@@ -25,6 +25,7 @@ class CodeListing extends Component {
 			leading: false,
 			trailing: true,
 		});
+		this._isMounted = false;
 	}
 
 	componentDidMount() {
@@ -34,11 +35,13 @@ class CodeListing extends Component {
 			this._scrollTo(this.state.startLine);
 		}
 		document.addEventListener("selectionchange", this._handleSelectionChange);
+		this._isMounted = true;
 	}
 
 	componentWillUnmount() {
 		window.removeEventListener("scroll", this._updateVisibleLines);
 		document.removeEventListener("selectionchange", this._handleSelectionChange);
+		this._isMounted = false;
 	}
 
 	reconcileState(state, props) {
@@ -47,6 +50,7 @@ class CodeListing extends Component {
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef;
 		state.activeDef = props.activeDef || null;
+		state.onRefClick = props.onRefClick || null;
 
 		let updateAnns = false;
 
@@ -163,10 +167,11 @@ class CodeListing extends Component {
 	}
 
 	getOffsetTopForByte(byte) {
+		if (!this._isMounted) return 0;
 		let $el = ReactDOM.findDOMNode(this);
 		let line = lineFromByte(this.state.lines, byte);
 		let $line = $el.querySelector(`[data-line="${line}"]`);
-		if ($line) return $line.offsetTop - $el.parentNode.querySelector(".code-file-toolbar").offsetTop;
+		if ($line) return $line.offsetTop + $el.parentNode.querySelector(".code-file-toolbar").clientHeight;
 		throw new Error(`No element found for line ${line}`);
 	}
 
@@ -186,6 +191,7 @@ class CodeListing extends Component {
 					selected={this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={visible ? this.state.highlightedDef : null}
 					activeDef={visible ? this.state.activeDef : null}
+					onRefClick={this.state.onRefClick}
 					key={i} />
 			);
 		});

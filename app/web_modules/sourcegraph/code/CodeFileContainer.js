@@ -19,9 +19,12 @@ import {GoTo} from "sourcegraph/util/hotLink";
 class CodeFileContainer extends Container {
 	constructor(props) {
 		super(props);
-		this.state = {};
+		this.state = {
+			activeRefStartByte: 0,
+		};
 		this._onClick = this._onClick.bind(this);
 		this._onKeyDown = this._onKeyDown.bind(this);
+		this._onRefClick = this._onRefClick.bind(this);
 	}
 
 	componentDidMount() {
@@ -43,20 +46,22 @@ class CodeFileContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
-		// get filename from definition data
-		let defData = props.def && DefStore.defs.get(props.def);
-		state.tree = (props.def && defData) ? (defData && defData.File.Path) : props.tree;
+		state.activeDef = props.activeDef || DefStore.activeDef || null;
+		// If there is a def in the URL that's passed down via props.activeDef, show the
+		// file that contains that def.
+		let defData = props.activeDef && DefStore.defs.get(state.activeDef);
+		state.tree = (props.activeDef && defData) ? (defData && defData.File.Path) : props.tree;
 
 		// fetch file content
 		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
 		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, state.tree, 0, 0);
 		state.annotations = CodeStore.annotations;
 
-		state.startLine = (props.def && state.file && defData) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
+		state.startLine = (state.activeDef && state.file && defData) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
 
 		state.defs = DefStore.defs;
 		state.examples = DefStore.examples;
-		state.highlightedDef = DefStore.highlightedDef || state.def || null;
+		state.highlightedDef = DefStore.highlightedDef || state.def || null; // TODO Delete state.def here?
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
 		state.defOptionsLeft = DefStore.defOptionsLeft;
@@ -67,6 +72,9 @@ class CodeFileContainer extends Container {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
 			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
 			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, nextState.tree));
+		}
+		if (nextState.activeDef && prevState.activeDef !== nextState.activeDef) {
+			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.activeDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
@@ -90,13 +98,19 @@ class CodeFileContainer extends Container {
 		}
 	}
 
+	_onRefClick(startByte) {
+		this.setState({
+			activeRefStartByte: startByte,
+		});
+	}
+
 	render() {
 		if (!this.state.tree) {
 			return null;
 		}
 
-		let defData = this.state.def && this.state.defs.get(this.state.def);
-		let highlightedDefData = this.state.highlightedDef && this.state.highlightedDef !== this.state.def && this.state.defs.get(this.state.highlightedDef);
+		let defData = this.state.activeDef && this.state.defs.get(this.state.activeDef);
+		let highlightedDefData = this.state.highlightedDef && this.state.highlightedDef !== this.state.activeDef && this.state.defs.get(this.state.highlightedDef);
 
 		return (
 			<div className="file-container">
@@ -117,13 +131,15 @@ class CodeFileContainer extends Container {
 							startCol={this.state.startCol}
 							endLine={this.state.endLine}
 							endCol={this.state.endCol}
+							onRefClick={this._onRefClick}
 							highlightedDef={this.state.highlightedDef}
-							activeDef={this.state.def} />}
+							activeDef={this.state.activeDef} />}
 					</div>
-					<FileMargin examples={this.state.examples} getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
+					<FileMargin getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
 						{defData &&
 						<DefPopup
 							def={defData}
+							byte={this.state.activeRefStartByte}
 							examples={this.state.examples}
 							annotations={this.state.annotations}
 							highlightedDef={this.state.highlightedDef} />}

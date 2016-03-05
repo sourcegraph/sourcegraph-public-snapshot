@@ -91,9 +91,6 @@ class CodeFileRouter extends Component {
 				if (state.url.hash.startsWith("#L")) {
 					Object.assign(state, parseLineRange(state.url.hash.slice(2)));
 				}
-
-				let defMatch = state.url.hash.match(/^#def-(.+)$/);
-				state.def = defMatch ? defMatch[1] : null;
 			}
 		} else {
 			state.def = state.url.pathname;
@@ -104,8 +101,6 @@ class CodeFileRouter extends Component {
 		let hash;
 		if (o.startLine) {
 			hash = `L${lineRange(lineCol(o.startLine, o.startCol), o.endLine && lineCol(o.endLine, o.endCol))}`;
-		} else if (o.def) {
-			hash = `def-${o.def}`;
 		}
 		let url = {
 			protocol: this.state.url.protocol,
@@ -140,8 +135,7 @@ class CodeFileRouter extends Component {
 			break;
 
 		case DefActions.SelectDef:
-			// null becomes undefined
-			this._navigate(this._filePath(), {def: action.url}); // eslint-disable-line no-undefined
+			this._navigate(this._filePath(), {def: null});
 			break;
 
 		case GoTo:
@@ -166,7 +160,7 @@ class CodeFileRouter extends Component {
 				startCol={this.state.startCol || null}
 				endLine={this.state.endLine || null}
 				endCol={this.state.endCol || null}
-				def={this.state.def} />
+				activeDef={this.state.def} />
 		);
 	}
 }
