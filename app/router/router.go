@@ -3,6 +3,7 @@ package router
 
 import (
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 
@@ -172,10 +173,12 @@ func New(base *mux.Router) *Router {
 	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
 	def.Path("/.examples").Methods("GET").Name(DefExamples)
 	def.Path("/.popover").Methods("GET").Name(DefPopover)
+	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
 
 	// See router_util/tree_route.go for an explanation of how we match tree
 	// entry routes.
 	repoTreePath := "/.tree" + routevar.TreeEntryPath
+	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
 	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 
 	repoRev.Path("/.refresh").Methods("POST", "PUT").Name(RepoRefresh)
@@ -250,3 +253,9 @@ func (r *Router) URLTo(routeName string, params ...string) *url.URL {
 }
 
 var Rel = New(nil)
+
+// gone returns HTTP 410 Gone, which indicates that this is an
+// "expected 404" and suppresses it from our 404 logs.
+func gone(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusGone)
+}
