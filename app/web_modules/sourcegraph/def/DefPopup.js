@@ -14,22 +14,18 @@ class DefPopup extends Component {
 	render() {
 		let def = this.state.def;
 		return (
-			<div className="token-details">
-				<div className="card">
-					<header>
-						<h1>
-							{def.Found &&
-								<a className="btn btn-toolbar btn-default go-to-def" href={def.URL} onClick={(def.Data && def.Data.Kind !== "package") && hotLink}>Go to definition</a>
-							}
-							<span className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
-							<a className="close top-action" onClick={() => {
-								Dispatcher.dispatch(new DefActions.SelectDef(null));
-							}}>×</a>
-						</h1>
-					</header>
-				</div>
+			<div className="token-details card">
+				<header>
+					{def.Found &&
+						<a className="go-to-def" href={def.URL} onClick={(def.Data && def.Data.Kind !== "package") && hotLink}><i className="fa fa-caret-square-o-right"></i>&nbsp; Go to definition</a>
+					}
+				</header>
+				<section>
+					<p className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
+				</section>
 
-				<section className="examples-card card">
+				<header>Usage Examples</header>
+				<section className="examples-card">
 					<ExampleView defURL={def.URL} examples={this.state.examples} annotations={this.state.annotations} highlightedDef={this.state.highlightedDef} />
 				</section>
 			</div>

@@ -123,6 +123,7 @@
 		table-layout: fixed;
 		display: block;
 		background-color: white;
+		overflow-x: auto;
 
 		&.placeholder {
 			width: 100%;
@@ -229,6 +230,11 @@
 	border: $content-border;
 	border-radius: $border-radius-base;
 	background-color: #fff;
+
+	.go-to-def {
+		color: $text-color;
+		float: right;
+	}
 }
 
 .token-details {
@@ -257,24 +263,15 @@
 		font-size: 11px;
 	}
 
-	header {
-		h1 {
-			padding-bottom: 10px;
-			font-size: 14px;
-			line-height: 21px;
-			margin: 0;
-			.close {
-				margin-top: -2px;
-			}
-		}
-
-		.qualified-name {
-			font-family: $font-family-monospace;
-			word-wrap: break-word;
-			color: #333;
-			.name {
-				font-weight: bold;
-			}
+	.qualified-name {
+		padding: 4px;
+		margin-bottom: 0;
+		font-size: 12px;
+		font-family: $font-family-monospace;
+		word-wrap: break-word;
+		color: #333;
+		.name {
+			font-weight: bold;
 		}
 	}
 }
@@ -319,6 +316,7 @@
 		a {
 			cursor: pointer;
 			text-decoration: none;
+			overflow-wrap: break-word;
 		}
 
 		nav {
@@ -351,6 +349,7 @@
 		position: relative;
 		border: 1px solid #dfdfdf;
 		border-width: 1px 0;
+		overflow-x: auto;
 
 		a.openFullExamples {
 			position: absolute;

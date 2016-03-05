@@ -63,6 +63,7 @@ pre code, .line-numbered-code td {
 
 .line-numbered-code {
 	word-wrap: break-word;
+	word-break: break-all;
 	table-layout: fixed;
 	border-collapse: separate;
 

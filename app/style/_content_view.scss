@@ -1,36 +1,59 @@
-$padding-card: 14px;
-
 // content-view refers to the general view structure where there is a
 // file or diff with sidebar cards.
 .content-view {
+	$content-width: 760px;
+	$sidebar-width: 360px;
+	$sidebar-margin: $grid-gutter-width/2;
+
 	display: flex;
+	justify-content: center;
+	overflow-x: auto;
+
 	& > .content {
-		@media(max-width: $screen-md-min) {
-			flex: 1 500px;
-		}
-		@media(min-width: $screen-md-min) and (max-width: $screen-lg-min) {
-			flex: 1 650px;
-		}
-		flex: 0.5 725px;
+		flex-basis: $content-width;
+		max-width: $content-width;
 	}
 	& > .sidebar {
-		@media(max-width: $screen-md-min) {
-			flex: 0 1 240px;
-		}
-		@media(min-width: $screen-md-min) and (max-width: $screen-lg-min) {
-			flex: 0 1 320px;
-		}
-		flex: 0.5 360px;
-		padding-left: $grid-gutter-width/2;
-		margin-right: $grid-gutter-width/2;
-		& > .card {
+		flex-basis: 360px;
+		padding-left: $sidebar-margin;
+		margin-right: $sidebar-margin;
+		& > * {
 			width: 100%;
+			min-width: 360px;
+		}
+	}
+
+	@media (min-width: $container-lg + $sidebar-margin + ($sidebar-width*2)) {
+		overflow-x: visible;
+		& > .content {
+			flex-basis: 100%;
+			max-width: initial;
+		}
+		& > .sidebar {
+			left: $sidebar-margin;
+			padding-left: 0;
+			margin-right: 0;
+			flex-basis: 0;
 		}
 	}
 }
 
 .card {
+	$padding-card: 8px;
+
 	header, section {
 		padding: $padding-card;
+	}
+
+	header {
+		@include clearfix;
+		background-color: $heading-bg-color;
+		color: $heading-text-color;
+		border-top: $content-border;
+		border-bottom: $content-border;
+
+		&:first-child {
+			border-top: none;
+		}
 	}
 }
