@@ -1,7 +1,6 @@
 package github
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -17,10 +16,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
-// Repos is a GitHub-backed implementation of the Repos store.
 type Repos struct{}
-
-var _ store.Repos = (*Repos)(nil)
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	owner, repoName, err := githubutil.SplitGitHubRepoURI(repo)
@@ -123,77 +119,6 @@ func convertGitHubRepoPerms(ghrepo *github.Repository) *sourcegraph.RepoPermissi
 	return rp
 }
 
-// TODO(public-release): This function has been commented out mostly for
-// performance reasons. It is fine for now, but MUST be implemented before we
-// have any code that needs to know the user's auth with respect to a GitHub
-// repo.
-func (s *Repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
-	// TODO(sqs): optimization: if the GitHub client is anonymous,
-	// then there are no permissions, so we can just return nil here
-	// instead of incurring the HTTP request.
-
-	//r, err := s.Get(ctx, repo)
-	//if err != nil {
-	//return nil, err
-	//}
-	//if r.Permissions == nil {
-	//return &sourcegraph.RepoPermissions{Read: true}, nil
-	//}
-	//return r.Permissions, nil
-	return &sourcegraph.RepoPermissions{Read: true}, nil
-}
-
-func (s *Repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
-	if opt == nil {
-		opt = &sourcegraph.RepoListOptions{}
-	}
-
-	listOpt := github.ListOptions{
-		Page:    opt.ListOptions.PageOrDefault(),
-		PerPage: opt.ListOptions.PerPageOrDefault(),
-	}
-
-	var (
-		ghRepos []github.Repository
-		err     error
-	)
-	githubHost := githubcli.Config.Host()
-	if opt.Owner != "" {
-		ghRepos, _, err = client(ctx).repos.List(opt.Owner, &github.RepositoryListOptions{
-			Sort:        opt.Sort,
-			Direction:   opt.Direction,
-			ListOptions: listOpt,
-		})
-	} else if opt.Query != "" {
-		repoQuery := strings.TrimSpace(strings.TrimPrefix(opt.Query, githubHost+"/"))
-		parts := strings.Split(repoQuery, "/")
-		if len(parts) == 2 && parts[1] == "" {
-			repoQuery = "user:" + parts[0]
-		} else if len(parts) == 1 {
-			repoQuery = parts[0]
-		} else {
-			repoQuery = "user:" + parts[0] + " " + parts[1]
-		}
-
-		var results *github.RepositoriesSearchResult
-		results, _, err = client(ctx).search.Repositories("in:name "+repoQuery, &github.SearchOptions{ListOptions: listOpt})
-		for _, repo := range results.Repositories {
-			ghRepos = append(ghRepos, repo)
-		}
-	} else {
-		ghRepos, _, err = client(ctx).repos.ListAll(&github.RepositoryListAllOptions{ListOptions: listOpt})
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	repos := make([]*sourcegraph.Repo, len(ghRepos))
-	for i, ghrepo := range ghRepos {
-		repos[i] = repoFromGitHub(&ghrepo)
-	}
-	return repos, nil
-}
-
 // ListWithToken lists repos from GitHub that are visible in the given auth
 // token's scope.
 func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph.RemoteRepo, error) {
@@ -259,16 +184,4 @@ func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph
 	}
 
 	return repos, nil
-}
-
-func (s *Repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
-	return errors.New("GitHub repo creation is not implemented")
-}
-
-func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
-	return errors.New("GitHub repo updating is not implemented")
-}
-
-func (s *Repos) Delete(ctx context.Context, repo string) error {
-	return errors.New("GitHub repo deletion is not implemented")
 }
