@@ -21,7 +21,7 @@ class CodeListing extends Component {
 			lineAnns: [],
 		};
 		this._updateVisibleLines = this._updateVisibleLines.bind(this);
-		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 250, {
+		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 200, {
 			leading: false,
 			trailing: true,
 		});
