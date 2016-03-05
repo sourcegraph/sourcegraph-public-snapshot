@@ -172,7 +172,6 @@ func New(base *mux.Router) *Router {
 	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
 	def.Path("/.examples").Methods("GET").Name(DefExamples)
 	def.Path("/.popover").Methods("GET").Name(DefPopover)
-	// TODO(x): def history route
 
 	// See router_util/tree_route.go for an explanation of how we match tree
 	// entry routes.
