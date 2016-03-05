@@ -42,7 +42,7 @@ type defFormatter struct {
 	data *DefData
 }
 
-func (f defFormatter) Language() string { return "JavaScript" }
+func (f defFormatter) Language() string { return "Ruby" }
 
 func (f defFormatter) DefKeyword() string {
 	switch f.data.RubyKind {

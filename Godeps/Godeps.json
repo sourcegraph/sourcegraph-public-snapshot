@@ -1244,15 +1244,15 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
-			"Rev": "f0be0c1b846b3ea4d8971693f436452236879df3"
+			"Rev": "a8fecc625132854e8381291178fad0f8d91ea28f"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
-			"Rev": "ae09e1348e9369ed6edc5d08115f163f13ca4404"
+			"Rev": "0df855098db89944166e81125cebe7d6a3c385f0"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-go/golang_def",
-			"Rev": "ae09e1348e9369ed6edc5d08115f163f13ca4404"
+			"Rev": "0df855098db89944166e81125cebe7d6a3c385f0"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-haskell/haskell",
@@ -1260,19 +1260,19 @@
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-java/java_def",
-			"Rev": "5c60cce8df5e8ea2510ba07f576f1a60b34c1d2b"
+			"Rev": "c7759b2165a8edeb83899598c86785b4a5099104"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-javascript/javascript_def",
-			"Rev": "6f2e41d5a06943c57585ae44c0088f46361a68e2"
+			"Rev": "38cb738a5c5b00e89aba23e1d34c166e11460100"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-python/python",
-			"Rev": "a3706f98a9fd893e571ccf0212f2d0ada6bafd0c"
+			"Rev": "36d1771e1a1d04b2f6a643cd7ba2edb8e4817f7a"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-ruby/ruby_def",
-			"Rev": "59082d5863ac9d9443948137bcafc4aab31d9b8f"
+			"Rev": "46b6d0baaea7bff01a470fbb6bbbd8cce29fd54a"
 		},
 		{
 			"ImportPath": "sourcegraph.com/sourcegraph/srclib-sample/sample",
