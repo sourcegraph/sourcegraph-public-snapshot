@@ -22,7 +22,6 @@ type Waitlist interface {
 	ListOrgs(ctx context.Context, onlyWaitlisted, onlyGranted bool, filterNames []string) ([]*sourcegraph.WaitlistedOrg, error)
 
 	UpdateUserOrgs(ctx context.Context, uid int32, orgNames []string) error
-	RecordPendingRepo(ctx context.Context, repo *sourcegraph.RemoteRepo) error
 }
 
 // WaitlistedUserNotFoundError occurs when a WaitlistedUser is not

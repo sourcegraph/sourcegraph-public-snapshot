@@ -2,7 +2,6 @@ package pgsql
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -322,34 +321,6 @@ func (w *waitlist) UpdateUserOrgs(ctx context.Context, uid int32, orgNames []str
 	}
 	if _, err := res.RowsAffected(); err != nil {
 		return err
-	}
-	return nil
-}
-
-func (w *waitlist) RecordPendingRepo(ctx context.Context, repo *sourcegraph.RemoteRepo) error {
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Waitlist.RecordPendingRepo"); err != nil {
-		return err
-	}
-	if repo == nil {
-		return errors.New("invalid argument: nil repo")
-	}
-	currTime := time.Now()
-	dbRepo := pendingReposRow{
-		URI:       "github.com/" + repo.Owner + "/" + repo.Name,
-		CloneURL:  repo.HTTPCloneURL,
-		Owner:     repo.Owner,
-		IsOrg:     repo.OwnerIsOrg,
-		Language:  repo.Language,
-		Stars:     repo.Stars,
-		UpdatedAt: &currTime,
-	}
-	n, err := dbh(ctx).Update(&dbRepo)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		// No pending repo row yet exists, so we must insert it.
-		return dbh(ctx).Insert(&dbRepo)
 	}
 	return nil
 }
