@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
-	"path"
+	pathpkg "path"
 	"path/filepath"
 	"strings"
 
@@ -65,7 +65,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		repoRev.CommitID = string(commit.ID)
 	}
 
-	pkg, subpkgs, pdoc, err := build(ctx, repo, repoRev, path.Clean(r.URL.Path))
+	pkg, subpkgs, pdoc, err := build(ctx, repo, repoRev, pathpkg.Clean(r.URL.Path))
 	if err != nil {
 		http.Error(w, err.Error(), errcode.HTTP(err))
 		return
@@ -111,7 +111,7 @@ var funcMap = template.FuncMap{
 	"urlToRepoGoDoc": func(repo, rev, path string) (*url.URL, error) {
 		return router.Rel.URLToOrError(router.RepoAppFrame, "Repo", repo, "Rev", rev, "App", "godoc", "AppPath", "/"+path)
 	},
-	"pathBase":  path.Base,
+	"pathBase":  pathpkg.Base,
 	"hasPrefix": strings.HasPrefix,
 }
 
@@ -139,7 +139,7 @@ func build(ctx context.Context, repo *sourcegraph.Repo, repoRev sourcegraph.Repo
 		}
 	}
 
-	return pkg, subpkgs, godocsupport.NewTDoc(pkg), nil
+	return pkg, subpkgs, godocsupport.NewTDoc(pkg, dir), nil
 }
 
 func getGodocDir(ctx context.Context, cl *sourcegraph.Client, repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, subdir string) (*gosrc.Directory, error) {
@@ -147,7 +147,7 @@ func getGodocDir(ctx context.Context, cl *sourcegraph.Client, repo *sourcegraph.
 	if repoRevSpec.URI == "github.com/golang/go" {
 		importPath = strings.TrimPrefix(subdir, "src/")
 	} else {
-		importPath = path.Join(repoRevSpec.URI, subdir)
+		importPath = pathpkg.Join(repoRevSpec.URI, subdir)
 	}
 
 	d := &gosrc.Directory{
@@ -170,7 +170,7 @@ func getGodocDir(ctx context.Context, cl *sourcegraph.Client, repo *sourcegraph.
 		return nil, err
 	}
 	for _, entry := range dirEntry.Entries {
-		path := filepath.Join(subdir, entry.Name)
+		path := pathpkg.Join(subdir, entry.Name)
 		switch entry.Type {
 		case sourcegraph.FileEntry:
 			if filepath.Ext(entry.Name) == ".go" {

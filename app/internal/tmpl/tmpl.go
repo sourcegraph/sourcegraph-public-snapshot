@@ -77,7 +77,6 @@ func repoTemplates() error {
 		{"repo/build.html", "builds/build.inc.html", "repo/commit.inc.html"},
 		{"repo/tree/file.html"},
 		{"repo/tree/doc.html", "repo/commit.inc.html"},
-		{"repo/tree/share.html"},
 		{"repo/tree/dir.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
 		{"repo/search.html"},
 		{"repo/frame.html", "error/common.html"},
@@ -88,7 +87,6 @@ func repoTemplates() error {
 		{"repo/compare.html", "repo/commit.inc.html"},
 		{"repo/no_vcs_data.html"},
 
-		{"def/share.html", "def/def.html"},
 		{"def/examples.html", "def/examples.inc.html", "def/snippet.inc.html", "def/def.html"},
 	}, []string{
 		"repo/repo.html",
@@ -137,12 +135,10 @@ func commonTemplates() error {
 	})
 }
 
-// standaloneTemplates returns a set of standalone templates (sourcebox, codebox,
-// etc.) if successful.
+// standaloneTemplates returns a set of standalone templates if
+// successful.
 func standaloneTemplates() error {
 	return parseHTMLTemplates([][]string{
-		{"sourcebox/sourcebox.js"},
-		{"sourcebox/sourcebox.html"},
 		{"def/popover.html"},
 	}, []string{"common.html"})
 }

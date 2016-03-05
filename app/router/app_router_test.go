@@ -189,29 +189,6 @@ func TestMatch(t *testing.T) {
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
 		},
 
-		// Sourceboxes
-		{
-			path:          "/repohost.com/foo@mycommitid/.t/.def/p/.sourcebox.js",
-			wantRouteName: SourceboxDef,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "mycommitid", "Format": "js"},
-		},
-		{
-			path:          "/repohost.com/foo@mycommitid/.t/.def/p/.sourcebox.json",
-			wantRouteName: SourceboxDef,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "mycommitid", "Format": "json"},
-		},
-		{
-			path:          "/repohost.com/foo@mycommitid/.tree/my/file/.sourcebox.js",
-			wantRouteName: SourceboxFile,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "mycommitid", "Path": "my/file", "Format": "js"},
-		},
-
-		{
-			path:          "/repohost.com/foo@mycommitid/.tree/my/file/.sourcebox.json",
-			wantRouteName: SourceboxFile,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "mycommitid", "Path": "my/file", "Format": "json"},
-		},
-
 		// Blog
 		{
 			path:          "/blog",

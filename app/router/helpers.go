@@ -110,10 +110,6 @@ func (r *Router) URLToRepoSearch(repoURI, rev, query string) (*url.URL, error) {
 	return url, nil
 }
 
-func (r *Router) URLToSourceboxFile(e sourcegraph.TreeEntrySpec, format string) *url.URL {
-	return r.URLTo(SourceboxFile, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", e.RepoRev.Rev, "CommitID", e.RepoRev.CommitID, "Path", e.Path, "Format", format)
-}
-
 func (r *Router) URLToRepoTreeEntryLines(repoURI string, rev, path string, startLine int) *url.URL {
 	u := r.URLTo(RepoTree, "Repo", repoURI, "Rev", rev, "Path", path)
 	u.Fragment = fmt.Sprintf("L%d", startLine)
@@ -142,10 +138,6 @@ func (r *Router) URLToDefAtRev(key graph.DefKey, rev interface{}) *url.URL {
 
 func (r *Router) URLToDefAtRevSubroute(routeName string, key graph.DefKey, rev interface{}) *url.URL {
 	return r.URLTo(routeName, "Repo", string(key.Repo), "Rev", commitIDStr(rev), "UnitType", key.UnitType, "Unit", key.Unit, "Path", string(key.Path))
-}
-
-func (r *Router) URLToSourceboxDef(key graph.DefKey, format string) *url.URL {
-	return r.URLTo(SourceboxDef, "Repo", string(key.Repo), "UnitType", key.UnitType, "Unit", key.Unit, "Path", string(key.Path), "Format", format)
 }
 
 func (r *Router) URLToRepoCommit(repoURI string, commitID interface{}) *url.URL {
