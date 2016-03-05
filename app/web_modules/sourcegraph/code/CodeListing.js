@@ -50,7 +50,6 @@ class CodeListing extends Component {
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef;
 		state.activeDef = props.activeDef || null;
-		state.onRefClick = props.onRefClick || null;
 
 		let updateAnns = false;
 
@@ -191,7 +190,6 @@ class CodeListing extends Component {
 					selected={this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={visible ? this.state.highlightedDef : null}
 					activeDef={visible ? this.state.activeDef : null}
-					onRefClick={this.state.onRefClick}
 					key={i} />
 			);
 		});

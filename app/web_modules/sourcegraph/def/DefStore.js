@@ -43,10 +43,6 @@ export class DefStore extends Store {
 			}));
 			break;
 
-		case DefActions.SelectDef:
-			this.activeDef = action.url;
-			break;
-
 		case DefActions.HighlightDef:
 			this.highlightedDef = action.url;
 			break;

@@ -19,12 +19,8 @@ import {GoTo} from "sourcegraph/util/hotLink";
 class CodeFileContainer extends Container {
 	constructor(props) {
 		super(props);
-		this.state = {
-			activeRefStartByte: 0,
-		};
 		this._onClick = this._onClick.bind(this);
 		this._onKeyDown = this._onKeyDown.bind(this);
-		this._onRefClick = this._onRefClick.bind(this);
 	}
 
 	componentDidMount() {
@@ -46,11 +42,9 @@ class CodeFileContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
-		state.activeDef = props.activeDef || DefStore.activeDef || null;
-		// If there is a def in the URL that's passed down via props.activeDef, show the
-		// file that contains that def.
+		state.activeDef = props.activeDef || null;
 		let defData = props.activeDef && DefStore.defs.get(state.activeDef);
-		state.tree = (props.activeDef && defData) ? (defData && defData.File.Path) : props.tree;
+		state.tree = props.activeDef && defData ? defData.File.Path : props.tree;
 
 		// fetch file content
 		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
@@ -61,7 +55,7 @@ class CodeFileContainer extends Container {
 
 		state.defs = DefStore.defs;
 		state.examples = DefStore.examples;
-		state.highlightedDef = DefStore.highlightedDef || state.def || null; // TODO Delete state.def here?
+		state.highlightedDef = DefStore.highlightedDef || null;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
 		state.defOptionsLeft = DefStore.defOptionsLeft;
@@ -74,6 +68,16 @@ class CodeFileContainer extends Container {
 			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, nextState.tree));
 		}
 		if (nextState.activeDef && prevState.activeDef !== nextState.activeDef) {
+			let defData = nextState.activeDef && DefStore.defs.get(nextState.activeDef);
+			if (defData && (!defData.File.Path || (defData.Data && defData.Data.Kind === "package"))) {
+				// The def's File field refers to a directory (e.g., in the
+				// case of a Go package). We can't show a dir in this view,
+				// so just redirect to the dir listing.
+				//
+				// TODO(sqs): Improve handling of this case.
+				window.location.href = defData.URL;
+				return;
+			}
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.activeDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
@@ -96,12 +100,6 @@ class CodeFileContainer extends Container {
 		if (event.keyCode === 27) {
 			Dispatcher.dispatch(new DefActions.SelectDef(null));
 		}
-	}
-
-	_onRefClick(startByte) {
-		this.setState({
-			activeRefStartByte: startByte,
-		});
 	}
 
 	render() {
@@ -131,7 +129,6 @@ class CodeFileContainer extends Container {
 							startCol={this.state.startCol}
 							endLine={this.state.endLine}
 							endCol={this.state.endCol}
-							onRefClick={this._onRefClick}
 							highlightedDef={this.state.highlightedDef}
 							activeDef={this.state.activeDef} />}
 					</div>
@@ -139,7 +136,7 @@ class CodeFileContainer extends Container {
 						{defData &&
 						<DefPopup
 							def={defData}
-							byte={this.state.activeRefStartByte}
+							byte={defData.ByteStartPosition}
 							examples={this.state.examples}
 							annotations={this.state.annotations}
 							highlightedDef={this.state.highlightedDef} />}

@@ -135,7 +135,7 @@ class CodeFileRouter extends Component {
 			break;
 
 		case DefActions.SelectDef:
-			this._navigate(this._filePath(), {def: null});
+			this._navigate(action.url, {});
 			break;
 
 		case GoTo:

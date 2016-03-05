@@ -38,7 +38,6 @@ class CodeLineView extends Component {
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
 		state.directLinks = Boolean(props.directLinks);
-		state.onRefClick = props.onRefClick || null;
 	}
 
 	render() {
@@ -102,7 +101,6 @@ class CodeLineView extends Component {
 									Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs([ann.URL].concat(extraURLs), ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY)); // dispatch async so that the menu is not immediately closed by click handler on document
 								} else {
 									Dispatcher.asyncDispatch(new DefActions.SelectDef(ann.URL));
-									if (this.state.onRefClick) this.state.onRefClick(ann.StartByte, ann.EndByte);
 								}
 							}}
 							key={i}>{text}</a>
