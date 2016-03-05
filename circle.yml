@@ -22,7 +22,7 @@ dependencies:
     # Use Go 1.6.
     - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
     # Update git, curl, and libcurl ( both openssl and gnutls flavours )
-    - sudo apt-get update; sudo apt-get install git curl libcurl3 libcurl3-gnutls
+    - sudo apt-get update; sudo apt-get install --reinstall git curl libcurl3 libcurl3-gnutls
 
   cache_directories:
     - ~/protobuf
