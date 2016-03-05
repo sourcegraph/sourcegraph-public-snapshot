@@ -362,10 +362,6 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		return err
 	}
 
-	if newRepo.DefaultBranch == "" {
-		return errors.New("invalid argument: no default branch provided")
-	}
-
 	// Create the filesystem repo where the git data lives. (The repo
 	// metadata, such as the existence, description, language, etc.,
 	// live in PostgreSQL.)
@@ -381,9 +377,6 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
-	if op.IsPrivate && op.IsPublic {
-		return errors.New("invalid argument: both IsPrivate and IsPublic are set to true")
-	}
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
 		return err
 	}
@@ -401,20 +394,6 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	}
 	if op.DefaultBranch != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
-		if err != nil {
-			return err
-		}
-	}
-	if op.IsPrivate || op.IsPublic {
-		// Only admin users can update a repo's visibility.
-		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.Update"); err != nil {
-			return err
-		}
-		private := "t"
-		if op.IsPublic {
-			private = "f"
-		}
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "private"=$1 WHERE uri=$2`, private, op.Repo.URI)
 		if err != nil {
 			return err
 		}

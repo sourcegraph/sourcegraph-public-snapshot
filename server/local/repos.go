@@ -5,7 +5,10 @@ import (
 	"log"
 	pathpkg "path"
 	"path/filepath"
+	"runtime"
 	"time"
+
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"strings"
 
@@ -29,12 +32,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
 var Repos sourcegraph.ReposServer = &repos{}
@@ -55,11 +56,15 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 	if err != nil {
 		return nil, err
 	}
-	if err := s.setRepoOtherFields(ctx, repo); err != nil {
+
+	// Query the remote server for the remote repo, to ensure the
+	// actor can access this repo.
+	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
 		return nil, err
 	}
+
 	if repo.Blocked {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo.URI)
+		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo)
 	}
 	return repo, nil
 }
@@ -69,17 +74,40 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	if err != nil {
 		return nil, err
 	}
-	if err := s.setRepoOtherFields(ctx, repos...); err != nil {
+
+	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	for _, repo_ := range repos {
+		repo := repo_
+		par.Do(func() error {
+			return s.setRepoFieldsFromRemote(ctx, repo)
+		})
+	}
+	if err := par.Wait(); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
-func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Repo) error {
-	appURL := conf.AppURL(ctx)
-	for _, repo := range repos {
-		repo.HTMLURL = appURL.ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
+func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
+	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
+
+	// Fetch latest metadata from GitHub (we don't even try to keep
+	// our cache up to date).
+	if strings.HasPrefix(repo.URI, "github.com/") {
+		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
+		if err != nil {
+			return err
+		}
+		repo.Description = ghrepo.Description
+		repo.Language = ghrepo.Language
+		repo.DefaultBranch = ghrepo.DefaultBranch
+		repo.Fork = ghrepo.Fork
+		repo.Private = ghrepo.Private
+		repo.Permissions = ghrepo.Permissions
+		repo.UpdatedAt = ghrepo.UpdatedAt
+		repo.GitHub = &sourcegraph.GitHubRepo{Stars: ghrepo.Stars}
 	}
+
 	return nil
 }
 
@@ -100,10 +128,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
 		return nil, err
 	}
-
-	actor := authpkg.ActorFromContext(ctx)
-	accesscontrol.SetMirrorRepoPerms(ctx, &actor)
-	ctx = authpkg.WithActor(ctx, actor)
 
 	repo, err = store.ReposFromContext(ctx).Get(ctx, repo.URI)
 	if err != nil {
@@ -158,58 +182,23 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 		return nil, err
 	}
 
-	uri := "github.com/" + ghrepo.Owner + "/" + ghrepo.Name
-	if ghrepo.Private {
-		actor := authpkg.ActorFromContext(ctx)
-
-		// If this server has a waitlist in place, check that the user
-		// is off the waitlist.
-		if !actor.PrivateMirrors {
-			return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-		}
-
-		// Check that the user has permission to access this private repo.
-		// The user's permissions for private mirror repos are set in
-		// MirrorRepos.GetUserData, which is called during onboarding.
-		valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), int32(actor.UID), uri)
-		if err != nil {
-			return nil, err
-		}
-		if !valid {
-			return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-		}
-
-		token, err := (&mirrorRepos{}).getRepoAuthToken(elevatedActor(ctx), uri)
-		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", uri, err)
-		}
-		ghrepo, err = (&github.Repos{}).Get(github.NewContextWithClient(ctx, githubutil.Default.AuthedClient(token), true), uri)
-		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "could not fetch private GitHub repo %v: %v", uri, err)
-		}
-	} else {
-		var err error
-		// Check that the repo is really public.
-		ghrepo, err = (&github.Repos{}).Get(github.NewContextWithClient(ctx, githubutil.Default.UnauthedClient(), false), uri)
-		if err != nil || ghrepo.Private {
-			log15.Warn("Could not fetch public GitHub repo in Repos.Create", "uri", uri, "error", err)
-			return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-		}
+	// If this server has a waitlist in place, check that the user
+	// is off the waitlist.
+	if ghrepo.Private && !authpkg.ActorFromContext(ctx).PrivateMirrors {
+		return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
 	}
 
+	// Purposefully set very few fields. We don't want to cache
+	// metadata, because it'll get stale, and fetching online from
+	// GitHub is quite easy and (with HTTP caching) performant.
 	ts := pbtypes.NewTimestamp(time.Now())
 	return &sourcegraph.Repo{
-		Name:          ghrepo.Name,
-		URI:           uri,
-		VCS:           ghrepo.VCS,
-		HTTPCloneURL:  ghrepo.HTTPCloneURL,
-		Language:      ghrepo.Language,
-		DefaultBranch: ghrepo.DefaultBranch,
-		Description:   ghrepo.Description,
-		Fork:          ghrepo.Fork,
-		Private:       ghrepo.Private,
-		Mirror:        true,
-		CreatedAt:     &ts,
+		Name:         ghrepo.Name,
+		URI:          "github.com/" + ghrepo.Owner + "/" + ghrepo.Name,
+		HTTPCloneURL: ghrepo.HTTPCloneURL,
+		VCS:          "git",
+		Mirror:       true,
+		CreatedAt:    &ts,
 	}, nil
 }
 

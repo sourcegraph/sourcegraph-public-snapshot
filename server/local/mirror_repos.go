@@ -3,14 +3,12 @@ package local
 import (
 	"os/exec"
 	"strings"
-	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/AaronO/go-git-http"
 	"github.com/prometheus/client_golang/prometheus"
 
-	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -46,7 +44,7 @@ func init() {
 }
 
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
-	r, err := store.ReposFromContext(ctx).Get(ctx, op.Repo.URI)
+	repo, err := (&repos{}).Get(ctx, &op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +53,9 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// simultaneously clone or update the same repo? Race conditions
 	// probably, esp. on NFS.
 
-	remoteOpts := vcs.RemoteOpts{}
-	var gh *gogithub.Client
 	// For private repos, supply auth from local auth store.
-	if r.Private {
+	remoteOpts := vcs.RemoteOpts{}
+	if repo.Private {
 		token, err := s.getRepoAuthToken(elevatedActor(ctx), op.Repo.URI)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
@@ -66,43 +63,19 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
 			Pass: token,
 		}
-		gh = githubutil.Default.AuthedClient(token)
-	} else {
-		gh = githubutil.Default.UnauthedClient()
 	}
 
-	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, r.URI)
+	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.updateRepo(ctx, r, vcsRepo, remoteOpts); err != nil {
+	if err := s.updateRepo(ctx, repo, vcsRepo, remoteOpts); err != nil {
 		if err != vcs.ErrRepoNotExist {
 			return nil, err
 		}
-		if err := s.cloneRepo(ctx, r, remoteOpts); err != nil {
+		if err := s.cloneRepo(ctx, repo, remoteOpts); err != nil {
 			return nil, err
 		}
-	}
-
-	// Update any of the repo's metadata that has changed on GitHub.
-	ctx = github.NewContextWithClient(ctx, gh, r.Private)
-	ghRepos := github.Repos{}
-	ghRepo, err := ghRepos.Get(ctx, r.URI)
-	if err != nil {
-		return nil, err
-	}
-	err = store.ReposFromContext(ctx).Update(ctx, &store.RepoUpdate{
-		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
-			Repo: sourcegraph.RepoSpec{
-				URI: op.Repo.URI,
-			},
-			DefaultBranch: ghRepo.DefaultBranch,
-			Language:      ghRepo.Language,
-			Description:   ghRepo.Description,
-		},
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	return &pbtypes.Void{}, nil
@@ -321,13 +294,9 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		return nil, err
 	}
 
-	repoPermsStore := store.RepoPermsFromContext(ctx)
-	reposStore := store.ReposFromContext(ctx)
-
-	ghRepos := &github.Repos{}
 	// TODO(perf) Cache this response or perform the fetch after page load to avoid
 	// having to wait for an http round trip to github.com.
-	gitHubRepos, err := ghRepos.ListWithToken(ctx, extToken.Token)
+	gitHubRepos, err := (&github.Repos{}).ListWithToken(ctx, extToken.Token)
 	if err != nil {
 		// Since the error is caused by something other than the token not existing,
 		// ensure the user knows there is a value set for the token but that
@@ -354,7 +323,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		URIs: gitHubRepoURIs,
 	}
 	for {
-		repoList, err := reposStore.List(elevatedActor(ctx), repoOpts)
+		repoList, err := store.ReposFromContext(ctx).List(elevatedActor(ctx), repoOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -372,62 +341,13 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Check if a user's remote GitHub repo already exists locally under the
 	// same URI. Allow this user to access all their private repos that are
 	// already mirrored on this Sourcegraph.
-	var privateRepoURIs []string
 	for _, repo := range gitHubRepos {
 		uri := "github.com/" + repo.Owner + "/" + repo.Name
 		if localRepo, ok := existingRepos[uri]; ok {
 			gd.Repos = append(gd.Repos, localRepo)
-			privateRepoURIs = append(privateRepoURIs, localRepo.URI)
-			if localRepo.Private != repo.Private {
-				// This means that either the existing local mirror was created with
-				// the incorrect visibility (public vs. private) compared to the
-				// upstream GitHub repo, or the upstream repo's visibility was modified
-				// recently.
-				// Modify the repo metadata in the local db to be consistent with it's
-				// visibility on GitHub. This means that if the repo was public and is
-				// now private, all Sourcegraph users will need to visit their dashboard
-				// to force a sync with GitHub and have their repo_perms records updated
-				// in order to continue accessing this repo.
-				now := time.Now()
-				err := reposStore.Update(elevatedActor(ctx), &store.RepoUpdate{
-					ReposUpdateOp: &sourcegraph.ReposUpdateOp{
-						IsPrivate: repo.Private,
-						IsPublic:  !repo.Private,
-					},
-					UpdatedAt: &now,
-				})
-				if err != nil {
-					// Failed to update repo visibility, so skip it.
-					log15.Warn("Failed to update repo visibility level", "repo", localRepo.URI, "error", err)
-					continue
-				}
-
-				// If the repo is public, remove it's records from the repo_perms store
-				// which only stores permissions for private repos.
-				if !repo.Private {
-					err := repoPermsStore.DeleteRepo(elevatedActor(ctx), localRepo.URI)
-					if err != nil {
-						// Failed to update repo permissions, so skip it.
-						log15.Warn("Failed to update repo permissions", "repo", localRepo.URI, "error", err)
-						continue
-					}
-				}
-			}
 		} else {
 			gd.RemoteRepos = append(gd.RemoteRepos, repo)
-			if repo.Private {
-				privateRepoURIs = append(privateRepoURIs, uri)
-				// If repo is private and not mirrored yet, add it to pending repos.
-				if err := store.WaitlistFromContext(ctx).RecordPendingRepo(elevatedActor(ctx), repo); err != nil {
-					log15.Warn("Failed to record pending private repo", "uri", uri, "error", err)
-				}
-			}
 		}
-	}
-	// Update the user's permissions for visible private repos.
-	uid := int32(authpkg.ActorFromContext(ctx).UID)
-	if err := repoPermsStore.Update(elevatedActor(ctx), uid, privateRepoURIs); err != nil {
-		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
 
 	return gd, nil
