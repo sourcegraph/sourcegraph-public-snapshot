@@ -97,7 +97,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
 	r.Get(router.Download).Handler(internal.Handler(serveDownload))
 	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))
-	r.Get(router.RepoCreate).Handler(internal.Handler(serveRepoCreate))
 
 	r.Get(router.RobotsTxt).HandlerFunc(robotsTxt)
 	r.Get(router.Favicon).HandlerFunc(favicon)
