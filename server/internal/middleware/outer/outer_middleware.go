@@ -2071,6 +2071,36 @@ func (s wrappedRepos) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (return
 	return rv, nil
 }
 
+func (s wrappedRepos) Resolve(ctx context.Context, v1 *sourcegraph.RepoResolveOp) (returnedResult *sourcegraph.RepoResolution, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Repos.Resolve: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ReposOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Repos")
+	}
+
+	rv, err := innerSvc.Resolve(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 func (s wrappedRepos) List(ctx context.Context, v1 *sourcegraph.RepoListOptions) (returnedResult *sourcegraph.RepoList, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

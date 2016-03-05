@@ -16,6 +16,7 @@ import (
 func TestRepo(t *testing.T) {
 	c, mock := apptest.New()
 
+	calledResolve := mock.Repos.MockResolve_Local(t, "my/repo")
 	calledGet := mockRepoGet(mock, "my/repo")
 	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
@@ -24,6 +25,9 @@ func TestRepo(t *testing.T) {
 
 	if _, err := c.GetOK(router.Rel.URLToRepo("my/repo").String()); err != nil {
 		t.Fatal(err)
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
@@ -45,6 +49,7 @@ func TestRepo(t *testing.T) {
 func TestRepo_branchWithSlashes(t *testing.T) {
 	c, mock := apptest.New()
 
+	mock.Repos.MockResolve_Local(t, "my/repo")
 	calledGet := mockRepoGet(mock, "my/repo")
 	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
@@ -67,6 +72,7 @@ func TestRepo_branchWithSlashes(t *testing.T) {
 func TestRepo_defaultBranchWithSlashes(t *testing.T) {
 	c, mock := apptest.New()
 
+	mock.Repos.MockResolve_Local(t, "my/repo")
 	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
 		URI:           "my/repo",
 		DefaultBranch: "some/branch",
@@ -90,6 +96,7 @@ func TestRepo_defaultBranchWithSlashes(t *testing.T) {
 func TestRepo_NotFound(t *testing.T) {
 	c, mock := apptest.New()
 
+	mock.Repos.MockResolve_Local(t, "my/repo")
 	var calledGet bool
 	mock.Repos.Get_ = func(context.Context, *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet = true

@@ -950,6 +950,19 @@ func (s wrappedRepos) Get(ctx context.Context, param *sourcegraph.RepoSpec) (res
 	return
 }
 
+func (s wrappedRepos) Resolve(ctx context.Context, param *sourcegraph.RepoResolveOp) (res *sourcegraph.RepoResolution, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "Resolve", param)
+	defer func() {
+		trace.After(ctx, "Repos", "Resolve", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Repos.Resolve(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.Resolve returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "List", param)

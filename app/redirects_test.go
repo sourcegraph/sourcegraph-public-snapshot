@@ -21,6 +21,7 @@ func TestRepoMain_redirectToNewURI(t *testing.T) {
 		newURI = "new/repo"
 	)
 
+	mock.Repos.MockResolve_Local(t, "old/repo")
 	var calledGet bool
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledGet = true

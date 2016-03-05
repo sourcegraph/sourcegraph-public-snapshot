@@ -337,6 +337,17 @@ service Repos {
 		};
 	};
 
+	// Resolve will first try to look up the specified repo using
+	// Repos.Get locally, returning a Repo if found. If no local repo
+	// is found, it will look it up on GitHub and return a RemoteRepo
+	// if found.
+	//
+	// Example use case: The app calls Resolve to support navigating
+	// directly to "https://sourcegraph.com/github.com/my/repo" when
+	// that has not been created yet. It will transparently call
+	// Repos.Create if it gets a RemoteRepo back from Repos.Resolve.
+	rpc Resolve(RepoResolveOp) returns (RepoResolution);
+
 	// List repositories.
 	rpc List(RepoListOptions) returns (RepoList) {
 		option (google.api.http) = {
@@ -413,6 +424,26 @@ service Repos {
 	// languages, etc., used by the repository, as evidenced by the
 	// repository's files.
 	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
+}
+
+message RepoResolveOp {
+	// Path is some repo path, such as "github.com/user/repo".
+	string path = 1;
+}
+
+// RepoResolution is the result of resolving a repo using
+// Repos.Resolve.
+message RepoResolution {
+	oneof result {
+		// Repo refers to a local repo (either a locally hosted repo,
+		// or a locally added mirror).
+		RepoSpec Repo = 1;
+
+		// RemoteRepo represents a repo that exists on a remote
+		// service (such as GitHub) but has no corresponding repo
+		// mirror created (yet) on this server.
+		RemoteRepo RemoteRepo = 2;
+	}
 }
 
 // SrclibDataVersion specifies a srclib store version.

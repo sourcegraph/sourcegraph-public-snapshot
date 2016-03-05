@@ -3,6 +3,10 @@ package app
 import (
 	"errors"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -60,13 +64,36 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	ctx, _ := handlerutil.Client(r)
+	ctx, cl := handlerutil.Client(r)
+
+	// Resolve repo path, and create local mirror for remote repo if
+	// needed.
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return err
+	}
+	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+		// Automatically create a local mirror.
+		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
+		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+			URI:         "github.com/" + remoteRepo.Owner + "/" + remoteRepo.Name,
+			VCS:         remoteRepo.VCS,
+			CloneURL:    remoteRepo.HTTPCloneURL,
+			Mirror:      true,
+			Private:     remoteRepo.Private,
+			Description: remoteRepo.Description,
+			Language:    remoteRepo.Language,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	repoCtx, cl, _, err := handlerutil.RepoClient(r)
 	if err != nil {
 		return err
 	}
-
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(repoCtx, mux.Vars(r))
+	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

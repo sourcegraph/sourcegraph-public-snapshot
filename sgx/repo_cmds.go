@@ -38,6 +38,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = reposGroup.AddCommand("resolve",
+		"resolve a repo",
+		"The `src repo resolve` command resolves a repo.",
+		&repoResolveCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	listC, err := reposGroup.AddCommand("list",
 		"list repos",
 		"The `sgx repo list` command lists repos.",
@@ -162,6 +171,30 @@ func (c *repoGetCmd) Execute(args []string) error {
 		fmt.Println(string(b))
 	}
 
+	return nil
+}
+
+type repoResolveCmd struct {
+	Args struct {
+		Path []string `name:"PATH" description:"repository path (ex: host.com/myrepo)"`
+	} `positional-args:"yes" required:"yes"`
+}
+
+func (c *repoResolveCmd) Execute(args []string) error {
+	cl := client.Client()
+
+	for _, path := range c.Args.Path {
+		log.Printf("# %s", path)
+		res, err := cl.Repos.Resolve(client.Ctx, &sourcegraph.RepoResolveOp{Path: path})
+		if err != nil {
+			return err
+		}
+		b, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(b))
+	}
 	return nil
 }
 

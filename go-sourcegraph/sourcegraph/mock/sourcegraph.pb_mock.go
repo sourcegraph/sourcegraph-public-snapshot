@@ -93,6 +93,7 @@ var _ sourcegraph.RepoStatusesServer = (*RepoStatusesServer)(nil)
 
 type ReposClient struct {
 	Get_                         func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Resolve_                     func(ctx context.Context, in *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
 	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
@@ -111,6 +112,10 @@ type ReposClient struct {
 
 func (s *ReposClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
 	return s.Get_(ctx, in)
+}
+
+func (s *ReposClient) Resolve(ctx context.Context, in *sourcegraph.RepoResolveOp, opts ...grpc.CallOption) (*sourcegraph.RepoResolution, error) {
+	return s.Resolve_(ctx, in)
 }
 
 func (s *ReposClient) List(ctx context.Context, in *sourcegraph.RepoListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoList, error) {
@@ -173,6 +178,7 @@ var _ sourcegraph.ReposClient = (*ReposClient)(nil)
 
 type ReposServer struct {
 	Get_                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Resolve_                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
 	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
@@ -191,6 +197,10 @@ type ReposServer struct {
 
 func (s *ReposServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 	return s.Get_(v0, v1)
+}
+
+func (s *ReposServer) Resolve(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	return s.Resolve_(v0, v1)
 }
 
 func (s *ReposServer) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
