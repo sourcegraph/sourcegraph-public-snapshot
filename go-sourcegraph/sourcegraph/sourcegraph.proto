@@ -738,40 +738,67 @@ enum UserMirrorsState {
 	HasAccess = 4;
 }
 
-// RemoteRepo is a repo canonically stored on an external host,
-// and possibly mirrored on the local instance.
+// RemoteRepo is a repo canonically stored on an external host, and
+// possibly mirrored on the local instance. Currently it's assumed
+// that RemoteRepo represents a GitHub repo.
 message RemoteRepo {
-	// ExistsLocally specifies if the repo is mirrored on the local
-	// Sourcegraph server.
-	bool ExistsLocally = 1;
+	// GitHubID is the repo's GitHub repository ID.
+	int32 GitHubID = 1;
 
-	// Repo is a repo on an external host.
-	Repo Repo = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
+	// Owner is the login or org name of the repo's owner ("foo" in
+	// github.com/foo/bar).
+	string Owner = 2;
 
-	// Owner is the user/org that owns the repo.
-	User Owner = 3;
+	// OwnerIsOrg is true if the repo's owner is an org (not a user).
+	bool OwnerIsOrg = 15;
 
-	// RepoSize is the size of whole repository (including history) in kilobytes.
-	int32 RepoSize = 5;
+	// Name is the repo's name ("bar" in github.com/foo/bar).
+	string Name = 3;
 
-	// Watchers is the number of watchers of this repo.
-	int32 Watchers = 6;
+	// VCS is "git".
+	string VCS = 4;
 
-	// Subscribers is the number of subscribers of this repo.
-	int32 Subscribers = 7;
+	// CloneURL is the repo's HTTP (preferably HTTPS) clone URL.
+	string HTTPCloneURL = 5;
 
-	// Stars is the number of stars on this repo.
-	int32 Stars = 8;
+	// DefaultBranch is the default Git branch for the repo.
+	string DefaultBranch = 6;
 
-	// OpenIssues is the number of open issues on this repo.
-	int32 OpenIssues = 9;
+	// Description is the repo's description from GitHub.
+	string Description = 7;
 
-	// Forks is the number of forks of this repo.
-	int32 Forks = 10;
+	// Language is the repo's primary programming language, as
+	// reported by GitHub.
+	string Language = 8;
+
+	// UpdatedAt is the date of the most recent update (push or
+	// metadata edit) to the repo on GitHub.
+	pbtypes.Timestamp UpdatedAt = 9;
+
+	// Private is true for private repos.
+	bool Private = 10;
+
+	// Fork is true for repos that were forked from another repo using
+	// GitHub's "fork" operation.
+	bool Fork = 11;
+
+	// Mirror is true for mirror repos (e.g., Apache Foundation
+	// open-source repo mirrors on GitHub.com).
+	bool Mirror = 12;
+
+	// Stars is the number of stargazers of the GitHub repo.
+	int32 Stars = 13;
+
+	// Permissions are the current actor's GitHub permissions for the
+	// repo.
+ 	RepoPermissions Permissions = 14;
 }
 
-// UserMirrorData is a list of GitHub repo that are visible
+// UserMirrorData is a list of repos that are visible
 // to the current user.
+//
+// TODO(sqs): Remove this and just have the homepage dashboard call
+// Repos.List and Repos.ListRemote and combine results.
 message UserMirrorData {
 	// URL is the base url of the external code host.
 	string URL = 1;
@@ -781,6 +808,8 @@ message UserMirrorData {
 
 	// visible to the current user.
 	repeated RemoteRepo RemoteRepos = 3;
+
+	repeated Repo Repos = 5;
 
 	// State is the state of the user's access to mirrored repos on
 	// this server.

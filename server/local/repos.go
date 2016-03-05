@@ -140,7 +140,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 		}
 
 		ghRepos := github.Repos{}
-		var ghRepo *sourcegraph.Repo
+		var ghRepo *sourcegraph.RemoteRepo
 		if op.Private {
 			// If this server has a waitlist in place, check that the user
 			// is off the waitlist.

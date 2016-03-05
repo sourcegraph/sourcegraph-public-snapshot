@@ -959,36 +959,57 @@ func (m *WaitlistedOrg) Reset()         { *m = WaitlistedOrg{} }
 func (m *WaitlistedOrg) String() string { return proto.CompactTextString(m) }
 func (*WaitlistedOrg) ProtoMessage()    {}
 
-// RemoteRepo is a repo canonically stored on an external host,
-// and possibly mirrored on the local instance.
+// RemoteRepo is a repo canonically stored on an external host, and
+// possibly mirrored on the local instance. Currently it's assumed
+// that RemoteRepo represents a GitHub repo.
 type RemoteRepo struct {
-	// ExistsLocally specifies if the repo is mirrored on the local
-	// Sourcegraph server.
-	ExistsLocally bool `protobuf:"varint,1,opt,name=ExistsLocally,proto3" json:"ExistsLocally,omitempty"`
-	// Repo is a repo on an external host.
-	Repo `protobuf:"bytes,2,opt,name=Repo,embedded=Repo" json:"Repo"`
-	// Owner is the user/org that owns the repo.
-	Owner *User `protobuf:"bytes,3,opt,name=Owner" json:"Owner,omitempty"`
-	// RepoSize is the size of whole repository (including history) in kilobytes.
-	RepoSize int32 `protobuf:"varint,5,opt,name=RepoSize,proto3" json:"RepoSize,omitempty"`
-	// Watchers is the number of watchers of this repo.
-	Watchers int32 `protobuf:"varint,6,opt,name=Watchers,proto3" json:"Watchers,omitempty"`
-	// Subscribers is the number of subscribers of this repo.
-	Subscribers int32 `protobuf:"varint,7,opt,name=Subscribers,proto3" json:"Subscribers,omitempty"`
-	// Stars is the number of stars on this repo.
-	Stars int32 `protobuf:"varint,8,opt,name=Stars,proto3" json:"Stars,omitempty"`
-	// OpenIssues is the number of open issues on this repo.
-	OpenIssues int32 `protobuf:"varint,9,opt,name=OpenIssues,proto3" json:"OpenIssues,omitempty"`
-	// Forks is the number of forks of this repo.
-	Forks int32 `protobuf:"varint,10,opt,name=Forks,proto3" json:"Forks,omitempty"`
+	// GitHubID is the repo's GitHub repository ID.
+	GitHubID int32 `protobuf:"varint,1,opt,name=GitHubID,proto3" json:"GitHubID,omitempty"`
+	// Owner is the login or org name of the repo's owner ("foo" in
+	// github.com/foo/bar).
+	Owner string `protobuf:"bytes,2,opt,name=Owner,proto3" json:"Owner,omitempty"`
+	// OwnerIsOrg is true if the repo's owner is an org (not a user).
+	OwnerIsOrg bool `protobuf:"varint,15,opt,name=OwnerIsOrg,proto3" json:"OwnerIsOrg,omitempty"`
+	// Name is the repo's name ("bar" in github.com/foo/bar).
+	Name string `protobuf:"bytes,3,opt,name=Name,proto3" json:"Name,omitempty"`
+	// VCS is "git".
+	VCS string `protobuf:"bytes,4,opt,name=VCS,proto3" json:"VCS,omitempty"`
+	// CloneURL is the repo's HTTP (preferably HTTPS) clone URL.
+	HTTPCloneURL string `protobuf:"bytes,5,opt,name=HTTPCloneURL,proto3" json:"HTTPCloneURL,omitempty"`
+	// DefaultBranch is the default Git branch for the repo.
+	DefaultBranch string `protobuf:"bytes,6,opt,name=DefaultBranch,proto3" json:"DefaultBranch,omitempty"`
+	// Description is the repo's description from GitHub.
+	Description string `protobuf:"bytes,7,opt,name=Description,proto3" json:"Description,omitempty"`
+	// Language is the repo's primary programming language, as
+	// reported by GitHub.
+	Language string `protobuf:"bytes,8,opt,name=Language,proto3" json:"Language,omitempty"`
+	// UpdatedAt is the date of the most recent update (push or
+	// metadata edit) to the repo on GitHub.
+	UpdatedAt *pbtypes.Timestamp `protobuf:"bytes,9,opt,name=UpdatedAt" json:"UpdatedAt,omitempty"`
+	// Private is true for private repos.
+	Private bool `protobuf:"varint,10,opt,name=Private,proto3" json:"Private,omitempty"`
+	// Fork is true for repos that were forked from another repo using
+	// GitHub's "fork" operation.
+	Fork bool `protobuf:"varint,11,opt,name=Fork,proto3" json:"Fork,omitempty"`
+	// Mirror is true for mirror repos (e.g., Apache Foundation
+	// open-source repo mirrors on GitHub.com).
+	Mirror bool `protobuf:"varint,12,opt,name=Mirror,proto3" json:"Mirror,omitempty"`
+	// Stars is the number of stargazers of the GitHub repo.
+	Stars int32 `protobuf:"varint,13,opt,name=Stars,proto3" json:"Stars,omitempty"`
+	// Permissions are the current actor's GitHub permissions for the
+	// repo.
+	Permissions *RepoPermissions `protobuf:"bytes,14,opt,name=Permissions" json:"Permissions,omitempty"`
 }
 
 func (m *RemoteRepo) Reset()         { *m = RemoteRepo{} }
 func (m *RemoteRepo) String() string { return proto.CompactTextString(m) }
 func (*RemoteRepo) ProtoMessage()    {}
 
-// UserMirrorData is a list of GitHub repo that are visible
+// UserMirrorData is a list of repos that are visible
 // to the current user.
+//
+// TODO(sqs): Remove this and just have the homepage dashboard call
+// Repos.List and Repos.ListRemote and combine results.
 type UserMirrorData struct {
 	// URL is the base url of the external code host.
 	URL string `protobuf:"bytes,1,opt,name=URL,proto3" json:"URL,omitempty"`
@@ -996,6 +1017,7 @@ type UserMirrorData struct {
 	Host string `protobuf:"bytes,2,opt,name=Host,proto3" json:"Host,omitempty"`
 	// visible to the current user.
 	RemoteRepos []*RemoteRepo `protobuf:"bytes,3,rep,name=RemoteRepos" json:"RemoteRepos,omitempty"`
+	Repos       []*Repo       `protobuf:"bytes,5,rep,name=Repos" json:"Repos,omitempty"`
 	// State is the state of the user's access to mirrored repos on
 	// this server.
 	State UserMirrorsState `protobuf:"varint,4,opt,name=State,proto3,enum=sourcegraph.UserMirrorsState" json:"State,omitempty"`
@@ -8167,63 +8189,117 @@ func (m *RemoteRepo) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ExistsLocally {
+	if m.GitHubID != 0 {
 		data[i] = 0x8
 		i++
-		if m.ExistsLocally {
+		i = encodeVarintSourcegraph(data, i, uint64(m.GitHubID))
+	}
+	if len(m.Owner) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Owner)))
+		i += copy(data[i:], m.Owner)
+	}
+	if len(m.Name) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Name)))
+		i += copy(data[i:], m.Name)
+	}
+	if len(m.VCS) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.VCS)))
+		i += copy(data[i:], m.VCS)
+	}
+	if len(m.HTTPCloneURL) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.HTTPCloneURL)))
+		i += copy(data[i:], m.HTTPCloneURL)
+	}
+	if len(m.DefaultBranch) > 0 {
+		data[i] = 0x32
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.DefaultBranch)))
+		i += copy(data[i:], m.DefaultBranch)
+	}
+	if len(m.Description) > 0 {
+		data[i] = 0x3a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Description)))
+		i += copy(data[i:], m.Description)
+	}
+	if len(m.Language) > 0 {
+		data[i] = 0x42
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Language)))
+		i += copy(data[i:], m.Language)
+	}
+	if m.UpdatedAt != nil {
+		data[i] = 0x4a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
+		n39, err := m.UpdatedAt.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n39
+	}
+	if m.Private {
+		data[i] = 0x50
+		i++
+		if m.Private {
 			data[i] = 1
 		} else {
 			data[i] = 0
 		}
 		i++
 	}
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n39, err := m.Repo.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n39
-	if m.Owner != nil {
-		data[i] = 0x1a
+	if m.Fork {
+		data[i] = 0x58
 		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Owner.Size()))
-		n40, err := m.Owner.MarshalTo(data[i:])
+		if m.Fork {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Mirror {
+		data[i] = 0x60
+		i++
+		if m.Mirror {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Stars != 0 {
+		data[i] = 0x68
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.Stars))
+	}
+	if m.Permissions != nil {
+		data[i] = 0x72
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.Permissions.Size()))
+		n40, err := m.Permissions.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n40
 	}
-	if m.RepoSize != 0 {
-		data[i] = 0x28
+	if m.OwnerIsOrg {
+		data[i] = 0x78
 		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.RepoSize))
-	}
-	if m.Watchers != 0 {
-		data[i] = 0x30
+		if m.OwnerIsOrg {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
 		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Watchers))
-	}
-	if m.Subscribers != 0 {
-		data[i] = 0x38
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Subscribers))
-	}
-	if m.Stars != 0 {
-		data[i] = 0x40
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Stars))
-	}
-	if m.OpenIssues != 0 {
-		data[i] = 0x48
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.OpenIssues))
-	}
-	if m.Forks != 0 {
-		data[i] = 0x50
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Forks))
 	}
 	return i, nil
 }
@@ -8271,6 +8347,18 @@ func (m *UserMirrorData) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x20
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.State))
+	}
+	if len(m.Repos) > 0 {
+		for _, msg := range m.Repos {
+			data[i] = 0x2a
+			i++
+			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
 	}
 	return i, nil
 }
@@ -14293,32 +14381,59 @@ func (m *WaitlistedOrg) Size() (n int) {
 func (m *RemoteRepo) Size() (n int) {
 	var l int
 	_ = l
-	if m.ExistsLocally {
-		n += 2
+	if m.GitHubID != 0 {
+		n += 1 + sovSourcegraph(uint64(m.GitHubID))
 	}
-	l = m.Repo.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Owner != nil {
-		l = m.Owner.Size()
+	l = len(m.Owner)
+	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	if m.RepoSize != 0 {
-		n += 1 + sovSourcegraph(uint64(m.RepoSize))
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	if m.Watchers != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Watchers))
+	l = len(m.VCS)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	if m.Subscribers != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Subscribers))
+	l = len(m.HTTPCloneURL)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.DefaultBranch)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.Language)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.UpdatedAt != nil {
+		l = m.UpdatedAt.Size()
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.Private {
+		n += 2
+	}
+	if m.Fork {
+		n += 2
+	}
+	if m.Mirror {
+		n += 2
 	}
 	if m.Stars != 0 {
 		n += 1 + sovSourcegraph(uint64(m.Stars))
 	}
-	if m.OpenIssues != 0 {
-		n += 1 + sovSourcegraph(uint64(m.OpenIssues))
+	if m.Permissions != nil {
+		l = m.Permissions.Size()
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	if m.Forks != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Forks))
+	if m.OwnerIsOrg {
+		n += 2
 	}
 	return n
 }
@@ -14342,6 +14457,12 @@ func (m *UserMirrorData) Size() (n int) {
 	}
 	if m.State != 0 {
 		n += 1 + sovSourcegraph(uint64(m.State))
+	}
+	if len(m.Repos) > 0 {
+		for _, e := range m.Repos {
+			l = e.Size()
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
 	}
 	return n
 }
@@ -22666,7 +22787,262 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExistsLocally", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GitHubID", wireType)
+			}
+			m.GitHubID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.GitHubID |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Owner", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Owner = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VCS", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VCS = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HTTPCloneURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HTTPCloneURL = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefaultBranch", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DefaultBranch = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Language", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Language = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.UpdatedAt == nil {
+				m.UpdatedAt = &pbtypes.Timestamp{}
+			}
+			if err := m.UpdatedAt.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Private", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -22683,75 +23059,12 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 					break
 				}
 			}
-			m.ExistsLocally = bool(v != 0)
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Repo", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Repo.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Owner", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Owner == nil {
-				m.Owner = &User{}
-			}
-			if err := m.Owner.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
+			m.Private = bool(v != 0)
+		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RepoSize", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Fork", wireType)
 			}
-			m.RepoSize = 0
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowSourcegraph
@@ -22761,16 +23074,17 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				m.RepoSize |= (int32(b) & 0x7F) << shift
+				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 6:
+			m.Fork = bool(v != 0)
+		case 12:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Watchers", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Mirror", wireType)
 			}
-			m.Watchers = 0
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowSourcegraph
@@ -22780,31 +23094,13 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				m.Watchers |= (int32(b) & 0x7F) << shift
+				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 7:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Subscribers", wireType)
-			}
-			m.Subscribers = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.Subscribers |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
+			m.Mirror = bool(v != 0)
+		case 13:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Stars", wireType)
 			}
@@ -22823,11 +23119,11 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OpenIssues", wireType)
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Permissions", wireType)
 			}
-			m.OpenIssues = 0
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowSourcegraph
@@ -22837,16 +23133,30 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				m.OpenIssues |= (int32(b) & 0x7F) << shift
+				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Forks", wireType)
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
 			}
-			m.Forks = 0
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Permissions == nil {
+				m.Permissions = &RepoPermissions{}
+			}
+			if err := m.Permissions.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerIsOrg", wireType)
+			}
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowSourcegraph
@@ -22856,11 +23166,12 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				m.Forks |= (int32(b) & 0x7F) << shift
+				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			m.OwnerIsOrg = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
@@ -23019,6 +23330,37 @@ func (m *UserMirrorData) Unmarshal(data []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Repos", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Repos = append(m.Repos, &Repo{})
+			if err := m.Repos[len(m.Repos)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

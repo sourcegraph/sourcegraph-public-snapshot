@@ -339,7 +339,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	var gitHubRepoURIs []string
 	for _, repo := range gitHubRepos {
 		if repo != nil {
-			gitHubRepoURIs = append(gitHubRepoURIs, repo.URI)
+			gitHubRepoURIs = append(gitHubRepoURIs, "github.com/"+repo.Owner+"/"+repo.Name)
 		}
 	}
 
@@ -372,11 +372,12 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 	// Check if a user's remote GitHub repo already exists locally under the
 	// same URI. Allow this user to access all their private repos that are
 	// already mirrored on this Sourcegraph.
-	remoteRepos := make([]*sourcegraph.RemoteRepo, 0)
 	var privateRepoURIs []string
 	for _, repo := range gitHubRepos {
-		if localRepo, ok := existingRepos[repo.URI]; ok {
-			repo.ExistsLocally = true
+		uri := "github.com/" + repo.Owner + "/" + repo.Name
+		if localRepo, ok := existingRepos[uri]; ok {
+			gd.Repos = append(gd.Repos, localRepo)
+			privateRepoURIs = append(privateRepoURIs, localRepo.URI)
 			if localRepo.Private != repo.Private {
 				// This means that either the existing local mirror was created with
 				// the incorrect visibility (public vs. private) compared to the
@@ -397,38 +398,37 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 				})
 				if err != nil {
 					// Failed to update repo visibility, so skip it.
-					log15.Warn("Failed to update repo visibility level", "repo", repo.URI, "error", err)
+					log15.Warn("Failed to update repo visibility level", "repo", localRepo.URI, "error", err)
 					continue
 				}
 
 				// If the repo is public, remove it's records from the repo_perms store
 				// which only stores permissions for private repos.
 				if !repo.Private {
-					err := repoPermsStore.DeleteRepo(elevatedActor(ctx), repo.URI)
+					err := repoPermsStore.DeleteRepo(elevatedActor(ctx), localRepo.URI)
 					if err != nil {
 						// Failed to update repo permissions, so skip it.
-						log15.Warn("Failed to update repo permissions", "repo", repo.URI, "error", err)
+						log15.Warn("Failed to update repo permissions", "repo", localRepo.URI, "error", err)
 						continue
 					}
 				}
 			}
-		} else if repo.Private {
-			// If repo is private and not mirrored yet, add it to pending repos.
-			if err := store.WaitlistFromContext(ctx).RecordPendingRepo(elevatedActor(ctx), repo); err != nil {
-				log15.Warn("Failed to record pending private repo", "uri", repo.URI, "error", err)
+		} else {
+			gd.RemoteRepos = append(gd.RemoteRepos, repo)
+			if repo.Private {
+				privateRepoURIs = append(privateRepoURIs, uri)
+				// If repo is private and not mirrored yet, add it to pending repos.
+				if err := store.WaitlistFromContext(ctx).RecordPendingRepo(elevatedActor(ctx), repo); err != nil {
+					log15.Warn("Failed to record pending private repo", "uri", uri, "error", err)
+				}
 			}
 		}
-		if repo.Private {
-			privateRepoURIs = append(privateRepoURIs, repo.URI)
-		}
-		remoteRepos = append(remoteRepos, repo)
 	}
 	// Update the user's permissions for visible private repos.
 	uid := int32(authpkg.ActorFromContext(ctx).UID)
 	if err := repoPermsStore.Update(elevatedActor(ctx), uid, privateRepoURIs); err != nil {
 		log15.Error("Failed to set private repo permissions for user", "uid", uid, "error", err)
 	}
-	gd.RemoteRepos = remoteRepos
 
 	return gd, nil
 }

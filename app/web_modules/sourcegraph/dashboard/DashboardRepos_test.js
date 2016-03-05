@@ -13,6 +13,7 @@ describe("DashboardRepos", () => {
 		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
 			<DashboardRepos
 				repos={[{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment(), Language: "Go"}]}
+				remoteRepos={[{Private: false, Owner: "o", Name: "r"}]}
 				onWaitlist={false}
 				allowGitHubMirrors={true}
 				linkGitHub={false} />
@@ -29,6 +30,7 @@ describe("DashboardRepos", () => {
 		autotest(testdataNotSupported, `${__dirname}/testdata/DashboardRepos-notSupported.json`,
 			<DashboardRepos
 				repos={repos}
+				remoteRepos={[{Private: false, Owner: "o", Name: "r", Language: "C++"}]}
 				onWaitlist={false}
 				allowGitHubMirrors={true}
 				linkGitHub={false} />
@@ -45,6 +47,7 @@ describe("DashboardRepos", () => {
 		autotest(testdataOnWaitlist, `${__dirname}/testdata/DashboardRepos-onWaitlist.json`,
 			<DashboardRepos
 				repos={repos}
+				remoteRepos={[{Private: false, Owner: "o", Name: "r", Language: "C++"}]}
 				onWaitlist={true}
 				allowGitHubMirrors={true}
 				linkGitHub={false} />

@@ -29,9 +29,8 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.repos = (DashboardStore.repos || [])
-			.map(repo => update(repo, {$merge: {ExistsLocally: true}}))
-			.concat(GitHubReposStore.remoteRepos.getDashboard());
+		state.repos = (DashboardStore.repos || []).concat(GitHubReposStore.repos);
+		state.remoteRepos = (GitHubReposStore.remoteRepos || []);
 		state.users = (DashboardStore.users || [])
 			.map(user => ({LocalAccount: user}))
 			.concat(GitHubUsersStore.users.getUnique());
@@ -88,6 +87,7 @@ class DashboardContainer extends Container {
 					</div>
 					<div>
 						<DashboardRepos repos={this.state.repos}
+							remoteRepos={this.state.remoteRepos}
 							onWaitlist={this.state.onWaitlist}
 							allowGitHubMirrors={this.state.allowGitHubMirrors}
 							linkGitHub={this.state.onboarding.linkGitHub} />

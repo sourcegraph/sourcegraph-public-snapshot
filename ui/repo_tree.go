@@ -17,7 +17,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	opt := &sourcegraph.RepoTreeGetOptions{TokenizedSource: true}
+	opt := &sourcegraph.RepoTreeGetOptions{}
 	if err := schemaDecoder.Decode(opt, r.URL.Query()); err != nil {
 		return err
 	}

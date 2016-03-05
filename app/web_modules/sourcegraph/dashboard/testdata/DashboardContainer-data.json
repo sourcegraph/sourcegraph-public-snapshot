@@ -34,6 +34,7 @@
 								"type": "DashboardRepos",
 								"props": {
 									"repos": [],
+									"remoteRepos": [],
 									"onWaitlist": true,
 									"allowGitHubMirrors": true
 								}

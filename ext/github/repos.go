@@ -3,7 +3,6 @@ package github
 import (
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
@@ -18,7 +17,7 @@ import (
 
 type Repos struct{}
 
-func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
 	owner, repoName, err := githubutil.SplitGitHubRepoURI(repo)
 	if err != nil {
 		return nil, err
@@ -35,75 +34,46 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		return nil, err
 	}
 
-	return repoFromGitHub(ghrepo), nil
+	return toRemoteRepo(ghrepo), nil
 }
 
-func repoFromGitHub(ghrepo *github.Repository) *sourcegraph.Repo {
-	gitHubHost := githubcli.Config.Host()
-	repo := sourcegraph.Repo{
-		URI:         gitHubHost + "/" + *ghrepo.FullName,
-		Permissions: convertGitHubRepoPerms(ghrepo),
-		Mirror:      true,
+func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
+	strv := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
 	}
-
-	if ghrepo.CloneURL != nil {
-		repo.HTTPCloneURL = *ghrepo.CloneURL
+	boolv := func(b *bool) bool {
+		if b == nil {
+			return false
+		}
+		return *b
 	}
-
-	// GitHub's SSHURL field is of the form
-	// "git@github.com:owner/repo.git", but we want
-	// "ssh://git@github.com/owner/repo.git."
-	if ghrepo.SSHURL != nil {
-		origHostStr := "git@" + gitHubHost + ":"
-		newHostStr := "ssh://git@" + gitHubHost + "/"
-		repo.SSHCloneURL = strings.Replace(*ghrepo.SSHURL, origHostStr, newHostStr, 1)
+	repo := sourcegraph.RemoteRepo{
+		GitHubID:      int32(*ghrepo.ID),
+		Name:          *ghrepo.Name,
+		VCS:           "git",
+		HTTPCloneURL:  strv(ghrepo.CloneURL),
+		DefaultBranch: strv(ghrepo.DefaultBranch),
+		Description:   strv(ghrepo.Description),
+		Language:      strv(ghrepo.Language),
+		Private:       boolv(ghrepo.Private),
+		Fork:          boolv(ghrepo.Fork),
+		Mirror:        ghrepo.MirrorURL != nil,
+		Permissions:   convertGitHubRepoPerms(ghrepo),
 	}
-
-	repo.Name = *ghrepo.Name
-	if ghrepo.Description != nil {
-		repo.Description = *ghrepo.Description
-	}
-	repo.VCS = sourcegraph.Git
-	if ghrepo.DefaultBranch != nil {
-		repo.DefaultBranch = *ghrepo.DefaultBranch
-	}
-	if ghrepo.Homepage != nil {
-		repo.HomepageURL = *ghrepo.Homepage
-	}
-	if ghrepo.Language != nil {
-		repo.Language = *ghrepo.Language
-	}
-	if ghrepo.Fork != nil {
-		repo.Fork = *ghrepo.Fork
-	}
-	if ghrepo.Private != nil {
-		repo.Private = *ghrepo.Private
-	}
-	if ghrepo.CreatedAt != nil {
-		ts := pbtypes.NewTimestamp(ghrepo.CreatedAt.Time)
-		repo.CreatedAt = &ts
+	if ghrepo.Owner != nil {
+		repo.Owner = strv(ghrepo.Owner.Login)
+		repo.OwnerIsOrg = strv(ghrepo.Owner.Type) == "Organization"
 	}
 	if ghrepo.UpdatedAt != nil {
 		ts := pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
 		repo.UpdatedAt = &ts
 	}
-	if ghrepo.PushedAt != nil {
-		ts := pbtypes.NewTimestamp(ghrepo.PushedAt.Time)
-		repo.PushedAt = &ts
-	}
-
-	// Look for "DEPRECATED" in the description. If it's removed from the
-	// description, the repo won't be un-deprecated. This allows us to manually
-	// deprecate repos that don't contain "DEPRECATED" in their description.
-	if ghrepo.Description != nil && strings.Contains(*ghrepo.Description, "DEPRECATED") {
-		repo.Deprecated = true
-	}
-
-	repo.GitHub = &sourcegraph.GitHubRepo{}
 	if ghrepo.WatchersCount != nil {
-		repo.GitHub.Stars = int32(*ghrepo.WatchersCount)
+		repo.Stars = int32(*ghrepo.WatchersCount)
 	}
-
 	return &repo
 }
 
@@ -151,31 +121,7 @@ func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph
 			return nil, err
 		}
 		for _, ghrepo := range userRepos {
-			remoteRepo := &sourcegraph.RemoteRepo{
-				Repo: *repoFromGitHub(&ghrepo),
-			}
-			if ghrepo.Owner != nil {
-				remoteRepo.Owner = userFromGitHub(ghrepo.Owner)
-			}
-			if ghrepo.Size != nil {
-				remoteRepo.RepoSize = int32(*ghrepo.Size)
-			}
-			if ghrepo.WatchersCount != nil {
-				remoteRepo.Watchers = int32(*ghrepo.WatchersCount)
-			}
-			if ghrepo.SubscribersCount != nil {
-				remoteRepo.Subscribers = int32(*ghrepo.SubscribersCount)
-			}
-			if ghrepo.StargazersCount != nil {
-				remoteRepo.Stars = int32(*ghrepo.StargazersCount)
-			}
-			if ghrepo.OpenIssuesCount != nil {
-				remoteRepo.OpenIssues = int32(*ghrepo.OpenIssuesCount)
-			}
-			if ghrepo.ForksCount != nil {
-				remoteRepo.Forks = int32(*ghrepo.ForksCount)
-			}
-			repos = append(repos, remoteRepo)
+			repos = append(repos, toRemoteRepo(&ghrepo))
 		}
 		if resp.NextPage == 0 {
 			break

@@ -134,7 +134,7 @@
 											"type": "div",
 											"key": "0",
 											"props": {
-												"className": "list-group-item repo-disabled",
+												"className": "list-group-item",
 												"children": [
 													{
 														"type": "div",
@@ -158,9 +158,112 @@
 																					"children": [
 																						{
 																							"type": "span",
+																							"key": "part1",
+																							"props": {
+																								"className": "part",
+																								"children": [
+																									"o"
+																								]
+																							}
+																						},
+																						{
+																							"type": "span",
+																							"key": "sep1",
+																							"props": {
+																								"className": "sep",
+																								"children": [
+																									"/"
+																								]
+																							}
+																						},
+																						{
+																							"type": "a",
+																							"key": "name2",
+																							"props": {
+																								"className": "name",
+																								"href": "/github.com/o/r",
+																								"title": "github.com/o/r",
+																								"children": [
+																									"r"
+																								]
+																							}
+																						}
+																					]
+																				}
+																			}
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "disabled-reason",
+																		"children": [
+																			"C++ coming soon"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "div",
+														"props": {
+															"className": "repo-body",
+															"children": [
+																{
+																	"type": "p",
+																	"props": {
+																		"className": "description"
+																	}
+																},
+																{
+																	"type": "p",
+																	"props": {
+																		"className": "updated",
+																		"children": [
+																			"Updated a few seconds ago"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"key": "1",
+											"props": {
+												"className": "list-group-item",
+												"children": [
+													{
+														"type": "div",
+														"props": {
+															"className": "repo-header",
+															"children": [
+																{
+																	"type": "h4",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "i",
+																				"props": {
+																					"className": "sg-icon repo-attr-icon sg-icon-public"
+																				}
+																			},
+																			{
+																				"type": "span",
+																				"props": {
+																					"className": "repo-link",
+																					"children": [
+																						{
+																							"type": "a",
 																							"key": "name0",
 																							"props": {
 																								"className": "name",
+																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
 																									"someurl"
@@ -216,9 +319,9 @@
 										},
 										{
 											"type": "div",
-											"key": "1",
+											"key": "2",
 											"props": {
-												"className": "list-group-item repo-disabled",
+												"className": "list-group-item",
 												"children": [
 													{
 														"type": "div",
@@ -241,10 +344,11 @@
 																					"className": "repo-link",
 																					"children": [
 																						{
-																							"type": "span",
+																							"type": "a",
 																							"key": "name0",
 																							"props": {
 																								"className": "name",
+																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
 																									"someurl"
@@ -300,9 +404,9 @@
 										},
 										{
 											"type": "div",
-											"key": "2",
+											"key": "3",
 											"props": {
-												"className": "list-group-item repo-disabled",
+												"className": "list-group-item",
 												"children": [
 													{
 														"type": "div",
@@ -325,10 +429,11 @@
 																					"className": "repo-link",
 																					"children": [
 																						{
-																							"type": "span",
+																							"type": "a",
 																							"key": "name0",
 																							"props": {
 																								"className": "name",
+																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
 																									"someurl"

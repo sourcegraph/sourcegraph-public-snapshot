@@ -334,25 +334,14 @@ func (w *waitlist) RecordPendingRepo(ctx context.Context, repo *sourcegraph.Remo
 		return errors.New("invalid argument: nil repo")
 	}
 	currTime := time.Now()
-	var ownerName string
-	var isOrg bool
-	if repo.Owner != nil {
-		ownerName = repo.Owner.Login
-		isOrg = repo.Owner.IsOrganization
-	}
 	dbRepo := pendingReposRow{
-		URI:         repo.URI,
-		CloneURL:    repo.HTTPCloneURL,
-		Owner:       ownerName,
-		IsOrg:       isOrg,
-		Language:    repo.Language,
-		Size:        repo.RepoSize,
-		Forks:       repo.Forks,
-		Stars:       repo.Stars,
-		Watchers:    repo.Watchers,
-		Subscribers: repo.Subscribers,
-		Issues:      repo.OpenIssues,
-		UpdatedAt:   &currTime,
+		URI:       "github.com/" + repo.Owner + "/" + repo.Name,
+		CloneURL:  repo.HTTPCloneURL,
+		Owner:     repo.Owner,
+		IsOrg:     repo.OwnerIsOrg,
+		Language:  repo.Language,
+		Stars:     repo.Stars,
+		UpdatedAt: &currTime,
 	}
 	n, err := dbh(ctx).Update(&dbRepo)
 	if err != nil {
