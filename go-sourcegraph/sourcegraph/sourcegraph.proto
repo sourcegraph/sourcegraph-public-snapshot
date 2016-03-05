@@ -585,33 +585,40 @@ service Storage {
 }
 
 message ReposCreateOp {
-	// URI is the desired URI of the new repository.
-	string URI = 1;
+	message NewRepo {
+		// URI is the desired URI of the new repository.
+		string URI = 1;
 
-	// VCS is the desired VCS type of the new repository (only "git"
-	// is currently supported).
-	string VCS = 2;
+		// VCS is the desired VCS type of the new repository (only "git"
+		// is currently supported).
+		string VCS = 2;
 
-	// CloneURL is the clone URL of the repository for mirrored
-	// repositories. If blank, a new hosted repository is created
-	// (i.e., a repo whose origin is on the server). If Mirror is
-	// true, a clone URL must be provided.
-	string CloneURL = 3;
+		// CloneURL is the clone URL of the repository for mirrored
+		// repositories. If blank, a new hosted repository is created
+		// (i.e., a repo whose origin is on the server). If Mirror is
+		// true, a clone URL must be provided.
+		string CloneURL = 3;
 
-	// Mirror is a boolean value indicating whether the newly created
-	// repository should be a mirror. Mirror repositories are
-	// periodically updated to track their upstream (which is
-	// specified using the CloneURL field of this message).
-	bool Mirror = 4;
+		// DefaultBranch is the repository's default Git branch.
+		string DefaultBranch = 4;
 
-	// Private is whether this repository is private.
-	bool Private = 5;
+		// Mirror is a boolean value indicating whether the newly created
+		// repository should be a mirror. Mirror repositories are
+		// periodically updated to track their upstream (which is
+		// specified using the CloneURL field of this message).
+		bool Mirror = 5;
 
-	// Description is the description of the repository.
-	string Description = 6;
+		// Description is the description of the repository.
+		string Description = 6;
 
-	// Language is the primary programming language of the repository.
-	string Language = 7;
+		// Language is the primary programming language of the repository.
+		string Language = 7;
+	}
+
+	oneof Op {
+		NewRepo New = 1;
+		int32 FromGitHubID = 2;
+	}
 }
 
 // ReposUpdateOp is an operation to update a repository's metadata.

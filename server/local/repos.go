@@ -118,7 +118,43 @@ func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Re
 	return nil
 }
 
-func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo *sourcegraph.Repo, err error) {
+	switch {
+	case op.GetNew() != nil:
+		repo, err = s.newRepo(ctx, op.GetNew())
+	case op.GetFromGitHubID() != 0:
+		repo, err = s.newRepoFromGitHubID(ctx, int(op.GetFromGitHubID()))
+	default:
+		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
+	}
+
+	if err != nil {
+		return
+	}
+
+	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
+		return nil, err
+	}
+
+	actor := authpkg.ActorFromContext(ctx)
+	accesscontrol.SetMirrorRepoPerms(ctx, &actor)
+	ctx = authpkg.WithActor(ctx, actor)
+
+	repo, err = store.ReposFromContext(ctx).Get(ctx, repo.URI)
+	if err != nil {
+		return
+	}
+
+	if repo.Mirror {
+		repoupdater.Enqueue(repo)
+	}
+
+	eventsutil.LogAddRepo(ctx, repo.HTTPCloneURL, repo.Language, repo.Mirror, repo.Private)
+
+	return
+}
+
+func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {
 	if op.URI == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "repo URI must have at least one path component")
 	}
@@ -127,92 +163,89 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 			return nil, grpc.Errorf(codes.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
 		}
 	}
-	if _, err := s.get(elevatedActor(ctx), op.URI); err == nil {
-		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
-	}
-	defaultBranch := "master"
 
-	actor := authpkg.ActorFromContext(ctx)
 	if authutil.ActiveFlags.PrivateMirrors {
-		if !op.Mirror {
-			// TODO: enable creating local repos on Sourcegraph Server instances.
-			return nil, grpc.Errorf(codes.Unavailable, "creating a non-mirror repo is not enabled on this server")
-		}
-
-		ghRepos := github.Repos{}
-		var ghRepo *sourcegraph.RemoteRepo
-		if op.Private {
-			// If this server has a waitlist in place, check that the user
-			// is off the waitlist.
-			if !actor.PrivateMirrors {
-				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-			}
-
-			// Check that the user has permission to access this private repo.
-			// The user's permissions for private mirror repos are set in
-			// MirrorRepos.GetUserData, which is called during onboarding.
-			valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), int32(actor.UID), op.URI)
-			if err != nil {
-				return nil, err
-			}
-			if !valid {
-				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-			}
-
-			token, err := (&mirrorRepos{}).getRepoAuthToken(elevatedActor(ctx), op.URI)
-			if err != nil {
-				return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.URI, err)
-			}
-			ghRepo, err = ghRepos.Get(github.NewContextWithClient(ctx, githubutil.Default.AuthedClient(token), true), op.URI)
-			if err != nil {
-				return nil, grpc.Errorf(codes.Unavailable, "could not fetch private GitHub repo %v: %v", op.URI, err)
-			}
-		} else {
-			var err error
-			// Check that the repo is really public.
-			ghRepo, err = ghRepos.Get(github.NewContextWithClient(ctx, githubutil.Default.UnauthedClient(), false), op.URI)
-			if err != nil || ghRepo.Private {
-				log15.Warn("Could not fetch public GitHub repo in Repos.Create", "uri", op.URI, "error", err)
-				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-			}
-		}
-		op.Description = ghRepo.Description
-		op.Language = ghRepo.Language
-		defaultBranch = ghRepo.DefaultBranch
-	} else {
-		if op.Mirror && op.Private {
-			return nil, grpc.Errorf(codes.Unavailable, "creating a private mirror repo is not enabled on this server")
-		}
+		// TODO: enable creating local repos on Sourcegraph Server instances.
+		return nil, grpc.Errorf(codes.Unavailable, "this server only supports creating mirror repos of GitHub repos")
 	}
+
+	if op.DefaultBranch == "" {
+		op.DefaultBranch = "master"
+	}
+
 	ts := pbtypes.NewTimestamp(time.Now())
-	repo := &sourcegraph.Repo{
+	return &sourcegraph.Repo{
 		Name:          pathpkg.Base(op.URI),
 		URI:           op.URI,
 		VCS:           op.VCS,
 		HTTPCloneURL:  op.CloneURL,
-		Mirror:        op.Mirror,
-		Private:       op.Private,
-		Description:   op.Description,
 		Language:      op.Language,
-		DefaultBranch: defaultBranch,
+		DefaultBranch: op.DefaultBranch,
+		Description:   op.Description,
+		Mirror:        op.Mirror,
 		CreatedAt:     &ts,
-	}
+	}, nil
+}
 
-	if err := store.ReposFromContext(ctx).Create(elevatedActor(ctx), repo); err != nil {
+func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourcegraph.Repo, error) {
+	ghrepo, err := (&github.Repos{}).GetByID(ctx, githubID)
+	if err != nil {
 		return nil, err
 	}
 
-	if op.Mirror {
-		repoupdater.Enqueue(repo)
+	uri := "github.com/" + ghrepo.Owner + "/" + ghrepo.Name
+	if ghrepo.Private {
+		actor := authpkg.ActorFromContext(ctx)
+
+		// If this server has a waitlist in place, check that the user
+		// is off the waitlist.
+		if !actor.PrivateMirrors {
+			return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
+		}
+
+		// Check that the user has permission to access this private repo.
+		// The user's permissions for private mirror repos are set in
+		// MirrorRepos.GetUserData, which is called during onboarding.
+		valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), int32(actor.UID), uri)
+		if err != nil {
+			return nil, err
+		}
+		if !valid {
+			return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
+		}
+
+		token, err := (&mirrorRepos{}).getRepoAuthToken(elevatedActor(ctx), uri)
+		if err != nil {
+			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", uri, err)
+		}
+		ghrepo, err = (&github.Repos{}).Get(github.NewContextWithClient(ctx, githubutil.Default.AuthedClient(token), true), uri)
+		if err != nil {
+			return nil, grpc.Errorf(codes.Unavailable, "could not fetch private GitHub repo %v: %v", uri, err)
+		}
+	} else {
+		var err error
+		// Check that the repo is really public.
+		ghrepo, err = (&github.Repos{}).Get(github.NewContextWithClient(ctx, githubutil.Default.UnauthedClient(), false), uri)
+		if err != nil || ghrepo.Private {
+			log15.Warn("Could not fetch public GitHub repo in Repos.Create", "uri", uri, "error", err)
+			return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
+		}
 	}
 
-	eventsutil.LogAddRepo(ctx, op.CloneURL, op.Language, op.Mirror, op.Private)
-
-	accesscontrol.SetMirrorRepoPerms(ctx, &actor)
-	ctx = authpkg.WithActor(ctx, actor)
-
-	repoSpec := repo.RepoSpec()
-	return s.Get(ctx, &repoSpec)
+	ts := pbtypes.NewTimestamp(time.Now())
+	return &sourcegraph.Repo{
+		Name:          ghrepo.Name,
+		URI:           uri,
+		VCS:           ghrepo.VCS,
+		HTTPCloneURL:  ghrepo.HTTPCloneURL,
+		Language:      ghrepo.Language,
+		DefaultBranch: ghrepo.DefaultBranch,
+		Description:   ghrepo.Description,
+		Fork:          ghrepo.Fork,
+		Private:       ghrepo.Private,
+		Mirror:        true,
+		CreatedAt:     &ts,
+	}, nil
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {

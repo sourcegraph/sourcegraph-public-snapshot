@@ -69,3 +69,56 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 		t.Error("repo != nil")
 	}
 }
+
+// TestRepos_GetByID_existing tests the behavior of Repos.GetByID when
+// called on a repo that exists (i.e., the successful outcome).
+func TestRepos_GetByID_existing(t *testing.T) {
+	githubcli.Config.GitHubHost = "github.com"
+	ctx := testContext(&minimalClient{
+		repos: mockGitHubRepos{
+			GetByID_: func(id int) (*github.Repository, *github.Response, error) {
+				return &github.Repository{
+					ID:       github.Int(123),
+					Name:     github.String("repo"),
+					FullName: github.String("owner/repo"),
+					Owner:    &github.User{ID: github.Int(1)},
+					CloneURL: github.String("https://github.com/owner/repo.git"),
+				}, nil, nil
+			},
+		},
+	})
+
+	repo, err := (&Repos{}).GetByID(ctx, 123)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo == nil {
+		t.Error("repo == nil")
+	}
+	if want := int32(123); repo.GitHubID != want {
+		t.Errorf("got %d, want %d", repo.GitHubID, want)
+	}
+}
+
+// TestRepos_GetByID_nonexistent tests the behavior of Repos.GetByID
+// when called on a repo that does not exist.
+func TestRepos_GetByID_nonexistent(t *testing.T) {
+	githubcli.Config.GitHubHost = "github.com"
+	ctx := testContext(&minimalClient{
+		repos: mockGitHubRepos{
+			GetByID_: func(id int) (*github.Repository, *github.Response, error) {
+				resp := &http.Response{StatusCode: http.StatusNotFound, Body: ioutil.NopCloser(bytes.NewReader(nil))}
+				return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
+			},
+		},
+	})
+
+	s := &Repos{}
+	repo, err := s.GetByID(ctx, 456)
+	if !isRepoNotFound(err) {
+		t.Fatal(err)
+	}
+	if repo != nil {
+		t.Error("repo != nil")
+	}
+}

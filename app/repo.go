@@ -76,13 +76,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		// Automatically create a local mirror.
 		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
 		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-			URI:         "github.com/" + remoteRepo.Owner + "/" + remoteRepo.Name,
-			VCS:         remoteRepo.VCS,
-			CloneURL:    remoteRepo.HTTPCloneURL,
-			Mirror:      true,
-			Private:     remoteRepo.Private,
-			Description: remoteRepo.Description,
-			Language:    remoteRepo.Language,
+			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: int32(remoteRepo.GitHubID)},
 		})
 		if err != nil {
 			return err

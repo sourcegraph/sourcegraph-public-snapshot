@@ -22,6 +22,7 @@ func newMinimalClient(client *github.Client, isAuthedUser bool) *minimalClient {
 
 type githubRepos interface {
 	Get(owner, repo string) (*github.Repository, *github.Response, error)
+	GetByID(id int) (*github.Repository, *github.Response, error)
 	List(user string, opt *github.RepositoryListOptions) ([]github.Repository, *github.Response, error)
 }
 

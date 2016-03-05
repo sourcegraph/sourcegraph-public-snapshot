@@ -91,7 +91,7 @@ func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec
 func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) (repo *sourcegraph.Repo, done func(), err error) {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
-	op := &sourcegraph.ReposCreateOp{
+	op := &sourcegraph.ReposCreateOp_NewRepo{
 		URI: repoURI,
 		VCS: "git",
 	}
@@ -105,7 +105,7 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) 
 		done = func() {} // no-op
 	}
 
-	repo, err = cl.Repos.Create(ctx, op)
+	repo, err = cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{Op: &sourcegraph.ReposCreateOp_New{New: op}})
 	if err != nil {
 		done()
 		return nil, done, err

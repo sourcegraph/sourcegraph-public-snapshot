@@ -1,6 +1,7 @@
 package github
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -25,16 +26,31 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
 	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return nil, &store.RepoNotFoundError{Repo: repo}
-		}
-		if resp != nil && resp.StatusCode == http.StatusForbidden {
-			return nil, &os.PathError{Op: "Repos.Get", Path: repo, Err: os.ErrPermission}
-		}
-		return nil, err
+		return nil, s.checkResponse(repo, resp, err)
 	}
 
 	return toRemoteRepo(ghrepo), nil
+}
+
+func (s *Repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
+	ghrepo, resp, err := client(ctx).repos.GetByID(id)
+	if err != nil {
+		return nil, s.checkResponse(fmt.Sprintf("GitHub repo #%d", id), resp, err)
+	}
+	return toRemoteRepo(ghrepo), nil
+}
+
+func (s *Repos) checkResponse(repo string, resp *github.Response, err error) error {
+	if err == nil {
+		return nil
+	}
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
+		return &store.RepoNotFoundError{Repo: repo}
+	}
+	if resp != nil && resp.StatusCode == http.StatusForbidden {
+		return &os.PathError{Op: "Repos.Get", Path: repo, Err: os.ErrPermission}
+	}
+	return err
 }
 
 func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
