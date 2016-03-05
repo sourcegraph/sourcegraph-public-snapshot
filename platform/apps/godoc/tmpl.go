@@ -12,10 +12,6 @@ var tmplHTML = `
 		margin-top: 28px;
 	}
 
-	.sourcegraph-sourcebox .sourcegraph-footer {
-		display: none;
-	}
-
 	pre {
 		background-color: #f5f5f5 !important;
 		border: solid 1px #ccc !important;
@@ -82,13 +78,13 @@ var tmplHTML = `
 				<!-- Contants -->
 				{{if .Consts}}
 					<h3 class="anchor" id="pkg-constants">Constants <a class="permalink" href="#pkg-constants"><i class="octicon octicon-link"></i></a></h3>
-					{{range .Consts}}{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}{{end}}
+					{{range .Consts}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
 				{{end}}
 
 				<!-- Variables -->
 				{{if .Vars}}
 					<h3 class="anchor" id="pkg-variables">Variables <a class="permalink" href="#pkg-variables"><i class="octicon octicon-link"></i></a></h3>
-					{{range .Vars}}{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}{{end}}
+					{{range .Vars}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
 				{{end}}
 
 				<!-- Functions -->
@@ -97,7 +93,7 @@ var tmplHTML = `
 						func <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
 						<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
 					</h3>
-					{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
+					<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 					{{template "Examples" .|$.PDoc.ObjExamples}}
 				{{end}}
 
@@ -107,9 +103,9 @@ var tmplHTML = `
 						type <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
 						<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
 					</h3>
-					{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
-					{{range .Consts}}{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}{{end}}
-					{{range .Vars}}{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}{{end}}
+					<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
+					{{range .Consts}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
+					{{range .Vars}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
 					{{template "Examples" .|$.PDoc.ObjExamples}}
 
 					{{range .Funcs}}
@@ -117,7 +113,7 @@ var tmplHTML = `
 							func <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
 							<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
 						</h4>
-						{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
+						<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 						{{template "Examples" .|$.PDoc.ObjExamples}}
 					{{end}}
 
@@ -126,7 +122,7 @@ var tmplHTML = `
 							func ({{.Recv}}) <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
 							<a class="permalink" href="#{{$t.Name}}.{{.Name}}"><i class="octicon octicon-link"></i></a>
 						</h4>
-						{{$.PDoc.Code .Pos $.RepoRevSpec}}{{.Doc|godoc_comment}}
+						<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 						{{template "Examples" .|$.PDoc.ObjExamples}}
 					{{end}}
 				{{end}}

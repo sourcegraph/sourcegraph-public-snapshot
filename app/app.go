@@ -111,7 +111,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.Def).Handler(internal.Handler(serveDef))
 	r.Get(router.DefExamples).Handler(internal.Handler(serveDefExamples))
 	r.Get(router.DefPopover).Handler(internal.Handler(serveDefPopover))
-	r.Get(router.DefShare).Handler(internal.Handler(serveDefShare))
 	r.Get(router.RepoAppFrame).Handler(internal.Handler(serveRepoFrame))
 	r.Get(router.Home).Handler(internal.Handler(serveHomeDashboard))
 	r.Get(router.LogOut).Handler(internal.Handler(serveLogOut))
@@ -132,9 +131,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearch))
 	r.Get(router.RepoTree).Handler(internal.Handler(serveRepoTree))
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
-	r.Get(router.RepoTreeShare).Handler(internal.Handler(serveRepoTreeShare))
-	r.Get(router.SourceboxDef).Handler(internal.Handler(serveSourceboxDef))
-	r.Get(router.SourceboxFile).Handler(internal.Handler(serveSourceboxFile))
 
 	if appconf.Flags.RepoBadgesAndCounters {
 		r.Get(router.RepoBadge).Handler(internal.Handler(serveRepoBadge))

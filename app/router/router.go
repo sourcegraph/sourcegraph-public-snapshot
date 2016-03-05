@@ -54,7 +54,6 @@ const (
 	RepoSearch       = "repo.search"
 	RepoRefresh      = "repo.refresh"
 	RepoTree         = "repo.tree"
-	RepoTreeShare    = "repo.tree.share"
 	RepoCompare      = "repo.compare"
 	RepoCompareAll   = "repo.compare.all"
 
@@ -65,9 +64,6 @@ const (
 
 	SearchForm    = "search.form"
 	SearchResults = "search.results"
-
-	SourceboxFile = "sourcebox.file"
-	SourceboxDef  = "sourcebox.def"
 
 	LogIn          = "log-in"
 	LogOut         = "log-out"
@@ -84,7 +80,6 @@ const (
 	Def         = "def"
 	DefExamples = "def.examples"
 	DefPopover  = "def.popover"
-	DefShare    = "def.share"
 
 	UserContent = "usercontent"
 
@@ -177,15 +172,11 @@ func New(base *mux.Router) *Router {
 	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
 	def.Path("/.examples").Methods("GET").Name(DefExamples)
 	def.Path("/.popover").Methods("GET").Name(DefPopover)
-	def.Path("/.sourcebox.{Format}").Methods("GET").Name(SourceboxDef)
-	def.Path("/.share").Methods("GET").Name(DefShare)
 	// TODO(x): def history route
 
 	// See router_util/tree_route.go for an explanation of how we match tree
 	// entry routes.
 	repoTreePath := "/.tree" + routevar.TreeEntryPath
-	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(SourceboxFile)
-	repoRev.Path(repoTreePath + "/.share").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTreeShare)
 	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 
 	repoRev.Path("/.refresh").Methods("POST", "PUT").Name(RepoRefresh)

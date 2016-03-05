@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/schema"
 	"github.com/microcosm-cc/bluemonday"
@@ -281,30 +279,13 @@ func (t *tumblr) servePost(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-var sourceboxRegexp = regexp.MustCompile(`<script type="text/javascript" src="(https://sourcegraph.com/[^"]*/\.sourcebox\.js)"></script>`)
-
-// sanitizeTumblrHTML sanitizes HTML but permits sourcebox <script> tags.
+// sanitizeTumblrHTML sanitizes HTML.
 //
 // This should NOT be relied upon to prevent reflected XSS attacks.
 // Access to the Tumblr blog account must be restricted to Sourcegraph
 // employees.
 func sanitizeTumblrHTML(origHTML template.HTML) template.HTML {
-	orig := string(origHTML)
-	matches := sourceboxRegexp.FindAllStringSubmatch(orig, -1)
-	mappings := make([][2]string, len(matches))
-	for i, match := range matches {
-		mappings[i] = [2]string{match[0], fmt.Sprintf(`<sourcebox src="%s">`, match[1])}
-	}
-	for _, mapping := range mappings {
-		orig = strings.Replace(orig, mapping[0], mapping[1], -1)
-	}
 	policy := bluemonday.UGCPolicy()
-	policy.AllowElements("sourcebox")
 	policy.AllowAttrs("class").Globally()
-	policy.AllowAttrs("src").OnElements("sourcebox")
-	sanitized := policy.Sanitize(orig)
-	for _, mapping := range mappings {
-		sanitized = strings.Replace(sanitized, mapping[1], mapping[0], -1)
-	}
-	return template.HTML(sanitized)
+	return template.HTML(policy.Sanitize(string(origHTML)))
 }

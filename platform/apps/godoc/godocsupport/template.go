@@ -2,16 +2,15 @@ package godocsupport
 
 import (
 	"bytes"
-	"fmt"
 	godoc "go/doc"
-	"html"
 	htemp "html/template"
 	"net/url"
 	"path"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 
@@ -28,6 +27,7 @@ var TemplateFuncMap = htemp.FuncMap{
 
 type TDoc struct {
 	*doc.Package
+	dir         *gosrc.Directory
 	allExamples []*texample
 }
 
@@ -38,19 +38,26 @@ type texample struct {
 	obj     interface{}
 }
 
-func NewTDoc(pdoc *doc.Package) *TDoc {
-	return &TDoc{Package: pdoc}
+func NewTDoc(pdoc *doc.Package, dir *gosrc.Directory) *TDoc {
+	return &TDoc{Package: pdoc, dir: dir}
 }
 
-func (pdoc *TDoc) Code(pos doc.Pos, repoRevSpec sourcegraph.RepoRevSpec) htemp.HTML {
-	var subdir string
-	if pdoc.ImportPath != pdoc.ProjectRoot && strings.HasPrefix(pdoc.ImportPath, pdoc.ProjectRoot) {
-		subdir = relativePathFn(pdoc.ImportPath, pdoc.ProjectRoot)
-	} else if repoRevSpec.URI == "github.com/golang/go" {
-		subdir = filepath.Join("src", pdoc.ImportPath)
+func (pdoc *TDoc) Code(pos doc.Pos, repoRevSpec sourcegraph.RepoRevSpec) string {
+	name := pdoc.Files[pos.File].Name
+	for _, f := range pdoc.dir.Files {
+		if f.Name == name {
+			lines := bytes.Split(f.Data, []byte("\n"))
+			start := int(pos.Line)            // 1-indexed
+			end := int(pos.Line) + int(pos.N) // 1-indexed
+			if start == 0 || start > len(lines) || end == 0 || end > len(lines) || end < start {
+				log15.Warn("godoc got invalid line range", "repoRev", repoRevSpec, "path", name, "startLine", start, "endLine", end)
+				return ""
+			}
+			return string(bytes.Join(lines[start-1:end], []byte("\n")))
+		}
 	}
-
-	return htemp.HTML(fmt.Sprintf(`<script type="text/javascript" src="/%s@%s/.tree/%s/.sourcebox.js?StartLine=%d&EndLine=%d"></script>`, html.EscapeString(repoRevSpec.URI), html.EscapeString(repoRevSpec.ResolvedRevString()), html.EscapeString(path.Join(subdir, pdoc.Files[pos.File].Name)), pos.Line, pos.Line+int32(pos.N)))
+	log15.Warn("godoc failed to find file", "repoRev", repoRevSpec, "path", name)
+	return ""
 }
 
 func (pdoc *TDoc) PageName() string {
@@ -312,11 +319,4 @@ func codeFn(c doc.Code, typ *doc.Type) htemp.HTML {
 	}
 	htemp.HTMLEscape(&buf, src[last:])
 	return htemp.HTML(buf.String())
-}
-
-func relativePathFn(path string, parentPath interface{}) string {
-	if p, ok := parentPath.(string); ok && p != "" && strings.HasPrefix(path, p) {
-		path = path[len(p)+1:]
-	}
-	return path
 }

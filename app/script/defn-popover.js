@@ -3,9 +3,6 @@
 // doesn't just run on DOMContentLoaded because this same function is used in
 // our Chrome extension (this file is copied over), where we want to be able to
 // manually trigger it.
-//
-// TODO(x): make sure this works in the chrome ext and in sourceboxes
-// after switching to webpack.
 function sourcegraph_activateDefnPopovers(el, baseURL) {
 	var activeA;
 	el.addEventListener("mouseover", function(ev) {
