@@ -170,7 +170,7 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 
 func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 	return droneyaml.BuildItem{
-		Key: "srclib coverage",
+		Key: "Graph metrics",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image: droneSrclibGoImage,
