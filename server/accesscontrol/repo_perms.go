@@ -2,7 +2,6 @@ package accesscontrol
 
 import (
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -10,27 +9,28 @@ import (
 
 // SetWaitlistStatus stores whether the PrivateReposAllowed feature is
 // enabled for the actor.
-func SetWaitlistStatus(ctx context.Context, actor *auth.Actor) {
+func SetWaitlistStatus(ctx context.Context, actor *auth.Actor) error {
 	if !authutil.ActiveFlags.PrivateMirrors || actor == nil || actor.UID == 0 {
-		return
+		return nil
 	}
 
 	if authutil.ActiveFlags.MirrorsWaitlist != "none" {
 		waitlistedUser, err := store.WaitlistFromContext(ctx).GetUser(elevatedActor(ctx), int32(actor.UID))
 		if err != nil {
 			if _, ok := err.(*store.WaitlistedUserNotFoundError); !ok {
-				log15.Debug("Error fetching waitlisted user", "uid", actor.UID, "error", err)
+				return err
 			}
-			return
+			return nil
 		}
 
 		if waitlistedUser.GrantedAt == nil {
 			// User is on the waitlist. Don't set PrivateReposAllowed.
-			return
+			return nil
 		}
 	}
 
 	actor.PrivateReposAllowed = true
+	return nil
 }
 
 // elevatedActor returns an actor with admin access to the stores.

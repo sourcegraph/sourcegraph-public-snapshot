@@ -71,7 +71,9 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 		}
 	}
 
-	accesscontrol.SetWaitlistStatus(ctx, actor)
+	if err := accesscontrol.SetWaitlistStatus(ctx, actor); err != nil {
+		return nil, err
+	}
 
 	// Make future calls use this access token.
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tokStr}))
