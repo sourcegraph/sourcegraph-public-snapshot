@@ -26,10 +26,10 @@ There are two types of access tokens:
 ## Client authentication
 
 Every Sourcegraph instance is authenticated by a public/private
-keypair called the "Sourcegraph identity key" (or "ID key" for short),
-which is stored at `$SGPATH/appdata/global/core.serve/auth/id.pem`. This
-keypair is generated automatically at server startup if it does not exist and
-can alternatively be read from the environment variable `SRC_ID_KEY_DATA`.
+keypair called the "Sourcegraph identity key" (or "ID key" for
+short). This keypair is generated automatically at server startup if
+it does not exist and can alternatively be read from the environment
+variable `SRC_ID_KEY_DATA`.
 
 An instance is identified by its public key fingerprint (hereafter its
 "ID"). This is also its OAuth2 client ID. Running `src meta config` or

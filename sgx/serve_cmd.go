@@ -92,7 +92,7 @@ Starts an HTTP server serving the app and API.
           --no-worker                            do not start background worker
           --tls-cert=                            certificate file (for TLS)
           --tls-key=                             key file (for TLS)
-      -i, --id-key=                              identity key file ($SGPATH/appdata/global/core.serve/auth/id.pem)
+      -i, --id-key=                              identity key file
           --id-key-data=                         identity key file data (overrides -i/--id-key) [$SRC_ID_KEY_DATA]
           --dequeue-msec=                        if no builds are dequeued, sleep up to this many msec before trying again (1000)
 
