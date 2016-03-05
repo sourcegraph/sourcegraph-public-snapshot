@@ -269,6 +269,8 @@ func (c *repoDeleteCmd) Execute(args []string) error {
 }
 
 type repoSyncCmd struct {
+	Force bool `long:"force" short:"f" description:"force rebuild even if build exists for the latest commit"`
+
 	Args struct {
 		URIs []string `name:"REPO-URI" description:"repository URIs (e.g., host.com/myrepo)"`
 	} `positional-args:"yes" required:"yes"`
@@ -317,7 +319,7 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	repoRevSpec.CommitID = string(commit.ID)
 	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], repo.DefaultBranch, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
 
-	if _, err := cl.Builds.GetRepoBuild(client.Ctx, &repoRevSpec); grpc.Code(err) == codes.NotFound {
+	if _, err := cl.Builds.GetRepoBuild(client.Ctx, &repoRevSpec); c.Force || grpc.Code(err) == codes.NotFound {
 		b, err := cl.Builds.Create(client.Ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repoRevSpec.RepoSpec,
 			CommitID: repoRevSpec.CommitID,
