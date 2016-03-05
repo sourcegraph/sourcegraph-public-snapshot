@@ -30,9 +30,8 @@ srclib solves this problem in 2 ways by:
   srclib language analyzer benefit users in any editor, and improvements in a
   srclib editor plugin benefit everyone who uses that editor on any language.
 
-* Providing high-quality language analyzers that implement
-  this standard. These were open-sourced from the code that powers
-  [Sourcegraph.com](https://sourcegraph.com).
+* Providing high-quality language analyzers that implement this
+  standard. These power [Sourcegraph.com](https://sourcegraph.com).
 
 Step 1 is to build the language analyzers. Next up, we will build the
 editor plugins!
