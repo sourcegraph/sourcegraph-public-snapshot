@@ -58,6 +58,7 @@
 														"type": "CodeListing",
 														"props": {
 															"contents": "hello\nworld",
+															"activeDef": "/someURL",
 															"highlightedDef": "/otherURL"
 														}
 													}

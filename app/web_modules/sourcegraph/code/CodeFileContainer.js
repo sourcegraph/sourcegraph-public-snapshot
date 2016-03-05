@@ -139,6 +139,7 @@ class CodeFileContainer extends Container {
 							byte={defData.ByteStartPosition}
 							examples={this.state.examples}
 							annotations={this.state.annotations}
+							activeDef={this.state.activeDef}
 							highlightedDef={this.state.highlightedDef} />}
 					</FileMargin>
 				</div>

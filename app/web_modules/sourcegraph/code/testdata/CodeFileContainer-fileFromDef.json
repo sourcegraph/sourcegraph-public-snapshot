@@ -47,7 +47,8 @@
 												},
 												"annotations": {
 													"content": {}
-												}
+												},
+												"activeDef": "someDef"
 											}
 										}
 									]

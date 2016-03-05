@@ -31,6 +31,7 @@ class ExampleView extends Component {
 			state.displayedExample = example;
 		}
 
+		state.activeDef = props.activeDef;
 		state.highlightedDef = props.highlightedDef;
 
 		let anns = example ? props.annotations.get(example.Repo, example.CommitID, example.File, example.Range.StartByte, example.Range.EndByte) : null;
@@ -82,6 +83,7 @@ class ExampleView extends Component {
 								<CodeListing
 									contents={example.Contents}
 									annotations={this.state.anns}
+									activeDef={this.state.activeDef}
 									highlightedDef={this.state.highlightedDef} />
 							</div>
 						}

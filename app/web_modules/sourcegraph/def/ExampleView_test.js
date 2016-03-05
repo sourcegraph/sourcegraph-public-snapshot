@@ -15,6 +15,7 @@ describe("ExampleView", () => {
 				defURL="/someURL"
 				examples={{get(defURL, index) { return null; }, getCount(defURL) { return 10; }}}
 				annotations={{get() { return null; }}}
+				activeDef={null}
 				highlightedDef={null} />
 		);
 	});
@@ -25,6 +26,7 @@ describe("ExampleView", () => {
 				defURL="/someURL"
 				examples={{get(defURL, index) { return {Repo: "someRepo", File: "foo.go", Range: {StartLine: 3, EndLine: 7}, Contents: "hello\nworld"}; }, getCount(defURL) { return 10; }}}
 				annotations={{get() { return null; }}}
+				activeDef="/someURL"
 				highlightedDef="/otherURL" />
 		);
 	});
@@ -35,6 +37,7 @@ describe("ExampleView", () => {
 				defURL="/someURL"
 				examples={{get(defURL, index) { return null; }, getCount(defURL) { return 0; }}}
 				annotations={{get() { return null; }}}
+				activeDef={null}
 				highlightedDef={null} />
 		);
 	});
