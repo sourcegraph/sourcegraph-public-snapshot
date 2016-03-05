@@ -76,6 +76,16 @@ var droneSrclibGoImage = "srclib/drone-srclib-go@sha256:af069725ea5fe4e8e657f16f
 // the old Docker image. Also ensure you `docker push` the new Docker
 // images, or else users' builds will fail because the required image
 // is not available on the Docker Hub.
+var srclibBasicItem = droneyaml.BuildItem{
+	Key: "PHP (indexing)",
+	Build: droneyaml.Build{
+		Container: droneyaml.Container{
+			Image: "srclib/drone-srclib-basic@sha256:f1d229c9895b860e8709a3d2bbd707ac15a092a97eec2f3e961454d064f3dc14",
+		},
+		Commands:     srclibBuildCommands,
+		AllowFailure: true,
+	},
+}
 var langSrclibConfigs = map[string]droneyaml.BuildItem{
 	"Go": droneyaml.BuildItem{
 		Key: "Go (indexing)",
@@ -107,6 +117,8 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
+	"PHP":         srclibBasicItem,
+	"Objective-C": srclibBasicItem,
 	"Python": droneyaml.BuildItem{
 		Key: "Python (indexing)",
 		Build: droneyaml.Build{
@@ -169,6 +181,7 @@ func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 			Commands: []string{
 				"echo Generating srclib coverage stats",
 				"srclib coverage > /tmp/srclib-coverage.json",
+				"cat /tmp/srclib-coverage.json",
 				"echo Publishing srclib coverage stats",
 				`cat /tmp/srclib-coverage.json | /usr/bin/curl \
 				--silent --show-error \
