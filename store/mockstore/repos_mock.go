@@ -13,20 +13,15 @@ import (
 )
 
 type Repos struct {
-	Get_      func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	GetPerms_ func(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error)
-	List_     func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
-	Create_   func(v0 context.Context, v1 *sourcegraph.Repo) error
-	Update_   func(v0 context.Context, v1 *store.RepoUpdate) error
-	Delete_   func(ctx context.Context, repo string) error
+	Get_    func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	List_   func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
+	Create_ func(v0 context.Context, v1 *sourcegraph.Repo) error
+	Update_ func(v0 context.Context, v1 *store.RepoUpdate) error
+	Delete_ func(ctx context.Context, repo string) error
 }
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	return s.Get_(ctx, repo)
-}
-
-func (s *Repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
-	return s.GetPerms_(ctx, repo)
 }
 
 func (s *Repos) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {

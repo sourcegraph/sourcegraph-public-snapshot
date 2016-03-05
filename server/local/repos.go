@@ -46,39 +46,22 @@ type repos struct{}
 
 var _ sourcegraph.ReposServer = (*repos)(nil)
 
-func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-	r, err := s.get(ctx, repo.URI)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.setRepoPermissions(ctx, r); err != nil {
-		return nil, err
-	}
-	if err := s.setRepoOtherFields(ctx, r); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-// get gets the repo from the store but does not fetch and populate
-// the repo permissions. Callers that need the repo but not the
-// permissions should call get (instead of Get) to avoid doing
-// needless work.
-func (s *repos) get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-	if repo == "" {
+func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	if repoSpec.URI == "" {
 		return nil, errEmptyRepoURI
 	}
 
-	r, err := store.ReposFromContext(ctx).Get(ctx, repo)
+	repo, err := store.ReposFromContext(ctx).Get(ctx, repoSpec.URI)
 	if err != nil {
 		return nil, err
 	}
-
-	if r.Blocked {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo)
+	if err := s.setRepoOtherFields(ctx, repo); err != nil {
+		return nil, err
 	}
-
-	return r, nil
+	if repo.Blocked {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo.URI)
+	}
+	return repo, nil
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
@@ -86,28 +69,10 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	if err != nil {
 		return nil, err
 	}
-	if err := s.setRepoPermissions(ctx, repos...); err != nil {
-		return nil, err
-	}
 	if err := s.setRepoOtherFields(ctx, repos...); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RepoList{Repos: repos}, nil
-}
-
-// setRepoPermissions modifies repos in place, setting their
-// Permissions fields by calling (store.Repos).GetPerms on each repo.
-func (s *repos) setRepoPermissions(ctx context.Context, repos ...*sourcegraph.Repo) error {
-	for _, repo := range repos {
-		if repo.Permissions == nil {
-			perms, err := store.ReposFromContext(ctx).GetPerms(ctx, repo.URI)
-			if err != nil {
-				return err
-			}
-			repo.Permissions = perms
-		}
-	}
-	return nil
 }
 
 func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Repo) error {
@@ -318,7 +283,7 @@ func (s *repos) resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.R
 }
 
 func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, error) {
-	repo, err := s.get(ctx, repoURI)
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 	if err != nil {
 		return "", err
 	}

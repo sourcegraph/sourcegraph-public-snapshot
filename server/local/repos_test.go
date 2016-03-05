@@ -27,7 +27,6 @@ func TestReposService_Get(t *testing.T) {
 	}
 
 	calledGet := mock.stores.Repos.MockGet(t, "r")
-	calledGetPerms := mock.stores.Repos.MockGetPerms_Read()
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: "r"})
 	if err != nil {
@@ -35,9 +34,6 @@ func TestReposService_Get(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
-	}
-	if !*calledGetPerms {
-		t.Error("!calledGetPerms")
 	}
 	if !reflect.DeepEqual(repo, wantRepo) {
 		t.Errorf("got %+v, want %+v", repo, wantRepo)
@@ -56,7 +52,6 @@ func TestReposService_List(t *testing.T) {
 	}
 
 	calledList := mock.stores.Repos.MockList(t, "r1", "r2")
-	calledGetPerms := mock.stores.Repos.MockGetPerms_Read()
 
 	repos, err := s.List(ctx, nil)
 	if err != nil {
@@ -64,9 +59,6 @@ func TestReposService_List(t *testing.T) {
 	}
 	if !*calledList {
 		t.Error("!calledList")
-	}
-	if !*calledGetPerms {
-		t.Error("!calledGetPerms")
 	}
 	if !reflect.DeepEqual(repos, wantRepos) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)

@@ -174,13 +174,6 @@ func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{})
 	return repo.toRepo(), nil
 }
 
-func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetPerms", repo); err != nil {
-		return nil, err
-	}
-	return &sourcegraph.RepoPermissions{Read: true, Write: true, Admin: true}, nil
-}
-
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
 		return nil, err
