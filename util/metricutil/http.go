@@ -49,7 +49,7 @@ func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFu
 	// If we have an error, name is an empty string which
 	// indicates to httptrace to use a fallback value
 	name, _ := httpctx.RouteNameOrError(r)
-	// If the code is zero, the inner Handler never explictly called
+	// If the code is zero, the inner Handler never explicitly called
 	// WriterHeader. We can assume the response code is 200 in such a case
 	code := rwIntercept.Code
 	if code == 0 {

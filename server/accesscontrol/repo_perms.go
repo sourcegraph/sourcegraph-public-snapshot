@@ -63,7 +63,7 @@ var errNotPrivateRepo = errors.New("not a private repo")
 //
 // It can return one of three categories of results:
 //  - nil error - private repo, actor has access, short circuit (don't require more VerifyActorHas{Read,Write}Access checks).
-//  - errNotPrivateRepo - public repo, no short circut decision here, defer to rest of VerifyActorHas{Read,Write}Access checks.
+//  - errNotPrivateRepo - public repo, no short circuit decision here, defer to rest of VerifyActorHas{Read,Write}Access checks.
 //  - any other non-nil error - private repo or other situation, no access, short circuit (don't require more VerifyActorHas{Read,Write}Access checks).
 //
 // TODO: Refactor this so it's more integrated with VerifyActorHas{Read,Write}Access.

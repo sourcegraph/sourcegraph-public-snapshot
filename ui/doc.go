@@ -6,7 +6,7 @@
 // The package also allows mocking out Sourcegraph API and Service calls that
 // happen during a request. This can be obtained by starting the Router using
 // a special argument and modifying UI requests to use method POST and a special
-// header "X-Mock-Reponse" set to the value "yes". By default, this functionality
+// header "X-Mock-Response" set to the value "yes". By default, this functionality
 // is and should stay disabled in production environments.
 //
 // WARNING: Integration tests may not be run in parallel or concurrently. Currently

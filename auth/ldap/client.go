@@ -100,7 +100,7 @@ func VerifyLogin(username, password string) (*LDAPUser, error) {
 		return nil, err
 	}
 
-	// Rebind as the read only user for any futher queries
+	// Rebind as the read only user for any further queries
 	err = l.Bind(bindusername, bindpassword)
 	if err != nil {
 		return nil, err

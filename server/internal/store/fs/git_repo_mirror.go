@@ -92,7 +92,7 @@ func (g *gitMirrorListener) parseMirrors() error {
 }
 
 func (g *gitMirrorListener) onGitEvent(id events.EventID, p events.GitPayload) {
-	// A git operation has occured, do we need to mirror any changes?
+	// A git operation has occurred, do we need to mirror any changes?
 	gitRemoteURL, ok := g.mirrors[p.Repo.URI]
 	if !ok {
 		return // Nothing to do for this repo.

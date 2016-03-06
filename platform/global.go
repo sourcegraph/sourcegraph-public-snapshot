@@ -20,7 +20,7 @@ type GlobalApp struct {
 	Icon string
 
 	// IconBadge, if not nil, is called with a per-request context
-	// to check if there should be a badge dispayed over app icon.
+	// to check if there should be a badge displayed over app icon.
 	//
 	// This func is called on every request to render a Sourcegraph page,
 	// so it should be fast. It should also be safe for concurrent access.
