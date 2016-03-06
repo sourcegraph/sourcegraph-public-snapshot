@@ -38,10 +38,10 @@ const CodeBackend = {
 
 		case CodeActions.WantAnnotations:
 			{
-				let anns = CodeStore.annotations.get(action.repo, action.rev, action.path, action.startByte, action.endByte);
+				let anns = CodeStore.annotations.get(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte);
 				if (anns === null) {
 					CodeBackend.xhr({
-						uri: `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.Rev=${action.rev}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`,
+						uri: `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.Rev=${action.rev}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`,
 						json: {},
 						headers: authHeaders(),
 					}, function(err, resp, body) {
@@ -50,7 +50,7 @@ const CodeBackend = {
 							return;
 						}
 						body.Annotations = prepareAnnotations(body.Annotations);
-						Dispatcher.dispatch(new CodeActions.AnnotationsFetched(action.repo, action.rev, action.path, action.startByte, action.endByte, body));
+						Dispatcher.dispatch(new CodeActions.AnnotationsFetched(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte, body));
 					});
 				}
 				break;

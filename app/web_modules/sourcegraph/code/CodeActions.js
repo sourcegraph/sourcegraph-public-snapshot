@@ -16,9 +16,10 @@ export class FileFetched {
 }
 
 export class WantAnnotations {
-	constructor(repo, rev, path, startByte, endByte) {
+	constructor(repo, rev, commitID, path, startByte, endByte) {
 		this.repo = repo;
 		this.rev = rev;
+		this.commitID = commitID;
 		this.path = path;
 		this.startByte = startByte;
 		this.endByte = endByte;
@@ -26,9 +27,10 @@ export class WantAnnotations {
 }
 
 export class AnnotationsFetched {
-	constructor(repo, rev, path, startByte, endByte, annotations) {
+	constructor(repo, rev, commitID, path, startByte, endByte, annotations) {
 		this.repo = repo;
 		this.rev = rev;
+		this.commitID = commitID;
 		this.path = path;
 		this.startByte = startByte;
 		this.endByte = endByte;

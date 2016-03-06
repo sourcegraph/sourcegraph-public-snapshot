@@ -34,7 +34,7 @@ class ExampleView extends Component {
 		state.activeDef = props.activeDef;
 		state.highlightedDef = props.highlightedDef;
 
-		let anns = example ? props.annotations.get(example.Repo, example.CommitID, example.File, example.Range.StartByte, example.Range.EndByte) : null;
+		let anns = example ? props.annotations.get(example.Repo, example.Rev, example.CommitID, example.File, example.Range.StartByte, example.Range.EndByte) : null;
 		state.anns = anns ? anns.Annotations.map((ann) => (
 			// Adjust the annotation start/end so that they are relative to
 			// the beginning of this code excerpt, not the full file.
@@ -50,7 +50,7 @@ class ExampleView extends Component {
 		if (prevState.displayedExample !== nextState.displayedExample) {
 			let ex = nextState.displayedExample;
 			if (ex) {
-				Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(ex.Repo, ex.CommitID, ex.File, ex.Range.StartByte, ex.Range.EndByte));
+				Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(ex.Repo, ex.Rev, ex.CommitID, ex.File, ex.Range.StartByte, ex.Range.EndByte));
 			}
 		}
 	}

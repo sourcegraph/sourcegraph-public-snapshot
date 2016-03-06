@@ -7,8 +7,8 @@ function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;
 }
 
-function keyForAnns(repo, rev, path, startByte, endByte) {
-	return `${repo}#${rev}#${path}#${startByte || 0}#${endByte || 0}`;
+function keyForAnns(repo, rev, commitID, path, startByte, endByte) {
+	return `${repo}#${rev}#${commitID}#${path}#${startByte || 0}#${endByte || 0}`;
 }
 
 export class CodeStore extends Store {
@@ -23,8 +23,8 @@ export class CodeStore extends Store {
 		// annotations are assumed to be sorted (with Annotations.sortAnns) by all callers of CodeStore.
 		this.annotations = deepFreeze({
 			content: {},
-			get(repo, rev, path, startByte, endByte) {
-				return this.content[keyForAnns(repo, rev, path, startByte, endByte)] || null;
+			get(repo, rev, commitID, path, startByte, endByte) {
+				return this.content[keyForAnns(repo, rev, commitID, path, startByte, endByte)] || null;
 			},
 		});
 	}
@@ -42,7 +42,7 @@ export class CodeStore extends Store {
 		case CodeActions.AnnotationsFetched:
 			this.annotations = deepFreeze(Object.assign({}, this.annotations, {
 				content: Object.assign({}, this.annotations.content, {
-					[keyForAnns(action.repo, action.rev, action.path, action.startByte, action.endByte)]: action.annotations,
+					[keyForAnns(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte)]: action.annotations,
 				}),
 			}));
 			break;

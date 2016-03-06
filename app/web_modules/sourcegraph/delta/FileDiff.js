@@ -17,16 +17,16 @@ class FileDiff extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.baseRepo !== prevState.baseRepo || nextState.baseRev !== prevState.baseRev || nextState.diff.OrigName !== prevState.diff.OrigName) {
-			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, nextState.diff.OrigName));
+			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, "", nextState.diff.OrigName));
 		}
 		if (nextState.headRepo !== prevState.headRepo || nextState.headRev !== prevState.headRev || nextState.diff.NewName !== prevState.diff.NewName) {
-			if (!isDevNull(nextState.diff.NewName)) Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.headRepo, nextState.headRev, nextState.diff.NewName));
+			if (!isDevNull(nextState.diff.NewName)) Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.headRepo, nextState.headRev, "", nextState.diff.NewName));
 		}
 	}
 
 	_groupAnnotationsByHunk(hunks) {
-		let baseAnns = this.state.annotations.get(this.state.baseRepo, this.state.baseRev, this.state.diff.OrigName);
-		let headAnns = this.state.annotations.get(this.state.headRepo, this.state.headRev, this.state.diff.NewName);
+		let baseAnns = this.state.annotations.get(this.state.baseRepo, this.state.baseRev, "", this.state.diff.OrigName);
+		let headAnns = this.state.annotations.get(this.state.headRepo, this.state.headRev, "", this.state.diff.NewName);
 		return hunks.map((hunk) => {
 			let baseStart = baseAnns ? baseAnns.LineStartBytes[hunk.OrigStartLine - 1] : null;
 			let baseEnd = baseAnns ? baseAnns.LineStartBytes[hunk.OrigStartLine + hunk.OrigLines - 1] : null;

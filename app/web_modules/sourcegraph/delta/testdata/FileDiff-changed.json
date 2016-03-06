@@ -113,12 +113,14 @@
 			"$constructor": "WantAnnotations",
 			"repo": "br",
 			"rev": "bv",
+			"commitID": "",
 			"path": "a"
 		},
 		{
 			"$constructor": "WantAnnotations",
 			"repo": "hr",
 			"rev": "hv",
+			"commitID": "",
 			"path": "b"
 		}
 	]

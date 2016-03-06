@@ -48,7 +48,7 @@ class CodeFileContainer extends Container {
 
 		// fetch file content
 		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
-		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, state.tree, 0, 0);
+		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, "", state.tree, 0, 0);
 		state.annotations = CodeStore.annotations;
 
 		state.startLine = (state.activeDef && state.file && defData) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
@@ -65,7 +65,7 @@ class CodeFileContainer extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
 			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
-			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, nextState.tree));
+			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.tree));
 		}
 		if (nextState.activeDef && prevState.activeDef !== nextState.activeDef) {
 			let defData = nextState.activeDef && DefStore.defs.get(nextState.activeDef);

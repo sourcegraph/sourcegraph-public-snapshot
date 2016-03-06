@@ -72,6 +72,7 @@
 			"$constructor": "WantAnnotations",
 			"repo": "br",
 			"rev": "bv",
+			"commitID": "",
 			"path": "a"
 		}
 	]

@@ -46,6 +46,7 @@
 			"$constructor": "WantAnnotations",
 			"repo": "aRepo",
 			"rev": "aRev",
+			"commitID": "",
 			"path": "aTree"
 		}
 	]
