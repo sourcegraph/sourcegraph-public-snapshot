@@ -80,6 +80,11 @@ class CodeFileRouter extends Component {
 			pathParts = [pathParts[0], `tree/${treePath}`];
 		}
 
+		if (!state.url.pathname.match(/\/\.(tree|def)/)) {
+			// Not a file view. Could be a new URL navigated to by the search bar.
+			return;
+		}
+
 		state.tree = null;
 		state.def = null;
 		state.startLine = null;
