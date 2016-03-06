@@ -51,7 +51,10 @@ class CodeFileContainer extends Container {
 		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, "", state.tree, 0, 0);
 		state.annotations = CodeStore.annotations;
 
-		state.startLine = (state.activeDef && state.file && defData) ? lineFromByte(state.file.Entry.ContentsString, defData && defData.ByteStartPosition) : (props.startLine || null);
+		if (state.activeDef && state.file && defData) {
+			state.startLine = lineFromByte(state.file.Entry.ContentsString, defData.ByteStartPosition);
+			state.endLine = lineFromByte(state.file.Entry.ContentsString, defData.ByteEndPosition);
+		}
 
 		state.defs = DefStore.defs;
 		state.examples = DefStore.examples;
