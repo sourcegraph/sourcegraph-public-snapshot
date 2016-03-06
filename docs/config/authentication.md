@@ -6,8 +6,7 @@ description = "Manage user authentication on your Sourcegraph instance"
 ## Local auth
 
 The default authentication mechanism for Sourcegraph is via username & password.
-Passwords are hashed and stored on your file system or database, depending
-on your [persistence configuration]({{< relref "config/localstore.md" >}}).
+Passwords are hashed and stored in your PostgreSQL database.
 
 The first user to create an account on a Sourcegraph instance becomes the instance
 admin. The admin may [invite other users and manage access controls]

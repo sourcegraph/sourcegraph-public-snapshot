@@ -13,7 +13,7 @@ development environment. Here's what you need:
 - [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
-- [PostgreSQL](http://www.postgresql.org/docs/9.5/interactive/index.html) (v9.2 or higher)
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
@@ -55,6 +55,17 @@ permanent for every shell session by adding the following line to your
 ```bash
 # increase max number of file descriptors for running a sourcegraph instance.
 ulimit -n 10000
+```
+
+# PostgreSQL
+
+[Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
+steps to [initialize and configure your database](https://src.sourcegraph.com/sourcegraph/.docs/config/storage/).
+
+Finally, issue the following command to set up your database tables:
+
+```
+src pgsql create
 ```
 
 ## Test
@@ -164,35 +175,6 @@ responsible (or ask).
 Finally, `go-sourcegraph` also uses many codegen tools. See its
 README.md for instructions on how to install them.
 
-# Postgres
-
-Once you have Postgres [installed](http://www.postgresql.org/download/) and [started](http://www.postgresql.org/docs/9.1/static/server-start.html), issue the following commands to create the necessary database and Postgres user:
-
-```
-createdb sg_test
-createuser -s sg_user_test
-```
-
-Add the following lines to your .*rc:
-
-```
-export PGSSLMODE=disable
-export PGDATABASE=sg_test
-export PGUSER=sg_user_test
-```
-
-Edit the `timezone` line in your postgresql.conf (usually in
-`/usr/local/var/postgres`) to read as follows:
-
-```
-timezone = 'UTC'
-```
-
-...and finally issue the following command:
-
-```
-src pgsql create
-```
 
 ## Code standards
 
