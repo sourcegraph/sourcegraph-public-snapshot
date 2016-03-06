@@ -28,32 +28,31 @@ import (
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.
 func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 	s := svc.Services{
-		GitTransport:        wrappedGitTransport{ctxFunc, services},
-		MultiRepoImporter:   wrappedMultiRepoImporter{ctxFunc, services},
-		Accounts:            wrappedAccounts{ctxFunc, services},
-		Auth:                wrappedAuth{ctxFunc, services},
-		Builds:              wrappedBuilds{ctxFunc, services},
-		Changesets:          wrappedChangesets{ctxFunc, services},
-		Defs:                wrappedDefs{ctxFunc, services},
-		Deltas:              wrappedDeltas{ctxFunc, services},
-		GraphUplink:         wrappedGraphUplink{ctxFunc, services},
-		Markdown:            wrappedMarkdown{ctxFunc, services},
-		Meta:                wrappedMeta{ctxFunc, services},
-		MirrorRepos:         wrappedMirrorRepos{ctxFunc, services},
-		MirroredRepoSSHKeys: wrappedMirroredRepoSSHKeys{ctxFunc, services},
-		Notify:              wrappedNotify{ctxFunc, services},
-		Orgs:                wrappedOrgs{ctxFunc, services},
-		People:              wrappedPeople{ctxFunc, services},
-		RegisteredClients:   wrappedRegisteredClients{ctxFunc, services},
-		RepoBadges:          wrappedRepoBadges{ctxFunc, services},
-		RepoStatuses:        wrappedRepoStatuses{ctxFunc, services},
-		RepoTree:            wrappedRepoTree{ctxFunc, services},
-		Repos:               wrappedRepos{ctxFunc, services},
-		Search:              wrappedSearch{ctxFunc, services},
-		Storage:             wrappedStorage{ctxFunc, services},
-		Units:               wrappedUnits{ctxFunc, services},
-		UserKeys:            wrappedUserKeys{ctxFunc, services},
-		Users:               wrappedUsers{ctxFunc, services},
+		GitTransport:      wrappedGitTransport{ctxFunc, services},
+		MultiRepoImporter: wrappedMultiRepoImporter{ctxFunc, services},
+		Accounts:          wrappedAccounts{ctxFunc, services},
+		Auth:              wrappedAuth{ctxFunc, services},
+		Builds:            wrappedBuilds{ctxFunc, services},
+		Changesets:        wrappedChangesets{ctxFunc, services},
+		Defs:              wrappedDefs{ctxFunc, services},
+		Deltas:            wrappedDeltas{ctxFunc, services},
+		GraphUplink:       wrappedGraphUplink{ctxFunc, services},
+		Markdown:          wrappedMarkdown{ctxFunc, services},
+		Meta:              wrappedMeta{ctxFunc, services},
+		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
+		Notify:            wrappedNotify{ctxFunc, services},
+		Orgs:              wrappedOrgs{ctxFunc, services},
+		People:            wrappedPeople{ctxFunc, services},
+		RegisteredClients: wrappedRegisteredClients{ctxFunc, services},
+		RepoBadges:        wrappedRepoBadges{ctxFunc, services},
+		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
+		RepoTree:          wrappedRepoTree{ctxFunc, services},
+		Repos:             wrappedRepos{ctxFunc, services},
+		Search:            wrappedSearch{ctxFunc, services},
+		Storage:           wrappedStorage{ctxFunc, services},
+		Units:             wrappedUnits{ctxFunc, services},
+		UserKeys:          wrappedUserKeys{ctxFunc, services},
+		Users:             wrappedUsers{ctxFunc, services},
 	}
 	return s
 }
@@ -1271,71 +1270,6 @@ func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, v1 *pbtypes.Void)
 	}
 
 	rv, err := innerSvc.AddToWaitlist(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedMirroredRepoSSHKeys struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MirroredRepoSSHKeysOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
-	}
-
-	rv, err := innerSvc.Create(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MirroredRepoSSHKeysOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MirroredRepoSSHKeysOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "MirroredRepoSSHKeys")
-	}
-
-	rv, err := innerSvc.Delete(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

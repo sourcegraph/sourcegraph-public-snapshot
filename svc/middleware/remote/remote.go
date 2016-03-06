@@ -23,30 +23,29 @@ import (
 
 // Services is a full set of remote services (implemented by calling a client to invoke each method on a remote server).
 var Services = svc.Services{
-	Accounts:            remoteAccounts{},
-	Auth:                remoteAuth{},
-	Builds:              remoteBuilds{},
-	Changesets:          remoteChangesets{},
-	Defs:                remoteDefs{},
-	Deltas:              remoteDeltas{},
-	GraphUplink:         remoteGraphUplink{},
-	Markdown:            remoteMarkdown{},
-	Meta:                remoteMeta{},
-	MirrorRepos:         remoteMirrorRepos{},
-	MirroredRepoSSHKeys: remoteMirroredRepoSSHKeys{},
-	Notify:              remoteNotify{},
-	Orgs:                remoteOrgs{},
-	People:              remotePeople{},
-	RegisteredClients:   remoteRegisteredClients{},
-	RepoBadges:          remoteRepoBadges{},
-	RepoStatuses:        remoteRepoStatuses{},
-	RepoTree:            remoteRepoTree{},
-	Repos:               remoteRepos{},
-	Search:              remoteSearch{},
-	Storage:             remoteStorage{},
-	Units:               remoteUnits{},
-	UserKeys:            remoteUserKeys{},
-	Users:               remoteUsers{},
+	Accounts:          remoteAccounts{},
+	Auth:              remoteAuth{},
+	Builds:            remoteBuilds{},
+	Changesets:        remoteChangesets{},
+	Defs:              remoteDefs{},
+	Deltas:            remoteDeltas{},
+	GraphUplink:       remoteGraphUplink{},
+	Markdown:          remoteMarkdown{},
+	Meta:              remoteMeta{},
+	MirrorRepos:       remoteMirrorRepos{},
+	Notify:            remoteNotify{},
+	Orgs:              remoteOrgs{},
+	People:            remotePeople{},
+	RegisteredClients: remoteRegisteredClients{},
+	RepoBadges:        remoteRepoBadges{},
+	RepoStatuses:      remoteRepoStatuses{},
+	RepoTree:          remoteRepoTree{},
+	Repos:             remoteRepos{},
+	Search:            remoteSearch{},
+	Storage:           remoteStorage{},
+	Units:             remoteUnits{},
+	UserKeys:          remoteUserKeys{},
+	Users:             remoteUsers{},
 }
 
 type remoteAccounts struct{ sourcegraph.AccountsServer }
@@ -491,34 +490,6 @@ func (s remoteMirrorRepos) AddToWaitlist(ctx context.Context, v1 *pbtypes.Void) 
 		return nil, err
 	}
 	return c.MirrorRepos.AddToWaitlist(ctx, v1)
-}
-
-type remoteMirroredRepoSSHKeys struct {
-	sourcegraph.MirroredRepoSSHKeysServer
-}
-
-func (s remoteMirroredRepoSSHKeys) Create(ctx context.Context, v1 *sourcegraph.MirroredRepoSSHKeysCreateOp) (*pbtypes.Void, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.MirroredRepoSSHKeys.Create(ctx, v1)
-}
-
-func (s remoteMirroredRepoSSHKeys) Get(ctx context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.SSHPrivateKey, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.MirroredRepoSSHKeys.Get(ctx, v1)
-}
-
-func (s remoteMirroredRepoSSHKeys) Delete(ctx context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return c.MirroredRepoSSHKeys.Delete(ctx, v1)
 }
 
 type remoteNotify struct{ sourcegraph.NotifyServer }

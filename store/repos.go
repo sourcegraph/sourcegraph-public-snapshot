@@ -48,9 +48,6 @@ type RepoUpdate struct {
 
 // RepoConfigs is the interface for storing Sourcegraph-specific repo
 // config.
-//
-// Note: See the RepoOrigins doc for more information on the split
-// between Sourcegraph-specific data and origin-specific data.
 type RepoConfigs interface {
 	Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error)
 	Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error

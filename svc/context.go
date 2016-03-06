@@ -22,62 +22,60 @@ import (
 type contextKey int
 
 const (
-	_GitTransportKey        contextKey = iota
-	_MultiRepoImporterKey   contextKey = iota
-	_AccountsKey            contextKey = iota
-	_AuthKey                contextKey = iota
-	_BuildsKey              contextKey = iota
-	_ChangesetsKey          contextKey = iota
-	_DefsKey                contextKey = iota
-	_DeltasKey              contextKey = iota
-	_GraphUplinkKey         contextKey = iota
-	_MarkdownKey            contextKey = iota
-	_MetaKey                contextKey = iota
-	_MirrorReposKey         contextKey = iota
-	_MirroredRepoSSHKeysKey contextKey = iota
-	_NotifyKey              contextKey = iota
-	_OrgsKey                contextKey = iota
-	_PeopleKey              contextKey = iota
-	_RegisteredClientsKey   contextKey = iota
-	_RepoBadgesKey          contextKey = iota
-	_RepoStatusesKey        contextKey = iota
-	_RepoTreeKey            contextKey = iota
-	_ReposKey               contextKey = iota
-	_SearchKey              contextKey = iota
-	_StorageKey             contextKey = iota
-	_UnitsKey               contextKey = iota
-	_UserKeysKey            contextKey = iota
-	_UsersKey               contextKey = iota
+	_GitTransportKey      contextKey = iota
+	_MultiRepoImporterKey contextKey = iota
+	_AccountsKey          contextKey = iota
+	_AuthKey              contextKey = iota
+	_BuildsKey            contextKey = iota
+	_ChangesetsKey        contextKey = iota
+	_DefsKey              contextKey = iota
+	_DeltasKey            contextKey = iota
+	_GraphUplinkKey       contextKey = iota
+	_MarkdownKey          contextKey = iota
+	_MetaKey              contextKey = iota
+	_MirrorReposKey       contextKey = iota
+	_NotifyKey            contextKey = iota
+	_OrgsKey              contextKey = iota
+	_PeopleKey            contextKey = iota
+	_RegisteredClientsKey contextKey = iota
+	_RepoBadgesKey        contextKey = iota
+	_RepoStatusesKey      contextKey = iota
+	_RepoTreeKey          contextKey = iota
+	_ReposKey             contextKey = iota
+	_SearchKey            contextKey = iota
+	_StorageKey           contextKey = iota
+	_UnitsKey             contextKey = iota
+	_UserKeysKey          contextKey = iota
+	_UsersKey             contextKey = iota
 )
 
 // Services contains fields for all existing services.
 type Services struct {
-	GitTransport        gitpb.GitTransportServer
-	MultiRepoImporter   pb.MultiRepoImporterServer
-	Accounts            sourcegraph.AccountsServer
-	Auth                sourcegraph.AuthServer
-	Builds              sourcegraph.BuildsServer
-	Changesets          sourcegraph.ChangesetsServer
-	Defs                sourcegraph.DefsServer
-	Deltas              sourcegraph.DeltasServer
-	GraphUplink         sourcegraph.GraphUplinkServer
-	Markdown            sourcegraph.MarkdownServer
-	Meta                sourcegraph.MetaServer
-	MirrorRepos         sourcegraph.MirrorReposServer
-	MirroredRepoSSHKeys sourcegraph.MirroredRepoSSHKeysServer
-	Notify              sourcegraph.NotifyServer
-	Orgs                sourcegraph.OrgsServer
-	People              sourcegraph.PeopleServer
-	RegisteredClients   sourcegraph.RegisteredClientsServer
-	RepoBadges          sourcegraph.RepoBadgesServer
-	RepoStatuses        sourcegraph.RepoStatusesServer
-	RepoTree            sourcegraph.RepoTreeServer
-	Repos               sourcegraph.ReposServer
-	Search              sourcegraph.SearchServer
-	Storage             sourcegraph.StorageServer
-	Units               sourcegraph.UnitsServer
-	UserKeys            sourcegraph.UserKeysServer
-	Users               sourcegraph.UsersServer
+	GitTransport      gitpb.GitTransportServer
+	MultiRepoImporter pb.MultiRepoImporterServer
+	Accounts          sourcegraph.AccountsServer
+	Auth              sourcegraph.AuthServer
+	Builds            sourcegraph.BuildsServer
+	Changesets        sourcegraph.ChangesetsServer
+	Defs              sourcegraph.DefsServer
+	Deltas            sourcegraph.DeltasServer
+	GraphUplink       sourcegraph.GraphUplinkServer
+	Markdown          sourcegraph.MarkdownServer
+	Meta              sourcegraph.MetaServer
+	MirrorRepos       sourcegraph.MirrorReposServer
+	Notify            sourcegraph.NotifyServer
+	Orgs              sourcegraph.OrgsServer
+	People            sourcegraph.PeopleServer
+	RegisteredClients sourcegraph.RegisteredClientsServer
+	RepoBadges        sourcegraph.RepoBadgesServer
+	RepoStatuses      sourcegraph.RepoStatusesServer
+	RepoTree          sourcegraph.RepoTreeServer
+	Repos             sourcegraph.ReposServer
+	Search            sourcegraph.SearchServer
+	Storage           sourcegraph.StorageServer
+	Units             sourcegraph.UnitsServer
+	UserKeys          sourcegraph.UserKeysServer
+	Users             sourcegraph.UsersServer
 }
 
 // RegisterAll calls all of the the RegisterXxxServer funcs.
@@ -129,10 +127,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.MirrorRepos != nil {
 		sourcegraph.RegisterMirrorReposServer(s, svcs.MirrorRepos)
-	}
-
-	if svcs.MirroredRepoSSHKeys != nil {
-		sourcegraph.RegisterMirroredRepoSSHKeysServer(s, svcs.MirroredRepoSSHKeys)
 	}
 
 	if svcs.Notify != nil {
@@ -238,10 +232,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.MirrorRepos != nil {
 		ctx = WithMirrorRepos(ctx, s.MirrorRepos)
-	}
-
-	if s.MirroredRepoSSHKeys != nil {
-		ctx = WithMirroredRepoSSHKeys(ctx, s.MirroredRepoSSHKeys)
 	}
 
 	if s.Notify != nil {
@@ -569,29 +559,6 @@ func MirrorRepos(ctx context.Context) sourcegraph.MirrorReposServer {
 // MirrorReposOrNil returns the context's MirrorRepos service if present, or else nil.
 func MirrorReposOrNil(ctx context.Context) sourcegraph.MirrorReposServer {
 	s, ok := ctx.Value(_MirrorReposKey).(sourcegraph.MirrorReposServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithMirroredRepoSSHKeys returns a copy of parent that uses the given MirroredRepoSSHKeys service.
-func WithMirroredRepoSSHKeys(ctx context.Context, s sourcegraph.MirroredRepoSSHKeysServer) context.Context {
-	return context.WithValue(ctx, _MirroredRepoSSHKeysKey, s)
-}
-
-// MirroredRepoSSHKeys gets the context's MirroredRepoSSHKeys service. If the service is not present, it panics.
-func MirroredRepoSSHKeys(ctx context.Context) sourcegraph.MirroredRepoSSHKeysServer {
-	s, ok := ctx.Value(_MirroredRepoSSHKeysKey).(sourcegraph.MirroredRepoSSHKeysServer)
-	if !ok || s == nil {
-		panic("no MirroredRepoSSHKeys set in context")
-	}
-	return s
-}
-
-// MirroredRepoSSHKeysOrNil returns the context's MirroredRepoSSHKeys service if present, or else nil.
-func MirroredRepoSSHKeysOrNil(ctx context.Context) sourcegraph.MirroredRepoSSHKeysServer {
-	s, ok := ctx.Value(_MirroredRepoSSHKeysKey).(sourcegraph.MirroredRepoSSHKeysServer)
 	if ok {
 		return s
 	}

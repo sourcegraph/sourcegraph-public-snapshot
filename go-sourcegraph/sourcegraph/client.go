@@ -6,30 +6,29 @@ import "google.golang.org/grpc"
 // is done using gRPC over HTTP/2.
 type Client struct {
 	// Services used to communicate with different parts of the Sourcegraph API.
-	Accounts            AccountsClient
-	Auth                AuthClient
-	Builds              BuildsClient
-	Defs                DefsClient
-	Deltas              DeltasClient
-	GraphUplink         GraphUplinkClient
-	Markdown            MarkdownClient
-	Meta                MetaClient
-	MirrorRepos         MirrorReposClient
-	MirroredRepoSSHKeys MirroredRepoSSHKeysClient
-	Notify              NotifyClient
-	Orgs                OrgsClient
-	People              PeopleClient
-	RegisteredClients   RegisteredClientsClient
-	RepoBadges          RepoBadgesClient
-	RepoStatuses        RepoStatusesClient
-	RepoTree            RepoTreeClient
-	Repos               ReposClient
-	Storage             StorageClient
-	Changesets          ChangesetsClient
-	Search              SearchClient
-	Units               UnitsClient
-	Users               UsersClient
-	UserKeys            UserKeysClient
+	Accounts          AccountsClient
+	Auth              AuthClient
+	Builds            BuildsClient
+	Defs              DefsClient
+	Deltas            DeltasClient
+	GraphUplink       GraphUplinkClient
+	Markdown          MarkdownClient
+	Meta              MetaClient
+	MirrorRepos       MirrorReposClient
+	Notify            NotifyClient
+	Orgs              OrgsClient
+	People            PeopleClient
+	RegisteredClients RegisteredClientsClient
+	RepoBadges        RepoBadgesClient
+	RepoStatuses      RepoStatusesClient
+	RepoTree          RepoTreeClient
+	Repos             ReposClient
+	Storage           StorageClient
+	Changesets        ChangesetsClient
+	Search            SearchClient
+	Units             UnitsClient
+	Users             UsersClient
+	UserKeys          UserKeysClient
 
 	// gRPC client connection used to communicate with the Sourcegraph
 	// API.
@@ -51,7 +50,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Markdown = NewMarkdownClient(conn)
 	c.Meta = NewMetaClient(conn)
 	c.MirrorRepos = NewMirrorReposClient(conn)
-	c.MirroredRepoSSHKeys = NewMirroredRepoSSHKeysClient(conn)
 	c.Notify = NewNotifyClient(conn)
 	c.Orgs = NewOrgsClient(conn)
 	c.People = NewPeopleClient(conn)

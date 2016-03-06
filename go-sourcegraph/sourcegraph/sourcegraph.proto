@@ -1095,40 +1095,6 @@ service MirrorRepos {
 	rpc AddToWaitlist(pbtypes.Void) returns (WaitlistState);
 }
 
-// MirroredRepoSSHKeys stores repository SSH keys (e.g., to access
-// private repos on some external origin that we mirror).
-service MirroredRepoSSHKeys {
-	rpc Create(MirroredRepoSSHKeysCreateOp) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			post: "/mirrored_repo_ssh_keys"
-		};
-	};
-
-	rpc Get(RepoSpec) returns (SSHPrivateKey) {
-		option (google.api.http) = {
-			get: "/mirrored_repo_ssh_keys"
-		};
-	};
-
-	rpc Delete(RepoSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			delete: "/mirrored_repo_ssh_keys"
-		};
-	};
-}
-
-message MirroredRepoSSHKeysCreateOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-	SSHPrivateKey Key = 2 [(gogoproto.nullable) = false];
-}
-
-// An SSHPrivateKey is an SSH key used to access a repository.
-message SSHPrivateKey {
-	// PEM is the encoded key.
-	bytes PEM = 2;
-}
-
-
 // A Build represents a scheduled, completed, or failed repository analysis and
 // import job.
 //
