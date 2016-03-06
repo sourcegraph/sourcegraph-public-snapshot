@@ -1385,6 +1385,10 @@
 			"Rev": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18"
 		},
 		{
+			"ImportPath": "sourcegraph.com/sqs/rego",
+			"Rev": "312483520e064868d7ee0f0c0365b96437ec33dc"
+		},
+		{
 			"ImportPath": "src.sourcegraph.com/apps/apidocs",
 			"Rev": "3d7eec8280f112d8290978ac8e0cc63a76b62e8a"
 		},
