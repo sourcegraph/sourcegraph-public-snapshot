@@ -3,14 +3,12 @@ package ui
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"github.com/sourcegraph/mux"
 
-	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
@@ -97,19 +95,11 @@ func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
 
 	results := make([]payloads.TextSearchResult, len(vcsEntryList.SearchResults))
 	for i, vcsEntry := range vcsEntryList.SearchResults {
-		matchEntryString := string(vcsEntry.Match)
-		matchEntryLines := strings.Split(matchEntryString, "\n")
-
-		sanitizedMatchEntryLines := make([]*pbtypes.HTML, len(matchEntryLines))
-		for j, line := range matchEntryLines {
-			sanitizedMatchEntryLines[j] = htmlutil.SanitizeForPB(line)
-		}
-
 		results[i] = payloads.TextSearchResult{
 			File:      vcsEntry.File,
 			StartLine: vcsEntry.StartLine,
 			EndLine:   vcsEntry.EndLine,
-			Lines:     sanitizedMatchEntryLines,
+			Contents:  string(vcsEntry.Match),
 		}
 	}
 

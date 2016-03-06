@@ -19,7 +19,7 @@ describe("TextSearchResults", () => {
 			File: "app.go",
 			StartLine: 1,
 			EndLine: 10,
-			Lines: [],
+			Contents: "abcdefg",
 		};
 		autotest(testdataResults, `${__dirname}/testdata/TextSearchResults-results.json`,
 			<TextSearchResults resultData={{Results: [exampleResult], Total: 1}} repo="aRepo" rev="aRev" query="aQuery" page={1} />

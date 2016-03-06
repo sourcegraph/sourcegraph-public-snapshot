@@ -6,6 +6,7 @@ import * as CodeActions from "sourcegraph/code/CodeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import CodeListing from "sourcegraph/code/CodeListing";
 import hotLink from "sourcegraph/util/hotLink";
+import * as router from "sourcegraph/util/router";
 
 class ExampleView extends Component {
 	reconcileState(state, props) {
@@ -68,11 +69,12 @@ class ExampleView extends Component {
 	render() {
 		let example = this.state.displayedExample;
 		let loading = this.state.selectedIndex !== this.state.displayedIndex && this.state.count !== 0;
+		let url = example && router.tree(example.Repo, example.Rev, example.File, example.Range.StartLine, example.Range.EndLine);
 		return (
 			<div className="examples">
 				<div className="example">
 					<header>
-						{example && <span>Used in <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}#L${example.Range.StartLine}-${example.Range.EndLine}`} onClick={hotLink}>{example.File}:{example.Range.StartLine}-{example.Range.EndLine}</a></span>}
+						{example && <span>Used in <a href={url} onClick={hotLink}>{example.File}:{example.Range.StartLine}-{example.Range.EndLine}</a></span>}
 						{loading && <i className="fa fa-spinner fa-spin"></i>}
 						{this.state.count === 0 && "No examples available"}
 					</header>

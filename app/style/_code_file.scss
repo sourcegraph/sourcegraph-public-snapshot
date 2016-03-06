@@ -98,7 +98,6 @@
 .line-numbered-code {
 	width: 100%;
 	.line-content {
-		width: 100%;
 	}
 }
 
@@ -131,6 +130,9 @@
 
 		td {
 			vertical-align: top;
+		}
+		.line-content {
+			width: 100%;
 		}
 	}
 

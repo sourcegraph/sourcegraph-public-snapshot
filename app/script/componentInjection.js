@@ -16,7 +16,6 @@ var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var AlertView = require("./components/AlertView");
-var CodeFileRange = require("./components/CodeFileRange");
 var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
 var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
 var SearchBar = require("sourcegraph/search/SearchBar").default;
@@ -51,23 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (el.length > 0) {
 		ReactDOM.render(
 			<LocationAdaptor component={CodeFileRouter} />,
-			el[0]
-		);
-	}
-
-	// TODO factor out issues app-specific code.
-	el = $("#IssuesReference");
-	if (el.length > 0 && window.preloadedIssuesReference) {
-		var reference = JSON.parse(window.preloadedIssuesReference);
-		var lines = reference.Contents.split("\n").map((line) => ({__html: line}));
-		ReactDOM.render(
-			<CodeFileRange
-				repo={reference.Repo.URI}
-				rev={reference.CommitID}
-				path={reference.Path}
-				startLine={reference.StartLine}
-				endLine={reference.EndLine}
-				lines={lines} />,
 			el[0]
 		);
 	}

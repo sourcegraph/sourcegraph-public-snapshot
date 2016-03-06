@@ -47,9 +47,11 @@ class CodeListing extends Component {
 	reconcileState(state, props) {
 		state.startLine = props.startLine || null;
 		state.endLine = props.endLine || null;
+		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef;
 		state.activeDef = props.activeDef || null;
+		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
 
 		let updateAnns = false;
@@ -199,14 +201,14 @@ class CodeListing extends Component {
 
 		let lines = this.state.lines.map((line, i) => {
 			const visible = i >= visibleLinesStart && i < visibleLinesEnd;
-			const lineNumber = 1 + i;
+			const lineNumber = 1 + i + this.state.contentsOffsetLine;
 			return (
 				<CodeLineView
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
 					annotations={visible ? (this.state.lineAnns[i] || null) : null}
-					selected={this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
+					selected={this.state.highlightSelectedLines && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={visible ? this.state.highlightedDef : null}
 					activeDef={visible ? this.state.activeDef : null}
 					key={i} />
@@ -233,6 +235,14 @@ CodeListing.propTypes = {
 	endCol: React.PropTypes.number,
 	highlightedDef: React.PropTypes.string,
 	activeDef: React.PropTypes.string,
+
+	// contentsOffsetLine indicates that the contents string does not
+	// start at line 1 within the file, but rather some other line number.
+	// It must be specified when startLine > 1 but the contents don't begin at
+	// the first line of the file.
+	contentsOffsetLine: React.PropTypes.number,
+
+	highlightSelectedLines: React.PropTypes.bool,
 
 	// dispatchSelections is whether this CodeListing should emit CodeActions.SelectCharRange
 	// actions when the text selection changes. It should be true for the main file view but

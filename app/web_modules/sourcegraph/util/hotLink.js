@@ -6,10 +6,18 @@ export class GoTo {
 	}
 }
 
-export default function(event) {
+export default function hotLink(event) {
 	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
 		return;
 	}
 	event.preventDefault();
-	Dispatcher.dispatch(new GoTo(event.currentTarget.href));
+	Dispatcher.dispatch(new GoTo(event.currentTarget.href || event.currentTarget.dataset.href));
+}
+
+// hotLinkAnyElement lets clicks on child A elements continue with the default
+// behavior. Otherwise it behaves like hotLink.
+export function hotLinkAnyElement(event) {
+	if (!event.target) return null;
+	if (event.target.tagName === "A") return null;
+	return hotLink(event);
 }

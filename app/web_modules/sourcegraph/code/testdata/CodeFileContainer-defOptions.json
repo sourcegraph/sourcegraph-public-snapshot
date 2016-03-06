@@ -37,6 +37,7 @@
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
+												"highlightSelectedLines": true,
 												"dispatchSelections": true
 											}
 										}

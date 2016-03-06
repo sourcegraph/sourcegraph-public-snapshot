@@ -128,6 +128,7 @@ class CodeFileContainer extends Container {
 							contents={this.state.file.Entry.ContentsString}
 							annotations={this.state.anns ? this.state.anns.Annotations : null}
 							lineNumbers={true}
+							highlightSelectedLines={true}
 							startLine={this.state.startLine}
 							startCol={this.state.startCol}
 							endLine={this.state.endLine}
