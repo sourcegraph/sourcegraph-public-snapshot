@@ -174,7 +174,7 @@ class UserList extends Component {
 									</label>
 								</div>
 							</div>
-							<button type="submit" className={classNames("btn btn-primary create-repo-btn", {
+							<button type="submit" className={classNames("btn btn-primary", {
 								disabled: !this._emailValid(),
 							})}
 								onClick={this._handleAddUser}>Invite</button>

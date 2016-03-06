@@ -10,21 +10,11 @@ import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 
-import Dispatcher from "sourcegraph/Dispatcher";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-
 import AlertContainer from "sourcegraph/alerts/AlertContainer";
-
-import classNames from "classnames";
 
 class DashboardContainer extends Container {
 	constructor(props) {
 		super(props);
-		this.state = {
-			repoName: "", // for the repo create input
-		};
-		this._handleRepoTextInput = this._handleRepoTextInput.bind(this);
-		this._handleCreateRepo = this._handleCreateRepo.bind(this);
 		this._dismissWelcome = this._dismissWelcome.bind(this);
 	}
 
@@ -53,18 +43,6 @@ class DashboardContainer extends Container {
 		state.allowGitHubMirrors = DashboardStore.allowMirrors;
 		state.allowStandaloneUsers = !DashboardStore.allowMirrors;
 		state.allowGitHubUsers = DashboardStore.allowMirrors;
-	}
-
-	_handleRepoTextInput(e) {
-		this.setState(update(this.state, {
-			repoName: {$set: e.target.value},
-		}));
-	}
-
-	_handleCreateRepo() {
-		if (this.state.repoName === "") return;
-		Dispatcher.dispatch(new DashboardActions.WantCreateRepo(this.state.repoName));
-		this.setState({showCreateRepoWell: false, repoName: ""});
 	}
 
 	_dismissWelcome() {
@@ -107,32 +85,7 @@ class DashboardContainer extends Container {
 					}
 					<div className="dash-repos-header">
 						<h3 className="your-repos">Repositories</h3>
-						{!this.state.allowGitHubMirrors && (this.state.currentUser.Admin || this.state.currentUser.Write) &&
-							<i className={classNames("btn-icon sg-icon", {
-								"sg-icon-plus-box": !this.state.showCreateRepoWell,
-								"sg-icon-close": this.state.showCreateRepoWell,
-							})}
-								onClick={_ => this.setState({showCreateRepoWell: !this.state.showCreateRepoWell})} />
-						}
 					</div>
-					{this.state.showCreateRepoWell && <div className="well add-repo-well">
-						<div className="form-inline">
-							<div className={classNames("form-group", {
-								"has-error": false, // TODO: add repo name validation
-							})}>
-								<input className="form-control create-repo-input"
-									placeholder="Repository name"
-									type="text"
-									value={this.state.repoName}
-									onKeyPress={(e) => { if ((e.keyCode || e.which) === 13) this._handleCreateRepo(); }}
-									onChange={this._handleRepoTextInput} />
-							</div>
-							<button className={classNames("btn btn-primary create-repo-btn", {
-								disabled: this.state.repoName === "",
-							})}
-								onClick={this._handleCreateRepo}>CREATE</button>
-						</div>
-					</div>}
 					<div>
 						<DashboardRepos repos={this.state.repos}
 							onWaitlist={this.state.onWaitlist}

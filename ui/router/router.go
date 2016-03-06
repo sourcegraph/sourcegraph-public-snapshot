@@ -17,8 +17,6 @@ const (
 	DefPopover  = "def.popover"
 	DefExamples = "def.examples"
 
-	RepoCreate = "repo.create"
-
 	RepoCommits = "repo.commits"
 
 	SearchTokens = "search.tokens"
@@ -90,10 +88,6 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/.commits").
 		Methods("GET").
 		Name(RepoCommits)
-
-	base.Path("/.repo-create").
-		Methods("GET", "POST").
-		Name(RepoCreate)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").

@@ -1,17 +1,5 @@
 // For the backend.
 
-export class WantCreateRepo {
-	constructor(name) {
-		this.name = name;
-	}
-}
-
-export class RepoCreated {
-	constructor(repos) {
-		this.repos = repos;
-	}
-}
-
 export class WantInviteUser {
 	constructor(email, permission) {
 		this.email = email;

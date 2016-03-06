@@ -34,10 +34,6 @@ export class DashboardStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 
-		case DashboardActions.RepoCreated:
-			this.repos = action.repos;
-			break;
-
 		case DashboardActions.UserInvited:
 			this.users = update(this.users, {$push: [action.user]});
 			break;

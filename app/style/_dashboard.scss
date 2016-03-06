@@ -114,28 +114,6 @@
 				margin-top: 0;
 				flex: 9;
 			}
-
-			.plus-btn {
-				display: inline-block;
-				background-color: $btn-primary-color;
-
-				width: 16px;
-				height: 19px;
-				border-radius: 2px;
-				margin-right: 10px;
-			}
-		}
-
-		.add-repo-well {
-			margin-top: 10px;
-		}
-
-		.create-repo-input {
-			min-width: 300px;
-		}
-
-		.create-repo-btn {
-			margin-left: 15px;
 		}
 
 		.repos-list nav {

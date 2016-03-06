@@ -8,25 +8,6 @@ const DashboardBackend = {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.WantCreateRepo:
-			DashboardBackend.xhr({
-				uri: `/.ui/.repo-create?RepoURI=${action.name}`,
-				method: "POST",
-				json: {},
-			}, function(err, resp, body) {
-				if (err) {
-					// TODO: some proper error handling
-					console.error(err);
-					return;
-				}
-				if (resp.statusCode !== 200) {
-					// TODO: some proper error handling
-					console.log(resp);
-					return;
-				}
-				Dispatcher.dispatch(new DashboardActions.RepoCreated(body));
-			});
-			break;
 		case DashboardActions.WantInviteUser:
 			DashboardBackend.xhr({
 				uri: `/.ui/.invite`,
