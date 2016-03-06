@@ -146,12 +146,10 @@ pre code, .line-numbered-code td {
 }
 
 .main-byte-range {
+	> .line-number {
+		background-color: $active-code-line-number-bg;
+	}
 	> .line-content {
 		background-color: $active-code-bg;
-		animation: highlight-flash 1s;
 	}
-}
-
-@keyframes highlight-flash {
-	5% { background-color: $active-code-flash-bg; }
 }
