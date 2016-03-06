@@ -18,36 +18,6 @@ describe("DashboardBackend", () => {
 });
 
 describe("DashboardBackend", () => {
-	it("should handle WantddMirrorRepos", () => {
-		let expectedURI = "/.ui/.repo-mirror";
-
-		DashboardBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			expect(options.json).to.have.property("Repos", "someRepos");
-			callback(null, {statusCode: 200}, "someFile");
-		};
-		expect(Dispatcher.catchDispatched(() => {
-			Dispatcher.directDispatch(DashboardBackend, new DashboardActions.WantAddMirrorRepos("someRepos"));
-		})).to.eql([new DashboardActions.MirrorReposAdded("someFile")]);
-	});
-});
-
-describe("DashboardBackend", () => {
-	it("should handle WantAddMirrorRepo", () => {
-		let expectedURI = "/.ui/.repo-mirror";
-
-		DashboardBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			expect(options.json).to.have.property("Repos");
-			callback(null, {statusCode: 200}, "someFile");
-		};
-		expect(Dispatcher.catchDispatched(() => {
-			Dispatcher.directDispatch(DashboardBackend, new DashboardActions.WantAddMirrorRepo("someRepos"));
-		})).to.eql([new DashboardActions.MirrorRepoAdded("someRepos", "someFile")]);
-	});
-});
-
-describe("DashboardBackend", () => {
 	it("should handle WantInviteUser", () => {
 		let action = {
 			email: "123@abc.com",

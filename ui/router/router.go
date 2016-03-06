@@ -18,7 +18,6 @@ const (
 	DefExamples = "def.examples"
 
 	RepoCreate = "repo.create"
-	RepoMirror = "repo.mirror"
 
 	RepoCommits = "repo.commits"
 
@@ -109,10 +108,6 @@ func New(base *mux.Router) *mux.Router {
 		Name(UserInvite)
 
 	if authutil.ActiveFlags.PrivateMirrors {
-		base.Path("/.repo-mirror").
-			Methods("POST").
-			Name(RepoMirror)
-
 		base.Path("/.invite-bulk").
 			Methods("POST").
 			Name(UserInviteBulk)

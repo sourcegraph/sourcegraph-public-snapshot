@@ -30,10 +30,6 @@ func (r *Router) URLToGitHubOAuth() *url.URL {
 	return r.URLTo(GitHubOAuth2Initiate)
 }
 
-func (r *Router) URLToRepoCreate() *url.URL {
-	return r.URLTo(RepoCreate)
-}
-
 func (r *Router) URLToRepoRev(repoURI string, rev string) (*url.URL, error) {
 	return r.URLToRepoSubrouteRev(Repo, repoURI, rev)
 }

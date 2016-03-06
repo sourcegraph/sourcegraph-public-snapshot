@@ -38,10 +38,6 @@ export class DashboardStore extends Store {
 			this.repos = action.repos;
 			break;
 
-		case DashboardActions.MirrorRepoAdded:
-			window.location.href = `/${action.repo.URI}`;
-			break;
-
 		case DashboardActions.UserInvited:
 			this.users = update(this.users, {$push: [action.user]});
 			break;

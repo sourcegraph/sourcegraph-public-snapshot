@@ -3,16 +3,10 @@ package app
 import (
 	"errors"
 
-	"fmt"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
-
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
@@ -37,39 +31,6 @@ func init() {
 	internal.RegisterErrorHandlerForType(&handlerutil.NoVCSDataError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
 		return renderRepoNoVCSDataTemplate(w, r, err.(*handlerutil.NoVCSDataError).RepoCommon)
 	})
-}
-
-func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	repoURI := r.PostFormValue("repo-name")
-	if repoURI == "" {
-		log15.Warn("No repository URI provided with repo create request")
-		return errors.New("Must provide a repository name")
-	}
-
-	ctx, cl := handlerutil.Client(r)
-
-	if _, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI}); grpc.Code(err) != codes.NotFound {
-		switch err {
-		case nil:
-			log15.Warn("repo already exists", "repoURI", repoURI)
-			return fmt.Errorf("Repo %s already exists", repoURI)
-		default:
-			log15.Warn("problem fetching repository", "error", err)
-			return fmt.Errorf("Problem fetching repository: %s", err)
-		}
-	}
-
-	repo, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-		URI: repoURI,
-		VCS: "git",
-	})
-	if err != nil {
-		log15.Error("failed to create repo", "error", err)
-		return err
-	}
-
-	http.Redirect(w, r, router.Rel.URLToRepo(repo.URI).String(), http.StatusSeeOther)
-	return nil
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {

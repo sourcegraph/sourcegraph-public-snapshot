@@ -73,7 +73,6 @@ func NewHandler(r *mux.Router) http.Handler {
 	}
 
 	if authutil.ActiveFlags.PrivateMirrors {
-		r.Get(ui_router.RepoMirror).Handler(handler(serveRepoMirror))
 		r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
 	}
 
