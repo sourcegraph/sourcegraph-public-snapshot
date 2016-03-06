@@ -9,11 +9,6 @@ be interested in some of the following features.
 
 Looking for something else? [Let us know!](mailto:support@sourcegraph.com)
 
-# Centralized LDAP
-
-To have Sourcegraph authenticate users via your directory server,
-follow the [LDAP configuration instructions]({{< relref "config/authentication.md" >}}).
-
 [Read more about Sourcegraph data collection.]({{< relref "management/data_collection.md" >}})
 
 # High scalability and availability

@@ -39,10 +39,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/auth/idkeystore"
-	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -580,14 +578,6 @@ func (c *ServeCmd) Execute(args []string) error {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()
-	}
-
-	if authutil.ActiveFlags.IsLDAP() {
-		if err := ldap.VerifyConfig(); err != nil {
-			log.Fatalf("Could not connect to LDAP server: %v", err)
-		} else {
-			log15.Info("Connection to LDAP server successful")
-		}
 	}
 
 	// Register client.

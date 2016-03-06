@@ -3303,7 +3303,7 @@ type ServerConfig struct {
 	// repositories.
 	AllowAnonymousReaders bool `protobuf:"varint,9,opt,name=AllowAnonymousReaders,proto3" json:"AllowAnonymousReaders,omitempty"`
 	// AuthSource is which mode of authentication is set up on the
-	// server (local|oauth|ldap).
+	// server (none|local).
 	AuthSource string `protobuf:"bytes,10,opt,name=AuthSource,proto3" json:"AuthSource,omitempty"`
 }
 

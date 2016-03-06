@@ -18,7 +18,6 @@ import (
 type dashboardData struct {
 	Repos          []*sourcegraph.Repo
 	Users          []*userInfo
-	IsLDAP         bool
 	PrivateMirrors bool
 	LinkGitHub     bool
 	OnWaitlist     bool
@@ -38,7 +37,6 @@ type marshalledDashboard struct {
 }
 
 func execDashboardTmpl(w http.ResponseWriter, r *http.Request, d *dashboardData) error {
-	d.IsLDAP = authutil.ActiveFlags.IsLDAP()
 	q := r.URL.Query()
 	if q.Get("github-onboarding") == "true" {
 		d.GitHubOnboarding = true

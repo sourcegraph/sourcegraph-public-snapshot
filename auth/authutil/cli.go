@@ -27,7 +27,7 @@ func init() {
 type Flags struct {
 	AllowAnonymousReaders bool `long:"auth.allow-anon-readers" description:"allow unauthenticated users to perform read operations (viewing repos, etc.)"`
 
-	Source string `long:"auth.source" description:"source of authentication to use (none|local|ldap)" default:"local"`
+	Source string `long:"auth.source" description:"source of authentication to use (none|local)" default:"local"`
 
 	// DeprecatedOAuth2AuthServer was deprecated because the OAuth2
 	// auth server is now always enabled.
@@ -50,11 +50,6 @@ type Flags struct {
 // IsLocal returns true if users are stored and authenticated locally.
 func (f Flags) IsLocal() bool {
 	return f.Source == "local"
-}
-
-// IsLDAP returns true if users are authenticated via the configured LDAP server.
-func (f Flags) IsLDAP() bool {
-	return f.Source == "ldap"
 }
 
 // HasUserAccounts returns a boolean value indicating whether user

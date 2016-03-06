@@ -3079,7 +3079,7 @@ message ServerConfig {
 	bool AllowAnonymousReaders = 9;
 
 	// AuthSource is which mode of authentication is set up on the
-	// server (local|oauth|ldap).
+	// server (none|local).
 	string AuthSource = 10;
 }
 

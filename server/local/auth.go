@@ -17,15 +17,12 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 var (
@@ -129,29 +126,11 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 
 	user, err := usersStore.Get(elevatedActor(ctx), sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
-		if !(store.IsUserNotFound(err) && authutil.ActiveFlags.IsLDAP()) {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	if authutil.ActiveFlags.IsLDAP() {
-		ldapuser, err := ldap.VerifyLogin(cred.Login, cred.Password)
-		if err != nil {
-			return nil, grpc.Errorf(codes.PermissionDenied, "LDAP auth failed: %v", err)
-		}
-
-		if user == nil {
-			user, err = linkLDAPUserAccount(ctx, ldapuser)
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		passwordStore := store.PasswordFromContext(ctx)
-
-		if passwordStore.CheckUIDPassword(elevatedActor(ctx), user.UID, cred.Password) != nil {
-			return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
-		}
+	if store.PasswordFromContext(ctx).CheckUIDPassword(elevatedActor(ctx), user.UID, cred.Password) != nil {
+		return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
 	}
 
 	a := authpkg.ActorFromContext(ctx)
@@ -336,25 +315,4 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 
 	err := extTokensStore.SetUserToken(ctx, dbToken)
 	return &pbtypes.Void{}, err
-}
-
-// linkLDAPUserAccount links the LDAP account with an account in the local users store.
-func linkLDAPUserAccount(ctx context.Context, ldapuser *ldap.LDAPUser) (*sourcegraph.User, error) {
-	if len(ldapuser.Emails) == 0 {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "LDAP accounts must have an associated email address to access Sourcegraph")
-	}
-
-	// Link the LDAP username with a user in the local accounts store.
-	userSpec, err := (&accounts{}).Create(elevatedActor(ctx), &sourcegraph.NewAccount{
-		// Use the LDAP username.
-		Login: ldapuser.Username,
-		// Use the common email address as the primary email.
-		Email: ldapuser.Emails[0],
-		// Password in local store is irrelevant since auth will be done via LDAP.
-		Password: randstring.NewLen(20),
-	})
-	return &sourcegraph.User{
-		UID:   userSpec.UID,
-		Login: userSpec.Login,
-	}, err
 }

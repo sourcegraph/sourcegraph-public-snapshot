@@ -214,12 +214,11 @@ func printRegisteredClient(c *sourcegraph.RegisteredClient) {
 }
 
 type regClientsUpdateCmd struct {
-	ClientName    string `long:"client-name"`
-	ClientURI     string `long:"client-uri"`
-	RedirectURI   string `long:"redirect-uri"`
-	Description   string `long:"description"`
-	AllowLogins   string `long:"allow-logins" description:"set to 'all' to allow any user to login to this client" default:"restricted"`
-	DefaultAccess string `long:"default-access" description:"set to 'write' to grant write access to new users (eg. for LDAP auth)" default:"read"`
+	ClientName  string `long:"client-name"`
+	ClientURI   string `long:"client-uri"`
+	RedirectURI string `long:"redirect-uri"`
+	Description string `long:"description"`
+	AllowLogins string `long:"allow-logins" description:"set to 'all' to allow any user to login to this client" default:"restricted"`
 
 	Args struct {
 		ClientID string `name:"CLIENT-ID"`
@@ -252,12 +251,6 @@ func (c *regClientsUpdateCmd) Execute(args []string) error {
 			rc.Meta = map[string]string{}
 		}
 		rc.Meta["allow-logins"] = c.AllowLogins
-	}
-	if c.DefaultAccess != "" {
-		if rc.Meta == nil {
-			rc.Meta = map[string]string{}
-		}
-		rc.Meta["default-access"] = c.DefaultAccess
 	}
 	if _, err := cl.RegisteredClients.Update(client.Ctx, rc); err != nil {
 		return err
