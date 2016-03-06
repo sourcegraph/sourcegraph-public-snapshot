@@ -2,20 +2,41 @@ import React from "react";
 
 import CodeStore from "sourcegraph/code/CodeStore";
 import Container from "sourcegraph/Container";
+import * as DefActions from "sourcegraph/def/DefActions";
+import DefStore from "sourcegraph/def/DefStore";
+import DefTooltip from "sourcegraph/def/DefTooltip";
 import DiffFileList from "sourcegraph/delta/DiffFileList";
+import Dispatcher from "sourcegraph/Dispatcher";
 import FileDiff from "sourcegraph/delta/FileDiff";
+
+// TODO(sqs): FileDiffs does not yet support multiple-defs (when a single
+// ref links to multiple defs, like Go embedded fields linking to both the
+// type and the field). We could copy over the implementation from
+// CodeFileContainer, but that is going to be factored out soon, and let's
+// keep it clean.
 
 class FileDiffs extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.annotations = CodeStore.annotations;
+
+		state.defs = DefStore.defs;
+		state.highlightedDef = DefStore.highlightedDef || null;
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
+			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
+		}
 	}
 
 	stores() {
-		return [CodeStore];
+		return [CodeStore, DefStore];
 	}
 
 	render() {
+		const highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
+
 		return (
 			<div>
 				<DiffFileList files={this.props.files} stats={this.props.stats} />
@@ -28,8 +49,10 @@ class FileDiffs extends Container {
 						baseRev={this.props.baseRev}
 						headRepo={this.props.headRepo}
 						headRev={this.props.headRev}
-						annotations={this.state.annotations} />
+						annotations={this.state.annotations}
+						defs={this.state.defs} />
 				))}
+				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
 			</div>
 		);
 	}

@@ -34,6 +34,9 @@
 						"headRev": "hv",
 						"annotations": {
 							"content": {}
+						},
+						"defs": {
+							"content": {}
 						}
 					}
 				},
@@ -51,6 +54,9 @@
 						"headRepo": "hr",
 						"headRev": "hv",
 						"annotations": {
+							"content": {}
+						},
+						"defs": {
 							"content": {}
 						}
 					}
