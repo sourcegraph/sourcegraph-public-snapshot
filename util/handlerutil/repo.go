@@ -411,7 +411,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 
 	// this can not be moved to svc/local, because HTML sanitation needs to
 	// happen on the local sourcegraph instance, not on an untrusted
-	// federation remote
+	// server
 	if len(def.Docs) > 0 {
 		defDoc := def.Docs[0]
 		var docHTML string
