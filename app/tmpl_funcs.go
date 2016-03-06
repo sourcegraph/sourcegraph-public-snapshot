@@ -6,7 +6,6 @@ import (
 	htmpl "html/template"
 	"net/url"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -57,12 +56,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"buildStatus": buildStatus,
 
 	"add": func(a, b int) int { return a + b },
-	"min": func(a, b int) int {
-		if a < b {
-			return a
-		}
-		return b
-	},
 	"json": func(v interface{}) (string, error) {
 		b, err := json.Marshal(v)
 		if err != nil {
@@ -110,18 +103,6 @@ var tmplFuncs = htmpl.FuncMap{
 			classes[i] = "route-" + strings.Join(parts[:i+1], "-")
 		}
 		return strings.Join(classes, " ")
-	},
-	"nextPageURL": func(currentURI *url.URL, inc int) string {
-		values := currentURI.Query()
-
-		pageField, exists := values["Page"]
-		if !exists || len(pageField) != 1 {
-			pageField = []string{"1"}
-		}
-		page, _ := strconv.Atoi(pageField[0])
-		values["Page"] = []string{strconv.Itoa(page + inc)}
-
-		return "?" + values.Encode()
 	},
 
 	"ifTrue": func(cond bool, v interface{}) interface{} {
@@ -198,10 +179,6 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
 	"hostname":            func() string { return hostname },
-
-	"nl2br": func(s string) htmpl.HTML {
-		return htmpl.HTML(strings.Replace(htmpl.HTMLEscapeString(s), "\n", "<br>", -1))
-	},
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 
