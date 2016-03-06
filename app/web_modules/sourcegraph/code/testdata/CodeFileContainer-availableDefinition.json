@@ -38,7 +38,8 @@
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightedDef": "otherDef",
-												"activeDef": "someDef"
+												"activeDef": "someDef",
+												"dispatchSelections": true
 											}
 										}
 									]

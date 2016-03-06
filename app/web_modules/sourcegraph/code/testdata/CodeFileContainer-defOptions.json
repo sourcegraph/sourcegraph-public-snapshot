@@ -36,7 +36,8 @@
 											"type": "CodeListing",
 											"props": {
 												"contents": "hello\nworld",
-												"lineNumbers": true
+												"lineNumbers": true,
+												"dispatchSelections": true
 											}
 										}
 									]

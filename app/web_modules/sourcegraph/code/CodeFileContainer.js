@@ -130,7 +130,8 @@ class CodeFileContainer extends Container {
 							endLine={this.state.endLine}
 							endCol={this.state.endCol}
 							highlightedDef={this.state.highlightedDef}
-							activeDef={this.state.activeDef} />}
+							activeDef={this.state.activeDef}
+							dispatchSelections={true} />}
 					</div>
 					<FileMargin getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
 						{defData &&
@@ -156,7 +157,7 @@ class CodeFileContainer extends Container {
 						{this.state.defOptionsURLs.map((url, i) => {
 							let data = this.state.defs.get(url);
 							return (
-								<li key={i} onClick={() => {
+								<li key={i} onClick={(ev) => {
 									Dispatcher.dispatch(new GoTo(url));
 								}}>
 									{data ? <span dangerouslySetInnerHTML={data.QualifiedName} /> : "..."}

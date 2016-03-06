@@ -37,7 +37,8 @@
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
-												"activeDef": "someDef"
+												"activeDef": "someDef",
+												"dispatchSelections": true
 											}
 										}
 									]

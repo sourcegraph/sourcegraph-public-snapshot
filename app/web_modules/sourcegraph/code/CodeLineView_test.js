@@ -12,25 +12,25 @@ import testdataLineSelection from "sourcegraph/code/testdata/CodeLineView-select
 describe("CodeLineView", () => {
 	it("should render", () => {
 		autotest(testdataContents, `${__dirname}/testdata/CodeLineView-contents.json`,
-			<CodeLineView contents={"hello\nworld"} highlightedDef="secondURL" />
+			<CodeLineView contents={"hello\nworld"} startByte={0} highlightedDef="secondURL" />
 		);
 	});
 
 	it("should render empty", () => {
 		autotest(testdataEmpty, `${__dirname}/testdata/CodeLineView-empty.json`,
-			<CodeLineView contents={"hello\nworld"} />
+			<CodeLineView contents={"hello\nworld"} startByte={0} />
 		);
 	});
 
 	it("should render line number", () => {
 		autotest(testdataLineNumber, `${__dirname}/testdata/CodeLineView-lineNumber.json`,
-			<CodeLineView lineNumber={42} contents={"hello\nworld"} />
+			<CodeLineView lineNumber={42} contents={"hello\nworld"} startByte={0} />
 		);
 	});
 
 	it("should render selection", () => {
 		autotest(testdataLineSelection, `${__dirname}/testdata/CodeLineView-selection.json`,
-			<CodeLineView contents={"hello\nworld"} selected={true} />
+			<CodeLineView contents={"hello\nworld"} startByte={0} selected={true} />
 		);
 	});
 });

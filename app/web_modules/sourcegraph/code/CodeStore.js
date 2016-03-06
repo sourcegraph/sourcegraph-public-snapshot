@@ -19,6 +19,8 @@ export class CodeStore extends Store {
 				return this.content[keyFor(repo, rev, tree)] || null;
 			},
 		});
+
+		// annotations are assumed to be sorted (with Annotations.sortAnns) by all callers of CodeStore.
 		this.annotations = deepFreeze({
 			content: {},
 			get(repo, rev, path, startByte, endByte) {

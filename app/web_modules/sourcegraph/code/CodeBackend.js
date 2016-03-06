@@ -1,5 +1,6 @@
 import * as CodeActions from "sourcegraph/code/CodeActions";
 import {authHeaders} from "sourcegraph/util/auth";
+import {sortAnns} from "sourcegraph/code/Annotations";
 import CodeStore from "sourcegraph/code/CodeStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "xhr";
@@ -48,6 +49,7 @@ const CodeBackend = {
 							console.error(err);
 							return;
 						}
+						body.Annotations = prepareAnnotations(body.Annotations);
 						Dispatcher.dispatch(new CodeActions.AnnotationsFetched(action.repo, action.rev, action.path, action.startByte, action.endByte, body));
 					});
 				}
@@ -60,3 +62,36 @@ const CodeBackend = {
 Dispatcher.register(CodeBackend.__onDispatch);
 
 export default CodeBackend;
+
+// prepareAnnotations should be called on annotations received from the server
+// to prepare them in ways described below for presentation in the UI.
+export function prepareAnnotations(anns) {
+	// Ensure that syntax highlighting is the innermost annotation so
+	// that the CSS colors are applied (otherwise ref links appear in
+	// the normal link color).
+	anns.forEach((a) => {
+		if (!a.URL) a.WantInner = 1;
+	});
+
+	sortAnns(anns);
+
+	// Condense coincident refs ("multiple defs", such as an embedded Go
+	// field's ref to both the field def and the type def).
+	for (let i = 0; i < anns.length; i++) {
+		const ann = anns[i];
+		for (let j = i + 1; j < anns.length; j++) {
+			const ann2 = anns[j];
+			if (ann.StartByte === ann2.StartByte && ann.EndByte === ann2.EndByte) {
+				if ((ann.URLs || ann.URL) && ann2.URL) {
+					ann.URLs = (ann.URLs || [ann.URL]).concat(ann2.URL);
+					delete ann.URL;
+					anns.splice(j, 1); // Delete the coincident ref.
+				}
+			} else {
+				break;
+			}
+		}
+	}
+
+	return anns;
+}

@@ -1,5 +1,6 @@
 import React from "react";
 
+import {annotate} from "sourcegraph/code/Annotations";
 import classNames from "classnames";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -22,6 +23,7 @@ class CodeLineView extends Component {
 			if (state.annotations) {
 				state.annotations.forEach((ann) => {
 					if (ann.URL) state.ownAnnURLs[ann.URL] = true;
+					if (ann.URLs) ann.URLs.forEach((url) => state.ownAnnURLs[url] = true);
 				});
 			}
 		}
@@ -33,7 +35,7 @@ class CodeLineView extends Component {
 		state.lineNumber = props.lineNumber || null;
 		state.oldLineNumber = props.oldLineNumber || null;
 		state.newLineNumber = props.newLineNumber || null;
-		state.startByte = props.startByte || null;
+		state.startByte = props.startByte;
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
@@ -41,82 +43,42 @@ class CodeLineView extends Component {
 	}
 
 	render() {
-		let contents;
-		if (this.state.annotations) {
-			contents = [];
-			let pos = 0;
-			let skip;
-			this.state.annotations.forEach((ann, i) => {
-				if (skip >= i) {
-					// This annotation's class was already merged into a previous annotation.
-					return;
-				}
-
-				let cls;
-				let extraURLs;
-
-				// Merge syntax highlighting and multiple-def annotations into the previous link, if any.
-				for (let j = i + 1; j < this.state.annotations.length; j++) {
-					let ann2 = this.state.annotations[j];
-					if (ann2.StartByte === ann.StartByte && ann2.EndByte === ann.EndByte) {
-						if (ann2.Class) {
-							cls = cls || [];
-							cls.push(ann2.Class);
-						}
-						if (ann2.URL) {
-							extraURLs = extraURLs || [];
-							extraURLs.push(ann2.URL);
-						}
-						skip = j;
-					} else {
-						break;
-					}
-				}
-
-				const start = ann.StartByte - this.state.startByte;
-				const end = ann.EndByte - this.state.startByte;
-				if (start > pos) {
-					contents.push(this.state.contents.slice(pos, start));
-				}
-
-				let matchesURL = (url) => ann.URL === url || (extraURLs && extraURLs.includes(url));
-
-				const text = this.state.contents.slice(start, end);
-				let el;
-				if (ann.URL) {
-					el = (
-						<a
-							className={classNames(cls, {
-								"ref": true,
-								"highlight-primary": matchesURL(this.state.highlightedDef),
-								"active-def": matchesURL(this.state.activeDef),
-							})}
-							href={ann.URL}
-							onMouseOver={() => Dispatcher.dispatch(new DefActions.HighlightDef(ann.URL))}
-							onMouseOut={() => Dispatcher.dispatch(new DefActions.HighlightDef(null))}
-							onClick={(ev) => {
-								if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
-								ev.preventDefault();
-								if (extraURLs) {
-									Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs([ann.URL].concat(extraURLs), ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY)); // dispatch async so that the menu is not immediately closed by click handler on document
-								} else {
-									Dispatcher.asyncDispatch(new DefActions.SelectDef(ann.URL));
-								}
-							}}
-							key={i}>{text}</a>
-					);
-				} else {
-					el = <span key={i} className={ann.Class}>{text}</span>;
-				}
-				contents.push(el);
-				pos = end;
-			});
-			if (pos < this.state.contents.length) {
-				contents.push(this.state.contents.slice(pos));
+		const hasURL = (ann, url) => url && (ann.URL ? ann.URL === url : ann.URLs.includes(url));
+		let i = 0;
+		let contents = annotate(this.state.contents, this.state.startByte, this.state.annotations || [], (ann, content) => {
+			i++;
+			if (ann.URL || ann.URLs) {
+				return (
+					<a
+						className={classNames(ann.Class, {
+							"ref": true,
+							"highlight-primary": hasURL(ann, this.state.highlightedDef),
+							"active-def": hasURL(ann, this.state.activeDef),
+						})}
+						href={ann.URL || ann.URLs[0]}
+						onMouseOver={() => Dispatcher.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
+						onMouseOut={() => Dispatcher.dispatch(new DefActions.HighlightDef(null))}
+						onClick={(ev) => {
+							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
+							ev.preventDefault();
+							if (ann.URLs) {
+								// Multiple refs coincident on the same token to different defs.
+								//
+								// Dispatch async and stop propagation so the menu is not
+								// immediately closed by click handler on Document.
+								Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs(
+									ann.URLs,
+									ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY
+								));
+							} else {
+								Dispatcher.dispatch(new DefActions.SelectDef(ann.URL));
+							}
+						}}
+						key={i}>{content}</a>
+				);
 			}
-		} else {
-			contents = this.state.contents;
-		}
+			return <span key={i} className={ann.Class}>{content.join("")}</span>;
+		});
 
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
@@ -172,7 +134,7 @@ CodeLineView.propTypes = {
 	className: React.PropTypes.string,
 
 	// directLinks, if true, makes clicks on annotation links go directly to the
-	// destination instead of using GoTo and pushState.
+	// destination instead of using pushState.
 	directLinks: React.PropTypes.bool,
 };
 
