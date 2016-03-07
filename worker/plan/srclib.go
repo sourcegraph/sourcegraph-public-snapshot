@@ -69,6 +69,8 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	return nil
 }
 
+var droneSrclibGoImage = "srclib/drone-srclib-go@sha256:af069725ea5fe4e8e657f16f06d772e4f4e7ae3fc74fdac34f1961277b208149"
+
 // Note: If you push new Docker images for the srclib build steps, you
 // MUST update the SHA256 digest, or else users will continue using
 // the old Docker image. Also ensure you `docker push` the new Docker
@@ -79,7 +81,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Go (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-go@sha256:8956f82d878b12212189e28ac09b94114734a869afb44ee95504e2c4264e62f5",
+				Image: droneSrclibGoImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -172,7 +174,7 @@ func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 		Key: "srclib coverage",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-go@sha256:af069725ea5fe4e8e657f16f06d772e4f4e7ae3fc74fdac34f1961277b208149",
+				Image: droneSrclibGoImage,
 				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_COVERAGE_URL=" + coverageURL.String(),
 				}),
