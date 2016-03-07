@@ -1,5 +1,4 @@
 import React from "react";
-import update from "react/lib/update";
 
 import Container from "sourcegraph/Container";
 import "./DashboardBackend"; // for side effects
