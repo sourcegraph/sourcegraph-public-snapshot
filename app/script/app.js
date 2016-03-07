@@ -22,10 +22,8 @@ require("./mirror-repos");
 // Views
 require("./componentInjection");
 
-require("./activateDefnPopovers");
 require("./buttons");
 require("./debounce");
-require("./defn-popover");
 require("./feedback-form");
 require("./history");
 require("./keyboard_shortcuts");

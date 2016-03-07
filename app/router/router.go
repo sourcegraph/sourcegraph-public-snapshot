@@ -71,7 +71,6 @@ const (
 
 	Def         = "def"
 	DefExamples = "def.examples"
-	DefPopover  = "def.popover"
 
 	UserContent = "usercontent"
 
@@ -151,7 +150,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path(defPath).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
 	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
 	def.Path("/.examples").Methods("GET").Name(DefExamples)
-	def.Path("/.popover").Methods("GET").Name(DefPopover)
 	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
 
 	// See router_util/tree_route.go for an explanation of how we match tree

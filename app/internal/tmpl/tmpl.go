@@ -129,23 +129,12 @@ func commonTemplates() error {
 	})
 }
 
-// standaloneTemplates returns a set of standalone templates if
-// successful.
-func standaloneTemplates() error {
-	return parseHTMLTemplates([][]string{
-		{"def/popover.html"},
-	}, []string{"common.html"})
-}
-
 // Load loads (or re-loads) all template files from disk.
 func Load() {
 	if err := repoTemplates(); err != nil {
 		log.Fatal(err)
 	}
 	if err := commonTemplates(); err != nil {
-		log.Fatal(err)
-	}
-	if err := standaloneTemplates(); err != nil {
 		log.Fatal(err)
 	}
 }

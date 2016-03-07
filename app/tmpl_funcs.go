@@ -114,17 +114,16 @@ var tmplFuncs = htmpl.FuncMap{
 	"commitSummary":       commitSummary,
 	"commitRestOfMessage": commitRestOfMessage,
 
-	"toString2":             func(v interface{}) string { return fmt.Sprintf("%s", v) },
-	"sanitizeHTML":          sanitizeHTML,
-	"sanitizeFormattedCode": sanitizeFormattedCode,
-	"textFromHTML":          textutil.TextFromHTML,
-	"timeOrNil":             timeutil.TimeOrNil,
-	"timeAgo":               timeutil.TimeAgo,
-	"now":                   time.Now,
-	"duration":              duration,
-	"isNil":                 isNil,
-	"minTime":               minTime,
-	"pathJoin":              path.Join,
+	"toString2":    func(v interface{}) string { return fmt.Sprintf("%s", v) },
+	"sanitizeHTML": sanitizeHTML,
+	"textFromHTML": textutil.TextFromHTML,
+	"timeOrNil":    timeutil.TimeOrNil,
+	"timeAgo":      timeutil.TimeAgo,
+	"now":          time.Now,
+	"duration":     duration,
+	"isNil":        isNil,
+	"minTime":      minTime,
+	"pathJoin":     path.Join,
 	"toInt": func(v interface{}) (int, error) {
 		switch v := v.(type) {
 		case int:

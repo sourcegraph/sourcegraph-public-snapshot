@@ -88,50 +88,6 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
-	// viewState holds the repository and file that the user is currently
-	// viewing.
-	type viewState struct {
-		CurrentRepo string
-		CurrentFile string
-	}
-	var opt viewState
-	err := schemautil.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
-	ctx, _ := handlerutil.Client(r)
-	dc, _, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
-	if err != nil {
-		// TODO(gbbr): Set up custom responses for each scenario.
-		// All of the below errors will cause full page HTML pages or redirects, if
-		// bubbled up the chain, so we return nil instead.
-		// Temporarily StatusNotFound with empty body will be returned.
-		switch err.(type) {
-		case *handlerutil.URLMovedError, *handlerutil.NoVCSDataError:
-			http.Error(w, "", http.StatusNotFound)
-			return nil
-		}
-		return err
-	}
-
-	hdr := http.Header{
-		"access-control-allow-origin":  []string{"*"},
-		"access-control-allow-methods": []string{"GET"},
-	}
-
-	return tmpl.Exec(r, w, "def/popover.html", http.StatusOK, hdr, &struct {
-		Def         *sourcegraph.Def
-		CurrentRepo string
-		CurrentFile string
-		tmpl.Common
-	}{
-		Def:         dc.Def,
-		CurrentRepo: opt.CurrentRepo,
-		CurrentFile: opt.CurrentFile,
-	})
-}
-
 // defRobotsIndex returns a boolean indicating whether the page
 // corresponding to this def should be indexed by robots (e.g.,
 // Googlebot).

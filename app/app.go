@@ -100,7 +100,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.Def).Handler(internal.Handler(serveDef))
 	r.Get(router.DefExamples).Handler(internal.Handler(serveDefExamples))
-	r.Get(router.DefPopover).Handler(internal.Handler(serveDefPopover))
 	r.Get(router.RepoAppFrame).Handler(internal.Handler(serveRepoFrame))
 	r.Get(router.Home).Handler(internal.Handler(serveHomeDashboard))
 	r.Get(router.LogOut).Handler(internal.Handler(serveLogOut))

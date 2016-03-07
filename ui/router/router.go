@@ -14,7 +14,6 @@ const (
 	RepoFileFinder = "repo.file.finder"
 
 	Definition  = "def"
-	DefPopover  = "def.popover"
 	DefExamples = "def.examples"
 
 	RepoCommits = "repo.commits"
@@ -70,10 +69,6 @@ func New(base *mux.Router) *mux.Router {
 	def.Path("/.examples").
 		Methods("GET").
 		Name(DefExamples)
-
-	def.Path("/.popover").
-		Methods("GET").
-		Name(DefPopover)
 
 	repoRev.Path("/.search/tokens").
 		Methods("GET").
