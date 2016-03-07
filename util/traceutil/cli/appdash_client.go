@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"net/url"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -101,15 +100,13 @@ func (f *ClientConfig) configure() (func(context.Context) context.Context, error
 
 	c.(*appdash.RemoteCollector).Debug = f.Debug
 
-	c = &appdash.ChunkedCollector{
-		Collector:   c,
-		MinInterval: 500 * time.Millisecond,
-		OnFlush: func(queueSize int) {
-			flushDurationGauge.Inc()
-			flushQueueSizeGauge.Set(float64(queueSize))
-		},
-		FlushTimeout: 50 * time.Millisecond,
+	// Wire in the ChunkeCollector with a prometheus counter for OnFlush events.
+	cc := appdash.NewChunkedCollector(c)
+	cc.OnFlush = func(queueSize int) {
+		flushDurationGauge.Inc()
+		flushQueueSizeGauge.Set(float64(queueSize))
 	}
+	c = cc
 
 	traceutil.DefaultCollector = c
 
