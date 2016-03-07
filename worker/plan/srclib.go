@@ -139,7 +139,8 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 		Key: "srclib import",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-import@sha256:92fd741b7869c7259bf5d9b5b86b3fab8c5941772db68034816f500eb03ba160",
+				// The hash is the final line of docker push output
+				Image: "sourcegraph/srclib-import@sha256:19d2918264ac24a928c06f3226aad3bf6babc8a8181dcf1cdc5a200c186006cd",
 				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_IMPORT_URL=" + importURL.String(),
 				}),
@@ -147,22 +148,8 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 			Commands: []string{
 				"echo Importing to $SOURCEGRAPH_IMPORT_URL",
 				`files=$(find .srclib-cache/ -type f | head -n 1); if [ -z "$files" ]; then echo No srclib data files found to import; exit 0; fi`,
-				`cd .srclib-cache/* && /usr/bin/zip -q --no-dir-entries -r - . | \
-			 /usr/bin/curl \
-			    --show-error \
-				--fail \
-				--netrc \
-				--connect-timeout 3 \
-				--max-time 300 \
-				--no-keepalive \
-				--retry 3 \
-				--retry-delay 2 \
-				-XPUT \
-				-H 'Content-Type: application/x-zip-compressed' \
-				-H 'Content-Transfer-Encoding: binary' \
-				--data-binary @- \
-				$SOURCEGRAPH_IMPORT_URL > build.out`,
-				"cat build.out",
+				`cd .srclib-cache/* && /usr/bin/zip -q --no-dir-entries -r - . > /tmp/srclib-cache.zip`,
+				`srclib-import $SOURCEGRAPH_IMPORT_URL /tmp/srclib-cache.zip`,
 				"echo Done importing",
 			},
 		},
