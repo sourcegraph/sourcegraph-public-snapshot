@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext/github"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
@@ -287,7 +288,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 
 	// Fetch the currently authenticated user's stored access token (if any).
 	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, nil)
-	if grpc.Code(err) == codes.NotFound {
+	if errcode.GRPC(err) == codes.NotFound {
 		gd.State = sourcegraph.UserMirrorsState_NoToken
 		return gd, nil
 	} else if err != nil {
@@ -314,7 +315,7 @@ func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*source
 		localRepo, err := (&repos{}).Get(ctx, &sourcegraph.RepoSpec{URI: uri})
 		if err == nil {
 			gd.Repos = append(gd.Repos, localRepo)
-		} else if grpc.Code(err) == codes.NotFound {
+		} else if errcode.GRPC(err) == codes.NotFound {
 			gd.RemoteRepos = append(gd.RemoteRepos, repo)
 		} else {
 			return nil, err
@@ -341,7 +342,7 @@ func (s *mirrorRepos) AddToWaitlist(ctx context.Context, _ *pbtypes.Void) (*sour
 
 	// Fetch the currently authenticated user's stored access token (if any).
 	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{})
-	if grpc.Code(err) == codes.NotFound {
+	if errcode.GRPC(err) == codes.NotFound {
 		result.State = sourcegraph.UserMirrorsState_NoToken
 		return result, nil
 	} else if err != nil {
