@@ -57,7 +57,7 @@ class DefTooltip extends Component {
 				<div className="popover-data">
 					<div className="title"><code dangerouslySetInnerHTML={def.QualifiedName}></code></div>
 					<div className="content">
-						<div className="doc" style={{maxHeight: 100, overflowY: "scroll"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>
+						<div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>
 						<span className="repo">{def.Data.Repo}</span>
 					</div>
 				</div>
