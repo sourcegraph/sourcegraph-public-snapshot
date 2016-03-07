@@ -107,6 +107,8 @@ var langRepos_ = map[string][]string{
 		"github.com/rancher/os",
 	},
 	"Java": []string{
+		"github.com/apache/cassandra",
+		"github.com/apache/hadoop",
 		"github.com/facebook/react-native",
 		"github.com/elastic/elasticsearch",
 		"github.com/nostra13/Android-Universal-Image-Loader",
