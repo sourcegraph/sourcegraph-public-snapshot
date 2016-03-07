@@ -11,56 +11,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
-type RepoBadgesClient struct {
-	ListBadges_   func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error)
-	ListCounters_ func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error)
-	RecordHit_    func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	CountHits_    func(ctx context.Context, in *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error)
-}
-
-func (s *RepoBadgesClient) ListBadges(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.BadgeList, error) {
-	return s.ListBadges_(ctx, in)
-}
-
-func (s *RepoBadgesClient) ListCounters(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.CounterList, error) {
-	return s.ListCounters_(ctx, in)
-}
-
-func (s *RepoBadgesClient) RecordHit(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.RecordHit_(ctx, in)
-}
-
-func (s *RepoBadgesClient) CountHits(ctx context.Context, in *sourcegraph.RepoBadgesCountHitsOp, opts ...grpc.CallOption) (*sourcegraph.RepoBadgesCountHitsResult, error) {
-	return s.CountHits_(ctx, in)
-}
-
-var _ sourcegraph.RepoBadgesClient = (*RepoBadgesClient)(nil)
-
-type RepoBadgesServer struct {
-	ListBadges_   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error)
-	ListCounters_ func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error)
-	RecordHit_    func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	CountHits_    func(v0 context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error)
-}
-
-func (s *RepoBadgesServer) ListBadges(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
-	return s.ListBadges_(v0, v1)
-}
-
-func (s *RepoBadgesServer) ListCounters(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
-	return s.ListCounters_(v0, v1)
-}
-
-func (s *RepoBadgesServer) RecordHit(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return s.RecordHit_(v0, v1)
-}
-
-func (s *RepoBadgesServer) CountHits(v0 context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
-	return s.CountHits_(v0, v1)
-}
-
-var _ sourcegraph.RepoBadgesServer = (*RepoBadgesServer)(nil)
-
 type RepoStatusesClient struct {
 	GetCombined_ func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
 	Create_      func(ctx context.Context, in *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error)

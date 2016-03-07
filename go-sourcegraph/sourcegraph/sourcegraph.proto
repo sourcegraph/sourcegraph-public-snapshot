@@ -17,14 +17,6 @@ option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
-message Badge {
-	string Name = 1;
-	string Description = 2;
-	string ImageURL = 3;
-	string UncountedImageURL = 4;
-	string Markdown = 5;
-}
-
 // CombinedStatus is the combined status (i.e., incorporating statuses from all
 // contexts) of the repository at a specific rev.
 message CombinedStatus {
@@ -40,14 +32,6 @@ message CombinedStatus {
 
 	// Statuses are the statuses for each context.
 	repeated RepoStatus Statuses = 3;
-}
-
-message Counter {
-	string Name = 1;
-	string Description = 2;
-	string ImageURL = 3;
-	string UncountedImageURL = 4;
-	string Markdown = 5;
 }
 
 // ListOptions specifies general pagination options for fetching a list of results.
@@ -167,23 +151,6 @@ message Repo {
 	GitHubRepo GitHub = 19;
 }
 
-message BadgeList {
-	repeated Badge Badges = 1;
-}
-
-message CounterList {
-	repeated Counter Counters = 1;
-}
-
-message RepoBadgesCountHitsOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-	pbtypes.Timestamp Since = 2;
-}
-
-message RepoBadgesCountHitsResult {
-	int32 Hits = 1;
-}
-
 message RepoListOptions {
 	string Name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
@@ -276,39 +243,6 @@ message RepoStatusesCreateOp {
 
 message RepoList {
 	repeated Repo Repos = 1;
-}
-
-
-service RepoBadges {
-	// ListBadges lists the available badges for repo.
-	rpc ListBadges(RepoSpec) returns (BadgeList) {
-		option (google.api.http) = {
-			get: "/repo_badges/list_badges"
-		};
-	};
-
-	// ListCounters lists the available counters for repo.
-	rpc ListCounters(RepoSpec) returns (CounterList) {
-		option (google.api.http) = {
-			get: "/repo_badges/list_counters"
-		};
-	};
-
-	// RecordHit records a visit to a repo (that will be reflected in
-	// its counter).
-	rpc RecordHit(RepoSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			put: "/repo_badges/record_hit"
-		};
-	};
-
-	// CountHits returns the hit count (optionally in a recent time
-	// period).
-	rpc CountHits(RepoBadgesCountHitsOp) returns (RepoBadgesCountHitsResult) {
-		option (google.api.http) = {
-			get: "/repo_badges/count_hits"
-		};
-	};
 }
 
 service RepoStatuses {

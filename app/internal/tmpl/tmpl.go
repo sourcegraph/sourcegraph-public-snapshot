@@ -71,8 +71,6 @@ func Delete(name string) {
 func repoTemplates() error {
 	return parseHTMLTemplates([][]string{
 		{"repo/main.html", "repo/readme.inc.html", "repo/tree.inc.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/badges.html", "repo/badges_and_counters.html"},
-		{"repo/counters.html", "repo/badges_and_counters.html"},
 		{"repo/builds.html", "builds/build.inc.html"},
 		{"repo/build.html", "builds/build.inc.html", "repo/commit.inc.html"},
 		{"repo/tree/file.html"},

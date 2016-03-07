@@ -17,7 +17,6 @@ func init() {
 			Directory:          &directory{},
 			ExternalAuthTokens: &externalAuthTokens{},
 			RepoConfigs:        &repoConfigs{},
-			RepoCounters:       &repoCounters{},
 			Password:           &password{},
 			RegisteredClients:  &registeredClients{},
 			RepoVCS:            &fs.RepoVCS{},

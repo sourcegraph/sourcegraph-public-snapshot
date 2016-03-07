@@ -22,8 +22,6 @@ var Flags struct {
 	// time.
 	DisableTreeEntryCommits bool `long:"app.disable-tree-entry-commits" description:"do not show the latest commit for tree files/dirs"`
 
-	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
-
 	DisableRepoTreeSearch bool `long:"app.disable-repo-tree-search" description:"do not show repo fulltext search results (only defs) (slower for large repos)"`
 
 	DisableGlobalSearch bool `long:"app.disable-global-search" description:"if set, only allow searching within a single repository at a time"`

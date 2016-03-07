@@ -246,7 +246,7 @@ func showRepoRevSwitcher(routeName string) bool {
 		return true
 	}
 	switch routeName {
-	case router.Repo, router.RepoBadges:
+	case router.Repo:
 		return true
 	}
 	return false

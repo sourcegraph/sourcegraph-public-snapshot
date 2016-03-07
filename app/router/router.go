@@ -36,10 +36,6 @@ const (
 	UserSettingsKeys          = "person.settings.keys"
 
 	Repo             = "repo"
-	RepoBadge        = "repo.badge"
-	RepoBadges       = "repo.badges"
-	RepoCounter      = "repo.counter"
-	RepoCounters     = "repo.counters"
 	RepoBuilds       = "repo.builds"
 	RepoBuild        = "repo.build"
 	RepoBuildUpdate  = "repo.build.update"
@@ -157,13 +153,8 @@ func New(base *mux.Router) *Router {
 	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
 	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 
-	repoRev.Path("/.badges").Methods("GET").Name(RepoBadges)
-	repoRev.Path("/.badges/{Badge}.{Format}").Methods("GET").Name(RepoBadge)
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
 
-	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
-
-	repoRev.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
 
 	repo.Path("/.commits/{Rev:" + spec.PathNoLeadingDotComponentPattern + "}").Methods("GET").Name(RepoCommit)

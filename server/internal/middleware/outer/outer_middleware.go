@@ -44,7 +44,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Orgs:              wrappedOrgs{ctxFunc, services},
 		People:            wrappedPeople{ctxFunc, services},
 		RegisteredClients: wrappedRegisteredClients{ctxFunc, services},
-		RepoBadges:        wrappedRepoBadges{ctxFunc, services},
 		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
 		RepoTree:          wrappedRepoTree{ctxFunc, services},
 		Repos:             wrappedRepos{ctxFunc, services},
@@ -1744,131 +1743,6 @@ func (s wrappedRegisteredClients) List(ctx context.Context, v1 *sourcegraph.Regi
 	}
 
 	rv, err := innerSvc.List(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedRepoBadges struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedRepoBadges) ListBadges(ctx context.Context, v1 *sourcegraph.RepoSpec) (returnedResult *sourcegraph.BadgeList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in RepoBadges.ListBadges: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.RepoBadgesOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
-	}
-
-	rv, err := innerSvc.ListBadges(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedRepoBadges) ListCounters(ctx context.Context, v1 *sourcegraph.RepoSpec) (returnedResult *sourcegraph.CounterList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in RepoBadges.ListCounters: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.RepoBadgesOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
-	}
-
-	rv, err := innerSvc.ListCounters(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedRepoBadges) RecordHit(ctx context.Context, v1 *sourcegraph.RepoSpec) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in RepoBadges.RecordHit: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.RepoBadgesOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
-	}
-
-	rv, err := innerSvc.RecordHit(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedRepoBadges) CountHits(ctx context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (returnedResult *sourcegraph.RepoBadgesCountHitsResult, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in RepoBadges.CountHits: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.RepoBadgesOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "RepoBadges")
-	}
-
-	rv, err := innerSvc.CountHits(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

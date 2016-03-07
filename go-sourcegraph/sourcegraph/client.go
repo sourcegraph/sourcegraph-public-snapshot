@@ -19,7 +19,6 @@ type Client struct {
 	Orgs              OrgsClient
 	People            PeopleClient
 	RegisteredClients RegisteredClientsClient
-	RepoBadges        RepoBadgesClient
 	RepoStatuses      RepoStatusesClient
 	RepoTree          RepoTreeClient
 	Repos             ReposClient
@@ -52,7 +51,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Orgs = NewOrgsClient(conn)
 	c.People = NewPeopleClient(conn)
 	c.RegisteredClients = NewRegisteredClientsClient(conn)
-	c.RepoBadges = NewRepoBadgesClient(conn)
 	c.RepoStatuses = NewRepoStatusesClient(conn)
 	c.RepoTree = NewRepoTreeClient(conn)
 	c.Repos = NewReposClient(conn)

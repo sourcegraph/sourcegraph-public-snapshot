@@ -37,7 +37,6 @@ const (
 	_OrgsKey              contextKey = iota
 	_PeopleKey            contextKey = iota
 	_RegisteredClientsKey contextKey = iota
-	_RepoBadgesKey        contextKey = iota
 	_RepoStatusesKey      contextKey = iota
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
@@ -64,7 +63,6 @@ type Services struct {
 	Orgs              sourcegraph.OrgsServer
 	People            sourcegraph.PeopleServer
 	RegisteredClients sourcegraph.RegisteredClientsServer
-	RepoBadges        sourcegraph.RepoBadgesServer
 	RepoStatuses      sourcegraph.RepoStatusesServer
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
@@ -135,10 +133,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.RegisteredClients != nil {
 		sourcegraph.RegisterRegisteredClientsServer(s, svcs.RegisteredClients)
-	}
-
-	if svcs.RepoBadges != nil {
-		sourcegraph.RegisterRepoBadgesServer(s, svcs.RepoBadges)
 	}
 
 	if svcs.RepoStatuses != nil {
@@ -232,10 +226,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.RegisteredClients != nil {
 		ctx = WithRegisteredClients(ctx, s.RegisteredClients)
-	}
-
-	if s.RepoBadges != nil {
-		ctx = WithRepoBadges(ctx, s.RepoBadges)
 	}
 
 	if s.RepoStatuses != nil {
@@ -608,29 +598,6 @@ func RegisteredClients(ctx context.Context) sourcegraph.RegisteredClientsServer 
 // RegisteredClientsOrNil returns the context's RegisteredClients service if present, or else nil.
 func RegisteredClientsOrNil(ctx context.Context) sourcegraph.RegisteredClientsServer {
 	s, ok := ctx.Value(_RegisteredClientsKey).(sourcegraph.RegisteredClientsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithRepoBadges returns a copy of parent that uses the given RepoBadges service.
-func WithRepoBadges(ctx context.Context, s sourcegraph.RepoBadgesServer) context.Context {
-	return context.WithValue(ctx, _RepoBadgesKey, s)
-}
-
-// RepoBadges gets the context's RepoBadges service. If the service is not present, it panics.
-func RepoBadges(ctx context.Context) sourcegraph.RepoBadgesServer {
-	s, ok := ctx.Value(_RepoBadgesKey).(sourcegraph.RepoBadgesServer)
-	if !ok || s == nil {
-		panic("no RepoBadges set in context")
-	}
-	return s
-}
-
-// RepoBadgesOrNil returns the context's RepoBadges service if present, or else nil.
-func RepoBadgesOrNil(ctx context.Context) sourcegraph.RepoBadgesServer {
-	s, ok := ctx.Value(_RepoBadgesKey).(sourcegraph.RepoBadgesServer)
 	if ok {
 		return s
 	}

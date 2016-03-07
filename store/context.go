@@ -30,7 +30,6 @@ type Stores struct {
 	Password           Password
 	RegisteredClients  RegisteredClients
 	RepoConfigs        RepoConfigs
-	RepoCounters       RepoCounters
 	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
@@ -55,7 +54,6 @@ const (
 	_PasswordKey
 	_RegisteredClientsKey
 	_RepoConfigsKey
-	_RepoCountersKey
 	_RepoPermsKey
 	_RepoStatusesKey
 	_RepoVCSKey
@@ -102,9 +100,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.RepoConfigs != nil {
 		ctx = WithRepoConfigs(ctx, s.RepoConfigs)
-	}
-	if s.RepoCounters != nil {
-		ctx = WithRepoCounters(ctx, s.RepoCounters)
 	}
 	if s.RepoPerms != nil {
 		ctx = WithRepoPerms(ctx, s.RepoPerms)
@@ -294,20 +289,6 @@ func RepoConfigsFromContext(ctx context.Context) RepoConfigs {
 	s, ok := ctx.Value(_RepoConfigsKey).(RepoConfigs)
 	if !ok || s == nil {
 		panic("no RepoConfigs set in context")
-	}
-	return s
-}
-
-// WithRepoCounters returns a copy of parent with the given RepoCounters store.
-func WithRepoCounters(parent context.Context, s RepoCounters) context.Context {
-	return context.WithValue(parent, _RepoCountersKey, s)
-}
-
-// RepoCountersFromContext gets the context's RepoCounters store. If the store is not present, it panics.
-func RepoCountersFromContext(ctx context.Context) RepoCounters {
-	s, ok := ctx.Value(_RepoCountersKey).(RepoCounters)
-	if !ok || s == nil {
-		panic("no RepoCounters set in context")
 	}
 	return s
 }

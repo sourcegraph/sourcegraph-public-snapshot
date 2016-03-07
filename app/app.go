@@ -118,13 +118,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoTree).Handler(internal.Handler(serveRepoTree))
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
 
-	if appconf.Flags.RepoBadgesAndCounters {
-		r.Get(router.RepoBadge).Handler(internal.Handler(serveRepoBadge))
-		r.Get(router.RepoBadges).Handler(internal.Handler(serveRepoBadges))
-		r.Get(router.RepoCounter).Handler(internal.Handler(serveRepoCounter))
-		r.Get(router.RepoCounters).Handler(internal.Handler(serveRepoCounters))
-	}
-
 	r.Get(router.RepoCommit).Handler(internal.Handler(serveRepoCommit))
 	r.Get(router.RepoRevCommits).Handler(internal.Handler(serveRepoCommits))
 	r.Get(router.RepoTags).Handler(internal.Handler(serveRepoTags))

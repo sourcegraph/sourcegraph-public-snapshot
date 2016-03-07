@@ -3,8 +3,6 @@
 package mockstore
 
 import (
-	"time"
-
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
@@ -65,21 +63,6 @@ func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 }
 
 var _ store.RepoStatuses = (*RepoStatuses)(nil)
-
-type RepoCounters struct {
-	RecordHit_ func(ctx context.Context, repo string) error
-	CountHits_ func(ctx context.Context, repo string, since time.Time) (int, error)
-}
-
-func (s *RepoCounters) RecordHit(ctx context.Context, repo string) error {
-	return s.RecordHit_(ctx, repo)
-}
-
-func (s *RepoCounters) CountHits(ctx context.Context, repo string, since time.Time) (int, error) {
-	return s.CountHits_(ctx, repo, since)
-}
-
-var _ store.RepoCounters = (*RepoCounters)(nil)
 
 type RepoVCS struct {
 	Open_             func(ctx context.Context, repo string) (vcs.Repository, error)

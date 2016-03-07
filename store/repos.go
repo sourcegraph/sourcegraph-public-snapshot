@@ -55,11 +55,6 @@ type RepoStatuses interface {
 	Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error
 }
 
-type RepoCounters interface {
-	RecordHit(ctx context.Context, repo string) error
-	CountHits(ctx context.Context, repo string, since time.Time) (int, error)
-}
-
 type RepoVCS interface {
 	Open(ctx context.Context, repo string) (vcs.Repository, error)
 	Clone(ctx context.Context, repo string, bare, mirror bool, info *CloneInfo) error

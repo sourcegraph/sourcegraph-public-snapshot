@@ -62,8 +62,6 @@ func Services() svc.Services {
 
 		RegisteredClients: wrappedRegisteredClients{},
 
-		RepoBadges: wrappedRepoBadges{},
-
 		RepoStatuses: wrappedRepoStatuses{},
 
 		RepoTree: wrappedRepoTree{},
@@ -808,60 +806,6 @@ func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.R
 	res, err = local.Services.RegisteredClients.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "RegisteredClients.List returned nil, nil")
-	}
-	return
-}
-
-type wrappedRepoBadges struct{}
-
-func (s wrappedRepoBadges) ListBadges(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.BadgeList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RepoBadges", "ListBadges", param)
-	defer func() {
-		trace.After(ctx, "RepoBadges", "ListBadges", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RepoBadges.ListBadges(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoBadges.ListBadges returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRepoBadges) ListCounters(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.CounterList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RepoBadges", "ListCounters", param)
-	defer func() {
-		trace.After(ctx, "RepoBadges", "ListCounters", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RepoBadges.ListCounters(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoBadges.ListCounters returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRepoBadges) RecordHit(ctx context.Context, param *sourcegraph.RepoSpec) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RepoBadges", "RecordHit", param)
-	defer func() {
-		trace.After(ctx, "RepoBadges", "RecordHit", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RepoBadges.RecordHit(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoBadges.RecordHit returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRepoBadges) CountHits(ctx context.Context, param *sourcegraph.RepoBadgesCountHitsOp) (res *sourcegraph.RepoBadgesCountHitsResult, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RepoBadges", "CountHits", param)
-	defer func() {
-		trace.After(ctx, "RepoBadges", "CountHits", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RepoBadges.CountHits(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RepoBadges.CountHits returned nil, nil")
 	}
 	return
 }
