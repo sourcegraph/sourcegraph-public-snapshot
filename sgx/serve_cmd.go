@@ -1011,7 +1011,7 @@ func (c *ServeCmd) runGitServer() {
 
 	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
-		cmd := exec.Command(sgxcmd.Path, "git-server")
+		cmd := exec.Command(sgxcmd.Path, "git-server", "--auto-terminate")
 		cmd.StdinPipe() // keep stdin from closing
 		cmd.Stdout = io.MultiWriter(os.Stdout, stdoutWriter)
 		cmd.Stderr = os.Stderr
