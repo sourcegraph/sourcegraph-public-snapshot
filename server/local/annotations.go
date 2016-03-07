@@ -25,11 +25,16 @@ var Annotations sourcegraph.AnnotationsServer = &annotations{}
 type annotations struct{}
 
 func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+	var fileRange sourcegraph.FileRange
+	if opt.Range != nil {
+		fileRange = *opt.Range
+	}
+
 	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: opt.Entry,
 		Opt: &sourcegraph.RepoTreeGetOptions{
 			GetFileOptions: sourcegraph.GetFileOptions{
-				FileRange: *opt.Range,
+				FileRange: fileRange,
 			},
 		},
 	})
