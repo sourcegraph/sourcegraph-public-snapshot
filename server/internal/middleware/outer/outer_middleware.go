@@ -36,11 +36,9 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Annotations:       wrappedAnnotations{ctxFunc, services},
 		Auth:              wrappedAuth{ctxFunc, services},
 		Builds:            wrappedBuilds{ctxFunc, services},
-		Changesets:        wrappedChangesets{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
 		Deltas:            wrappedDeltas{ctxFunc, services},
 		GraphUplink:       wrappedGraphUplink{ctxFunc, services},
-		Markdown:          wrappedMarkdown{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
 		Notify:            wrappedNotify{ctxFunc, services},
@@ -500,7 +498,17 @@ type wrappedAnnotations struct {
 	services svc.Services
 }
 
-func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.AnnotationsListOptions) (returnedResult *sourcegraph.AnnotationList, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Annotations.List: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
 	var err error
 	ctx, err = initContext(ctx, s.ctxFunc, s.services)
 	if err != nil {
@@ -980,281 +988,6 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDe
 	return rv, nil
 }
 
-type wrappedChangesets struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedChangesets) Create(ctx context.Context, v1 *sourcegraph.ChangesetCreateOp) (returnedResult *sourcegraph.Changeset, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.Create: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.Create(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) Get(ctx context.Context, v1 *sourcegraph.ChangesetGetOp) (returnedResult *sourcegraph.Changeset, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.Get: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.Get(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) List(ctx context.Context, v1 *sourcegraph.ChangesetListOp) (returnedResult *sourcegraph.ChangesetList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.List: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.List(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) Update(ctx context.Context, v1 *sourcegraph.ChangesetUpdateOp) (returnedResult *sourcegraph.ChangesetEvent, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.Update: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.Update(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) Merge(ctx context.Context, v1 *sourcegraph.ChangesetMergeOp) (returnedResult *sourcegraph.ChangesetEvent, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.Merge: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.Merge(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) UpdateAffected(ctx context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (returnedResult *sourcegraph.ChangesetEventList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.UpdateAffected: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.UpdateAffected(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) CreateReview(ctx context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (returnedResult *sourcegraph.ChangesetReview, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.CreateReview: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.CreateReview(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) ListReviews(ctx context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (returnedResult *sourcegraph.ChangesetReviewList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.ListReviews: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.ListReviews(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedChangesets) ListEvents(ctx context.Context, v1 *sourcegraph.ChangesetSpec) (returnedResult *sourcegraph.ChangesetEventList, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Changesets.ListEvents: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.ChangesetsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Changesets")
-	}
-
-	rv, err := innerSvc.ListEvents(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 type wrappedDefs struct {
 	ctxFunc  ContextFunc
 	services svc.Services
@@ -1683,41 +1416,6 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.User
 	}
 
 	rv, err := innerSvc.PushEvents(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedMarkdown struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedMarkdown) Render(ctx context.Context, v1 *sourcegraph.MarkdownRenderOp) (returnedResult *sourcegraph.MarkdownData, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Markdown.Render: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.MarkdownOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Markdown")
-	}
-
-	rv, err := innerSvc.Render(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

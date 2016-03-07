@@ -45,15 +45,11 @@ func Services() svc.Services {
 
 		Builds: wrappedBuilds{},
 
-		Changesets: wrappedChangesets{},
-
 		Defs: wrappedDefs{},
 
 		Deltas: wrappedDeltas{},
 
 		GraphUplink: wrappedGraphUplink{},
-
-		Markdown: wrappedMarkdown{},
 
 		Meta: wrappedMeta{},
 
@@ -283,11 +279,7 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 	defer func() {
 		trace.After(ctx, "Annotations", "List", param, err, time.Since(start))
 	}()
-
-	target := local.Services.Annotations
-
-	res, err = target.List(ctx, param)
-
+	res, err = local.Services.Annotations.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
 	}
@@ -493,125 +485,6 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 	return
 }
 
-type wrappedChangesets struct{}
-
-func (s wrappedChangesets) Create(ctx context.Context, param *sourcegraph.ChangesetCreateOp) (res *sourcegraph.Changeset, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "Create", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "Create", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.Create(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.Create returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) Get(ctx context.Context, param *sourcegraph.ChangesetGetOp) (res *sourcegraph.Changeset, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "Get", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "Get", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.Get returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) List(ctx context.Context, param *sourcegraph.ChangesetListOp) (res *sourcegraph.ChangesetList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "List", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "List", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.List returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) Update(ctx context.Context, param *sourcegraph.ChangesetUpdateOp) (res *sourcegraph.ChangesetEvent, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "Update", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "Update", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.Update(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.Update returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) Merge(ctx context.Context, param *sourcegraph.ChangesetMergeOp) (res *sourcegraph.ChangesetEvent, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "Merge", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "Merge", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.Merge(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.Merge returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) UpdateAffected(ctx context.Context, param *sourcegraph.ChangesetUpdateAffectedOp) (res *sourcegraph.ChangesetEventList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "UpdateAffected", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "UpdateAffected", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.UpdateAffected(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.UpdateAffected returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) CreateReview(ctx context.Context, param *sourcegraph.ChangesetCreateReviewOp) (res *sourcegraph.ChangesetReview, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "CreateReview", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "CreateReview", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.CreateReview(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.CreateReview returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) ListReviews(ctx context.Context, param *sourcegraph.ChangesetListReviewsOp) (res *sourcegraph.ChangesetReviewList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "ListReviews", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "ListReviews", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.ListReviews(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.ListReviews returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedChangesets) ListEvents(ctx context.Context, param *sourcegraph.ChangesetSpec) (res *sourcegraph.ChangesetEventList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Changesets", "ListEvents", param)
-	defer func() {
-		trace.After(ctx, "Changesets", "ListEvents", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Changesets.ListEvents(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Changesets.ListEvents returned nil, nil")
-	}
-	return
-}
-
 type wrappedDefs struct{}
 
 func (s wrappedDefs) Get(ctx context.Context, param *sourcegraph.DefsGetOp) (res *sourcegraph.Def, err error) {
@@ -796,21 +669,6 @@ func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.U
 	res, err = local.Services.GraphUplink.PushEvents(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "GraphUplink.PushEvents returned nil, nil")
-	}
-	return
-}
-
-type wrappedMarkdown struct{}
-
-func (s wrappedMarkdown) Render(ctx context.Context, param *sourcegraph.MarkdownRenderOp) (res *sourcegraph.MarkdownData, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Markdown", "Render", param)
-	defer func() {
-		trace.After(ctx, "Markdown", "Render", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Markdown.Render(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Markdown.Render returned nil, nil")
 	}
 	return
 }

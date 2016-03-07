@@ -310,18 +310,6 @@ func LogViewDef(ctx context.Context, eventType string) {
 	})
 }
 
-func LogCreateChangeset(ctx context.Context) {
-	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
-
-	Log(&sourcegraph.Event{
-		Type:     "CreateChangeset",
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
-	})
-}
-
 func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Request) {
 	route := httpctx.RouteName(req)
 	eventType := getPageViewEventType(route)

@@ -322,106 +322,6 @@ func (s *StorageServer) List(v0 context.Context, v1 *sourcegraph.StorageKey) (*s
 
 var _ sourcegraph.StorageServer = (*StorageServer)(nil)
 
-type ChangesetsClient struct {
-	Create_         func(ctx context.Context, in *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error)
-	Get_            func(ctx context.Context, in *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error)
-	List_           func(ctx context.Context, in *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
-	Update_         func(ctx context.Context, in *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
-	Merge_          func(ctx context.Context, in *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error)
-	UpdateAffected_ func(ctx context.Context, in *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error)
-	CreateReview_   func(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
-	ListReviews_    func(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
-	ListEvents_     func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
-}
-
-func (s *ChangesetsClient) Create(ctx context.Context, in *sourcegraph.ChangesetCreateOp, opts ...grpc.CallOption) (*sourcegraph.Changeset, error) {
-	return s.Create_(ctx, in)
-}
-
-func (s *ChangesetsClient) Get(ctx context.Context, in *sourcegraph.ChangesetGetOp, opts ...grpc.CallOption) (*sourcegraph.Changeset, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *ChangesetsClient) List(ctx context.Context, in *sourcegraph.ChangesetListOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetList, error) {
-	return s.List_(ctx, in)
-}
-
-func (s *ChangesetsClient) Update(ctx context.Context, in *sourcegraph.ChangesetUpdateOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEvent, error) {
-	return s.Update_(ctx, in)
-}
-
-func (s *ChangesetsClient) Merge(ctx context.Context, in *sourcegraph.ChangesetMergeOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEvent, error) {
-	return s.Merge_(ctx, in)
-}
-
-func (s *ChangesetsClient) UpdateAffected(ctx context.Context, in *sourcegraph.ChangesetUpdateAffectedOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEventList, error) {
-	return s.UpdateAffected_(ctx, in)
-}
-
-func (s *ChangesetsClient) CreateReview(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetReview, error) {
-	return s.CreateReview_(ctx, in)
-}
-
-func (s *ChangesetsClient) ListReviews(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetReviewList, error) {
-	return s.ListReviews_(ctx, in)
-}
-
-func (s *ChangesetsClient) ListEvents(ctx context.Context, in *sourcegraph.ChangesetSpec, opts ...grpc.CallOption) (*sourcegraph.ChangesetEventList, error) {
-	return s.ListEvents_(ctx, in)
-}
-
-var _ sourcegraph.ChangesetsClient = (*ChangesetsClient)(nil)
-
-type ChangesetsServer struct {
-	Create_         func(v0 context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error)
-	Get_            func(v0 context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error)
-	List_           func(v0 context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
-	Update_         func(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
-	Merge_          func(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error)
-	UpdateAffected_ func(v0 context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error)
-	CreateReview_   func(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
-	ListReviews_    func(v0 context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
-	ListEvents_     func(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
-}
-
-func (s *ChangesetsServer) Create(v0 context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
-	return s.Create_(v0, v1)
-}
-
-func (s *ChangesetsServer) Get(v0 context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *ChangesetsServer) List(v0 context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
-	return s.List_(v0, v1)
-}
-
-func (s *ChangesetsServer) Update(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	return s.Update_(v0, v1)
-}
-
-func (s *ChangesetsServer) Merge(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
-	return s.Merge_(v0, v1)
-}
-
-func (s *ChangesetsServer) UpdateAffected(v0 context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
-	return s.UpdateAffected_(v0, v1)
-}
-
-func (s *ChangesetsServer) CreateReview(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
-	return s.CreateReview_(v0, v1)
-}
-
-func (s *ChangesetsServer) ListReviews(v0 context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
-	return s.ListReviews_(v0, v1)
-}
-
-func (s *ChangesetsServer) ListEvents(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
-	return s.ListEvents_(v0, v1)
-}
-
-var _ sourcegraph.ChangesetsServer = (*ChangesetsServer)(nil)
-
 type MirrorReposClient struct {
 	RefreshVCS_    func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 	GetUserData_   func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
@@ -1061,26 +961,6 @@ func (s *DeltasServer) ListAffectedClients(v0 context.Context, v1 *sourcegraph.D
 }
 
 var _ sourcegraph.DeltasServer = (*DeltasServer)(nil)
-
-type MarkdownClient struct {
-	Render_ func(ctx context.Context, in *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error)
-}
-
-func (s *MarkdownClient) Render(ctx context.Context, in *sourcegraph.MarkdownRenderOp, opts ...grpc.CallOption) (*sourcegraph.MarkdownData, error) {
-	return s.Render_(ctx, in)
-}
-
-var _ sourcegraph.MarkdownClient = (*MarkdownClient)(nil)
-
-type MarkdownServer struct {
-	Render_ func(v0 context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error)
-}
-
-func (s *MarkdownServer) Render(v0 context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
-	return s.Render_(v0, v1)
-}
-
-var _ sourcegraph.MarkdownServer = (*MarkdownServer)(nil)
 
 type RepoTreeClient struct {
 	Get_    func(ctx context.Context, in *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)

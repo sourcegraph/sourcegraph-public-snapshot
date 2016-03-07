@@ -13,7 +13,6 @@ import (
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/coverage"
 	"src.sourcegraph.com/sourcegraph/app/internal"
-	_ "src.sourcegraph.com/sourcegraph/app/internal/markdown"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/conf"
@@ -116,8 +115,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoBuildTaskLog).Handler(internal.Handler(serveRepoBuildTaskLog))
 	r.Get(router.RepoBuilds).Handler(internal.Handler(serveRepoBuilds))
 	r.Get(router.RepoBuildsCreate).Handler(internal.Handler(serveRepoBuildsCreate))
-	r.Get(router.RepoCompare).Handler(internal.Handler(serveRepoCompare))
-	r.Get(router.RepoCompareAll).Handler(internal.Handler(serveRepoCompare))
 	r.Get(router.RepoRefresh).Handler(internal.Handler(serveRepoRefresh))
 	r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearch))
 	r.Get(router.RepoTree).Handler(internal.Handler(serveRepoTree))

@@ -22,7 +22,6 @@ type Stores struct {
 	Authorizations     Authorizations
 	BuildLogs          BuildLogs
 	Builds             Builds
-	Changesets         Changesets
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	Graph              srcstore.MockMultiRepoStore
@@ -47,7 +46,6 @@ func (s *Stores) Stores() store.Stores {
 		Authorizations:     &s.Authorizations,
 		BuildLogs:          &s.BuildLogs,
 		Builds:             &s.Builds,
-		Changesets:         &s.Changesets,
 		Directory:          &s.Directory,
 		ExternalAuthTokens: &s.ExternalAuthTokens,
 		Graph:              &s.Graph,

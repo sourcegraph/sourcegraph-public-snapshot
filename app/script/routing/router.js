@@ -4,10 +4,6 @@ module.exports = {
 		return `/${repo}${rev ? `@${rev}` : ""}`;
 	},
 
-	changesetURL(repo, id) {
-		return `${module.exports.repoURL(repo)}/.changes/${id}`;
-	},
-
 	// defURL constructs the application (not API) URL to a def. The def
 	// spec may be passed as individual arguments as listed in the
 	// function prototype, or as one DefSpec object argument.
@@ -69,18 +65,6 @@ module.exports = {
 
 	commitsURL(repo, rev) {
 		return `${module.exports.repoURL(repo, rev)}/.commits`;
-	},
-
-	/**
-	 * @description Constructs a compare view URL.
-	 * @param {string} repo - Repository URL
-	 * @param {string} base - Base compare revision
-	 * @param {string} head - Head compare revision
-	 * @param {string=} filter - Optional filter
-	 * @returns {string} The resulting URL
-	 */
-	compareURL(repo, base, head, filter) {
-		return `${module.exports.repoURL(repo, base)}/.compare/${head}${filter ? `?filter=${filter}` : ""}`;
 	},
 
 	signInURL(returnTo) {

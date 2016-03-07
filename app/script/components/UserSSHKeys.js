@@ -1,5 +1,4 @@
 var React = require("react");
-var globals = require("../globals");
 var $ = require("jquery");
 var UserSSHKey = require("./UserSSHKey");
 
@@ -25,7 +24,7 @@ var UserSSHKeys = React.createClass({
 			method: "DELETE",
 			url: `/.ui/.user/keys?ID=${key.ID}`,
 			headers: {
-				"X-CSRF-Token": globals.CsrfToken,
+				"X-CSRF-Token": typeof window !== "undefined" && window._csrfToken,
 			},
 		}).done(this.handleResponse);
 	},
@@ -50,7 +49,7 @@ var UserSSHKeys = React.createClass({
 			}),
 			dataType: "json",
 			headers: {
-				"X-CSRF-Token": globals.CsrfToken,
+				"X-CSRF-Token": typeof window !== "undefined" && window._csrfToken,
 			},
 		}).done(this.handleResponse);
 	},

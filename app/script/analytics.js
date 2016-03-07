@@ -101,8 +101,6 @@ function setupSentry() {
 		// the plugins, or else the plugins can't take effect.
 		require("jquery");
 		require("raven-js/plugins/jquery.js");
-		require("backbone");
-		require("raven-js/plugins/backbone.js");
 
 		// Ignore rules (from https://gist.github.com/impressiver/5092952).
 		var opt = {

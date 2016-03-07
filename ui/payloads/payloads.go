@@ -34,36 +34,6 @@ type DefCommon struct {
 	Found bool
 }
 
-// Changeset holds the payload that will be sent when requesting information about
-// changesets.
-type Changeset struct {
-	// Changeset contains the changeset data.
-	Changeset *sourcegraph.Changeset
-
-	// Delta contains information about the difference between the revisions
-	// in the changeset.
-	Delta *sourcegraph.Delta
-
-	// BaseTip is the tip commit of the `base` of this changeset. This is compared
-	// against the Delta's BaseCommit which is the merge-base commit. If they
-	// differ, the changeset can not be cleanly merged.
-	BaseTip *vcs.Commit
-
-	// Commits holds the list of commits that are part of this changeset, augmented
-	// with user information.
-	Commits []*AugmentedCommit `json:",omitempty"`
-
-	// Files holds the actual changeset files (diffs).
-	Files *sourcegraph.DeltaFiles `json:",omitempty"`
-
-	// Reviews holds all the reviews that were made on this changeset.
-	Reviews []*sourcegraph.ChangesetReview
-
-	// Events is a list of events that occurred on this changeset. Events are
-	// popuplated when a changeset is updated.
-	Events []*sourcegraph.ChangesetEvent
-}
-
 // CodeFile holds information about a code file to be displayed in the UI.
 type CodeFile struct {
 	// Repo is the repository that the file belongs to.

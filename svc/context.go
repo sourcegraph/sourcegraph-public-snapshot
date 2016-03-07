@@ -28,11 +28,9 @@ const (
 	_AnnotationsKey       contextKey = iota
 	_AuthKey              contextKey = iota
 	_BuildsKey            contextKey = iota
-	_ChangesetsKey        contextKey = iota
 	_DefsKey              contextKey = iota
 	_DeltasKey            contextKey = iota
 	_GraphUplinkKey       contextKey = iota
-	_MarkdownKey          contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
 	_NotifyKey            contextKey = iota
@@ -58,11 +56,9 @@ type Services struct {
 	Annotations       sourcegraph.AnnotationsServer
 	Auth              sourcegraph.AuthServer
 	Builds            sourcegraph.BuildsServer
-	Changesets        sourcegraph.ChangesetsServer
 	Defs              sourcegraph.DefsServer
 	Deltas            sourcegraph.DeltasServer
 	GraphUplink       sourcegraph.GraphUplinkServer
-	Markdown          sourcegraph.MarkdownServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
 	Notify            sourcegraph.NotifyServer
@@ -107,10 +103,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		sourcegraph.RegisterBuildsServer(s, svcs.Builds)
 	}
 
-	if svcs.Changesets != nil {
-		sourcegraph.RegisterChangesetsServer(s, svcs.Changesets)
-	}
-
 	if svcs.Defs != nil {
 		sourcegraph.RegisterDefsServer(s, svcs.Defs)
 	}
@@ -121,10 +113,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.GraphUplink != nil {
 		sourcegraph.RegisterGraphUplinkServer(s, svcs.GraphUplink)
-	}
-
-	if svcs.Markdown != nil {
-		sourcegraph.RegisterMarkdownServer(s, svcs.Markdown)
 	}
 
 	if svcs.Meta != nil {
@@ -216,10 +204,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithBuilds(ctx, s.Builds)
 	}
 
-	if s.Changesets != nil {
-		ctx = WithChangesets(ctx, s.Changesets)
-	}
-
 	if s.Defs != nil {
 		ctx = WithDefs(ctx, s.Defs)
 	}
@@ -230,10 +214,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.GraphUplink != nil {
 		ctx = WithGraphUplink(ctx, s.GraphUplink)
-	}
-
-	if s.Markdown != nil {
-		ctx = WithMarkdown(ctx, s.Markdown)
 	}
 
 	if s.Meta != nil {
@@ -437,29 +417,6 @@ func BuildsOrNil(ctx context.Context) sourcegraph.BuildsServer {
 	return nil
 }
 
-// WithChangesets returns a copy of parent that uses the given Changesets service.
-func WithChangesets(ctx context.Context, s sourcegraph.ChangesetsServer) context.Context {
-	return context.WithValue(ctx, _ChangesetsKey, s)
-}
-
-// Changesets gets the context's Changesets service. If the service is not present, it panics.
-func Changesets(ctx context.Context) sourcegraph.ChangesetsServer {
-	s, ok := ctx.Value(_ChangesetsKey).(sourcegraph.ChangesetsServer)
-	if !ok || s == nil {
-		panic("no Changesets set in context")
-	}
-	return s
-}
-
-// ChangesetsOrNil returns the context's Changesets service if present, or else nil.
-func ChangesetsOrNil(ctx context.Context) sourcegraph.ChangesetsServer {
-	s, ok := ctx.Value(_ChangesetsKey).(sourcegraph.ChangesetsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithDefs returns a copy of parent that uses the given Defs service.
 func WithDefs(ctx context.Context, s sourcegraph.DefsServer) context.Context {
 	return context.WithValue(ctx, _DefsKey, s)
@@ -523,29 +480,6 @@ func GraphUplink(ctx context.Context) sourcegraph.GraphUplinkServer {
 // GraphUplinkOrNil returns the context's GraphUplink service if present, or else nil.
 func GraphUplinkOrNil(ctx context.Context) sourcegraph.GraphUplinkServer {
 	s, ok := ctx.Value(_GraphUplinkKey).(sourcegraph.GraphUplinkServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithMarkdown returns a copy of parent that uses the given Markdown service.
-func WithMarkdown(ctx context.Context, s sourcegraph.MarkdownServer) context.Context {
-	return context.WithValue(ctx, _MarkdownKey, s)
-}
-
-// Markdown gets the context's Markdown service. If the service is not present, it panics.
-func Markdown(ctx context.Context) sourcegraph.MarkdownServer {
-	s, ok := ctx.Value(_MarkdownKey).(sourcegraph.MarkdownServer)
-	if !ok || s == nil {
-		panic("no Markdown set in context")
-	}
-	return s
-}
-
-// MarkdownOrNil returns the context's Markdown service if present, or else nil.
-func MarkdownOrNil(ctx context.Context) sourcegraph.MarkdownServer {
-	s, ok := ctx.Value(_MarkdownKey).(sourcegraph.MarkdownServer)
 	if ok {
 		return s
 	}

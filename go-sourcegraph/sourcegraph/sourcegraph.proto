@@ -70,133 +70,6 @@ message StreamResponse {
 	bool HasMore = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// ChangesetReviewer represents a user who is acting as a reviewer on a
-// changeset, and whether or not they think the changeset is good to merge in
-// it's current form.
-message ChangesetReviewer {
-	// UserSpec is the user who is acting as a reviewer on a changeset.
-	UserSpec UserSpec = 1 [(gogoproto.nullable) = false];
-
-	// FullUser is the full user object (AvatarURL and all) which is only non-nil
-	// if ChangesetGetOp.FullReviewerUsers == true.
-	User FullUser = 2;
-
-	// LGTM is whether or not they think the changeset is a good change to merge
-	// in it's current form.
-	bool LGTM = 3;
-}
-
-// Changeset stores information about a changeset.
-message Changeset {
-	// ID is the unique identifier for this changeset, relative to the repository
-	// that contains it.
-	int64 ID = 1;
-
-	// Title holds a summary about this changeset.
-	string Title = 2;
-
-	// Description holds the description for this changeset.
-	string Description = 3;
-
-	// Author is the user that initiated this changeset.
-	UserSpec Author = 4 [(gogoproto.nullable) = false];
-
-	// Reviewers is a list of people who are assigned to review the changeset.
-	repeated ChangesetReviewer Reviewers = 9;
-
-	// DeltaSpec contains information about the base and head spec for this
-	// changeset.
-	DeltaSpec DeltaSpec = 5 [(gogoproto.nullable) = true];
-
-	// Merged specifies whether this changeset was merged.
-	bool Merged = 6;
-
-	// CreatedAt holds the creation time of this changeset.
-	pbtypes.Timestamp CreatedAt = 7;
-
-	// ClosedAt holds the time when this changeset was closed or merged.
-	pbtypes.Timestamp ClosedAt = 8;
-}
-
-// ChangesetReview contains information about a review submitted on a changeset.
-message ChangesetReview {
-	// ID holds the unique identifier (with reference to the changeset) of the
-	// review.
-	int64 ID = 1;
-
-	// Body holds the text description of the review.
-	string Body = 2;
-
-	// Author is the spec of the user that submitted this review.
-	UserSpec Author = 3 [(gogoproto.nullable) = false];
-
-	// CreatedAt is the date at which this review was submitted.
-	pbtypes.Timestamp CreatedAt = 4;
-
-	// EditedAt is the last time at which this review was edited. If the review
-	// has never been edited, this value will be nil.
-	pbtypes.Timestamp EditedAt = 5;
-
-	// Comments holds any inline comments that were submitted along with this
-	// review.
-	repeated InlineComment Comments = 6 [(gogoproto.nullable) = true];
-
-	// Deleted specifies whether this review has been removed.
-	bool Deleted = 7;
-}
-
-// ChangesetEvent holds information about an update that occurred on the
-// properties of a Changeset.
-message ChangesetEvent {
-	// Before holds the changeset as it was before the event.
-	Changeset Before = 2 [(gogoproto.nullable) = true];
-
-	// After holds the changeset as it became after the event.
-	Changeset After = 3 [(gogoproto.nullable) = true];
-
-	// Op holds the update operation that changed the state.
-	ChangesetUpdateOp Op = 4;
-
-	// CreatedAt is the date at which the event was created.
-	pbtypes.Timestamp CreatedAt = 5;
-}
-
-// InlineComment represents a comment made on a line of code. It is uniquely identified
-// via Filename + LineNumber + CommitID. In a Changeset, the CommitID might vary
-// within the same file based on whether the comment was made on the lines that
-// match the pre-index SHA-1 or the lines that match the post-index SHA-1. Pre
-// and post index values may differ from Base and Head of the diff.
-// For more information on indexes see http://git-scm.com/docs/git-diff-index
-message InlineComment {
-	// Filename is the name of the file where this comment was made.
-	string Filename = 1;
-
-	// LineNumber is the line number relative to the beginning of the file in
-	// the specified commit.
-	int32 LineNumber = 2;
-
-	// CommitID is the SHA-1 for the post-image of this file, where the comment
-	// was placed. The post-image can be deduced from the file entry in the diff
-	// that it belong by extracting it's extended header's index entry.
-	string CommitID = 3;
-
-	// Author is the user that initiated this changeset.
-	UserSpec Author = 4 [(gogoproto.nullable) = false];
-
-	// Body holds the body of this comment.
-	string Body = 5;
-
-	// CreatedAt holds the creation date of this comment.
-	pbtypes.Timestamp CreatedAt = 6;
-
-	// EditedAt holds the time when this comment was last edited. If no edits occurred,
-	// it will be null.
-	pbtypes.Timestamp EditedAt = 7;
-
-	// Deleted indicates whether the comment has been deleted.
-	bool Deleted = 8;
-}
-
 // A Readme represents a formatted "README"-type file in a repository.
 message Readme {
 	// Path is the relative path of this readme file from the repository root.
@@ -681,42 +554,6 @@ service Storage {
 	}
 }
 
-service Changesets {
-	// Create creates a new Changeset and returns it, populating
-	// its fields, such as ID and CreatedAt.
-	rpc Create(ChangesetCreateOp) returns (Changeset);
-
-	// Get returns the changeset by RepoSpec and ID.
-	rpc Get(ChangesetGetOp) returns (Changeset);
-
-	// List lists changesets for a repository.
-	rpc List(ChangesetListOp) returns (ChangesetList);
-
-	// Update updates a changeset's fields and returns the
-	// update event. If no update occurred, it returns nil.
-	rpc Update(ChangesetUpdateOp) returns (ChangesetEvent);
-
-	// Merge merges the head branch of a changeset into its base branch and
-	// pushes the resulting merged base. It returns the resulting update event.
-	// If no merge occurred, it returns nil.
-	rpc Merge(ChangesetMergeOp) returns (ChangesetEvent);
-
-	// UpdateAffected updates all changesets which may be affected
-	// by new commits to a branch and returns the list of update
-	// events for all affected changesets.
-	rpc UpdateAffected(ChangesetUpdateAffectedOp) returns (ChangesetEventList);
-
-	// CreateReview creates a new Review and returns it, populating
-	// its fields, such as ID and CreatedAt.
-	rpc CreateReview(ChangesetCreateReviewOp) returns (ChangesetReview);
-
-	// ListReviews returns all reviews for a given changeset.
-	rpc ListReviews(ChangesetListReviewsOp) returns (ChangesetReviewList);
-
-	// ListEvents returns all the events that occurred on a given changeset.
-	rpc ListEvents(ChangesetSpec) returns (ChangesetEventList);
-}
-
 message ReposCreateOp {
 	// URI is the desired URI of the new repository.
 	string URI = 1;
@@ -823,122 +660,6 @@ message RepoListCommittersOptions {
 message CommitterList {
 	repeated vcs.Committer Committers = 1;
 	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message ChangesetCreateOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-	Changeset Changeset = 2;
-}
-
-message ChangesetCreateReviewOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-	int64 ChangesetID = 2;
-	ChangesetReview Review = 3;
-}
-
-message ChangesetListReviewsOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-	int64 ChangesetID = 2;
-}
-
-message ChangesetSpec {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-	int64 ID = 2;
-}
-
-// ChangesetGetOp specifies options to get a changeset.
-message ChangesetGetOp {
-	// Spec specifies the changeset to get.
-	ChangesetSpec Spec = 1 [(gogoproto.nullable) = false];
-
-	// FullReviewerUsers, if set, will cause the returned changeset to include a
-	// full User object (with AvatarURL and all) for each Reviewer.
-	bool FullReviewerUsers = 2;
-}
-
-message ChangesetUpdateOp {
-	// Repo holds the RepoSpec where the Changeset to be updated is located.
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-
-	// ID holds the ID of the changeset that is to be updated.
-	int64 ID = 2;
-
-	// Title, if non-empty, will be set as the new title of the changeset.
-	string Title = 3;
-
-	// Description, if specified, will become the new description of the changeset.
-	string Description = 4;
-
-	// Open, if true, will set the changeset's ClosedAt value to nil.
-	bool Open = 5;
-
-	// Close, if true, will set the ClosedAt date.
-	bool Close = 6;
-
-	// Merged, if true, will update the changeset to indicate that it was priorly
-	// merged.
-	bool Merged = 7;
-
-	// AddReviewer, if set, adds the specified user as a reviewer for the
-	// changeset.
-	UserSpec AddReviewer = 9;
-
-	// RemoveReviewer, if set, removes the specified user as a reviewer for the
-	// changeset.
-	UserSpec RemoveReviewer = 10;
-
-	// LGTM, if set, marks the changeset as "Looks Good To Me" (good to merge) as
-	// the author of this changeset update.
-	//
-	// It fails if you are not authenticated as that user / an admin, and
-	// automatically adds you as a reviewer to the changeset if you are not
-	// already.
-	bool LGTM = 11;
-
-	// NotLGTM, if set, is the exact opposite operation as LGTM. It does not
-	// remove you as a reviewer (use RemoveReviewer for that).
-	bool NotLGTM = 12;
-
-	// FullReviewerUsers, if set, will cause the returned changeset to include a
-	// full User object (with AvatarURL and all) for each Reviewer.
-	bool FullReviewerUsers = 13;
-
-	// Author is the user that initiated this event.
-	UserSpec Author = 8 [(gogoproto.nullable) = false];
-}
-
-message ChangesetMergeOp {
-	// Repo holds the RepoSpec where the Changeset to be merged is located.
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-
-	// ID holds the ID of the changeset that is to be merged.
-	int64 ID = 2;
-
-	// Message is a text template used to generate a message for the commit of
-	// the resulting merge operation. Any of the fields from the changeset are
-	// available to use in the template.
-	string Message = 3;
-
-	// Squash, if true, will squash the commits of the head branch into a
-	// single commit prior to merging.
-	bool Squash = 4;
-}
-
-message ChangesetUpdateAffectedOp {
-	// Repo holds the RepoSpec which received a commit.
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
-
-	// Branch is the name of the branch which was pushed to.
-	string Branch = 2;
-
-	// Last is the SHA1 of the last commit on the branch.
-	string Last = 3;
-
-	// Commit is the SHA1 of the tip of the newly pushed commits on the branch.
-	string Commit = 4;
-
-	// ForcePush is whether or not the branch was force pushed to.
-	bool ForcePush = 5;
 }
 
 message RepoListTagsOptions {
@@ -1214,29 +935,6 @@ message BuildListOptions {
 	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
-message ChangesetListOp {
-	string Repo = 1;
-
-	// Open, when true, will only return open changesets.
-	bool Open = 2;
-
-	// Closed, when true, will only return closed changeset.
-	bool Closed = 3;
-
-	// NeedsReview, when set, will only return changesets that need review by the
-	// given user (are open and not LGTM'd by that user).
-	UserSpec NeedsReview = 6;
-
-	// Head, if set, will restrict the returned list to only changesets
-	// that have this branch as head.
-	string Head = 4;
-
-	// Base, when set, will restrict the list to changesets that have this
-	// branch as a base.
-	string Base = 5;
-	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
 // A BuildSpec uniquely identifies a build.
 message BuildSpec {
 	// Repo is the repository associated with the build.
@@ -1350,18 +1048,6 @@ message BuildsListBuildTasksOp {
 
 message BuildTaskList {
 	repeated BuildTask BuildTasks = 1;
-}
-
-message ChangesetReviewList {
-	repeated ChangesetReview Reviews = 1;
-}
-
-message ChangesetList {
-	repeated Changeset Changesets = 1;
-}
-
-message ChangesetEventList {
-	repeated ChangesetEvent Events = 1;
 }
 
 message BuildsCreateTasksOp {
@@ -2498,24 +2184,6 @@ message Example {
 	string Rev = 7 [(gogoproto.jsontag) = ",omitempty"];
 }
 
-message MarkdownData {
-	bytes Rendered = 1;
-	Checklist Checklist = 2;
-}
-
-message MarkdownOpt {
-	bool EnableCheckboxes = 1;
-}
-
-message MarkdownRequestBody {
-	bytes Markdown = 1;
-	MarkdownOpt MarkdownOpt = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message MarkdownRenderOp {
-	bytes Markdown = 1;
-	MarkdownOpt Opt = 2 [(gogoproto.nullable) = false];
-}
 
 message Ref {
 	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -2789,14 +2457,6 @@ service Deltas {
 	rpc ListAffectedClients(DeltasListAffectedClientsOp) returns (DeltaAffectedPersonList) {
 		option (google.api.http) = {
 			get: "/deltas/list_affected_clients"
-		};
-	};
-}
-
-service Markdown {
-	rpc Render(MarkdownRenderOp) returns (MarkdownData) {
-		option (google.api.http) = {
-			get: "/markdown/render"
 		};
 	};
 }
@@ -3183,7 +2843,7 @@ message EventList {
 }
 
 // NotifyGenericEvent describes an action being done against an object. For
-// example reviewing a changeset.
+// example, pushing a branch.
 message NotifyGenericEvent {
 	// Actor is the User who did the action
 	UserSpec Actor = 1;
@@ -3191,10 +2851,10 @@ message NotifyGenericEvent {
 	// Recipients is who should be notified of the action
 	repeated UserSpec Recipients = 2;
 
-	// ActionType example: "reviewed"
+	// ActionType example: "pushed"
 	string ActionType = 3;
 
-	// ActionContent example: "Please add tests for the new functionality"
+	// ActionContent example: "37 commits"
 	string ActionContent = 4;
 
 	// ObjectID example: 71
@@ -3203,13 +2863,13 @@ message NotifyGenericEvent {
 	// ObjectRepo example: "gorilla/mux"
 	string ObjectRepo = 6;
 
-	// ObjectType example: "changeset"
+	// ObjectType example: "branch"
 	string ObjectType = 7;
 
-	// ObjectTitle example: "search: Simplify tokenizer"
+	// ObjectTitle example: "mybranch"
 	string ObjectTitle = 8;
 
-	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.changesets/71"
+	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.branches/mybranch"
 	string ObjectURL = 9;
 
 	// SlackMsg, if present, will override the Slack message for this event.

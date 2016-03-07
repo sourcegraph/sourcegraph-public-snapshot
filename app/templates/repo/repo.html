@@ -11,10 +11,3 @@
 </script>
 
 {{end}}
-
-{{define "RepoRefreshButton"}}
-<form class="form refresh-button-form" action="{{urlToRepoSubroute "repo.refresh" .Repo.URI}}" method="post">
-	<button data-loading-text="Refreshing... (reload in a bit)" class="btn btn-default loading-indicator" type="submit"><i class="octicon octicon-sync"></i><span class="txt">Refresh</span></button>
-	<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-</form>
-{{end}}

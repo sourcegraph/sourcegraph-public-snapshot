@@ -48,8 +48,6 @@ const (
 	RepoSearch       = "repo.search"
 	RepoRefresh      = "repo.refresh"
 	RepoTree         = "repo.tree"
-	RepoCompare      = "repo.compare"
-	RepoCompareAll   = "repo.compare.all"
 
 	RepoRevCommits = "repo.rev.commits"
 	RepoCommit     = "repo.commit"
@@ -76,8 +74,6 @@ const (
 	DefPopover  = "def.popover"
 
 	UserContent = "usercontent"
-
-	Markdown = "markdown"
 
 	// Platform routes
 	RepoAppFrame       = "repo.appframe"
@@ -133,8 +129,6 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
 
-	base.Path("/.markdown").Methods("POST").Name(Markdown)
-
 	// User routes begin with tilde (~).
 	userPath := `/~` + routevar.User
 	user := base.PathPrefix(userPath).Subrouter()
@@ -175,10 +169,6 @@ func New(base *mux.Router) *Router {
 
 	repoRev.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
-
-	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
-	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)
-	repoRev.Path("/.compare/" + headVar + "/.all").Methods("GET").Name(RepoCompareAll)
 
 	repo.Path("/.commits/{Rev:" + spec.PathNoLeadingDotComponentPattern + "}").Methods("GET").Name(RepoCommit)
 	repo.Path("/.branches").Methods("GET").Name(RepoBranches)

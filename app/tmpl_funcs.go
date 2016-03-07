@@ -77,7 +77,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlToRepoSubrouteRev": router.Rel.URLToRepoSubrouteRev,
 	"urlToRepoTreeEntry":   router.Rel.URLToRepoTreeEntry,
 	"urlToRepoCommit":      router.Rel.URLToRepoCommit,
-	"urlToRepoCompare":     router.Rel.URLToRepoCompare,
 	"urlToRepoApp":         router.Rel.URLToRepoApp,
 	"urlWithSchema":        schemautil.URLWithSchema,
 	"urlToDef":             router.Rel.URLToDef,

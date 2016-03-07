@@ -33,12 +33,10 @@ type mockServers struct {
 	Accounts     mock.AccountsServer
 	Auth         mock.AuthServer
 	Builds       mock.BuildsServer
-	Changesets   mock.ChangesetsServer
 	Storage      mock.StorageServer
 	Defs         mock.DefsServer
 	Deltas       mock.DeltasServer
 	GitTransport gitmock.GitTransportServer
-	Markdown     mock.MarkdownServer
 	MirrorRepos  mock.MirrorReposServer
 	Orgs         mock.OrgsServer
 	People       mock.PeopleServer
@@ -59,7 +57,6 @@ func (s *mockServers) servers() svc.Services {
 		Defs:         &s.Defs,
 		Deltas:       &s.Deltas,
 		GitTransport: &s.GitTransport,
-		Markdown:     &s.Markdown,
 		MirrorRepos:  &s.MirrorRepos,
 		Orgs:         &s.Orgs,
 		People:       &s.People,

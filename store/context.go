@@ -22,7 +22,6 @@ type Stores struct {
 	Authorizations     Authorizations
 	BuildLogs          BuildLogs
 	Builds             Builds
-	Changesets         Changesets
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	Graph              srcstore.MultiRepoStoreImporterIndexer
@@ -48,7 +47,6 @@ const (
 	_AuthorizationsKey
 	_BuildLogsKey
 	_BuildsKey
-	_ChangesetsKey
 	_DirectoryKey
 	_ExternalAuthTokensKey
 	_GraphKey
@@ -80,9 +78,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Builds != nil {
 		ctx = WithBuilds(ctx, s.Builds)
-	}
-	if s.Changesets != nil {
-		ctx = WithChangesets(ctx, s.Changesets)
 	}
 	if s.Directory != nil {
 		ctx = WithDirectory(ctx, s.Directory)
@@ -187,20 +182,6 @@ func BuildsFromContext(ctx context.Context) Builds {
 	s, ok := ctx.Value(_BuildsKey).(Builds)
 	if !ok || s == nil {
 		panic("no Builds set in context")
-	}
-	return s
-}
-
-// WithChangesets returns a copy of parent with the given Changesets store.
-func WithChangesets(parent context.Context, s Changesets) context.Context {
-	return context.WithValue(parent, _ChangesetsKey, s)
-}
-
-// ChangesetsFromContext gets the context's Changesets store. If the store is not present, it panics.
-func ChangesetsFromContext(ctx context.Context) Changesets {
-	s, ok := ctx.Value(_ChangesetsKey).(Changesets)
-	if !ok || s == nil {
-		panic("no Changesets set in context")
 	}
 	return s
 }

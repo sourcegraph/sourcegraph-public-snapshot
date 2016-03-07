@@ -52,34 +52,3 @@
 		&:hover ul.people { opacity: inherit; }
 	}
 }
-
-.sidebar2 {
-	display: none;
-	@media (min-width: $screen-md-min) {
-		display: block;
-	}
-
-	padding-top: 1em;
-	border-left: 1px solid $gray-lighter;
-
-	.header {
-		border-top: 1px solid $gray-lighter;
-		&:first-child {
-			border-top: 0;
-		}
-	}
-
-	ul {
-		font-weight: bold;
-		@extend .list-unstyled;
-		li {
-			padding-left: $padding-base-horizontal;
-			padding-top: $padding-base-vertical;
-			padding-bottom: $padding-base-vertical;
-		}
-
-		ul {
-			font-weight: normal;
-		}
-	}
-}

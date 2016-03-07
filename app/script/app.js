@@ -16,16 +16,8 @@ require("google-code-prettify/prettify");
 
 require("./auth");
 require("./appdash");
-require("./globals");
 require("./invite");
 require("./mirror-repos");
-
-// Dispatchers
-require("./dispatchers/AppDispatcher");
-
-// Stores
-require("./stores/models/CodeLineModel");
-require("./stores/collections/CodeLineCollection");
 
 // Views
 require("./componentInjection");

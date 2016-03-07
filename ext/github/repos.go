@@ -272,11 +272,3 @@ func (s *Repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 func (s *Repos) Delete(ctx context.Context, repo string) error {
 	return errors.New("GitHub repo deletion is not implemented")
 }
-
-func (s *Repos) CreateChangeset(ctx context.Context, repo string, cs *sourcegraph.Changeset) error {
-	return errors.New("GitHub PR creation is not implemented")
-}
-
-func (s *Repos) GetChangeset(ctx context.Context, repo string, ID int64) (*sourcegraph.Changeset, error) {
-	return nil, errors.New("GitHub PR get is not implemented")
-}

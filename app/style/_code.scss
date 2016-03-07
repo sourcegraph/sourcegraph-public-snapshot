@@ -26,14 +26,6 @@ pre code {
 	white-space: pre-wrap;
 }
 
-/* this class can be used to insert Markdown (backtick-style) entries in
-the middle of prose */
-.backtick {
-	font-family: $font-family-monospace;
-	border: 1px solid #eaeaea;
-	padding: 2px 3px;
-}
-
 pre code, .line-numbered-code td {
 	tab-size: 4;
 
@@ -98,37 +90,6 @@ pre code, .line-numbered-code td {
 
 	.line-content {
 		padding-left: 11px;
-	}
-
-	.inline-content {
-		@include base-font;
-		padding: 10px;
-
-		.inline-form {
-			max-width: 640px;
-
-			.markdown-textarea, & > input, & > textarea {
-				margin-bottom: $line-height-computed / 2;
-			}
-
-			input, textarea {
-				width: 100%;
-				border: solid 1px #eee;
-				padding: 6px;
-				background-color: #fafafa;
-				&:focus {
-					background-color: $white;
-				}
-			}
-
-			textarea {
-				height: 80px;
-			}
-
-			textarea:focus {
-				position: relative;
-			}
-		}
 	}
 
 	tr:hover .line-number {

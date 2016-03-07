@@ -242,16 +242,6 @@
 .token-details {
 	width: 100%;
 	@include z-index(token-popover);
-	&.token-details-review {
-		i.file-path {
-			display: inline-block;
-			text-overflow: ellipsis;
-			overflow: hidden;
-			white-space: nowrap;
-			width: 355px;
-			vertical-align: -4px;
-		}
-	}
 
 	&.closed {
 		opacity: 0;
@@ -352,13 +342,6 @@
 		border: 1px solid #dfdfdf;
 		border-width: 1px 0;
 		overflow-x: auto;
-
-		a.openFullExamples {
-			position: absolute;
-			top: 10px;
-			right: 15px;
-			font-size: 14px;
-		}
 	}
 
 	.line-numbered-code td {

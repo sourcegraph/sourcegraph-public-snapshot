@@ -46,10 +46,6 @@ func (r *Router) URLToRepoSubrouteRev(routeName string, repoURI string, rev stri
 	return r.URLToOrError(routeName, "Repo", repoURI, "Rev", rev)
 }
 
-func (r *Router) URLToRepoCompare(repoURI, rev, head string) (*url.URL, error) {
-	return r.URLToOrError(RepoCompare, "Repo", repoURI, "Rev", rev, "Head", head)
-}
-
 func (r *Router) URLToRepoApp(repoURI string, appID string) (*url.URL, error) {
 	return r.URLToOrError(RepoAppFrame, "Repo", repoURI, "App", appID, "AppPath", "")
 }

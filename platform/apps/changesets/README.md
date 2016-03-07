@@ -1,2 +1,0 @@
-# changesets
-Changesets app

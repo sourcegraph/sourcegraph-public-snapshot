@@ -13,7 +13,6 @@ type Client struct {
 	Defs              DefsClient
 	Deltas            DeltasClient
 	GraphUplink       GraphUplinkClient
-	Markdown          MarkdownClient
 	Meta              MetaClient
 	MirrorRepos       MirrorReposClient
 	Notify            NotifyClient
@@ -25,7 +24,6 @@ type Client struct {
 	RepoTree          RepoTreeClient
 	Repos             ReposClient
 	Storage           StorageClient
-	Changesets        ChangesetsClient
 	Search            SearchClient
 	Units             UnitsClient
 	Users             UsersClient
@@ -49,7 +47,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Defs = NewDefsClient(conn)
 	c.Deltas = NewDeltasClient(conn)
 	c.GraphUplink = NewGraphUplinkClient(conn)
-	c.Markdown = NewMarkdownClient(conn)
 	c.Meta = NewMetaClient(conn)
 	c.MirrorRepos = NewMirrorReposClient(conn)
 	c.Notify = NewNotifyClient(conn)
@@ -61,7 +58,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.RepoTree = NewRepoTreeClient(conn)
 	c.Repos = NewReposClient(conn)
 	c.Storage = NewStorageClient(conn)
-	c.Changesets = NewChangesetsClient(conn)
 	c.Search = NewSearchClient(conn)
 	c.Units = NewUnitsClient(conn)
 	c.Users = NewUsersClient(conn)
