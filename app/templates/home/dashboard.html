@@ -23,6 +23,15 @@
 	{{else if .GitHubOnboarding}}
 		window.onboarding.linkGitHubRedirect = true;
 	{{end}}
+
+	{{if .Companies}}
+	window.intercomSettings.companies = JSON.parse({{json .Companies}}).map(function(company) {
+		return {
+			id: company.ID,
+			name: company.Name,
+		}
+	});
+	{{end}}
 </script>
 
 <div class="dashboard">

@@ -93,6 +93,31 @@
 			data-file-search-disabled="true"
 		{{end}}
 	>
+		{{if appconf.DisableSupportServices}}
+			{{if .CurrentUser}}
+				<script ignore-csp>
+					{{if .UserEmail}}
+					window.intercomSettings = {
+						app_id: "wd8xxn47",
+						name: window._currentUser.Name || window._currentUser.Login,
+						email: {{.UserEmail}},
+						user_hash: {{intercomHMAC .UserEmail}},
+						created_at: Math.floor(new Date(window._currentUser.RegisteredAt).getTime() / 1000),
+					};
+					{{else}}
+					window.intercomSettings = {
+						app_id: "wd8xxn47",
+					}
+					{{end}}
+				</script>
+			{{else}}
+				<script ignore-csp>
+					window.intercomSettings = {
+						app_id: "wd8xxn47",
+					}
+				</script>
+			{{end}}
+		{{end}}
 
 		<header class="page-header">
 			{{with $motd}}<div class="motd">{{.}}</div>{{end}}
@@ -142,32 +167,7 @@
 		{{appconf.ExtraBodyHTML}}
 
 		{{if appconf.DisableSupportServices}}
-			<!-- Start of Sourcegraph Intercom script -->
-			{{if .CurrentUser}}
-				<script ignore-csp>
-					{{if .UserEmail}}
-					window.intercomSettings = {
-						app_id: "wd8xxn47",
-						name: window._currentUser.Name || window._currentUser.Login,
-						email: {{.UserEmail}},
-						user_hash: {{intercomHMAC .UserEmail}},
-						created_at: Math.floor(new Date(window._currentUser.RegisteredAt).getTime() / 1000),
-					};
-					{{else}}
-					window.intercomSettings = {
-						app_id: "wd8xxn47",
-					}
-					{{end}}
-				</script>
-			{{else}}
-				<script ignore-csp>
-					window.intercomSettings = {
-						app_id: "wd8xxn47",
-					}
-				</script>
-			{{end}}
 			<script ignore-csp>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wd8xxn47';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
-			<!-- End of Sourcegraph Intercom script -->
 		{{end}}
 	</body>
 </html>
