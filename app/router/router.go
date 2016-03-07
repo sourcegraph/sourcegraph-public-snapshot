@@ -46,7 +46,6 @@ const (
 	RepoBuildTaskLog = "repo.build.task.log"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoSearch       = "repo.search"
-	RepoRefresh      = "repo.refresh"
 	RepoTree         = "repo.tree"
 
 	RepoRevCommits = "repo.rev.commits"
@@ -158,7 +157,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
 	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 
-	repoRev.Path("/.refresh").Methods("POST", "PUT").Name(RepoRefresh)
 	repoRev.Path("/.badges").Methods("GET").Name(RepoBadges)
 	repoRev.Path("/.badges/{Badge}.{Format}").Methods("GET").Name(RepoBadge)
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)

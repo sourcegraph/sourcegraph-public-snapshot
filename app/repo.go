@@ -33,26 +33,6 @@ func init() {
 	})
 }
 
-func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
-
-	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
-	op := &sourcegraph.MirrorReposRefreshVCSOp{
-		Repo: rc.Repo.RepoSpec(),
-	}
-
-	if _, err := cl.MirrorRepos.RefreshVCS(ctx, op); err != nil {
-		return err
-	}
-
-	http.Redirect(w, r, router.Rel.URLToRepo(rc.Repo.URI).String(), http.StatusNoContent)
-	return nil
-}
-
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
