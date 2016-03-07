@@ -37,7 +37,7 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 		i, ref := loopI, loopRef
 
 		par.Do(func() error {
-			examples[i] = &sourcegraph.Example{Ref: ref.Ref}
+			examples[i] = &sourcegraph.Example{Ref: *ref}
 
 			entrySpec := sourcegraph.TreeEntrySpec{
 				RepoRev: sourcegraph.RepoRevSpec{

@@ -5,7 +5,6 @@ package mock
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
@@ -827,8 +826,6 @@ type DefsClient struct {
 	List_         func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_     func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListExamples_ func(ctx context.Context, in *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error)
-	ListAuthors_  func(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
-	ListClients_  func(ctx context.Context, in *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error)
 }
 
 func (s *DefsClient) Get(ctx context.Context, in *sourcegraph.DefsGetOp, opts ...grpc.CallOption) (*sourcegraph.Def, error) {
@@ -847,14 +844,6 @@ func (s *DefsClient) ListExamples(ctx context.Context, in *sourcegraph.DefsListE
 	return s.ListExamples_(ctx, in)
 }
 
-func (s *DefsClient) ListAuthors(ctx context.Context, in *sourcegraph.DefsListAuthorsOp, opts ...grpc.CallOption) (*sourcegraph.DefAuthorList, error) {
-	return s.ListAuthors_(ctx, in)
-}
-
-func (s *DefsClient) ListClients(ctx context.Context, in *sourcegraph.DefsListClientsOp, opts ...grpc.CallOption) (*sourcegraph.DefClientList, error) {
-	return s.ListClients_(ctx, in)
-}
-
 var _ sourcegraph.DefsClient = (*DefsClient)(nil)
 
 type DefsServer struct {
@@ -862,8 +851,6 @@ type DefsServer struct {
 	List_         func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_     func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListExamples_ func(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error)
-	ListAuthors_  func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
-	ListClients_  func(v0 context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error)
 }
 
 func (s *DefsServer) Get(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
@@ -882,82 +869,34 @@ func (s *DefsServer) ListExamples(v0 context.Context, v1 *sourcegraph.DefsListEx
 	return s.ListExamples_(v0, v1)
 }
 
-func (s *DefsServer) ListAuthors(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
-	return s.ListAuthors_(v0, v1)
-}
-
-func (s *DefsServer) ListClients(v0 context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
-	return s.ListClients_(v0, v1)
-}
-
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)
 
 type DeltasClient struct {
-	Get_                 func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
-	ListUnits_           func(ctx context.Context, in *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error)
-	ListDefs_            func(ctx context.Context, in *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error)
-	ListFiles_           func(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
-	ListAffectedAuthors_ func(ctx context.Context, in *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error)
-	ListAffectedClients_ func(ctx context.Context, in *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error)
+	Get_       func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
+	ListFiles_ func(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
 }
 
 func (s *DeltasClient) Get(ctx context.Context, in *sourcegraph.DeltaSpec, opts ...grpc.CallOption) (*sourcegraph.Delta, error) {
 	return s.Get_(ctx, in)
 }
 
-func (s *DeltasClient) ListUnits(ctx context.Context, in *sourcegraph.DeltasListUnitsOp, opts ...grpc.CallOption) (*sourcegraph.UnitDeltaList, error) {
-	return s.ListUnits_(ctx, in)
-}
-
-func (s *DeltasClient) ListDefs(ctx context.Context, in *sourcegraph.DeltasListDefsOp, opts ...grpc.CallOption) (*sourcegraph.DeltaDefs, error) {
-	return s.ListDefs_(ctx, in)
-}
-
 func (s *DeltasClient) ListFiles(ctx context.Context, in *sourcegraph.DeltasListFilesOp, opts ...grpc.CallOption) (*sourcegraph.DeltaFiles, error) {
 	return s.ListFiles_(ctx, in)
-}
-
-func (s *DeltasClient) ListAffectedAuthors(ctx context.Context, in *sourcegraph.DeltasListAffectedAuthorsOp, opts ...grpc.CallOption) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedAuthors_(ctx, in)
-}
-
-func (s *DeltasClient) ListAffectedClients(ctx context.Context, in *sourcegraph.DeltasListAffectedClientsOp, opts ...grpc.CallOption) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedClients_(ctx, in)
 }
 
 var _ sourcegraph.DeltasClient = (*DeltasClient)(nil)
 
 type DeltasServer struct {
-	Get_                 func(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
-	ListUnits_           func(v0 context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error)
-	ListDefs_            func(v0 context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error)
-	ListFiles_           func(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
-	ListAffectedAuthors_ func(v0 context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error)
-	ListAffectedClients_ func(v0 context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error)
+	Get_       func(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
+	ListFiles_ func(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
 }
 
 func (s *DeltasServer) Get(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
 	return s.Get_(v0, v1)
 }
 
-func (s *DeltasServer) ListUnits(v0 context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {
-	return s.ListUnits_(v0, v1)
-}
-
-func (s *DeltasServer) ListDefs(v0 context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
-	return s.ListDefs_(v0, v1)
-}
-
 func (s *DeltasServer) ListFiles(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	return s.ListFiles_(v0, v1)
-}
-
-func (s *DeltasServer) ListAffectedAuthors(v0 context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedAuthors_(v0, v1)
-}
-
-func (s *DeltasServer) ListAffectedClients(v0 context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedClients_(v0, v1)
 }
 
 var _ sourcegraph.DeltasServer = (*DeltasServer)(nil)
@@ -1031,36 +970,6 @@ func (s *SearchServer) SearchText(v0 context.Context, v1 *sourcegraph.TextSearch
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)
-
-type UnitsClient struct {
-	Get_  func(ctx context.Context, in *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error)
-	List_ func(ctx context.Context, in *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error)
-}
-
-func (s *UnitsClient) Get(ctx context.Context, in *sourcegraph.UnitSpec, opts ...grpc.CallOption) (*unit.RepoSourceUnit, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *UnitsClient) List(ctx context.Context, in *sourcegraph.UnitListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoSourceUnitList, error) {
-	return s.List_(ctx, in)
-}
-
-var _ sourcegraph.UnitsClient = (*UnitsClient)(nil)
-
-type UnitsServer struct {
-	Get_  func(v0 context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error)
-	List_ func(v0 context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error)
-}
-
-func (s *UnitsServer) Get(v0 context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *UnitsServer) List(v0 context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
-	return s.List_(v0, v1)
-}
-
-var _ sourcegraph.UnitsServer = (*UnitsServer)(nil)
 
 type MetaClient struct {
 	Status_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerStatus, error)

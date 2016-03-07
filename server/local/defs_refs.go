@@ -1,17 +1,13 @@
 package local
 
 import (
-	"log"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
 )
@@ -64,48 +60,13 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}
 
 	// Convert to sourcegraph.Ref and file bareRefs.
-	refs := make([]*sourcegraph.Ref, 0, opt.Limit())
+	refs := make([]*graph.Ref, 0, opt.Limit())
 	for i, bareRef := range bareRefs {
 		if i >= opt.Offset() && i < (opt.Offset()+opt.Limit()) {
-			refs = append(refs, &sourcegraph.Ref{Ref: *bareRef})
+			refs = append(refs, bareRef)
 		}
 	}
 	hasMore := len(bareRefs) > opt.Offset()+opt.Limit()
-
-	// Get authorship info, if requested.
-	if opt.Authorship {
-		// TODO(perf): optimize this to hit the cache more, assuming
-		// we're blaming lots of small refs in the same file
-		par := parallel.NewRun(8)
-		for _, ref0 := range refs {
-			ref := ref0
-			par.Do(func() error {
-				vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, ref.Repo)
-				if err != nil {
-					return err
-				}
-				hunks, err := blameFileByteRange(vcsrepo, ref.File, &vcs.BlameOptions{NewestCommit: vcs.CommitID(ref.CommitID)}, int(ref.Start), int(ref.End))
-				if err != nil {
-					return err
-				}
-				if len(hunks) != 1 {
-					log.Printf("Warning: blaming ref %v: blame output has %d hunks, expected only one. Using first (or skipping if none).", ref, len(hunks))
-				}
-				if len(hunks) > 0 {
-					h := hunks[0]
-					ref.Authorship = &sourcegraph.AuthorshipInfo{
-						AuthorEmail:    h.Author.Email, // TODO(privacy): leaks email addrs
-						LastCommitDate: h.Author.Date,
-						LastCommitID:   string(h.CommitID),
-					}
-				}
-				return nil
-			})
-		}
-		if err := par.Wait(); err != nil {
-			log.Printf("Warning: error fetching ref authorship info for def %+v: %s. Continuing.", defSpec, err)
-		}
-	}
 
 	return &sourcegraph.RefList{
 		Refs:           refs,

@@ -18,7 +18,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -74,8 +73,6 @@ func Services() svc.Services {
 		Search: wrappedSearch{},
 
 		Storage: wrappedStorage{},
-
-		Units: wrappedUnits{},
 
 		UserKeys: wrappedUserKeys{},
 
@@ -539,32 +536,6 @@ func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsLi
 	return
 }
 
-func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsListAuthorsOp) (res *sourcegraph.DefAuthorList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Defs", "ListAuthors", param)
-	defer func() {
-		trace.After(ctx, "Defs", "ListAuthors", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Defs.ListAuthors(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListAuthors returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedDefs) ListClients(ctx context.Context, param *sourcegraph.DefsListClientsOp) (res *sourcegraph.DefClientList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Defs", "ListClients", param)
-	defer func() {
-		trace.After(ctx, "Defs", "ListClients", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Defs.ListClients(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListClients returned nil, nil")
-	}
-	return
-}
-
 type wrappedDeltas struct{}
 
 func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (res *sourcegraph.Delta, err error) {
@@ -580,32 +551,6 @@ func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (r
 	return
 }
 
-func (s wrappedDeltas) ListUnits(ctx context.Context, param *sourcegraph.DeltasListUnitsOp) (res *sourcegraph.UnitDeltaList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "ListUnits", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "ListUnits", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Deltas.ListUnits(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Deltas.ListUnits returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedDeltas) ListDefs(ctx context.Context, param *sourcegraph.DeltasListDefsOp) (res *sourcegraph.DeltaDefs, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "ListDefs", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "ListDefs", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Deltas.ListDefs(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Deltas.ListDefs returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasListFilesOp) (res *sourcegraph.DeltaFiles, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Deltas", "ListFiles", param)
@@ -615,32 +560,6 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	res, err = local.Services.Deltas.ListFiles(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedDeltas) ListAffectedAuthors(ctx context.Context, param *sourcegraph.DeltasListAffectedAuthorsOp) (res *sourcegraph.DeltaAffectedPersonList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "ListAffectedAuthors", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "ListAffectedAuthors", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Deltas.ListAffectedAuthors(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Deltas.ListAffectedAuthors returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedDeltas) ListAffectedClients(ctx context.Context, param *sourcegraph.DeltasListAffectedClientsOp) (res *sourcegraph.DeltaAffectedPersonList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Deltas", "ListAffectedClients", param)
-	defer func() {
-		trace.After(ctx, "Deltas", "ListAffectedClients", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Deltas.ListAffectedClients(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Deltas.ListAffectedClients returned nil, nil")
 	}
 	return
 }
@@ -1317,34 +1236,6 @@ func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey)
 	res, err = local.Services.Storage.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.List returned nil, nil")
-	}
-	return
-}
-
-type wrappedUnits struct{}
-
-func (s wrappedUnits) Get(ctx context.Context, param *sourcegraph.UnitSpec) (res *unit.RepoSourceUnit, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Units", "Get", param)
-	defer func() {
-		trace.After(ctx, "Units", "Get", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Units.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Units.Get returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedUnits) List(ctx context.Context, param *sourcegraph.UnitListOptions) (res *sourcegraph.RepoSourceUnitList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Units", "List", param)
-	defer func() {
-		trace.After(ctx, "Units", "List", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Units.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Units.List returned nil, nil")
 	}
 	return
 }

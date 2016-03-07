@@ -38,7 +38,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/gitserver/gitpb"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"

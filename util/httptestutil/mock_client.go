@@ -29,7 +29,6 @@ type MockClients struct {
 	RepoTree          mock.RepoTreeClient
 	Repos             mock.ReposClient
 	Search            mock.SearchClient
-	Units             mock.UnitsClient
 	Users             mock.UsersClient
 }
 
@@ -51,7 +50,6 @@ func (c *MockClients) Client() *sourcegraph.Client {
 		RepoTree:          &c.RepoTree,
 		Repos:             &c.Repos,
 		Search:            &c.Search,
-		Units:             &c.Units,
 		Users:             &c.Users,
 	}
 }

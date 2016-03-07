@@ -1,10 +1,6 @@
 package sourcegraph
 
-import (
-	"fmt"
-
-	"sourcegraph.com/sourcegraph/srclib/graph"
-)
+import "sourcegraph.com/sourcegraph/srclib/graph"
 
 func (s *DefSpec) RouteVars() map[string]string {
 	m := map[string]string{"Repo": s.Repo, "UnitType": s.UnitType, "Unit": s.Unit, "Path": s.Path}
@@ -52,23 +48,3 @@ func (s *Def) DefSpec() DefSpec {
 	spec := NewDefSpecFromDefKey(s.Def.DefKey)
 	return spec
 }
-
-type Refs []*Ref
-
-func (r *Ref) sortKey() string     { return fmt.Sprintf("%+v", r) }
-func (vs Refs) Len() int           { return len(vs) }
-func (vs Refs) Swap(i, j int)      { vs[i], vs[j] = vs[j], vs[i] }
-func (vs Refs) Less(i, j int) bool { return vs[i].sortKey() < vs[j].sortKey() }
-
-type Examples []*Example
-
-func (r *Example) sortKey() string     { return fmt.Sprintf("%+v", r) }
-func (vs Examples) Len() int           { return len(vs) }
-func (vs Examples) Swap(i, j int)      { vs[i], vs[j] = vs[j], vs[i] }
-func (vs Examples) Less(i, j int) bool { return vs[i].sortKey() < vs[j].sortKey() }
-
-type DefAuthorsByBytes []*DefAuthor
-
-func (v DefAuthorsByBytes) Len() int           { return len(v) }
-func (v DefAuthorsByBytes) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
-func (v DefAuthorsByBytes) Less(i, j int) bool { return v[i].Bytes < v[j].Bytes }

@@ -6,7 +6,6 @@ import "sourcegraph.com/sourcegraph/go-diff/diff/diff.proto";
 import "src.sourcegraph.com/sourcegraph/pkg/vcs/vcs.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
-import "sourcegraph.com/sourcegraph/srclib/unit/unit.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";
@@ -1829,15 +1828,6 @@ message ExternalToken {
 	int32 ext_uid = 6 [(gogoproto.customname) = "ExtUID"];
 }
 
-message AuthorshipInfo {
-	string AuthorEmail = 1;
-	pbtypes.Timestamp LastCommitDate = 2 [(gogoproto.nullable) = false];
-
-	// LastCommitID is the commit ID of the last commit that this author made to the
-	// thing that this info describes.
-	string LastCommitID = 3;
-}
-
 // Def is a code def returned by the Sourcegraph API.
 message Def {
 	graph.Def Def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -1845,57 +1835,9 @@ message Def {
 	graph.DefFormatStrings FmtStrings = 3;
 }
 
-message DefAuthor {
-	int32 UID = 1;
-	string Email = 2;
-	DefAuthorship DefAuthorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message DefAuthorship {
-	AuthorshipInfo AuthorshipInfo = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// Exported is whether the def is exported.
-	bool Exported = 2;
-
-	int32 Bytes = 3;
-	double BytesProportion = 4;
-}
-
-message DefClient {
-	int32 UID = 1;
-	string Email = 2;
-	AuthorshipInfo AuthorshipInfo = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// UseCount is the number of times this person referred to the def.
-	int32 UseCount = 4;
-}
-
-// A DefDelta represents a single definition that was changed. It has fields for
-// the before (Base) and after (Head) versions. If both Base and Head are non-nil,
-// then the def was changed from base to head. Otherwise, one of the fields being
-// nil means that the def did not exist in that revision (e.g., it was added or
-// deleted from base to head).
-message DefDelta {
-	// the def in the base commit (if nil, this def was added in the head)
-	Def Base = 1;
-
-	// the def in the head commit (if nil, this def was deleted in the head)
-	Def Head = 2;
-}
-
 // DefGetOptions specifies options for DefsService.Get.
 message DefGetOptions {
 	bool Doc = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-}
-
-// DefListAuthorsOptions specifies options for DefsService.ListAuthors.
-message DefListAuthorsOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// DefListClientsOptions specifies options for DefsService.ListClients.
-message DefListClientsOptions {
-	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
@@ -1966,7 +1908,6 @@ message DefListOptions {
 }
 
 message DefListRefsOptions {
-	bool Authorship = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
@@ -1996,7 +1937,7 @@ message DefsListRefsOp {
 }
 
 message RefList {
-	repeated Ref Refs = 1;
+	repeated graph.Ref Refs = 1;
 	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
@@ -2013,16 +1954,6 @@ message ExampleList {
 	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
-message DefsListAuthorsOp {
-	DefSpec Def = 1 [(gogoproto.nullable) = false];
-	DefListAuthorsOptions Opt = 2;
-}
-
-message DefsListClientsOp {
-	DefSpec Def = 1 [(gogoproto.nullable) = false];
-	DefListClientsOptions Opt = 2;
-}
-
 // Delta represents the difference between two commits (possibly in 2 separate
 // repositories).
 message Delta {
@@ -2032,32 +1963,6 @@ message Delta {
 	vcs.Commit HeadCommit = 4;
 	Repo BaseRepo = 5;
 	Repo HeadRepo = 6;
-}
-
-// DeltaAffectedPerson describes a person (registered user or committer email
-// address) that is affected by a delta. It includes fields for the person affected
-// as well as the defs that are the reason why we consider them to be affected.
-//
-// The person's relationship to the Defs depends on what method returned this
-// DeltaAffectedPerson. If it was returned by a method that lists authors, then the
-// Defs are definitions that the Person committed. If it was returned by a method
-// that lists clients (a.k.a users), then the Defs are definitions that the Person
-// uses.
-message DeltaAffectedPerson {
-	// the affected person
-	Person Person = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// the defs they authored or use (the reason why they're affected)
-	repeated Def Defs = 2;
-}
-
-// DeltaDefs describes definitions added/changed/deleted in a delta.
-message DeltaDefs {
-	// added/changed/deleted defs
-	repeated DefDelta Defs = 1;
-
-	// overall diffstat (not subject to pagination)
-	diff.Stat DiffStat = 2 [(gogoproto.nullable) = false];
 }
 
 // FileDiff holds data about a diff, and additionally stores extended
@@ -2091,24 +1996,6 @@ message DeltaFilter {
 	string UnitType = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// DeltaListAffectedAuthorsOptions specifies options for ListAffectedAuthors.
-message DeltaListAffectedAuthorsOptions {
-	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// DeltaListAffectedClientsOptions specifies options for ListAffectedClients.
-message DeltaListAffectedClientsOptions {
-	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// DeltaListDefsOptions specifies options for ListDefs.
-message DeltaListDefsOptions {
-	DeltaFilter DeltaFilter = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
 // DeltaListFilesOptions specifies options for ListFiles.
 message DeltaListFilesOptions {
 	// Filter filters the list of returned files to those whose name matches
@@ -2124,49 +2011,16 @@ message DeltaListFilesOptions {
 	DeltaFilter DeltaFilter = 5 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
-// DeltaListUnitsOptions specifies options for ListUnits.
-message DeltaListUnitsOptions {
-}
-
 // A DeltaSpec specifies a delta.
 message DeltaSpec {
 	RepoRevSpec Base = 1 [(gogoproto.nullable) = false];
 	RepoRevSpec Head = 2 [(gogoproto.nullable) = false];
 }
 
-message DeltasListUnitsOp {
-	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
-	DeltaListUnitsOptions Opt = 2;
-}
-
-message UnitDeltaList {
-	repeated UnitDelta UnitDeltas = 1;
-}
-
-message DeltasListDefsOp {
-	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
-	DeltaListDefsOptions Opt = 2;
-}
-
 message DeltasListFilesOp {
 	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
 	DeltaListFilesOptions Opt = 2;
 }
-
-message DeltasListAffectedAuthorsOp {
-	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
-	DeltaListAffectedAuthorsOptions Opt = 2;
-}
-
-message DeltaAffectedPersonList {
-	repeated DeltaAffectedPerson DeltaAffectedPersons = 1;
-}
-
-message DeltasListAffectedClientsOp {
-	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
-	DeltaListAffectedClientsOptions Opt = 2;
-}
-
 // Example is a usage example of a def.
 message Example {
 	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -2182,12 +2036,6 @@ message Example {
 	// If the example has been requested by revision name (ie. branch, tag), this
 	// value will be set.
 	string Rev = 7 [(gogoproto.jsontag) = ",omitempty"];
-}
-
-
-message Ref {
-	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	AuthorshipInfo Authorship = 2;
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
@@ -2316,56 +2164,6 @@ message FileRange {
 	int64 EndByte = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// A UnitDelta represents a single source unit that was changed. It has fields for
-// the before (Base) and after (Head) versions. If both Base and Head are non-nil,
-// then the unit was changed from base to head. Otherwise, one of the fields being
-// nil means that the unit did not exist in that revision (e.g., it was added or
-// deleted from base to head).
-message UnitDelta {
-	unit.RepoSourceUnit Base = 1;
-	unit.RepoSourceUnit Head = 2;
-}
-
-// UnitListOptions specifies options for UnitsService.List.
-message UnitListOptions {
-	// RepoRevs constrains the results to a set of repository revisions (given by their
-	// URIs plus an optional "@" and a revision specifier). For example,
-	// "repo.com/foo@revspec".
-	repeated string RepoRevs = 1 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
-
-	string UnitType = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string Unit = 3 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// NameQuery specifies a full-text search query over the unit name.
-	string NameQuery = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// Query specifies a full-text search query over the repo URI, unit name, and unit
-	// data.
-	string Query = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	// Paging
-	ListOptions ListOptions = 6 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// UnitSpec specifies a source unit.
-message UnitSpec {
-	RepoRevSpec RepoRevSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	string UnitType = 2;
-	string Unit = 3;
-}
-
-message RepoSourceUnitList {
-	repeated unit.RepoSourceUnit Units = 1;
-}
-
-message DefAuthorList {
-	repeated DefAuthor DefAuthors = 1;
-}
-
-message DefClientList {
-	repeated DefClient DefClients = 1;
-}
-
 // DefsService communicates with the def- and graph-related endpoints in the
 // Sourcegraph API.
 service Defs {
@@ -2396,26 +2194,10 @@ service Defs {
 			get: "/defs/list_examples"
 		};
 	};
-
-	// ListExamples lists people who committed parts of def's definition.
-	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList) {
-		option (google.api.http) = {
-			get: "/defs/list_authors"
-		};
-	};
-
-	// ListClients lists people who use def in their code.
-	rpc ListClients(DefsListClientsOp) returns (DefClientList) {
-		option (google.api.http) = {
-			get: "/defs/list_clients"
-		};
-	};
 }
 
 // DeltasService interacts with the delta-related endpoints of the Sourcegraph API.
-// A delta is all of the changes between two commits, possibly from two different
-// repositories. It includes the usual file diffs as well as definition-level
-// diffs, affected author/repo impact information, etc.
+// A delta is all of the changes between two commits.
 service Deltas {
 	// Get fetches a summary of a delta.
 	rpc Get(DeltaSpec) returns (Delta) {
@@ -2424,39 +2206,10 @@ service Deltas {
 		};
 	};
 
-	// ListUnits lists units added/changed/deleted in a delta.
-	rpc ListUnits(DeltasListUnitsOp) returns (UnitDeltaList) {
-		option (google.api.http) = {
-			get: "/deltas/list_units"
-		};
-	};
-
-	// ListDefs lists definitions added/changed/deleted in a delta.
-	rpc ListDefs(DeltasListDefsOp) returns (DeltaDefs) {
-		option (google.api.http) = {
-			get: "/deltas/list_defs"
-		};
-	};
-
 	// ListFiles fetches the file diff for a delta.
 	rpc ListFiles(DeltasListFilesOp) returns (DeltaFiles) {
 		option (google.api.http) = {
 			get: "/deltas/list_files"
-		};
-	};
-
-	// ListAffectedAuthors lists authors whose code is added/deleted/changed in a
-	// delta.
-	rpc ListAffectedAuthors(DeltasListAffectedAuthorsOp) returns (DeltaAffectedPersonList) {
-		option (google.api.http) = {
-			get: "/deltas/list_affected_authors"
-		};
-	};
-
-	// ListAffectedClients lists clients whose code is affected by a delta.
-	rpc ListAffectedClients(DeltasListAffectedClientsOp) returns (DeltaAffectedPersonList) {
-		option (google.api.http) = {
-			get: "/deltas/list_affected_clients"
 		};
 	};
 }
@@ -2499,24 +2252,6 @@ service Search {
 	rpc SearchText(TextSearchOptions) returns (VCSSearchResultList) {
 		option (google.api.http) = {
 			post: "/search/text"
-		};
-	};
-}
-
-// UnitsService communicates with the source unit-related endpoints in the
-// Sourcegraph API.
-service Units {
-	// Get fetches a unit.
-	rpc Get(UnitSpec) returns (unit.RepoSourceUnit) {
-		option (google.api.http) = {
-			get: "/units"
-		};
-	};
-
-	// List units.
-	rpc List(UnitListOptions) returns (RepoSourceUnitList) {
-		option (google.api.http) = {
-			get: "/units/list"
 		};
 	};
 }

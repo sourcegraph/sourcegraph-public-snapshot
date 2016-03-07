@@ -45,7 +45,6 @@ type mockServers struct {
 	RepoTree     mock.RepoTreeServer
 	Repos        mock.ReposServer
 	Search       mock.SearchServer
-	Units        mock.UnitsServer
 	Users        mock.UsersServer
 }
 
@@ -65,7 +64,6 @@ func (s *mockServers) servers() svc.Services {
 		RepoTree:     &s.RepoTree,
 		Repos:        &s.Repos,
 		Search:       &s.Search,
-		Units:        &s.Units,
 		Users:        &s.Users,
 	}
 }

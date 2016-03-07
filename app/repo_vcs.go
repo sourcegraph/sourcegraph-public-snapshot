@@ -62,8 +62,6 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 		DeltaFiles *sourcegraph.DeltaFiles
 		DeltaSpec  sourcegraph.DeltaSpec
 
-		DeltaListDefsOpt *sourcegraph.DeltaListDefsOptions
-
 		// TODO(beyang): additional hacks like the one above
 		ShowFiles bool
 		Filter    string

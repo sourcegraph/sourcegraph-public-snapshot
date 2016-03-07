@@ -43,7 +43,6 @@ const (
 	_ReposKey             contextKey = iota
 	_SearchKey            contextKey = iota
 	_StorageKey           contextKey = iota
-	_UnitsKey             contextKey = iota
 	_UserKeysKey          contextKey = iota
 	_UsersKey             contextKey = iota
 )
@@ -71,7 +70,6 @@ type Services struct {
 	Repos             sourcegraph.ReposServer
 	Search            sourcegraph.SearchServer
 	Storage           sourcegraph.StorageServer
-	Units             sourcegraph.UnitsServer
 	UserKeys          sourcegraph.UserKeysServer
 	Users             sourcegraph.UsersServer
 }
@@ -161,10 +159,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Storage != nil {
 		sourcegraph.RegisterStorageServer(s, svcs.Storage)
-	}
-
-	if svcs.Units != nil {
-		sourcegraph.RegisterUnitsServer(s, svcs.Units)
 	}
 
 	if svcs.UserKeys != nil {
@@ -262,10 +256,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Storage != nil {
 		ctx = WithStorage(ctx, s.Storage)
-	}
-
-	if s.Units != nil {
-		ctx = WithUnits(ctx, s.Units)
 	}
 
 	if s.UserKeys != nil {
@@ -756,29 +746,6 @@ func Storage(ctx context.Context) sourcegraph.StorageServer {
 // StorageOrNil returns the context's Storage service if present, or else nil.
 func StorageOrNil(ctx context.Context) sourcegraph.StorageServer {
 	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithUnits returns a copy of parent that uses the given Units service.
-func WithUnits(ctx context.Context, s sourcegraph.UnitsServer) context.Context {
-	return context.WithValue(ctx, _UnitsKey, s)
-}
-
-// Units gets the context's Units service. If the service is not present, it panics.
-func Units(ctx context.Context) sourcegraph.UnitsServer {
-	s, ok := ctx.Value(_UnitsKey).(sourcegraph.UnitsServer)
-	if !ok || s == nil {
-		panic("no Units set in context")
-	}
-	return s
-}
-
-// UnitsOrNil returns the context's Units service if present, or else nil.
-func UnitsOrNil(ctx context.Context) sourcegraph.UnitsServer {
-	s, ok := ctx.Value(_UnitsKey).(sourcegraph.UnitsServer)
 	if ok {
 		return s
 	}

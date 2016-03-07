@@ -116,15 +116,8 @@
 		AuthInfo
 		ExternalTokenRequest
 		ExternalToken
-		AuthorshipInfo
 		Def
-		DefAuthor
-		DefAuthorship
-		DefClient
-		DefDelta
 		DefGetOptions
-		DefListAuthorsOptions
-		DefListClientsOptions
 		DefListExamplesOptions
 		DefListOptions
 		DefListRefsOptions
@@ -135,29 +128,14 @@
 		RefList
 		DefsListExamplesOp
 		ExampleList
-		DefsListAuthorsOp
-		DefsListClientsOp
 		Delta
-		DeltaAffectedPerson
-		DeltaDefs
 		FileDiff
 		DeltaFiles
 		DeltaFilter
-		DeltaListAffectedAuthorsOptions
-		DeltaListAffectedClientsOptions
-		DeltaListDefsOptions
 		DeltaListFilesOptions
-		DeltaListUnitsOptions
 		DeltaSpec
-		DeltasListUnitsOp
-		UnitDeltaList
-		DeltasListDefsOp
 		DeltasListFilesOp
-		DeltasListAffectedAuthorsOp
-		DeltaAffectedPersonList
-		DeltasListAffectedClientsOp
 		Example
-		Ref
 		RepoTreeGetOptions
 		GetFileOptions
 		RepoTreeSearchOptions
@@ -173,12 +151,6 @@
 		BasicTreeEntry
 		TreeEntrySpec
 		FileRange
-		UnitDelta
-		UnitListOptions
-		UnitSpec
-		RepoSourceUnitList
-		DefAuthorList
-		DefClientList
 		Checklist
 		FileToken
 		ServerStatus
@@ -212,7 +184,6 @@ import diff "sourcegraph.com/sourcegraph/go-diff/diff"
 import vcs "src.sourcegraph.com/sourcegraph/pkg/vcs"
 import graph "sourcegraph.com/sourcegraph/srclib/graph"
 import graph1 "sourcegraph.com/sourcegraph/srclib/graph"
-import unit "sourcegraph.com/sourcegraph/srclib/unit"
 import pbtypes "sourcegraph.com/sqs/pbtypes"
 import pbtypes1 "sourcegraph.com/sqs/pbtypes"
 import pbtypes2 "sourcegraph.com/sqs/pbtypes"
@@ -2013,18 +1984,6 @@ func (m *ExternalToken) Reset()         { *m = ExternalToken{} }
 func (m *ExternalToken) String() string { return proto.CompactTextString(m) }
 func (*ExternalToken) ProtoMessage()    {}
 
-type AuthorshipInfo struct {
-	AuthorEmail    string            `protobuf:"bytes,1,opt,name=AuthorEmail,proto3" json:"AuthorEmail,omitempty"`
-	LastCommitDate pbtypes.Timestamp `protobuf:"bytes,2,opt,name=LastCommitDate" json:"LastCommitDate"`
-	// LastCommitID is the commit ID of the last commit that this author made to the
-	// thing that this info describes.
-	LastCommitID string `protobuf:"bytes,3,opt,name=LastCommitID,proto3" json:"LastCommitID,omitempty"`
-}
-
-func (m *AuthorshipInfo) Reset()         { *m = AuthorshipInfo{} }
-func (m *AuthorshipInfo) String() string { return proto.CompactTextString(m) }
-func (*AuthorshipInfo) ProtoMessage()    {}
-
 // Def is a code def returned by the Sourcegraph API.
 type Def struct {
 	graph.Def  `protobuf:"bytes,1,opt,name=Def,embedded=Def" json:""`
@@ -2036,56 +1995,6 @@ func (m *Def) Reset()         { *m = Def{} }
 func (m *Def) String() string { return proto.CompactTextString(m) }
 func (*Def) ProtoMessage()    {}
 
-type DefAuthor struct {
-	UID           int32  `protobuf:"varint,1,opt,name=UID,proto3" json:"UID,omitempty"`
-	Email         string `protobuf:"bytes,2,opt,name=Email,proto3" json:"Email,omitempty"`
-	DefAuthorship `protobuf:"bytes,3,opt,name=DefAuthorship,embedded=DefAuthorship" json:""`
-}
-
-func (m *DefAuthor) Reset()         { *m = DefAuthor{} }
-func (m *DefAuthor) String() string { return proto.CompactTextString(m) }
-func (*DefAuthor) ProtoMessage()    {}
-
-type DefAuthorship struct {
-	AuthorshipInfo `protobuf:"bytes,1,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:""`
-	// Exported is whether the def is exported.
-	Exported        bool    `protobuf:"varint,2,opt,name=Exported,proto3" json:"Exported,omitempty"`
-	Bytes           int32   `protobuf:"varint,3,opt,name=Bytes,proto3" json:"Bytes,omitempty"`
-	BytesProportion float64 `protobuf:"fixed64,4,opt,name=BytesProportion,proto3" json:"BytesProportion,omitempty"`
-}
-
-func (m *DefAuthorship) Reset()         { *m = DefAuthorship{} }
-func (m *DefAuthorship) String() string { return proto.CompactTextString(m) }
-func (*DefAuthorship) ProtoMessage()    {}
-
-type DefClient struct {
-	UID            int32  `protobuf:"varint,1,opt,name=UID,proto3" json:"UID,omitempty"`
-	Email          string `protobuf:"bytes,2,opt,name=Email,proto3" json:"Email,omitempty"`
-	AuthorshipInfo `protobuf:"bytes,3,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:""`
-	// UseCount is the number of times this person referred to the def.
-	UseCount int32 `protobuf:"varint,4,opt,name=UseCount,proto3" json:"UseCount,omitempty"`
-}
-
-func (m *DefClient) Reset()         { *m = DefClient{} }
-func (m *DefClient) String() string { return proto.CompactTextString(m) }
-func (*DefClient) ProtoMessage()    {}
-
-// A DefDelta represents a single definition that was changed. It has fields for
-// the before (Base) and after (Head) versions. If both Base and Head are non-nil,
-// then the def was changed from base to head. Otherwise, one of the fields being
-// nil means that the def did not exist in that revision (e.g., it was added or
-// deleted from base to head).
-type DefDelta struct {
-	// the def in the base commit (if nil, this def was added in the head)
-	Base *Def `protobuf:"bytes,1,opt,name=Base" json:"Base,omitempty"`
-	// the def in the head commit (if nil, this def was deleted in the head)
-	Head *Def `protobuf:"bytes,2,opt,name=Head" json:"Head,omitempty"`
-}
-
-func (m *DefDelta) Reset()         { *m = DefDelta{} }
-func (m *DefDelta) String() string { return proto.CompactTextString(m) }
-func (*DefDelta) ProtoMessage()    {}
-
 // DefGetOptions specifies options for DefsService.Get.
 type DefGetOptions struct {
 	Doc bool `protobuf:"varint,1,opt,name=Doc,proto3" json:"Doc,omitempty" url:",omitempty"`
@@ -2094,24 +2003,6 @@ type DefGetOptions struct {
 func (m *DefGetOptions) Reset()         { *m = DefGetOptions{} }
 func (m *DefGetOptions) String() string { return proto.CompactTextString(m) }
 func (*DefGetOptions) ProtoMessage()    {}
-
-// DefListAuthorsOptions specifies options for DefsService.ListAuthors.
-type DefListAuthorsOptions struct {
-	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *DefListAuthorsOptions) Reset()         { *m = DefListAuthorsOptions{} }
-func (m *DefListAuthorsOptions) String() string { return proto.CompactTextString(m) }
-func (*DefListAuthorsOptions) ProtoMessage()    {}
-
-// DefListClientsOptions specifies options for DefsService.ListClients.
-type DefListClientsOptions struct {
-	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *DefListClientsOptions) Reset()         { *m = DefListClientsOptions{} }
-func (m *DefListClientsOptions) String() string { return proto.CompactTextString(m) }
-func (*DefListClientsOptions) ProtoMessage()    {}
 
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
 type DefListExamplesOptions struct {
@@ -2173,7 +2064,6 @@ func (m *DefListOptions) String() string { return proto.CompactTextString(m) }
 func (*DefListOptions) ProtoMessage()    {}
 
 type DefListRefsOptions struct {
-	Authorship  bool   `protobuf:"varint,1,opt,name=Authorship,proto3" json:"Authorship,omitempty" url:",omitempty"`
 	Repo        string `protobuf:"bytes,2,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
 	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
@@ -2223,7 +2113,7 @@ func (m *DefsListRefsOp) String() string { return proto.CompactTextString(m) }
 func (*DefsListRefsOp) ProtoMessage()    {}
 
 type RefList struct {
-	Refs           []*Ref `protobuf:"bytes,1,rep,name=Refs" json:"Refs,omitempty"`
+	Refs           []*graph1.Ref `protobuf:"bytes,1,rep,name=Refs" json:"Refs,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
@@ -2252,24 +2142,6 @@ func (m *ExampleList) Reset()         { *m = ExampleList{} }
 func (m *ExampleList) String() string { return proto.CompactTextString(m) }
 func (*ExampleList) ProtoMessage()    {}
 
-type DefsListAuthorsOp struct {
-	Def DefSpec                `protobuf:"bytes,1,opt,name=Def" json:"Def"`
-	Opt *DefListAuthorsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
-}
-
-func (m *DefsListAuthorsOp) Reset()         { *m = DefsListAuthorsOp{} }
-func (m *DefsListAuthorsOp) String() string { return proto.CompactTextString(m) }
-func (*DefsListAuthorsOp) ProtoMessage()    {}
-
-type DefsListClientsOp struct {
-	Def DefSpec                `protobuf:"bytes,1,opt,name=Def" json:"Def"`
-	Opt *DefListClientsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
-}
-
-func (m *DefsListClientsOp) Reset()         { *m = DefsListClientsOp{} }
-func (m *DefsListClientsOp) String() string { return proto.CompactTextString(m) }
-func (*DefsListClientsOp) ProtoMessage()    {}
-
 // Delta represents the difference between two commits (possibly in 2 separate
 // repositories).
 type Delta struct {
@@ -2284,38 +2156,6 @@ type Delta struct {
 func (m *Delta) Reset()         { *m = Delta{} }
 func (m *Delta) String() string { return proto.CompactTextString(m) }
 func (*Delta) ProtoMessage()    {}
-
-// DeltaAffectedPerson describes a person (registered user or committer email
-// address) that is affected by a delta. It includes fields for the person affected
-// as well as the defs that are the reason why we consider them to be affected.
-//
-// The person's relationship to the Defs depends on what method returned this
-// DeltaAffectedPerson. If it was returned by a method that lists authors, then the
-// Defs are definitions that the Person committed. If it was returned by a method
-// that lists clients (a.k.a users), then the Defs are definitions that the Person
-// uses.
-type DeltaAffectedPerson struct {
-	// the affected person
-	Person `protobuf:"bytes,1,opt,name=Person,embedded=Person" json:""`
-	// the defs they authored or use (the reason why they're affected)
-	Defs []*Def `protobuf:"bytes,2,rep,name=Defs" json:"Defs,omitempty"`
-}
-
-func (m *DeltaAffectedPerson) Reset()         { *m = DeltaAffectedPerson{} }
-func (m *DeltaAffectedPerson) String() string { return proto.CompactTextString(m) }
-func (*DeltaAffectedPerson) ProtoMessage()    {}
-
-// DeltaDefs describes definitions added/changed/deleted in a delta.
-type DeltaDefs struct {
-	// added/changed/deleted defs
-	Defs []*DefDelta `protobuf:"bytes,1,rep,name=Defs" json:"Defs,omitempty"`
-	// overall diffstat (not subject to pagination)
-	DiffStat diff.Stat `protobuf:"bytes,2,opt,name=DiffStat" json:"DiffStat"`
-}
-
-func (m *DeltaDefs) Reset()         { *m = DeltaDefs{} }
-func (m *DeltaDefs) String() string { return proto.CompactTextString(m) }
-func (*DeltaDefs) ProtoMessage()    {}
 
 // FileDiff holds data about a diff, and additionally stores extended
 // information about its hunks.
@@ -2359,36 +2199,6 @@ func (m *DeltaFilter) Reset()         { *m = DeltaFilter{} }
 func (m *DeltaFilter) String() string { return proto.CompactTextString(m) }
 func (*DeltaFilter) ProtoMessage()    {}
 
-// DeltaListAffectedAuthorsOptions specifies options for ListAffectedAuthors.
-type DeltaListAffectedAuthorsOptions struct {
-	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *DeltaListAffectedAuthorsOptions) Reset()         { *m = DeltaListAffectedAuthorsOptions{} }
-func (m *DeltaListAffectedAuthorsOptions) String() string { return proto.CompactTextString(m) }
-func (*DeltaListAffectedAuthorsOptions) ProtoMessage()    {}
-
-// DeltaListAffectedClientsOptions specifies options for ListAffectedClients.
-type DeltaListAffectedClientsOptions struct {
-	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *DeltaListAffectedClientsOptions) Reset()         { *m = DeltaListAffectedClientsOptions{} }
-func (m *DeltaListAffectedClientsOptions) String() string { return proto.CompactTextString(m) }
-func (*DeltaListAffectedClientsOptions) ProtoMessage()    {}
-
-// DeltaListDefsOptions specifies options for ListDefs.
-type DeltaListDefsOptions struct {
-	DeltaFilter `protobuf:"bytes,1,opt,name=DeltaFilter,embedded=DeltaFilter" json:""`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *DeltaListDefsOptions) Reset()         { *m = DeltaListDefsOptions{} }
-func (m *DeltaListDefsOptions) String() string { return proto.CompactTextString(m) }
-func (*DeltaListDefsOptions) ProtoMessage()    {}
-
 // DeltaListFilesOptions specifies options for ListFiles.
 type DeltaListFilesOptions struct {
 	// Filter filters the list of returned files to those whose name matches
@@ -2406,14 +2216,6 @@ func (m *DeltaListFilesOptions) Reset()         { *m = DeltaListFilesOptions{} }
 func (m *DeltaListFilesOptions) String() string { return proto.CompactTextString(m) }
 func (*DeltaListFilesOptions) ProtoMessage()    {}
 
-// DeltaListUnitsOptions specifies options for ListUnits.
-type DeltaListUnitsOptions struct {
-}
-
-func (m *DeltaListUnitsOptions) Reset()         { *m = DeltaListUnitsOptions{} }
-func (m *DeltaListUnitsOptions) String() string { return proto.CompactTextString(m) }
-func (*DeltaListUnitsOptions) ProtoMessage()    {}
-
 // A DeltaSpec specifies a delta.
 type DeltaSpec struct {
 	Base RepoRevSpec `protobuf:"bytes,1,opt,name=Base" json:"Base"`
@@ -2424,32 +2226,6 @@ func (m *DeltaSpec) Reset()         { *m = DeltaSpec{} }
 func (m *DeltaSpec) String() string { return proto.CompactTextString(m) }
 func (*DeltaSpec) ProtoMessage()    {}
 
-type DeltasListUnitsOp struct {
-	Ds  DeltaSpec              `protobuf:"bytes,1,opt,name=Ds" json:"Ds"`
-	Opt *DeltaListUnitsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
-}
-
-func (m *DeltasListUnitsOp) Reset()         { *m = DeltasListUnitsOp{} }
-func (m *DeltasListUnitsOp) String() string { return proto.CompactTextString(m) }
-func (*DeltasListUnitsOp) ProtoMessage()    {}
-
-type UnitDeltaList struct {
-	UnitDeltas []*UnitDelta `protobuf:"bytes,1,rep,name=UnitDeltas" json:"UnitDeltas,omitempty"`
-}
-
-func (m *UnitDeltaList) Reset()         { *m = UnitDeltaList{} }
-func (m *UnitDeltaList) String() string { return proto.CompactTextString(m) }
-func (*UnitDeltaList) ProtoMessage()    {}
-
-type DeltasListDefsOp struct {
-	Ds  DeltaSpec             `protobuf:"bytes,1,opt,name=Ds" json:"Ds"`
-	Opt *DeltaListDefsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
-}
-
-func (m *DeltasListDefsOp) Reset()         { *m = DeltasListDefsOp{} }
-func (m *DeltasListDefsOp) String() string { return proto.CompactTextString(m) }
-func (*DeltasListDefsOp) ProtoMessage()    {}
-
 type DeltasListFilesOp struct {
 	Ds  DeltaSpec              `protobuf:"bytes,1,opt,name=Ds" json:"Ds"`
 	Opt *DeltaListFilesOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
@@ -2458,32 +2234,6 @@ type DeltasListFilesOp struct {
 func (m *DeltasListFilesOp) Reset()         { *m = DeltasListFilesOp{} }
 func (m *DeltasListFilesOp) String() string { return proto.CompactTextString(m) }
 func (*DeltasListFilesOp) ProtoMessage()    {}
-
-type DeltasListAffectedAuthorsOp struct {
-	Ds  DeltaSpec                        `protobuf:"bytes,1,opt,name=Ds" json:"Ds"`
-	Opt *DeltaListAffectedAuthorsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
-}
-
-func (m *DeltasListAffectedAuthorsOp) Reset()         { *m = DeltasListAffectedAuthorsOp{} }
-func (m *DeltasListAffectedAuthorsOp) String() string { return proto.CompactTextString(m) }
-func (*DeltasListAffectedAuthorsOp) ProtoMessage()    {}
-
-type DeltaAffectedPersonList struct {
-	DeltaAffectedPersons []*DeltaAffectedPerson `protobuf:"bytes,1,rep,name=DeltaAffectedPersons" json:"DeltaAffectedPersons,omitempty"`
-}
-
-func (m *DeltaAffectedPersonList) Reset()         { *m = DeltaAffectedPersonList{} }
-func (m *DeltaAffectedPersonList) String() string { return proto.CompactTextString(m) }
-func (*DeltaAffectedPersonList) ProtoMessage()    {}
-
-type DeltasListAffectedClientsOp struct {
-	Ds  DeltaSpec                        `protobuf:"bytes,1,opt,name=Ds" json:"Ds"`
-	Opt *DeltaListAffectedClientsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
-}
-
-func (m *DeltasListAffectedClientsOp) Reset()         { *m = DeltasListAffectedClientsOp{} }
-func (m *DeltasListAffectedClientsOp) String() string { return proto.CompactTextString(m) }
-func (*DeltasListAffectedClientsOp) ProtoMessage()    {}
 
 // Example is a usage example of a def.
 type Example struct {
@@ -2501,15 +2251,6 @@ type Example struct {
 func (m *Example) Reset()         { *m = Example{} }
 func (m *Example) String() string { return proto.CompactTextString(m) }
 func (*Example) ProtoMessage()    {}
-
-type Ref struct {
-	graph1.Ref `protobuf:"bytes,1,opt,name=Ref,embedded=Ref" json:""`
-	Authorship *AuthorshipInfo `protobuf:"bytes,2,opt,name=Authorship" json:"Authorship,omitempty"`
-}
-
-func (m *Ref) Reset()         { *m = Ref{} }
-func (m *Ref) String() string { return proto.CompactTextString(m) }
-func (*Ref) ProtoMessage()    {}
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 type RepoTreeGetOptions struct {
@@ -2679,76 +2420,6 @@ type FileRange struct {
 func (m *FileRange) Reset()         { *m = FileRange{} }
 func (m *FileRange) String() string { return proto.CompactTextString(m) }
 func (*FileRange) ProtoMessage()    {}
-
-// A UnitDelta represents a single source unit that was changed. It has fields for
-// the before (Base) and after (Head) versions. If both Base and Head are non-nil,
-// then the unit was changed from base to head. Otherwise, one of the fields being
-// nil means that the unit did not exist in that revision (e.g., it was added or
-// deleted from base to head).
-type UnitDelta struct {
-	Base *unit.RepoSourceUnit `protobuf:"bytes,1,opt,name=Base" json:"Base,omitempty"`
-	Head *unit.RepoSourceUnit `protobuf:"bytes,2,opt,name=Head" json:"Head,omitempty"`
-}
-
-func (m *UnitDelta) Reset()         { *m = UnitDelta{} }
-func (m *UnitDelta) String() string { return proto.CompactTextString(m) }
-func (*UnitDelta) ProtoMessage()    {}
-
-// UnitListOptions specifies options for UnitsService.List.
-type UnitListOptions struct {
-	// RepoRevs constrains the results to a set of repository revisions (given by their
-	// URIs plus an optional "@" and a revision specifier). For example,
-	// "repo.com/foo@revspec".
-	RepoRevs []string `protobuf:"bytes,1,rep,name=RepoRevs" json:"RepoRevs,omitempty" url:",omitempty,comma"`
-	UnitType string   `protobuf:"bytes,2,opt,name=UnitType,proto3" json:"UnitType,omitempty" url:",omitempty"`
-	Unit     string   `protobuf:"bytes,3,opt,name=Unit,proto3" json:"Unit,omitempty" url:",omitempty"`
-	// NameQuery specifies a full-text search query over the unit name.
-	NameQuery string `protobuf:"bytes,4,opt,name=NameQuery,proto3" json:"NameQuery,omitempty" url:",omitempty"`
-	// Query specifies a full-text search query over the repo URI, unit name, and unit
-	// data.
-	Query string `protobuf:"bytes,5,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
-	// Paging
-	ListOptions `protobuf:"bytes,6,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *UnitListOptions) Reset()         { *m = UnitListOptions{} }
-func (m *UnitListOptions) String() string { return proto.CompactTextString(m) }
-func (*UnitListOptions) ProtoMessage()    {}
-
-// UnitSpec specifies a source unit.
-type UnitSpec struct {
-	RepoRevSpec `protobuf:"bytes,1,opt,name=RepoRevSpec,embedded=RepoRevSpec" json:""`
-	UnitType    string `protobuf:"bytes,2,opt,name=UnitType,proto3" json:"UnitType,omitempty"`
-	Unit        string `protobuf:"bytes,3,opt,name=Unit,proto3" json:"Unit,omitempty"`
-}
-
-func (m *UnitSpec) Reset()         { *m = UnitSpec{} }
-func (m *UnitSpec) String() string { return proto.CompactTextString(m) }
-func (*UnitSpec) ProtoMessage()    {}
-
-type RepoSourceUnitList struct {
-	Units []*unit.RepoSourceUnit `protobuf:"bytes,1,rep,name=Units" json:"Units,omitempty"`
-}
-
-func (m *RepoSourceUnitList) Reset()         { *m = RepoSourceUnitList{} }
-func (m *RepoSourceUnitList) String() string { return proto.CompactTextString(m) }
-func (*RepoSourceUnitList) ProtoMessage()    {}
-
-type DefAuthorList struct {
-	DefAuthors []*DefAuthor `protobuf:"bytes,1,rep,name=DefAuthors" json:"DefAuthors,omitempty"`
-}
-
-func (m *DefAuthorList) Reset()         { *m = DefAuthorList{} }
-func (m *DefAuthorList) String() string { return proto.CompactTextString(m) }
-func (*DefAuthorList) ProtoMessage()    {}
-
-type DefClientList struct {
-	DefClients []*DefClient `protobuf:"bytes,1,rep,name=DefClients" json:"DefClients,omitempty"`
-}
-
-func (m *DefClientList) Reset()         { *m = DefClientList{} }
-func (m *DefClientList) String() string { return proto.CompactTextString(m) }
-func (*DefClientList) ProtoMessage()    {}
 
 type Checklist struct {
 	// number of tasks to be done (unchecked)
@@ -5621,10 +5292,6 @@ type DefsClient interface {
 	ListRefs(ctx context.Context, in *DefsListRefsOp, opts ...grpc.CallOption) (*RefList, error)
 	// ListExamples lists examples for def.
 	ListExamples(ctx context.Context, in *DefsListExamplesOp, opts ...grpc.CallOption) (*ExampleList, error)
-	// ListExamples lists people who committed parts of def's definition.
-	ListAuthors(ctx context.Context, in *DefsListAuthorsOp, opts ...grpc.CallOption) (*DefAuthorList, error)
-	// ListClients lists people who use def in their code.
-	ListClients(ctx context.Context, in *DefsListClientsOp, opts ...grpc.CallOption) (*DefClientList, error)
 }
 
 type defsClient struct {
@@ -5671,24 +5338,6 @@ func (c *defsClient) ListExamples(ctx context.Context, in *DefsListExamplesOp, o
 	return out, nil
 }
 
-func (c *defsClient) ListAuthors(ctx context.Context, in *DefsListAuthorsOp, opts ...grpc.CallOption) (*DefAuthorList, error) {
-	out := new(DefAuthorList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Defs/ListAuthors", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *defsClient) ListClients(ctx context.Context, in *DefsListClientsOp, opts ...grpc.CallOption) (*DefClientList, error) {
-	out := new(DefClientList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Defs/ListClients", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for Defs service
 
 type DefsServer interface {
@@ -5700,10 +5349,6 @@ type DefsServer interface {
 	ListRefs(context.Context, *DefsListRefsOp) (*RefList, error)
 	// ListExamples lists examples for def.
 	ListExamples(context.Context, *DefsListExamplesOp) (*ExampleList, error)
-	// ListExamples lists people who committed parts of def's definition.
-	ListAuthors(context.Context, *DefsListAuthorsOp) (*DefAuthorList, error)
-	// ListClients lists people who use def in their code.
-	ListClients(context.Context, *DefsListClientsOp) (*DefClientList, error)
 }
 
 func RegisterDefsServer(s *grpc.Server, srv DefsServer) {
@@ -5758,30 +5403,6 @@ func _Defs_ListExamples_Handler(srv interface{}, ctx context.Context, dec func(i
 	return out, nil
 }
 
-func _Defs_ListAuthors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DefsListAuthorsOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DefsServer).ListAuthors(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Defs_ListClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DefsListClientsOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DefsServer).ListClients(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 var _Defs_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Defs",
 	HandlerType: (*DefsServer)(nil),
@@ -5802,14 +5423,6 @@ var _Defs_serviceDesc = grpc.ServiceDesc{
 			MethodName: "ListExamples",
 			Handler:    _Defs_ListExamples_Handler,
 		},
-		{
-			MethodName: "ListAuthors",
-			Handler:    _Defs_ListAuthors_Handler,
-		},
-		{
-			MethodName: "ListClients",
-			Handler:    _Defs_ListClients_Handler,
-		},
 	},
 	Streams: []grpc.StreamDesc{},
 }
@@ -5819,17 +5432,8 @@ var _Defs_serviceDesc = grpc.ServiceDesc{
 type DeltasClient interface {
 	// Get fetches a summary of a delta.
 	Get(ctx context.Context, in *DeltaSpec, opts ...grpc.CallOption) (*Delta, error)
-	// ListUnits lists units added/changed/deleted in a delta.
-	ListUnits(ctx context.Context, in *DeltasListUnitsOp, opts ...grpc.CallOption) (*UnitDeltaList, error)
-	// ListDefs lists definitions added/changed/deleted in a delta.
-	ListDefs(ctx context.Context, in *DeltasListDefsOp, opts ...grpc.CallOption) (*DeltaDefs, error)
 	// ListFiles fetches the file diff for a delta.
 	ListFiles(ctx context.Context, in *DeltasListFilesOp, opts ...grpc.CallOption) (*DeltaFiles, error)
-	// ListAffectedAuthors lists authors whose code is added/deleted/changed in a
-	// delta.
-	ListAffectedAuthors(ctx context.Context, in *DeltasListAffectedAuthorsOp, opts ...grpc.CallOption) (*DeltaAffectedPersonList, error)
-	// ListAffectedClients lists clients whose code is affected by a delta.
-	ListAffectedClients(ctx context.Context, in *DeltasListAffectedClientsOp, opts ...grpc.CallOption) (*DeltaAffectedPersonList, error)
 }
 
 type deltasClient struct {
@@ -5849,45 +5453,9 @@ func (c *deltasClient) Get(ctx context.Context, in *DeltaSpec, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *deltasClient) ListUnits(ctx context.Context, in *DeltasListUnitsOp, opts ...grpc.CallOption) (*UnitDeltaList, error) {
-	out := new(UnitDeltaList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Deltas/ListUnits", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *deltasClient) ListDefs(ctx context.Context, in *DeltasListDefsOp, opts ...grpc.CallOption) (*DeltaDefs, error) {
-	out := new(DeltaDefs)
-	err := grpc.Invoke(ctx, "/sourcegraph.Deltas/ListDefs", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *deltasClient) ListFiles(ctx context.Context, in *DeltasListFilesOp, opts ...grpc.CallOption) (*DeltaFiles, error) {
 	out := new(DeltaFiles)
 	err := grpc.Invoke(ctx, "/sourcegraph.Deltas/ListFiles", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *deltasClient) ListAffectedAuthors(ctx context.Context, in *DeltasListAffectedAuthorsOp, opts ...grpc.CallOption) (*DeltaAffectedPersonList, error) {
-	out := new(DeltaAffectedPersonList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Deltas/ListAffectedAuthors", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *deltasClient) ListAffectedClients(ctx context.Context, in *DeltasListAffectedClientsOp, opts ...grpc.CallOption) (*DeltaAffectedPersonList, error) {
-	out := new(DeltaAffectedPersonList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Deltas/ListAffectedClients", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5899,17 +5467,8 @@ func (c *deltasClient) ListAffectedClients(ctx context.Context, in *DeltasListAf
 type DeltasServer interface {
 	// Get fetches a summary of a delta.
 	Get(context.Context, *DeltaSpec) (*Delta, error)
-	// ListUnits lists units added/changed/deleted in a delta.
-	ListUnits(context.Context, *DeltasListUnitsOp) (*UnitDeltaList, error)
-	// ListDefs lists definitions added/changed/deleted in a delta.
-	ListDefs(context.Context, *DeltasListDefsOp) (*DeltaDefs, error)
 	// ListFiles fetches the file diff for a delta.
 	ListFiles(context.Context, *DeltasListFilesOp) (*DeltaFiles, error)
-	// ListAffectedAuthors lists authors whose code is added/deleted/changed in a
-	// delta.
-	ListAffectedAuthors(context.Context, *DeltasListAffectedAuthorsOp) (*DeltaAffectedPersonList, error)
-	// ListAffectedClients lists clients whose code is affected by a delta.
-	ListAffectedClients(context.Context, *DeltasListAffectedClientsOp) (*DeltaAffectedPersonList, error)
 }
 
 func RegisterDeltasServer(s *grpc.Server, srv DeltasServer) {
@@ -5928,60 +5487,12 @@ func _Deltas_Get_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return out, nil
 }
 
-func _Deltas_ListUnits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DeltasListUnitsOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DeltasServer).ListUnits(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Deltas_ListDefs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DeltasListDefsOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DeltasServer).ListDefs(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func _Deltas_ListFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(DeltasListFilesOp)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(DeltasServer).ListFiles(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Deltas_ListAffectedAuthors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DeltasListAffectedAuthorsOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DeltasServer).ListAffectedAuthors(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Deltas_ListAffectedClients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DeltasListAffectedClientsOp)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(DeltasServer).ListAffectedClients(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -5997,24 +5508,8 @@ var _Deltas_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Deltas_Get_Handler,
 		},
 		{
-			MethodName: "ListUnits",
-			Handler:    _Deltas_ListUnits_Handler,
-		},
-		{
-			MethodName: "ListDefs",
-			Handler:    _Deltas_ListDefs_Handler,
-		},
-		{
 			MethodName: "ListFiles",
 			Handler:    _Deltas_ListFiles_Handler,
-		},
-		{
-			MethodName: "ListAffectedAuthors",
-			Handler:    _Deltas_ListAffectedAuthors_Handler,
-		},
-		{
-			MethodName: "ListAffectedClients",
-			Handler:    _Deltas_ListAffectedClients_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -6218,94 +5713,6 @@ var _Search_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchText",
 			Handler:    _Search_SearchText_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{},
-}
-
-// Client API for Units service
-
-type UnitsClient interface {
-	// Get fetches a unit.
-	Get(ctx context.Context, in *UnitSpec, opts ...grpc.CallOption) (*unit.RepoSourceUnit, error)
-	// List units.
-	List(ctx context.Context, in *UnitListOptions, opts ...grpc.CallOption) (*RepoSourceUnitList, error)
-}
-
-type unitsClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewUnitsClient(cc *grpc.ClientConn) UnitsClient {
-	return &unitsClient{cc}
-}
-
-func (c *unitsClient) Get(ctx context.Context, in *UnitSpec, opts ...grpc.CallOption) (*unit.RepoSourceUnit, error) {
-	out := new(unit.RepoSourceUnit)
-	err := grpc.Invoke(ctx, "/sourcegraph.Units/Get", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *unitsClient) List(ctx context.Context, in *UnitListOptions, opts ...grpc.CallOption) (*RepoSourceUnitList, error) {
-	out := new(RepoSourceUnitList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Units/List", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for Units service
-
-type UnitsServer interface {
-	// Get fetches a unit.
-	Get(context.Context, *UnitSpec) (*unit.RepoSourceUnit, error)
-	// List units.
-	List(context.Context, *UnitListOptions) (*RepoSourceUnitList, error)
-}
-
-func RegisterUnitsServer(s *grpc.Server, srv UnitsServer) {
-	s.RegisterService(&_Units_serviceDesc, srv)
-}
-
-func _Units_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(UnitSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(UnitsServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Units_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(UnitListOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(UnitsServer).List(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-var _Units_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcegraph.Units",
-	HandlerType: (*UnitsServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Get",
-			Handler:    _Units_Get_Handler,
-		},
-		{
-			MethodName: "List",
-			Handler:    _Units_List_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -11496,44 +10903,6 @@ func (m *ExternalToken) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *AuthorshipInfo) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AuthorshipInfo) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.AuthorEmail) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.AuthorEmail)))
-		i += copy(data[i:], m.AuthorEmail)
-	}
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.LastCommitDate.Size()))
-	n89, err := m.LastCommitDate.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n89
-	if len(m.LastCommitID) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.LastCommitID)))
-		i += copy(data[i:], m.LastCommitID)
-	}
-	return i, nil
-}
-
 func (m *Def) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -11552,193 +10921,30 @@ func (m *Def) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n90, err := m.Def.MarshalTo(data[i:])
+	n89, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n90
+	i += n89
 	if m.DocHTML != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.DocHTML.Size()))
-		n91, err := m.DocHTML.MarshalTo(data[i:])
+		n90, err := m.DocHTML.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n91
+		i += n90
 	}
 	if m.FmtStrings != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FmtStrings.Size()))
-		n92, err := m.FmtStrings.MarshalTo(data[i:])
+		n91, err := m.FmtStrings.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n92
-	}
-	return i, nil
-}
-
-func (m *DefAuthor) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefAuthor) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.UID != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
-	}
-	if len(m.Email) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Email)))
-		i += copy(data[i:], m.Email)
-	}
-	data[i] = 0x1a
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.DefAuthorship.Size()))
-	n93, err := m.DefAuthorship.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n93
-	return i, nil
-}
-
-func (m *DefAuthorship) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefAuthorship) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.AuthorshipInfo.Size()))
-	n94, err := m.AuthorshipInfo.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n94
-	if m.Exported {
-		data[i] = 0x10
-		i++
-		if m.Exported {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	if m.Bytes != 0 {
-		data[i] = 0x18
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Bytes))
-	}
-	if m.BytesProportion != 0 {
-		data[i] = 0x21
-		i++
-		i = encodeFixed64Sourcegraph(data, i, uint64(math.Float64bits(m.BytesProportion)))
-	}
-	return i, nil
-}
-
-func (m *DefClient) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefClient) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.UID != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
-	}
-	if len(m.Email) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Email)))
-		i += copy(data[i:], m.Email)
-	}
-	data[i] = 0x1a
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.AuthorshipInfo.Size()))
-	n95, err := m.AuthorshipInfo.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n95
-	if m.UseCount != 0 {
-		data[i] = 0x20
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.UseCount))
-	}
-	return i, nil
-}
-
-func (m *DefDelta) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefDelta) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Base != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-		n96, err := m.Base.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n96
-	}
-	if m.Head != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-		n97, err := m.Head.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n97
+		i += n91
 	}
 	return i, nil
 }
@@ -11771,58 +10977,6 @@ func (m *DefGetOptions) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DefListAuthorsOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefListAuthorsOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n98, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n98
-	return i, nil
-}
-
-func (m *DefListClientsOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefListClientsOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n99, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n99
-	return i, nil
-}
-
 func (m *DefListExamplesOptions) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -11847,11 +11001,11 @@ func (m *DefListExamplesOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x22
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n100, err := m.ListOptions.MarshalTo(data[i:])
+	n92, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n100
+	i += n92
 	return i, nil
 }
 
@@ -12048,11 +11202,11 @@ func (m *DefListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n101, err := m.ListOptions.MarshalTo(data[i:])
+	n93, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n101
+	i += n93
 	return i, nil
 }
 
@@ -12071,16 +11225,6 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Authorship {
-		data[i] = 0x8
-		i++
-		if m.Authorship {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
 	if len(m.Repo) > 0 {
 		data[i] = 0x12
 		i++
@@ -12090,11 +11234,11 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n102, err := m.ListOptions.MarshalTo(data[i:])
+	n94, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n102
+	i += n94
 	return i, nil
 }
 
@@ -12164,20 +11308,20 @@ func (m *DefsGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n103, err := m.Def.MarshalTo(data[i:])
+	n95, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n103
+	i += n95
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n104, err := m.Opt.MarshalTo(data[i:])
+		n96, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n104
+		i += n96
 	}
 	return i, nil
 }
@@ -12212,11 +11356,11 @@ func (m *DefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n105, err := m.ListResponse.MarshalTo(data[i:])
+	n97, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n105
+	i += n97
 	return i, nil
 }
 
@@ -12238,20 +11382,20 @@ func (m *DefsListRefsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n106, err := m.Def.MarshalTo(data[i:])
+	n98, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n106
+	i += n98
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n107, err := m.Opt.MarshalTo(data[i:])
+		n99, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n107
+		i += n99
 	}
 	return i, nil
 }
@@ -12286,11 +11430,11 @@ func (m *RefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n108, err := m.StreamResponse.MarshalTo(data[i:])
+	n100, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n108
+	i += n100
 	return i, nil
 }
 
@@ -12312,11 +11456,11 @@ func (m *DefsListExamplesOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n109, err := m.Def.MarshalTo(data[i:])
+	n101, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n109
+	i += n101
 	if len(m.Rev) > 0 {
 		data[i] = 0x12
 		i++
@@ -12327,11 +11471,11 @@ func (m *DefsListExamplesOp) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n110, err := m.Opt.MarshalTo(data[i:])
+		n102, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n110
+		i += n102
 	}
 	return i, nil
 }
@@ -12366,83 +11510,11 @@ func (m *ExampleList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n111, err := m.StreamResponse.MarshalTo(data[i:])
+	n103, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n111
-	return i, nil
-}
-
-func (m *DefsListAuthorsOp) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefsListAuthorsOp) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n112, err := m.Def.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n112
-	if m.Opt != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n113, err := m.Opt.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n113
-	}
-	return i, nil
-}
-
-func (m *DefsListClientsOp) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefsListClientsOp) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n114, err := m.Def.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n114
-	if m.Opt != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n115, err := m.Opt.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n115
-	}
+	i += n103
 	return i, nil
 }
 
@@ -12464,135 +11536,59 @@ func (m *Delta) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n116, err := m.Base.MarshalTo(data[i:])
+	n104, err := m.Base.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n116
+	i += n104
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n117, err := m.Head.MarshalTo(data[i:])
+	n105, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n117
+	i += n105
 	if m.BaseCommit != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BaseCommit.Size()))
-		n118, err := m.BaseCommit.MarshalTo(data[i:])
+		n106, err := m.BaseCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n118
+		i += n106
 	}
 	if m.HeadCommit != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeadCommit.Size()))
-		n119, err := m.HeadCommit.MarshalTo(data[i:])
+		n107, err := m.HeadCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n119
+		i += n107
 	}
 	if m.BaseRepo != nil {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BaseRepo.Size()))
-		n120, err := m.BaseRepo.MarshalTo(data[i:])
+		n108, err := m.BaseRepo.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n120
+		i += n108
 	}
 	if m.HeadRepo != nil {
 		data[i] = 0x32
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeadRepo.Size()))
-		n121, err := m.HeadRepo.MarshalTo(data[i:])
+		n109, err := m.HeadRepo.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n121
+		i += n109
 	}
-	return i, nil
-}
-
-func (m *DeltaAffectedPerson) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaAffectedPerson) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Person.Size()))
-	n122, err := m.Person.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n122
-	if len(m.Defs) > 0 {
-		for _, msg := range m.Defs {
-			data[i] = 0x12
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *DeltaDefs) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaDefs) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Defs) > 0 {
-		for _, msg := range m.Defs {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.DiffStat.Size()))
-	n123, err := m.DiffStat.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n123
 	return i, nil
 }
 
@@ -12614,11 +11610,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileDiff.Size()))
-	n124, err := m.FileDiff.MarshalTo(data[i:])
+	n110, err := m.FileDiff.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n124
+	i += n110
 	if len(m.FileDiffHunks) > 0 {
 		for _, msg := range m.FileDiffHunks {
 			data[i] = 0x12
@@ -12646,11 +11642,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n125, err := m.Stats.MarshalTo(data[i:])
+	n111, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n125
+	i += n111
 	if m.Filtered {
 		data[i] = 0x30
 		i++
@@ -12695,20 +11691,20 @@ func (m *DeltaFiles) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Delta.Size()))
-		n126, err := m.Delta.MarshalTo(data[i:])
+		n112, err := m.Delta.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n126
+		i += n112
 	}
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n127, err := m.Stats.MarshalTo(data[i:])
+	n113, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n127
+	i += n113
 	return i, nil
 }
 
@@ -12742,108 +11738,6 @@ func (m *DeltaFilter) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DeltaListAffectedAuthorsOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaListAffectedAuthorsOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n128, err := m.DeltaFilter.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n128
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n129, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n129
-	return i, nil
-}
-
-func (m *DeltaListAffectedClientsOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaListAffectedClientsOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n130, err := m.DeltaFilter.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n130
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n131, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n131
-	return i, nil
-}
-
-func (m *DeltaListDefsOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaListDefsOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n132, err := m.DeltaFilter.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n132
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n133, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n133
-	return i, nil
-}
-
 func (m *DeltaListFilesOptions) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -12868,11 +11762,11 @@ func (m *DeltaListFilesOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n134, err := m.DeltaFilter.MarshalTo(data[i:])
+	n114, err := m.DeltaFilter.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n134
+	i += n114
 	if len(m.Ignore) > 0 {
 		for _, s := range m.Ignore {
 			data[i] = 0x32
@@ -12888,24 +11782,6 @@ func (m *DeltaListFilesOptions) MarshalTo(data []byte) (int, error) {
 			i += copy(data[i:], s)
 		}
 	}
-	return i, nil
-}
-
-func (m *DeltaListUnitsOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaListUnitsOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
 	return i, nil
 }
 
@@ -12927,121 +11803,19 @@ func (m *DeltaSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n135, err := m.Base.MarshalTo(data[i:])
+	n115, err := m.Base.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n135
+	i += n115
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n136, err := m.Head.MarshalTo(data[i:])
+	n116, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n136
-	return i, nil
-}
-
-func (m *DeltasListUnitsOp) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltasListUnitsOp) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n137, err := m.Ds.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n137
-	if m.Opt != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n138, err := m.Opt.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n138
-	}
-	return i, nil
-}
-
-func (m *UnitDeltaList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *UnitDeltaList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.UnitDeltas) > 0 {
-		for _, msg := range m.UnitDeltas {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *DeltasListDefsOp) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltasListDefsOp) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n139, err := m.Ds.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n139
-	if m.Opt != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n140, err := m.Opt.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n140
-	}
+	i += n116
 	return i, nil
 }
 
@@ -13063,122 +11837,20 @@ func (m *DeltasListFilesOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n141, err := m.Ds.MarshalTo(data[i:])
+	n117, err := m.Ds.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n141
+	i += n117
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n142, err := m.Opt.MarshalTo(data[i:])
+		n118, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n142
-	}
-	return i, nil
-}
-
-func (m *DeltasListAffectedAuthorsOp) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltasListAffectedAuthorsOp) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n143, err := m.Ds.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n143
-	if m.Opt != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n144, err := m.Opt.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n144
-	}
-	return i, nil
-}
-
-func (m *DeltaAffectedPersonList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltaAffectedPersonList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.DeltaAffectedPersons) > 0 {
-		for _, msg := range m.DeltaAffectedPersons {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *DeltasListAffectedClientsOp) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DeltasListAffectedClientsOp) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n145, err := m.Ds.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n145
-	if m.Opt != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n146, err := m.Opt.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n146
+		i += n118
 	}
 	return i, nil
 }
@@ -13201,11 +11873,11 @@ func (m *Example) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Ref.Size()))
-	n147, err := m.Ref.MarshalTo(data[i:])
+	n119, err := m.Ref.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n147
+	i += n119
 	if len(m.Contents) > 0 {
 		data[i] = 0x12
 		i++
@@ -13215,11 +11887,11 @@ func (m *Example) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-	n148, err := m.FileRange.MarshalTo(data[i:])
+	n120, err := m.FileRange.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n148
+	i += n120
 	if m.Error {
 		data[i] = 0x30
 		i++
@@ -13235,42 +11907,6 @@ func (m *Example) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Rev)))
 		i += copy(data[i:], m.Rev)
-	}
-	return i, nil
-}
-
-func (m *Ref) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *Ref) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Ref.Size()))
-	n149, err := m.Ref.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n149
-	if m.Authorship != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Authorship.Size()))
-		n150, err := m.Authorship.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n150
 	}
 	return i, nil
 }
@@ -13303,11 +11939,11 @@ func (m *RepoTreeGetOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.GetFileOptions.Size()))
-	n151, err := m.GetFileOptions.MarshalTo(data[i:])
+	n121, err := m.GetFileOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n151
+	i += n121
 	return i, nil
 }
 
@@ -13329,11 +11965,11 @@ func (m *GetFileOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-	n152, err := m.FileRange.MarshalTo(data[i:])
+	n122, err := m.FileRange.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n152
+	i += n122
 	if m.EntireFile {
 		data[i] = 0x10
 		i++
@@ -13395,11 +12031,11 @@ func (m *RepoTreeSearchOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchOptions.Size()))
-	n153, err := m.SearchOptions.MarshalTo(data[i:])
+	n123, err := m.SearchOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n153
+	i += n123
 	return i, nil
 }
 
@@ -13421,19 +12057,19 @@ func (m *RepoTreeSearchResult) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchResult.Size()))
-	n154, err := m.SearchResult.MarshalTo(data[i:])
+	n124, err := m.SearchResult.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n154
+	i += n124
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n155, err := m.RepoRev.MarshalTo(data[i:])
+	n125, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n155
+	i += n125
 	return i, nil
 }
 
@@ -13455,20 +12091,20 @@ func (m *RepoTreeGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n156, err := m.Entry.MarshalTo(data[i:])
+	n126, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n156
+	i += n126
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n157, err := m.Opt.MarshalTo(data[i:])
+		n127, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n157
+		i += n127
 	}
 	return i, nil
 }
@@ -13491,20 +12127,20 @@ func (m *RepoTreeSearchOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n158, err := m.Rev.MarshalTo(data[i:])
+	n128, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n158
+	i += n128
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n159, err := m.Opt.MarshalTo(data[i:])
+		n129, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n159
+		i += n129
 	}
 	return i, nil
 }
@@ -13527,11 +12163,11 @@ func (m *RepoTreeListOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n160, err := m.Rev.MarshalTo(data[i:])
+	n130, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n160
+	i += n130
 	return i, nil
 }
 
@@ -13598,11 +12234,11 @@ func (m *VCSSearchResultList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n161, err := m.ListResponse.MarshalTo(data[i:])
+	n131, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n161
+	i += n131
 	return i, nil
 }
 
@@ -13630,19 +12266,19 @@ func (m *TokenSearchOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n162, err := m.RepoRev.MarshalTo(data[i:])
+	n132, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n162
+	i += n132
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n163, err := m.ListOptions.MarshalTo(data[i:])
+	n133, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n163
+	i += n133
 	return i, nil
 }
 
@@ -13670,19 +12306,19 @@ func (m *TextSearchOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n164, err := m.RepoRev.MarshalTo(data[i:])
+	n134, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n164
+	i += n134
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n165, err := m.ListOptions.MarshalTo(data[i:])
+	n135, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n165
+	i += n135
 	return i, nil
 }
 
@@ -13705,21 +12341,21 @@ func (m *TreeEntry) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BasicTreeEntry.Size()))
-		n166, err := m.BasicTreeEntry.MarshalTo(data[i:])
+		n136, err := m.BasicTreeEntry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n166
+		i += n136
 	}
 	if m.FileRange != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-		n167, err := m.FileRange.MarshalTo(data[i:])
+		n137, err := m.FileRange.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n167
+		i += n137
 	}
 	if len(m.ContentsString) > 0 {
 		data[i] = 0x1a
@@ -13797,11 +12433,11 @@ func (m *TreeEntrySpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n168, err := m.RepoRev.MarshalTo(data[i:])
+	n138, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n168
+	i += n138
 	if len(m.Path) > 0 {
 		data[i] = 0x12
 		i++
@@ -13845,237 +12481,6 @@ func (m *FileRange) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x20
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.EndByte))
-	}
-	return i, nil
-}
-
-func (m *UnitDelta) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *UnitDelta) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Base != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-		n169, err := m.Base.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n169
-	}
-	if m.Head != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-		n170, err := m.Head.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n170
-	}
-	return i, nil
-}
-
-func (m *UnitListOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *UnitListOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.RepoRevs) > 0 {
-		for _, s := range m.RepoRevs {
-			data[i] = 0xa
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				data[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			data[i] = uint8(l)
-			i++
-			i += copy(data[i:], s)
-		}
-	}
-	if len(m.UnitType) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.UnitType)))
-		i += copy(data[i:], m.UnitType)
-	}
-	if len(m.Unit) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Unit)))
-		i += copy(data[i:], m.Unit)
-	}
-	if len(m.NameQuery) > 0 {
-		data[i] = 0x22
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.NameQuery)))
-		i += copy(data[i:], m.NameQuery)
-	}
-	if len(m.Query) > 0 {
-		data[i] = 0x2a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Query)))
-		i += copy(data[i:], m.Query)
-	}
-	data[i] = 0x32
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n171, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n171
-	return i, nil
-}
-
-func (m *UnitSpec) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *UnitSpec) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	data[i] = 0xa
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRevSpec.Size()))
-	n172, err := m.RepoRevSpec.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n172
-	if len(m.UnitType) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.UnitType)))
-		i += copy(data[i:], m.UnitType)
-	}
-	if len(m.Unit) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Unit)))
-		i += copy(data[i:], m.Unit)
-	}
-	return i, nil
-}
-
-func (m *RepoSourceUnitList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RepoSourceUnitList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Units) > 0 {
-		for _, msg := range m.Units {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *DefAuthorList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefAuthorList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.DefAuthors) > 0 {
-		for _, msg := range m.DefAuthors {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *DefClientList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *DefClientList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.DefClients) > 0 {
-		for _, msg := range m.DefClients {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
 	}
 	return i, nil
 }
@@ -14133,11 +12538,11 @@ func (m *FileToken) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-		n173, err := m.Entry.MarshalTo(data[i:])
+		n139, err := m.Entry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n173
+		i += n139
 	}
 	return i, nil
 }
@@ -14320,19 +12725,19 @@ func (m *RegisteredClient) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x5a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n174, err := m.CreatedAt.MarshalTo(data[i:])
+	n140, err := m.CreatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n174
+	i += n140
 	data[i] = 0x62
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
-	n175, err := m.UpdatedAt.MarshalTo(data[i:])
+	n141, err := m.UpdatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n175
+	i += n141
 	return i, nil
 }
 
@@ -14413,11 +12818,11 @@ func (m *RegisteredClientListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n176, err := m.ListOptions.MarshalTo(data[i:])
+	n142, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n176
+	i += n142
 	return i, nil
 }
 
@@ -14451,11 +12856,11 @@ func (m *RegisteredClientList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n177, err := m.StreamResponse.MarshalTo(data[i:])
+	n143, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n177
+	i += n143
 	return i, nil
 }
 
@@ -14567,11 +12972,11 @@ func (m *UserPermissionsOptions) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.ClientSpec.Size()))
-		n178, err := m.ClientSpec.MarshalTo(data[i:])
+		n144, err := m.ClientSpec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n178
+		i += n144
 	}
 	if m.UID != 0 {
 		data[i] = 0x10
@@ -14666,11 +13071,11 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-		n179, err := m.CreatedAt.MarshalTo(data[i:])
+		n145, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n179
+		i += n145
 	}
 	if len(m.Message) > 0 {
 		data[i] = 0x42
@@ -14766,11 +13171,11 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
-		n180, err := m.Timestamp.MarshalTo(data[i:])
+		n146, err := m.Timestamp.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n180
+		i += n146
 	}
 	if len(m.UserProperties) > 0 {
 		keysForUserProperties := make([]string, 0, len(m.UserProperties))
@@ -14880,11 +13285,11 @@ func (m *NotifyGenericEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Actor.Size()))
-		n181, err := m.Actor.MarshalTo(data[i:])
+		n147, err := m.Actor.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n181
+		i += n147
 	}
 	if len(m.Recipients) > 0 {
 		for _, msg := range m.Recipients {
@@ -15059,20 +13464,20 @@ func (m *AnnotationsListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n182, err := m.Entry.MarshalTo(data[i:])
+	n148, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n182
+	i += n148
 	if m.Range != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Range.Size()))
-		n183, err := m.Range.MarshalTo(data[i:])
+		n149, err := m.Range.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n183
+		i += n149
 	}
 	return i, nil
 }
@@ -17010,22 +15415,6 @@ func (m *ExternalToken) Size() (n int) {
 	return n
 }
 
-func (m *AuthorshipInfo) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.AuthorEmail)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = m.LastCommitDate.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	l = len(m.LastCommitID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
 func (m *Def) Size() (n int) {
 	var l int
 	_ = l
@@ -17042,92 +15431,12 @@ func (m *Def) Size() (n int) {
 	return n
 }
 
-func (m *DefAuthor) Size() (n int) {
-	var l int
-	_ = l
-	if m.UID != 0 {
-		n += 1 + sovSourcegraph(uint64(m.UID))
-	}
-	l = len(m.Email)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = m.DefAuthorship.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *DefAuthorship) Size() (n int) {
-	var l int
-	_ = l
-	l = m.AuthorshipInfo.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Exported {
-		n += 2
-	}
-	if m.Bytes != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Bytes))
-	}
-	if m.BytesProportion != 0 {
-		n += 9
-	}
-	return n
-}
-
-func (m *DefClient) Size() (n int) {
-	var l int
-	_ = l
-	if m.UID != 0 {
-		n += 1 + sovSourcegraph(uint64(m.UID))
-	}
-	l = len(m.Email)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = m.AuthorshipInfo.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.UseCount != 0 {
-		n += 1 + sovSourcegraph(uint64(m.UseCount))
-	}
-	return n
-}
-
-func (m *DefDelta) Size() (n int) {
-	var l int
-	_ = l
-	if m.Base != nil {
-		l = m.Base.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if m.Head != nil {
-		l = m.Head.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
 func (m *DefGetOptions) Size() (n int) {
 	var l int
 	_ = l
 	if m.Doc {
 		n += 2
 	}
-	return n
-}
-
-func (m *DefListAuthorsOptions) Size() (n int) {
-	var l int
-	_ = l
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *DefListClientsOptions) Size() (n int) {
-	var l int
-	_ = l
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
 	return n
 }
 
@@ -17231,9 +15540,6 @@ func (m *DefListOptions) Size() (n int) {
 func (m *DefListRefsOptions) Size() (n int) {
 	var l int
 	_ = l
-	if m.Authorship {
-		n += 2
-	}
 	l = len(m.Repo)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
@@ -17351,30 +15657,6 @@ func (m *ExampleList) Size() (n int) {
 	return n
 }
 
-func (m *DefsListAuthorsOp) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Def.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Opt != nil {
-		l = m.Opt.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *DefsListClientsOp) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Def.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Opt != nil {
-		l = m.Opt.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
 func (m *Delta) Size() (n int) {
 	var l int
 	_ = l
@@ -17398,34 +15680,6 @@ func (m *Delta) Size() (n int) {
 		l = m.HeadRepo.Size()
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	return n
-}
-
-func (m *DeltaAffectedPerson) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Person.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if len(m.Defs) > 0 {
-		for _, e := range m.Defs {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *DeltaDefs) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.Defs) > 0 {
-		for _, e := range m.Defs {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	l = m.DiffStat.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
 	return n
 }
 
@@ -17488,36 +15742,6 @@ func (m *DeltaFilter) Size() (n int) {
 	return n
 }
 
-func (m *DeltaListAffectedAuthorsOptions) Size() (n int) {
-	var l int
-	_ = l
-	l = m.DeltaFilter.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *DeltaListAffectedClientsOptions) Size() (n int) {
-	var l int
-	_ = l
-	l = m.DeltaFilter.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *DeltaListDefsOptions) Size() (n int) {
-	var l int
-	_ = l
-	l = m.DeltaFilter.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
 func (m *DeltaListFilesOptions) Size() (n int) {
 	var l int
 	_ = l
@@ -17536,12 +15760,6 @@ func (m *DeltaListFilesOptions) Size() (n int) {
 	return n
 }
 
-func (m *DeltaListUnitsOptions) Size() (n int) {
-	var l int
-	_ = l
-	return n
-}
-
 func (m *DeltaSpec) Size() (n int) {
 	var l int
 	_ = l
@@ -17552,79 +15770,7 @@ func (m *DeltaSpec) Size() (n int) {
 	return n
 }
 
-func (m *DeltasListUnitsOp) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Ds.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Opt != nil {
-		l = m.Opt.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *UnitDeltaList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.UnitDeltas) > 0 {
-		for _, e := range m.UnitDeltas {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *DeltasListDefsOp) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Ds.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Opt != nil {
-		l = m.Opt.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
 func (m *DeltasListFilesOp) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Ds.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Opt != nil {
-		l = m.Opt.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *DeltasListAffectedAuthorsOp) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Ds.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Opt != nil {
-		l = m.Opt.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *DeltaAffectedPersonList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.DeltaAffectedPersons) > 0 {
-		for _, e := range m.DeltaAffectedPersons {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *DeltasListAffectedClientsOp) Size() (n int) {
 	var l int
 	_ = l
 	l = m.Ds.Size()
@@ -17652,18 +15798,6 @@ func (m *Example) Size() (n int) {
 	}
 	l = len(m.Rev)
 	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *Ref) Size() (n int) {
-	var l int
-	_ = l
-	l = m.Ref.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Authorship != nil {
-		l = m.Authorship.Size()
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	return n
@@ -17876,102 +16010,6 @@ func (m *FileRange) Size() (n int) {
 	}
 	if m.EndByte != 0 {
 		n += 1 + sovSourcegraph(uint64(m.EndByte))
-	}
-	return n
-}
-
-func (m *UnitDelta) Size() (n int) {
-	var l int
-	_ = l
-	if m.Base != nil {
-		l = m.Base.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if m.Head != nil {
-		l = m.Head.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *UnitListOptions) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.RepoRevs) > 0 {
-		for _, s := range m.RepoRevs {
-			l = len(s)
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	l = len(m.UnitType)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Unit)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.NameQuery)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Query)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *UnitSpec) Size() (n int) {
-	var l int
-	_ = l
-	l = m.RepoRevSpec.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	l = len(m.UnitType)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Unit)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *RepoSourceUnitList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.Units) > 0 {
-		for _, e := range m.Units {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *DefAuthorList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.DefAuthors) > 0 {
-		for _, e := range m.DefAuthors {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *DefClientList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.DefClients) > 0 {
-		for _, e := range m.DefClients {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
 	}
 	return n
 }
@@ -33089,144 +31127,6 @@ func (m *ExternalToken) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *AuthorshipInfo) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AuthorshipInfo: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AuthorshipInfo: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AuthorEmail", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AuthorEmail = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastCommitDate", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.LastCommitDate.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastCommitID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LastCommitID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *Def) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -33373,534 +31273,6 @@ func (m *Def) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DefAuthor) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefAuthor: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefAuthor: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
-			}
-			m.UID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.UID |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Email", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Email = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DefAuthorship", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.DefAuthorship.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefAuthorship) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefAuthorship: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefAuthorship: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AuthorshipInfo", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.AuthorshipInfo.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Exported", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Exported = bool(v != 0)
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Bytes", wireType)
-			}
-			m.Bytes = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.Bytes |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BytesProportion", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += 8
-			v = uint64(data[iNdEx-8])
-			v |= uint64(data[iNdEx-7]) << 8
-			v |= uint64(data[iNdEx-6]) << 16
-			v |= uint64(data[iNdEx-5]) << 24
-			v |= uint64(data[iNdEx-4]) << 32
-			v |= uint64(data[iNdEx-3]) << 40
-			v |= uint64(data[iNdEx-2]) << 48
-			v |= uint64(data[iNdEx-1]) << 56
-			m.BytesProportion = float64(math.Float64frombits(v))
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefClient) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefClient: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefClient: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
-			}
-			m.UID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.UID |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Email", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Email = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AuthorshipInfo", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.AuthorshipInfo.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UseCount", wireType)
-			}
-			m.UseCount = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.UseCount |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefDelta) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefDelta: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefDelta: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Base", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Base == nil {
-				m.Base = &Def{}
-			}
-			if err := m.Base.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Head", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Head == nil {
-				m.Head = &Def{}
-			}
-			if err := m.Head.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *DefGetOptions) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -33950,166 +31322,6 @@ func (m *DefGetOptions) Unmarshal(data []byte) error {
 				}
 			}
 			m.Doc = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefListAuthorsOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefListAuthorsOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefListAuthorsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefListClientsOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefListClientsOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefListClientsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
@@ -34837,26 +32049,6 @@ func (m *DefListRefsOptions) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: DefListRefsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authorship", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Authorship = bool(v != 0)
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Repo", wireType)
@@ -35524,7 +32716,7 @@ func (m *RefList) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Refs = append(m.Refs, &Ref{})
+			m.Refs = append(m.Refs, &graph1.Ref{})
 			if err := m.Refs[len(m.Refs)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -35833,232 +33025,6 @@ func (m *ExampleList) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DefsListAuthorsOp) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefsListAuthorsOp: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefsListAuthorsOp: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Def", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Def.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Opt == nil {
-				m.Opt = &DefListAuthorsOptions{}
-			}
-			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefsListClientsOp) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefsListClientsOp: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefsListClientsOp: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Def", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Def.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Opt == nil {
-				m.Opt = &DefListClientsOptions{}
-			}
-			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *Delta) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -36277,228 +33243,6 @@ func (m *Delta) Unmarshal(data []byte) error {
 				m.HeadRepo = &Repo{}
 			}
 			if err := m.HeadRepo.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltaAffectedPerson) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaAffectedPerson: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaAffectedPerson: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Person", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Person.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Defs", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Defs = append(m.Defs, &Def{})
-			if err := m.Defs[len(m.Defs)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltaDefs) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaDefs: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaDefs: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Defs", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Defs = append(m.Defs, &DefDelta{})
-			if err := m.Defs[len(m.Defs)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DiffStat", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.DiffStat.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -36994,336 +33738,6 @@ func (m *DeltaFilter) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DeltaListAffectedAuthorsOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaListAffectedAuthorsOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaListAffectedAuthorsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DeltaFilter", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.DeltaFilter.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltaListAffectedClientsOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaListAffectedClientsOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaListAffectedClientsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DeltaFilter", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.DeltaFilter.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltaListDefsOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaListDefsOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaListDefsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DeltaFilter", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.DeltaFilter.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *DeltaListFilesOptions) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -37462,56 +33876,6 @@ func (m *DeltaListFilesOptions) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DeltaListUnitsOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaListUnitsOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaListUnitsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *DeltaSpec) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -37598,313 +33962,6 @@ func (m *DeltaSpec) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Head.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltasListUnitsOp) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltasListUnitsOp: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltasListUnitsOp: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ds", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Ds.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Opt == nil {
-				m.Opt = &DeltaListUnitsOptions{}
-			}
-			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UnitDeltaList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UnitDeltaList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UnitDeltaList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnitDeltas", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.UnitDeltas = append(m.UnitDeltas, &UnitDelta{})
-			if err := m.UnitDeltas[len(m.UnitDeltas)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltasListDefsOp) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltasListDefsOp: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltasListDefsOp: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ds", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Ds.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Opt == nil {
-				m.Opt = &DeltaListDefsOptions{}
-			}
-			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -38016,313 +34073,6 @@ func (m *DeltasListFilesOp) Unmarshal(data []byte) error {
 			}
 			if m.Opt == nil {
 				m.Opt = &DeltaListFilesOptions{}
-			}
-			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltasListAffectedAuthorsOp) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltasListAffectedAuthorsOp: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltasListAffectedAuthorsOp: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ds", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Ds.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Opt == nil {
-				m.Opt = &DeltaListAffectedAuthorsOptions{}
-			}
-			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltaAffectedPersonList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltaAffectedPersonList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltaAffectedPersonList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DeltaAffectedPersons", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DeltaAffectedPersons = append(m.DeltaAffectedPersons, &DeltaAffectedPerson{})
-			if err := m.DeltaAffectedPersons[len(m.DeltaAffectedPersons)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DeltasListAffectedClientsOp) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DeltasListAffectedClientsOp: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeltasListAffectedClientsOp: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ds", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Ds.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Opt == nil {
-				m.Opt = &DeltaListAffectedClientsOptions{}
 			}
 			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
@@ -38515,119 +34265,6 @@ func (m *Example) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Rev = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Ref) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Ref: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Ref: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ref", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Ref.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Authorship", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Authorship == nil {
-				m.Authorship = &AuthorshipInfo{}
-			}
-			if err := m.Authorship.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -40408,728 +36045,6 @@ func (m *FileRange) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UnitDelta) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UnitDelta: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UnitDelta: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Base", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Base == nil {
-				m.Base = &unit.RepoSourceUnit{}
-			}
-			if err := m.Base.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Head", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Head == nil {
-				m.Head = &unit.RepoSourceUnit{}
-			}
-			if err := m.Head.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UnitListOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UnitListOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UnitListOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RepoRevs", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RepoRevs = append(m.RepoRevs, string(data[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnitType", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.UnitType = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Unit", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Unit = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NameQuery", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NameQuery = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Query = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UnitSpec) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UnitSpec: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UnitSpec: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RepoRevSpec", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.RepoRevSpec.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnitType", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.UnitType = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Unit", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Unit = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RepoSourceUnitList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RepoSourceUnitList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RepoSourceUnitList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Units", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Units = append(m.Units, &unit.RepoSourceUnit{})
-			if err := m.Units[len(m.Units)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefAuthorList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefAuthorList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefAuthorList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DefAuthors", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DefAuthors = append(m.DefAuthors, &DefAuthor{})
-			if err := m.DefAuthors[len(m.DefAuthors)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DefClientList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DefClientList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DefClientList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DefClients", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DefClients = append(m.DefClients, &DefClient{})
-			if err := m.DefClients[len(m.DefClients)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

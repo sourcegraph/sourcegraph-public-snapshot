@@ -38,7 +38,6 @@ var Services = svc.Services{
 	Repos:             Repos,
 	Search:            Search,
 	Storage:           Storage,
-	Units:             Units,
 	UserKeys:          UserKeys,
 	Users:             Users,
 }

@@ -19,8 +19,8 @@ func TestDefsService_ListExamples(t *testing.T) {
 	var calledListRefs, calledRepoTreeGet bool
 	mock.servers.Defs.ListRefs_ = func(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
 		calledListRefs = true
-		return &sourcegraph.RefList{Refs: []*sourcegraph.Ref{
-			&sourcegraph.Ref{Ref: want[0].Ref},
+		return &sourcegraph.RefList{Refs: []*graph.Ref{
+			&want[0].Ref,
 		}}, nil
 	}
 	mock.servers.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
@@ -58,8 +58,8 @@ func TestDefsService_ListExamples_HandleTreeEntryError(t *testing.T) {
 	var calledListRefs, calledRepoTreeGet bool
 	mock.servers.Defs.ListRefs_ = func(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
 		calledListRefs = true
-		return &sourcegraph.RefList{Refs: []*sourcegraph.Ref{
-			&sourcegraph.Ref{Ref: want[0].Ref},
+		return &sourcegraph.RefList{Refs: []*graph.Ref{
+			&want[0].Ref,
 		}}, nil
 	}
 	mock.servers.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
