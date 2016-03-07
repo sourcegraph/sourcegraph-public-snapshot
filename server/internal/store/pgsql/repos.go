@@ -17,6 +17,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -347,7 +348,15 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 }
 
 func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
+	if strings.HasPrefix(newRepo.URI, "github.com/") {
+		if !newRepo.Mirror {
+			return grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
+		}
+		// All authenticated users can create GitHub mirrors.
+		if !auth.ActorFromContext(ctx).IsAuthenticated() {
+			return grpc.Errorf(codes.Unauthenticated, "cannot create GitHub mirror as anonymous user")
+		}
+	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
 		return err
 	}
 
