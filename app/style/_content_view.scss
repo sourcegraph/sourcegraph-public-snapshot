@@ -8,7 +8,6 @@
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
-	overflow-x: auto;
 
 	& > .content {
 		flex-basis: $content-width;
