@@ -11,10 +11,7 @@ import (
 )
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
+	ctx, cl := handlerutil.Client(r)
 
 	repo, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {

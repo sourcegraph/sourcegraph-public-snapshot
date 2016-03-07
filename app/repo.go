@@ -83,10 +83,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	repoCtx, cl, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
 		return err
@@ -99,7 +95,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		treeEntrySpec = sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: "."}
 		run := parallel.NewRun(2)
 		run.Do(func() (err error) {
-			readme, err = cl.Repos.GetReadme(repoCtx, &vc.RepoRevSpec)
+			readme, err = cl.Repos.GetReadme(ctx, &vc.RepoRevSpec)
 			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 				// Lack of a readme is not a fatal error.
 				err = nil
@@ -111,10 +107,10 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 			opt := sourcegraph.RepoTreeGetOptions{GetFileOptions: sourcegraph.GetFileOptions{
 				RecurseSingleSubfolderLimit: 200,
 			}}
-			tree, err = cl.RepoTree.Get(repoCtx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
+			tree, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
 			if err == nil {
 				tree_ := *tree
-				go cacheutil.PrecacheTreeEntry(cl, repoCtx, &tree_, treeEntrySpec)
+				go cacheutil.PrecacheTreeEntry(cl, ctx, &tree_, treeEntrySpec)
 			}
 
 			return

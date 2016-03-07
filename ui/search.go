@@ -18,11 +18,7 @@ import (
 )
 
 func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
-
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TokenSearchOptions
@@ -76,11 +72,7 @@ func serveTokenSearch(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTextSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
-
+	ctx, cl := handlerutil.Client(r)
 	e := json.NewEncoder(w)
 
 	var opt sourcegraph.TextSearchOptions

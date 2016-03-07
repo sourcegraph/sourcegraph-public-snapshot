@@ -12,10 +12,7 @@ import (
 )
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	ctx, _, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
+	ctx, _ := handlerutil.Client(r)
 
 	opt := &sourcegraph.RepoTreeGetOptions{}
 	if err := schemaDecoder.Decode(opt, r.URL.Query()); err != nil {

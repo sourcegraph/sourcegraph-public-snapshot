@@ -42,10 +42,7 @@ type repoTreeTemplate struct {
 // serveRepoTree creates a new response for the code view that contains information
 // about the requested tree entry.
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	ctx, _, _, err := handlerutil.RepoClient(r)
-	if err != nil {
-		return err
-	}
+	ctx, _ := handlerutil.Client(r)
 
 	opt := sourcegraph.RepoTreeGetOptions{
 		GetFileOptions: sourcegraph.GetFileOptions{
