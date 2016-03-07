@@ -56,6 +56,7 @@
 				{
 					"type": "DefTooltip",
 					"props": {
+						"currentRepo": "aRepo",
 						"def": {
 							"Found": true,
 							"File": {

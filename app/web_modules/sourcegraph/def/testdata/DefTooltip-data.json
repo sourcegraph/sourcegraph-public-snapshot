@@ -19,7 +19,7 @@
 									"className": "title",
 									"children": [
 										{
-											"type": "code",
+											"type": "pre",
 											"props": {
 												"dangerouslySetInnerHTML": {
 													"__html": "someName"
@@ -40,7 +40,7 @@
 												"className": "doc",
 												"style": {
 													"maxHeight": 100,
-													"overflowY": "scroll"
+													"overflowY": "hidden"
 												},
 												"dangerouslySetInnerHTML": "someDoc"
 											}

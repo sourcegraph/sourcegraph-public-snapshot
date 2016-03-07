@@ -55,10 +55,10 @@ class DefTooltip extends Component {
 		return (
 			<div className="token-popover" style={{left: this.state.left, top: this.state.top}}>
 				<div className="popover-data">
-					<div className="title"><code dangerouslySetInnerHTML={def.QualifiedName}></code></div>
+					<div className="title"><pre dangerouslySetInnerHTML={def.QualifiedName}></pre></div>
 					<div className="content">
-						<div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>
-						<span className="repo">{def.Data.Repo}</span>
+						{def.Data && def.Data.DocHTML && <div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>}
+						{def.Data && def.Data.Repo !== this.state.currentRepo && <span className="repo">{def.Data.Repo}</span>}
 					</div>
 				</div>
 			</div>
@@ -67,6 +67,9 @@ class DefTooltip extends Component {
 }
 
 DefTooltip.propTypes = {
+	// currentRepo is the repo of the file that's currently being displayed, if any.
+	currentRepo: React.PropTypes.string,
+
 	def: React.PropTypes.object,
 };
 

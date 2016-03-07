@@ -66,15 +66,14 @@
 
 .token-popover {
 	@include z-index(token-popover);
-	background-color: white;
+	background-color: transparentize(#222, 0.12);
 	max-width: 360px;
-	width: 360px;
+	min-width: 120px;
 	border: solid 1px lighten($popover-border-color, 5%);
-	border-radius: 3px;
+	border-radius: 2px;
 	position: fixed;
 	padding: 7px;
-	color: #252525;
-	font-size: 13px;
+	color: #eee;
 	word-wrap: break-word;
 
 	.title {
@@ -83,12 +82,15 @@
 
 	p { margin: 5px 0 0 0; }
 
-	code, pre {
+	pre {
 		font-family: $font-family-monospace;
+		font-size: $font-size-base;
+		padding: 0;
+		margin-bottom: 0;
 	}
 
 	.repo {
-		color: #888;
+		color: #bbb;
 		margin-top: 4px;
 		display: block;
 		font-size: 13px;
