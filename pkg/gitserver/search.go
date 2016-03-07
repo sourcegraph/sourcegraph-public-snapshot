@@ -146,7 +146,7 @@ func exitStatus(err error) int {
 
 func Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
 	var reply []*vcs.SearchResult
-	if err := clientSingleton.Call("Git.Search", &SearchArgs{Repo: repo, Commit: commit, Opt: opt}, &reply); err != nil {
+	if err := call("Git.Search", &SearchArgs{Repo: repo, Commit: commit, Opt: opt}, &reply); err != nil {
 		return nil, err
 	}
 	return reply, nil

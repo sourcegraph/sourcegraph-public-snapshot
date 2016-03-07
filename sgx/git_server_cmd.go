@@ -25,6 +25,7 @@ func init() {
 }
 
 type gitServerCmd struct {
+	Addr string `long:"addr" default:"127.0.0.1:0" description:"RPC listen address for git server"`
 }
 
 func (c *gitServerCmd) Execute(args []string) error {
@@ -35,7 +36,7 @@ func (c *gitServerCmd) Execute(args []string) error {
 
 	gitserver.RegisterHandler()
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := net.Listen("tcp", c.Addr)
 	if err != nil {
 		return err
 	}

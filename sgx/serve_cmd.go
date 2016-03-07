@@ -181,6 +181,8 @@ type ServeCmd struct {
 	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup"`
 
 	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
+
+	GitServer string `long:"git-server" description:"address of the remote git server process; a local git server process is used by default"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -1000,6 +1002,13 @@ func (c *ServeCmd) safeConfigFlags() string {
 }
 
 func (c *ServeCmd) runGitServer() {
+	if c.GitServer != "" {
+		if err := gitserver.Dial(c.GitServer); err != nil {
+			log.Fatalf("git-server dial failed: %s", err)
+		}
+		return
+	}
+
 	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
 		cmd := exec.Command(sgxcmd.Path, "git-server")
