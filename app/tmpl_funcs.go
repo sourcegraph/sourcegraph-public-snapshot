@@ -1,10 +1,13 @@
 package app
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -214,4 +217,10 @@ var tmplFuncs = htmpl.FuncMap{
 	"buildvar": func() buildvar.Vars { return buildvar.All },
 
 	"showDataCollectionMessage": func() bool { return !metricutil.DisableMetricsCollection() },
+
+	"intercomHMAC": func(email string) string {
+		mac := hmac.New(sha256.New, []byte(os.Getenv("SG_INTERCOM_SECRET_KEY")))
+		mac.Write([]byte(email))
+		return string(mac.Sum(nil))
+	},
 }

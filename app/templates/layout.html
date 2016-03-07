@@ -141,26 +141,23 @@
 
 		{{appconf.ExtraBodyHTML}}
 
-		{{if not appconf.DisableSupportServices}}
+		{{if appconf.DisableSupportServices}}
 			<!-- Start of Sourcegraph Intercom script -->
 			{{if .CurrentUser}}
 				<script ignore-csp>
-					var emails = JSON.parse({{json .UserEmails}});
-					if (emails) {
-						var primaryEmail = emails.EmailAddrs.filter(function(email) {return email.Primary;})[0];
-						if (primaryEmail && primaryEmail.Email) {
-							window.intercomSettings = {
-								app_id: "wd8xxn47",
-								name: window._currentUser.Name || window._currentUser.Login,
-								email: primaryEmail.Email,
-								created_at: Math.floor(new Date(window._currentUser.RegisteredAt).getTime() / 1000),
-							};
-						} else {
-							window.intercomSettings = {
-								app_id: "wd8xxn47",
-							}
-						}
+					{{if .UserEmail}}
+					window.intercomSettings = {
+						app_id: "wd8xxn47",
+						name: window._currentUser.Name || window._currentUser.Login,
+						email: {{.UserEmail}},
+						user_hash: {{intercomHMAC .UserEmail}},
+						created_at: Math.floor(new Date(window._currentUser.RegisteredAt).getTime() / 1000),
+					};
+					{{else}}
+					window.intercomSettings = {
+						app_id: "wd8xxn47",
 					}
+					{{end}}
 				</script>
 			{{else}}
 				<script ignore-csp>
