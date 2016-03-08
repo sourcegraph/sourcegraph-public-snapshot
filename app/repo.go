@@ -1,8 +1,6 @@
 package app
 
 import (
-	"errors"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -41,27 +38,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
-	}
-
-	// Special-case: redirect "user/repo" URLs (with no "github.com/") to the
-	// path "/github.com/user/repo". This lets you use
-	// "sourcegraph.com/user/repo" as your repo's URL.
-	if appconf.Flags.EnableGitHubRepoShortURIAliases {
-		if parts := strings.Split(repoSpec.URI, "/"); len(parts) == 2 && !strings.Contains(parts[0], ".") {
-			http.Redirect(w, r, router.Rel.URLToRepo("github.com/"+repoSpec.URI).String(), http.StatusSeeOther)
-			return nil
-		}
-	}
-
-	// Special-case: redirect "github.com/user/repo/..." (old URLs) to
-	// "github.com/user/repo".
-	if strings.HasPrefix(repoSpec.URI, "github.com/") && strings.Count(repoSpec.URI, "/") > 2 {
-		parts := strings.SplitN(repoSpec.URI, "/", 4)
-		if len(parts) < 4 {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad github repository url")}
-		}
-		http.Redirect(w, r, router.Rel.URLToRepo(string(strings.Join(parts[0:3], "/"))).String(), http.StatusMovedPermanently)
-		return nil
 	}
 
 	ctx, cl := handlerutil.Client(r)
