@@ -8,6 +8,7 @@ import (
 
 	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -60,13 +61,17 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	data.Repos, err = cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
-		Sort:        "pushed",
-		Direction:   "desc",
-		ListOptions: listOpt,
-	})
-	if err != nil {
-		return err
+	// Only show hosted repos on the dashboard to users that have write access
+	// on this server.
+	if auth.ActorFromContext(ctx).HasWriteAccess() {
+		data.Repos, err = cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+			Sort:        "pushed",
+			Direction:   "desc",
+			ListOptions: listOpt,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return tmpl.Exec(r, w, "home/dashboard.html", http.StatusOK, nil, &data)
