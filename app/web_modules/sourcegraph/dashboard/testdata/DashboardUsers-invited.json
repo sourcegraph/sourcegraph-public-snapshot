@@ -25,7 +25,9 @@
 										{
 											"type": "i",
 											"props": {
-												"className": "btn-icon sg-icon-plus-box"
+												"className": "btn-icon sg-icon-plus-box",
+												"data-tooltip": true,
+												"title": "Invite all teammates"
 											}
 										}
 									]

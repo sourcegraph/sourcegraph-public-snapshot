@@ -11,76 +11,6 @@
 							{
 								"type": "div",
 								"props": {
-									"className": "toggles",
-									"children": [
-										{
-											"type": "div",
-											"props": {
-												"className": "btn-group",
-												"children": [
-													{
-														"type": "button",
-														"key": "0",
-														"props": {
-															"className": "btn btn-block toggle btn-primary",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "toggle-label",
-																		"children": [
-																			"all"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "button",
-														"key": "1",
-														"props": {
-															"className": "btn btn-block toggle btn-default",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "toggle-label",
-																		"children": [
-																			"private"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "button",
-														"key": "2",
-														"props": {
-															"className": "btn btn-block toggle btn-default",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "toggle-label",
-																		"children": [
-																			"public"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
 									"className": "search-bar",
 									"children": [
 										{
@@ -133,108 +63,6 @@
 										{
 											"type": "div",
 											"key": "0",
-											"props": {
-												"className": "list-group-item",
-												"children": [
-													{
-														"type": "div",
-														"props": {
-															"className": "repo-header",
-															"children": [
-																{
-																	"type": "h4",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "sg-icon repo-attr-icon sg-icon-public"
-																				}
-																			},
-																			{
-																				"type": "span",
-																				"props": {
-																					"className": "repo-link",
-																					"children": [
-																						{
-																							"type": "span",
-																							"key": "part1",
-																							"props": {
-																								"className": "part",
-																								"children": [
-																									"o"
-																								]
-																							}
-																						},
-																						{
-																							"type": "span",
-																							"key": "sep1",
-																							"props": {
-																								"className": "sep",
-																								"children": [
-																									"/"
-																								]
-																							}
-																						},
-																						{
-																							"type": "a",
-																							"key": "name2",
-																							"props": {
-																								"className": "name",
-																								"href": "/github.com/o/r",
-																								"title": "github.com/o/r",
-																								"children": [
-																									"r"
-																								]
-																							}
-																						}
-																					]
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "disabled-reason",
-																		"children": [
-																			"C++ coming soon"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "div",
-														"props": {
-															"className": "repo-body",
-															"children": [
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "description"
-																	}
-																},
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "updated",
-																		"children": [
-																			"Updated a few seconds ago"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "div",
-											"key": "1",
 											"props": {
 												"className": "list-group-item",
 												"children": [
@@ -319,7 +147,7 @@
 										},
 										{
 											"type": "div",
-											"key": "2",
+											"key": "1",
 											"props": {
 												"className": "list-group-item",
 												"children": [
@@ -404,7 +232,7 @@
 										},
 										{
 											"type": "div",
-											"key": "3",
+											"key": "2",
 											"props": {
 												"className": "list-group-item",
 												"children": [
