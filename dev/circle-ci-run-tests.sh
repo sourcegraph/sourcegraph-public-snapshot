@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Runs test tasks across an arbitrary number of test runners.
+
 set -e
 set -o pipefail
 

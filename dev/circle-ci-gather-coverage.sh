@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Gathers and merges coverage output from all the test runners. Stores the
+# combined coverage output along with a HTML report as artifacts.
+
 set -x
 
 for i in $(seq 1 $CIRCLE_NODE_TOTAL); do
