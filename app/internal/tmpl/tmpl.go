@@ -107,7 +107,6 @@ func commonTemplates() error {
 		{"user/password_reset.html"},
 		{"user/new_password.html"},
 		{"user/settings/profile.html", "user/settings/common.inc.html"},
-		{"user/settings/notifications.html", "user/settings/common.inc.html"},
 		{"user/settings/keys.html", "user/settings/common.inc.html"},
 
 		{"home/dashboard.html"},
@@ -117,8 +116,6 @@ func commonTemplates() error {
 		{"error/error.html", "error/common.html"},
 
 		{"oauth-provider/authorize.html"},
-
-		{"app_global.html"},
 	}, []string{
 		"common.html",
 		"layout.html",

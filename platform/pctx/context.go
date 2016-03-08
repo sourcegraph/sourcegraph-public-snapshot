@@ -78,17 +78,6 @@ func WithRepoSearchInfo(ctx context.Context, r *http.Request) (context.Context, 
 	return ctx, nil
 }
 
-// WithGlobalAppInfo computes the context to be passed to a global app handler,
-// including BaseURI and CSRF Token.
-func WithGlobalAppInfo(ctx context.Context, r *http.Request) (context.Context, error) {
-	// TODO: Make this work for multiple global apps.
-	baseURI := "/.notifications"
-
-	ctx = context.WithValue(ctx, csrfTokenKey, nosurf.Token(r))
-	ctx = context.WithValue(ctx, baseURIKey, baseURI)
-	return ctx, nil
-}
-
 // repoFrameBaseURI computes the root URI of an application repository frame.
 // Repository frames often will contain their own URL subrouters.
 func repoFrameBaseURI(ctx context.Context, r *http.Request) (string, error) {
