@@ -33,7 +33,7 @@
 			display: none;
 		}
 	}
-	
+
 	@media (min-width: $container-lg + $sidebar-margin + ($sidebar-width*2)) {
 		overflow-x: visible;
 		& > .content {
