@@ -486,7 +486,7 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 }
 
 func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.UpdateTask", task.Build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.UpdateTask", task.Build.Repo.URI); err != nil {
 		return err
 	}
 	var args []interface{}
