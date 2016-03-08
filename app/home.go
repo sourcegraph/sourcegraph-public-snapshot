@@ -9,6 +9,7 @@ import (
 	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
@@ -45,41 +46,51 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	var users []*userInfo
-	var repos []*sourcegraph.Repo
 	var onWaitlist bool
 
-	if currentUser == nil {
+	if currentUser == nil && authutil.ActiveFlags.HasUserAccounts() {
 		return appauthutil.RedirectToLogIn(w, r)
 	}
 
 	var mirrorData *sourcegraph.UserMirrorData
 	var teammates *sourcegraph.Teammates
 
-	var err error
-	mirrorData, err = cl.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
+	if authutil.ActiveFlags.HasUserAccounts() {
+		var err error
+		mirrorData, err = cl.MirrorRepos.GetUserData(ctx, &pbtypes.Void{})
+		if err != nil {
+			return err
+		}
+
+		switch mirrorData.State {
+		case sourcegraph.UserMirrorsState_NoToken, sourcegraph.UserMirrorsState_InvalidToken:
+			return execDashboardTmpl(w, r, &dashboardData{
+				MirrorData: mirrorData,
+				LinkGitHub: true,
+			})
+		}
+
+		if mirrorData.State == sourcegraph.UserMirrorsState_OnWaitlist {
+			onWaitlist = true
+		}
+
+		teammates, err = cl.Users.ListTeammates(ctx, currentUser)
+		if err != nil {
+			return err
+		}
 	}
 
-	switch mirrorData.State {
-	case sourcegraph.UserMirrorsState_NoToken, sourcegraph.UserMirrorsState_InvalidToken:
-		return execDashboardTmpl(w, r, &dashboardData{
-			MirrorData: mirrorData,
-			LinkGitHub: true,
-		})
-	}
-
-	if mirrorData.State == sourcegraph.UserMirrorsState_OnWaitlist {
-		onWaitlist = true
-	}
-
-	teammates, err = cl.Users.ListTeammates(ctx, currentUser)
+	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		Sort:        "pushed",
+		Direction:   "desc",
+		ListOptions: sourcegraph.ListOptions{PerPage: 100},
+	})
 	if err != nil {
 		return err
 	}
 
 	return execDashboardTmpl(w, r, &dashboardData{
-		Repos:      repos,
+		Repos:      repos.Repos,
 		Users:      users,
 		OnWaitlist: onWaitlist,
 		MirrorData: mirrorData,
