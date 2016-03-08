@@ -234,7 +234,6 @@ type repoCreateCmd struct {
 	Args struct {
 		URI string `name:"REPO-URI" description:"desired repository URI (e.g., host.com/myrepo)"`
 	} `positional-args:"yes" required:"yes" count:"1"`
-	VCS           string `long:"vcs" description:"git or hg" default:"git" required:"yes"`
 	CloneURL      string `short:"u" long:"clone-url" description:"clone URL of existing repo"`
 	DefaultBranch string `short:"b" long:"default-branch" description:"default branch" default:"master"`
 	Mirror        bool   `short:"m" long:"mirror" description:"create the repo as a mirror"`
@@ -249,7 +248,6 @@ func (c *repoCreateCmd) Execute(args []string) error {
 		Op: &sourcegraph.ReposCreateOp_New{
 			New: &sourcegraph.ReposCreateOp_NewRepo{
 				URI:           c.Args.URI,
-				VCS:           c.VCS,
 				CloneURL:      c.CloneURL,
 				DefaultBranch: c.DefaultBranch,
 				Mirror:        c.Mirror,

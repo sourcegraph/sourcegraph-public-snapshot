@@ -114,7 +114,6 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	}
 
 	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.URI, true, true, &store.CloneInfo{
-		VCS:        repo.VCS,
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
 	})
@@ -184,7 +183,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// is good because otherwise when we add a new mirror
 			// repo, builds and notifications are triggered for all
 			// historical PRs.
-			if repo.VCS == "git" && strings.HasPrefix(change.Branch, "refs/") {
+			if strings.HasPrefix(change.Branch, "refs/") {
 				continue
 			}
 

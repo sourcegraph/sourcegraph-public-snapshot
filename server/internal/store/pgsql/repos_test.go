@@ -11,7 +11,6 @@ import (
 func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
 	var createdRepos []*sourcegraph.Repo
 	for _, repo := range repos {
-		repo.VCS = "git"
 		repo.DefaultBranch = "master"
 
 		if err := s.Create(ctx, repo); err != nil {

@@ -68,7 +68,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		URI:           r.URI,
 		Name:          r.Name,
 		Description:   r.Description,
-		VCS:           r.VCS,
 		HTTPCloneURL:  r.HTTPCloneURL,
 		SSHCloneURL:   r.SSHCloneURL,
 		HomepageURL:   r.HomepageURL,
@@ -101,7 +100,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
 	r.Name = r2.Name
 	r.Description = r2.Description
-	r.VCS = r2.VCS
 	r.HTTPCloneURL = r2.HTTPCloneURL
 	r.SSHCloneURL = r2.SSHCloneURL
 	r.HomepageURL = r2.HomepageURL

@@ -45,7 +45,6 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 		{
 			NewRepo: sourcegraph.ReposCreateOp_NewRepo{
 				URI:         "sample/golang/hello",
-				VCS:         "git",
 				Description: "A Go starter project to demonstrate Sourcegraph",
 				Language:    "Go",
 			},

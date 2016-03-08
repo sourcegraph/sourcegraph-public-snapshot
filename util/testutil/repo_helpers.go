@@ -89,7 +89,6 @@ func CreateRepo(t *testing.T, ctx context.Context, repoURI string, mirror bool) 
 
 	op := &sourcegraph.ReposCreateOp_NewRepo{
 		URI: repoURI,
-		VCS: "git",
 	}
 
 	if mirror {

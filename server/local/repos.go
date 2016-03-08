@@ -168,7 +168,6 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 	return &sourcegraph.Repo{
 		Name:          pathpkg.Base(op.URI),
 		URI:           op.URI,
-		VCS:           op.VCS,
 		HTTPCloneURL:  op.CloneURL,
 		Language:      op.Language,
 		DefaultBranch: op.DefaultBranch,
@@ -192,7 +191,6 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 		Name:         ghrepo.Name,
 		URI:          "github.com/" + ghrepo.Owner + "/" + ghrepo.Name,
 		HTTPCloneURL: ghrepo.HTTPCloneURL,
-		VCS:          "git",
 		Mirror:       true,
 		CreatedAt:    &ts,
 	}, nil

@@ -17,10 +17,6 @@ import (
 )
 
 func CreateRepo(ctx context.Context, repo *sourcegraph.Repo) error {
-	if repo.VCS != "git" {
-		return grpc.Errorf(codes.Unimplemented, "only git repos are supported in repo creation")
-	}
-
 	dir := absolutePathForRepo(ctx, repo.URI)
 
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
@@ -39,7 +35,7 @@ func CreateRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("creating %s repository %s failed with output:\n%s", repo.VCS, repo.URI, string(out))
+		return fmt.Errorf("creating repository %s failed with output:\n%s", repo.URI, string(out))
 	}
 
 	if repo.Mirror {
@@ -57,7 +53,7 @@ func CreateRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 			cmd.Dir = dir
 			out, err := cmd.CombinedOutput()
 			if err != nil {
-				return fmt.Errorf("configuring mirrored %s repository %s (origin clone URL %s) failed with %v:\n%s", repo.VCS, repo.URI, repo.CloneURL(), err, string(out))
+				return fmt.Errorf("configuring mirrored repository %s (origin clone URL %s) failed with %v:\n%s", repo.URI, repo.CloneURL(), err, string(out))
 			}
 		}
 	}

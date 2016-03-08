@@ -36,11 +36,6 @@ func orderedRepoEnabledFrames(repo *sourcegraph.Repo, repoConf *sourcegraph.Repo
 		return nil, nil
 	}
 
-	// Non-git apps are not currently supported
-	if repo.VCS != "git" {
-		return nil, nil
-	}
-
 	frames = make(map[string]platform.RepoFrame)
 	for _, frame := range platform.Frames() {
 		if isAlwaysEnabledApp(frame.ID) || repoConf.IsAppEnabled(frame.ID) || (frame.Enable != nil && frame.Enable(repo)) {

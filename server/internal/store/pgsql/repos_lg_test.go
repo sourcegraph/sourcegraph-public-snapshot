@@ -53,7 +53,6 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 		Op: &sourcegraph.ReposCreateOp_New{
 			New: &sourcegraph.ReposCreateOp_NewRepo{
 				URI:      repo,
-				VCS:      "git",
 				CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
 				Mirror:   true,
 			},
@@ -120,7 +119,6 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 		Op: &sourcegraph.ReposCreateOp_New{
 			New: &sourcegraph.ReposCreateOp_NewRepo{
 				URI:      repo,
-				VCS:      "git",
 				CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
 				Mirror:   true,
 			},

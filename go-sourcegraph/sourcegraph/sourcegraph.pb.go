@@ -351,9 +351,6 @@ type Repo struct {
 	Name string `protobuf:"bytes,2,opt,name=Name,proto3" json:"Name,omitempty"`
 	// Description is a brief description of the repository.
 	Description string `protobuf:"bytes,3,opt,name=Description,proto3" json:"Description,omitempty"`
-	// VCS is the short name of the VCS system that this repository uses: "git" or
-	// "hg".
-	VCS string `protobuf:"bytes,4,opt,name=VCS,proto3" json:"VCS,omitempty"`
 	// HTTPCloneURL is the HTTPS clone URL of the repository (or the HTTP clone URL, if
 	// no HTTPS clone URL is available).
 	HTTPCloneURL string `protobuf:"bytes,5,opt,name=HTTPCloneURL,proto3" json:"HTTPCloneURL,omitempty"`
@@ -364,8 +361,7 @@ type Repo struct {
 	// HTMLURL is the URL to the repository's main page on the
 	// Sourcegraph server.
 	HTMLURL string `protobuf:"bytes,22,opt,name=HTMLURL,proto3" json:"HTMLURL,omitempty"`
-	// DefaultBranch is the default VCS branch used (typically "master" for git
-	// repositories and "default" for hg repositories).
+	// DefaultBranch is the default git branch used (typically "master").
 	DefaultBranch string `protobuf:"bytes,8,opt,name=DefaultBranch,proto3" json:"DefaultBranch,omitempty"`
 	// Language is the primary programming language used in this repository.
 	Language string `protobuf:"bytes,9,opt,name=Language,proto3" json:"Language,omitempty"`
@@ -799,9 +795,6 @@ func _ReposCreateOp_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 type ReposCreateOp_NewRepo struct {
 	// URI is the desired URI of the new repository.
 	URI string `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
-	// VCS is the desired VCS type of the new repository (only "git"
-	// is currently supported).
-	VCS string `protobuf:"bytes,2,opt,name=VCS,proto3" json:"VCS,omitempty"`
 	// CloneURL is the clone URL of the repository for mirrored
 	// repositories. If blank, a new hosted repository is created
 	// (i.e., a repo whose origin is on the server). If Mirror is
@@ -5930,12 +5923,6 @@ func (m *Repo) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Description)))
 		i += copy(data[i:], m.Description)
 	}
-	if len(m.VCS) > 0 {
-		data[i] = 0x22
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.VCS)))
-		i += copy(data[i:], m.VCS)
-	}
 	if len(m.HTTPCloneURL) > 0 {
 		data[i] = 0x2a
 		i++
@@ -6776,12 +6763,6 @@ func (m *ReposCreateOp_NewRepo) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.URI)))
 		i += copy(data[i:], m.URI)
-	}
-	if len(m.VCS) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.VCS)))
-		i += copy(data[i:], m.VCS)
 	}
 	if len(m.CloneURL) > 0 {
 		data[i] = 0x1a
@@ -12729,10 +12710,6 @@ func (m *Repo) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	l = len(m.VCS)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	l = len(m.HTTPCloneURL)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
@@ -13080,10 +13057,6 @@ func (m *ReposCreateOp_NewRepo) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.URI)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.VCS)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
@@ -16159,35 +16132,6 @@ func (m *Repo) Unmarshal(data []byte) error {
 			}
 			m.Description = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field VCS", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.VCS = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field HTTPCloneURL", wireType)
@@ -18736,35 +18680,6 @@ func (m *ReposCreateOp_NewRepo) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.URI = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field VCS", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.VCS = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
