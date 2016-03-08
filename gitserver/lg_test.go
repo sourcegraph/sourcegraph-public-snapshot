@@ -3,13 +3,10 @@
 package gitserver_test
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"fmt"
 	"net/url"
 	"testing"
 
-	"golang.org/x/crypto/ssh"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/testserver"
@@ -19,34 +16,23 @@ import (
 func TestGitServerWithAnonymousReaders(t *testing.T) {
 	var tests = []interface{}{
 		// Clone test.
-		gitCloneTest{false, false, "http", []string{}, false},
-		gitCloneTest{false, true, "http", []string{}, false},
-		// TODO: Maybe unauthed cloning over SSH should be
-		// enabled with the `AllowAnonymousReaders` flag set.
-		gitCloneTest{true, false, "ssh", []string{}, false},
-		gitCloneTest{false, true, "ssh", []string{}, false},
+		gitCloneTest{false, false, []string{}, false},
+		gitCloneTest{false, true, []string{}, false},
 
 		// Shallow clone tests.
-		gitCloneTest{false, true, "http", []string{"--depth", "1"}, false},
-		gitCloneTest{false, true, "ssh", []string{"--depth", "1"}, false},
+		gitCloneTest{false, true, []string{"--depth", "1"}, false},
 
 		// Empty fetch tests.
-		gitCloneTest{false, true, "http", []string{}, true},
-		gitCloneTest{false, true, "ssh", []string{}, true},
+		gitCloneTest{false, true, []string{}, true},
 
 		// Push tests.
-		gitPushTest{true, false, "http", true, false},
-		gitPushTest{false, true, "http", true, false},
-		gitPushTest{true, false, "ssh", true, false},
-		gitPushTest{false, true, "ssh", true, false},
+		gitPushTest{true, false, true, false},
+		gitPushTest{false, true, true, false},
 
 		// Vary permissions.
-		gitPushTest{true, true, "ssh", false, false},
-		gitPushTest{false, true, "ssh", false, true},
-		gitPushTest{false, true, "ssh", true, true},
-		gitPushTest{true, true, "http", false, false},
-		gitPushTest{false, true, "http", false, true},
-		gitPushTest{false, true, "http", true, true},
+		gitPushTest{true, true, false, false},
+		gitPushTest{false, true, false, true},
+		gitPushTest{false, true, true, true},
 	}
 	testGitServer(t, &authutil.Flags{Source: "local", AllowAnonymousReaders: true}, tests)
 }
@@ -54,32 +40,23 @@ func TestGitServerWithAnonymousReaders(t *testing.T) {
 func TestGitServerWithAuth(t *testing.T) {
 	var tests = []interface{}{
 		// Clone test.
-		gitCloneTest{true, false, "http", []string{}, false},
-		gitCloneTest{false, true, "http", []string{}, false},
-		gitCloneTest{true, false, "ssh", []string{}, false},
-		gitCloneTest{false, true, "ssh", []string{}, false},
+		gitCloneTest{true, false, []string{}, false},
+		gitCloneTest{false, true, []string{}, false},
 
 		// Shallow clone tests.
-		gitCloneTest{false, true, "http", []string{"--depth", "1"}, false},
-		gitCloneTest{false, true, "ssh", []string{"--depth", "1"}, false},
+		gitCloneTest{false, true, []string{"--depth", "1"}, false},
 
 		// Empty fetch tests.
-		gitCloneTest{false, true, "http", []string{}, true},
-		gitCloneTest{false, true, "ssh", []string{}, true},
+		gitCloneTest{false, true, []string{}, true},
 
 		// Push tests.
-		gitPushTest{true, false, "http", true, false},
-		gitPushTest{false, true, "http", true, false},
-		gitPushTest{true, false, "ssh", true, false},
-		gitPushTest{false, true, "ssh", true, false},
+		gitPushTest{true, false, true, false},
+		gitPushTest{false, true, true, false},
 
 		// Vary permissions.
-		gitPushTest{true, true, "ssh", false, false},
-		gitPushTest{false, true, "ssh", false, true},
-		gitPushTest{false, true, "ssh", true, true},
-		gitPushTest{true, true, "http", false, false},
-		gitPushTest{false, true, "http", false, true},
-		gitPushTest{false, true, "http", true, true},
+		gitPushTest{true, true, false, false},
+		gitPushTest{false, true, false, true},
+		gitPushTest{false, true, true, true},
 	}
 	testGitServer(t, &authutil.Flags{Source: "local", AllowAllLogins: true}, tests)
 }
@@ -87,26 +64,24 @@ func TestGitServerWithAuth(t *testing.T) {
 type gitCloneTest struct {
 	expectError   bool
 	authenticated bool
-	protocol      string // http or ssh
 	args          []string
 	emptyFetch    bool
 }
 
 func (t gitCloneTest) String() string {
-	return fmt.Sprintf("Clone over %s, expect error %t: authenticated: %t, test empty fetch: %t, args: %v", t.protocol, t.expectError, t.authenticated, t.emptyFetch, t.args)
+	return fmt.Sprintf("Clone over HTTP, expect error %t: authenticated: %t, test empty fetch: %t, args: %v", t.expectError, t.authenticated, t.emptyFetch, t.args)
 }
 
 type gitPushTest struct {
 	expectError   bool
 	authenticated bool
-	protocol      string // http or ssh
-	canWrite      bool   // user should have write access.
-	isAdmin       bool   // user should be admin.
+	canWrite      bool // user should have write access.
+	isAdmin       bool // user should be admin.
 }
 
 func (t gitPushTest) String() string {
-	return fmt.Sprintf("Push over %s, expect error %t: authenticated: %t, can write: %t, is admin: %t",
-		t.protocol, t.expectError, t.authenticated, t.canWrite, t.isAdmin)
+	return fmt.Sprintf("Push over HTTP, expect error %t: authenticated: %t, can write: %t, is admin: %t",
+		t.expectError, t.authenticated, t.canWrite, t.isAdmin)
 }
 
 func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{}) {
@@ -127,27 +102,6 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 		t.Fatal(err)
 	}
 
-	// Link a SSH key to the user.
-	linkedKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	if err != nil {
-		t.Fatal(err)
-	}
-	linkedKeyPublic, err := ssh.NewPublicKey(&linkedKey.PublicKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = server.Client.UserKeys.AddKey(ctx,
-		&sourcegraph.SSHPublicKey{Name: "testkey", Key: ssh.MarshalAuthorizedKey(linkedKeyPublic)})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create SSH key not linked with the user.
-	unlinkedKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create repo with files.
 	repo, _, done, err := testutil.CreateAndPushRepo(t, ctx, "myrepo")
 	if err != nil {
@@ -160,30 +114,18 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 	}
 	authedURL.User = url.UserPassword("u", "p")
 
-	remoteURL := func(protocol string, authenticated bool) string {
-		if protocol == "ssh" {
-			return repo.SSHCloneURL
-		} else if authenticated {
+	remoteURL := func(authenticated bool) string {
+		if authenticated {
 			return authedURL.String()
 		}
 		return repo.HTTPCloneURL
-	}
-	sshKey := func(protocol string, authenticated bool) *rsa.PrivateKey {
-		if protocol != "ssh" {
-			return nil
-		}
-		if authenticated {
-			return linkedKey
-		}
-		return unlinkedKey
 	}
 
 	// Run the tests.
 	for _, it := range tests {
 		switch test := it.(type) {
 		case gitCloneTest:
-			err := testutil.CloneRepo(t, remoteURL(test.protocol, test.authenticated), "",
-				sshKey(test.protocol, test.authenticated), test.args, test.emptyFetch)
+			err := testutil.CloneRepo(t, remoteURL(test.authenticated), "", test.args, test.emptyFetch)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
 			}
@@ -198,7 +140,7 @@ func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{})
 				t.Errorf("Error while creating authed clone URL: %s", err)
 			}
 
-			err = testutil.PushRepo(t, ctx, remoteURL(test.protocol, test.authenticated), authedCloneURL, sshKey(test.protocol, test.authenticated), map[string]string{"unique.txt": test.String()}, false)
+			err = testutil.PushRepo(t, ctx, remoteURL(test.authenticated), authedCloneURL, map[string]string{"unique.txt": test.String()}, false)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
 			}

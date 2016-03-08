@@ -29,7 +29,7 @@ func New() (*httptestutil.Client, *httptestutil.MockClients) {
 	app.Init()
 	mux := app.NewHandler(router.New(mux.NewRouter()))
 	c, mock := httptestutil.NewTest(mux)
-	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "http", Host: "example.com", Path: "/"}, nil)
+	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "http", Host: "example.com", Path: "/"})
 	mock.Ctx = sourcegraph.WithGRPCEndpoint(mock.Ctx, &url.URL{Scheme: "http", Host: "grpc.example.com", Path: "/"})
 	mock.Ctx = idkey.NewContext(mock.Ctx, &idkey.IDKey{ID: "k"})
 

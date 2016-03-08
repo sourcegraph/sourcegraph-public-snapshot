@@ -37,7 +37,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 
 	// Sample Go files for language detection.
 	files := map[string]string{"a.go": "a"}
-	if err := testutil.PushRepo(t, ctx, repo.HTTPCloneURL, repo.HTTPCloneURL, nil, files, false); err != nil {
+	if err := testutil.PushRepo(t, ctx, repo.HTTPCloneURL, repo.HTTPCloneURL, files, false); err != nil {
 		t.Fatal(err)
 	}
 

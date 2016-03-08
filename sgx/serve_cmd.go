@@ -45,7 +45,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
@@ -82,7 +81,6 @@ Starts an HTTP server serving the app and API.
 [serve command options]
           --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3080)
           --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3443)
-          --ssh-addr=                            SSH address to listen on, if not blank (:3022)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
           --reload                               reload templates, etc. on each request (dev mode)
@@ -164,7 +162,6 @@ var serveCmdInst ServeCmd
 type ServeCmd struct {
 	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API"`
 	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
-	SSHAddr   string `long:"ssh-addr" default:":3022" description:"SSH address to listen on, if not blank"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
 
@@ -215,28 +212,6 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	return appURL, nil
-}
-
-func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
-	if c.SSHAddr != "" {
-		host, _, err := net.SplitHostPort(appURL.Host)
-		if err != nil {
-			if strings.Contains(err.Error(), "missing port in address") {
-				host = appURL.Host
-			} else {
-				return nil, err
-			}
-		}
-		sshURL := *appURL
-		sshURL.Scheme = "ssh"
-		sshURL.User = url.User("git")
-		sshURL.Host = host
-		if c.SSHAddr != ":22" {
-			sshURL.Host += c.SSHAddr
-		}
-		return &sshURL, nil
-	}
-	return nil, nil
 }
 
 func (c *ServeCmd) Execute(args []string) error {
@@ -329,17 +304,13 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	sshURL, err := c.configureSSHURL(appURL)
-	if err != nil {
-		return err
-	}
 
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
 		for _, f := range sharedCtxFuncs {
 			ctx = f(ctx)
 		}
-		ctx = conf.WithURL(ctx, appURL, sshURL)
+		ctx = conf.WithURL(ctx, appURL)
 		return ctx
 	}
 	clientCtxFunc := func(ctx context.Context) context.Context {
@@ -474,7 +445,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners(client.Ctx, idKey, appURL, sshURL)
+	c.initializeEventListeners(client.Ctx, idKey, appURL)
 
 	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
 		lmux := cmux.New(l)
@@ -541,19 +512,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		l = tls.NewListener(l, srv.TLSConfig)
 
 		serveHTTP(l, &srv, c.HTTPSAddr, true)
-	}
-
-	// Start SSH git server.
-	if c.SSHAddr != "" {
-		// Create a context with regular (non self-signed) tokens.
-		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
-		if err != nil {
-			return err
-		}
-		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, idKey)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Connection test
@@ -691,8 +649,8 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL, sshURL *url.URL) {
-	ctx := conf.WithURL(parent, appURL, sshURL)
+func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
+	ctx := conf.WithURL(parent, appURL)
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{ClientID: k.ID})
 	// Mask out the server's private key from the context passed to the listener
 	ctx = idkey.NewContext(ctx, nil)

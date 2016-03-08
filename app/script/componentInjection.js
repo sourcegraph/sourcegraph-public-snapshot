@@ -14,7 +14,6 @@ var AlertView = require("./components/AlertView");
 var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
 var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
 var SearchBar = require("sourcegraph/search/SearchBar").default;
-var UserSSHKeys = require("./components/UserSSHKeys");
 
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
@@ -141,13 +140,5 @@ document.addEventListener("DOMContentLoaded", () => {
 					hasCookie={element.dataset.hasCookie === "true"} />, element
 			);
 		});
-	}
-
-	el = document.querySelector("[data-react=UserSSHKeys]");
-	if (el) {
-		ReactDOM.render(
-			<UserSSHKeys
-				keys={el.dataset.keys} />, el
-		);
 	}
 });

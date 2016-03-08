@@ -1346,32 +1346,6 @@ service Users {
 	rpc Count(pbtypes.Void) returns (UserCount);
 }
 
-message SSHKeyList {
-	repeated SSHPublicKey SSHKeys = 1 [(gogoproto.nullable) = false];
-}
-
-// UserKeys manages SSH public keys per user.
-service UserKeys {
-	// AddKey adds an SSH public key for the user, enabling them to use git over SSH.
-	//
-	// The ID field of SSHPublicKey will be ignored by this method.
-	rpc AddKey(SSHPublicKey) returns (pbtypes.Void);
-
-	// LookupUser looks up a user based on the given public key.
-	//
-	// The ID and Name fields of SSHPublicKey will be ignored by this method.
-	rpc LookupUser(SSHPublicKey) returns (UserSpec);
-
-	// DeleteKey deletes the user's SSH public key given an ID or name.
-	rpc DeleteKey(SSHPublicKey) returns (pbtypes.Void);
-
-	// ListKeys lists the user's SSH public keys
-	rpc ListKeys(pbtypes.Void) returns (SSHKeyList);
-
-	// DeleteAllKeys delets all of the user's SSH public keys
-	rpc DeleteAllKeys(pbtypes.Void) returns (pbtypes.Void);
-}
-
 // Auth manages authentication and authorization (via OAuth2).
 service Auth {
 	// GetAuthorizationCodeGrant gets an OAuth2 authorization code
@@ -1406,22 +1380,6 @@ service Auth {
 	// SetExternalToken stores a token that authorizes this server
 	// to an external service on behalf of the user.
 	rpc SetExternalToken(ExternalToken) returns (pbtypes.Void);
-}
-
-// SSHPublicKey that users to authenticate with for SSH git access.
-message SSHPublicKey {
-	// Key is the serialized key data in SSH wire format, with the name prefix.
-	//
-	// NOTE: When adding a key, the server instead expects the data to be
-	// serialized in the same format as keys in an OpenSSH authorized_keys
-	// file.
-	bytes Key = 1;
-
-	// Name is the name of the SSH key.
-	string Name = 2;
-
-	// ID is the ID of the SSH key.
-	uint64 ID = 3;
 }
 
 // AuthorizationCodeRequest: see

@@ -2,9 +2,6 @@ package testutil
 
 import (
 	"bytes"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
@@ -15,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -136,7 +132,7 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 		return nil, "", nil, err
 	}
 
-	if err := PushRepo(t, ctx, authedCloneURL, authedCloneURL, nil, files, false); err != nil {
+	if err := PushRepo(t, ctx, authedCloneURL, authedCloneURL, files, false); err != nil {
 		return nil, "", nil, err
 	}
 
@@ -157,7 +153,7 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 // committed in the same commit.
 // If deleteBranch is true it will push the commits to another branch and
 // then atttempt to delete the branch.
-func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, key *rsa.PrivateKey, files map[string]string, deleteBranch bool) error {
+func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files map[string]string, deleteBranch bool) error {
 	if cloneURL == "" {
 		return fmt.Errorf("PushRepo can't be called with `cloneURL` unset.")
 	}
@@ -212,12 +208,6 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, key *
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	cmd.Dir = dir
 	prepGitCommand(cmd)
-	if key != nil {
-		// Attempting to push over SSH.
-		if _, err := prepGitSSHCommand(cmd, dir, key); err != nil {
-			return err
-		}
-	}
 	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
 	logCmdOutut(t, cmd, out)
 	if err != nil {
@@ -252,7 +242,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, key *
 // CloneRepo tests cloning from the clone URL.
 // If emptyFetch is true it performs a fetch right after a clone to test a fetch
 // that does not go through the pack negotiation phase of the protocol.
-func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []string, emptyFetch bool) (err error) {
+func CloneRepo(t *testing.T, cloneURL, dir string, args []string, emptyFetch bool) (err error) {
 	if dir == "" {
 		var err error
 		dir, err = ioutil.TempDir("", "")
@@ -268,12 +258,6 @@ func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 	cmd.Stdin = bytes.NewReader([]byte("\n"))
 	cmd.Dir = dir
 	prepGitCommand(cmd)
-	if key != nil {
-		// Attempting to clone over SSH.
-		if _, err := prepGitSSHCommand(cmd, dir, key); err != nil {
-			return err
-		}
-	}
 	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
 	logCmdOutut(t, cmd, out)
 	if err != nil {
@@ -292,39 +276,6 @@ func CloneRepo(t *testing.T, cloneURL, dir string, key *rsa.PrivateKey, args []s
 		}
 	}
 	return nil
-}
-
-// prepGitSSHCommand performs the necessary configurations to execute an git
-// command using the provided RSA key.
-func prepGitSSHCommand(cmd *exec.Cmd, dir string, key *rsa.PrivateKey) (*exec.Cmd, error) {
-	sshDir := filepath.Join(dir, ".ssh")
-	if err := os.Mkdir(sshDir, 0700); err != nil {
-		return cmd, err
-	}
-
-	idFile := filepath.Join(sshDir, "sshkey")
-
-	// Write public key.
-	sshPublicKey, err := ssh.NewPublicKey(&key.PublicKey)
-	if err != nil {
-		return cmd, err
-	}
-	publicKey := ssh.MarshalAuthorizedKey(sshPublicKey)
-	if err := ioutil.WriteFile(idFile+".pub", publicKey, 0600); err != nil {
-		return cmd, err
-	}
-
-	// Write private key.
-	keyPrivatePEM := pem.EncodeToMemory(&pem.Block{
-		Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-	if err := ioutil.WriteFile(idFile, keyPrivatePEM, 0600); err != nil {
-		return cmd, err
-	}
-
-	// Generate the necessary SSH command.
-	// NOTE: GIT_SSH_COMMAND requires git version 2.3+.
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SSH_COMMAND=ssh -i %s -F /dev/null -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null", idFile))
-	return cmd, err
 }
 
 // prepGitCommand adds environment variables for running a git command.

@@ -25,7 +25,6 @@ const (
 	UserContentUpload = "usercontent.upload"
 
 	UserInviteBulk = "user.invite.bulk"
-	UserKeys       = "user.keys"
 )
 
 func New(base *mux.Router) *mux.Router {
@@ -93,10 +92,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/.invite-bulk").
 		Methods("POST").
 		Name(UserInviteBulk)
-
-	base.Path("/.user/keys").
-		Methods("POST", "GET", "DELETE").
-		Name(UserKeys)
 
 	return base
 }

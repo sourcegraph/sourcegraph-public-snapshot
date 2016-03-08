@@ -107,7 +107,6 @@ func commonTemplates() error {
 		{"user/password_reset.html"},
 		{"user/new_password.html"},
 		{"user/settings/profile.html", "user/settings/common.inc.html"},
-		{"user/settings/keys.html", "user/settings/common.inc.html"},
 
 		{"home/dashboard.html"},
 

@@ -20,7 +20,7 @@ import (
 func testContext() (ctx context.Context, done func()) {
 	ctx = context.Background()
 
-	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, &url.URL{Scheme: "ssh", Host: "example.com", User: url.User("git")})
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 
 	reposDir, err := ioutil.TempDir("", "repos")
 	if err != nil {

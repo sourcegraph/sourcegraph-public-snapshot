@@ -32,7 +32,6 @@ const (
 	User                      = "person"
 	UserSettingsProfile       = "person.settings.profile"
 	UserSettingsProfileAvatar = "person.settings.profile.avatar"
-	UserSettingsKeys          = "person.settings.keys"
 
 	Repo             = "repo"
 	RepoBuilds       = "repo.builds"
@@ -124,7 +123,6 @@ func New(base *mux.Router) *Router {
 	user := base.PathPrefix(userPath).Subrouter()
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
 	user.Path("/.settings/profile/avatar").Methods("POST").Name(UserSettingsProfileAvatar)
-	user.Path("/.settings/keys").Methods("GET", "POST").Name(UserSettingsKeys)
 
 	// attach git transport endpoints
 	gitrouter.New(base)

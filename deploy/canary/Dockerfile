@@ -12,7 +12,7 @@ RUN { \
 ADD src /usr/local/bin/src
 
 ENTRYPOINT ["src"]
-CMD ["serve", "--http-addr=:80", "--https-addr=:443", "--ssh-addr=:22"]
+CMD ["serve", "--http-addr=:80", "--https-addr=:443"]
 
 VOLUME ["/root/.sourcegraph", "/var/run/docker.sock"]
 EXPOSE 80 443 22

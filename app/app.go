@@ -94,7 +94,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.UserSettingsProfile).Handler(internal.Handler(serveUserSettingsProfile))
 	r.Get(router.UserSettingsProfileAvatar).Handler(internal.Handler(serveUserSettingsProfileAvatar))
-	r.Get(router.UserSettingsKeys).Handler(internal.Handler(serveUserSettingsKeys))
 
 	r.Get(router.Repo).Handler(internal.Handler(serveRepo))
 	r.Get(router.RepoBuild).Handler(internal.Handler(serveRepoBuild))

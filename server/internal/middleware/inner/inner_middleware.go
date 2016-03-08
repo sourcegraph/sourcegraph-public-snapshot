@@ -72,8 +72,6 @@ func Services() svc.Services {
 
 		Storage: wrappedStorage{},
 
-		UserKeys: wrappedUserKeys{},
-
 		Users: wrappedUsers{},
 	}
 }
@@ -1180,73 +1178,6 @@ func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey)
 	res, err = local.Services.Storage.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Storage.List returned nil, nil")
-	}
-	return
-}
-
-type wrappedUserKeys struct{}
-
-func (s wrappedUserKeys) AddKey(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "UserKeys", "AddKey", param)
-	defer func() {
-		trace.After(ctx, "UserKeys", "AddKey", param, err, time.Since(start))
-	}()
-	res, err = local.Services.UserKeys.AddKey(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "UserKeys.AddKey returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedUserKeys) LookupUser(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *sourcegraph.UserSpec, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "UserKeys", "LookupUser", param)
-	defer func() {
-		trace.After(ctx, "UserKeys", "LookupUser", param, err, time.Since(start))
-	}()
-	res, err = local.Services.UserKeys.LookupUser(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "UserKeys.LookupUser returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedUserKeys) DeleteKey(ctx context.Context, param *sourcegraph.SSHPublicKey) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "UserKeys", "DeleteKey", param)
-	defer func() {
-		trace.After(ctx, "UserKeys", "DeleteKey", param, err, time.Since(start))
-	}()
-	res, err = local.Services.UserKeys.DeleteKey(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteKey returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedUserKeys) ListKeys(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.SSHKeyList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "UserKeys", "ListKeys", param)
-	defer func() {
-		trace.After(ctx, "UserKeys", "ListKeys", param, err, time.Since(start))
-	}()
-	res, err = local.Services.UserKeys.ListKeys(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "UserKeys.ListKeys returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedUserKeys) DeleteAllKeys(ctx context.Context, param *pbtypes.Void) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "UserKeys", "DeleteAllKeys", param)
-	defer func() {
-		trace.After(ctx, "UserKeys", "DeleteAllKeys", param, err, time.Since(start))
-	}()
-	res, err = local.Services.UserKeys.DeleteAllKeys(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "UserKeys.DeleteAllKeys returned nil, nil")
 	}
 	return
 }

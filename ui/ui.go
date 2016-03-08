@@ -73,8 +73,6 @@ func NewHandler(r *mux.Router) http.Handler {
 
 	r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
 
-	r.Get(ui_router.UserKeys).Handler(handler(serveUserKeys))
-
 	return handlerutil.WithMiddleware(r, mw...)
 }
 

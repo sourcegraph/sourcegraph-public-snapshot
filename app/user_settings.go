@@ -200,19 +200,3 @@ func gravatarURL(email string) string {
 	io.WriteString(h, email) // md5 hash the final string.
 	return fmt.Sprintf("https://secure.gravatar.com/avatar/%x?d=mm", h.Sum(nil))
 }
-
-func serveUserSettingsKeys(w http.ResponseWriter, r *http.Request) error {
-	_, cd, err := userSettingsCommon(w, r)
-	if err == errUserSettingsCommonWroteResponse {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	return tmpl.Exec(r, w, "user/settings/keys.html", http.StatusOK, nil, &struct {
-		userSettingsCommonData
-		tmpl.Common
-	}{
-		userSettingsCommonData: *cd,
-	})
-}

@@ -65,10 +65,12 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // VerifyActorHasReadAccess checks if the given actor is authorized to make
 // read requests to this server.
 //
-// Note that this function allows the caller to retrieve any user's access levels.
-// This is meant for trusted server code living outside the scope of gRPC requests
-// to verify user permissions, for example the SSH Git server. For all other cases,
-// VerifyUserHasWriteAccess or VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
+// Note that this function allows the caller to retrieve any user's
+// access levels.  This is meant for trusted server code living
+// outside the scope of gRPC requests to verify user permissions. For
+// all other cases, VerifyUserHasWriteAccess or
+// VerifyUserHasAdminAccess should be used to authorize a user for
+// gRPC operations.
 func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has read access.
@@ -92,10 +94,11 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 // VerifyActorHasWriteAccess checks if the given actor is authorized to make
 // write requests to this server.
 //
-// Note that this function allows the caller to retrieve any user's access levels.
-// This is meant for trusted server code living outside the scope of gRPC requests
-// to verify user permissions, for example the SSH Git server. For all other cases,
-// VerifyUserHasWriteAccess should be used to authorize a user for gRPC operations.
+// Note that this function allows the caller to retrieve any user's
+// access levels.  This is meant for trusted server code living
+// outside the scope of gRPC requests to verify user permissions. For
+// all other cases, VerifyUserHasWriteAccess should be used to
+// authorize a user for gRPC operations.
 func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
@@ -125,10 +128,11 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 // VerifyActorHasAdminAccess checks if the given actor is authorized to make
 // admin requests to this server.
 //
-// Note that this function allows the caller to retrieve any user's access levels.
-// This is meant for trusted server code living outside the scope of gRPC requests
-// to verify user permissions, for example the SSH Git server. For all other cases,
-// VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
+// Note that this function allows the caller to retrieve any user's
+// access levels.  This is meant for trusted server code living
+// outside the scope of gRPC requests to verify user permissions. For
+// all other cases, VerifyUserHasAdminAccess should be used to
+// authorize a user for gRPC operations.
 func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has admin access.

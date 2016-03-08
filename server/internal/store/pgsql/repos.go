@@ -219,16 +219,13 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-// setCloneURLField sets the *CloneURL fields on the repo based on
-// the ctx's app and SSH URLs. These values are not stored in the
-// database because if they were, the values would be stale if the
-// configuration's app or SSH URLs change.
+// setCloneURLField sets the *CloneURL fields on the repo based on the
+// ctx's app URL. These values are not stored in the database because
+// if they were, the values would be stale if the configuration
+// changes.
 func setCloneURLField(ctx context.Context, repo *sourcegraph.Repo) {
 	if !repo.Mirror {
 		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
-		if conf.SSHURL(ctx) != nil {
-			repo.SSHCloneURL = fmt.Sprintf("%s/%s", conf.SSHURL(ctx).String(), repo.URI)
-		}
 	}
 }
 

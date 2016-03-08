@@ -30,13 +30,6 @@
 					{{if .IsOrganization}}Organization profile{{else}}Profile{{end}}
 				</li>
 			</a>
-			{{if not .IsOrganization}}
-			<a href="{{urlToUserSubroute "person.settings.keys" .Login}}">
-				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.keys" .Login).String)}}active{{end}}">
-					SSH keys
-				</li>
-			</a>
-			{{end}}
 		</ul>
 		{{end}}
 	</div>
