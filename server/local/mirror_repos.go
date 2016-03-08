@@ -54,15 +54,29 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// simultaneously clone or update the same repo? Race conditions
 	// probably, esp. on NFS.
 
-	// For private repos, supply auth from local auth store.
+	actor := authpkg.ActorFromContext(ctx)
+	asUserUID := int32(actor.UID)
+	if op.AsUser != nil && actor.HasAdminAccess() {
+		if op.AsUser.UID != 0 {
+			asUserUID = op.AsUser.UID
+		} else if op.AsUser.Login != "" {
+			user, err := (&users{}).Get(ctx, op.AsUser)
+			if err != nil {
+				return nil, err
+			}
+			asUserUID = user.UID
+		}
+	}
+
 	remoteOpts := vcs.RemoteOpts{}
-	if repo.Private {
-		token, err := s.getRepoAuthToken(elevatedActor(ctx), op.Repo.URI)
+	// For private repos, supply auth from local auth store.
+	if repo.Private && asUserUID != 0 {
+		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: asUserUID})
 		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.Repo.URI, err)
+			return nil, grpc.Errorf(codes.Unavailable, "cannot refresh %s as no credentials available for user %v: %v", op.Repo.URI, asUserUID, err)
 		}
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
-			Pass: token,
+			Pass: extToken.Token,
 		}
 	}
 
@@ -80,32 +94,6 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	}
 
 	return &pbtypes.Void{}, nil
-}
-
-func (s *mirrorRepos) getRepoAuthToken(ctx context.Context, repo string) (string, error) {
-	users, err := store.RepoPermsFromContext(ctx).ListRepoUsers(ctx, repo)
-	if err != nil {
-		return "", err
-	}
-
-	if users == nil || len(users) == 0 {
-		return "", grpc.Errorf(codes.Unavailable, "repo has no user with access")
-	}
-
-	var token string
-	for _, user := range users {
-		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: user})
-		if err != nil {
-			log15.Debug("No auth token found for user to fetch repo", "uid", users[0], "repo", repo, "error", err)
-			continue
-		}
-		token = extToken.Token
-	}
-
-	if token == "" {
-		return "", grpc.Errorf(codes.Unavailable, "no auth token found for repo")
-	}
-	return token, nil
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {

@@ -640,6 +640,10 @@ message MirrorReposRefreshVCSOp {
 	reserved 2;
 
 	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+
+	// AsUser is the user whose auth token will be used for refreshing this
+	// mirror repo. This can be used when refreshing a private repo mirror.
+	UserSpec AsUser = 3;
 }
 
 // VCSCredentials for authentication during communication with VCS remotes.
