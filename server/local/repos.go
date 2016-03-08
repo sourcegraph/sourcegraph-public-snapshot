@@ -20,6 +20,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
+	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -133,7 +134,8 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 	}
 
 	if repo.Mirror {
-		repoupdater.Enqueue(repo)
+		actor := authpkg.ActorFromContext(ctx)
+		repoupdater.Enqueue(repo, &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login})
 	}
 
 	eventsutil.LogAddRepo(ctx, repo.HTTPCloneURL, repo.Language, repo.Mirror, repo.Private)
