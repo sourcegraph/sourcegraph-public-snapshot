@@ -1,5 +1,5 @@
 // Package tmpl implements a protobuf template-based generator.
-package tmpl
+package tmpl // import "sourcegraph.com/sourcegraph/prototools/tmpl"
 
 import (
 	"bytes"

@@ -286,7 +286,7 @@ func NewConn(cc *ClientConn) (*Conn, error) {
 		}
 	}
 	c.stateCV = sync.NewCond(&c.mu)
-	if c.dopts.block || true {
+	if c.dopts.block {
 		if err := c.resetTransport(false); err != nil {
 			c.Close()
 			return nil, err
