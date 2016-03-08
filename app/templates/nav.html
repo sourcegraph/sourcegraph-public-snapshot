@@ -34,12 +34,6 @@
 							{{.CurrentUser.Login}}
 						</a>
 					</li>
-					<li>
-						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}">
-							<i class="octicon octicon-gear"></i>
-							<span class="hidden-sm hidden-md hidden-lg">Settings</span>
-						</a>
-					</li>
 					<li class="sign-out">
 						<form action="{{urlTo "log-out"}}" method="POST" class="navbar-form">
 							<button class="btn btn-link">
