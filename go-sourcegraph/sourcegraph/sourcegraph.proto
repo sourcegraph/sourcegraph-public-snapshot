@@ -10,7 +10,6 @@ import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";
 import "src.sourcegraph.com/sourcegraph/pkg/inventory/inventory.proto";
-import "github.com/gengo/grpc-gateway/third_party/googleapis/google/api/annotations.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;
@@ -247,29 +246,17 @@ message RepoList {
 
 service RepoStatuses {
 	// GetCombined fetches the combined repository status for the given commit.
-	rpc GetCombined(RepoRevSpec) returns (CombinedStatus) {
-		option (google.api.http) = {
-			get: "/repo_statuses"
-		};
-	};
+	rpc GetCombined(RepoRevSpec) returns (CombinedStatus);
 
 	// Create creates a repository status for the given commit.
-	rpc Create(RepoStatusesCreateOp) returns (RepoStatus) {
-		option (google.api.http) = {
-			post: "/repo_statuses"
-		};
-	};
+	rpc Create(RepoStatusesCreateOp) returns (RepoStatus);
 }
 
 // Repos exposes information about and actions on both locally hosted
 // and remote repositories.
 service Repos {
 	// Get fetches a repository.
-	rpc Get(RepoSpec) returns (Repo) {
-		option (google.api.http) = {
-			get: "/repos"
-		};
-	};
+	rpc Get(RepoSpec) returns (Repo);
 
 	// Resolve will first try to look up the specified repo using
 	// Repos.Get locally, returning a Repo if found. If no local repo
@@ -283,49 +270,28 @@ service Repos {
 	rpc Resolve(RepoResolveOp) returns (RepoResolution);
 
 	// List repositories.
-	rpc List(RepoListOptions) returns (RepoList) {
-		option (google.api.http) = {
-			get: "/repos/list"
-		};
-	};
+	rpc List(RepoListOptions) returns (RepoList);
 
 	// List remote repositories (on GitHub) associated with the
 	// currently authenticated actor.
 	rpc ListRemote(ReposListRemoteOptions) returns (RemoteRepoList);
 
 	// Create creates a new repository.
-	rpc Create(ReposCreateOp) returns (Repo) {
-		option (google.api.http) = {
-			post: "/repos"
-		};
-	};
+	rpc Create(ReposCreateOp) returns (Repo);
 
 	// Update updates a repository.
 	rpc Update(ReposUpdateOp) returns (Repo);
 
 	// Delete removes a repository.
-	rpc Delete(RepoSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			delete: "/repos"
-		};
-	};
+	rpc Delete(RepoSpec) returns (pbtypes.Void);
 
 	// GetReadme fetches the formatted README file for a repository.
-	rpc GetReadme(RepoRevSpec) returns (Readme) {
-		option (google.api.http) = {
-			get: "/repos/get_readme"
-		};
-	};
+	rpc GetReadme(RepoRevSpec) returns (Readme);
 
 	// GetConfig retrieves the configuration for a repository.
-	rpc GetConfig(RepoSpec) returns (RepoConfig) {
-		option (google.api.http) = {
-			get: "/repos/get_config"
-		};
-	};
+	rpc GetConfig(RepoSpec) returns (RepoConfig);
 
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
-	// TODO(slimsag): add google.api.http annotations to these once moved
 	rpc GetCommit(RepoRevSpec) returns (vcs.Commit);
 	// ListCommits returns the list of commits that span between the revisions
 	// specified in the given DeltaSpec. By default, it will return 1 page of
@@ -479,57 +445,33 @@ service Storage {
 	// Get gets the value of a storage object.
 	//
 	// If the specified object does not exist, a NotFound error is returned.
-	rpc Get(StorageKey) returns (StorageValue) {
-		option (google.api.http) = {
-			get: "/storage"
-		};
-	}
+	rpc Get(StorageKey) returns (StorageValue);
 
 	// Put puts an object into storage overwriting the old object (if any).
-	rpc Put(StoragePutOp) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			put: "/storage"
-		};
-	}
+	rpc Put(StoragePutOp) returns (pbtypes.Void);
 
 	// PutNoOverwrite puts an object into storage, returning a AlreadyExists error
 	// if the object already exists.
-	rpc PutNoOverwrite(StoragePutOp) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			put: "/storage"
-		};
-	}
+	rpc PutNoOverwrite(StoragePutOp) returns (pbtypes.Void);
 
 	// Delete deletes the specific storage object or, if no key is specified, all
 	// objects in the bucket.
 	//
 	// If the given key or bucket does not exist, this function is no-op.
-	rpc Delete(StorageKey) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			delete: "/storage"
-		};
-	}
+	rpc Delete(StorageKey) returns (pbtypes.Void);
 
 	// Exists tells if the given key exists in the bucket or not.
 	//
 	// If the object does not exist, no error is returned, only exists=false is
 	// returned.
-	rpc Exists(StorageKey) returns (StorageExists) {
-		option (google.api.http) = {
-			get: "/storage/exists"
-		};
-	}
+	rpc Exists(StorageKey) returns (StorageExists);
 
 	// List lists all objects in the bucket. It ignores the 'key' field of the
 	// storage name parameter.
 	//
 	// If the bucket does not exist, no error is returned, only an empty list is
 	// returned.
-	rpc List(StorageKey) returns (StorageList) {
-		option (google.api.http) = {
-			get: "/storage/list"
-		};
-	}
+	rpc List(StorageKey) returns (StorageList);
 }
 
 message ReposCreateOp {
@@ -726,11 +668,7 @@ message RemoteRepo {
 // Sourcegraph of repositories hosted elsewhere.
 service MirrorRepos {
 	// Refresh fetches the newest VCS data from the repo's origin.
-	rpc RefreshVCS(MirrorReposRefreshVCSOp) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			put: "/mirror_repos"
-		};
-	};
+	rpc RefreshVCS(MirrorReposRefreshVCSOp) returns (pbtypes.Void);
 }
 
 // A Build represents a scheduled, completed, or failed repository analysis and
@@ -1198,11 +1136,7 @@ message OrgList {
 // API.
 service Builds {
 	// Get fetches a build.
-	rpc Get(BuildSpec) returns (Build) {
-		option (google.api.http) = {
-			get: "/builds"
-		};
-	};
+	rpc Get(BuildSpec) returns (Build);
 
 	// GetRepoBuild returns the build for the repo at the given exact
 	// commit or branch head commit.
@@ -1211,97 +1145,49 @@ service Builds {
 	// history to find the "best recent build." This method no longer
 	// implements that functionality. Refer to
 	// Repos.GetSrclibDataVersionForPath.
-	rpc GetRepoBuild(RepoRevSpec) returns (Build) {
-		option (google.api.http) = {
-			get: "/builds/get_repo_build"
-		};
-	};
+	rpc GetRepoBuild(RepoRevSpec) returns (Build);
 
 	// List builds.
-	rpc List(BuildListOptions) returns (BuildList) {
-		option (google.api.http) = {
-			get: "/builds/list"
-		};
-	};
+	rpc List(BuildListOptions) returns (BuildList);
 
 	// Create a new build. The build will run asynchronously (Create does not wait for
 	// it to return. To monitor the build's status, use Get.)
-	rpc Create(BuildsCreateOp) returns (Build) {
-		option (google.api.http) = {
-			post: "/builds"
-		};
-	};
+	rpc Create(BuildsCreateOp) returns (Build);
 
 	// Update updates information about a build and returns the build after the update
 	// has been applied.
-	rpc Update(BuildsUpdateOp) returns (Build) {
-		option (google.api.http) = {
-			put: "/builds/update"
-		};
-	};
+	rpc Update(BuildsUpdateOp) returns (Build);
 
 	// ListBuildTasks lists the tasks associated with a build.
-	rpc ListBuildTasks(BuildsListBuildTasksOp) returns (BuildTaskList) {
-		option (google.api.http) = {
-			get: "/builds/list_build_tasks"
-		};
-	};
+	rpc ListBuildTasks(BuildsListBuildTasksOp) returns (BuildTaskList);
 
 	// CreateTasks creates tasks associated with a build and returns them with their
 	// TID fields set.
-	rpc CreateTasks(BuildsCreateTasksOp) returns (BuildTaskList) {
-		option (google.api.http) = {
-			post: "/builds/create_tasks"
-		};
-	};
+	rpc CreateTasks(BuildsCreateTasksOp) returns (BuildTaskList);
 
 	// UpdateTask updates a task associated with a build.
-	rpc UpdateTask(BuildsUpdateTaskOp) returns (BuildTask) {
-		option (google.api.http) = {
-			put: "/builds/update_task"
-		};
-	};
+	rpc UpdateTask(BuildsUpdateTaskOp) returns (BuildTask);
 
 	// GetTaskLog gets log entries associated with a task.
-	rpc GetTaskLog(BuildsGetTaskLogOp) returns (LogEntries) {
-		option (google.api.http) = {
-			get: "/builds/get_task_log"
-		};
-	};
+	rpc GetTaskLog(BuildsGetTaskLogOp) returns (LogEntries);
 
 	// DequeueNext returns the next queued build and marks it as
 	// having started (atomically). If there are no builds in the
 	// queue, a NotFound error is returned.
-	rpc DequeueNext(BuildsDequeueNextOp) returns (Build) {
-		option (google.api.http) = {
-			get: "/builds/dequeue_next"
-		};
-	};
+	rpc DequeueNext(BuildsDequeueNextOp) returns (Build);
 }
 
 // OrgsService communicates with the organizations-related endpoints in the
 // Sourcegraph API.
 service Orgs {
 	// Get fetches an organization.
-	rpc Get(OrgSpec) returns (Org) {
-		option (google.api.http) = {
-			get: "/orgs"
-		};
-	};
+	rpc Get(OrgSpec) returns (Org);
 
 	// List lists organizations that a user is a member of.
-	rpc List(OrgsListOp) returns (OrgList) {
-		option (google.api.http) = {
-			get: "/orgs/list"
-		};
-	};
+	rpc List(OrgsListOp) returns (OrgList);
 
 	// ListMembers lists members of an organization.
-	rpc ListMembers(OrgsListMembersOp) returns (UserList) {
-		option (google.api.http) = {
-			get: "/orgs/list_members"
-		};
-	};
+	rpc ListMembers(OrgsListMembersOp) returns (UserList);
 }
 
 // PeopleService communicates with the people-related endpoints in the Sourcegraph
@@ -1310,11 +1196,7 @@ service People {
 	// Get gets a person. If an email is provided and it resolves to a registered user,
 	// information about that user is returned. Otherwise a transient person is created
 	// and returned.
-	rpc Get(PersonSpec) returns (Person) {
-		option (google.api.http) = {
-			get: "/people"
-		};
-	};
+	rpc Get(PersonSpec) returns (Person);
 }
 
 // Accounts communicates with the account-related endpoints in the
@@ -1326,68 +1208,32 @@ service People {
 // can't create/update information about).
 service Accounts {
 	// Create creates a new user account.
-	rpc Create(NewAccount) returns (UserSpec) {
-		option (google.api.http) = {
-			post: "/accounts/create"
-		};
-	};
+	rpc Create(NewAccount) returns (UserSpec);
 
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
-	rpc RequestPasswordReset(PersonSpec) returns (PendingPasswordReset) {
-		option (google.api.http) = {
-			post: "/accounts/request_password_reset"
-		};
-	};
+	rpc RequestPasswordReset(PersonSpec) returns (PendingPasswordReset);
 
 	// CheckResetToken verifies a password reset token is authentic and valid
-	rpc ResetPassword(NewPassword) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			post: "/accounts/reset_password"
-		};
-	};
+	rpc ResetPassword(NewPassword) returns (pbtypes.Void);
 
 	// Update profile of existing account.
-	rpc Update(User) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			post: "/accounts/update"
-		};
-	};
+	rpc Update(User) returns (pbtypes.Void);
 
 	// Invite creates a pending invite and notifies the recipient via email.
-	rpc Invite(AccountInvite) returns (PendingInvite) {
-		option (google.api.http) = {
-			post: "/accounts/invite"
-		};
-	};
+	rpc Invite(AccountInvite) returns (PendingInvite);
 
 	// AcceptInvite uses a pending invite to create a new user account.
-	rpc AcceptInvite(AcceptedInvite) returns (UserSpec) {
-		option (google.api.http) = {
-			post: "/accounts/accept_invite"
-		};
-	};
+	rpc AcceptInvite(AcceptedInvite) returns (UserSpec);
 
 	// ListInvites lists the pending invites on this server.
-	rpc ListInvites(pbtypes.Void) returns (AccountInviteList) {
-		option (google.api.http) = {
-			post: "/accounts/list_invites"
-		};
-	};
+	rpc ListInvites(pbtypes.Void) returns (AccountInviteList);
 
 	// DeleteInvite deletes an existing invite.
-	rpc DeleteInvite(InviteSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			post: "/accounts/delete_invite"
-		};
-	};
+	rpc DeleteInvite(InviteSpec) returns (pbtypes.Void);
 
 	// Delete deletes a user account from this server.
-	rpc Delete(PersonSpec) returns (pbtypes.Void) {
-		option (google.api.http) = {
-			post: "/accounts/delete"
-		};
-	};
+	rpc Delete(PersonSpec) returns (pbtypes.Void);
 }
 
 message PasswordResetToken {
@@ -1481,47 +1327,23 @@ message AcceptedInvite {
 // API.
 service Users {
 	// Get fetches a user.
-	rpc Get(UserSpec) returns (User) {
-		option (google.api.http) = {
-			get: "/users"
-		};
-	};
+	rpc Get(UserSpec) returns (User);
 
 	// GetWithEmail fetches a user by their primary email.
-	rpc GetWithEmail(EmailAddr) returns (User) {
-		option (google.api.http) = {
-			get: "/users/by_email"
-		};
-	};
+	rpc GetWithEmail(EmailAddr) returns (User);
 
 	// ListEmails returns a list of a user's email addresses.
-	rpc ListEmails(UserSpec) returns (EmailAddrList) {
-		option (google.api.http) = {
-			get: "/users/list_emails"
-		};
-	};
+	rpc ListEmails(UserSpec) returns (EmailAddrList);
 
 	// List users.
-	rpc List(UsersListOptions) returns (UserList) {
-		option (google.api.http) = {
-			get: "/users/list"
-		};
-	};
+	rpc List(UsersListOptions) returns (UserList);
 
 	// ListTeammates fetches all members of the GitHub organizations
 	// that the current user is part of.
-	rpc ListTeammates(UserSpec) returns (Teammates) {
-		option (google.api.http) = {
-			get: "/users/list_teammates"
-		};
-	};
+	rpc ListTeammates(UserSpec) returns (Teammates);
 
 	// Count returns the number of users signed up on this instance.
-	rpc Count(pbtypes.Void) returns (UserCount) {
-		option (google.api.http) = {
-			get: "/users/count"
-		};
-	};
+	rpc Count(pbtypes.Void) returns (UserCount);
 }
 
 message SSHKeyList {
@@ -1575,11 +1397,7 @@ service Auth {
 
 	// Identify describes the currently authenticated user and/or
 	// client (if any). It is akin to "whoami".
-	rpc Identify(pbtypes.Void) returns (AuthInfo) {
-		option (google.api.http) = {
-			get: "/auth/identify"
-		};
-	};
+	rpc Identify(pbtypes.Void) returns (AuthInfo);
 
 	// GetExternalToken returns a stored token that authorizes this server
 	// to an external service on behalf of the user.
@@ -2082,92 +1900,48 @@ message FileRange {
 // Sourcegraph API.
 service Defs {
 	// Get fetches a def.
-	rpc Get(DefsGetOp) returns (Def) {
-		option (google.api.http) = {
-			get: "/defs/get"
-		};
-	};
+	rpc Get(DefsGetOp) returns (Def);
 
 	// List defs.
-	rpc List(DefListOptions) returns (DefList) {
-		option (google.api.http) = {
-			get: "/defs/list"
-		};
-	};
+	rpc List(DefListOptions) returns (DefList);
 
 	// ListRefs lists references to def.
-	rpc ListRefs(DefsListRefsOp) returns (RefList) {
-		option (google.api.http) = {
-			get: "/defs/list_refs"
-		};
-	};
+	rpc ListRefs(DefsListRefsOp) returns (RefList);
 
 	// ListExamples lists examples for def.
-	rpc ListExamples(DefsListExamplesOp) returns (ExampleList) {
-		option (google.api.http) = {
-			get: "/defs/list_examples"
-		};
-	};
+	rpc ListExamples(DefsListExamplesOp) returns (ExampleList);
 }
 
 // DeltasService interacts with the delta-related endpoints of the Sourcegraph API.
 // A delta is all of the changes between two commits.
 service Deltas {
 	// Get fetches a summary of a delta.
-	rpc Get(DeltaSpec) returns (Delta) {
-		option (google.api.http) = {
-			get: "/deltas/get"
-		};
-	};
+	rpc Get(DeltaSpec) returns (Delta);
 
 	// ListFiles fetches the file diff for a delta.
-	rpc ListFiles(DeltasListFilesOp) returns (DeltaFiles) {
-		option (google.api.http) = {
-			get: "/deltas/list_files"
-		};
-	};
+	rpc ListFiles(DeltasListFilesOp) returns (DeltaFiles);
 }
 
 // RepoTreeService communicates with the Sourcegraph API endpoints that fetch file
 // and directory entries in repositories.
 service RepoTree {
-	rpc Get(RepoTreeGetOp) returns (TreeEntry) {
-		option (google.api.http) = {
-			get: "/repo_tree"
-		};
-	};
+	rpc Get(RepoTreeGetOp) returns (TreeEntry);
 
-	rpc Search(RepoTreeSearchOp) returns (VCSSearchResultList) {
-		option (google.api.http) = {
-			post: "/repo_tree/search"
-		};
-	};
+	rpc Search(RepoTreeSearchOp) returns (VCSSearchResultList);
 
 	// List returns a list of all the files in the repo tree at
 	// the given revision.
-	rpc List(RepoTreeListOp) returns (RepoTreeListResult) {
-		option (google.api.http) = {
-			post: "/repo_tree/list"
-		};
-	};
+	rpc List(RepoTreeListOp) returns (RepoTreeListResult);
 }
 
 // SearchService communicates with the search-related endpoints in the Sourcegraph
 // API.
 service Search {
 	// SearchTokens searches the index of tokens.
-	rpc SearchTokens(TokenSearchOptions) returns (DefList) {
-		option (google.api.http) = {
-			post: "/search/tokens"
-		};
-	};
+	rpc SearchTokens(TokenSearchOptions) returns (DefList);
 
 	// SearchText searches the content of files in the repo tree.
-	rpc SearchText(TextSearchOptions) returns (VCSSearchResultList) {
-		option (google.api.http) = {
-			post: "/search/text"
-		};
-	};
+	rpc SearchText(TextSearchOptions) returns (VCSSearchResultList);
 }
 
 message Checklist {
@@ -2186,18 +1960,10 @@ message FileToken {
 service Meta {
 	// Status returns status information from the server's point of
 	// view.
-	rpc Status(pbtypes.Void) returns (ServerStatus) {
-		option (google.api.http) = {
-			get: "/meta/status"
-		};
-	};
+	rpc Status(pbtypes.Void) returns (ServerStatus);
 
 	// Config returns the server's configuration.
-	rpc Config(pbtypes.Void) returns (ServerConfig) {
-		option (google.api.http) = {
-			get: "/meta/config"
-		};
-	};
+	rpc Config(pbtypes.Void) returns (ServerConfig);
 }
 
 // ServerStatus describes the server's status.

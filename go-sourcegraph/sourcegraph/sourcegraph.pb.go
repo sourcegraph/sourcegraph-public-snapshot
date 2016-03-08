@@ -183,8 +183,6 @@ import pbtypes1 "sourcegraph.com/sqs/pbtypes"
 import pbtypes2 "sourcegraph.com/sqs/pbtypes"
 import inventory "src.sourcegraph.com/sourcegraph/pkg/inventory"
 
-// discarding unused import google_api1 "github.com/gengo/grpc-gateway/third_party/googleapis/google/api"
-
 import (
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
@@ -2966,7 +2964,6 @@ type ReposClient interface {
 	// GetConfig retrieves the configuration for a repository.
 	GetConfig(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*RepoConfig, error)
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
-	// TODO(slimsag): add google.api.http annotations to these once moved
 	GetCommit(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*vcs.Commit, error)
 	// ListCommits returns the list of commits that span between the revisions
 	// specified in the given DeltaSpec. By default, it will return 1 page of
@@ -3193,7 +3190,6 @@ type ReposServer interface {
 	// GetConfig retrieves the configuration for a repository.
 	GetConfig(context.Context, *RepoSpec) (*RepoConfig, error)
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
-	// TODO(slimsag): add google.api.http annotations to these once moved
 	GetCommit(context.Context, *RepoRevSpec) (*vcs.Commit, error)
 	// ListCommits returns the list of commits that span between the revisions
 	// specified in the given DeltaSpec. By default, it will return 1 page of
