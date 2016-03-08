@@ -20,9 +20,6 @@ const (
 
 	RegisterClient = "register-client"
 
-	DownloadInstall = "download.install"
-	Download        = "download"
-
 	RobotsTxt = "robots-txt"
 	Favicon   = "favicon"
 
@@ -92,9 +89,6 @@ func New(base *mux.Router) *Router {
 	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
 
 	base.Path("/.builds").Methods("GET").Name(Builds)
-
-	base.Path("/.download/install.sh").Methods("GET").Name(DownloadInstall)
-	base.Path("/.download/{Suffix:.*}").Methods("GET").Name(Download)
 
 	base.Path("/search").Methods("GET").Queries("q", "").Name(SearchResults)
 	base.Path("/search").Methods("GET").Name(SearchForm)

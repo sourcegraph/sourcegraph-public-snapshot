@@ -1,4 +1,4 @@
-// sgtool prepares and releases the Sourcegraph binary and OS packages.
+// sgtool performs Sourcegraph packaging tasks.
 package main
 
 import (
@@ -15,7 +15,7 @@ var globalOpts struct {
 var CLI = flags.NewParser(&globalOpts, flags.Default)
 
 func init() {
-	CLI.LongDescription = "sgtool performs Sourcegraph release and deployment tasks."
+	CLI.LongDescription = "sgtool performs Sourcegraph packaging tasks."
 }
 
 func main() {

@@ -74,8 +74,6 @@ func NewHandler(r *router.Router) http.Handler {
 	gitserver.AddHandlers(&r.Router)
 
 	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
-	r.Get(router.Download).Handler(internal.Handler(serveDownload))
-	r.Get(router.DownloadInstall).Handler(internal.Handler(serveDownloadInstall))
 
 	r.Get(router.RobotsTxt).HandlerFunc(robotsTxt)
 	r.Get(router.Favicon).HandlerFunc(favicon)

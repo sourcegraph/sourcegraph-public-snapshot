@@ -122,9 +122,6 @@ ${GOBIN}/protoc-gen-gogo:
 ${GOBIN}/gopathexec:
 	go get sourcegraph.com/sourcegraph/gopathexec
 
-${GOBIN}/go-selfupdate:
-	go get github.com/sqs/go-selfupdate
-
 ${GOBIN}/gen-mocks:
 	go get sourcegraph.com/sourcegraph/gen-mocks
 
@@ -134,7 +131,7 @@ ${GOBIN}/go-template-lint:
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	go install ./sgtool
 
-dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
+dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/gopathexec ${GOBIN}/sgtool
 
 dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)

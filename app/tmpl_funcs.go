@@ -212,8 +212,7 @@ var tmplFuncs = htmpl.FuncMap{
 		})
 	},
 
-	"buildvar":        func() buildvar.Vars { return buildvar.All },
-	"updateAvailable": updateAvailable,
+	"buildvar": func() buildvar.Vars { return buildvar.All },
 
 	"showDataCollectionMessage": metricutil.EnableForwarding,
 }

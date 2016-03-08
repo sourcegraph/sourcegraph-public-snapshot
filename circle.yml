@@ -25,7 +25,6 @@ dependencies:
 
   cache_directories:
     - ~/google-cloud-sdk
-    - ~/daemonize
 
   override:
     - rm -rf $HOME/.go_workspace/src
@@ -40,7 +39,6 @@ dependencies:
     - git config --global user.name "CI User"
 
     - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
-    - if [ ! -d ~/daemonize ]; then mkdir ~/daemonize; package/linux/scripts/install_daemonize.sh ~/daemonize/; fi
 
 test:
   override:
@@ -93,12 +91,7 @@ deployment:
   release-tag:
     tag: /[0-9]+\.[0-9]+\.[0-9]+/
     commands:
-      - grep "# $VERSION" release_notes.md # fail if version is not mentioned in release notes
       - ./circle-build-docker-image.sh $CIRCLE_TAG:
-          pwd: $REPO
-
-      # build and upload binary releases
-      - sgtool release $CIRCLE_TAG:
           pwd: $REPO
 
       # push to Docker Hub
