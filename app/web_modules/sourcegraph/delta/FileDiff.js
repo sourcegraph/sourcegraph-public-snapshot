@@ -1,6 +1,6 @@
 import React from "react";
 
-import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {atob} from "abab";
 import Component from "sourcegraph/Component";
 import DiffStatScale from "sourcegraph/delta/DiffStatScale";
@@ -17,10 +17,10 @@ class FileDiff extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.baseRepo !== prevState.baseRepo || nextState.baseRev !== prevState.baseRev || nextState.diff.OrigName !== prevState.diff.OrigName) {
-			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, "", nextState.diff.OrigName));
+			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, "", nextState.diff.OrigName));
 		}
 		if (nextState.headRepo !== prevState.headRepo || nextState.headRev !== prevState.headRev || nextState.diff.NewName !== prevState.diff.NewName) {
-			if (!isDevNull(nextState.diff.NewName)) Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.headRepo, nextState.headRev, "", nextState.diff.NewName));
+			if (!isDevNull(nextState.diff.NewName)) Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.headRepo, nextState.headRev, "", nextState.diff.NewName));
 		}
 	}
 
@@ -123,7 +123,7 @@ FileDiff.propTypes = {
 	headRepo: React.PropTypes.string.isRequired,
 	headRev: React.PropTypes.string.isRequired,
 
-	// annotations is CodeStore.annotations.
+	// annotations is BlobStore.annotations.
 	annotations: React.PropTypes.object,
 
 	// id is the optional DOM ID, used for creating a URL ("...#F1")

@@ -32,13 +32,13 @@
 	{{end}}
 	{{if .Entry}}{{if .Entry.ContentsString}}
 		<script ignore-csp>
-			window.preloadedCodeViewFile = {
+			window.preloadedBlob = {
 				"url": "{{urlToRepoTreeEntry .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path}}",
 				"data": "{{json .}}"
 			};
 		</script>
 	{{end}}{{end}}
-	<div id="CodeFileView" class="theme-default"></div>
+	<div id="BlobContainer" class="theme-default"></div>
 
 	<div data-react="TreeEntrySearch"
 			data-repo="{{.EntrySpec.RepoRev.URI}}"

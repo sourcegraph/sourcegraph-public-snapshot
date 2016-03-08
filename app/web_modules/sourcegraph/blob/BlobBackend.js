@@ -1,28 +1,28 @@
-import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {authHeaders} from "sourcegraph/util/auth";
-import {sortAnns} from "sourcegraph/code/Annotations";
-import CodeStore from "sourcegraph/code/CodeStore";
+import {sortAnns} from "sourcegraph/blob/Annotations";
+import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "xhr";
 
-const CodeBackend = {
+const BlobBackend = {
 	xhr: defaultXhr,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case CodeActions.WantFile:
+		case BlobActions.WantFile:
 			{
-				let file = CodeStore.files.get(action.repo, action.rev, action.tree);
+				let file = BlobStore.files.get(action.repo, action.rev, action.tree);
 				if (file === null) {
 					let revPart = action.rev ? `@${action.rev}` : "";
 					let uri = `/${action.repo}${revPart}/.tree/${action.tree}`;
 
-					if (typeof window !== "undefined" && window.preloadedCodeViewFile && window.preloadedCodeViewFile.url === uri) {
-						Dispatcher.asyncDispatch(new CodeActions.FileFetched(action.repo, action.rev, action.tree, JSON.parse(window.preloadedCodeViewFile.data)));
+					if (typeof window !== "undefined" && window.preloadedBlob && window.preloadedBlob.url === uri) {
+						Dispatcher.asyncDispatch(new BlobActions.FileFetched(action.repo, action.rev, action.tree, JSON.parse(window.preloadedBlob.data)));
 						return;
 					}
 
-					CodeBackend.xhr({
+					BlobBackend.xhr({
 						uri: `/.ui${uri}`,
 						json: {},
 					}, function(err, resp, body) {
@@ -30,17 +30,17 @@ const CodeBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new CodeActions.FileFetched(action.repo, action.rev, action.tree, body));
+						Dispatcher.dispatch(new BlobActions.FileFetched(action.repo, action.rev, action.tree, body));
 					});
 				}
 				break;
 			}
 
-		case CodeActions.WantAnnotations:
+		case BlobActions.WantAnnotations:
 			{
-				let anns = CodeStore.annotations.get(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte);
+				let anns = BlobStore.annotations.get(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte);
 				if (anns === null) {
-					CodeBackend.xhr({
+					BlobBackend.xhr({
 						uri: `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.Rev=${action.rev}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`,
 						json: {},
 						headers: authHeaders(),
@@ -50,7 +50,7 @@ const CodeBackend = {
 							return;
 						}
 						body.Annotations = prepareAnnotations(body.Annotations);
-						Dispatcher.dispatch(new CodeActions.AnnotationsFetched(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte, body));
+						Dispatcher.dispatch(new BlobActions.AnnotationsFetched(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte, body));
 					});
 				}
 				break;
@@ -59,9 +59,9 @@ const CodeBackend = {
 	},
 };
 
-Dispatcher.register(CodeBackend.__onDispatch);
+Dispatcher.register(BlobBackend.__onDispatch);
 
-export default CodeBackend;
+export default BlobBackend;
 
 // prepareAnnotations should be called on annotations received from the server
 // to prepare them in ways described below for presentation in the UI.

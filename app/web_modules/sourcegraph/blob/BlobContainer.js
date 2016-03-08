@@ -2,21 +2,21 @@ import React from "react";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
-import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
-import CodeStore from "sourcegraph/code/CodeStore";
+import BlobStore from "sourcegraph/blob/BlobStore";
 import DefStore from "sourcegraph/def/DefStore";
-import CodeListing from "sourcegraph/code/CodeListing";
-import CodeFileToolbar from "sourcegraph/code/CodeFileToolbar";
+import Blob from "sourcegraph/blob/Blob";
+import BlobToolbar from "sourcegraph/blob/BlobToolbar";
 import DefPopup from "sourcegraph/def/DefPopup";
 import DefTooltip from "sourcegraph/def/DefTooltip";
-import FileMargin from "sourcegraph/code/FileMargin";
-import "sourcegraph/code/CodeBackend";
+import FileMargin from "sourcegraph/blob/FileMargin";
+import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
-import lineFromByte from "sourcegraph/code/lineFromByte";
+import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {GoTo} from "sourcegraph/util/hotLink";
 
-class CodeFileContainer extends Container {
+class BlobContainer extends Container {
 	constructor(props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
@@ -36,7 +36,7 @@ class CodeFileContainer extends Container {
 	}
 
 	stores() {
-		return [CodeStore, DefStore];
+		return [BlobStore, DefStore];
 	}
 
 	reconcileState(state, props) {
@@ -47,9 +47,9 @@ class CodeFileContainer extends Container {
 		state.tree = props.activeDef && defData ? defData.File.Path : props.tree;
 
 		// fetch file content
-		state.file = state.tree && CodeStore.files.get(state.repo, state.rev, state.tree);
-		state.anns = state.tree && CodeStore.annotations.get(state.repo, state.rev, "", state.tree, 0, 0);
-		state.annotations = CodeStore.annotations;
+		state.file = state.tree && BlobStore.files.get(state.repo, state.rev, state.tree);
+		state.anns = state.tree && BlobStore.annotations.get(state.repo, state.rev, "", state.tree, 0, 0);
+		state.annotations = BlobStore.annotations;
 
 		if (state.activeDef && state.file && defData) {
 			state.startLine = lineFromByte(state.file.Entry.ContentsString, defData.ByteStartPosition);
@@ -67,8 +67,8 @@ class CodeFileContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
-			Dispatcher.asyncDispatch(new CodeActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
-			Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.tree));
+			Dispatcher.asyncDispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
+			Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.tree));
 		}
 		if (nextState.activeDef && prevState.activeDef !== nextState.activeDef) {
 			let defData = nextState.activeDef && DefStore.defs.get(nextState.activeDef);
@@ -117,13 +117,13 @@ class CodeFileContainer extends Container {
 			<div className="file-container">
 				<div className="content-view">
 					<div className="content file-content card">
-						<CodeFileToolbar
+						<BlobToolbar
 							repo={this.state.repo}
 							rev={this.state.rev}
 							tree={this.state.tree}
 							file={this.state.file} />
 						{this.state.file &&
-						<CodeListing
+						<Blob
 							ref={(e) => this.setState({_codeListing: e})}
 							contents={this.state.file.Entry.ContentsString}
 							annotations={this.state.anns ? this.state.anns.Annotations : null}
@@ -175,7 +175,7 @@ class CodeFileContainer extends Container {
 	}
 }
 
-CodeFileContainer.propTypes = {
+BlobContainer.propTypes = {
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
 	tree: React.PropTypes.string,
@@ -187,4 +187,4 @@ CodeFileContainer.propTypes = {
 	example: React.PropTypes.number,
 };
 
-export default CodeFileContainer;
+export default BlobContainer;

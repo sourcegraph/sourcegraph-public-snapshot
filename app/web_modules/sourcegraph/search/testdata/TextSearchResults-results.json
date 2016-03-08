@@ -37,7 +37,7 @@
 								}
 							},
 							{
-								"type": "CodeListing",
+								"type": "Blob",
 								"props": {
 									"repo": "aRepo",
 									"rev": "aRev",

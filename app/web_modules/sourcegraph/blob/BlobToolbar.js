@@ -4,7 +4,7 @@ import Component from "sourcegraph/Component";
 import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
 import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
 
-class CodeFileToolbar extends Component {
+class BlobToolbar extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 	}
@@ -42,4 +42,4 @@ class CodeFileToolbar extends Component {
 	}
 }
 
-export default CodeFileToolbar;
+export default BlobToolbar;

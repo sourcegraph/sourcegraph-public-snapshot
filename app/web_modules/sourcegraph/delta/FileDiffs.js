@@ -1,6 +1,6 @@
 import React from "react";
 
-import CodeStore from "sourcegraph/code/CodeStore";
+import BlobStore from "sourcegraph/blob/BlobStore";
 import Container from "sourcegraph/Container";
 import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
@@ -12,13 +12,13 @@ import FileDiff from "sourcegraph/delta/FileDiff";
 // TODO(sqs): FileDiffs does not yet support multiple-defs (when a single
 // ref links to multiple defs, like Go embedded fields linking to both the
 // type and the field). We could copy over the implementation from
-// CodeFileContainer, but that is going to be factored out soon, and let's
+// BlobContainer, but that is going to be factored out soon, and let's
 // keep it clean.
 
 class FileDiffs extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.annotations = CodeStore.annotations;
+		state.annotations = BlobStore.annotations;
 
 		state.defs = DefStore.defs;
 		state.highlightedDef = DefStore.highlightedDef || null;
@@ -31,7 +31,7 @@ class FileDiffs extends Container {
 	}
 
 	stores() {
-		return [CodeStore, DefStore];
+		return [BlobStore, DefStore];
 	}
 
 	render() {

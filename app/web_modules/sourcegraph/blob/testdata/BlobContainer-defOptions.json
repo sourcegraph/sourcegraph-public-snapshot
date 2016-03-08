@@ -15,7 +15,7 @@
 									"className": "content file-content card",
 									"children": [
 										{
-											"type": "CodeFileToolbar",
+											"type": "BlobToolbar",
 											"props": {
 												"repo": "aRepo",
 												"rev": "aRev",
@@ -33,12 +33,11 @@
 											}
 										},
 										{
-											"type": "CodeListing",
+											"type": "Blob",
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightSelectedLines": true,
-												"activeDef": "someDef",
 												"dispatchSelections": true
 											}
 										}
@@ -48,6 +47,59 @@
 							{
 								"type": "FileMargin",
 								"props": {}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "context-menu",
+						"style": {
+							"left": 10,
+							"top": 20
+						},
+						"children": [
+							{
+								"type": "ul",
+								"props": {
+									"children": [
+										{
+											"type": "li",
+											"key": "0",
+											"props": {
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "GoTo",
+															"url": "firstDef"
+														}
+													]
+												},
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "li",
+											"key": "1",
+											"props": {
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "GoTo",
+															"url": "secondDef"
+														}
+													]
+												},
+												"children": [
+													"..."
+												]
+											}
+										}
+									]
+								}
 							}
 						]
 					}
@@ -71,7 +123,11 @@
 		},
 		{
 			"$constructor": "WantDef",
-			"url": "someDef"
+			"url": "firstDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "secondDef"
 		}
 	]
 }

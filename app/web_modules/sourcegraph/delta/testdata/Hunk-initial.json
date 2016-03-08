@@ -44,7 +44,7 @@
 								}
 							},
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "0",
 								"props": {
 									"className": "new-line",
@@ -55,7 +55,7 @@
 								}
 							},
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "1",
 								"props": {
 									"className": "old-line",
@@ -66,7 +66,7 @@
 								}
 							},
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "2",
 								"props": {
 									"className": "",
@@ -78,7 +78,7 @@
 								}
 							},
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "3",
 								"props": {
 									"className": "old-line",
@@ -89,7 +89,7 @@
 								}
 							},
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "4",
 								"props": {
 									"className": "old-line",

@@ -4,16 +4,16 @@ import utf8 from "utf8";
 
 import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
 import Component from "sourcegraph/Component";
-import * as CodeActions from "sourcegraph/code/CodeActions";
-import CodeLineView from "sourcegraph/code/CodeLineView";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
+import BlobLine from "sourcegraph/blob/BlobLine";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import fileLines from "sourcegraph/util/fileLines";
-import lineFromByte from "sourcegraph/code/lineFromByte";
+import lineFromByte from "sourcegraph/blob/lineFromByte";
 
 const tilingFactor = 50;
 
-class CodeListing extends Component {
+class Blob extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -157,7 +157,7 @@ class CodeListing extends Component {
 
 		if (sel.isCollapsed) {
 			// It's a click IN the file view with an empty (collapsed) selection.
-			Dispatcher.dispatch(new CodeActions.SelectCharRange(null));
+			Dispatcher.dispatch(new BlobActions.SelectCharRange(null));
 			return;
 		}
 
@@ -172,7 +172,7 @@ class CodeListing extends Component {
 		let endByte = this.state.lineStartBytes[endLine - 1] + endCol;
 
 		// console.log("%d:%d[%d] - %d:%d[%d]", startLine, startCol, startByte, endLine, endCol, endByte);
-		Dispatcher.dispatch(new CodeActions.SelectCharRange(startLine, startCol, startByte, endLine, endCol, endByte));
+		Dispatcher.dispatch(new BlobActions.SelectCharRange(startLine, startCol, startByte, endLine, endCol, endByte));
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -219,7 +219,7 @@ class CodeListing extends Component {
 			const visible = i >= visibleLinesStart && i < visibleLinesEnd;
 			const lineNumber = 1 + i + this.state.contentsOffsetLine;
 			return (
-				<CodeLineView
+				<BlobLine
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
@@ -241,7 +241,7 @@ class CodeListing extends Component {
 	}
 }
 
-CodeListing.propTypes = {
+Blob.propTypes = {
 	contents: React.PropTypes.string,
 	annotations: React.PropTypes.array,
 	lineNumbers: React.PropTypes.bool,
@@ -260,10 +260,10 @@ CodeListing.propTypes = {
 
 	highlightSelectedLines: React.PropTypes.bool,
 
-	// dispatchSelections is whether this CodeListing should emit CodeActions.SelectCharRange
+	// dispatchSelections is whether this Blob should emit BlobActions.SelectCharRange
 	// actions when the text selection changes. It should be true for the main file view but
 	// not for secondary file views (e.g., usage examples).
 	dispatchSelections: React.PropTypes.bool,
 };
 
-export default CodeListing;
+export default Blob;

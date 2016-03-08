@@ -15,7 +15,7 @@
 									"className": "content file-content card",
 									"children": [
 										{
-											"type": "CodeFileToolbar",
+											"type": "BlobToolbar",
 											"props": {
 												"repo": "aRepo",
 												"rev": "aRev",
@@ -33,12 +33,11 @@
 											}
 										},
 										{
-											"type": "CodeListing",
+											"type": "Blob",
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightSelectedLines": true,
-												"highlightedDef": "otherDef",
 												"activeDef": "someDef",
 												"dispatchSelections": true
 											}
@@ -51,17 +50,6 @@
 								"props": {}
 							}
 						]
-					}
-				},
-				{
-					"type": "DefTooltip",
-					"props": {
-						"currentRepo": "aRepo",
-						"def": {
-							"File": {
-								"Path": "aTree"
-							}
-						}
 					}
 				}
 			]
@@ -84,10 +72,6 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
-		},
-		{
-			"$constructor": "WantDef",
-			"url": "otherDef"
 		}
 	]
 }

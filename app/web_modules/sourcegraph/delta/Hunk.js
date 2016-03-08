@@ -2,7 +2,7 @@ import React from "react";
 
 import {atob} from "abab";
 import classNames from "classnames";
-import CodeLineView from "sourcegraph/code/CodeLineView";
+import BlobLine from "sourcegraph/blob/BlobLine";
 import fileLines from "sourcegraph/util/fileLines";
 
 class Hunk extends React.Component {
@@ -52,7 +52,7 @@ class Hunk extends React.Component {
 						)) : null;
 
 						return (
-							<CodeLineView
+							<BlobLine
 								key={i}
 								className={classNames({
 									"new-line": prefix === "+",

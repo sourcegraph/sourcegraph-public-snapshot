@@ -11,7 +11,7 @@ var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var AlertView = require("./components/AlertView");
-var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
+var BlobRouter = require("sourcegraph/blob/BlobRouter").default;
 var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
 var SearchBar = require("sourcegraph/search/SearchBar").default;
 
@@ -35,10 +35,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	el = $("#CodeFileView");
+	el = $("#BlobContainer");
 	if (el.length > 0) {
 		ReactDOM.render(
-			<LocationAdaptor component={CodeFileRouter} />,
+			<LocationAdaptor component={BlobRouter} />,
 			el[0]
 		);
 	}

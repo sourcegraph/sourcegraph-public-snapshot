@@ -15,7 +15,7 @@
 									"className": "content file-content card",
 									"children": [
 										{
-											"type": "CodeFileToolbar",
+											"type": "BlobToolbar",
 											"props": {
 												"repo": "aRepo",
 												"rev": "aRev",
@@ -33,11 +33,13 @@
 											}
 										},
 										{
-											"type": "CodeListing",
+											"type": "Blob",
 											"props": {
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightSelectedLines": true,
+												"highlightedDef": "otherDef",
+												"activeDef": "someDef",
 												"dispatchSelections": true
 											}
 										}
@@ -52,56 +54,14 @@
 					}
 				},
 				{
-					"type": "div",
+					"type": "DefTooltip",
 					"props": {
-						"className": "context-menu",
-						"style": {
-							"left": 10,
-							"top": 20
-						},
-						"children": [
-							{
-								"type": "ul",
-								"props": {
-									"children": [
-										{
-											"type": "li",
-											"key": "0",
-											"props": {
-												"onClick": {
-													"dispatched": [
-														{
-															"$constructor": "GoTo",
-															"url": "firstDef"
-														}
-													]
-												},
-												"children": [
-													"..."
-												]
-											}
-										},
-										{
-											"type": "li",
-											"key": "1",
-											"props": {
-												"onClick": {
-													"dispatched": [
-														{
-															"$constructor": "GoTo",
-															"url": "secondDef"
-														}
-													]
-												},
-												"children": [
-													"..."
-												]
-											}
-										}
-									]
-								}
+						"currentRepo": "aRepo",
+						"def": {
+							"File": {
+								"Path": "aTree"
 							}
-						]
+						}
 					}
 				}
 			]
@@ -123,11 +83,11 @@
 		},
 		{
 			"$constructor": "WantDef",
-			"url": "firstDef"
+			"url": "someDef"
 		},
 		{
 			"$constructor": "WantDef",
-			"url": "secondDef"
+			"url": "otherDef"
 		}
 	]
 }

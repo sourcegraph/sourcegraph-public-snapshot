@@ -10,7 +10,7 @@
 					"props": {
 						"children": [
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "0",
 								"props": {
 									"startByte": 0,
@@ -19,7 +19,7 @@
 								}
 							},
 							{
-								"type": "CodeLineView",
+								"type": "BlobLine",
 								"key": "1",
 								"props": {
 									"startByte": 6,

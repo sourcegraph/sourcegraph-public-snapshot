@@ -1,6 +1,6 @@
 import expect from "expect.js";
 
-import {annotate, sortAnns} from "sourcegraph/code/Annotations";
+import {annotate, sortAnns} from "sourcegraph/blob/Annotations";
 
 const testCases = {
 	"empty and unannotated": {

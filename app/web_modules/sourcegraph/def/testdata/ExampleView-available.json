@@ -55,7 +55,7 @@
 												},
 												"children": [
 													{
-														"type": "CodeListing",
+														"type": "Blob",
 														"props": {
 															"contents": "hello\nworld",
 															"activeDef": "/someURL",

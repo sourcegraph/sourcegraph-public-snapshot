@@ -3,9 +3,9 @@ import URL from "url";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
-import CodeFileContainer from "sourcegraph/code/CodeFileContainer";
+import BlobContainer from "sourcegraph/blob/BlobContainer";
 import DefStore from "sourcegraph/def/DefStore";
-import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {GoTo} from "sourcegraph/util/hotLink";
 
@@ -46,7 +46,7 @@ function parseLineRange(range) {
 // to sub-components via props. Every time window.location changes, this
 // component gets re-rendered. Sub-components should never access
 // window.location by themselves.
-class CodeFileRouter extends Component {
+class BlobRouter extends Component {
 	componentDidMount() {
 		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
 	}
@@ -119,18 +119,18 @@ class CodeFileRouter extends Component {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case CodeActions.SelectLine:
+		case BlobActions.SelectLine:
 			this._navigate(this._filePath(), {startLine: action.line});
 			break;
 
-		case CodeActions.SelectLineRange:
+		case BlobActions.SelectLineRange:
 			this._navigate(this._filePath(), {
 				startLine: Math.min(this.state.startLine || action.line, action.line),
 				endLine: Math.max(this.state.endLine || this.state.startLine || action.line, action.line),
 			});
 			break;
 
-		case CodeActions.SelectCharRange:
+		case BlobActions.SelectCharRange:
 			this._navigate(this._filePath(), {
 				startLine: action.startLine,
 				startCol: action.startCol,
@@ -157,7 +157,7 @@ class CodeFileRouter extends Component {
 
 	render() {
 		return (
-			<CodeFileContainer
+			<BlobContainer
 				repo={this.state.repo}
 				rev={this.state.rev}
 				tree={this.state.tree}
@@ -170,9 +170,9 @@ class CodeFileRouter extends Component {
 	}
 }
 
-CodeFileRouter.propTypes = {
+BlobRouter.propTypes = {
 	location: React.PropTypes.string,
 	navigate: React.PropTypes.func,
 };
 
-export default CodeFileRouter;
+export default BlobRouter;

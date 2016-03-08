@@ -1,6 +1,6 @@
 import React from "react";
 
-import CodeListing from "sourcegraph/code/CodeListing";
+import Blob from "sourcegraph/blob/Blob";
 import Component from "sourcegraph/Component";
 import {hotLinkAnyElement} from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
@@ -44,7 +44,7 @@ class TextSearchResults extends Component {
 						<div className="text-search-result" key={`${result.File}-${result.StartLine}`}
 							data-href={url} onClick={hotLinkAnyElement}>
 							{showHeader ? <header><a href={url}>{result.File}</a></header> : null}
-							<CodeListing
+							<Blob
 								repo={this.state.repo}
 								rev={this.state.rev}
 								path={currentFile}

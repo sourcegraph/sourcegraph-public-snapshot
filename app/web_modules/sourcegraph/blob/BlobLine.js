@@ -1,13 +1,13 @@
 import React from "react";
 
-import {annotate} from "sourcegraph/code/Annotations";
+import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
-import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 
-class CodeLineView extends Component {
+class BlobLine extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -90,10 +90,10 @@ class CodeLineView extends Component {
 						data-line={this.state.lineNumber}
 						onClick={(event) => {
 							if (event.shiftKey) {
-								Dispatcher.dispatch(new CodeActions.SelectLineRange(this.state.lineNumber));
+								Dispatcher.dispatch(new BlobActions.SelectLineRange(this.state.lineNumber));
 								return;
 							}
-							Dispatcher.dispatch(new CodeActions.SelectLine(this.state.lineNumber));
+							Dispatcher.dispatch(new BlobActions.SelectLine(this.state.lineNumber));
 						}}>
 					</td>}
 				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
@@ -108,7 +108,7 @@ class CodeLineView extends Component {
 	}
 }
 
-CodeLineView.propTypes = {
+BlobLine.propTypes = {
 	lineNumber: (props, propName, componentName) => {
 		let v = React.PropTypes.number(props, propName, componentName);
 		if (v) return v;
@@ -138,4 +138,4 @@ CodeLineView.propTypes = {
 	directLinks: React.PropTypes.bool,
 };
 
-export default CodeLineView;
+export default BlobLine;

@@ -1,12 +1,10 @@
 {
 	"renderOutput": {
-		"type": "CodeFileContainer",
+		"type": "BlobContainer",
 		"props": {
 			"repo": "github.com/gorilla/mux",
 			"rev": "master",
-			"tree": "mux.go",
-			"startLine": 40,
-			"endLine": 53
+			"tree": "mux.go"
 		}
 	}
 }

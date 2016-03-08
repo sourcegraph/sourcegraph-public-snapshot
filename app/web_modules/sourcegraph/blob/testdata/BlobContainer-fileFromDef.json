@@ -15,7 +15,7 @@
 									"className": "content file-content card",
 									"children": [
 										{
-											"type": "CodeFileToolbar",
+											"type": "BlobToolbar",
 											"props": {
 												"repo": "aRepo",
 												"rev": "aRev",

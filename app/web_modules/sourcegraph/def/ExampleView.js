@@ -2,9 +2,9 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
-import * as CodeActions from "sourcegraph/code/CodeActions";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
-import CodeListing from "sourcegraph/code/CodeListing";
+import Blob from "sourcegraph/blob/Blob";
 import hotLink from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
 
@@ -51,7 +51,7 @@ class ExampleView extends Component {
 		if (prevState.displayedExample !== nextState.displayedExample) {
 			let ex = nextState.displayedExample;
 			if (ex) {
-				Dispatcher.asyncDispatch(new CodeActions.WantAnnotations(ex.Repo, ex.Rev, ex.CommitID, ex.File, ex.Range.StartByte, ex.Range.EndByte));
+				Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(ex.Repo, ex.Rev, ex.CommitID, ex.File, ex.Range.StartByte, ex.Range.EndByte));
 			}
 		}
 	}
@@ -82,7 +82,7 @@ class ExampleView extends Component {
 					<div className="body">
 						{example && example.Contents &&
 							<div style={{opacity: loading ? 0.5 : 1}}>
-								<CodeListing
+								<Blob
 									contents={example.Contents}
 									annotations={this.state.anns}
 									activeDef={this.state.activeDef}
