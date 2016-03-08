@@ -23,3 +23,17 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	}
 	return writeJSON(w, tc.Entry)
 }
+
+func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
+	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	ctx, cl := handlerutil.Client(r)
+	treeList, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRev})
+	if err != nil {
+		return err
+	}
+	return writeJSON(w, treeList)
+}

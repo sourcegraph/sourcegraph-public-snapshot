@@ -60,7 +60,7 @@ module.exports = {
 	},
 
 	fileListURL(repo, rev) {
-		return `${module.exports.repoURL(repo, rev)}/.filefinder`;
+		return `/.api/repos${module.exports.repoURL(repo, rev)}/.tree-list`;
 	},
 
 	commitsURL(repo, rev) {

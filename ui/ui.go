@@ -55,8 +55,6 @@ func NewHandler(r *mux.Router) http.Handler {
 
 	r.Get(ui_router.RepoTree).Handler(handler(serveRepoTree))
 
-	r.Get(ui_router.RepoFileFinder).Handler(handler(serveRepoFileFinder))
-
 	r.Get(ui_router.Definition).Handler(handler(serveDef))
 	r.Get(ui_router.DefExamples).Handler(handler(serveDefExamples))
 

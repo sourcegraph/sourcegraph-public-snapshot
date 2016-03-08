@@ -10,8 +10,6 @@ import (
 const (
 	RepoTree = "repo.tree"
 
-	RepoFileFinder = "repo.file.finder"
-
 	Definition  = "def"
 	DefExamples = "def.examples"
 
@@ -45,10 +43,6 @@ func New(base *mux.Router) *mux.Router {
 		PostMatchFunc(routevar.FixTreeEntryVars).
 		BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).
 		Name(RepoTree)
-
-	repoRev.Path("/.filefinder").
-		Methods("GET").
-		Name(RepoFileFinder)
 
 	defPath := "/" + routevar.Def
 

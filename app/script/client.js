@@ -7,7 +7,7 @@ var $ = require("jquery");
 
 function repoFiles(repo, rev) {
 	return $.ajax({
-		url: `/.ui/${router.fileListURL(repo, rev)}`,
+		url: router.fileListURL(repo, rev),
 	});
 }
 

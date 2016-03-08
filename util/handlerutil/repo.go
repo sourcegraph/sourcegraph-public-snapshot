@@ -476,16 +476,3 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	}
 	return dc, rc, vc, nil
 }
-
-func GetRepoTreeListCommon(ctx context.Context, vars map[string]string) (*sourcegraph.RepoTreeListResult, error) {
-	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(vars)
-	if err != nil {
-		return nil, err
-	}
-
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
-}

@@ -78,7 +78,7 @@ var TreeEntrySearch = React.createClass({
 		}
 
 		client.repoFiles(this.props.repo, this.props.rev).then(
-			this._loadedList, () => notify.error("Couldn't load file list")
+			(resp) => this._loadedList(resp.Files), () => notify.error("Couldn't load file list")
 		);
 	},
 

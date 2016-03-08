@@ -26,6 +26,7 @@ const (
 	RepoBuildTasks    = "build.tasks"
 	RepoBuildsCreate  = "repo.builds.create"
 	RepoTags          = "repo.tags"
+	RepoTreeList      = "repo.tree-list"
 	Repos             = "repos"
 	Search            = "search"
 	SearchComplete    = "search.complete"
@@ -57,6 +58,7 @@ func New(base *mux.Router) *mux.Router {
 	repo := base.PathPrefix(repoPath).Subrouter()
 	repo.Path("/.branches").Methods("GET").Name(RepoBranches)
 	repoRev.Path("/.tree" + routevar.TreeEntryPath).PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
+	repoRev.Path("/.tree-list").Methods("GET").Name(RepoTreeList)
 	repo.Path("/.tags").Methods("GET").Name(RepoTags)
 
 	repoRev.Path("/.build").Methods("GET").Name(RepoBuild)
