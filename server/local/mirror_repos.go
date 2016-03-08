@@ -44,40 +44,45 @@ func init() {
 	prometheus.MustRegister(activeGitGC)
 }
 
+// TODO(sqs): What if multiple goroutines or processes
+// simultaneously clone or update the same repo? Race conditions
+// probably, esp. on NFS.
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
-	repo, err := (&repos{}).Get(ctx, &op.Repo)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO(sqs): What if multiple goroutines or processes
-	// simultaneously clone or update the same repo? Race conditions
-	// probably, esp. on NFS.
-
 	actor := authpkg.ActorFromContext(ctx)
 	asUserUID := int32(actor.UID)
-	if op.AsUser != nil && actor.HasAdminAccess() {
-		if op.AsUser.UID != 0 {
-			asUserUID = op.AsUser.UID
-		} else if op.AsUser.Login != "" {
-			user, err := (&users{}).Get(ctx, op.AsUser)
-			if err != nil {
-				return nil, err
-			}
-			asUserUID = user.UID
+
+	// Only admin users and the repo updater are allowed to perform this operation
+	// as a different user.
+	canImpersonateUser := actor.HasAdminAccess() || actor.HasScope("internal:repoupdater")
+	if op.AsUser != nil && canImpersonateUser {
+		var err error
+		asUserUID, err = getUIDFromUserSpec(ctx, op.AsUser)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	remoteOpts := vcs.RemoteOpts{}
-	// For private repos, supply auth from local auth store.
-	if repo.Private && asUserUID != 0 {
+	if asUserUID != 0 {
 		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: asUserUID})
 		if err != nil {
 			return nil, grpc.Errorf(codes.Unavailable, "cannot refresh %s as no credentials available for user %v: %v", op.Repo.URI, asUserUID, err)
 		}
+		// Set the auth token to be used in repo VCS operations.
 		remoteOpts.HTTPS = &vcs.HTTPSConfig{
 			Pass: extToken.Token,
 		}
+
+		// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
+		ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, authpkg.Actor{UID: int(asUserUID)}))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	repo, err := (&repos{}).Get(ctx, &op.Repo)
+	if err != nil {
+		return nil, err
 	}
 
 	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
@@ -94,6 +99,17 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	}
 
 	return &pbtypes.Void{}, nil
+}
+
+func getUIDFromUserSpec(ctx context.Context, userSpec *sourcegraph.UserSpec) (int32, error) {
+	if userSpec.UID != 0 {
+		return userSpec.UID, nil
+	}
+	user, err := (&users{}).Get(ctx, userSpec)
+	if err != nil {
+		return int32(0), err
+	}
+	return user.UID, nil
 }
 
 func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, remoteOpts vcs.RemoteOpts) error {
