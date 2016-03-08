@@ -73,13 +73,13 @@
 
 {{define "RepoIcon"}}<!-- expects *sourcegraph.Repo -->
 	{{if .Private}}
-		<span title="Private repository" data-tooltip data-placement="bottom" class="octicon octicon-lock repo-attr-icon"></span>
+		<span title="Private repository" class="octicon octicon-lock repo-attr-icon"></span>
 	{{else if .Fork}}
-		<span title="Fork repository" data-tooltip data-placement="bottom" class="octicon octicon-repo-forked repo-attr-icon"></span>
+		<span title="Fork repository" class="octicon octicon-repo-forked repo-attr-icon"></span>
 	{{else if .Mirror}}
-		<span title="Mirror repository" data-tooltip data-placement="bottom" class="octicon octicon-mirror repo-attr-icon"></span>
+		<span title="Mirror repository" class="octicon octicon-mirror repo-attr-icon"></span>
 	{{else}}
-		<span title="Repository" data-tooltip data-placement="bottom" class="octicon octicon-repo repo-attr-icon"></span>
+		<span title="Repository" class="octicon octicon-repo repo-attr-icon"></span>
 	{{end}}
 {{end}}
 

@@ -82,7 +82,6 @@ class UserList extends Component {
 						{!this.state.onboarding.linkGitHub &&
 							<i className="btn-icon sg-icon-plus-box"
 								onClick={this._handleInviteAll}
-								data-tooltip={true}
 								title="Invite all teammates" />
 						}
 					</div>
@@ -98,7 +97,6 @@ class UserList extends Component {
 									{!this._existsLocally(user) && !this._isInvited(user) &&
 										<i className={classNames("sg-icon sg-icon-plus-box btn-icon", {"add-user-icon-disabled": !this._hasEmail(user)})}
 											onClick={() => this._handleInviteUser(user)}
-											data-tooltip={!this._hasEmail(user) ? "top" : null}
 											title={!this._hasEmail(user) ? "No public email" : null} />
 									}
 								</div>

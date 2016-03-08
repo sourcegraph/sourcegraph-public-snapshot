@@ -140,7 +140,6 @@ var RepoBuildIndicator = React.createClass({
 		case this.BuildStatus.NA:
 			return (
 				<a key="indicator"
-					data-tooltip={this.props.tooltipPosition}
 					title={this.props.Buildable ? "Build this version" : null}
 					onClick={this.props.Buildable ? this.triggerBuild : null}
 					className={`build-indicator btn ${this.props.btnSize} not-available`}>
@@ -176,8 +175,6 @@ var RepoBuildIndicator = React.createClass({
 			<a key="indicator"
 				className={`build-indicator btn ${this.props.btnSize} text-${cls}`}
 				href={`/${this.props.RepoURI}/.builds/${this.state.LastBuild.ID}`}
-				data-tooltip={this.props.tooltipPosition}
-				data-placement="bottom"
 				title={`Build ${txt}`}>
 				<i className={`fa ${icon}`}></i>
 			</a>

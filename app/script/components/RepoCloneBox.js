@@ -47,9 +47,7 @@ var RepoCloneBox = React.createClass({
 				<div className="input-group-btn">
 					<button className="btn btn-primary clone-url-toggle clone-type"
 						onClick={this._toggleType.bind(this, nextType, sshAvailable)}
-						title={sshAvailable ? null : "SSH unavailable"}
-						data-tooltip={sshAvailable ? null : "true"}
-						data-placement={sshAvailable ? null : "bottom"}>
+						title={sshAvailable ? null : "SSH unavailable"}>
 							{this.state.type + (url.indexOf("https://") > -1 ? "S" : "")}
 					</button>
 				</div>
