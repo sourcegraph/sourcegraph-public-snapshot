@@ -3,9 +3,6 @@
 
 <div class="panel panel-repo-tree">
 	<header class="rev-and-breadcrumb">
-	{{if showRepoRevSwitcher .CurrentRoute}}
-		<span data-react="RepoRevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="file" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></span>
-	{{end}}
 		<span class="tree-breadcrumb">
 		{{template "Breadcrumb" (fileToBreadcrumb .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path)}}
 		</span>
@@ -29,6 +26,10 @@
 			</a>
 		</li>
 	</ul>
+	{{if showRepoRevSwitcher .CurrentRoute}}
+		<div data-react="RepoRevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="file" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></div>
+	{{end}}
+
 	</header>
 
 	{{$repo:=.Repo}}

@@ -20,7 +20,9 @@
 	}
 }
 
-.repo-rev-switcher {
+[data-react="RepoRevSwitcher"] {
+	display: inline-block;
+	padding-left: 10px;
 	.button {
 		color: $btn-default-dark;
 		font-weight: bold;
@@ -29,6 +31,7 @@
 				color: $btn-default-color;
 			}
 		}
+		padding: 2px 12px;
 	}
 
 	.search-section {
