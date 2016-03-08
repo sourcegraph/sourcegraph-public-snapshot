@@ -27,7 +27,6 @@ import (
 	_ "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 
 	// Platform applications
-	_ "src.sourcegraph.com/apps/apidocs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 )
