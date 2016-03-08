@@ -386,6 +386,9 @@ func (m taskMonitor) End(ok, allowFailure bool) {
 		if err := m.s.Warnings(m.ctx); err != nil && m.ctx.Err() == nil {
 			log15.Error("Error marking monitored task as ended (with allowable failure)", "task", m.s.String(), "err", err)
 		}
+		if err := m.s.End(m.ctx, nil); err != nil && m.ctx.Err() == nil {
+			log15.Error("Error marking monitored task as ended (with warnings)", "task", m.s.String(), "err", err)
+		}
 	} else {
 		var execErr error
 		if !ok {
