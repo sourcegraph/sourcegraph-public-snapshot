@@ -100,7 +100,7 @@ func (f *ClientConfig) configure() (func(context.Context) context.Context, error
 
 	c.(*appdash.RemoteCollector).Debug = f.Debug
 
-	// Wire in the ChunkeCollector with a prometheus counter for OnFlush events.
+	// Wire in the ChunkedCollector with a prometheus counter for OnFlush events.
 	cc := appdash.NewChunkedCollector(c)
 	cc.OnFlush = func(queueSize int) {
 		flushDurationGauge.Inc()
