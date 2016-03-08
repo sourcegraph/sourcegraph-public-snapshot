@@ -52,7 +52,7 @@ class FileDiffs extends Container {
 						annotations={this.state.annotations}
 						defs={this.state.defs} />
 				))}
-				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
+				{highlightedDefData && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
 			</div>
 		);
 	}

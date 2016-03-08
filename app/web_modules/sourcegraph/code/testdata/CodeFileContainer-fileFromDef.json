@@ -33,7 +33,6 @@
 											"type": "DefPopup",
 											"props": {
 												"def": {
-													"Found": true,
 													"File": {
 														"Path": "somePath"
 													},

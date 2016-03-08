@@ -28,10 +28,6 @@ type DefCommon struct {
 	// ByteStartPosition and ByteEndPosition are the byte offsets that this
 	// definition occupy in the original containing file.
 	ByteStartPosition, ByteEndPosition uint32
-
-	// Found, when false, indicates that a definition does indeed exist, but
-	// has not yet been indexed by our build system.
-	Found bool
 }
 
 // CodeFile holds information about a code file to be displayed in the UI.

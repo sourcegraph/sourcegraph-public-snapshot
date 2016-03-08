@@ -472,7 +472,6 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		File:              sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: def.File},
 		ByteStartPosition: def.DefStart,
 		ByteEndPosition:   def.DefEnd,
-		Found:             true,
 	}
 	return dc, rc, vc, nil
 }

@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"html/template"
 	"net/http"
 
 	"github.com/sourcegraph/mux"
@@ -23,29 +22,6 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 	dc, rc, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
-		if urlErr, ok := err.(*handlerutil.URLMovedError); ok {
-			return e.Encode(urlErr)
-		} else if dc != nil && dc.Def != nil {
-			// Create a fake minimal definition based on def spec in request. This is the best we can do
-			// here since the actual def hasn't been indexed and isn't available.
-			// TODO: This is hacky and should be refactored.
-			defKey := dc.Def.DefKey
-
-			// TODO: Refactor to reuse of sourcecode.DefQualifiedName(def, "scope") for rendering the fake minimal definition.
-			qualifiedName := template.HTML(template.HTMLEscapeString(defKey.Unit))
-			if defKey.Path != "" && defKey.Path != "." {
-				if qualifiedName != "" {
-					qualifiedName += "."
-				}
-				qualifiedName += `<span class="name">` + template.HTML(template.HTMLEscapeString(defKey.Path)) + "</span>"
-			}
-			qualifiedName = sourcecode.OverrideStyleViaRegexpFlags(qualifiedName)
-			return e.Encode(payloads.DefCommon{
-				QualifiedName: htmlutil.SanitizeForPB(string(qualifiedName)),
-				URL:           router.Rel.URLToDef(defKey).String(),
-				Found:         false,
-			})
-		}
 		return err
 	}
 
@@ -60,7 +36,6 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		File:              entrySpec,
 		ByteStartPosition: def.DefStart,
 		ByteEndPosition:   def.DefEnd,
-		Found:             true,
 	}
 
 	if r.Header.Get("X-Definition-Data-Only") != "yes" {

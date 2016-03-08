@@ -58,7 +58,6 @@
 					"props": {
 						"currentRepo": "aRepo",
 						"def": {
-							"Found": true,
 							"File": {
 								"Path": "aTree"
 							}

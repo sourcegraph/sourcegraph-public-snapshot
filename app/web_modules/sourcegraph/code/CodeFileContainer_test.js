@@ -39,7 +39,7 @@ describe("CodeFileContainer", () => {
 	it("should handle available file and available definition", () => {
 		Dispatcher.directDispatch(CodeStore, new CodeActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {Found: true, File: {Path: "aTree"}}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {File: {Path: "aTree"}}));
 		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/CodeFileContainer-availableDefinition.json`,
 			<CodeFileContainer repo="aRepo" rev="aRev" tree="aTree" activeDef="someDef" />
@@ -47,7 +47,7 @@ describe("CodeFileContainer", () => {
 	});
 
 	it("should get filename from definition", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {Found: true, File: {Path: "somePath"}, Data: {Kind: "someKind"}}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {File: {Path: "somePath"}, Data: {Kind: "someKind"}}));
 		autotest(testdataFileFromDef, `${__dirname}/testdata/CodeFileContainer-fileFromDef.json`,
 			<CodeFileContainer repo="aRepo" rev="aRev" activeDef="someDef" />
 		);

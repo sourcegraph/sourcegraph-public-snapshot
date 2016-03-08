@@ -149,7 +149,7 @@ class CodeFileContainer extends Container {
 					</FileMargin>
 				</div>
 
-				{highlightedDefData && highlightedDefData.Found && !this.state.defOptionsURLs && <DefTooltip currentRepo={this.state.repo} def={highlightedDefData} />}
+				{highlightedDefData && !this.state.defOptionsURLs && <DefTooltip currentRepo={this.state.repo} def={highlightedDefData} />}
 
 				{this.state.defOptionsURLs &&
 				<div className="context-menu"

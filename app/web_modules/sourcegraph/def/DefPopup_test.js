@@ -11,7 +11,7 @@ describe("DefPopup", () => {
 	it("should render definition data", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
-				def={{Found: true, URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
+				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
 				examples={{test: "examples"}}
 				highlightedDef="otherURL" />
 		);
@@ -20,7 +20,7 @@ describe("DefPopup", () => {
 	it("should render 'not available'", () => {
 		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
 			<DefPopup
-				def={{Found: false, URL: "someURL", QualifiedName: {__html: "someName"}}}
+				def={{URL: "someURL", QualifiedName: {__html: "someName"}}}
 				examples={{test: "examples"}}
 				highlightedDef={null} />
 		);
