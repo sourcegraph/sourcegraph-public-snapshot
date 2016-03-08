@@ -39,7 +39,12 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 }
 
 func (s *repos) ListRemote(ctx context.Context, opt *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
-	repos, err := (&github.Repos{}).ListAccessible(ctx, &gogithub.RepositoryListOptions{})
+	repos, err := (&github.Repos{}).ListAccessible(ctx, &gogithub.RepositoryListOptions{
+		ListOptions: gogithub.ListOptions{
+			PerPage: int(opt.ListOptions.PerPage),
+			Page:    int(opt.ListOptions.Page),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
