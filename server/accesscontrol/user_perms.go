@@ -85,7 +85,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		if len(actor.Scope) > 0 {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: no authenticated user in current context", method)
+		return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
 	}
 
 	return nil
@@ -109,7 +109,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
+		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated", method)
 	}
 
 	var hasWrite bool
@@ -143,11 +143,11 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, "") {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
+		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
 	}
 
 	if !actor.HasAdminAccess() {
-		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: user does not have admin status", method)
+		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: not authorized", method)
 	}
 	return nil
 }
