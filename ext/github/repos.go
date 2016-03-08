@@ -2,16 +2,11 @@ package github
 
 import (
 	"fmt"
-	"net/http"
-	"os"
 
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
@@ -25,7 +20,7 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
 	if err != nil {
-		return nil, s.checkResponse(repo, resp, err)
+		return nil, checkResponse(resp, err, fmt.Sprintf("github.Repos.Get %q", repo))
 	}
 
 	return toRemoteRepo(ghrepo), nil
@@ -34,22 +29,9 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 func (s *Repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
 	ghrepo, resp, err := client(ctx).repos.GetByID(id)
 	if err != nil {
-		return nil, s.checkResponse(fmt.Sprintf("GitHub repo #%d", id), resp, err)
+		return nil, checkResponse(resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
 	}
 	return toRemoteRepo(ghrepo), nil
-}
-
-func (s *Repos) checkResponse(repo string, resp *github.Response, err error) error {
-	if err == nil {
-		return nil
-	}
-	if resp != nil && resp.StatusCode == http.StatusNotFound {
-		return &store.RepoNotFoundError{Repo: repo}
-	}
-	if resp != nil && resp.StatusCode == http.StatusForbidden {
-		return &os.PathError{Op: "Repos.Get", Path: repo, Err: os.ErrPermission}
-	}
-	return err
 }
 
 func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
@@ -104,41 +86,20 @@ func convertGitHubRepoPerms(ghrepo *github.Repository) *sourcegraph.RepoPermissi
 	return rp
 }
 
-// ListWithToken lists repos from GitHub that are visible in the given auth
-// token's scope.
-func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph.RemoteRepo, error) {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-
-	client := github.NewClient(tc)
-	repoType := ""
-	if githubcli.Config.IsGitHubEnterprise() {
-		client.BaseURL = githubcli.Config.APIBaseURL()
-		client.UploadURL = githubcli.Config.UploadURL()
+// ListAccessible lists repos that are accessible to the authenticated
+// user.
+//
+// See https://developer.github.com/v3/repos/#list-your-repositories
+// for more information.
+func (s *Repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error) {
+	ghRepos, resp, err := client(ctx).repos.List("", opt)
+	if err != nil {
+		return nil, checkResponse(resp, err, "github.Repos.ListAccessible")
 	}
 
 	var repos []*sourcegraph.RemoteRepo
-	repoOpts := &github.RepositoryListOptions{
-		Type: repoType,
-		ListOptions: github.ListOptions{
-			PerPage: 100, // 100 is the max page size for GitHub's API
-		},
+	for _, ghRepo := range ghRepos {
+		repos = append(repos, toRemoteRepo(&ghRepo))
 	}
-	// List responses on GitHub are paginated; continue fetching private repos
-	// until each page has been obtained.
-	for {
-		userRepos, resp, err := client.Repositories.List("", repoOpts)
-		if err != nil {
-			return nil, err
-		}
-		for _, ghrepo := range userRepos {
-			repos = append(repos, toRemoteRepo(&ghrepo))
-		}
-		if resp.NextPage == 0 {
-			break
-		}
-		repoOpts.ListOptions.Page = resp.NextPage
-	}
-
 	return repos, nil
 }

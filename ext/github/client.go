@@ -1,6 +1,10 @@
 package github
 
-import "github.com/sourcegraph/go-github/github"
+import (
+	"github.com/sourcegraph/go-github/github"
+	"google.golang.org/grpc"
+	"src.sourcegraph.com/sourcegraph/errcode"
+)
 
 // minimalClient contains the minimal set of GitHub API methods needed
 // by this package.
@@ -29,4 +33,14 @@ type githubRepos interface {
 type githubOrgs interface {
 	ListMembers(org string, opt *github.ListMembersOptions) ([]github.User, *github.Response, error)
 	List(member string, opt *github.ListOptions) ([]github.Organization, *github.Response, error)
+}
+
+func checkResponse(resp *github.Response, err error, op string) error {
+	if err == nil {
+		return nil
+	}
+	if resp == nil {
+		return err
+	}
+	return grpc.Errorf(errcode.HTTPToGRPC(resp.StatusCode), "%s", op)
 }

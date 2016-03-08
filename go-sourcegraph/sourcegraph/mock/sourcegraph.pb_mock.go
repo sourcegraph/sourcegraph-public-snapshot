@@ -45,6 +45,7 @@ type ReposClient struct {
 	Get_                         func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve_                     func(ctx context.Context, in *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListRemote_                  func(ctx context.Context, in *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -70,6 +71,10 @@ func (s *ReposClient) Resolve(ctx context.Context, in *sourcegraph.RepoResolveOp
 
 func (s *ReposClient) List(ctx context.Context, in *sourcegraph.RepoListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoList, error) {
 	return s.List_(ctx, in)
+}
+
+func (s *ReposClient) ListRemote(ctx context.Context, in *sourcegraph.ReposListRemoteOptions, opts ...grpc.CallOption) (*sourcegraph.RemoteRepoList, error) {
+	return s.ListRemote_(ctx, in)
 }
 
 func (s *ReposClient) Create(ctx context.Context, in *sourcegraph.ReposCreateOp, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -130,6 +135,7 @@ type ReposServer struct {
 	Get_                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve_                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListRemote_                  func(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -155,6 +161,10 @@ func (s *ReposServer) Resolve(v0 context.Context, v1 *sourcegraph.RepoResolveOp)
 
 func (s *ReposServer) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	return s.List_(v0, v1)
+}
+
+func (s *ReposServer) ListRemote(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
+	return s.ListRemote_(v0, v1)
 }
 
 func (s *ReposServer) Create(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
@@ -282,31 +292,21 @@ func (s *StorageServer) List(v0 context.Context, v1 *sourcegraph.StorageKey) (*s
 var _ sourcegraph.StorageServer = (*StorageServer)(nil)
 
 type MirrorReposClient struct {
-	RefreshVCS_  func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
-	GetUserData_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
+	RefreshVCS_ func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 }
 
 func (s *MirrorReposClient) RefreshVCS(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.RefreshVCS_(ctx, in)
 }
 
-func (s *MirrorReposClient) GetUserData(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.UserMirrorData, error) {
-	return s.GetUserData_(ctx, in)
-}
-
 var _ sourcegraph.MirrorReposClient = (*MirrorReposClient)(nil)
 
 type MirrorReposServer struct {
-	RefreshVCS_  func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
-	GetUserData_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
+	RefreshVCS_ func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 }
 
 func (s *MirrorReposServer) RefreshVCS(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	return s.RefreshVCS_(v0, v1)
-}
-
-func (s *MirrorReposServer) GetUserData(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
-	return s.GetUserData_(v0, v1)
 }
 
 var _ sourcegraph.MirrorReposServer = (*MirrorReposServer)(nil)

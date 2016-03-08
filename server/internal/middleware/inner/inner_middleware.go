@@ -633,19 +633,6 @@ func (s wrappedMirrorRepos) RefreshVCS(ctx context.Context, param *sourcegraph.M
 	return
 }
 
-func (s wrappedMirrorRepos) GetUserData(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserMirrorData, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "MirrorRepos", "GetUserData", param)
-	defer func() {
-		trace.After(ctx, "MirrorRepos", "GetUserData", param, err, time.Since(start))
-	}()
-	res, err = local.Services.MirrorRepos.GetUserData(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MirrorRepos.GetUserData returned nil, nil")
-	}
-	return
-}
-
 type wrappedNotify struct{}
 
 func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.NotifyGenericEvent) (res *pbtypes.Void, err error) {
@@ -903,6 +890,19 @@ func (s wrappedRepos) List(ctx context.Context, param *sourcegraph.RepoListOptio
 	res, err = local.Services.Repos.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.List returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedRepos) ListRemote(ctx context.Context, param *sourcegraph.ReposListRemoteOptions) (res *sourcegraph.RemoteRepoList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "ListRemote", param)
+	defer func() {
+		trace.After(ctx, "Repos", "ListRemote", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Repos.ListRemote(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListRemote returned nil, nil")
 	}
 	return
 }

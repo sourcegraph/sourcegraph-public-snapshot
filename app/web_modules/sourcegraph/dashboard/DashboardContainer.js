@@ -3,7 +3,6 @@ import React from "react";
 import Container from "sourcegraph/Container";
 import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
-import GitHubReposStore from "sourcegraph/dashboard/GitHubReposStore";
 import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
 
 import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
@@ -30,7 +29,7 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.repos = (DashboardStore.repos).concat(GitHubReposStore.repos).concat(GitHubReposStore.remoteRepos);
+		state.repos = DashboardStore.repos;
 		state.users = GitHubUsersStore.users.getUnique();
 		state.currentUser = DashboardStore.currentUser || {}; // empty if anonymous user
 		state.onboarding = DashboardStore.onboarding;
@@ -50,7 +49,7 @@ class DashboardContainer extends Container {
 		this.setState({dismissWelcome: true});
 	}
 
-	stores() { return [DashboardStore, GitHubReposStore, GitHubUsersStore]; }
+	stores() { return [DashboardStore, GitHubUsersStore]; }
 
 	render() {
 		return (

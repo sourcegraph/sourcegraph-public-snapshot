@@ -1,6 +1,7 @@
 package local
 
 import (
+	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -35,4 +36,12 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 		}
 	}
 	return nil, err
+}
+
+func (s *repos) ListRemote(ctx context.Context, opt *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
+	repos, err := (&github.Repos{}).ListAccessible(ctx, &gogithub.RepositoryListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return &sourcegraph.RemoteRepoList{RemoteRepos: repos}, nil
 }

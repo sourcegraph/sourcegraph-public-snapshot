@@ -14,8 +14,9 @@ func grpcToHTTP(code codes.Code) int {
 	return http.StatusInternalServerError
 }
 
-// httpToGRPC maps HTTP status codes to gRPC codes.
-func httpToGRPC(statusCode int) codes.Code {
+// HTTPToGRPC returns the most appropriate gRPC error code for the
+// HTTP status. For example, HTTP 404 is mapped to codes.NotFound.
+func HTTPToGRPC(statusCode int) codes.Code {
 	if statusCode < 400 {
 		return codes.OK
 	}

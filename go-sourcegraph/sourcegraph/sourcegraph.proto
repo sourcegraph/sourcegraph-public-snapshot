@@ -289,6 +289,10 @@ service Repos {
 		};
 	};
 
+	// List remote repositories (on GitHub) associated with the
+	// currently authenticated actor.
+	rpc ListRemote(ReposListRemoteOptions) returns (RemoteRepoList);
+
 	// Create creates a new repository.
 	rpc Create(ReposCreateOp) returns (Repo) {
 		option (google.api.http) = {
@@ -378,6 +382,16 @@ message RepoResolution {
 		// mirror created (yet) on this server.
 		RemoteRepo RemoteRepo = 2;
 	}
+}
+
+// ReposListRemoteOptions specifies options for Repos.ListRemote.
+message ReposListRemoteOptions {
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+// RemoteRepoList is a list of remote repos.
+message RemoteRepoList {
+	repeated RemoteRepo RemoteRepos = 1;
 }
 
 // SrclibDataVersion specifies a srclib store version.
@@ -652,26 +666,6 @@ message VCSCredentials {
 	string Pass = 1;
 }
 
-// UserMirrorsState specifies the state of the user's access to the
-// GitHub repo mirrors feature.
-enum UserMirrorsState {
-	// NotAllowed is the state where the user is not allowed to access
-	// the repo mirrors feature on this server.
-	NotAllowed = 0;
-
-	// NoToken is the state where the user has not yet linked their
-	// GitHub account on this server.
-	NoToken = 2;
-
-	// InvalidToken is the state where the user's stored GitHub OAuth2 token
-	// is invalid.
-	InvalidToken = 3;
-
-	// HasAccess is the state where user has access to the repo mirrors
-	// feature.
-	HasAccess = 4;
-}
-
 // RemoteRepo is a repo canonically stored on an external host, and
 // possibly mirrored on the local instance. Currently it's assumed
 // that RemoteRepo represents a GitHub repo.
@@ -728,28 +722,6 @@ message RemoteRepo {
  	RepoPermissions Permissions = 14;
 }
 
-// UserMirrorData is a list of repos that are visible
-// to the current user.
-//
-// TODO(sqs): Remove this and just have the homepage dashboard call
-// Repos.List and Repos.ListRemote and combine results.
-message UserMirrorData {
-	// URL is the base url of the external code host.
-	string URL = 1;
-
-	// Host is the name of the external code host.
-	string Host = 2;
-
-	// visible to the current user.
-	repeated RemoteRepo RemoteRepos = 3;
-
-	repeated Repo Repos = 5;
-
-	// State is the state of the user's access to mirrored repos on
-	// this server.
-	UserMirrorsState State = 4;
-}
-
 // MirrorRepos handles operations related to maintaining mirrors on
 // Sourcegraph of repositories hosted elsewhere.
 service MirrorRepos {
@@ -759,10 +731,6 @@ service MirrorRepos {
 			put: "/mirror_repos"
 		};
 	};
-
-	// GetUserData returns the list of GitHub repos that are visible
-	// to the currently authenticated user.
-	rpc GetUserData(pbtypes.Void) returns (UserMirrorData);
 }
 
 // A Build represents a scheduled, completed, or failed repository analysis and

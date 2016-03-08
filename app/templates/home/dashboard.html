@@ -4,8 +4,12 @@
 {{define "Body"}}
 
 <script ignore-csp>
-	window.repos = JSON.parse({{json .Repos}}) || [];
-	window.mirrorData = JSON.parse({{json .MirrorData}});
+	{{if .Repos}}
+		window.repos = JSON.parse({{json .Repos.Repos}}) || [];
+	{{end}}
+	{{if .RemoteRepos}}
+		window.remoteRepos = JSON.parse({{json .RemoteRepos.RemoteRepos}});
+	{{end}}
 	window.teammates = JSON.parse({{json .Teammates}});
 
 	window.onboarding = {

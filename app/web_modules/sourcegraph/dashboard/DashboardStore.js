@@ -9,7 +9,7 @@ export class DashboardStore extends Store {
 
 	reset() {
 		if (typeof window !== "undefined") { // TODO(autotest) support document object.
-			this.repos = deepFreeze(window.repos || []);
+			this.repos = deepFreeze((window.repos || []).concat(window.remoteRepos || []));
 			this.currentUser = deepFreeze(window._currentUser);
 			this.onboarding = deepFreeze(window.onboarding);
 		} else {

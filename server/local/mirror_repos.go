@@ -14,10 +14,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/events"
 	"src.sourcegraph.com/sourcegraph/ext/github"
-	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -269,51 +267,4 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		})
 	}
 	return nil
-}
-
-func (s *mirrorRepos) GetUserData(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
-	gd := &sourcegraph.UserMirrorData{
-		URL:   githubcli.Config.URL(),
-		Host:  githubcli.Config.Host() + "/",
-		State: sourcegraph.UserMirrorsState_NotAllowed,
-	}
-
-	// Fetch the currently authenticated user's stored access token (if any).
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, nil)
-	if errcode.GRPC(err) == codes.NotFound {
-		gd.State = sourcegraph.UserMirrorsState_NoToken
-		return gd, nil
-	} else if err != nil {
-		return nil, err
-	}
-	gd.State = sourcegraph.UserMirrorsState_HasAccess
-
-	// TODO(perf) Cache this response or perform the fetch after page load to avoid
-	// having to wait for an http round trip to github.com.
-	gitHubRepos, err := (&github.Repos{}).ListWithToken(ctx, extToken.Token)
-	if err != nil {
-		// Since the error is caused by something other than the token not existing,
-		// ensure the user knows there is a value set for the token but that
-		// it is invalid.
-		gd.State = sourcegraph.UserMirrorsState_InvalidToken
-		return gd, nil
-	}
-
-	for _, repo := range gitHubRepos {
-		uri := "github.com/" + repo.Owner + "/" + repo.Name
-
-		// Check if a user's remote GitHub repo already exists locally under the
-		// same URI. Allow this user to access all their private repos that are
-		// already mirrored on this Sourcegraph.
-		localRepo, err := (&repos{}).Get(ctx, &sourcegraph.RepoSpec{URI: uri})
-		if err == nil {
-			gd.Repos = append(gd.Repos, localRepo)
-		} else if errcode.GRPC(err) == codes.NotFound {
-			gd.RemoteRepos = append(gd.RemoteRepos, repo)
-		} else {
-			return nil, err
-		}
-	}
-
-	return gd, nil
 }

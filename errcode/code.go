@@ -79,7 +79,7 @@ func HTTP(err error) int {
 // err.
 func GRPC(err error) codes.Code {
 	// Piggyback on the HTTP func to reduce code duplication.
-	return httpToGRPC(HTTP(err))
+	return HTTPToGRPC(HTTP(err))
 }
 
 type HTTPErr struct {
