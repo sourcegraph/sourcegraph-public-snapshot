@@ -375,7 +375,8 @@ LIMIT 1
 }
 
 func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Create", newBuild.Repo); err != nil {
+	// Allow readers to create builds.
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Create", newBuild.Repo); err != nil {
 		return nil, err
 	}
 	var b dbBuild
