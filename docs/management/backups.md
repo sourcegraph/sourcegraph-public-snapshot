@@ -25,7 +25,6 @@ installed Sourcegraph on a Linux server, it may be running as user
 
 1. Source code repositories are standard git repositories and are located at
    `$SGPATH/repos`.
-1. Changesets, issues, user accounts, etc., are all also stored inside `$SGPATH`.
 1. Your local machine's authentication info (i.e., your `src login`) is stored in
    `~/.src-auth`. This is your personal login information, not server-wide user
    data.

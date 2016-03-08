@@ -34,7 +34,6 @@ type Stores struct {
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
-	Storage            Storage
 	Users              Users
 }
 
@@ -57,7 +56,6 @@ const (
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
-	_StorageKey
 	_UsersKey
 )
 
@@ -110,9 +108,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Repos != nil {
 		ctx = WithRepos(ctx, s.Repos)
-	}
-	if s.Storage != nil {
-		ctx = WithStorage(ctx, s.Storage)
 	}
 	if s.Users != nil {
 		ctx = WithUsers(ctx, s.Users)
@@ -340,20 +335,6 @@ func ReposFromContext(ctx context.Context) Repos {
 	s, ok := ctx.Value(_ReposKey).(Repos)
 	if !ok || s == nil {
 		panic("no Repos set in context")
-	}
-	return s
-}
-
-// WithStorage returns a copy of parent with the given Storage store.
-func WithStorage(parent context.Context, s Storage) context.Context {
-	return context.WithValue(parent, _StorageKey, s)
-}
-
-// StorageFromContext gets the context's Storage store. If the store is not present, it panics.
-func StorageFromContext(ctx context.Context) Storage {
-	s, ok := ctx.Value(_StorageKey).(Storage)
-	if !ok || s == nil {
-		panic("no Storage set in context")
 	}
 	return s
 }

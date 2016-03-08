@@ -40,7 +40,6 @@ import (
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/auth/idkeystore"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -52,7 +51,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
-	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -153,7 +151,7 @@ type ServeCmdPrivate struct {
 	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
 	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
 
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file"`
+	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem"`
 	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
 }
 
@@ -331,11 +329,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Server identity keypair
-	idKeyCtx, err := serverContextWithStore(serverCtxFunc)
-	if err != nil {
-		return err
-	}
-	idKey, createdIDKey, err := idkeystore.GenerateOrGetIDKey(idKeyCtx, c.IDKeyData, c.IDKeyFile)
+	idKey, createdIDKey, err := c.generateOrReadIDKey()
 	if err != nil {
 		return err
 	}
@@ -564,44 +558,40 @@ func (c *ServeCmd) Execute(args []string) error {
 }
 
 // generateOrReadIDKey reads the server's ID key (or creates one on-demand).
-func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
+func (c *ServeCmd) generateOrReadIDKey() (k *idkey.IDKey, created bool, err error) {
 	if s := c.IDKeyData; s != "" {
-		if globalOpt.Verbose {
-			log.Println("Reading ID key from environment (or CLI flag).")
-		}
-
-		return idkey.FromString(s)
+		log15.Debug("Reading ID key from environment (or CLI flag).")
+		k, err = idkey.FromString(s)
+		return k, false, err
 	}
 
 	c.IDKeyFile = os.ExpandEnv(c.IDKeyFile)
 
-	var k *idkey.IDKey
 	if data, err := ioutil.ReadFile(c.IDKeyFile); err == nil {
 		// File exists.
 		k, err = idkey.New(data)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	} else if os.IsNotExist(err) {
-		log.Printf("Generating new Sourcegraph ID key at %s...", c.IDKeyFile)
+		log15.Debug("Generating new Sourcegraph ID key", "path", c.IDKeyFile)
 		k, err = idkey.Generate()
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		data, err := k.MarshalText()
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if err := os.MkdirAll(filepath.Dir(c.IDKeyFile), 0700); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if err := ioutil.WriteFile(c.IDKeyFile, data, 0600); err != nil {
-			return nil, err
+			return nil, false, err
 		}
-	} else {
-		return nil, err
+		created = true
 	}
-	return k, nil
+	return
 }
 
 // authenticateCLIContext adds a "service account" access token to
@@ -1052,19 +1042,6 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
-}
-
-// serverContextWithStore generates a context like what is used in the service
-// layer. For use in server setup before the servers are up
-func serverContextWithStore(serverCtxFunc func(context.Context) context.Context) (ctx context.Context, err error) {
-	ctx = serverCtxFunc(context.Background())
-	for _, f := range serverctx.Funcs {
-		ctx, err = f(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ctx, nil
 }
 
 func noiseyLogFilter(r *log15.Record) bool {

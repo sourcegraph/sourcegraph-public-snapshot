@@ -70,8 +70,6 @@ func Services() svc.Services {
 
 		Search: wrappedSearch{},
 
-		Storage: wrappedStorage{},
-
 		Users: wrappedUsers{},
 	}
 }
@@ -1098,86 +1096,6 @@ func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSe
 	res, err = local.Services.Search.SearchText(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Search.SearchText returned nil, nil")
-	}
-	return
-}
-
-type wrappedStorage struct{}
-
-func (s wrappedStorage) Get(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageValue, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Get", param)
-	defer func() {
-		trace.After(ctx, "Storage", "Get", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Storage.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Storage.Get returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedStorage) Put(ctx context.Context, param *sourcegraph.StoragePutOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Put", param)
-	defer func() {
-		trace.After(ctx, "Storage", "Put", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Storage.Put(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Storage.Put returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedStorage) PutNoOverwrite(ctx context.Context, param *sourcegraph.StoragePutOp) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "PutNoOverwrite", param)
-	defer func() {
-		trace.After(ctx, "Storage", "PutNoOverwrite", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Storage.PutNoOverwrite(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Storage.PutNoOverwrite returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedStorage) Delete(ctx context.Context, param *sourcegraph.StorageKey) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Delete", param)
-	defer func() {
-		trace.After(ctx, "Storage", "Delete", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Storage.Delete(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Storage.Delete returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedStorage) Exists(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageExists, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "Exists", param)
-	defer func() {
-		trace.After(ctx, "Storage", "Exists", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Storage.Exists(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Storage.Exists returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedStorage) List(ctx context.Context, param *sourcegraph.StorageKey) (res *sourcegraph.StorageList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Storage", "List", param)
-	defer func() {
-		trace.After(ctx, "Storage", "List", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Storage.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Storage.List returned nil, nil")
 	}
 	return
 }

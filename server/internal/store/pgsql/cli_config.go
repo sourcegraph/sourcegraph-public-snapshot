@@ -21,7 +21,6 @@ func init() {
 			RegisteredClients:  &registeredClients{},
 			RepoVCS:            &fs.RepoVCS{},
 			Repos:              &repos{},
-			Storage:            &storage{},
 			RepoStatuses:       &repoStatuses{},
 			Users:              &users{},
 			Invites:            &invites{},

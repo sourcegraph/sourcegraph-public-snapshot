@@ -34,7 +34,6 @@ type Stores struct {
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
-	Storage            Storage
 	Users              Users
 }
 
@@ -56,7 +55,6 @@ func (s *Stores) Stores() store.Stores {
 		RepoStatuses:       &s.RepoStatuses,
 		RepoVCS:            &s.RepoVCS,
 		Repos:              &s.Repos,
-		Storage:            &s.Storage,
 		Users:              &s.Users,
 	}
 }
