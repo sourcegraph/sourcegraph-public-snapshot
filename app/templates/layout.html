@@ -36,7 +36,6 @@
 			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
 			window._csrfToken = "{{.CSRFToken}}";
 			window._currentUser = JSON.parse({{.CurrentUser|json}});
-			window._isMothership = {{isMothership}};
 			{{if .CacheControl}}window._cacheControl = "{{.CacheControl}}";{{end}}
 		</script>
 

@@ -28,6 +28,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/util/envutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/textutil"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
@@ -215,5 +216,5 @@ var tmplFuncs = htmpl.FuncMap{
 	"buildvar":        func() buildvar.Vars { return buildvar.All },
 	"updateAvailable": updateAvailable,
 
-	"isMothership": func() bool { return appconf.Flags.IsSourcegraphCloud },
+	"showDataCollectionMessage": metricutil.EnableForwarding,
 }
