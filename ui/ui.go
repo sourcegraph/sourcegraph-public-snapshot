@@ -44,9 +44,9 @@ func init() {
 // NewHandler creates a new http.Handler for all UI endpoints, optionally using
 // the provided router as a base.
 func NewHandler(r *mux.Router) http.Handler {
-	mw := []handlerutil.Middleware{
-		appauth.CookieMiddleware,
-		handlerutil.UserMiddleware,
+	var mw []handlerutil.Middleware
+	if authutil.ActiveFlags.HasUserAccounts() {
+		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	}
 
 	if r == nil {

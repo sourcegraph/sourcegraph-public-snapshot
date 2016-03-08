@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/gitserver"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
@@ -52,10 +53,12 @@ func NewHandler(r *router.Router) http.Handler {
 		r = router.New(nil)
 	}
 
-	mw := []handlerutil.Middleware{
-		appauth.CookieMiddleware,
-		httpapiauth.OAuth2AccessTokenMiddleware,
-		handlerutil.UserMiddleware,
+	var mw []handlerutil.Middleware
+	if authutil.ActiveFlags.HasAccessControl() {
+		mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware)
+	}
+	if authutil.ActiveFlags.HasUserAccounts() {
+		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	}
 	mw = append(mw, internal.Middleware...)
 

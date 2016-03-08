@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/csp"
+	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
@@ -23,13 +24,16 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 	m.StrictSlash(true)
 
-	mw := []handlerutil.Middleware{
-		// SECURITY NOTE: The HTTP API should not accept cookies as
-		// authentication. Doing so would open it up to CSRF
-		// attacks. By requiring users use HTTP Basic authentication,
-		// we mitigate the risk of CSRF.
-		httpapiauth.PasswordMiddleware,
-		httpapiauth.OAuth2AccessTokenMiddleware,
+	// SECURITY NOTE: The HTTP API should not accept cookies as
+	// authentication. Doing so would open it up to CSRF
+	// attacks. By requiring users use HTTP Basic authentication,
+	// we mitigate the risk of CSRF.
+	var mw []handlerutil.Middleware
+	if authutil.ActiveFlags.HasUserAccounts() {
+		mw = append(mw, httpapiauth.PasswordMiddleware)
+	}
+	if authutil.ActiveFlags.HasAccessControl() {
+		mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware)
 	}
 
 	if conf.GetenvBool("SG_USE_CSP") {
