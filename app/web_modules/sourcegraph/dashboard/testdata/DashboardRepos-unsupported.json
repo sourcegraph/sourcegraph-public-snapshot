@@ -11,6 +11,76 @@
 							{
 								"type": "div",
 								"props": {
+									"className": "toggles",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "btn-group",
+												"children": [
+													{
+														"type": "button",
+														"key": "0",
+														"props": {
+															"className": "btn btn-block toggle btn-primary",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "toggle-label",
+																		"children": [
+																			"all"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "button",
+														"key": "1",
+														"props": {
+															"className": "btn btn-block toggle btn-default",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "toggle-label",
+																		"children": [
+																			"private"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "button",
+														"key": "2",
+														"props": {
+															"className": "btn btn-block toggle btn-default",
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"className": "toggle-label",
+																		"children": [
+																			"public"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
 									"className": "search-bar",
 									"children": [
 										{
