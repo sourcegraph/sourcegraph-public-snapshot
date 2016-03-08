@@ -6,9 +6,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 )
 
@@ -17,8 +14,6 @@ type Flags struct {
 	ForwardURL string `long:"metrics.forward" value-name:"URL" description:"Sourcegraph metric sink to forward metrics to (empty to disable)" default:"https://sourcegraph.com"`
 
 	StoreURL string `long:"metrics.store" value-name:"URL" description:"Elasticsearch server to store metrics in (if set)" env:"SG_ELASTICSEARCH_URL"`
-
-	DeprecatedGraphUplinkPeriod time.Duration `long:"graphuplink" hidden:"yes"`
 }
 
 // config is the currently active metrics config (as set by CLI flags).
@@ -42,17 +37,8 @@ func init() {
 	})
 
 	cli.ServeInit = append(cli.ServeInit, func() {
-		if fed.Config.DeprecatedIsRoot {
-			log15.Warn("The --fed.is-root option is DEPRECATED. If you were using it to disable sending metrics to an external server, switch to using --metrics.forward='' instead. Otherwise, you can remove it, as it is a no-op.")
-			config.ForwardURL = ""
-		}
-
 		if config.ForwardURL != "" && config.StoreURL != "" {
 			log.Fatal("At most one of the --metrics.forward and --metrics.store and CLI flags may be specified.")
-		}
-
-		if config.DeprecatedGraphUplinkPeriod != 0 {
-			log15.Warn("The --graphuplink flag is DEPRECATED. The standard interval is now 10 minutes and is not configurable.")
 		}
 	})
 }

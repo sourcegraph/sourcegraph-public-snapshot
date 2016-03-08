@@ -83,7 +83,6 @@ serve-beyang-dev:
 --appdash.url 'http://localhost:7800' \
 --auth.source none \
 --clean \
---graphuplink 0 \
 --grpc-addr ':3100' \
 --http-addr ':3000' \
 --local.clcache 10s \
