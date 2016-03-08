@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -112,14 +111,10 @@ func (s *Repos) ListWithToken(ctx context.Context, token string) ([]*sourcegraph
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
 	client := github.NewClient(tc)
-	repoType := "private"
+	repoType := ""
 	if githubcli.Config.IsGitHubEnterprise() {
 		client.BaseURL = githubcli.Config.APIBaseURL()
 		client.UploadURL = githubcli.Config.UploadURL()
-		repoType = "" // import both public and private repos from GHE.
-	}
-	if authutil.ActiveFlags.PrivateMirrors {
-		repoType = "" // import both public and private repos for PrivateMirrors.
 	}
 
 	var repos []*sourcegraph.RemoteRepo

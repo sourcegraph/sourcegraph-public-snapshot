@@ -16,19 +16,15 @@
 		linkGitHubURL: null, // URL for GitHub OAuth
 		linkGitHubRedirect: false, // user is beind redirected to the dashboard from GitHub
 	};
-	{{if (or (and .PrivateMirrors .CurrentUser) .LinkGitHub)}}
-		{{if .LinkGitHub}}
-			window.onboarding.linkGitHub = true;
-			window.onboarding.linkGitHubURL = "{{router.URLToGitHubOAuth}}";
-		{{else}}
-			{{if .GitHubOnboarding}}
-				window.onboarding.linkGitHubRedirect = true;
-			{{end}}
-		{{end}}
+	{{if .LinkGitHub}}
+		window.onboarding.linkGitHub = true;
+		window.onboarding.linkGitHubURL = "{{router.URLToGitHubOAuth}}";
+	{{else if .GitHubOnboarding}}
+		window.onboarding.linkGitHubRedirect = true;
 	{{end}}
 
 	window.isMothership = JSON.parse({{json isMothership}});
-	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
+	window.allowMirrors = true;
 </script>
 
 <div class="dashboard">

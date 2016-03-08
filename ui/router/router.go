@@ -4,7 +4,6 @@ package router
 import (
 	"github.com/sourcegraph/mux"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 )
 
@@ -25,7 +24,6 @@ const (
 
 	UserContentUpload = "usercontent.upload"
 
-	UserInvite     = "user.invite"
 	UserInviteBulk = "user.invite.bulk"
 	UserKeys       = "user.keys"
 )
@@ -92,15 +90,9 @@ func New(base *mux.Router) *mux.Router {
 		Methods("POST").
 		Name(UserContentUpload)
 
-	base.Path("/.invite").
+	base.Path("/.invite-bulk").
 		Methods("POST").
-		Name(UserInvite)
-
-	if authutil.ActiveFlags.PrivateMirrors {
-		base.Path("/.invite-bulk").
-			Methods("POST").
-			Name(UserInviteBulk)
-	}
+		Name(UserInviteBulk)
 
 	base.Path("/.user/keys").
 		Methods("POST", "GET", "DELETE").

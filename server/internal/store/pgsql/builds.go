@@ -14,7 +14,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -233,7 +232,7 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	var conds []string
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
-	} else if authutil.ActiveFlags.PrivateMirrors {
+	} else {
 		// if requesting user is not admin, only list public repo builds.
 		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.List"); err != nil {
 			conds = append(conds, "b.repo not in (select uri from repo where private)")

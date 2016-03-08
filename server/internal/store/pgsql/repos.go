@@ -18,7 +18,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -292,10 +291,8 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
 
-		// If PrivateMirrors is enabled, don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		if authutil.ActiveFlags.PrivateMirrors {
-			conds = append(conds, "uri NOT LIKE 'github.com/%'")
-		}
+		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
+		conds = append(conds, "uri NOT LIKE 'github.com/%'")
 
 		if conds != nil {
 			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"

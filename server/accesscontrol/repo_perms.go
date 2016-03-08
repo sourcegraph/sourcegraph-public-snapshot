@@ -10,7 +10,7 @@ import (
 // SetWaitlistStatus stores whether the PrivateReposAllowed feature is
 // enabled for the actor.
 func SetWaitlistStatus(ctx context.Context, actor *auth.Actor) error {
-	if !authutil.ActiveFlags.PrivateMirrors || actor == nil || actor.UID == 0 {
+	if actor == nil || actor.UID == 0 {
 		return nil
 	}
 

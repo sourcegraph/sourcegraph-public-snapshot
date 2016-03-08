@@ -131,12 +131,8 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 
 func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
-		if authutil.ActiveFlags.PrivateMirrors {
-			invite.Admin = false
-			invite.Write = false
-		} else {
-			return nil, err
-		}
+		invite.Admin = false
+		invite.Write = false
 	}
 
 	senderUID := int32(authpkg.ActorFromContext(ctx).UID)

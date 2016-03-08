@@ -42,8 +42,6 @@ type Flags struct {
 
 	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
 
-	PrivateMirrors bool `long:"private-mirrors" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
-
 	MirrorsWaitlist string `long:"mirrors-waitlist" description:"restrict access to private mirrors feature via a waitlist (none|open)" default:"none"`
 }
 

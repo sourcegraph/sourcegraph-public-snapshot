@@ -21,7 +21,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -151,11 +150,6 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		if op.CloneURL == "" {
 			return nil, grpc.Errorf(codes.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
 		}
-	}
-
-	if authutil.ActiveFlags.PrivateMirrors {
-		// TODO: enable creating local repos on Sourcegraph Server instances.
-		return nil, grpc.Errorf(codes.Unavailable, "this server only supports creating mirror repos of GitHub repos")
 	}
 
 	if op.DefaultBranch == "" {
