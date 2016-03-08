@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import utf8 from "utf8";
 
+import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
 import Component from "sourcegraph/Component";
 import * as CodeActions from "sourcegraph/code/CodeActions";
 import CodeLineView from "sourcegraph/code/CodeLineView";
@@ -176,14 +177,29 @@ class CodeListing extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.startLine && nextState.highlightedDef && prevState.startLine !== nextState.startLine) {
-			this._scrollTo(nextState.startLine);
+			if (!this._lineIsVisible(nextState.startLine)) {
+				this._scrollTo(nextState.startLine);
+			}
 		}
 	}
 
 	_scrollTo(line) {
 		if (!this.refs.table) { return; }
 		let rect = this.refs.table.getBoundingClientRect();
-		window.scrollTo(0, rect.height / this.state.lines.length * (line - 1) - 100);
+		const y = rect.height / this.state.lines.length * (line - 1) - 100;
+		animatedScrollTo(document.body, y, 350);
+	}
+
+	// _lineIsVisible returns true iff the line is scrolled into view.
+	_lineIsVisible(line) {
+		if (!this._isMounted) return false;
+		if (typeof document === "undefined" || typeof window === "undefined") return false;
+		let top = document.body.scrollTop;
+		let bottom = top + window.innerHeight;
+		let $line = this.refs.table.querySelector(`[data-line="${line}"]`);
+		let elemTop = $line.offsetTop;
+		let elemBottom = elemTop + $line.clientHeight;
+		return elemBottom <= bottom && elemTop >= top;
 	}
 
 	getOffsetTopForByte(byte) {
