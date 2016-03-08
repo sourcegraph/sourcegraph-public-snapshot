@@ -20,8 +20,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil"
@@ -30,7 +28,6 @@ import (
 
 var Flags struct {
 	Dir   string `long:"app.static-dir"   description:"path to a plain directory from which to serve static files"`
-	Repo  string `long:"app.static-repo"  description:"path to a local repository from which to serve static files from"`
 	Dev   bool   `long:"app.static-dev"   description:"when present static template files are reloaded upon each request"`
 	Debug bool   `long:"app.static-debug" description:"debug serving of static files"`
 }
@@ -51,7 +48,7 @@ func init() {
 // Implementation note: unlike staticMiddleware, it needs no
 // instantiation.
 func Middleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if Flags.Dir == "" && Flags.Repo == "" {
+	if Flags.Dir == "" {
 		next(w, r)
 		return
 	}
@@ -111,11 +108,7 @@ type staticMiddleware struct {
 
 // Middleware is the actual middleware handler function.
 func (mw *staticMiddleware) Middleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if Flags.Dir != "" {
-		mw.debugf("request for %q from dir %q\n", r.URL.Path, Flags.Dir)
-	} else {
-		mw.debugf("request for %q from repo %q\n", r.URL.Path, Flags.Repo)
-	}
+	mw.debugf("request for %q from dir %q\n", r.URL.Path, Flags.Dir)
 
 	// If user is logged in and visits the home page, redirect them to dashboard.
 	if r.URL.Path == "/" && handlerutil.UserFromRequest(r) != nil {
@@ -314,20 +307,12 @@ func (mw *staticMiddleware) reloadContent(force bool) error {
 // newMiddleware returns a new initialized static-file-serving
 // middleware. An error is returned only due to opening the VFS.
 //
-// If neither a app.static-repo nor an app.static-dir CLI flag is provided, a
+// If no app.static-dir CLI flag is provided, a
 // panic will occur (the caller should check first).
 func newMiddleware() (*staticMiddleware, error) {
 	mw := &staticMiddleware{}
 
-	if Flags.Repo != "" {
-		repo := gitcmd.Open(Flags.Repo)
-		mw.debugf("serving git repository @ master branch\n")
-		commit, err := repo.ResolveRevision("master")
-		if err != nil {
-			return nil, err
-		}
-		mw.vfs = vcs.FileSystem(repo, commit)
-	} else if Flags.Dir != "" {
+	if Flags.Dir != "" {
 		mw.debugf("serving a normal directory\n")
 		mw.vfs = vfs.OS(Flags.Dir)
 	} else {
