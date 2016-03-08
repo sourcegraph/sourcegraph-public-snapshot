@@ -66,9 +66,19 @@
 
 .token-popover {
 	@include z-index(token-popover);
-	background-color: transparentize(#222, 0.12);
 	max-width: 360px;
 	min-width: 120px;
+
+	&.found {
+		background-color: transparentize(#222, 0.12);
+	}
+	&.error {
+		background-color: transparentize(#a00, 0.12);
+	}
+	.error-message {
+		font-size: $font-size-small;
+	}
+
 	border: solid 1px lighten($popover-border-color, 5%);
 	border-radius: 2px;
 	position: fixed;

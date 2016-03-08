@@ -104,7 +104,7 @@ class BlobRouter extends Component {
 
 	_navigate(pathname, o) {
 		let hash;
-		if (o.startLine) {
+		if (o && o.startLine) {
 			hash = `L${lineRange(lineCol(o.startLine, o.startCol), o.endLine && lineCol(o.endLine, o.endCol))}`;
 		}
 		let url = {
@@ -140,7 +140,23 @@ class BlobRouter extends Component {
 			break;
 
 		case DefActions.SelectDef:
-			this._navigate(action.url, {});
+			{
+				let def = DefStore.defs.get(action.url);
+				if (def) {
+					if (!def.Error) {
+						this._navigate(action.url);
+					}
+				} else {
+					this.setState({def: action.url});
+					Dispatcher.dispatch(new DefActions.WantDef(action.url));
+				}
+				break;
+			}
+
+		case DefActions.DefFetched:
+			if (this.state.def === action.url) {
+				this._navigate(action.url);
+			}
 			break;
 
 		case GoTo:

@@ -44,7 +44,8 @@ class BlobContainer extends Container {
 
 		state.activeDef = props.activeDef || null;
 		let defData = props.activeDef && DefStore.defs.get(state.activeDef);
-		state.tree = props.activeDef && defData ? defData.File.Path : props.tree;
+
+		state.tree = props.activeDef && defData && !defData.Error ? defData.File.Path : props.tree;
 
 		// fetch file content
 		state.file = state.tree && BlobStore.files.get(state.repo, state.rev, state.tree);
@@ -138,7 +139,7 @@ class BlobContainer extends Container {
 							dispatchSelections={true} />}
 					</div>
 					<FileMargin getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
-						{defData &&
+						{defData && !defData.Error &&
 						<DefPopup
 							def={defData}
 							byte={defData.ByteStartPosition}

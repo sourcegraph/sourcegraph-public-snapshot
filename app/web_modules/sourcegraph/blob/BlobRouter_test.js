@@ -8,6 +8,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import BlobRouter from "sourcegraph/blob/BlobRouter";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import DefStore from "sourcegraph/def/DefStore";
 import {GoTo} from "sourcegraph/util/hotLink";
 
 import testdataFile from "sourcegraph/blob/testdata/BlobRouter-file.json";
@@ -47,11 +48,39 @@ describe("BlobRouter", () => {
 		);
 	});
 
-	it("should handle DefActions.SelectDef", () => {
+	it("should handle DefActions.SelectDef and trigger WantDef when no def is in store", () => {
+		expect(Dispatcher.catchDispatched(() => {
+			testAction(
+				"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+				new DefActions.SelectDef("someURL"),
+				"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
+			);
+		})).to.eql([new DefActions.WantDef("someURL")]);
+	});
+
+	it("should handle DefActions.SelectDef and go to def when the def is in store", () => {
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someURL", {}));
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new DefActions.SelectDef("someURL"),
 			"http://localhost:3080/someURL"
+		);
+	});
+
+	it("should handle DefActions.SelectDef and NOT go to def when the def is errored", () => {
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someURL", {Error: "x"}));
+		testAction(
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			new DefActions.SelectDef("someURL"),
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
+		);
+	});
+
+	it("should ignore standalone DefActions.DefFetched actions for defs that are not its active def", () => {
+		testAction(
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			new DefActions.DefFetched("someURL", {}),
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
 		);
 	});
 
@@ -101,6 +130,7 @@ describe("BlobRouter", () => {
 function testAction(uri, action, expectedURI) {
 	let renderer = TestUtils.createRenderer();
 	renderer.render(<BlobRouter location={uri} navigate={(newURI) => { uri = newURI; }} />);
-	Dispatcher.directDispatch(renderer._instance._instance, action);
+	if (!(action instanceof Array)) action = [action];
+	action.forEach((a) => Dispatcher.directDispatch(renderer._instance._instance, a));
 	expect(uri).to.be(expectedURI);
 }

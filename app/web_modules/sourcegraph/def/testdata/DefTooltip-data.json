@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-popover",
+			"className": "token-popover found",
 			"style": {
 				"left": null,
 				"top": null
@@ -13,6 +13,12 @@
 					"props": {
 						"className": "popover-data",
 						"children": [
+							{
+								"type": "span",
+								"props": {
+									"className": "error-message"
+								}
+							},
 							{
 								"type": "div",
 								"props": {

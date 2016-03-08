@@ -1,4 +1,5 @@
 import React from "react";
+import classNames from "classnames";
 
 import Component from "sourcegraph/Component";
 
@@ -52,9 +53,15 @@ class DefTooltip extends Component {
 
 	render() {
 		let def = this.state.def;
+		let classes = classNames({
+			"token-popover": true,
+			"error": Boolean(def.Error),
+			"found": !Boolean(def.Error),
+		});
 		return (
-			<div className="token-popover" style={{left: this.state.left, top: this.state.top}}>
+			<div className={classes} style={{left: this.state.left, top: this.state.top}}>
 				<div className="popover-data">
+					<span className="error-message">{def.Error && "Definition not available"}</span>
 					<div className="title"><pre dangerouslySetInnerHTML={def.QualifiedName}></pre></div>
 					<div className="content">
 						{def.Data && def.Data.DocHTML && <div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>}
