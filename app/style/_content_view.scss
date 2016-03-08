@@ -23,6 +23,17 @@
 		}
 	}
 
+	@media (max-width: $screen-xs-max) {
+		& > .content {
+			flex-basis: 100%;
+			max-width: initial;
+			border: none;
+		}
+		& > .sidebar {
+			display: none;
+		}
+	}
+	
 	@media (min-width: $container-lg + $sidebar-margin + ($sidebar-width*2)) {
 		overflow-x: visible;
 		& > .content {
@@ -34,6 +45,15 @@
 			padding-left: 0;
 			margin-right: 0;
 			flex-basis: 0;
+		}
+	}
+}
+
+@media (max-width: $screen-xs-max) {
+	body > .container {
+		padding: 0;
+		& > .repo-body {
+			margin-top: 0;
 		}
 	}
 }

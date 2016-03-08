@@ -97,6 +97,13 @@
 	}
 }
 
+@media (max-width: $screen-xs-max) {
+	.line-numbered-code td {
+		font-size: 11px !important;
+	}
+}
+
+
 .line-numbered-code {
 	width: 100%;
 	.line-content {
