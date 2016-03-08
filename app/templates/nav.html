@@ -34,22 +34,6 @@
 							{{.CurrentUser.Login}}
 						</a>
 					</li>
-
-					{{range orderedEnabledGlobalApps}}
-					<li>
-						<a href="{{urlToGlobalApp .ID}}">
-							<span class="icon-container">
-								<i class="octicon octicon-{{.Icon}}">
-								{{if iconBadge $.Ctx .}}
-									{{template "iconBadge"}}
-								{{end}}
-								</i>
-							</span>
-							<span class="hidden-sm hidden-md hidden-lg">{{.Title}}</span>
-						</a>
-					</li>
-					{{end}}
-
 					<li>
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}">
 							<i class="octicon octicon-gear"></i>

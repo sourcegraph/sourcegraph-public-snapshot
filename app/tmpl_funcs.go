@@ -83,7 +83,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlToDefAtRev":        router.Rel.URLToDefAtRev,
 	"urlToDefSubroute":     router.Rel.URLToDefSubroute,
 	"urlToWithReturnTo":    urlToWithReturnTo,
-	"urlToGlobalApp":       router.Rel.URLToGlobalApp,
 
 	"fileToBreadcrumb":      FileToBreadcrumb,
 	"fileLinesToBreadcrumb": FileLinesToBreadcrumb,
@@ -185,13 +184,6 @@ var tmplFuncs = htmpl.FuncMap{
 			orderedFrames[i] = frames[id]
 		}
 		return orderedFrames
-	},
-	"orderedEnabledGlobalApps": platform.OrderedEnabledGlobalApps,
-	"iconBadge": func(ctx context.Context, app platform.GlobalApp) (bool, error) {
-		if app.IconBadge == nil {
-			return false, nil
-		}
-		return app.IconBadge(ctx)
 	},
 	"platformSearchFrames": func() map[string]platform.SearchFrame {
 		return platform.SearchFrames()

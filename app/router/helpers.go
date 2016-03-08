@@ -134,7 +134,3 @@ func commitIDStr(commitID interface{}) string {
 	}
 	return commitID.(string)
 }
-
-func (r *Router) URLToGlobalApp(id string) *url.URL {
-	return r.URLTo("appglobal." + id)
-}
