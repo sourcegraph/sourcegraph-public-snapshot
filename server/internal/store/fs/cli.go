@@ -30,8 +30,7 @@ func init() {
 }
 
 type Flags struct {
-	ReposDir      string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
-	GitRepoMirror string `long:"fs.git-repo-mirror" description:"comma-separated string map in the form '<LocalRepoURI>:<GitRemoteURL>' defining which repos to mirror on a remote host"`
+	ReposDir string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
 }
 
 var activeFlags Flags
