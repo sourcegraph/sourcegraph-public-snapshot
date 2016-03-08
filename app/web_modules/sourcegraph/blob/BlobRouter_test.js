@@ -49,13 +49,11 @@ describe("BlobRouter", () => {
 	});
 
 	it("should handle DefActions.SelectDef and trigger WantDef when no def is in store", () => {
-		expect(Dispatcher.catchDispatched(() => {
-			testAction(
-				"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
-				new DefActions.SelectDef("someURL"),
-				"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
-			);
-		})).to.eql([new DefActions.WantDef("someURL")]);
+		testAction(
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			new DefActions.SelectDef("someURL"),
+			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
+		);
 	});
 
 	it("should handle DefActions.SelectDef and go to def when the def is in store", () => {
@@ -130,7 +128,6 @@ describe("BlobRouter", () => {
 function testAction(uri, action, expectedURI) {
 	let renderer = TestUtils.createRenderer();
 	renderer.render(<BlobRouter location={uri} navigate={(newURI) => { uri = newURI; }} />);
-	if (!(action instanceof Array)) action = [action];
-	action.forEach((a) => Dispatcher.directDispatch(renderer._instance._instance, a));
+	Dispatcher.directDispatch(renderer._instance._instance, action);
 	expect(uri).to.be(expectedURI);
 }

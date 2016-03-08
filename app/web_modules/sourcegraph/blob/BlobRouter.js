@@ -147,15 +147,15 @@ class BlobRouter extends Component {
 						this._navigate(action.url);
 					}
 				} else {
-					this.setState({def: action.url});
-					Dispatcher.dispatch(new DefActions.WantDef(action.url));
+					this.setState({loadingDef: action.url});
 				}
 				break;
 			}
 
 		case DefActions.DefFetched:
-			if (this.state.def === action.url) {
+			if (this.state.loadingDef === action.url) {
 				this._navigate(action.url);
+				this.setState({loadingDef: null});
 			}
 			break;
 
