@@ -45,14 +45,6 @@ dependencies:
 
 test:
   override:
-    - ./sh/gofmt.sh:
-        pwd: $REPO
-    - npm run dep:
-        pwd: $REPO/app
-    - npm test:
-        pwd: $REPO/app
-    - make check:
-        pwd: $REPO
     - mkdir -p $CIRCLE_TEST_REPORTS/junit:
         parallel: true
     - ./dev/circle-ci-run-tests.sh:
