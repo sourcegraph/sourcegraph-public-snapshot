@@ -233,9 +233,9 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
 	} else {
-		// if requesting user is not admin, only list public repo builds.
+		// Only admins can list builds for all repos.
 		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.List"); err != nil {
-			conds = append(conds, "b.repo not in (select uri from repo where private)")
+			return nil, err
 		}
 	}
 	if opt.Queued {
