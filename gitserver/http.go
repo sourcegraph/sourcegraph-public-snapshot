@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/mux"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -16,13 +15,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
-
-func init() {
-	go func() {
-		time.Sleep(5 * time.Second)
-		panic("chaos monkey!")
-	}()
-}
 
 // AddHandlers adds git HTTP handlers to r.
 func AddHandlers(r *mux.Router) {
