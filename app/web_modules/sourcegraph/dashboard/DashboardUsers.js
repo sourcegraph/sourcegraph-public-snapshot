@@ -75,7 +75,7 @@ class UserList extends Component {
 
 	render() {
 		return (
-			<div className="panel panel-default">
+			!this.state.currentUser.Login ? <div /> : <div className="panel panel-default">
 				<div className="panel-heading">
 					<div className="panel-heading-content">
 						<h5>Team</h5>
