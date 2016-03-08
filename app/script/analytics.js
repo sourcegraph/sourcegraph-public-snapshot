@@ -8,7 +8,6 @@ var $ = require("jquery");
  * @type {Object}
  */
 var analyticsHeaders = {
-	heapAnalyticsId: setupHeapAnalytics,
 	googleAnalyticsTrackingId: setupGoogleAnalytics,
 	publicRavenDsn: setupSentry,
 };
@@ -18,50 +17,6 @@ $(function() {
 		if (document.head.dataset.hasOwnProperty(header)) analyticsHeaders[header]();
 	});
 });
-
-/**
- * @description Sets up HEAP Analytics.
- * @returns {void}
- */
-function setupHeapAnalytics() {
-	if (!document.head.dataset.heapAnalyticsId) {
-		return;
-	}
-
-	window.heap=window.heap||[],heap.load=function(t,e){window.heap.appid=t,window.heap.config=e;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.heapanalytics.com/js/heap-"+t+".js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n);for(var o=function(t){return function(){heap.push([t].concat(Array.prototype.slice.call(arguments,0)))}},p=["clearEventProperties","identify","setEventProperties","track","unsetEventProperty"],c=0;c<p.length;c++)heap[p[c]]=o(p[c])}; // eslint-disable-line
-
-	window.heap.load(document.head.dataset.heapAnalyticsId);
-
-	if (document.head.dataset.currentUserLogin) {
-		window.heap.identify({handle: document.head.dataset.currentUserLogin});
-	}
-
-	document.addEventListener("DOMContentLoaded", function() {
-		//
-		// Custom page view tracking by route name
-		//
-		function trackPageView() {
-			$.get(`/_/route/${window.location.pathname}`, null, function(routeName) {
-				var properties = {path: window.location.pathname, query: window.location.search};
-
-				var statusCodeElem = $("#sg-status-code");
-				if (statusCodeElem.size() >= 1) {
-					properties.statusCode = statusCodeElem.html();
-				}
-
-				window.heap.track(`Page(route): ${routeName}`, properties);
-			});
-		}
-
-		trackPageView();
-
-		["pushState", "popState", "replaceState"].forEach(function(method) {
-			window.addEventListener(`sg:${method}`, function(e) {
-				trackPageView();
-			});
-		});
-	});
-}
 
 /**
  * @description Enables google analytics tracking.

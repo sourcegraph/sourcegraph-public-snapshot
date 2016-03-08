@@ -30,7 +30,7 @@ var Flags struct {
 
 	DisableApps bool `long:"app.disable-apps" description:"if set, disable the changes and issues applications"`
 
-	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics, Heap analytics"`
+	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics"`
 
 	DisableCloneURL bool `long:"app.disable-clone-url" description:"if set, disable display of the git clone URL"`
 
@@ -48,8 +48,6 @@ var Flags struct {
 	MOTD template.HTML `long:"app.motd" description:"show a custom message to all users beneath the top nav bar (HTML)" env:"SG_NAV_MSG"`
 
 	GoogleAnalyticsTrackingID string `long:"app.google-analytics-tracking-id" description:"Google Analytics tracking ID (UA-########-#)" env:"GOOGLE_ANALYTICS_TRACKING_ID"`
-
-	HeapAnalyticsID string `long:"app.heap-analytics-id" description:"Heap Analytics ID" env:"HEAP_ANALYTICS_ID"`
 
 	CustomFeedbackForm template.HTML `long:"app.custom-feedback-form" description:"custom feedback form to display (HTML)" env:"CUSTOM_FEEDBACK_FORM"`
 

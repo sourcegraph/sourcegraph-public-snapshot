@@ -171,7 +171,6 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"ifTemplate":                ifTemplate,
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
-	"heapAnalyticsID":           func() string { return appconf.Flags.HeapAnalyticsID },
 
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
 	"hostname":            func() string { return hostname },

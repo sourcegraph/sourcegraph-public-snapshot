@@ -4,7 +4,6 @@
 	<head
 		{{if not appconf.DisableSupportServices}}
 			{{if googleAnalyticsTrackingID}}data-google-analytics-tracking-id="{{googleAnalyticsTrackingID}}"{{end}}
-			data-heap-analytics-id="{{heapAnalyticsID}}"
 			{{if publicRavenDSN}}data-public-raven-dsn="{{publicRavenDSN}}"{{end}}
 		{{end}}
 		{{/* Using data attributes is deprecated. Use the script tag below to add data to context.js. */}}

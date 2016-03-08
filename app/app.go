@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/justinas/nosurf"
-	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/csp"
 	"src.sourcegraph.com/sourcegraph/app/appconf"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
@@ -68,19 +67,6 @@ func NewHandler(r *router.Router) http.Handler {
 		cspHandler.ReportLog = log.New(ioutil.Discard, "", 0)
 		mw = append(mw, cspHandler.ServeHTTP)
 	}
-
-	m.Handle("/_/route/", http.StripPrefix("/_/route", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		var rtmatch mux.RouteMatch
-		matched := r.Match(req, &rtmatch)
-		if matched {
-			_, err := w.Write([]byte(rtmatch.Route.GetName()))
-			if err != nil {
-				log.Printf("failed to write to response for route request for %s: %s", "/_/route"+req.URL.String(), err)
-			}
-		} else {
-			http.Error(w, "", http.StatusNotFound)
-		}
-	})))
 
 	m.Handle("/", handlerutil.WithMiddleware(r, tmplReloadMiddleware))
 
@@ -145,12 +131,10 @@ var cspConfig = csp.Config{
 		DefaultSrc: []string{"'self'"},
 		FrameSrc:   []string{"https://www.youtube.com", "https://speakerdeck.com"},
 		FontSrc:    []string{"'self'", "https://s3-us-west-2.amazonaws.com/sourcegraph-assets/fonts/"},
-		ScriptSrc: []string{"'self'", "https://www.google-analytics.com", "heapanalytics.com", "https://cdn.heapanalytics.com", "https://platform.twitter.com", "https://speakerdeck.com",
-			"'unsafe-eval'", // Required for Heap Analytics JS (their external script requires eval).
-		},
-		ImgSrc:    []string{"*"},
-		StyleSrc:  []string{"*"},
-		ReportURI: "/.csp-report",
+		ScriptSrc:  []string{"'self'", "https://www.google-analytics.com", "https://platform.twitter.com", "https://speakerdeck.com"},
+		ImgSrc:     []string{"*"},
+		StyleSrc:   []string{"*"},
+		ReportURI:  "/.csp-report",
 	},
 }
 
