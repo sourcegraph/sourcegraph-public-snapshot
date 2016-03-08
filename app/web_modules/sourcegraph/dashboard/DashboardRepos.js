@@ -15,6 +15,7 @@ class DashboardRepos extends Component {
 		};
 		this._handleSearch = this._handleSearch.bind(this);
 		this._selectFilter = this._selectFilter.bind(this);
+		this._qualifiedName = this._qualifiedName.bind(this);
 		this._showRepo = this._showRepo.bind(this);
 		this._canMirror = this._canMirror.bind(this);
 		this._disabledReason = this._disabledReason.bind(this);
@@ -38,9 +39,22 @@ class DashboardRepos extends Component {
 		}));
 	}
 
+	_qualifiedName(repo) {
+		if (repo.URI) {
+			let collection = [],
+				parts = repo.URI.split("/");
+			parts.forEach(part => {
+				if (part !== "sourcegraph.com" && part !== "github.com") collection.push(part);
+			});
+			return collection.join("/");
+		}
+
+		return `${repo.Owner}/${repo.Name}`;
+	}
+
 	_showRepo(repo) {
 		const isPrivate = Boolean(repo.Private);
-		if (this.state.searchQuery && repo.URI.indexOf(this.state.searchQuery) === -1) {
+		if (this.state.searchQuery && this._qualifiedName(repo).indexOf(this.state.searchQuery) === -1) {
 			return false;
 		}
 		if (this.state.filter) {
@@ -55,14 +69,10 @@ class DashboardRepos extends Component {
 	}
 
 	_canMirror(repo) {
-		if (this.state.onWaitlist) {
-			if (repo.Private) return false;
-		}
 		return repo.Language === "Go" || repo.Language === "Java";
 	}
 
 	_disabledReason(repo) {
-		if (this.state.onWaitlist && repo.Private) return "private repositories coming soon";
 		return `${repo.Language || ""} coming soon`;
 	}
 
@@ -71,10 +81,8 @@ class DashboardRepos extends Component {
 	}
 
 	_repoSort(a, b) {
-		if (this.state.allowGitHubMirrors) {
-			if (!this._canMirror(a) && this._canMirror(b)) return 1;
-			if (this._canMirror(a) && !this._canMirror(b)) return -1;
-		}
+		if (!this._canMirror(a) && this._canMirror(b)) return 1;
+		if (this._canMirror(a) && !this._canMirror(b)) return -1;
 		if (moment(this._repoTime(a)).isBefore(moment(this._repoTime(b)))) return 1;
 		if (moment(this._repoTime(a)).isAfter(moment(this._repoTime(b)))) return -1;
 		return -1;
@@ -89,17 +97,13 @@ class DashboardRepos extends Component {
 			</button>
 		);
 
-		const repoDisabled = (repo) => repo.URI === "" && this.state.allowGitHubMirrors && !this._canMirror(repo);
+		const repoDisabled = (repo) => !repo.URI && !this._canMirror(repo);
 
 		const repoRowClass = (repo) => classNames("list-group-item", {
 			"repo-disabled": repoDisabled(repo),
 		});
 
-		const emptyStateLabel = this.state.allowGitHubMirrors && this.state.linkGitHub ? "Link your GitHub account to add repositories." : "No repositories.";
-
-		const filteredNonRemoteRepos = this.state.repos.filter(this._showRepo);
-		const filteredRemoteRepos = this.state.remoteRepos.filter(this._showRepo);
-		const filteredRepos = filteredNonRemoteRepos.concat(filteredRemoteRepos);
+		const filteredRepos = this.state.repos.filter(this._showRepo);
 
 		return (
 			<div className="repos-list">
@@ -119,25 +123,28 @@ class DashboardRepos extends Component {
 					</div>
 				</nav>
 				<div className="repos">
-					{this.state.repos.length + this.state.remoteRepos.length === 0 ? <div className="well">{emptyStateLabel}</div> : <div className="list-group">
-						{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
-							<div className={repoRowClass(repo)} key={i}>
-								<div className="repo-header">
-									<h4>
-										<i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
-										{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, repoDisabled(repo))}
-									</h4>
-									{this.state.allowGitHubMirrors && !this._canMirror(repo) &&
-										<span className="disabled-reason">{this._disabledReason(repo)}</span>
-									}
+					{this.state.repos.length === 0 ?
+						<div className="well">{"Link your GitHub account to add repositories."}</div> :
+						<div className="list-group">
+							{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
+								<div className={repoRowClass(repo)} key={i}>
+									<div className="repo-header">
+										<h4>
+											<i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
+											{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, repoDisabled(repo))}
+										</h4>
+										{!this._canMirror(repo) &&
+											<span className="disabled-reason">{this._disabledReason(repo)}</span>
+										}
+									</div>
+									<div className="repo-body">
+										<p className="description">{repo.Description}</p>
+										<p className="updated">{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
+									</div>
 								</div>
-								<div className="repo-body">
-									<p className="description">{repo.Description}</p>
-									<p className="updated">{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
-								</div>
-							</div>
-						))}
-					</div>}
+							))}
+						</div>
+					}
 				</div>
 			</div>
 		);
@@ -146,8 +153,6 @@ class DashboardRepos extends Component {
 
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	remoteRepos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	onWaitlist: React.PropTypes.bool.isRequired,
 	linkGitHub: React.PropTypes.bool.isRequired,
 };
 

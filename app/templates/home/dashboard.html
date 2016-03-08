@@ -5,11 +5,8 @@
 
 <script ignore-csp>
 	window.repos = JSON.parse({{json .Repos}}) || [];
-	window.users = JSON.parse({{json .Users}}) || [];
-	window.currentUser = JSON.parse({{json .CurrentUser}});
 	window.mirrorData = JSON.parse({{json .MirrorData}});
 	window.teammates = JSON.parse({{json .Teammates}});
-	window.onWaitlist = JSON.parse({{json .OnWaitlist}}) || false;
 
 	window.onboarding = {
 		linkGitHub: false, // user needs to link GitHub account
@@ -22,9 +19,6 @@
 	{{else if .GitHubOnboarding}}
 		window.onboarding.linkGitHubRedirect = true;
 	{{end}}
-
-	window.isMothership = JSON.parse({{json isMothership}});
-	window.allowMirrors = true;
 </script>
 
 <div class="dashboard">

@@ -3,12 +3,9 @@ package app
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"sourcegraph.com/sqs/pbtypes"
 	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -16,12 +13,9 @@ import (
 
 type dashboardData struct {
 	Repos      []*sourcegraph.Repo
-	Users      []*userInfo
 	LinkGitHub bool
-	OnWaitlist bool
 	MirrorData *sourcegraph.UserMirrorData
 	Teammates  *sourcegraph.Teammates
-	IsRoot     bool
 
 	// This flag is set if the user has returned to the dashboard after
 	// being redirected from GitHub OAuth2 login page.
@@ -45,8 +39,6 @@ func execDashboardTmpl(w http.ResponseWriter, r *http.Request, d *dashboardData)
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
-	var users []*userInfo
-	var onWaitlist bool
 
 	if currentUser == nil && authutil.ActiveFlags.HasUserAccounts() {
 		return appauthutil.RedirectToLogIn(w, r)
@@ -70,10 +62,6 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 			})
 		}
 
-		if mirrorData.State == sourcegraph.UserMirrorsState_OnWaitlist {
-			onWaitlist = true
-		}
-
 		teammates, err = cl.Users.ListTeammates(ctx, currentUser)
 		if err != nil {
 			return err
@@ -91,60 +79,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 
 	return execDashboardTmpl(w, r, &dashboardData{
 		Repos:      repos.Repos,
-		Users:      users,
-		OnWaitlist: onWaitlist,
 		MirrorData: mirrorData,
 		Teammates:  teammates,
 	})
-}
-
-type userInfo struct {
-	UID       int32
-	Name      string
-	Login     string
-	AvatarURL string
-	Write     bool
-	Admin     bool
-	Invite    bool
-}
-
-func getUsers(ctx context.Context, cl *sourcegraph.Client) []*userInfo {
-	var users []*userInfo
-	ctxActor := auth.ActorFromContext(ctx)
-	if !ctxActor.HasAdminAccess() {
-		return users
-	}
-
-	// Fetch pending invites.
-	inviteList, err := cl.Accounts.ListInvites(ctx, &pbtypes.Void{})
-	if err == nil {
-		for _, invite := range inviteList.Invites {
-			users = append(users, &userInfo{
-				Name:   invite.Email,
-				Write:  invite.Write,
-				Admin:  invite.Admin,
-				Invite: true,
-			})
-		}
-	}
-
-	// Fetch registered users.
-	userList, err := cl.Users.List(ctx, &sourcegraph.UsersListOptions{
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: 10000,
-		},
-	})
-	if err == nil {
-		for _, user := range userList.Users {
-			users = append(users, &userInfo{
-				UID:       user.UID,
-				Name:      user.Name,
-				Login:     user.Login,
-				AvatarURL: user.AvatarURL,
-				Write:     user.Write,
-				Admin:     user.Admin,
-			})
-		}
-	}
-	return users
 }
