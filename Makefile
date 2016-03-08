@@ -120,9 +120,6 @@ libvfsgen:
 ${GOBIN}/protoc-gen-gogo:
 	go get github.com/gogo/protobuf/protoc-gen-gogo
 
-${GOBIN}/protoc-gen-dump:
-	go get sourcegraph.com/sourcegraph/prototools/cmd/protoc-gen-dump
-
 ${GOBIN}/gopathexec:
 	go get sourcegraph.com/sourcegraph/gopathexec
 
@@ -138,7 +135,7 @@ ${GOBIN}/go-template-lint:
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	go install ./sgtool
 
-dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/protoc-gen-dump ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
+dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
 
 dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
@@ -146,7 +143,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint ${GOBIN}/protoc-gen-dump
+generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint
 
 db-reset: src
 	src pgsql reset

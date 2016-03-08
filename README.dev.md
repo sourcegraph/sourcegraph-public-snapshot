@@ -140,8 +140,6 @@ The Sourcegraph repository relies on code generation triggered by `go
 generate`. Code generation is used for a variety of tasks:
 
 * generating code for mocking interfaces
-* hackily updating protobuf-generated code to make its JSON representation CamelCase not `snake_case`
-(this is a tech debt TODO to obviate)
 * generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
 * pack app templates and assets into binaries
 
@@ -182,11 +180,6 @@ The Sourcegraph repository enforces some code standards via `make
 test`, which is also run in CI.
 
 Read more about our style in [README.style.md](README.style.md).
-
-## Developer API & Documentation
-
-Sourcegraph uses gRPC and Protocol Buffers under the hood. Read more at
-[README.protobuf.md](README.protobuf.md) or view the documentation for the API at [developer.sourcegraph.com](https://developer.sourcegraph.com).
 
 ## Windows notes
 

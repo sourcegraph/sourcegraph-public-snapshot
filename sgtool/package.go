@@ -29,7 +29,6 @@ type PackageCmd struct {
 	OS string `long:"os" description:"operating system targets to cross-compile for" default:"linux darwin"`
 
 	SkipWebpack bool `long:"skip-webpack" description:"skip webpack (JS/SCSS preparation, concatenation, minification, etc.)"`
-	SkipProtoc  bool `long:"skip-protoc" description:"skip devdoc protobuf dump generation (which requires protoc)"`
 	IgnoreDirty bool `long:"ignore-dirty" description:"ignore dirty working directory"`
 
 	Args struct {
@@ -69,11 +68,8 @@ func (c *PackageCmd) Execute(args []string) error {
 		os.Getenv("GOPATH"),
 	}, string(filepath.ListSeparator))
 
-	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./platform/...", "./devdoc/...", "./misc/sampledata")
+	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./platform/...", "./misc/sampledata")
 	overrideEnv(genCmd, "GOPATH", gopath)
-	if c.SkipProtoc {
-		genCmd.Env = append(genCmd.Env, "SKIP_PROTOC=t")
-	}
 	if err := execCmd(genCmd); err != nil {
 		return err
 	}
