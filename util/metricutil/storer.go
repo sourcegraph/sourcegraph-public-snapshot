@@ -2,7 +2,6 @@ package metricutil
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"golang.org/x/net/context"
@@ -16,7 +15,7 @@ import (
 var storage *elastigo.BulkIndexer
 
 func startEventStorer(ctx context.Context) {
-	url := os.Getenv("SG_ELASTICSEARCH_URL")
+	url := config.StoreURL
 	if url == "" {
 		log15.Debug("EventStorer failed to locate elasticsearch endpoint")
 		return

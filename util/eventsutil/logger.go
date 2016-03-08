@@ -167,7 +167,7 @@ var ActiveLogger *Logger
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
 // maximum number of buffered events after which the worker will flush the buffer upstream.
 func StartEventLogger(ctx context.Context, clientID string, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	if !metricutil.EnableForwarding() {
+	if !metricutil.EnableMetricsCollection() {
 		return
 	}
 

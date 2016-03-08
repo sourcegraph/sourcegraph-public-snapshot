@@ -19,13 +19,14 @@ type Flags struct {
 // config is the currently active metrics config (as set by CLI flags).
 var config Flags
 
-// EnableForwarding is true if this server should forward usage
-// metrics and stats to another server for collection.
+// EnableMetricsCollection is true if this server should collect
+// usage metrics and stats, and forward to another server or store
+// in an Elasticsearch server.
 //
 // It depends on the CLI flags being set, so it only returns the
 // correct value when called from an invocation of `src serve`.
-func EnableForwarding() bool {
-	return config.ForwardURL != ""
+func EnableMetricsCollection() bool {
+	return config.ForwardURL != "" || config.StoreURL != ""
 }
 
 func init() {
@@ -46,9 +47,13 @@ func init() {
 // Start starts the event logger and event storer using the CLI
 // configuration.
 func Start(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	// Listen for events and flush them to Elasticsearch.
-	startEventStorer(ctx)
+	if config.StoreURL != "" {
+		// Listen for events and flush them to Elasticsearch.
+		startEventStorer(ctx)
+	}
 
-	// Listen for events and periodically push them upstream.
-	startEventLogger(ctx, channelCapacity, workerBufferSize, flushInterval)
+	if EnableMetricsCollection() {
+		// Listen for events and periodically push them upstream.
+		startEventLogger(ctx, channelCapacity, workerBufferSize, flushInterval)
+	}
 }
