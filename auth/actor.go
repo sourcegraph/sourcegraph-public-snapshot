@@ -29,10 +29,6 @@ type Actor struct {
 	// Scope is a set of authorized scopes that the actor has
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
-
-	// PrivateReposAllowed is true if the actor corresponds to a user
-	// that has access to the private repos (and mirrors) feature.
-	PrivateReposAllowed bool `json:",omitempty"`
 }
 
 func (a Actor) String() string {

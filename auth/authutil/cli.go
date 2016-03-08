@@ -41,8 +41,6 @@ type Flags struct {
 	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations"`
 
 	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
-
-	MirrorsWaitlist string `long:"mirrors-waitlist" description:"restrict access to private mirrors feature via a waitlist (none|open)" default:"none"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
@@ -68,7 +66,3 @@ func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.Has
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.
 var ActiveFlags Flags
-
-// mirrorsWhitelist is a map of login ids of users that are allowed
-// access to the mirror next feature.
-var mirrorsWhitelist map[string]bool

@@ -652,48 +652,12 @@ message VCSCredentials {
 	string Pass = 1;
 }
 
-// WaitlistedUser describes a user who has been added to the waitlist
-// for access to the private repos feature.
-message WaitlistedUser {
-	// UID is the unique id of the waitlisted user.
-	int32 UID = 1;
-
-	// AddedAt is the timestamp at which the user was added to the
-	// waitlist.
-	pbtypes.Timestamp AddedAt = 2;
-
-	// GrantedAt is the timestamp at which the user was granted
-	// access to the feature. If this field is null, the user is
-	// still on the waitlist.
-	pbtypes.Timestamp GrantedAt = 3;
-}
-
-// WaitlistedOrg describes a GitHub organization which has been added
-// to the waitlist for access to the private repos feature.
-message WaitlistedOrg {
-	// Name is the unique name of the waitlisted GitHub org.
-	string Name = 1;
-
-	// AddedAt is the timestamp at which the org was added to the
-	// waitlist.
-	pbtypes.Timestamp AddedAt = 2;
-
-	// GrantedAt is the timestamp at which the org was granted
-	// access to the feature. If this field is null, the org is
-	// still on the waitlist.
-	pbtypes.Timestamp GrantedAt = 3;
-}
-
 // UserMirrorsState specifies the state of the user's access to the
 // GitHub repo mirrors feature.
 enum UserMirrorsState {
 	// NotAllowed is the state where the user is not allowed to access
 	// the repo mirrors feature on this server.
 	NotAllowed = 0;
-
-	// OnWaitlist is the state where user is on the waitlist for the
-	// repo mirrors feature.
-	OnWaitlist = 1;
 
 	// NoToken is the state where the user has not yet linked their
 	// GitHub account on this server.
@@ -786,11 +750,6 @@ message UserMirrorData {
 	UserMirrorsState State = 4;
 }
 
-message WaitlistState {
-	// State is the state of the user on the waitlist.
-	UserMirrorsState State = 1;
-}
-
 // MirrorRepos handles operations related to maintaining mirrors on
 // Sourcegraph of repositories hosted elsewhere.
 service MirrorRepos {
@@ -804,10 +763,6 @@ service MirrorRepos {
 	// GetUserData returns the list of GitHub repos that are visible
 	// to the currently authenticated user.
 	rpc GetUserData(pbtypes.Void) returns (UserMirrorData);
-
-	// AddToWaitlist adds the authenticated user to the waitlist for
-	// private repo mirrors feature.
-	rpc AddToWaitlist(pbtypes.Void) returns (WaitlistState);
 }
 
 // A Build represents a scheduled, completed, or failed repository analysis and
@@ -1778,10 +1733,6 @@ message AuthInfo {
 	// Scopes represent the permissions granted to the authenticated
 	// user (if any).
 	repeated string Scopes = 7;
-
-	// PrivateReposAllowed is set if the user (if any) has access to
-	// the private repo mirrors feature on this server.
-	bool PrivateReposAllowed = 8;
 }
 
 // ExternalTokenRequest specifies a request for a stored auth token

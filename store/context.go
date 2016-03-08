@@ -36,7 +36,6 @@ type Stores struct {
 	Repos              Repos
 	Storage            Storage
 	Users              Users
-	Waitlist           Waitlist
 }
 
 type contextKey int
@@ -60,7 +59,6 @@ const (
 	_ReposKey
 	_StorageKey
 	_UsersKey
-	_WaitlistKey
 )
 
 // WithStores returns a copy of parent with the given stores. If a store's field value is nil, its previous value is inherited from parent in the new context.
@@ -118,9 +116,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Users != nil {
 		ctx = WithUsers(ctx, s.Users)
-	}
-	if s.Waitlist != nil {
-		ctx = WithWaitlist(ctx, s.Waitlist)
 	}
 	return ctx
 }
@@ -373,20 +368,6 @@ func UsersFromContext(ctx context.Context) Users {
 	s, ok := ctx.Value(_UsersKey).(Users)
 	if !ok || s == nil {
 		panic("no Users set in context")
-	}
-	return s
-}
-
-// WithWaitlist returns a copy of parent with the given Waitlist store.
-func WithWaitlist(parent context.Context, s Waitlist) context.Context {
-	return context.WithValue(parent, _WaitlistKey, s)
-}
-
-// WaitlistFromContext gets the context's Waitlist store. If the store is not present, it panics.
-func WaitlistFromContext(ctx context.Context) Waitlist {
-	s, ok := ctx.Value(_WaitlistKey).(Waitlist)
-	if !ok || s == nil {
-		panic("no Waitlist set in context")
 	}
 	return s
 }

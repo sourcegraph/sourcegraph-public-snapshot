@@ -282,9 +282,8 @@ func (s *StorageServer) List(v0 context.Context, v1 *sourcegraph.StorageKey) (*s
 var _ sourcegraph.StorageServer = (*StorageServer)(nil)
 
 type MirrorReposClient struct {
-	RefreshVCS_    func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
-	GetUserData_   func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
-	AddToWaitlist_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.WaitlistState, error)
+	RefreshVCS_  func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	GetUserData_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
 }
 
 func (s *MirrorReposClient) RefreshVCS(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
@@ -295,16 +294,11 @@ func (s *MirrorReposClient) GetUserData(ctx context.Context, in *pbtypes.Void, o
 	return s.GetUserData_(ctx, in)
 }
 
-func (s *MirrorReposClient) AddToWaitlist(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.WaitlistState, error) {
-	return s.AddToWaitlist_(ctx, in)
-}
-
 var _ sourcegraph.MirrorReposClient = (*MirrorReposClient)(nil)
 
 type MirrorReposServer struct {
-	RefreshVCS_    func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
-	GetUserData_   func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
-	AddToWaitlist_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error)
+	RefreshVCS_  func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
+	GetUserData_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
 }
 
 func (s *MirrorReposServer) RefreshVCS(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
@@ -313,10 +307,6 @@ func (s *MirrorReposServer) RefreshVCS(v0 context.Context, v1 *sourcegraph.Mirro
 
 func (s *MirrorReposServer) GetUserData(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
 	return s.GetUserData_(v0, v1)
-}
-
-func (s *MirrorReposServer) AddToWaitlist(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error) {
-	return s.AddToWaitlist_(v0, v1)
 }
 
 var _ sourcegraph.MirrorReposServer = (*MirrorReposServer)(nil)

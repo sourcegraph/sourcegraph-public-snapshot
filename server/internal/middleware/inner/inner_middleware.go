@@ -646,19 +646,6 @@ func (s wrappedMirrorRepos) GetUserData(ctx context.Context, param *pbtypes.Void
 	return
 }
 
-func (s wrappedMirrorRepos) AddToWaitlist(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.WaitlistState, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "MirrorRepos", "AddToWaitlist", param)
-	defer func() {
-		trace.After(ctx, "MirrorRepos", "AddToWaitlist", param, err, time.Since(start))
-	}()
-	res, err = local.Services.MirrorRepos.AddToWaitlist(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "MirrorRepos.AddToWaitlist returned nil, nil")
-	}
-	return
-}
-
 type wrappedNotify struct{}
 
 func (s wrappedNotify) GenericEvent(ctx context.Context, param *sourcegraph.NotifyGenericEvent) (res *pbtypes.Void, err error) {

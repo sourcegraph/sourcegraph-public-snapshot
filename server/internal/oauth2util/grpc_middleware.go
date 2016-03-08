@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
 
 // GRPCMiddleware reads the OAuth2 access token from the gRPC call's
@@ -69,10 +68,6 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 			tmp := auth.Actor{ClientID: sigClientID}
 			actor = &tmp
 		}
-	}
-
-	if err := accesscontrol.SetWaitlistStatus(ctx, actor); err != nil {
-		return nil, err
 	}
 
 	// Make future calls use this access token.

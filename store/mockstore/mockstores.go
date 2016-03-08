@@ -36,7 +36,6 @@ type Stores struct {
 	Repos              Repos
 	Storage            Storage
 	Users              Users
-	Waitlist           Waitlist
 }
 
 func (s *Stores) Stores() store.Stores {
@@ -59,6 +58,5 @@ func (s *Stores) Stores() store.Stores {
 		Repos:              &s.Repos,
 		Storage:            &s.Storage,
 		Users:              &s.Users,
-		Waitlist:           &s.Waitlist,
 	}
 }

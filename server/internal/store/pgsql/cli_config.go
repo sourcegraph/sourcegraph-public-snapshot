@@ -26,7 +26,6 @@ func init() {
 			Users:              &users{},
 			Invites:            &invites{},
 			RepoPerms:          &repoPerms{},
-			Waitlist:           &waitlist{},
 		}), nil
 	})
 }

@@ -20,7 +20,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -174,12 +173,6 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 	ghrepo, err := (&github.Repos{}).GetByID(ctx, githubID)
 	if err != nil {
 		return nil, err
-	}
-
-	// If this server has a waitlist in place, check that the user
-	// is off the waitlist.
-	if ghrepo.Private && !authpkg.ActorFromContext(ctx).PrivateReposAllowed {
-		return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
 	}
 
 	// Purposefully set very few fields. We don't want to cache

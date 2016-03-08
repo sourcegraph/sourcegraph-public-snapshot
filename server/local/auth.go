@@ -243,8 +243,6 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 		Write:  a.HasWriteAccess(),
 		Admin:  a.HasAdminAccess(),
 		Scopes: authpkg.MarshalScope(a.Scope),
-
-		PrivateReposAllowed: a.PrivateReposAllowed,
 	}, nil
 }
 
