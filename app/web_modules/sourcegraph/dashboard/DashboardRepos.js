@@ -69,7 +69,7 @@ class DashboardRepos extends Component {
 	}
 
 	_canMirror(repo) {
-		return !repo.GitHubID || repo.Language === "Go" || repo.Language === "Java";
+		return !repo.GitHubID || repo.Language === "Go";
 	}
 
 	_disabledReason(repo) {
