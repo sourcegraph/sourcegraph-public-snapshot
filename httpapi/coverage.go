@@ -14,12 +14,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
-type coverage struct {
-}
-
-type repoCoverage struct {
-}
-
 func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
 		w.WriteHeader(http.StatusBadRequest)
