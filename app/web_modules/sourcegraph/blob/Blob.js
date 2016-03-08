@@ -177,7 +177,7 @@ class Blob extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.startLine && nextState.highlightedDef && prevState.startLine !== nextState.startLine) {
-			if (!this._lineIsVisible(nextState.startLine)) {
+			if (Math.abs(prevState.startLine - nextState.startLine) > 5 || !this._lineIsVisible(nextState.startLine)) {
 				this._scrollTo(nextState.startLine);
 			}
 		}
