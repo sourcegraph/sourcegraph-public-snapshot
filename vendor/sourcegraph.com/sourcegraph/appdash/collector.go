@@ -94,9 +94,10 @@ type ChunkedCollector struct {
 	// Default FlushTimeout = 50 * time.Millisecond (50ms).
 	FlushTimeout time.Duration
 
-	// MaxQueueSize is the maximum size in bytes that the pending queue of
-	// collections may grow to before being entirely dropped (trace data lost).
-	// In the event that the queue is dropped, Collect will return ErrQueueDropped.
+	// MaxQueueSize, if non-zero, is the maximum size in bytes that the pending
+	// queue of collections may grow to before being entirely dropped (trace data
+	// lost). In the event that the queue is dropped, Collect will return
+	// ErrQueueDropped.
 	//
 	// Default MaxQueueSize = 32 * 1024 * 1024 (32MB).
 	MaxQueueSize uint64
@@ -135,7 +136,7 @@ type ChunkedCollector struct {
 // 		MinInterval:  500 * time.Millisecond,
 // 		FlushTimeout: 50 * time.Millisecond,
 // 		MaxQueueSize: 32 * 1024 * 1024, // 32MB
-// 		Log:          log.New(os.Stderr, "appdash", log.LstdFlags),
+// 		Log:          log.New(os.Stderr, "appdash: ", log.LstdFlags),
 // 	}
 //
 func NewChunkedCollector(c Collector) *ChunkedCollector {
@@ -144,7 +145,7 @@ func NewChunkedCollector(c Collector) *ChunkedCollector {
 		MinInterval:  500 * time.Millisecond,
 		FlushTimeout: 50 * time.Millisecond,
 		MaxQueueSize: 32 * 1024 * 1024, // 32MB
-		Log:          log.New(os.Stderr, "appdash", log.LstdFlags),
+		Log:          log.New(os.Stderr, "appdash: ", log.LstdFlags),
 	}
 }
 
@@ -170,8 +171,13 @@ func (cc *ChunkedCollector) Collect(span SpanID, anns ...Annotation) error {
 		collectionSize += uint64(len(ann.Key))
 		collectionSize += uint64(len(ann.Value))
 	}
-	if cc.queueSizeBytes+collectionSize > cc.MaxQueueSize {
-		// Queue is too large, drop it.
+
+	// If the queue would become too large, drop it.
+	if cc.MaxQueueSize != 0 && cc.queueSizeBytes+collectionSize > cc.MaxQueueSize {
+		if cc.Log != nil {
+			cc.Log.Println("ChunkedCollector: queue entirely dropped (trace data will be missing)")
+			cc.Log.Println("ChunkedCollector: queueSize:%v queueSizeBytes:%v + collectionSize:%v\n", len(cc.pendingBySpanID), cc.queueSizeBytes, collectionSize)
+		}
 		cc.pendingBySpanID = nil
 		cc.queueSizeBytes = 0
 		return ErrQueueDropped
@@ -217,6 +223,12 @@ func (cc *ChunkedCollector) Flush() error {
 			errs = append(errs, err)
 		}
 		if cc.FlushTimeout != 0 && time.Since(start) > cc.FlushTimeout {
+			cc.mu.Lock()
+			if cc.Log != nil {
+				cc.Log.Println("ChunkedCollector: queue entirely dropped (trace data will be missing)")
+				cc.Log.Println("ChunkedCollector: queueSize:%v queueSizeBytes:%v\n", len(cc.pendingBySpanID), cc.queueSizeBytes)
+			}
+			cc.mu.Unlock()
 			errs = append(errs, ErrQueueDropped)
 			break
 		}
