@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/ext/github"
 )
 
 // VerifyUserHasReadAccess checks if the user in the current context
@@ -77,6 +78,19 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		return nil
 	}
 
+	// TODO: move to a security model that is more robust, readable, has better separation
+	// when dealing with multiple configurations, actor types, resource types and actions.
+	//
+	// Delegate permissions check to GitHub for GitHub mirrored repos.
+	if strings.HasPrefix(repo, "github.com/") {
+		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+			_, err := (&github.Repos{}).Get(ctx, repo)
+			if err != nil {
+				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+			}
+		}
+	}
+
 	if authutil.ActiveFlags.AllowAnonymousReaders {
 		return nil
 	}
@@ -100,6 +114,8 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 // all other cases, VerifyUserHasWriteAccess should be used to
 // authorize a user for gRPC operations.
 func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
+	// TODO: redesign the permissions model to avoid short-circuited "return nil"s.
+	// (because it makes modifying authorization logic more error-prone.)
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil
@@ -121,6 +137,19 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 
 	if !hasWrite {
 		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
+	}
+
+	// TODO: move to a security model that is more robust, readable, has better separation
+	// when dealing with multiple configurations, actor types, resource types and actions.
+	//
+	// Delegate permissions check to GitHub for GitHub mirrored repos.
+	if strings.HasPrefix(repo, "github.com/") {
+		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+			_, err := (&github.Repos{}).Get(ctx, repo)
+			if err != nil {
+				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+			}
+		}
 	}
 	return nil
 }

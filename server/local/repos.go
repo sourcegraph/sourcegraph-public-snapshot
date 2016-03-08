@@ -31,6 +31,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
+	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
@@ -56,10 +57,17 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		return nil, err
 	}
 
-	// Query the remote server for the remote repo, to ensure the
+	// If the actor doesn't have a special grant to access this repo,
+	// query the remote server for the remote repo, to ensure the
 	// actor can access this repo.
-	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-		return nil, err
+	//
+	// Special grants are given to drone workers to fetch repo metadata
+	// when configuring a build.
+	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repoSpec.URI)
+	if !hasGrant {
+		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+			return nil, err
+		}
 	}
 
 	if repo.Blocked {
