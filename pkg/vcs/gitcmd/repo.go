@@ -2,7 +2,6 @@ package gitcmd
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -505,38 +504,6 @@ func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.D
 
 func (r *Repository) GitRootDir() string { return r.Dir }
 
-func (r *Repository) CrossRepoDiff(base vcs.CommitID, headRepo vcs.Repository, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
-	defer r.trace(time.Now(), "CrossRepoDiff", base, headRepo.GitRootDir(), head, opt)
-
-	headDir := headRepo.GitRootDir()
-
-	if headDir == r.Dir {
-		return r.Diff(base, head, opt)
-	}
-
-	if err := r.fetchRemote(headDir); err != nil {
-		return nil, err
-	}
-
-	return r.Diff(base, head, opt)
-}
-
-func (r *Repository) fetchRemote(repoDir string) error {
-	r.editLock.Lock()
-	defer r.editLock.Unlock()
-
-	name := base64.URLEncoding.EncodeToString([]byte(repoDir))
-
-	// Fetch remote commit data.
-	cmd := gitserver.Command("git", "fetch", "-v", filepath.ToSlash(repoDir), "+refs/heads/*:refs/remotes/"+name+"/*")
-	cmd.Dir = r.Dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("exec %v in %s failed: %s. Output was:\n\n%s", cmd.Args, cmd.Dir, err, out)
-	}
-	return nil
-}
-
 // UpdateEverything updates all branches, tags, etc., to match the
 // default remote repository.
 func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
@@ -701,23 +668,6 @@ func (r *Repository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 		return "", fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
 	}
 	return vcs.CommitID(bytes.TrimSpace(out)), nil
-}
-
-func (r *Repository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b vcs.CommitID) (vcs.CommitID, error) {
-	defer r.trace(time.Now(), "CrossRepoMergeBase", a, repoB.GitRootDir(), b)
-
-	// git.Repository inherits GitRootDir and CrossRepo from its
-	// embedded gitcmd.Repository.
-
-	repoBDir := repoB.GitRootDir()
-
-	if repoBDir != r.Dir {
-		if err := r.fetchRemote(repoBDir); err != nil {
-			return "", err
-		}
-	}
-
-	return r.MergeBase(a, b)
 }
 
 func (r *Repository) Search(at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {

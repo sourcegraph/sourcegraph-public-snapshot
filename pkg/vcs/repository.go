@@ -67,23 +67,9 @@ type Repository interface {
 	// exist, an error is returned.
 	Diff(base, head CommitID, opt *DiffOptions) (*Diff, error)
 
-	// CrossRepoDiff shows changes between two commits in different
-	// repositories. If base or head do not exist, an error is
-	// returned.
-	CrossRepoDiff(base CommitID, headRepo Repository, head CommitID, opt *DiffOptions) (*Diff, error)
-
 	// MergeBase returns the merge base commit for the specified
 	// commits.
 	MergeBase(CommitID, CommitID) (CommitID, error)
-
-	// CrossRepoMergeBase returns the merge base commit for the
-	// specified commits.
-	//
-	// The commit specified by `b` must exist in repoB but does not
-	// need to exist in the repository that CrossRepoMergeBase is
-	// called on. Likewise, the commit specified by `a` need not exist
-	// in repoB.
-	CrossRepoMergeBase(a CommitID, repoB Repository, b CommitID) (CommitID, error)
 
 	// UpdateEverything updates all branches, tags, etc., to match the
 	// default remote repository.

@@ -1,6 +1,7 @@
 package local
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -62,22 +63,16 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 	if err != nil {
 		return d, err
 	}
-	var id vcs.CommitID
-	if d.BaseRepo.URI == d.HeadRepo.URI {
-		id, err = vcsBaseRepo.MergeBase(vcs.CommitID(d.BaseCommit.ID), vcs.CommitID(d.HeadCommit.ID))
-		if err != nil {
-			return d, err
-		}
-	} else {
-		vcsHeadRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.HeadRepo.URI)
-		if err != nil {
-			return d, err
-		}
-		id, err = vcsBaseRepo.CrossRepoMergeBase(vcs.CommitID(d.BaseCommit.ID), vcsHeadRepo, vcs.CommitID(d.HeadCommit.ID))
-		if err != nil {
-			return d, err
-		}
+
+	if d.BaseRepo.URI != d.HeadRepo.URI {
+		return d, errors.New("base and head repo must be identical")
 	}
+
+	id, err := vcsBaseRepo.MergeBase(vcs.CommitID(d.BaseCommit.ID), vcs.CommitID(d.HeadCommit.ID))
+	if err != nil {
+		return d, err
+	}
+
 	if d.BaseCommit.ID != id {
 		ds2 := *ds
 		// There is most likely a merge conflict here, so we update the

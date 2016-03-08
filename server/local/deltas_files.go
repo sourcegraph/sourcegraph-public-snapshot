@@ -2,6 +2,7 @@ package local
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -142,16 +143,8 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 		return nil, nil, err
 	}
 
-	var headVCSRepo vcs.Repository
-	sameRepo := ds.Base.RepoSpec == ds.Head.RepoSpec
-	if sameRepo {
-		headVCSRepo = baseVCSRepo
-	} else {
-		var err error
-		headVCSRepo, err = store.RepoVCSFromContext(ctx).Open(ctx, delta.HeadRepo.URI)
-		if err != nil {
-			return nil, nil, err
-		}
+	if ds.Base.RepoSpec != ds.Head.RepoSpec {
+		return nil, nil, errors.New("base and head repo must be identical")
 	}
 
 	var vcsDiff *vcs.Diff
@@ -167,16 +160,9 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 		ExcludeReachableFromBoth: true,
 	}
 
-	if sameRepo {
-		vcsDiff, err = baseVCSRepo.Diff(vcs.CommitID(ds.Base.CommitID), vcs.CommitID(ds.Head.CommitID), diffOpt)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		vcsDiff, err = baseVCSRepo.CrossRepoDiff(vcs.CommitID(ds.Base.CommitID), headVCSRepo, vcs.CommitID(ds.Head.CommitID), diffOpt)
-		if err != nil {
-			return nil, nil, err
-		}
+	vcsDiff, err = baseVCSRepo.Diff(vcs.CommitID(ds.Base.CommitID), vcs.CommitID(ds.Head.CommitID), diffOpt)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	fdiffs, err := diff.ParseMultiFileDiff([]byte(vcsDiff.Raw))

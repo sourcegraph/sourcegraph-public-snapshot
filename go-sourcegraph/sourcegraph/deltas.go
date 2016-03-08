@@ -12,17 +12,8 @@ import (
 // delta specified by this DeltaSpec.
 func (s DeltaSpec) RouteVars() map[string]string {
 	m := s.Base.RouteVars()
-
-	if s.Base.RepoSpec == s.Head.RepoSpec {
-		m["DeltaHeadResolvedRev"] = s.Head.ResolvedRevString()
-	} else {
-		m["DeltaHeadResolvedRev"] = encodeCrossRepoRevSpecForDeltaHeadResolvedRev(s.Head)
-	}
+	m["DeltaHeadResolvedRev"] = s.Head.ResolvedRevString()
 	return m
-}
-
-func encodeCrossRepoRevSpecForDeltaHeadResolvedRev(rr RepoRevSpec) string {
-	return base64.URLEncoding.EncodeToString([]byte(rr.RepoSpec.SpecString())) + ":" + rr.ResolvedRevString()
 }
 
 // UnmarshalDeltaSpec marshals a map containing route variables

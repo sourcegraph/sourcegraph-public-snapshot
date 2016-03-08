@@ -13,11 +13,6 @@ const (
 	headCommit = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 )
 
-var (
-	baseRev = RepoRevSpec{RepoSpec: RepoSpec{URI: "base.com/repo"}, Rev: "baserev", CommitID: baseCommit}
-	headRev = RepoRevSpec{RepoSpec: RepoSpec{URI: "head.com/repo"}, Rev: "headrev", CommitID: headCommit}
-)
-
 func TestDeltas(t *testing.T) {
 	tests := []struct {
 		spec          DeltaSpec
@@ -30,21 +25,9 @@ func TestDeltas(t *testing.T) {
 			},
 			wantRouteVars: map[string]string{
 				"Repo":                 "samerepo",
-				"Rev":                  baseRev.Rev,
+				"Rev":                  "baserev",
 				"CommitID":             baseCommit,
 				"DeltaHeadResolvedRev": "headrev===" + headCommit,
-			},
-		},
-		{
-			spec: DeltaSpec{
-				Base: baseRev,
-				Head: headRev,
-			},
-			wantRouteVars: map[string]string{
-				"Repo":                 "base.com/repo",
-				"Rev":                  baseRev.Rev,
-				"CommitID":             baseCommit,
-				"DeltaHeadResolvedRev": encodeCrossRepoRevSpecForDeltaHeadResolvedRev(headRev),
 			},
 		},
 	}

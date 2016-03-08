@@ -28,11 +28,8 @@ type MockRepository struct {
 	ReadFile_ func(commit vcs.CommitID, name string) ([]byte, error)
 	ReadDir_  func(commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error)
 
-	Diff_          func(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
-	CrossRepoDiff_ func(base vcs.CommitID, headRepo vcs.Repository, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
-
-	MergeBase_          func(a, b vcs.CommitID) (vcs.CommitID, error)
-	CrossRepoMergeBase_ func(a vcs.CommitID, repoB vcs.Repository, b vcs.CommitID) (vcs.CommitID, error)
+	Diff_      func(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
+	MergeBase_ func(a, b vcs.CommitID) (vcs.CommitID, error)
 
 	Committers_ func(opt vcs.CommittersOptions) ([]*vcs.Committer, error)
 
@@ -94,16 +91,8 @@ func (r MockRepository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vc
 	return r.Diff_(base, head, opt)
 }
 
-func (r MockRepository) CrossRepoDiff(base vcs.CommitID, headRepo vcs.Repository, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
-	return r.CrossRepoDiff_(base, headRepo, head, opt)
-}
-
 func (r MockRepository) MergeBase(a, b vcs.CommitID) (vcs.CommitID, error) {
 	return r.MergeBase_(a, b)
-}
-
-func (r MockRepository) CrossRepoMergeBase(a vcs.CommitID, repoB vcs.Repository, b vcs.CommitID) (vcs.CommitID, error) {
-	return r.CrossRepoMergeBase_(a, repoB, b)
 }
 
 func (r MockRepository) Committers(opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
