@@ -53,6 +53,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
 	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
+	"src.sourcegraph.com/sourcegraph/pkg/snapshotprof"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
@@ -264,6 +265,12 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
+
+	// Snapshotters allow us to regularly capture profile data for later
+	// analysis. Not enabled by default since it is similiar to debug logs
+	if p := os.Getenv("SG_SNAPSHOTPROF_PATH"); p != "" {
+		runSnapshotProfiler(p)
+	}
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
@@ -1142,6 +1149,18 @@ func (c *ServeCmd) runGitServer() {
 	if err := gitserver.Dial(addr); err != nil {
 		log.Fatalf("git-server dial failed: %s", err)
 	}
+}
+
+// runSnapshotProfiler starts up the snapshotprof in a goroutine
+func runSnapshotProfiler(path string) {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		log.Fatalf("snapshot-profiler failed to open %s: %s", path, err)
+	}
+	go func() {
+		err := snapshotprof.Run(f, 5*time.Minute)
+		log15.Error("snapshot-profiler failed writing to log file", "error", err, "path", path)
+	}()
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
