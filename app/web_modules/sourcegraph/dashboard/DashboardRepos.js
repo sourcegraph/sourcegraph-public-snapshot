@@ -108,9 +108,9 @@ class DashboardRepos extends Component {
 		return (
 			<div className="repos-list">
 				<nav>
-					{this.state.allowGitHubMirrors && <div className="toggles">
+					<div className="toggles">
 						<div className="btn-group">{toggles}</div>
-					</div>}
+					</div>
 					<div className="search-bar">
 						<div className="input-group">
 							<input className="form-control search-input"
