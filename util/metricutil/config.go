@@ -14,19 +14,29 @@ type Flags struct {
 	ForwardURL string `long:"metrics.forward" value-name:"URL" description:"Sourcegraph metric sink to forward metrics to (empty to disable)" default:"https://sourcegraph.com"`
 
 	StoreURL string `long:"metrics.store" value-name:"URL" description:"Elasticsearch server to store metrics in (if set)" env:"SG_ELASTICSEARCH_URL"`
+
+	DisableAllCollection bool `long:"metrics.disable" description:"Disable all metrics, stats and events data collection from this server"`
 }
 
 // config is the currently active metrics config (as set by CLI flags).
 var config Flags
 
-// EnableMetricsCollection is true if this server should collect
-// usage metrics and stats, and forward to another server or store
-// in an Elasticsearch server.
+// DisableMetricsCollection is true if this server should not collect
+// usage metrics, stats or events data.
 //
 // It depends on the CLI flags being set, so it only returns the
 // correct value when called from an invocation of `src serve`.
-func EnableMetricsCollection() bool {
-	return config.ForwardURL != "" || config.StoreURL != ""
+func DisableMetricsCollection() bool {
+	return config.DisableAllCollection
+}
+
+// EnableForwarding is true if this server should forward metrics
+// and stats to another server.
+//
+// It depends on the CLI flags being set, so it only returns the
+// correct value when called from an invocation of `src serve`.
+func EnableForwarding() bool {
+	return !config.DisableAllCollection && config.ForwardURL != ""
 }
 
 func init() {
@@ -47,13 +57,15 @@ func init() {
 // Start starts the event logger and event storer using the CLI
 // configuration.
 func Start(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
+	if DisableMetricsCollection() {
+		return
+	}
+
 	if config.StoreURL != "" {
 		// Listen for events and flush them to Elasticsearch.
 		startEventStorer(ctx)
 	}
 
-	if EnableMetricsCollection() {
-		// Listen for events and periodically push them upstream.
-		startEventLogger(ctx, channelCapacity, workerBufferSize, flushInterval)
-	}
+	// Listen for events and periodically push them upstream.
+	startEventLogger(ctx, channelCapacity, workerBufferSize, flushInterval)
 }

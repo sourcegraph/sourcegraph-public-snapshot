@@ -214,5 +214,5 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"buildvar": func() buildvar.Vars { return buildvar.All },
 
-	"showDataCollectionMessage": metricutil.EnableForwarding,
+	"showDataCollectionMessage": func() bool { return !metricutil.DisableMetricsCollection() },
 }
