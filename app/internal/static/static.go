@@ -220,7 +220,7 @@ func (mw *staticMiddleware) chooseFile(input string, recurse bool) (p string, ok
 // loadTemplate loads the named template from the VFS.
 func (mw *staticMiddleware) loadTemplate(name string) error {
 	// Create the template.
-	t := mw.root.New(name)
+	t := mw.root.New(name).Delims("[#[", "]#]")
 	t.Funcs(tmpl.FuncMap)
 
 	// Open the file.
