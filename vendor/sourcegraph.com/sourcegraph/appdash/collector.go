@@ -166,7 +166,7 @@ func (cc *ChunkedCollector) Collect(span SpanID, anns ...Annotation) error {
 	// Increase queue size by approximately the size of the entry. This doesn't
 	// account for map entry or slice header overhead, but close enough for our
 	// purposes here.
-	const collectionSize uint64 = 3 * 8 // SpanID is 3 * uint64 ID's.
+	var collectionSize uint64 = 3 * 8 // SpanID is 3 * uint64 ID's.
 	for _, ann := range anns {
 		collectionSize += uint64(len(ann.Key))
 		collectionSize += uint64(len(ann.Value))
