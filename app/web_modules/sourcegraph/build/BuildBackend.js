@@ -1,16 +1,7 @@
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import BuildStore from "sourcegraph/build/BuildStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "xhr";
-
-function authHeaders() {
-	let hdr = {};
-	if (typeof document !== "undefined" && document.head.dataset && document.head.dataset.currentUserOauth2AccessToken) {
-		let auth = `x-oauth-basic:${document.head.dataset.currentUserOauth2AccessToken}`;
-		hdr.authorization = `Basic ${btoa(auth)}`;
-	}
-	return hdr;
-}
+import defaultXhr from "sourcegraph/util/xhr";
 
 const BuildBackend = {
 	xhr: defaultXhr,
@@ -24,7 +15,6 @@ const BuildBackend = {
 					BuildBackend.xhr({
 						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}`,
 						json: {},
-						headers: authHeaders(),
 					}, function(err, resp, body) {
 						if (err) {
 							console.error(err);
@@ -33,6 +23,46 @@ const BuildBackend = {
 						Dispatcher.dispatch(new BuildActions.BuildFetched(action.repo, action.buildID, body));
 					});
 				}
+				break;
+			}
+
+		case BuildActions.WantNewestBuildForCommit:
+			{
+				let builds = BuildStore.builds.listNewestByCommitID(action.repo, action.commitID);
+				if (builds === null || action.force) {
+					BuildBackend.xhr({
+						uri: `/.api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${encodeURIComponent(action.repo)}&CommitID=${encodeURIComponent(action.commitID)}`,
+						json: {},
+					}, function(err, resp, body) {
+						if (!err && (resp.statusCode !== 200 && resp.statusCode !== 201)) err = `HTTP ${resp.statusCode}`;
+						if (err) {
+							console.error(err);
+							return;
+						}
+						Dispatcher.dispatch(new BuildActions.BuildsFetchedForCommit(action.repo, action.commitID, body.Builds || []));
+					});
+				}
+				break;
+			}
+
+		case BuildActions.CreateBuild:
+			{
+				BuildBackend.xhr({
+					uri: `/.api/repos/${action.repo}/.builds`,
+					method: "post",
+					json: {
+						CommitID: action.commitID,
+						Branch: action.branch,
+						Config: {Queue: true},
+					},
+				}, function(err, resp, body) {
+					if (!err && (resp.statusCode !== 200 && resp.statusCode !== 201)) err = `HTTP ${resp.statusCode}`;
+					if (err) {
+						console.error(err);
+						return;
+					}
+					Dispatcher.dispatch(new BuildActions.BuildFetched(action.repo, body.ID, body));
+				});
 				break;
 			}
 
@@ -77,7 +107,6 @@ const BuildBackend = {
 					BuildBackend.xhr({
 						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks?PerPage=1000`,
 						json: {},
-						headers: authHeaders(),
 					}, function(err, resp, body) {
 						if (err) {
 							console.error(err);

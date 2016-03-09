@@ -2,7 +2,7 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
-import RepoBuildIndicator from "../../../script/components/RepoBuildIndicator"; // FIXME
+import BuildIndicator from "sourcegraph/build/BuildIndicator";
 
 class BlobToolbar extends Component {
 	reconcileState(state, props) {
@@ -30,7 +30,7 @@ class BlobToolbar extends Component {
 					<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
 				</div>
 				<div className="actions">
-					<RepoBuildIndicator btnSize="btn-sm" RepoURI={this.state.repo} commitID={this.state.rev} />
+					<BuildIndicator repo={this.state.repo} commitID={this.state.rev} builds={this.state.builds} />
 
 					<RepoRevSwitcher repoSpec={this.state.repo}
 						rev={this.state.rev}
@@ -41,5 +41,13 @@ class BlobToolbar extends Component {
 		);
 	}
 }
+
+BlobToolbar.propTypes = {
+	repo: React.PropTypes.string.isRequired,
+	rev: React.PropTypes.string.isRequired,
+
+	// builds is BuildStore.builds.
+	builds: React.PropTypes.object.isRequired,
+};
 
 export default BlobToolbar;

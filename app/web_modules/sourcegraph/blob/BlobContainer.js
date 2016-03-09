@@ -5,6 +5,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import BlobStore from "sourcegraph/blob/BlobStore";
+import BuildStore from "sourcegraph/build/BuildStore";
 import DefStore from "sourcegraph/def/DefStore";
 import Blob from "sourcegraph/blob/Blob";
 import BlobToolbar from "sourcegraph/blob/BlobToolbar";
@@ -13,6 +14,7 @@ import DefTooltip from "sourcegraph/def/DefTooltip";
 import FileMargin from "sourcegraph/blob/FileMargin";
 import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
+import "sourcegraph/build/BuildBackend";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {GoTo} from "sourcegraph/util/hotLink";
 
@@ -36,7 +38,7 @@ class BlobContainer extends Container {
 	}
 
 	stores() {
-		return [BlobStore, DefStore];
+		return [BuildStore, BlobStore, BuildStore, DefStore];
 	}
 
 	reconcileState(state, props) {
@@ -64,6 +66,8 @@ class BlobContainer extends Container {
 		state.defOptionsURLs = DefStore.defOptionsURLs;
 		state.defOptionsLeft = DefStore.defOptionsLeft;
 		state.defOptionsTop = DefStore.defOptionsTop;
+
+		state.builds = BuildStore.builds;
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -119,6 +123,7 @@ class BlobContainer extends Container {
 				<div className="content-view">
 					<div className="content file-content card">
 						<BlobToolbar
+							builds={this.state.builds}
 							repo={this.state.repo}
 							rev={this.state.rev}
 							tree={this.state.tree}

@@ -21,3 +21,7 @@ export function def(repoPath, rev, unitType, unit, path) {
 	}
 	return `${repo(repoPath, rev)}/.${unitType}/${unit}/.def${path !== "." ? `/${path}` : ""}`;
 }
+
+export function build(repoPath, id) {
+	return `${repo(repoPath)}/.builds/${id}`;
+}

@@ -6,11 +6,35 @@ export class WantBuild {
 	}
 }
 
+export class WantNewestBuildForCommit {
+	constructor(repo, commitID, force) {
+		this.repo = repo;
+		this.commitID = commitID;
+		this.force = force;
+	}
+}
+
+export class BuildsFetchedForCommit {
+	constructor(repo, commitID, builds) {
+		this.repo = repo;
+		this.commitID = commitID;
+		this.builds = builds;
+	}
+}
+
 export class BuildFetched {
 	constructor(repo, buildID, build) {
 		this.repo = repo;
 		this.buildID = buildID;
 		this.build = build;
+	}
+}
+
+export class CreateBuild {
+	constructor(repo, commitID, branch) {
+		this.repo = repo;
+		this.commitID = commitID;
+		this.branch = branch;
 	}
 }
 

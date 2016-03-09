@@ -2,6 +2,10 @@ import classNames from "classnames";
 import moment from "moment";
 import React from "react";
 
+export function updatedAt(b) {
+	return b.EndedAt || b.StartedAt || b.CreatedAt || null;
+}
+
 // buildStatus returns a textual status description for the build.
 export function buildStatus(b) {
 	if (b.Killed) {

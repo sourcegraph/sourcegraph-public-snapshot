@@ -5,7 +5,7 @@ var ReactDOM = require("react-dom");
 var DashboardContainer = require("sourcegraph/dashboard/DashboardContainer").default;
 var BuildContainer = require("sourcegraph/build/BuildContainer").default;
 var FileDiffs = require("sourcegraph/delta/FileDiffs").default;
-var RepoBuildIndicator = require("./components/RepoBuildIndicator");
+var BuildIndicatorContainer = require("sourcegraph/build/BuildIndicatorContainer").default;
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
 var TreeSearch = require("sourcegraph/tree/TreeSearch").default;
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
@@ -64,29 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	});
 
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]"), []).map((el2) => {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=BuildIndicator]"), []).map((el2) => {
 		ReactDOM.render(
-			<RepoBuildIndicator
-				btnSize="btn-xs"
-				RepoURI={el2.dataset.uri}
-				CommitID={el2.dataset.commitId}
-				Branch={el2.dataset.branch}
-				SuccessReload={el2.dataset.successReload}
-				Label={el2.dataset.label}
-				Buildable={el2.dataset.buildable === "true"} />,
-			el2
-		);
-	});
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]"), []).map((el2) => {
-		ReactDOM.render(
-			<RepoBuildIndicator
-				btnSize="btn-md"
-				RepoURI={el2.dataset.uri}
-				CommitID={el2.dataset.commitId}
-				Branch={el2.dataset.branch}
-				SuccessReload={el2.dataset.successReload}
-				Label={el2.dataset.label}
-				Buildable={el2.dataset.buildable === "true"} />,
+			<BuildIndicatorContainer
+				repo={el2.dataset.uri}
+				commitID={el2.dataset.commitId}
+				branch={el2.dataset.branch || null}
+				buildable={el2.dataset.buildable === "true"} />,
 			el2
 		);
 	});

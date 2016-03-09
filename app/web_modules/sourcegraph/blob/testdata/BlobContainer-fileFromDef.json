@@ -17,6 +17,9 @@
 										{
 											"type": "BlobToolbar",
 											"props": {
+												"builds": {
+													"content": {}
+												},
 												"repo": "aRepo",
 												"rev": "aRev",
 												"tree": "somePath"
