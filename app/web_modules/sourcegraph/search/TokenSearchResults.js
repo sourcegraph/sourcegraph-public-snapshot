@@ -3,8 +3,6 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import * as router from "sourcegraph/util/router";
 
-const helpDocURL = "https://src.sourcegraph.com/sourcegraph/.docs/config/builds/";
-
 class TokenSearchResultsView extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
@@ -37,7 +35,7 @@ class TokenSearchResultsView extends Component {
 			<div className="token-search-results">
 				{!this.state.srclibDataVersion &&
 					<div className="alert alert-info">
-						<i className="fa fa-warning"></i>No Code Intelligence data for {this.state.repo}. <a href={helpDocURL}>See troubleshooting guide</a>.
+						<i className="fa fa-warning"></i>&nbsp;Code Intelligence data unavailable. <a href={`/${this.state.repo}/.builds`}>Check your builds</a>.
 					</div>
 				}
 				{(this.state.srclibDataVersion && this.state.srclibDataVersion.CommitsBehind) &&
