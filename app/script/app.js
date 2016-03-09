@@ -19,7 +19,6 @@ require("./componentInjection");
 
 require("./feedback-form");
 require("./history");
-require("./links");
 
 require("../style/web.scss");
 
