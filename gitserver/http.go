@@ -132,7 +132,6 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 	}
 	pkt, err := c.ReceivePack(ctx, &sourcegraph.ReceivePackOp{
 		Repo: repo,
-		// ContentEncoding: r.Header.Get("content-encoding"),
 		Data: body,
 	})
 	if err != nil {
