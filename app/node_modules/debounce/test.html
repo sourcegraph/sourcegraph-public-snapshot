@@ -1,0 +1,19 @@
+<html>
+<head>
+  <title>Debounce Component</title>
+</head>
+<body>
+  Resize the window!
+
+  <script src="build/build.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var debounce = require('debounce');
+    window.onresize = debounce(resize, 200);
+
+    function resize(e) {
+      console.log('height', window.innerHeight);
+      console.log('width', window.innerWidth);
+    }
+  </script>
+</body>
+</html>

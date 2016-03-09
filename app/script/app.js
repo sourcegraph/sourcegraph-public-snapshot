@@ -17,9 +17,13 @@ require("./invite");
 // Views
 require("./componentInjection");
 
-require("./feedback-form");
-require("./history");
-
 require("../style/web.scss");
 
 require("sourcegraph/util/actionLogger");
+
+// REQUIRED. Configures Sentry error monitoring.
+require("./sentry");
+
+// REQUIRED. Enables HTML history API (pushState) tracking in Google Analytics.
+// See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
+require("autotrack/lib/plugins/url-change-tracker");

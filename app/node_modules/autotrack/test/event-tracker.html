@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<body>
+  <script>
+  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
+  ga('create', 'UA-XXXXX-Y', 'auto');
+
+
+  // Note(philipwalton):
+  // Selenium on Windows 10 Edge doesn't handle arrays well, so we fake it.
+  var hitData = {count: 0};
+  ga('set', 'sendHitTask', function(model) {
+    hitData[hitData.count] = {
+      eventCategory: model.get('eventCategory'),
+      eventAction: model.get('eventAction'),
+      eventLabel: model.get('eventLabel'),
+      eventValue: model.get('eventValue'),
+      devId: model.get('&did')
+    };
+    hitData.count++;
+  });
+
+
+  ga('require', 'eventTracker');
+
+  </script>
+
+  <button
+    id="event-button"
+    data-event-category="foo"
+    data-event-action="bar"
+    data-event-label="qux"
+    data-event-value="42">
+    Click
+  </button>
+
+  <button
+    id="event-button-some-fields"
+    data-event-category="foo"
+    data-event-action="bar"
+    data-event-label="qux">
+    Click
+  </button>
+
+  <button
+    id="event-button-missing-fields"
+    data-event-label="qux"
+    data-event-value="42">
+    Click
+  </button>
+
+  <script async src='//www.google-analytics.com/analytics.js'></script>
+  <script aysnc src="/autotrack.js"></script>
+
+</body>
+</html>
