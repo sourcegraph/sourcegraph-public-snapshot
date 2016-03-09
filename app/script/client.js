@@ -4,14 +4,6 @@
 
 var $ = require("jquery");
 
-function repoFiles(repo, rev) {
-	return $.ajax({
-		url: `/.api/repos/${repo}@${rev}/.tree-list`,
-	});
-}
-
-exports.repoFiles = repoFiles;
-
 function builds(repoURI, rev, noCache) {
 	return $.ajax({
 		url: `/.api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${repoURI || ""}&CommitID=${rev || ""}`,
