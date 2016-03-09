@@ -13,10 +13,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// buildLogs is a Papertrail-backed implementation of the build logs
-// store.
 const maxAttempts = 5
 
+// buildLogs is a Papertrail-backed implementation of the build logs
+// store.
 type buildLogs struct{}
 
 var _ store.BuildLogs = (*buildLogs)(nil)
@@ -48,8 +48,7 @@ func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID st
 
 		b := &backoff.Backoff{
 			Min:    500 * time.Millisecond,
-			Factor: 2,
-			Jitter: false,
+			Jitter: true,
 		}
 		var e0s *papertrail.SearchResponse
 		var err error
@@ -60,7 +59,6 @@ func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID st
 			}
 			time.Sleep(b.Duration())
 		}
-
 		if err != nil {
 			return nil, err
 		}
