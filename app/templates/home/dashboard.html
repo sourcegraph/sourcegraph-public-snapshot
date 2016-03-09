@@ -24,11 +24,11 @@
 		window.onboarding.linkGitHubRedirect = true;
 	{{end}}
 
-	{{if .Companies}}
-	window.intercomSettings.companies = JSON.parse({{json .Companies}}).map(function(company) {
+	{{if (and .Teammates .Teammates.Organizations) }}
+	window.intercomSettings.companies = JSON.parse({{json .Teammates.Organizations}}).map(function(company) {
 		return {
-			id: company.ID,
-			name: company.Name,
+			id: "github_" + company,
+			name: company,
 		}
 	});
 	{{end}}
