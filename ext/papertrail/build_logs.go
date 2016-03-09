@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/jpillora/backoff"
 	"github.com/sourcegraph/go-papertrail/papertrail"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -14,6 +15,8 @@ import (
 
 // buildLogs is a Papertrail-backed implementation of the build logs
 // store.
+const maxAttempts = 5
+
 type buildLogs struct{}
 
 var _ store.BuildLogs = (*buildLogs)(nil)
@@ -43,7 +46,21 @@ func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID st
 			break
 		}
 
-		e0s, _, err := client(ctx).Search(pOpt)
+		b := &backoff.Backoff{
+			Min:    500 * time.Millisecond,
+			Factor: 2,
+			Jitter: false,
+		}
+		var e0s *papertrail.SearchResponse
+		var err error
+		for i := 0; i < maxAttempts; i++ {
+			e0s, _, err = client(ctx).Search(pOpt)
+			if err == nil {
+				break
+			}
+			time.Sleep(b.Duration())
+		}
+
 		if err != nil {
 			return nil, err
 		}
