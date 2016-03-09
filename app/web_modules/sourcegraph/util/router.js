@@ -1,10 +1,14 @@
 export function tree(repoPath, rev, path, startLine, endLine) {
 	let line = startLine && endLine ? `#L${startLine}-${endLine}` : "";
-	return `${repo(repoPath)}${rev ? `@${rev}` : ""}/.tree/${path}${line}`;
+	return `${repoRev(repoPath, rev)}/.tree/${path}${line}`;
 }
 
 export function repo(repoPath) {
 	return `/${repoPath}`;
+}
+
+export function repoRev(repoPath, rev) {
+	return `${repo(repoPath)}${rev ? `@${rev}` : ""}`;
 }
 
 // def constructs the application (not API) URL to a def. The def
@@ -24,4 +28,8 @@ export function def(repoPath, rev, unitType, unit, path) {
 
 export function build(repoPath, id) {
 	return `${repo(repoPath)}/.builds/${id}`;
+}
+
+export function repoCommits(repoPath, rev) {
+	return `${repoRev(repoPath, rev)}/.commits`;
 }

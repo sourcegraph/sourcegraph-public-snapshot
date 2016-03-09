@@ -6,7 +6,7 @@ var DashboardContainer = require("sourcegraph/dashboard/DashboardContainer").def
 var BuildContainer = require("sourcegraph/build/BuildContainer").default;
 var FileDiffs = require("sourcegraph/delta/FileDiffs").default;
 var BuildIndicatorContainer = require("sourcegraph/build/BuildIndicatorContainer").default;
-var RepoRevSwitcher = require("./components/RepoRevSwitcher");
+var RevSwitcherContainer = require("sourcegraph/repo/RevSwitcherContainer").default;
 var TreeSearch = require("sourcegraph/tree/TreeSearch").default;
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var BlobRouter = require("sourcegraph/blob/BlobRouter").default;
@@ -85,13 +85,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	});
 
-	el = document.querySelector("[data-react=RepoRevSwitcher]");
+	el = document.querySelector("[data-react=RevSwitcher]");
 	if (el) {
 		ReactDOM.render(
-			<RepoRevSwitcher
-				repoSpec={el.dataset.repoSpec}
+			<RevSwitcherContainer
+				repo={el.dataset.repoSpec}
 				rev={el.dataset.rev}
-				path={el.dataset.path}
+				path={el.dataset.path || ""}
 				route={el.dataset.route} />, el
 		);
 	}

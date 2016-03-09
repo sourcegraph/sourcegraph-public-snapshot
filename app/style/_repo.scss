@@ -20,7 +20,10 @@
 	}
 }
 
-[data-react="RepoRevSwitcher"] {
+[data-react="RevSwitcher"] {
+	display: inline-block;
+}
+.repo-rev-switcher {
 	display: inline-block;
 	padding-left: 10px;
 	.button {
@@ -39,6 +42,9 @@
 		input {
 				width: 100%;
 				margin-bottom: -4px;
+		}
+		.form-control {
+			margin: 0;
 		}
 	}
 	.list-section {

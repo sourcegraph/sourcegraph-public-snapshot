@@ -1,7 +1,7 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
-import RepoRevSwitcher from "../../../script/components/RepoRevSwitcher"; // FIXME
+import RevSwitcherContainer from "sourcegraph/repo/RevSwitcherContainer";
 import BuildIndicator from "sourcegraph/build/BuildIndicator";
 
 class BlobToolbar extends Component {
@@ -32,9 +32,10 @@ class BlobToolbar extends Component {
 				<div className="actions">
 					<BuildIndicator repo={this.state.repo} commitID={this.state.rev} builds={this.state.builds} />
 
-					<RepoRevSwitcher repoSpec={this.state.repo}
+					<RevSwitcherContainer repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.tree}
+						route="tree"
 						alignRight={true} />
 				</div>
 			</div>

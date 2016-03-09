@@ -27,7 +27,7 @@
 		</li>
 	</ul>
 	{{if showRepoRevSwitcher .CurrentRoute}}
-		<div data-react="RepoRevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="file" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></div>
+		<div data-react="RevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="tree" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></div>
 	{{end}}
 
 	</header>
