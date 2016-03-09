@@ -24,7 +24,6 @@
     "font-awesome": "4.3.0",
     "fuse.js": "1.2.2",
     "glob": "5.0.15",
-    "jsdom": "6.5.1",
     "json-loader": "0.5.3",
     "lintspaces": "0.3.3",
     "lintspaces-cli": "0.1.1",
@@ -37,7 +36,6 @@
     "raw-loader": "0.5.1",
     "react-addons-test-utils": "0.14.0",
     "sass-loader": "2.0.1",
-    "sinon": "1.15.4",
     "style-loader": "0.12.3",
     "webpack": "1.12.13",
     "webpack-dev-server": "1.14.1"
