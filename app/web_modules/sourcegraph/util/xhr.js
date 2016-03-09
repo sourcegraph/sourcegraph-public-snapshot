@@ -15,5 +15,6 @@ export default function(options, callback) {
 	if (context.cacheControl) {
 		defaultOptions.headers["Cache-Control"] = context.cacheControl;
 	}
+	if (context.parentSpanID) defaultOptions.headers["Parent-Span-ID"] = context.parentSpanID;
 	defaultXhr(Object.assign(defaultOptions, options), callback);
 }

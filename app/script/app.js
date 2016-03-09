@@ -11,8 +11,9 @@ require("bootstrap-sass/assets/javascripts/bootstrap/dropdown.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/modal.js");
 
 require("./auth");
-require("./appdash");
 require("./invite");
+
+require("sourcegraph/init/AppdashRecordPerfTiming");
 
 // Views
 require("./componentInjection");
