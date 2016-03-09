@@ -96,6 +96,10 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		BuildConfig: op.Config,
 	}
 
+	if repo.Private {
+		b.Priority += 20
+	}
+
 	b, err = store.BuildsFromContext(ctx).Create(ctx, b)
 	if err != nil {
 		return nil, err
