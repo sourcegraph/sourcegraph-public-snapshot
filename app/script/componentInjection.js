@@ -7,7 +7,7 @@ var BuildContainer = require("sourcegraph/build/BuildContainer").default;
 var FileDiffs = require("sourcegraph/delta/FileDiffs").default;
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
-var TreeEntrySearch = require("./components/TreeEntrySearch");
+var TreeSearch = require("sourcegraph/tree/TreeSearch").default;
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var BlobRouter = require("sourcegraph/blob/BlobRouter").default;
 var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
@@ -112,11 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	el = document.querySelector("[data-react=TreeEntrySearch]");
+	el = document.querySelector("[data-react=TreeSearch]");
 	if (el) {
 		var rev = el.dataset.rev || el.dataset.commit,
 			repo = el.dataset.repo;
 
-		ReactDOM.render(<TreeEntrySearch repo={repo} rev={rev} />, el);
+		ReactDOM.render(<TreeSearch repo={repo} rev={rev} />, el);
 	}
 });

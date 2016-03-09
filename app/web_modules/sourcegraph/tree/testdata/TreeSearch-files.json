@@ -1,0 +1,67 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "tree-entry-search hidden",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "overlay"
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "search-input-group",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "tree-search-input",
+									"children": [
+										{
+											"type": "input",
+											"ref": "input",
+											"props": {
+												"type": "text",
+												"placeholder": "Search files in this repository..."
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "spinner",
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"className": "fa fa-spinner fa-spin"
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "ul",
+								"props": {
+									"className": "tree-search-file-list"
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFileList",
+			"repo": "repo",
+			"rev": "rev"
+		}
+	]
+}

@@ -4,7 +4,7 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 
 function keyFor(repo, rev, path) {
-	return `${repo}#${rev}#${path}`;
+	return `${repo}#${rev}#${path || ""}`;
 }
 
 export class TreeStore extends Store {
@@ -15,6 +15,12 @@ export class TreeStore extends Store {
 				return this.content[keyFor(repo, rev, path)] || null;
 			},
 		});
+		this.fileLists = deepFreeze({
+			content: {},
+			get(repo, rev) {
+				return this.content[keyFor(repo, rev)] || null;
+			},
+		});
 	}
 
 	__onDispatch(action) {
@@ -23,6 +29,14 @@ export class TreeStore extends Store {
 			this.commits = deepFreeze(Object.assign({}, this.commits, {
 				content: Object.assign({}, this.commits.content, {
 					[keyFor(action.repo, action.rev, action.path)]: action.commit,
+				}),
+			}));
+			break;
+
+		case TreeActions.FileListFetched:
+			this.fileLists = deepFreeze(Object.assign({}, this.fileLists, {
+				content: Object.assign({}, this.fileLists.content, {
+					[keyFor(action.repo, action.rev)]: action.fileList,
 				}),
 			}));
 			break;
