@@ -11,7 +11,7 @@ if (document.head.dataset.publicRavenDsn) {
 	require("raven-js/plugins/jquery.js");
 
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
-	var opt = {
+	let opt = {
 		// Will cause a deprecation warning, but the demise of `ignoreErrors` is still under discussion.
 		// See: https://github.com/getsentry/raven-js/issues/73
 		ignoreErrors: [
