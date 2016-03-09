@@ -11,12 +11,13 @@ import (
 // and "myrepo".
 func SplitGitHubRepoURI(uri string) (owner, repo string, err error) {
 	// TODO(sqs): hack: treat sourcegraph.com/... as github.com/...
-	uri = strings.Replace(uri, "sourcegraph.com/", "github.com/", 1)
+	if strings.HasPrefix(uri, "sourcegraph.com/") {
+		uri = strings.Replace(uri, "sourcegraph.com/", "github.com/", 1)
+	}
 
-	gitHubHost := githubcli.Config.Host() + "/"
 	if strings.HasPrefix(uri, "github.com/") {
 		uri = strings.TrimPrefix(uri, "github.com/")
-	} else if strings.HasPrefix(uri, gitHubHost) {
+	} else if gitHubHost := githubcli.Config.Host() + "/"; strings.HasPrefix(uri, gitHubHost) {
 		uri = strings.TrimPrefix(uri, gitHubHost)
 	} else {
 		return "", "", fmt.Errorf("not a GitHub repository URI: %q", uri)
