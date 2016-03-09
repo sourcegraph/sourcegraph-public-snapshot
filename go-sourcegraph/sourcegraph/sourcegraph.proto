@@ -61,11 +61,6 @@ message Readme {
 	string HTML = 2;
 }
 
-// GitHubRepo holds additional metadata about GitHub repos.
-message GitHubRepo {
-	int32 Stars = 1;
-}
-
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
 message RepoConfig {
@@ -146,8 +141,6 @@ message Repo {
 	// Permissions describes the permissions that the current user (or anonymous users,
 	// if there is no current user) is granted to this repository.
 	RepoPermissions Permissions = 18;
-
-	GitHubRepo GitHub = 19;
 }
 
 message RepoListOptions {

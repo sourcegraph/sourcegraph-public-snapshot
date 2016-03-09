@@ -112,7 +112,6 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 		repo.Private = ghrepo.Private
 		repo.Permissions = ghrepo.Permissions
 		repo.UpdatedAt = ghrepo.UpdatedAt
-		repo.GitHub = &sourcegraph.GitHubRepo{Stars: ghrepo.Stars}
 	}
 
 	return nil
