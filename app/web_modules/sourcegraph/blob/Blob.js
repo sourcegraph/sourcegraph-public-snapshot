@@ -232,11 +232,13 @@ class Blob extends Component {
 		});
 
 		return (
-			<table className="line-numbered-code" ref="table">
-				<tbody>
-					{lines}
-				</tbody>
-			</table>
+			<div className="blob-scroller">
+				<table className="line-numbered-code" ref="table">
+					<tbody>
+						{lines}
+					</tbody>
+				</table>
+			</div>
 		);
 	}
 }

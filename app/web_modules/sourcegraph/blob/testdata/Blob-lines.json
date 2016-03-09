@@ -1,34 +1,42 @@
 {
 	"renderOutput": {
-		"type": "table",
-		"ref": "table",
+		"type": "div",
 		"props": {
-			"className": "line-numbered-code",
+			"className": "blob-scroller",
 			"children": [
 				{
-					"type": "tbody",
+					"type": "table",
+					"ref": "table",
 					"props": {
+						"className": "line-numbered-code",
 						"children": [
 							{
-								"type": "BlobLine",
-								"key": "0",
+								"type": "tbody",
 								"props": {
-									"lineNumber": 1,
-									"startByte": 0,
-									"contents": "hello",
-									"selected": false,
-									"highlightedDef": "otherDef"
-								}
-							},
-							{
-								"type": "BlobLine",
-								"key": "1",
-								"props": {
-									"lineNumber": 2,
-									"startByte": 6,
-									"contents": "world",
-									"selected": false,
-									"highlightedDef": "otherDef"
+									"children": [
+										{
+											"type": "BlobLine",
+											"key": "0",
+											"props": {
+												"lineNumber": 1,
+												"startByte": 0,
+												"contents": "hello",
+												"selected": false,
+												"highlightedDef": "otherDef"
+											}
+										},
+										{
+											"type": "BlobLine",
+											"key": "1",
+											"props": {
+												"lineNumber": 2,
+												"startByte": 6,
+												"contents": "world",
+												"selected": false,
+												"highlightedDef": "otherDef"
+											}
+										}
+									]
 								}
 							}
 						]

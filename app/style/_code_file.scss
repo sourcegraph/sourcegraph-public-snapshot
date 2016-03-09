@@ -113,6 +113,10 @@
 	}
 }
 
+.blob-scroller {
+	overflow-x: auto;
+	overflow-y: hidden;
+}
 
 .line-numbered-code {
 	width: 100%;
