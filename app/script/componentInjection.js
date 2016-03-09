@@ -7,7 +7,6 @@ var BuildContainer = require("sourcegraph/build/BuildContainer").default;
 var FileDiffs = require("sourcegraph/delta/FileDiffs").default;
 var RepoBuildIndicator = require("./components/RepoBuildIndicator");
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
-var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 var BlobRouter = require("sourcegraph/blob/BlobRouter").default;
@@ -110,15 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				rev={el.dataset.rev}
 				path={el.dataset.path}
 				route={el.dataset.route} />, el
-		);
-	}
-
-	el = document.querySelector("[data-react=RepoCloneBox]");
-	if (el) {
-		ReactDOM.render(
-			<RepoCloneBox
-				SSHCloneURL={el.dataset.ssh}
-				HTTPCloneURL={el.dataset.httpCloneUrl}/>, el
 		);
 	}
 

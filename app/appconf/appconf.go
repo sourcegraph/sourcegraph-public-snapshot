@@ -30,8 +30,6 @@ var Flags struct {
 
 	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics"`
 
-	DisableCloneURL bool `long:"app.disable-clone-url" description:"if set, disable display of the git clone URL"`
-
 	DisableUserContent bool `long:"app.disable-user-content" description:"if set, disable ability to upload user content (e.g., pasting images into textareas)"`
 
 	CustomLogo template.HTML `long:"app.custom-logo" description:"custom logo to display in the top nav bar (HTML)"`

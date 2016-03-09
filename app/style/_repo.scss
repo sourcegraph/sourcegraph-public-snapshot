@@ -94,37 +94,6 @@ div.repo-body {
 			padding-top: $padding-small-vertical;
 		}
 	}
-
-	.clone-url-container {
-		.clone-url-wrap {
-			max-width: 15em;
-
-			.clone-type {
-				opacity: 1;
-			}
-
-			#clone-url-value {
-				padding-left: 6px;
-				padding-left: 6px;
-				background-color: white;
-				overflow: hidden;
-				max-width: 15em;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-				color: $text-color;
-			}
-		}
-
-		.clone-copy {
-			color: $heading-text-color;
-			background-color: $heading-bg-color;
-			border: $content-border;
-		}
-	}
-}
-
-#clone-url-value {
-	margin: 0px;
 }
 
 .alert-container {

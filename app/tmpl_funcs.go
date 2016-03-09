@@ -190,7 +190,6 @@ var tmplFuncs = htmpl.FuncMap{
 	},
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
-	"disableCloneURL":    func() bool { return appconf.Flags.DisableCloneURL },
 
 	"isAdmin": func(ctx context.Context, method string) bool {
 		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
