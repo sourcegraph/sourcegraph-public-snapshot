@@ -14,7 +14,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -233,10 +232,10 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 	var conds []string
 	if opt.Repo != "" {
 		conds = append(conds, "b.repo="+arg(opt.Repo))
-	} else if authutil.ActiveFlags.PrivateMirrors {
-		// if requesting user is not admin, only list public repo builds.
+	} else {
+		// Only admins can list builds for all repos.
 		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.List"); err != nil {
-			conds = append(conds, "b.repo not in (select uri from repo where private)")
+			return nil, err
 		}
 	}
 	if opt.Queued {
@@ -376,7 +375,8 @@ LIMIT 1
 }
 
 func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Create", newBuild.Repo); err != nil {
+	// Allow readers to create builds.
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Create", newBuild.Repo); err != nil {
 		return nil, err
 	}
 	var b dbBuild
@@ -487,7 +487,7 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 }
 
 func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.UpdateTask", task.Build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.UpdateTask", task.Build.Repo.URI); err != nil {
 		return err
 	}
 	var args []interface{}

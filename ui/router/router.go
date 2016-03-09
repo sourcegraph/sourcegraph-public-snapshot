@@ -4,20 +4,14 @@ package router
 import (
 	"github.com/sourcegraph/mux"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 )
 
 const (
 	RepoTree = "repo.tree"
 
-	RepoFileFinder = "repo.file.finder"
-
 	Definition  = "def"
-	DefPopover  = "def.popover"
 	DefExamples = "def.examples"
-
-	RepoCreate = "repo.create"
 
 	RepoCommits = "repo.commits"
 
@@ -28,9 +22,7 @@ const (
 
 	UserContentUpload = "usercontent.upload"
 
-	UserInvite     = "user.invite"
 	UserInviteBulk = "user.invite.bulk"
-	UserKeys       = "user.keys"
 )
 
 func New(base *mux.Router) *mux.Router {
@@ -52,10 +44,6 @@ func New(base *mux.Router) *mux.Router {
 		BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).
 		Name(RepoTree)
 
-	repoRev.Path("/.filefinder").
-		Methods("GET").
-		Name(RepoFileFinder)
-
 	defPath := "/" + routevar.Def
 
 	repoRev.Path(defPath).
@@ -73,10 +61,6 @@ func New(base *mux.Router) *mux.Router {
 		Methods("GET").
 		Name(DefExamples)
 
-	def.Path("/.popover").
-		Methods("GET").
-		Name(DefPopover)
-
 	repoRev.Path("/.search/tokens").
 		Methods("GET").
 		Name(SearchTokens)
@@ -91,10 +75,6 @@ func New(base *mux.Router) *mux.Router {
 		Methods("GET").
 		Name(RepoCommits)
 
-	base.Path("/.repo-create").
-		Methods("GET", "POST").
-		Name(RepoCreate)
-
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").
 		Name(AppdashUploadPageLoad)
@@ -103,19 +83,9 @@ func New(base *mux.Router) *mux.Router {
 		Methods("POST").
 		Name(UserContentUpload)
 
-	base.Path("/.invite").
+	base.Path("/.invite-bulk").
 		Methods("POST").
-		Name(UserInvite)
-
-	if authutil.ActiveFlags.PrivateMirrors {
-		base.Path("/.invite-bulk").
-			Methods("POST").
-			Name(UserInviteBulk)
-	}
-
-	base.Path("/.user/keys").
-		Methods("POST", "GET", "DELETE").
-		Name(UserKeys)
+		Name(UserInviteBulk)
 
 	return base
 }

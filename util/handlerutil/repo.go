@@ -52,13 +52,13 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 		return
 	}
 
-	vc = &RepoRevCommon{}
-	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
-
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return
 	}
+
+	vc = &RepoRevCommon{}
+	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
 	var commit0 *vcs.Commit
 	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
@@ -201,8 +201,43 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 	if err != nil {
 		return repo, repoRevSpec, nil, err
 	}
+
 	repoRevSpec, commit, err = getRepoRev(ctx, vars, repo.DefaultBranch)
 	return repo, repoRevSpec, commit, err
+}
+
+// ResolveRepoRev fills in the Rev and CommitID if they are missing.
+func ResolveRepoRev(r *http.Request, repoRev *sourcegraph.RepoRevSpec) error {
+	if repoRev.Rev != "" && len(repoRev.CommitID) == 40 {
+		return nil
+	}
+	if repoRev.Rev == "" && len(repoRev.CommitID) == 40 {
+		repoRev.Rev = repoRev.CommitID
+		return nil
+	}
+	if len := len(repoRev.CommitID); len != 0 && len != 40 {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid commit ID %q (must be absolute, 40-char)", repoRev.CommitID)}
+	}
+
+	ctx, cl := Client(r)
+
+	if repoRev.Rev == "" {
+		repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
+		if err != nil {
+			return err
+		}
+		repoRev.Rev = repo.DefaultBranch
+		if repo.DefaultBranch == "" {
+			log15.Warn("ResolveRepoRev: no rev specified and repo has no default branch", "repo", repoRev.URI)
+		}
+	}
+
+	commit, err := cl.Repos.GetCommit(ctx, repoRev)
+	if err != nil {
+		return err
+	}
+	repoRev.CommitID = string(commit.ID)
+	return nil
 }
 
 // RedirectToNewRepoURI writes an HTTP redirect response with a
@@ -281,15 +316,15 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 		return tc, rc, vc, err
 	}
 
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return
+	}
+
 	tc = &TreeEntryCommon{}
 	tc.EntrySpec = sourcegraph.TreeEntrySpec{
 		RepoRev: vc.RepoRevSpec,
 		Path:    vars["Path"],
-	}
-
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return
 	}
 
 	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, tc.EntrySpec); err == nil {
@@ -411,7 +446,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 
 	// this can not be moved to svc/local, because HTML sanitation needs to
 	// happen on the local sourcegraph instance, not on an untrusted
-	// federation remote
+	// server
 	if len(def.Docs) > 0 {
 		defDoc := def.Docs[0]
 		var docHTML string
@@ -437,20 +472,6 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		File:              sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: def.File},
 		ByteStartPosition: def.DefStart,
 		ByteEndPosition:   def.DefEnd,
-		Found:             true,
 	}
 	return dc, rc, vc, nil
-}
-
-func GetRepoTreeListCommon(ctx context.Context, vars map[string]string) (*sourcegraph.RepoTreeListResult, error) {
-	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(vars)
-	if err != nil {
-		return nil, err
-	}
-
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
 }

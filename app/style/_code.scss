@@ -23,31 +23,24 @@ pre code {
 
 .line-numbered-code td {
 	overflow: visible;
-	white-space: pre-wrap;
-}
-
-/* this class can be used to insert Markdown (backtick-style) entries in
-the middle of prose */
-.backtick {
-	font-family: $font-family-monospace;
-	border: 1px solid #eaeaea;
-	padding: 2px 3px;
+	white-space: pre;
 }
 
 pre code, .line-numbered-code td {
 	tab-size: 4;
 
-	line-height: $code-line-height;
-	font-size: $code-font-size;
-	font-family: $font-family-monospace;
 	padding-top: 0;
 	padding-bottom: 0;
 
-	a.ref, a.ann-link, a.defn-popover {
-		padding: 0 1.7px;
-		margin: 0 -1.7px;
+	line-height: $code-line-height;
+	font-size: $code-font-size;
+	font-family: $font-family-monospace;
+
+	a.ref {
 		text-decoration: none;
-		border-radius: 2px;
+	}
+	a:focus {
+		outline-offset: 0;
 	}
 
 	span.match {
@@ -61,33 +54,29 @@ pre code, .line-numbered-code td {
 }
 
 .line-numbered-code {
-	width: 100%;
 	word-wrap: break-word;
+	word-break: break-all;
 	table-layout: fixed;
 	border-collapse: separate;
 
 	.line {
 		&:first-child {
 			> td {
-				padding-top: 10px;
+				padding-top: 5px !important;
 			}
 		}
 	}
 
 	.line-number {
-		position: relative;
-		width: 50px;
+		min-width: 50px;
 		text-align: right;
 		vertical-align: top;
-		overflow: hidden;
-		overflow: visible;
 		background-color: $line-number-bg;
 		color: $line-number-text;
 		// match code
 		font-family: $font-family-monospace;
 		font-size: $code-font-size;
 		line-height: $code-line-height;
-		border-right: $content-border;
 
 		color: $line-number-text;
 
@@ -100,38 +89,7 @@ pre code, .line-numbered-code td {
 	}
 
 	.line-content {
-		padding-left: 14px;
-	}
-
-	.inline-content {
-		@include base-font;
-		padding: 10px;
-
-		.inline-form {
-			max-width: 640px;
-
-			.markdown-textarea, & > input, & > textarea {
-				margin-bottom: $line-height-computed / 2;
-			}
-
-			input, textarea {
-				width: 100%;
-				border: solid 1px #eee;
-				padding: 6px;
-				background-color: #fafafa;
-				&:focus {
-					background-color: $white;
-				}
-			}
-
-			textarea {
-				height: 80px;
-			}
-
-			textarea:focus {
-				position: relative;
-			}
-		}
+		padding-left: 11px;
 	}
 
 	tr:hover .line-number {
@@ -148,13 +106,11 @@ pre code, .line-numbered-code td {
 	}
 }
 
-.line.main-byte-range {
-	.line-content {
-		background-color: $active-code-bg;
-		animation: highlight-flash 1s;
+.main-byte-range {
+	> .line-number {
+		background-color: $active-code-line-number-bg;
 	}
-}
-
-@keyframes highlight-flash {
-	5% { background-color: $active-code-flash-bg; }
+	> .line-content {
+		background-color: $active-code-bg;
+	}
 }

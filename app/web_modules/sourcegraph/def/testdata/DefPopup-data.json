@@ -1,127 +1,52 @@
 {
 	"renderOutput": {
-		"type": "",
+		"type": "div",
 		"props": {
-			"handle": "header.toolbar",
+			"className": "token-details card",
 			"children": [
 				{
-					"type": "div",
+					"type": "section",
 					"props": {
-						"className": "token-details",
 						"children": [
 							{
-								"type": "div",
+								"type": "p",
 								"props": {
-									"className": "body",
-									"children": [
-										{
-											"type": "header",
-											"props": {
-												"className": "toolbar",
-												"children": [
-													{
-														"type": "a",
-														"props": {
-															"className": "btn btn-toolbar btn-default go-to-def",
-															"href": "someURL",
-															"onClick": {
-																"defaultPrevented": true,
-																"dispatched": [
-																	{
-																		"$constructor": "GoTo",
-																		"url": "[currentTarget.href]"
-																	}
-																]
-															},
-															"children": [
-																"Go to definition"
-															]
-														}
-													},
-													{
-														"type": "a",
-														"props": {
-															"className": "close top-action",
-															"onClick": {
-																"dispatched": [
-																	{
-																		"$constructor": "SelectDef"
-																	}
-																]
-															},
-															"children": [
-																"×"
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "section",
-											"props": {
-												"className": "docHTML",
-												"children": [
-													{
-														"type": "div",
-														"props": {
-															"className": "header",
-															"children": [
-																{
-																	"type": "h1",
-																	"props": {
-																		"className": "qualified-name",
-																		"dangerouslySetInnerHTML": {
-																			"__html": "someName"
-																		}
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "section",
-														"props": {
-															"className": "doc",
-															"children": [
-																{
-																	"type": "div",
-																	"props": {
-																		"dangerouslySetInnerHTML": "someDoc"
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "ExampleView",
-											"props": {
-												"defURL": "someURL",
-												"examples": {
-													"test": "examples"
-												},
-												"highlightedDef": "otherURL"
-											}
-										}
-									]
+									"className": "qualified-name",
+									"dangerouslySetInnerHTML": {
+										"__html": "someName"
+									}
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "header",
+					"props": {
+						"children": [
+							"Usage Examples"
+						]
+					}
+				},
+				{
+					"type": "section",
+					"props": {
+						"className": "examples-card",
+						"children": [
+							{
+								"type": "ExampleView",
+								"props": {
+									"defURL": "someURL",
+									"examples": {
+										"test": "examples"
+									},
+									"highlightedDef": "otherURL"
 								}
 							}
 						]
 					}
 				}
-			],
-			"axis": "both",
-			"bounds": false,
-			"moveOnStartChange": false,
-			"start": {
-				"x": 0,
-				"y": 0
-			},
-			"zIndex": null,
-			"enableUserSelectHack": true
+			]
 		}
 	}
 }

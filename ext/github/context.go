@@ -15,7 +15,11 @@ func init() {
 	// Make a GitHub API client available in the context that is
 	// authenticated as the current user, or just using our
 	// application credentials if there's no current user.
-	serverctx.Funcs = append(serverctx.Funcs,
+	//
+	// This appends to LastFuncs, not just Funcs, because it must be
+	// run AFTER the actor has been stored in the context, because it
+	// depends on the actor.
+	serverctx.LastFuncs = append(serverctx.LastFuncs,
 		NewContextWithAuthedClient,
 	)
 }
@@ -28,15 +32,8 @@ const (
 
 // NewContextWithClient creates a new child context with the specified
 // GitHub client.
-func NewContextWithClient(ctx context.Context, client *github.Client) context.Context {
-	return newContext(ctx, newMinimalClient(client))
-}
-
-// NewContextWithUnauthedClient creates a new child context with a
-// GitHub client that is authenticated using the application
-// credentials but no user credentials.
-func NewContextWithUnauthedClient(ctx context.Context) context.Context {
-	return NewContextWithClient(ctx, githubutil.Default.UnauthedClient())
+func NewContextWithClient(ctx context.Context, client *github.Client, isAuthedUser bool) context.Context {
+	return newContext(ctx, newMinimalClient(client, isAuthedUser))
 }
 
 // NewContextWithAuthedClient creates a new child context with a
@@ -47,11 +44,13 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	a := auth.ActorFromContext(ctx)
 	var c *github.Client
 
+	isAuthedUser := false
 	if a.IsAuthenticated() {
 		host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
 		tok, err := store.ExternalAuthTokensFromContext(ctx).GetUserToken(ctx, a.UID, host, githubutil.Default.OAuth.ClientID)
 		if err == nil {
 			c = githubutil.Default.AuthedClient(tok.Token)
+			isAuthedUser = true
 		}
 		if err != nil && err != auth.ErrNoExternalAuthToken && err != auth.ErrExternalAuthTokenDisabled {
 			return nil, err
@@ -60,7 +59,7 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 	if c == nil {
 		c = githubutil.Default.UnauthedClient()
 	}
-	return NewContextWithClient(ctx, c), nil
+	return NewContextWithClient(ctx, c, isAuthedUser), nil
 }
 
 func newContext(ctx context.Context, client *minimalClient) context.Context {

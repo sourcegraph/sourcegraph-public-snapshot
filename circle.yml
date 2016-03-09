@@ -7,8 +7,7 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/protobuf/bin:$HOME/google-cloud-sdk/bin:$PATH
-    LD_LIBRARY_PATH: $HOME/protobuf/lib
+    PATH: $HOME/google-cloud-sdk/bin:$PATH
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
@@ -25,9 +24,7 @@ dependencies:
     - sudo apt-get update; sudo apt-get install --reinstall git curl libcurl3 libcurl3-gnutls
 
   cache_directories:
-    - ~/protobuf
     - ~/google-cloud-sdk
-    - ~/daemonize
 
   override:
     - rm -rf $HOME/.go_workspace/src
@@ -41,9 +38,7 @@ dependencies:
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
 
-    - if [ ! -d ~/protobuf ]; then $REPO/dev/install_protobuf.sh $PWD/build/ && mv ./build/usr/local $HOME/protobuf; fi
     - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
-    - if [ ! -d ~/daemonize ]; then mkdir ~/daemonize; package/linux/scripts/install_daemonize.sh ~/daemonize/; fi
 
 test:
   override:
@@ -96,12 +91,7 @@ deployment:
   release-tag:
     tag: /[0-9]+\.[0-9]+\.[0-9]+/
     commands:
-      - grep "# $VERSION" release_notes.md # fail if version is not mentioned in release notes
       - ./circle-build-docker-image.sh $CIRCLE_TAG:
-          pwd: $REPO
-
-      # build and upload binary releases
-      - sgtool release $CIRCLE_TAG:
           pwd: $REPO
 
       # push to Docker Hub

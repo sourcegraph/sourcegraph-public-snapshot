@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	approuter "src.sourcegraph.com/sourcegraph/app/router"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
+	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -44,7 +44,7 @@ func init() {
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
 	URI           string
-	Origin        string
+	Origin        string // DEPRECATED: will be removed in a future commit
 	Name          string
 	Description   string
 	VCS           string
@@ -66,7 +66,6 @@ type dbRepo struct {
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
 		URI:           r.URI,
-		Origin:        r.Origin,
 		Name:          r.Name,
 		Description:   r.Description,
 		VCS:           r.VCS,
@@ -100,7 +99,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
-	r.Origin = r2.Origin
 	r.Name = r2.Name
 	r.Description = r2.Description
 	r.VCS = r2.VCS
@@ -142,13 +140,19 @@ type repos struct{}
 var _ store.Repos = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
-		return nil, err
-	}
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
+
+	// Access controls for GitHub repos are handled by making a call
+	// in the request path to the GitHub API as the actor, not by us.
+	if !strings.HasPrefix(uri, "github.com/") {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
+			return nil, err
+		}
+	}
+
 	setCloneURLField(ctx, repo)
 	return repo, nil
 }
@@ -176,13 +180,6 @@ func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{})
 	return repo.toRepo(), nil
 }
 
-func (s *repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetPerms", repo); err != nil {
-		return nil, err
-	}
-	return &sourcegraph.RepoPermissions{Read: true, Write: true, Admin: true}, nil
-}
-
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
 		return nil, err
@@ -191,10 +188,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	// Fetch the list of private repositories visible to the current user.
-	privateURIs := accesscontrol.GetActorPrivateRepos(ctx, authpkg.ActorFromContext(ctx), "Repos.List")
-
-	sql, args, err := s.listSQL(opt, privateURIs)
+	sql, args, err := s.listSQL(opt)
 	if err != nil {
 		if err == errOptionsSpecifyEmptyResult {
 			err = nil
@@ -225,20 +219,17 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
 
-// setCloneURLField sets the *CloneURL fields on the repo based on
-// the ctx's app and SSH URLs. These values are not stored in the
-// database because if they were, the values would be stale if the
-// configuration's app or SSH URLs change.
+// setCloneURLField sets the *CloneURL fields on the repo based on the
+// ctx's app URL. These values are not stored in the database because
+// if they were, the values would be stale if the configuration
+// changes.
 func setCloneURLField(ctx context.Context, repo *sourcegraph.Repo) {
 	if !repo.Mirror {
 		repo.HTTPCloneURL = conf.AppURL(ctx).ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
-		if conf.SSHURL(ctx) != nil {
-			repo.SSHCloneURL = fmt.Sprintf("%s/%s", conf.SSHURL(ctx).String(), repo.URI)
-		}
 	}
 }
 
-func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) (string, []interface{}, error) {
+func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}, error) {
 	var selectSQL, fromSQL, whereSQL, orderBySQL string
 
 	var args []interface{}
@@ -297,24 +288,8 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions, privateURIs []string) 
 			return "", nil, errOptionsSpecifyEmptyResult
 		}
 
-		// If PrivateMirrors is enabled and private repositories are part of the request,
-		// only pick repositories that are either public or visible to the current user.
-		// NOTE: if privateURIs == nil, then either PrivateMirrors is not enabled, or the
-		// actor has access to all private repos on this server.
-		if privateURIs != nil && opt.Type != "public" {
-			filterPrivateSQL := "false"
-			if opt.Type != "private" {
-				filterPrivateSQL = "NOT private"
-			}
-			if len(privateURIs) > 0 {
-				privateURIBindVars := make([]string, len(privateURIs))
-				for i, uri := range privateURIs {
-					privateURIBindVars[i] = arg(uri)
-				}
-				filterPrivateSQL += " OR uri IN (" + strings.Join(privateURIBindVars, ",") + ")"
-			}
-			conds = append(conds, filterPrivateSQL)
-		}
+		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
+		conds = append(conds, "uri NOT LIKE 'github.com/%'")
 
 		if conds != nil {
 			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
@@ -367,12 +342,16 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 }
 
 func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
+	if strings.HasPrefix(newRepo.URI, "github.com/") {
+		if !newRepo.Mirror {
+			return grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
+		}
+		// All authenticated users can create GitHub mirrors.
+		if !auth.ActorFromContext(ctx).IsAuthenticated() {
+			return grpc.Errorf(codes.Unauthenticated, "cannot create GitHub mirror as anonymous user")
+		}
+	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
 		return err
-	}
-
-	if newRepo.DefaultBranch == "" {
-		return errors.New("invalid argument: no default branch provided")
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
@@ -390,9 +369,6 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
-	if op.IsPrivate && op.IsPublic {
-		return errors.New("invalid argument: both IsPrivate and IsPublic are set to true")
-	}
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
 		return err
 	}
@@ -410,20 +386,6 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 	}
 	if op.DefaultBranch != "" {
 		_, err := dbh(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
-		if err != nil {
-			return err
-		}
-	}
-	if op.IsPrivate || op.IsPublic {
-		// Only admin users can update a repo's visibility.
-		if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Repos.Update"); err != nil {
-			return err
-		}
-		private := "t"
-		if op.IsPublic {
-			private = "f"
-		}
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "private"=$1 WHERE uri=$2`, private, op.Repo.URI)
 		if err != nil {
 			return err
 		}

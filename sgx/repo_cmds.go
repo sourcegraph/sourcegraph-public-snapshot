@@ -38,6 +38,15 @@ func init() {
 		log.Fatal(err)
 	}
 
+	_, err = reposGroup.AddCommand("resolve",
+		"resolve a repo",
+		"The `src repo resolve` command resolves a repo.",
+		&repoResolveCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	listC, err := reposGroup.AddCommand("list",
 		"list repos",
 		"The `sgx repo list` command lists repos.",
@@ -165,6 +174,30 @@ func (c *repoGetCmd) Execute(args []string) error {
 	return nil
 }
 
+type repoResolveCmd struct {
+	Args struct {
+		Path []string `name:"PATH" description:"repository path (ex: host.com/myrepo)"`
+	} `positional-args:"yes" required:"yes"`
+}
+
+func (c *repoResolveCmd) Execute(args []string) error {
+	cl := client.Client()
+
+	for _, path := range c.Args.Path {
+		log.Printf("# %s", path)
+		res, err := cl.Repos.Resolve(client.Ctx, &sourcegraph.RepoResolveOp{Path: path})
+		if err != nil {
+			return err
+		}
+		b, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(b))
+	}
+	return nil
+}
+
 type repoListCmd struct {
 	Owner     string `long:"owner" description:"login of user whose owned repositories to list"`
 	Query     string `short:"q" long:"query" description:"query"`
@@ -201,23 +234,29 @@ type repoCreateCmd struct {
 	Args struct {
 		URI string `name:"REPO-URI" description:"desired repository URI (e.g., host.com/myrepo)"`
 	} `positional-args:"yes" required:"yes" count:"1"`
-	VCS         string `long:"vcs" description:"git or hg" default:"git" required:"yes"`
-	CloneURL    string `short:"u" long:"clone-url" description:"clone URL of existing repo"`
-	Mirror      bool   `short:"m" long:"mirror" description:"create the repo as a mirror"`
-	Description string `short:"d" long:"description" description:"repo description"`
-	Language    string `short:"l" long:"lang" description:"primary programming language"`
+	VCS           string `long:"vcs" description:"git or hg" default:"git" required:"yes"`
+	CloneURL      string `short:"u" long:"clone-url" description:"clone URL of existing repo"`
+	DefaultBranch string `short:"b" long:"default-branch" description:"default branch" default:"master"`
+	Mirror        bool   `short:"m" long:"mirror" description:"create the repo as a mirror"`
+	Description   string `short:"d" long:"description" description:"repo description"`
+	Language      string `short:"l" long:"lang" description:"primary programming language"`
 }
 
 func (c *repoCreateCmd) Execute(args []string) error {
 	cl := client.Client()
 
 	repo, err := cl.Repos.Create(client.Ctx, &sourcegraph.ReposCreateOp{
-		URI:         c.Args.URI,
-		VCS:         c.VCS,
-		CloneURL:    c.CloneURL,
-		Mirror:      c.Mirror,
-		Description: c.Description,
-		Language:    c.Language,
+		Op: &sourcegraph.ReposCreateOp_New{
+			New: &sourcegraph.ReposCreateOp_NewRepo{
+				URI:           c.Args.URI,
+				VCS:           c.VCS,
+				CloneURL:      c.CloneURL,
+				DefaultBranch: c.DefaultBranch,
+				Mirror:        c.Mirror,
+				Description:   c.Description,
+				Language:      c.Language,
+			},
+		},
 	})
 	if err != nil {
 		return err

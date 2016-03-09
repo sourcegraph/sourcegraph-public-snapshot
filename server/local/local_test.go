@@ -19,7 +19,7 @@ func testContext() (context.Context, *mocks) {
 	ctx := context.Background()
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
-	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	return ctx, &m
 }
 
@@ -33,21 +33,16 @@ type mockServers struct {
 	Accounts     mock.AccountsServer
 	Auth         mock.AuthServer
 	Builds       mock.BuildsServer
-	Changesets   mock.ChangesetsServer
-	Storage      mock.StorageServer
 	Defs         mock.DefsServer
 	Deltas       mock.DeltasServer
 	GitTransport gitmock.GitTransportServer
-	Markdown     mock.MarkdownServer
 	MirrorRepos  mock.MirrorReposServer
 	Orgs         mock.OrgsServer
 	People       mock.PeopleServer
-	RepoBadges   mock.RepoBadgesServer
 	RepoStatuses mock.RepoStatusesServer
 	RepoTree     mock.RepoTreeServer
 	Repos        mock.ReposServer
 	Search       mock.SearchServer
-	Units        mock.UnitsServer
 	Users        mock.UsersServer
 }
 
@@ -59,16 +54,13 @@ func (s *mockServers) servers() svc.Services {
 		Defs:         &s.Defs,
 		Deltas:       &s.Deltas,
 		GitTransport: &s.GitTransport,
-		Markdown:     &s.Markdown,
 		MirrorRepos:  &s.MirrorRepos,
 		Orgs:         &s.Orgs,
 		People:       &s.People,
-		RepoBadges:   &s.RepoBadges,
 		RepoStatuses: &s.RepoStatuses,
 		RepoTree:     &s.RepoTree,
 		Repos:        &s.Repos,
 		Search:       &s.Search,
-		Units:        &s.Units,
 		Users:        &s.Users,
 	}
 }

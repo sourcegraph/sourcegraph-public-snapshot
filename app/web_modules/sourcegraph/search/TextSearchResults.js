@@ -1,8 +1,9 @@
 import React from "react";
 
+import Blob from "sourcegraph/blob/Blob";
 import Component from "sourcegraph/Component";
-import CodeFileRange from "../../../script/components/CodeFileRange"; // FIXME
-import router from "../../../script/routing/router"; // FIXME
+import {hotLinkAnyElement} from "sourcegraph/util/hotLink";
+import * as router from "sourcegraph/util/router";
 
 class TextSearchResults extends Component {
 	reconcileState(state, props) {
@@ -29,30 +30,32 @@ class TextSearchResults extends Component {
 		let summary = `${this.state.total} text result${s} for "${this.state.query}"`;
 		if (this.state.currentPage > 1) summary = `Page ${this.state.currentPage} of ${summary}`;
 
-		let currentFile, header;
+		let currentFile;
 		return (
-			<div className="text-search-results">
+			<div className="text-search-results theme-default">
 				<p className="summary">{summary}</p>
 				{this.state.results.map((result) => {
-					if (currentFile !== result.File) {
-						let fileURL = router.fileRangeURL(this.state.repo, this.state.rev, result.File, result.StartLine, this.state.results[this.state.results.length - 1].EndLine);
-						header = <header><a href={fileURL}>{result.File}</a></header>;
-					} else {
-						header = null;
-					}
+					const showHeader = currentFile !== result.File;
 					currentFile = result.File;
 
+					let url = router.tree(this.state.repo, this.state.rev, currentFile, result.StartLine, result.EndLine);
+
 					return (
-						<div className="text-search-result" key={`${result.File}-${result.StartLine}`}>
-							{header}
-							<CodeFileRange
+						<div className="text-search-result" key={`${result.File}-${result.StartLine}`}
+							data-href={url} onClick={hotLinkAnyElement}>
+							{showHeader ? <header><a href={url}>{result.File}</a></header> : null}
+							<Blob
 								repo={this.state.repo}
 								rev={this.state.rev}
-								path={result.File}
+								path={currentFile}
+								lineNumbers={true}
 								startLine={result.StartLine}
 								endLine={result.EndLine}
-								lines={result.Lines}
-								showFileRangeLink={true} />
+								contentsOffsetLine={result.StartLine}
+								contents={result.Contents}
+								highlightedDef={null}
+								activeDef={null}
+								annotations={queryHighlightAnnotations(this.state.query, result.Contents)} />
 						</div>
 					);
 				})}
@@ -69,3 +72,18 @@ TextSearchResults.propTypes = {
 };
 
 export default TextSearchResults;
+
+function queryHighlightAnnotations(query, match) {
+	let indexes = [];
+	let i = 0;
+	while (i < match.length - query.length) {
+		if (match.slice(i).startsWith(query)) {
+			indexes.push(i);
+			i += query.length;
+		} else {
+			i++;
+		}
+	}
+
+	return indexes.map((j) => ({StartByte: j, EndByte: j + query.length, Class: "highlight-primary"}));
+}

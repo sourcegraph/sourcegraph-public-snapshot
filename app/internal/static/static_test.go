@@ -49,7 +49,7 @@ func TestStatic_tmpl(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, "foo.tmpl"), []byte("bar at {{.CurrentURL.Host}}"), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, "foo.tmpl"), []byte("bar at [#[.CurrentURL.Host]#]"), 0600); err != nil {
 		t.Fatal(err)
 	}
 

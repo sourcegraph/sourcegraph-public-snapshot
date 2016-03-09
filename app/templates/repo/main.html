@@ -2,15 +2,15 @@
 <meta name="description" content="{{repoMetaDescription .Repo}}">
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:site" content="@srcgraph" />
-<meta name="twitter:title" content="Repository {{.Repo.URI}}{{if .Repo.GitHub}} ({{.Repo.GitHub.Stars}} stars){{end}}"/>
+<meta name="twitter:title" content="Repository {{.Repo.URI}}"/>
 <meta name="twitter:description" content="{{.Repo.Description}}{{if and .Repo.Description .Repo.HomepageURL}} - {{end}}{{.Repo.HomepageURL}}" />
 {{end}}
 
 {{define "RepoBody"}}
 
-{{if or (or .Repo.Description .Repo.HomepageURL) (not disableCloneURL)}}
+{{if or .Repo.Description .Repo.HomepageURL}}
 	<div class="repo-meta row">
-		<p class="description col-sm-9">
+		<p class="description col-sm-12">
 			{{if or .Repo.Description .Repo.HomepageURL}}
 				{{sanitizeHTML .Repo.Description}}
 				{{if and .Repo.Description .Repo.HomepageURL}}&mdash;{{end}}
@@ -19,16 +19,6 @@
 				{{end}}
 			{{end}}
 		</p>
-
-		{{if not disableCloneURL}}
-			<div class="clone-url-container col-sm-3">
-				<div data-react="RepoCloneBox"
-					data-ssh="{{.Repo.SSHCloneURL}}"
-					data-HTTP-Clone-URL="{{.Repo.HTTPCloneURL}}">
-				</div>
-			</div>
-		{{end}}
-
 	</div>
 
 	<hr/>

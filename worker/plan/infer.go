@@ -47,7 +47,6 @@ var langConfigs = map[string]struct {
 				Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
 				Commands: []string{
 					"go get -t $(go list ./... | grep -v /vendor/)",
-					"go build $(go list ./... | grep -v /vendor/)",
 				},
 				AllowFailure: true,
 			},

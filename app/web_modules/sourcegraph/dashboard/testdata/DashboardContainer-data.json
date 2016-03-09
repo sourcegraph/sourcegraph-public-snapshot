@@ -33,9 +33,7 @@
 							{
 								"type": "DashboardRepos",
 								"props": {
-									"repos": [],
-									"onWaitlist": true,
-									"allowGitHubMirrors": true
+									"repos": []
 								}
 							}
 						]
@@ -53,9 +51,7 @@
 									"currentUser": {
 										"Name": "abc xyz"
 									},
-									"onboarding": {},
-									"allowStandaloneUsers": false,
-									"allowGitHubUsers": true
+									"onboarding": {}
 								}
 							}
 						]

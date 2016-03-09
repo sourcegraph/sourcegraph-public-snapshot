@@ -11,8 +11,6 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 
-	"sourcegraph.com/sqs/pbtypes"
-
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -197,11 +195,6 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	_, err = cl.Accounts.Update(ctx, sgUser)
 	if err != nil {
 		log15.Info("Could not update profile info", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
-	}
-
-	_, err = cl.MirrorRepos.AddToWaitlist(ctx, &pbtypes.Void{})
-	if err != nil {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
 	returnTo := state.ReturnTo

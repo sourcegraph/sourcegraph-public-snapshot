@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-popover",
+			"className": "token-popover found",
 			"style": {
 				"left": null,
 				"top": null
@@ -14,12 +14,18 @@
 						"className": "popover-data",
 						"children": [
 							{
+								"type": "span",
+								"props": {
+									"className": "error-message"
+								}
+							},
+							{
 								"type": "div",
 								"props": {
 									"className": "title",
 									"children": [
 										{
-											"type": "code",
+											"type": "pre",
 											"props": {
 												"dangerouslySetInnerHTML": {
 													"__html": "someName"
@@ -40,7 +46,7 @@
 												"className": "doc",
 												"style": {
 													"maxHeight": 100,
-													"overflowY": "scroll"
+													"overflowY": "hidden"
 												},
 												"dangerouslySetInnerHTML": "someDoc"
 											}

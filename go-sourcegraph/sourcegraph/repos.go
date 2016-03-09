@@ -3,13 +3,8 @@ package sourcegraph
 import (
 	"net/url"
 
-	"strings"
-
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
 )
-
-// IsGitHubRepo returns true iff this repository is hosted on GitHub.
-func (r *Repo) IsGitHubRepo() bool { return strings.HasPrefix(r.URI, "github.com/") }
 
 // IsSystemOfRecord returns true iff this repository is the source of truth (not a mirror, etc)
 func (r *Repo) IsSystemOfRecord() bool {
@@ -28,16 +23,6 @@ func (r *Repo) CloneURL() *url.URL {
 	}
 	u, _ := url.Parse(cloneURL)
 	return u
-}
-
-// GitHubHTMLURL returns URL to the GitHub HTML page (e.g.,
-// https://github.com/foo/bar, not a clone URL) for this repo, if it's
-// a GitHub repo. Otherwise it returns the empty string.
-func (r *Repo) GitHubHTMLURL() string {
-	if r.IsGitHubRepo() {
-		return (&url.URL{Scheme: "https", Host: "github.com", Path: "/" + strings.TrimPrefix(r.URI, "github.com/")}).String()
-	}
-	return ""
 }
 
 // RepoSpec returns the RepoSpec that specifies r.

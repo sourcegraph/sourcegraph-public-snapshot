@@ -50,7 +50,7 @@ func TestRepoRevSpec(t *testing.T) {
 	}{
 		{RepoRevSpec{RepoSpec: RepoSpec{URI: "a.com/x"}, Rev: "r"}, map[string]string{"Repo": "a.com/x", "Rev": "r"}},
 		{RepoRevSpec{RepoSpec: RepoSpec{URI: "x"}, Rev: "r"}, map[string]string{"Repo": "x", "Rev": "r"}},
-		{RepoRevSpec{RepoSpec: RepoSpec{URI: "a.com/x"}, Rev: "r", CommitID: commitID}, map[string]string{"Repo": "a.com/x", "Rev": "r", "CommitID": commitID}},
+		{RepoRevSpec{RepoSpec: RepoSpec{URI: "a.com/x"}, Rev: "r", CommitID: "aaa"}, map[string]string{"Repo": "a.com/x", "Rev": "r", "CommitID": "aaa"}},
 	}
 
 	for _, test := range tests {

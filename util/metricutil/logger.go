@@ -1,7 +1,9 @@
 package metricutil
 
 import (
+	"bytes"
 	"fmt"
+	"net/url"
 	"runtime"
 	"time"
 
@@ -12,7 +14,6 @@ import (
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/env"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
@@ -21,20 +22,20 @@ type Worker struct {
 	Buffer   []*sourcegraph.UserEvent
 	Position int
 
-	Channel       chan *sourcegraph.UserEvent
-	Ctx           context.Context
-	RootCtx       context.Context
-	RootAvailable bool
+	Channel              chan *sourcegraph.UserEvent
+	Ctx                  context.Context
+	forwardDestCtx       context.Context
+	forwardDestAvailable bool
 }
 
 func (w *Worker) Work() {
 	for {
 		if w.Position >= len(w.Buffer) {
 			if err := w.Flush(); err != nil {
-				// Flush didn't succeed and buffer is full
-				// so don't dequeue the new event.
-				// Dequeue after a short interval to avoid
-				// immediately re-connecting to the root.
+				// Flush didn't succeed and buffer is full so don't
+				// dequeue the new event.  Dequeue after a short
+				// interval to avoid immediately re-connecting to the
+				// forward dest server.
 				time.Sleep(30 * time.Second)
 				continue
 			}
@@ -54,32 +55,20 @@ func (w *Worker) Work() {
 	}
 }
 
-// LocateRootInstance discovers the root instance's gRPC endpoint.
-func (w *Worker) LocateRootInstance() error {
-	if fed.Config.IsRoot {
-		return fmt.Errorf("cannot locate root as a root instance")
-	}
-	rootCtx := fed.Config.NewRemoteContext(w.Ctx)
-	rootCl, err := sourcegraph.NewClientFromContext(rootCtx)
+// connectToForwardDestServer connects to the server that the worker
+// is configured to forward metrics to.
+func (w *Worker) connectToForwardDestServer() error {
+	url, err := url.Parse(config.ForwardURL)
 	if err != nil {
 		return err
 	}
-
-	config, err := rootCl.Meta.Config(rootCtx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-	if !config.IsFederationRoot {
-		return fmt.Errorf("server %q is not a federation root", fed.Config.RootURL())
-	}
-
-	w.RootCtx = rootCtx
-	w.RootAvailable = true
+	w.forwardDestCtx = sourcegraph.WithGRPCEndpoint(w.Ctx, url)
+	w.forwardDestAvailable = true
 	return nil
 }
 
 // Flush pushes the local event buffer upstream from client instances
-// or forwards to EventForwarder from root instances.
+// or forwards to EventForwarder from servers that can store metrics.
 // If Flush fails, the event buffer is not modified. Repeatedly failing
 // to flush events will fill the local buffer and eventually newer events
 // will start getting discarded.
@@ -88,26 +77,50 @@ func (w *Worker) Flush() error {
 		return nil
 	}
 	eventList := &sourcegraph.UserEventList{Events: w.Buffer[:w.Position]}
-	if fed.Config.IsRoot {
-		ForwardEvents(w.Ctx, eventList)
-	} else {
-		if !w.RootAvailable {
-			if err := w.LocateRootInstance(); err != nil {
-				log15.Error("Metrics logger flush failed to locate root instance", "error", err)
+	if config.StoreURL != "" {
+		StoreEvents(w.Ctx, eventList)
+	}
+	if config.ForwardURL != "" {
+		if !w.forwardDestAvailable {
+			if err := w.connectToForwardDestServer(); err != nil {
+				log15.Error("Metrics logger flush failed to locate server to forward to", "error", err)
 				return err
 			}
 		}
-		cl, err := sourcegraph.NewClientFromContext(w.RootCtx)
+		cl, err := sourcegraph.NewClientFromContext(w.forwardDestCtx)
 		if err != nil {
 			return err
 		}
-		_, err = cl.GraphUplink.PushEvents(w.RootCtx, eventList)
+
+		// Send events.
+		_, err = cl.GraphUplink.PushEvents(w.forwardDestCtx, eventList)
 		if err != nil {
-			log15.Error("GraphUplink.PushEvents failed", "error", err)
-			// Force the connection to root to be re-established on the next flush.
-			w.RootAvailable = false
+			log15.Error("GraphUplink.PushEvents failed", "error", err, "forwardURL", config.ForwardURL)
+			// Force the connection to be re-established on the next flush.
+			w.forwardDestAvailable = false
 			return err
 		}
+
+		// Send metrics.
+		buf := &bytes.Buffer{}
+		mfs := snapshotMetricFamilies()
+		if err := mfs.Marshal(buf); err != nil {
+			log15.Error("Error marshaling metric families", "error", err)
+			return err
+		}
+		log15.Debug("GraphUplink sending metrics snapshot", "forwardURL", config.ForwardURL, "numMetrics", len(mfs))
+		snapshot := sourcegraph.MetricsSnapshot{
+			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
+			TelemetryData: buf.Bytes(),
+		}
+		if _, err := cl.GraphUplink.Push(w.forwardDestCtx, &snapshot); err != nil {
+			log15.Error("GraphUplink push failed", "error", err, "forwardURL", config.ForwardURL)
+			// Force the connection to be re-established on the next flush.
+			w.forwardDestAvailable = false
+			return err
+		}
+
+		log15.Debug("Forwarded metrics and events", "forwardURL", config.ForwardURL, "numMetrics", len(mfs), "numEvents", len(eventList.Events))
 	}
 	// Flush successful
 	w.Position = 0
@@ -133,13 +146,6 @@ func (l *logger) Log(ctx context.Context, event *sourcegraph.UserEvent) {
 }
 
 func (l *logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool {
-	// don't track grpc and app events on mothership
-	if fed.Config.IsRoot {
-		switch event.Type {
-		case "grpc", "app":
-			return false
-		}
-	}
 	if event.Type != "grpc" {
 		// all events that are not grpc calls are important
 		return true
@@ -185,14 +191,13 @@ func (l *logger) Uploader(ctx context.Context, flushInterval time.Duration) {
 
 var activeLogger *logger
 
-// StartEventLogger sets up a buffered channel for posting events to, and workers that consume
+// startEventLogger sets up a buffered channel for posting events to, and workers that consume
 // event messages from that channel.
 // channelCapacity is the max number of events that the channel will hold. Newer events will be
 // dropped when the channel is full.
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
-// maximum number of buffered events after which the worker will flush the buffer upstream to
-// the federation root via graph uplink.
-func StartEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
+// maximum number of buffered events after which the worker will flush the buffer upstream.
+func startEventLogger(ctx context.Context, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
 	activeLogger = &logger{
 		Channel: make(chan *sourcegraph.UserEvent, channelCapacity),
 	}

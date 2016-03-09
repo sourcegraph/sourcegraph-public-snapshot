@@ -2,6 +2,7 @@ import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as BuildActions from "sourcegraph/build/BuildActions";
+import {updatedAt} from "sourcegraph/build/Build";
 
 function keyFor(repo, build, task) {
 	let key = `${repo}#${build}`;
@@ -15,8 +16,23 @@ export class BuildStore extends Store {
 	reset() {
 		this.builds = deepFreeze({
 			content: {},
+			_fetchedForCommit: {}, // necessary to track whether falsey means "not fetched" or "empty"
 			get(repo, build) {
 				return this.content[keyFor(repo, build)] || null;
+			},
+			listNewestByCommitID(repo, commitID) {
+				const builds = Object.values(this.content).filter((b) =>
+					b.Repo === repo && b.CommitID === commitID
+				);
+				if (builds === null) return null;
+				return builds.sort((a, b) => {
+					// These date strings ("2016-03-07T22:51:43.202747Z") lexically sort.
+					const ta = updatedAt(a);
+					const tb = updatedAt(b);
+					if (ta === tb) return 0;
+					if (ta > tb) return -1; // Newest first.
+					return 1;
+				});
 			},
 		});
 		this.logs = deepFreeze({
@@ -41,6 +57,17 @@ export class BuildStore extends Store {
 					[keyFor(action.repo, action.buildID)]: action.build,
 				}),
 			}));
+			break;
+
+		case BuildActions.BuildsFetchedForCommit:
+			this.builds = deepFreeze(Object.assign({}, this.builds, {
+				_fetchedForCommit: Object.assign({}, this.builds._fetchedForCommit, {
+					[keyFor(action.repo, action.commitID)]: true,
+				}),
+			}));
+			action.builds.forEach((b) => {
+				this.__onDispatch(new BuildActions.BuildFetched(action.repo, b.ID, b));
+			});
 			break;
 
 		case BuildActions.LogFetched:

@@ -1,0 +1,79 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "file-diff",
+			"id": "myid",
+			"children": [
+				{
+					"type": "header",
+					"props": {
+						"children": [
+							{
+								"type": "DiffStatScale",
+								"props": {
+									"Stat": {
+										"Added": 5,
+										"Changed": 6,
+										"Deleted": 7
+									}
+								}
+							},
+							{
+								"type": "span",
+								"props": {
+									"children": [
+										"b"
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "btn-group pull-right",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"className": "button btn btn-default btn-xs",
+												"href": "/hr@hv/.tree/b",
+												"children": [
+													"New"
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "Hunk",
+					"key": "0",
+					"props": {
+						"hunk": {
+							"Body": "a\nb"
+						},
+						"baseRepo": "br",
+						"baseRev": "bv",
+						"basePath": "/dev/null",
+						"headRepo": "hr",
+						"headRev": "hv",
+						"headPath": "b",
+						"annotations": []
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "hr",
+			"rev": "hv",
+			"commitID": "",
+			"path": "b"
+		}
+	]
+}

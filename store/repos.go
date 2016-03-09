@@ -16,11 +16,6 @@ type Repos interface {
 	// Get gets a repository.
 	Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
-	// GetPerms reports the current user's (or anonymous user's)
-	// permissions on the specified repo.
-	// DEPRECATED: use RepoPerms store to fetch repo permissions info.
-	GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error)
-
 	// List lists repositories.
 	List(context.Context, *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 
@@ -58,11 +53,6 @@ type RepoConfigs interface {
 type RepoStatuses interface {
 	GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
 	Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error
-}
-
-type RepoCounters interface {
-	RecordHit(ctx context.Context, repo string) error
-	CountHits(ctx context.Context, repo string, since time.Time) (int, error)
 }
 
 type RepoVCS interface {

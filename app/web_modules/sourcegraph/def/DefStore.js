@@ -15,6 +15,7 @@ export class DefStore extends Store {
 				return this.content[url] || null;
 			},
 		});
+		this.activeDef = null;
 		this.highlightedDef = null;
 		this.examples = deepFreeze({
 			content: {},

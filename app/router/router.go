@@ -8,27 +8,17 @@ import (
 	"os"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/conf/feature"
 	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
 )
 
 const (
-	BlogIndex     = "blog"
-	BlogIndexAtom = "blog[.atom]"
-	BlogPost      = "blog.post"
-
-	Liveblog = "liveblog"
-
 	Builds = "builds"
 
 	Home = "home"
 
 	RegisterClient = "register-client"
-
-	DownloadInstall = "download.install"
-	Download        = "download"
 
 	RobotsTxt = "robots-txt"
 	Favicon   = "favicon"
@@ -39,23 +29,15 @@ const (
 	User                      = "person"
 	UserSettingsProfile       = "person.settings.profile"
 	UserSettingsProfileAvatar = "person.settings.profile.avatar"
-	UserSettingsKeys          = "person.settings.keys"
 
 	Repo             = "repo"
-	RepoBadge        = "repo.badge"
-	RepoBadges       = "repo.badges"
-	RepoCounter      = "repo.counter"
-	RepoCounters     = "repo.counters"
 	RepoBuilds       = "repo.builds"
 	RepoBuild        = "repo.build"
 	RepoBuildUpdate  = "repo.build.update"
 	RepoBuildTaskLog = "repo.build.task.log"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoSearch       = "repo.search"
-	RepoRefresh      = "repo.refresh"
 	RepoTree         = "repo.tree"
-	RepoCompare      = "repo.compare"
-	RepoCompareAll   = "repo.compare.all"
 
 	RepoRevCommits = "repo.rev.commits"
 	RepoCommit     = "repo.commit"
@@ -79,18 +61,12 @@ const (
 
 	Def         = "def"
 	DefExamples = "def.examples"
-	DefPopover  = "def.popover"
 
 	UserContent = "usercontent"
-
-	Markdown = "markdown"
 
 	// Platform routes
 	RepoAppFrame       = "repo.appframe"
 	RepoPlatformSearch = "repo.platformsearch"
-
-	// TODO: Cleanup.
-	AppGlobalNotificationCenter = "appglobal.notifications"
 )
 
 // Router is an app URL router.
@@ -112,16 +88,7 @@ func New(base *mux.Router) *Router {
 	base.Path("/").Methods("GET").Name(Home)
 	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
 
-	base.PathPrefix("/blog/live").Name(Liveblog)
-
-	base.Path(`/blog`).Methods("GET").Name(BlogIndex)
-	base.Path(`/blog{Format:\.atom}`).Methods("GET").Name(BlogIndexAtom)
-	base.Path("/blog/{Slug:.*}").Methods("GET").Name(BlogPost)
-
 	base.Path("/.builds").Methods("GET").Name(Builds)
-
-	base.Path("/.download/install.sh").Methods("GET").Name(DownloadInstall)
-	base.Path("/.download/{Suffix:.*}").Methods("GET").Name(Download)
 
 	base.Path("/search").Methods("GET").Queries("q", "").Name(SearchResults)
 	base.Path("/search").Methods("GET").Name(SearchForm)
@@ -145,14 +112,11 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
 
-	base.Path("/.markdown").Methods("POST").Name(Markdown)
-
 	// User routes begin with tilde (~).
 	userPath := `/~` + routevar.User
 	user := base.PathPrefix(userPath).Subrouter()
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
 	user.Path("/.settings/profile/avatar").Methods("POST").Name(UserSettingsProfileAvatar)
-	user.Path("/.settings/keys").Methods("GET", "POST").Name(UserSettingsKeys)
 
 	// attach git transport endpoints
 	gitrouter.New(base)
@@ -169,7 +133,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path(defPath).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
 	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
 	def.Path("/.examples").Methods("GET").Name(DefExamples)
-	def.Path("/.popover").Methods("GET").Name(DefPopover)
 	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
 
 	// See router_util/tree_route.go for an explanation of how we match tree
@@ -178,19 +141,9 @@ func New(base *mux.Router) *Router {
 	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
 	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 
-	repoRev.Path("/.refresh").Methods("POST", "PUT").Name(RepoRefresh)
-	repoRev.Path("/.badges").Methods("GET").Name(RepoBadges)
-	repoRev.Path("/.badges/{Badge}.{Format}").Methods("GET").Name(RepoBadge)
 	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
 
-	repoRev.Path("/.counters").Methods("GET").Name(RepoCounters)
-
-	repoRev.Path("/.counters/{Counter}.{Format}").Methods("GET").Name(RepoCounter)
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
-
-	headVar := "{Head:" + routevar.NamedToNonCapturingGroups(spec.RevPattern) + "}"
-	repoRev.Path("/.compare/" + headVar).Methods("GET").Name(RepoCompare)
-	repoRev.Path("/.compare/" + headVar + "/.all").Methods("GET").Name(RepoCompareAll)
 
 	repo.Path("/.commits/{Rev:" + spec.PathNoLeadingDotComponentPattern + "}").Methods("GET").Name(RepoCommit)
 	repo.Path("/.branches").Methods("GET").Name(RepoBranches)
@@ -216,11 +169,6 @@ func New(base *mux.Router) *Router {
 	// path that Sourcegraph passes directly to the app. The empty
 	// AppPath is the app's homepage, and it manages its own subpaths.
 	repoRev.PathPrefix(`/.{App}{AppPath:(?:/.*)?}`).Name(RepoAppFrame)
-
-	if feature.Features.NotificationCenter {
-		// TODO.
-		base.PathPrefix("/.notifications").Methods("GET").Name(AppGlobalNotificationCenter)
-	}
 
 	return &Router{*base}
 }

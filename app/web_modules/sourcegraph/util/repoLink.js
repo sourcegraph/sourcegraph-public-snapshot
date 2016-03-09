@@ -1,6 +1,6 @@
 import React from "react";
 
-import router from "../../../script/routing/router";
+import * as router from "sourcegraph/util/router";
 
 
 // repoLink is swiped from app/repo.go.
@@ -18,7 +18,7 @@ function repoLink(repoURI, disableLink) {
 			if (disableLink) {
 				collection.push(<span className="name" key={`name${i}`} title={repoURI}>{parts[i]}</span>);
 			} else {
-				collection.push(<a className="name" key={`name${i}`} href={router.repoURL(repoURI)} title={repoURI}>{parts[i]}</a>);
+				collection.push(<a className="name" key={`name${i}`} href={router.repo(repoURI)} title={repoURI}>{parts[i]}</a>);
 			}
 		} else {
 			collection.push(<span className="part" key={`part${i}`}>{parts[i]}</span>);

@@ -71,7 +71,7 @@ func TestCreate(t *testing.T) {
 func TestRequestPasswordReset(t *testing.T) {
 	notif.MustBeDisabled()
 	ctx, mock := testContext()
-	ctx = conf.WithURL(ctx, &url.URL{}, nil)
+	ctx = conf.WithURL(ctx, &url.URL{})
 	var sendEmailCalled bool
 	sendEmail = func(template string, name string, email string, subject string, templateContent []gochimp.Var, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
 		sendEmailCalled = true

@@ -343,8 +343,8 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.SGPATH = sgpath
 
 	// Find unused ports
-	var httpPort, httpsPort, sshPort, appdashHTTPPort int
-	s.selectUnusedPorts(&httpPort, &httpsPort, &sshPort, &appdashHTTPPort)
+	var httpPort, httpsPort, appdashHTTPPort int
+	s.selectUnusedPorts(&httpPort, &httpsPort, &appdashHTTPPort)
 
 	var mainHTTPPort int
 	switch scheme {
@@ -361,11 +361,9 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
 	s.Config.Endpoint.URL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
 
-	// SSH
-	s.Config.Serve.SSHAddr = fmt.Sprintf(":%d", sshPort)
-
 	// Other config
 	s.Config.Serve.NoInitialOnboarding = true
+	s.Config.Serve.RegisterURL = ""
 
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
@@ -399,7 +397,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	s.Ctx = context.Background()
 	s.Ctx = s.Config.Endpoint.NewContext(s.Ctx)
-	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL), nil)
+	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key
 	idkey.SetTestEnvironment(1024) // Minimum RSA size for SSH is 1024

@@ -1,0 +1,67 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "DiffFileList",
+					"props": {
+						"files": [
+							{
+								"OrigName": "a",
+								"NewName": "b"
+							},
+							{
+								"OrigName": "c",
+								"NewName": "d"
+							}
+						],
+						"stats": {}
+					}
+				},
+				{
+					"type": "FileDiff",
+					"key": "ab",
+					"props": {
+						"id": "F0",
+						"diff": {
+							"OrigName": "a",
+							"NewName": "b"
+						},
+						"baseRepo": "br",
+						"baseRev": "bv",
+						"headRepo": "hr",
+						"headRev": "hv",
+						"annotations": {
+							"content": {}
+						},
+						"defs": {
+							"content": {}
+						}
+					}
+				},
+				{
+					"type": "FileDiff",
+					"key": "cd",
+					"props": {
+						"id": "F1",
+						"diff": {
+							"OrigName": "c",
+							"NewName": "d"
+						},
+						"baseRepo": "br",
+						"baseRev": "bv",
+						"headRepo": "hr",
+						"headRev": "hv",
+						"annotations": {
+							"content": {}
+						},
+						"defs": {
+							"content": {}
+						}
+					}
+				}
+			]
+		}
+	}
+}

@@ -5,7 +5,10 @@ import (
 	"log"
 	pathpkg "path"
 	"path/filepath"
+	"runtime"
 	"time"
+
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"strings"
 
@@ -18,7 +21,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
@@ -34,7 +36,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/svc"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
 var Repos sourcegraph.ReposServer = &repos{}
@@ -46,39 +47,33 @@ type repos struct{}
 
 var _ sourcegraph.ReposServer = (*repos)(nil)
 
-func (s *repos) Get(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-	r, err := s.get(ctx, repo.URI)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.setRepoPermissions(ctx, r); err != nil {
-		return nil, err
-	}
-	if err := s.setRepoOtherFields(ctx, r); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-// get gets the repo from the store but does not fetch and populate
-// the repo permissions. Callers that need the repo but not the
-// permissions should call get (instead of Get) to avoid doing
-// needless work.
-func (s *repos) get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-	if repo == "" {
+func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	if repoSpec.URI == "" {
 		return nil, errEmptyRepoURI
 	}
 
-	r, err := store.ReposFromContext(ctx).Get(ctx, repo)
+	repo, err := store.ReposFromContext(ctx).Get(ctx, repoSpec.URI)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.Blocked {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo)
+	// If the actor doesn't have a special grant to access this repo,
+	// query the remote server for the remote repo, to ensure the
+	// actor can access this repo.
+	//
+	// Special grants are given to drone workers to fetch repo metadata
+	// when configuring a build.
+	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repoSpec.URI)
+	if !hasGrant {
+		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+			return nil, err
+		}
 	}
 
-	return r, nil
+	if repo.Blocked {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo)
+	}
+	return repo, nil
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
@@ -86,39 +81,76 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	if err != nil {
 		return nil, err
 	}
-	if err := s.setRepoPermissions(ctx, repos...); err != nil {
-		return nil, err
+
+	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	for _, repo_ := range repos {
+		repo := repo_
+		par.Do(func() error {
+			return s.setRepoFieldsFromRemote(ctx, repo)
+		})
 	}
-	if err := s.setRepoOtherFields(ctx, repos...); err != nil {
+	if err := par.Wait(); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
-// setRepoPermissions modifies repos in place, setting their
-// Permissions fields by calling (store.Repos).GetPerms on each repo.
-func (s *repos) setRepoPermissions(ctx context.Context, repos ...*sourcegraph.Repo) error {
-	for _, repo := range repos {
-		if repo.Permissions == nil {
-			perms, err := store.ReposFromContext(ctx).GetPerms(ctx, repo.URI)
-			if err != nil {
-				return err
-			}
-			repo.Permissions = perms
+func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
+	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
+
+	// Fetch latest metadata from GitHub (we don't even try to keep
+	// our cache up to date).
+	if strings.HasPrefix(repo.URI, "github.com/") {
+		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
+		if err != nil {
+			return err
 		}
+		repo.Description = ghrepo.Description
+		repo.Language = ghrepo.Language
+		repo.DefaultBranch = ghrepo.DefaultBranch
+		repo.Fork = ghrepo.Fork
+		repo.Private = ghrepo.Private
+		repo.Permissions = ghrepo.Permissions
+		repo.UpdatedAt = ghrepo.UpdatedAt
 	}
+
 	return nil
 }
 
-func (s *repos) setRepoOtherFields(ctx context.Context, repos ...*sourcegraph.Repo) error {
-	appURL := conf.AppURL(ctx)
-	for _, repo := range repos {
-		repo.HTMLURL = appURL.ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
+func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo *sourcegraph.Repo, err error) {
+	switch {
+	case op.GetNew() != nil:
+		repo, err = s.newRepo(ctx, op.GetNew())
+	case op.GetFromGitHubID() != 0:
+		repo, err = s.newRepoFromGitHubID(ctx, int(op.GetFromGitHubID()))
+	default:
+		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
 	}
-	return nil
+
+	if err != nil {
+		return
+	}
+
+	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
+		return nil, err
+	}
+
+	repo, err = store.ReposFromContext(ctx).Get(ctx, repo.URI)
+	if err != nil {
+		return
+	}
+
+	if repo.Mirror {
+		actor := authpkg.ActorFromContext(ctx)
+		repoupdater.Enqueue(repo, &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login})
+	}
+
+	eventsutil.LogAddRepo(ctx, repo.HTTPCloneURL, repo.Language, repo.Mirror, repo.Private)
+
+	return
 }
 
-func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {
 	if op.URI == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "repo URI must have at least one path component")
 	}
@@ -127,92 +159,43 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sou
 			return nil, grpc.Errorf(codes.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
 		}
 	}
-	if _, err := s.get(elevatedActor(ctx), op.URI); err == nil {
-		return nil, grpc.Errorf(codes.AlreadyExists, "repo already exists")
+
+	if op.DefaultBranch == "" {
+		op.DefaultBranch = "master"
 	}
-	defaultBranch := "master"
 
-	actor := authpkg.ActorFromContext(ctx)
-	if authutil.ActiveFlags.PrivateMirrors {
-		if !op.Mirror {
-			// TODO: enable creating local repos on Sourcegraph Server instances.
-			return nil, grpc.Errorf(codes.Unavailable, "creating a non-mirror repo is not enabled on this server")
-		}
-
-		ghRepos := github.Repos{}
-		var ghRepo *sourcegraph.Repo
-		if op.Private {
-			// If this server has a waitlist in place, check that the user
-			// is off the waitlist.
-			if !actor.PrivateMirrors {
-				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-			}
-
-			// Check that the user has permission to access this private repo.
-			// The user's permissions for private mirror repos are set in
-			// MirrorRepos.GetUserData, which is called during onboarding.
-			valid, err := store.RepoPermsFromContext(ctx).Get(elevatedActor(ctx), int32(actor.UID), op.URI)
-			if err != nil {
-				return nil, err
-			}
-			if !valid {
-				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-			}
-
-			token, err := (&mirrorRepos{}).getRepoAuthToken(elevatedActor(ctx), op.URI)
-			if err != nil {
-				return nil, grpc.Errorf(codes.Unavailable, "could not fetch credentials for %v: %v", op.URI, err)
-			}
-			ghRepo, err = ghRepos.Get(github.NewContextWithClient(ctx, githubutil.Default.AuthedClient(token)), op.URI)
-			if err != nil {
-				return nil, grpc.Errorf(codes.Unavailable, "could not fetch private GitHub repo %v: %v", op.URI, err)
-			}
-		} else {
-			var err error
-			// Check that the repo is really public.
-			ghRepo, err = ghRepos.Get(github.NewContextWithUnauthedClient(ctx), op.URI)
-			if err != nil || ghRepo.Private {
-				log15.Warn("Could not fetch public GitHub repo in Repos.Create", "uri", op.URI, "error", err)
-				return nil, grpc.Errorf(codes.PermissionDenied, "user is not allowed to create this repo")
-			}
-		}
-		op.Description = ghRepo.Description
-		op.Language = ghRepo.Language
-		defaultBranch = ghRepo.DefaultBranch
-	} else {
-		if op.Mirror && op.Private {
-			return nil, grpc.Errorf(codes.Unavailable, "creating a private mirror repo is not enabled on this server")
-		}
-	}
 	ts := pbtypes.NewTimestamp(time.Now())
-	repo := &sourcegraph.Repo{
+	return &sourcegraph.Repo{
 		Name:          pathpkg.Base(op.URI),
 		URI:           op.URI,
 		VCS:           op.VCS,
 		HTTPCloneURL:  op.CloneURL,
-		Mirror:        op.Mirror,
-		Private:       op.Private,
-		Description:   op.Description,
 		Language:      op.Language,
-		DefaultBranch: defaultBranch,
+		DefaultBranch: op.DefaultBranch,
+		Description:   op.Description,
+		Mirror:        op.Mirror,
 		CreatedAt:     &ts,
-	}
+	}, nil
+}
 
-	if err := store.ReposFromContext(ctx).Create(elevatedActor(ctx), repo); err != nil {
+func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourcegraph.Repo, error) {
+	ghrepo, err := (&github.Repos{}).GetByID(ctx, githubID)
+	if err != nil {
 		return nil, err
 	}
 
-	if op.Mirror {
-		repoupdater.Enqueue(repo)
-	}
-
-	eventsutil.LogAddRepo(ctx, op.CloneURL, op.Language, op.Mirror, op.Private)
-
-	accesscontrol.SetMirrorRepoPerms(ctx, &actor)
-	ctx = authpkg.WithActor(ctx, actor)
-
-	repoSpec := repo.RepoSpec()
-	return s.Get(ctx, &repoSpec)
+	// Purposefully set very few fields. We don't want to cache
+	// metadata, because it'll get stale, and fetching online from
+	// GitHub is quite easy and (with HTTP caching) performant.
+	ts := pbtypes.NewTimestamp(time.Now())
+	return &sourcegraph.Repo{
+		Name:         ghrepo.Name,
+		URI:          "github.com/" + ghrepo.Owner + "/" + ghrepo.Name,
+		HTTPCloneURL: ghrepo.HTTPCloneURL,
+		VCS:          "git",
+		Mirror:       true,
+		CreatedAt:    &ts,
+	}, nil
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
@@ -285,7 +268,7 @@ func (s *repos) resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.R
 }
 
 func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, error) {
-	repo, err := s.get(ctx, repoURI)
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 	if err != nil {
 		return "", err
 	}

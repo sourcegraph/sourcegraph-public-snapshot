@@ -2,16 +2,13 @@ package sgx
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"strconv"
 
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"golang.org/x/crypto/ssh"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
@@ -97,39 +94,6 @@ func init() {
 		"delete a user account",
 		"Delete a user account.",
 		&userDeleteCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	userKeysGroup, err := userGroup.AddCommand("keys",
-		"manage user's SSH public keys",
-		"Manage user's SSH public keys.",
-		&userKeysCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = userKeysGroup.AddCommand("add",
-		"add an SSH public key",
-		"Add an SSH public key for a user.",
-		&userKeysAddCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = userKeysGroup.AddCommand("delete",
-		"delete the SSH public key",
-		"Delete the SSH public key for a user.",
-		&userKeysDeleteCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = userKeysGroup.AddCommand("list",
-		"list SSH public keys",
-		"List the SSH public keys for a user.",
-		&userKeysListCmd{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -418,104 +382,5 @@ func (c *userDeleteCmd) Execute(args []string) error {
 
 	fmt.Printf("# User %q deleted.\n", identifier)
 
-	return nil
-}
-
-type userKeysCmd struct{}
-
-func (*userKeysCmd) Execute(args []string) error { return nil }
-
-type userKeysAddCmd struct {
-	Args struct {
-		PublicKeyPath string `name:"PublicKeyPath" description:"path to SSH public key"`
-	} `positional-args:"yes" required:"yes"`
-}
-
-func (c *userKeysAddCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	// Get the SSH public key.
-	keyBytes, err := ioutil.ReadFile(c.Args.PublicKeyPath)
-	if err != nil {
-		return fmt.Errorf("failed to read SSH public key: %v", err)
-	}
-	_, _, _, _, err = ssh.ParseAuthorizedKey(keyBytes)
-	if err != nil {
-		return fmt.Errorf("failed to parse SSH public key: %v\n\nAre you sure you provided a SSH public key?", err)
-	}
-
-	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-
-	// Add key.
-	_, err = cl.UserKeys.AddKey(client.Ctx, &sourcegraph.SSHPublicKey{Key: keyBytes})
-	if err != nil {
-		return err
-	}
-
-	log.Printf("# Added SSH public key %v for user %q", c.Args.PublicKeyPath, authInfo.Login)
-	return nil
-}
-
-type userKeysDeleteCmd struct {
-	ID   string `long:"id" description:"ID of the key to delete"`
-	Name string `long:"name" description:"name of the key to delete"`
-}
-
-func (c *userKeysDeleteCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	if c.ID == "" && c.Name == "" {
-		log.Fatal("Must specify either --id or --name of key to delete.")
-	}
-	id, _ := strconv.ParseUint(c.ID, 10, 64)
-
-	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-
-	// Delete key.
-	_, err = cl.UserKeys.DeleteKey(client.Ctx, &sourcegraph.SSHPublicKey{
-		ID:   id,
-		Name: c.Name,
-	})
-	if err != nil {
-		return err
-	}
-
-	log.Printf("# Deleted SSH public key for user %q\n", authInfo.Login)
-	return nil
-}
-
-type userKeysListCmd struct{}
-
-func (c *userKeysListCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	// Get user info for output message.
-	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-
-	// List keys.
-	keys, err := cl.UserKeys.ListKeys(client.Ctx, &pbtypes.Void{})
-	if err != nil {
-		return err
-	}
-
-	if len(keys.SSHKeys) == 0 {
-		log.Printf("User %q has no SSH public keys.\n", authInfo.Login)
-	} else {
-		log.Printf("SSH public keys for user %q:\n", authInfo.Login)
-		for _, k := range keys.SSHKeys {
-			log.Printf("%d. %q\n", k.ID, k.Name)
-		}
-	}
 	return nil
 }

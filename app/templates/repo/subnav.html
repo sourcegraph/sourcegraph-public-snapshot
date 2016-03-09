@@ -1,6 +1,6 @@
 {{define "RepoSubnav"}}
 <nav class="navbar navbar-default subnav repo-subnav" id="repo-subnav">
-	<div class="container{{if .FullWidth}}-fluid{{end}}">
+	<div class="container">
 		<div class="navbar-header">
 			<span class="navbar-brand repo">
 				{{template "RepoIcon" .Repo}}
@@ -29,17 +29,8 @@
 					</li>
 				{{end}}
 
-				{{if .Repo.GitHub}}
-					<li class="github navbar-right">
-						<a target="_blank" href="{{.Repo.GitHubHTMLURL}}/stargazers"
-							data-tooltip title="Stargazers" data-placement="bottom">
-							<i class="octicon octicon-star"></i><span class="txt">{{.Repo.GitHub.Stars}} </span><span class="hidden-sm hidden-md hidden-lg">Stargazers</span>
-						</a>
-					</li>
-				{{end}}
-
 				<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}">
-					<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}" data-placement="bottom">
+					<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">
 						<i class="fa fa-check-square-o"></i><span class="txt">Builds</span>
 					</a>
 				</li>

@@ -61,7 +61,7 @@ serve-dev: serve-dep
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
-	$(MAKE) serve-dev SERVEFLAGS="--fed.is-root --auth.source=local --auth.oauth2-auth-server --auth.allow-anon-readers --http-addr=:13080 --ssh-addr=:13022 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
+	$(MAKE) serve-dev SERVEFLAGS="--auth.source=local --auth.allow-anon-readers --http-addr=:13080 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
 
 BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
@@ -83,13 +83,11 @@ serve-beyang-dev:
 --appdash.url 'http://localhost:7800' \
 --auth.source none \
 --clean \
---graphuplink 0 \
 --grpc-addr ':3100' \
 --http-addr ':3000' \
 --local.clcache 10s \
 --local.clcachesize 2000 \
 --num-workers 0 \
---fed.is-root \
 $(SERVEFLAGS)"
 
 PROMETHEUS_STORAGE ?= $(shell eval `src config` && echo $${SGPATH}/prometheus)
@@ -100,7 +98,7 @@ serve-metrics-dev:
 	prometheus -storage.local.path ${PROMETHEUS_STORAGE} --config.file dev/prometheus.yml
 
 serve-dep:
-	go install ./vendor/sourcegraph.com/sqs/rego
+	go get sourcegraph.com/sqs/rego
 
 # This ulimit check is for the large number of open files from rego; we need
 # this here even though the `src` sysreq package also checks for ulimit (for
@@ -121,14 +119,8 @@ libvfsgen:
 ${GOBIN}/protoc-gen-gogo:
 	go get github.com/gogo/protobuf/protoc-gen-gogo
 
-${GOBIN}/protoc-gen-dump:
-	go get sourcegraph.com/sourcegraph/prototools/cmd/protoc-gen-dump
-
 ${GOBIN}/gopathexec:
 	go get sourcegraph.com/sourcegraph/gopathexec
-
-${GOBIN}/go-selfupdate:
-	go get github.com/sqs/go-selfupdate
 
 ${GOBIN}/gen-mocks:
 	go get sourcegraph.com/sourcegraph/gen-mocks
@@ -139,7 +131,7 @@ ${GOBIN}/go-template-lint:
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	go install ./sgtool
 
-dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/protoc-gen-dump ${GOBIN}/gopathexec ${GOBIN}/go-selfupdate ${GOBIN}/sgtool
+dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/gopathexec ${GOBIN}/sgtool
 
 dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
@@ -147,7 +139,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint ${GOBIN}/protoc-gen-dump
+generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint
 
 db-reset: src
 	src pgsql reset

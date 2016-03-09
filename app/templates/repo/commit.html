@@ -8,13 +8,11 @@
 
 <nav class="page-actions">
 	{{range .RepoCommit.Parents}}
-	<a class="btn btn-default btn-sm" href="{{urlToRepoCommit $repoURI .}}"
-			data-tooltip title="View parent commit {{.}}">
+	<a class="btn btn-default btn-sm" href="{{urlToRepoCommit $repoURI .}}"	title="View parent commit {{.}}">
 		<span class="octicon octicon-git-commit"></span> Parent {{truncateCommitID .}}
 	</a>
 	{{end}}
-	<a class="btn btn-default btn-sm" href="{{urlToRepoTreeEntry $repoURI .RepoCommit.ID "."}}"
-		data-tooltip title="Browse files as of {{.RepoCommit.ID}}">
+	<a class="btn btn-default btn-sm" href="{{urlToRepoTreeEntry $repoURI .RepoCommit.ID "."}}" title="Browse files as of {{.RepoCommit.ID}}">
 		<span class="octicon octicon-file-directory"></span> Browse files at this commit
 	</a>
 </nav>
@@ -39,12 +37,18 @@
 
 {{end}}
 
-
 {{define "commitDelta"}}
 {{$Repo := .Repo}}
 
+
 <div class="delta">
-	<script ignore-csp>window.preloadedDiffData = {{json .}}</script>
-	<div id="RepoCompareView" data-revision-header="no" class="compare-view"></div>
+	<div
+		data-react="FileDiffs"
+		data-files="{{json .DeltaFiles.FileDiffs}}"
+		data-stats="{{json .DeltaFiles.Stats}}"
+		data-base-repo="{{.Delta.Base.URI}}"
+		data-base-rev="{{.Delta.Base.Rev}}"
+		data-head-repo="{{.Delta.Head.URI}}"
+		data-head-rev="{{.Delta.Head.Rev}}" />
 </div>
 {{end}}

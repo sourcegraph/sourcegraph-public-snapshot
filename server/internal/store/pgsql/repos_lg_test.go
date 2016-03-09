@@ -50,11 +50,14 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 	// Create a mirror repo against the fs-backed instance.
 	repo := "myrepo/name"
 	_, err = pgsqlServer.Client.Repos.Create(pgsqlCtx, &sourcegraph.ReposCreateOp{
-		URI:      repo,
-		VCS:      "git",
-		CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
-		Mirror:   true,
-		Private:  true,
+		Op: &sourcegraph.ReposCreateOp_New{
+			New: &sourcegraph.ReposCreateOp_NewRepo{
+				URI:      repo,
+				VCS:      "git",
+				CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
+				Mirror:   true,
+			},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -114,10 +117,14 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	// Create a mirror repo against the fs-backed instance.
 	repo := "myrepo/name"
 	_, err = pgsqlServer.Client.Repos.Create(pgsqlCtx, &sourcegraph.ReposCreateOp{
-		URI:      repo,
-		VCS:      "git",
-		CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
-		Mirror:   true,
+		Op: &sourcegraph.ReposCreateOp_New{
+			New: &sourcegraph.ReposCreateOp_NewRepo{
+				URI:      repo,
+				VCS:      "git",
+				CloneURL: fsServer.Config.Serve.AppURL + "/myrepo",
+				Mirror:   true,
+			},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)

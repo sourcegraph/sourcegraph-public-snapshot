@@ -1,22 +1,18 @@
 #footer {
 	color: $footer-text;
+	margin-top: $line-height-computed*1.5;
+	border-top: $content-border;
 
-	.footer-inner {
+	.container {
 		padding-bottom: 30px;
+	}
 
-		.footer-container {
-			margin-top: $line-height-computed;
-			padding-top: $line-height-computed;
-			border-top: $content-border;
-		}
+	.footer-container {
+		padding-top: $line-height-computed*1.5;
 	}
 
 	li.separator {
 		margin-top: 7px;
-	}
-
-	.container-fluid {
-		width: auto;
 	}
 
 	.info {

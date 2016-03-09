@@ -19,9 +19,6 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 	if opt.PerPage > 1000 {
 		opt.PerPage = 1000
 	}
-	if opt.PerPage > 10 && (opt.Formatted || opt.TokenizedSource) {
-		opt.PerPage = 10
-	}
 
 	refs, err := svc.Defs(ctx).ListRefs(ctx, &sourcegraph.DefsListRefsOp{
 		Def: defSpec,
@@ -40,50 +37,40 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 		i, ref := loopI, loopRef
 
 		par.Do(func() error {
-			examples[i] = &sourcegraph.Example{Ref: ref.Ref}
+			examples[i] = &sourcegraph.Example{Ref: *ref}
 
-			if opt.Formatted || opt.TokenizedSource {
-				entrySpec := sourcegraph.TreeEntrySpec{
-					RepoRev: sourcegraph.RepoRevSpec{
-						RepoSpec: sourcegraph.RepoSpec{URI: ref.Repo},
-						Rev:      op.Rev,
-						CommitID: ref.CommitID,
+			entrySpec := sourcegraph.TreeEntrySpec{
+				RepoRev: sourcegraph.RepoRevSpec{
+					RepoSpec: sourcegraph.RepoSpec{URI: ref.Repo},
+					Rev:      op.Rev,
+					CommitID: ref.CommitID,
+				},
+				Path: ref.File,
+			}
+			opt := &sourcegraph.RepoTreeGetOptions{
+				GetFileOptions: sourcegraph.GetFileOptions{
+					FileRange: sourcegraph.FileRange{
+						StartByte: int64(ref.Start), EndByte: int64(ref.End),
 					},
-					Path: ref.File,
-				}
-				opt := &sourcegraph.RepoTreeGetOptions{
-					Formatted:       opt.Formatted,
-					TokenizedSource: opt.TokenizedSource,
-					GetFileOptions: sourcegraph.GetFileOptions{
-						FileRange: sourcegraph.FileRange{
-							StartByte: int64(ref.Start), EndByte: int64(ref.End),
-						},
-						FullLines:          true,
-						ExpandContextLines: 4,
-					},
-				}
-				e, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: opt})
-				if err != nil {
-					log.Printf("Error fetching VCS file %v in def examples query for def %+v: %s. Proceeding with other examples.", entrySpec, defSpec, err)
-					examples[i].Error = true
-					return nil
-				}
-				if e.Type != sourcegraph.FileEntry {
-					examples[i].Error = true
-					return nil
-				}
+					FullLines:          true,
+					ExpandContextLines: 2,
+				},
+			}
+			e, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: opt})
+			if err != nil {
+				log.Printf("Error fetching VCS file %v in def examples query for def %+v: %s. Proceeding with other examples.", entrySpec, defSpec, err)
+				examples[i].Error = true
+				return nil
+			}
+			if e.Type != sourcegraph.FileEntry {
+				examples[i].Error = true
+				return nil
+			}
 
-				if e.SourceCode != nil {
-					examples[i].SourceCode = e.SourceCode
-				} else if opt.Formatted {
-					examples[i].SrcHTML = string(e.Contents)
-				}
-
-				examples[i].StartLine = int32(e.StartLine)
-				examples[i].EndLine = int32(e.EndLine)
-				if op.Rev != "" {
-					examples[i].Rev = op.Rev
-				}
+			examples[i].Contents = string(e.Contents)
+			examples[i].FileRange = *e.FileRange
+			if op.Rev != "" {
+				examples[i].Rev = op.Rev
 			}
 			return nil
 		})

@@ -25,27 +25,22 @@ const (
 	_GitTransportKey      contextKey = iota
 	_MultiRepoImporterKey contextKey = iota
 	_AccountsKey          contextKey = iota
+	_AnnotationsKey       contextKey = iota
 	_AuthKey              contextKey = iota
 	_BuildsKey            contextKey = iota
-	_ChangesetsKey        contextKey = iota
 	_DefsKey              contextKey = iota
 	_DeltasKey            contextKey = iota
 	_GraphUplinkKey       contextKey = iota
-	_MarkdownKey          contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
 	_NotifyKey            contextKey = iota
 	_OrgsKey              contextKey = iota
 	_PeopleKey            contextKey = iota
 	_RegisteredClientsKey contextKey = iota
-	_RepoBadgesKey        contextKey = iota
 	_RepoStatusesKey      contextKey = iota
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
 	_SearchKey            contextKey = iota
-	_StorageKey           contextKey = iota
-	_UnitsKey             contextKey = iota
-	_UserKeysKey          contextKey = iota
 	_UsersKey             contextKey = iota
 )
 
@@ -54,27 +49,22 @@ type Services struct {
 	GitTransport      gitpb.GitTransportServer
 	MultiRepoImporter pb.MultiRepoImporterServer
 	Accounts          sourcegraph.AccountsServer
+	Annotations       sourcegraph.AnnotationsServer
 	Auth              sourcegraph.AuthServer
 	Builds            sourcegraph.BuildsServer
-	Changesets        sourcegraph.ChangesetsServer
 	Defs              sourcegraph.DefsServer
 	Deltas            sourcegraph.DeltasServer
 	GraphUplink       sourcegraph.GraphUplinkServer
-	Markdown          sourcegraph.MarkdownServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
 	Notify            sourcegraph.NotifyServer
 	Orgs              sourcegraph.OrgsServer
 	People            sourcegraph.PeopleServer
 	RegisteredClients sourcegraph.RegisteredClientsServer
-	RepoBadges        sourcegraph.RepoBadgesServer
 	RepoStatuses      sourcegraph.RepoStatusesServer
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
 	Search            sourcegraph.SearchServer
-	Storage           sourcegraph.StorageServer
-	Units             sourcegraph.UnitsServer
-	UserKeys          sourcegraph.UserKeysServer
 	Users             sourcegraph.UsersServer
 }
 
@@ -93,16 +83,16 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		sourcegraph.RegisterAccountsServer(s, svcs.Accounts)
 	}
 
+	if svcs.Annotations != nil {
+		sourcegraph.RegisterAnnotationsServer(s, svcs.Annotations)
+	}
+
 	if svcs.Auth != nil {
 		sourcegraph.RegisterAuthServer(s, svcs.Auth)
 	}
 
 	if svcs.Builds != nil {
 		sourcegraph.RegisterBuildsServer(s, svcs.Builds)
-	}
-
-	if svcs.Changesets != nil {
-		sourcegraph.RegisterChangesetsServer(s, svcs.Changesets)
 	}
 
 	if svcs.Defs != nil {
@@ -115,10 +105,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.GraphUplink != nil {
 		sourcegraph.RegisterGraphUplinkServer(s, svcs.GraphUplink)
-	}
-
-	if svcs.Markdown != nil {
-		sourcegraph.RegisterMarkdownServer(s, svcs.Markdown)
 	}
 
 	if svcs.Meta != nil {
@@ -145,10 +131,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 		sourcegraph.RegisterRegisteredClientsServer(s, svcs.RegisteredClients)
 	}
 
-	if svcs.RepoBadges != nil {
-		sourcegraph.RegisterRepoBadgesServer(s, svcs.RepoBadges)
-	}
-
 	if svcs.RepoStatuses != nil {
 		sourcegraph.RegisterRepoStatusesServer(s, svcs.RepoStatuses)
 	}
@@ -163,18 +145,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Search != nil {
 		sourcegraph.RegisterSearchServer(s, svcs.Search)
-	}
-
-	if svcs.Storage != nil {
-		sourcegraph.RegisterStorageServer(s, svcs.Storage)
-	}
-
-	if svcs.Units != nil {
-		sourcegraph.RegisterUnitsServer(s, svcs.Units)
-	}
-
-	if svcs.UserKeys != nil {
-		sourcegraph.RegisterUserKeysServer(s, svcs.UserKeys)
 	}
 
 	if svcs.Users != nil {
@@ -198,16 +168,16 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithAccounts(ctx, s.Accounts)
 	}
 
+	if s.Annotations != nil {
+		ctx = WithAnnotations(ctx, s.Annotations)
+	}
+
 	if s.Auth != nil {
 		ctx = WithAuth(ctx, s.Auth)
 	}
 
 	if s.Builds != nil {
 		ctx = WithBuilds(ctx, s.Builds)
-	}
-
-	if s.Changesets != nil {
-		ctx = WithChangesets(ctx, s.Changesets)
 	}
 
 	if s.Defs != nil {
@@ -220,10 +190,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.GraphUplink != nil {
 		ctx = WithGraphUplink(ctx, s.GraphUplink)
-	}
-
-	if s.Markdown != nil {
-		ctx = WithMarkdown(ctx, s.Markdown)
 	}
 
 	if s.Meta != nil {
@@ -250,10 +216,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 		ctx = WithRegisteredClients(ctx, s.RegisteredClients)
 	}
 
-	if s.RepoBadges != nil {
-		ctx = WithRepoBadges(ctx, s.RepoBadges)
-	}
-
 	if s.RepoStatuses != nil {
 		ctx = WithRepoStatuses(ctx, s.RepoStatuses)
 	}
@@ -268,18 +230,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Search != nil {
 		ctx = WithSearch(ctx, s.Search)
-	}
-
-	if s.Storage != nil {
-		ctx = WithStorage(ctx, s.Storage)
-	}
-
-	if s.Units != nil {
-		ctx = WithUnits(ctx, s.Units)
-	}
-
-	if s.UserKeys != nil {
-		ctx = WithUserKeys(ctx, s.UserKeys)
 	}
 
 	if s.Users != nil {
@@ -358,6 +308,29 @@ func AccountsOrNil(ctx context.Context) sourcegraph.AccountsServer {
 	return nil
 }
 
+// WithAnnotations returns a copy of parent that uses the given Annotations service.
+func WithAnnotations(ctx context.Context, s sourcegraph.AnnotationsServer) context.Context {
+	return context.WithValue(ctx, _AnnotationsKey, s)
+}
+
+// Annotations gets the context's Annotations service. If the service is not present, it panics.
+func Annotations(ctx context.Context) sourcegraph.AnnotationsServer {
+	s, ok := ctx.Value(_AnnotationsKey).(sourcegraph.AnnotationsServer)
+	if !ok || s == nil {
+		panic("no Annotations set in context")
+	}
+	return s
+}
+
+// AnnotationsOrNil returns the context's Annotations service if present, or else nil.
+func AnnotationsOrNil(ctx context.Context) sourcegraph.AnnotationsServer {
+	s, ok := ctx.Value(_AnnotationsKey).(sourcegraph.AnnotationsServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
 // WithAuth returns a copy of parent that uses the given Auth service.
 func WithAuth(ctx context.Context, s sourcegraph.AuthServer) context.Context {
 	return context.WithValue(ctx, _AuthKey, s)
@@ -398,29 +371,6 @@ func Builds(ctx context.Context) sourcegraph.BuildsServer {
 // BuildsOrNil returns the context's Builds service if present, or else nil.
 func BuildsOrNil(ctx context.Context) sourcegraph.BuildsServer {
 	s, ok := ctx.Value(_BuildsKey).(sourcegraph.BuildsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithChangesets returns a copy of parent that uses the given Changesets service.
-func WithChangesets(ctx context.Context, s sourcegraph.ChangesetsServer) context.Context {
-	return context.WithValue(ctx, _ChangesetsKey, s)
-}
-
-// Changesets gets the context's Changesets service. If the service is not present, it panics.
-func Changesets(ctx context.Context) sourcegraph.ChangesetsServer {
-	s, ok := ctx.Value(_ChangesetsKey).(sourcegraph.ChangesetsServer)
-	if !ok || s == nil {
-		panic("no Changesets set in context")
-	}
-	return s
-}
-
-// ChangesetsOrNil returns the context's Changesets service if present, or else nil.
-func ChangesetsOrNil(ctx context.Context) sourcegraph.ChangesetsServer {
-	s, ok := ctx.Value(_ChangesetsKey).(sourcegraph.ChangesetsServer)
 	if ok {
 		return s
 	}
@@ -490,29 +440,6 @@ func GraphUplink(ctx context.Context) sourcegraph.GraphUplinkServer {
 // GraphUplinkOrNil returns the context's GraphUplink service if present, or else nil.
 func GraphUplinkOrNil(ctx context.Context) sourcegraph.GraphUplinkServer {
 	s, ok := ctx.Value(_GraphUplinkKey).(sourcegraph.GraphUplinkServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithMarkdown returns a copy of parent that uses the given Markdown service.
-func WithMarkdown(ctx context.Context, s sourcegraph.MarkdownServer) context.Context {
-	return context.WithValue(ctx, _MarkdownKey, s)
-}
-
-// Markdown gets the context's Markdown service. If the service is not present, it panics.
-func Markdown(ctx context.Context) sourcegraph.MarkdownServer {
-	s, ok := ctx.Value(_MarkdownKey).(sourcegraph.MarkdownServer)
-	if !ok || s == nil {
-		panic("no Markdown set in context")
-	}
-	return s
-}
-
-// MarkdownOrNil returns the context's Markdown service if present, or else nil.
-func MarkdownOrNil(ctx context.Context) sourcegraph.MarkdownServer {
-	s, ok := ctx.Value(_MarkdownKey).(sourcegraph.MarkdownServer)
 	if ok {
 		return s
 	}
@@ -657,29 +584,6 @@ func RegisteredClientsOrNil(ctx context.Context) sourcegraph.RegisteredClientsSe
 	return nil
 }
 
-// WithRepoBadges returns a copy of parent that uses the given RepoBadges service.
-func WithRepoBadges(ctx context.Context, s sourcegraph.RepoBadgesServer) context.Context {
-	return context.WithValue(ctx, _RepoBadgesKey, s)
-}
-
-// RepoBadges gets the context's RepoBadges service. If the service is not present, it panics.
-func RepoBadges(ctx context.Context) sourcegraph.RepoBadgesServer {
-	s, ok := ctx.Value(_RepoBadgesKey).(sourcegraph.RepoBadgesServer)
-	if !ok || s == nil {
-		panic("no RepoBadges set in context")
-	}
-	return s
-}
-
-// RepoBadgesOrNil returns the context's RepoBadges service if present, or else nil.
-func RepoBadgesOrNil(ctx context.Context) sourcegraph.RepoBadgesServer {
-	s, ok := ctx.Value(_RepoBadgesKey).(sourcegraph.RepoBadgesServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
 // WithRepoStatuses returns a copy of parent that uses the given RepoStatuses service.
 func WithRepoStatuses(ctx context.Context, s sourcegraph.RepoStatusesServer) context.Context {
 	return context.WithValue(ctx, _RepoStatusesKey, s)
@@ -766,75 +670,6 @@ func Search(ctx context.Context) sourcegraph.SearchServer {
 // SearchOrNil returns the context's Search service if present, or else nil.
 func SearchOrNil(ctx context.Context) sourcegraph.SearchServer {
 	s, ok := ctx.Value(_SearchKey).(sourcegraph.SearchServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithStorage returns a copy of parent that uses the given Storage service.
-func WithStorage(ctx context.Context, s sourcegraph.StorageServer) context.Context {
-	return context.WithValue(ctx, _StorageKey, s)
-}
-
-// Storage gets the context's Storage service. If the service is not present, it panics.
-func Storage(ctx context.Context) sourcegraph.StorageServer {
-	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
-	if !ok || s == nil {
-		panic("no Storage set in context")
-	}
-	return s
-}
-
-// StorageOrNil returns the context's Storage service if present, or else nil.
-func StorageOrNil(ctx context.Context) sourcegraph.StorageServer {
-	s, ok := ctx.Value(_StorageKey).(sourcegraph.StorageServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithUnits returns a copy of parent that uses the given Units service.
-func WithUnits(ctx context.Context, s sourcegraph.UnitsServer) context.Context {
-	return context.WithValue(ctx, _UnitsKey, s)
-}
-
-// Units gets the context's Units service. If the service is not present, it panics.
-func Units(ctx context.Context) sourcegraph.UnitsServer {
-	s, ok := ctx.Value(_UnitsKey).(sourcegraph.UnitsServer)
-	if !ok || s == nil {
-		panic("no Units set in context")
-	}
-	return s
-}
-
-// UnitsOrNil returns the context's Units service if present, or else nil.
-func UnitsOrNil(ctx context.Context) sourcegraph.UnitsServer {
-	s, ok := ctx.Value(_UnitsKey).(sourcegraph.UnitsServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithUserKeys returns a copy of parent that uses the given UserKeys service.
-func WithUserKeys(ctx context.Context, s sourcegraph.UserKeysServer) context.Context {
-	return context.WithValue(ctx, _UserKeysKey, s)
-}
-
-// UserKeys gets the context's UserKeys service. If the service is not present, it panics.
-func UserKeys(ctx context.Context) sourcegraph.UserKeysServer {
-	s, ok := ctx.Value(_UserKeysKey).(sourcegraph.UserKeysServer)
-	if !ok || s == nil {
-		panic("no UserKeys set in context")
-	}
-	return s
-}
-
-// UserKeysOrNil returns the context's UserKeys service if present, or else nil.
-func UserKeysOrNil(ctx context.Context) sourcegraph.UserKeysServer {
-	s, ok := ctx.Value(_UserKeysKey).(sourcegraph.UserKeysServer)
 	if ok {
 		return s
 	}

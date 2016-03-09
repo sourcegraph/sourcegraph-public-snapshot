@@ -22,7 +22,6 @@ type Stores struct {
 	Authorizations     Authorizations
 	BuildLogs          BuildLogs
 	Builds             Builds
-	Changesets         Changesets
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	Graph              srcstore.MockMultiRepoStore
@@ -31,14 +30,11 @@ type Stores struct {
 	Password           Password
 	RegisteredClients  RegisteredClients
 	RepoConfigs        RepoConfigs
-	RepoCounters       RepoCounters
 	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
-	Storage            Storage
 	Users              Users
-	Waitlist           Waitlist
 }
 
 func (s *Stores) Stores() store.Stores {
@@ -47,7 +43,6 @@ func (s *Stores) Stores() store.Stores {
 		Authorizations:     &s.Authorizations,
 		BuildLogs:          &s.BuildLogs,
 		Builds:             &s.Builds,
-		Changesets:         &s.Changesets,
 		Directory:          &s.Directory,
 		ExternalAuthTokens: &s.ExternalAuthTokens,
 		Graph:              &s.Graph,
@@ -56,13 +51,10 @@ func (s *Stores) Stores() store.Stores {
 		Password:           &s.Password,
 		RegisteredClients:  &s.RegisteredClients,
 		RepoConfigs:        &s.RepoConfigs,
-		RepoCounters:       &s.RepoCounters,
 		RepoPerms:          &s.RepoPerms,
 		RepoStatuses:       &s.RepoStatuses,
 		RepoVCS:            &s.RepoVCS,
 		Repos:              &s.Repos,
-		Storage:            &s.Storage,
 		Users:              &s.Users,
-		Waitlist:           &s.Waitlist,
 	}
 }

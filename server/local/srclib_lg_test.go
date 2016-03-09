@@ -63,7 +63,7 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	}
 
 	// Clone the repo locally.
-	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil, nil, false); err != nil {
+	if err := testutil.CloneRepo(t, authedCloneURL, tmpDir, nil, false); err != nil {
 		t.Fatal(err)
 	}
 	repoDir := filepath.Join(tmpDir, "testrepo")

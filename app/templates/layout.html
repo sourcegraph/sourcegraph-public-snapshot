@@ -4,7 +4,6 @@
 	<head
 		{{if not appconf.DisableSupportServices}}
 			{{if googleAnalyticsTrackingID}}data-google-analytics-tracking-id="{{googleAnalyticsTrackingID}}"{{end}}
-			data-heap-analytics-id="{{heapAnalyticsID}}"
 			{{if publicRavenDSN}}data-public-raven-dsn="{{publicRavenDSN}}"{{end}}
 		{{end}}
 		{{/* Using data attributes is deprecated. Use the script tag below to add data to context.js. */}}
@@ -28,7 +27,6 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="theme-color" content="#0fb6f2">
 		<link rel="search" type="application/opensearchdescription+xml" href="{{assetURL "/misc/opensearch.xml"}}" title="Sourcegraph" />
-		<link href="{{urlToBlogAtomFeed}}" type="application/atom+xml" rel="alternate" title="The Sourcegraph Blog">
 		<link rel="shortcut icon" href="{{assetURL "/img/favicon.png"}}?v=1">
 
 		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
@@ -37,14 +35,11 @@
 			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
 			window._csrfToken = "{{.CSRFToken}}";
 			window._currentUser = JSON.parse({{.CurrentUser|json}});
-			window._isMothership = {{isMothership}};
 			{{if .CacheControl}}window._cacheControl = "{{.CacheControl}}";{{end}}
 		</script>
 
 		<link href="{{assetURL "/bundle.css"}}" rel="stylesheet">
 		<link href="{{assetURL "/font/octicons/octicons.css"}}" rel="stylesheet">
-
-		<script src="{{assetURL "/analytics.js"}}"></script>
 
 		<link rel="canonical" href="{{.CanonicalURL}}">
 
@@ -71,6 +66,20 @@
 				{{end}}
 			</script>
 			<!-- End of FullStory script -->
+
+			<!-- Start of Google Analytics script -->
+			<script ignore-csp>
+				if (document.head.dataset.googleAnalyticsTrackingId) {
+					(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","https://www.google-analytics.com/analytics.js","ga");
+					window.ga("create", document.head.dataset.googleAnalyticsTrackingId, "auto");
+					window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
+					window.ga("require", "urlChangeTracker");
+					window.ga("set", "dimension1", Boolean(document.head.dataset.currentUserLogin));
+					window.ga("set", "dimension4", "web");
+					window.ga("send", "pageview");
+				}
+			<!-- End of Google Analytics script -->
+			</script>
 		{{end}}
 	</head>
 
@@ -96,7 +105,7 @@
 			{{ifTemplate .Common.TemplateName "RepoSubnav" $}}
 		</header>
 
-		<div class="container{{if .FullWidth}}-fluid{{end}} body" id="main">
+		<div class="container body" id="main">
 			{{template "Body" $}}
 		</div>
 

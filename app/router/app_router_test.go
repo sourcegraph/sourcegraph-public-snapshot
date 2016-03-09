@@ -63,21 +63,6 @@ func TestMatch(t *testing.T) {
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "myrev"},
 		},
 		{
-			path:          "/repohost.com/foo@a/b/.compare/c/d",
-			wantRouteName: RepoCompare,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "a/b", "Head": "c/d"},
-		},
-		{
-			path:          "/repohost.com/foo@a/.compare/b",
-			wantRouteName: RepoCompare,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "a", "Head": "b"},
-		},
-		{
-			path:          "/repohost.com/foo@a/.compare/b/.all",
-			wantRouteName: RepoCompareAll,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "a", "Head": "b"},
-		},
-		{
 			path:          "/repohost.com/foo/.commits",
 			wantRouteName: RepoRevCommits,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
@@ -187,22 +172,6 @@ func TestMatch(t *testing.T) {
 			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2/.examples",
 			wantRouteName: DefExamples,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
-		},
-
-		// Blog
-		{
-			path:          "/blog",
-			wantRouteName: BlogIndex,
-		},
-		{
-			path:          "/blog.atom",
-			wantRouteName: BlogIndexAtom,
-			wantVars:      map[string]string{"Format": ".atom"},
-		},
-		{
-			path:          "/blog/foo-bar",
-			wantRouteName: BlogPost,
-			wantVars:      map[string]string{"Slug": "foo-bar"},
 		},
 	}
 	for _, test := range tests {

@@ -27,15 +27,6 @@ export class GitHubUsersStore extends Store {
 				getUnique() { return []; },
 			});
 		}
-		// Store the state of which organizations mirrored users can come from.
-		// The currentOrg is a filter for widget components.
-		this.getByOrg = {};
-		if (typeof window === "undefined" || !window.teammates) { // TODO support document object.
-			this.orgs = {};
-		} else {
-			this.orgs = window.teammates.Organizations;
-			this.users.users.map(user => this.getByOrg.hasOwnProperty(user.Organization) ? this.getByOrg[user.Organization].push(user) : this.getByOrg[user.Organization] = [].concat.apply(user || []));
-		}
 	}
 
 	__onDispatch(action) {

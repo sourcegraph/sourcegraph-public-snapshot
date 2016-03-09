@@ -4,24 +4,9 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
 )
 
-// Orgs is a GitHub-backed implementation of the Orgs store.
 type Orgs struct{}
-
-var _ store.Orgs = (*Orgs)(nil)
-
-func (s *Orgs) Get(ctx context.Context, orgSpec sourcegraph.OrgSpec) (*sourcegraph.Org, error) {
-	user, err := (&Users{}).Get(ctx, sourcegraph.UserSpec{Login: orgSpec.Org, UID: orgSpec.UID})
-	if err != nil {
-		return nil, err
-	}
-	if !user.IsOrganization {
-		return nil, &store.UserNotFoundError{Login: orgSpec.Org}
-	}
-	return &sourcegraph.Org{User: *user}, nil
-}
 
 func (s *Orgs) List(ctx context.Context, user sourcegraph.UserSpec, opt *sourcegraph.ListOptions) ([]*sourcegraph.Org, error) {
 	ghOrgs, _, err := client(ctx).orgs.List(user.Login, &github.ListOptions{

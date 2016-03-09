@@ -16,11 +16,9 @@ SectionOrder = [
 ]
 
 [params.SectionNames]
-getting-started = "Getting Started"
 install = "Installation"
 config = "Configuration"
 features = "Features"
 integrations = "Integrations"
 management = "Management"
 dev = "Development"
-troubleshooting = "Troubleshooting"

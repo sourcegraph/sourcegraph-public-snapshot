@@ -158,7 +158,7 @@ func getGodocDir(ctx context.Context, cl *sourcegraph.Client, repo *sourcegraph.
 		VCS:         repo.VCS,
 		DeadEndFork: repo.Fork,
 		BrowseURL:   router.Rel.URLToRepoTreeEntry(repo.URI, repoRevSpec.CommitID, subdir).String(),
-		LineFmt:     "%s?startline=%d&endline=%[2]d",
+		LineFmt:     "%s#L%d-%[2]d",
 	}
 
 	entrySpec := sourcegraph.TreeEntrySpec{

@@ -38,12 +38,15 @@
 	}
 
 	.highlight-primary {
-		background: $token-focus-color;
-		box-shadow: inset 0px 0px 0px 1px $token-focus-border;
-	}
-	.highlight-secondary {
 		background: $token-hover-color;
-		box-shadow: inset 0px 0px 0px 1px $token-hover-border;
+		outline: solid 1px $token-hover-color;
+		border-radius: $border-radius-small;
+	}
+
+	.active-def {
+		background: $token-active-color;
+		outline: solid 1px $token-active-border;
+		border-radius: $border-radius-small;
 	}
 }
 

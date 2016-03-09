@@ -12,15 +12,13 @@ import (
 // Features is the source of truth for feature toggles. Use Features for
 // querying whether a feature is toggled or not
 var Features = struct {
-	Discussions        bool
-	NotificationCenter bool
+	Discussions bool
 
 	// Currently disabled due to performance issues.
 	TreeEntryCommits bool
 }{
-	Discussions:        false,
-	NotificationCenter: true,
-	TreeEntryCommits:   false,
+	Discussions:      false,
+	TreeEntryCommits: false,
 }
 
 func init() {

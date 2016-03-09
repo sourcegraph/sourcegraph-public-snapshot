@@ -34,12 +34,12 @@ func TestDefExamples(t *testing.T) {
 		return &sourcegraph.ExampleList{
 			Examples: []*sourcegraph.Example{
 				{
-					Ref:     graph.Ref{DefRepo: "my/repo", DefUnitType: "t", DefUnit: "u", DefPath: "p", Repo: "r", File: "foo.go", CommitID: "c", Start: 3, End: 6},
-					SrcHTML: `<a>baz</a>`,
+					Ref:      graph.Ref{DefRepo: "my/repo", DefUnitType: "t", DefUnit: "u", DefPath: "p", Repo: "r", File: "foo.go", CommitID: "c", Start: 3, End: 6},
+					Contents: `<a>baz</a>`,
 				},
 				{
-					Ref:     graph.Ref{DefRepo: "my/repo", DefUnitType: "t", DefUnit: "u", DefPath: "p", Repo: "r", File: "bar.go", CommitID: "c", Start: 20, End: 23},
-					SrcHTML: `<a>baz</a>`,
+					Ref:      graph.Ref{DefRepo: "my/repo", DefUnitType: "t", DefUnit: "u", DefPath: "p", Repo: "r", File: "bar.go", CommitID: "c", Start: 20, End: 23},
+					Contents: `<a>baz</a>`,
 				},
 			},
 		}, nil

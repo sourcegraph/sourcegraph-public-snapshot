@@ -18,14 +18,6 @@ import (
 // This file contains getters and middleware setters for data that
 // should be in the context during HTTP handler execution.
 
-type contextKey int
-
-const (
-	userKey contextKey = iota
-	fullUserKey
-	emailAddrsKey
-)
-
 // UserMiddleware fetches the user object and stores it in the context
 // for downstream HTTP handlers. The CookieMiddleware must already
 // have run (or something else that calls sourcegraph.WithCredentials
@@ -43,12 +35,8 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 			ctx = auth.WithActor(ctx, auth.Actor{
 				UID:      int(authInfo.UID),
 				Login:    authInfo.Login,
-				Domain:   authInfo.Domain,
 				ClientID: authInfo.ClientID,
 				Scope:    auth.UnmarshalScope(authInfo.Scopes),
-
-				PrivateMirrors:  authInfo.PrivateMirrors,
-				MirrorsWaitlist: authInfo.MirrorsWaitlist,
 			})
 		}
 	}
@@ -79,9 +67,8 @@ func ClearUser(ctx context.Context) context.Context {
 func WithUser(ctx context.Context, user sourcegraph.UserSpec) context.Context {
 	ctx = withUser(ctx, &user)
 	ctx = withFullUser(ctx, &sourcegraph.User{
-		Login:  user.Login,
-		UID:    user.UID,
-		Domain: user.Domain,
+		Login: user.Login,
+		UID:   user.UID,
 	})
 	return ctx
 }

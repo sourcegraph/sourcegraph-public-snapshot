@@ -2,7 +2,7 @@
 {{if not .DisableExternalLinks}}
 	<footer id="footer">
 		<div class="footer-inner">
-			<div class="container{{if .FullWidth}}-fluid{{end}}">
+			<div class="container">
 				<div class="footer-container">
 					<div class="row">
 						<div class="col-sm-6 info">
@@ -10,15 +10,10 @@
 								<span class="powered-by">Powered by</span>
 								<a href="https://sourcegraph.com" target="_blank">Sourcegraph</a><br>
 								<span class="powered-by small">Code Intelligence for teams</span><br>
-								<span class="version" data-tooltip title="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">
+								<span class="version" title="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">
 									<span class="powered-by small">version {{buildvar.Version}}</span>
 								</span>
 							</p>
-							{{with updateAvailable}}
-								<a class="small" target="_blank" href="https://src.sourcegraph.com/sourcegraph/.docs/management/upgrading/">
-									Upgrade to v{{.}}
-								</a>
-							{{end}}
 						</div>
 						<div class="col-sm-6 info">
 						</div>

@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
+	"src.sourcegraph.com/sourcegraph/ext/github"
 )
 
 // VerifyUserHasReadAccess checks if the user in the current context
@@ -65,20 +66,28 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // VerifyActorHasReadAccess checks if the given actor is authorized to make
 // read requests to this server.
 //
-// Note that this function allows the caller to retrieve any user's access levels.
-// This is meant for trusted server code living outside the scope of gRPC requests
-// to verify user permissions, for example the SSH Git server. For all other cases,
-// VerifyUserHasWriteAccess or VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
+// Note that this function allows the caller to retrieve any user's
+// access levels.  This is meant for trusted server code living
+// outside the scope of gRPC requests to verify user permissions. For
+// all other cases, VerifyUserHasWriteAccess or
+// VerifyUserHasAdminAccess should be used to authorize a user for
+// gRPC operations.
 func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has read access.
 		return nil
 	}
 
-	if authutil.ActiveFlags.PrivateMirrors && repo != "" {
-		err := verifyPrivateRepoPerms(ctx, actor, method, repo)
-		if err != errNotPrivateRepo {
-			return err
+	// TODO: move to a security model that is more robust, readable, has better separation
+	// when dealing with multiple configurations, actor types, resource types and actions.
+	//
+	// Delegate permissions check to GitHub for GitHub mirrored repos.
+	if strings.HasPrefix(repo, "github.com/") {
+		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+			_, err := (&github.Repos{}).Get(ctx, repo)
+			if err != nil {
+				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+			}
 		}
 	}
 
@@ -90,7 +99,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		if len(actor.Scope) > 0 {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: no authenticated user in current context", method)
+		return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
 	}
 
 	return nil
@@ -99,32 +108,24 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 // VerifyActorHasWriteAccess checks if the given actor is authorized to make
 // write requests to this server.
 //
-// Note that this function allows the caller to retrieve any user's access levels.
-// This is meant for trusted server code living outside the scope of gRPC requests
-// to verify user permissions, for example the SSH Git server. For all other cases,
-// VerifyUserHasWriteAccess should be used to authorize a user for gRPC operations.
+// Note that this function allows the caller to retrieve any user's
+// access levels.  This is meant for trusted server code living
+// outside the scope of gRPC requests to verify user permissions. For
+// all other cases, VerifyUserHasWriteAccess should be used to
+// authorize a user for gRPC operations.
 func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
+	// TODO: redesign the permissions model to avoid short-circuited "return nil"s.
+	// (because it makes modifying authorization logic more error-prone.)
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has write access.
 		return nil
-	}
-
-	if authutil.ActiveFlags.PrivateMirrors {
-		if method == "Repos.Create" && actor.PrivateMirrors {
-			return nil
-		} else if repo != "" {
-			err := verifyPrivateRepoPerms(ctx, actor, method, repo)
-			if err != errNotPrivateRepo {
-				return err
-			}
-		}
 	}
 
 	if !actor.IsAuthenticated() {
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: no authenticated user in current context", method)
+		return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated", method)
 	}
 
 	var hasWrite bool
@@ -137,16 +138,30 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	if !hasWrite {
 		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
 	}
+
+	// TODO: move to a security model that is more robust, readable, has better separation
+	// when dealing with multiple configurations, actor types, resource types and actions.
+	//
+	// Delegate permissions check to GitHub for GitHub mirrored repos.
+	if strings.HasPrefix(repo, "github.com/") {
+		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+			_, err := (&github.Repos{}).Get(ctx, repo)
+			if err != nil {
+				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+			}
+		}
+	}
 	return nil
 }
 
 // VerifyActorHasAdminAccess checks if the given actor is authorized to make
 // admin requests to this server.
 //
-// Note that this function allows the caller to retrieve any user's access levels.
-// This is meant for trusted server code living outside the scope of gRPC requests
-// to verify user permissions, for example the SSH Git server. For all other cases,
-// VerifyUserHasAdminAccess should be used to authorize a user for gRPC operations.
+// Note that this function allows the caller to retrieve any user's
+// access levels.  This is meant for trusted server code living
+// outside the scope of gRPC requests to verify user permissions. For
+// all other cases, VerifyUserHasAdminAccess should be used to
+// authorize a user for gRPC operations.
 func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method string) error {
 	if !authutil.ActiveFlags.HasAccessControl() {
 		// Access controls are disabled on the server, so everyone has admin access.
@@ -157,11 +172,11 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, "") {
 			return nil
 		}
-		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: no authenticated user in current context", method)
+		return grpc.Errorf(codes.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
 	}
 
 	if !actor.HasAdminAccess() {
-		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: user does not have admin status", method)
+		return grpc.Errorf(codes.PermissionDenied, "admin operation (%s) denied: not authorized", method)
 	}
 	return nil
 }

@@ -7,8 +7,8 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 afterEach(GitHubUsersStore.reset.bind(GitHubUsersStore));
 beforeEach(GitHubUsersStore.reset.bind(GitHubUsersStore));
 
-describe("DefStore", () => {
-	it("should handle Mirror Repo Added", () => {
+describe("GitHubUsersStore", () => {
+	it("should handle user invites", () => {
 		Dispatcher.directDispatch(GitHubUsersStore, new DashboardActions.UsersInvited({Users: "hello"}));
 		expect(GitHubUsersStore.users.users).to.be("hello");
 	});

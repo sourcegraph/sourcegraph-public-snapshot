@@ -19,18 +19,13 @@ import (
 
 	// External services
 	_ "src.sourcegraph.com/sourcegraph/ext/github"
-	_ "src.sourcegraph.com/sourcegraph/ext/github/discover"
 	_ "src.sourcegraph.com/sourcegraph/ext/papertrail"
 
 	// Misc.
-	_ "src.sourcegraph.com/sourcegraph/devdoc"
 	_ "src.sourcegraph.com/sourcegraph/pkg/wellknown"
 	_ "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
 
 	// Platform applications
-	_ "src.sourcegraph.com/apps/apidocs"
-	_ "src.sourcegraph.com/apps/notifications/sgapp"
-	_ "src.sourcegraph.com/sourcegraph/platform/apps/changesets"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
 	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
 )

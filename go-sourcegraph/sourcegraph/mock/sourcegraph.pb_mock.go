@@ -5,62 +5,11 @@ package mock
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/inventory"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
-
-type RepoBadgesClient struct {
-	ListBadges_   func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error)
-	ListCounters_ func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error)
-	RecordHit_    func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	CountHits_    func(ctx context.Context, in *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error)
-}
-
-func (s *RepoBadgesClient) ListBadges(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.BadgeList, error) {
-	return s.ListBadges_(ctx, in)
-}
-
-func (s *RepoBadgesClient) ListCounters(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.CounterList, error) {
-	return s.ListCounters_(ctx, in)
-}
-
-func (s *RepoBadgesClient) RecordHit(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.RecordHit_(ctx, in)
-}
-
-func (s *RepoBadgesClient) CountHits(ctx context.Context, in *sourcegraph.RepoBadgesCountHitsOp, opts ...grpc.CallOption) (*sourcegraph.RepoBadgesCountHitsResult, error) {
-	return s.CountHits_(ctx, in)
-}
-
-var _ sourcegraph.RepoBadgesClient = (*RepoBadgesClient)(nil)
-
-type RepoBadgesServer struct {
-	ListBadges_   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error)
-	ListCounters_ func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error)
-	RecordHit_    func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	CountHits_    func(v0 context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error)
-}
-
-func (s *RepoBadgesServer) ListBadges(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.BadgeList, error) {
-	return s.ListBadges_(v0, v1)
-}
-
-func (s *RepoBadgesServer) ListCounters(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.CounterList, error) {
-	return s.ListCounters_(v0, v1)
-}
-
-func (s *RepoBadgesServer) RecordHit(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	return s.RecordHit_(v0, v1)
-}
-
-func (s *RepoBadgesServer) CountHits(v0 context.Context, v1 *sourcegraph.RepoBadgesCountHitsOp) (*sourcegraph.RepoBadgesCountHitsResult, error) {
-	return s.CountHits_(v0, v1)
-}
-
-var _ sourcegraph.RepoBadgesServer = (*RepoBadgesServer)(nil)
 
 type RepoStatusesClient struct {
 	GetCombined_ func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
@@ -94,7 +43,9 @@ var _ sourcegraph.RepoStatusesServer = (*RepoStatusesServer)(nil)
 
 type ReposClient struct {
 	Get_                         func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Resolve_                     func(ctx context.Context, in *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(ctx context.Context, in *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListRemote_                  func(ctx context.Context, in *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -114,8 +65,16 @@ func (s *ReposClient) Get(ctx context.Context, in *sourcegraph.RepoSpec, opts ..
 	return s.Get_(ctx, in)
 }
 
+func (s *ReposClient) Resolve(ctx context.Context, in *sourcegraph.RepoResolveOp, opts ...grpc.CallOption) (*sourcegraph.RepoResolution, error) {
+	return s.Resolve_(ctx, in)
+}
+
 func (s *ReposClient) List(ctx context.Context, in *sourcegraph.RepoListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoList, error) {
 	return s.List_(ctx, in)
+}
+
+func (s *ReposClient) ListRemote(ctx context.Context, in *sourcegraph.ReposListRemoteOptions, opts ...grpc.CallOption) (*sourcegraph.RemoteRepoList, error) {
+	return s.ListRemote_(ctx, in)
 }
 
 func (s *ReposClient) Create(ctx context.Context, in *sourcegraph.ReposCreateOp, opts ...grpc.CallOption) (*sourcegraph.Repo, error) {
@@ -174,7 +133,9 @@ var _ sourcegraph.ReposClient = (*ReposClient)(nil)
 
 type ReposServer struct {
 	Get_                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Resolve_                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List_                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListRemote_                  func(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error)
 	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
@@ -194,8 +155,16 @@ func (s *ReposServer) Get(v0 context.Context, v1 *sourcegraph.RepoSpec) (*source
 	return s.Get_(v0, v1)
 }
 
+func (s *ReposServer) Resolve(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+	return s.Resolve_(v0, v1)
+}
+
 func (s *ReposServer) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
 	return s.List_(v0, v1)
+}
+
+func (s *ReposServer) ListRemote(v0 context.Context, v1 *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
+	return s.ListRemote_(v0, v1)
 }
 
 func (s *ReposServer) Create(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
@@ -252,212 +221,22 @@ func (s *ReposServer) GetInventory(v0 context.Context, v1 *sourcegraph.RepoRevSp
 
 var _ sourcegraph.ReposServer = (*ReposServer)(nil)
 
-type StorageClient struct {
-	Get_            func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
-	Put_            func(ctx context.Context, in *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	PutNoOverwrite_ func(ctx context.Context, in *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	Delete_         func(ctx context.Context, in *sourcegraph.StorageKey) (*pbtypes.Void, error)
-	Exists_         func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
-	List_           func(ctx context.Context, in *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
-}
-
-func (s *StorageClient) Get(ctx context.Context, in *sourcegraph.StorageKey, opts ...grpc.CallOption) (*sourcegraph.StorageValue, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *StorageClient) Put(ctx context.Context, in *sourcegraph.StoragePutOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.Put_(ctx, in)
-}
-
-func (s *StorageClient) PutNoOverwrite(ctx context.Context, in *sourcegraph.StoragePutOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.PutNoOverwrite_(ctx, in)
-}
-
-func (s *StorageClient) Delete(ctx context.Context, in *sourcegraph.StorageKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.Delete_(ctx, in)
-}
-
-func (s *StorageClient) Exists(ctx context.Context, in *sourcegraph.StorageKey, opts ...grpc.CallOption) (*sourcegraph.StorageExists, error) {
-	return s.Exists_(ctx, in)
-}
-
-func (s *StorageClient) List(ctx context.Context, in *sourcegraph.StorageKey, opts ...grpc.CallOption) (*sourcegraph.StorageList, error) {
-	return s.List_(ctx, in)
-}
-
-var _ sourcegraph.StorageClient = (*StorageClient)(nil)
-
-type StorageServer struct {
-	Get_            func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error)
-	Put_            func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	PutNoOverwrite_ func(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error)
-	Delete_         func(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error)
-	Exists_         func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error)
-	List_           func(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error)
-}
-
-func (s *StorageServer) Get(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageValue, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *StorageServer) Put(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	return s.Put_(v0, v1)
-}
-
-func (s *StorageServer) PutNoOverwrite(v0 context.Context, v1 *sourcegraph.StoragePutOp) (*pbtypes.Void, error) {
-	return s.PutNoOverwrite_(v0, v1)
-}
-
-func (s *StorageServer) Delete(v0 context.Context, v1 *sourcegraph.StorageKey) (*pbtypes.Void, error) {
-	return s.Delete_(v0, v1)
-}
-
-func (s *StorageServer) Exists(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageExists, error) {
-	return s.Exists_(v0, v1)
-}
-
-func (s *StorageServer) List(v0 context.Context, v1 *sourcegraph.StorageKey) (*sourcegraph.StorageList, error) {
-	return s.List_(v0, v1)
-}
-
-var _ sourcegraph.StorageServer = (*StorageServer)(nil)
-
-type ChangesetsClient struct {
-	Create_         func(ctx context.Context, in *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error)
-	Get_            func(ctx context.Context, in *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error)
-	List_           func(ctx context.Context, in *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
-	Update_         func(ctx context.Context, in *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
-	Merge_          func(ctx context.Context, in *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error)
-	UpdateAffected_ func(ctx context.Context, in *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error)
-	CreateReview_   func(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
-	ListReviews_    func(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
-	ListEvents_     func(ctx context.Context, in *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
-}
-
-func (s *ChangesetsClient) Create(ctx context.Context, in *sourcegraph.ChangesetCreateOp, opts ...grpc.CallOption) (*sourcegraph.Changeset, error) {
-	return s.Create_(ctx, in)
-}
-
-func (s *ChangesetsClient) Get(ctx context.Context, in *sourcegraph.ChangesetGetOp, opts ...grpc.CallOption) (*sourcegraph.Changeset, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *ChangesetsClient) List(ctx context.Context, in *sourcegraph.ChangesetListOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetList, error) {
-	return s.List_(ctx, in)
-}
-
-func (s *ChangesetsClient) Update(ctx context.Context, in *sourcegraph.ChangesetUpdateOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEvent, error) {
-	return s.Update_(ctx, in)
-}
-
-func (s *ChangesetsClient) Merge(ctx context.Context, in *sourcegraph.ChangesetMergeOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEvent, error) {
-	return s.Merge_(ctx, in)
-}
-
-func (s *ChangesetsClient) UpdateAffected(ctx context.Context, in *sourcegraph.ChangesetUpdateAffectedOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetEventList, error) {
-	return s.UpdateAffected_(ctx, in)
-}
-
-func (s *ChangesetsClient) CreateReview(ctx context.Context, in *sourcegraph.ChangesetCreateReviewOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetReview, error) {
-	return s.CreateReview_(ctx, in)
-}
-
-func (s *ChangesetsClient) ListReviews(ctx context.Context, in *sourcegraph.ChangesetListReviewsOp, opts ...grpc.CallOption) (*sourcegraph.ChangesetReviewList, error) {
-	return s.ListReviews_(ctx, in)
-}
-
-func (s *ChangesetsClient) ListEvents(ctx context.Context, in *sourcegraph.ChangesetSpec, opts ...grpc.CallOption) (*sourcegraph.ChangesetEventList, error) {
-	return s.ListEvents_(ctx, in)
-}
-
-var _ sourcegraph.ChangesetsClient = (*ChangesetsClient)(nil)
-
-type ChangesetsServer struct {
-	Create_         func(v0 context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error)
-	Get_            func(v0 context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error)
-	List_           func(v0 context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error)
-	Update_         func(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error)
-	Merge_          func(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error)
-	UpdateAffected_ func(v0 context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error)
-	CreateReview_   func(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error)
-	ListReviews_    func(v0 context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error)
-	ListEvents_     func(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error)
-}
-
-func (s *ChangesetsServer) Create(v0 context.Context, v1 *sourcegraph.ChangesetCreateOp) (*sourcegraph.Changeset, error) {
-	return s.Create_(v0, v1)
-}
-
-func (s *ChangesetsServer) Get(v0 context.Context, v1 *sourcegraph.ChangesetGetOp) (*sourcegraph.Changeset, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *ChangesetsServer) List(v0 context.Context, v1 *sourcegraph.ChangesetListOp) (*sourcegraph.ChangesetList, error) {
-	return s.List_(v0, v1)
-}
-
-func (s *ChangesetsServer) Update(v0 context.Context, v1 *sourcegraph.ChangesetUpdateOp) (*sourcegraph.ChangesetEvent, error) {
-	return s.Update_(v0, v1)
-}
-
-func (s *ChangesetsServer) Merge(v0 context.Context, v1 *sourcegraph.ChangesetMergeOp) (*sourcegraph.ChangesetEvent, error) {
-	return s.Merge_(v0, v1)
-}
-
-func (s *ChangesetsServer) UpdateAffected(v0 context.Context, v1 *sourcegraph.ChangesetUpdateAffectedOp) (*sourcegraph.ChangesetEventList, error) {
-	return s.UpdateAffected_(v0, v1)
-}
-
-func (s *ChangesetsServer) CreateReview(v0 context.Context, v1 *sourcegraph.ChangesetCreateReviewOp) (*sourcegraph.ChangesetReview, error) {
-	return s.CreateReview_(v0, v1)
-}
-
-func (s *ChangesetsServer) ListReviews(v0 context.Context, v1 *sourcegraph.ChangesetListReviewsOp) (*sourcegraph.ChangesetReviewList, error) {
-	return s.ListReviews_(v0, v1)
-}
-
-func (s *ChangesetsServer) ListEvents(v0 context.Context, v1 *sourcegraph.ChangesetSpec) (*sourcegraph.ChangesetEventList, error) {
-	return s.ListEvents_(v0, v1)
-}
-
-var _ sourcegraph.ChangesetsServer = (*ChangesetsServer)(nil)
-
 type MirrorReposClient struct {
-	RefreshVCS_    func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
-	GetUserData_   func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
-	AddToWaitlist_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.WaitlistState, error)
+	RefreshVCS_ func(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 }
 
 func (s *MirrorReposClient) RefreshVCS(ctx context.Context, in *sourcegraph.MirrorReposRefreshVCSOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.RefreshVCS_(ctx, in)
 }
 
-func (s *MirrorReposClient) GetUserData(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.UserMirrorData, error) {
-	return s.GetUserData_(ctx, in)
-}
-
-func (s *MirrorReposClient) AddToWaitlist(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.WaitlistState, error) {
-	return s.AddToWaitlist_(ctx, in)
-}
-
 var _ sourcegraph.MirrorReposClient = (*MirrorReposClient)(nil)
 
 type MirrorReposServer struct {
-	RefreshVCS_    func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
-	GetUserData_   func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error)
-	AddToWaitlist_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error)
+	RefreshVCS_ func(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error)
 }
 
 func (s *MirrorReposServer) RefreshVCS(v0 context.Context, v1 *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	return s.RefreshVCS_(v0, v1)
-}
-
-func (s *MirrorReposServer) GetUserData(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.UserMirrorData, error) {
-	return s.GetUserData_(v0, v1)
-}
-
-func (s *MirrorReposServer) AddToWaitlist(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.WaitlistState, error) {
-	return s.AddToWaitlist_(v0, v1)
 }
 
 var _ sourcegraph.MirrorReposServer = (*MirrorReposServer)(nil)
@@ -802,66 +581,6 @@ func (s *UsersServer) Count(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 
 var _ sourcegraph.UsersServer = (*UsersServer)(nil)
 
-type UserKeysClient struct {
-	AddKey_        func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
-	LookupUser_    func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
-	DeleteKey_     func(ctx context.Context, in *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
-	ListKeys_      func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.SSHKeyList, error)
-	DeleteAllKeys_ func(ctx context.Context, in *pbtypes.Void) (*pbtypes.Void, error)
-}
-
-func (s *UserKeysClient) AddKey(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.AddKey_(ctx, in)
-}
-
-func (s *UserKeysClient) LookupUser(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*sourcegraph.UserSpec, error) {
-	return s.LookupUser_(ctx, in)
-}
-
-func (s *UserKeysClient) DeleteKey(ctx context.Context, in *sourcegraph.SSHPublicKey, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.DeleteKey_(ctx, in)
-}
-
-func (s *UserKeysClient) ListKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.SSHKeyList, error) {
-	return s.ListKeys_(ctx, in)
-}
-
-func (s *UserKeysClient) DeleteAllKeys(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.DeleteAllKeys_(ctx, in)
-}
-
-var _ sourcegraph.UserKeysClient = (*UserKeysClient)(nil)
-
-type UserKeysServer struct {
-	AddKey_        func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
-	LookupUser_    func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error)
-	DeleteKey_     func(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error)
-	ListKeys_      func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error)
-	DeleteAllKeys_ func(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error)
-}
-
-func (s *UserKeysServer) AddKey(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	return s.AddKey_(v0, v1)
-}
-
-func (s *UserKeysServer) LookupUser(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*sourcegraph.UserSpec, error) {
-	return s.LookupUser_(v0, v1)
-}
-
-func (s *UserKeysServer) DeleteKey(v0 context.Context, v1 *sourcegraph.SSHPublicKey) (*pbtypes.Void, error) {
-	return s.DeleteKey_(v0, v1)
-}
-
-func (s *UserKeysServer) ListKeys(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.SSHKeyList, error) {
-	return s.ListKeys_(v0, v1)
-}
-
-func (s *UserKeysServer) DeleteAllKeys(v0 context.Context, v1 *pbtypes.Void) (*pbtypes.Void, error) {
-	return s.DeleteAllKeys_(v0, v1)
-}
-
-var _ sourcegraph.UserKeysServer = (*UserKeysServer)(nil)
-
 type AuthClient struct {
 	GetAuthorizationCode_ func(ctx context.Context, in *sourcegraph.AuthorizationCodeRequest) (*sourcegraph.AuthorizationCode, error)
 	GetAccessToken_       func(ctx context.Context, in *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
@@ -927,8 +646,6 @@ type DefsClient struct {
 	List_         func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_     func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListExamples_ func(ctx context.Context, in *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error)
-	ListAuthors_  func(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
-	ListClients_  func(ctx context.Context, in *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error)
 }
 
 func (s *DefsClient) Get(ctx context.Context, in *sourcegraph.DefsGetOp, opts ...grpc.CallOption) (*sourcegraph.Def, error) {
@@ -947,14 +664,6 @@ func (s *DefsClient) ListExamples(ctx context.Context, in *sourcegraph.DefsListE
 	return s.ListExamples_(ctx, in)
 }
 
-func (s *DefsClient) ListAuthors(ctx context.Context, in *sourcegraph.DefsListAuthorsOp, opts ...grpc.CallOption) (*sourcegraph.DefAuthorList, error) {
-	return s.ListAuthors_(ctx, in)
-}
-
-func (s *DefsClient) ListClients(ctx context.Context, in *sourcegraph.DefsListClientsOp, opts ...grpc.CallOption) (*sourcegraph.DefClientList, error) {
-	return s.ListClients_(ctx, in)
-}
-
 var _ sourcegraph.DefsClient = (*DefsClient)(nil)
 
 type DefsServer struct {
@@ -962,8 +671,6 @@ type DefsServer struct {
 	List_         func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_     func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListExamples_ func(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error)
-	ListAuthors_  func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
-	ListClients_  func(v0 context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error)
 }
 
 func (s *DefsServer) Get(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
@@ -982,105 +689,37 @@ func (s *DefsServer) ListExamples(v0 context.Context, v1 *sourcegraph.DefsListEx
 	return s.ListExamples_(v0, v1)
 }
 
-func (s *DefsServer) ListAuthors(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
-	return s.ListAuthors_(v0, v1)
-}
-
-func (s *DefsServer) ListClients(v0 context.Context, v1 *sourcegraph.DefsListClientsOp) (*sourcegraph.DefClientList, error) {
-	return s.ListClients_(v0, v1)
-}
-
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)
 
 type DeltasClient struct {
-	Get_                 func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
-	ListUnits_           func(ctx context.Context, in *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error)
-	ListDefs_            func(ctx context.Context, in *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error)
-	ListFiles_           func(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
-	ListAffectedAuthors_ func(ctx context.Context, in *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error)
-	ListAffectedClients_ func(ctx context.Context, in *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error)
+	Get_       func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
+	ListFiles_ func(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
 }
 
 func (s *DeltasClient) Get(ctx context.Context, in *sourcegraph.DeltaSpec, opts ...grpc.CallOption) (*sourcegraph.Delta, error) {
 	return s.Get_(ctx, in)
 }
 
-func (s *DeltasClient) ListUnits(ctx context.Context, in *sourcegraph.DeltasListUnitsOp, opts ...grpc.CallOption) (*sourcegraph.UnitDeltaList, error) {
-	return s.ListUnits_(ctx, in)
-}
-
-func (s *DeltasClient) ListDefs(ctx context.Context, in *sourcegraph.DeltasListDefsOp, opts ...grpc.CallOption) (*sourcegraph.DeltaDefs, error) {
-	return s.ListDefs_(ctx, in)
-}
-
 func (s *DeltasClient) ListFiles(ctx context.Context, in *sourcegraph.DeltasListFilesOp, opts ...grpc.CallOption) (*sourcegraph.DeltaFiles, error) {
 	return s.ListFiles_(ctx, in)
-}
-
-func (s *DeltasClient) ListAffectedAuthors(ctx context.Context, in *sourcegraph.DeltasListAffectedAuthorsOp, opts ...grpc.CallOption) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedAuthors_(ctx, in)
-}
-
-func (s *DeltasClient) ListAffectedClients(ctx context.Context, in *sourcegraph.DeltasListAffectedClientsOp, opts ...grpc.CallOption) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedClients_(ctx, in)
 }
 
 var _ sourcegraph.DeltasClient = (*DeltasClient)(nil)
 
 type DeltasServer struct {
-	Get_                 func(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
-	ListUnits_           func(v0 context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error)
-	ListDefs_            func(v0 context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error)
-	ListFiles_           func(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
-	ListAffectedAuthors_ func(v0 context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error)
-	ListAffectedClients_ func(v0 context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error)
+	Get_       func(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
+	ListFiles_ func(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
 }
 
 func (s *DeltasServer) Get(v0 context.Context, v1 *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
 	return s.Get_(v0, v1)
 }
 
-func (s *DeltasServer) ListUnits(v0 context.Context, v1 *sourcegraph.DeltasListUnitsOp) (*sourcegraph.UnitDeltaList, error) {
-	return s.ListUnits_(v0, v1)
-}
-
-func (s *DeltasServer) ListDefs(v0 context.Context, v1 *sourcegraph.DeltasListDefsOp) (*sourcegraph.DeltaDefs, error) {
-	return s.ListDefs_(v0, v1)
-}
-
 func (s *DeltasServer) ListFiles(v0 context.Context, v1 *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
 	return s.ListFiles_(v0, v1)
 }
 
-func (s *DeltasServer) ListAffectedAuthors(v0 context.Context, v1 *sourcegraph.DeltasListAffectedAuthorsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedAuthors_(v0, v1)
-}
-
-func (s *DeltasServer) ListAffectedClients(v0 context.Context, v1 *sourcegraph.DeltasListAffectedClientsOp) (*sourcegraph.DeltaAffectedPersonList, error) {
-	return s.ListAffectedClients_(v0, v1)
-}
-
 var _ sourcegraph.DeltasServer = (*DeltasServer)(nil)
-
-type MarkdownClient struct {
-	Render_ func(ctx context.Context, in *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error)
-}
-
-func (s *MarkdownClient) Render(ctx context.Context, in *sourcegraph.MarkdownRenderOp, opts ...grpc.CallOption) (*sourcegraph.MarkdownData, error) {
-	return s.Render_(ctx, in)
-}
-
-var _ sourcegraph.MarkdownClient = (*MarkdownClient)(nil)
-
-type MarkdownServer struct {
-	Render_ func(v0 context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error)
-}
-
-func (s *MarkdownServer) Render(v0 context.Context, v1 *sourcegraph.MarkdownRenderOp) (*sourcegraph.MarkdownData, error) {
-	return s.Render_(v0, v1)
-}
-
-var _ sourcegraph.MarkdownServer = (*MarkdownServer)(nil)
 
 type RepoTreeClient struct {
 	Get_    func(ctx context.Context, in *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error)
@@ -1151,36 +790,6 @@ func (s *SearchServer) SearchText(v0 context.Context, v1 *sourcegraph.TextSearch
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)
-
-type UnitsClient struct {
-	Get_  func(ctx context.Context, in *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error)
-	List_ func(ctx context.Context, in *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error)
-}
-
-func (s *UnitsClient) Get(ctx context.Context, in *sourcegraph.UnitSpec, opts ...grpc.CallOption) (*unit.RepoSourceUnit, error) {
-	return s.Get_(ctx, in)
-}
-
-func (s *UnitsClient) List(ctx context.Context, in *sourcegraph.UnitListOptions, opts ...grpc.CallOption) (*sourcegraph.RepoSourceUnitList, error) {
-	return s.List_(ctx, in)
-}
-
-var _ sourcegraph.UnitsClient = (*UnitsClient)(nil)
-
-type UnitsServer struct {
-	Get_  func(v0 context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error)
-	List_ func(v0 context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error)
-}
-
-func (s *UnitsServer) Get(v0 context.Context, v1 *sourcegraph.UnitSpec) (*unit.RepoSourceUnit, error) {
-	return s.Get_(v0, v1)
-}
-
-func (s *UnitsServer) List(v0 context.Context, v1 *sourcegraph.UnitListOptions) (*sourcegraph.RepoSourceUnitList, error) {
-	return s.List_(v0, v1)
-}
-
-var _ sourcegraph.UnitsServer = (*UnitsServer)(nil)
 
 type MetaClient struct {
 	Status_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerStatus, error)
@@ -1331,3 +940,23 @@ func (s *NotifyServer) GenericEvent(v0 context.Context, v1 *sourcegraph.NotifyGe
 }
 
 var _ sourcegraph.NotifyServer = (*NotifyServer)(nil)
+
+type AnnotationsClient struct {
+	List_ func(ctx context.Context, in *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+}
+
+func (s *AnnotationsClient) List(ctx context.Context, in *sourcegraph.AnnotationsListOptions, opts ...grpc.CallOption) (*sourcegraph.AnnotationList, error) {
+	return s.List_(ctx, in)
+}
+
+var _ sourcegraph.AnnotationsClient = (*AnnotationsClient)(nil)
+
+type AnnotationsServer struct {
+	List_ func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+}
+
+func (s *AnnotationsServer) List(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error) {
+	return s.List_(v0, v1)
+}
+
+var _ sourcegraph.AnnotationsServer = (*AnnotationsServer)(nil)

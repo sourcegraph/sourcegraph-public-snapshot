@@ -19,6 +19,7 @@ func TestRepoReadme(t *testing.T) {
 	const wantReadmeText = "hello from the readme"
 
 	mockBasicRepoMainPage(mock)
+	mock.Repos.MockResolve_Local(t, "my/repo")
 	mockRepoGet(mock, "my/repo")
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mock.Repos.GetReadme_ = func(ctx context.Context, repo *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
@@ -47,6 +48,7 @@ func TestRepoReadme_NoReadme(t *testing.T) {
 	c, mock := apptest.New()
 
 	mockBasicRepoMainPage(mock)
+	mock.Repos.MockResolve_Local(t, "my/repo")
 	mockRepoGet(mock, "my/repo")
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mock.Repos.GetReadme_ = func(ctx context.Context, repo *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {

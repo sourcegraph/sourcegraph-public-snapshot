@@ -2,97 +2,83 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "example",
+			"className": "examples",
 			"children": [
-				{
-					"type": "header",
-					"props": {
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"className": "pull-right",
-									"children": [
-										"someRepo"
-									]
-								}
-							},
-							{
-								"type": "nav",
-								"props": {
-									"children": [
-										{
-											"type": "a",
-											"props": {
-												"className": "fa fa-chevron-circle-left btnNav disabled"
-											}
-										},
-										{
-											"type": "a",
-											"props": {
-												"className": "fa fa-chevron-circle-right btnNav ",
-												"onClick": {
-													"dispatched": [
-														{
-															"$constructor": "WantExample",
-															"defURL": "/someURL",
-															"index": 1
-														},
-														{
-															"$constructor": "WantExample",
-															"defURL": "/someURL",
-															"index": 2
-														}
-													]
-												}
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "a",
-								"props": {
-									"href": "/someRepo/.tree/foo.go?startline=3&endline=7&seldef=/someURL",
-									"onClick": {
-										"defaultPrevented": true,
-										"dispatched": [
-											{
-												"$constructor": "GoTo",
-												"url": "[currentTarget.href]"
-											}
-										]
-									},
-									"children": [
-										"foo.go:3-7"
-									]
-								}
-							}
-						]
-					}
-				},
 				{
 					"type": "div",
 					"props": {
-						"className": "body",
+						"className": "example",
 						"children": [
+							{
+								"type": "header",
+								"props": {
+									"children": [
+										{
+											"type": "span",
+											"props": {
+												"children": [
+													"Used in ",
+													{
+														"type": "a",
+														"props": {
+															"href": "/someRepo/.tree/foo.go#L3-7",
+															"onClick": {
+																"defaultPrevented": true,
+																"dispatched": [
+																	{
+																		"$constructor": "GoTo",
+																		"url": "[currentTarget.href]"
+																	}
+																]
+															},
+															"children": [
+																"foo.go:3-7"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
 							{
 								"type": "div",
 								"props": {
-									"style": {
-										"opacity": 1
-									},
+									"className": "body",
 									"children": [
 										{
-											"type": "CodeListing",
+											"type": "div",
 											"props": {
-												"lines": [
+												"style": {
+													"opacity": 1
+												},
+												"children": [
 													{
-														"test": "aLine"
+														"type": "Blob",
+														"props": {
+															"contents": "hello\nworld",
+															"activeDef": "/someURL",
+															"highlightedDef": "/otherURL"
+														}
 													}
-												],
-												"selectedDef": "/someURL",
-												"highlightedDef": "/otherURL"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "footer",
+								"props": {
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "pull-right",
+												"children": [
+													"someRepo"
+												]
 											}
 										}
 									]
@@ -102,23 +88,65 @@
 					}
 				},
 				{
-					"type": "footer",
+					"type": "nav",
 					"props": {
+						"className": "example-navigation",
 						"children": [
 							{
-								"type": "a",
+								"type": "button",
 								"props": {
-									"target": "_blank",
-									"href": "/someURL/.examples",
-									"className": "pull-right",
+									"className": "btn btn-default prev disabled",
 									"children": [
 										{
 											"type": "i",
 											"props": {
-												"className": "fa fa-eye"
+												"className": "fa fa-arrow-left"
 											}
-										},
-										" View all"
+										}
+									]
+								}
+							},
+							{
+								"type": "button",
+								"props": {
+									"className": "btn btn-default next ",
+									"onClick": {
+										"dispatched": [
+											{
+												"$constructor": "WantExample",
+												"defURL": "/someURL",
+												"index": 1
+											},
+											{
+												"$constructor": "WantExample",
+												"defURL": "/someURL",
+												"index": 2
+											},
+											{
+												"$constructor": "WantAnnotations",
+												"repo": "someRepo",
+												"path": "foo.go"
+											}
+										]
+									},
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"className": "fa fa-arrow-right"
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "a",
+								"props": {
+									"className": "btn btn-default all pull-right",
+									"target": "_blank",
+									"href": "/someURL/.examples",
+									"children": [
+										"View all uses"
 									]
 								}
 							}
@@ -138,6 +166,11 @@
 			"$constructor": "WantExample",
 			"defURL": "/someURL",
 			"index": 1
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "someRepo",
+			"path": "foo.go"
 		}
 	]
 }

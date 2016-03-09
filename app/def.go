@@ -2,13 +2,11 @@ package app
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/sourcegraph/mux"
 
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
@@ -35,10 +33,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 			Path:    dc.Def.File,
 		},
 	}
-	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: &sourcegraph.RepoTreeGetOptions{
-		TokenizedSource: true,
-	}})
-
+	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: &sourcegraph.RepoTreeGetOptions{}})
 	if err != nil {
 		return err
 	}
@@ -52,7 +47,6 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	opt.Formatted = true
 
 	ctx, cl := handlerutil.Client(r)
 
@@ -69,17 +63,6 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	})
 	if err != nil {
 		return err
-	}
-
-	// Highlight this def in examples.
-	u0 := router.Rel.URLToDefAtRev(dc.Def.DefKey, vc.RepoRevSpec.CommitID) // internal
-	u1 := router.Rel.URLToDefAtRev(dc.Def.DefKey, vc.RepoRevSpec.Rev)      // internal
-	u2 := router.Rel.URLToDefAtRev(dc.Def.DefKey, "")                      // external
-	for _, x := range examples.Examples {
-		x.SrcHTML = strings.Replace(string(x.SrcHTML), u0.String()+`" class="`, u0.String()+`" class="highlight highlight-primary `, -1)
-		x.SrcHTML = strings.Replace(string(x.SrcHTML), u1.String()+`" class="`, u1.String()+`" class="highlight highlight-primary `, -1)
-		x.SrcHTML = strings.Replace(string(x.SrcHTML), u2.String()+`" class="`, u2.String()+`" class="highlight highlight-primary `, -1)
-		x.SrcHTML = strings.Replace(string(x.SrcHTML), "class=\"", "class=\"defn-popover ", -1)
 	}
 
 	pg, err := paginatePrevNext(opt, examples.StreamResponse)
@@ -102,50 +85,6 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 		Examples:      examples.Examples,
 		PageLinks:     pg,
 		Options:       opt,
-	})
-}
-
-func serveDefPopover(w http.ResponseWriter, r *http.Request) error {
-	// viewState holds the repository and file that the user is currently
-	// viewing.
-	type viewState struct {
-		CurrentRepo string
-		CurrentFile string
-	}
-	var opt viewState
-	err := schemautil.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
-	ctx, _ := handlerutil.Client(r)
-	dc, _, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
-	if err != nil {
-		// TODO(gbbr): Set up custom responses for each scenario.
-		// All of the below errors will cause full page HTML pages or redirects, if
-		// bubbled up the chain, so we return nil instead.
-		// Temporarily StatusNotFound with empty body will be returned.
-		switch err.(type) {
-		case *handlerutil.URLMovedError, *handlerutil.NoVCSDataError:
-			http.Error(w, "", http.StatusNotFound)
-			return nil
-		}
-		return err
-	}
-
-	hdr := http.Header{
-		"access-control-allow-origin":  []string{"*"},
-		"access-control-allow-methods": []string{"GET"},
-	}
-
-	return tmpl.Exec(r, w, "def/popover.html", http.StatusOK, hdr, &struct {
-		Def         *sourcegraph.Def
-		CurrentRepo string
-		CurrentFile string
-		tmpl.Common
-	}{
-		Def:         dc.Def,
-		CurrentRepo: opt.CurrentRepo,
-		CurrentFile: opt.CurrentFile,
 	})
 }
 

@@ -10,14 +10,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func (r *Router) URLToBlogAtomFeed() *url.URL {
-	return r.URLTo(BlogIndexAtom, "Format", ".atom")
-}
-
-func (r *Router) URLToBlogPost(slug string) *url.URL {
-	return r.URLTo(BlogPost, "Slug", slug)
-}
-
 func (r *Router) URLToUserSubroute(routeName string, userSpec string) *url.URL {
 	return r.URLTo(routeName, "User", userSpec)
 }
@@ -52,10 +44,6 @@ func (r *Router) URLToRepoSubroute(routeName string, uri string) *url.URL {
 
 func (r *Router) URLToRepoSubrouteRev(routeName string, repoURI string, rev string) (*url.URL, error) {
 	return r.URLToOrError(routeName, "Repo", repoURI, "Rev", rev)
-}
-
-func (r *Router) URLToRepoCompare(repoURI, rev, head string) (*url.URL, error) {
-	return r.URLToOrError(RepoCompare, "Repo", repoURI, "Rev", rev, "Head", head)
 }
 
 func (r *Router) URLToRepoApp(repoURI string, appID string) (*url.URL, error) {
@@ -145,8 +133,4 @@ func commitIDStr(commitID interface{}) string {
 		return string(v)
 	}
 	return commitID.(string)
-}
-
-func (r *Router) URLToGlobalApp(id string) *url.URL {
-	return r.URLTo("appglobal." + id)
 }

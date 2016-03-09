@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
 
 // GRPCMiddleware reads the OAuth2 access token from the gRPC call's
@@ -70,8 +69,6 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 			actor = &tmp
 		}
 	}
-
-	accesscontrol.SetMirrorRepoPerms(ctx, actor)
 
 	// Make future calls use this access token.
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tokStr}))

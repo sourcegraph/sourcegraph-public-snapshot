@@ -1,7 +1,7 @@
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "xhr";
+import defaultXhr from "sourcegraph/util/xhr";
 
 const TreeBackend = {
 	xhr: defaultXhr,
@@ -21,6 +21,24 @@ const TreeBackend = {
 							return;
 						}
 						Dispatcher.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, body));
+					});
+				}
+				break;
+			}
+
+		case TreeActions.WantFileList:
+			{
+				let fileList = TreeStore.fileLists.get(action.repo, action.rev);
+				if (fileList === null) {
+					TreeBackend.xhr({
+						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}/.tree-list`,
+						json: {},
+					}, function(err, resp, body) {
+						if (err) {
+							console.error(err);
+							return;
+						}
+						Dispatcher.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, body));
 					});
 				}
 				break;

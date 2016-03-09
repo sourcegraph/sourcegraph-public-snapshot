@@ -89,8 +89,7 @@ func PersonFromContext(ctx context.Context) *sourcegraph.Person {
 func UserFromContext(ctx context.Context) *sourcegraph.UserSpec {
 	actor := authpkg.ActorFromContext(ctx)
 	return &sourcegraph.UserSpec{
-		UID:    int32(actor.UID),
-		Domain: actor.Domain,
-		Login:  actor.Login,
+		UID:   int32(actor.UID),
+		Login: actor.Login,
 	}
 }

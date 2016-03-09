@@ -1,7 +1,9 @@
 package app
 
 import (
-	"errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"net/http"
 	"net/url"
@@ -10,7 +12,6 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/app/appconf"
 	"src.sourcegraph.com/sourcegraph/app/internal"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
@@ -33,53 +34,29 @@ func init() {
 	})
 }
 
-func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
-
-	rc, err := handlerutil.GetRepoCommon(ctx, mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
-	op := &sourcegraph.MirrorReposRefreshVCSOp{
-		Repo: rc.Repo.RepoSpec(),
-	}
-
-	if _, err := cl.MirrorRepos.RefreshVCS(ctx, op); err != nil {
-		return err
-	}
-
-	http.Redirect(w, r, router.Rel.URLToRepo(rc.Repo.URI).String(), http.StatusNoContent)
-	return nil
-}
-
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
-
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	// Special-case: redirect "user/repo" URLs (with no "github.com/") to the
-	// path "/github.com/user/repo". This lets you use
-	// "sourcegraph.com/user/repo" as your repo's URL.
-	if appconf.Flags.EnableGitHubRepoShortURIAliases {
-		if parts := strings.Split(repoSpec.URI, "/"); len(parts) == 2 && !strings.Contains(parts[0], ".") {
-			http.Redirect(w, r, router.Rel.URLToRepo("github.com/"+repoSpec.URI).String(), http.StatusSeeOther)
-			return nil
-		}
-	}
+	ctx, cl := handlerutil.Client(r)
 
-	// Special-case: redirect "github.com/user/repo/..." (old URLs) to
-	// "github.com/user/repo".
-	if strings.HasPrefix(repoSpec.URI, "github.com/") && strings.Count(repoSpec.URI, "/") > 2 {
-		parts := strings.SplitN(repoSpec.URI, "/", 4)
-		if len(parts) < 4 {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("bad github repository url")}
+	// Resolve repo path, and create local mirror for remote repo if
+	// needed.
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return err
+	}
+	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+		// Automatically create a local mirror.
+		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
+		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: int32(remoteRepo.GitHubID)},
+		})
+		if err != nil {
+			return err
 		}
-		http.Redirect(w, r, router.Rel.URLToRepo(string(strings.Join(parts[0:3], "/"))).String(), http.StatusMovedPermanently)
-		return nil
 	}
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
@@ -127,7 +104,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if rc.Repo.Mirror {
-		repoupdater.Enqueue(rc.Repo)
+		repoupdater.Enqueue(rc.Repo, handlerutil.UserFromContext(ctx))
 	}
 
 	return tmpl.Exec(r, w, "repo/main.html", http.StatusOK, nil, &struct {
@@ -241,7 +218,7 @@ func showRepoRevSwitcher(routeName string) bool {
 		return true
 	}
 	switch routeName {
-	case router.Repo, router.RepoBadges:
+	case router.Repo:
 		return true
 	}
 	return false

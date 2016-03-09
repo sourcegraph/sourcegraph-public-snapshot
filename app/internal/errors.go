@@ -83,8 +83,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err)
 	}
 
-	// Handle potential panic during execution of error template, since it may call out to
-	// code provided by an external platform app (e.g., via the GlobalApp.IconBadge callback).
+	// Handle panic during execution of error template.
 	defer func() {
 		if e := recover(); e != nil {
 			log15.Error("panic during execution of error template", "error", e, "func_name", "HandleError", "tmpl_name", "error/error.html")

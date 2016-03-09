@@ -2,65 +2,84 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "example",
+			"className": "examples",
 			"children": [
 				{
-					"type": "header",
+					"type": "div",
 					"props": {
+						"className": "example",
 						"children": [
 							{
-								"type": "div",
+								"type": "header",
 								"props": {
-									"className": "pull-right"
+									"children": [
+										"No examples available"
+									]
 								}
 							},
 							{
-								"type": "nav",
+								"type": "div",
+								"props": {
+									"className": "body"
+								}
+							},
+							{
+								"type": "footer",
 								"props": {
 									"children": [
 										{
-											"type": "a",
+											"type": "div",
 											"props": {
-												"className": "fa fa-chevron-circle-left btnNav disabled"
+												"className": "pull-right"
 											}
-										},
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "nav",
+					"props": {
+						"className": "example-navigation",
+						"children": [
+							{
+								"type": "button",
+								"props": {
+									"className": "btn btn-default prev disabled",
+									"children": [
 										{
-											"type": "a",
+											"type": "i",
 											"props": {
-												"className": "fa fa-chevron-circle-right btnNav disabled"
+												"className": "fa fa-arrow-left"
 											}
 										}
 									]
 								}
 							},
-							"No examples available"
-						]
-					}
-				},
-				{
-					"type": "div",
-					"props": {
-						"className": "body"
-					}
-				},
-				{
-					"type": "footer",
-					"props": {
-						"children": [
 							{
-								"type": "a",
+								"type": "button",
 								"props": {
-									"target": "_blank",
-									"href": "/someURL/.examples",
-									"className": "pull-right",
+									"className": "btn btn-default next disabled",
 									"children": [
 										{
 											"type": "i",
 											"props": {
-												"className": "fa fa-eye"
+												"className": "fa fa-arrow-right"
 											}
-										},
-										" View all"
+										}
+									]
+								}
+							},
+							{
+								"type": "a",
+								"props": {
+									"className": "btn btn-default all pull-right",
+									"target": "_blank",
+									"href": "/someURL/.examples",
+									"children": [
+										"View all uses"
 									]
 								}
 							}

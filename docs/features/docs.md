@@ -3,7 +3,7 @@ title = "Documentation on Sourcegraph"
 linktitle = "Documentation"
 +++
 
-# Static doc generation (Hugo)
+## Static doc generation (Hugo)
 
 Sourcegraph embeds a [Hugo static site generator](https://gohugo.io/)
 that can serve documentation (or any other type of static site) for
@@ -21,23 +21,7 @@ To create a static site for your repository:
 1. Enable the Hugo docs app by running: `src repo config app MY/REPO docs --enable` (where `MY/REPO` is your repository).
 
 
-# API documentation
-
-Sourcegraph can display API documentation for your code. This uses the
-function, class, etc., definitions from [srclib](https://srclib.org)'s
-analysis of your code.
-
-To enable the API documentation app on a repository named `MY/REPO`:
-
-```
-src repo config app MY/REPO apidocs --enable
-```
-
-Then open the repository's page in your browser and use the "apidocs"
-navigation bar link.
-
-
-# godoc
+## godoc
 
 In addition to embedding a static site engine, Sourcegraph can also
 run `godoc` on your Go source. It uses the same code that powers

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
 )
 
@@ -70,54 +69,6 @@ func (d *Delta) DeltaSpec() DeltaSpec {
 		Base: d.Base,
 		Head: d.Head,
 	}
-}
-
-// Added is whether this represents an added source unit (not present
-// in base, present in head).
-func (ud UnitDelta) Added() bool { return ud.Base == nil && ud.Head != nil }
-
-// Changed is whether this represents a changed source unit (present
-// in base, present in head).
-func (ud UnitDelta) Changed() bool { return ud.Base != nil && ud.Head != nil }
-
-// Deleted is whether this represents a deleted source unit (present
-// in base, not present in head).
-func (ud UnitDelta) Deleted() bool { return ud.Base != nil && ud.Head == nil }
-
-type UnitDeltas []*UnitDelta
-
-func (v UnitDeltas) Len() int      { return len(v) }
-func (v UnitDeltas) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
-func (v UnitDeltas) Less(i, j int) bool {
-	a, b := v[i], v[j]
-	return (a.Added() && b.Added() && deltaUnitLess(a.Head, b.Head)) || (a.Changed() && b.Changed() && deltaUnitLess(a.Head, b.Head)) || (a.Deleted() && b.Deleted() && deltaUnitLess(a.Base, b.Base)) || (a.Added() && !b.Added()) || (a.Changed() && !b.Added() && !b.Changed())
-}
-
-func deltaUnitLess(a, b *unit.RepoSourceUnit) bool {
-	return a.UnitType < b.UnitType || (a.UnitType == b.UnitType && a.Unit < b.Unit)
-}
-
-// Added is whether this represents an added def (not present in base,
-// present in head).
-func (dd DefDelta) Added() bool { return dd.Base == nil && dd.Head != nil }
-
-// Changed is whether this represents a changed def (present in base,
-// present in head).
-func (dd DefDelta) Changed() bool { return dd.Base != nil && dd.Head != nil }
-
-// Deleted is whether this represents a deleted def (present in base,
-// not present in head).
-func (dd DefDelta) Deleted() bool { return dd.Base != nil && dd.Head == nil }
-
-func (v DeltaDefs) Len() int      { return len(v.Defs) }
-func (v DeltaDefs) Swap(i, j int) { v.Defs[i], v.Defs[j] = v.Defs[j], v.Defs[i] }
-func (v DeltaDefs) Less(i, j int) bool {
-	a, b := v.Defs[i], v.Defs[j]
-	return (a.Added() && b.Added() && deltaDefLess(a.Head, b.Head)) || (a.Changed() && b.Changed() && deltaDefLess(a.Head, b.Head)) || (a.Deleted() && b.Deleted() && deltaDefLess(a.Base, b.Base)) || (a.Added() && !b.Added()) || (a.Changed() && !b.Added() && !b.Changed())
-}
-
-func deltaDefLess(a, b *Def) bool {
-	return a.UnitType < b.UnitType || (a.UnitType == b.UnitType && a.Unit < b.Unit) || (a.UnitType == b.UnitType && a.Unit == b.Unit && a.Path < b.Path)
 }
 
 // DiffStat returns a diffstat that is the sum of all of the files'

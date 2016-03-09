@@ -37,13 +37,13 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 	}
 
 	type op struct {
-		sourcegraph.ReposCreateOp
+		NewRepo      sourcegraph.ReposCreateOp_NewRepo
 		pushRefspecs []string
 		after        func(*sourcegraph.Repo, context.Context) error
 	}
 	ops := []op{
 		{
-			ReposCreateOp: sourcegraph.ReposCreateOp{
+			NewRepo: sourcegraph.ReposCreateOp_NewRepo{
 				URI:         "sample/golang/hello",
 				VCS:         "git",
 				Description: "A Go starter project to demonstrate Sourcegraph",
@@ -54,11 +54,13 @@ func (c *ServeCmd) prepareInitialOnboarding(ctx context.Context) error {
 	}
 
 	do := func(ctx context.Context, op op) error {
-		log15.Debug(fmt.Sprintf("Creating sample repo %s...", op.URI))
-		repo, err := cl.Repos.Create(ctx, &op.ReposCreateOp)
+		log15.Debug(fmt.Sprintf("Creating sample repo %s...", op.NewRepo.URI))
+		repo, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+			Op: &sourcegraph.ReposCreateOp_New{New: &op.NewRepo},
+		})
 		if err != nil {
 			if grpc.Code(err) == codes.Unimplemented {
-				log15.Info("Skipping creation of sample demonstration repo", "repo", op.URI)
+				log15.Info("Skipping creation of sample demonstration repo", "repo", op.NewRepo.URI)
 				return nil
 			}
 			return err

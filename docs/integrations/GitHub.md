@@ -32,7 +32,6 @@ for your Sourcegraph server. To enable this feature, follow these steps:
 - Make sure you are running the server with a PostgreSQL database backend. Also, you may need to
   run the db migration steps listed in `dbutil2/MIGRATE.md` if you have updated your server
   from an older version (<= 0.13.6)
-- Append the flag `--private-mirrors` to your server config.
 - Restart your server.
 
 With this feature, you will be able to link your Sourcegraph user account with
@@ -40,9 +39,3 @@ your GitHub account via OAuth2, after which you can mirror your private GitHub r
 your Sourcegraph server. The repo permissions are synced with GitHub, so everyone
 who wants to access the private repo on Sourcegraph will have to link their account
 with GitHub.
-
-### Migrating from personal access tokens
-
-If you used an earlier version of Sourcegraph to mirror private GitHub repos using personal
-access tokens, you will not be able to continue using that feature. Please follow the steps
-mentioned above to set up the private mirrors feature for your team.

@@ -36,6 +36,48 @@ func (s *ReposServer) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (c
 	return
 }
 
+func (s *ReposServer) MockResolve_Local(t *testing.T, wantPath string) (called *bool) {
+	called = new(bool)
+	s.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+		*called = true
+		if op.Path != wantPath {
+			t.Errorf("got repo %q, want %q", op.Path, wantPath)
+			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
+		}
+		return &sourcegraph.RepoResolution{
+			Result: &sourcegraph.RepoResolution_Repo{Repo: &sourcegraph.RepoSpec{URI: op.Path}},
+		}, nil
+	}
+	return
+}
+
+func (s *ReposServer) MockResolve_Remote(t *testing.T, wantPath string, resolved *sourcegraph.RemoteRepo) (called *bool) {
+	called = new(bool)
+	s.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+		*called = true
+		if op.Path != wantPath {
+			t.Errorf("got repo %q, want %q", op.Path, wantPath)
+			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
+		}
+		return &sourcegraph.RepoResolution{
+			Result: &sourcegraph.RepoResolution_RemoteRepo{RemoteRepo: resolved},
+		}, nil
+	}
+	return
+}
+
+func (s *ReposServer) MockResolve_NotFound(t *testing.T, wantPath string) (called *bool) {
+	called = new(bool)
+	s.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+		*called = true
+		if op.Path != wantPath {
+			t.Errorf("got repo %q, want %q", op.Path, wantPath)
+		}
+		return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
+	}
+	return
+}
+
 func (s *ReposServer) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
 	s.List_ = func(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {

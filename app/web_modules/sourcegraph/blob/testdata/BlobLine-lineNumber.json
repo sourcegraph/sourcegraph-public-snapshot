@@ -1,0 +1,35 @@
+{
+	"renderOutput": {
+		"type": "tr",
+		"props": {
+			"className": "line  ",
+			"data-line": 42,
+			"children": [
+				{
+					"type": "td",
+					"props": {
+						"className": "line-number",
+						"data-line": 42,
+						"onClick": {
+							"dispatched": [
+								{
+									"$constructor": "SelectLine",
+									"line": 42
+								}
+							]
+						}
+					}
+				},
+				{
+					"type": "td",
+					"props": {
+						"className": "line-content",
+						"children": [
+							"hello\nworld"
+						]
+					}
+				}
+			]
+		}
+	}
+}

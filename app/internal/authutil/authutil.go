@@ -29,7 +29,7 @@ func init() {
 // process.
 func RedirectToLogIn(w http.ResponseWriter, r *http.Request) error {
 	switch authutil.ActiveFlags.Source {
-	case "local", "ldap":
+	case "local":
 		u := router.Rel.URLTo(router.LogIn)
 		returnTo, err := returnto.BestGuess(r)
 		if err != nil {

@@ -20,15 +20,6 @@ func TestRepoTree(t *testing.T) {
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockNoSrclibData(mock)
 	calledRepoTreeGet := mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
-		SourceCode: &sourcegraph.SourceCode{
-			Lines: []*sourcegraph.SourceCodeLine{
-				{
-					Tokens: []*sourcegraph.SourceCodeToken{
-						&sourcegraph.SourceCodeToken{Class: "typ", Label: "Milton"},
-					},
-				},
-			},
-		},
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Contents: []byte(source),
 		},
@@ -88,15 +79,6 @@ func TestRepoTree_plaintext(t *testing.T) {
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockNoSrclibData(mock)
 	mockTreeEntryGet(mock, &sourcegraph.TreeEntry{
-		SourceCode: &sourcegraph.SourceCode{
-			Lines: []*sourcegraph.SourceCodeLine{
-				{
-					Tokens: []*sourcegraph.SourceCodeToken{
-						&sourcegraph.SourceCodeToken{Label: "Milton Woof"},
-					},
-				},
-			},
-		},
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Contents: []byte(source),
 		},

@@ -22,23 +22,15 @@ var Flags struct {
 	// time.
 	DisableTreeEntryCommits bool `long:"app.disable-tree-entry-commits" description:"do not show the latest commit for tree files/dirs"`
 
-	RepoBadgesAndCounters bool `long:"app.repo-badges-counters" description:"enable repo badges and counters"`
-
 	DisableRepoTreeSearch bool `long:"app.disable-repo-tree-search" description:"do not show repo fulltext search results (only defs) (slower for large repos)"`
-
-	DisableGlobalSearch bool `long:"app.disable-global-search" description:"if set, only allow searching within a single repository at a time"`
 
 	DisableSearch bool `long:"app.disable-search" description:"if set, search will be entirely disabled / never allowed"`
 
 	DisableApps bool `long:"app.disable-apps" description:"if set, disable the changes and issues applications"`
 
-	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics, Heap analytics"`
-
-	DisableCloneURL bool `long:"app.disable-clone-url" description:"if set, disable display of the git clone URL"`
+	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics"`
 
 	DisableUserContent bool `long:"app.disable-user-content" description:"if set, disable ability to upload user content (e.g., pasting images into textareas)"`
-
-	EnableGitHubRepoShortURIAliases bool `long:"app.enable-github-repo-short-uri-aliases" description:"if set, redirect 'user/repo' URLs (with no 'github.com/') to '/github.com/user/repo'"`
 
 	CustomLogo template.HTML `long:"app.custom-logo" description:"custom logo to display in the top nav bar (HTML)"`
 
@@ -51,13 +43,9 @@ var Flags struct {
 
 	GoogleAnalyticsTrackingID string `long:"app.google-analytics-tracking-id" description:"Google Analytics tracking ID (UA-########-#)" env:"GOOGLE_ANALYTICS_TRACKING_ID"`
 
-	HeapAnalyticsID string `long:"app.heap-analytics-id" description:"Heap Analytics ID" env:"HEAP_ANALYTICS_ID"`
-
 	CustomFeedbackForm template.HTML `long:"app.custom-feedback-form" description:"custom feedback form to display (HTML)" env:"CUSTOM_FEEDBACK_FORM"`
 
 	CheckForUpdates time.Duration `long:"app.check-for-updates" description:"rate at which to check for updates and display a notification (not download/install) (0 to disable)" default:"30m"`
-
-	Blog bool `long:"app.blog" description:"Enable the Sourcegraph blog, must also set $SG_TUMBLR_API_KEY"`
 
 	DisableExternalLinks bool `long:"app.disable-external-links" description:"Disable links to external websites"`
 
@@ -72,8 +60,6 @@ var Flags struct {
 	DisableGitNotify bool `long:"app.disable-git-notify" description:"disable git notifications"`
 
 	WebpackDevServerURL string `long:"app.webpack-dev-server" description:"serve frontend assets (JS, CSS, etc.) from this Webpack dev server" value-name:"URL"`
-
-	IsSourcegraphCloud bool `long:"app.sourcegraph-cloud" description:"run this server as a Sourcegraph Cloud server"`
 }
 
 func init() {

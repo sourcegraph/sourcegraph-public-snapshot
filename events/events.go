@@ -19,24 +19,6 @@ type GitPayload struct {
 	Event           githttp.Event
 }
 
-const ChangesetCreateEvent EventID = "changeset.create"
-const ChangesetUpdateEvent EventID = "changeset.update"
-const ChangesetReviewEvent EventID = "changeset.review"
-const ChangesetMergeEvent EventID = "changeset.merge"
-const ChangesetCloseEvent EventID = "changeset.close"
-
-type ChangesetPayload struct {
-	Actor     sourcegraph.UserSpec
-	ID        int64
-	Repo      string
-	Title     string
-	URL       string
-	Changeset *sourcegraph.Changeset
-	Review    *sourcegraph.ChangesetReview
-	Update    *sourcegraph.ChangesetUpdateOp
-	Merge     *sourcegraph.ChangesetMergeOp
-}
-
 const ClientRegisterEvent EventID = "client.register"
 const ClientUpdateEvent EventID = "client.update"
 const ClientGrantAccessEvent EventID = "client.grant.access"

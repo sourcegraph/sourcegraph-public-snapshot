@@ -19,29 +19,16 @@ func init() {
 type Flags struct {
 	AllowAnonymousReaders bool `long:"auth.allow-anon-readers" description:"allow unauthenticated users to perform read operations (viewing repos, etc.)"`
 
-	Source string `long:"auth.source" description:"source of authentication to use (none|local|ldap)" default:"local"`
-
-	OAuth2AuthServer bool `long:"auth.oauth2-auth-server" description:"enable OAuth2 authentication server (allow users to authenticate via this server)"`
+	Source string `long:"auth.source" description:"source of authentication to use (none|local)" default:"local"`
 
 	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login."`
 
 	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations"`
-
-	MigrateMode bool `long:"migrate-mode" description:"allow inserting users with specified UID, when migrating user data from another server"`
-
-	PrivateMirrors bool `long:"private-mirrors" description:"enable mirroring of GitHub repos via OAuth2 on this server"`
-
-	MirrorsWaitlist string `long:"mirrors-waitlist" description:"restrict access to private mirrors feature via a waitlist (none|open)" default:"none"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
 func (f Flags) IsLocal() bool {
 	return f.Source == "local"
-}
-
-// IsLDAP returns true if users are authenticated via the configured LDAP server.
-func (f Flags) IsLDAP() bool {
-	return f.Source == "ldap"
 }
 
 // HasUserAccounts returns a boolean value indicating whether user
@@ -62,7 +49,3 @@ func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.Has
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.
 var ActiveFlags Flags
-
-// mirrorsWhitelist is a map of login ids of users that are allowed
-// access to the mirror next feature.
-var mirrorsWhitelist map[string]bool

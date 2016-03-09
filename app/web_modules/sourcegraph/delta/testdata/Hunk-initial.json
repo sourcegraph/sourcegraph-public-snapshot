@@ -1,0 +1,108 @@
+{
+	"renderOutput": {
+		"type": "table",
+		"props": {
+			"className": "line-numbered-code theme-default file-diff-hunk",
+			"children": [
+				{
+					"type": "tbody",
+					"props": {
+						"children": [
+							{
+								"type": "tr",
+								"props": {
+									"className": "line hunk-header",
+									"children": [
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-number",
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "td",
+											"props": {
+												"className": "line-content",
+												"children": [
+													"@@ -5,20 +5,20 @@ mysection"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "BlobLine",
+								"key": "0",
+								"props": {
+									"className": "new-line",
+									"newLineNumber": 5,
+									"contents": "+ a",
+									"startByte": 0,
+									"directLinks": true
+								}
+							},
+							{
+								"type": "BlobLine",
+								"key": "1",
+								"props": {
+									"className": "old-line",
+									"oldLineNumber": 6,
+									"contents": "- b",
+									"startByte": 4,
+									"directLinks": true
+								}
+							},
+							{
+								"type": "BlobLine",
+								"key": "2",
+								"props": {
+									"className": "",
+									"oldLineNumber": 7,
+									"newLineNumber": 6,
+									"contents": " c",
+									"startByte": 8,
+									"directLinks": true
+								}
+							},
+							{
+								"type": "BlobLine",
+								"key": "3",
+								"props": {
+									"className": "old-line",
+									"oldLineNumber": 8,
+									"contents": "- d",
+									"startByte": 11,
+									"directLinks": true
+								}
+							},
+							{
+								"type": "BlobLine",
+								"key": "4",
+								"props": {
+									"className": "old-line",
+									"oldLineNumber": 9,
+									"contents": "- e",
+									"startByte": 15,
+									"directLinks": true
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

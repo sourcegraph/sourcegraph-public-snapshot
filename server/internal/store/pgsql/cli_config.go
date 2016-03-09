@@ -17,18 +17,14 @@ func init() {
 			Directory:          &directory{},
 			ExternalAuthTokens: &externalAuthTokens{},
 			RepoConfigs:        &repoConfigs{},
-			RepoCounters:       &repoCounters{},
 			Password:           &password{},
 			RegisteredClients:  &registeredClients{},
 			RepoVCS:            &fs.RepoVCS{},
 			Repos:              &repos{},
-			Storage:            &storage{},
 			RepoStatuses:       &repoStatuses{},
 			Users:              &users{},
-			Changesets:         &fs.Changesets{},
 			Invites:            &invites{},
 			RepoPerms:          &repoPerms{},
-			Waitlist:           &waitlist{},
 		}), nil
 	})
 }

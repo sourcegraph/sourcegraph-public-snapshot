@@ -1,0 +1,46 @@
+{
+	"renderOutput": {
+		"type": "span",
+		"props": {
+			"className": "diff-stat-scale",
+			"children": [
+				{
+					"type": "span",
+					"props": {
+						"className": "stat-added",
+						"children": [
+							"■"
+						]
+					}
+				},
+				{
+					"type": "span",
+					"props": {
+						"className": "stat-changed",
+						"children": [
+							"■"
+						]
+					}
+				},
+				{
+					"type": "span",
+					"props": {
+						"className": "stat-deleted",
+						"children": [
+							"■"
+						]
+					}
+				},
+				{
+					"type": "span",
+					"props": {
+						"className": "stat-filler",
+						"children": [
+							"■■"
+						]
+					}
+				}
+			]
+		}
+	}
+}

@@ -6,7 +6,6 @@ import (
 	htmpl "html/template"
 	"net/url"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,13 +21,14 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
+	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/util/envutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 	"src.sourcegraph.com/sourcegraph/util/textutil"
 	"src.sourcegraph.com/sourcegraph/util/timeutil"
 	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
@@ -57,12 +57,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"buildStatus": buildStatus,
 
 	"add": func(a, b int) int { return a + b },
-	"min": func(a, b int) int {
-		if a < b {
-			return a
-		}
-		return b
-	},
 	"json": func(v interface{}) (string, error) {
 		b, err := json.Marshal(v)
 		if err != nil {
@@ -76,8 +70,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },
 
 	"urlTo":                router.Rel.URLTo,
-	"urlToBlogPost":        router.Rel.URLToBlogPost,
-	"urlToBlogAtomFeed":    router.Rel.URLToBlogAtomFeed,
 	"urlToUserSubroute":    router.Rel.URLToUserSubroute,
 	"urlToRepo":            router.Rel.URLToRepo,
 	"urlToRepoRev":         router.Rel.URLToRepoRev,
@@ -86,14 +78,12 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlToRepoSubrouteRev": router.Rel.URLToRepoSubrouteRev,
 	"urlToRepoTreeEntry":   router.Rel.URLToRepoTreeEntry,
 	"urlToRepoCommit":      router.Rel.URLToRepoCommit,
-	"urlToRepoCompare":     router.Rel.URLToRepoCompare,
 	"urlToRepoApp":         router.Rel.URLToRepoApp,
 	"urlWithSchema":        schemautil.URLWithSchema,
 	"urlToDef":             router.Rel.URLToDef,
 	"urlToDefAtRev":        router.Rel.URLToDefAtRev,
 	"urlToDefSubroute":     router.Rel.URLToDefSubroute,
 	"urlToWithReturnTo":    urlToWithReturnTo,
-	"urlToGlobalApp":       router.Rel.URLToGlobalApp,
 
 	"fileToBreadcrumb":      FileToBreadcrumb,
 	"fileLinesToBreadcrumb": FileLinesToBreadcrumb,
@@ -113,18 +103,6 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return strings.Join(classes, " ")
 	},
-	"nextPageURL": func(currentURI *url.URL, inc int) string {
-		values := currentURI.Query()
-
-		pageField, exists := values["Page"]
-		if !exists || len(pageField) != 1 {
-			pageField = []string{"1"}
-		}
-		page, _ := strconv.Atoi(pageField[0])
-		values["Page"] = []string{strconv.Itoa(page + inc)}
-
-		return "?" + values.Encode()
-	},
 
 	"ifTrue": func(cond bool, v interface{}) interface{} {
 		if cond {
@@ -136,17 +114,16 @@ var tmplFuncs = htmpl.FuncMap{
 	"commitSummary":       commitSummary,
 	"commitRestOfMessage": commitRestOfMessage,
 
-	"toString2":             func(v interface{}) string { return fmt.Sprintf("%s", v) },
-	"sanitizeHTML":          sanitizeHTML,
-	"sanitizeFormattedCode": sanitizeFormattedCode,
-	"textFromHTML":          textutil.TextFromHTML,
-	"timeOrNil":             timeutil.TimeOrNil,
-	"timeAgo":               timeutil.TimeAgo,
-	"now":                   time.Now,
-	"duration":              duration,
-	"isNil":                 isNil,
-	"minTime":               minTime,
-	"pathJoin":              path.Join,
+	"toString2":    func(v interface{}) string { return fmt.Sprintf("%s", v) },
+	"sanitizeHTML": sanitizeHTML,
+	"textFromHTML": textutil.TextFromHTML,
+	"timeOrNil":    timeutil.TimeOrNil,
+	"timeAgo":      timeutil.TimeAgo,
+	"now":          time.Now,
+	"duration":     duration,
+	"isNil":        isNil,
+	"minTime":      minTime,
+	"pathJoin":     path.Join,
 	"toInt": func(v interface{}) (int, error) {
 		switch v := v.(type) {
 		case int:
@@ -175,7 +152,7 @@ var tmplFuncs = htmpl.FuncMap{
 	"assetURL": assets.URL,
 
 	"getClientIDOrHostName": func(ctx context.Context, appURL *url.URL) string {
-		clientID := oauth2client.ClientIDFromContext(ctx)
+		clientID := idkey.FromContext(ctx).ID
 		if clientID != "" {
 			// return a shortened clientID, to match the clientID logged
 			// in eventsutil/events.go:getShortClientID.
@@ -192,18 +169,11 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"hasField": hasStructField,
 
-	"hasPrefix": strings.HasPrefix,
-
 	"ifTemplate":                ifTemplate,
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
-	"heapAnalyticsID":           func() string { return appconf.Flags.HeapAnalyticsID },
 
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
 	"hostname":            func() string { return hostname },
-
-	"nl2br": func(s string) htmpl.HTML {
-		return htmpl.HTML(strings.Replace(htmpl.HTMLEscapeString(s), "\n", "<br>", -1))
-	},
 
 	"showRepoRevSwitcher": showRepoRevSwitcher,
 
@@ -215,19 +185,11 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return orderedFrames
 	},
-	"orderedEnabledGlobalApps": platform.OrderedEnabledGlobalApps,
-	"iconBadge": func(ctx context.Context, app platform.GlobalApp) (bool, error) {
-		if app.IconBadge == nil {
-			return false, nil
-		}
-		return app.IconBadge(ctx)
-	},
 	"platformSearchFrames": func() map[string]platform.SearchFrame {
 		return platform.SearchFrames()
 	},
 	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
-	"disableCloneURL":    func() bool { return appconf.Flags.DisableCloneURL },
 
 	"isAdmin": func(ctx context.Context, method string) bool {
 		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
@@ -249,8 +211,7 @@ var tmplFuncs = htmpl.FuncMap{
 		})
 	},
 
-	"buildvar":        func() buildvar.Vars { return buildvar.All },
-	"updateAvailable": updateAvailable,
+	"buildvar": func() buildvar.Vars { return buildvar.All },
 
-	"isMothership": func() bool { return appconf.Flags.IsSourcegraphCloud },
+	"showDataCollectionMessage": func() bool { return !metricutil.DisableMetricsCollection() },
 }

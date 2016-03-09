@@ -29,35 +29,13 @@ func TestProtobuf_RepoListOptions(t *testing.T) {
 	}
 }
 
-func TestProtobuf_Ref(t *testing.T) {
-	v := &Ref{
-		Ref: graph.Ref{
-			File: "f",
-		},
-		Authorship: &AuthorshipInfo{AuthorEmail: "a@a.com"},
-	}
-	b, err := proto.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	v2 := new(Ref)
-	if err := proto.Unmarshal(b, v2); err != nil {
-		t.Fatal(err)
-	}
-
-	if !reflect.DeepEqual(v, v2) {
-		t.Errorf("got %+v, want %+v", v2, v)
-	}
-}
-
 func TestProtobuf_Example(t *testing.T) {
 	v := &Example{
 		Ref: graph.Ref{
 			File: "f",
 		},
-		SourceCode: &SourceCode{NumRefs: 123},
-		StartLine:  7,
+		Contents:  "hello",
+		FileRange: FileRange{StartLine: 7},
 	}
 	b, err := proto.Marshal(v)
 	if err != nil {

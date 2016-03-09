@@ -1,5 +1,4 @@
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import * as AlertActions from "sourcegraph/alerts/AlertActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "sourcegraph/util/xhr";
 
@@ -8,52 +7,6 @@ const DashboardBackend = {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.WantCreateRepo:
-			DashboardBackend.xhr({
-				uri: `/.ui/.repo-create?RepoURI=${action.name}`,
-				method: "POST",
-				json: {},
-			}, function(err, resp, body) {
-				if (err) {
-					// TODO: some proper error handling
-					console.error(err);
-					return;
-				}
-				if (resp.statusCode !== 200) {
-					// TODO: some proper error handling
-					console.log(resp);
-					return;
-				}
-				Dispatcher.dispatch(new DashboardActions.RepoCreated(body));
-			});
-			break;
-		case DashboardActions.WantInviteUser:
-			DashboardBackend.xhr({
-				uri: `/.ui/.invite`,
-				method: "POST",
-				json: {
-					Email: action.email,
-					Permission: action.permission,
-				},
-			}, function(err, resp, body) {
-				if (err) {
-					console.error(err);
-					return;
-				}
-				if (resp.statusCode !== 200) {
-					// TODO: some proper error handling
-					console.log(resp);
-					return;
-				}
-				Dispatcher.dispatch(new DashboardActions.UserInvited({
-					Name: action.email,
-					Admin: action.permission === "admin",
-					Write: action.permission === "write",
-				}));
-				Dispatcher.dispatch(new AlertActions.AddAlert(false,
-					`Please send <a href="${body.Link}">this invitation link</a> to <strong>${action.email}</strong>.`));
-			});
-			break;
 		case DashboardActions.WantInviteUsers:
 			DashboardBackend.xhr({
 				uri: `/.ui/.invite-bulk`,

@@ -35,15 +35,6 @@ func (s *Repos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called 
 	return
 }
 
-func (s *Repos) MockGetPerms_Read() (called *bool) {
-	called = new(bool)
-	s.GetPerms_ = func(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
-		*called = true
-		return &sourcegraph.RepoPermissions{Read: true}, nil
-	}
-	return
-}
-
 func (s *Repos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
 	s.List_ = func(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {

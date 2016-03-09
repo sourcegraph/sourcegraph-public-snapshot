@@ -23,13 +23,9 @@
 						<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 					</form>
 					<p class="small-block">
-						{{if .IsLDAP}}
-						Use your LDAP credentials to login.
-						{{else}}
 						{{.LoginForm.FieldError "Password"}} Oh no, I <a href="{{urlToWithReturnTo "forgot-password" .ReturnTo}}">forgot my password</a>
-						{{end}}
 					</p>
-					{{if (not .IsLDAP)}}<p class="redirect-block">Don't have an account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign up</a></p>{{end}}
+					<p class="redirect-block">Don't have an account yet? <a href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">Sign up</a></p>
 				</div>
 			</div>
 		</div>

@@ -2,9 +2,11 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
-import CodeListing from "sourcegraph/code/CodeListing";
+import Blob from "sourcegraph/blob/Blob";
 import hotLink from "sourcegraph/util/hotLink";
+import * as router from "sourcegraph/util/router";
 
 class ExampleView extends Component {
 	reconcileState(state, props) {
@@ -14,6 +16,7 @@ class ExampleView extends Component {
 			state.selectedIndex = 0;
 			state.displayedIndex = -1;
 			state.displayedExample = null;
+			state.anns = null;
 		}
 
 		// fix selected index if not enough examples
@@ -29,13 +32,27 @@ class ExampleView extends Component {
 			state.displayedExample = example;
 		}
 
+		state.activeDef = props.activeDef;
 		state.highlightedDef = props.highlightedDef;
+
+		let anns = example ? props.annotations.get(example.Repo, example.Rev, example.CommitID, example.File, example.Range.StartByte, example.Range.EndByte) : null;
+		state.anns = anns ? anns.Annotations.map((ann) => (
+			// Adjust the annotation start/end so that they are relative to
+			// the beginning of this code excerpt, not the full file.
+			Object.assign({}, ann, {StartByte: ann.StartByte - example.Range.StartByte, EndByte: ann.EndByte - example.Range.StartByte})
+		)): null;
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.defURL !== nextState.defURL || prevState.selectedIndex !== nextState.selectedIndex) {
 			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex));
 			Dispatcher.asyncDispatch(new DefActions.WantExample(nextState.defURL, nextState.selectedIndex + 1)); // check if there are more examples
+		}
+		if (prevState.displayedExample !== nextState.displayedExample) {
+			let ex = nextState.displayedExample;
+			if (ex) {
+				Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(ex.Repo, ex.Rev, ex.CommitID, ex.File, ex.Range.StartByte, ex.Range.EndByte));
+			}
 		}
 	}
 
@@ -52,35 +69,38 @@ class ExampleView extends Component {
 	render() {
 		let example = this.state.displayedExample;
 		let loading = this.state.selectedIndex !== this.state.displayedIndex && this.state.count !== 0;
+		let url = example && router.tree(example.Repo, example.Rev, example.File, example.Range.StartLine, example.Range.EndLine);
 		return (
-			<div className="example">
-				<header>
-					<div className="pull-right">{example && example.Repo}</div>
-					<nav>
-						<a className={`fa fa-chevron-circle-left btnNav ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}></a>
-						<a className={`fa fa-chevron-circle-right btnNav ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}></a>
-					</nav>
-					{example && <a href={`/${example.Repo}${example.Rev ? `@${example.Rev}` : ""}/.tree/${example.File}?startline=${example.StartLine}&endline=${example.EndLine}&seldef=${this.state.defURL}`} onClick={hotLink}>{example.File}:{example.StartLine}-{example.EndLine}</a>}
-					{loading && <i className="fa fa-spinner fa-spin"></i>}
-					{this.state.count === 0 && "No examples available"}
-				</header>
+			<div className="examples">
+				<div className="example">
+					<header>
+						{example && <span>Used in <a href={url} onClick={hotLink}>{example.File}:{example.Range.StartLine}-{example.Range.EndLine}</a></span>}
+						{loading && <i className="fa fa-spinner fa-spin"></i>}
+						{this.state.count === 0 && "No examples available"}
+					</header>
 
-				<div className="body">
-					{example &&
-						<div style={{opacity: loading ? 0.5 : 1}}>
-							<CodeListing
-								lines={example.SourceCode.Lines}
-								selectedDef={this.state.defURL}
-								highlightedDef={this.state.highlightedDef} />
-						</div>
-					}
+					<div className="body">
+						{example && example.Contents &&
+							<div style={{opacity: loading ? 0.5 : 1}}>
+								<Blob
+									contents={example.Contents}
+									annotations={this.state.anns}
+									activeDef={this.state.activeDef}
+									highlightedDef={this.state.highlightedDef} />
+							</div>
+						}
+					</div>
+					<footer>
+						<div className="pull-right">{example && example.Repo}</div>
+					</footer>
 				</div>
-
-				<footer>
-					<a target="_blank" href={`${this.state.defURL}/.examples`} className="pull-right">
-						<i className="fa fa-eye" /> View all
+				<nav className="example-navigation">
+					<button className={`btn btn-default prev ${this.state.selectedIndex === 0 ? "disabled" : ""}`} onClick={this._changeExample(-1)}><i className="fa fa-arrow-left"></i></button>
+					<button className={`btn btn-default next ${this.state.selectedIndex >= this.state.count - 1 ? "disabled" : ""}`} onClick={this._changeExample(+1)}><i className="fa fa-arrow-right"></i></button>
+					<a className="btn btn-default all pull-right" target="_blank" href={`${this.state.defURL}/.examples`}>
+						View all uses
 					</a>
-				</footer>
+				</nav>
 			</div>
 		);
 	}
@@ -89,6 +109,7 @@ class ExampleView extends Component {
 ExampleView.propTypes = {
 	defURL: React.PropTypes.string,
 	examples: React.PropTypes.object,
+	annotations: React.PropTypes.object,
 	highlightedDef: React.PropTypes.string,
 };
 

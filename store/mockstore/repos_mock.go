@@ -3,8 +3,6 @@
 package mockstore
 
 import (
-	"time"
-
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
@@ -13,20 +11,15 @@ import (
 )
 
 type Repos struct {
-	Get_      func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	GetPerms_ func(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error)
-	List_     func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
-	Create_   func(v0 context.Context, v1 *sourcegraph.Repo) error
-	Update_   func(v0 context.Context, v1 *store.RepoUpdate) error
-	Delete_   func(ctx context.Context, repo string) error
+	Get_    func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	List_   func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
+	Create_ func(v0 context.Context, v1 *sourcegraph.Repo) error
+	Update_ func(v0 context.Context, v1 *store.RepoUpdate) error
+	Delete_ func(ctx context.Context, repo string) error
 }
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	return s.Get_(ctx, repo)
-}
-
-func (s *Repos) GetPerms(ctx context.Context, repo string) (*sourcegraph.RepoPermissions, error) {
-	return s.GetPerms_(ctx, repo)
 }
 
 func (s *Repos) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
@@ -70,21 +63,6 @@ func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 }
 
 var _ store.RepoStatuses = (*RepoStatuses)(nil)
-
-type RepoCounters struct {
-	RecordHit_ func(ctx context.Context, repo string) error
-	CountHits_ func(ctx context.Context, repo string, since time.Time) (int, error)
-}
-
-func (s *RepoCounters) RecordHit(ctx context.Context, repo string) error {
-	return s.RecordHit_(ctx, repo)
-}
-
-func (s *RepoCounters) CountHits(ctx context.Context, repo string, since time.Time) (int, error) {
-	return s.CountHits_(ctx, repo, since)
-}
-
-var _ store.RepoCounters = (*RepoCounters)(nil)
 
 type RepoVCS struct {
 	Open_             func(ctx context.Context, repo string) (vcs.Repository, error)

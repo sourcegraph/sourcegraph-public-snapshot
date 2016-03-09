@@ -1,0 +1,84 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "file-container",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "content-view",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "content file-content card",
+									"children": [
+										{
+											"type": "BlobToolbar",
+											"props": {
+												"builds": {
+													"content": {}
+												},
+												"repo": "aRepo",
+												"rev": "aRev",
+												"tree": "somePath"
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "FileMargin",
+								"props": {
+									"children": [
+										{
+											"type": "DefPopup",
+											"props": {
+												"def": {
+													"File": {
+														"Path": "somePath"
+													},
+													"Data": {
+														"Kind": "someKind"
+													}
+												},
+												"examples": {
+													"content": {},
+													"counts": {}
+												},
+												"annotations": {
+													"content": {}
+												},
+												"activeDef": "someDef"
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "somePath"
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"commitID": "",
+			"path": "somePath"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "someDef"
+		}
+	]
+}

@@ -4,31 +4,25 @@
 {{define "Body"}}
 
 <script ignore-csp>
-	window.repos = JSON.parse({{json .Repos}}) || [];
-	window.users = JSON.parse({{json .Users}}) || [];
-	window.currentUser = JSON.parse({{json .CurrentUser}});
-	window.mirrorData = JSON.parse({{json .MirrorData}});
+	{{if .Repos}}
+		window.repos = JSON.parse({{json .Repos.Repos}}) || [];
+	{{end}}
+	{{if .RemoteRepos}}
+		window.remoteRepos = JSON.parse({{json .RemoteRepos.RemoteRepos}});
+	{{end}}
 	window.teammates = JSON.parse({{json .Teammates}});
-	window.onWaitlist = JSON.parse({{json .OnWaitlist}}) || false;
 
 	window.onboarding = {
 		linkGitHub: false, // user needs to link GitHub account
 		linkGitHubURL: null, // URL for GitHub OAuth
 		linkGitHubRedirect: false, // user is beind redirected to the dashboard from GitHub
 	};
-	{{if (or (and .PrivateMirrors .CurrentUser) .LinkGitHub)}}
-		{{if .LinkGitHub}}
-			window.onboarding.linkGitHub = true;
-			window.onboarding.linkGitHubURL = "{{router.URLToGitHubOAuth}}";
-		{{else}}
-			{{if .GitHubOnboarding}}
-				window.onboarding.linkGitHubRedirect = true;
-			{{end}}
-		{{end}}
+	{{if .LinkGitHub}}
+		window.onboarding.linkGitHub = true;
+		window.onboarding.linkGitHubURL = "{{router.URLToGitHubOAuth}}";
+	{{else if .GitHubOnboarding}}
+		window.onboarding.linkGitHubRedirect = true;
 	{{end}}
-
-	window.isMothership = JSON.parse({{json isMothership}});
-	window.allowMirrors = JSON.parse({{json .PrivateMirrors}});
 </script>
 
 <div class="dashboard">

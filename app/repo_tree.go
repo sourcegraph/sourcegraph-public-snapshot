@@ -15,6 +15,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/doc"
 	"src.sourcegraph.com/sourcegraph/errcode"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/inventory/filelang"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
 	"src.sourcegraph.com/sourcegraph/util/eventsutil"
@@ -41,14 +42,13 @@ type repoTreeTemplate struct {
 // serveRepoTree creates a new response for the code view that contains information
 // about the requested tree entry.
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	opt := sourcegraph.RepoTreeGetOptions{
-		TokenizedSource: !doc.IsFormattableDocFile(mux.Vars(r)["Path"]) || router.IsRaw(r.URL),
+	ctx, _ := handlerutil.Client(r)
 
+	opt := sourcegraph.RepoTreeGetOptions{
 		GetFileOptions: sourcegraph.GetFileOptions{
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
-	ctx, _ := handlerutil.Client(r)
 	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
@@ -91,7 +91,6 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 	var (
 		templateFile string
 		docs         string
-		fullWidth    bool
 	)
 	ctx := httpctx.FromRequest(r)
 
@@ -100,11 +99,8 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		treeURL := router.Rel.URLToRepoTreeEntrySpec(tc.EntrySpec).String()
 		http.Redirect(w, r, treeURL, http.StatusFound)
 		return nil
-	case tc.Entry.SourceCode != nil:
-		fullWidth = true
-		eventsutil.LogBrowseCode(ctx, "file", tc, rc)
-		templateFile = "repo/tree/file.html"
-	default:
+
+	case isDocFile(tc.EntrySpec.Path) && !router.IsRaw(r.URL):
 		if tc.Entry.Contents == nil {
 			panic("Entry.Contents is nil")
 		}
@@ -115,10 +111,16 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		docs = string(formatted)
 		eventsutil.LogBrowseCode(ctx, "doc", tc, rc)
 		templateFile = "repo/tree/doc.html"
+
+	default:
+		eventsutil.LogBrowseCode(ctx, "file", tc, rc)
+		templateFile = "repo/tree/file.html"
 	}
 
+	tc.Entry.ContentsString = string(tc.Entry.Contents)
+	tc.Entry.Contents = nil
+
 	return tmpl.Exec(r, w, templateFile, http.StatusOK, nil, &repoTreeTemplate{
-		Common:          tmpl.Common{FullWidth: fullWidth},
 		Definition:      dc,
 		TreeEntryCommon: tc,
 		RepoCommon:      rc,
@@ -128,6 +130,11 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 	})
 }
 
+func isDocFile(filename string) bool {
+	langs := filelang.Langs.ByFilename(filename)
+	return len(langs) > 0 && langs[0].Type == "prose"
+}
+
 // FileToBreadcrumb returns the file link without line number
 func FileToBreadcrumb(repoURI string, rev, path string) []*BreadcrumbLink {
 	return FileLinesToBreadcrumb(repoURI, rev, path, 0)
@@ -135,11 +142,11 @@ func FileToBreadcrumb(repoURI string, rev, path string) []*BreadcrumbLink {
 
 // FileLinesToBreadcrumb returns the file link with line number
 func FileLinesToBreadcrumb(repo string, rev, path string, startLine int) []*BreadcrumbLink {
-	return SnippetToBreadcrumb(repo, rev, path, startLine, 0, nil)
+	return SnippetToBreadcrumb(repo, rev, path, startLine, 0)
 }
 
-func SnippetToBreadcrumb(repo string, rev, path string, startLine int, endLine int, defURL *url.URL) []*BreadcrumbLink {
-	return AbsSnippetToBreadcrumb(nil, repo, rev, path, startLine, endLine, defURL, true)
+func SnippetToBreadcrumb(repo string, rev, path string, startLine int, endLine int) []*BreadcrumbLink {
+	return AbsSnippetToBreadcrumb(nil, repo, rev, path, startLine, endLine, true)
 }
 
 type BreadcrumbLink struct {
@@ -148,7 +155,7 @@ type BreadcrumbLink struct {
 }
 
 // AbsSnippetToBreadcrumb returns the breadcrumb to a specific set of lines in a file. The URLs are absolute if appURL is given.
-func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, startLine int, endLine int, defURL *url.URL, includeRepo bool) []*BreadcrumbLink {
+func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, startLine int, endLine int, includeRepo bool) []*BreadcrumbLink {
 	curPath := ""
 	if appURL != nil {
 		curPath = appURL.String()
@@ -174,13 +181,10 @@ func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, star
 			}
 
 			link.Text += fmt.Sprintf(":%d", startLine)
+			link.URL += fmt.Sprintf("#L%d", startLine)
 			if endLine != startLine {
 				link.Text += fmt.Sprintf("-%d", endLine)
-			}
-
-			link.URL += fmt.Sprintf("?startline=%d&endline=%d", startLine, endLine)
-			if defURL != nil {
-				link.URL += fmt.Sprintf("&seldef=%s", defURL)
+				link.URL += fmt.Sprintf("-%d", endLine)
 			}
 		}
 

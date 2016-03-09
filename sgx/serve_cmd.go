@@ -39,16 +39,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/assets"
 	app_router "src.sourcegraph.com/sourcegraph/app/router"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/auth/idkeystore"
-	"src.sourcegraph.com/sourcegraph/auth/ldap"
 	"src.sourcegraph.com/sourcegraph/auth/sharedsecret"
-	"src.sourcegraph.com/sourcegraph/client/pkg/oauth2client"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/fed"
-	"src.sourcegraph.com/sourcegraph/gitserver/sshgit"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/httpapi"
 	"src.sourcegraph.com/sourcegraph/httpapi/router"
@@ -57,7 +51,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/server"
 	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
-	"src.sourcegraph.com/sourcegraph/server/serverctx"
 	"src.sourcegraph.com/sourcegraph/sgx/cli"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -86,10 +79,9 @@ Starts an HTTP server serving the app and API.
 [serve command options]
           --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3080)
           --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3443)
-          --ssh-addr=                            SSH address to listen on, if not blank (:3022)
           --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
           --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
-          --reload                               reload templates, blog posts, etc. on each request (dev mode)
+          --reload                               reload templates, etc. on each request (dev mode)
           --no-worker                            do not start background worker
           --tls-cert=                            certificate file (for TLS)
           --tls-key=                             key file (for TLS)
@@ -154,13 +146,12 @@ Starts an HTTP server serving the app and API.`,
 }
 
 // ServeCmdPrivate holds the parameters containing private data about the
-// instance. These fields will not be sent to the federation root server
-// for diagnostic purposes.
+// instance. These fields will not be forwarded with the other metrics.
 type ServeCmdPrivate struct {
 	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
 	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
 
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file"`
+	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem"`
 	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
 }
 
@@ -169,7 +160,6 @@ var serveCmdInst ServeCmd
 type ServeCmd struct {
 	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API"`
 	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
-	SSHAddr   string `long:"ssh-addr" default:":3022" description:"SSH address to listen on, if not blank"`
 
 	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
 
@@ -177,8 +167,7 @@ type ServeCmd struct {
 
 	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
 
-	NoWorker          bool          `long:"no-worker" description:"do not start background worker"`
-	GraphUplinkPeriod time.Duration `long:"graphuplink" default:"10m" description:"how often to communicate back to the mothership; if 0, then no periodic communication occurs"`
+	NoWorker bool `long:"no-worker" description:"do not start background worker"`
 
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
@@ -190,6 +179,8 @@ type ServeCmd struct {
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
 	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup"`
+
+	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -219,28 +210,6 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	return appURL, nil
-}
-
-func (c *ServeCmd) configureSSHURL(appURL *url.URL) (*url.URL, error) {
-	if c.SSHAddr != "" {
-		host, _, err := net.SplitHostPort(appURL.Host)
-		if err != nil {
-			if strings.Contains(err.Error(), "missing port in address") {
-				host = appURL.Host
-			} else {
-				return nil, err
-			}
-		}
-		sshURL := *appURL
-		sshURL.Scheme = "ssh"
-		sshURL.User = url.User("git")
-		sshURL.Host = host
-		if c.SSHAddr != ":22" {
-			sshURL.Host += c.SSHAddr
-		}
-		return &sshURL, nil
-	}
-	return nil, nil
 }
 
 func (c *ServeCmd) Execute(args []string) error {
@@ -339,17 +308,13 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	sshURL, err := c.configureSSHURL(appURL)
-	if err != nil {
-		return err
-	}
 
 	// Shared context setup between client and server.
 	sharedCtxFunc := func(ctx context.Context) context.Context {
 		for _, f := range sharedCtxFuncs {
 			ctx = f(ctx)
 		}
-		ctx = conf.WithURL(ctx, appURL, sshURL)
+		ctx = conf.WithURL(ctx, appURL)
 		return ctx
 	}
 	clientCtxFunc := func(ctx context.Context) context.Context {
@@ -370,32 +335,17 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Server identity keypair
-	idKeyCtx, err := serverContextWithStore(serverCtxFunc)
-	if err != nil {
-		return err
-	}
-	idKey, createdIDKey, err := idkeystore.GenerateOrGetIDKey(idKeyCtx, c.IDKeyData, c.IDKeyFile)
+	idKey, createdIDKey, err := c.generateOrReadIDKey()
 	if err != nil {
 		return err
 	}
 	log15.Debug("Sourcegraph server", "ID", idKey.ID)
 	// Uncomment to add ID key prefix to log messages.
 	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
-	var idKeyToken oauth2.TokenSource
-	if !fed.Config.IsRoot {
-		tokenURL := fed.Config.RootURL().ResolveReference(app_router.Rel.URLTo(app_router.OAuth2ServerToken))
-		idKeyToken = idKey.TokenSource(context.Background(), tokenURL.String())
-	}
 
 	sharedCtxFuncs = append(sharedCtxFuncs, func(ctx context.Context) context.Context {
-		if !fed.Config.IsRoot {
-			ctx = sourcegraph.WithCredentials(ctx, idKeyToken)
-		}
 		ctx = idkey.NewContext(ctx, idKey)
 		return ctx
-	})
-	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
-		return oauth2client.WithClientID(ctx, idKey.ID)
 	})
 	sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
 	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
@@ -404,15 +354,8 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	clientCtx := clientCtxFunc(context.Background())
 
-	if fed.Config.IsRoot {
-		// Listen for events and flush them to elasticsearch
-		metricutil.StartEventForwarder(clientCtx)
-		metricutil.StartEventLogger(clientCtx, 10*4096, 1024, 5*time.Minute)
-	} else if c.GraphUplinkPeriod != 0 {
-		// Listen for events and periodically push them upstream
-		metricutil.StartEventLogger(clientCtx, 10*4096, 256, 10*time.Minute)
-	}
-
+	// Periodically forward and/or save metrics.
+	metricutil.Start(clientCtx, 10*4096, 256, 5*time.Minute)
 	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
 		Type:     "notif",
 		ClientID: idKey.ID,
@@ -422,11 +365,9 @@ func (c *ServeCmd) Execute(args []string) error {
 	})
 	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
 
-	if c.GraphUplinkPeriod != 0 {
-		// Listen for events and periodically push them to analytics gateway.
-		eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
-		eventsutil.LogStartServer()
-	}
+	// Listen for events and periodically push them to analytics gateway.
+	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
+	eventsutil.LogStartServer()
 
 	c.runGitServer()
 
@@ -504,7 +445,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners(client.Ctx, idKey, appURL, sshURL)
+	c.initializeEventListeners(client.Ctx, idKey, appURL)
 
 	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
 		lmux := cmux.New(l)
@@ -573,20 +514,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		serveHTTP(l, &srv, c.HTTPSAddr, true)
 	}
 
-	// Start SSH git server.
-	if c.SSHAddr != "" {
-		// Create a context with regular (non self-signed) tokens that
-		// are valid on the federation root server.
-		ctx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:sshgit"})
-		if err != nil {
-			return err
-		}
-		err = (&sshgit.Server{}).ListenAndStart(ctx, c.SSHAddr, idKey)
-		if err != nil {
-			return err
-		}
-	}
-
 	// Connection test
 	c.checkReachability()
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
@@ -611,31 +538,19 @@ func (c *ServeCmd) Execute(args []string) error {
 		}()
 	}
 
-	if authutil.ActiveFlags.IsLDAP() {
-		if err := ldap.VerifyConfig(); err != nil {
-			log.Fatalf("Could not connect to LDAP server: %v", err)
-		} else {
-			log15.Info("Connection to LDAP server successful")
+	// Register client.
+	go func() {
+		if err := c.registerClient(appURL, idKey); err != nil {
+			log15.Warn("Failed to register (or check registration) with server", "error", err, "registerURL", c.RegisterURL)
 		}
-	}
-
-	// Register client with fed root instance.
-	go c.registerClientWithRoot(appURL, idKey)
+	}()
 
 	// Refresh commit list periodically
 	go c.repoStatusCommitLogCacheRefresher()
 
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
-	statsInterval := c.GraphUplinkPeriod
-	if statsInterval < 10*time.Minute {
-		statsInterval = 10 * time.Minute
-	}
-
-	go statsutil.ComputeUsageStats(client.Ctx, statsInterval)
-
-	// Occasionally send metrics and usage stats upstream via GraphUplink
-	go c.graphUplink(clientCtx)
+	go statsutil.ComputeUsageStats(client.Ctx, 10*time.Minute)
 
 	// Prepare for initial onboarding.
 	if createdIDKey && !c.NoInitialOnboarding {
@@ -649,44 +564,40 @@ func (c *ServeCmd) Execute(args []string) error {
 }
 
 // generateOrReadIDKey reads the server's ID key (or creates one on-demand).
-func (c *ServeCmd) generateOrReadIDKey() (*idkey.IDKey, error) {
+func (c *ServeCmd) generateOrReadIDKey() (k *idkey.IDKey, created bool, err error) {
 	if s := c.IDKeyData; s != "" {
-		if globalOpt.Verbose {
-			log.Println("Reading ID key from environment (or CLI flag).")
-		}
-
-		return idkey.FromString(s)
+		log15.Debug("Reading ID key from environment (or CLI flag).")
+		k, err = idkey.FromString(s)
+		return k, false, err
 	}
 
 	c.IDKeyFile = os.ExpandEnv(c.IDKeyFile)
 
-	var k *idkey.IDKey
 	if data, err := ioutil.ReadFile(c.IDKeyFile); err == nil {
 		// File exists.
 		k, err = idkey.New(data)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	} else if os.IsNotExist(err) {
-		log.Printf("Generating new Sourcegraph ID key at %s...", c.IDKeyFile)
+		log15.Debug("Generating new Sourcegraph ID key", "path", c.IDKeyFile)
 		k, err = idkey.Generate()
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		data, err := k.MarshalText()
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if err := os.MkdirAll(filepath.Dir(c.IDKeyFile), 0700); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if err := ioutil.WriteFile(c.IDKeyFile, data, 0600); err != nil {
-			return nil, err
+			return nil, false, err
 		}
-	} else {
-		return nil, err
+		created = true
 	}
-	return k, nil
+	return
 }
 
 // authenticateCLIContext adds a "service account" access token to
@@ -734,8 +645,8 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL, sshURL *url.URL) {
-	ctx := conf.WithURL(parent, appURL, sshURL)
+func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
+	ctx := conf.WithURL(parent, appURL)
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{ClientID: k.ID})
 	// Mask out the server's private key from the context passed to the listener
 	ctx = idkey.NewContext(ctx, nil)
@@ -960,11 +871,22 @@ func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc
 
 // webpackDevServerHandler sets a CORS header if you are running with Webpack in local dev.
 
-// registerClientWithRoot registers a local Sourcegraph instance as a client
-// of its root instance.
-func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
-	if fed.Config.IsRoot {
-		return
+// registerClient registers this Sourcegraph server as a client
+// of another server.
+func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
+	if c.RegisterURL == "" {
+		return nil
+	}
+
+	// Short-circuit if RegisterURL is set to this server's own app URL.
+	if c.RegisterURL == c.AppURL {
+		log15.Warn("RegisterURL is set to this server's own app URL, skipping client registration.")
+		return nil
+	}
+
+	registerURL, err := url.Parse(c.RegisterURL)
+	if err != nil {
+		return err
 	}
 
 	shortClientID := idKey.ID
@@ -972,50 +894,33 @@ func (c *ServeCmd) registerClientWithRoot(appURL *url.URL, idKey *idkey.IDKey) {
 		shortClientID = shortClientID[:5]
 	}
 
-	// JWKS
 	jwks, err := idKey.MarshalJWKSPublicKey()
 	if err != nil {
-		log.Fatalf("Could not marshal JWKS for client: %v", err)
+		return err
 	}
 
-	rctx := fed.Config.NewRemoteContext(context.Background())
+	rctx := sourcegraph.WithGRPCEndpoint(context.Background(), registerURL)
 
-	for {
-		cl, err := sourcegraph.NewClientFromContext(rctx)
-		if err != nil {
-			log15.Error("Could not create client while registering client instance with root", "error", err)
-			time.Sleep(30 * time.Second)
-			continue
-		}
-
-		_, err = cl.RegisteredClients.Get(rctx, &sourcegraph.RegisteredClientSpec{
-			ID: idKey.ID,
-		})
-		if err == nil {
-			log15.Debug("Client already registered with root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
-			return
-		} else if grpc.Code(err) != codes.NotFound {
-			log15.Debug("Could not fetch client from root", "error", err)
-			time.Sleep(5 * time.Minute)
-			continue
-		}
-
-		clientName := fmt.Sprintf("Client #%s", shortClientID)
-		_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
-			ID:         idKey.ID,
-			ClientName: clientName,
-			ClientURI:  appURL.String(),
-			JWKS:       string(jwks),
-		})
-		if err != nil {
-			log15.Warn("Could not register client with root", "error", err)
-			time.Sleep(10 * time.Minute)
-			continue
-		}
-		eventsutil.LogRegisterServer(clientName)
-		log15.Debug("Registered as client of root", "rootURL", fed.Config.RootURLStr, "client", shortClientID)
-		return
+	cl, err := sourcegraph.NewClientFromContext(rctx)
+	if err != nil {
+		return err
 	}
+
+	regClient, err := cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
+		ID:         idKey.ID,
+		ClientName: fmt.Sprintf("Client #%s", shortClientID),
+		ClientURI:  appURL.String(),
+		JWKS:       string(jwks),
+	})
+	if grpc.Code(err) == codes.AlreadyExists {
+		log15.Debug("Client is already registered", "registerURL", registerURL, "client", idKey.ID)
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("registering client with %s: %s", registerURL, err)
+	}
+	eventsutil.LogRegisterServer(regClient.ClientName)
+	log15.Debug("Registered as client", "registerURL", registerURL, "client", idKey.ID)
+	return nil
 }
 
 // repoStatusCommitLogCacheRefresher periodically refreshes the commit log cache
@@ -1069,37 +974,6 @@ Outer:
 			cacheutil.PrecacheRoot(repo.URI)
 		}
 		time.Sleep(localcli.Flags.CommitLogCachePeriod)
-	}
-}
-
-func (c *ServeCmd) graphUplink(ctx context.Context) {
-	if c.GraphUplinkPeriod == 0 || fed.Config.IsRoot {
-		return
-	}
-
-	rctx := fed.Config.NewRemoteContext(ctx)
-
-	for {
-		time.Sleep(c.GraphUplinkPeriod)
-		cl, err := sourcegraph.NewClientFromContext(rctx)
-		if err != nil {
-			log15.Error("GraphUplink push failed", "error", err)
-			continue
-		}
-
-		buf := &bytes.Buffer{}
-		mfs := metricutil.SnapshotMetricFamilies()
-		mfs.Marshal(buf)
-
-		log15.Debug("GraphUplink sending metrics snapshot", "mothership", fed.Config.RootURL(), "numMetrics", len(mfs))
-		snapshot := sourcegraph.MetricsSnapshot{
-			Type:          sourcegraph.TelemetryType_PrometheusDelimited0dot0dot4,
-			TelemetryData: buf.Bytes(),
-		}
-		_, err = cl.GraphUplink.Push(rctx, &snapshot)
-		if err != nil {
-			log15.Error("GraphUplink push failed", "error", err)
-		}
 	}
 }
 
@@ -1179,19 +1053,6 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
-}
-
-// serverContextWithStore generates a context like what is used in the service
-// layer. For use in server setup before the servers are up
-func serverContextWithStore(serverCtxFunc func(context.Context) context.Context) (ctx context.Context, err error) {
-	ctx = serverCtxFunc(context.Background())
-	for _, f := range serverctx.Funcs {
-		ctx, err = f(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ctx, nil
 }
 
 func noiseyLogFilter(r *log15.Record) bool {

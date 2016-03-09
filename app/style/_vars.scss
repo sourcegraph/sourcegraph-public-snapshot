@@ -29,6 +29,7 @@ $lemon: #ffe37e;
 // Content
 $blue-grey: #5c768d;
 $dark-blue-grey: #344a66;
+$muted-grey: #bfbfc7;
 $shadow-blue: #7794ae;
 $warm-grey: #787878;
 $light-grey: #969896;
@@ -80,13 +81,15 @@ $file-toolbar-bg: $white;
 $file-toolbar-path-color: $warm-grey;
 
 $line-number-bg: $pale-grey;
-$line-number-text: darken($pale-grey, 30%);
+$line-number-text: $muted-grey;
+$line-content-bg: $white;
+$active-code-line-number-bg: transparentize($brand-azure, 0.85);
 $active-code-bg: transparentize($brand-azure, 0.90);
 $active-code-flash-bg: transparentize($brand-azure, 0.85);
-$token-focus-color: $lemon;
-$token-focus-border: darken($token-focus-color, 8%);
-$token-hover-color: transparentize($lemon, 0.56);
+$token-hover-color: transparentize($lemon, 0.63);
 $token-hover-border: darken($token-hover-color, 5%);
+$token-active-color: transparentize($lemon, 0.20);
+$token-active-border: darken($token-active-color, 2%);
 
 $content-primary-bg: $duck-egg-blue;
 $content-primary-border: lighten($brand-azure, 27%);
@@ -194,6 +197,7 @@ $zindex-modal:            z-index(modal);
 // ----------------------------------------------------------------------------
 
 $content-border: solid 1px $content-border-color;
+$line-panel-shadow: 0 1px 3px 0 transparentize($cloudy-blue, 0.72);
 
 $footer-height: 110px;
 $motd-height: 29px;
@@ -204,7 +208,7 @@ $navbar-height: 50px;
 $code-line-height: 1.35em;
 $code-font-size: 13px;
 $code-popup-width: 600px;
-$line-number-padding: 0 9px 0 2px;
+$line-number-padding: 0 8px 0 8px;
 
 /* Bootstrap Overrides */
 $border-radius-base:  3px;
@@ -218,3 +222,8 @@ $input-border-radius-small: $border-radius-small;
 $btn-border-radius-large: $border-radius-base;
 
 $navbar-border-radius: 0;
+
+$container-sm: 100%;
+$container-tablet: 100%;
+$container-md: 100%;
+$container-desktop: 100%;

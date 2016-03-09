@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/fed/discover"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/store"
 
@@ -67,8 +66,6 @@ func HTTP(err error) int {
 		return http.StatusNotFound
 	} else if os.IsPermission(err) {
 		return http.StatusForbidden
-	} else if discover.IsNotFound(err) {
-		return http.StatusNotFound
 	}
 
 	if code := grpc.Code(err); code != codes.Unknown {
@@ -82,7 +79,7 @@ func HTTP(err error) int {
 // err.
 func GRPC(err error) codes.Code {
 	// Piggyback on the HTTP func to reduce code duplication.
-	return httpToGRPC(HTTP(err))
+	return HTTPToGRPC(HTTP(err))
 }
 
 type HTTPErr struct {

@@ -73,24 +73,13 @@
 
 {{define "RepoIcon"}}<!-- expects *sourcegraph.Repo -->
 	{{if .Private}}
-		<span title="Private repository" data-tooltip data-placement="bottom" class="octicon octicon-lock repo-attr-icon"></span>
+		<span title="Private repository" class="octicon octicon-lock repo-attr-icon"></span>
 	{{else if .Fork}}
-		<span title="Fork repository" data-tooltip data-placement="bottom" class="octicon octicon-repo-forked repo-attr-icon"></span>
+		<span title="Fork repository" class="octicon octicon-repo-forked repo-attr-icon"></span>
 	{{else if .Mirror}}
-		<span title="Mirror repository" data-tooltip data-placement="bottom" class="octicon octicon-mirror repo-attr-icon"></span>
+		<span title="Mirror repository" class="octicon octicon-mirror repo-attr-icon"></span>
 	{{else}}
-		<span title="Repository" data-tooltip data-placement="bottom" class="octicon octicon-repo repo-attr-icon"></span>
-	{{end}}
-
-	{{/* Label repos that have a remote origin. */}}
-	{{if hasPrefix .Origin "GitHub "}}
-		<a target="_blank" href="{{.GitHubHTMLURL}}"
-			data-tooltip title="{{.Origin}}" data-placement="bottom" class="repo-attr-icon">
-			<i class="fa fa-github"></i>
-		</a>
-	{{else if .Origin}}
-		<i class="fa fa-globe repo-attr-icon"
-			data-tooltip title="Origin: {{.Origin}}" data-placement="bottom"></i>
+		<span title="Repository" class="octicon octicon-repo repo-attr-icon"></span>
 	{{end}}
 {{end}}
 
@@ -149,5 +138,5 @@
 {{end}}
 
 {{define "dataCollectionMessage"}}
-By creating an account you acknowledge that we collect and aggregate information from your server to make Sourcegraph better. <a href="https://src.sourcegraph.com/sourcegraph/.docs/management/data_collection/" target="_blank">See details</a>
+You also acknowledge that we collect and aggregate information from your server to make Sourcegraph better. <a href="https://src.sourcegraph.com/sourcegraph/.docs/management/data_collection/" target="_blank">See details</a>
 {{end}}

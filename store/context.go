@@ -22,7 +22,6 @@ type Stores struct {
 	Authorizations     Authorizations
 	BuildLogs          BuildLogs
 	Builds             Builds
-	Changesets         Changesets
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	Graph              srcstore.MultiRepoStoreImporterIndexer
@@ -31,14 +30,11 @@ type Stores struct {
 	Password           Password
 	RegisteredClients  RegisteredClients
 	RepoConfigs        RepoConfigs
-	RepoCounters       RepoCounters
 	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
-	Storage            Storage
 	Users              Users
-	Waitlist           Waitlist
 }
 
 type contextKey int
@@ -48,7 +44,6 @@ const (
 	_AuthorizationsKey
 	_BuildLogsKey
 	_BuildsKey
-	_ChangesetsKey
 	_DirectoryKey
 	_ExternalAuthTokensKey
 	_GraphKey
@@ -57,14 +52,11 @@ const (
 	_PasswordKey
 	_RegisteredClientsKey
 	_RepoConfigsKey
-	_RepoCountersKey
 	_RepoPermsKey
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
-	_StorageKey
 	_UsersKey
-	_WaitlistKey
 )
 
 // WithStores returns a copy of parent with the given stores. If a store's field value is nil, its previous value is inherited from parent in the new context.
@@ -80,9 +72,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Builds != nil {
 		ctx = WithBuilds(ctx, s.Builds)
-	}
-	if s.Changesets != nil {
-		ctx = WithChangesets(ctx, s.Changesets)
 	}
 	if s.Directory != nil {
 		ctx = WithDirectory(ctx, s.Directory)
@@ -108,9 +97,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.RepoConfigs != nil {
 		ctx = WithRepoConfigs(ctx, s.RepoConfigs)
 	}
-	if s.RepoCounters != nil {
-		ctx = WithRepoCounters(ctx, s.RepoCounters)
-	}
 	if s.RepoPerms != nil {
 		ctx = WithRepoPerms(ctx, s.RepoPerms)
 	}
@@ -123,14 +109,8 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Repos != nil {
 		ctx = WithRepos(ctx, s.Repos)
 	}
-	if s.Storage != nil {
-		ctx = WithStorage(ctx, s.Storage)
-	}
 	if s.Users != nil {
 		ctx = WithUsers(ctx, s.Users)
-	}
-	if s.Waitlist != nil {
-		ctx = WithWaitlist(ctx, s.Waitlist)
 	}
 	return ctx
 }
@@ -187,20 +167,6 @@ func BuildsFromContext(ctx context.Context) Builds {
 	s, ok := ctx.Value(_BuildsKey).(Builds)
 	if !ok || s == nil {
 		panic("no Builds set in context")
-	}
-	return s
-}
-
-// WithChangesets returns a copy of parent with the given Changesets store.
-func WithChangesets(parent context.Context, s Changesets) context.Context {
-	return context.WithValue(parent, _ChangesetsKey, s)
-}
-
-// ChangesetsFromContext gets the context's Changesets store. If the store is not present, it panics.
-func ChangesetsFromContext(ctx context.Context) Changesets {
-	s, ok := ctx.Value(_ChangesetsKey).(Changesets)
-	if !ok || s == nil {
-		panic("no Changesets set in context")
 	}
 	return s
 }
@@ -317,20 +283,6 @@ func RepoConfigsFromContext(ctx context.Context) RepoConfigs {
 	return s
 }
 
-// WithRepoCounters returns a copy of parent with the given RepoCounters store.
-func WithRepoCounters(parent context.Context, s RepoCounters) context.Context {
-	return context.WithValue(parent, _RepoCountersKey, s)
-}
-
-// RepoCountersFromContext gets the context's RepoCounters store. If the store is not present, it panics.
-func RepoCountersFromContext(ctx context.Context) RepoCounters {
-	s, ok := ctx.Value(_RepoCountersKey).(RepoCounters)
-	if !ok || s == nil {
-		panic("no RepoCounters set in context")
-	}
-	return s
-}
-
 // WithRepoPerms returns a copy of parent with the given RepoPerms store.
 func WithRepoPerms(parent context.Context, s RepoPerms) context.Context {
 	return context.WithValue(parent, _RepoPermsKey, s)
@@ -387,20 +339,6 @@ func ReposFromContext(ctx context.Context) Repos {
 	return s
 }
 
-// WithStorage returns a copy of parent with the given Storage store.
-func WithStorage(parent context.Context, s Storage) context.Context {
-	return context.WithValue(parent, _StorageKey, s)
-}
-
-// StorageFromContext gets the context's Storage store. If the store is not present, it panics.
-func StorageFromContext(ctx context.Context) Storage {
-	s, ok := ctx.Value(_StorageKey).(Storage)
-	if !ok || s == nil {
-		panic("no Storage set in context")
-	}
-	return s
-}
-
 // WithUsers returns a copy of parent with the given Users store.
 func WithUsers(parent context.Context, s Users) context.Context {
 	return context.WithValue(parent, _UsersKey, s)
@@ -411,20 +349,6 @@ func UsersFromContext(ctx context.Context) Users {
 	s, ok := ctx.Value(_UsersKey).(Users)
 	if !ok || s == nil {
 		panic("no Users set in context")
-	}
-	return s
-}
-
-// WithWaitlist returns a copy of parent with the given Waitlist store.
-func WithWaitlist(parent context.Context, s Waitlist) context.Context {
-	return context.WithValue(parent, _WaitlistKey, s)
-}
-
-// WaitlistFromContext gets the context's Waitlist store. If the store is not present, it panics.
-func WaitlistFromContext(ctx context.Context) Waitlist {
-	s, ok := ctx.Value(_WaitlistKey).(Waitlist)
-	if !ok || s == nil {
-		panic("no Waitlist set in context")
 	}
 	return s
 }

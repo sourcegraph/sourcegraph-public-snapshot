@@ -1,0 +1,10 @@
+{
+	"renderOutput": {
+		"type": "BlobContainer",
+		"props": {
+			"repo": "github.com/gorilla/mux",
+			"rev": "master",
+			"tree": ".travis.yml"
+		}
+	}
+}

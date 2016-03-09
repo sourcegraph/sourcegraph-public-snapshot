@@ -3,15 +3,12 @@ package app
 import (
 	"bytes"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/ui/payloads"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
@@ -62,108 +59,24 @@ func virtualTreeEntry(def *sourcegraph.Def, rev sourcegraph.RepoRevSpec) (*handl
 	}
 	rawContents := buf.String()
 
-	entrySpec := sourcegraph.TreeEntrySpec{
-		RepoRev: rev,
-		Path:    def.File,
-	}
-
-	entry0 := &sourcegraph.FileWithRange{
-		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-			Name:     filepath.Base(def.File),
-			Type:     sourcegraph.FileEntry,
-			Contents: []byte(rawContents),
-		},
-		FileRange: sourcegraph.FileRange{
-			StartLine: 0,
-			EndLine:   int64(strings.Count(rawContents, "\n")),
-			StartByte: 0,
-			EndByte:   int64(len(rawContents)),
-		},
-	}
-
-	sourceCode, err := parseVirtual(def, entrySpec, entry0)
-	if err != nil {
-		return nil, err
-	}
-
-	entry := &sourcegraph.TreeEntry{
-		BasicTreeEntry: entry0.BasicTreeEntry,
-		FileRange:      &entry0.FileRange,
-		SourceCode:     sourceCode,
-	}
-
 	return &handlerutil.TreeEntryCommon{
-		EntrySpec: entrySpec,
-		Entry:     entry,
+		EntrySpec: sourcegraph.TreeEntrySpec{
+			RepoRev: rev,
+			Path:    def.File,
+		},
+		Entry: &sourcegraph.TreeEntry{
+			BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+				Name:     filepath.Base(def.File),
+				Type:     sourcegraph.FileEntry,
+				Contents: []byte(rawContents),
+			},
+			FileRange: &sourcegraph.FileRange{
+				StartLine: 0,
+				EndLine:   int64(strings.Count(rawContents, "\n")),
+				StartByte: 0,
+				EndByte:   int64(len(rawContents)),
+			},
+			ContentsString: rawContents,
+		},
 	}, nil
-}
-
-// parseVirtual returns the parsed tokenized representation of the virtual source code. This closely mirrors what
-// sourcecode.Parse returns, but for the fake source code that's generated for virtual defs. It is mostly copied and
-// pasted from sourcecode.Parse.
-func parseVirtual(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) (*sourcegraph.SourceCode, error) {
-	sourceCode := sourcecode.Tokenize(entry)
-
-	refs := virtualEntryRefs(def, entrySpec, entry)
-	for _, r := range refs {
-		var defURL *url.URL
-		if graph.URIEqual(entrySpec.RepoRev.URI, r.DefKey().Repo) {
-			defURL = router.Rel.URLToDefAtRev(r.DefKey(), entrySpec.RepoRev.CommitID)
-		} else {
-			defURL = router.Rel.URLToDef(r.DefKey())
-		}
-
-		for _, line := range sourceCode.Lines {
-			if r.Start >= uint32(line.StartByte) && r.Start <= uint32(line.EndByte) {
-				for k, tok := range line.Tokens {
-					start, end := uint32(tok.StartByte), uint32(tok.EndByte)
-					if (r.Start >= start && r.Start < end) ||
-						(r.End > end && r.Start < start) ||
-						(r.End > start && r.End <= end) {
-						if tok.URL == nil {
-							tok.URL = make([]string, 0, 1)
-						}
-						tok.URL = append(tok.URL, defURL.String())
-						tok.IsDef = r.Def
-						line.Tokens[k] = tok
-					}
-				}
-			}
-		}
-	}
-
-	numRefs := len(refs)
-	sourceCode.TooManyRefs = false
-	sourceCode.NumRefs = int32(numRefs)
-
-	return sourceCode, nil
-}
-
-// virtualEntryRefs returns fake refs for the fake source code generated for a virtual def.
-func virtualEntryRefs(def *sourcegraph.Def, entrySpec sourcegraph.TreeEntrySpec, entry *sourcegraph.FileWithRange) []*graph.Ref {
-	var refs []*graph.Ref
-	s := string(entry.Contents)
-	for seen, i := 0, strings.Index(s, def.Path); i >= 0; i = strings.Index(s, def.Path) {
-		j := i + len(def.Path)
-
-		refs = append(refs, &graph.Ref{
-			DefRepo:     def.Repo,
-			DefUnitType: def.UnitType,
-			DefUnit:     def.Unit,
-			DefPath:     def.Path,
-			Repo:        def.Repo,
-			CommitID:    def.CommitID,
-			UnitType:    def.UnitType,
-			Unit:        def.Unit,
-			Def:         true,
-			File:        def.File,
-			Start:       uint32(seen + i),
-			End:         uint32(seen + j),
-		})
-
-		seen += j
-		s = s[j:]
-	}
-
-	return refs
 }

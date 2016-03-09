@@ -53,6 +53,10 @@ func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
 		return err
 	}
 	repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		// Only update public mirror repos in the background, as we cannot reliably identify
+		// the auth token to use for updating private mirrors.
+		// TODO: make it possible to background update private mirror repos.
+		Type: "public",
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: 100000,
 		},
@@ -62,11 +66,11 @@ func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
 	}
 	hasMirror := false
 	for _, repo := range repos.Repos {
-		if repo.Mirror {
+		if repo.Mirror && !repo.Private {
 			// Sleep a tiny bit longer than MirrorUpdateRate to avoid our
 			// enqueue being no-op / hitting "was recently updated".
 			time.Sleep(appconf.Flags.MirrorRepoUpdateRate + (200 * time.Millisecond))
-			Enqueue(repo)
+			Enqueue(repo, nil)
 			hasMirror = true
 		}
 	}

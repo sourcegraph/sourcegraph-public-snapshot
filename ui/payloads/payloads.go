@@ -28,40 +28,6 @@ type DefCommon struct {
 	// ByteStartPosition and ByteEndPosition are the byte offsets that this
 	// definition occupy in the original containing file.
 	ByteStartPosition, ByteEndPosition uint32
-
-	// Found, when false, indicates that a definition does indeed exist, but
-	// has not yet been indexed by our build system.
-	Found bool
-}
-
-// Changeset holds the payload that will be sent when requesting information about
-// changesets.
-type Changeset struct {
-	// Changeset contains the changeset data.
-	Changeset *sourcegraph.Changeset
-
-	// Delta contains information about the difference between the revisions
-	// in the changeset.
-	Delta *sourcegraph.Delta
-
-	// BaseTip is the tip commit of the `base` of this changeset. This is compared
-	// against the Delta's BaseCommit which is the merge-base commit. If they
-	// differ, the changeset can not be cleanly merged.
-	BaseTip *vcs.Commit
-
-	// Commits holds the list of commits that are part of this changeset, augmented
-	// with user information.
-	Commits []*AugmentedCommit `json:",omitempty"`
-
-	// Files holds the actual changeset files (diffs).
-	Files *sourcegraph.DeltaFiles `json:",omitempty"`
-
-	// Reviews holds all the reviews that were made on this changeset.
-	Reviews []*sourcegraph.ChangesetReview
-
-	// Events is a list of events that occurred on this changeset. Events are
-	// popuplated when a changeset is updated.
-	Events []*sourcegraph.ChangesetEvent
 }
 
 // CodeFile holds information about a code file to be displayed in the UI.
@@ -106,12 +72,7 @@ type TokenSearchResult struct {
 
 type TextSearchResult struct {
 	File      string
-	Lines     []*pbtypes.HTML
+	Contents  string
 	StartLine uint32
 	EndLine   uint32
-}
-
-type UserKeysResult struct {
-	Key, Name string
-	ID        int
 }

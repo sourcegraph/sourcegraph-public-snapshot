@@ -1,0 +1,96 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "file-container",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "content-view",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "content file-content card",
+									"children": [
+										{
+											"type": "BlobToolbar",
+											"props": {
+												"builds": {
+													"content": {}
+												},
+												"repo": "aRepo",
+												"rev": "aRev",
+												"tree": "aTree",
+												"file": {
+													"Entry": {
+														"ContentsString": "hello\nworld"
+													},
+													"EntrySpec": {
+														"RepoRev": {
+															"CommitID": "123abc"
+														}
+													}
+												}
+											}
+										},
+										{
+											"type": "Blob",
+											"props": {
+												"contents": "hello\nworld",
+												"lineNumbers": true,
+												"highlightSelectedLines": true,
+												"highlightedDef": "otherDef",
+												"activeDef": "someDef",
+												"dispatchSelections": true
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "FileMargin",
+								"props": {}
+							}
+						]
+					}
+				},
+				{
+					"type": "DefTooltip",
+					"props": {
+						"currentRepo": "aRepo",
+						"def": {
+							"File": {
+								"Path": "aTree"
+							}
+						}
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"commitID": "",
+			"path": "aTree"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "someDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "otherDef"
+		}
+	]
+}

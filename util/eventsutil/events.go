@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gorilla/mux"
 	"github.com/sourcegraph/go-github/github"
+	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -304,18 +304,6 @@ func LogViewDef(ctx context.Context, eventType string) {
 
 	Log(&sourcegraph.Event{
 		Type:     eventType,
-		ClientID: clientID,
-		UserID:   userID,
-		DeviceID: deviceID,
-	})
-}
-
-func LogCreateChangeset(ctx context.Context) {
-	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
-
-	Log(&sourcegraph.Event{
-		Type:     "CreateChangeset",
 		ClientID: clientID,
 		UserID:   userID,
 		DeviceID: deviceID,

@@ -12,7 +12,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/auth/idkey"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/fed"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/sgx/buildvar"
 )
@@ -42,11 +41,6 @@ func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
 		IDKey:      idkey.FromContext(ctx).ID,
 		AuthSource: authutil.ActiveFlags.Source,
-	}
-
-	c.IsFederationRoot = fed.Config.IsRoot
-	if u := fed.Config.RootURL(); u != nil {
-		c.FederationRootURL = u.String()
 	}
 
 	return c, nil

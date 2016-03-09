@@ -4,27 +4,14 @@ var ReactDOM = require("react-dom");
 
 var DashboardContainer = require("sourcegraph/dashboard/DashboardContainer").default;
 var BuildContainer = require("sourcegraph/build/BuildContainer").default;
-var CloseChangesetButton = require("./components/CloseChangesetButton");
-var CompareView = require("./components/CompareView");
-var DeltaDefsContainer = require("./components/DeltaDefsContainer");
-var DeltaImpactContainer = require("./components/DeltaImpactContainer");
-var MarkdownView = require("./components/MarkdownView");
-var RepoBuildIndicator = require("./components/RepoBuildIndicator");
+var FileDiffs = require("sourcegraph/delta/FileDiffs").default;
+var BuildIndicatorContainer = require("sourcegraph/build/BuildIndicatorContainer").default;
 var RepoRevSwitcher = require("./components/RepoRevSwitcher");
-var RepoCloneBox = require("./components/RepoCloneBox");
-var TreeEntrySearch = require("./components/TreeEntrySearch");
+var TreeSearch = require("sourcegraph/tree/TreeSearch").default;
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
-var AlertView = require("./components/AlertView");
-var CodeFileRange = require("./components/CodeFileRange");
-var CodeFileRouter = require("sourcegraph/code/CodeFileRouter").default;
+var BlobRouter = require("sourcegraph/blob/BlobRouter").default;
 var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
 var SearchBar = require("sourcegraph/search/SearchBar").default;
-var UserSSHKeys = require("./components/UserSSHKeys");
-
-// Application-specific JS
-//
-// TODO: Bundle this with the applications.
-require("./apps/changes/componentInjection.js");
 
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
@@ -46,27 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	el = $("#CodeFileView");
+	el = $("#BlobContainer");
 	if (el.length > 0) {
 		ReactDOM.render(
-			<LocationAdaptor component={CodeFileRouter} />,
-			el[0]
-		);
-	}
-
-	// TODO factor out issues app-specific code.
-	el = $("#IssuesReference");
-	if (el.length > 0 && window.preloadedIssuesReference) {
-		var reference = JSON.parse(window.preloadedIssuesReference);
-		var lines = reference.Contents.split("\n").map((line) => ({__html: line}));
-		ReactDOM.render(
-			<CodeFileRange
-				repo={reference.Repo.URI}
-				rev={reference.CommitID}
-				path={reference.Path}
-				startLine={reference.StartLine}
-				endLine={reference.EndLine}
-				lines={lines} />,
+			<LocationAdaptor component={BlobRouter} />,
 			el[0]
 		);
 	}
@@ -81,71 +51,26 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	el = $(".react-close-changeset-button");
-	if (el.length > 0) {
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=FileDiffs]"), []).map((el2) => {
 		ReactDOM.render(
-			<CloseChangesetButton {...el[0].dataset} />,
-			el[0]
-		);
-	}
-
-	el = $("#RepoCompareView");
-	if (el.length > 0) {
-		ReactDOM.render(
-			<CompareView data={window.preloadedDiffData||null}
-				revisionHeader={el.data("revisionHeader")} />,
-			el[0]
-		);
-	}
-
-	el = document.querySelector("[data-react=DeltaDefsContainer]");
-	if (el) {
-		ReactDOM.render(
-			<DeltaDefsContainer
-				deltaSpec={JSON.parse(el.dataset.deltaSpec)}
-				deltaRouteVars={JSON.parse(el.dataset.deltaRouteVars)} />,
-			el
-		);
-	}
-
-	el = document.querySelector("[data-react=DeltaImpactContainer]");
-	if (el) {
-		ReactDOM.render(
-			<DeltaImpactContainer
-				deltaSpec={JSON.parse(el.dataset.deltaSpec)}
-				deltaRouteVars={JSON.parse(el.dataset.deltaRouteVars)} />,
-			el
-		);
-	}
-
-	el = $("[data-react-component=MarkdownView]");
-	if (el.length) {
-		el.each((_, e) => ReactDOM.render(<MarkdownView {...e.dataset} />, e));
-	}
-
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator]"), []).map((el2) => {
-		ReactDOM.render(
-			<RepoBuildIndicator
-				btnSize="btn-xs"
-				RepoURI={el2.dataset.uri}
-				CommitID={el2.dataset.commitId}
-				Branch={el2.dataset.branch}
-				SuccessReload={el2.dataset.successReload}
-				Label={el2.dataset.label}
-				Buildable={el2.dataset.buildable === "true"} />,
+			<FileDiffs
+				files={JSON.parse(el2.dataset.files)}
+				stats={JSON.parse(el2.dataset.stats)}
+				baseRepo={el2.dataset.baseRepo}
+				baseRev={el2.dataset.baseRev}
+				headRepo={el2.dataset.headRepo}
+				headRev={el2.dataset.headRev} />,
 			el2
 		);
 	});
-	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=RepoBuildIndicator-md]"), []).map((el2) => {
+
+	Reflect.apply(Array.prototype.slice, document.querySelectorAll("[data-react=BuildIndicator]"), []).map((el2) => {
 		ReactDOM.render(
-			<RepoBuildIndicator
-				btnSize="btn-md"
-				RepoURI={el2.dataset.uri}
-				CommitID={el2.dataset.commitId}
-				Branch={el2.dataset.branch}
-				SuccessReload={el2.dataset.successReload}
-				Label={el2.dataset.label}
-				Buildable={el2.dataset.buildable === "true"} />,
+			<BuildIndicatorContainer
+				repo={el2.dataset.uri}
+				commitID={el2.dataset.commitId}
+				branch={el2.dataset.branch || null}
+				buildable={el2.dataset.buildable === "true"} />,
 			el2
 		);
 	});
@@ -171,39 +96,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	el = document.querySelector("[data-react=RepoCloneBox]");
-	if (el) {
-		ReactDOM.render(
-			<RepoCloneBox
-				SSHCloneURL={el.dataset.ssh}
-				HTTPCloneURL={el.dataset.httpCloneUrl}/>, el
-		);
-	}
-
-	el = document.querySelector("[data-react=TreeEntrySearch]");
+	el = document.querySelector("[data-react=TreeSearch]");
 	if (el) {
 		var rev = el.dataset.rev || el.dataset.commit,
 			repo = el.dataset.repo;
 
-		ReactDOM.render(<TreeEntrySearch repo={repo} rev={rev} />, el);
-	}
-
-	el = $("[data-react='AlertView']");
-	if (el.length > 0) {
-		el.each((_, element) => {
-			ReactDOM.render(
-				<AlertView {...element.dataset}
-					closeable={element.dataset.closeable === "true"}
-					hasCookie={element.dataset.hasCookie === "true"} />, element
-			);
-		});
-	}
-
-	el = document.querySelector("[data-react=UserSSHKeys]");
-	if (el) {
-		ReactDOM.render(
-			<UserSSHKeys
-				keys={el.dataset.keys} />, el
-		);
+		ReactDOM.render(<TreeSearch repo={repo} rev={rev} />, el);
 	}
 });

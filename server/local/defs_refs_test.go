@@ -13,9 +13,9 @@ func TestDefsService_ListRefs(t *testing.T) {
 	var s defs
 	ctx, mock := testContext()
 
-	want := []*sourcegraph.Ref{{Ref: graph.Ref{File: "f"}}}
+	want := []*graph.Ref{{File: "f"}}
 
-	calledRefs := mockstore.GraphMockRefs(&mock.stores.Graph, unwrapRefs(want)...)
+	calledRefs := mockstore.GraphMockRefs(&mock.stores.Graph, want...)
 
 	refs, err := s.ListRefs(ctx, &sourcegraph.DefsListRefsOp{Def: sourcegraph.DefSpec{CommitID: "c", Repo: "r", Path: "p"}})
 	if err != nil {
@@ -27,12 +27,4 @@ func TestDefsService_ListRefs(t *testing.T) {
 	if !*calledRefs {
 		t.Error("!calledRefs")
 	}
-}
-
-func unwrapRefs(refs []*sourcegraph.Ref) []*graph.Ref {
-	grefs := make([]*graph.Ref, len(refs))
-	for i, ref := range refs {
-		grefs[i] = &ref.Ref
-	}
-	return grefs
 }

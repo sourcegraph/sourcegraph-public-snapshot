@@ -2,4 +2,3 @@
 /app/vendor/**/* -diff
 /grapher/javascript/node_modules/**/* -diff
 # /Godeps/_workspace/**/* -diff
-release_notes.md merge=union

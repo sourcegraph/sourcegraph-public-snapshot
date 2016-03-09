@@ -30,7 +30,7 @@
 {{end}}
 
 {{define "BuildRow"}}
-<tr class="build {{buildClass .Build}}" data-href="{{urlToRepoBuild .Build.Repo .Build.ID}}">
+<tr class="build {{buildClass .Build}}">
 	<th>
 		{{template "RepoLink" (repoLink .Build.Repo)}}
 	</th>

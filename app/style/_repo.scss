@@ -20,7 +20,9 @@
 	}
 }
 
-.repo-rev-switcher {
+[data-react="RepoRevSwitcher"] {
+	display: inline-block;
+	padding-left: 10px;
 	.button {
 		color: $btn-default-dark;
 		font-weight: bold;
@@ -29,6 +31,7 @@
 				color: $btn-default-color;
 			}
 		}
+		padding: 2px 12px;
 	}
 
 	.search-section {
@@ -76,11 +79,6 @@
 div.repo-body {
 	margin-top: 18px;
 
-	&.repo-body-full-width {
-		margin-top: 0;
-		max-width: none;
-	}
-
 	h1 {
 		margin-top: 0;
 	}
@@ -94,33 +92,6 @@ div.repo-body {
 			font-size: $font-size-base;
 			color: $heading-text-color;
 			padding-top: $padding-small-vertical;
-		}
-	}
-
-	.clone-url-container {
-		.clone-url-wrap {
-			max-width: 15em;
-
-			.clone-type {
-				opacity: 1;
-			}
-
-			#clone-url-value {
-				padding-left: 6px;
-				padding-left: 6px;
-				background-color: white;
-				overflow: hidden;
-				max-width: 15em;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-				color: $text-color;
-			}
-		}
-
-		.clone-copy {
-			color: $heading-text-color;
-			background-color: $heading-bg-color;
-			border: $content-border;
 		}
 	}
 }

@@ -51,7 +51,6 @@ module.exports = {
 	context: __dirname,
 	entry: {
 		bundle: "./script/app.js",
-		analytics: "./script/analytics.js",
 		_goTemplates: glob.sync("./templates/**/*.html"),
 		test: glob.sync("./web_modules/sourcegraph/**/*_test.js"),
 	},

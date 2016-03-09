@@ -6,16 +6,13 @@ import (
 	"strings"
 
 	"github.com/cznic/mathutil"
-	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/sourcecode"
 	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 var RepoTree sourcegraph.RepoTreeServer = &repoTree{}
@@ -43,30 +40,6 @@ func (s *repoTree) Get(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sou
 	}
 	if entry0.Type == sourcegraph.FileEntry {
 		entry.FileRange = &entry0.FileRange
-	}
-
-	switch {
-	case opt.TokenizedSource && opt.Formatted:
-		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of TokenizedSource and Formatted may be specified")
-
-	case opt.TokenizedSource:
-		sourceCode, err := sourcecode.Parse(ctx, entrySpec, entry0)
-		if err == nil {
-			entry.Contents = nil
-			entry.SourceCode = sourceCode
-		}
-		if err != nil && err != sourcecode.ErrIsNotFile {
-			return nil, err
-		}
-
-	case opt.Formatted:
-		res, err := sourcecode.Format(ctx, entrySpec, entry0, opt.HighlightStrings)
-		if err == nil {
-			entry.FormatResult = res
-		}
-		if err != nil && err != sourcecode.ErrIsNotFile {
-			return nil, err
-		}
 	}
 
 	if opt.ContentsAsString {
@@ -195,42 +168,6 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		return nil, grpc.Errorf(codes.InvalidArgument, "page offset bounds out of range")
 	}
 	res = res[origOffset:mathutil.Min(int(origOffset+origN), total)]
-
-	if opt.Formatted {
-		// Format the results in parallel since each call to RepoTree.Get is expensive
-		// (on the order of ~30ms per call) due to blocking I/O constraints.
-		par := parallel.NewRun(8)
-		for _, res := range res {
-			r := res
-			par.Do(func() error {
-				entrySpec := sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: r.File}
-				f, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
-					Entry: entrySpec,
-					Opt: &sourcegraph.RepoTreeGetOptions{
-						Formatted:        true,
-						HighlightStrings: []string{opt.SearchOptions.Query},
-						GetFileOptions: sourcegraph.GetFileOptions{
-							FileRange: sourcegraph.FileRange{
-								StartLine: int64(r.StartLine),
-								EndLine:   int64(r.EndLine),
-							},
-						},
-					},
-				})
-
-				r.Match = f.Contents
-				if err != nil {
-					return err
-				}
-				return nil
-			})
-		}
-
-		err = par.Wait()
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	return &sourcegraph.VCSSearchResultList{
 		SearchResults: res,

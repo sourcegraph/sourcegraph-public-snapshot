@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
 
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
@@ -37,7 +36,7 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var delta *sourcegraph.Delta
-	var files *sourcegraph.DeltaFiles
+	var deltaFiles *sourcegraph.DeltaFiles
 	if baseRevSpec != nil {
 		ds := sourcegraph.DeltaSpec{Base: *baseRevSpec, Head: headRevSpec}
 
@@ -46,20 +45,12 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-		par := parallel.NewRun(3)
-		par.Do(func() (err error) {
-			opt := sourcegraph.DeltasListFilesOp{
-				Ds: ds,
-				Opt: &sourcegraph.DeltaListFilesOptions{
-					Formatted: false,
-					Tokenized: true,
-					Filter:    r.URL.Query().Get("filter"),
-				},
-			}
-			files, err = cl.Deltas.ListFiles(ctx, &opt)
-			return
+		var err error
+		deltaFiles, err = cl.Deltas.ListFiles(ctx, &sourcegraph.DeltasListFilesOp{
+			Ds:  ds,
+			Opt: &sourcegraph.DeltaListFilesOptions{Filter: r.URL.Query().Get("filter")},
 		})
-		if err := par.Wait(); err != nil {
+		if err != nil {
 			return err
 		}
 	}
@@ -67,31 +58,25 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 	tmplData := struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		Delta     *sourcegraph.Delta
-		DiffData  *sourcegraph.DeltaFiles
-		DeltaSpec sourcegraph.DeltaSpec
-
-		DeltaListDefsOpt *sourcegraph.DeltaListDefsOptions
+		Delta      *sourcegraph.Delta
+		DeltaFiles *sourcegraph.DeltaFiles
+		DeltaSpec  sourcegraph.DeltaSpec
 
 		// TODO(beyang): additional hacks like the one above
-		ShowFiles     bool
-		Filter        string
-		OverThreshold bool
+		ShowFiles bool
+		Filter    string
 
 		tmpl.Common
 	}{
 		RepoCommon:    *rc,
 		RepoRevCommon: *vc,
 		Delta:         delta,
-		DiffData:      files,
+		DeltaFiles:    deltaFiles,
 
 		ShowFiles: true,
 	}
 	if delta != nil {
 		tmplData.DeltaSpec = delta.DeltaSpec()
-	}
-	if files != nil {
-		tmplData.OverThreshold = files.OverThreshold
 	}
 
 	return tmpl.Exec(r, w, "repo/commit.html", http.StatusOK, nil, &tmplData)

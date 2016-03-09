@@ -22,7 +22,7 @@ func testContext() (ctx context.Context, done func()) {
 
 	ctx = context.Background()
 	ctx = WithReposVFS(ctx, filepath.Join(tmpDir, "repos"))
-	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"}, nil)
+	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	return ctx, func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			log.Fatalf("Warning: failed to remove temp dir %q: %s.", tmpDir, err)

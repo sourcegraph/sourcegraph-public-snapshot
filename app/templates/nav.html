@@ -1,6 +1,6 @@
 {{define "Nav"}}
 <nav class="navbar navbar-tint" role="navigation" id="nav">
-	<div class="container{{if .FullWidth}}-fluid{{end}}">
+	<div class="container">
 		<div class="navbar-header">
 			{{if appconf.CustomLogo}}
 				<a class="navbar-brand logo logo-symbol-and-text" href="/">
@@ -27,36 +27,11 @@
 		<div class="collapse navbar-collapse" id="top-nav-collapse">
 
 			<ul class="nav navbar-nav navbar-right">
-				{{if appconf.Blog}}
-					<li><a href="{{urlTo "blog"}}">Blog</a></li>
-				{{end}}
 				{{if authFlags.HasUserAccounts}}
 				{{if .CurrentUser}}
 					<li class="current-user name">
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
 							{{.CurrentUser.Login}}
-						</a>
-					</li>
-
-					{{range orderedEnabledGlobalApps}}
-					<li>
-						<a href="{{urlToGlobalApp .ID}}">
-							<span class="icon-container">
-								<i class="octicon octicon-{{.Icon}}">
-								{{if iconBadge $.Ctx .}}
-									{{template "iconBadge"}}
-								{{end}}
-								</i>
-							</span>
-							<span class="hidden-sm hidden-md hidden-lg">{{.Title}}</span>
-						</a>
-					</li>
-					{{end}}
-
-					<li>
-						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}">
-							<i class="octicon octicon-gear"></i>
-							<span class="hidden-sm hidden-md hidden-lg">Settings</span>
 						</a>
 					</li>
 					<li class="sign-out">

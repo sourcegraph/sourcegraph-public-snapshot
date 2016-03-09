@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/sourcegraph/mux"
 )
 
 func TestUser(t *testing.T) {
@@ -19,9 +19,9 @@ func TestUser(t *testing.T) {
 		wantVars    map[string]string
 	}{
 		{path: "/foo", wantVars: map[string]string{"User": "foo"}},
-		{path: "/foo@bar", wantVars: map[string]string{"User": "foo@bar"}},
-		{path: "/foo@bar.com", wantVars: map[string]string{"User": "foo@bar.com"}},
+		{path: "/1$", wantVars: map[string]string{"User": "1$"}},
 
+		{path: "/foo@bar.com", wantNoMatch: true},
 		{path: "/", wantNoMatch: true},
 		{path: "/.foo", wantNoMatch: true},
 		{path: "/foo@", wantNoMatch: true},

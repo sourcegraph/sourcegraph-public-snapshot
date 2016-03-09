@@ -13,7 +13,6 @@ import (
 
 	"golang.org/x/net/context"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
@@ -33,7 +32,7 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Create"); err != nil {
 		return nil, err
 	}
-	if newUser.UID != 0 && !authutil.ActiveFlags.MigrateMode {
+	if newUser.UID != 0 {
 		return nil, errors.New("uid already set")
 	}
 	if newUser.Login == "" {

@@ -44,9 +44,9 @@ func init() {
 // NewHandler creates a new http.Handler for all UI endpoints, optionally using
 // the provided router as a base.
 func NewHandler(r *mux.Router) http.Handler {
-	mw := []handlerutil.Middleware{
-		appauth.CookieMiddleware,
-		handlerutil.UserMiddleware,
+	var mw []handlerutil.Middleware
+	if authutil.ActiveFlags.HasUserAccounts() {
+		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	}
 
 	if r == nil {
@@ -55,12 +55,9 @@ func NewHandler(r *mux.Router) http.Handler {
 
 	r.Get(ui_router.RepoTree).Handler(handler(serveRepoTree))
 
-	r.Get(ui_router.RepoFileFinder).Handler(handler(serveRepoFileFinder))
-
 	r.Get(ui_router.Definition).Handler(handler(serveDef))
 	r.Get(ui_router.DefExamples).Handler(handler(serveDefExamples))
 
-	r.Get(ui_router.RepoCreate).Handler(handler(serveRepoCreate))
 	r.Get(ui_router.RepoCommits).Handler(handler(serveRepoCommits))
 
 	r.Get(ui_router.SearchTokens).Handler(handler(serveTokenSearch))
@@ -72,12 +69,7 @@ func NewHandler(r *mux.Router) http.Handler {
 		r.Get(ui_router.UserContentUpload).Handler(handler(serveUserContentUpload))
 	}
 
-	if authutil.ActiveFlags.PrivateMirrors {
-		r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
-	}
-
-	r.Get(ui_router.UserInvite).Handler(handler(serveUserInvite))
-	r.Get(ui_router.UserKeys).Handler(handler(serveUserKeys))
+	r.Get(ui_router.UserInviteBulk).Handler(handler(serveUserInviteBulk))
 
 	return handlerutil.WithMiddleware(r, mw...)
 }

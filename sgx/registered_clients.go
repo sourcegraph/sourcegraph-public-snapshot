@@ -46,6 +46,16 @@ func init() {
 	}
 	c.Aliases = []string{"ls"}
 
+	c, err = g.AddCommand("get",
+		"get a registered API client",
+		"The get subcommand shows information about a single registered API client.",
+		&regClientsGetCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.Aliases = []string{"ls"}
+
 	_, err = g.AddCommand("current",
 		"gets info about the currently authenticated registered API client",
 		"The current subcommand gets info about the currently authenticated registered API client.",
@@ -105,6 +115,25 @@ func (c *regClientsListCmd) Execute(args []string) error {
 			break
 		}
 		opt.Page++
+	}
+	return nil
+}
+
+type regClientsGetCmd struct {
+	Args struct {
+		ID []string
+	} `positional-args:"yes"`
+}
+
+func (c *regClientsGetCmd) Execute(args []string) error {
+	cl := client.Client()
+
+	for _, id := range c.Args.ID {
+		regClient, err := cl.RegisteredClients.Get(client.Ctx, &sourcegraph.RegisteredClientSpec{ID: id})
+		if err != nil {
+			return err
+		}
+		printRegisteredClient(regClient)
 	}
 	return nil
 }
@@ -185,12 +214,11 @@ func printRegisteredClient(c *sourcegraph.RegisteredClient) {
 }
 
 type regClientsUpdateCmd struct {
-	ClientName    string `long:"client-name"`
-	ClientURI     string `long:"client-uri"`
-	RedirectURI   string `long:"redirect-uri"`
-	Description   string `long:"description"`
-	AllowLogins   string `long:"allow-logins" description:"set to 'all' to allow any user to login to this client" default:"restricted"`
-	DefaultAccess string `long:"default-access" description:"set to 'write' to grant write access to new users (eg. for LDAP auth)" default:"read"`
+	ClientName  string `long:"client-name"`
+	ClientURI   string `long:"client-uri"`
+	RedirectURI string `long:"redirect-uri"`
+	Description string `long:"description"`
+	AllowLogins string `long:"allow-logins" description:"set to 'all' to allow any user to login to this client" default:"restricted"`
 
 	Args struct {
 		ClientID string `name:"CLIENT-ID"`
@@ -223,12 +251,6 @@ func (c *regClientsUpdateCmd) Execute(args []string) error {
 			rc.Meta = map[string]string{}
 		}
 		rc.Meta["allow-logins"] = c.AllowLogins
-	}
-	if c.DefaultAccess != "" {
-		if rc.Meta == nil {
-			rc.Meta = map[string]string{}
-		}
-		rc.Meta["default-access"] = c.DefaultAccess
 	}
 	if _, err := cl.RegisteredClients.Update(client.Ctx, rc); err != nil {
 		return err

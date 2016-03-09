@@ -14,3 +14,18 @@ export class CommitFetched {
 		this.commit = commit;
 	}
 }
+
+export class WantFileList {
+	constructor(repo, rev) {
+		this.repo = repo;
+		this.rev = rev;
+	}
+}
+
+export class FileListFetched {
+	constructor(repo, rev, fileList) {
+		this.repo = repo;
+		this.rev = rev;
+		this.fileList = fileList;
+	}
+}

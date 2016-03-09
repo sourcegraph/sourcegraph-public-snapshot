@@ -1,7 +1,7 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
-import router from "../../../script/routing/router"; // FIXME
+import * as router from "sourcegraph/util/router";
 
 const helpDocURL = "https://src.sourcegraph.com/sourcegraph/.docs/config/builds/";
 
@@ -53,7 +53,7 @@ class TokenSearchResultsView extends Component {
 						doc = <p dangerouslySetInnerHTML={result.Def.DocHTML}></p>;
 					}
 					let def = result.Def;
-					let href = router.defURL(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
+					let href = router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
 					return (
 						<div key={result.URL} className="token-search-result">
 							<hr/>

@@ -1,0 +1,136 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"className": "file-container",
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"className": "content-view",
+						"children": [
+							{
+								"type": "div",
+								"props": {
+									"className": "content file-content card",
+									"children": [
+										{
+											"type": "BlobToolbar",
+											"props": {
+												"builds": {
+													"content": {}
+												},
+												"repo": "aRepo",
+												"rev": "aRev",
+												"tree": "aTree",
+												"file": {
+													"Entry": {
+														"ContentsString": "hello\nworld"
+													},
+													"EntrySpec": {
+														"RepoRev": {
+															"CommitID": "123abc"
+														}
+													}
+												}
+											}
+										},
+										{
+											"type": "Blob",
+											"props": {
+												"contents": "hello\nworld",
+												"lineNumbers": true,
+												"highlightSelectedLines": true,
+												"dispatchSelections": true
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "FileMargin",
+								"props": {}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"className": "context-menu",
+						"style": {
+							"left": 10,
+							"top": 20
+						},
+						"children": [
+							{
+								"type": "ul",
+								"props": {
+									"children": [
+										{
+											"type": "li",
+											"key": "0",
+											"props": {
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "GoTo",
+															"url": "firstDef"
+														}
+													]
+												},
+												"children": [
+													"..."
+												]
+											}
+										},
+										{
+											"type": "li",
+											"key": "1",
+											"props": {
+												"onClick": {
+													"dispatched": [
+														{
+															"$constructor": "GoTo",
+															"url": "secondDef"
+														}
+													]
+												},
+												"children": [
+													"..."
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantFile",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"tree": "aTree"
+		},
+		{
+			"$constructor": "WantAnnotations",
+			"repo": "aRepo",
+			"rev": "aRev",
+			"commitID": "",
+			"path": "aTree"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "firstDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "secondDef"
+		}
+	]
+}

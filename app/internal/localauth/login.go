@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/app/internal"
-	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
 	"src.sourcegraph.com/sourcegraph/app/internal/form"
 	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
 	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
@@ -46,9 +45,6 @@ func serveLogIn(w http.ResponseWriter, r *http.Request) error {
 	if err := checkLoginEnabled(); err != nil {
 		return err
 	}
-	if !(authutil.ActiveFlags.IsLocal() || authutil.ActiveFlags.IsLDAP()) {
-		return appauthutil.RedirectToLogIn(w, r)
-	}
 
 	ctx := httpctx.FromRequest(r)
 	u := handlerutil.UserFromContext(ctx)
@@ -83,12 +79,10 @@ func serveLoginForm(w http.ResponseWriter, r *http.Request, form loginForm) erro
 	return tmpl.Exec(r, w, "user/login.html", http.StatusOK, nil, &struct {
 		LoginForm loginForm
 		FirstUser bool
-		IsLDAP    bool
 		tmpl.Common
 	}{
 		LoginForm: form,
 		FirstUser: (numUsers.Count == 0),
-		IsLDAP:    authutil.ActiveFlags.IsLDAP(),
 	})
 }
 

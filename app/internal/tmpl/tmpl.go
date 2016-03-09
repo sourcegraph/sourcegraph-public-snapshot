@@ -71,8 +71,6 @@ func Delete(name string) {
 func repoTemplates() error {
 	return parseHTMLTemplates([][]string{
 		{"repo/main.html", "repo/readme.inc.html", "repo/tree.inc.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/badges.html", "repo/badges_and_counters.html"},
-		{"repo/counters.html", "repo/badges_and_counters.html"},
 		{"repo/builds.html", "builds/build.inc.html"},
 		{"repo/build.html", "builds/build.inc.html", "repo/commit.inc.html"},
 		{"repo/tree/file.html"},
@@ -84,7 +82,6 @@ func repoTemplates() error {
 		{"repo/commits.html", "repo/commit.inc.html"},
 		{"repo/branches.html"},
 		{"repo/tags.html"},
-		{"repo/compare.html", "repo/commit.inc.html"},
 		{"repo/no_vcs_data.html"},
 
 		{"def/examples.html", "def/examples.inc.html", "def/snippet.inc.html", "def/def.html"},
@@ -99,7 +96,7 @@ func repoTemplates() error {
 	})
 }
 
-// commonTemplates returns all common templates such as user pages, blog, search,
+// commonTemplates returns all common templates such as user pages, search,
 // etc. if successful.
 func commonTemplates() error {
 	return parseHTMLTemplates([][]string{
@@ -110,13 +107,6 @@ func commonTemplates() error {
 		{"user/password_reset.html"},
 		{"user/new_password.html"},
 		{"user/settings/profile.html", "user/settings/common.inc.html"},
-		{"user/settings/notifications.html", "user/settings/common.inc.html"},
-		{"user/settings/keys.html", "user/settings/common.inc.html"},
-		{"blog/index.html", "blog/blog.html", "blog/common.inc.html"},
-		{"blog/post.html", "blog/blog.html", "blog/common.inc.html"},
-
-		{"liveblog/index.html", "liveblog/layout.html", "liveblog/common.inc.html"},
-		{"liveblog/post.html", "liveblog/layout.html", "liveblog/common.inc.html"},
 
 		{"home/dashboard.html"},
 
@@ -125,8 +115,6 @@ func commonTemplates() error {
 		{"error/error.html", "error/common.html"},
 
 		{"oauth-provider/authorize.html"},
-
-		{"app_global.html"},
 	}, []string{
 		"common.html",
 		"layout.html",
@@ -135,23 +123,12 @@ func commonTemplates() error {
 	})
 }
 
-// standaloneTemplates returns a set of standalone templates if
-// successful.
-func standaloneTemplates() error {
-	return parseHTMLTemplates([][]string{
-		{"def/popover.html"},
-	}, []string{"common.html"})
-}
-
 // Load loads (or re-loads) all template files from disk.
 func Load() {
 	if err := repoTemplates(); err != nil {
 		log.Fatal(err)
 	}
 	if err := commonTemplates(); err != nil {
-		log.Fatal(err)
-	}
-	if err := standaloneTemplates(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -205,9 +182,6 @@ type Common struct {
 
 	// Features is a struct containing feature toggles. See conf/feature
 	Features interface{}
-
-	// FullWidth sets the main body and navigation to fluid.
-	FullWidth bool
 
 	// ErrorID is a randomly generated string used to identify a specific instance
 	// of app error in the error logs.
@@ -311,7 +285,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,
-			FullWidth:            existingCommon.FullWidth,
 
 			ErrorID: errorID,
 
