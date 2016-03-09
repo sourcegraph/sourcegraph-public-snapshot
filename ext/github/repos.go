@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/store"
 	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
@@ -15,7 +16,7 @@ type Repos struct{}
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
 	owner, repoName, err := githubutil.SplitGitHubRepoURI(repo)
 	if err != nil {
-		return nil, err
+		return nil, &store.RepoNotFoundError{Repo: repo}
 	}
 
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
