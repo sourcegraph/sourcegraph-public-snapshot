@@ -25,25 +25,27 @@
 	{{end}}
 
 	{{if .Teammates }}
-	if (window.teammates && window.teammates.Organizations) {
-		window.intercomSettings.companies = window.teammates.Organizations.map(function(company) {
-			return {
-				id: "github_" + company,
-				name: company,
-			}
-		});
-	}
-	if (window.teammates) {
-		var outstandingInvitations = 0;
-		window.teammates.Users.forEach(function(user) {
-			if (user.IsInvited) outstandingInvitations += 1;
-		});
-		window.intercomSettings["outstanding_invites"] = outstandingInvitations;
+	if (window.intercomSettings) {
+		if (window.teammates && window.teammates.Organizations) {
+			window.intercomSettings.companies = window.teammates.Organizations.map(function(company) {
+				return {
+					id: "github_" + company,
+					name: company,
+				}
+			});
+		}
+		if (window.teammates) {
+			var outstandingInvitations = 0;
+			window.teammates.Users.forEach(function(user) {
+				if (user.IsInvited) outstandingInvitations += 1;
+			});
+			window.intercomSettings["outstanding_invites"] = outstandingInvitations;
+		}
 	}
 	{{end}}
 
 	{{if .RemoteRepos}}
-	if (window.remoteRepos) {
+	if (window.remoteRepos && window.intercomSettings) {
 		var langMap = {};
 		var publicCount = 0, privateCount = 0;
 		window.remoteRepos.forEach(function(repo) {
