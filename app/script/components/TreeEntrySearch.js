@@ -4,7 +4,6 @@ var $ = require("jquery");
 var router = require("../routing/router");
 var Fuze = require("fuse.js");
 var classNames = require("classnames");
-var notify = require("./notify");
 
 var FILE_LIMIT = 15;
 
@@ -78,7 +77,7 @@ var TreeEntrySearch = React.createClass({
 		}
 
 		client.repoFiles(this.props.repo, this.props.rev).then(
-			(resp) => this._loadedList(resp.Files), () => notify.error("Couldn't load file list")
+			(resp) => this._loadedList(resp.Files), (err) => console.error("file finder:", err)
 		);
 	},
 

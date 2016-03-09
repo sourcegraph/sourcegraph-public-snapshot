@@ -10,9 +10,6 @@ require("bootstrap-sass/assets/javascripts/bootstrap/button.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/dropdown.js");
 require("bootstrap-sass/assets/javascripts/bootstrap/modal.js");
 
-require("./auth");
-require("./invite");
-
 require("sourcegraph/init/AppdashRecordPerfTiming");
 
 // Views

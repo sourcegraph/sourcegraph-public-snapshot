@@ -8,62 +8,6 @@
 	border: none;
 }
 
-.alert-notify {
-	@include z-index(alert);
-	position: fixed;
-	text-align: center;
-	top: 120px;
-	left: 50%;
-	margin-left: -250px;
-	min-width: 230px;
-	max-width: 500px;
-	border-radius: 5px;
-	border: 1px solid $content-primary-border;
-	background: $content-primary-bg;
-	padding: 10px 13px;
-	font-size: 13px;
-
-	a.close {
-		cursor: pointer;
-		&:hover { text-decoration: none; }
-		position: absolute;
-		top: 2px;
-		right: 5px;
-		color: #333;
-		font-size: 14px;
-	}
-
-	.fa {
-		padding-right: 8px;
-		font-size: 18px;
-		position: relative;
-		top: 2px;
-	}
-
-	&.info { color: $alert-info-text; }
-
-	&.error {
-		color: $alert-danger-text;
-		background-color: $alert-danger-bg;
-		border: 1px solid $alert-danger-border;
-		.close { color: inherit; }
-	}
-
-	&.warning {
-		color: $alert-warning-text;
-		background-color: $alert-warning-bg;
-		border: 1px solid $alert-warning-border;
-		.close { color: inherit; }
-	}
-
-	&.success {
-		color: $alert-success-text;
-		background-color: $alert-success-bg;
-		border: 1px solid $alert-success-border;
-		.close { color: inherit; }
-	}
-}
-
 .token-popover {
 	@include z-index(token-popover);
 	max-width: 360px;

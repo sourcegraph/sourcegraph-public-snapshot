@@ -59,10 +59,6 @@ module.exports = {
 		return `${module.exports.repoURL(repo, rev)}/.tree/${path}#L${startline}-${endline}`;
 	},
 
-	fileListURL(repo, rev) {
-		return `/.api/repos${module.exports.repoURL(repo, rev)}/.tree-list`;
-	},
-
 	commitsURL(repo, rev) {
 		return `${module.exports.repoURL(repo, rev)}/.commits`;
 	},

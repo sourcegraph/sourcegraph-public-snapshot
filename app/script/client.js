@@ -2,12 +2,11 @@
 //
 // ad-hoc for now
 
-var router = require("./routing/router");
 var $ = require("jquery");
 
 function repoFiles(repo, rev) {
 	return $.ajax({
-		url: router.fileListURL(repo, rev),
+		url: `/.api/repos/${repo}@${rev}/.tree-list`,
 	});
 }
 
@@ -21,24 +20,6 @@ function builds(repoURI, rev, noCache) {
 }
 
 exports.builds = builds;
-
-function createInvite(email, perms, cb) {
-	return $.ajax({
-		url: "/.ui/.invite",
-		method: "post",
-		headers: {
-			"X-Csrf-Token": window._csrfToken,
-		},
-		data: JSON.stringify({
-			Email: email,
-			Permission: perms,
-		}),
-		success: cb.success,
-		error: cb.error,
-	});
-}
-
-exports.createInvite = createInvite;
 
 function createRepoBuild(repoURI, commitID, branch) {
 	return $.ajax({

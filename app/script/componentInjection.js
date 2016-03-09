@@ -10,7 +10,6 @@ var RepoRevSwitcher = require("./components/RepoRevSwitcher");
 var RepoCloneBox = require("./components/RepoCloneBox");
 var TreeEntrySearch = require("./components/TreeEntrySearch");
 var TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
-var AlertView = require("./components/AlertView");
 var BlobRouter = require("sourcegraph/blob/BlobRouter").default;
 var LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
 var SearchBar = require("sourcegraph/search/SearchBar").default;
@@ -129,16 +128,5 @@ document.addEventListener("DOMContentLoaded", () => {
 			repo = el.dataset.repo;
 
 		ReactDOM.render(<TreeEntrySearch repo={repo} rev={rev} />, el);
-	}
-
-	el = $("[data-react='AlertView']");
-	if (el.length > 0) {
-		el.each((_, element) => {
-			ReactDOM.render(
-				<AlertView {...element.dataset}
-					closeable={element.dataset.closeable === "true"}
-					hasCookie={element.dataset.hasCookie === "true"} />, element
-			);
-		});
 	}
 });
