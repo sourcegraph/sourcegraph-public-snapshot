@@ -1,4 +1,4 @@
-package main
+package e2etest
 
 import (
 	"bytes"
@@ -256,7 +256,7 @@ var (
 	runFlag = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
 )
 
-func main() {
+func Main() {
 	flag.Parse()
 
 	// Prepare logging.
