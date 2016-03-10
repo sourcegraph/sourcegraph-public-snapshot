@@ -381,7 +381,12 @@ func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (
 		return nil, grpc.Errorf(codes.InvalidArgument, "need to specify UID, login or email of the user account")
 	}
 
-	err := accountsStore.Delete(ctx, uid)
+	err := accountsStore.UpdateEmails(ctx, sourcegraph.UserSpec{UID: uid}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = accountsStore.Delete(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
