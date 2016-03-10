@@ -216,7 +216,7 @@ The resulting file, test.pb.go, is:
 
 To create and play with a Test object:
 
-	package main
+package main
 
 	import (
 		"log"
@@ -441,7 +441,7 @@ func (p *Buffer) DebugPrint(s string, b []byte) {
 	var u uint64
 
 	obuf := p.buf
-	sindex := p.index
+	index := p.index
 	p.buf = b
 	p.index = 0
 	depth := 0
@@ -536,7 +536,7 @@ out:
 	fmt.Printf("\n")
 
 	p.buf = obuf
-	p.index = sindex
+	p.index = index
 }
 
 // SetDefaults sets unset protocol buffer fields to their default values.

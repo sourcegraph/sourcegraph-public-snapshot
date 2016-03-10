@@ -53,22 +53,6 @@ func IsCastType(field *google_protobuf.FieldDescriptorProto) bool {
 	return false
 }
 
-func IsCastKey(field *google_protobuf.FieldDescriptorProto) bool {
-	typ := GetCastKey(field)
-	if len(typ) > 0 {
-		return true
-	}
-	return false
-}
-
-func IsCastValue(field *google_protobuf.FieldDescriptorProto) bool {
-	typ := GetCastValue(field)
-	if len(typ) > 0 {
-		return true
-	}
-	return false
-}
-
 func GetCustomType(field *google_protobuf.FieldDescriptorProto) string {
 	if field.Options != nil {
 		v, err := proto.GetExtension(field.Options, E_Customtype)
@@ -89,44 +73,8 @@ func GetCastType(field *google_protobuf.FieldDescriptorProto) string {
 	return ""
 }
 
-func GetCastKey(field *google_protobuf.FieldDescriptorProto) string {
-	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, E_Castkey)
-		if err == nil && v.(*string) != nil {
-			return *(v.(*string))
-		}
-	}
-	return ""
-}
-
-func GetCastValue(field *google_protobuf.FieldDescriptorProto) string {
-	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, E_Castvalue)
-		if err == nil && v.(*string) != nil {
-			return *(v.(*string))
-		}
-	}
-	return ""
-}
-
 func IsCustomName(field *google_protobuf.FieldDescriptorProto) bool {
 	name := GetCustomName(field)
-	if len(name) > 0 {
-		return true
-	}
-	return false
-}
-
-func IsEnumCustomName(field *google_protobuf.EnumDescriptorProto) bool {
-	name := GetEnumCustomName(field)
-	if len(name) > 0 {
-		return true
-	}
-	return false
-}
-
-func IsEnumValueCustomName(field *google_protobuf.EnumValueDescriptorProto) bool {
-	name := GetEnumValueCustomName(field)
 	if len(name) > 0 {
 		return true
 	}
@@ -136,26 +84,6 @@ func IsEnumValueCustomName(field *google_protobuf.EnumValueDescriptorProto) bool
 func GetCustomName(field *google_protobuf.FieldDescriptorProto) string {
 	if field.Options != nil {
 		v, err := proto.GetExtension(field.Options, E_Customname)
-		if err == nil && v.(*string) != nil {
-			return *(v.(*string))
-		}
-	}
-	return ""
-}
-
-func GetEnumCustomName(field *google_protobuf.EnumDescriptorProto) string {
-	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, E_EnumCustomname)
-		if err == nil && v.(*string) != nil {
-			return *(v.(*string))
-		}
-	}
-	return ""
-}
-
-func GetEnumValueCustomName(field *google_protobuf.EnumValueDescriptorProto) string {
-	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, E_EnumvalueCustomname)
 		if err == nil && v.(*string) != nil {
 			return *(v.(*string))
 		}
@@ -247,10 +175,6 @@ func IsUnmarshaler(file *google_protobuf.FileDescriptorProto, message *google_pr
 
 func IsSizer(file *google_protobuf.FileDescriptorProto, message *google_protobuf.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, E_Sizer, proto.GetBoolExtension(file.Options, E_SizerAll, false))
-}
-
-func IsProtoSizer(file *google_protobuf.FileDescriptorProto, message *google_protobuf.DescriptorProto) bool {
-	return proto.GetBoolExtension(message.Options, E_Protosizer, proto.GetBoolExtension(file.Options, E_ProtosizerAll, false))
 }
 
 func IsGoEnumStringer(file *google_protobuf.FileDescriptorProto, enum *google_protobuf.EnumDescriptorProto) bool {

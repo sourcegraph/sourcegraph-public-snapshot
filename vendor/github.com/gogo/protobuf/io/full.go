@@ -45,13 +45,7 @@ type fullWriter struct {
 func (this *fullWriter) WriteMsg(msg proto.Message) (err error) {
 	var data []byte
 	if m, ok := msg.(marshaler); ok {
-		n, ok := getSize(m)
-		if !ok {
-			data, err = proto.Marshal(msg)
-			if err != nil {
-				return err
-			}
-		}
+		n := m.Size()
 		if n >= len(this.buffer) {
 			this.buffer = make([]byte, n)
 		}

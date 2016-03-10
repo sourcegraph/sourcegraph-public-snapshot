@@ -46,22 +46,6 @@ var E_EnumStringer = &proto.ExtensionDesc{
 	Tag:           "varint,62022,opt,name=enum_stringer",
 }
 
-var E_EnumCustomname = &proto.ExtensionDesc{
-	ExtendedType:  (*google_protobuf.EnumOptions)(nil),
-	ExtensionType: (*string)(nil),
-	Field:         62023,
-	Name:          "gogoproto.enum_customname",
-	Tag:           "bytes,62023,opt,name=enum_customname",
-}
-
-var E_EnumvalueCustomname = &proto.ExtensionDesc{
-	ExtendedType:  (*google_protobuf.EnumValueOptions)(nil),
-	ExtensionType: (*string)(nil),
-	Field:         66001,
-	Name:          "gogoproto.enumvalue_customname",
-	Tag:           "bytes,66001,opt,name=enumvalue_customname",
-}
-
 var E_GoprotoGettersAll = &proto.ExtensionDesc{
 	ExtendedType:  (*google_protobuf.FileOptions)(nil),
 	ExtensionType: (*bool)(nil),
@@ -246,14 +230,6 @@ var E_GogoprotoImport = &proto.ExtensionDesc{
 	Tag:           "varint,63027,opt,name=gogoproto_import",
 }
 
-var E_ProtosizerAll = &proto.ExtensionDesc{
-	ExtendedType:  (*google_protobuf.FileOptions)(nil),
-	ExtensionType: (*bool)(nil),
-	Field:         63028,
-	Name:          "gogoproto.protosizer_all",
-	Tag:           "varint,63028,opt,name=protosizer_all",
-}
-
 var E_GoprotoGetters = &proto.ExtensionDesc{
 	ExtendedType:  (*google_protobuf.MessageOptions)(nil),
 	ExtensionType: (*bool)(nil),
@@ -406,14 +382,6 @@ var E_GoprotoUnrecognized = &proto.ExtensionDesc{
 	Tag:           "varint,64026,opt,name=goproto_unrecognized",
 }
 
-var E_Protosizer = &proto.ExtensionDesc{
-	ExtendedType:  (*google_protobuf.MessageOptions)(nil),
-	ExtensionType: (*bool)(nil),
-	Field:         64028,
-	Name:          "gogoproto.protosizer",
-	Tag:           "varint,64028,opt,name=protosizer",
-}
-
 var E_Nullable = &proto.ExtensionDesc{
 	ExtendedType:  (*google_protobuf.FieldOptions)(nil),
 	ExtensionType: (*bool)(nil),
@@ -470,28 +438,10 @@ var E_Casttype = &proto.ExtensionDesc{
 	Tag:           "bytes,65007,opt,name=casttype",
 }
 
-var E_Castkey = &proto.ExtensionDesc{
-	ExtendedType:  (*google_protobuf.FieldOptions)(nil),
-	ExtensionType: (*string)(nil),
-	Field:         65008,
-	Name:          "gogoproto.castkey",
-	Tag:           "bytes,65008,opt,name=castkey",
-}
-
-var E_Castvalue = &proto.ExtensionDesc{
-	ExtendedType:  (*google_protobuf.FieldOptions)(nil),
-	ExtensionType: (*string)(nil),
-	Field:         65009,
-	Name:          "gogoproto.castvalue",
-	Tag:           "bytes,65009,opt,name=castvalue",
-}
-
 func init() {
 	proto.RegisterExtension(E_GoprotoEnumPrefix)
 	proto.RegisterExtension(E_GoprotoEnumStringer)
 	proto.RegisterExtension(E_EnumStringer)
-	proto.RegisterExtension(E_EnumCustomname)
-	proto.RegisterExtension(E_EnumvalueCustomname)
 	proto.RegisterExtension(E_GoprotoGettersAll)
 	proto.RegisterExtension(E_GoprotoEnumPrefixAll)
 	proto.RegisterExtension(E_GoprotoStringerAll)
@@ -515,7 +465,6 @@ func init() {
 	proto.RegisterExtension(E_GoprotoExtensionsMapAll)
 	proto.RegisterExtension(E_GoprotoUnrecognizedAll)
 	proto.RegisterExtension(E_GogoprotoImport)
-	proto.RegisterExtension(E_ProtosizerAll)
 	proto.RegisterExtension(E_GoprotoGetters)
 	proto.RegisterExtension(E_GoprotoStringer)
 	proto.RegisterExtension(E_VerboseEqual)
@@ -535,7 +484,6 @@ func init() {
 	proto.RegisterExtension(E_UnsafeUnmarshaler)
 	proto.RegisterExtension(E_GoprotoExtensionsMap)
 	proto.RegisterExtension(E_GoprotoUnrecognized)
-	proto.RegisterExtension(E_Protosizer)
 	proto.RegisterExtension(E_Nullable)
 	proto.RegisterExtension(E_Embed)
 	proto.RegisterExtension(E_Customtype)
@@ -543,6 +491,4 @@ func init() {
 	proto.RegisterExtension(E_Jsontag)
 	proto.RegisterExtension(E_Moretags)
 	proto.RegisterExtension(E_Casttype)
-	proto.RegisterExtension(E_Castkey)
-	proto.RegisterExtension(E_Castvalue)
 }

@@ -36,11 +36,6 @@ extend google.protobuf.EnumOptions {
 	optional bool goproto_enum_prefix = 62001;
 	optional bool goproto_enum_stringer = 62021;
 	optional bool enum_stringer = 62022;
-	optional string enum_customname = 62023;
-}
-
-extend google.protobuf.EnumValueOptions {
-	optional string enumvalue_customname = 66001;
 }
 
 extend google.protobuf.FileOptions {
@@ -72,7 +67,6 @@ extend google.protobuf.FileOptions {
 	optional bool goproto_extensions_map_all = 63025;
 	optional bool goproto_unrecognized_all = 63026;
 	optional bool gogoproto_import = 63027;
-	optional bool protosizer_all = 63028;
 }
 
 extend google.protobuf.MessageOptions {
@@ -99,8 +93,6 @@ extend google.protobuf.MessageOptions {
 
 	optional bool goproto_extensions_map = 64025;
 	optional bool goproto_unrecognized = 64026;
-
-	optional bool protosizer = 64028;
 }
 
 extend google.protobuf.FieldOptions {
@@ -111,7 +103,5 @@ extend google.protobuf.FieldOptions {
   optional string jsontag = 65005;
   optional string moretags = 65006;
   optional string casttype = 65007;
-  optional string castkey = 65008;
-  optional string castvalue = 65009;
 }
 

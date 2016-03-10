@@ -220,23 +220,23 @@
 		},
 		{
 			"path": "github.com/gogo/protobuf/gogoproto",
-			"revision": "f4cc07910fc38f5b6b8d6e75d7457cf504157b6c",
-			"revisionTime": "2016-03-05T16:14:14+02:00"
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
 			"path": "github.com/gogo/protobuf/io",
-			"revision": "f4cc07910fc38f5b6b8d6e75d7457cf504157b6c",
-			"revisionTime": "2016-03-05T16:14:14+02:00"
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
 			"path": "github.com/gogo/protobuf/proto",
-			"revision": "f4cc07910fc38f5b6b8d6e75d7457cf504157b6c",
-			"revisionTime": "2016-03-05T16:14:14+02:00"
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
 			"path": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
-			"revision": "f4cc07910fc38f5b6b8d6e75d7457cf504157b6c",
-			"revisionTime": "2016-03-05T16:14:14+02:00"
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
 			"path": "github.com/gogo/protobuf/sortkeys",

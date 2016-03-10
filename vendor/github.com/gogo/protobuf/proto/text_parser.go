@@ -715,32 +715,18 @@ func (p *textParser) readAny(v reflect.Value, props *Properties) error {
 			fv.Set(reflect.ValueOf(bytes))
 			return nil
 		}
-		// Repeated field.
-		if tok.value == "[" {
-			// Repeated field with list notation, like [1,2,3].
-			for {
-				fv.Set(reflect.Append(fv, reflect.New(at.Elem()).Elem()))
-				err := p.readAny(fv.Index(fv.Len()-1), props)
-				if err != nil {
-					return err
-				}
-				ntok := p.next()
-				if ntok.err != nil {
-					return ntok.err
-				}
-				if ntok.value == "]" {
-					break
-				}
-				if ntok.value != "," {
-					return p.errorf("Expected ']' or ',' found %q", ntok.value)
-				}
-			}
-			return nil
+		// Repeated field. May already exist.
+		flen := fv.Len()
+		if flen == fv.Cap() {
+			nav := reflect.MakeSlice(at, flen, 2*flen+1)
+			reflect.Copy(nav, fv)
+			fv.Set(nav)
 		}
-		// One value of the repeated field.
+		fv.SetLen(flen + 1)
+
+		// Read one.
 		p.back()
-		fv.Set(reflect.Append(fv, reflect.New(at.Elem()).Elem()))
-		return p.readAny(fv.Index(fv.Len()-1), props)
+		return p.readAny(fv.Index(flen), props)
 	case reflect.Bool:
 		// Either "true", "false", 1 or 0.
 		switch tok.value {
