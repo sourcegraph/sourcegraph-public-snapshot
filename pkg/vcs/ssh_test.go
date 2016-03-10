@@ -58,7 +58,6 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			defer s.Close()
 
 			opt := gitcmd.CloneOpt{
-				Bare:       true,
 				RemoteOpts: remoteOpts,
 			}
 
@@ -139,7 +138,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			baseURL := s.GitURL + "/" + filepath.Base(test.baseDir)
 			t.Logf("Cloning from %s to %s", baseURL, test.headDir)
-			if err := gitcmd.Clone(baseURL, test.headDir, gitcmd.CloneOpt{Bare: true, Mirror: true, RemoteOpts: remoteOpts}); err != nil {
+			if err := gitcmd.Clone(baseURL, test.headDir, gitcmd.CloneOpt{RemoteOpts: remoteOpts}); err != nil {
 				t.Errorf("Clone(%q, %q, %q): %s", label, baseURL, test.headDir, err)
 				return
 			}

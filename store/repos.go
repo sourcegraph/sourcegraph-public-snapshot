@@ -57,7 +57,7 @@ type RepoStatuses interface {
 
 type RepoVCS interface {
 	Open(ctx context.Context, repo string) (vcs.Repository, error)
-	Clone(ctx context.Context, repo string, bare, mirror bool, info *CloneInfo) error
+	Clone(ctx context.Context, repo string, info *CloneInfo) error
 	OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error)
 }
 

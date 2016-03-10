@@ -47,22 +47,11 @@ func Open(dir string) *Repository {
 
 // CloneOpt configures a clone operation.
 type CloneOpt struct {
-	Bare   bool // create a bare repo
-	Mirror bool // create a mirror repo (`git clone --mirror`)
-
 	vcs.RemoteOpts // configures communication with the remote repository
 }
 
 func Clone(url, dir string, opt CloneOpt) error {
-	args := []string{"clone"}
-	if opt.Bare {
-		args = append(args, "--bare")
-	}
-	if opt.Mirror {
-		args = append(args, "--mirror")
-	}
-	args = append(args, "--", url, filepath.ToSlash(dir))
-	cmd := gitserver.Command("git", args...)
+	cmd := gitserver.Command("git", "clone", "--mirror", "--", url, filepath.ToSlash(dir))
 	cmd.Opt = &opt.RemoteOpts
 	out, err := cmd.CombinedOutput()
 	if err != nil {

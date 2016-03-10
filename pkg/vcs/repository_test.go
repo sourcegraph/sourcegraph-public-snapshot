@@ -1097,7 +1097,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if err := gitcmd.Clone(test.baseDir, test.headDir, gitcmd.CloneOpt{Bare: true, Mirror: true}); err != nil {
+		if err := gitcmd.Clone(test.baseDir, test.headDir, gitcmd.CloneOpt{}); err != nil {
 			t.Errorf("Clone(%q, %q): %s", test.baseDir, test.headDir, err)
 			continue
 		}

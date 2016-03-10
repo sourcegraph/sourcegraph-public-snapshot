@@ -34,7 +34,7 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	return r, nil
 }
 
-func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error {
+func (s *RepoVCS) Clone(ctx context.Context, repo string, info *store.CloneInfo) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
 		return err
 	}
@@ -56,8 +56,6 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, inf
 
 	start := time.Now()
 	if err := gitcmd.Clone(info.CloneURL, cloneDir, gitcmd.CloneOpt{
-		Bare:       bare,
-		Mirror:     mirror,
 		RemoteOpts: info.RemoteOpts,
 	}); err != nil {
 		return err

@@ -66,7 +66,7 @@ var _ store.RepoStatuses = (*RepoStatuses)(nil)
 
 type RepoVCS struct {
 	Open_             func(ctx context.Context, repo string) (vcs.Repository, error)
-	Clone_            func(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error
+	Clone_            func(ctx context.Context, repo string, info *store.CloneInfo) error
 	OpenGitTransport_ func(ctx context.Context, repo string) (gitproto.Transport, error)
 }
 
@@ -74,8 +74,8 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	return s.Open_(ctx, repo)
 }
 
-func (s *RepoVCS) Clone(ctx context.Context, repo string, bare, mirror bool, info *store.CloneInfo) error {
-	return s.Clone_(ctx, repo, bare, mirror, info)
+func (s *RepoVCS) Clone(ctx context.Context, repo string, info *store.CloneInfo) error {
+	return s.Clone_(ctx, repo, info)
 }
 
 func (s *RepoVCS) OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error) {
