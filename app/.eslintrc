@@ -1,6 +1,10 @@
 {
 	"ecmaFeatures": {
 		"arrowFunctions": true,
+		"blockBindings": true,
+		"classes": true,
+		"forOf": true,
+		"modules": true,
 		"objectLiteralComputedProperties": true,
 		"objectLiteralShorthandMethods": true,
 		"templateStrings": true,
@@ -77,6 +81,7 @@
 		"no-throw-literal": 2,
 		"no-trailing-spaces": [1, {"skipBlankLines": false}],
 		"no-undef": 2,
+		"no-undefined": 2,
 		"no-unexpected-multiline": 2,
 		"no-unneeded-ternary": 2,
 		"no-unreachable": 1,
@@ -84,6 +89,7 @@
 		"no-unused-vars": [1, {"vars": "all", "args": "none"}],
 		"no-use-before-define": [2, "nofunc"],
 		"no-useless-concat": 1,
+		"no-var": 2,
 		"no-void": 2,
 		"no-with": 2,
 
@@ -146,10 +152,12 @@
 		"react/no-direct-mutation-state": 2,
 		"react/no-multi-comp": [2, {"ignoreStateless": true}],
 		"react/no-unknown-property": 2,
-		"react/prop-types": 0,
+		"react/prefer-es6-class": 2,
+		"react/prop-types": 2,
 		"react/react-in-jsx-scope": 2,
 		"react/self-closing-comp": 1,
 		"react/sort-comp": 1,
 		"react/wrap-multilines": 1,
 	}
 }
+
