@@ -31,7 +31,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/util/httputil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 	"src.sourcegraph.com/sourcegraph/util/metricutil"
-	"src.sourcegraph.com/sourcegraph/util/randstring"
 	"src.sourcegraph.com/sourcegraph/util/traceutil"
 )
 
@@ -241,12 +240,10 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 		returnTo, _ := returnto.BestGuess(req)
 
-		var errorID string
 		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
 		if errField.IsValid() {
-			errorID = randstring.NewLen(6)
 			appError := errField.Interface().(error)
-			appEvent.Message = fmt.Sprintf("ErrorID:%s Msg:%s", errorID, appError.Error())
+			appEvent.Message = fmt.Sprintf("ErrorID:%s Msg:%s", existingCommon.ErrorID, appError.Error())
 		}
 
 		// Propagate Cache-Control no-cache and max-age=0 directives
@@ -286,7 +283,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,
 
-			ErrorID: errorID,
+			ErrorID: existingCommon.ErrorID,
 
 			CacheControl: cacheControl,
 

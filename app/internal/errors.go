@@ -11,6 +11,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
 // ErrorHandler is a func that renders a custom error page for the
@@ -53,6 +54,7 @@ var UnauthorizedErrorHandler ErrorHandler
 // otherwise displaying the standard error page.
 func HandleError(resp http.ResponseWriter, req *http.Request, status int, err error) {
 	origErr := err
+	errorID := randstring.NewLen(6)
 
 	if errH, present := errorHandlers[reflect.TypeOf(err)]; present {
 		err = errH(resp, req, err)
@@ -60,7 +62,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 			return
 		}
 	} else if grpc.Code(err) == codes.Unauthenticated {
-		log15.Debug("redirecting to login", "from", req.URL, "error", err)
+		log15.Debug("redirecting to login", "from", req.URL, "error", err, "error_id", errorID)
 		err = UnauthorizedErrorHandler(resp, req, err)
 		if err == nil {
 			return
@@ -79,15 +81,15 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		err = fmt.Errorf("during execution of error handler: %s (original error: %s)", err, origErr)
 	}
 
-	if status < 200 || status >= 500 {
-		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err)
+	if status < 200 || status >= 400 {
+		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "error_id", errorID)
 	}
 
 	// Handle panic during execution of error template.
 	defer func() {
 		if e := recover(); e != nil {
-			log15.Error("panic during execution of error template", "error", e, "func_name", "HandleError", "tmpl_name", "error/error.html")
-			err := fmt.Errorf("panic during execution of error template: %v", e)
+			log15.Error("panic during execution of error template", "error", e, "error_id", errorID, "func_name", "HandleError", "tmpl_name", "error/error.html")
+			err := fmt.Errorf("panic during execution of error template (error id %v): %v", errorID, e)
 			if !handlerutil.DebugMode(req) {
 				err = errPublicFacingErrorMessage
 			}
@@ -110,10 +112,11 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		StatusCode: status,
 		Status:     http.StatusText(status),
 		Err:        err,
+		Common:     tmpl.Common{ErrorID: errorID},
 	})
 	if err2 != nil {
-		log15.Error("error during execution of error template", "error", err2)
-		err := fmt.Errorf("error during execution of error template: %v", err2)
+		log15.Error("error during execution of error template", "error", err2, "error_id", errorID)
+		err := fmt.Errorf("error during execution of error template (error id %v): %v", errorID, err2)
 		if !handlerutil.DebugMode(req) {
 			err = errPublicFacingErrorMessage
 		}
