@@ -23,6 +23,51 @@
 	{{else if .GitHubOnboarding}}
 		window.onboarding.linkGitHubRedirect = true;
 	{{end}}
+
+	{{if .Teammates }}
+	if (window.intercomSettings) {
+		if (window.teammates && window.teammates.Organizations) {
+			window.intercomSettings.companies = window.teammates.Organizations.map(function(company) {
+				return {
+					id: "github_" + company,
+					name: company,
+				}
+			});
+		}
+		if (window.teammates) {
+			var outstandingInvitations = 0;
+			window.teammates.Users.forEach(function(user) {
+				if (user.IsInvited) outstandingInvitations += 1;
+			});
+			window.intercomSettings["outstanding_invites"] = outstandingInvitations;
+		}
+	}
+	{{end}}
+
+	{{if .RemoteRepos}}
+	if (window.remoteRepos && window.intercomSettings) {
+		var langMap = {};
+		var publicCount = 0, privateCount = 0;
+		window.remoteRepos.forEach(function(repo) {
+			if (repo.Private) {
+				privateCount += 1;
+			} else {
+				publicCount += 1;
+			}
+
+			if (!repo.Language) return;
+			var lang = repo.Language.replace(/\s/g, "_");
+			if (lang === "undefined") return;
+			if (langMap[lang]) langMap[lang] += 1;
+			if (!langMap[lang]) langMap[lang] = 1;
+		});
+		window.intercomSettings["repos_public"] = publicCount;
+		window.intercomSettings["repos_private"] = privateCount;
+		Object.keys(langMap).forEach(function(lang) {
+			window.intercomSettings["repos_" + lang] = langMap[lang];
+		});
+	}
+	{{end}}
 </script>
 
 <div class="dashboard">

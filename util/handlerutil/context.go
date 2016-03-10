@@ -5,6 +5,6 @@ type contextKey int
 const (
 	userKey contextKey = iota
 	fullUserKey
-	emailAddrsKey
+	emailAddrKey
 	repoFallbackKey
 )
