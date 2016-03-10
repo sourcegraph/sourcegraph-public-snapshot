@@ -26,9 +26,9 @@ import (
 )
 
 var Flags struct {
-	Dir   string `long:"app.static-dir"   description:"path to a plain directory from which to serve static files"`
-	Dev   bool   `long:"app.static-dev"   description:"when present static template files are reloaded upon each request"`
-	Debug bool   `long:"app.static-debug" description:"debug serving of static files"`
+	Dir   string `long:"app.static-dir"   description:"path to a plain directory from which to serve static files" env:"SRC_APP_STATIC_DIR"`
+	Dev   bool   `long:"app.static-dev"   description:"when present static template files are reloaded upon each request" env:"SRC_APP_STATIC_DEV"`
+	Debug bool   `long:"app.static-debug" description:"debug serving of static files" env:"SRC_APP_STATIC_DEBUG"`
 }
 
 func init() {

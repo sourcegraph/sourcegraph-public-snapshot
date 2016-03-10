@@ -61,11 +61,11 @@ func initClient() {
 var clientFlags ClientConfig
 
 type ClientConfig struct {
-	Disable    bool   `long:"appdash.disable-client" description:"disable appdash client"`
-	URL        string `long:"appdash.url" description:"externally accessible URL for Appdash's web UI" default:"http://localhost:7800"`
-	RemoteAddr string `long:"appdash.remote-collector-addr" description:"collector addr for appdash client to send to"`
-	TLS        bool   `long:"appdash.remote-collector-tls" description:"whether to connect to collector via TLS (if so, remote addr must have hostname, not IP addr, for cert verification)"`
-	Debug      bool   `long:"appdash.client-debug"`
+	Disable    bool   `long:"appdash.disable-client" description:"disable appdash client" env:"SRC_APPDASH_DISABLE_CLIENT"`
+	URL        string `long:"appdash.url" description:"externally accessible URL for Appdash's web UI" default:"http://localhost:7800" env:"SRC_APPDASH_URL"`
+	RemoteAddr string `long:"appdash.remote-collector-addr" description:"collector addr for appdash client to send to" env:"SRC_APPDASH_REMOTE_COLLECTOR_ADDR"`
+	TLS        bool   `long:"appdash.remote-collector-tls" description:"whether to connect to collector via TLS (if so, remote addr must have hostname, not IP addr, for cert verification)" env:"SRC_APPDASH_TLS"`
+	Debug      bool   `long:"appdash.client-debug" env:"SRC_APPDASH_CLIENT_DEBUG"`
 }
 
 func (f *ClientConfig) configure() (func(context.Context) context.Context, error) {

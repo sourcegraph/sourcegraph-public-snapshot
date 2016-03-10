@@ -11,11 +11,11 @@ import (
 
 // Flags defines settings for metrics.
 type Flags struct {
-	ForwardURL string `long:"metrics.forward" value-name:"URL" description:"Sourcegraph metric sink to forward metrics to (empty to disable)" default:"https://sourcegraph.com"`
+	ForwardURL string `long:"metrics.forward" value-name:"URL" description:"Sourcegraph metric sink to forward metrics to (empty to disable)" default:"https://sourcegraph.com" env:"SRC_METRICS_FORWARD"`
 
 	StoreURL string `long:"metrics.store" value-name:"URL" description:"Elasticsearch server to store metrics in (if set)" env:"SG_ELASTICSEARCH_URL"`
 
-	DisableAllCollection bool `long:"metrics.disable" description:"Disable all metrics, stats and events data collection from this server"`
+	DisableAllCollection bool `long:"metrics.disable" description:"Disable all metrics, stats and events data collection from this server" env:"SRC_METRICS_DISABLE"`
 }
 
 // config is the currently active metrics config (as set by CLI flags).

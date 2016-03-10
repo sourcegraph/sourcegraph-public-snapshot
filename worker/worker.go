@@ -42,9 +42,9 @@ builds.`,
 }
 
 type WorkCmd struct {
-	Parallel    int  `short:"p" long:"parallel" description:"number of parallel builds to run" default:"2"`
-	DequeueMsec int  `long:"dequeue-msec" description:"if no builds are dequeued, sleep up to this many msec before trying again" default:"1000"`
-	Remote      bool `long:"remote" description:"run worker remotely from server; worker is authenticated via a shared secret token derived from the server's id key (SRC_ID_KEY_DATA)" default:"false"`
+	Parallel    int  `short:"p" long:"parallel" description:"number of parallel builds to run" default:"2" env:"SRC_WORK_PARALLEL"`
+	DequeueMsec int  `long:"dequeue-msec" description:"if no builds are dequeued, sleep up to this many msec before trying again" default:"1000" env:"SRC_WORK_DEQUEUE_MSEC"`
+	Remote      bool `long:"remote" description:"run worker remotely from server; worker is authenticated via a shared secret token derived from the server's id key (SRC_ID_KEY_DATA)" default:"false" env:"SRC_WORK_REMOTE"`
 }
 
 func (c *WorkCmd) Execute(args []string) error {

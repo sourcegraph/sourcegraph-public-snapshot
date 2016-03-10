@@ -30,7 +30,7 @@ func init() {
 }
 
 type Flags struct {
-	ReposDir string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
+	ReposDir string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_FS_REPOS_DIR"`
 }
 
 var activeFlags Flags

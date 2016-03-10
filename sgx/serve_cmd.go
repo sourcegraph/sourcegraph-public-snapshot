@@ -149,37 +149,37 @@ Starts an HTTP server serving the app and API.`,
 // ServeCmdPrivate holds the parameters containing private data about the
 // instance. These fields will not be forwarded with the other metrics.
 type ServeCmdPrivate struct {
-	CertFile string `long:"tls-cert" description:"certificate file (for TLS)"`
-	KeyFile  string `long:"tls-key" description:"key file (for TLS)"`
+	CertFile string `long:"tls-cert" description:"certificate file (for TLS)" env:"SRC_TLS_CERT"`
+	KeyFile  string `long:"tls-key" description:"key file (for TLS)" env:"SRC_TLS_KEY"`
 
-	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem"`
+	IDKeyFile string `short:"i" long:"id-key" description:"identity key file" default:"$SGPATH/id.pem" env:"SRC_ID_KEY"`
 	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
 }
 
 var serveCmdInst ServeCmd
 
 type ServeCmd struct {
-	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API"`
-	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API"`
+	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API" env:"SRC_HTTP_ADDR"`
+	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API" env:"SRC_HTTPS_ADDR"`
 
-	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR"`
+	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR" env:"SRC_PROF_HTTP"`
 
-	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)"`
+	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)" env:"SRC_APP_URL"`
 
 	RedirectToHTTPS bool `long:"app.redirect-to-https" description:"redirect HTTP requests to the equivalent HTTPS URL" env:"SG_FORCE_HTTPS"`
 
-	NoWorker bool `long:"no-worker" description:"do not start background worker"`
+	NoWorker bool `long:"no-worker" description:"do not start background worker" env:"SRC_NO_WORKER"`
 
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
 
-	Prefetch bool `long:"prefetch" description:"prefetch directory children"`
+	Prefetch bool `long:"prefetch" description:"prefetch directory children" env:"SRC_PREFETCH"`
 
 	worker.WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
-	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup"`
+	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup" env:"SRC_NO_INITIAL_ONBOARDING"`
 
 	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
