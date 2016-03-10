@@ -91,6 +91,19 @@ go test ./util/textutil
 
 Learn more at [README.tests.md](README.tests.md).
 
+# E2E tests
+
+End-to-end tests are ran constantly against sourcegraph.com, and as part of CI.
+You may additionally run them locally on your machine:
+
+- Run Selenium server via Docker:
+  - `docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0`
+- Find the IP of your active machine via `docker-machine ls`.
+- Run the E2E tests once:
+  - `go install sourcegraph.com/sourcegraph/infrastructure/docker-images/e2etest`
+  - `SELENIUM_SERVER=192.168.99.100:4444 TARGET=https://sourcegraph.com e2etest -once`
+- Run a specific E2E test once: `e2etest -once -run="login_flow"`
+
 ## godep
 
 The Sourcegraph repository uses
