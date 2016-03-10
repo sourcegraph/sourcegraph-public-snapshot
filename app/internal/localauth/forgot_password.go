@@ -40,6 +40,12 @@ func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveForgotPasswordForm(w http.ResponseWriter, r *http.Request, form userForm) error {
+	userSpec := handlerutil.UserFromRequest(r)
+	if userSpec != nil {
+		http.Redirect(w, r, router.Rel.URLTo(router.Home).String(), http.StatusSeeOther)
+		return nil
+	}
+
 	return tmpl.Exec(r, w, "user/forgot_password.html", http.StatusOK, nil, &struct {
 		UserForm          userForm
 		IsEmailConfigured bool

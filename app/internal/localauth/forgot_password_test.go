@@ -13,6 +13,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
 	"src.sourcegraph.com/sourcegraph/app/router"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 func TestGetForgotPassword(t *testing.T) {
@@ -24,6 +25,28 @@ func TestGetForgotPassword(t *testing.T) {
 	}
 	if want := http.StatusOK; resp.StatusCode != want {
 		t.Errorf("wanted %d, got %d", want, resp.StatusCode)
+	}
+}
+
+// Test that the forgot password page redirects to home when already logged in.
+func TestGetForgotPassword_loggedIn(t *testing.T) {
+	c, mock := apptest.New()
+
+	mock.Ctx = handlerutil.WithUser(mock.Ctx, sourcegraph.UserSpec{
+		UID:   1,
+		Login: "u",
+	})
+
+	resp, err := c.GetNoFollowRedirects(router.Rel.URLTo(router.ForgotPassword).String())
+	if err != nil {
+		t.Fatalf("wanted nil, got %s", err)
+	}
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Errorf("got %d, wanted %d", resp.StatusCode, http.StatusSeeOther)
+	}
+	lv := resp.Header.Get("Location")
+	if got, want := lv, router.Rel.URLTo(router.Home).String(); got != want {
+		t.Errorf("redirected to %s, wanted %s", got, want)
 	}
 }
 
