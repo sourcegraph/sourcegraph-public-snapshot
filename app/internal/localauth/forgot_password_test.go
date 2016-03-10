@@ -20,8 +20,7 @@ func TestGetForgotPassword(t *testing.T) {
 
 	resp, err := c.GetOK(router.Rel.URLTo(router.ForgotPassword).String())
 	if err != nil {
-		t.Errorf("wanted nil, got %s", err)
-		t.Fatal(err)
+		t.Fatalf("wanted nil, got %s", err)
 	}
 	if want := http.StatusOK; resp.StatusCode != want {
 		t.Errorf("wanted %d, got %d", want, resp.StatusCode)

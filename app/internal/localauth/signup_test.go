@@ -22,10 +22,11 @@ import (
 // TestSignUp_disabled_404 tests that the signup endpoint returns 404s
 // when user accounts are disabled.
 func TestSignUp_disabled_404(t *testing.T) {
-	authutil.ActiveFlags.Source = "none"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "none"
 
 	c, _ := apptest.New()
 
@@ -42,10 +43,11 @@ func TestSignUp_disabled_404(t *testing.T) {
 }
 
 func TestSignUp_form(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, _ := apptest.New()
 
@@ -55,10 +57,11 @@ func TestSignUp_form(t *testing.T) {
 }
 
 func TestSignUp_submit(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 
@@ -124,10 +127,11 @@ func TestSignUp_submit(t *testing.T) {
 }
 
 func TestSignUp_loginAlreadyExists(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 
@@ -172,10 +176,11 @@ func TestSignUp_loginAlreadyExists(t *testing.T) {
 }
 
 func TestSignUp_emailAlreadyExists(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 

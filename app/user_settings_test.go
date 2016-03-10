@@ -13,11 +13,11 @@ import (
 )
 
 func TestUserSettingsAccess(t *testing.T) {
-	origFlag := authutil.ActiveFlags.Source
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags.Source = origFlag
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 

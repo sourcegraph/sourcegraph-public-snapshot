@@ -22,10 +22,11 @@ import (
 // TestLogIn_disabled_404 tests that the login endpoint returns 404s
 // when auth is disabled.
 func TestLogIn_disabled_404(t *testing.T) {
-	authutil.ActiveFlags.Source = "none"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "none"
 
 	c, _ := apptest.New()
 
@@ -42,10 +43,11 @@ func TestLogIn_disabled_404(t *testing.T) {
 }
 
 func TestLogIn_form(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, _ := apptest.New()
 
@@ -55,10 +57,11 @@ func TestLogIn_form(t *testing.T) {
 }
 
 func TestLogIn_submit_validPassword(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 
@@ -105,10 +108,11 @@ func TestLogIn_submit_validPassword(t *testing.T) {
 }
 
 func TestLogIn_submit_userNotFound(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 
@@ -153,10 +157,11 @@ func TestLogIn_submit_userNotFound(t *testing.T) {
 }
 
 func TestLogIn_submit_badPassword(t *testing.T) {
-	authutil.ActiveFlags.Source = "local"
+	origSource := authutil.ActiveFlags.Source
 	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
+		authutil.ActiveFlags.Source = origSource
 	}()
+	authutil.ActiveFlags.Source = "local"
 
 	c, mock := apptest.New()
 
