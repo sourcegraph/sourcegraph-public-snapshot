@@ -166,7 +166,8 @@ package sourcegraph
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import _ "github.com/gogo/protobuf/gogoproto"
+
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 import diff "sourcegraph.com/sourcegraph/go-diff/diff"
 import vcs "src.sourcegraph.com/sourcegraph/pkg/vcs"
 import graph "sourcegraph.com/sourcegraph/srclib/graph"
@@ -180,6 +181,8 @@ import (
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )
+
+import github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
 
 import io "io"
 
@@ -2729,158 +2732,6 @@ func (m *AnnotationsListOptions) String() string { return proto.CompactTextStrin
 func (*AnnotationsListOptions) ProtoMessage()    {}
 
 func init() {
-	proto.RegisterType((*CombinedStatus)(nil), "sourcegraph.CombinedStatus")
-	proto.RegisterType((*ListOptions)(nil), "sourcegraph.ListOptions")
-	proto.RegisterType((*ListResponse)(nil), "sourcegraph.ListResponse")
-	proto.RegisterType((*StreamResponse)(nil), "sourcegraph.StreamResponse")
-	proto.RegisterType((*Readme)(nil), "sourcegraph.Readme")
-	proto.RegisterType((*RepoConfig)(nil), "sourcegraph.RepoConfig")
-	proto.RegisterType((*Repo)(nil), "sourcegraph.Repo")
-	proto.RegisterType((*RepoListOptions)(nil), "sourcegraph.RepoListOptions")
-	proto.RegisterType((*RepoPermissions)(nil), "sourcegraph.RepoPermissions")
-	proto.RegisterType((*RepoRevSpec)(nil), "sourcegraph.RepoRevSpec")
-	proto.RegisterType((*RepoSpec)(nil), "sourcegraph.RepoSpec")
-	proto.RegisterType((*RepoStatus)(nil), "sourcegraph.RepoStatus")
-	proto.RegisterType((*RepoStatusesCreateOp)(nil), "sourcegraph.RepoStatusesCreateOp")
-	proto.RegisterType((*RepoList)(nil), "sourcegraph.RepoList")
-	proto.RegisterType((*ReceivePackOp)(nil), "sourcegraph.ReceivePackOp")
-	proto.RegisterType((*UploadPackOp)(nil), "sourcegraph.UploadPackOp")
-	proto.RegisterType((*Packet)(nil), "sourcegraph.Packet")
-	proto.RegisterType((*RepoResolveOp)(nil), "sourcegraph.RepoResolveOp")
-	proto.RegisterType((*RepoResolution)(nil), "sourcegraph.RepoResolution")
-	proto.RegisterType((*ReposListRemoteOptions)(nil), "sourcegraph.ReposListRemoteOptions")
-	proto.RegisterType((*RemoteRepoList)(nil), "sourcegraph.RemoteRepoList")
-	proto.RegisterType((*SrclibDataVersion)(nil), "sourcegraph.SrclibDataVersion")
-	proto.RegisterType((*RepoConfigureAppOp)(nil), "sourcegraph.RepoConfigureAppOp")
-	proto.RegisterType((*ReposCreateOp)(nil), "sourcegraph.ReposCreateOp")
-	proto.RegisterType((*ReposCreateOp_NewRepo)(nil), "sourcegraph.ReposCreateOp.NewRepo")
-	proto.RegisterType((*ReposUpdateOp)(nil), "sourcegraph.ReposUpdateOp")
-	proto.RegisterType((*ReposListCommitsOp)(nil), "sourcegraph.ReposListCommitsOp")
-	proto.RegisterType((*RepoListCommitsOptions)(nil), "sourcegraph.RepoListCommitsOptions")
-	proto.RegisterType((*CommitList)(nil), "sourcegraph.CommitList")
-	proto.RegisterType((*ReposListBranchesOp)(nil), "sourcegraph.ReposListBranchesOp")
-	proto.RegisterType((*RepoListBranchesOptions)(nil), "sourcegraph.RepoListBranchesOptions")
-	proto.RegisterType((*BranchList)(nil), "sourcegraph.BranchList")
-	proto.RegisterType((*ReposListTagsOp)(nil), "sourcegraph.ReposListTagsOp")
-	proto.RegisterType((*ReposListCommittersOp)(nil), "sourcegraph.ReposListCommittersOp")
-	proto.RegisterType((*RepoListCommittersOptions)(nil), "sourcegraph.RepoListCommittersOptions")
-	proto.RegisterType((*CommitterList)(nil), "sourcegraph.CommitterList")
-	proto.RegisterType((*RepoListTagsOptions)(nil), "sourcegraph.RepoListTagsOptions")
-	proto.RegisterType((*TagList)(nil), "sourcegraph.TagList")
-	proto.RegisterType((*MirrorReposRefreshVCSOp)(nil), "sourcegraph.MirrorReposRefreshVCSOp")
-	proto.RegisterType((*VCSCredentials)(nil), "sourcegraph.VCSCredentials")
-	proto.RegisterType((*RemoteRepo)(nil), "sourcegraph.RemoteRepo")
-	proto.RegisterType((*Build)(nil), "sourcegraph.Build")
-	proto.RegisterType((*BuildConfig)(nil), "sourcegraph.BuildConfig")
-	proto.RegisterType((*BuildGetLogOptions)(nil), "sourcegraph.BuildGetLogOptions")
-	proto.RegisterType((*BuildListOptions)(nil), "sourcegraph.BuildListOptions")
-	proto.RegisterType((*BuildSpec)(nil), "sourcegraph.BuildSpec")
-	proto.RegisterType((*BuildTask)(nil), "sourcegraph.BuildTask")
-	proto.RegisterType((*BuildTaskListOptions)(nil), "sourcegraph.BuildTaskListOptions")
-	proto.RegisterType((*BuildUpdate)(nil), "sourcegraph.BuildUpdate")
-	proto.RegisterType((*BuildList)(nil), "sourcegraph.BuildList")
-	proto.RegisterType((*BuildsCreateOp)(nil), "sourcegraph.BuildsCreateOp")
-	proto.RegisterType((*BuildsUpdateOp)(nil), "sourcegraph.BuildsUpdateOp")
-	proto.RegisterType((*BuildsListBuildTasksOp)(nil), "sourcegraph.BuildsListBuildTasksOp")
-	proto.RegisterType((*BuildTaskList)(nil), "sourcegraph.BuildTaskList")
-	proto.RegisterType((*BuildsCreateTasksOp)(nil), "sourcegraph.BuildsCreateTasksOp")
-	proto.RegisterType((*BuildsUpdateTaskOp)(nil), "sourcegraph.BuildsUpdateTaskOp")
-	proto.RegisterType((*BuildsGetTaskLogOp)(nil), "sourcegraph.BuildsGetTaskLogOp")
-	proto.RegisterType((*BuildsDequeueNextOp)(nil), "sourcegraph.BuildsDequeueNextOp")
-	proto.RegisterType((*EmailAddr)(nil), "sourcegraph.EmailAddr")
-	proto.RegisterType((*LogEntries)(nil), "sourcegraph.LogEntries")
-	proto.RegisterType((*Org)(nil), "sourcegraph.Org")
-	proto.RegisterType((*OrgListMembersOptions)(nil), "sourcegraph.OrgListMembersOptions")
-	proto.RegisterType((*OrgSpec)(nil), "sourcegraph.OrgSpec")
-	proto.RegisterType((*OrgsListMembersOp)(nil), "sourcegraph.OrgsListMembersOp")
-	proto.RegisterType((*UserList)(nil), "sourcegraph.UserList")
-	proto.RegisterType((*UserCount)(nil), "sourcegraph.UserCount")
-	proto.RegisterType((*Person)(nil), "sourcegraph.Person")
-	proto.RegisterType((*PersonSpec)(nil), "sourcegraph.PersonSpec")
-	proto.RegisterType((*RemoteUser)(nil), "sourcegraph.RemoteUser")
-	proto.RegisterType((*Teammates)(nil), "sourcegraph.Teammates")
-	proto.RegisterType((*TaskSpec)(nil), "sourcegraph.TaskSpec")
-	proto.RegisterType((*TaskUpdate)(nil), "sourcegraph.TaskUpdate")
-	proto.RegisterType((*User)(nil), "sourcegraph.User")
-	proto.RegisterType((*UserSpec)(nil), "sourcegraph.UserSpec")
-	proto.RegisterType((*UsersListOptions)(nil), "sourcegraph.UsersListOptions")
-	proto.RegisterType((*OrgsListOp)(nil), "sourcegraph.OrgsListOp")
-	proto.RegisterType((*EmailAddrList)(nil), "sourcegraph.EmailAddrList")
-	proto.RegisterType((*OrgList)(nil), "sourcegraph.OrgList")
-	proto.RegisterType((*PasswordResetToken)(nil), "sourcegraph.PasswordResetToken")
-	proto.RegisterType((*PendingPasswordReset)(nil), "sourcegraph.PendingPasswordReset")
-	proto.RegisterType((*NewPassword)(nil), "sourcegraph.NewPassword")
-	proto.RegisterType((*NewAccount)(nil), "sourcegraph.NewAccount")
-	proto.RegisterType((*AccountInvite)(nil), "sourcegraph.AccountInvite")
-	proto.RegisterType((*InviteSpec)(nil), "sourcegraph.InviteSpec")
-	proto.RegisterType((*PendingInvite)(nil), "sourcegraph.PendingInvite")
-	proto.RegisterType((*AccountInviteList)(nil), "sourcegraph.AccountInviteList")
-	proto.RegisterType((*AcceptedInvite)(nil), "sourcegraph.AcceptedInvite")
-	proto.RegisterType((*AuthorizationCodeRequest)(nil), "sourcegraph.AuthorizationCodeRequest")
-	proto.RegisterType((*AuthorizationCode)(nil), "sourcegraph.AuthorizationCode")
-	proto.RegisterType((*LoginCredentials)(nil), "sourcegraph.LoginCredentials")
-	proto.RegisterType((*BearerJWT)(nil), "sourcegraph.BearerJWT")
-	proto.RegisterType((*AccessTokenRequest)(nil), "sourcegraph.AccessTokenRequest")
-	proto.RegisterType((*AccessTokenResponse)(nil), "sourcegraph.AccessTokenResponse")
-	proto.RegisterType((*AuthInfo)(nil), "sourcegraph.AuthInfo")
-	proto.RegisterType((*ExternalTokenRequest)(nil), "sourcegraph.ExternalTokenRequest")
-	proto.RegisterType((*ExternalToken)(nil), "sourcegraph.ExternalToken")
-	proto.RegisterType((*Def)(nil), "sourcegraph.Def")
-	proto.RegisterType((*DefGetOptions)(nil), "sourcegraph.DefGetOptions")
-	proto.RegisterType((*DefListExamplesOptions)(nil), "sourcegraph.DefListExamplesOptions")
-	proto.RegisterType((*DefListOptions)(nil), "sourcegraph.DefListOptions")
-	proto.RegisterType((*DefListRefsOptions)(nil), "sourcegraph.DefListRefsOptions")
-	proto.RegisterType((*DefSpec)(nil), "sourcegraph.DefSpec")
-	proto.RegisterType((*DefsGetOp)(nil), "sourcegraph.DefsGetOp")
-	proto.RegisterType((*DefList)(nil), "sourcegraph.DefList")
-	proto.RegisterType((*DefsListRefsOp)(nil), "sourcegraph.DefsListRefsOp")
-	proto.RegisterType((*RefList)(nil), "sourcegraph.RefList")
-	proto.RegisterType((*DefsListExamplesOp)(nil), "sourcegraph.DefsListExamplesOp")
-	proto.RegisterType((*ExampleList)(nil), "sourcegraph.ExampleList")
-	proto.RegisterType((*Delta)(nil), "sourcegraph.Delta")
-	proto.RegisterType((*FileDiff)(nil), "sourcegraph.FileDiff")
-	proto.RegisterType((*DeltaFiles)(nil), "sourcegraph.DeltaFiles")
-	proto.RegisterType((*DeltaFilter)(nil), "sourcegraph.DeltaFilter")
-	proto.RegisterType((*DeltaListFilesOptions)(nil), "sourcegraph.DeltaListFilesOptions")
-	proto.RegisterType((*DeltaSpec)(nil), "sourcegraph.DeltaSpec")
-	proto.RegisterType((*DeltasListFilesOp)(nil), "sourcegraph.DeltasListFilesOp")
-	proto.RegisterType((*Example)(nil), "sourcegraph.Example")
-	proto.RegisterType((*RepoTreeGetOptions)(nil), "sourcegraph.RepoTreeGetOptions")
-	proto.RegisterType((*GetFileOptions)(nil), "sourcegraph.GetFileOptions")
-	proto.RegisterType((*RepoTreeSearchOptions)(nil), "sourcegraph.RepoTreeSearchOptions")
-	proto.RegisterType((*RepoTreeSearchResult)(nil), "sourcegraph.RepoTreeSearchResult")
-	proto.RegisterType((*RepoTreeGetOp)(nil), "sourcegraph.RepoTreeGetOp")
-	proto.RegisterType((*RepoTreeSearchOp)(nil), "sourcegraph.RepoTreeSearchOp")
-	proto.RegisterType((*RepoTreeListOp)(nil), "sourcegraph.RepoTreeListOp")
-	proto.RegisterType((*RepoTreeListResult)(nil), "sourcegraph.RepoTreeListResult")
-	proto.RegisterType((*VCSSearchResultList)(nil), "sourcegraph.VCSSearchResultList")
-	proto.RegisterType((*TokenSearchOptions)(nil), "sourcegraph.TokenSearchOptions")
-	proto.RegisterType((*TextSearchOptions)(nil), "sourcegraph.TextSearchOptions")
-	proto.RegisterType((*TreeEntry)(nil), "sourcegraph.TreeEntry")
-	proto.RegisterType((*BasicTreeEntry)(nil), "sourcegraph.BasicTreeEntry")
-	proto.RegisterType((*TreeEntrySpec)(nil), "sourcegraph.TreeEntrySpec")
-	proto.RegisterType((*FileRange)(nil), "sourcegraph.FileRange")
-	proto.RegisterType((*Checklist)(nil), "sourcegraph.Checklist")
-	proto.RegisterType((*FileToken)(nil), "sourcegraph.FileToken")
-	proto.RegisterType((*ServerStatus)(nil), "sourcegraph.ServerStatus")
-	proto.RegisterType((*ServerConfig)(nil), "sourcegraph.ServerConfig")
-	proto.RegisterType((*RegisteredClient)(nil), "sourcegraph.RegisteredClient")
-	proto.RegisterType((*RegisteredClientSpec)(nil), "sourcegraph.RegisteredClientSpec")
-	proto.RegisterType((*RegisteredClientCredentials)(nil), "sourcegraph.RegisteredClientCredentials")
-	proto.RegisterType((*RegisteredClientListOptions)(nil), "sourcegraph.RegisteredClientListOptions")
-	proto.RegisterType((*RegisteredClientList)(nil), "sourcegraph.RegisteredClientList")
-	proto.RegisterType((*UserPermissions)(nil), "sourcegraph.UserPermissions")
-	proto.RegisterType((*UserPermissionsList)(nil), "sourcegraph.UserPermissionsList")
-	proto.RegisterType((*UserPermissionsOptions)(nil), "sourcegraph.UserPermissionsOptions")
-	proto.RegisterType((*MetricsSnapshot)(nil), "sourcegraph.MetricsSnapshot")
-	proto.RegisterType((*UserEvent)(nil), "sourcegraph.UserEvent")
-	proto.RegisterType((*UserEventList)(nil), "sourcegraph.UserEventList")
-	proto.RegisterType((*Event)(nil), "sourcegraph.Event")
-	proto.RegisterType((*EventList)(nil), "sourcegraph.EventList")
-	proto.RegisterType((*NotifyGenericEvent)(nil), "sourcegraph.NotifyGenericEvent")
-	proto.RegisterType((*Annotation)(nil), "sourcegraph.Annotation")
-	proto.RegisterType((*AnnotationList)(nil), "sourcegraph.AnnotationList")
-	proto.RegisterType((*AnnotationsListOptions)(nil), "sourcegraph.AnnotationsListOptions")
 	proto.RegisterEnum("sourcegraph.TreeEntryType", TreeEntryType_name, TreeEntryType_value)
 	proto.RegisterEnum("sourcegraph.RegisteredClientType", RegisteredClientType_name, RegisteredClientType_value)
 	proto.RegisterEnum("sourcegraph.TelemetryType", TelemetryType_name, TelemetryType_value)
@@ -8224,17 +8075,17 @@ func (m *BuildUpdate) MarshalTo(data []byte) (int, error) {
 	if m.FileScore != 0 {
 		data[i] = 0x5d
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.FileScore))))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.FileScore)))
 	}
 	if m.RefScore != 0 {
 		data[i] = 0x65
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.RefScore))))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.RefScore)))
 	}
 	if m.TokDensity != 0 {
 		data[i] = 0x6d
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.TokDensity))))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.TokDensity)))
 	}
 	return i, nil
 }
@@ -11929,7 +11780,12 @@ func (m *RegisteredClient) MarshalTo(data []byte) (int, error) {
 		i += copy(data[i:], m.Description)
 	}
 	if len(m.Meta) > 0 {
+		keysForMeta := make([]string, 0, len(m.Meta))
 		for k, _ := range m.Meta {
+			keysForMeta = append(keysForMeta, k)
+		}
+		github_com_gogo_protobuf_sortkeys.Strings(keysForMeta)
+		for _, k := range keysForMeta {
 			data[i] = 0x4a
 			i++
 			v := m.Meta[k]
@@ -12406,7 +12262,12 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		i += n144
 	}
 	if len(m.UserProperties) > 0 {
+		keysForUserProperties := make([]string, 0, len(m.UserProperties))
 		for k, _ := range m.UserProperties {
+			keysForUserProperties = append(keysForUserProperties, k)
+		}
+		github_com_gogo_protobuf_sortkeys.Strings(keysForUserProperties)
+		for _, k := range keysForUserProperties {
 			data[i] = 0x32
 			i++
 			v := m.UserProperties[k]
@@ -12423,7 +12284,12 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		}
 	}
 	if len(m.EventProperties) > 0 {
+		keysForEventProperties := make([]string, 0, len(m.EventProperties))
 		for k, _ := range m.EventProperties {
+			keysForEventProperties = append(keysForEventProperties, k)
+		}
+		github_com_gogo_protobuf_sortkeys.Strings(keysForEventProperties)
+		for _, k := range keysForEventProperties {
 			data[i] = 0x3a
 			i++
 			v := m.EventProperties[k]
@@ -17795,10 +17661,7 @@ func (m *ReceivePackOp) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
+			m.Data = append([]byte{}, data[iNdEx:postIndex]...)
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
@@ -17926,10 +17789,7 @@ func (m *UploadPackOp) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
+			m.Data = append([]byte{}, data[iNdEx:postIndex]...)
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
@@ -18027,10 +17887,7 @@ func (m *Packet) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
+			m.Data = append([]byte{}, data[iNdEx:postIndex]...)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -33532,10 +33389,7 @@ func (m *BasicTreeEntry) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Contents = append(m.Contents[:0], data[iNdEx:postIndex]...)
-			if m.Contents == nil {
-				m.Contents = []byte{}
-			}
+			m.Contents = append([]byte{}, data[iNdEx:postIndex]...)
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
@@ -35573,10 +35427,7 @@ func (m *MetricsSnapshot) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.TelemetryData = append(m.TelemetryData[:0], data[iNdEx:postIndex]...)
-			if m.TelemetryData == nil {
-				m.TelemetryData = []byte{}
-			}
+			m.TelemetryData = append([]byte{}, data[iNdEx:postIndex]...)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
