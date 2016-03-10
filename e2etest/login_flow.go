@@ -3,6 +3,11 @@ package e2etest
 import (
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
+	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+
 	"sourcegraph.com/sourcegraph/go-selenium"
 )
 
@@ -17,6 +22,21 @@ func init() {
 func TestLoginFlow(t *TestSuite) error {
 	wd := t.WebDriverT()
 	defer wd.Quit()
+
+	// Create gRPC client connection so we can talk to the server. e2etest uses
+	// the server's ID key for authentication, which means it can do ANYTHING with
+	// no restrictions. Be careful!
+	ctx, c := t.GRPCClient()
+
+	// Create the test user account.
+	_, err := c.Accounts.Create(ctx, &sourcegraph.NewAccount{
+		Login:    "e2eloginflow",
+		Email:    "e2eloginflow@sourcegraph.com",
+		Password: "e2eloginflow",
+	})
+	if err != nil && grpc.Code(err) != codes.AlreadyExists {
+		return err
+	}
 
 	// Get login page.
 	wd.Get(t.Endpoint("/login"))
@@ -59,8 +79,8 @@ func TestLoginFlow(t *TestSuite) error {
 	}
 
 	// Enter username and password for test account.
-	username.SendKeys("test123")
-	password.SendKeys("test123")
+	username.SendKeys("e2eloginflow")
+	password.SendKeys("e2eloginflow")
 
 	// Click the submit button.
 	//
