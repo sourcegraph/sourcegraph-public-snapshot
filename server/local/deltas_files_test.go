@@ -127,7 +127,6 @@ func TestDeltasListFilesCacheKeyDeterministic(t *testing.T) {
 	op.Opt = new(sourcegraph.DeltaListFilesOptions)
 	op.Opt.Filter = "filter"
 	op.Opt.Ignore = []string{"not", "this"}
-	op.Opt.MaxSize = 1
 	k, err := deltasListFileCacheKey(op)
 	if err != nil {
 		t.Fatal(err)

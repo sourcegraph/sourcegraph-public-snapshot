@@ -68,6 +68,10 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 }
 
 func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegraph.Delta, error) {
+	if d.Base.RepoSpec.URI != d.Head.RepoSpec.URI {
+		return d, errors.New("base and head repo must be identical")
+	}
+
 	getCommit := func(repoRevSpec *sourcegraph.RepoRevSpec, commit **vcs.Commit) error {
 		var err error
 		*commit, err = svc.Repos(ctx).GetCommit(ctx, repoRevSpec)
@@ -78,7 +82,7 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 		return nil
 	}
 
-	par := parallel.NewRun(4)
+	par := parallel.NewRun(2)
 	if d.BaseCommit == nil {
 		par.Do(func() error { return getCommit(&d.Base, &d.BaseCommit) })
 	}
@@ -94,11 +98,6 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 	if err != nil {
 		return d, err
 	}
-
-	if d.BaseRepo.URI != d.HeadRepo.URI {
-		return d, errors.New("base and head repo must be identical")
-	}
-	d.HeadRepo = d.BaseRepo
 
 	id, err := vcsBaseRepo.MergeBase(vcs.CommitID(d.BaseCommit.ID), vcs.CommitID(d.HeadCommit.ID))
 	if err != nil {

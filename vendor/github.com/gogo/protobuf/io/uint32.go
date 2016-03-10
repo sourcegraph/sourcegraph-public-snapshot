@@ -51,7 +51,13 @@ type uint32Writer struct {
 func (this *uint32Writer) WriteMsg(msg proto.Message) (err error) {
 	var data []byte
 	if m, ok := msg.(marshaler); ok {
-		n := m.Size()
+		n, ok := getSize(m)
+		if !ok {
+			data, err = proto.Marshal(msg)
+			if err != nil {
+				return err
+			}
+		}
 		if n >= len(this.buffer) {
 			this.buffer = make([]byte, n)
 		}
@@ -67,7 +73,7 @@ func (this *uint32Writer) WriteMsg(msg proto.Message) (err error) {
 		}
 	}
 	length := uint32(len(data))
-	if err := binary.Write(this.w, this.byteOrder, &length); err != nil {
+	if err = binary.Write(this.w, this.byteOrder, &length); err != nil {
 		return err
 	}
 	_, err = this.w.Write(data)

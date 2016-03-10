@@ -28,13 +28,13 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 		calledGetLock.Lock()
 		calledGet++
 		calledGetLock.Unlock()
-		if repoRevSpec != nil && repoRevSpec.URI == "head" {
+		if repoRevSpec != nil && repoRevSpec.Rev == "head" {
 			return nil, wantErr
 		}
 		return &vcs.Commit{}, nil
 	}
 	ds := new(sourcegraph.DeltaSpec)
-	ds.Head.URI = "head"
+	ds.Head.Rev = "head"
 	delta, err := s.Get(ctx, ds)
 	if err.Error() != wantErr.Error() {
 		t.Errorf("got error %v, want %v", err, wantErr)

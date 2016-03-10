@@ -125,13 +125,6 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		return nil, err
 	}
 
-	if opt.Formatted {
-		// Parse and code-format file diffs.
-		if err := formatFileDiffs(ctx, ds, files.FileDiffs); err != nil {
-			return nil, err
-		}
-	}
-
 	if s.listFilesCache != nil {
 		s.listFilesCache.Add(op, files)
 	}
@@ -152,18 +145,6 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.Base.RepoSpec.URI)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	var headVCSRepo vcs.Repository
-	sameRepo := ds.Base.RepoSpec == ds.Head.RepoSpec
-	if sameRepo {
-		headVCSRepo = baseVCSRepo
-	} else {
-		var err error
-		headVCSRepo, err = store.RepoVCSFromContext(ctx).Open(ctx, delta.Head.RepoSpec.URI)
-		if err != nil {
-			return nil, nil, err
-		}
 	}
 
 	var vcsDiff *vcs.Diff
