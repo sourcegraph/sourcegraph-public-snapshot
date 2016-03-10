@@ -8,8 +8,8 @@ const DashboardBackend = {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DashboardActions.WantInviteUsers:
-			if (window.Intercom) {
-				window.Intercom("trackEvent", "invited teammates", {total: action.emails.length});
+			if (global.Intercom) {
+				global.Intercom("trackEvent", "invited teammates", {total: action.emails.length});
 			}
 			DashboardBackend.xhr({
 				uri: `/.ui/.invite-bulk`,
