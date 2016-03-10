@@ -103,6 +103,7 @@ You may additionally run them locally on your machine:
   - `go install sourcegraph.com/sourcegraph/infrastructure/docker-images/e2etest`
   - `SELENIUM_SERVER=192.168.99.100:4444 TARGET=https://sourcegraph.com e2etest -once`
 - Run a specific E2E test once: `e2etest -once -run="login_flow"`
+- Run tests against local Sourcegraph instance: specify `TARGET=<ip>:4444` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
 
 ## godep
 
