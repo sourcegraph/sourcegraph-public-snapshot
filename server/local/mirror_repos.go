@@ -10,8 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sqs/pbtypes"
 	authpkg "src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/events"
@@ -58,21 +56,22 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		}
 	}
 
+	// Use the auth token for asUserUID if it can be successfully looked up (it may fail if that user doesn't have one),
+	// otherwise proceed without their credentials. It will work for public repos.
 	remoteOpts := vcs.RemoteOpts{}
 	if asUserUID != 0 {
 		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: asUserUID})
-		if err != nil {
-			return nil, grpc.Errorf(codes.Unavailable, "cannot refresh %s as no credentials available for user %v: %v", op.Repo.URI, asUserUID, err)
-		}
-		// Set the auth token to be used in repo VCS operations.
-		remoteOpts.HTTPS = &vcs.HTTPSConfig{
-			Pass: extToken.Token,
-		}
+		if err == nil {
+			// Set the auth token to be used in repo VCS operations.
+			remoteOpts.HTTPS = &vcs.HTTPSConfig{
+				Pass: extToken.Token,
+			}
 
-		// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
-		ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, authpkg.Actor{UID: int(asUserUID)}))
-		if err != nil {
-			return nil, err
+			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
+			ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, authpkg.Actor{UID: int(asUserUID)}))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
