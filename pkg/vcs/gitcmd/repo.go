@@ -556,16 +556,8 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 	if err != nil {
 		return nil, fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)
 	}
-	if len(out) < 1 {
-		// go 1.8.5 changed the behavior of `git blame` on empty files.
-		// previously, it returned a boundary commit. now, it returns nothing.
-		// TODO(sqs) TODO(beyang): make `git blame` return the boundary commit
-		// on an empty file somehow, or come up with some other workaround.
-		st, err := os.Stat(filepath.Join(r.Dir, path))
-		if err == nil && st.Size() == 0 {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("Expected git output of length at least 1")
+	if len(out) == 0 {
+		return nil, nil
 	}
 
 	commits := make(map[string]vcs.Commit)
