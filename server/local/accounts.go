@@ -17,6 +17,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
@@ -382,5 +383,5 @@ func sendAccountCreateSlackMsg(ctx context.Context, login, email string, invite 
 	if invite {
 		msg += " (via an invite)"
 	}
-	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
+	slack.PostOnboardingNotif(msg)
 }
