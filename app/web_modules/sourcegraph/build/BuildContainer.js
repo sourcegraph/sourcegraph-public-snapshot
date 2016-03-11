@@ -57,8 +57,8 @@ class BuildContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.build !== nextState.build) {
-			Dispatcher.dispatch(new BuildActions.WantBuild(nextState.build.Repo, nextState.build.ID));
-			Dispatcher.dispatch(new BuildActions.WantTasks(nextState.build.Repo, nextState.build.ID));
+			Dispatcher.asyncDispatch(new BuildActions.WantBuild(nextState.build.Repo, nextState.build.ID));
+			Dispatcher.asyncDispatch(new BuildActions.WantTasks(nextState.build.Repo, nextState.build.ID));
 		}
 	}
 

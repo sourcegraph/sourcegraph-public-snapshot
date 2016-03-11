@@ -40,7 +40,7 @@ class BuildIndicator extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID || nextState.branch !== prevState.branch) {
-			Dispatcher.dispatch(new BuildActions.WantNewestBuildForCommit(nextState.repo, nextState.commitID, true));
+			Dispatcher.asyncDispatch(new BuildActions.WantNewestBuildForCommit(nextState.repo, nextState.commitID, true));
 		}
 		if (nextState.build && nextState.build !== prevState.build) {
 			this._updater(nextState.build.EndedAt ? endedPollInterval : notYetEndedPollInterval);
