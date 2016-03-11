@@ -28,7 +28,8 @@ function record() {
 	});
 
 	// Update the debug display on the page with the time.
-	document.querySelector("body>#debug>a").text = `${loadTimeSeconds}s`;
+	let debug = document.querySelector("body>#debug>a");
+	if (debug) debug.text = `${loadTimeSeconds}s`;
 }
 
 if (typeof document !== "undefined" && document.head.dataset.appdashCurrentSpanId) {
