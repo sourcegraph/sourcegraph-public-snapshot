@@ -56,7 +56,15 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		log15.Warn("postPushHook error", "error", err)
 	}
 
-	repo := payload.Repo
+	repo, err := cl.Repos.Get(ctx, &payload.Repo)
+	if err != nil {
+		log15.Warn("postPushHook error fetching repo", "repo", payload.Repo.URI, "error", err)
+	}
+	// Don't emit notifications for mirror repositories.
+	if repo.Mirror {
+		return
+	}
+
 	event := payload.Event
 	branchURL, err := router.Rel.URLToRepoRev(repo.URI, event.Branch)
 	if err != nil {
@@ -89,7 +97,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 
 	// See how many commits were pushed.
 	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: repo,
+		Repo: repo.RepoSpec(),
 		Opt: &sourcegraph.RepoListCommitsOptions{
 			Head:         event.Commit,
 			Base:         event.Last,
