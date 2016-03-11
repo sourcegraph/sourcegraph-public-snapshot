@@ -1,6 +1,6 @@
 /*
-Package vfsgen takes an input http.FileSystem (likely at `go generate` time) and
-generates Go code that statically implements the given http.FileSystem.
+Package vfsgen takes an http.FileSystem (likely at `go generate` time) and
+generates Go code that statically implements the provided http.FileSystem.
 
 Features:
 

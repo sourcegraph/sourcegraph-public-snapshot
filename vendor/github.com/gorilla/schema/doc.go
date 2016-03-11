@@ -119,5 +119,30 @@ Notice that only for slices of structs the slice index is required.
 This is needed for disambiguation: if the nested struct also had a slice
 field, we could not translate multiple values to it if we did not use an
 index for the parent struct.
+
+There's also the possibility to create a custom type that implements the
+TextUnmarshaler interface, and in this case there's no need to registry
+a converter, like:
+
+	type Person struct {
+	  Emails []Email
+	}
+
+	type Email struct {
+	  *mail.Address
+	}
+
+	func (e *Email) UnmarshalText(text []byte) (err error) {
+		e.Address, err = mail.ParseAddress(string(text))
+		return
+	}
+
+...an HTML form that accepts three Email values would look like this:
+
+	<form>
+		<input type="email" name="Emails.0">
+		<input type="email" name="Emails.1">
+		<input type="email" name="Emails.2">
+	</form>
 */
 package schema

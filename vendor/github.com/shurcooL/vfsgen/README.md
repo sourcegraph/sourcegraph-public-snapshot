@@ -1,7 +1,7 @@
 # vfsgen [![Build Status](https://travis-ci.org/shurcooL/vfsgen.svg?branch=master)](https://travis-ci.org/shurcooL/vfsgen) [![GoDoc](https://godoc.org/github.com/shurcooL/vfsgen?status.svg)](https://godoc.org/github.com/shurcooL/vfsgen)
 
-Package vfsgen takes an input http.FileSystem (likely at `go generate` time) and
-generates Go code that statically implements the given http.FileSystem.
+Package vfsgen takes an http.FileSystem (likely at `go generate` time) and
+generates Go code that statically implements the provided http.FileSystem.
 
 Features:
 
@@ -48,11 +48,68 @@ http.Handle("/assets/", http.FileServer(assets))
 
 ### `go generate` Usage
 
-vfsgen is great to use with go generate directives. The code above can go in an assets_gen.go file, which can then be invoked via "//go:generate go run assets_gen.go". The input virtual filesystem can read directly from disk, or it can be more involved.
+vfsgen is great to use with go generate directives. The code invoking `vfsgen.Generate` can go in an assets_generate.go file, which can then be invoked via "//go:generate go run assets_generate.go". The input virtual filesystem can read directly from disk, or it can be more involved.
 
 By using build tags, you can create a development mode where assets are loaded directly from disk via `http.Dir`, but then statically implemented for final releases.
 
-See [shurcooL/Go-Package-Store#38](https://github.com/shurcooL/Go-Package-Store/pull/38) for a complete example of such use.
+For example, suppose your source filesystem is defined in a package with import path "example.com/project/data" as:
+
+```Go
+// +build dev
+
+package data
+
+// Assets contains project assets.
+var Assets http.FileSystem = http.Dir("assets")
+```
+
+When built with the "dev" build tag, accessing `data.Assets` will read from disk directly via `http.Dir`.
+
+A generate helper file assets_generate.go can be invoked via "//go:generate go run -tags=dev assets_generate.go" directive:
+
+```Go
+// +build ignore
+
+package main
+
+import (
+	"log"
+
+	"example.com/project/data"
+	"github.com/shurcooL/vfsgen"
+)
+
+func main() {
+	err := vfsgen.Generate(data.Assets, vfsgen.Options{
+		PackageName:  "data",
+		BuildTags:    "!dev",
+		VariableName: "Assets",
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+```
+
+Note that "dev" build tag is used to access the source filesystem, and the output file will contain "!dev" build tag. That way, the statically implemented version will be used during normal builds and `go get`, when custom builds tags are not specified.
+
+### `vfsgendev` Usage
+
+`vfsgendev` is a binary that can be used to replace the need for the assets_generate.go file.
+
+Make sure it's installed and available in your PATH.
+
+```bash
+go get -u github.com/shurcooL/vfsgen/cmd/vfsgendev
+```
+
+Then the "//go:generate go run -tags=dev assets_generate.go" directive can be replaced with:
+
+```
+//go:generate vfsgendev -source="example.com/project/data".Assets
+```
+
+vfsgendev accesses the source variable using "dev" build tag, and generates an output file with "!dev" build tag.
 
 ### Additional Embedded Information
 

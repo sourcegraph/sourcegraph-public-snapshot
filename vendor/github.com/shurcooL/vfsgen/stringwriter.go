@@ -11,12 +11,12 @@ type stringWriter struct {
 	N int64 // Total bytes written.
 }
 
-func (sw *stringWriter) Write(p []byte) (n int, _ error) {
+func (sw *stringWriter) Write(p []byte) (n int, err error) {
 	const hex = "0123456789abcdef"
 	buf := []byte{'\\', 'x', 0, 0}
 	for _, b := range p {
 		buf[2], buf[3] = hex[b/16], hex[b%16]
-		_, err := sw.Writer.Write(buf)
+		_, err = sw.Writer.Write(buf)
 		if err != nil {
 			return n, err
 		}

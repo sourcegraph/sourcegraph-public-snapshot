@@ -5,6 +5,9 @@ Just a few functions for helping humanize times and sizes.
 `go get` it as `github.com/dustin/go-humanize`, import it as
 `"github.com/dustin/go-humanize"`, use it as `humanize`
 
+See [godoc](https://godoc.org/github.com/dustin/go-humanize) for
+complete documentation.
+
 ## Sizes
 
 This lets you take numbers like `82854982` and convert them to useful
@@ -12,7 +15,9 @@ strings like, `83MB` or `79MiB` (whichever you prefer).
 
 Example:
 
-    fmt.Printf("That file is %s.", humanize.Bytes(82854982))
+```go
+fmt.Printf("That file is %s.", humanize.Bytes(82854982))
+```
 
 ## Times
 
@@ -21,7 +26,9 @@ For example, `12 seconds ago` or `3 days from now`.
 
 Example:
 
-    fmt.Printf("This was touched %s", humanize.Time(someTimeInstance))
+```go
+fmt.Printf("This was touched %s", humanize.Time(someTimeInstance))
+```
 
 Thanks to Kyle Lemons for the time implementation from an IRC
 conversation one day.  It's pretty neat.
@@ -40,7 +47,9 @@ to label ordinals.
 
 Example:
 
-    fmt.Printf("You're my %s best friend.", humanize.Ordinal(193))
+```go
+fmt.Printf("You're my %s best friend.", humanize.Ordinal(193))
+```
 
 ## Commas
 
@@ -54,6 +63,30 @@ Want to shove commas into numbers?  Be my guest.
 
 Example:
 
-    fmt.Printf("You owe $%s.\n", humanize.Comma(6582491))
+```go
+fmt.Printf("You owe $%s.\n", humanize.Comma(6582491))
+```
+
+## Ftoa
+
+Nicer float64 formatter that removes trailing zeros.
+
+```go
+fmt.Printf("%f", 2.24)                   // 2.240000
+fmt.Printf("%s", humanize.Ftoa(2.24))    // 2.24
+fmt.Printf("%f", 2.0)                    // 2.000000
+fmt.Printf("%s", humanize.Ftoa(2.0))     // 2
+```
+
+## SI notation
+
+Format numbers with [SI notation][sinotation].
+
+Example:
+
+```go
+humanize.SI(0.00000000223, "M")    // 2.23nM
+```
 
 [odisc]: https://groups.google.com/d/topic/golang-nuts/l8NhI74jl-4/discussion
+[sinotation]: http://en.wikipedia.org/wiki/Metric_prefix

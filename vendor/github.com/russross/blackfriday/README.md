@@ -169,6 +169,25 @@ implements the following extensions:
     You can use 3 or more backticks to mark the beginning of the
     block, and the same number to mark the end of the block.
 
+*   **Definition lists**. A simple definition list is made of a single-line
+    term followed by a colon and the definition for that term.
+
+        Cat
+        : Fluffy animal everyone likes
+        
+        Internet
+        : Vector of transmission for pictures of cats
+
+    Terms must be separated from the previous definition by a blank line.
+
+*   **Footnotes**. A marker in the text that will become a superscript number;
+    a footnote definition that will be placed in a list of footnotes at the
+    end of the document. A footnote looks like this:
+
+        This is a footnote.[^1]
+        
+        [^1]: the footnote text.
+
 *   **Autolinking**. Blackfriday can find URLs that have not been
     explicitly marked as links and turn them into links.
 
@@ -223,6 +242,8 @@ are a few of note:
     point. In particular, it does not do any inline escaping, so input
     that happens to look like LaTeX code will be passed through without
     modification.
+    
+*   [Md2Vim](https://github.com/FooSoft/md2vim): transforms markdown files into vimdoc format.
 
 
 Todo

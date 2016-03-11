@@ -11,13 +11,13 @@ import (
 // IEC Sizes.
 // kibis of bits
 const (
-	Byte   = 1
-	KiByte = Byte * 1024
-	MiByte = KiByte * 1024
-	GiByte = MiByte * 1024
-	TiByte = GiByte * 1024
-	PiByte = TiByte * 1024
-	EiByte = PiByte * 1024
+	Byte = 1 << (iota * 10)
+	KiByte
+	MiByte
+	GiByte
+	TiByte
+	PiByte
+	EiByte
 )
 
 // SI Sizes.
@@ -67,36 +67,44 @@ func logn(n, b float64) float64 {
 
 func humanateBytes(s uint64, base float64, sizes []string) string {
 	if s < 10 {
-		return fmt.Sprintf("%dB", s)
+		return fmt.Sprintf("%d B", s)
 	}
 	e := math.Floor(logn(float64(s), base))
 	suffix := sizes[int(e)]
-	val := float64(s) / math.Pow(base, math.Floor(e))
-	f := "%.0f"
+	val := math.Floor(float64(s)/math.Pow(base, e)*10+0.5) / 10
+	f := "%.0f %s"
 	if val < 10 {
-		f = "%.1f"
+		f = "%.1f %s"
 	}
 
-	return fmt.Sprintf(f+"%s", val, suffix)
-
+	return fmt.Sprintf(f, val, suffix)
 }
 
 // Bytes produces a human readable representation of an SI size.
+//
+// See also: ParseBytes.
+//
 // Bytes(82854982) -> 83MB
 func Bytes(s uint64) string {
-	sizes := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB"}
-	return humanateBytes(uint64(s), 1000, sizes)
+	sizes := []string{"B", "kB", "MB", "GB", "TB", "PB", "EB"}
+	return humanateBytes(s, 1000, sizes)
 }
 
 // IBytes produces a human readable representation of an IEC size.
+//
+// See also: ParseBytes.
+//
 // IBytes(82854982) -> 79MiB
 func IBytes(s uint64) string {
 	sizes := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"}
-	return humanateBytes(uint64(s), 1024, sizes)
+	return humanateBytes(s, 1024, sizes)
 }
 
 // ParseBytes parses a string representation of bytes into the number
 // of bytes it represents.
+//
+// See Also: Bytes, IBytes.
+//
 // ParseBytes("42MB") -> 42000000, nil
 // ParseBytes("42mib") -> 44040192, nil
 func ParseBytes(s string) (uint64, error) {

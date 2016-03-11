@@ -22,6 +22,10 @@ type Options struct {
 	// VariableName is the name of the http.FileSystem variable in the generated code.
 	// If left empty, it defaults to "assets".
 	VariableName string
+
+	// VariableComment is the comment of the http.FileSystem variable in the generated code.
+	// If left empty, it defaults to "{{.VariableName}} statically implements the virtual filesystem provided to vfsgen.".
+	VariableComment string
 }
 
 // fillMissing sets default values for mandatory options that are left empty.
@@ -34,5 +38,8 @@ func (opt *Options) fillMissing() {
 	}
 	if opt.Filename == "" {
 		opt.Filename = fmt.Sprintf("%s_vfsdata.go", strings.ToLower(opt.VariableName))
+	}
+	if opt.VariableComment == "" {
+		opt.VariableComment = fmt.Sprintf("%s statically implements the virtual filesystem provided to vfsgen.", opt.VariableName)
 	}
 }

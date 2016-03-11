@@ -1,6 +1,7 @@
 # nosurf
 
 [![Build Status](https://travis-ci.org/justinas/nosurf.svg?branch=master)](https://travis-ci.org/justinas/nosurf)
+[![GoDoc](http://godoc.org/github.com/justinas/nosurf?status.png)](http://godoc.org/github.com/justinas/nosurf)
 
 `nosurf` is an HTTP package for Go
 that helps you prevent Cross-Site Request Forgery attacks.
@@ -28,7 +29,7 @@ an exact URL, a glob, or a regular expression.
 * Allows specifying your own failure handler. 
 Want to present the hacker with an ASCII middle finger
 instead of the plain old `HTTP 400`? No problem.
-* Uses masked tokens to mitigate the BREACH attack
+* Uses masked tokens to mitigate the BREACH attack.
 * Has no dependencies outside the Go standard library.
 
 ### Example
@@ -84,9 +85,42 @@ More examples can be found in the
 Feel free to add one for your favorite framework 
 or an unusual setup of the default HTTP tools.
 
-### API Docs
+### Manual token verification
+In some cases the CSRF token may be send through a non standard way,
+e.g. a body or request is a JSON encoded message with one of the fields
+being a token.
 
-... are at [GoDoc](http://godoc.org/github.com/justinas/nosurf). No big surprise, right?
+In such case the handler(path) should be excluded from an automatic
+verification by using one of the exemption methods:
+
+```go
+	func (h *CSRFHandler) ExemptFunc(fn func(r *http.Request) bool)
+	func (h *CSRFHandler) ExemptGlob(pattern string)
+	func (h *CSRFHandler) ExemptGlobs(patterns ...string)
+	func (h *CSRFHandler) ExemptPath(path string)
+	func (h *CSRFHandler) ExemptPaths(paths ...string)
+	func (h *CSRFHandler) ExemptRegexp(re interface{})
+	func (h *CSRFHandler) ExemptRegexps(res ...interface{})
+```
+
+Later on, the token **must** be verified by manually getting the token from the cookie
+and providing the token sent in body through: `VerifyToken(tkn, tkn2 string) bool`.
+
+Example:
+```go
+func HandleJson(w http.ResponseWriter, r *http.Request) {
+	d := struct{
+		X,Y int
+		Tkn string
+	}{}
+	json.Unmarshal(ioutil.ReadAll(r.Body), &d)
+	if !nosurf.VerifyToken(Token(r), d.Tkn) {
+		http.Errorf(w, "CSRF token incorrect", http.StatusBadRequest)
+		return
+	}
+	// do smth cool
+}
+```
 
 ### Contributing
 

@@ -320,6 +320,11 @@ func (p *parser) html(out *bytes.Buffer, data []byte, doRender bool) int {
 			return size
 		}
 
+		// check for HTML CDATA
+		if size := p.htmlCDATA(out, data, doRender); size > 0 {
+			return size
+		}
+
 		// no special case recognized
 		return 0
 	}
@@ -397,28 +402,10 @@ func (p *parser) html(out *bytes.Buffer, data []byte, doRender bool) int {
 	return i
 }
 
-// HTML comment, lax form
-func (p *parser) htmlComment(out *bytes.Buffer, data []byte, doRender bool) int {
-	if data[0] != '<' || data[1] != '!' || data[2] != '-' || data[3] != '-' {
-		return 0
-	}
-
-	i := 5
-
-	// scan for an end-of-comment marker, across lines if necessary
-	for i < len(data) && !(data[i-2] == '-' && data[i-1] == '-' && data[i] == '>') {
-		i++
-	}
-	i++
-
-	// no end-of-comment marker
-	if i >= len(data) {
-		return 0
-	}
-
-	// needs to end with a blank line
-	if j := p.isEmpty(data[i:]); j > 0 {
-		size := i + j
+func (p *parser) renderHTMLBlock(out *bytes.Buffer, data []byte, start int, doRender bool) int {
+	// html block needs to end with a blank line
+	if i := p.isEmpty(data[start:]); i > 0 {
+		size := start + i
 		if doRender {
 			// trim trailing newlines
 			end := size
@@ -429,8 +416,36 @@ func (p *parser) htmlComment(out *bytes.Buffer, data []byte, doRender bool) int 
 		}
 		return size
 	}
-
 	return 0
+}
+
+// HTML comment, lax form
+func (p *parser) htmlComment(out *bytes.Buffer, data []byte, doRender bool) int {
+	i := p.inlineHTMLComment(out, data)
+	return p.renderHTMLBlock(out, data, i, doRender)
+}
+
+// HTML CDATA section
+func (p *parser) htmlCDATA(out *bytes.Buffer, data []byte, doRender bool) int {
+	const cdataTag = "<![cdata["
+	const cdataTagLen = len(cdataTag)
+	if len(data) < cdataTagLen+1 {
+		return 0
+	}
+	if !bytes.Equal(bytes.ToLower(data[:cdataTagLen]), []byte(cdataTag)) {
+		return 0
+	}
+	i := cdataTagLen
+	// scan for an end-of-comment marker, across lines if necessary
+	for i < len(data) && !(data[i-2] == ']' && data[i-1] == ']' && data[i] == '>') {
+		i++
+	}
+	i++
+	// no end-of-comment marker
+	if i >= len(data) {
+		return 0
+	}
+	return p.renderHTMLBlock(out, data, i, doRender)
 }
 
 // HR, which is the only self-closing block tag considered
@@ -449,19 +464,7 @@ func (p *parser) htmlHr(out *bytes.Buffer, data []byte, doRender bool) int {
 	}
 
 	if data[i] == '>' {
-		i++
-		if j := p.isEmpty(data[i:]); j > 0 {
-			size := i + j
-			if doRender {
-				// trim newlines
-				end := size
-				for end > 0 && data[end-1] == '\n' {
-					end--
-				}
-				p.r.BlockHtml(out, data[:end])
-			}
-			return size
-		}
+		return p.renderHTMLBlock(out, data, i+1, doRender)
 	}
 
 	return 0
@@ -473,7 +476,7 @@ func (p *parser) htmlFindTag(data []byte) (string, bool) {
 		i++
 	}
 	key := string(data[:i])
-	if blockTags[key] {
+	if _, ok := blockTags[key]; ok {
 		return key, true
 	}
 	return "", false
@@ -908,13 +911,35 @@ func (p *parser) quotePrefix(data []byte) int {
 	return 0
 }
 
+// blockquote ends with at least one blank line
+// followed by something without a blockquote prefix
+func (p *parser) terminateBlockquote(data []byte, beg, end int) bool {
+	if p.isEmpty(data[beg:]) <= 0 {
+		return false
+	}
+	if end >= len(data) {
+		return true
+	}
+	return p.quotePrefix(data[end:]) == 0 && p.isEmpty(data[end:]) == 0
+}
+
 // parse a blockquote fragment
 func (p *parser) quote(out *bytes.Buffer, data []byte) int {
 	var raw bytes.Buffer
 	beg, end := 0, 0
 	for beg < len(data) {
 		end = beg
+		// Step over whole lines, collecting them. While doing that, check for
+		// fenced code and if one's found, incorporate it altogether,
+		// irregardless of any contents inside it
 		for data[end] != '\n' {
+			if p.flags&EXTENSION_FENCED_CODE != 0 {
+				if i := p.fencedCode(out, data[end:], false); i > 0 {
+					// -1 to compensate for the extra end++ after the loop:
+					end += i - 1
+					break
+				}
+			}
 			end++
 		}
 		end++
@@ -922,11 +947,7 @@ func (p *parser) quote(out *bytes.Buffer, data []byte) int {
 		if pre := p.quotePrefix(data[beg:]); pre > 0 {
 			// skip the prefix
 			beg += pre
-		} else if p.isEmpty(data[beg:]) > 0 &&
-			(end >= len(data) ||
-				(p.quotePrefix(data[end:]) == 0 && p.isEmpty(data[end:]) == 0)) {
-			// blockquote ends with at least one blank line
-			// followed by something without a blockquote prefix
+		} else if p.terminateBlockquote(data, beg, end) {
 			break
 		}
 
@@ -1132,6 +1153,7 @@ gatherlines:
 		// and move on to the next line
 		if p.isEmpty(data[line:i]) > 0 {
 			containsBlankLine = true
+			raw.Write(data[line:i])
 			line = i
 			continue
 		}
@@ -1199,17 +1221,10 @@ gatherlines:
 
 		// a blank line means this should be parsed as a block
 		case containsBlankLine:
-			raw.WriteByte('\n')
 			*flags |= LIST_ITEM_CONTAINS_BLOCK
 		}
 
-		// if this line was preceeded by one or more blanks,
-		// re-introduce the blank into the buffer
-		if containsBlankLine {
-			containsBlankLine = false
-			raw.WriteByte('\n')
-
-		}
+		containsBlankLine = false
 
 		// add the line into the working buffer without prefix
 		raw.Write(data[line+indent : i])
@@ -1357,6 +1372,14 @@ func (p *parser) paragraph(out *bytes.Buffer, data []byte) int {
 		if p.isPrefixHeader(current) || p.isHRule(current) {
 			p.renderParagraph(out, data[:i])
 			return i
+		}
+
+		// if there's a fenced code block, paragraph is over
+		if p.flags&EXTENSION_FENCED_CODE != 0 {
+			if p.fencedCode(out, current, false) > 0 {
+				p.renderParagraph(out, data[:i])
+				return i
+			}
 		}
 
 		// if there's a definition list item, prev line is a definition term

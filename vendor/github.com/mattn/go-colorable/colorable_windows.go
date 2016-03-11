@@ -56,6 +56,9 @@ var (
 	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
 	procGetConsoleScreenBufferInfo = kernel32.NewProc("GetConsoleScreenBufferInfo")
 	procSetConsoleTextAttribute    = kernel32.NewProc("SetConsoleTextAttribute")
+	procSetConsoleCursorPosition   = kernel32.NewProc("SetConsoleCursorPosition")
+	procFillConsoleOutputCharacter = kernel32.NewProc("FillConsoleOutputCharacterW")
+	procFillConsoleOutputAttribute = kernel32.NewProc("FillConsoleOutputAttribute")
 )
 
 type Writer struct {
@@ -65,26 +68,27 @@ type Writer struct {
 	oldattr word
 }
 
-func NewColorableStdout() io.Writer {
-	var csbi consoleScreenBufferInfo
-	out := os.Stdout
-	if !isatty.IsTerminal(out.Fd()) {
-		return out
+func NewColorable(file *os.File) io.Writer {
+	if file == nil {
+		panic("nil passed instead of *os.File to NewColorable()")
 	}
-	handle := syscall.Handle(out.Fd())
-	procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi)))
-	return &Writer{out: out, handle: handle, oldattr: csbi.attributes}
+
+	if isatty.IsTerminal(file.Fd()) {
+		var csbi consoleScreenBufferInfo
+		handle := syscall.Handle(file.Fd())
+		procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi)))
+		return &Writer{out: file, handle: handle, oldattr: csbi.attributes}
+	} else {
+		return file
+	}
+}
+
+func NewColorableStdout() io.Writer {
+	return NewColorable(os.Stdout)
 }
 
 func NewColorableStderr() io.Writer {
-	var csbi consoleScreenBufferInfo
-	out := os.Stderr
-	if !isatty.IsTerminal(out.Fd()) {
-		return out
-	}
-	handle := syscall.Handle(out.Fd())
-	procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi)))
-	return &Writer{out: out, handle: handle, oldattr: csbi.attributes}
+	return NewColorable(os.Stderr)
 }
 
 var color256 = map[int]int{
@@ -394,7 +398,121 @@ loop:
 			buf.Write([]byte(string(c)))
 		}
 
+		var csbi consoleScreenBufferInfo
 		switch m {
+		case 'A':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+			csbi.cursorPosition.y -= short(n)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'B':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+			csbi.cursorPosition.y += short(n)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'C':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+			csbi.cursorPosition.x -= short(n)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'D':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			if n, err = strconv.Atoi(buf.String()); err == nil {
+				var csbi consoleScreenBufferInfo
+				procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+				csbi.cursorPosition.x += short(n)
+				procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+			}
+		case 'E':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+			csbi.cursorPosition.x = 0
+			csbi.cursorPosition.y += short(n)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'F':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+			csbi.cursorPosition.x = 0
+			csbi.cursorPosition.y -= short(n)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'G':
+			n, err = strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			procGetConsoleScreenBufferInfo.Call(uintptr(w.handle), uintptr(unsafe.Pointer(&csbi)))
+			csbi.cursorPosition.x = short(n)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'H':
+			token := strings.Split(buf.String(), ";")
+			if len(token) != 2 {
+				continue
+			}
+			n1, err := strconv.Atoi(token[0])
+			if err != nil {
+				continue
+			}
+			n2, err := strconv.Atoi(token[1])
+			if err != nil {
+				continue
+			}
+			csbi.cursorPosition.x = short(n2)
+			csbi.cursorPosition.x = short(n1)
+			procSetConsoleCursorPosition.Call(uintptr(w.handle), *(*uintptr)(unsafe.Pointer(&csbi.cursorPosition)))
+		case 'J':
+			n, err := strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			var cursor coord
+			switch n {
+			case 0:
+				cursor = coord{x: csbi.cursorPosition.x, y: csbi.cursorPosition.y}
+			case 1:
+				cursor = coord{x: csbi.window.left, y: csbi.window.top}
+			case 2:
+				cursor = coord{x: csbi.window.left, y: csbi.window.top}
+			}
+			var count, written dword
+			count = dword(csbi.size.x - csbi.cursorPosition.x + (csbi.size.y-csbi.cursorPosition.y)*csbi.size.x)
+			procFillConsoleOutputCharacter.Call(uintptr(w.handle), uintptr(' '), uintptr(count), *(*uintptr)(unsafe.Pointer(&cursor)), uintptr(unsafe.Pointer(&written)))
+			procFillConsoleOutputAttribute.Call(uintptr(w.handle), uintptr(csbi.attributes), uintptr(count), *(*uintptr)(unsafe.Pointer(&cursor)), uintptr(unsafe.Pointer(&written)))
+		case 'K':
+			n, err := strconv.Atoi(buf.String())
+			if err != nil {
+				continue
+			}
+			var cursor coord
+			switch n {
+			case 0:
+				cursor = coord{x: csbi.cursorPosition.x, y: csbi.cursorPosition.y}
+			case 1:
+				cursor = coord{x: csbi.window.left, y: csbi.window.top + csbi.cursorPosition.y}
+			case 2:
+				cursor = coord{x: csbi.window.left, y: csbi.window.top + csbi.cursorPosition.y}
+			}
+			var count, written dword
+			count = dword(csbi.size.x - csbi.cursorPosition.x)
+			procFillConsoleOutputCharacter.Call(uintptr(w.handle), uintptr(' '), uintptr(count), *(*uintptr)(unsafe.Pointer(&cursor)), uintptr(unsafe.Pointer(&written)))
+			procFillConsoleOutputAttribute.Call(uintptr(w.handle), uintptr(csbi.attributes), uintptr(count), *(*uintptr)(unsafe.Pointer(&cursor)), uintptr(unsafe.Pointer(&written)))
 		case 'm':
 			attr := csbi.attributes
 			cs := buf.String()

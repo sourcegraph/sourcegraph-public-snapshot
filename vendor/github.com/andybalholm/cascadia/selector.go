@@ -430,6 +430,11 @@ func onlyChildSelector(ofType bool) Selector {
 	}
 }
 
+// inputSelector is a Selector that matches input, select, textarea and button elements.
+func inputSelector(n *html.Node) bool {
+	return n.Type == html.ElementNode && (n.Data == "input" || n.Data == "select" || n.Data == "textarea" || n.Data == "button")
+}
+
 // emptyElementSelector is a Selector that matches empty elements.
 func emptyElementSelector(n *html.Node) bool {
 	if n.Type != html.ElementNode {

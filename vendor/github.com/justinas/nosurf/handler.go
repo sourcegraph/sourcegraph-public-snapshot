@@ -60,7 +60,7 @@ type CSRFHandler struct {
 }
 
 func defaultFailureHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(FailureCode)
+	http.Error(w, "", FailureCode)
 }
 
 // Extracts the "sent" token from the request
@@ -132,13 +132,8 @@ func (h *CSRFHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctxSetToken(r, realToken)
 	}
 
-	if sContains(safeMethods, r.Method) {
+	if sContains(safeMethods, r.Method) || h.IsExempt(r) {
 		// short-circuit with a success for safe methods
-		h.handleSuccess(w, r)
-		return
-	}
-
-	if h.IsExempt(r) {
 		h.handleSuccess(w, r)
 		return
 	}
@@ -168,8 +163,7 @@ func (h *CSRFHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Finally, we check the token itself.
 	sentToken := extractToken(r)
 
-	equals := verifyToken(realToken, sentToken)
-	if !equals {
+	if !verifyToken(realToken, sentToken) {
 		ctxSetReason(r, ErrBadToken)
 		h.handleFailure(w, r)
 		return

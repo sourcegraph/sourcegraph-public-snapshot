@@ -2728,7 +2728,7 @@ func (t *nfcTrie) lookup(s []byte) (v uint16, sz int) {
 	switch {
 	case c0 < 0x80: // is ASCII
 		return nfcValues[c0], 1
-	case c0 < 0xC0:
+	case c0 < 0xC2:
 		return 0, 1 // Illegal UTF-8: not a starter, not ASCII.
 	case c0 < 0xE0: // 2-byte UTF-8
 		if len(s) < 2 {
@@ -2813,7 +2813,7 @@ func (t *nfcTrie) lookupString(s string) (v uint16, sz int) {
 	switch {
 	case c0 < 0x80: // is ASCII
 		return nfcValues[c0], 1
-	case c0 < 0xC0:
+	case c0 < 0xC2:
 		return 0, 1 // Illegal UTF-8: not a starter, not ASCII.
 	case c0 < 0xE0: // 2-byte UTF-8
 		if len(s) < 2 {
@@ -4330,7 +4330,7 @@ func (t *nfkcTrie) lookup(s []byte) (v uint16, sz int) {
 	switch {
 	case c0 < 0x80: // is ASCII
 		return nfkcValues[c0], 1
-	case c0 < 0xC0:
+	case c0 < 0xC2:
 		return 0, 1 // Illegal UTF-8: not a starter, not ASCII.
 	case c0 < 0xE0: // 2-byte UTF-8
 		if len(s) < 2 {
@@ -4415,7 +4415,7 @@ func (t *nfkcTrie) lookupString(s string) (v uint16, sz int) {
 	switch {
 	case c0 < 0x80: // is ASCII
 		return nfkcValues[c0], 1
-	case c0 < 0xC0:
+	case c0 < 0xC2:
 		return 0, 1 // Illegal UTF-8: not a starter, not ASCII.
 	case c0 < 0xE0: // 2-byte UTF-8
 		if len(s) < 2 {

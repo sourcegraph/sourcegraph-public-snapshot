@@ -93,20 +93,24 @@ func (p *Parser) Parse() *Block {
 			ours := p.namedBlocks[prev.Name]
 
 			if ours == nil {
+				// Put a copy of the named block into current context, so that sub-templates can use the block
+				p.namedBlocks[prev.Name] = prev
 				continue
 			}
 
+			top := findTopmostParentWithNamedBlock(p, prev.Name)
+			nb := top.namedBlocks[prev.Name]
 			switch ours.Modifier {
 			case NamedBlockAppend:
 				for i := 0; i < len(ours.Children); i++ {
-					prev.push(ours.Children[i])
+					nb.push(ours.Children[i])
 				}
 			case NamedBlockPrepend:
 				for i := len(ours.Children) - 1; i >= 0; i-- {
-					prev.pushFront(ours.Children[i])
+					nb.pushFront(ours.Children[i])
 				}
 			default:
-				prev.Children = ours.Children
+				nb.Children = ours.Children
 			}
 		}
 
@@ -431,4 +435,20 @@ func (p *Parser) parseMixinCall() *MixinCall {
 	mixinCall := newMixinCall(tok.Value, tok.Data["Args"])
 	mixinCall.SourcePosition = p.pos()
 	return mixinCall
+}
+
+func findTopmostParentWithNamedBlock(p *Parser, name string) *Parser {
+	top := p
+
+	for {
+		if top.namedBlocks[name] == nil {
+			return nil
+		}
+		if top.parent == nil {
+			return top
+		}
+		if top.parent.namedBlocks[name] != nil {
+			top = top.parent
+		}
+	}
 }

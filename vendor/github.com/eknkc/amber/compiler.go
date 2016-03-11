@@ -5,7 +5,6 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"github.com/eknkc/amber/parser"
 	"go/ast"
 	gp "go/parser"
 	gt "go/token"
@@ -15,8 +14,11 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/eknkc/amber/parser"
 )
 
 var builtinFunctions = [...]string{
@@ -510,10 +512,18 @@ func (c *Compiler) visitTag(tag *parser.Tag) {
 		}
 	}
 
+	keys := make([]string, 0, len(attribs))
+	for key := range attribs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
 	c.indent(0, true)
 	c.write("<" + tag.Name)
 
-	for name, value := range attribs {
+	for _, name := range keys {
+		value := attribs[name]
+
 		if len(value.condition) > 0 {
 			c.write(`{{if ` + value.condition + `}}`)
 		}

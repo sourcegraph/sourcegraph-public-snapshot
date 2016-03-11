@@ -59,7 +59,7 @@ func (g GeoPoint) Valid() bool {
 // See WithCallOverride.
 type APICallFunc func(ctx context.Context, service, method string, in, out proto.Message) error
 
-// WithCallOverride returns a copy of the parent context
+// WithAPICallFunc returns a copy of the parent context
 // that will cause API calls to invoke f instead of their normal operation.
 //
 // This is intended for advanced users only.

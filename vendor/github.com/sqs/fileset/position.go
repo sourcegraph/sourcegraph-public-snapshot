@@ -97,6 +97,8 @@ type File struct {
 
 	// byteOffsetOfRune is protected by set.mutex
 	byteOffsetOfRune []int // byteOffsetOfRune contains the byte offset at each rune offset
+
+	numRunes int // number of runes in file's content, computed in SetByteOffsetsForContent
 }
 
 // Name returns the file name of file f as registered with AddFile.
@@ -163,6 +165,8 @@ func (f *File) SetByteOffsetsForContent(content []byte) {
 		i++
 	}
 
+	f.numRunes = len(byteOffsetOfRune)
+
 	// set lines table
 	f.set.mutex.Lock()
 	f.byteOffsetOfRune = byteOffsetOfRune
@@ -171,10 +175,15 @@ func (f *File) SetByteOffsetsForContent(content []byte) {
 
 // ByteOffsetOfRune returns the byte offset that points to the same position as
 // runeOffset. Assumes SetByteOffsetsForContent has been called.
+// runeOffset argument is expected to be in range [0..num-runes-in-file] inclusive
 //
 func (f *File) ByteOffsetOfRune(runeOffset int) int {
 	f.set.mutex.RLock()
 	defer f.set.mutex.RUnlock()
+
+	if runeOffset == f.numRunes {
+		return runeOffset
+	}
 	return f.byteOffsetOfRune[runeOffset]
 }
 
@@ -323,7 +332,7 @@ func (s *FileSet) AddFile(filename string, base, size int) *File {
 		panic("illegal base or size")
 	}
 	// base >= s.base && size >= 0
-	f := &File{s, filename, base, size, []int{0}, nil}
+	f := &File{s, filename, base, size, []int{0}, nil, 0}
 	base += size + 1 // +1 because EOF also has a position
 	if base < 0 {
 		panic("token.Pos offset overflow (> 2G of source code in file set)")

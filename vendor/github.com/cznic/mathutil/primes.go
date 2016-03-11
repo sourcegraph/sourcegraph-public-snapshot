@@ -280,7 +280,7 @@ func FactorInt(n uint32) (f FactorTerms) {
 
 	f, w := make([]FactorTerm, 9), 0
 	for p := 2; p < len(primes16); p += int(primes16[p]) {
-		if p*p > int(n) {
+		if uint(p*p) > uint(n) {
 			break
 		}
 

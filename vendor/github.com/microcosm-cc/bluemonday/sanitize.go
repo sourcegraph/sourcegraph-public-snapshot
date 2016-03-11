@@ -90,7 +90,11 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 	tokenizer := html.NewTokenizer(r)
 
 	skipElementContent := false
+	skippingElementsCount := 0
+
 	skipClosingTag := false
+	closingTagToSkipStack := []string{}
+
 	for {
 		if tokenizer.Next() == html.ErrorToken {
 			err := tokenizer.Err()
@@ -121,6 +125,7 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 			if !ok {
 				if _, ok := p.setOfElementsToSkipContent[token.Data]; ok {
 					skipElementContent = true
+					skippingElementsCount++
 				}
 				break
 			}
@@ -132,27 +137,38 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 			if len(token.Attr) == 0 {
 				if !p.allowNoAttrs(token.Data) {
 					skipClosingTag = true
+					closingTagToSkipStack = append(closingTagToSkipStack, token.Data)
 					break
 				}
 			}
 
-			buff.WriteString(token.String())
+			if !skipElementContent {
+				buff.WriteString(token.String())
+			}
 
 		case html.EndTagToken:
 
-			if skipClosingTag {
-				skipClosingTag = false
+			if skipClosingTag && closingTagToSkipStack[len(closingTagToSkipStack)-1] == token.Data {
+				closingTagToSkipStack = closingTagToSkipStack[:len(closingTagToSkipStack)-1]
+				if len(closingTagToSkipStack) == 0 {
+					skipClosingTag = false
+				}
 				break
 			}
 
 			if _, ok := p.elsAndAttrs[token.Data]; !ok {
 				if _, ok := p.setOfElementsToSkipContent[token.Data]; ok {
-					skipElementContent = false
+					skippingElementsCount--
+					if skippingElementsCount == 0 {
+						skipElementContent = false
+					}
 				}
 				break
 			}
 
-			buff.WriteString(token.String())
+			if !skipElementContent {
+				buff.WriteString(token.String())
+			}
 
 		case html.SelfClosingTagToken:
 
@@ -169,7 +185,9 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 				break
 			}
 
-			buff.WriteString(token.String())
+			if !skipElementContent {
+				buff.WriteString(token.String())
+			}
 
 		case html.TextToken:
 
@@ -380,7 +398,7 @@ func (p *Policy) sanitizeAttrs(
 }
 
 func (p *Policy) allowNoAttrs(elementName string) bool {
-	_, ok := p.setOfElementsWithoutAttrs[elementName]
+	_, ok := p.setOfElementsAllowedWithoutAttrs[elementName]
 	return ok
 }
 

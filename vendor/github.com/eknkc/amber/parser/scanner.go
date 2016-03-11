@@ -76,6 +76,7 @@ func (s *scanner) Pos() SourcePosition {
 	return SourcePosition{s.lastTokenLine + 1, s.lastTokenCol + 1, s.lastTokenSize, ""}
 }
 
+// Returns next token found in buffer
 func (s *scanner) Next() *token {
 	if s.readRaw {
 		s.readRaw = false
@@ -456,6 +457,7 @@ func (s *scanner) scanText() *token {
 	return nil
 }
 
+// Moves position forward, and removes beginning of s.buffer (len bytes)
 func (s *scanner) consume(runes int) {
 	if len(s.buffer) < runes {
 		panic(fmt.Sprintf("Unable to consume %d runes from buffer.", runes))
@@ -469,6 +471,7 @@ func (s *scanner) consume(runes int) {
 	s.col += runes
 }
 
+// Reads string into s.buffer
 func (s *scanner) ensureBuffer() {
 	if len(s.buffer) > 0 {
 		return

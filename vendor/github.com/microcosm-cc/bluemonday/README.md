@@ -58,7 +58,7 @@ We expect to be supplied with well-formatted HTML (closing elements for every ap
 
 ### Supported Go Versions
 
-bluemonday is regularly tested against Go 1.1, 1.2, 1.3 and tip.
+bluemonday is regularly tested against Go 1.1, 1.2, 1.3, 1.4, 1.5 and tip.
 
 We do not support Go 1.0 as we depend on `golang.org/x/net/html` which includes a reference to `io.ErrNoProgress` which did not exist in Go 1.0.
 

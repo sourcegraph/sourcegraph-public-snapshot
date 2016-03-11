@@ -44,11 +44,14 @@ func FromTTY() *LoginCredentials {
 		return nil
 	}
 	fmt.Print("Password: ")
-	password := string(gopass.GetPasswd())
-	if username == "" || password == "" {
+	password, err := gopass.GetPasswd()
+	if err != nil {
 		return nil
 	}
-	return &LoginCredentials{Login: username, Password: password}
+	if username == "" || string(password) == "" {
+		return nil
+	}
+	return &LoginCredentials{Login: username, Password: string(password)}
 }
 
 func getLine() (string, error) {

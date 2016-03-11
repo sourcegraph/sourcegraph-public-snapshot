@@ -13,24 +13,24 @@ type Converter func(string) reflect.Value
 
 var (
 	invalidValue = reflect.Value{}
-	boolType     = reflect.TypeOf(false)
-	float32Type  = reflect.TypeOf(float32(0))
-	float64Type  = reflect.TypeOf(float64(0))
-	intType      = reflect.TypeOf(int(0))
-	int8Type     = reflect.TypeOf(int8(0))
-	int16Type    = reflect.TypeOf(int16(0))
-	int32Type    = reflect.TypeOf(int32(0))
-	int64Type    = reflect.TypeOf(int64(0))
-	stringType   = reflect.TypeOf("")
-	uintType     = reflect.TypeOf(uint(0))
-	uint8Type    = reflect.TypeOf(uint8(0))
-	uint16Type   = reflect.TypeOf(uint16(0))
-	uint32Type   = reflect.TypeOf(uint32(0))
-	uint64Type   = reflect.TypeOf(uint64(0))
+	boolType     = reflect.Bool
+	float32Type  = reflect.Float32
+	float64Type  = reflect.Float64
+	intType      = reflect.Int
+	int8Type     = reflect.Int8
+	int16Type    = reflect.Int16
+	int32Type    = reflect.Int32
+	int64Type    = reflect.Int64
+	stringType   = reflect.String
+	uintType     = reflect.Uint
+	uint8Type    = reflect.Uint8
+	uint16Type   = reflect.Uint16
+	uint32Type   = reflect.Uint32
+	uint64Type   = reflect.Uint64
 )
 
 // Default converters for basic types.
-var converters = map[reflect.Type]Converter{
+var converters = map[reflect.Kind]Converter{
 	boolType:    convertBool,
 	float32Type: convertFloat32,
 	float64Type: convertFloat64,
