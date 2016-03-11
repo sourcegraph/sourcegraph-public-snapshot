@@ -1,7 +1,6 @@
 package local
 
 import (
-	"os/exec"
 	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -159,16 +158,6 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 	updateResult, err := vcsRepo.UpdateEverything(remoteOpts)
 	if err != nil {
 		return err
-	}
-
-	if len(updateResult.Changes) > 0 {
-		go func() {
-			activeGitGC.Inc()
-			defer activeGitGC.Dec()
-			gcCmd := exec.Command("git", "gc")
-			gcCmd.Dir = vcsRepo.GitRootDir()
-			gcCmd.Run() // ignore error
-		}()
 	}
 
 	forcePushes := make(map[string]bool)

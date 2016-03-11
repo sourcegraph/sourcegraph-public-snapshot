@@ -41,7 +41,7 @@ func (r *Repository) servicePack(ctx context.Context, service string, data []byt
 		args = append(args, "--advertise-refs")
 	}
 	cmd := gitserver.Command("git", append(args, ".")...)
-	cmd.Dir = r.Dir
+	cmd.Repo = r.URL
 	cmd.Input, err = ioutil.ReadAll(rpcReader)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rpc reader error: %s", err)

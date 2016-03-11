@@ -728,7 +728,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo     vcs.Repository
+		repo     *gitcmd.Repository
 		commitID vcs.CommitID
 	}{
 		// TODO(sqs): implement Lstat and symlink handling for git, git
@@ -743,7 +743,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 		var commitID string
 		if test.commitID == "" {
-			commitID = computeCommitHash(test.repo.GitRootDir(), true)
+			commitID = computeCommitHash(test.repo.URL, true)
 		} else {
 			commitID = string(test.commitID)
 		}

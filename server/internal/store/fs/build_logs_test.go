@@ -30,8 +30,7 @@ func init() {
 }
 
 func TestBuildLogs_Get_noErrorIfNotExist(t *testing.T) {
-	ctx, done := testContext()
-	defer done()
+	ctx := context.Background()
 
 	s := &BuildLogs{}
 	e, err := s.Get(ctx, task, "", time.Time{}, time.Time{})
@@ -44,8 +43,7 @@ func TestBuildLogs_Get_noErrorIfNotExist(t *testing.T) {
 }
 
 func TestBuildLogs_Get_noErrorIfEmpty(t *testing.T) {
-	ctx, done := testContext()
-	defer done()
+	ctx := context.Background()
 
 	s := &BuildLogs{}
 	writeBuildLog(ctx, t, task, "")
@@ -60,8 +58,7 @@ func TestBuildLogs_Get_noErrorIfEmpty(t *testing.T) {
 }
 
 func TestBuildLogs_Get_ok(t *testing.T) {
-	ctx, done := testContext()
-	defer done()
+	ctx := context.Background()
 
 	s := &BuildLogs{}
 	writeBuildLog(ctx, t, task, "hello\nworld")
@@ -75,8 +72,7 @@ func TestBuildLogs_Get_ok(t *testing.T) {
 }
 
 func TestBuildLogs_Get_MinID(t *testing.T) {
-	ctx, done := testContext()
-	defer done()
+	ctx := context.Background()
 
 	s := &BuildLogs{}
 	const data = "a\nb\nc\nd"

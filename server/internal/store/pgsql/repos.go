@@ -25,6 +25,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
+// TODO remove skipFS by decoupling packages
+var skipFS = false // used by tests
+
 func init() {
 	Schema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(false, "URI")
 	Schema.CreateSQL = append(Schema.CreateSQL,
@@ -352,13 +355,13 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		return err
 	}
 
-	// Create the filesystem repo where the git data lives. (The repo
-	// metadata, such as the existence, description, language, etc.,
-	// live in PostgreSQL.)
-	if err := fs.CreateRepo(ctx, newRepo); grpc.Code(err) == codes.AlreadyExists {
-		log15.Warn("Repo already exists on filesystem; reusing", "repo", newRepo.URI)
-	} else if err != nil {
-		return err
+	if !skipFS {
+		// Create the filesystem repo where the git data lives. (The repo
+		// metadata, such as the existence, description, language, etc.,
+		// live in PostgreSQL.)
+		if err := fs.CreateRepo(ctx, newRepo); err != nil {
+			return err
+		}
 	}
 
 	var r dbRepo
@@ -412,8 +415,10 @@ func (s *repos) Delete(ctx context.Context, repo string) error {
 	if err != nil {
 		return err
 	}
-	if err := fs.DeleteRepo(ctx, repo); err != nil {
-		log15.Warn("Deleting repo on filesystem failed", "repo", repo, "err", err)
+	if !skipFS {
+		if err := fs.DeleteRepo(ctx, repo); err != nil {
+			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "err", err)
+		}
 	}
 	return nil
 }

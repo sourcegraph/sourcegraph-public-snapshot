@@ -183,6 +183,7 @@ type ServeCmd struct {
 
 	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
+	ReposDir  string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
 	GitServer string `long:"git-server" description:"address of the remote git server process; a local git server process is used by default"`
 }
 
@@ -1012,7 +1013,7 @@ func (c *ServeCmd) runGitServer() {
 
 	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
-		cmd := exec.Command(sgxcmd.Path, "git-server", "--auto-terminate")
+		cmd := exec.Command(sgxcmd.Path, "git-server", "--auto-terminate", "--repos-dir="+os.ExpandEnv(c.ReposDir))
 		cmd.StdinPipe() // keep stdin from closing
 		cmd.Stdout = io.MultiWriter(os.Stdout, stdoutWriter)
 		cmd.Stderr = os.Stderr

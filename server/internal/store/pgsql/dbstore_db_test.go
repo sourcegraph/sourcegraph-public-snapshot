@@ -3,15 +3,16 @@
 package pgsql
 
 import (
-	"io/ioutil"
 	"net/url"
-	"os"
 
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/util/testdb"
 )
+
+func init() {
+	skipFS = true
+}
 
 // testContext constructs a new context that holds a temporary test DB
 // handle and other test configuration. Call done() when done using it
@@ -22,16 +23,9 @@ func testContext() (ctx context.Context, done func()) {
 
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 
-	reposDir, err := ioutil.TempDir("", "repos")
-	if err != nil {
-		panic("creating temp dir for repos: " + err.Error())
-	}
-	ctx = fs.WithReposVFS(ctx, reposDir)
-
 	dbh, dbDone := testdb.NewHandle(&Schema)
 
 	return NewContext(ctx, dbh), func() {
 		dbDone()
-		os.RemoveAll(reposDir)
 	}
 }

@@ -30,7 +30,6 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/pkg/wellknown"
-	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/sgx"
 	"src.sourcegraph.com/sourcegraph/sgx/client"
 	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
@@ -76,17 +75,15 @@ type Server struct {
 }
 
 type Config struct {
-	Flags        []interface{} // flags to `src`
-	Endpoint     client.EndpointOpts
-	Serve        sgx.ServeCmd
-	ServeFlags   []interface{} // flags to `src serve`
-	ServeFSFlags *fs.Flags
+	Flags      []interface{} // flags to `src`
+	Endpoint   client.EndpointOpts
+	Serve      sgx.ServeCmd
+	ServeFlags []interface{} // flags to `src serve`
 }
 
 func (c *Config) args() ([]string, error) {
 	flags := c.Flags
 	flags = append(flags, &c.Endpoint, "serve", &c.Serve)
-	flags = append(flags, c.ServeFSFlags)
 	flags = append(flags, c.ServeFlags...)
 	return makeCommandLineArgs(flags...)
 }
@@ -374,9 +371,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 
 	// FS
-	s.Config.ServeFSFlags = &fs.Flags{
-		ReposDir: reposDir,
-	}
+	s.Config.Serve.ReposDir = reposDir
 
 	// Appdash
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{

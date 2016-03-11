@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strconv"
 	"syscall"
@@ -30,7 +31,7 @@ func (g *Git) Search(args *SearchArgs, reply *[]*vcs.SearchResult) error {
 	}
 
 	cmd := exec.Command("git", "grep", "--null", "--line-number", "-I", "--no-color", "--context", strconv.Itoa(int(args.Opt.ContextLines)), queryType, "-e", args.Opt.Query, string(args.Commit))
-	cmd.Dir = args.Repo
+	cmd.Dir = path.Join(ReposDir, args.Repo)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.StdoutPipe()
 	if err != nil {

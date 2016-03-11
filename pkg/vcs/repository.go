@@ -14,7 +14,7 @@ var ErrRepoNotExist = errors.New("repository does not exist")
 
 // A Repository is a VCS repository.
 type Repository interface {
-	GitRootDir() string
+	String() string
 
 	// ResolveRevision returns the revision that the given revision
 	// specifier resolves to, or a non-nil error if there is no such

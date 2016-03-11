@@ -117,7 +117,7 @@ func getSourceFS(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (hugoDir 
 	// TODO(sqs): Assumes that repo is on local disk. To remove this
 	// assumption, we would need a VFS interface that operates over
 	// gRPC to the RepoTree service.
-	vcsRepo := gitcmd.Open(filepath.Join(os.Getenv("SGPATH"), "repos", repoRev.URI))
+	vcsRepo := gitcmd.Open(repoRev.URI)
 	vcsRepo.AppdashRec = traceutil.Recorder(ctx)
 	fs = aferoVFS{vcs.FileSystem(vcsRepo, vcs.CommitID(repoRev.CommitID))}
 

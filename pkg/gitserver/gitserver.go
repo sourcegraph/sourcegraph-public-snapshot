@@ -7,6 +7,7 @@ import (
 	"net/rpc"
 	"os"
 	"os/exec"
+	"path"
 	"syscall"
 	"time"
 
@@ -31,6 +32,7 @@ type ExecReply struct {
 	Stderr     []byte
 }
 
+var ReposDir string
 var callChan chan<- *rpc.Call
 
 func RegisterHandler() {
@@ -39,13 +41,14 @@ func RegisterHandler() {
 }
 
 func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
-	if _, err := os.Stat(args.Repo); args.Repo != "" && os.IsNotExist(err) {
+	dir := path.Join(ReposDir, args.Repo)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return nil
 	}
 	reply.RepoExists = true
 
 	cmd := exec.Command("git", args.Args...)
-	cmd.Dir = args.Repo
+	cmd.Dir = dir
 	cmd.Stdin = bytes.NewReader(args.Stdin)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -156,7 +159,7 @@ func call(serviceMethod string, args interface{}, reply interface{}) error {
 
 type Cmd struct {
 	Args       []string
-	Dir        string
+	Repo       string
 	Opt        *vcs.RemoteOpts
 	Input      []byte
 	ExitStatus int
@@ -173,7 +176,7 @@ func Command(name string, arg ...string) *Cmd {
 
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	var reply ExecReply
-	if err := call("Git.Exec", &ExecArgs{Repo: c.Dir, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input}, &reply); err != nil {
+	if err := call("Git.Exec", &ExecArgs{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input}, &reply); err != nil {
 		return nil, nil, err
 	}
 	if !reply.RepoExists {

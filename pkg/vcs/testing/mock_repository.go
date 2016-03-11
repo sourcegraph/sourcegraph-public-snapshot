@@ -11,7 +11,7 @@ import (
 )
 
 type MockRepository struct {
-	GitRootDir_ func() string
+	String_ func() string
 
 	ResolveRevision_ func(spec string) (vcs.CommitID, error)
 
@@ -43,8 +43,8 @@ type MockRepository struct {
 
 var _ vcs.Repository = MockRepository{}
 
-func (r MockRepository) GitRootDir() string {
-	return r.GitRootDir_()
+func (r MockRepository) String() string {
+	return r.String_()
 }
 
 func (r MockRepository) ResolveRevision(spec string) (vcs.CommitID, error) {

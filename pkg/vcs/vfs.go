@@ -40,7 +40,7 @@ func (fs fileSystem) ReadDir(name string) ([]os.FileInfo, error) {
 }
 
 func (fs fileSystem) String() string {
-	return fmt.Sprintf("git repository %s commit %s (cmd)", fs.repo.GitRootDir(), fs.commit)
+	return fmt.Sprintf("%s at commit %s (cmd)", fs.repo, fs.commit)
 }
 
 type nopCloser struct {

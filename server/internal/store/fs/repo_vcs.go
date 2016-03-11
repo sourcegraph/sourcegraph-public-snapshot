@@ -1,16 +1,8 @@
 package fs
 
 import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"time"
-
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
-	"src.sourcegraph.com/sourcegraph/pkg/mv"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -28,8 +20,7 @@ func (s *RepoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error)
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
 		return nil, err
 	}
-	dir := absolutePathForRepo(ctx, repo)
-	r := gitcmd.Open(dir)
+	r := gitcmd.Open(repo)
 	r.AppdashRec = traceutil.Recorder(ctx)
 	return r, nil
 }
@@ -38,35 +29,10 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, info *store.CloneInfo)
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
 		return err
 	}
-	name := filepath.Base(repo)
-	dir := absolutePathForRepo(ctx, repo)
-	if err := os.MkdirAll(filepath.Dir(dir), 0700); err != nil {
-		return err
-	}
 
-	// Clone into a temporary dir. This allows us to rename into place +
-	// in production our repo store performs better.
-	cloneDir, err := ioutil.TempDir("", "sg-clone-"+name)
-	if err == nil {
-		log15.Debug("Cloning repo into temporary directory", "repo", repo, "tmp", cloneDir)
-		defer os.RemoveAll(cloneDir)
-	} else {
-		cloneDir = dir
-	}
-
-	start := time.Now()
-	if err := gitcmd.Clone(info.CloneURL, cloneDir, gitcmd.CloneOpt{
+	return gitcmd.Clone(info.CloneURL, repo, gitcmd.CloneOpt{
 		RemoteOpts: info.RemoteOpts,
-	}); err != nil {
-		return err
-	}
-
-	// We cloned into a temporary directory, move into place
-	if cloneDir != dir {
-		log15.Debug("Moving cloned repo into repos dir", "repo", repo, "src", cloneDir, "dst", dir, "duration", time.Since(start))
-		return mv.Atomic(cloneDir, dir)
-	}
-	return nil
+	})
 }
 
 func (s *RepoVCS) OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error) {

@@ -26,10 +26,16 @@ func init() {
 
 type gitServerCmd struct {
 	Addr          string `long:"addr" default:"127.0.0.1:0" description:"RPC listen address for git server"`
+	ReposDir      string `long:"repos-dir" description:"root dir containing repos"`
 	AutoTerminate bool   `long:"auto-terminate" description:"terminate if stdin gets closed (e.g. parent process died)"`
 }
 
 func (c *gitServerCmd) Execute(args []string) error {
+	if c.ReposDir == "" {
+		log.Fatal("git-server: --repos-dir flag is required")
+	}
+	gitserver.ReposDir = c.ReposDir
+
 	if c.AutoTerminate {
 		go func() {
 			io.Copy(ioutil.Discard, os.Stdin)
