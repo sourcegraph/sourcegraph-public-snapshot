@@ -13,9 +13,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
-func newCreateUserFunc(ctx context.Context) func(user sourcegraph.User) (*sourcegraph.UserSpec, error) {
-	return func(user sourcegraph.User) (*sourcegraph.UserSpec, error) {
-		created, err := (&accounts{}).Create(ctx, &user)
+func newCreateUserFunc(ctx context.Context) func(user sourcegraph.User, email sourcegraph.EmailAddr) (*sourcegraph.UserSpec, error) {
+	return func(user sourcegraph.User, email sourcegraph.EmailAddr) (*sourcegraph.UserSpec, error) {
+		created, err := (&accounts{}).Create(ctx, &user, &email)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,7 @@ func TestUsers_Get_existingByLogin(t *testing.T) {
 	defer done()
 
 	s := &users{}
-	if _, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"}); err != nil {
+	if _, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"}, sourcegraph.EmailAddr{Email: "email@email.email"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -68,7 +68,7 @@ func TestUsers_Get_existingByUID(t *testing.T) {
 	defer done()
 
 	s := &users{}
-	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"})
+	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"}, sourcegraph.EmailAddr{Email: "email@email.email"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestUsers_Get_existingByBoth(t *testing.T) {
 	defer done()
 
 	s := &users{}
-	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"})
+	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"}, sourcegraph.EmailAddr{Email: "email@email.email"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,27 +118,27 @@ func TestUsers_Get_existingByBothConflict(t *testing.T) {
 
 	s := &users{}
 	createUser := newCreateUserFunc(ctx)
-	created0, err := createUser(sourcegraph.User{Login: "u0"})
+	created0, err := createUser(sourcegraph.User{Login: "u0"}, sourcegraph.EmailAddr{Email: "email0@email.email"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("create0 error %q", err)
 	}
 	if created0.Login == "" || created0.UID == 0 {
 		t.Error("violated assumption that both login and UID are set")
 	}
 
-	created1, err := createUser(sourcegraph.User{Login: "u1"})
+	created1, err := createUser(sourcegraph.User{Login: "u1"}, sourcegraph.EmailAddr{Email: "email1@email.email"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("create1 error %q", err)
 	}
 	if created1.Login == "" || created1.UID == 0 {
 		t.Error("violated assumption that both login and UID are set")
 	}
 
 	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created0.UID, Login: created1.Login}); !isUserNotFound(err) {
-		t.Fatal(err)
+		t.Fatal("Get1 error %q", err)
 	}
 	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created1.UID, Login: created0.Login}); !isUserNotFound(err) {
-		t.Fatal(err)
+		t.Fatal("Get0 error %q", err)
 	}
 }
 
@@ -151,7 +151,7 @@ func TestUsers_Get_existingByBothOnlyOneExist(t *testing.T) {
 	defer done()
 
 	s := &users{}
-	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"})
+	created, err := newCreateUserFunc(ctx)(sourcegraph.User{Login: "u"}, sourcegraph.EmailAddr{Email: "email@email.email"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,10 +209,10 @@ func TestUsers_List_ok(t *testing.T) {
 
 	s := &users{}
 	createUser := newCreateUserFunc(ctx)
-	if _, err := createUser(sourcegraph.User{Login: "u0"}); err != nil {
+	if _, err := createUser(sourcegraph.User{Login: "u0"}, sourcegraph.EmailAddr{Email: "email0@email.email"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := createUser(sourcegraph.User{Login: "u1"}); err != nil {
+	if _, err := createUser(sourcegraph.User{Login: "u1"}, sourcegraph.EmailAddr{Email: "email1@email.email"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -238,13 +238,13 @@ func TestUsers_List_query(t *testing.T) {
 
 	s := &users{}
 	createUser := newCreateUserFunc(ctx)
-	if _, err := createUser(sourcegraph.User{Login: "u0"}); err != nil {
+	if _, err := createUser(sourcegraph.User{Login: "u0"}, sourcegraph.EmailAddr{Email: "email0@email.email"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := createUser(sourcegraph.User{Login: "u1"}); err != nil {
+	if _, err := createUser(sourcegraph.User{Login: "u1"}, sourcegraph.EmailAddr{Email: "email1@email.email"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := createUser(sourcegraph.User{Login: "u12"}); err != nil {
+	if _, err := createUser(sourcegraph.User{Login: "u12"}, sourcegraph.EmailAddr{Email: "email2@email.email"}); err != nil {
 		t.Fatal(err)
 	}
 

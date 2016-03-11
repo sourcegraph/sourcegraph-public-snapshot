@@ -82,11 +82,8 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty password")
 	}
 
-	usersStore := store.UsersFromContext(ctx)
-
-	_, err := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: newAcct.Email})
-	if err == nil {
-		return nil, grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", newAcct.Email)
+	if newAcct.Email == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "empty email")
 	}
 
 	now := pbtypes.NewTimestamp(time.Now())
@@ -98,26 +95,18 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		Admin:        admin,
 	}
 
-	created, err := accountsStore.Create(elevatedActor(ctx), newUser)
+	email := &sourcegraph.EmailAddr{Email: newAcct.Email, Primary: true}
+
+	created, err := accountsStore.Create(elevatedActor(ctx), newUser, email)
 	if err != nil {
 		return nil, err
 	}
+
 	userSpec := created.Spec()
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID)})
-
-	if newAcct.Email != "" {
-		email := []*sourcegraph.EmailAddr{
-			{Email: newAcct.Email, Primary: true},
-		}
-		if err := accountsStore.UpdateEmails(ctx, userSpec, email); err != nil {
-			return nil, err
-		}
-	}
-
 	if err := store.PasswordFromContext(ctx).SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
 		return nil, err
 	}
-
 	return &userSpec, nil
 }
 

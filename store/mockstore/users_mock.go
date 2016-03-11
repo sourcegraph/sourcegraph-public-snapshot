@@ -38,7 +38,7 @@ func (s *Users) Count(v0 context.Context) (int32, error) { return s.Count_(v0) }
 var _ store.Users = (*Users)(nil)
 
 type Accounts struct {
-	Create_               func(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error)
+	Create_               func(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	GetByGitHubID_        func(ctx context.Context, id int) (*sourcegraph.User, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) error
 	UpdateEmails_         func(v0 context.Context, v1 sourcegraph.UserSpec, v2 []*sourcegraph.EmailAddr) error
@@ -47,8 +47,8 @@ type Accounts struct {
 	Delete_               func(v0 context.Context, v1 int32) error
 }
 
-func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
-	return s.Create_(ctx, newUser)
+func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
+	return s.Create_(ctx, newUser, email)
 }
 
 func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {

@@ -23,7 +23,7 @@ type Users interface {
 // created. External sources of users (e.g., GitHub) should probably
 // only implement Users.
 type Accounts interface {
-	Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error)
+	Create(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error)
 	Update(context.Context, *sourcegraph.User) error
 	UpdateEmails(context.Context, sourcegraph.UserSpec, []*sourcegraph.EmailAddr) error

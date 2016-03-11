@@ -30,7 +30,7 @@ func (s *accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User
 	return nil, grpc.Errorf(codes.Unimplemented, "GetByGitHubID")
 }
 
-func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sourcegraph.User, error) {
+func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Create"); err != nil {
 		return nil, err
 	}
@@ -52,10 +52,22 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User) (*sour
 
 	var u dbUser
 	u.fromUser(newUser)
-	if err := dbh(ctx).Insert(&u); err != nil {
-		if strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_login"`) {
-			return nil, &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
+
+	err := dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
+		if err := tx.Insert(&u); err != nil {
+			if strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_login"`) {
+				return &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
+			}
+			return err
 		}
+
+		if err := tx.Insert(&userEmailAddrRow{UID: int(newUser.UID), EmailAddr: *email}); err != nil {
+			return grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", email.Email)
+		}
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
 	return u.toUser(), nil
