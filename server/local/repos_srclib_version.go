@@ -38,7 +38,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return &sourcegraph.SrclibDataVersion{CommitID: vers[0].CommitID, CommitsBehind: 0}, nil
 	}
 
-	if entry.Path == "." {
+	if entry.Path == "." && len(entry.RepoRev.CommitID) == 40 {
 		// All commits affect the root, so there is no hope of finding
 		// an earlier srclib-built commit that we can use.
 		log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "no version for root")
