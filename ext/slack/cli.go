@@ -1,16 +1,12 @@
 package slack
 
-import (
-	"os"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-)
+import "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 // Flags defines settings (in the form of CLI flags) for Slack integration.
 type Flags struct {
 	Disable bool `long:"slack.disable" description:"disable Slack integration"`
 
-	WebhookURL string `long:"slack.webhook-url" description:"the URL to the Slack webhook endpoint for posting Slack notifications"`
+	WebhookURL string `long:"slack.webhook-url" description:"the URL to the Slack webhook endpoint for posting Slack notifications" env:"SG_SLACK_WEBHOOK_URL"`
 
 	DefaultChannel string `long:"slack.default-channel" description:"the default channel to post notifications to" default:"dev-bot"`
 
@@ -22,15 +18,10 @@ type Flags struct {
 }
 
 // GetWebhookURLIfConfigured returns the Slack Webhook URL if Slack integration
-// is enabled and a URL is configured, otherwise it returns an empty string.
-// A URL can be configured by setting the --slack.webhook-url flag. If this
-// flag is not set, then the SG_SLACK_WEBHOOK_URL env variable will be tried.
+// is enabled and a webhook URL is configured, otherwise it returns an empty string.
 func (f *Flags) GetWebhookURLIfConfigured() string {
 	if f.Disable {
 		return ""
-	}
-	if f.WebhookURL == "" {
-		return os.Getenv("SG_SLACK_WEBHOOK_URL")
 	}
 	return f.WebhookURL
 }
