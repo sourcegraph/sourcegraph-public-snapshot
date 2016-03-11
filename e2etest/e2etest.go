@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/user"
@@ -228,10 +229,35 @@ func (t *TestSuite) runTests(logSuccess bool) bool {
 			t.slackLogBuffer.String(),
 		)
 
-		// TODO(slimsag): trigger rollback here via #dev-deploy-bot
+		// emit the alert to monitoring-bot
+		err := sendAlert()
+		if err != nil {
+			t.Log.Printf("[WARNING] error while sending alert to monitoring-bot %s", err)
+		}
 	}
 	t.slackLogBuffer.Reset()
 	return total == success
+}
+
+func sendAlert() error {
+	u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
+	if err != nil {
+		return err
+	}
+
+	u.User = url.UserPassword(os.Getenv("MONITORING_BOT_USERNAME"), os.Getenv("MONITORING_BOT_PASSWORD"))
+
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // runTest runs a single test and recovers from panics, should they occur.
