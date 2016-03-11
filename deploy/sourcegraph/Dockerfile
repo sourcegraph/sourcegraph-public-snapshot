@@ -8,7 +8,7 @@ RUN { \
 		echo 'UseRoaming no'; \
 	} >> /etc/ssh/ssh_config
 
-ENV STATIC_SITE_VERSION 04ea4dd59150067ba3d15ec2e155d65d15a042c5
+ENV STATIC_SITE_VERSION 6188e841d1ef0c12ca807d829d1e3f4940ebad64
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar
 RUN curl -Ls $STATIC_SITE_URL | tar x
 
