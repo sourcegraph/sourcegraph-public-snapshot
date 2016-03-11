@@ -20,7 +20,7 @@ class DashboardContainer extends Container {
 
 	componentDidMount() {
 		super.componentDidMount();
-		if (this.state.onboarding.linkGitHubRedirect) setTimeout(this._dismissWelcome, 3000);
+		if (this.state.onboarding.linkGitHubRedirect) setTimeout(this._dismissWelcome, 5000);
 	}
 
 	componentWillUnmount() {
