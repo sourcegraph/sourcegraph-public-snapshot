@@ -32,7 +32,7 @@ class Blob extends Component {
 	componentDidMount() {
 		this._updateVisibleLines();
 		window.addEventListener("scroll", this._updateVisibleLines);
-		if (this.state.startLine) {
+		if (this.state.startLine && this.state.scrollToStartLine) {
 			this._scrollTo(this.state.startLine);
 		}
 		document.addEventListener("selectionchange", this._handleSelectionChange);
@@ -48,6 +48,7 @@ class Blob extends Component {
 	reconcileState(state, props) {
 		state.startLine = props.startLine || null;
 		state.endLine = props.endLine || null;
+		state.scrollToStartLine = Boolean(props.scrollToStartLine);
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef;
@@ -178,7 +179,9 @@ class Blob extends Component {
 	onStateTransition(prevState, nextState) {
 		if (nextState.startLine && nextState.highlightedDef && prevState.startLine !== nextState.startLine) {
 			if (Math.abs(prevState.startLine - nextState.startLine) > 5 || !this._lineIsVisible(nextState.startLine)) {
-				this._scrollTo(nextState.startLine);
+				if (this.state.scrollToStartLine) {
+					this._scrollTo(nextState.startLine);
+				}
 			}
 		}
 	}
@@ -251,6 +254,7 @@ Blob.propTypes = {
 	startCol: React.PropTypes.number,
 	endLine: React.PropTypes.number,
 	endCol: React.PropTypes.number,
+	scrollToStartLine: React.PropTypes.bool,
 	highlightedDef: React.PropTypes.string,
 	activeDef: React.PropTypes.string,
 

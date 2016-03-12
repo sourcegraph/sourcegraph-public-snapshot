@@ -41,6 +41,7 @@
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightSelectedLines": true,
+												"scrollToStartLine": true,
 												"dispatchSelections": true
 											}
 										}

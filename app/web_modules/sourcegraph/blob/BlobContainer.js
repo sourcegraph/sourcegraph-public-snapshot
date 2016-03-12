@@ -139,6 +139,7 @@ class BlobContainer extends Container {
 							startCol={this.state.startCol}
 							endLine={this.state.endLine}
 							endCol={this.state.endCol}
+							scrollToStartLine={true}
 							highlightedDef={this.state.highlightedDef}
 							activeDef={this.state.activeDef}
 							dispatchSelections={true} />}
