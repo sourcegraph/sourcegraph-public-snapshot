@@ -1,6 +1,7 @@
 package e2etest
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -17,12 +18,27 @@ func init() {
 }
 
 func TestRepoFlow(t *T) error {
-	t.Get(t.Endpoint("/github.com/gorilla/mux"))
+	wd := t.WebDriver
+	defer wd.Quit()
 
-	var muxLink selenium.WebElementT
+	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
+	if err != nil {
+		return err
+	}
+
+	var muxLink selenium.WebElement
 	getMuxLink := func() bool {
-		muxLink = t.FindElement(selenium.ByPartialLinkText, "mux.go")
-		return strings.Contains(muxLink.Text(), "mux.go")
+		var err error
+		muxLink, err = wd.FindElement(selenium.ByPartialLinkText, "mux.go")
+		if err != nil {
+			return false
+		}
+		text, err := muxLink.Text()
+		if err != nil {
+			return false
+		}
+
+		return strings.Contains(text, "mux.go")
 	}
 
 	t.WaitForCondition(
@@ -33,16 +49,32 @@ func TestRepoFlow(t *T) error {
 	)
 
 	want := "/github.com/gorilla/mux@master/.tree/mux.go"
-	if have := muxLink.GetAttribute("href"); !strings.Contains(have, want) {
-		t.Fatalf("wanted: %s, got %s", want, have)
+
+	have, err := muxLink.GetAttribute("href")
+	if err != nil {
+		return err
 	}
 
-	if !muxLink.IsDisplayed() {
-		t.Fatalf("mux link should be displayed")
+	if !strings.Contains(have, want) {
+		return fmt.Errorf("wanted: %s, got %s", want, have)
 	}
 
-	if !muxLink.IsEnabled() {
-		t.Fatalf("mux link should be enabled")
+	isDisplayed, err := muxLink.IsDisplayed()
+	if err != nil {
+		return err
+	}
+
+	if !isDisplayed {
+		return errors.New("mux link should be displayed")
+	}
+
+	isEnabled, err := muxLink.IsEnabled()
+	if err != nil {
+		return err
+	}
+
+	if !isEnabled {
+		return errors.New("mux link should be enabled")
 	}
 
 	muxLink.Click()
@@ -52,20 +84,23 @@ func TestRepoFlow(t *T) error {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
-		func() bool { return t.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go") },
+		wantURL(t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go"), wd),
 		"wait for mux.go codefile to load",
 	)
 
-	var routerSpan selenium.WebElementT
+	var routerSpan selenium.WebElement
 
 	getSpans := func() bool {
-		spans := t.FindElements(selenium.ByTagName, "span")
+		spans, err := wd.FindElements(selenium.ByTagName, "span")
+		if err != nil {
+			return false
+		}
 
 		for _, span := range spans {
-			fmt.Println("BEFORE?????")
-			text := span.Text()
-			fmt.Println("AFTER?????")
-			fmt.Println("text", text)
+			text, err := span.Text()
+			if err != nil {
+				return false
+			}
 			if text == "Router" {
 				routerSpan = span
 				return true
@@ -77,7 +112,7 @@ func TestRepoFlow(t *T) error {
 
 	t.WaitForCondition(
 		5*time.Second,
-		100*time.Millisecond,
+		4*time.Second,
 		getSpans,
 		"Wait for Router span to appear",
 	)
@@ -88,12 +123,21 @@ func TestRepoFlow(t *T) error {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
-		func() bool {
-			return t.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router")
-		},
+		wantURL(t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"), wd),
 		"wait for Router def to load",
 	)
 
 	return nil
 
+}
+
+func wantURL(wantedURL string, wd selenium.WebDriver) func() bool {
+	return func() bool {
+		currentURL, err := wd.CurrentURL()
+		if err != nil {
+			return false
+		}
+
+		return currentURL == wantedURL
+	}
 }
