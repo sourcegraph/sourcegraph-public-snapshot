@@ -230,7 +230,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		)
 
 		// emit the alert to monitoring-bot
-		err := sendAlert()
+		err := t.sendAlert()
 		if err != nil {
 			t.Log.Printf("[WARNING] error while sending alert to monitoring-bot %s", err)
 		}
@@ -239,7 +239,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	return total == success
 }
 
-func sendAlert() error {
+func (t *testRunner) sendAlert() error {
 	username := os.Getenv("MONITORING_BOT_USERNAME")
 	if username == "" {
 		return nil
