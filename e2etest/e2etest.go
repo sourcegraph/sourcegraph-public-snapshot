@@ -294,7 +294,7 @@ func Main() {
 		log.Fatal("Unable to get SELENIUM_SERVER_IP from environment")
 	}
 	if serverPort == "" {
-		log.Fatal("Unable to get SELENIUM_SERVER_PORT from environment")
+		serverPort = "4444" // default to standard Selenium port
 	}
 
 	u, err := url.Parse(fmt.Sprintf("%s:%s", serverAddr, serverPort))
