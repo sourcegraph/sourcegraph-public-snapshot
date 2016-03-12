@@ -286,17 +286,43 @@ func (t *testRunner) sendAlert() error {
 	return nil
 }
 
-// runTest runs a single test and recovers from panics, should they occur.
+// runTest runs a single test and recovers from panics, should they occur. If
+// the test failed for any reason err != nil is returned.
 func (t *testRunner) runTest(test *Test) (err error) {
+	// Create a selenium web driver for the test.
+	// Set up webdriver.
+	caps := selenium.Capabilities(map[string]interface{}{
+		"browserName": "chrome",
+	})
+	wd, err := selenium.NewRemote(caps, t.executor)
+	if err != nil {
+		return err
+	}
+
+	// Handle things after the test has finished executing.
 	defer func() {
+		// Handle any panics that might occur because we are a single-process test
+		// suite.
 		if r := recover(); r != nil {
 			if err == nil {
 				err = errors.New(fmt.Sprint(r))
 			}
 		}
+
+		wd.Close()
 	}()
-	err = test.Func(&T{}) // TODO
-	return
+
+	// Setup the context for the test.
+	ctx := &T{
+		Log:       t.log,
+		Target:    t.target,
+		WebDriver: wd,
+		tr:        t,
+	}
+	ctx.WebDriverT = ctx.WebDriver.T(ctx)
+
+	// Execute the test.
+	return test.Func(ctx)
 }
 
 var tr = &testRunner{
