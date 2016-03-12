@@ -54,12 +54,8 @@ func Register(t *Test) {
 // testRunner is provided as input to each test and provides generic helper
 // methods to make testing easier.
 type testRunner struct {
-	// Log is where all errors, warnings, etc. should be written to.
-	Log *log.Logger
-
-	// Target is the target Sourcegraph server to test, e.g. https://sourcegraph.com
-	Target string
-
+	log      *log.Logger
+	target   string
 	tests    []*Test
 	executor string
 	idKey    *idkey.IDKey
@@ -196,11 +192,11 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			err := t.runTest(test)
 			unitTime := time.Since(unitStart)
 			if err != nil {
-				t.Log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+				t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
 				return nil
 			}
 
-			t.Log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
+			t.log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
 			successMu.Lock()
 			success++
 			successMu.Unlock()
@@ -209,7 +205,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	}
 	run.Wait()
 
-	t.Log.Printf("%v tests finished in %v [%v success] [%v failure]\n", total, time.Since(start), success, total-success)
+	t.log.Printf("%v tests finished in %v [%v success] [%v failure]\n", total, time.Since(start), success, total-success)
 
 	if total == success {
 		t.slackSkipAtChannel = false // do @channel on next failure
@@ -232,7 +228,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		// emit the alert to monitoring-bot
 		err := t.sendAlert()
 		if err != nil {
-			t.Log.Printf("[WARNING] error while sending alert to monitoring-bot %s", err)
+			t.log.Printf("[WARNING] error while sending alert to monitoring-bot %s", err)
 		}
 	}
 	t.slackLogBuffer.Reset()
@@ -290,7 +286,7 @@ func Main() {
 	flag.Parse()
 
 	// Prepare logging.
-	tr.Log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
+	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
 	// Determine which Selenium server to connect to.
 	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
@@ -313,8 +309,8 @@ func Main() {
 	tr.executor = u.String()
 
 	// Determine the target Sourcegraph instance to test against.
-	tr.Target = os.Getenv("TARGET")
-	if tr.Target == "" {
+	tr.log = os.Getenv("TARGET")
+	if tr.log == "" {
 		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
 	}
 
