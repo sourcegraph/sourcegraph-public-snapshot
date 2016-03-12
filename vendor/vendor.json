@@ -18,7 +18,6 @@
 			"revisionTime": "2015-05-01T06:40:42-04:00"
 		},
 		{
-			"origin": "src.sourcegraph.com/sourcegraph/vendor/github.com/NYTimes/gziphandler",
 			"path": "github.com/NYTimes/gziphandler",
 			"revision": "a88790d49798560db24af70fb6a10a66e2549a72",
 			"revisionTime": "2016-02-07T20:52:08-05:00"
@@ -1462,41 +1461,6 @@
 			"path": "sourcegraph.com/sqs/pbtypes",
 			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
 			"revisionTime": "2016-01-07T01:09:29-08:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/apidocs",
-			"revision": "3d7eec8280f112d8290978ac8e0cc63a76b62e8a",
-			"revisionTime": "2016-01-12T10:01:27-07:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/apidocs/assets",
-			"revision": "3d7eec8280f112d8290978ac8e0cc63a76b62e8a",
-			"revisionTime": "2016-01-12T10:01:27-07:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/notifications",
-			"revision": "54724dfb91c02f7de2171729135fbb2887b06672",
-			"revisionTime": "2016-02-29T00:50:35-08:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/notifications/common",
-			"revision": "54724dfb91c02f7de2171729135fbb2887b06672",
-			"revisionTime": "2016-02-29T00:50:35-08:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/notifications/notifications",
-			"revision": "54724dfb91c02f7de2171729135fbb2887b06672",
-			"revisionTime": "2016-02-29T00:50:35-08:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/notifications/notifications/kv",
-			"revision": "54724dfb91c02f7de2171729135fbb2887b06672",
-			"revisionTime": "2016-02-29T00:50:35-08:00"
-		},
-		{
-			"path": "src.sourcegraph.com/apps/notifications/sgapp",
-			"revision": "54724dfb91c02f7de2171729135fbb2887b06672",
-			"revisionTime": "2016-02-29T00:50:35-08:00"
 		},
 		{
 			"path": "src.sourcegraph.com/syntaxhighlight",
