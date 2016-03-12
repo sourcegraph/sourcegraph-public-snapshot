@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/user"
@@ -239,23 +240,27 @@ func (t *TestSuite) runTests(logSuccess bool) bool {
 }
 
 func sendAlert() error {
-	// u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
-	// if err != nil {
-	// 	return err
-	// }
+	username := os.Getenv("MONITORING_BOT_USERNAME")
+	if username == "" {
+		return nil
+	}
 
-	// u.User = url.UserPassword(os.Getenv("MONITORING_BOT_USERNAME"), os.Getenv("MONITORING_BOT_PASSWORD"))
+	u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
+	if err != nil {
+		return err
+	}
 
-	// resp, err := http.Get(u.String())
-	// if err != nil {
-	// 	return err
-	// }
-	// defer resp.Body.Close()
+	u.User = url.UserPassword(username, os.Getenv("MONITORING_BOT_PASSWORD"))
 
-	// if resp.StatusCode != http.StatusOK {
-	// 	return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
-	// }
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
+	}
 	return nil
 }
 
