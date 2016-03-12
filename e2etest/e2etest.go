@@ -42,18 +42,18 @@ type Test struct {
 	// considered failed.
 	//
 	// Tests must log all output to t.Log instead of via other logging packages.
-	Func func(t *TestSuite) error
+	Func func(t *testRunner) error
 }
 
 // Register should be called inside of an init function in order to register a
 // new test as part of the testsuite.
 func Register(t *Test) {
-	testSuite.tests = append(testSuite.tests, t)
+	tr.tests = append(tr.tests, t)
 }
 
-// TestSuite is provided as input to each test and provides generic helper
+// testRunner is provided as input to each test and provides generic helper
 // methods to make testing easier.
-type TestSuite struct {
+type testRunner struct {
 	// Log is where all errors, warnings, etc. should be written to.
 	Log *log.Logger
 
@@ -71,7 +71,7 @@ type TestSuite struct {
 }
 
 // WebDriver returns a new remote Selenium webdriver.
-func (t *TestSuite) WebDriver() selenium.WebDriver {
+func (t *testRunner) WebDriver() selenium.WebDriver {
 	caps := selenium.Capabilities(map[string]interface{}{
 		"browserName": "chrome",
 	})
@@ -84,21 +84,21 @@ func (t *TestSuite) WebDriver() selenium.WebDriver {
 
 // WebDriverT returns a new remote Selenium webdriver which handles failure
 // cases automatically for you by calling t.Fatalf().
-func (t *TestSuite) WebDriverT() selenium.WebDriverT {
+func (t *testRunner) WebDriverT() selenium.WebDriverT {
 	return t.WebDriver().T(t)
 }
 
 // Fatalf implements the selenium.TestingT interface. Because unlike the testing
 // package we are a single process, we instead cause a panic (which is caught
 // by the test executor).
-func (t *TestSuite) Fatalf(fmtStr string, v ...interface{}) {
+func (t *testRunner) Fatalf(fmtStr string, v ...interface{}) {
 	panic(fmt.Sprintf(fmtStr, v...))
 }
 
 // Endpoint returns an absolute URL given one relative to the target instance
 // root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
 // will return "https://sourcegraph.com/login"
-func (t *TestSuite) Endpoint(e string) string {
+func (t *testRunner) Endpoint(e string) string {
 	u, err := url.Parse(t.Target)
 	if err != nil {
 		panic(err) // Target is validated in main, always.
@@ -109,7 +109,7 @@ func (t *TestSuite) Endpoint(e string) string {
 
 // GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
 // server's ID key, and thus has 100% unrestricted access. Use with caution!
-func (t *TestSuite) GRPCClient() (context.Context, *sourcegraph.Client) {
+func (t *testRunner) GRPCClient() (context.Context, *sourcegraph.Client) {
 	target, err := url.Parse(t.Target)
 	if err != nil {
 		panic(err) // Target is validated in main, always.
@@ -128,7 +128,7 @@ func (t *TestSuite) GRPCClient() (context.Context, *sourcegraph.Client) {
 	return ctx, c
 }
 
-func (t *TestSuite) slackMessage(msg, quoted string) {
+func (t *testRunner) slackMessage(msg, quoted string) {
 	if t.slack == nil {
 		return
 	}
@@ -152,7 +152,7 @@ func (t *TestSuite) slackMessage(msg, quoted string) {
 
 // run runs the test suite over and over again against $TARGET, if $TARGET is set,
 // otherwise it runs the test suite just once.
-func (t *TestSuite) run() {
+func (t *testRunner) run() {
 	shouldLogSuccess := 0
 	for {
 		if t.runTests(shouldLogSuccess < 5) {
@@ -172,7 +172,7 @@ func (t *TestSuite) run() {
 
 // runTests runs all of the tests and handles failures. It returns whether or
 // not all tests were successful.
-func (t *TestSuite) runTests(logSuccess bool) bool {
+func (t *testRunner) runTests(logSuccess bool) bool {
 	// Execute the registered tests in parallel.
 	var (
 		successMu sync.Mutex
@@ -265,7 +265,7 @@ func sendAlert() error {
 }
 
 // runTest runs a single test and recovers from panics, should they occur.
-func (t *TestSuite) runTest(test *Test) (err error) {
+func (t *testRunner) runTest(test *Test) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err == nil {
@@ -277,7 +277,7 @@ func (t *TestSuite) runTest(test *Test) (err error) {
 	return
 }
 
-var testSuite = &TestSuite{
+var tr = &testRunner{
 	slackLogBuffer: &bytes.Buffer{},
 }
 
@@ -290,7 +290,7 @@ func Main() {
 	flag.Parse()
 
 	// Prepare logging.
-	testSuite.Log = log.New(io.MultiWriter(os.Stderr, testSuite.slackLogBuffer), "", 0)
+	tr.Log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
 	// Determine which Selenium server to connect to.
 	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
@@ -310,17 +310,17 @@ func Main() {
 		u.Scheme = "http"
 	}
 	u.Path = path.Join(u.Path, "wd/hub")
-	testSuite.executor = u.String()
+	tr.executor = u.String()
 
 	// Determine the target Sourcegraph instance to test against.
-	testSuite.Target = os.Getenv("TARGET")
-	if testSuite.Target == "" {
+	tr.Target = os.Getenv("TARGET")
+	if tr.Target == "" {
 		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
 	}
 
 	// Find server ID key information.
 	if key := os.Getenv("ID_KEY_DATA"); key != "" {
-		testSuite.idKey, err = idkey.FromString(key)
+		tr.idKey, err = idkey.FromString(key)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -337,21 +337,21 @@ func Main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		testSuite.idKey, err = idkey.New(data)
+		tr.idKey, err = idkey.New(data)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	if token := os.Getenv("SLACK_API_TOKEN"); token != "" {
-		testSuite.slack = slack.New(token)
+		tr.slack = slack.New(token)
 
 		// Find the channel ID.
 		channelName := os.Getenv("SLACK_CHANNEL")
 		if channelName == "" {
 			channelName = "e2etest"
 		}
-		channels, err := testSuite.slack.GetChannels(true)
+		channels, err := tr.slack.GetChannels(true)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -359,26 +359,26 @@ func Main() {
 		for _, c := range channels {
 			if c.Name == channelName {
 				found = true
-				testSuite.slackChannel = c
+				tr.slackChannel = c
 			}
 		}
 		if !found {
 			log.Println("could not find slack channel", channelName)
 			log.Println("disabling slack notifications")
-			testSuite.slack = nil
+			tr.slack = nil
 		} else {
 			registeredTests := &bytes.Buffer{}
-			for _, t := range testSuite.tests {
+			for _, t := range tr.tests {
 				fmt.Fprintf(registeredTests, "[%v]: %v\n", t.Name, t.Description)
 			}
-			testSuite.slackMessage(":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
+			tr.slackMessage(":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
 		}
 	}
 
-	testSuite.run()
+	tr.run()
 }
 
-func waitForCondition(t *TestSuite, d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
+func waitForCondition(t *testRunner, d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
 	start := time.Now()
 	for time.Now().Sub(start) < d {
 		time.Sleep(optimisticD)
