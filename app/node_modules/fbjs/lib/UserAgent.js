@@ -1,12 +1,11 @@
 /**
- * Copyright 2013-2015, Facebook, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule UserAgent
  */
 
 'use strict';
@@ -112,9 +111,11 @@ var UserAgent = {
    * @param {string} query Query of the form "Name [range expression]"
    * @return {boolean}
    */
+
   isBrowser: function (query) {
     return compare(UserAgentData.browserName, UserAgentData.browserFullVersion, query);
   },
+
 
   /**
    * Check if the User Agent browser uses a 32 or 64 bit architecture.
@@ -127,6 +128,7 @@ var UserAgent = {
   isBrowserArchitecture: function (query) {
     return compare(UserAgentData.browserArchitecture, null, query);
   },
+
 
   /**
    * Check if the User Agent device matches `query`.
@@ -156,6 +158,7 @@ var UserAgent = {
     return compare(UserAgentData.deviceName, null, query);
   },
 
+
   /**
    * Check if the User Agent rendering engine matches `query`.
    *
@@ -181,6 +184,7 @@ var UserAgent = {
   isEngine: function (query) {
     return compare(UserAgentData.engineName, UserAgentData.engineVersion, query);
   },
+
 
   /**
    * Check if the User Agent platform matches `query`.
@@ -221,6 +225,7 @@ var UserAgent = {
     return compare(UserAgentData.platformName, UserAgentData.platformFullVersion, query, normalizePlatformVersion);
   },
 
+
   /**
    * Check if the User Agent platform is a 32 or 64 bit architecture.
    *
@@ -232,7 +237,6 @@ var UserAgent = {
   isPlatformArchitecture: function (query) {
     return compare(UserAgentData.platformArchitecture, null, query);
   }
-
 };
 
 module.exports = mapObject(UserAgent, memoizeStringOnly);

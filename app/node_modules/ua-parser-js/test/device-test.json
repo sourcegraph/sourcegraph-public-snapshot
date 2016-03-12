@@ -40,6 +40,16 @@
         }
     },
     {
+        "desc"    : "Motorola Nexus 6",
+        "ua"      : "Mozilla/5.0 (Linux; Android 5.1.1; Nexus 6 Build/LYZ28E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.20 Mobile Safari/537.36",
+        "expect"  :
+        {
+            "vendor"  : "Motorola",
+            "model"   : "Nexus 6",
+            "type"    : "mobile"
+        }
+    },
+    {
         "desc"    : "Motorola Droid RAZR 4G",
         "ua"      : "Mozilla/5.0 (Linux; U; Android 2.3; xx-xx; DROID RAZR 4G Build/6.5.1-73_DHD-11_M1-29) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
         "expect"  :
@@ -236,6 +246,26 @@
         {
             "vendor"  : "Xiaomi",
             "model"   : "MI-ONE Plus",
+            "type"    : "mobile"
+        }
+    },
+    {
+        "desc"      : "PlayStation 4",
+        "ua"        : "Mozilla/5.0 (PlayStation 4 3.00) AppleWebKit/537.73 (KHTML, like Gecko)",
+        "expect"    :
+        {
+            "vendor"  : "Sony",
+            "model"   : "PlayStation 4",
+            "type"    : "console"
+        }
+    },
+    {
+        "desc"      : "Galaxy Nexus",
+        "ua"        : "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19",
+        "expect"    :
+        {
+            "vendor"  : "Samsung",
+            "model"   : "Galaxy Nexus",
             "type"    : "mobile"
         }
     }

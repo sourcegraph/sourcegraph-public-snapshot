@@ -252,6 +252,15 @@
         }
     },
     {
+        "desc"    : "PlayStation 4",
+        "ua"      : "Mozilla/5.0 (PlayStation 4 3.00) AppleWebKit/537.73 (KHTML, like Gecko)",
+        "expect"  :
+        {
+            "name"    : "PlayStation",
+            "version" : "4"
+        }
+    },
+    {
         "desc"    : "Mint",
         "ua"      : "",
         "expect"  :

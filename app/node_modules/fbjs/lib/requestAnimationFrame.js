@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Copyright 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -6,10 +8,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule requestAnimationFrame
  */
-
-'use strict';
 
 var emptyFunction = require('./emptyFunction');
 var nativeRequestAnimationFrame = require('./nativeRequestAnimationFrame');

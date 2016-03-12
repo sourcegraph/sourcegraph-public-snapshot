@@ -540,6 +540,16 @@
         }
     },
     {
+        "desc"    : "PhantomJS",
+        "ua"      : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.34 (KHTML, like Gecko) PhantomJS/1.9.2 Safari/534.34",
+        "expect"  :
+        {
+            "name"    : "PhantomJS",
+            "version" : "1.9.2",
+            "major"   : "1"
+        }
+    },
+    {
         "desc"    : "Phoenix",
         "ua"      : "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.2b) Gecko/20021029 Phoenix/0.4",
         "expect"  : 
@@ -664,9 +674,29 @@
         "ua"      : "Mozilla/5.0 (S60V3; U; en-in; NokiaN73)/UC Browser8.4.0.159/28/351/UCWEB Mobile",
         "expect"  : 
         {
-            "name"    : "UC Browser",
+            "name"    : "UCBrowser",
             "version" : "8.4.0.159",
             "major"   : "8"
+        }
+    },
+    {
+        "desc"    : "UC Browser J2ME",
+        "ua"      : "UCWEB/2.0 (MIDP-2.0; U; zh-CN; HTC EVO 3D X515m) U2/1.0.0 UCBrowser/10.4.0.558 U2/1.0.0 Mobile",
+        "expect"  : 
+        {
+            "name"    : "UCBrowser",
+            "version" : "10.4.0.558",
+            "major"   : "10"
+        }
+    },
+    {
+        "desc"    : "UC Browser J2ME 2",
+        "ua"      : "JUC (Linux; U; 2.3.5; zh-cn; GT-I9100; 480*800) UCWEB7.9.0.94/139/800",
+        "expect"  : 
+        {
+            "name"    : "UCBrowser",
+            "version" : "7.9.0.94",
+            "major"   : "7"
         }
     },
     {
@@ -707,6 +737,16 @@
             "name"    : "Iridium",
             "version" : "43.8",
             "major"   : "43"
+        }
+    },
+    {
+        "desc"    : "Firefox iOS",
+        "ua"      : "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) FxiOS/1.1 Mobile/13B143 Safari/601.1.46",
+        "expect"  :
+        {
+            "name"    : "Firefox",
+            "version" : "1.1",
+            "major"   : "1"
         }
     }
 ]
