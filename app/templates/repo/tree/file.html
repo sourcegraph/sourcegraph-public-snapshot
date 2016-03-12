@@ -30,14 +30,6 @@
 		</p>
 	</noscript>
 	{{end}}
-	{{if .Entry}}{{if .Entry.ContentsString}}
-		<script ignore-csp>
-			window.preloadedBlob = {
-				"url": "{{urlToRepoTreeEntry .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path}}",
-				"data": "{{json .}}"
-			};
-		</script>
-	{{end}}{{end}}
 	<div id="BlobContainer" class="theme-default"></div>
 
 	<div data-react="TreeSearch"

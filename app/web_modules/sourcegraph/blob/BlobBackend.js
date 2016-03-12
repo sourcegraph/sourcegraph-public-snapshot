@@ -15,12 +15,6 @@ const BlobBackend = {
 				if (file === null) {
 					let revPart = action.rev ? `@${action.rev}` : "";
 					let uri = `/${action.repo}${revPart}/.tree/${action.tree}`;
-
-					if (typeof window !== "undefined" && window.preloadedBlob && window.preloadedBlob.url === uri) {
-						Dispatcher.asyncDispatch(new BlobActions.FileFetched(action.repo, action.rev, action.tree, JSON.parse(window.preloadedBlob.data)));
-						return;
-					}
-
 					BlobBackend.xhr({
 						uri: `/.ui${uri}`,
 						json: {},

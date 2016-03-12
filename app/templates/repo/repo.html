@@ -3,10 +3,5 @@
 <div class="repo-body">
 	{{template "RepoBody" $}}
 </div>
-<script ignore-csp>
-	window.preloadedRepo = {
-		"data": {{json .Repo}}
-	};
-</script>
 
 {{end}}
