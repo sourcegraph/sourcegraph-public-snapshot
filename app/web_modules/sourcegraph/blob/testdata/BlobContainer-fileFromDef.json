@@ -36,12 +36,8 @@
 											"type": "DefPopup",
 											"props": {
 												"def": {
-													"File": {
-														"Path": "somePath"
-													},
-													"Data": {
-														"Kind": "someKind"
-													}
+													"File": "somePath",
+													"Kind": "someKind"
 												},
 												"examples": {
 													"content": {},

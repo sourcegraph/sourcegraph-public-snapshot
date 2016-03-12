@@ -22,7 +22,7 @@
 												},
 												"repo": "aRepo",
 												"rev": "aRev",
-												"path": "aTree"
+												"path": "aPath"
 											}
 										},
 										{
@@ -54,14 +54,14 @@
 			"$constructor": "WantFile",
 			"repo": "aRepo",
 			"rev": "aRev",
-			"tree": "aTree"
+			"tree": "aPath"
 		},
 		{
 			"$constructor": "WantAnnotations",
 			"repo": "aRepo",
 			"rev": "aRev",
 			"commitID": "",
-			"path": "aTree"
+			"path": "aPath"
 		},
 		{
 			"$constructor": "WantDef",

@@ -11,7 +11,7 @@ describe("DefPopup", () => {
 	it("should render definition data", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
-				def={{URL: "someURL", QualifiedName: {__html: "someName"}, Data: {DocHTML: "someDoc"}}}
+				def={{URL: "someURL", QualifiedName: {__html: "someName"}, DocHTML: "someDoc"}}
 				examples={{test: "examples"}}
 				highlightedDef="otherURL" />
 		);

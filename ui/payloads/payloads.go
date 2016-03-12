@@ -3,32 +3,7 @@ package payloads
 import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sqs/pbtypes"
 )
-
-// DefCommon holds all of the def-specific information necessary to
-// render a def page template. It is returned by GetDefCommon. It is assumes
-// that pages rendered are also provided with repoCommon,
-// repoRevCommon, and repoBuildCommon template data.
-type DefCommon struct {
-	// Def holds information about this definition.
-	Def *sourcegraph.Def `json:"Data,omitempty"`
-
-	// QualifiedName is the user-friendly form of this definition containing its
-	// name and type, and is used as the title for this definition.
-	QualifiedName *pbtypes.HTML
-
-	// URL is the DefKey-based URL that can be used to request this definition.
-	URL string
-
-	// File holds information about the file that contains the declaration of
-	// this definition.
-	File sourcegraph.TreeEntrySpec
-
-	// ByteStartPosition and ByteEndPosition are the byte offsets that this
-	// definition occupy in the original containing file.
-	ByteStartPosition, ByteEndPosition uint32
-}
 
 // CodeFile holds information about a code file to be displayed in the UI.
 type CodeFile struct {

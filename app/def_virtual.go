@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
@@ -35,8 +34,8 @@ func isVirtual(def graph.DefKey) bool {
 	return false
 }
 
-func serveDefVirtual(w http.ResponseWriter, r *http.Request, dc *payloads.DefCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
-	tc, err := virtualTreeEntry(dc.Def, vc.RepoRevSpec)
+func serveDefVirtual(w http.ResponseWriter, r *http.Request, dc *sourcegraph.Def, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
+	tc, err := virtualTreeEntry(dc, vc.RepoRevSpec)
 	if err != nil {
 		return err
 	}

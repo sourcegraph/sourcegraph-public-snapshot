@@ -45,18 +45,18 @@ class BlobContainer extends Container {
 		Object.assign(state, props);
 
 		state.activeDef = props.activeDef || null;
-		let defData = props.activeDef && DefStore.defs.get(state.activeDef);
+		let activeDefData = props.activeDef && DefStore.defs.get(state.activeDef);
 
-		state.tree = props.activeDef && defData && !defData.Error ? defData.File.Path : props.tree;
+		state.path = props.activeDef && activeDefData ? activeDefData.File : props.path;
 
 		// fetch file content
-		state.file = state.tree && BlobStore.files.get(state.repo, state.rev, state.tree);
-		state.anns = state.tree && BlobStore.annotations.get(state.repo, state.rev, "", state.tree, 0, 0);
+		state.file = state.path && BlobStore.files.get(state.repo, state.rev, state.path);
+		state.anns = state.path && BlobStore.annotations.get(state.repo, state.rev, "", state.path, 0, 0);
 		state.annotations = BlobStore.annotations;
 
-		if (state.activeDef && state.file && defData) {
-			state.startLine = lineFromByte(state.file.ContentsString, defData.ByteStartPosition);
-			state.endLine = lineFromByte(state.file.ContentsString, defData.ByteEndPosition);
+		if (state.activeDef && state.file && activeDefData) {
+			state.startLine = lineFromByte(state.file.ContentsString, activeDefData.DefStart);
+			state.endLine = lineFromByte(state.file.ContentsString, activeDefData.DefEnd);
 		}
 
 		state.defs = DefStore.defs;
@@ -71,19 +71,19 @@ class BlobContainer extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.tree && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.tree !== nextState.tree)) {
-			Dispatcher.asyncDispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.tree));
-			Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.tree));
+		if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path)) {
+			Dispatcher.asyncDispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.path));
+			Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.path));
 		}
 		if (nextState.activeDef && prevState.activeDef !== nextState.activeDef) {
-			let defData = nextState.activeDef && DefStore.defs.get(nextState.activeDef);
-			if (defData && (!defData.File.Path || (defData.Data && defData.Data.Kind === "package"))) {
+			let activeDefData = nextState.activeDef && DefStore.defs.get(nextState.activeDef);
+			if (activeDefData && (!activeDefData.File || activeDefData.Kind === "package")) {
 				// The def's File field refers to a directory (e.g., in the
 				// case of a Go package). We can't show a dir in this view,
 				// so just redirect to the dir listing.
 				//
 				// TODO(sqs): Improve handling of this case.
-				window.location.href = defData.URL;
+				window.location.href = activeDefData.URL;
 				return;
 			}
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.activeDef));
@@ -111,11 +111,11 @@ class BlobContainer extends Container {
 	}
 
 	render() {
-		if (!this.state.tree) {
+		if (!this.state.path) {
 			return null;
 		}
 
-		let defData = this.state.activeDef && this.state.defs.get(this.state.activeDef);
+		let activeDefData = this.state.activeDef && this.state.defs.get(this.state.activeDef);
 		let highlightedDefData = this.state.highlightedDef && this.state.highlightedDef !== this.state.activeDef && this.state.defs.get(this.state.highlightedDef);
 
 		return (
@@ -126,7 +126,7 @@ class BlobContainer extends Container {
 							builds={this.state.builds}
 							repo={this.state.repo}
 							rev={this.state.rev}
-							path={this.state.tree} />
+							path={this.state.path} />
 						{this.state.file &&
 						<Blob
 							ref={(e) => this.setState({_codeListing: e})}
@@ -144,10 +144,10 @@ class BlobContainer extends Container {
 							dispatchSelections={true} />}
 					</div>
 					<FileMargin getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
-						{defData && !defData.Error &&
+						{activeDefData && !activeDefData.Error &&
 						<DefPopup
-							def={defData}
-							byte={defData.ByteStartPosition}
+							def={activeDefData}
+							byte={activeDefData.DefStart}
 							examples={this.state.examples}
 							annotations={this.state.annotations}
 							activeDef={this.state.activeDef}
@@ -184,7 +184,7 @@ class BlobContainer extends Container {
 BlobContainer.propTypes = {
 	repo: React.PropTypes.string,
 	rev: React.PropTypes.string,
-	tree: React.PropTypes.string,
+	path: React.PropTypes.string,
 	def: React.PropTypes.string,
 	startLine: React.PropTypes.number,
 	startCol: React.PropTypes.number,

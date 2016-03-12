@@ -9,7 +9,7 @@ import (
 )
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, _ := handlerutil.Client(r)
 
 	var opt sourcegraph.DefGetOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -17,12 +17,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	defSpec, err := getDefSpec(r)
-	if err != nil {
-		return err
-	}
-
-	def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: &opt})
+	def, _, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 
 func TestRepoTree(t *testing.T) {
 	c, mock := apptest.New()
-	const source = "Milton"
+	const source = "test.go"
 	const expectedHTML = source
 
 	mockRepoGet(mock, "my/repo")

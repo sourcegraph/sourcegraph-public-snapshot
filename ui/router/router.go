@@ -4,12 +4,9 @@ package router
 import (
 	"github.com/sourcegraph/mux"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 )
 
 const (
-	Definition = "def"
-
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 
 	UserContentUpload = "usercontent.upload"
@@ -23,20 +20,6 @@ func New(base *mux.Router) *mux.Router {
 	}
 
 	base.StrictSlash(true)
-
-	repoRevPath := `/` + routevar.RepoRev
-	repoRev := base.PathPrefix(repoRevPath).
-		PostMatchFunc(routevar.FixRepoRevVars).
-		BuildVarsFunc(routevar.PrepareRepoRevRouteVars).
-		Subrouter()
-
-	defPath := "/" + routevar.Def
-
-	repoRev.Path(defPath).
-		Methods("GET").
-		PostMatchFunc(routevar.FixDefUnitVars).
-		BuildVarsFunc(routevar.PrepareDefRouteVars).
-		Name(Definition)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").

@@ -21,42 +21,42 @@ describe("BlobContainer", () => {
 	};
 
 	it("should handle unavailable file", () => {
-		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aTree", null));
+		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aPath", null));
 		autotest(testdataUnavailableFile, `${__dirname}/testdata/BlobContainer-unavailableFile.json`,
-			<BlobContainer repo="aRepo" rev="aRev" tree="aTree" />
+			<BlobContainer repo="aRepo" rev="aRev" path="aPath" />
 		);
 	});
 
 	it("should handle available file and unavailable definition", () => {
-		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
+		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aPath", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", null));
 		autotest(testdataUnavailableDefinition, `${__dirname}/testdata/BlobContainer-unavailableDefinition.json`,
-			<BlobContainer repo="aRepo" rev="aRev" tree="aTree" activeDef="someDef" />
+			<BlobContainer repo="aRepo" rev="aRev" path="aPath" activeDef="someDef" />
 		);
 	});
 
 	it("should handle available file and available definition", () => {
-		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
+		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aPath", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {File: {Path: "aTree"}}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {File: {Path: "aPath"}}));
 		Dispatcher.directDispatch(DefStore, new DefActions.ExampleFetched("foo", {test: "exampleData"}));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/BlobContainer-availableDefinition.json`,
-			<BlobContainer repo="aRepo" rev="aRev" tree="aTree" activeDef="someDef" />
+			<BlobContainer repo="aRepo" rev="aRev" path="aPath" activeDef="someDef" />
 		);
 	});
 
 	it("should get filename from definition", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {File: {Path: "somePath"}, Data: {Kind: "someKind"}}));
+		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someDef", {File: "somePath", Kind: "someKind"}));
 		autotest(testdataFileFromDef, `${__dirname}/testdata/BlobContainer-fileFromDef.json`,
 			<BlobContainer repo="aRepo" rev="aRev" activeDef="someDef" />
 		);
 	});
 
 	it("should render def options menu", () => {
-		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aTree", exampleFile));
+		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aPath", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.SelectMultipleDefs(["firstDef", "secondDef"], 10, 20));
 		autotest(testdataDefOptions, `${__dirname}/testdata/BlobContainer-defOptions.json`,
-			<BlobContainer repo="aRepo" rev="aRev" tree="aTree" />
+			<BlobContainer repo="aRepo" rev="aRev" path="aPath" />
 		);
 	});
 });

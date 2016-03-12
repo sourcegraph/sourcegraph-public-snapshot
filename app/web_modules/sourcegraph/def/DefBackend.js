@@ -13,12 +13,10 @@ const DefBackend = {
 				let def = DefStore.defs.get(action.url);
 				if (def === null) {
 					DefBackend.xhr({
-						uri: `/.ui${action.url}`,
-						headers: {
-							"X-Definition-Data-Only": "yes",
-						},
+						uri: `/.api/repos${action.url}`,
 						json: {},
 					}, function(err, resp, body) {
+						if (resp.statusCode !== 200) body = {Error: true};
 						if (err) {
 							console.error(err);
 							return;
@@ -55,7 +53,7 @@ const DefBackend = {
 						uri: `/.api/repos${action.defURL}/.examples?PerPage=1&Page=${action.index + 1}`,
 						json: {},
 					}, function(err, resp, body) {
-						if (!err && (resp.statusCode !== 200 && resp.statusCode !== 201)) err = `HTTP ${resp.statusCode}`;
+						if (!err && (resp.statusCode !== 200)) err = `HTTP ${resp.statusCode}`;
 						if (err) {
 							console.error(err);
 							return;

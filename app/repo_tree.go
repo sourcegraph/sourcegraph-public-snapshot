@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
@@ -31,7 +30,7 @@ type repoTreeTemplate struct {
 	*handlerutil.TreeEntryCommon
 	tmpl.Common `json:"-"`
 
-	Definition      *payloads.DefCommon
+	Definition      *sourcegraph.Def
 	RobotsIndex     bool
 	Title           string
 	MetaDescription string
@@ -77,7 +76,7 @@ func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.Tr
 	})
 }
 
-func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, dc *payloads.DefCommon) error {
+func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon, dc *sourcegraph.Def) error {
 	var (
 		templateFile string
 		docs         string

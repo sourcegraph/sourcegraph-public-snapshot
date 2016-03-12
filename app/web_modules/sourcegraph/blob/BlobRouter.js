@@ -85,12 +85,12 @@ class BlobRouter extends Component {
 			return;
 		}
 
-		state.tree = null;
+		state.path = null;
 		state.def = null;
 		state.startLine = null;
 		state.endLine = null;
 		if (pathParts[1].startsWith("tree/")) {
-			state.tree = pathParts[1].slice("tree/".length);
+			state.path = pathParts[1].slice("tree/".length);
 
 			if (state.url.hash) {
 				if (state.url.hash.startsWith("#L")) {
@@ -166,9 +166,9 @@ class BlobRouter extends Component {
 	}
 
 	_filePath() {
-		let tree = this.state.tree || DefStore.defs.get(this.state.def).File.Path;
+		let path = this.state.path || DefStore.defs.get(this.state.def).File;
 		let revPart = this.state.rev ? `@${this.state.rev}` : "";
-		return `/${this.state.repo}${revPart}/.tree/${tree}`;
+		return `/${this.state.repo}${revPart}/.tree/${path}`;
 	}
 
 	render() {
@@ -176,7 +176,7 @@ class BlobRouter extends Component {
 			<BlobContainer
 				repo={this.state.repo}
 				rev={this.state.rev}
-				tree={this.state.tree}
+				path={this.state.path}
 				startLine={this.state.startLine || null}
 				startCol={this.state.startCol || null}
 				endLine={this.state.endLine || null}

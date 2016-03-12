@@ -357,7 +357,7 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 //
 // dc.Def.DefKey will be set to the def specification based on the
 // request when getting actual def fails.
-func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *payloads.DefCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
+func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, rc *RepoCommon, vc *RepoRevCommon, err error) {
 	defSpec := sourcegraph.DefSpec{
 		Repo:     vars["Repo"],
 		Unit:     vars["Unit"],
@@ -365,15 +365,13 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		Path:     router_util.EscapePath(vars["Path"]),
 	}
 	// If we fail to get a def, return the best known information to the caller.
-	dc = &payloads.DefCommon{
-		Def: &sourcegraph.Def{
-			Def: graph.Def{
-				DefKey: graph.DefKey{
-					Repo:     defSpec.Repo,
-					Unit:     defSpec.Unit,
-					UnitType: defSpec.UnitType,
-					Path:     defSpec.Path,
-				},
+	dc = &sourcegraph.Def{
+		Def: graph.Def{
+			DefKey: graph.DefKey{
+				Repo:     defSpec.Repo,
+				Unit:     defSpec.Unit,
+				UnitType: defSpec.UnitType,
+				Path:     defSpec.Path,
 			},
 		},
 	}
@@ -403,9 +401,9 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	}
 
 	// Insert additional available information into the def.
-	dc.Def.Def.DefKey.CommitID = defSpec.CommitID
+	dc.Def.DefKey.CommitID = defSpec.CommitID
 
-	def, err := cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
+	dc, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
 	if err != nil {
 		return dc, rc, vc, err
 	}
@@ -432,7 +430,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 			Rev:      vc.RepoRevSpec.Rev,
 			CommitID: vc.RepoRevSpec.Rev, // use originally requested rev, not already resolved last-srclib-version
 		},
-		Path: def.File,
+		Path: dc.File,
 	})
 	if err != nil {
 		return dc, rc, vc, err
@@ -440,15 +438,15 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	if defResolvedRev.CommitID != resolvedRev.CommitID {
 		return dc, rc, vc, &errcode.HTTPErr{
 			Status: http.StatusNotFound,
-			Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, def.File, resolvedRev.CommitID, vc.RepoRevSpec.Rev),
+			Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, dc.File, resolvedRev.CommitID, vc.RepoRevSpec.Rev),
 		}
 	}
 
 	// this can not be moved to svc/local, because HTML sanitation needs to
 	// happen on the local sourcegraph instance, not on an untrusted
 	// server
-	if len(def.Docs) > 0 {
-		defDoc := def.Docs[0]
+	if len(dc.Docs) > 0 {
+		defDoc := dc.Docs[0]
 		var docHTML string
 		switch defDoc.Format {
 		case "text/html":
@@ -460,18 +458,12 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 			doc.ToHTML(&buf, defDoc.Data, nil)
 			docHTML = buf.String()
 		}
-		def.DocHTML = htmlutil.SanitizeForPB(docHTML)
+		dc.DocHTML = htmlutil.SanitizeForPB(docHTML)
 	}
 
-	qualifiedName := sourcecode.DefQualifiedNameAndType(def, "scope")
+	qualifiedName := sourcecode.DefQualifiedNameAndType(dc, "scope")
 	qualifiedName = sourcecode.OverrideStyleViaRegexpFlags(qualifiedName)
-	dc = &payloads.DefCommon{
-		Def:               def,
-		QualifiedName:     htmlutil.SanitizeForPB(string(qualifiedName)),
-		URL:               router.Rel.URLToDefAtRev(def.DefKey, vc.RepoRevSpec.Rev).String(),
-		File:              sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: def.File},
-		ByteStartPosition: def.DefStart,
-		ByteEndPosition:   def.DefEnd,
-	}
+	dc.QualifiedName = htmlutil.SanitizeForPB(string(qualifiedName))
+	dc.URL = router.Rel.URLToDefAtRev(dc.DefKey, vc.RepoRevSpec.Rev).String()
 	return dc, rc, vc, nil
 }

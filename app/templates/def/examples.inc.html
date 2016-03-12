@@ -2,7 +2,7 @@
 <div>
 	{{if len .Examples}}
 		<ol class="examples list-unstyled" id="examples">
-			{{ $rev := .File.RepoRev.Rev }}
+			{{ $rev := .RepoRevSpec.Rev }}
 			{{ $defURL := urlToDefAtRev .Def.DefKey $rev }}
 			{{range .Examples}}
 				<li>

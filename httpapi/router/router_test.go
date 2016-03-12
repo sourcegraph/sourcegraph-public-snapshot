@@ -64,32 +64,32 @@ func TestRouter(t *testing.T) {
 
 		// Defs
 		{
-			path:          "/repos/repohost.com/foo@mycommitid/.defs/.t/.def/p",
+			path:          "/repos/repohost.com/foo@mycommitid/.t/.def/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "mycommitid"},
 		},
 		{
-			path:          "/repos/repohost.com/foo@myrev/mysubrev/.defs/.t/.def/p",
+			path:          "/repos/repohost.com/foo@myrev/mysubrev/.t/.def/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "myrev/mysubrev"},
 		},
 		{
-			path:          "/repos/repohost.com/foo/.defs/.t/.def/p",
+			path:          "/repos/repohost.com/foo/.t/.def/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
 		},
 		{
-			path:          "/repos/repohost.com/foo/.defs/.t/.def", // empty path
+			path:          "/repos/repohost.com/foo/.t/.def", // empty path
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
 		},
 		{
-			path:          "/repos/repohost.com/foo/.defs/.t/u1/.def/p",
+			path:          "/repos/repohost.com/foo/.t/u1/.def/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1", "Path": "p"},
 		},
 		{
-			path:          "/repos/repohost.com/foo/.defs/.t/u1/u2/.def/p1/p2",
+			path:          "/repos/repohost.com/foo/.t/u1/u2/.def/p1/p2",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
 		},

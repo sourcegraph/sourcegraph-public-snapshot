@@ -8,8 +8,8 @@
 	<meta name="twitter:card" content="summary" />
 	<meta name="twitter:site" content="@srcgraph" />
 {{with .Definition}}
-	<meta name="twitter:title" content="{{.Def.Fmt.DefKeyword}} {{.Def.Fmt.Name "scope"}}{{.Def.Fmt.NameAndTypeSeparator}}{{.Def.Fmt.Type "scope"}} (in {{.Def.Repo}}: {{.Def.File}})" />
-	<meta name="twitter:description" content="{{truncate 200 (textFromHTML .Def.DocHTML.HTML)}}" />
+	<meta name="twitter:title" content="{{.Fmt.DefKeyword}} {{.Fmt.Name "scope"}}{{.Fmt.NameAndTypeSeparator}}{{.Fmt.Type "scope"}} (in {{.Repo}}: {{.File}})" />
+	<meta name="twitter:description" content="{{truncate 200 (textFromHTML .DocHTML.HTML)}}" />
 {{else}}
 	<meta name="twitter:title" content="{{.EntrySpec.Path}} in {{.EntrySpec.RepoRev.URI}} at {{.EntrySpec.RepoRev.Rev}}" />
 {{end}}
@@ -19,14 +19,14 @@
 	{{with .Definition}}
 	<noscript>
 		<h2 class="def-title">
-			{{.Def.Fmt.DefKeyword}}
-			<a href="{{urlToDef .Def.Def.DefKey}}">{{defQualifiedName .Def "scope"}}</a>
+			{{.Fmt.DefKeyword}}
+			<a href="{{urlToDef .Def.DefKey}}">{{defQualifiedName . "scope"}}</a>
 		</h2>
 		<pre class="code">
-			{{overrideStyleViaRegexpFlags (defQualifiedNameAndType .Def "scope")}}
+			{{overrideStyleViaRegexpFlags (defQualifiedNameAndType . "scope")}}
 		</pre>
 		<p class="doc">
-			{{sanitizeHTML .Def.DocHTML.HTML}}
+			{{sanitizeHTML .DocHTML.HTML}}
 		</p>
 	</noscript>
 	{{end}}

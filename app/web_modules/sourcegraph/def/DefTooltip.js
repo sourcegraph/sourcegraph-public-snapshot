@@ -64,8 +64,8 @@ class DefTooltip extends Component {
 					<span className="error-message">{def.Error && "Definition not available"}</span>
 					<div className="title"><pre dangerouslySetInnerHTML={def.QualifiedName}></pre></div>
 					<div className="content">
-						{def.Data && def.Data.DocHTML && <div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def.Data && def.Data.DocHTML}></div>}
-						{def.Data && def.Data.Repo !== this.state.currentRepo && <span className="repo">{def.Data.Repo}</span>}
+						{def && def.DocHTML && <div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
+						{def && def.Repo !== this.state.currentRepo && <span className="repo">{def.Repo}</span>}
 					</div>
 				</div>
 			</div>

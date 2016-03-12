@@ -8,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -57,7 +56,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 
 	// Get actual list of examples
 	examples, err := cl.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
-		Def: dc.Def.DefSpec(),
+		Def: dc.DefSpec(),
 		Rev: vc.RepoRevSpec.Rev,
 		Opt: &opt,
 	})
@@ -73,7 +72,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "def/examples.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		payloads.DefCommon
+		sourcegraph.Def
 		Examples  []*sourcegraph.Example
 		PageLinks []pageLink
 		Options   sourcegraph.DefListExamplesOptions
@@ -81,7 +80,7 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}{
 		RepoCommon:    *rc,
 		RepoRevCommon: *vc,
-		DefCommon:     *dc,
+		Def:           *dc,
 		Examples:      examples.Examples,
 		PageLinks:     pg,
 		Options:       opt,
