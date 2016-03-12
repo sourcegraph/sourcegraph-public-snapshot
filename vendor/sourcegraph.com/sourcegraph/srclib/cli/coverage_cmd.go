@@ -126,6 +126,10 @@ func coverage(repo *Repo) (*cvg.Coverage, error) {
 
 		var data graph.Output
 		if err := readJSONFileFS(bdfs, rule.Target(), &data); err != nil {
+			if err == errEmptyJSONFile {
+				log.Printf("Warning: the JSON file is empty for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
+				continue
+			}
 			if os.IsNotExist(err) {
 				log.Printf("Warning: no build data for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
 				continue

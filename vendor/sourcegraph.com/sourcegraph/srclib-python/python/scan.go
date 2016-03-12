@@ -23,8 +23,7 @@ func Scan(srcdir string, repoURI string, repoSubdir string) ([]*unit.SourceUnit,
 	if err != nil {
 		return nil, err
 	}
-
-	cmd := exec.Command(filepath.Join(p, "python"), filepath.Join(p, "pydep-run.py"), "list", srcdir)
+	cmd := exec.Command(filepath.Join(p, "pydep-run.py"), "list", srcdir)
 
 	cmd.Stderr = os.Stderr
 	stdout, err := cmd.StdoutPipe()
@@ -95,7 +94,7 @@ func requirements(unitDir string) ([]*requirement, error) {
 	if err != nil {
 		return nil, err
 	}
-	depCmd := exec.Command(filepath.Join(p, "python"), filepath.Join(p, "pydep-run.py"), "dep", unitDir)
+	depCmd := exec.Command(filepath.Join(p, "pydep-run.py"), "dep", unitDir)
 	depCmd.Stderr = os.Stderr
 	b, err := depCmd.Output()
 	if err != nil {
@@ -128,7 +127,7 @@ func pythonSourceFiles(dir string, discoveredScripts map[string]bool) (files []s
 			_, found := discoveredScripts[file]
 
 			if !found {
-				files = append(files, filepath.ToSlash(file))
+				files = append(files, file)
 				discoveredScripts[file] = true
 			}
 		}

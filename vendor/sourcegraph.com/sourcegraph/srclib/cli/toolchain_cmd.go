@@ -259,6 +259,7 @@ var stdToolchains = toolchainMap{
 	"python":     toolchainInstaller{"Python (sourcegraph.com/sourcegraph/srclib-python)", installPythonToolchain},
 	"ruby":       toolchainInstaller{"Ruby (sourcegraph.com/sourcegraph/srclib-ruby)", installRubyToolchain},
 	"javascript": toolchainInstaller{"JavaScript (sourcegraph.com/sourcegraph/srclib-javascript)", installJavaScriptToolchain},
+	"typescript": toolchainInstaller{"TypeScript (sourcegraph.com/sourcegraph/srclib-typescript)", installTypeScriptToolchain},
 	"java":       toolchainInstaller{"Java (sourcegraph.com/sourcegraph/srclib-java)", installJavaToolchain},
 	"basic":      toolchainInstaller{"PHP, Objective-C (sourcegraph.com/sourcegraph/srclib-basic)", installBasicToolchain},
 	"csharp":     toolchainInstaller{"C# (sourcegraph.com/sourcegraph/srclib-csharp)", installCSharpToolchain},
@@ -399,6 +400,35 @@ func installJavaScriptToolchain() error {
 
 	log.Println("Downloading JavaScript toolchain in", srclibpathDir)
 	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func installTypeScriptToolchain() error {
+	const toolchain = "sourcegraph.com/sourcegraph/srclib-typescript"
+
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+
+	if _, err := exec.LookPath("node"); isExecErrNotFound(err) {
+		return errors.New("no `node` in PATH (do you have Node.js installed properly?)")
+	}
+	if _, err := exec.LookPath("npm"); isExecErrNotFound(err) {
+		return fmt.Errorf("no `npm` in PATH; TypeScript toolchain requires npm")
+	}
+
+	if _, err := exec.LookPath("tsc"); isExecErrNotFound(err) {
+		return fmt.Errorf("no `tsc` in PATH; TypeScript toolchain requires tsc")
+	}
+
+	log.Println("Downloading TypeScript toolchain in", srclibpathDir)
+	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+		return err
+	}
+
+	log.Println("Building TypeScript toolchain program")
+	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
 		return err
 	}
 

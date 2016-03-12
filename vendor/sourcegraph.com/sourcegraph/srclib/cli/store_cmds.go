@@ -269,6 +269,10 @@ func Import(buildDataFS vfs.FileSystem, stor interface{}, opt ImportOpt) error {
 			case *grapher.GraphUnitRule:
 				var data graph.Output
 				if err := readJSONFileFS(buildDataFS, rule.Target(), &data); err != nil {
+					if err == errEmptyJSONFile {
+						log.Printf("Warning: the JSON file is empty for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
+						return nil
+					}
 					if os.IsNotExist(err) {
 						log.Printf("Warning: no build data for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
 						return nil

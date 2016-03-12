@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"sourcegraph.com/sourcegraph/srclib/toolchain"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
@@ -31,60 +33,51 @@ func NewGraphContext(unit *unit.SourceUnit) *GraphContext {
 	return &g
 }
 
-// Graphs the Python source unit. This assumes that the source unit has already
+// Graphs the Python source unit. If run outside of a Docker container, this assumes that the source unit has already
 // been installed (via pip or `python setup.py install`).
 func (c *GraphContext) Graph() (*graph.Output, error) {
+	programMode := os.Getenv("IN_DOCKER_CONTAINER") == ""
 	pipBin := "pip"
 	pythonBin := "python"
 
-	dir, err := getProgramPath()
-	if err != nil {
-		return nil, err
-	}
-
-	tempDir, err := ioutil.TempDir("", "srclib-python-graph")
-	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(tempDir)
-	envDir := filepath.Join(tempDir, ".env")
-
-	// Use binaries from our virtual env.
-	pipBin = filepath.Join(dir, ".env", getEnvBinDir(), "pip")
-	pythonBin = filepath.Join(dir, ".env", getEnvBinDir(), "python")
-
-	if _, err := os.Stat(filepath.Join(envDir)); os.IsNotExist(err) {
-		log.Println("Creating virtual env")
-		// We don't have virtual env for this SourceUnit, create one.
-
-		cmd := exec.Command(filepath.Join(dir, ".env", getEnvBinDir(), "virtualenv"), envDir)
-		if err := runCmdStderr(cmd); err != nil {
+	if programMode {
+		tc, err := toolchain.Lookup("sourcegraph.com/sourcegraph/srclib-python")
+		if err != nil {
 			return nil, err
 		}
 
-		// using python and pip from temporary env directory
-		pipBin = filepath.Join(envDir, getEnvBinDir(), "pip")
-		pythonBin = filepath.Join(envDir, getEnvBinDir(), "python")
-
-		log.Println("Installing srclib-python requirements")
-		// Install our dependencies.
-		// Todo(MaikuMori): Use symlinks from toolchains virtualenv to project virtual env.
-		// NOTE: If SourceUnit requirements overwrite our requirements, things will fail.
-		// 			 We could install them last, but then we would have to do this before each
-		//			 graphing which noticably increases graphing time (since our deps are always
-		//       downloaded by pip due to dependency on git commit not actual package version).
-		requirementFile := filepath.Join(dir, "requirements.txt")
-		if err := runCmdStderr(exec.Command(pipBin,
-			"--isolated",
-			"--disable-pip-version-check",
-			"install",
-			"-r",
-			requirementFile)); err != nil {
+		tempDir, err := ioutil.TempDir("", "srclib-python-graph")
+		if err != nil {
 			return nil, err
 		}
-		log.Println("Updating srclib-python project in editable mode")
-		if err := runCmdStderr(exec.Command(pipBin, "install", "-e", dir)); err != nil {
-			return nil, err
+		defer os.RemoveAll(tempDir)
+		envName := fmt.Sprintf("%s-%s-env", getHash(c.Unit.Dir), url.QueryEscape(c.Unit.Name))
+		envDir := filepath.Join(tempDir, envName)
+
+		// Use binaries from our virutal env.
+		pipBin = filepath.Join(envDir, "bin", "pip")
+		pythonBin = filepath.Join(envDir, "bin", "python")
+
+		if _, err := os.Stat(filepath.Join(envDir)); os.IsNotExist(err) {
+			// We don't have virtual env for this SourceUnit, create one.
+			tcVENVBinPath := filepath.Join(tc.Dir, ".env", "bin")
+			cmd := exec.Command(filepath.Join(tcVENVBinPath, "virtualenv"), envDir)
+			if err := runCmdStderr(cmd); err != nil {
+				return nil, err
+			}
+			// Install our dependencies.
+			// Todo(MaikuMori): Use symlinks from toolchains virtualenv to project virtual env.
+			// NOTE: If SourceUnit requirements overwrite our requirements, things will fail.
+			// 			 We could install them last, but then we would have to do this before each
+			//			 graphing which noticably increases graphing time (since our deps are always
+			//       downloaded by pip due to dependency on git commit not actual package version).
+			requirementFile := filepath.Join(tc.Dir, "requirements.txt")
+			if err := runCmdStderr(exec.Command(pipBin, "install", "-r", requirementFile)); err != nil {
+				return nil, err
+			}
+			if err := runCmdStderr(exec.Command(pipBin, "install", "-e", tc.Dir)); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -95,18 +88,10 @@ func (c *GraphContext) Graph() (*graph.Output, error) {
 		return nil, err
 	}
 	if _, err := os.Stat(filepath.Join(c.Unit.Dir, "setup.py")); !os.IsNotExist(err) {
-		log.Println("Re-installing unit")
-		runCmdLogError(exec.Command(pipBin,
-			"--isolated",
-			"--disable-pip-version-check",
-			"install",
-			"-I",
-			c.Unit.Dir))
+		runCmdLogError(exec.Command(pipBin, "install", "-I", c.Unit.Dir))
 	}
-	log.Println("Installing unit requirements")
 	installPipRequirements(pipBin, requirementFiles)
 
-	log.Println("Building graph")
 	cmd := exec.Command(pythonBin, "-m", "grapher.graph", "--verbose", "--dir", c.Unit.Dir, "--files")
 	cmd.Args = append(cmd.Args, c.Unit.Files...)
 	cmd.Stderr = os.Stderr
@@ -168,7 +153,7 @@ func (c *GraphContext) transformDef(rawDef *RawDef) *graph.Def {
 		TreePath: string(rawDef.Path), // TODO: make this consistent w/ old way
 		Kind:     jediKindToDefKind[rawDef.Kind],
 		Name:     rawDef.Name,
-		File:     filepath.ToSlash(rawDef.File),
+		File:     rawDef.File,
 		DefStart: rawDef.DefStart,
 		DefEnd:   rawDef.DefEnd,
 		Exported: rawDef.Exported,
@@ -191,13 +176,13 @@ func (c *GraphContext) transformRef(rawRef *RawRef) (*graph.Ref, error) {
 		DefRepo:     defUnit.Repo,
 		DefUnitType: defUnit.Type,
 		DefUnit:     defUnit.Name,
-		DefPath:     filepath.ToSlash(defPath),
+		DefPath:     defPath,
 
 		Repo:     c.Unit.Repo,
 		Unit:     c.Unit.Name,
 		UnitType: c.Unit.Type,
 
-		File:  filepath.ToSlash(rawRef.File),
+		File:  rawRef.File,
 		Start: rawRef.Start,
 		End:   rawRef.End,
 		Def:   rawRef.Def,
@@ -286,18 +271,13 @@ func (c *GraphContext) inferSourceUnitFromFile(file string, reqs []*requirement)
 		return foundReq.SourceUnit(), nil
 	}
 
-	// Case 3: in std lib (.env/lib optionally followed by python..)
+	// Case 3: in std lib
 	pythonDirIdx := -1
-	prev := ``
 	for i, cmp := range fileCmps {
-		if cmp == "lib" && prev == ".env" {
-			pythonDirIdx = i
-			break
-		} else if strings.EqualFold(cmp, "lib") && strings.HasPrefix(strings.ToLower(prev), "python") {
+		if strings.HasPrefix(cmp, "python") {
 			pythonDirIdx = i
 			break
 		}
-		prev = cmp
 	}
 	if pythonDirIdx != -1 {
 		return stdLibPkg.SourceUnit(), nil
