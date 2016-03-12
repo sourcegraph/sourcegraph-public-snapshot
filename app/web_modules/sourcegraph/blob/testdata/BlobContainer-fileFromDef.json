@@ -22,7 +22,7 @@
 												},
 												"repo": "aRepo",
 												"rev": "aRev",
-												"tree": "somePath"
+												"path": "somePath"
 											}
 										}
 									]

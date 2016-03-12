@@ -22,17 +22,7 @@
 												},
 												"repo": "aRepo",
 												"rev": "aRev",
-												"tree": "aTree",
-												"file": {
-													"Entry": {
-														"ContentsString": "hello\nworld"
-													},
-													"EntrySpec": {
-														"RepoRev": {
-															"CommitID": "123abc"
-														}
-													}
-												}
+												"path": "aTree"
 											}
 										},
 										{

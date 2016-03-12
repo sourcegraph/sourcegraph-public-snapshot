@@ -19,22 +19,20 @@ class BlobToolbar extends Component {
 				<a className="path-component" href={basePath}>{repoSegs[repoSegs.length-1]}</a>
 			</span>,
 		];
-		this.state.tree.split("/").forEach((seg, i) => {
+		this.state.path.split("/").forEach((seg, i) => {
 			basePath += `/${seg}`;
 			breadcrumb.push(<span key={i} className="path-component"> / <a href={basePath}>{seg}</a></span>);
 		});
 
 		return (
 			<div className="code-file-toolbar" ref="toolbar">
-				<div className="file-breadcrumb">
-					<i className={this.state.file ? "fa fa-file" : "fa fa-spinner fa-spin"} />{breadcrumb}
-				</div>
+				<div className="file-breadcrumb">{breadcrumb}</div>
 				<div className="actions">
 					<BuildIndicator repo={this.state.repo} commitID={this.state.rev} builds={this.state.builds} />
 
 					<RevSwitcherContainer repo={this.state.repo}
 						rev={this.state.rev}
-						path={this.state.tree}
+						path={this.state.path}
 						route="tree"
 						alignRight={true} />
 				</div>
@@ -46,6 +44,7 @@ class BlobToolbar extends Component {
 BlobToolbar.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
+	path: React.PropTypes.string.isRequired,
 
 	// builds is BuildStore.builds.
 	builds: React.PropTypes.object.isRequired,

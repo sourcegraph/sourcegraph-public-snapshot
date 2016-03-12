@@ -126,8 +126,7 @@ class BlobContainer extends Container {
 							builds={this.state.builds}
 							repo={this.state.repo}
 							rev={this.state.rev}
-							tree={this.state.tree}
-							file={this.state.file} />
+							path={this.state.tree} />
 						{this.state.file &&
 						<Blob
 							ref={(e) => this.setState({_codeListing: e})}
