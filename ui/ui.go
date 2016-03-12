@@ -60,7 +60,6 @@ func NewHandler(r *mux.Router) http.Handler {
 	}
 
 	r.Get(ui_router.Definition).Handler(handler(serveDef))
-	r.Get(ui_router.DefExamples).Handler(handler(serveDefExamples))
 
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(handler(serveAppdashUploadPageLoad))
 

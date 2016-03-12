@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	Definition  = "def"
-	DefExamples = "def.examples"
+	Definition = "def"
 
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 
@@ -38,15 +37,6 @@ func New(base *mux.Router) *mux.Router {
 		PostMatchFunc(routevar.FixDefUnitVars).
 		BuildVarsFunc(routevar.PrepareDefRouteVars).
 		Name(Definition)
-
-	def := repoRev.PathPrefix(defPath).
-		PostMatchFunc(routevar.FixDefUnitVars).
-		BuildVarsFunc(routevar.PrepareDefRouteVars).
-		Subrouter()
-
-	def.Path("/.examples").
-		Methods("GET").
-		Name(DefExamples)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").

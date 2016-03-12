@@ -29,8 +29,8 @@ describe("DefBackend", () => {
 	describe("should handle WantExample", () => {
 		it("with result available", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.ui/someURL/.examples?PerPage=1&Page=43");
-				callback(null, null, [{test: "exampleData"}]);
+				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=1&Page=43");
+				callback(null, {statusCode: 200}, {Examples: [{test: "exampleData"}]});
 			};
 			expect(Dispatcher.catchDispatched(() => {
 				Dispatcher.directDispatch(DefBackend, new DefActions.WantExample("/someURL", 42));
@@ -39,8 +39,8 @@ describe("DefBackend", () => {
 
 		it("with no result available", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.ui/someURL/.examples?PerPage=1&Page=43");
-				callback(null, null, null);
+				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=1&Page=43");
+				callback(null, {statusCode: 200}, null);
 			};
 			expect(Dispatcher.catchDispatched(() => {
 				Dispatcher.directDispatch(DefBackend, new DefActions.WantExample("/someURL", 42));
