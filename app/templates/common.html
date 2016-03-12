@@ -8,40 +8,6 @@
 </div>
 {{end}}
 
-{{define "KeyboardShortcutsHelp"}}
-<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true" id="keyboard-shortcuts-help">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">Keyboard shortcuts</h4>
-			</div>
-			<div class="modal-body">
-				<table>
-					{{if not appconf.DisableSearch}}
-						<tr><th><span class="shortcut-key">/</span></th><td>focus search field</td></tr>
-						<tr><th>
-								<span class="shortcut-key">o</span> or <span class="shortcut-key">Enter</span></th><td>
-								open the selected result
-								(use <span class="shortcut-key">TAB</span>,<span class="shortcut-key">&uarr;</span>,<span class="shortcut-key">&darr;</span> to
-								select)
-						</td></tr>
-						<tr><td colspan="2"><hr></td></tr>
-					{{end}}
-					<tr><th><span class="shortcut-key">g</span><span class="shortcut-key">r</span></th><td>go to repository</td></tr>
-					<tr><th><span class="shortcut-key">g</span><span class="shortcut-key">b</span></th><td>go to repository builds</td></tr>
-					<tr><th><span class="shortcut-key">t</span></th><td>fuzzy search files in this repository</td></tr>
-					<tr><td colspan="2"><hr></td></tr>
-					<tr><th><span class="shortcut-key">esc</span></th><td>close token popup box</td></tr>
-					<tr><th><span class="shortcut-key">g</span><span class="shortcut-key">h</span></th><td>go to homepage</td></tr>
-					<tr><th><span class="shortcut-key">?</span></th><td>show this help screen</td></tr>
-				</table>
-			</div>
-		</div>
-	</div>
-</div>
-{{end}}
-
 {{define "Breadcrumb"}}<!-- expects []*BreadcrumbLink --><!--
 	-->{{range $i, $link := .}}<!--
 		-->{{if gt $i 0}}<!--
