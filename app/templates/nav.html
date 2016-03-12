@@ -15,19 +15,10 @@
 			{{if appconf.CustomNavLayout}}
 				{{appconf.CustomNavLayout}}
 			{{end}}
-
-			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-nav-collapse">
-				<span class="sr-only">Toggle navigation</span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
 		</div>
 
-		<div class="collapse navbar-collapse" id="top-nav-collapse">
-
-			<ul class="nav navbar-nav navbar-right">
-				{{if authFlags.HasUserAccounts}}
+		<ul class="nav navbar-nav navbar-right">
+			{{if authFlags.HasUserAccounts}}
 				{{if .CurrentUser}}
 					<li class="current-user name">
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
@@ -36,20 +27,19 @@
 					</li>
 					<li class="sign-out">
 						<form action="{{urlTo "log-out"}}" method="POST" class="navbar-form">
-							<button class="btn btn-link">
+							<button class="btn btn-link" title="Sign out">
 								<i class="octicon octicon-sign-out"></i>
-								<span class="hidden-sm hidden-md hidden-lg">Sign out</span>
 							</button>
 							<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 						</form>
 					</li>
 				{{else}}
 					{{if authFlags.HasSignup}}
-					<li class="sign-up">
-						<a class="sign-up" href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">
-							Sign up
-						</a>
-					</li>
+						<li class="sign-up">
+							<a class="sign-up" href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">
+								Sign up
+							</a>
+						</li>
 					{{end}}
 					<li class="sign-in">
 						<a class="sign-in" href="{{urlToWithReturnTo "log-in" .ReturnTo}}">
@@ -57,13 +47,12 @@
 						</a>
 					</li>
 				{{end}}
-				{{end}}
-			</ul>
-
-			{{if (showSearchForm .Common)}}
-				<div id="SearchBar" class="search-bar"></div>
 			{{end}}
-		</div>
+		</ul>
+
+		{{if (showSearchForm .Common)}}
+			<div id="SearchBar" class="search-bar"></div>
+		{{end}}
 	</div>
 </nav>
 {{end}}

@@ -26,6 +26,10 @@
 			}
 		}
 	}
+
+	@media (max-width: $grid-float-breakpoint) {
+		clear: both;
+	}
 }
 
 .search-results {

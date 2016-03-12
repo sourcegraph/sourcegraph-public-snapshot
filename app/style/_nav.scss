@@ -79,8 +79,16 @@ header.page-header {
 		font-weight: bold;
 	}
 
+	.navbar-header {
+		float: left !important;
+	}
+
 	ul.nav {
+		float: right !important;
 		li {
+			// Don't stack on small screens.
+			float: left !important;
+
 			a, .btn-link {
 				padding-left: 10px;
 				padding-right: 10px;
