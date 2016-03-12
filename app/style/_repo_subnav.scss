@@ -32,6 +32,7 @@
 
 	ul.navbar-nav {
 		float: none;
+		margin: 0 !important;
 		> li > a {
 			color: $subnav-color;
 		}
@@ -103,19 +104,11 @@
 			border-bottom-color: $subnav-active-color !important;
 			font-weight: bold;
 			&, i { color: $subnav-active-color; }
-			@media (max-width: $grid-float-breakpoint) {
-				border-bottom: 0;
-				background-color: #efefef;
-			}
 		}
 		&:hover {
 
 			> a {
 				border-bottom-color: $subnav-active-color;
-				@media (max-width: $grid-float-breakpoint) {
-					border-bottom: 0;
-					background-color: #efefef;
-				}
 			}
 		}
 

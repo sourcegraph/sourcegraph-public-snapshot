@@ -79,16 +79,8 @@ header.page-header {
 		font-weight: bold;
 	}
 
-	.navbar-header {
-		float: left !important;
-	}
-
 	ul.nav {
-		float: right !important;
 		li {
-			// Don't stack on small screens.
-			float: left !important;
-
 			a, .btn-link {
 				padding-left: 10px;
 				padding-right: 10px;
@@ -149,5 +141,18 @@ header.page-header {
 		height: 10px;
 		border-radius: 50%;
 		background-color: $nav-icon-badge-color;
+	}
+}
+
+// Don't collapse or stack on small screens.
+.no-collapse-nav {
+	ul.navbar-right {
+		float: right !important;
+	}
+	.navbar-header {
+		float: left !important;
+	}
+	li {
+			float: left !important;
 	}
 }

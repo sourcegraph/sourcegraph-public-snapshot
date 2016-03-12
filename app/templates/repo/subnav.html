@@ -1,41 +1,33 @@
 {{define "RepoSubnav"}}
-<nav class="navbar navbar-default subnav repo-subnav" id="repo-subnav">
+<nav class="navbar navbar-default subnav repo-subnav no-collapse-nav" id="repo-subnav">
 	<div class="container">
 		<div class="navbar-header">
 			<span class="navbar-brand repo">
 				{{template "RepoIcon" .Repo}}
 				{{template "RepoLink" (repoLink .Repo.URI)}}
 			</span>
-			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#repo-nav-collapse">
-				<span class="sr-only">Toggle navigation</span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
 		</div>
-		<div class="collapse navbar-collapse" id="repo-nav-collapse">
-			<ul class="nav navbar-nav repo-subnav">
-				<li class="{{if or (eq .CurrentRoute "repo") (eq .CurrentRoute "repo.tree")}}active{{end}}">
-					<a href="{{urlToRepo .Repo.URI}}">
-						<i class="octicon octicon-code"></i><span class="txt">Code</span>
+		<ul class="nav navbar-nav repo-subnav">
+			<li class="{{if or (eq .CurrentRoute "repo") (eq .CurrentRoute "repo.tree")}}active{{end}}">
+				<a href="{{urlToRepo .Repo.URI}}">
+					<i class="octicon octicon-code"></i><span class="txt">Code</span>
+				</a>
+			</li>
+
+			{{range (orderedRepoEnabledFrames .Repo .RepoConfig)}}
+				<li {{if activeRepoApp $.CurrentURI $.Repo.URI .ID}}class="active"{{end}}>
+					<a href="{{urlToRepoApp $.Repo.URI .ID}}">
+						<i class="octicon octicon-{{.Icon}}"></i><span class="txt">{{.Title}}</span>
 					</a>
 				</li>
+			{{end}}
 
-				{{range (orderedRepoEnabledFrames .Repo .RepoConfig)}}
-					<li {{if activeRepoApp $.CurrentURI $.Repo.URI .ID}}class="active"{{end}}>
-						<a href="{{urlToRepoApp $.Repo.URI .ID}}">
-							<i class="octicon octicon-{{.Icon}}"></i><span class="txt">{{.Title}}</span>
-						</a>
-					</li>
-				{{end}}
-
-				<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}">
-					<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">
-						<i class="fa fa-check-square-o"></i><span class="txt">Builds</span>
-					</a>
-				</li>
-			</ul>
-		</div>
+			<li class="{{if eq .CurrentRoute "repo.builds"}}active {{end}}">
+				<a href="{{urlToRepoSubroute "repo.builds" .Repo.URI}}">
+					<i class="fa fa-check-square-o"></i><span class="txt">Builds</span>
+				</a>
+			</li>
+		</ul>
 	</div>
 </nav>
 {{end}}
