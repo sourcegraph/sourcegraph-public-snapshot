@@ -5,11 +5,6 @@ if (document.head.dataset.publicRavenDsn) {
 	require("raven-js/plugins/native.js");
 	require("raven-js/plugins/console.js");
 
-	// When loading plugins, load the libs they modify before loading
-	// the plugins, or else the plugins can't take effect.
-	require("jquery");
-	require("raven-js/plugins/jquery.js");
-
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
 	let opt = {
 		// Will cause a deprecation warning, but the demise of `ignoreErrors` is still under discussion.

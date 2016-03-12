@@ -54,15 +54,6 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	// Delete the "_" cache-busting query param that jQuery adds when
-	// the "cache" $.ajaxSettings entry is false. We use this to
-	// immediately return the new build when the user triggers a new
-	// build to be created. Otherwise the old build (or lack thereof)
-	// would be cached for our default cache time.
-	q := r.URL.Query()
-	delete(q, "_")
-	r.URL.RawQuery = q.Encode()
-
 	var opt sourcegraph.BuildListOptions
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
 	if err != nil {
