@@ -2,22 +2,46 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "row build-container",
+			"className": "build-container",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"className": "col-md-3 col-lg-2",
+						"className": "row",
 						"children": [
 							{
-								"type": "BuildHeader",
+								"type": "div",
 								"props": {
-									"build": {
-										"ID": 123
-									},
-									"commit": {
-										"ID": "abc"
-									}
+									"className": "col-md-3 col-lg-2",
+									"children": [
+										{
+											"type": "BuildHeader",
+											"props": {
+												"build": {
+													"ID": 123
+												},
+												"commit": {
+													"ID": "abc"
+												}
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "col-md-9 col-lg-10",
+									"children": [
+										{
+											"type": "Commit",
+											"props": {
+												"commit": {
+													"ID": "abc"
+												}
+											}
+										}
+									]
 								}
 							}
 						]
@@ -26,14 +50,12 @@
 				{
 					"type": "div",
 					"props": {
-						"className": "col-md-9 col-lg-10",
+						"className": "row",
 						"children": [
 							{
-								"type": "Commit",
+								"type": "div",
 								"props": {
-									"commit": {
-										"ID": "abc"
-									}
+									"className": "col-md-12"
 								}
 							}
 						]

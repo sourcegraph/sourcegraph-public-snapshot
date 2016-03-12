@@ -6,7 +6,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import "./BuildBackend"; // for side effects
 import BuildHeader from "sourcegraph/build/BuildHeader";
-import BuildNav from "sourcegraph/build/BuildNav";
 import BuildStore from "sourcegraph/build/BuildStore";
 import BuildTasks from "sourcegraph/build/BuildTasks";
 
@@ -74,15 +73,20 @@ class BuildContainer extends Container {
 		}
 
 		return (
-			<div className="row build-container">
+			<div className="build-container">
+				<div className="row">
 					<div className="col-md-3 col-lg-2">
 						<BuildHeader build={build} commit={this.state.commit} />
-						{tasks ? <BuildNav build={build} tasks={tasks} /> : null}
 					</div>
 					<div className="col-md-9 col-lg-10">
 						<Commit commit={this.state.commit} />
+					</div>
+				</div>
+				<div className="row">
+					<div className="col-md-12">
 						{tasks ? <BuildTasks tasks={tasks} logs={this.state.logs} /> : null}
 					</div>
+				</div>
 			</div>
 		);
 	}

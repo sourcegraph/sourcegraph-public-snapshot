@@ -20,9 +20,7 @@
 											"type": "a",
 											"props": {
 												"role": "button",
-												"data-toggle": "collapse",
 												"data-parent": "task-undefined-subtasks",
-												"href": "T456-log-body",
 												"children": [
 													{
 														"type": "span",
