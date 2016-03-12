@@ -352,7 +352,7 @@ func Main() {
 		}
 		found := false
 		for _, c := range channels {
-			if c.Name == "e2etest" {
+			if c.Name == channelName {
 				found = true
 				testSuite.slackChannel = c
 			}
