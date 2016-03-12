@@ -28,6 +28,65 @@ import (
 	"sourcegraph.com/sourcegraph/go-selenium"
 )
 
+// T is passed as context into all tests. It provides generic helper methods to
+// make life during testing easier.
+type T struct {
+	selenium.WebDriverT
+
+	// Log is where all errors, warnings, etc. should be written to.
+	Log *log.Logger
+
+	// Target is the target Sourcegraph server to test, e.g. https://sourcegraph.com
+	Target string
+
+	// WebDriver is the underlying selenium web driver. Useful if you want to
+	// handle errors yourself (the embedded WebDriverT handles them for you by
+	// calling Fatalf).
+	WebDriver selenium.WebDriver
+
+	tr *testRunner
+}
+
+// Fatalf implements the selenium.TestingT interface. Because unlike the testing
+// package we are a single process, we instead cause a panic (which is caught
+// by the test executor).
+func (t *T) Fatalf(fmtStr string, v ...interface{}) {
+	panic(fmt.Sprintf(fmtStr, v...))
+}
+
+// Endpoint returns an absolute URL given one relative to the target instance
+// root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
+// will return "https://sourcegraph.com/login"
+func (t *T) Endpoint(e string) string {
+	u, err := url.Parse(t.Target)
+	if err != nil {
+		panic(err) // Target is validated in main, always.
+	}
+	u.Path = path.Join(u.Path, e)
+	return u.String()
+}
+
+// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
+// server's ID key, and thus has 100% unrestricted access. Use with caution!
+func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
+	target, err := url.Parse(t.Target)
+	if err != nil {
+		panic(err) // Target is validated in main, always.
+	}
+
+	// Create context with gRPC endpoint and idKey credentials.
+	ctx := context.TODO()
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, target)
+	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
+
+	// Create client.
+	c, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		t.Fatalf("could not create gRPC client:", c)
+	}
+	return ctx, c
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,
@@ -89,39 +148,6 @@ func (t *testRunner) WebDriverT() selenium.WebDriverT {
 // by the test executor).
 func (t *testRunner) Fatalf(fmtStr string, v ...interface{}) {
 	panic(fmt.Sprintf(fmtStr, v...))
-}
-
-// Endpoint returns an absolute URL given one relative to the target instance
-// root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
-// will return "https://sourcegraph.com/login"
-func (t *testRunner) Endpoint(e string) string {
-	u, err := url.Parse(t.Target)
-	if err != nil {
-		panic(err) // Target is validated in main, always.
-	}
-	u.Path = path.Join(u.Path, e)
-	return u.String()
-}
-
-// GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
-// server's ID key, and thus has 100% unrestricted access. Use with caution!
-func (t *testRunner) GRPCClient() (context.Context, *sourcegraph.Client) {
-	target, err := url.Parse(t.Target)
-	if err != nil {
-		panic(err) // Target is validated in main, always.
-	}
-
-	// Create context with gRPC endpoint and idKey credentials.
-	ctx := context.TODO()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, target)
-	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.idKey, "internal:e2etest"))
-
-	// Create client.
-	c, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		t.Fatalf("could not create gRPC client:", c)
-	}
-	return ctx, c
 }
 
 func (t *testRunner) slackMessage(msg, quoted string) {
@@ -210,7 +236,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	if total == success {
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
-			t.slackMessage(fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.Target), "")
+			t.slackMessage(fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
 		}
 	} else {
 		// Only send @channel on the first failure, not all consecutive ones (that
@@ -221,7 +247,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			atChannel = " @channel"
 		}
 		t.slackMessage(
-			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, total-success, total, t.Target),
+			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, total-success, total, t.target),
 			t.slackLogBuffer.String(),
 		)
 
@@ -309,8 +335,8 @@ func Main() {
 	tr.executor = u.String()
 
 	// Determine the target Sourcegraph instance to test against.
-	tr.log = os.Getenv("TARGET")
-	if tr.log == "" {
+	tr.target = os.Getenv("TARGET")
+	if tr.target == "" {
 		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
 	}
 
