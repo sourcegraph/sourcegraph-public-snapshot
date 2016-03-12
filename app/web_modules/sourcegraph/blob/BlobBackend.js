@@ -1,9 +1,8 @@
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {authHeaders} from "sourcegraph/util/auth";
 import {sortAnns} from "sourcegraph/blob/Annotations";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "xhr";
+import defaultXhr from "sourcegraph/util/xhr";
 
 const BlobBackend = {
 	xhr: defaultXhr,
@@ -43,7 +42,6 @@ const BlobBackend = {
 					BlobBackend.xhr({
 						uri: `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.Rev=${action.rev}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`,
 						json: {},
-						headers: authHeaders(),
 					}, function(err, resp, body) {
 						if (err) {
 							console.error(err);

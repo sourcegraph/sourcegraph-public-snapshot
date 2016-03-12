@@ -1,7 +1,7 @@
 import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "xhr";
+import defaultXhr from "sourcegraph/util/xhr";
 
 const DefBackend = {
 	xhr: defaultXhr,

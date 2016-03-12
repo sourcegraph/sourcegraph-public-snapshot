@@ -1,7 +1,7 @@
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "xhr";
+import defaultXhr from "sourcegraph/util/xhr";
 
 const SearchBackend = {
 	xhr: defaultXhr,
