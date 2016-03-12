@@ -1,4 +1,3 @@
-let $ = require("jquery");
 let React = require("react");
 let ReactDOM = require("react-dom");
 
@@ -17,37 +16,37 @@ let SearchBar = require("sourcegraph/search/SearchBar").default;
 document.addEventListener("DOMContentLoaded", () => {
 	let el;
 
-	el = $("#DashboardContainer");
-	if (el.length > 0) {
+	el = document.getElementById("DashboardContainer");
+	if (el) {
 		ReactDOM.render(
 			<DashboardContainer />,
-			el[0]
+			el
 		);
 	}
 
-	el = $("#SearchBar");
-	if (el.length > 0) {
+	el = document.getElementById("SearchBar");
+	if (el) {
 		ReactDOM.render(
 			<LocationAdaptor component={SearchBar} />,
-			el[0]
+			el
 		);
 	}
 
-	el = $("#BlobContainer");
-	if (el.length > 0) {
+	el = document.getElementById("BlobContainer");
+	if (el) {
 		ReactDOM.render(
 			<LocationAdaptor component={BlobRouter} />,
-			el[0]
+			el
 		);
 	}
 
-	el = $("#BuildContainer");
-	if (el.length > 0) {
+	el = document.getElementById("BuildContainer");
+	if (el) {
 		ReactDOM.render(
 			<BuildContainer
-				build={JSON.parse(el[0].dataset.build)}
-				commit={JSON.parse(el[0].dataset.commit)} />,
-			el[0]
+				build={JSON.parse(el.dataset.build)}
+				commit={JSON.parse(el.dataset.commit)} />,
+			el
 		);
 	}
 
