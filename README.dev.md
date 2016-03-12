@@ -93,7 +93,7 @@ Learn more at [README.tests.md](README.tests.md).
 
 # E2E tests
 
-End-to-end tests are ran constantly against sourcegraph.com, and as part of CI.
+End-to-end tests are run constantly against sourcegraph.com, and as part of CI.
 You may additionally run them locally on your machine:
 
 - Run Selenium server via Docker:

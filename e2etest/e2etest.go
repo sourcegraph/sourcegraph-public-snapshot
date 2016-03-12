@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"os/user"
@@ -83,7 +82,7 @@ func (t *TestSuite) WebDriver() selenium.WebDriver {
 }
 
 // WebDriverT returns a new remote Selenium webdriver which handles failure
-// cases automatically for you.
+// cases automatically for you by calling t.Fatalf().
 func (t *TestSuite) WebDriverT() selenium.WebDriverT {
 	return t.WebDriver().T(t)
 }
@@ -95,7 +94,7 @@ func (t *TestSuite) Fatalf(fmtStr string, v ...interface{}) {
 	panic(fmt.Sprintf(fmtStr, v...))
 }
 
-// Endpoint returns an absolute URL given one relative to the target isntance
+// Endpoint returns an absolute URL given one relative to the target instance
 // root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
 // will return "https://sourcegraph.com/login"
 func (t *TestSuite) Endpoint(e string) string {
@@ -150,7 +149,7 @@ func (t *TestSuite) slackMessage(msg, quoted string) {
 	}
 }
 
-// run runs the test suite over and over again against $TARGET, if set,
+// run runs the test suite over and over again against $TARGET, if $TARGET is set,
 // otherwise it runs the test suite just once.
 func (t *TestSuite) run() {
 	shouldLogSuccess := 0
@@ -240,22 +239,22 @@ func (t *TestSuite) runTests(logSuccess bool) bool {
 }
 
 func sendAlert() error {
-	u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
-	if err != nil {
-		return err
-	}
+	// u, err := url.Parse("https://monitoring-bot.sourcegraph.com/alert?source=e2etest")
+	// if err != nil {
+	// 	return err
+	// }
 
-	u.User = url.UserPassword(os.Getenv("MONITORING_BOT_USERNAME"), os.Getenv("MONITORING_BOT_PASSWORD"))
+	// u.User = url.UserPassword(os.Getenv("MONITORING_BOT_USERNAME"), os.Getenv("MONITORING_BOT_PASSWORD"))
 
-	resp, err := http.Get(u.String())
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	// resp, err := http.Get(u.String())
+	// if err != nil {
+	// 	return err
+	// }
+	// defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
-	}
+	// if resp.StatusCode != http.StatusOK {
+	// 	return fmt.Errorf("monitoring bot returned non-200 status code: %d", resp.StatusCode)
+	// }
 
 	return nil
 }
@@ -289,11 +288,16 @@ func Main() {
 	testSuite.Log = log.New(io.MultiWriter(os.Stderr, testSuite.slackLogBuffer), "", 0)
 
 	// Determine which Selenium server to connect to.
-	serverAddr := os.Getenv("SELENIUM_SERVER")
+	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
+	serverPort := os.Getenv("SELENIUM_SERVER_PORT")
 	if serverAddr == "" {
-		log.Fatal("Unable to get SELENIUM_SERVER address from environment")
+		log.Fatal("Unable to get SELENIUM_SERVER_IP from environment")
 	}
-	u, err := url.Parse(serverAddr)
+	if serverPort == "" {
+		log.Fatal("Unable to get SELENIUM_SERVER_PORT from environment")
+	}
+
+	u, err := url.Parse(fmt.Sprintf("%s:%s", serverAddr, serverPort))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -367,4 +371,16 @@ func Main() {
 	}
 
 	testSuite.run()
+}
+
+func waitForCondition(t *TestSuite, d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
+	start := time.Now()
+	for time.Now().Sub(start) < d {
+		time.Sleep(optimisticD)
+		if cond() {
+			return
+		}
+	}
+
+	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }

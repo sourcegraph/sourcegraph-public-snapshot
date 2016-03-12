@@ -1,6 +1,7 @@
 package e2etest
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -21,10 +22,19 @@ func TestRepoFlow(t *TestSuite) error {
 
 	wd.Get(t.Endpoint("/github.com/gorilla/mux"))
 
-	muxLink := wd.FindElement(selenium.ByPartialLinkText, "mux.go")
-	if muxLink.Text() == "" {
-		t.Fatalf("mux link text is empty, should be mux.go")
+	var muxLink selenium.WebElementT
+	getMuxLink := func() bool {
+		muxLink = wd.FindElement(selenium.ByPartialLinkText, "mux.go")
+		return strings.Contains(muxLink.Text(), "mux.go")
 	}
+
+	waitForCondition(
+		t,
+		5*time.Second,
+		100*time.Millisecond,
+		getMuxLink,
+		"Wait for mux.go codefile link to appear",
+	)
 
 	want := "/github.com/gorilla/mux@master/.tree/mux.go"
 	if have := muxLink.GetAttribute("href"); !strings.Contains(have, want) {
@@ -42,54 +52,54 @@ func TestRepoFlow(t *TestSuite) error {
 	muxLink.Click()
 
 	// Wait for redirect.
-	timeout := time.After(20 * time.Second)
-	for {
-		if wd.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go") {
-			break
-		}
-		select {
-		case <-timeout:
-			t.Fatalf("expected redirect to homepage after sign-in; CurrentURL=%q\n", wd.CurrentURL())
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
 
-	time.Sleep(2 * time.Second)
+	waitForCondition(
+		t,
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool { return wd.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go") },
+		"wait for mux.go codefile to load",
+	)
 
-	spans := wd.FindElements(selenium.ByTagName, "span")
-
-	found := false
 	var routerSpan selenium.WebElementT
-	for _, span := range spans {
 
-		if span.Text() == "Router" {
-			routerSpan = span
-			found = true
-			break
+	getSpans := func() bool {
+		spans := wd.FindElements(selenium.ByTagName, "span")
+
+		for _, span := range spans {
+			fmt.Println("BEFORE?????")
+			text := span.Text()
+			fmt.Println("AFTER?????")
+			fmt.Println("text", text)
+			if text == "Router" {
+				routerSpan = span
+				return true
+			}
 		}
+
+		return false
 	}
 
-	if !found {
-		t.Fatalf("mux.go codefile does not contain a Router ref")
-	}
-
+	waitForCondition(
+		t,
+		5*time.Second,
+		100*time.Millisecond,
+		getSpans,
+		"Wait for Router span to appear",
+	)
 	// TODO(poler) test the hover-over
 
 	routerSpan.Click()
 
-	timeout = time.After(20 * time.Second)
-	for {
-		if wd.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router") {
-			break
-		}
-		select {
-		case <-timeout:
-			t.Fatalf("Expected to be taken to Router def, currentURL=%q", wd.CurrentURL())
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
+	waitForCondition(
+		t,
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			return wd.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router")
+		},
+		"wait for Router def to load",
+	)
 
 	return nil
 

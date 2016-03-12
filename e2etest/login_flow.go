@@ -55,10 +55,6 @@ func TestLoginFlow(t *TestSuite) error {
 	if !username.IsEnabled() {
 		t.Fatalf("username input field should be enabled")
 	}
-	// TODO(slimsag): Why don't we select this by default?!
-	//if !username.IsSelected() {
-	//	t.Fatalf("username input field should be selected")
-	//}
 
 	// Validate password input field.
 	password := wd.FindElement(selenium.ById, "password")
@@ -83,8 +79,6 @@ func TestLoginFlow(t *TestSuite) error {
 	password.SendKeys("e2eloginflow")
 
 	// Click the submit button.
-	//
-	// TODO(slimsag): we should give a proper ID to this button.
 	submit := wd.FindElement(selenium.ByCSSSelector, ".log-in > button.btn")
 	submit.Click()
 
