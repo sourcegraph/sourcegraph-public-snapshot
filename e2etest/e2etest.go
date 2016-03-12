@@ -125,31 +125,6 @@ type testRunner struct {
 	slackSkipAtChannel bool
 }
 
-// WebDriver returns a new remote Selenium webdriver.
-func (t *testRunner) WebDriver() selenium.WebDriver {
-	caps := selenium.Capabilities(map[string]interface{}{
-		"browserName": "chrome",
-	})
-	d, err := selenium.NewRemote(caps, t.executor)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return d
-}
-
-// WebDriverT returns a new remote Selenium webdriver which handles failure
-// cases automatically for you by calling t.Fatalf().
-func (t *testRunner) WebDriverT() selenium.WebDriverT {
-	return t.WebDriver().T(t)
-}
-
-// Fatalf implements the selenium.TestingT interface. Because unlike the testing
-// package we are a single process, we instead cause a panic (which is caught
-// by the test executor).
-func (t *testRunner) Fatalf(fmtStr string, v ...interface{}) {
-	panic(fmt.Sprintf(fmtStr, v...))
-}
-
 func (t *testRunner) slackMessage(msg, quoted string) {
 	if t.slack == nil {
 		return
