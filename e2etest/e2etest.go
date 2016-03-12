@@ -101,7 +101,7 @@ type Test struct {
 	// considered failed.
 	//
 	// Tests must log all output to t.Log instead of via other logging packages.
-	Func func(t *testRunner) error
+	Func func(t *T) error
 }
 
 // Register should be called inside of an init function in order to register a
@@ -295,7 +295,7 @@ func (t *testRunner) runTest(test *Test) (err error) {
 			}
 		}
 	}()
-	err = test.Func(t)
+	err = test.Func(&T{}) // TODO
 	return
 }
 
@@ -400,7 +400,7 @@ func Main() {
 	tr.run()
 }
 
-func waitForCondition(t *testRunner, d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
+func waitForCondition(t *T, d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
 	start := time.Now()
 	for time.Now().Sub(start) < d {
 		time.Sleep(optimisticD)

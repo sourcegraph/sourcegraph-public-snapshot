@@ -16,15 +16,12 @@ func init() {
 	})
 }
 
-func TestRepoFlow(t *TestSuite) error {
-	wd := t.WebDriverT()
-	defer wd.Quit()
-
-	wd.Get(t.Endpoint("/github.com/gorilla/mux"))
+func TestRepoFlow(t *T) error {
+	t.Get(t.Endpoint("/github.com/gorilla/mux"))
 
 	var muxLink selenium.WebElementT
 	getMuxLink := func() bool {
-		muxLink = wd.FindElement(selenium.ByPartialLinkText, "mux.go")
+		muxLink = t.FindElement(selenium.ByPartialLinkText, "mux.go")
 		return strings.Contains(muxLink.Text(), "mux.go")
 	}
 
@@ -57,14 +54,14 @@ func TestRepoFlow(t *TestSuite) error {
 		t,
 		20*time.Second,
 		100*time.Millisecond,
-		func() bool { return wd.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go") },
+		func() bool { return t.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go") },
 		"wait for mux.go codefile to load",
 	)
 
 	var routerSpan selenium.WebElementT
 
 	getSpans := func() bool {
-		spans := wd.FindElements(selenium.ByTagName, "span")
+		spans := t.FindElements(selenium.ByTagName, "span")
 
 		for _, span := range spans {
 			fmt.Println("BEFORE?????")
@@ -96,7 +93,7 @@ func TestRepoFlow(t *TestSuite) error {
 		20*time.Second,
 		100*time.Millisecond,
 		func() bool {
-			return wd.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router")
+			return t.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router")
 		},
 		"wait for Router def to load",
 	)

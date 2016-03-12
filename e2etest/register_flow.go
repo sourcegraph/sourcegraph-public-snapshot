@@ -19,10 +19,7 @@ func init() {
 	})
 }
 
-func TestRegisterFlow(t *TestSuite) error {
-	wd := t.WebDriverT()
-	defer wd.Quit()
-
+func TestRegisterFlow(t *T) error {
 	// Create gRPC client connection so we can talk to the server. e2etest uses
 	// the server's ID key for authentication, which means it can do ANYTHING with
 	// no restrictions. Be careful!
@@ -37,10 +34,10 @@ func TestRegisterFlow(t *TestSuite) error {
 	}
 
 	// Get join page.
-	wd.Get(t.Endpoint("/join"))
+	t.Get(t.Endpoint("/join"))
 
 	// Validate username input field.
-	username := wd.FindElement(selenium.ById, "login")
+	username := t.FindElement(selenium.ById, "login")
 	if username.TagName() != "input" {
 		t.Fatalf("username TagName should be input, found", username.TagName())
 	}
@@ -59,7 +56,7 @@ func TestRegisterFlow(t *TestSuite) error {
 	//}
 
 	// Validate password input field.
-	password := wd.FindElement(selenium.ById, "password")
+	password := t.FindElement(selenium.ById, "password")
 	if password.TagName() != "input" {
 		t.Fatalf("password TagName should be input, found", password.TagName())
 	}
@@ -77,7 +74,7 @@ func TestRegisterFlow(t *TestSuite) error {
 	}
 
 	// Validate email input field.
-	email := wd.FindElement(selenium.ById, "email")
+	email := t.FindElement(selenium.ById, "email")
 	if email.TagName() != "input" {
 		t.Fatalf("email TagName should be input, found", email.TagName())
 	}
@@ -102,18 +99,18 @@ func TestRegisterFlow(t *TestSuite) error {
 	// Click the submit button.
 	//
 	// TODO(slimsag): we should give a proper ID to this button.
-	submit := wd.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")
+	submit := t.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")
 	submit.Click()
 
 	// Wait for redirect.
 	timeout := time.After(1 * time.Second)
 	for {
-		if wd.CurrentURL() == t.Endpoint("/") {
+		if t.CurrentURL() == t.Endpoint("/") {
 			break
 		}
 		select {
 		case <-timeout:
-			t.Fatalf("expected redirect to homepage after register; CurrentURL=%q\n", wd.CurrentURL())
+			t.Fatalf("expected redirect to homepage after register; CurrentURL=%q\n", t.CurrentURL())
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
