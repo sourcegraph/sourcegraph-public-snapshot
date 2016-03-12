@@ -14,9 +14,8 @@ const BlobBackend = {
 				let file = BlobStore.files.get(action.repo, action.rev, action.tree);
 				if (file === null) {
 					let revPart = action.rev ? `@${action.rev}` : "";
-					let uri = `/${action.repo}${revPart}/.tree/${action.tree}`;
 					BlobBackend.xhr({
-						uri: `/.ui${uri}`,
+						uri: `/.api/repos/${action.repo}${revPart}/.tree/${action.tree}?ContentsAsString=true`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {

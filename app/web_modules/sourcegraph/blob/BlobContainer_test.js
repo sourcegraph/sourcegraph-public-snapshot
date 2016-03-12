@@ -17,8 +17,7 @@ import testdataDefOptions from "sourcegraph/blob/testdata/BlobContainer-defOptio
 
 describe("BlobContainer", () => {
 	let exampleFile = {
-		Entry: {ContentsString: "hello\nworld"},
-		EntrySpec: {RepoRev: {CommitID: "123abc"}},
+		ContentsString: "hello\nworld",
 	};
 
 	it("should handle unavailable file", () => {

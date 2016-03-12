@@ -55,8 +55,8 @@ class BlobContainer extends Container {
 		state.annotations = BlobStore.annotations;
 
 		if (state.activeDef && state.file && defData) {
-			state.startLine = lineFromByte(state.file.Entry.ContentsString, defData.ByteStartPosition);
-			state.endLine = lineFromByte(state.file.Entry.ContentsString, defData.ByteEndPosition);
+			state.startLine = lineFromByte(state.file.ContentsString, defData.ByteStartPosition);
+			state.endLine = lineFromByte(state.file.ContentsString, defData.ByteEndPosition);
 		}
 
 		state.defs = DefStore.defs;
@@ -130,7 +130,7 @@ class BlobContainer extends Container {
 						{this.state.file &&
 						<Blob
 							ref={(e) => this.setState({_codeListing: e})}
-							contents={this.state.file.Entry.ContentsString}
+							contents={this.state.file.ContentsString}
 							annotations={this.state.anns ? this.state.anns.Annotations : null}
 							lineNumbers={true}
 							highlightSelectedLines={true}

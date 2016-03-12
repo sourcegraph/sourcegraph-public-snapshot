@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	RepoTree = "repo.tree"
-
 	Definition  = "def"
 	DefExamples = "def.examples"
 
@@ -34,12 +32,6 @@ func New(base *mux.Router) *mux.Router {
 		PostMatchFunc(routevar.FixRepoRevVars).
 		BuildVarsFunc(routevar.PrepareRepoRevRouteVars).
 		Subrouter()
-
-	repoRev.Path("/.tree" + routevar.TreeEntryPath).
-		Methods("GET").
-		PostMatchFunc(routevar.FixTreeEntryVars).
-		BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).
-		Name(RepoTree)
 
 	defPath := "/" + routevar.Def
 
