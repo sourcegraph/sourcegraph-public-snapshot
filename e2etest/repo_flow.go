@@ -25,8 +25,7 @@ func TestRepoFlow(t *T) error {
 		return strings.Contains(muxLink.Text(), "mux.go")
 	}
 
-	waitForCondition(
-		t,
+	t.WaitForCondition(
 		5*time.Second,
 		100*time.Millisecond,
 		getMuxLink,
@@ -50,8 +49,7 @@ func TestRepoFlow(t *T) error {
 
 	// Wait for redirect.
 
-	waitForCondition(
-		t,
+	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
 		func() bool { return t.CurrentURL() == t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go") },
@@ -77,8 +75,7 @@ func TestRepoFlow(t *T) error {
 		return false
 	}
 
-	waitForCondition(
-		t,
+	t.WaitForCondition(
 		5*time.Second,
 		100*time.Millisecond,
 		getSpans,
@@ -88,8 +85,7 @@ func TestRepoFlow(t *T) error {
 
 	routerSpan.Click()
 
-	waitForCondition(
-		t,
+	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
 		func() bool {

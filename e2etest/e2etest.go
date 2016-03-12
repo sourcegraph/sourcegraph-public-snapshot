@@ -87,6 +87,20 @@ func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
 	return ctx, c
 }
 
+// WaitForCondition waits up to d for cond() to be true. After each time cond()
+// is called, time.Sleep(optimisticD) is called. If timeout occurs, t.Fatalf is
+// invoked.
+func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
+	start := time.Now()
+	for time.Now().Sub(start) < d {
+		time.Sleep(optimisticD)
+		if cond() {
+			return
+		}
+	}
+	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,
@@ -399,16 +413,4 @@ func Main() {
 	}
 
 	tr.run()
-}
-
-func waitForCondition(t *T, d time.Duration, optimisticD time.Duration, cond func() bool, condName string) {
-	start := time.Now()
-	for time.Now().Sub(start) < d {
-		time.Sleep(optimisticD)
-		if cond() {
-			return
-		}
-	}
-
-	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
