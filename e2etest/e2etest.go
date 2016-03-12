@@ -2,12 +2,14 @@ package e2etest
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -134,6 +136,7 @@ type testRunner struct {
 	idKey    *idkey.IDKey
 
 	slack              *slack.Client
+	slackToken         string
 	slackChannel       slack.Channel
 	slackLogBuffer     *bytes.Buffer
 	slackSkipAtChannel bool
@@ -204,10 +207,18 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		test := testToCopy
 		run.Do(func() error {
 			unitStart := time.Now()
-			err := t.runTest(test)
+			err, screenshot := t.runTest(test)
 			unitTime := time.Since(unitStart)
 			if err != nil {
 				t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+
+				// When running without Slack support, write the screenshot to a file
+				// instead.
+				if t.slack == nil {
+					if e := ioutil.WriteFile(test.Name+".png", screenshot, 0666); e != nil {
+						t.log.Printf("[failure] [%v]: could not save screenshot: %v\n", test.Name, e)
+					}
+				}
 				return nil
 			}
 
@@ -276,8 +287,9 @@ func (t *testRunner) sendAlert() error {
 }
 
 // runTest runs a single test and recovers from panics, should they occur. If
-// the test failed for any reason err != nil is returned.
-func (t *testRunner) runTest(test *Test) (err error) {
+// the test failed for any reason err != nil is returned. If it was possible to
+// capture a screenshot of the error, screenshot will be the encoded PNG bytes.
+func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	// Create a selenium web driver for the test.
 	// Set up webdriver.
 	caps := selenium.Capabilities(map[string]interface{}{
@@ -285,7 +297,7 @@ func (t *testRunner) runTest(test *Test) (err error) {
 	})
 	wd, err := selenium.NewRemote(caps, t.executor)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	// Handle things after the test has finished executing.
@@ -298,6 +310,17 @@ func (t *testRunner) runTest(test *Test) (err error) {
 			}
 		}
 
+		// If there was an error, capture a screenshot of the problem.
+		if err != nil {
+			var err2 error
+			screenshot, err2 = wd.Screenshot()
+			if err2 != nil {
+				t.log.Println("could not capture screenshot for", test.Name, err2)
+			}
+			if err2 = t.slackFileUpload(screenshot, test.Name+".png"); err2 != nil {
+				t.log.Println("could not upload screenshot to Slack", test.Name, err2)
+			}
+		}
 		wd.Close()
 	}()
 
@@ -311,7 +334,63 @@ func (t *testRunner) runTest(test *Test) (err error) {
 	ctx.WebDriverT = ctx.WebDriver.T(ctx)
 
 	// Execute the test.
-	return test.Func(ctx)
+	return test.Func(ctx), nil
+}
+
+// slackFileUpload implements slack multipart file upload.
+//
+// TODO(slimsag): upstream this type of change to github.com/nlopes/slack.
+func (t *testRunner) slackFileUpload(f []byte, title string) error {
+	b := &bytes.Buffer{}
+	w := multipart.NewWriter(b)
+	fw, err := w.CreateFormFile("file", title)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(fw, bytes.NewReader(f)); err != nil {
+		return err
+	}
+	if err := w.Close(); err != nil {
+		return err
+	}
+
+	// Write additional fields.
+	fields := map[string]string{
+		"channels": t.slackChannel.ID,
+		"token":    t.slackToken,
+	}
+	for k, v := range fields {
+		fw, err := w.CreateFormField(k)
+		if err != nil {
+			return err
+		}
+		if _, err := fw.Write([]byte(v)); err != nil {
+			return err
+		}
+	}
+
+	// Make the request.
+	resp, err := http.Post("https://slack.com/api/files.upload", w.FormDataContentType(), b)
+	if err != nil {
+		return err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	// Decode the response and check ok field as the Slack API docs say to do.
+	var slackResp = struct {
+		Ok bool
+		// TODO(slimsag): "file" object field
+	}{}
+	if err := json.Unmarshal(body, &slackResp); err != nil {
+		return err
+	}
+	if !slackResp.Ok {
+		return fmt.Errorf("slack file upload failed, response:", body)
+	}
+	return nil
 }
 
 var tr = &testRunner{
@@ -382,6 +461,7 @@ func Main() {
 
 	if token := os.Getenv("SLACK_API_TOKEN"); token != "" {
 		tr.slack = slack.New(token)
+		tr.slackToken = token
 
 		// Find the channel ID.
 		channelName := os.Getenv("SLACK_CHANNEL")
