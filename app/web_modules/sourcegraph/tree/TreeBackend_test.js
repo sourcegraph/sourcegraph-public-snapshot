@@ -11,7 +11,7 @@ describe("TreeBackend", () => {
 			rev: "aRev",
 			path: "aPath",
 		};
-		let expectedURI = `/.ui/${entry.repo}/.commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
+		let expectedURI = `/.api/repos/${entry.repo}/.commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
 
 		TreeBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);

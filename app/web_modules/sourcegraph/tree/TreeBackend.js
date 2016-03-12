@@ -13,7 +13,7 @@ const TreeBackend = {
 				let commit = TreeStore.commits.get(action.repo, action.rev, action.path);
 				if (commit === null) {
 					TreeBackend.xhr({
-						uri: `/.ui/${action.repo}/.commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`,
+						uri: `/.api/repos/${action.repo}/.commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {

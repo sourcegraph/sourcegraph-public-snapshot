@@ -11,8 +11,6 @@ const (
 	Definition  = "def"
 	DefExamples = "def.examples"
 
-	RepoCommits = "repo.commits"
-
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 
 	UserContentUpload = "usercontent.upload"
@@ -49,12 +47,6 @@ func New(base *mux.Router) *mux.Router {
 	def.Path("/.examples").
 		Methods("GET").
 		Name(DefExamples)
-
-	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
-
-	repo.Path("/.commits").
-		Methods("GET").
-		Name(RepoCommits)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").
