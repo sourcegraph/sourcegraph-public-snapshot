@@ -61,7 +61,7 @@ var tmplHTML = `
 				{{with .AllExamples}}
 					<h4 class="anchor" id="pkg-examples">Examples <a class="permalink" href="#pkg-examples"><i class="octicon octicon-link"></i></a></h4>
 					<ul class="list-unstyled">
-						{{range . }}<li><a href="#example-{{.ID}}" onclick="$('#ex-{{.ID}}').addClass('in').removeClass('collapse').height('auto')">{{.Label}}</a></li>{{end}}
+						{{range . }}<li><a href="#example-{{.ID}}" onclick="var e=document.getElementById('ex-{{.ID}}');e.classList.add('in');e.classList.remove('collapse');e.style.height='auto';">{{.Label}}</a></li>{{end}}
 					</ul>
 				{{else}}
 					<span class="anchor" id="pkg-examples"></span>
@@ -139,7 +139,7 @@ var tmplHTML = `
 		<div class="panel-group">
 		{{range .}}
 			<div class="panel panel-default anchor" id="example-{{.ID}}">
-				<div class="panel-heading"><a class="accordion-toggle" data-toggle="collapse" href="#ex-{{.ID}}">Example{{with .Example.Name}} ({{.}}){{end}}</a></div>
+				<div class="panel-heading"><a class="accordion-toggle" href="#ex-{{.ID}}" onclick="var e=document.getElementById('ex-{{.ID}}');e.classList.toggle('in');e.classList.toggle('collapse');">Example{{with .Example.Name}} ({{.}}){{end}}</a></div>
 				<div id="ex-{{.ID}}" class="anchor panel-collapse collapse"><div class="panel-body">
 					{{with .Example.Doc}}<p>{{.|godoc_comment}}{{end}}
 						<p>Code:
