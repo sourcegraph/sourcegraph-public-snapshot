@@ -365,4 +365,4 @@ func parseHTMLTemplates(sets [][]string, layout []string) error {
 }
 
 // FuncMap is the template func map passed to each template.
-var FuncMap htmpl.FuncMap
+var FuncMap = htmpl.FuncMap{}
