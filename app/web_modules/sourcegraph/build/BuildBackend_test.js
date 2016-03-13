@@ -4,6 +4,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import BuildBackend from "sourcegraph/build/BuildBackend";
 import BuildStore from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
+import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 
 describe("BuildBackend", () => {
 	it("should handle WantBuild", () => {
@@ -13,9 +14,9 @@ describe("BuildBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}`;
 
-		BuildBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			callback(null, null, {ID: 123});
+		BuildBackend.fetch = function(url, options) {
+			expect(url).to.be(expectedURI);
+			return immediateSyncPromise({status: 200, json: () => ({ID: 123})});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BuildBackend.__onDispatch(new BuildActions.WantBuild(action.repo, action.buildID));
@@ -30,9 +31,9 @@ describe("BuildBackend", () => {
 		};
 		let expectedURI = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
 
-		BuildBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			callback(null, {headers: {"x-sourcegraph-log-max-id": 789}, statusCode: 200}, "a");
+		BuildBackend.fetch = function(url, options) {
+			expect(url).to.be(expectedURI);
+			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("a"), headers: {"x-sourcegraph-log-max-id": 789}});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BuildBackend.__onDispatch(new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
@@ -52,9 +53,9 @@ describe("BuildBackend", () => {
 		// Trigger "second" fetch, which should reuse MaxID from
 		// initial fetch as MinID of this fetch.
 		let expectedURI = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
-		BuildBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			callback(null, {headers: {"x-sourcegraph-log-max-id": 34}, statusCode: 200}, "c");
+		BuildBackend.fetch = function(url, options) {
+			expect(url).to.be(expectedURI);
+			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("c"), headers: {"x-sourcegraph-log-max-id": 34}});
 		};
 
 		expect(Dispatcher.Stores.catchDispatched(() => {
@@ -69,9 +70,9 @@ describe("BuildBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks?PerPage=1000`;
 
-		BuildBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			callback(null, null, [{ID: 456}]);
+		BuildBackend.fetch = function(url, options) {
+			expect(url).to.be(expectedURI);
+			return immediateSyncPromise({status: 200, json: () => [{ID: 456}]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BuildBackend.__onDispatch(new BuildActions.WantTasks(action.repo, action.buildID));

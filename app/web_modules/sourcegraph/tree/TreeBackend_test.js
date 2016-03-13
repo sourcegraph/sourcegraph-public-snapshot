@@ -3,6 +3,7 @@ import expect from "expect.js";
 import Dispatcher from "sourcegraph/Dispatcher";
 import TreeBackend from "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
+import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 
 describe("TreeBackend", () => {
 	it("should handle WantCommit", () => {
@@ -13,9 +14,9 @@ describe("TreeBackend", () => {
 		};
 		let expectedURI = `/.api/repos/${entry.repo}/-/commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
 
-		TreeBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			callback(null, null, {Commits: ["someTreeCommit"]});
+		TreeBackend.fetch = function(url, options) {
+			expect(url).to.be(expectedURI);
+			return immediateSyncPromise({status: 200, json: () => ({Commits: ["someTreeCommit"]})});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			TreeBackend.__onDispatch(new TreeActions.WantCommit(entry.repo, entry.rev, entry.path));
@@ -27,9 +28,9 @@ describe("TreeBackend", () => {
 		const rev = "aRev";
 		let expectedURI = `/.api/repos/${repo}@${rev}/-/tree-list`;
 
-		TreeBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be(expectedURI);
-			callback(null, null, {Files: ["a", "b"]});
+		TreeBackend.fetch = function(url, options) {
+			expect(url).to.be(expectedURI);
+			return immediateSyncPromise({status: 200, json: () => ({Files: ["a", "b"]})});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, rev));

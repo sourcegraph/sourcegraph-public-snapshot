@@ -1,10 +1,10 @@
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "sourcegraph/util/xhr";
+import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 
 const RepoBackend = {
-	xhr: defaultXhr,
+	fetch: defaultFetch,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
@@ -13,17 +13,14 @@ const RepoBackend = {
 			{
 				let repo = RepoStore.repos.get(action.repo);
 				if (repo === null) {
-					RepoBackend.xhr({
-						uri: `/.api/repos/${action.repo}`,
-						json: {},
-					}, function(err, resp, body) {
-						if (!err && resp.statusCode !== 200) err = `HTTP ${resp.statusCode}`;
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, body));
-					});
+					RepoBackend.fetch(`/.api/repos/${action.repo}`)
+							.then((resp) => resp.json())
+							.then(checkStatus)
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data)));
 				}
 				break;
 			}
@@ -32,17 +29,13 @@ const RepoBackend = {
 			{
 				let branches = RepoStore.branches.list(action.repo);
 				if (branches === null) {
-					RepoBackend.xhr({
-						uri: `/.api/repos/${action.repo}/-/branches`,
-						json: {},
-					}, function(err, resp, body) {
-						if (!err && resp.statusCode !== 200) err = `HTTP ${resp.statusCode}`;
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, body.Branches || [], err));
-					});
+					RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches`)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, [], true));
+								console.error(err);
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, data.Branches || [])));
 				}
 				break;
 			}
@@ -51,17 +44,13 @@ const RepoBackend = {
 			{
 				let tags = RepoStore.tags.list(action.repo);
 				if (tags === null) {
-					RepoBackend.xhr({
-						uri: `/.api/repos/${action.repo}/-/tags`,
-						json: {},
-					}, function(err, resp, body) {
-						if (!err && resp.statusCode !== 200) err = `HTTP ${resp.statusCode}`;
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, body.Tags || [], err));
-					});
+					RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags`)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, [], true));
+								console.error(err);
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, data.Tags || [])));
 				}
 				break;
 			}

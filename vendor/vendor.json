@@ -699,6 +699,11 @@
 			"revisionTime": "2016-03-05T22:47:48Z"
 		},
 		{
+			"path": "golang.org/x/net/publicsuffix",
+			"revision": "c2528b2dd8352441850638a8bb678c2ad056fd3e",
+			"revisionTime": "2015-09-26T06:14:36+02:00"
+		},
+		{
 			"path": "golang.org/x/net/trace",
 			"revision": "e7da8edaa52631091740908acaf2c2d4c9b3ce90",
 			"revisionTime": "2016-03-05T22:47:48Z"

@@ -1,33 +1,46 @@
-import defaultXhr from "xhr";
+import "whatwg-fetch";
 
 import context from "sourcegraph/context";
 
-export default function(options, callback) {
-	if (typeof document === "undefined") {
-		// On the server (in the Duktape JS VM), there is no XHR. This HTTP request
-		// will not be issued nor satisfied, but that's OK, since the client will
-		// pick up where the server left off by issuing the same request.
-		//
-		// Calling XHR on the server indicates that data was not preloaded. This is
-		// OK, but you can improve performance by preloading the necessary data. NOTE:
-		// manual preloading of data will no longer be necessary in the upcoming
-		// pure-react branch (this was written on 2016 Mar 28).
-		return;
-	}
+// This file provides a common entrypoint to the fetch API.
+//
+// Use the fetch API (not XHR) because it is the future standard and because
+// we can intercept calls to fetch in the reactbridge to render React
+// components on the server even if they fetch external data.
 
-	let defaultOptions = {
+function defaultOptions() {
+	let options = {
 		headers: {
 			"X-Csrf-Token": context.csrfToken,
 			"X-Device-Id": context.deviceID,
 		},
+		credentials: "same-origin",
 	};
 	if (typeof document !== "undefined" && document.head.dataset && document.head.dataset.currentUserOauth2AccessToken) {
 		let auth = `x-oauth-basic:${document.head.dataset.currentUserOauth2AccessToken}`;
-		defaultOptions.headers["authorization"] = `Basic ${btoa(auth)}`;
+		options.headers["authorization"] = `Basic ${btoa(auth)}`;
 	}
 	if (context.cacheControl) {
-		defaultOptions.headers["Cache-Control"] = context.cacheControl;
+		options.headers["Cache-Control"] = context.cacheControl;
 	}
-	if (context.parentSpanID) defaultOptions.headers["Parent-Span-ID"] = context.parentSpanID;
-	defaultXhr(Object.assign(defaultOptions, options), callback);
+	if (context.parentSpanID) options.headers["Parent-Span-ID"] = context.parentSpanID;
+	return options;
+}
+
+export function defaultFetch(url, options) {
+	let defaults = defaultOptions();
+
+	// Combine headers.
+	const headers = Object.assign({}, defaults.headers, options ? options.headers : null);
+
+	return fetch(url, Object.assign(defaults, options, {headers: headers}));
+}
+
+// checkStatus is intended to be chained in a fetch call. For example:
+//   fetch(...).then(checkStatus) ...
+export function checkStatus(resp) {
+	if (resp.status === 200 || resp.status === 201) return resp;
+	let err = new Error(resp.statusText || `HTTP ${resp.status}`);
+	err.response = resp;
+	throw err;
 }

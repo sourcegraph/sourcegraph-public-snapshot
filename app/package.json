@@ -18,6 +18,7 @@
     "eslint-loader": "1.1.1",
     "eslint-plugin-react": "3.9.0",
     "expect.js": "0.3.1",
+    "exports-loader": "^0.6.3",
     "extract-text-webpack-plugin": "0.8.2",
     "file-loader": "0.8.4",
     "flux": "2.1.1",
@@ -25,6 +26,7 @@
     "fuse.js": "1.2.2",
     "glob": "5.0.15",
     "ignore-styles": "^1.2.0",
+    "imports-loader": "^0.6.5",
     "json-loader": "0.5.3",
     "lintspaces": "0.3.3",
     "lintspaces-cli": "0.1.1",
@@ -52,7 +54,7 @@
     "react-dom": "^15.0.0-rc.1",
     "url": "0.10.3",
     "utf8": "2.1.1",
-    "xhr": "2.2.0"
+    "whatwg-fetch": "^0.11.0"
   },
   "scripts": {
     "start": "node ./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",

@@ -4,12 +4,17 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import BlobBackend from "sourcegraph/blob/BlobBackend";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
+import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
+
 
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {
-		BlobBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be("/.api/repos/aRepo@aRev/-/tree/aTree?ContentsAsString=true");
-			callback(null, null, "someFile");
+		BlobBackend.fetch = function(url, options) {
+			expect(url).to.be("/.api/repos/aRepo@aRev/-/tree/aTree?ContentsAsString=true");
+			return immediateSyncPromise({
+				status: 200,
+				json: () => "someFile",
+			});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aTree"));

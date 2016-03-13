@@ -1,10 +1,10 @@
 import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "sourcegraph/util/xhr";
+import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 
 const DefBackend = {
-	xhr: defaultXhr,
+	fetch: defaultFetch,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
@@ -12,17 +12,14 @@ const DefBackend = {
 			{
 				let def = DefStore.defs.get(action.url);
 				if (def === null) {
-					DefBackend.xhr({
-						uri: `/.api/repos${action.url}`,
-						json: {},
-					}, function(err, resp, body) {
-						if (resp.statusCode !== 200) body = {Error: true};
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.url, body));
-					});
+					DefBackend.fetch(`/.api/repos${action.url}`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.url, data)));
 				}
 				break;
 			}
@@ -31,16 +28,16 @@ const DefBackend = {
 			{
 				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
 				if (defs === null) {
-					DefBackend.xhr({
-						uri: `/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`,
-						json: {},
-					}, function(err, resp, body) {
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, body));
-					});
+					DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => {
+								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, data));
+							});
 				}
 				break;
 			}
@@ -51,16 +48,16 @@ const DefBackend = {
 				if (refs === null) {
 					let url = `/.ui${action.defURL}/-/refs`;
 					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
-					DefBackend.xhr({
-						uri: url,
-						json: {},
-					}, function(err, resp, body) {
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.defURL, action.file, body));
-					});
+					DefBackend.fetch(url)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return null;
+							})
+							.then((data) => {
+								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.defURL, action.file, data));
+							});
 				}
 				break;
 			}

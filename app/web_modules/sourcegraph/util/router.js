@@ -31,5 +31,5 @@ export function build(repoPath, id) {
 }
 
 export function repoCommits(repoPath, rev) {
-	return `${repoRev(repoPath, rev)}/commits`;
+	return `${repoRev(repoPath, rev)}/-/commits`;
 }

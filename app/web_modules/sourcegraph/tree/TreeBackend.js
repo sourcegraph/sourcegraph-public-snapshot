@@ -1,10 +1,10 @@
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import Dispatcher from "sourcegraph/Dispatcher";
-import defaultXhr from "sourcegraph/util/xhr";
+import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 
 const TreeBackend = {
-	xhr: defaultXhr,
+	fetch: defaultFetch,
 
 	__onDispatch(action) {
 		switch (action.constructor) {
@@ -12,16 +12,14 @@ const TreeBackend = {
 			{
 				let commit = TreeStore.commits.get(action.repo, action.rev, action.path);
 				if (commit === null) {
-					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}/-/commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`,
-						json: {},
-					}, function(err, resp, body) {
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, body));
-					});
+					TreeBackend.fetch(`/.api/repos/${action.repo}/-/commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, data)));
 				}
 				break;
 			}
@@ -30,16 +28,14 @@ const TreeBackend = {
 			{
 				let fileList = TreeStore.fileLists.get(action.repo, action.rev);
 				if (fileList === null) {
-					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}@${action.rev}/-/tree-list`,
-						json: {},
-					}, function(err, resp, body) {
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, body));
-					});
+					TreeBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/tree-list`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, data)));
 				}
 				break;
 			}
@@ -48,20 +44,21 @@ const TreeBackend = {
 			{
 				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.path);
 				if (version === null) {
-					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}@${action.rev}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`,
-						json: {},
-					}, function(err, resp, body) {
-						if (resp.statusCode === 404) {
-							body = {};
-							err = null;
-						}
-						if (err) {
-							console.error(err);
-							return;
-						}
-						Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, body));
-					});
+					TreeBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
+							.then((resp) => {
+								if (resp.status === 404) {
+									return Object.assign({}, resp, {json: () => ({})});
+								} else if (resp.status === 200) {
+									return resp;
+								}
+								return checkStatus(resp);
+							})
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, data)));
 				}
 				break;
 			}
