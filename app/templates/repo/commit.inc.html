@@ -42,7 +42,7 @@
 
 {{define "commitLinks"}}
 <div class="pull-right repo-build">
-	<div data-react="BuildIndicator" data-uri="{{.RepoURI}}" data-commit-id="{{.ID}}" data-buildable="{{uiBuild}}"></div>
+	{{component nil nil "sourcegraph/build/BuildIndicatorContainer" "repo" .RepoURI "commitID" .ID "buildable" uiBuild}}
 </div>
 {{end}}
 

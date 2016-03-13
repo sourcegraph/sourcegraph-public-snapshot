@@ -22,8 +22,5 @@
 	</form>
 </nav>
 
-<div id="BuildContainer"
-	data-build="{{json .Build}}"
-	data-commit="{{json .Commit}}"></div>
-
+<div data-react="sourcegraph/build/BuildContainer" data-props='{"build":{{json .Build}},"commit":{{json .Commit}}}'></div>
 {{end}}

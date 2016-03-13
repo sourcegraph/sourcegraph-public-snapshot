@@ -9,6 +9,7 @@ import * as router from "sourcegraph/util/router";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import DefStore from "sourcegraph/def/DefStore";
 import "sourcegraph/tree/TreeBackend";
+import "sourcegraph/def/DefBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";

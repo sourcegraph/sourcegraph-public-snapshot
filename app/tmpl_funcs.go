@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	"golang.org/x/net/context"
@@ -34,7 +35,12 @@ import (
 )
 
 func init() {
-	tmpl.FuncMap = tmplFuncs
+	for name, fn := range tmplFuncs {
+		if _, present := tmpl.FuncMap[name]; present {
+			panic("template func already exists: " + name)
+		}
+		tmpl.FuncMap[name] = fn
+	}
 }
 
 var tmplFuncs = htmpl.FuncMap{
@@ -94,6 +100,18 @@ var tmplFuncs = htmpl.FuncMap{
 			classes[i] = "route-" + strings.Join(parts[:i+1], "-")
 		}
 		return strings.Join(classes, " ")
+	},
+
+	// coalesce returns the first item in vals that is truthy (using
+	// template.IsTrue), or nil if all items are nil.
+	"coalesce": func(vals ...interface{}) interface{} {
+		for _, v := range vals {
+			truth, ok := template.IsTrue(v)
+			if truth && ok {
+				return v
+			}
+		}
+		return nil
 	},
 
 	"commitSummary":       commitSummary,

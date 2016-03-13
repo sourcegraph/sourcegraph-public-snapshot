@@ -4,8 +4,7 @@ require("babel-polyfill");
 
 require("sourcegraph/init/AppdashRecordPerfTiming");
 
-// Views
-require("./componentInjection");
+require("sourcegraph/init/browser");
 
 require("../style/web.scss");
 

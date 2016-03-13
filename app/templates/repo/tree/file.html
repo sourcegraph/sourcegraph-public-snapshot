@@ -30,10 +30,9 @@
 		</p>
 	</noscript>
 	{{end}}
-	<div id="BlobContainer" class="theme-default"></div>
+	<div class="theme-default">
+		{{component .Ctx nil "sourcegraph/LocationAdaptor" "component" "sourcegraph/blob/BlobRouter"}}
+	</div>
 
-	<div data-react="TreeSearch"
-			data-repo="{{.EntrySpec.RepoRev.URI}}"
-			data-rev="{{.EntrySpec.RepoRev.Rev}}"
-			data-commit="{{.EntrySpec.RepoRev.CommitID}}" data-overlay="true"></div>
+	{{component nil nil "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.Rev}}
 {{end}}

@@ -42,13 +42,6 @@
 
 
 <div class="delta">
-	<div
-		data-react="FileDiffs"
-		data-files="{{json .DeltaFiles.FileDiffs}}"
-		data-stats="{{json .DeltaFiles.Stats}}"
-		data-base-repo="{{.Delta.Base.URI}}"
-		data-base-rev="{{.Delta.Base.Rev}}"
-		data-head-repo="{{.Delta.Head.URI}}"
-		data-head-rev="{{.Delta.Head.Rev}}" />
+	<div data-react="sourcegraph/delta/FileDiffs" data-props='{"files":{{json .DeltaFiles.FileDiffs}},"stats":{{json .DeltaFiles.Stats}},"baseRepo":"{{.Delta.Base.URI}}","baseRev":"{{.Delta.Base.Rev}}","headRepo":"{{.Delta.Head.URI}}","headRev":"{{.Delta.Head.Rev}}"}'></div>
 </div>
 {{end}}

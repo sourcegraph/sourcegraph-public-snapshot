@@ -3,7 +3,7 @@
 
 {{define "RepoBody"}}
 
-<div data-react="RevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="commits" data-repo-spec="{{.CurrentRouteVars.Repo}}"></div>
+<div data-react="sourcegraph/repo/RevSwitcherContainer" data-props='{"repo":"{{.CurrentRouteVars.Repo}}","rev":"{{coalesce .CurrentRouteVars.Rev .Repo.DefaultBranch}}","route":"commits"}'></div>
 
 {{if isNil .CommitDays}}
 <div class="alert alert-danger"><strong>Error fetching commits.</strong></div>

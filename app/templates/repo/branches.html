@@ -9,7 +9,9 @@
 	{{$repoURI := .Repo.URI}}
 	{{range .Branches}}
 	<li class="list-group-item branch">
-		<div class="pull-right" data-react="BuildIndicator" data-uri="{{$repoURI}}" data-commit-id="{{.Head}}" data-branch="{{.Name}}" data-buildable="{{uiBuild}}"></div>
+		<div class="pull-right">
+			{{component nil nil "sourcegraph/build/BuildIndicatorContainer" "repo" $repoURI "commitID" .Head "branch" .Name "buildable" uiBuild}}
+		</div>
 		{{if (eq .Name $.BehindAheadBranch)}}
 			{{template "DefaultLabel"}}
 		{{else}}
