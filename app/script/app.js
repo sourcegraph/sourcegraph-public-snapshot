@@ -15,4 +15,4 @@ require("sourcegraph/init/Sentry");
 
 // REQUIRED. Enables HTML history API (pushState) tracking in Google Analytics.
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
-require("autotrack/lib/plugins/url-change-tracker");
+if (typeof window !== "undefined") require("autotrack/lib/plugins/url-change-tracker");

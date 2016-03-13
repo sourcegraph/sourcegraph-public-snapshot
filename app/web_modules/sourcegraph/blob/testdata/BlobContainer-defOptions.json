@@ -103,6 +103,14 @@
 	},
 	"dispatched": [
 		{
+			"$constructor": "WantDef",
+			"url": "firstDef"
+		},
+		{
+			"$constructor": "WantDef",
+			"url": "secondDef"
+		},
+		{
 			"$constructor": "WantFile",
 			"repo": "aRepo",
 			"rev": "aRev",
@@ -114,14 +122,6 @@
 			"rev": "aRev",
 			"commitID": "",
 			"path": "aPath"
-		},
-		{
-			"$constructor": "WantDef",
-			"url": "firstDef"
-		},
-		{
-			"$constructor": "WantDef",
-			"url": "secondDef"
 		}
 	]
 }

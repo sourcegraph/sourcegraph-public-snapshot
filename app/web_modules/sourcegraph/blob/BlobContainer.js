@@ -27,14 +27,18 @@ class BlobContainer extends Container {
 
 	componentDidMount() {
 		super.componentDidMount();
-		document.addEventListener("click", this._onClick);
-		document.addEventListener("keydown", this._onKeyDown);
+		if (typeof document !== "undefined") {
+			document.addEventListener("click", this._onClick);
+			document.addEventListener("keydown", this._onKeyDown);
+		}
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
-		document.removeEventListener("click", this._onClick);
-		document.removeEventListener("keydown", this._onKeyDown);
+		if (typeof document !== "undefined") {
+			document.removeEventListener("click", this._onClick);
+			document.removeEventListener("keydown", this._onKeyDown);
+		}
 	}
 
 	stores() {
@@ -83,7 +87,7 @@ class BlobContainer extends Container {
 				// so just redirect to the dir listing.
 				//
 				// TODO(sqs): Improve handling of this case.
-				window.location.href = activeDefData.URL;
+				if (typeof window !== "undefined") window.location.href = activeDefData.URL;
 				return;
 			}
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.activeDef));
@@ -93,7 +97,7 @@ class BlobContainer extends Container {
 		}
 		if (nextState.defOptionsURLs && prevState.defOptionsURLs !== nextState.defOptionsURLs) {
 			nextState.defOptionsURLs.forEach((url) => {
-				Dispatcher.asyncDispatch(new DefActions.WantDef(url));
+				Dispatcher.dispatch(new DefActions.WantDef(url));
 			});
 		}
 	}

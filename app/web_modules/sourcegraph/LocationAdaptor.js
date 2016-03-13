@@ -4,13 +4,17 @@ const pushstateEvent = "LocationAdaptor.pushstate";
 
 class LocationAdaptor extends React.Component {
 	componentDidMount() {
-		window.addEventListener("popstate", this._locationChanged.bind(this));
-		window.addEventListener(pushstateEvent, this._locationChanged.bind(this));
+		if (typeof window !== "undefined") {
+			window.addEventListener("popstate", this._locationChanged.bind(this));
+			window.addEventListener(pushstateEvent, this._locationChanged.bind(this));
+		}
 	}
 
 	componentWillUnmount() {
-		window.removeEventListener("popstate", this._locationChanged.bind(this));
-		window.removeEventListener(pushstateEvent, this._locationChanged.bind(this));
+		if (typeof window !== "undefined") {
+			window.removeEventListener("popstate", this._locationChanged.bind(this));
+			window.removeEventListener(pushstateEvent, this._locationChanged.bind(this));
+		}
 	}
 
 	_locationChanged() {
@@ -20,14 +24,23 @@ class LocationAdaptor extends React.Component {
 	render() {
 		let other = Object.assign({}, this.props);
 		delete other.component;
+
+		if (!other.location) other.location = window.location.href;
+
+		const navigate = typeof window === "undefined" ? null : (uri) => {
+			window.history.pushState(null, "", uri);
+			let event = new CustomEvent(pushstateEvent);
+			window.dispatchEvent(event);
+		};
+
 		return (
-				<this.props.component location={window.location.href} navigate={(uri) => {
-					window.history.pushState(null, "", uri);
-					let event = new CustomEvent(pushstateEvent);
-					window.dispatchEvent(event);
-				}} {...other} />
+				<this.props.component navigate={navigate} {...other} />
 		);
 	}
 }
+
+LocationAdaptor.propTypes = {
+	location: React.PropTypes.string,
+};
 
 export default LocationAdaptor;

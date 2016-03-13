@@ -1,6 +1,6 @@
 // Sentry error monitoring code
 
-if (document.head.dataset.publicRavenDsn) {
+if (typeof document !== "undefined" && document.head.dataset.publicRavenDsn) {
 	require("raven-js/dist/raven.js");
 	require("raven-js/plugins/native.js");
 	require("raven-js/plugins/console.js");
