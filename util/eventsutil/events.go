@@ -73,6 +73,13 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 	if firstUser {
 		firstUserStr = "True"
 	}
+
+	// Truncate the invite code to avoid any possibility of leaking it, but
+	// preserve the ability to link the sign up event with the invite event
+	if len(inviteCode) > 5 {
+		inviteCode = inviteCode[:5]
+	}
+
 	eventProperties := map[string]string{
 		"FirstUser":  firstUserStr,
 		"InviteCode": inviteCode,
@@ -92,6 +99,12 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write bool) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+
+	// Truncate the invite code to avoid any possibility of leaking it, but
+	// preserve the ability to link the sign up event with the invite event
+	if len(inviteCode) > 5 {
+		inviteCode = inviteCode[:5]
+	}
 
 	eventProperties := map[string]string{
 		"Invitee":     email,

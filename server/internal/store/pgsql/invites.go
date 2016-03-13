@@ -58,11 +58,16 @@ func (s *invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.Accoun
 
 	err := dbh(ctx).Insert(dbInvite)
 	if err != nil && strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
-		_, err = dbh(ctx).Update(dbInvite)
+		var oldDbInvite dbInvites
+		if err := dbh(ctx).SelectOne(&oldDbInvite, `SELECT * FROM invites WHERE "email" = $1;`, dbInvite.Email); err != nil {
+			return "", err
+		}
+		dbInvite.Token = oldDbInvite.Token
+		if _, err = dbh(ctx).Update(dbInvite); err != nil {
+			return "", err
+		}
 	}
-	if err != nil {
-		return "", err
-	}
+
 	return dbInvite.Token, nil
 }
 
