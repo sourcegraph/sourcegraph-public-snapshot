@@ -74,7 +74,7 @@ func TestExec(t *testing.T) {
 		server2 := make(chan *rpc.Call)
 		servers = [](chan<- *rpc.Call){server1, server2}
 
-		go func() {
+		go func(test *execTest) {
 			call1 := <-server1
 			*call1.Reply.(*ExecReply) = test.reply1
 			call1.Error = test.error1
@@ -84,7 +84,7 @@ func TestExec(t *testing.T) {
 			*call2.Reply.(*ExecReply) = test.reply2
 			call2.Error = test.error2
 			call2.Done <- call2
-		}()
+		}(test)
 
 		stdout, stderr, err := Command("git", "test").DividedOutput()
 		if err != test.expectedErr {
