@@ -50,6 +50,8 @@ type CloneOpt struct {
 	vcs.RemoteOpts // configures communication with the remote repository
 }
 
+// Clone initializes a new repository, adds the given remote and fetches its contents.
+// It returns an error if the repository already exists.
 func Clone(remote, repo string, opt CloneOpt) error {
 	if err := gitserver.Init(repo); err != nil {
 		return err
