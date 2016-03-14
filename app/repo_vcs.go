@@ -83,8 +83,6 @@ func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
-	panic("chaos monkey!")
-
 	var opt sourcegraph.RepoListCommitsOptions
 	err := schemautil.Decode(&opt, r.URL.Query())
 	if err != nil {
