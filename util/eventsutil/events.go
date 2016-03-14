@@ -455,24 +455,6 @@ func LogLinkGitHub(ctx context.Context, ghUser *github.User) {
 	})
 }
 
-func LogAddMirrorRepos(ctx context.Context, numPrivate, numPublic int32) {
-	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
-
-	eventProperties := map[string]string{
-		"NumPrivate": fmt.Sprintf("%d", numPrivate),
-		"NumPublic":  fmt.Sprintf("%d", numPublic),
-	}
-
-	Log(&sourcegraph.Event{
-		Type:            "AddMirrorRepos",
-		ClientID:        clientID,
-		UserID:          userID,
-		DeviceID:        deviceID,
-		EventProperties: eventProperties,
-	})
-}
-
 func LogAddTeammates(ctx context.Context, numSuccess, numFail int32) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)

@@ -21,6 +21,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/platform"
 	"src.sourcegraph.com/sourcegraph/repoupdater"
 	"src.sourcegraph.com/sourcegraph/util/cacheutil"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
@@ -51,12 +52,13 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
 		// Automatically create a local mirror.
 		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
-		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+		repo, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
 			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: int32(remoteRepo.GitHubID)},
 		})
 		if err != nil {
 			return err
 		}
+		eventsutil.LogAddRepo(ctx, remoteRepo.HTTPCloneURL, repo.Language, repo.Mirror, repo.Private)
 	}
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
