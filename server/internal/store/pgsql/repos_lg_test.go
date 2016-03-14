@@ -3,8 +3,6 @@
 package pgsql_test
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -137,12 +135,5 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	// Manually check $SGPATH/repos/myrepo/name for the directory and confirm it
-	// was deleted.
-	_, err = os.Stat(filepath.Join(pgsqlServer.Config.Serve.ReposDir, repo))
-	if !os.IsNotExist(err) {
-		t.Fatal("Repos.Delete did not properly remove the repository directory")
 	}
 }
