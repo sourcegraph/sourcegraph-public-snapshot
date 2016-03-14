@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/rpc"
 	"time"
+
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 type Git struct {
@@ -64,4 +66,35 @@ func Dial(addr string) error {
 	}()
 
 	return nil
+}
+
+type repoExistsReply interface {
+	repoExists() bool
+}
+
+func broadcastCall(serviceMethod string, args interface{}, newReply func() repoExistsReply) (interface{}, error) {
+	done := make(chan *rpc.Call, len(servers))
+	for _, server := range servers {
+		server <- &rpc.Call{
+			ServiceMethod: serviceMethod,
+			Args:          args,
+			Reply:         newReply(),
+			Done:          done,
+		}
+	}
+	var rpcError error
+	for range servers {
+		call := <-done
+		if call.Error != nil {
+			rpcError = call.Error
+			continue
+		}
+		if call.Reply.(repoExistsReply).repoExists() {
+			return call.Reply, nil
+		}
+	}
+	if rpcError != nil {
+		return nil, rpcError
+	}
+	return nil, vcs.ErrRepoNotExist
 }

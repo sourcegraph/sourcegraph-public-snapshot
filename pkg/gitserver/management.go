@@ -60,6 +60,10 @@ type RemoveReply struct {
 	RepoExists bool
 }
 
+func (r *RemoveReply) repoExists() bool {
+	return r.RepoExists
+}
+
 func (g *Git) Remove(args *RemoveArgs, reply *RemoveReply) error {
 	dir := path.Join(ReposDir, args.Repo)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -77,29 +81,10 @@ func (g *Git) Remove(args *RemoveArgs, reply *RemoveReply) error {
 }
 
 func Remove(repo string) error {
-	done := make(chan *rpc.Call, len(servers))
-	for _, server := range servers {
-		server <- &rpc.Call{
-			ServiceMethod: "Git.Remove",
-			Args:          &RemoveArgs{Repo: repo},
-			Reply:         &RemoveReply{},
-			Done:          done,
-		}
-	}
-	var rpcError error
-	for range servers {
-		call := <-done
-		if call.Error != nil {
-			rpcError = call.Error
-			continue
-		}
-		reply := call.Reply.(*RemoveReply)
-		if reply.RepoExists {
-			return nil
-		}
-	}
-	if rpcError != nil {
-		return rpcError
-	}
-	return vcs.ErrRepoNotExist
+	_, err := broadcastCall(
+		"Git.Remove",
+		&RemoveArgs{Repo: repo},
+		func() repoExistsReply { return new(RemoveReply) },
+	)
+	return err
 }

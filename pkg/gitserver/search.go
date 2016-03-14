@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net/rpc"
 	"os"
 	"os/exec"
 	"path"
@@ -25,6 +24,10 @@ type SearchArgs struct {
 type SearchReply struct {
 	RepoExists bool
 	Results    []*vcs.SearchResult
+}
+
+func (r *SearchReply) repoExists() bool {
+	return r.RepoExists
 }
 
 func (g *Git) Search(args *SearchArgs, reply *SearchReply) error {
@@ -156,29 +159,13 @@ func exitStatus(err error) int {
 }
 
 func Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	done := make(chan *rpc.Call, len(servers))
-	for _, server := range servers {
-		server <- &rpc.Call{
-			ServiceMethod: "Git.Search",
-			Args:          &SearchArgs{Repo: repo, Commit: commit, Opt: opt},
-			Reply:         &SearchReply{},
-			Done:          done,
-		}
+	reply, err := broadcastCall(
+		"Git.Search",
+		&SearchArgs{Repo: repo, Commit: commit, Opt: opt},
+		func() repoExistsReply { return new(SearchReply) },
+	)
+	if err != nil {
+		return nil, err
 	}
-	var rpcError error
-	for range servers {
-		call := <-done
-		if call.Error != nil {
-			rpcError = call.Error
-			continue
-		}
-		reply := call.Reply.(*SearchReply)
-		if reply.RepoExists {
-			return reply.Results, nil
-		}
-	}
-	if rpcError != nil {
-		return nil, rpcError
-	}
-	return nil, vcs.ErrRepoNotExist
+	return reply.(*SearchReply).Results, nil
 }
