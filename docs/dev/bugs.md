@@ -8,9 +8,6 @@ If you find bugs or documentation mistakes in Sourcegraph, please let us know by
 [contacting support](mailto:support@sourcegraph.com). We appreciate all
 bug reports, no matter how small.
 
-You can also open a thread while browsing through code; hover-over the left gutter
-to open a thread which automatically references the code you're filing a report about.
-
 To make your bug report accurate and easy to understand, please try to create bug reports that are:
 
 - Specific. Include as much details as possible: which version, what environment, what configuration, etc. You can also attach logs. Whatever you think is relevant.
