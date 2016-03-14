@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"log"
+	"net/rpc"
 	"os"
 	"os/exec"
 	"path"
@@ -107,19 +108,36 @@ func Command(name string, arg ...string) *Cmd {
 }
 
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
-	var reply ExecReply
-	if err := call("Git.Exec", &ExecArgs{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input}, &reply); err != nil {
-		return nil, nil, err
+	done := make(chan *rpc.Call, len(servers))
+	for _, server := range servers {
+		server <- &rpc.Call{
+			ServiceMethod: "Git.Exec",
+			Args:          &ExecArgs{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input},
+			Reply:         &ExecReply{},
+			Done:          done,
+		}
 	}
-	if !reply.RepoExists {
-		return nil, nil, vcs.ErrRepoNotExist
+	var rpcError error
+	for range servers {
+		call := <-done
+		if call.Error != nil {
+			rpcError = call.Error
+			continue
+		}
+		reply := call.Reply.(*ExecReply)
+		if reply.RepoExists {
+			var err error
+			if reply.Error != "" {
+				err = errors.New(reply.Error)
+			}
+			c.ExitStatus = reply.ExitStatus
+			return reply.Stdout, reply.Stderr, err
+		}
 	}
-	var err error
-	if reply.Error != "" {
-		err = errors.New(reply.Error)
+	if rpcError != nil {
+		return nil, nil, rpcError
 	}
-	c.ExitStatus = reply.ExitStatus
-	return reply.Stdout, reply.Stderr, err
+	return nil, nil, vcs.ErrRepoNotExist
 }
 
 func (c *Cmd) Run() error {

@@ -1,10 +1,15 @@
 package gitserver
 
 import (
+	"errors"
 	"fmt"
+	"hash/fnv"
+	"net/rpc"
 	"os"
 	"os/exec"
 	"path"
+
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 type InitArgs struct {
@@ -20,15 +25,47 @@ func (g *Git) Init(args *InitArgs, reply *struct{}) error {
 }
 
 func Init(repo string) error {
-	return call("Git.Init", &InitArgs{Repo: repo}, &struct{}{})
+	cmd := Command("git", "remote")
+	cmd.Repo = repo
+	err := cmd.Run()
+	if err == nil {
+		return errors.New("repository already exists")
+	}
+	if err != vcs.ErrRepoNotExist {
+		return err
+	}
+
+	// this hash is used to avoid concurrent init on two servers, it does not need to be stable over long timespans
+	h := fnv.New32a()
+	if _, err := h.Write([]byte(repo)); err != nil {
+		return err
+	}
+	serverIndex := int(h.Sum32()) % len(servers)
+
+	done := make(chan *rpc.Call, 1)
+	servers[serverIndex] <- &rpc.Call{
+		ServiceMethod: "Git.Init",
+		Args:          &InitArgs{Repo: repo},
+		Reply:         &struct{}{},
+		Done:          done,
+	}
+	return (<-done).Error
 }
 
 type RemoveArgs struct {
 	Repo string
 }
 
-func (g *Git) Remove(args *RemoveArgs, reply *struct{}) error {
+type RemoveReply struct {
+	RepoExists bool
+}
+
+func (g *Git) Remove(args *RemoveArgs, reply *RemoveReply) error {
 	dir := path.Join(ReposDir, args.Repo)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil
+	}
+	reply.RepoExists = true
 
 	cmd := exec.Command("git", "remote")
 	cmd.Dir = dir
@@ -40,5 +77,29 @@ func (g *Git) Remove(args *RemoveArgs, reply *struct{}) error {
 }
 
 func Remove(repo string) error {
-	return call("Git.Remove", &RemoveArgs{Repo: repo}, &struct{}{})
+	done := make(chan *rpc.Call, len(servers))
+	for _, server := range servers {
+		server <- &rpc.Call{
+			ServiceMethod: "Git.Remove",
+			Args:          &RemoveArgs{Repo: repo},
+			Reply:         &RemoveReply{},
+			Done:          done,
+		}
+	}
+	var rpcError error
+	for range servers {
+		call := <-done
+		if call.Error != nil {
+			rpcError = call.Error
+			continue
+		}
+		reply := call.Reply.(*RemoveReply)
+		if reply.RepoExists {
+			return nil
+		}
+	}
+	if rpcError != nil {
+		return rpcError
+	}
+	return vcs.ErrRepoNotExist
 }

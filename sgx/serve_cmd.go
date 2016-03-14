@@ -183,8 +183,8 @@ type ServeCmd struct {
 
 	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
-	ReposDir  string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
-	GitServer string `long:"git-server" description:"address of the remote git server process; a local git server process is used by default"`
+	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
+	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
@@ -1004,9 +1004,12 @@ func (c *ServeCmd) safeConfigFlags() string {
 }
 
 func (c *ServeCmd) runGitServer() {
-	if c.GitServer != "" {
-		if err := gitserver.Dial(c.GitServer); err != nil {
-			log.Fatalf("git-server dial failed: %s", err)
+	gitServers := strings.Fields(c.GitServers)
+	if len(c.GitServers) != 0 {
+		for _, addr := range gitServers {
+			if err := gitserver.Dial(addr); err != nil {
+				log.Fatalf("git-server dial failed: %s", err)
+			}
 		}
 		return
 	}

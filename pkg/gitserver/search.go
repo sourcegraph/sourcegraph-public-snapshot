@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/rpc"
 	"os"
 	"os/exec"
 	"path"
@@ -21,7 +22,18 @@ type SearchArgs struct {
 	Opt    vcs.SearchOptions
 }
 
-func (g *Git) Search(args *SearchArgs, reply *[]*vcs.SearchResult) error {
+type SearchReply struct {
+	RepoExists bool
+	Results    []*vcs.SearchResult
+}
+
+func (g *Git) Search(args *SearchArgs, reply *SearchReply) error {
+	dir := path.Join(ReposDir, args.Repo)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil
+	}
+	reply.RepoExists = true
+
 	var queryType string
 	switch args.Opt.QueryType {
 	case vcs.FixedQuery:
@@ -31,7 +43,7 @@ func (g *Git) Search(args *SearchArgs, reply *[]*vcs.SearchResult) error {
 	}
 
 	cmd := exec.Command("git", "grep", "--null", "--line-number", "-I", "--no-color", "--context", strconv.Itoa(int(args.Opt.ContextLines)), queryType, "-e", args.Opt.Query, string(args.Commit))
-	cmd.Dir = path.Join(ReposDir, args.Repo)
+	cmd.Dir = dir
 	cmd.Stderr = os.Stderr
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -43,21 +55,20 @@ func (g *Git) Search(args *SearchArgs, reply *[]*vcs.SearchResult) error {
 	}
 
 	errc := make(chan error)
-	var res []*vcs.SearchResult
 	go func() {
 		rd := bufio.NewReader(out)
 		var r *vcs.SearchResult
 		addResult := func(rr *vcs.SearchResult) bool {
 			if rr != nil {
 				if args.Opt.Offset == 0 {
-					res = append(res, rr)
+					reply.Results = append(reply.Results, rr)
 				} else {
 					args.Opt.Offset--
 				}
 				r = nil
 			}
 			// Return true if no more need to be added.
-			return len(res) == int(args.Opt.N)
+			return len(reply.Results) == int(args.Opt.N)
 		}
 		for {
 			line, err := rd.ReadBytes('\n')
@@ -127,7 +138,6 @@ func (g *Git) Search(args *SearchArgs, reply *[]*vcs.SearchResult) error {
 		return err
 	}
 
-	*reply = res
 	return nil
 }
 
@@ -146,9 +156,29 @@ func exitStatus(err error) int {
 }
 
 func Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	var reply []*vcs.SearchResult
-	if err := call("Git.Search", &SearchArgs{Repo: repo, Commit: commit, Opt: opt}, &reply); err != nil {
-		return nil, err
+	done := make(chan *rpc.Call, len(servers))
+	for _, server := range servers {
+		server <- &rpc.Call{
+			ServiceMethod: "Git.Search",
+			Args:          &SearchArgs{Repo: repo, Commit: commit, Opt: opt},
+			Reply:         &SearchReply{},
+			Done:          done,
+		}
 	}
-	return reply, nil
+	var rpcError error
+	for range servers {
+		call := <-done
+		if call.Error != nil {
+			rpcError = call.Error
+			continue
+		}
+		reply := call.Reply.(*SearchReply)
+		if reply.RepoExists {
+			return reply.Results, nil
+		}
+	}
+	if rpcError != nil {
+		return nil, rpcError
+	}
+	return nil, vcs.ErrRepoNotExist
 }
