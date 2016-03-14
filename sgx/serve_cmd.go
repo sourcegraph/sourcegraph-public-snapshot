@@ -23,6 +23,8 @@ import (
 	"text/template"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/NYTimes/gziphandler"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
@@ -32,7 +34,6 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sqs/pbtypes"
 	"src.sourcegraph.com/sourcegraph/app"
@@ -183,8 +184,8 @@ type ServeCmd struct {
 
 	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
-	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos"`
-	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default"`
+	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
+	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default" env:"SRC_GIT_SERVERS"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
