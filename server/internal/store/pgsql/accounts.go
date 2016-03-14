@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
@@ -16,6 +17,7 @@ import (
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 	"src.sourcegraph.com/sourcegraph/store"
+	"src.sourcegraph.com/sourcegraph/util/dbutil"
 	"src.sourcegraph.com/sourcegraph/util/randstring"
 )
 
@@ -83,11 +85,24 @@ func (s *accounts) Delete(ctx context.Context, uid int32) error {
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.Delete", uid); err != nil {
 		return err
 	}
-	dbUID := int(uid)
-	if _, err := dbh(ctx).Exec(`DELETE FROM users where uid=$1`, dbUID); err != nil {
-		return err
+
+	if uid == 0 {
+		return &store.UserNotFoundError{UID: 0}
 	}
-	return nil
+
+	return dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
+		dbUID := int(uid)
+
+		if _, err := tx.Exec(`DELETE FROM users where uid=$1`, dbUID); err != nil {
+			return err
+		}
+
+		if _, err := tx.Exec(`DELETE FROM user_email WHERE uid=$1;`, dbUID); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func init() {
