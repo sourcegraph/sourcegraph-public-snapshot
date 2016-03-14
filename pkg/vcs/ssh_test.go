@@ -2,6 +2,7 @@ package vcs_test
 
 import (
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -62,7 +63,7 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			}
 
 			gitURL := s.GitURL + "/" + filepath.Base(test.repoDir)
-			cloneDir := makeTmpDir(t, "ssh-clone")
+			cloneDir := path.Join(makeTmpDir(t, "ssh-clone"), "repo")
 			t.Logf("Cloning from %s to %s", gitURL, cloneDir)
 			if err := gitcmd.Clone(gitURL, cloneDir, opt); err != nil {
 				t.Fatalf("%s: Clone: %s", label, err)
@@ -120,7 +121,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 		wantUpdateResult *vcs.UpdateResult
 	}{
 		"git cmd": { // gitcmd
-			vcs: "git", baseDir: initGitRepository(t, gitCommands...), headDir: makeTmpDir(t, "git-update-ssh"),
+			vcs: "git", baseDir: initGitRepository(t, gitCommands...), headDir: path.Join(makeTmpDir(t, "git-update-ssh"), "repo"),
 			newCmds: []string{"git tag t0", "git checkout -b b0"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -1064,7 +1065,7 @@ func TestClone(t *testing.T) {
 	t.Parallel()
 
 	url := initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty")
-	dir := makeTmpDir(t, "git-clone")
+	dir := path.Join(makeTmpDir(t, "git-clone"), "repo")
 	if err := gitcmd.Clone(url, dir, gitcmd.CloneOpt{}); err != nil {
 		t.Errorf("Clone(%q, %q): %s", url, dir, err)
 	}
@@ -1085,7 +1086,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		wantUpdateResult *vcs.UpdateResult
 	}{
 		{
-			vcs: "git", baseDir: initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty", "git tag initial"), headDir: makeTmpDir(t, "git-clone"),
+			vcs: "git", baseDir: initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty", "git tag initial"), headDir: path.Join(makeTmpDir(t, "git-clone"), "repo"),
 			newCmds: []string{"touch newfile", "git add newfile", "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m newfile --author='a <a@a.com>' --date 2006-01-02T15:04:05Z", "git tag second"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{
