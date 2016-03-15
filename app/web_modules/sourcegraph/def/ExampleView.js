@@ -41,6 +41,7 @@ class ExampleView extends Component {
 			// the beginning of this code excerpt, not the full file.
 			Object.assign({}, ann, {StartByte: ann.StartByte - example.Range.StartByte, EndByte: ann.EndByte - example.Range.StartByte})
 		)): null;
+		state.anns = anns ? {Annotations: state.anns} : null;
 	}
 
 	onStateTransition(prevState, nextState) {

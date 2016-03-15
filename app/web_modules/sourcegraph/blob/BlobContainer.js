@@ -54,8 +54,8 @@ class BlobContainer extends Container {
 		state.path = props.activeDef && activeDefData ? activeDefData.File : props.path;
 
 		// fetch file content
-		state.file = state.path && BlobStore.files.get(state.repo, state.rev, state.path);
-		state.anns = state.path && BlobStore.annotations.get(state.repo, state.rev, "", state.path, 0, 0);
+		state.file = state.path ? BlobStore.files.get(state.repo, state.rev, state.path) : null;
+		state.anns = state.path ? BlobStore.annotations.get(state.repo, state.rev, "", state.path, 0, 0) : null;
 		state.annotations = BlobStore.annotations;
 
 		if (state.activeDef && state.file && activeDefData) {
@@ -135,7 +135,7 @@ class BlobContainer extends Container {
 						<Blob
 							ref={(e) => this._blob = e}
 							contents={this.state.file.ContentsString}
-							annotations={this.state.anns ? this.state.anns.Annotations : null}
+							annotations={this.state.anns}
 							lineNumbers={true}
 							highlightSelectedLines={true}
 							startLine={this.state.startLine}

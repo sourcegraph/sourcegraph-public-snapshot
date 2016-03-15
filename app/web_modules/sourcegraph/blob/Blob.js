@@ -67,12 +67,12 @@ class Blob extends Component {
 		if (state.contents !== props.contents) {
 			state.contents = props.contents;
 			state.lines = fileLines(props.contents);
-			state.lineStartBytes = this._computeLineStartBytes(state.lines);
+			state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : this._computeLineStartBytes(state.lines);
 			updateAnns = true;
 		}
 
 		if (updateAnns) {
-			state.lineAnns = state.lineStartBytes && state.annotations ? annotationsByLine(state.lineStartBytes, state.annotations, state.lines) : null;
+			state.lineAnns = state.lineStartBytes && state.annotations && state.annotations.Annotations ? annotationsByLine(state.lineStartBytes, state.annotations.Annotations, state.lines) : null;
 		}
 	}
 
@@ -241,7 +241,10 @@ class Blob extends Component {
 
 Blob.propTypes = {
 	contents: React.PropTypes.string,
-	annotations: React.PropTypes.array,
+	annotations: React.PropTypes.shape({
+		Annotations: React.PropTypes.array,
+		LineStartBytes: React.PropTypes.array,
+	}),
 	lineNumbers: React.PropTypes.bool,
 	startLine: React.PropTypes.number,
 	startCol: React.PropTypes.number,

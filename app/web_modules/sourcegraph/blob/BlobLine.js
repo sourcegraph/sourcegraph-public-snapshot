@@ -8,19 +8,12 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 
 class BlobLine extends Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			ownAnnURLs: {},
-		};
-	}
-
 	reconcileState(state, props) {
 		// Update ownAnnURLs when they change.
 		if (state.annotations !== props.annotations) {
 			state.annotations = props.annotations;
-			state.ownAnnURLs = {};
-			if (state.annotations) {
+			if (state.annotations && state.annotations.length) {
+				state.ownAnnURLs = {};
 				state.annotations.forEach((ann) => {
 					if (ann.URL) state.ownAnnURLs[ann.URL] = true;
 					if (ann.URLs) ann.URLs.forEach((url) => state.ownAnnURLs[url] = true);
@@ -29,8 +22,8 @@ class BlobLine extends Component {
 		}
 
 		// Filter highlightedDef to improve perf.
-		state.highlightedDef = state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
-		state.activeDef = state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
+		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
+		state.activeDef = state.ownAnnURLs && state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
 
 		state.lineNumber = props.lineNumber || null;
 		state.oldLineNumber = props.oldLineNumber || null;
@@ -55,10 +48,10 @@ class BlobLine extends Component {
 		});
 	}
 
-	render() {
+	_annotate() {
 		const hasURL = (ann, url) => url && (ann.URL ? ann.URL === url : ann.URLs.includes(url));
 		let i = 0;
-		let contents = annotate(this.state.contents, this.state.startByte, this.state.annotations || [], (ann, content) => {
+		return annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
 			i++;
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
@@ -94,7 +87,10 @@ class BlobLine extends Component {
 			}
 			return <span key={i} className={ann.Class}>{content}</span>;
 		});
+	}
 
+	render() {
+		let contents = this.state.annotations ? this._annotate() : this.state.contents;
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (

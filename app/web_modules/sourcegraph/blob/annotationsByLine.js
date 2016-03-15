@@ -11,6 +11,7 @@ export default function annotationsByLine(lineStartBytes, annotations, lines) {
 	const lineEndBytes = lineStartBytes.map((lineStartByte, i) =>
 		lineStartBytes[i + 1] || lineStartByte + lines[i].length
 	);
+
 	let line = 0; // 0-indexed line number
 	for (let i = 0; i < annotations.length; i++) {
 		const ann = annotations[i];
@@ -23,8 +24,14 @@ export default function annotationsByLine(lineStartBytes, annotations, lines) {
 		}
 		if (line === lines.length) break;
 
+		// Optimization: add the ann to this line (if it intersects);
+		if (ann.StartByte < lineEndBytes[line] && ann.EndByte >= lineStartBytes[line]) {
+			lineAnns[line].push(ann);
+		}
+
 		// Add the ann to all lines (current and subsequent) it intersects.
-		for (let line2 = line; line2 < lines.length; line2++) {
+		if (ann.EndByte <= lineEndBytes[line]) continue;
+		for (let line2 = line + 1; line2 < lines.length; line2++) {
 			if (ann.StartByte >= lineEndBytes[line2]) break;
 			if (ann.StartByte < lineEndBytes[line2] && ann.EndByte >= lineStartBytes[line2]) {
 				lineAnns[line2].push(ann);
