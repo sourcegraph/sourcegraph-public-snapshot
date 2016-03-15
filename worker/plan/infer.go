@@ -73,5 +73,5 @@ var langConfigs = map[string]struct {
 	"Java":       {},
 	"Python":     {},
 	"TypeScript": {},
-	"C#": {},
+	"C#":         {},
 }
