@@ -916,6 +916,11 @@
 			"revisionTime": "2015-05-13T20:26:30-04:00"
 		},
 		{
+			"path": "gopkg.in/olebedev/go-duktape.v2",
+			"revision": "55fa18c4e63070a925cf2090e699d4e6edd80949",
+			"revisionTime": "2016-03-05T22:31:35+05:00"
+		},
+		{
 			"path": "gopkg.in/yaml.v2",
 			"revision": "7ad95dd0798a40da1ccdff6dff35fd177b5edf40",
 			"revisionTime": "2015-06-24T11:29:02+01:00"
