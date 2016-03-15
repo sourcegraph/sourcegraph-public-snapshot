@@ -1,8 +1,8 @@
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {sortAnns} from "sourcegraph/blob/Annotations";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import defaultXhr from "sourcegraph/util/xhr";
+import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 
 const BlobBackend = {
 	xhr: defaultXhr,
@@ -53,36 +53,3 @@ const BlobBackend = {
 Dispatcher.register(BlobBackend.__onDispatch);
 
 export default BlobBackend;
-
-// prepareAnnotations should be called on annotations received from the server
-// to prepare them in ways described below for presentation in the UI.
-export function prepareAnnotations(anns) {
-	// Ensure that syntax highlighting is the innermost annotation so
-	// that the CSS colors are applied (otherwise ref links appear in
-	// the normal link color).
-	anns.forEach((a) => {
-		if (!a.URL) a.WantInner = 1;
-	});
-
-	sortAnns(anns);
-
-	// Condense coincident refs ("multiple defs", such as an embedded Go
-	// field's ref to both the field def and the type def).
-	for (let i = 0; i < anns.length; i++) {
-		const ann = anns[i];
-		for (let j = i + 1; j < anns.length; j++) {
-			const ann2 = anns[j];
-			if (ann.StartByte === ann2.StartByte && ann.EndByte === ann2.EndByte) {
-				if ((ann.URLs || ann.URL) && ann2.URL) {
-					ann.URLs = (ann.URLs || [ann.URL]).concat(ann2.URL);
-					delete ann.URL;
-					anns.splice(j, 1); // Delete the coincident ref.
-				}
-			} else {
-				break;
-			}
-		}
-	}
-
-	return anns;
-}

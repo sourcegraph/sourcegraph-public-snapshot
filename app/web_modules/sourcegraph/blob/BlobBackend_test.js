@@ -2,7 +2,7 @@ import expect from "expect.js";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 import BlobBackend from "sourcegraph/blob/BlobBackend";
-import {prepareAnnotations} from "sourcegraph/blob/BlobBackend";
+import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 
 describe("BlobBackend", () => {

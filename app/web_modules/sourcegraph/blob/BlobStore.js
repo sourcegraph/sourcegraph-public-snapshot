@@ -2,6 +2,7 @@ import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
+import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 
 function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;
@@ -53,6 +54,13 @@ export class BlobStore extends Store {
 
 		this.__emitChange();
 	}
+}
+
+function prepareAnnotationsInPlace(anns) {
+	Object.keys(anns).forEach((key) => {
+		anns[key].Annotations = prepareAnnotations(anns[key].Annotations);
+	});
+	return anns;
 }
 
 export default new BlobStore(Dispatcher);
