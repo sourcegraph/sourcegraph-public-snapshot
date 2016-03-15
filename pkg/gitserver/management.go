@@ -1,6 +1,8 @@
 package gitserver
 
 import (
+	"crypto/md5"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -40,7 +42,9 @@ func Init(repo string) error {
 	if _, err := h.Write([]byte(repo)); err != nil {
 		return err
 	}
-	serverIndex := int(h.Sum32()) % len(servers)
+
+	sum := md5.Sum([]byte(repo))
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(servers))
 
 	done := make(chan *rpc.Call, 1)
 	servers[serverIndex] <- &rpc.Call{
