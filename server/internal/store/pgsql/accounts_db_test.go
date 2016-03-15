@@ -5,6 +5,7 @@ package pgsql
 import (
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
@@ -25,8 +26,9 @@ func TestAccounts_Create_ok(t *testing.T) {
 	}
 
 	want := sourcegraph.User{Login: "u", Name: "n"}
+	email := &sourcegraph.EmailAddr{Email: "email@email.email"}
 
-	created, err := s.Create(ctx, &want)
+	created, err := s.Create(ctx, &want, email)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,12 +59,15 @@ func TestAccounts_Create_duplicate(t *testing.T) {
 	defer done()
 
 	s := &accounts{}
+	email := &sourcegraph.EmailAddr{Email: "email@email.email"}
 
-	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u"}); err != nil {
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u"}, email); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := s.Create(ctx, &sourcegraph.User{Login: "u"})
+	email = &sourcegraph.EmailAddr{Email: "email1@email.email"}
+
+	_, err := s.Create(ctx, &sourcegraph.User{Login: "u"}, email)
 	if _, ok := err.(*store.AccountAlreadyExistsError); !ok {
 		t.Fatalf("got err type %T, want %T", err, &store.AccountAlreadyExistsError{})
 	}
@@ -77,7 +82,9 @@ func TestAccounts_Create_noLogin(t *testing.T) {
 	defer done()
 
 	s := &accounts{}
-	if _, err := s.Create(ctx, &sourcegraph.User{Login: ""}); err == nil {
+	email := &sourcegraph.EmailAddr{Email: "email@email.email"}
+
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: ""}, email); err == nil {
 		t.Fatal("err == nil")
 	}
 }
@@ -91,8 +98,48 @@ func TestAccounts_Create_uidAlreadySet(t *testing.T) {
 	defer done()
 
 	s := &accounts{}
-	if _, err := s.Create(ctx, &sourcegraph.User{UID: 123, Login: "u"}); err == nil {
+	email := &sourcegraph.EmailAddr{Email: "email@email.email"}
+
+	if _, err := s.Create(ctx, &sourcegraph.User{UID: 123, Login: "u"}, email); err == nil {
 		t.Fatal("err == nil")
+	}
+}
+
+// TestAccounts_Create_noEmail tests the behavior of Accounts.Create
+// when called with an empty email
+func TestAccounts_Create_noEmail(t *testing.T) {
+	t.Parallel()
+
+	ctx, done := testContext()
+	defer done()
+
+	s := &accounts{}
+	email := &sourcegraph.EmailAddr{Email: ""}
+
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: ""}, email); err == nil {
+		t.Fatal("err == nil")
+	}
+}
+
+// TestAccounts_Create_ExistingEmail tests the behavior of Accounts.Create
+// when called with an email that is used by another account
+func TestAccounts_Create_ExistingEmail(t *testing.T) {
+	t.Parallel()
+
+	ctx, done := testContext()
+	defer done()
+
+	s := &accounts{}
+	email := &sourcegraph.EmailAddr{Email: "email@email.email"}
+
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u"}, email); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u2"}, email); err != nil {
+		if !strings.Contains(err.Error(), "primary email already associated with a user") {
+			t.Fatal("wrong error was produced, was expecing code == 6 and error about email already taken")
+		}
 	}
 }
 

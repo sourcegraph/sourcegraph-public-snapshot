@@ -108,13 +108,14 @@ type userCreateCmd struct {
 	Args struct {
 		Login    string `name:"LOGIN" description:"login of the user to add"`
 		Password string `name:"PASSWORD" description:"password of the user to add"`
+		Email    string `name:"EMAIL" description:"email of the user to add"`
 	} `positional-args:"yes" required:"yes"`
 }
 
 func (c *userCreateCmd) Execute(args []string) error {
 	cl := client.Client()
 
-	user, err := cl.Accounts.Create(client.Ctx, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password})
+	user, err := cl.Accounts.Create(client.Ctx, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password, Email: c.Args.Email})
 	if err != nil {
 		return err
 	}

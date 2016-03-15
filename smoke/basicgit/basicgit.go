@@ -18,6 +18,7 @@ import (
 var (
 	username = flag.String("username", "testuser1", "the username to use for src operations")
 	password = flag.String("password", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "the password to use for src operations")
+	email    = flag.String("email", "email@email.email", "the email to use for src operations")
 
 	registeredClient            = "testserver"
 	registeredClientURL         = "http://localhost:3080"
@@ -77,6 +78,7 @@ func main_() error {
 
 	os.Setenv("SG_USERNAME", *username)
 	os.Setenv("SG_PASSWORD", *password)
+	os.Setenv("SG_EMAIL", *email)
 
 	// launch local server
 	server, err := async(`src serve --auth.allow-all-logins --id-key=$SGPATH/id.pem`)
@@ -98,7 +100,7 @@ func main_() error {
 	}
 
 	// create user on instance (will be granted admin access)
-	if err := ce(`src --endpoint=http://localhost:3080 user create $SG_USERNAME $SG_PASSWORD`); err != nil {
+	if err := ce(`src --endpoint=http://localhost:3080 user create $SG_USERNAME $SG_PASSWORD $SG_EMAIL`); err != nil {
 		return err
 	}
 

@@ -30,7 +30,7 @@ func TestCreateFirstAccount(t *testing.T) {
 		}
 		return nil
 	}
-	mock.stores.Accounts.Create_ = func(ctx context.Context, u *sourcegraph.User) (*sourcegraph.User, error) {
+	mock.stores.Accounts.Create_ = func(ctx context.Context, u *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 		if want := "a user"; want != u.Login {
 			t.Errorf("got %s, want %s", u.Login, want)
 		}
@@ -39,7 +39,7 @@ func TestCreateFirstAccount(t *testing.T) {
 		}
 		return &sourcegraph.User{UID: 123}, nil
 	}
-	Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "a user", Password: "func"})
+	Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "a user", Password: "func", Email: "email@email.com"})
 }
 
 func TestCreate(t *testing.T) {
@@ -56,7 +56,7 @@ func TestCreate(t *testing.T) {
 		}
 		return nil
 	}
-	mock.stores.Accounts.Create_ = func(ctx context.Context, u *sourcegraph.User) (*sourcegraph.User, error) {
+	mock.stores.Accounts.Create_ = func(ctx context.Context, u *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 		if want := "a user"; want != u.Login {
 			t.Errorf("got %s, want %s", u.Login, want)
 		}
@@ -65,7 +65,7 @@ func TestCreate(t *testing.T) {
 		}
 		return &sourcegraph.User{UID: 123}, nil
 	}
-	Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "a user", Password: "func"})
+	Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "a user", Password: "func", Email: "email@email.com"})
 }
 
 func TestRequestPasswordReset(t *testing.T) {
