@@ -6,20 +6,20 @@
 	$sidebar-margin: $grid-gutter-width/2;
 
 	display: flex;
-	justify-content: center;
 	align-items: flex-start;
 
 	& > .content {
-		flex-basis: $content-width;
+		flex-basis: 0.8 $content-width;
 		max-width: $content-width;
 	}
 	& > .sidebar {
-		flex-basis: 360px;
+		position: relative;
+		flex-basis: $sidebar-width;
 		padding-left: $sidebar-margin;
-		margin-right: $sidebar-margin;
+		padding-right: $sidebar-margin;
+		width: $sidebar-width - $sidebar-margin;
 		& > * {
-			width: 100%;
-			min-width: 360px;
+			width: $sidebar-width - $sidebar-margin;
 		}
 	}
 
@@ -39,12 +39,6 @@
 		& > .content {
 			flex-basis: 100%;
 			max-width: initial;
-		}
-		& > .sidebar {
-			left: $sidebar-margin;
-			padding-left: 0;
-			margin-right: 0;
-			flex-basis: 0;
 		}
 	}
 }
