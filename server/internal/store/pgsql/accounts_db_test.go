@@ -118,7 +118,7 @@ func TestAccounts_RequestPasswordReset(t *testing.T) {
 
 // TestAccounts_ResetPassword_ok tests that we can successfully reset a password.
 func TestAccounts_ResetPassword_ok(t *testing.T) {
-	t.Parallel()
+	// t.Parallel() // TODO s.RequestPasswordReset occasionally has a data race with the same function from TestAccounts_RequestPasswordReset
 	ctx, done := testContext()
 	defer done()
 

@@ -96,4 +96,25 @@ func TestInvites(t *testing.T) {
 	if err := s.DeleteByEmail(ctx, "u@d.com"); err == nil {
 		t.Errorf("expected error deleting already deleted token, got nil")
 	}
+
+	// Test that inviting the same person twice sends the same token both times
+	token, err = s.CreateOrUpdate(ctx, &sourcegraph.AccountInvite{Email: "n@b.com", Write: true, Admin: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	token1, err := s.CreateOrUpdate(ctx, &sourcegraph.AccountInvite{Email: "n@b.com", Write: false, Admin: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if token != token1 {
+		t.Errorf("expected same token to be returned when re-inviting the same email")
+	}
+
+	// Test that the second invite updates the invite permissions
+	got1, err := s.get(ctx, token1)
+	if got1.Admin != false || got1.Write != false {
+		t.Errorf("expected second update to update write/admin permissions")
+	}
 }
