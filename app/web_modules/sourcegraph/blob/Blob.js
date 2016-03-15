@@ -16,23 +16,15 @@ import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 
 const tilingFactor = 100;
 
-function estimateVisibleLinesCount() {
-	const estLineHeight = 17; // px height of a line of code
-	const estTopChromeHeight = 75; // px height of top nav, file nav, etc. above the blob
-	if (typeof window !== "undefined") {
-		const screen = window.screen;
-		if (screen) return Math.ceil((screen.availHeight - estTopChromeHeight) / estLineHeight);
-	}
-	return 75; // default
-}
+// The smaller the visibleLinesCount, the faster the initial load.
+const initialVisibleLinesCount = 80;
 
 class Blob extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			firstVisibleLine: 0,
-			// The smaller the visibleLinesCount, the faster the initial load.
-			visibleLinesCount: estimateVisibleLinesCount(),
+			visibleLinesCount: initialVisibleLinesCount,
 			lineAnns: [],
 			expandedRanges: [],
 		};
@@ -70,7 +62,7 @@ class Blob extends Component {
 		state.scrollToStartLine = Boolean(props.scrollToStartLine);
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
-		state.highlightedDef = props.highlightedDef;
+		state.highlightedDef = props.highlightedDef || null;
 		state.activeDef = props.activeDef || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
@@ -368,5 +360,34 @@ Blob.propTypes = {
 	// not for secondary file views (e.g., usage examples).
 	dispatchSelections: React.PropTypes.bool,
 };
+
+// ServerBlob is used on the server instead of Blob. Its render method calls into Go
+// for a fastpath for generating its markup.
+class ServerBlob extends Component { // eslint-disable-line react/no-multi-comp
+	render() {
+		let reactID = this._reactInternalInstance._nativeContainerInfo._idCounter;
+		let props = Object.assign({visibleLinesCount: initialVisibleLinesCount}, this.props);
+
+		// On the server, __goRenderBlob__ is a globally injected Go function that behaves like a
+		// stateless component. It accepts props and returns the HTML for the blob.
+		let html = {
+			__html: __goRenderBlob__(reactID, JSON.stringify(props)), // eslint-disable-line react/display-name, react/jsx-key, no-undef
+		};
+
+		// HACK: Update the react-id counter based on how many IDs we used, so that
+		// rendering other components works.
+		// This method is accurate because a " that's not part of the HTML tag attr
+		// would be escaped, so including the " ensures we only count valid matches.
+		let numReactIDsUsed = (html.__html.match(/(<!-- react-text: |data-reactid=")/g) || []).length;
+		this._reactInternalInstance._nativeContainerInfo._idCounter += numReactIDsUsed;
+
+		return (
+			<div className="blob-scroller" dangerouslySetInnerHTML={html} data-reactid={reactID} data-remove-second-reactid="yes"></div>
+		);
+	}
+}
+if (typeof document === "undefined" && typeof __goRenderBlob__ !== "undefined") {
+	Blob = ServerBlob;
+}
 
 export default Blob;

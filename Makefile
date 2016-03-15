@@ -135,12 +135,15 @@ db-reset: src
 drop-test-dbs:
 	psql -A -t -c "select datname from pg_database where datname like 'sgtmp%' or datname like 'graphtmp%';" | xargs -P 10 -n 1 -t dropdb
 
+app/assets/bundle.js: app-dep
+	cd app && npm run build
+
 # GOFLAGS is all test build tags (use smtest/mdtest/lgtest targets to
 # execute common subsets of tests).
 GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest uitest'
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
-test: check
+test: check app/assets/bundle.js
 	cd app && npm test
 	$(MAKE) go-test
 

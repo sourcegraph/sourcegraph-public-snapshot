@@ -8,12 +8,29 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 )
 
 func getBundleJS() (js, cacheKey string, err error) {
-	if urlStr := appconf.Flags.WebpackDevServerURL; urlStr != "" {
+	// Try all. appconf.Flags is not set when running this in a test,
+	// since that is only set when the `src serve` command is run. So,
+	// check the env vars manually.
+	try := []string{
+		os.Getenv("WEBPACK_DEV_SERVER_URL"),
+		os.Getenv("SRC_APP_WEBPACK_DEV_SERVER"),
+		appconf.Flags.WebpackDevServerURL,
+	}
+	var urlStr string
+	for _, v := range try {
+		if v != "" {
+			urlStr = v
+			break
+		}
+	}
+
+	if urlStr != "" {
 		// Support Webpack.
 		url, err := url.Parse(urlStr)
 		if err != nil {

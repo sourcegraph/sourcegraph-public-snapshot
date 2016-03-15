@@ -2617,6 +2617,14 @@ type Annotation struct {
 	// Class is the HTML class name that should be applied to this
 	// region.
 	Class string `protobuf:"bytes,4,opt,name=Class,proto3" json:"Class,omitempty"`
+	// WantInner indicates that this annotation, when being applied to
+	// the underlying text, should be inner (i.e., more deeply
+	// nested). Larger numbers mean greater precedence for being
+	// nested more deeply.
+	WantInner int32 `protobuf:"varint,5,opt,name=WantInner,proto3" json:"WantInner,omitempty"`
+	// URLs can be set instead of URL if there are multiple URLs on an
+	// annotation.
+	URLs []string `protobuf:"bytes,6,rep,name=URLs" json:"URLs,omitempty"`
 }
 
 func (m *Annotation) Reset()         { *m = Annotation{} }
@@ -12004,6 +12012,26 @@ func (m *Annotation) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Class)))
 		i += copy(data[i:], m.Class)
 	}
+	if m.WantInner != 0 {
+		data[i] = 0x28
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.WantInner))
+	}
+	if len(m.URLs) > 0 {
+		for _, s := range m.URLs {
+			data[i] = 0x32
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			data[i] = uint8(l)
+			i++
+			i += copy(data[i:], s)
+		}
+	}
 	return i, nil
 }
 
@@ -14778,6 +14806,15 @@ func (m *Annotation) Size() (n int) {
 	l = len(m.Class)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.WantInner != 0 {
+		n += 1 + sovSourcegraph(uint64(m.WantInner))
+	}
+	if len(m.URLs) > 0 {
+		for _, s := range m.URLs {
+			l = len(s)
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
 	}
 	return n
 }
@@ -35489,6 +35526,54 @@ func (m *Annotation) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Class = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WantInner", wireType)
+			}
+			m.WantInner = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.WantInner |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field URLs", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.URLs = append(m.URLs, string(data[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

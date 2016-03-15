@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/olebedev/go-duktape.v2"
+
 	"golang.org/x/net/context"
 )
 
@@ -20,6 +22,29 @@ func TestBridge_simple(t *testing.T) {
 	}
 
 	if want := "Hello, world!"; resp != want {
+		t.Errorf("got %q, want %q", resp, want)
+	}
+}
+
+func TestBridge_globalFunc(t *testing.T) {
+	GlobalFuncs["endear"] = func(d *duktape.Context) int {
+		arg := d.SafeToString(-1)
+		d.PushString("dear " + arg)
+		return 1
+	}
+	defer func() {
+		delete(GlobalFuncs, "endear")
+	}()
+
+	b := New(`function main(a, callback) { callback("Hello, " + endear(a) + "!"); }`, 1, nil)
+
+	ctx := context.Background()
+	resp, err := b.CallMain(ctx, "friend")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "Hello, dear friend!"; resp != want {
 		t.Errorf("got %q, want %q", resp, want)
 	}
 }
@@ -47,7 +72,7 @@ func TestBridge_concurrent(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
-		go func() {
+		go func(i int) {
 			defer wg.Done()
 			want := fmt.Sprintf("hello %d", i)
 			resp, err := b.CallMain(ctx, want)
@@ -57,7 +82,7 @@ func TestBridge_concurrent(t *testing.T) {
 			if resp != want {
 				t.Errorf("got %q, want %q", resp, want)
 			}
-		}()
+		}(i)
 	}
 	wg.Wait()
 }

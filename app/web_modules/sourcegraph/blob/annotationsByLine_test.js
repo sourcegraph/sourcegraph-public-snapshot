@@ -5,6 +5,7 @@ function labels(annsByLine) {
 	return annsByLine.map((lineAnns) => lineAnns.map((ann) => ann.Label));
 }
 
+// NOTE: This must be kept in sync with blob_test.go TestAnnotationsByLine.
 describe("annotationsByLine", () => {
 	it("empty", () => {
 		expect(annotationsByLine([], [], [""])).to.eql([]);

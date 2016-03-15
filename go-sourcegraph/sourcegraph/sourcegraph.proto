@@ -2123,6 +2123,16 @@ message Annotation {
 	// Class is the HTML class name that should be applied to this
 	// region.
 	string Class = 4;
+
+	// WantInner indicates that this annotation, when being applied to
+	// the underlying text, should be inner (i.e., more deeply
+	// nested). Larger numbers mean greater precedence for being
+	// nested more deeply.
+	int32 WantInner = 5;
+
+	// URLs can be set instead of URL if there are multiple URLs on an
+	// annotation.
+	repeated string URLs = 6;
 }
 
 // AnnotationList is a list of annotations.

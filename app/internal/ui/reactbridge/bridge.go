@@ -13,6 +13,9 @@ import (
 	"gopkg.in/olebedev/go-duktape.v2"
 )
 
+// GlobalFuncs are injected into the global JavaScript context.
+var GlobalFuncs = map[string]func(*duktape.Context) int{}
+
 type Bridge struct {
 	pool
 }
@@ -68,7 +71,7 @@ func (b *Bridge) CallMain(ctx context.Context, arg interface{}) (string, error) 
 
 	select {
 	case res := <-resCh2:
-		if evalTime := time.Since(evalStart); evalTime > 5*time.Millisecond {
+		if evalTime := time.Since(evalStart); evalTime > 750*time.Millisecond {
 			log15.Warn("JavaScript eval", "evalTime", evalTime, "poolTime", evalStart.Sub(poolStart))
 		}
 		b.put(vm)
@@ -132,6 +135,11 @@ func newVMContext(js string) (*vmContext, error) {
 	}
 	if _, err := vm.PushGlobalGoFunction("__goCallback__", goCallback); err != nil {
 		return nil, err
+	}
+	for name, fn := range GlobalFuncs {
+		if _, err := vm.PushGlobalGoFunction(name, fn); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := vm.PevalLstring(js, len(js)); err != nil {

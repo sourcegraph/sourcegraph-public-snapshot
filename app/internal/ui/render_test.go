@@ -86,8 +86,14 @@ func TestRenderReactComponent_BlobRouter(t *testing.T) {
 		&sourcegraph.AnnotationList{
 			Annotations: []*sourcegraph.Annotation{
 				{URL: "a", StartByte: 1, EndByte: 5},
+
+				// Multiple URLs
 				{URL: "b", StartByte: 3, EndByte: 6},
+				{URL: "b2", StartByte: 3, EndByte: 6},
+				{Class: "b", StartByte: 3, EndByte: 6},
+
 				{URL: "c", StartByte: 6, EndByte: 12},
+				{Class: "c", StartByte: 6, EndByte: 12},
 				{URL: "d", StartByte: 13, EndByte: 15},
 				{Class: "a", StartByte: 1, EndByte: 5},
 				{Class: "b", StartByte: 15, EndByte: 18},

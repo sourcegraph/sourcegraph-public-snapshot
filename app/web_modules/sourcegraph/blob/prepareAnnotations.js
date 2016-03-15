@@ -1,13 +1,15 @@
 import {sortAnns} from "sourcegraph/blob/Annotations";
 
-// prepareAnnotations should be called on annotations received from the server
+// prepareAnnotations should be called on annotations added on the client side
 // to prepare them in ways described below for presentation in the UI.
+//
+// NOTE: This logic must be kept in sync with annotations.Prepare in Go.
 export default function prepareAnnotations(anns) {
 	// Ensure that syntax highlighting is the innermost annotation so
 	// that the CSS colors are applied (otherwise ref links appear in
 	// the normal link color).
 	anns.forEach((a) => {
-		if (!a.URL) a.WantInner = 1;
+		if (!a.URL && (!a.URLs || a.URLs.length === 0)) a.WantInner = 1;
 		if (!a.StartByte) a.StartByte = 0;
 	});
 
@@ -32,6 +34,7 @@ export default function prepareAnnotations(anns) {
 
 					delete ann.URL;
 					anns.splice(j, 1); // Delete the coincident ref.
+					j--;
 				}
 			} else {
 				break;

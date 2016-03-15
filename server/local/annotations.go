@@ -1,7 +1,6 @@
 package local
 
 import (
-	"sort"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -12,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	annotationspkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/annotations"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/svc"
@@ -72,7 +72,7 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 		return nil, err
 	}
 
-	sort.Sort(sortableAnnotations(allAnns))
+	allAnns = annotationspkg.Prepare(allAnns)
 
 	return &sourcegraph.AnnotationList{
 		Annotations:    allAnns,
@@ -154,16 +154,6 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		}
 	}
 	return anns, nil
-}
-
-type sortableAnnotations []*sourcegraph.Annotation
-
-func (a sortableAnnotations) Len() int      { return len(a) }
-func (a sortableAnnotations) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortableAnnotations) Less(i, j int) bool {
-	return a[i].StartByte < a[j].StartByte ||
-		(a[i].StartByte == a[j].StartByte && (a[i].EndByte < a[j].EndByte ||
-			(a[i].EndByte == a[j].EndByte && a[i].URL != "")))
 }
 
 func computeLineStartBytes(data []byte) []uint32 {

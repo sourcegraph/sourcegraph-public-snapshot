@@ -1,13 +1,13 @@
 package ui
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"runtime"
 	"sync"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/golang/groupcache/lru"
 	"golang.org/x/net/context"
@@ -48,11 +48,9 @@ func getRenderer() (*cachingRenderer, error) {
 	}
 
 	if cacheKey == rendererCacheKey {
-		log15.Info("Renderer cache HIT")
 		return renderer, nil
 	}
 
-	log15.Info("Renderer cache MISS")
 	rendererCacheKey = cacheKey
 	renderer = newCachingRenderer(js)
 	return renderer, nil
@@ -163,6 +161,57 @@ func DisabledReactPrerendering(ctx context.Context) context.Context {
 }
 
 func shouldPrerenderReact(ctx context.Context) bool {
-	dontPrerender, _ := ctx.Value(dontPrerenderReactComponents).(bool)
-	return !dontPrerender
+	return ctx.Value(dontPrerenderReactComponents) == nil
+}
+
+// reactCompatibleHTMLEscape is like template.HTMLEscape, but it uses
+// the same HTML entities that React does (in
+// escapeTextContentForBrowser). This ensures that the HTML rendered
+// by Go (e.g., in blob.render) is identical to that rendered by React
+// (which is necessary for server-side rendering).
+func reactCompatibleHTMLEscape(w io.Writer, b []byte) {
+	last := 0
+	for i, c := range b {
+		var html []byte
+		switch c {
+		case '"':
+			html = htmlQuot
+		case '\'':
+			html = htmlApos
+		case '&':
+			html = htmlAmp
+		case '<':
+			html = htmlLt
+		case '>':
+			html = htmlGt
+		default:
+			continue
+		}
+		w.Write(b[last:i])
+		w.Write(html)
+		last = i + 1
+	}
+	w.Write(b[last:])
+}
+
+var (
+	// Used by reactCompatibleHTMLEscape.
+	htmlQuot = []byte("&quot;")
+	htmlApos = []byte("&#x27;")
+	htmlAmp  = []byte("&amp;")
+	htmlLt   = []byte("&lt;")
+	htmlGt   = []byte("&gt;")
+
+	// Go-style, not React-style, HTML escapes.
+	htmlApos2 = []byte("&#39;")
+	htmlQuot2 = []byte("&#34;")
+)
+
+// convertToReactHTMLEscapeStyle uses React-style
+// (escapeTextContentForBrowser) escapes instead of
+// golang.org/x/net/html-style escapes.
+func convertToReactHTMLEscapeStyle(escapedHTML []byte) []byte {
+	escapedHTML = bytes.Replace(escapedHTML, htmlApos2, htmlApos, -1)
+	escapedHTML = bytes.Replace(escapedHTML, htmlQuot2, htmlQuot, -1)
+	return escapedHTML
 }
