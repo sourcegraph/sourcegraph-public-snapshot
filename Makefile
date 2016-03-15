@@ -137,7 +137,7 @@ drop-test-dbs:
 
 # GOFLAGS is all test build tags (use smtest/mdtest/lgtest targets to
 # execute common subsets of tests).
-GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
+GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest uitest'
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"time"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
@@ -32,9 +33,21 @@ var funcs = template.FuncMap{
 			return "", err
 		}
 
-		return template.HTML(fmt.Sprintf(`<div data-react="%s" data-props="%s"></div>`,
+		var componentHTML string
+		if ctx != nil {
+			var err error
+			ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
+			defer cancel()
+			componentHTML, err = renderReactComponent(ctx, component, propMap, stores)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		return template.HTML(fmt.Sprintf(`<div data-react="%s" data-props="%s">%s</div>`,
 			html.EscapeString(component),
 			html.EscapeString(string(propsJSON)),
+			componentHTML,
 		)), nil
 	},
 }

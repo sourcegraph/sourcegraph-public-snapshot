@@ -25,7 +25,9 @@ class LocationAdaptor extends React.Component {
 		let other = Object.assign({}, this.props);
 		delete other.component;
 
-		if (!other.location) other.location = window.location.href;
+		// Don't use initially provided location prop in the browser, where it
+		// should always reflect the current URL.
+		if (typeof window !== "undefined") other.location = window.location.href;
 
 		const navigate = typeof window === "undefined" ? null : (uri) => {
 			window.history.pushState(null, "", uri);
