@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/doc"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
@@ -19,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 // repoTreeTemplate holds data necessary to populate the repository tree templates
@@ -29,6 +29,8 @@ type repoTreeTemplate struct {
 	*handlerutil.RepoRevCommon
 	*handlerutil.TreeEntryCommon
 	tmpl.Common `json:"-"`
+
+	StoreData *ui.StoreData
 
 	Definition      *sourcegraph.Def
 	RobotsIndex     bool
@@ -81,7 +83,7 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		templateFile string
 		docs         string
 	)
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	switch {
 	case tc.Entry.Type == sourcegraph.DirEntry:
@@ -109,14 +111,35 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 	tc.Entry.ContentsString = string(tc.Entry.Contents)
 	tc.Entry.Contents = nil
 
-	return tmpl.Exec(r, w, templateFile, http.StatusOK, nil, &repoTreeTemplate{
+	data := &repoTreeTemplate{
 		Definition:      dc,
 		TreeEntryCommon: tc,
 		RepoCommon:      rc,
 		RepoRevCommon:   vc,
 		Documentation:   docs,
 		EntryPath:       tc.EntrySpec.Path,
-	})
+	}
+
+	{
+		// Preload store data.
+		annListOpts := &sourcegraph.AnnotationsListOptions{
+			Entry: tc.EntrySpec,
+			Range: &sourcegraph.FileRange{}, // entire file
+		}
+		anns, err := cl.Annotations.List(ctx, annListOpts)
+		if err != nil {
+			return err
+		}
+
+		data.StoreData = &ui.StoreData{}
+		data.StoreData.BlobStore.AddAnnotations(annListOpts, anns)
+		data.StoreData.BlobStore.AddFile(tc.EntrySpec, tc.Entry)
+		if dc != nil {
+			data.StoreData.DefStore.AddDef(r.URL.Path, dc)
+		}
+	}
+
+	return tmpl.Exec(r, w, templateFile, http.StatusOK, nil, data)
 }
 
 func isDocFile(filename string) bool {

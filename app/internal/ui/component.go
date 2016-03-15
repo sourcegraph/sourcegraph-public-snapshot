@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	tmpl.FuncMap["component"] = func(ctx context.Context, stores interface{}, component string, props ...interface{}) (template.HTML, error) {
+	tmpl.FuncMap["component"] = func(ctx context.Context, stores *StoreData, component string, props ...interface{}) (template.HTML, error) {
 		if len(props)%2 == 1 {
 			return "", errors.New("component requires an even number of prop key-value items (key1 val1 key2 val2 ...)")
 		}

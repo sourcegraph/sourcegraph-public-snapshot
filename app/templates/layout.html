@@ -155,6 +155,12 @@
 			<script src="{{.}}/webpack-dev-server.js"></script>
 		{{end}}
 
+			{{if hasField . "StoreData"}}
+				<script ignore-csp>
+					window.__StoreData = {{rawJSON .StoreData}};
+				</script>
+			{{end}}
+
 		<script src="{{assetURL "/bundle.js"}}"></script>
 
 		{{appconf.ExtraBodyHTML}}

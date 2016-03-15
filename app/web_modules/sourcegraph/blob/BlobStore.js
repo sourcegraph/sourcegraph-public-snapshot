@@ -4,10 +4,14 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 
+// keyFor must stay in sync with the key func in
+// (*ui.BlobStore).AddFile.
 function keyFor(repo, rev, tree) {
 	return `${repo}#${rev}#${tree}`;
 }
 
+// keyForAnns must stay in sync with the key func in
+// (*ui.BlobStore).AddAnnotations.
 function keyForAnns(repo, rev, commitID, path, startByte, endByte) {
 	return `${repo}#${rev}#${commitID}#${path}#${startByte || 0}#${endByte || 0}`;
 }

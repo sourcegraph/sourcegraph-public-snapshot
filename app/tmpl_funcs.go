@@ -69,6 +69,13 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return string(b), nil
 	},
+	"rawJSON": func(v interface{}) (htmpl.JS, error) {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+		return htmpl.JS(b), nil
+	},
 
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
 	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },

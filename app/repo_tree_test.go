@@ -24,6 +24,7 @@ func TestRepoTree(t *testing.T) {
 			Contents: []byte(source),
 		},
 	})
+	mock.Annotations.MockList(t, &sourcegraph.Annotation{})
 
 	resp, err := c.GetOK(router.Rel.URLToRepoTreeEntry("my/repo", "some/branch", "test.go").String())
 	if err != nil {
@@ -55,6 +56,7 @@ func TestRepoTree_markdown(t *testing.T) {
 			Contents: []byte(docSource),
 		},
 	})
+	mock.Annotations.MockList(t, &sourcegraph.Annotation{})
 
 	resp, err := c.GetOK(router.Rel.URLToRepoTreeEntry("my/repo", "some/branch", "test.md").String())
 	if err != nil {
@@ -83,6 +85,7 @@ func TestRepoTree_plaintext(t *testing.T) {
 			Contents: []byte(source),
 		},
 	})
+	mock.Annotations.MockList(t, &sourcegraph.Annotation{})
 
 	resp, err := c.GetOK(router.Rel.URLToRepoTreeEntry("my/repo", "some/branch", "filename.txt").String())
 	if err != nil {
