@@ -47,23 +47,23 @@ func init() {
 var serverCmdFlags, serverGroupFlags ServerConfig
 
 type ServerConfig struct {
-	Disable bool `long:"appdash.disable-server" description:"don't run an appdash server (neither collector nor web UI)"`
+	Disable bool `long:"appdash.disable-server" description:"don't run an appdash server (neither collector nor web UI)" env:"SRC_APPDASH_DISABLE_SERVER"`
 
-	HTTPAddr    string `long:"appdash.http-addr" description:"http bind address for background appdash" default:":7800"`
-	TLSCertFile string `long:"appdash.tls-cert" description:"certificate file for HTTP and collector TLS (if not set, TLS is disabled)"`
-	TLSKeyFile  string `long:"appdash.tls-key" description:"key file for HTTP and collector TLS (if not set, TLS is disabled)"`
+	HTTPAddr    string `long:"appdash.http-addr" description:"http bind address for background appdash" default:":7800" env:"SRC_APPDASH_HTTP_ADDR"`
+	TLSCertFile string `long:"appdash.tls-cert" description:"certificate file for HTTP and collector TLS (if not set, TLS is disabled)" env:"SRC_APPDASH_TLS_CERT"`
+	TLSKeyFile  string `long:"appdash.tls-key" description:"key file for HTTP and collector TLS (if not set, TLS is disabled)" env:"SRC_APPDASH_TLS_KEY"`
 
-	HTTPBasicAuthUser     string `long:"appdash.http-basic-auth-user" description:"username required for basic auth (only used if set)"`
-	HTTPBasicAuthPassword string `long:"appdash.http-basic-auth-password" description:"password required for basic auth"`
+	HTTPBasicAuthUser     string `long:"appdash.http-basic-auth-user" description:"username required for basic auth (only used if set)" env:"SRC_APPDASH_HTTP_BASIC_AUTH_USER"`
+	HTTPBasicAuthPassword string `long:"appdash.http-basic-auth-password" description:"password required for basic auth" env:"SRC_APPDASH_HTTP_BASIC_AUTH_PASSWORD"`
 
-	CollectorAddr   string `long:"appdash.collector-addr" description:"TCP collector bind address for background appdash ('127.0.0.1:0' for randomly chosen)" default:"127.0.0.1:0"`
-	CollectorTLS    bool   `long:"appdash.collector-tls" description:"whether or not the collector should use TLS"`
-	NSlowest        int    `long:"appdash.n-slowest" description:"number of slowest traces to keep for a URL route (before deleting oldest)" default:"5"`
-	MaxRate         int    `long:"appdash.max-rate" description:"maximum expected rate of concurrent requests (slowest traces will be missed otherwise)" default:"4096"`
-	KeepMax         int    `long:"appdash.keep-max" description:"max number of recent traces to keep (before deleting oldest)" default:"2000"`
-	MinRecentTraces int    `long:"appdash.min-recent-traces" description:"number of minutes of recent traces to keep in storage" default:"5"`
-	LogDebug        bool   `long:"appdash.log-debug" description:"enable appdash debug logging"`
-	LogTrace        bool   `long:"appdash.log-trace" description:"enable appdash trace logging"`
+	CollectorAddr   string `long:"appdash.collector-addr" description:"TCP collector bind address for background appdash ('127.0.0.1:0' for randomly chosen)" default:"127.0.0.1:0" env:"SRC_APPDASH_COLLECTOR_ADDR"`
+	CollectorTLS    bool   `long:"appdash.collector-tls" description:"whether or not the collector should use TLS" env:"SRC_APPDASH_COLLECTOR_TLS"`
+	NSlowest        int    `long:"appdash.n-slowest" description:"number of slowest traces to keep for a URL route (before deleting oldest)" default:"5" env:"SRC_APPDASH_N_SLOWEST"`
+	MaxRate         int    `long:"appdash.max-rate" description:"maximum expected rate of concurrent requests (slowest traces will be missed otherwise)" default:"4096" env:"SRC_APPDASH_MAX_RATE"`
+	KeepMax         int    `long:"appdash.keep-max" description:"max number of recent traces to keep (before deleting oldest)" default:"2000" env:"SRC_APPDASH_KEEP_MAX"`
+	MinRecentTraces int    `long:"appdash.min-recent-traces" description:"number of minutes of recent traces to keep in storage" default:"5" env:"SRC_APPDASH_MIN_RECENT_TRACES"`
+	LogDebug        bool   `long:"appdash.log-debug" description:"enable appdash debug logging" env:"SRC_APPDASH_LOG_DEBUG"`
+	LogTrace        bool   `long:"appdash.log-trace" description:"enable appdash trace logging" env:"SRC_APPDASH_LOG_TRACE"`
 }
 
 // configureAndStart starts Appdash servers per the configuration and
