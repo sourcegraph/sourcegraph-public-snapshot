@@ -7,6 +7,7 @@ if (typeof window !== "undefined") {
 		csrfToken: window._csrfToken,
 		cacheControl: window._cacheControl || null,
 		parentSpanID: window.document.head.dataset.appdashCurrentSpanId,
+		deviceID: window.document.head.dataset.deviceId,
 	};
 } else {
 	context = {
@@ -14,6 +15,7 @@ if (typeof window !== "undefined") {
 		csrfToken: "",
 		cacheControl: null,
 		parentSpanID: null,
+		deviceID: "",
 	};
 }
 

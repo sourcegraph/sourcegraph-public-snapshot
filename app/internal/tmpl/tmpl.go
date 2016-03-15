@@ -197,6 +197,10 @@ type Common struct {
 	// HideSearch, if set, hides the search bar from the top
 	// navigation bar.
 	HideSearch bool
+
+	// DeviceID is the correlation id given to user activity from a particular
+	// device, pre- and post- authentication.
+	DeviceID string
 }
 
 func executeTemplateBase(w http.ResponseWriter, templateName string, data interface{}) error {
@@ -288,6 +292,8 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			CacheControl: cacheControl,
 
 			HideMOTD: existingCommon.HideMOTD,
+
+			DeviceID: eventsutil.DeviceIdFromContext(ctx),
 		}))
 	}
 

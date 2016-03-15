@@ -58,23 +58,29 @@ func UserAgentFromContext(ctx context.Context) string {
 func DeviceIdMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	ctx := httpctx.FromRequest(r)
 	actor := auth.ActorFromContext(ctx)
-	sess, err := readSessionCookie(r)
 
-	if err == http.ErrNoCookie || (actor.UID == 0 && sess.UID != 0) {
-		// New anonymous user, or authenticated user does logout; reset cookie.
-		log15.Info("DeviceIDMiddleware: generating new device id cookie")
-		deviceId := uuid.NewV4().String()
-		writeSessionCookie(w, Session{DeviceID: deviceId, UID: actor.UID})
-		ctx = WithDeviceID(ctx, deviceId)
-	} else if err != nil {
-		panic("DeviceIDMiddleware: could not read session cookie: " + err.Error())
-	} else if actor.UID != 0 && sess.UID == 0 {
-		// Anonymous user does login; update cookie (but keep device ID).
-		log15.Info("DeviceIDMiddleware: updating actor for device id cookie")
-		writeSessionCookie(w, Session{DeviceID: sess.DeviceID, UID: actor.UID})
-		ctx = WithDeviceID(ctx, sess.DeviceID)
+	header := r.Header.Get("X-Device-Id")
+	if header != "" {
+		ctx = WithDeviceID(ctx, header)
 	} else {
-		ctx = WithDeviceID(ctx, sess.DeviceID)
+		sess, err := readSessionCookie(r)
+
+		if err == http.ErrNoCookie || (actor.UID == 0 && sess.UID != 0) {
+			// New anonymous user, or authenticated user does logout; reset cookie.
+			log15.Info("DeviceIdMiddleware: generating new device id cookie")
+			deviceId := uuid.NewV4().String()
+			writeSessionCookie(w, Session{DeviceID: deviceId, UID: actor.UID})
+			ctx = WithDeviceID(ctx, deviceId)
+		} else if err != nil {
+			panic("DeviceIdMiddleware: could not read session cookie: " + err.Error())
+		} else if actor.UID != 0 && sess.UID == 0 {
+			// Anonymous user does login; update cookie (but keep device ID).
+			log15.Info("DeviceIdMiddleware: updating actor for device id cookie")
+			writeSessionCookie(w, Session{DeviceID: sess.DeviceID, UID: actor.UID})
+			ctx = WithDeviceID(ctx, sess.DeviceID)
+		} else {
+			ctx = WithDeviceID(ctx, sess.DeviceID)
+		}
 	}
 
 	httpctx.SetForRequest(r, ctx)

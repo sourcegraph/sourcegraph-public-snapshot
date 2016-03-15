@@ -6,6 +6,7 @@ export default function(options, callback) {
 	let defaultOptions = {
 		headers: {
 			"X-Csrf-Token": context.csrfToken,
+			"X-Device-Id": context.deviceID,
 		},
 	};
 	if (typeof document !== "undefined" && document.head.dataset && document.head.dataset.currentUserOauth2AccessToken) {
