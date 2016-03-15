@@ -41,15 +41,6 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 		return nil, errors.New("login must be set")
 	}
 
-	if newUser.UID == 0 {
-		sql := "SELECT uid FROM users order by uid desc limit 1;"
-		maxUID, err := dbh(ctx).SelectInt(sql)
-		if err != nil {
-			return nil, err
-		}
-		newUser.UID = int32(maxUID) + 1
-	}
-
 	var u dbUser
 	u.fromUser(newUser)
 
