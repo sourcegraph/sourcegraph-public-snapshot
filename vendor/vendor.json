@@ -263,51 +263,6 @@
 			"revisionTime": "2016-02-17T19:51:18-05:00"
 		},
 		{
-			"path": "github.com/gopherjs/gopherjs",
-			"revision": "e35c96a025f1a3095703a999c16cc8e596a4428e",
-			"revisionTime": "2016-03-11T01:53:30+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/build",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/compiler",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/compiler/analysis",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/compiler/astutil",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/compiler/filter",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/compiler/prelude",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/compiler/typesutil",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
-			"path": "github.com/gopherjs/gopherjs/third_party/importer",
-			"revision": "f8510c9aef19750ec5a1178b33932a7f9defd197",
-			"revisionTime": "2016-02-20T20:04:58+01:00"
-		},
-		{
 			"path": "github.com/gorilla/context",
 			"revision": "1ea25387ff6f684839d82767c1733ff4d4d15d0a",
 			"revisionTime": "2016-02-26T13:46:23-08:00"
@@ -446,11 +401,6 @@
 			"path": "github.com/mitchellh/mapstructure",
 			"revision": "d2dd0262208475919e1a362f675cfc0e7c10e905",
 			"revisionTime": "2016-02-11T19:18:39-08:00"
-		},
-		{
-			"path": "github.com/neelance/sourcemap",
-			"revision": "8c68805598ab8d5637b1a72b5f7d381ea0f39c31",
-			"revisionTime": "2015-10-28T02:37:22+01:00"
 		},
 		{
 			"path": "github.com/opennota/urlesc",
