@@ -147,6 +147,16 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
+	"C#": droneyaml.BuildItem{
+		Key: "C# (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: "srclib/drone-srclib-csharp@sha256:28a3d40e363c94b61bed2d9f363602fe502953df1659d207e5c30e5e5df2ef80",
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
 }
 
 var srclibBuildCommands = []string{"srclib config", "srclib make"}
