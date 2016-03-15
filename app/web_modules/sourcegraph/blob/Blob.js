@@ -10,6 +10,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
+import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 
 const tilingFactor = 50;
 
@@ -71,15 +72,7 @@ class Blob extends Component {
 		}
 
 		if (updateAnns) {
-			state.lineAnns = new Array(state.lineStartBytes ? state.lineStartBytes.length : 0);
-			if (state.lineStartBytes && state.annotations) {
-				state.lineStartBytes.forEach((lineStartByte, i) => {
-					let lineEndByte = state.lineStartBytes[i + 1] || lineStartByte + state.lines[i].length;
-					state.lineAnns[i] = (state.annotations || []).filter((ann) => (
-						ann.StartByte < lineEndByte && ann.EndByte >= lineStartByte
-					));
-				});
-			}
+			state.lineAnns = state.lineStartBytes && state.annotations ? annotationsByLine(state.lineStartBytes, state.annotations, state.lines) : null;
 		}
 	}
 
@@ -226,7 +219,7 @@ class Blob extends Component {
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
-					annotations={visible ? (this.state.lineAnns[i] || null) : null}
+					annotations={visible && this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.highlightSelectedLines && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={visible ? this.state.highlightedDef : null}
 					activeDef={visible ? this.state.activeDef : null}
