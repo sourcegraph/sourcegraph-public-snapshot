@@ -218,22 +218,12 @@
 			"revisionTime": "2015-10-31T12:22:57-04:00"
 		},
 		{
-			"path": "github.com/gogo/protobuf/gogoproto",
-			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
-			"revisionTime": "2015-10-07T17:10:53+02:00"
-		},
-		{
 			"path": "github.com/gogo/protobuf/io",
 			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
 			"path": "github.com/gogo/protobuf/proto",
-			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
-			"revisionTime": "2015-10-07T17:10:53+02:00"
-		},
-		{
-			"path": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
 			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
@@ -1001,21 +991,6 @@
 			"path": "golang.org/x/tools/go/buildutil",
 			"revision": "498e5ca20752b991e09551fa8fdebca879eaeedb",
 			"revisionTime": "2016-03-09T09:17:37+11:00"
-		},
-		{
-			"path": "golang.org/x/tools/go/exact",
-			"revision": "093d7650abf0a26882924de03a6c840a00356572",
-			"revisionTime": "2016-03-09T21:59:58Z"
-		},
-		{
-			"path": "golang.org/x/tools/go/types",
-			"revision": "093d7650abf0a26882924de03a6c840a00356572",
-			"revisionTime": "2016-03-09T21:59:58Z"
-		},
-		{
-			"path": "golang.org/x/tools/go/types/typeutil",
-			"revision": "093d7650abf0a26882924de03a6c840a00356572",
-			"revisionTime": "2016-03-09T21:59:58Z"
 		},
 		{
 			"path": "golang.org/x/tools/godoc/vfs",
