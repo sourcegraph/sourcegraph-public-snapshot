@@ -19,6 +19,10 @@ if (typeof document !== "undefined") {
 		if (props && props.component) {
 			props.component = requireComponent(props.component);
 		}
-		ReactDOM.render(<Component {...props} />, el);
+		render(Component, props, el);
 	}
+}
+
+function render(Component, props, el) {
+	setTimeout(() => ReactDOM.render(<Component {...props} />, el), 0);
 }
