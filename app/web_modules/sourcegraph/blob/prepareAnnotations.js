@@ -8,6 +8,7 @@ export default function prepareAnnotations(anns) {
 	// the normal link color).
 	anns.forEach((a) => {
 		if (!a.URL) a.WantInner = 1;
+		if (!a.StartByte) a.StartByte = 0;
 	});
 
 	sortAnns(anns);
@@ -21,6 +22,14 @@ export default function prepareAnnotations(anns) {
 			if (ann.StartByte === ann2.StartByte && ann.EndByte === ann2.EndByte) {
 				if ((ann.URLs || ann.URL) && ann2.URL) {
 					ann.URLs = (ann.URLs || [ann.URL]).concat(ann2.URL);
+
+					// Sort for determinism.
+					ann.URLs.sort((a, b) => {
+						if (a < b) return -1;
+						if (a > b) return 1;
+						return 0;
+					});
+
 					delete ann.URL;
 					anns.splice(j, 1); // Delete the coincident ref.
 				}

@@ -1,5 +1,8 @@
 // sortAnns sorts annotations *in place* by start position, breaking ties by preferring
 // longer annotations.
+//
+// This must be 100% deterministic because it is run on both the client and server,
+// and the order must be the same.
 export function sortAnns(anns) {
 	return anns.sort((a, b) => {
 		if (a.StartByte < b.StartByte || (a.StartByte === b.StartByte && a.EndByte > b.EndByte)) {
