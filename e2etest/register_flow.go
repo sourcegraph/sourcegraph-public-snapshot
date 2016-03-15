@@ -50,10 +50,6 @@ func TestRegisterFlow(t *T) error {
 	if !username.IsEnabled() {
 		t.Fatalf("username input field should be enabled")
 	}
-	// TODO(slimsag): Why don't we select this by default?!
-	//if !username.IsSelected() {
-	//	t.Fatalf("username input field should be selected")
-	//}
 
 	// Validate password input field.
 	password := t.FindElement(selenium.ById, "password")
@@ -97,8 +93,6 @@ func TestRegisterFlow(t *T) error {
 	email.SendKeys("test123@sourcegraph.com")
 
 	// Click the submit button.
-	//
-	// TODO(slimsag): we should give a proper ID to this button.
 	submit := t.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")
 	submit.Click()
 
