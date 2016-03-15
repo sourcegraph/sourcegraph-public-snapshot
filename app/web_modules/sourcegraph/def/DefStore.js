@@ -12,9 +12,9 @@ function exampleKeyFor(defURL, index) {
 }
 
 export class DefStore extends Store {
-	reset() {
+	reset(data) {
 		this.defs = deepFreeze({
-			content: {},
+			content: data && data.defs ? data.defs : {},
 			get(url) {
 				return this.content[url] || null;
 			},
