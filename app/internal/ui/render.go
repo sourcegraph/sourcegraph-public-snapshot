@@ -132,6 +132,7 @@ func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string
 // Be sure that the app/node_modules/react/lib/DOMProperty.js file has
 // a manual edit to make this "\u00B7".
 func renderReactComponent(ctx context.Context, componentModule string, props interface{}, stores *StoreData) (string, error) {
+
 	r, err := getRenderer()
 	if err != nil {
 		return "", err
@@ -147,4 +148,21 @@ func renderReactComponent(ctx context.Context, componentModule string, props int
 		Stores:          stores,
 	}
 	return r.callMain(ctx, data)
+}
+
+type contextKey int
+
+const (
+	dontPrerenderReactComponents contextKey = iota
+)
+
+// DisabledReactPrerendering disables server-side prerendering of React
+// components within this context.
+func DisabledReactPrerendering(ctx context.Context) context.Context {
+	return context.WithValue(ctx, dontPrerenderReactComponents, struct{}{})
+}
+
+func shouldPrerenderReact(ctx context.Context) bool {
+	dontPrerender, _ := ctx.Value(dontPrerenderReactComponents).(bool)
+	return !dontPrerender
 }

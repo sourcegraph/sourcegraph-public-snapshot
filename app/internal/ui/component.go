@@ -34,7 +34,7 @@ var funcs = template.FuncMap{
 		}
 
 		var componentHTML string
-		if ctx != nil {
+		if ctx != nil && shouldPrerenderReact(ctx) {
 			var err error
 			ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
 			defer cancel()

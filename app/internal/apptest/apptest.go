@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
@@ -32,6 +33,7 @@ func New() (*httptestutil.Client, *httptestutil.MockClients) {
 	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "http", Host: "example.com", Path: "/"})
 	mock.Ctx = sourcegraph.WithGRPCEndpoint(mock.Ctx, &url.URL{Scheme: "http", Host: "grpc.example.com", Path: "/"})
 	mock.Ctx = idkey.NewContext(mock.Ctx, &idkey.IDKey{ID: "k"})
+	mock.Ctx = ui.DisabledReactPrerendering(mock.Ctx)
 
 	// Convenience mocks.
 	mock.Meta.Config_ = func(context.Context, *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
