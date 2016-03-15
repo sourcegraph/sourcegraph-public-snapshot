@@ -44,7 +44,6 @@ func TestRepository_Clone_ssh(t *testing.T) {
 	// TODO(sqs): test hg ssh support when it's implemented
 	tests := map[string]struct {
 		repoDir      string
-		cloner       func(url, dir string, opt gitcmd.CloneOpt) error
 		wantCommitID vcs.CommitID // commit ID that tag t0 refers to
 	}{
 		"git cmd": {
@@ -58,14 +57,10 @@ func TestRepository_Clone_ssh(t *testing.T) {
 			s, remoteOpts := startGitShellSSHServer(t, label, filepath.Dir(test.repoDir))
 			defer s.Close()
 
-			opt := gitcmd.CloneOpt{
-				RemoteOpts: remoteOpts,
-			}
-
 			gitURL := s.GitURL + "/" + filepath.Base(test.repoDir)
 			cloneDir := path.Join(makeTmpDir(t, "ssh-clone"), "repo")
 			t.Logf("Cloning from %s to %s", gitURL, cloneDir)
-			if err := gitcmd.Clone(gitURL, cloneDir, opt); err != nil {
+			if err := gitserver.Clone(cloneDir, gitURL, &remoteOpts); err != nil {
 				t.Fatalf("%s: Clone: %s", label, err)
 			}
 
@@ -109,9 +104,6 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 	tests := map[string]struct {
 		vcs, baseDir, headDir string
 
-		opener func(dir string) (vcs.Repository, error)
-		cloner func(url, dir string, opt gitcmd.CloneOpt) (vcs.Repository, error)
-
 		// newCmds should commit a file "newfile" in the repository
 		// root and tag the commit with "second". This is used to test
 		// that UpdateEverything picks up the new file from the
@@ -139,7 +131,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 
 			baseURL := s.GitURL + "/" + filepath.Base(test.baseDir)
 			t.Logf("Cloning from %s to %s", baseURL, test.headDir)
-			if err := gitcmd.Clone(baseURL, test.headDir, gitcmd.CloneOpt{RemoteOpts: remoteOpts}); err != nil {
+			if err := gitserver.Clone(test.headDir, baseURL, &remoteOpts); err != nil {
 				t.Errorf("Clone(%q, %q, %q): %s", label, baseURL, test.headDir, err)
 				return
 			}

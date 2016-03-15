@@ -2,10 +2,13 @@ package gitserver
 
 import (
 	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 
+	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
 )
 
@@ -14,6 +17,41 @@ import (
 // is true, the program is susceptible to a man-in-the-middle
 // attack. This should only be used for testing.
 var InsecureSkipCheckVerifySSH bool
+
+func runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
+	if opt != nil && opt.SSH != nil {
+		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := makeGitSSHWrapper(opt.SSH.PrivateKey)
+		defer func() {
+			if keyFile != "" {
+				if err := os.Remove(keyFile); err != nil {
+					log.Fatalf("Error removing SSH key file %s: %s.", keyFile, err)
+				}
+			}
+		}()
+		if err != nil {
+			return err
+		}
+		defer os.Remove(gitSSHWrapper)
+		if gitSSHWrapperDir != "" {
+			defer os.RemoveAll(gitSSHWrapperDir)
+		}
+		cmd.Env = append(cmd.Env, "GIT_SSH="+gitSSHWrapper)
+	}
+
+	if opt != nil && opt.HTTPS != nil {
+		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.Pass)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(gitPassHelper)
+		if gitPassHelperDir != "" {
+			defer os.RemoveAll(gitPassHelperDir)
+		}
+		cmd.Env = append(cmd.Env, "GIT_ASKPASS="+gitPassHelper)
+	}
+
+	return cmd.Run()
+}
 
 // makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
 // private key. You should remove the sshWrapper, sshWrapperDir and
@@ -36,20 +74,6 @@ func makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile strin
 
 	tmpFile, tmpFileDir, err := gitSSHWrapper(keyFile, otherOpt)
 	return tmpFile, tmpFileDir, keyFile, err
-}
-
-// environ is a slice of strings representing the environment, in the form "key=value".
-type environ []string
-
-// Unset a single environment variable.
-func (e *environ) Unset(key string) {
-	for i := range *e {
-		if strings.HasPrefix((*e)[i], key+"=") {
-			(*e)[i] = (*e)[len(*e)-1]
-			*e = (*e)[:len(*e)-1]
-			break
-		}
-	}
 }
 
 // Makes system-dependent SSH wrapper

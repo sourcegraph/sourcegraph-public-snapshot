@@ -3,6 +3,7 @@ package fs
 import (
 	"golang.org/x/net/context"
 	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
@@ -30,9 +31,7 @@ func (s *RepoVCS) Clone(ctx context.Context, repo string, info *store.CloneInfo)
 		return err
 	}
 
-	return gitcmd.Clone(info.CloneURL, repo, gitcmd.CloneOpt{
-		RemoteOpts: info.RemoteOpts,
-	})
+	return gitserver.Clone(repo, info.CloneURL, &info.RemoteOpts)
 }
 
 func (s *RepoVCS) OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error) {

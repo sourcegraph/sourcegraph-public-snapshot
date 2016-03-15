@@ -45,27 +45,6 @@ func Open(url string) *Repository {
 	return &Repository{URL: url}
 }
 
-// CloneOpt configures a clone operation.
-type CloneOpt struct {
-	vcs.RemoteOpts // configures communication with the remote repository
-}
-
-// Clone initializes a new repository, adds the given remote and fetches its contents.
-// It returns an error if the repository already exists.
-func Clone(remote, repo string, opt CloneOpt) error {
-	if err := gitserver.Init(repo); err != nil {
-		return err
-	}
-
-	cmd := gitserver.Command("git", "remote", "add", "--mirror=fetch", "--fetch", "origin", remote)
-	cmd.Repo = repo
-	cmd.Opt = &opt.RemoteOpts
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("exec `git remote add` failed: %s. Output was:\n\n%s", err, out)
-	}
-	return nil
-}
-
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
 // cause it to be interpreted as a git command line argument.
 func checkSpecArgSafety(spec string) error {

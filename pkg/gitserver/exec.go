@@ -3,7 +3,6 @@ package gitserver
 import (
 	"bytes"
 	"errors"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -45,44 +44,7 @@ func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 
-	if args.Opt != nil && args.Opt.SSH != nil {
-		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := makeGitSSHWrapper(args.Opt.SSH.PrivateKey)
-		defer func() {
-			if keyFile != "" {
-				if err := os.Remove(keyFile); err != nil {
-					log.Fatalf("Error removing SSH key file %s: %s.", keyFile, err)
-				}
-			}
-		}()
-		if err != nil {
-			return err
-		}
-		defer os.Remove(gitSSHWrapper)
-		if gitSSHWrapperDir != "" {
-			defer os.RemoveAll(gitSSHWrapperDir)
-		}
-		cmd.Env = []string{"GIT_SSH=" + gitSSHWrapper}
-	}
-
-	if args.Opt != nil && args.Opt.HTTPS != nil {
-		env := environ(os.Environ())
-		env.Unset("GIT_TERMINAL_PROMPT")
-
-		gitPassHelper, gitPassHelperDir, err := makeGitPassHelper(args.Opt.HTTPS.Pass)
-		if err != nil {
-			return err
-		}
-		defer os.Remove(gitPassHelper)
-		if gitPassHelperDir != "" {
-			defer os.RemoveAll(gitPassHelperDir)
-		}
-		env.Unset("GIT_ASKPASS")
-		env = append(env, "GIT_ASKPASS="+gitPassHelper)
-
-		cmd.Env = env
-	}
-
-	if err := cmd.Run(); err != nil {
+	if err := runWithRemoteOpts(cmd, args.Opt); err != nil {
 		reply.Error = err.Error()
 	}
 	if cmd.ProcessState != nil { // is nil if process failed to start
