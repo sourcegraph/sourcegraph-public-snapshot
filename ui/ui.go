@@ -17,7 +17,9 @@ import (
 	appauth "src.sourcegraph.com/sourcegraph/app/auth"
 	"src.sourcegraph.com/sourcegraph/auth/authutil"
 	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 var (
@@ -47,6 +49,11 @@ func NewHandler(r *mux.Router) http.Handler {
 	var mw []handlerutil.Middleware
 	if authutil.ActiveFlags.HasUserAccounts() {
 		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
+	}
+	if !metricutil.DisableMetricsCollection() {
+		// TODO(rothfels): check what other special characters (besides semis) need to be sanitized
+		// mw = append(mw, eventsutil.AgentMiddleware)
+		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 
 	if r == nil {

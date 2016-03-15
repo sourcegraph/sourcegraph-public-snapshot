@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/satori/go.uuid"
 
@@ -68,7 +67,7 @@ func DeviceIdMiddleware(w http.ResponseWriter, r *http.Request, next http.Handle
 		writeSessionCookie(w, Session{DeviceID: deviceId, UID: actor.UID})
 		ctx = WithDeviceID(ctx, deviceId)
 	} else if err != nil {
-		log15.Warn("DeviceIDMiddleware: could not read session cookie", "error", err)
+		panic("DeviceIDMiddleware: could not read session cookie: " + err.Error())
 	} else if actor.UID != 0 && sess.UID == 0 {
 		// Anonymous user does login; update cookie (but keep device ID).
 		log15.Info("DeviceIDMiddleware: updating actor for device id cookie")
@@ -114,7 +113,6 @@ func newSessionCookie(s Session) (*http.Cookie, error) {
 		Value:    base64.StdEncoding.EncodeToString(encoded),
 		Path:     "/",
 		HttpOnly: true,
-		Expires:  time.Now().Add(time.Hour * 24 * 365 * 2),
 	}, nil
 }
 

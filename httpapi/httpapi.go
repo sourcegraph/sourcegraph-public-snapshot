@@ -12,7 +12,9 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
 	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 // NewHandler returns a new API handler that uses the provided API
@@ -34,6 +36,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 	if authutil.ActiveFlags.HasAccessControl() {
 		mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware)
+	}
+	if !metricutil.DisableMetricsCollection() {
+		// TODO(rothfels): check what other special characters (besides semis) need to be sanitized
+		// mw = append(mw, eventsutil.AgentMiddleware)
+		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 
 	if conf.GetenvBool("SG_USE_CSP") {
