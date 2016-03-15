@@ -18,8 +18,10 @@ import (
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/gitserver"
 	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
+	"src.sourcegraph.com/sourcegraph/util/eventsutil"
 	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
@@ -58,6 +60,11 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 	if authutil.ActiveFlags.HasUserAccounts() {
 		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
+	}
+	if !metricutil.DisableMetricsCollection() {
+		// TODO(rothfels): check what other special characters (besides semis) need to be sanitized
+		// mw = append(mw, eventsutil.AgentMiddleware)
+		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 	mw = append(mw, internal.Middleware...)
 

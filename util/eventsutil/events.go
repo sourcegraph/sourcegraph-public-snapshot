@@ -50,7 +50,7 @@ func LogRegisterServer(clientName string) {
 // an invite code.
 func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admin, write, firstUser bool, inviteCode string) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, newAcct.Login)
+	userID, deviceID := getUserAndDeviceID(ctx, newAcct.Login)
 
 	userProperties := map[string]string{
 		"UID":         strconv.Itoa(int(newAcct.UID)),
@@ -98,7 +98,7 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 // LogSendInvite records that an invite link was created.
 func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write bool) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	// Truncate the invite code to avoid any possibility of leaking it, but
 	// preserve the ability to link the sign up event with the invite event
@@ -123,7 +123,7 @@ func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write b
 
 func LogAddRepo(ctx context.Context, cloneURL, language string, mirror, private bool) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	source := "local"
 	if mirror {
@@ -187,7 +187,7 @@ func LogBuildRepo(ctx context.Context, result string, build *sourcegraph.Build) 
 	langs := strings.Join(languages, ",")
 
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	eventProperties := map[string]string{
 		"CodeIntelligence": result,
@@ -222,7 +222,7 @@ func LogFinishBuildTask(ctx context.Context, label string, success bool, failure
 	}
 
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	result := "N/A"
 	if success {
@@ -247,7 +247,7 @@ func LogFinishBuildTask(ctx context.Context, label string, success bool, failure
 func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon) {
 	clientID := sourcegraphClientID
 	user := handlerutil.UserFromContext(ctx)
-	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+	userID, deviceID := getUserAndDeviceID(ctx, getUserLogin(user))
 	userAgent := UserAgentFromContext(ctx)
 
 	codeIntelligenceAvailable := "false"
@@ -285,7 +285,7 @@ func LogBrowseCode(ctx context.Context, entryType string, tc *handlerutil.TreeEn
 
 func LogGitPush(ctx context.Context) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	Log(&sourcegraph.Event{
 		Type:     "GitPush",
@@ -297,7 +297,7 @@ func LogGitPush(ctx context.Context) {
 
 func LogSearchQuery(ctx context.Context, searchType string, numResults int32) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	Log(&sourcegraph.Event{
 		Type:     searchType,
@@ -313,7 +313,7 @@ func LogSearchQuery(ctx context.Context, searchType string, numResults int32) {
 func LogViewDef(ctx context.Context, eventType string) {
 	clientID := sourcegraphClientID
 	user := handlerutil.UserFromContext(ctx)
-	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+	userID, deviceID := getUserAndDeviceID(ctx, getUserLogin(user))
 
 	Log(&sourcegraph.Event{
 		Type:     eventType,
@@ -331,7 +331,7 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Requ
 	}
 
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, getUserLogin(user))
+	userID, deviceID := getUserAndDeviceID(ctx, getUserLogin(user))
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(req))
 	var organization string
 	if err != nil {
@@ -391,7 +391,7 @@ func LogSignOut(ctx context.Context) {
 func LogEvent(ctx context.Context, event string) {
 	login := auth.ActorFromContext(ctx).Login
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, login)
+	userID, deviceID := getUserAndDeviceID(ctx, login)
 	userAgent := UserAgentFromContext(ctx)
 
 	var eventProperties map[string]string
@@ -412,7 +412,7 @@ func LogEvent(ctx context.Context, event string) {
 func LogLinkGitHub(ctx context.Context, ghUser *github.User) {
 	login := auth.ActorFromContext(ctx).Login
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, login)
+	userID, deviceID := getUserAndDeviceID(ctx, login)
 	userAgent := UserAgentFromContext(ctx)
 
 	var ghlogin, name, company, location, email string
@@ -457,7 +457,7 @@ func LogLinkGitHub(ctx context.Context, ghUser *github.User) {
 
 func LogAddTeammates(ctx context.Context, numSuccess, numFail int32) {
 	clientID := sourcegraphClientID
-	userID, deviceID := getUserOrDeviceID(clientID, auth.ActorFromContext(ctx).Login)
+	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
 
 	eventProperties := map[string]string{
 		"NumSuccess": fmt.Sprintf("%d", numSuccess),
@@ -490,12 +490,17 @@ func getShortClientID(clientID string) string {
 	return clientID[:shortLen]
 }
 
-func getUserOrDeviceID(clientID, login string) (string, string) {
-	if login == "" {
-		return "", clientID
+func getUserAndDeviceID(ctx context.Context, login string) (string, string) {
+	deviceId := DeviceIdFromContext(ctx)
+	if deviceId == "" {
+		deviceId = sourcegraphClientID
 	}
-	shortClientID := getShortClientID(clientID)
-	return fmt.Sprintf("%s@%s", login, shortClientID), ""
+
+	if login == "" {
+		return "", deviceId
+	}
+	shortClientID := getShortClientID(sourcegraphClientID)
+	return fmt.Sprintf("%s@%s", login, shortClientID), deviceId
 }
 
 func getUserLogin(user *sourcegraph.UserSpec) string {
