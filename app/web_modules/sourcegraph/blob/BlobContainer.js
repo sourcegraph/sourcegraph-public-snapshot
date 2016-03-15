@@ -133,7 +133,7 @@ class BlobContainer extends Container {
 							path={this.state.path} />
 						{this.state.file &&
 						<Blob
-							ref={(e) => this.setState({_codeListing: e})}
+							ref={(e) => this._blob = e}
 							contents={this.state.file.ContentsString}
 							annotations={this.state.anns ? this.state.anns.Annotations : null}
 							lineNumbers={true}
@@ -147,7 +147,7 @@ class BlobContainer extends Container {
 							activeDef={this.state.activeDef}
 							dispatchSelections={true} />}
 					</div>
-					<FileMargin getOffsetTopForByte={this.state._codeListing ? this.state._codeListing.getOffsetTopForByte.bind(this.state._codeListing) : null}>
+					<FileMargin getOffsetTopForByte={this._blob ? this._blob.getOffsetTopForByte.bind(this._blob) : null}>
 						{activeDefData && !activeDefData.Error &&
 						<DefPopup
 							def={activeDefData}
