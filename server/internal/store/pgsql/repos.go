@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"gopkg.in/gorp.v1"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
@@ -20,8 +20,8 @@ import (
 	"src.sourcegraph.com/sourcegraph/auth"
 	"src.sourcegraph.com/sourcegraph/conf"
 	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
 	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
 	"src.sourcegraph.com/sourcegraph/store"
 )
 
@@ -355,11 +355,12 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		return err
 	}
 
-	if !skipFS {
-		// Create the filesystem repo where the git data lives. (The repo
-		// metadata, such as the existence, description, language, etc.,
-		// live in PostgreSQL.)
-		if err := fs.CreateRepo(ctx, newRepo); err != nil {
+	// Create the filesystem repo where the git data lives. (The repo
+	// metadata, such as the existence, description, language, etc.,
+	// live in PostgreSQL.)
+	// A mirrored repo is automatically cloned by the repo updater instead of here.
+	if !newRepo.Mirror && !skipFS {
+		if err := gitserver.Init(newRepo.URI); err != nil {
 			return err
 		}
 	}
@@ -416,7 +417,7 @@ func (s *repos) Delete(ctx context.Context, repo string) error {
 		return err
 	}
 	if !skipFS {
-		if err := fs.DeleteRepo(ctx, repo); err != nil {
+		if err := gitserver.Remove(repo); err != nil {
 			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "err", err)
 		}
 	}
