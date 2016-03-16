@@ -37,18 +37,6 @@
 	{{end}}
 {{end}}
 
-{{define "RepoIcon"}}<!-- expects *sourcegraph.Repo -->
-	{{if .Private}}
-		<span title="Private repository" class="octicon octicon-lock repo-attr-icon"></span>
-	{{else if .Fork}}
-		<span title="Fork repository" class="octicon octicon-repo-forked repo-attr-icon"></span>
-	{{else if .Mirror}}
-		<span title="Mirror repository" class="octicon octicon-mirror repo-attr-icon"></span>
-	{{else}}
-		<span title="Repository" class="octicon octicon-repo repo-attr-icon"></span>
-	{{end}}
-{{end}}
-
 {{define "RepoLabel"}}<!-- expects []string --><!--
 	--><span class="repo-label"><!--
 		-->{{$last := add (len .) -1}}<!--
@@ -64,13 +52,11 @@
 -->{{end}}
 
 {{define "RepoLink"}}<!-- expects *repoLinkInfo --><!--
-	--><span class="repo-link"><!--
-		-->{{range .LeadingParts}}<!--
-			--><span class="part">{{.}}</span><!--
-			--><span class="sep">/</span><!--
-		-->{{end}}<!--
-		--><a class="name" href="{{.URL}}" title="{{.Title}}">{{.NamePart}}</a><!--
-	--></span><!--
+	-->{{range .LeadingParts}}<!--
+		--><span class="part">{{.}}</span><!--
+		--><span class="sep">/</span><!--
+	-->{{end}}<!--
+	--><a class="name" href="{{.URL}}" title="{{.Title}}">{{.NamePart}}</a><!--
 -->{{end}}
 
 {{define "Date"}}

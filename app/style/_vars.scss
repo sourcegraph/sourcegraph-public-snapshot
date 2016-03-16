@@ -12,7 +12,7 @@ $light-gold: #fdd74e;
 $green-apple: #62ce21;
 $turquoise: #0dceb7;
 $turquoise-blue: #0ec3d3;
-$brand-azure: #0fb6f2;
+$brand-azure: darken(#0698EE, 15%);
 $cornflower: #6065f5;
 $brand-violet: #bd37f9;
 $dark-pink: #d03592;
@@ -55,17 +55,6 @@ $text-strong-color: $blue-grey;
 $text-quieted: $shadow-blue;
 $text-light: $light-grey;
 $text-disabled: $cloudy-blue;
-
-$nav-background-color: $pale-grey;
-$nav-border-color: darken($nav-background-color, 5%);
-$nav-text-color: $silver;
-$nav-brand-color: $jet-black;
-
-$subnav-background-color: $white;
-$subnav-color: $slate-grey;
-$subnav-active-color: $brand-azure;
-$subnav-repo-link-color: $jet-black;
-$subnav-border-color: darken($nav-background-color, 5%);
 
 $footer-bg: $pale-grey;
 $footer-text: $silver;

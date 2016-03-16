@@ -9,11 +9,11 @@
 <nav class="page-actions">
 	{{range .RepoCommit.Parents}}
 	<a class="btn btn-default btn-sm" href="{{urlToRepoCommit $repoURI .}}"	title="View parent commit {{.}}">
-		<span class="octicon octicon-git-commit"></span> Parent {{truncateCommitID .}}
+		Parent {{truncateCommitID .}}
 	</a>
 	{{end}}
 	<a class="btn btn-default btn-sm" href="{{urlToRepoTreeEntry $repoURI .RepoCommit.ID "."}}" title="Browse files as of {{.RepoCommit.ID}}">
-		<span class="octicon octicon-file-directory"></span> Browse files at this commit
+		Browse files at this commit
 	</a>
 </nav>
 

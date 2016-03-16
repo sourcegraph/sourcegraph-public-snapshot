@@ -19,7 +19,7 @@ type RepoFrame struct {
 	// Title is the user-visible name for the application.
 	Title string
 
-	// Icon specifies which octicon should serve as the application's
+	// Icon specifies which icon should serve as the application's
 	// icon.
 	Icon string
 

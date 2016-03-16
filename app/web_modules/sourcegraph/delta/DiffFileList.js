@@ -29,9 +29,9 @@ class DiffFileList extends React.Component {
 					{this.props.files.map((fd, i) => (
 						<li key={fd.OrigName + fd.NewName} className="file-list-item">
 							<a href={`#F${i}`}>
-								{isDevNull(fd.OrigName) ? <i className="fa change-type octicon octicon-diff-added additions-color" /> : null}
-								{isDevNull(fd.NewName) ? <i className="fa change-type octicon octicon-diff-removed deletions-color" /> : null}
-								{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) ? <i className="fa change-type octicon octicon-diff-modified changes-color" /> : null}
+								{isDevNull(fd.OrigName) ? <code className="change-type additions-color">+</code> : null}
+								{isDevNull(fd.NewName) ? <code className="change-type deletions-color">&minus;</code> : null}
+								{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) ? <code className="change-type changes-color">&bull;</code> : null}
 
 								{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) && fd.OrigName !== fd.NewName ? (
 									<span>{fd.OrigName} <i className="fa fa-icon fa-long-arrow-right" />&nbsp;</span>

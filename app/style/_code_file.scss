@@ -1,13 +1,5 @@
 // _code_file contains styles for the code browsing view.
 
-// Remove container horizontal padding (whitespace).
-.container.container-code-file.body {
-	padding-left: inherit;
-	padding-right: inherit;
-	width: 98%;
-	border: none;
-}
-
 .token-popover {
 	@include z-index(token-popover);
 	max-width: 360px;
@@ -145,12 +137,10 @@
 .code-file-toolbar {
 	background-color: $file-toolbar-bg;
 	border-bottom: solid 1px $content-border-color;
-	padding: 8px 20px 8px 12px;
+	padding: 8px;
 
 	.file-breadcrumb {
 		display: inline-block;
-		padding: $padding-base-vertical $padding-base-horizontal;
-		padding-left: 0;
 
 		& > i {
 			margin-right: 10px;
@@ -160,7 +150,6 @@
 
 		.path-component {
 			a {
-				color: $file-toolbar-path-color;
 				margin-top: 10px;
 			}
 			&:last-child {
@@ -185,12 +174,7 @@
 	}
 
 	.actions {
-		display: inline-block;
 		float: right;
-		.repo-rev-switcher .caret {
-			position: relative;
-			left: 2px;
-		}
 	}
 }
 

@@ -1,122 +1,40 @@
-.nav-avatar {
-	margin-right: 3px;
-	height: 32px;
-	border-radius: $border-radius-large;
-}
-.navbar-avatar {
-	margin-top: -7px;
-	margin-bottom: -7px;
-}
-
-header.page-header {
-	display: block;
-	width: 100%;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	min-height: $navbar-height;
-
-	> div > nav {
-		margin: 0;
-		min-height: $navbar-height;
-
-		&.repo-subnav {
-			width: 100%;
-			float: left;
-
-			ul.navbar-nav {
-				@media (min-width: $grid-float-breakpoint) {
-					margin-top: 4px;
-				}
-			}
-		}
-
-		ul.navbar-nav {
-			@media (max-width: $grid-float-breakpoint) {
-				margin-top: 0;
-				margin-bottom: 0;
-			}
-		}
-	}
-}
-
 #nav {
-	margin-bottom: 0;
-
-	background-color: $nav-background-color;
-	border: solid $nav-border-color 1px;
-
 	.navbar-brand {
-		color: $nav-brand-color;
-		margin-right: 5px;
-		&.logo {
-			white-space: nowrap;
-			font-size: $font-size-large;
+		$size: $navbar-height - 14px;
+		img {
+			height: $size;
+			width: $size;
+
 			&:hover {
-				opacity: 0.8;
+				animation: spin 0.4s ease-in-out 1;
+				@keyframes spin { 100% { transform:rotate(360deg); } }
 			}
 		}
-		.name {
-			font-weight: 500;
-		}
-	}
-
-	.sourcegraph-logo {
-		margin-right: 38px;
-		margin-left: $navbar-padding-horizontal;
-		@media (min-width: $screen-sm-min) {
-			margin-left: 0;
-		}
-
-		img {
-			padding: 15px 0;
-			height: 51px;
-		}
-
+		padding-top: ($navbar-height - $size)/2;
+		padding-bottom: ($navbar-height - $size)/2;
+		padding: $nav-link-padding;
 	}
 
 	.current-user.name {
 		font-weight: bold;
 	}
 
-	ul.nav {
-		li {
-			a, .btn-link {
-				padding-left: 10px;
-				padding-right: 10px;
-				@media (min-width: $grid-float-breakpoint) {
-					padding-top: 15px;
-					padding-bottom: 15px;
-				}
-				border: none;
-				&:hover,
-				&:focus {
-					background-color: darken($nav-background-color, 5);
-				}
-			}
-			a, i, .btn-link {
-				color: $nav-text-color;
-				text-decoration: none;
-			}
-			button {
-				@media (max-width: $grid-float-breakpoint-max) {
-					width: 100%;
-					text-align: left;
-					padding: 10px;
-				}
-			}
-		}
-
-		.navbar-form {
-			margin: 0;
-			padding: 0;
-			border: none;
-			box-shadow: none;
+	.navbar-form {
+		margin: 0;
+		padding: 0;
+		border: none;
+		box-shadow: none;
+		.btn-link {
+			padding-top:    10px;
+			padding-bottom: 10px;
 		}
 	}
 
-	.sign-up {
-		font-weight: bold;
+	.title {
+		a {
+			font-weight: bold;
+			color: white;
+		}
 	}
 }
 
@@ -129,6 +47,6 @@ header.page-header {
 		float: left !important;
 	}
 	li {
-			float: left !important;
+		float: left !important;
 	}
 }

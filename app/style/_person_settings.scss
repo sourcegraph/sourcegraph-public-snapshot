@@ -31,17 +31,6 @@
 	}
 }
 
-.alert-org-membership-perms-insufficient {
-	margin-top: 15px;
-	a.btn {
-		display: block;
-		margin-bottom: $padding-large-vertical;
-	}
-	label {
-		display: block;
-	}
-}
-
 .person-settings.panel {
 	.avatar {
 		img {
@@ -55,82 +44,5 @@
 
 	input[type=submit] {
 		float: right;
-	}
-
-	&.person-settings-auth {
-		pre {
-			border: $content-border;
-			border-radius: $border-radius-base;
-			background-color: $code-block-bg;
-			padding: $padding-small-vertical $padding-small-horizontal;
-		}
-		.warning {
-			padding-top: 7px;
-			margin-bottom: 0;
-			color: $gray;
-		}
-	}
-	&.person-settings-integration {
-		.panel-heading {
-			font-weight: bold;
-			a { color: $text-color; }
-		}
-		.panel-body > :last-child {
-			margin-bottom: 0;
-		}
-		.api-status {
-			color: $gray;
-			.success {
-				color: $non-brand-success;
-			}
-			.warning {
-				color: $brand-warning;
-			}
-			.danger {
-				color: $brand-danger;
-			}
-			.disabled {
-				color: $gray;
-			}
-		}
-		.access-token-form {
-			margin-bottom: $padding-large-vertical*2;
-		}
-
-		&.github {
-			h3 {
-				font-size: $font-size-large;
-			}
-			.panel-heading {
-				padding-top: $padding-large-vertical*1.5;
-				span { font-size: 1.5em; }
-				span.octicon-logo-github {
-					color: black;
-					vertical-align: -3px;
-				}
-			}
-			.repo-list {
-				tr > td {
-					vertical-align: middle;
-					&:last-child {
-						text-align: right;
-					}
-					&.disabled {
-						color: $gray;
-					}
-					i.github-link {
-						color: black;
-						margin-left: 4px;
-					}
-				}
-			}
-		}
-
-		h4 { font-weight: bold; }
-		h3 .octicon {
-			font-size: 24px;
-			position: relative;
-			top: -1px;
-		}
 	}
 }

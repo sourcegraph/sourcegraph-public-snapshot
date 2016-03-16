@@ -9,19 +9,16 @@
 	<ul class="nav nav-pills list-inline branch-commit-tag">
 		<li>
 			<a href="{{urlToRepoSubrouteRev "repo.rev.commits" .Repo.URI .RepoRevSpec.Rev}}">
-				<i class="octicon octicon-git-commit"></i>
 				<span class="text">Commits</span>
 			</a>
 		</li>
 		<li>
 			<a href="{{urlToRepoSubroute "repo.branches" .Repo.URI}}">
-				<i class="octicon octicon-git-branch"></i>
 				<span class="text">Branches</span>
 			</a>
 		</li>
 		<li>
 			<a href="{{urlToRepoSubroute "repo.tags" .Repo.URI}}">
-				<i class="octicon octicon-tag"></i>
 				<span class="text">Tags</span>
 			</a>
 		</li>
@@ -59,7 +56,7 @@
 		{{$fullPath := (pathJoin $parentEntryPath (flattenName .))}}
 		{{$isDir := eq .Type.String "DirEntry"}}
 		<tr class="entry">
-			<td class="icon"><i class="{{if eq .Type.String "FileEntry"}}fa fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa fa-folder{{else if eq .Type.String "SubmoduleEntry"}}octicon octicon-file-submodule{{else}}fa fa-file-o{{end}}"></i></td>
+			<td class="icon"><i class="{{if eq .Type.String "FileEntry"}}fa fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa fa-folder{{else if eq .Type.String "SubmoduleEntry"}}fa fa-share-square{{else}}fa fa-file-o{{end}}"></i></td>
 			<td class="name">
 				{{if ne .Type.String "SubmoduleEntry"}}
 					<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>

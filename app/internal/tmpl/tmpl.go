@@ -86,7 +86,6 @@ func repoTemplates() error {
 		{"def/examples.html", "def/examples.inc.html", "def/snippet.inc.html", "def/def.html"},
 	}, []string{
 		"repo/repo.html",
-		"repo/subnav.html",
 
 		"common.html",
 		"layout.html",

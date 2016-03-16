@@ -4,6 +4,11 @@
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins";
 
+$navbar-height: 40px;
+$navbar-padding-vertical: 10px;
+$nav-link-padding: 8px 8px;
+$navbar-inverse-brand-color: lighten($navbar-inverse-link-color, 15%);
+
 // Reset and dependencies
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/normalize";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/print";
@@ -39,3 +44,4 @@
 // Utility classes
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/utilities";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/responsive-utilities";
+

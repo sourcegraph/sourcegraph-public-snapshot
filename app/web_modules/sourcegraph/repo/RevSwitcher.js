@@ -138,7 +138,7 @@ class RevSwitcher extends Component {
 			<div className={cls}>
 				<button type="button" className="button btn btn-default dropdown-toggle"
 					onClick={this._onToggleDropdown}>
-					<i className="octicon octicon-git-branch"></i> {abbrevRev(this.props.rev)} <span className="caret"></span>
+					<label>{this.props.rev.length === 40 ? "Commit: " : "Branch: "}</label> {abbrevRev(this.props.rev)} <span className="caret"></span>
 				</button>
 				<div className={this.props.alignRight ? "dropdown-menu dropdown-menu-right" : "dropdown-menu"} role="menu">
 					<div className="search-section">
