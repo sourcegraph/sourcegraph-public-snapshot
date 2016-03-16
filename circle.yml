@@ -31,7 +31,7 @@ dependencies:
 
   override:
     - rm -rf $HOME/.go_workspace/src
-    - mkdir -p $HOME/.go_workspace/src/src.sourcegraph.com
+    - mkdir -p $HOME/.go_workspace/src/sourcegraph.com/sourcegraph
     - cp -r $PWD $REPO
 
     - git --version

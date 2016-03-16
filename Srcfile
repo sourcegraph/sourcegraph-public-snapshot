@@ -5,6 +5,6 @@
     {"Name":"app", "Type":"CommonJSPackage"}
   ],
   "Config": {
-    "ImportPathRoot": "src.sourcegraph.com"
+    "ImportPathRoot": "sourcegraph.com/sourcegraph/sourcegraph"
   }
 }
