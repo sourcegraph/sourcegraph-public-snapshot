@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -26,7 +27,7 @@ func init() {
 }
 
 type PackageCmd struct {
-	OS string `long:"os" description:"operating system targets to cross-compile for" default:"linux darwin"`
+	OS string `long:"os" description:"operating system targets to cross-compile for" default-mask:"$GOOS"`
 
 	SkipWebpack bool `long:"skip-webpack" description:"skip webpack (JS/SCSS preparation, concatenation, minification, etc.)"`
 	IgnoreDirty bool `long:"ignore-dirty" description:"ignore dirty working directory"`
@@ -42,6 +43,10 @@ func (c *PackageCmd) Execute(args []string) error {
 	// Check for dependencies before starting.
 	if err := requireCmds("npm", "go"); err != nil {
 		return err
+	}
+
+	if c.OS == "" {
+		c.OS = runtime.GOOS
 	}
 
 	if c.Args.Version == "" {
@@ -81,21 +86,21 @@ func (c *PackageCmd) Execute(args []string) error {
 
 	bins := []string{}
 	par := parallel.NewRun(2)
-	for _, os := range strings.Split(c.OS, " ") {
-		os := os
-		dest, err := filepath.Abs(filepath.Join("release", c.Args.Version, os+"-amd64"))
+	for _, osName := range strings.Split(c.OS, " ") {
+		osName := osName
+		dest, err := filepath.Abs(filepath.Join("release", c.Args.Version, osName+"-amd64"))
 		if err != nil {
 			return err
 		}
 		bins = append(bins, dest)
 		par.Do(func() (err error) {
-			cmd := exec.Command("go", "build", "-installsuffix", "netgo", "-ldflags", ldflags, "-tags", "dist netgo", "-o", dest, ".")
+			cmd := exec.Command("go", "build", "-installsuffix", "netgo", "-ldflags", ldflags, "-tags", "dist", "-o", dest, ".")
 			cmd.Dir = "./cmd/src"
 			cmd.Env = []string{
-				"GOOS=" + os,
+				"GOOS=" + osName,
 				"GOARCH=amd64",
-				"CGO_ENABLED=0",
 				"GOPATH=" + gopath,
+				"PATH=" + os.Getenv("PATH"),
 			}
 
 			if err := execCmd(cmd); err != nil {
