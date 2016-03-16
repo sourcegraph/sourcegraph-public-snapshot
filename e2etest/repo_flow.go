@@ -19,7 +19,6 @@ func init() {
 
 func TestRepoFlow(t *T) error {
 	wd := t.WebDriver
-	defer wd.Quit()
 
 	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
 	if err != nil {
