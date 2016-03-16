@@ -60,6 +60,10 @@ $panel-repo-tree-padding-horizontal: 9px;
 				.name {
 					font-weight: bold;
 				}
+
+				.fa {
+					margin-right: 10px;
+				}
 			}
 		}
 	}
@@ -78,6 +82,10 @@ $panel-repo-tree-padding-horizontal: 9px;
 		padding: 10px;
 		padding-left: 12px;
 		font-weight: bold;
+
+		button {
+			margin-top: -5px;
+		}
 	}
 
 	&.hidden {

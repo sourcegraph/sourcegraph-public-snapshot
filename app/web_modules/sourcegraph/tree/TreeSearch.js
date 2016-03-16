@@ -197,7 +197,7 @@ class TreeSearch extends Container {
 
 			list.push(
 				<li className={ctx} key={fileURL}>
-					<a href={fileURL}>{file}</a>
+				<i className="fa fa-file-text-o"></i><a href={fileURL}>{file}</a>
 				</li>
 			);
 		}
