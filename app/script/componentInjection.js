@@ -100,6 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		let rev = el.dataset.rev || el.dataset.commit,
 			repo = el.dataset.repo;
 
-		ReactDOM.render(<TreeSearch repo={repo} rev={rev} />, el);
+		ReactDOM.render(<TreeSearch repo={repo} rev={rev} overlay={el.dataset.overlay === "" && true} />, el);
 	}
 });

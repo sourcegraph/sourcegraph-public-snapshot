@@ -32,12 +32,18 @@ class TreeSearch extends Container {
 
 	componentDidMount() {
 		super.componentDidMount();
-		document.addEventListener("keyup", this._handleKeyUp);
+		if (!this.state.overlay) {
+			this._focusInput();
+		} else {
+			document.addEventListener("keyup", this._handleKeyUp);
+		}
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
-		document.removeEventListener("keyup", this._handleKeyUp);
+		if (this.state.overlay) {
+			document.removeEventListener("keyup", this._handleKeyUp);
+		}
 	}
 
 	stores() { return [TreeStore]; }
@@ -174,10 +180,15 @@ class TreeSearch extends Container {
 			"loading": this.state.loading,
 		});
 
+		let searchInputClass = classNames({
+			"search-input-group": true,
+			"search-input-group-overlay": this.state.overlay,
+		});
+
 		return (
 			<div className={ctx}>
-				<div className="overlay" onClick={this._blurInput} />
-				<div className="search-input-group">
+				<div className={classNames({overlay: this.state.overlay})} onClick={this._blurInput} />
+				<div className={searchInputClass}>
 					<div className="tree-search-input">
 						<input type="text"
 							placeholder="Search files in this repository..."
@@ -197,6 +208,7 @@ class TreeSearch extends Container {
 TreeSearch.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
+	overlay: React.PropTypes.bool.isRequired,
 	prefetch: React.PropTypes.bool,
 };
 

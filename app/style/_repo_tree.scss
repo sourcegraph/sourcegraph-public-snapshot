@@ -16,11 +16,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 	.search-input-group {
 		@include z-index(tree-search-modal);
 		@include box-shadow(0 2px 8px transparentize(#000, 0.6));
-		position: fixed;
-		width: 700px;
-		top: 20%;
-		left: 50%;
-		margin-left: -350px;
 
 		.tree-search-input {
 			position: relative;
@@ -63,6 +58,14 @@ $panel-repo-tree-padding-horizontal: 9px;
 				}
 			}
 		}
+	}
+
+	.search-input-group-overlay {
+		position: fixed;
+		width: 700px;
+		top: 20%;
+		left: 50%;
+		margin-left: -350px;
 	}
 
 	&.hidden {
