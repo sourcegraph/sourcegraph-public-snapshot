@@ -5,6 +5,8 @@ RUN echo '@edge http://nl.alpinelinux.org/alpine/edge/main' >> /etc/apk/reposito
 
 RUN apk add --update --update-cache \
   openssh \
+  # for go-duktape
+  libc6-compat \
   # Need edge for >2.7.1 See CVE-2016-2324, CVE-2016-2315
   git@edge \
   # for /etc/mime.types, needed by HTTP server
