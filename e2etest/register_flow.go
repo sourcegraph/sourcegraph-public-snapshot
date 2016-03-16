@@ -97,7 +97,7 @@ func TestRegisterFlow(t *T) error {
 	submit.Click()
 
 	// Wait for redirect.
-	timeout := time.After(1 * time.Second)
+	timeout := time.After(10 * time.Second)
 	for {
 		if t.CurrentURL() == t.Endpoint("/") {
 			break
