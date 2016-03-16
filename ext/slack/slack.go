@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -94,11 +93,4 @@ func PostMessage(opt PostOpts) {
 			log15.Warn("Failed to post Slack message", "payload", o, "error", err)
 		}
 	}()
-}
-
-func PostOnboardingNotif(msg string) {
-	PostMessage(PostOpts{
-		Msg:     msg,
-		Channel: os.Getenv("SG_SLACK_ONBOARDING_NOTIFS_CHANNEL"),
-	})
 }

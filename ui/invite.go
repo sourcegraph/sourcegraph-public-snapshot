@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
@@ -77,5 +77,5 @@ func sendInviteBulkSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, n
 	if numFail > 0 {
 		msg += fmt.Sprintf(" (failed to send %d invites)", numFail)
 	}
-	slack.PostOnboardingNotif(msg)
+	notif.PostOnboardingNotif(msg)
 }

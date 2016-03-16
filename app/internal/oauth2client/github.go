@@ -22,8 +22,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
@@ -237,5 +237,5 @@ func sendLinkGitHubSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, g
 		ghEmail = *ghUser.Email
 	}
 	msg := fmt.Sprintf("User *%s* linked their GitHub account: *%s* (%s <%s>)", sgUser.Login, ghLogin, ghName, ghEmail)
-	slack.PostOnboardingNotif(msg)
+	notif.PostOnboardingNotif(msg)
 }

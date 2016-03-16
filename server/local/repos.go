@@ -25,8 +25,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/doc"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -469,5 +469,5 @@ func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, p
 	if language != "" {
 		msg += fmt.Sprintf(" (%s)", language)
 	}
-	slack.PostOnboardingNotif(msg)
+	notif.PostOnboardingNotif(msg)
 }
