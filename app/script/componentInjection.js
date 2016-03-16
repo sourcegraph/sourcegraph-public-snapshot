@@ -105,8 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			overlay = true;
 		}
 
-		console.log(overlay);
-
 		ReactDOM.render(<TreeSearch repo={repo} rev={rev} overlay={overlay} />, el);
 	}
 });

@@ -57,7 +57,6 @@ class TreeSearch extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) || {Results: [], SrclibDataVersion: null};
-		console.log(state.matchingSymbols);
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -275,9 +274,9 @@ class TreeSearch extends Container {
 							const location = window.location.href,
 								index = location.indexOf("/.tree");
 							if (index === -1) {
-								window.location.href = window.location.href + "/.tree/";
+								window.location.href = `${window.location.href}${"/.tree/"}`;
 							} else {
-								window.location.href = window.location.href.substring(0, index) + "/.tree/";
+								window.location.href = `${window.location.href.substring(0, index) }${"/.tree/"}`;
 							}
 						}}>View all</button>
 					</div>
