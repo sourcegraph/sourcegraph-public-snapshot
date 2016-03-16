@@ -2,6 +2,7 @@ package local
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	pathpkg "path"
 	"path/filepath"
@@ -25,6 +26,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -146,6 +148,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 	}
 
 	eventsutil.LogAddRepo(ctx, repo.HTTPCloneURL, repo.Language, repo.Mirror, repo.Private)
+	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
 	return
 }
@@ -447,4 +450,27 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 		}
 	}
 	return false
+}
+
+func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, private bool) {
+	user := authpkg.ActorFromContext(ctx).Login
+
+	repoType := "public"
+	if private {
+		repoType = "private"
+	}
+	if mirror {
+		repoType += " mirror"
+	} else {
+		repoType += " hosted"
+	}
+
+	msg := fmt.Sprintf("User *%s* added a %s repo", user, repoType)
+	if !private {
+		msg += fmt.Sprintf(": *%s*", uri)
+	}
+	if language != "" {
+		msg += fmt.Sprintf(" (%s)", language)
+	}
+	notif.PostOnboardingNotif(msg)
 }

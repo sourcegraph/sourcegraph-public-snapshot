@@ -382,5 +382,5 @@ func sendAccountCreateSlackMsg(ctx context.Context, login, email string, invite 
 	if invite {
 		msg += " (via an invite)"
 	}
-	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
+	notif.PostOnboardingNotif(msg)
 }

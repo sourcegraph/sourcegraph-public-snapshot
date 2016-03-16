@@ -237,5 +237,5 @@ func sendLinkGitHubSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, g
 		ghEmail = *ghUser.Email
 	}
 	msg := fmt.Sprintf("User *%s* linked their GitHub account: *%s* (%s <%s>)", sgUser.Login, ghLogin, ghName, ghEmail)
-	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
+	notif.PostOnboardingNotif(msg)
 }

@@ -77,5 +77,5 @@ func sendInviteBulkSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, n
 	if numFail > 0 {
 		msg += fmt.Sprintf(" (failed to send %d invites)", numFail)
 	}
-	notif.ActionSlackMessage(notif.ActionContext{SlackMsg: msg})
+	notif.PostOnboardingNotif(msg)
 }
