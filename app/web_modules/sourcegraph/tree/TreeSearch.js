@@ -11,8 +11,8 @@ import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
-const SYMBOL_LIMIT = 10;
-const FILE_LIMIT = 10;
+const SYMBOL_LIMIT = 7;
+const FILE_LIMIT = 7;
 
 class TreeSearch extends Container {
 	constructor(props) {
@@ -20,7 +20,7 @@ class TreeSearch extends Container {
 		this.state = {
 			visible: false,
 			loading: false,
-			matchingSymbols: {Results: []},
+			matchingSymbols: {Results: [], SrclibDataVersion: null},
 			matchingFiles: [],
 			query: "",
 			selectionIndex: 0,
@@ -56,7 +56,7 @@ class TreeSearch extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) || {Results: []};
+		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) || {Results: [], SrclibDataVersion: null};
 		console.log(state.matchingSymbols);
 	}
 
@@ -263,7 +263,12 @@ class TreeSearch extends Container {
 						Symbols
 					</div>
 					<ul className="tree-search-file-list">
-						{this._symbolItems()}
+						{this.state.matchingSymbols.SrclibDataVersion && this._symbolItems()}
+						{!this.state.matchingSymbols.SrclibDataVersion &&
+							<li>
+								<i>Sourcegraph is analyzing your code &mdash; results will be available soon!</i>
+							</li>
+						}
 					</ul>
 					<div className="tree-search-label">
 						Files
