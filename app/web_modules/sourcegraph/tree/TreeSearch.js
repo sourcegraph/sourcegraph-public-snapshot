@@ -11,6 +11,7 @@ import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
+const SYMBOL_LIMIT = 10;
 const FILE_LIMIT = 10;
 
 class TreeSearch extends Container {
@@ -28,6 +29,8 @@ class TreeSearch extends Container {
 		this._focusInput = this._focusInput.bind(this);
 		this._blurInput = this._blurInput.bind(this);
 		this._onType = this._onType.bind(this);
+		this._numResults = this._numResults.bind(this);
+		this._getSelectionURL = this._getSelectionURL.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState({query: query, selectionIndex: 0});
 		}, 300, {leading: false, trailing: true});
@@ -70,7 +73,7 @@ class TreeSearch extends Container {
 			if (!initialLoad || nextState.prefetch) {
 				Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
 				Dispatcher.asyncDispatch(
-					new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, FILE_LIMIT, nextState.query)
+					new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
 				);
 			}
 		}
@@ -90,7 +93,7 @@ class TreeSearch extends Container {
 
 		if (nextState.query !== prevState.query) {
 			Dispatcher.asyncDispatch(
-				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, FILE_LIMIT, nextState.query)
+				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
 			);
 		}
 	}
@@ -128,12 +131,27 @@ class TreeSearch extends Container {
 		});
 	}
 
+	_numResults() {
+		const fileResults = this.state.matchingFiles.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingFiles.length;
+		const symbolResults = this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
+		return fileResults + symbolResults;
+	}
+
+	_getSelectionURL() {
+		const i = this.state.selectionIndex;
+		if (i < this.state.matchingSymbols.Results.length) {
+			const def = this.state.matchingSymbols.Results[i].Def;
+			return router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
+		}
+		return router.tree(this.props.repo, this.props.rev, this.state.matchingFiles[i - this.state.matchingSymbols.Results.length]);
+	}
+
 	_onType(e) {
 		let idx, max;
 		switch (e.key) {
 		case "ArrowDown":
 			idx = this.state.selectionIndex;
-			max = this.state.matchingFiles.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingFiles.length;
+			max = this._numResults();
 
 			this.setState({
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
@@ -144,7 +162,7 @@ class TreeSearch extends Container {
 
 		case "ArrowUp":
 			idx = this.state.selectionIndex;
-			max = this.state.matchingFiles.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingFiles.length;
+			max = this._numResults();
 
 			this.setState({
 				selectionIndex: idx < 1 ? max-1 : idx-1,
@@ -154,7 +172,7 @@ class TreeSearch extends Container {
 			break;
 
 		case "Enter":
-			window.location = router.tree(this.props.repo, this.props.rev, this.state.matchingFiles[this.state.selectionIndex]);
+			window.location = this._getSelectionURL();
 			e.preventDefault();
 			break;
 
@@ -174,7 +192,7 @@ class TreeSearch extends Container {
 				fileURL = router.tree(this.props.repo, this.props.rev, file);
 
 			let ctx = classNames({
-				selected: this.state.selectionIndex === i,
+				selected: this.state.selectionIndex - this.state.matchingSymbols.Results.length === i,
 			});
 
 			list.push(
@@ -191,7 +209,7 @@ class TreeSearch extends Container {
 		if (!this.state.visible || !this.state.matchingSymbols) return [];
 
 		let list = [],
-			limit = this.state.matchingSymbols.Results.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingSymbols.Results.length;
+			limit = this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
 
 		for (let i = 0; i < limit; i++) {
 			let result = this.state.matchingSymbols.Results[i];
