@@ -42,12 +42,27 @@ class BlobLine extends Component {
 		state.directLinks = Boolean(props.directLinks);
 	}
 
+	_hasLink(content) {
+		if (!content || !content.length) {
+			return false;
+		}
+		return content.some(item => {
+			if (item.type === "a") {
+				return true;
+			}
+			let props = item.props || {};
+			return this._hasLink(props.children);
+		});
+	}
+
 	render() {
 		const hasURL = (ann, url) => url && (ann.URL ? ann.URL === url : ann.URLs.includes(url));
 		let i = 0;
 		let contents = annotate(this.state.contents, this.state.startByte, this.state.annotations || [], (ann, content) => {
 			i++;
-			if (ann.URL || ann.URLs) {
+			// ensure there are no links inside content to make ReactJS happy
+			// otherwise incorrect DOM is built (a > .. > a)
+			if ((ann.URL || ann.URLs) && !this._hasLink(content)) {
 				return (
 					<a
 						className={classNames(ann.Class, {
@@ -77,7 +92,7 @@ class BlobLine extends Component {
 						key={i}>{content}</a>
 				);
 			}
-			return <span key={i} className={ann.Class}>{content.join("")}</span>;
+			return <span key={i} className={ann.Class}>{content}</span>;
 		});
 
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
