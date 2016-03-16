@@ -49,20 +49,10 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 			RecurseSingleSubfolderLimit: 200,
 		},
 	}
+
 	tc, rc, vc, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
-	}
-
-	// Redirect root dir to repo homepage, so that we don't have two pages with
-	// basically the same purpose and contents.
-	if tc.EntrySpec.Path == "." {
-		dst, err := router.Rel.URLToRepoRev(tc.EntrySpec.RepoRev.URI, tc.EntrySpec.RepoRev.Rev)
-		if err != nil {
-			return err
-		}
-		http.Redirect(w, r, dst.String(), http.StatusMovedPermanently)
-		return nil
 	}
 
 	switch tc.Entry.Type {

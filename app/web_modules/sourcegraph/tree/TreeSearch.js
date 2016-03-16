@@ -272,6 +272,15 @@ class TreeSearch extends Container {
 					</ul>
 					<div className="tree-search-label">
 						Files
+						<button className="btn btn-default pull-right" onClick={() => {
+							const location = window.location.href,
+								index = location.indexOf("/.tree");
+							if (index === -1) {
+								window.location.href = window.location.href + "/.tree/";
+							} else {
+								window.location.href = window.location.href.substring(0, index) + "/.tree/";
+							}
+						}}>View all</button>
 					</div>
 					<ul className="tree-search-file-list">
 						{this._listItems()}

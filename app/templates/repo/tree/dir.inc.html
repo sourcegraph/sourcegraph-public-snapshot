@@ -39,7 +39,45 @@
 	<div data-react="TreeSearch"
 			data-repo="{{$repo.URI}}"
 			data-rev="{{$repoRevSpec.Rev}}"
+			{{if isRepoTreePage .CurrentURL}}
+			data-overlay="true"
+			{{end}}
 			data-commit="{{$repoRevSpec.CommitID}}"></div>
+
+	{{if isRepoTreePage .CurrentURL}}
+	<header class="commit">
+		{{with .RepoCommit}}{{template "TreeTopCommit" .}}{{end}}
+	</header>
+	<table class="table repo-tree-dir">
+	{{if not (eq .EntryPath ".")}}
+		<tr class="entry">
+			<td class="icon"></td>
+			<td class="name"><a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev (pathJoin $parentEntryPath "..")}}">..</a></td>
+		</tr>
+	{{end}}
+	{{range .Entry.Entries}}
+		{{$fullPath := (pathJoin $parentEntryPath (flattenName .))}}
+		{{$isDir := eq .Type.String "DirEntry"}}
+		<tr class="entry">
+			<td class="icon"><i class="{{if eq .Type.String "FileEntry"}}fa fa-file-text-o{{else if eq .Type.String "DirEntry"}}fa fa-folder{{else if eq .Type.String "SubmoduleEntry"}}octicon octicon-file-submodule{{else}}fa fa-file-o{{end}}"></i></td>
+			<td class="name">
+				{{if ne .Type.String "SubmoduleEntry"}}
+					<a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev $fullPath}}">{{flattenNameHTML .}}</a>
+				{{else}}
+					<span class="disabled">{{flattenNameHTML .}}</span>
+				{{end}}
+			</td>
+			{{if or appconf.DisableTreeEntryCommits (not $.Features.TreeEntryCommits)}}
+				<td></td>
+			{{else}}
+				<td class="commit">
+					<div data-react="TreeEntryCommit" data-repo="{{$repo.URI}}" data-rev="{{$repoRevSpec.CommitID}}" data-path="{{$fullPath}}"></div>
+				</td>
+			{{end}}
+		</tr>
+	{{end}}
+	</table>
+	{{end}}
 </div>
 {{end}}
 {{end}}
