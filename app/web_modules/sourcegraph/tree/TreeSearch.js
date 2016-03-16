@@ -227,7 +227,6 @@ class TreeSearch extends Container {
 							<code>{def.Kind}</code>
 							<code dangerouslySetInnerHTML={result.QualifiedName}></code>
 						</a>
-						{def.DocHTML && <p className="doc-string" dangerouslySetInnerHTML={def.DocHTML}></p>}
 					</div>
 				</li>
 			);
@@ -262,7 +261,7 @@ class TreeSearch extends Container {
 					<div className="tree-search-label">
 						Symbols
 					</div>
-					<ul className="tree-search-file-list">
+					<ul className="tree-search-symbol-list">
 						{this.state.matchingSymbols.SrclibDataVersion && this._symbolItems()}
 						{!this.state.matchingSymbols.SrclibDataVersion &&
 							<li>
