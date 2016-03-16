@@ -34,7 +34,7 @@
 				}
 			});
 		}
-		if (window.teammates) {
+		if (window.teammates && window.teammates.Users) {
 			var outstandingInvitations = 0;
 			window.teammates.Users.forEach(function(user) {
 				if (user.IsInvited) outstandingInvitations += 1;
