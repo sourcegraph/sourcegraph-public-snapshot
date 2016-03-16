@@ -16,6 +16,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -418,14 +419,17 @@ func Main() {
 		serverPort = "4444" // default to standard Selenium port
 	}
 
+	if !strings.Contains(serverAddr, "://") {
+		serverAddr = "http://" + serverAddr
+	}
+
 	u, err := url.Parse(fmt.Sprintf("%s:%s", serverAddr, serverPort))
 	if err != nil {
 		log.Fatal(err)
 	}
-	if u.Scheme == "" {
-		u.Scheme = "http"
-	}
+
 	u.Path = path.Join(u.Path, "wd/hub")
+
 	tr.executor = u.String()
 
 	// Determine the target Sourcegraph instance to test against.
