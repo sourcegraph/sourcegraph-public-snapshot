@@ -67,15 +67,13 @@ func DeviceIdMiddleware(w http.ResponseWriter, r *http.Request, next http.Handle
 
 		if err == http.ErrNoCookie || (actor.UID == 0 && sess.UID != 0) {
 			// New anonymous user, or authenticated user does logout; reset cookie.
-			log15.Info("DeviceIdMiddleware: generating new device id cookie")
 			deviceId := uuid.NewV4().String()
 			writeSessionCookie(w, Session{DeviceID: deviceId, UID: actor.UID})
 			ctx = WithDeviceID(ctx, deviceId)
 		} else if err != nil {
-			panic("DeviceIdMiddleware: could not read session cookie: " + err.Error())
+			log15.Warn("DeviceIDMiddleware: could not read session cookie", "error", err)
 		} else if actor.UID != 0 && sess.UID == 0 {
 			// Anonymous user does login; update cookie (but keep device ID).
-			log15.Info("DeviceIdMiddleware: updating actor for device id cookie")
 			writeSessionCookie(w, Session{DeviceID: sess.DeviceID, UID: actor.UID})
 			ctx = WithDeviceID(ctx, sess.DeviceID)
 		} else {
