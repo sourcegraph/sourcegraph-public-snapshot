@@ -25,7 +25,7 @@ class AlertContainer extends Container {
 						<div className="alert-content">
 							<i className="sg-icon sg-icon-close btn-icon alert-dismiss"
 								onClick={_ => Dispatcher.dispatch(new AlertActions.RemoveAlert(alert.id))}></i>
-							<span dangerouslySetInnerHTML={{__html: alert.html}} />
+							{alert.component}
 						</div>
 					</div>
 				)}

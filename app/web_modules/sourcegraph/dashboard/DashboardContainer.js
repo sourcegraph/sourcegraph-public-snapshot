@@ -54,8 +54,8 @@ class DashboardContainer extends Container {
 	render() {
 		return (
 			<div className="dashboard-container row">
-				<AlertContainer />
 				<div className="dash-repos col-lg-9 col-md-8">
+					<AlertContainer />
 					{(this.state.currentUser.Login && this.state.onboarding.linkGitHub ||
 						(this.state.onboarding.linkGitHubRedirect && !this.state.dismissWelcome)) &&
 						<div className="well link-github-well">
