@@ -454,15 +454,18 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 
 func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, private bool) {
 	user := authpkg.ActorFromContext(ctx).Login
-	action := "added"
-	if mirror {
-		action = "mirrored"
-	}
+
 	repoType := "public"
 	if private {
 		repoType = "private"
 	}
-	msg := fmt.Sprintf("User *%s* %s a %s repo", user, action, repoType)
+	if mirror {
+		repoType += " mirror"
+	} else {
+		repoType += " hosted"
+	}
+
+	msg := fmt.Sprintf("User *%s* added a %s repo", user, repoType)
 	if !private {
 		msg += fmt.Sprintf(": *%s*", uri)
 	}
