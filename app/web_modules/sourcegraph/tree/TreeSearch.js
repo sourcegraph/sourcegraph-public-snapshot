@@ -6,10 +6,12 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import * as router from "sourcegraph/util/router";
 import TreeStore from "sourcegraph/tree/TreeStore";
+import SearchResultsStore from "sourcegraph/search/SearchResultsStore";
 import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
+import * as SearchActions from "sourcegraph/search/SearchActions";
 
-const FILE_LIMIT = 15;
+const FILE_LIMIT = 10;
 
 class TreeSearch extends Container {
 	constructor(props) {
@@ -17,6 +19,7 @@ class TreeSearch extends Container {
 		this.state = {
 			visible: false,
 			loading: false,
+			matchingSymbols: {Results: []},
 			matchingFiles: [],
 			query: "",
 			selectionIndex: 0,
@@ -46,10 +49,12 @@ class TreeSearch extends Container {
 		}
 	}
 
-	stores() { return [TreeStore]; }
+	stores() { return [TreeStore, SearchResultsStore]; }
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
+		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) || {Results: []};
+		console.log(state.matchingSymbols);
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -64,6 +69,9 @@ class TreeSearch extends Container {
 			const initialLoad = !prevState.repo && !prevState.rev;
 			if (!initialLoad || nextState.prefetch) {
 				Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
+				Dispatcher.asyncDispatch(
+					new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, FILE_LIMIT, nextState.query)
+				);
 			}
 		}
 
@@ -78,6 +86,12 @@ class TreeSearch extends Container {
 
 		if (nextState.fuzzyFinder !== prevState.fuzzyFinder || nextState.query !== prevState.query) {
 			nextState.matchingFiles = (nextState.query && nextState.fuzzyFinder) ? nextState.fuzzyFinder.search(nextState.query).map(i => nextState.allFiles[i]) : nextState.allFiles;
+		}
+
+		if (nextState.query !== prevState.query) {
+			Dispatcher.asyncDispatch(
+				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, FILE_LIMIT, nextState.query)
+			);
 		}
 	}
 
@@ -173,6 +187,37 @@ class TreeSearch extends Container {
 		return list;
 	}
 
+	_symbolItems() {
+		if (!this.state.visible || !this.state.matchingSymbols) return [];
+
+		let list = [],
+			limit = this.state.matchingSymbols.Results.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingSymbols.Results.length;
+
+		for (let i = 0; i < limit; i++) {
+			let result = this.state.matchingSymbols.Results[i];
+			let def = result.Def,
+				defURL = router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
+
+			let ctx = classNames({
+				selected: this.state.selectionIndex === i,
+			});
+
+			list.push(
+				<li className={ctx} key={defURL}>
+					<div key={defURL}>
+						<a href={defURL}>
+							<code>{def.Kind}</code>
+							<code dangerouslySetInnerHTML={result.QualifiedName}></code>
+						</a>
+						{def.DocHTML && <p className="doc-string" dangerouslySetInnerHTML={def.DocHTML}></p>}
+					</div>
+				</li>
+			);
+		}
+
+		return list;
+	}
+
 	render() {
 		let ctx = classNames({
 			"tree-entry-search": true,
@@ -191,10 +236,19 @@ class TreeSearch extends Container {
 				<div className={searchInputClass}>
 					<div className="tree-search-input">
 						<input type="text"
-							placeholder="Search files in this repository..."
+							placeholder="Search this repository..."
 							ref="input"
 							onKeyUp={this._onType} />
 						<div className="spinner"><i className="fa fa-spinner fa-spin" /></div>
+					</div>
+					<div className="tree-search-label">
+						Symbols
+					</div>
+					<ul className="tree-search-file-list">
+						{this._symbolItems()}
+					</ul>
+					<div className="tree-search-label">
+						Files
 					</div>
 					<ul className="tree-search-file-list">
 						{this._listItems()}

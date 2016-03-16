@@ -68,6 +68,19 @@ $panel-repo-tree-padding-horizontal: 9px;
 		margin-left: -350px;
 	}
 
+	.tree-search-label {
+		background-color: $nav-background-color;
+		font-size: 16px;
+		padding: 10px;
+		padding-left: 12px;
+		font-weight: bold;
+	}
+
+	.doc-string {
+		padding-left: 10px;
+		padding-top: 3px;
+	}
+
 	&.hidden {
 		display: none;
 	}
