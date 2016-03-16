@@ -1,5 +1,5 @@
 package sgx
 
 import (
-	_ "src.sourcegraph.com/sourcegraph/env"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/env"
 )

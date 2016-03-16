@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 var wordBreaks = regexp.MustCompile(`([\./:])`)

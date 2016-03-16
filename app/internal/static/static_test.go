@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
 )
 
 func TestStatic_file(t *testing.T) {

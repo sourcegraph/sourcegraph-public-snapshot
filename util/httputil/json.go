@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 )
 
 // WriteJSON writes a JSON Content-Type header and a JSON-encoded

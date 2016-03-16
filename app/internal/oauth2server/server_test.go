@@ -11,13 +11,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
-	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {

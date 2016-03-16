@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func (s *RepoTreeClient) MockGet_Return_NoCheck(t *testing.T, returns *sourcegraph.TreeEntry) (called *bool) {

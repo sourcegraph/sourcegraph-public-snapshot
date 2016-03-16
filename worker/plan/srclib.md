@@ -8,7 +8,7 @@ them in Sourcegraph as part of builds.
    Docker-awareness needs to be removed.
 
    This means:
-   
+
     * IN_DOCKER_CONTAINER env var in code and in the Dockerfile
 	* separate Makefile installation steps for inside Docker
 	* eliminating now-unnecessary CMD/ENTRYPOINT directives from the Dockerfile
@@ -18,14 +18,14 @@ them in Sourcegraph as part of builds.
       push srclib/srclib-LANG` (these are by convention and are not
       enforced anywhere in code)
 	* update the README.md if anything there is invalidated
-	
+
 	Also, this is now a good time to change the Dockerfiles to use
     standard base Docker images such as
     https://hub.docker.com/_/python/ (ideally the `-slim` variants,
     which take MUCH less disk space).
 2. You need to create and push a new Docker image
    `srclib/drone-srclib-LANG`. Use the
-   https://src.sourcegraph.com/srclib.org/plugin/drone-srclib` repo's
+   https://sourcegraph.com/sourcegraph/srclib.org/plugin/drone-srclib` repo's
    `dev` branch `toolchains/LANG` dir. Create a new dir based on the
    other dirs. This Docker image should be based on (`FROM`'d) on the
    `srclib/srclib-LANG` image you created earlier. It should download
@@ -48,7 +48,7 @@ check --debug` in any locally checked out repo (which does not even
 need to exist on any Sourcegraph server). That runs the same CI
 process but locally.
 
-# Infer build and test configuration 
+# Infer build and test configuration
 
 By making the user, not srclib, responsible for building and installing deps, we
 (1) greatly simplify srclib and (2) make it easier for users to customize
@@ -69,7 +69,7 @@ configuration is when you have a .drone.yml with srclib steps in it; in that
 case, no implicit configuration is performed (e.g., say you had some .py files
 but didn't want to run srclib-python).
 
-By default, Sourcegraphs adds up to one build step per language 
+By default, Sourcegraphs adds up to one build step per language
 * *Build* that tries to compile source code
 
 Presence of this step depends on language (some may not have centralized

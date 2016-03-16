@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/util/httputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 )
 
 // Test that we don't use cached responses from requests authenticated

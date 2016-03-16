@@ -16,10 +16,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/util/executil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/executil"
 )
 
 func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {

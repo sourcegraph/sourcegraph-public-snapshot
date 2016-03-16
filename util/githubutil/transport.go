@@ -5,7 +5,7 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/util/httputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 )
 
 func NewGitHubCacheControlTransport(origCacheControl string, baseTransport http.RoundTripper) *httputil.CacheControlTransport {

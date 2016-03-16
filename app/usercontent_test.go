@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/ui"
-	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
-	"src.sourcegraph.com/sourcegraph/usercontent"
-	"src.sourcegraph.com/sourcegraph/util/httptestutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/ui"
+	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 )
 
 func TestUserContent(t *testing.T) {

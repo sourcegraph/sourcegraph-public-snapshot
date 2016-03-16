@@ -3,8 +3,8 @@ package httpapi
 import (
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveAnnotations(w http.ResponseWriter, r *http.Request) error {

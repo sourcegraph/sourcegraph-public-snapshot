@@ -1,6 +1,6 @@
 package routevar
 
-import "src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
+import "sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 
 var (
 	// User captures UserSpec strings in URL routes.

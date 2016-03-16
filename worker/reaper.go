@@ -7,7 +7,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sqs/pbtypes"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"golang.org/x/net/context"
 )

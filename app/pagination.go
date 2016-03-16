@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // paginatePrevNext returns a list of page links that contain URLs and text

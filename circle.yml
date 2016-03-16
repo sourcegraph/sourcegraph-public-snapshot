@@ -3,7 +3,7 @@ machine:
     - docker
     - postgresql
   environment:
-    REPO: ../.go_workspace/src/src.sourcegraph.com/sourcegraph
+    REPO: ../.go_workspace/src/sourcegraph.com/sourcegraph/sourcegraph
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable

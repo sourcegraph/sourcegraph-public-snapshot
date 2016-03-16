@@ -3,11 +3,11 @@ package app
 import (
 	"net/http"
 
-	appauth "src.sourcegraph.com/sourcegraph/app/auth"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 func serveLogOut(w http.ResponseWriter, r *http.Request) error {

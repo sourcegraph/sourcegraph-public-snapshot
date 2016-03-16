@@ -6,8 +6,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/rogpeppe/rog-go/parallel"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExampleList, error) {

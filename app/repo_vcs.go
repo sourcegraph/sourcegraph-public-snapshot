@@ -6,12 +6,12 @@ import (
 
 	"github.com/sourcegraph/mux"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveRepoCommit(w http.ResponseWriter, r *http.Request) error {

@@ -7,14 +7,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	localcli "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {

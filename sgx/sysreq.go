@@ -8,8 +8,8 @@ import (
 
 	"github.com/kr/text"
 
-	"src.sourcegraph.com/sourcegraph/pkg/sysreq"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 
 	"golang.org/x/net/context"
 )

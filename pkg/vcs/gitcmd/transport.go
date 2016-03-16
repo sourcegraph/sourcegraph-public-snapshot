@@ -6,8 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
-	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	githttp "github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"

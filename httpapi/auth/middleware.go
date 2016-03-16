@@ -8,9 +8,9 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 const oauthBasicUsername = "x-oauth-basic"

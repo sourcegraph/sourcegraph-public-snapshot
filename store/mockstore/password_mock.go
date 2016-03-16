@@ -4,7 +4,7 @@ package mockstore
 
 import (
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 type Password struct {

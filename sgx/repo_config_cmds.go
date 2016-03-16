@@ -7,8 +7,8 @@ import (
 	"log"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 )
 
 func initRepoConfigCmds(repoGroup *flags.Command) {

@@ -5,10 +5,10 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
 type Repos struct{}

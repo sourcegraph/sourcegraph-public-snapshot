@@ -1393,7 +1393,7 @@
 			"revisionTime": "2016-01-07T01:09:29-08:00"
 		},
 		{
-			"path": "src.sourcegraph.com/syntaxhighlight",
+			"path": "sourcegraph.com/sourcegraph/syntaxhighlight",
 			"revision": "3440cd8bca7fa63b875e190cad38d2e961c82f99",
 			"revisionTime": "2015-12-17T07:28:40Z"
 		}

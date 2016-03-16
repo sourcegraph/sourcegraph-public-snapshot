@@ -17,11 +17,11 @@ import (
 	"github.com/golang/groupcache/lru"
 
 	"sourcegraph.com/sourcegraph/appdash"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
-	"src.sourcegraph.com/sourcegraph/pkg/synclru"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
 )
 
 var (

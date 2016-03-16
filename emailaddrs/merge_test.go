@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestMerge(t *testing.T) {

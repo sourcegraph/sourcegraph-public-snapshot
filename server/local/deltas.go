@@ -11,12 +11,12 @@ import (
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/synclru"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 var Deltas sourcegraph.DeltasServer = &deltas{

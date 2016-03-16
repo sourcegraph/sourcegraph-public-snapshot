@@ -9,9 +9,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
-	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
 
 type PageLoadEvent struct {

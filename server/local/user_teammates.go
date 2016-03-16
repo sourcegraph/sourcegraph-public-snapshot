@@ -9,13 +9,13 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/ext/github"
-	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util/githubutil"
 )
 
 func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.Teammates, error) {

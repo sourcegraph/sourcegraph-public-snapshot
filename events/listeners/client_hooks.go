@@ -11,9 +11,9 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/events"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 )
 
 func init() {

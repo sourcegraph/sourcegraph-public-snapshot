@@ -4,30 +4,30 @@ package main
 import (
 	"os"
 
-	"src.sourcegraph.com/sourcegraph/sgx"
-	"src.sourcegraph.com/sourcegraph/worker"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
+	"sourcegraph.com/sourcegraph/sourcegraph/worker"
 
 	// App
-	_ "src.sourcegraph.com/sourcegraph/app/cmd"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
 
 	// Server
-	_ "src.sourcegraph.com/sourcegraph/server/cmd"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/server/cmd"
 
 	// Events
-	_ "src.sourcegraph.com/sourcegraph/events"
-	_ "src.sourcegraph.com/sourcegraph/events/listeners"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/events"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/events/listeners"
 
 	// External services
-	_ "src.sourcegraph.com/sourcegraph/ext/github"
-	_ "src.sourcegraph.com/sourcegraph/ext/papertrail"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/github"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/papertrail"
 
 	// Misc.
-	_ "src.sourcegraph.com/sourcegraph/pkg/wellknown"
-	_ "src.sourcegraph.com/sourcegraph/util/traceutil/cli"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
 
 	// Platform applications
-	_ "src.sourcegraph.com/sourcegraph/platform/apps/docs"
-	_ "src.sourcegraph.com/sourcegraph/platform/apps/godoc"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/platform/apps/docs"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/platform/apps/godoc"
 )
 
 func main() {

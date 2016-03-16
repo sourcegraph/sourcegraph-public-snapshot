@@ -7,12 +7,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 // defaultBuildListOptions takes the provided BuildListOptions, and returns a copy with

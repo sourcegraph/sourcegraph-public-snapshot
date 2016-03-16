@@ -17,10 +17,10 @@ import (
 
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 var newSrclibStoreClient = pb.Client // mockable for testing

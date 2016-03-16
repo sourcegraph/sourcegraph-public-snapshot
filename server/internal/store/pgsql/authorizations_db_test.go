@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 // TestAuthorizations_CreateAuthCode_MarkExchanged_ok tests the behavior

@@ -13,12 +13,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	httpapirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/worker/builder"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	httpapirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
-	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/worker/builder"
 )
 
 func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Builder, error) {

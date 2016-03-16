@@ -10,9 +10,9 @@ import (
 
 	"github.com/satori/go.uuid"
 	"sourcegraph.com/sourcegraph/rwvfs"
-	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/usercontent"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 var allowedMIMETypes = map[string]struct{}{

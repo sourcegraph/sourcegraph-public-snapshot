@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 
 	"golang.org/x/crypto/ssh"
 )

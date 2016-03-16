@@ -3,10 +3,10 @@ package server
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/inner"
-	"src.sourcegraph.com/sourcegraph/server/internal/middleware/outer"
-	"src.sourcegraph.com/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/inner"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/outer"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 // NewServer creates a new gRPC server with all RPC services

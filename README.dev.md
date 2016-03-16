@@ -1,7 +1,7 @@
 # Development README
 
 The best way to become familiar with the Sourcegraph repository is by
-reading the code at https://src.sourcegraph.com/sourcegraph.
+reading the code at https://sourcegraph.com/sourcegraph/sourcegraph.
 
 ## Environment
 
@@ -20,10 +20,10 @@ If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/
 
 ## Get the code
 
-Then, clone the `sourcegraph` repository into `$GOPATH/src/src.sourcegraph.com/sourcegraph`
+Then, clone the `sourcegraph` repository into `$GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph`
 
 ```
-go get src.sourcegraph.com/sourcegraph
+go get sourcegraph.com/sourcegraph/sourcegraph
 ```
 
 ## Build
@@ -38,7 +38,7 @@ echo $PATH # should include $GOPATH/bin
 Then in your terminal run:
 
 ```
-cd $GOPATH/src/src.sourcegraph.com/sourcegraph
+cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
 make dep
 make serve-dev
 ```
@@ -60,7 +60,7 @@ ulimit -n 10000
 # PostgreSQL
 
 [Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
-steps to [initialize and configure your database](https://src.sourcegraph.com/sourcegraph/.docs/config/storage/).
+steps to [initialize and configure your database](https://sourcegraph.com/sourcegraph/sourcegraph/.docs/config/storage/).
 
 Finally, issue the following command to set up your database tables:
 
@@ -119,7 +119,7 @@ codegen (see the Codegen section for more info). Here's a one-liner
 for updating `go-sourcegraph` (the most commonly updated dependency):
 
 ```
-godep update src.sourcegraph.com/sourcegraph/go-sourcegraph/... && go generate ./...
+godep update sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/... && go generate ./...
 ```
 
 When you add a new package dependency, you need to run `godep save

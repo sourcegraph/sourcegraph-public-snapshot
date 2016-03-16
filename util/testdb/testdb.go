@@ -4,7 +4,7 @@ package testdb
 
 import (
 	"gopkg.in/gorp.v1"
-	"src.sourcegraph.com/sourcegraph/util/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
 )
 
 // NewHandle creates new test DB handles.

@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
-	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // GRPCMiddleware reads the OAuth2 access token from the gRPC call's

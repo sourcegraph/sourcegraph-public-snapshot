@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"syscall"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type SearchArgs struct {

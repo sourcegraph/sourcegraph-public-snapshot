@@ -6,8 +6,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	vcstesting "src.sourcegraph.com/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
 
 func (s *RepoVCS) MockOpen(t *testing.T, wantRepo string, mockVCSRepo vcstesting.MockRepository) (called *bool) {

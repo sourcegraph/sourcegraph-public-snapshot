@@ -5,7 +5,7 @@
 // be subsumed into other packages.
 package notif
 
-import "src.sourcegraph.com/sourcegraph/ext/slack"
+import "sourcegraph.com/sourcegraph/sourcegraph/ext/slack"
 
 // MustBeDisabled panics if sending notifications is enabled.
 // Use it in tests to ensure that they do not send live notifications.

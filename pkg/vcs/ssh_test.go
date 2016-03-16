@@ -8,10 +8,10 @@ import (
 	"sort"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/ssh"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/ssh"
 )
 
 func init() {

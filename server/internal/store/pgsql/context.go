@@ -3,7 +3,7 @@ package pgsql
 import (
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 type contextKey int

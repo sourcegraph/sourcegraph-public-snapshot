@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func logStr(e *sourcegraph.LogEntries) string { return strings.Join(e.Entries, "\n") }

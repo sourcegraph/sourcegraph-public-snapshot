@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // parseRemoteUpdate parses stderr output from running `git remote update`,

@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/sourcegraph/go-github/github"
-	"src.sourcegraph.com/sourcegraph/ext/github/githubcli"
+	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
 )
 
 // TestRepos_Get_existing tests the behavior of Repos.Get when called on a

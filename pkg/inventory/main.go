@@ -12,8 +12,8 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 )
 
 var (

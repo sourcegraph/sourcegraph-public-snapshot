@@ -3,10 +3,10 @@ package sgx
 import (
 	"log"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 )
 
 func init() {

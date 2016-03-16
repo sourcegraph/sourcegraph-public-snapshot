@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 var (

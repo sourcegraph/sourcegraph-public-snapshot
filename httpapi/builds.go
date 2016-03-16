@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveBuild(w http.ResponseWriter, r *http.Request) error {

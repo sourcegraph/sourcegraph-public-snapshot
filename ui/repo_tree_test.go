@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/server/testserver"
-	"src.sourcegraph.com/sourcegraph/ui/payloads"
-	"src.sourcegraph.com/sourcegraph/util/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 // TODO(slimsag): If we start writing more UI tests, use a centralized

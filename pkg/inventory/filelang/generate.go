@@ -15,7 +15,7 @@ import (
 
 	"github.com/shurcooL/go-goon"
 	"gopkg.in/yaml.v2"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 )
 
 var (

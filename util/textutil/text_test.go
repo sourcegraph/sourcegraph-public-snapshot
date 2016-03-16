@@ -3,7 +3,7 @@ package textutil
 import (
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestFirstSentence(t *testing.T) {

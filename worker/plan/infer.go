@@ -5,7 +5,7 @@ import (
 
 	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 )
 
 // inferConfig consults a repo's inventory (of programming languages

@@ -9,11 +9,11 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sqs/pbtypes"
 
-	app_router "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/idkey"
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/testserver"
+	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
 )
 
 func TestServeCmd_RegisterClient(t *testing.T) {

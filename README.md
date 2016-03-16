@@ -9,7 +9,7 @@ Sourcegraph gives your team the power to build better software with:
 * **Live usage examples:** See how any function, class, etc., is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
 * **Smart search:** Find code quickly by function name, full text, etc.
 * **Deep integrations:** Works great with GitHub, GitHub Enterprise, and more.
-* **Hackable source code:** [Sourcegraph's source code](https://src.sourcegraph.com/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).
+* **Hackable source code:** [Sourcegraph's source code](https://sourcegraph.com/sourcegraph/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).
 
 *More info? Watch the [demo video](https://www.youtube.com/watch?v=XOdh3-QJSzs) or read the
 [announcement blog post](https://sourcegraph.com/blog/133554180524/announcing-the-sourcegraph-developer-release-an).*
@@ -32,11 +32,11 @@ Sourcegraph is built on several components:
 ## Contributing to Sourcegraph
 
 Want to make Sourcegraph better? Great! Check out
-[CONTRIBUTING.md](https://src.sourcegraph.com/sourcegraph@master/.tree/CONTRIBUTING.md). We
+[CONTRIBUTING.md](https://sourcegraph.com/sourcegraph/sourcegraph@master/.tree/CONTRIBUTING.md). We
 welcome all types of contributions--code, documentation, assets,
 community support, and user feedback.
 
-Our [developer README](https://src.sourcegraph.com/sourcegraph@master/.tree/README.dev.md)
+Our [developer README](https://sourcegraph.com/sourcegraph/sourcegraph@master/.tree/README.dev.md)
 is a good place to start.
 
 ## Security

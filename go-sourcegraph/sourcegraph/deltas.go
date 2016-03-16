@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
 
 // RouteVars returns the route variables for generating URLs to the

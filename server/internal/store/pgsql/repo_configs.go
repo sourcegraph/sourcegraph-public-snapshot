@@ -4,10 +4,10 @@ import (
 	"database/sql"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/dbutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 )
 
 func init() {

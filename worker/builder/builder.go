@@ -18,8 +18,8 @@ import (
 	"github.com/drone/drone/yaml/matrix"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/worker/plan"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/worker/plan"
 )
 
 // A Builder executes a single build (with its Exec func). It manages
@@ -237,7 +237,7 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 					fmt.Fprintln(w, "#")
 					fmt.Fprintln(w, "# If this configuration is incorrect or incomplete, add a .drone.yml file to your repository (using this as a starter) with the correct configuration. See http://readme.drone.io/usage/overview/ for instructions.")
 					fmt.Fprintln(w, "#")
-					fmt.Fprintln(w, "# Tip: You can test your .drone.yml locally by running `src check` in your repository, after downloading the src CLI tool at https://src.sourcegraph.com/sourcegraph/.docs/install/CLI/.")
+					fmt.Fprintln(w, "# Tip: You can test your .drone.yml locally by running `src check` in your repository, after downloading the src CLI tool at https://sourcegraph.com/sourcegraph/sourcegraph/.docs/install/CLI/.")
 				}
 
 				fmt.Fprintln(state.Log())

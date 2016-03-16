@@ -10,8 +10,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 type contextKey int

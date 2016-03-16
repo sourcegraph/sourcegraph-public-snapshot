@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store/mockstore"
 )
 
 func TestDefsService_ListRefs(t *testing.T) {

@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/testserver"
-	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
-	"src.sourcegraph.com/sourcegraph/util/executil"
-	"src.sourcegraph.com/sourcegraph/util/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/executil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 func TestSrclibPush(t *testing.T) {

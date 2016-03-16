@@ -13,13 +13,13 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/app/appconf"
-	appauth "src.sourcegraph.com/sourcegraph/app/auth"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	ui_router "src.sourcegraph.com/sourcegraph/ui/router"
-	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/metricutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
+	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 )
 
 var (

@@ -6,8 +6,8 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/util/testdb"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testdb"
 )
 
 func init() {

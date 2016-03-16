@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/worker/builder"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/worker/builder"
 )
 
 // startBuild starts and monitors a single build. It manages the

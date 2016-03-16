@@ -11,11 +11,11 @@ import (
 
 	gcontext "github.com/gorilla/context"
 
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/platform"
-	"src.sourcegraph.com/sourcegraph/platform/pctx"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform/pctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 
 	"github.com/sourcegraph/mux"
 )

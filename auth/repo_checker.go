@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // A RepoChecker checks the actor's permissions on a repo.

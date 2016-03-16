@@ -10,14 +10,14 @@ import (
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/net/context"
+	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
-	approuter "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/syntaxhighlight"
+	"sourcegraph.com/sourcegraph/syntaxhighlight"
 )
 
 var Annotations sourcegraph.AnnotationsServer = &annotations{}

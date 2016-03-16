@@ -3,7 +3,7 @@ package authutil
 import (
 	"log"
 
-	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 func init() {

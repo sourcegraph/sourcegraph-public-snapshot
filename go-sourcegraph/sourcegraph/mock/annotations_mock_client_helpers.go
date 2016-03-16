@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func (s *AnnotationsClient) MockList(t *testing.T, wantAnns ...*sourcegraph.Annotation) (called *bool) {

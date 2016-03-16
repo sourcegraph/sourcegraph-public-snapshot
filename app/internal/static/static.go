@@ -17,12 +17,12 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/httpfs"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/app/appconf"
-	"src.sourcegraph.com/sourcegraph/app/internal"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 var Flags struct {

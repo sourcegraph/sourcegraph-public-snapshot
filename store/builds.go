@@ -6,8 +6,8 @@ import (
 	"sort"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 type Builds interface {

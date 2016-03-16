@@ -11,13 +11,13 @@ your repository. Your site is generated and served inside Sourcegraph
 directly from the repository source code (at any version).
 
 If you're reading these docs on
-[Sourcegraph's official doc site](https://src.sourcegraph.com/sourcegraph/.docs),
+[Sourcegraph's official doc site](https://sourcegraph.com/sourcegraph/sourcegraph/.docs),
 you using this app now.
 
 To create a static site for your repository:
 
 1. Create a Hugo static site within your repository by following the
-   [docs usage instructions](https://src.sourcegraph.com/sourcegraph/.tree/platform/apps/docs/README.md).
+   [docs usage instructions](https://sourcegraph.com/sourcegraph/sourcegraph/.tree/platform/apps/docs/README.md).
 1. Enable the Hugo docs app by running: `src repo config app MY/REPO docs --enable` (where `MY/REPO` is your repository).
 
 

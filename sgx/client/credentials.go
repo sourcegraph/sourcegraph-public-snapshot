@@ -5,9 +5,9 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"src.sourcegraph.com/sourcegraph/auth/userauth"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/userauth"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 var Credentials CredentialOpts

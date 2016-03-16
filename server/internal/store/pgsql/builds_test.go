@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func (s *builds) mustCreate(ctx context.Context, t *testing.T, b *sourcegraph.Build) *sourcegraph.Build {

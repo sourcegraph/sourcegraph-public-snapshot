@@ -8,8 +8,8 @@ import (
 
 	"sourcegraph.com/sqs/pbtypes"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func isRegisteredClientNotFound(err error) bool {

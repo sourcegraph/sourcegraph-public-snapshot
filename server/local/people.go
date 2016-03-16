@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/emailaddrs"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/emailaddrs"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 var People sourcegraph.PeopleServer = &people{}

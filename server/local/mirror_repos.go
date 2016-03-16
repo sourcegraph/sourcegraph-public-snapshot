@@ -9,15 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/events"
+	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sqs/pbtypes"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/ext/github"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
 )
 
 var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}

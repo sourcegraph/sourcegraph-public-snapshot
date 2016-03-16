@@ -3,13 +3,13 @@ package sourcegraph;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "sourcegraph.com/sourcegraph/go-diff/diff/diff.proto";
-import "src.sourcegraph.com/sourcegraph/pkg/vcs/vcs.proto";
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/vcs.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/def.proto";
 import "sourcegraph.com/sourcegraph/srclib/graph/ref.proto";
 import "sourcegraph.com/sqs/pbtypes/timestamp.proto";
 import "sourcegraph.com/sqs/pbtypes/void.proto";
 import "sourcegraph.com/sqs/pbtypes/html.proto";
-import "src.sourcegraph.com/sourcegraph/pkg/inventory/inventory.proto";
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/inventory.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 option (gogoproto.unmarshaler_all) = true;
@@ -316,7 +316,7 @@ service Repos {
 	// languages, etc., used by the repository, as evidenced by the
 	// repository's files.
 	rpc GetInventory(RepoRevSpec) returns (inventory.Inventory);
-	
+
 	rpc ReceivePack(ReceivePackOp) returns (Packet);
 	rpc UploadPack(UploadPackOp) returns (Packet);
 }
@@ -1624,7 +1624,7 @@ message Example {
 	string Contents = 2;
 
 	FileRange Range = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-	
+
 	// Error is whether an error occurred while fetching this example.
 	bool Error = 6;
 
@@ -2147,7 +2147,7 @@ message NotifyGenericEvent {
 	// ObjectTitle example: "mybranch"
 	string ObjectTitle = 8;
 
-	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.branches/mybranch"
+	// ObjectURL example: "https://sourcegraph.com/sourcegraph/sourcegraph/.branches/mybranch"
 	string ObjectURL = 9;
 
 	// SlackMsg, if present, will override the Slack message for this event.

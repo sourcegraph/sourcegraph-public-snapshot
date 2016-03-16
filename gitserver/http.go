@@ -11,11 +11,11 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"gopkg.in/inconshreveable/log15.v2"
-	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/gitserver/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 // AddHandlers adds git HTTP handlers to r.

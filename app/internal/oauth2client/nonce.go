@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/util/randstring"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/randstring"
 )
 
 const (

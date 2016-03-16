@@ -6,7 +6,7 @@ import (
 
 	"github.com/samalba/dockerclient"
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/pkg/sysreq"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 )
 
 func init() {

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/util/timeutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
 )
 
 func minTime(a, b interface{}) time.Time {

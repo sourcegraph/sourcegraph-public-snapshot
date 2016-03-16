@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func (s *BuildsServer) MockGet_Return(t *testing.T, want *sourcegraph.Build) (called *bool) {

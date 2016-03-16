@@ -3,7 +3,7 @@ package emailaddrs
 import (
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Merge merges 2 lists of email addresses. It returns the final list

@@ -3,7 +3,7 @@ package sourcecode
 import (
 	"github.com/sourcegraph/annotate"
 
-	"src.sourcegraph.com/syntaxhighlight"
+	"sourcegraph.com/sourcegraph/syntaxhighlight"
 )
 
 func SyntaxHighlight(fileName string, src []byte) ([]*annotate.Annotation, error) {

@@ -5,10 +5,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/app/internal/apptest"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestDefExamples(t *testing.T) {

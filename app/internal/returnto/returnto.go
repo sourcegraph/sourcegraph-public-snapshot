@@ -27,8 +27,8 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 )
 
 // ParamName is the URL query param name for the "return-to" URL.

@@ -16,9 +16,9 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 var (

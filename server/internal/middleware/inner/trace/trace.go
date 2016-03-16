@@ -17,10 +17,10 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
-	authpkg "src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/metricutil"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 // prepareArg prepares the gRPC method arg for logging/tracing. For

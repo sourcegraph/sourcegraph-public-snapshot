@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/kr/pretty"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestPagination_PageLinks(t *testing.T) {

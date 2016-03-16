@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 	"sourcegraph.com/sourcegraph/go-flags"
 )

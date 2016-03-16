@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // These build helpers will need to be moved to another package so

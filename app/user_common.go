@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func getUser(ctx context.Context, r *http.Request) (*sourcegraph.User, *sourcegraph.UserSpec, error) {

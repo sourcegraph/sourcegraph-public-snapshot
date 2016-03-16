@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func (r *Router) URLToUserSubroute(routeName string, userSpec string) *url.URL {

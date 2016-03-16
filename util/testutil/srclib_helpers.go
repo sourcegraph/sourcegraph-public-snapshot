@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // CheckImport checks whether the defs produced by the srclib-sample

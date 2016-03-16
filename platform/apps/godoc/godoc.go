@@ -14,14 +14,14 @@ import (
 	"github.com/sourcegraph/gddo/doc"
 	"github.com/sourcegraph/gddo/gosrc"
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/platform"
-	"src.sourcegraph.com/sourcegraph/platform/apps/godoc/godocsupport"
-	"src.sourcegraph.com/sourcegraph/platform/pctx"
-	"src.sourcegraph.com/sourcegraph/util/httputil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform/apps/godoc/godocsupport"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform/pctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {

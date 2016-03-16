@@ -2,7 +2,7 @@ package github
 
 import (
 	"github.com/sourcegraph/go-github/github"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func userFromGitHub(ghuser *github.User) *sourcegraph.User {

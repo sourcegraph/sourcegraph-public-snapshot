@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/util"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}

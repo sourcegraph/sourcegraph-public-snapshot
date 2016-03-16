@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 
 	"github.com/AaronO/go-git-http"
 	"golang.org/x/net/context"

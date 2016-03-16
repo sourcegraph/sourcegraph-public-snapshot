@@ -11,10 +11,10 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
-	"src.sourcegraph.com/sourcegraph/server/serverctx"
-	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
-	"src.sourcegraph.com/sourcegraph/util/traceutil/appdashctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
 
 var flushDurationGauge = prometheus.NewCounter(prometheus.CounterOpts{

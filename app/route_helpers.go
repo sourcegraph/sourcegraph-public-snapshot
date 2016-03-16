@@ -3,8 +3,8 @@ package app
 import (
 	"net/url"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
-	"src.sourcegraph.com/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 )
 
 func urlToWithReturnTo(routeName, returnTo string) *url.URL {

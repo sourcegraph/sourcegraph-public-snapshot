@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
 const (

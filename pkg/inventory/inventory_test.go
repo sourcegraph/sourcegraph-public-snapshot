@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/justinas/nosurf"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
-	approuter "src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/conf"
+	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 )
 
 type contextKey int

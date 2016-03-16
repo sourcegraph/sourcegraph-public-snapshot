@@ -5,10 +5,10 @@ package mock
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
 )
 
 type RepoStatusesClient struct {

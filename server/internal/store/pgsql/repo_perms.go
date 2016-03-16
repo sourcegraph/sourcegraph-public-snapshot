@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 )
 
 type repoPermsRow struct {

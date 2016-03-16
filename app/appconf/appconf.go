@@ -10,7 +10,7 @@ import (
 	"html/template"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 // Flags configure the app. The values are set by CLI flags (or during testing).

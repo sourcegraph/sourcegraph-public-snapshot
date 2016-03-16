@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 )
 
 const (

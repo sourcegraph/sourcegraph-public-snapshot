@@ -5,8 +5,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 func HTTPMiddleware() func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {

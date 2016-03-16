@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 
 	"github.com/sourcegraph/mux"
 )

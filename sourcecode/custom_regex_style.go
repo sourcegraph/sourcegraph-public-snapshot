@@ -9,8 +9,8 @@ import (
 
 	"github.com/sourcegraph/annotate"
 	"golang.org/x/net/html"
-	"src.sourcegraph.com/sourcegraph/ui/uiconf"
-	"src.sourcegraph.com/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/ui/uiconf"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
 )
 
 // Ability to override def rendering style via regexp flags.

@@ -3,7 +3,7 @@ package github
 import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 type Orgs struct{}

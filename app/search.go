@@ -1,8 +1,8 @@
 package app
 
 import (
-	"src.sourcegraph.com/sourcegraph/app/appconf"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 )
 
 func showSearchForm(tmpl *tmpl.Common) bool {

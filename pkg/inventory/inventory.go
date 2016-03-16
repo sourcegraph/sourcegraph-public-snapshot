@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 
 	"github.com/kr/fs"
 	"golang.org/x/net/context"

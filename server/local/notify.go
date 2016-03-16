@@ -1,13 +1,13 @@
 package local
 
 import (
-	"src.sourcegraph.com/sourcegraph/notif"
-	"src.sourcegraph.com/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
 )
 
 var Notify sourcegraph.NotifyServer = &notify{}

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestParseRemoteUpdate(t *testing.T) {

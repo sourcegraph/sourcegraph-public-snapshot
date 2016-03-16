@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"os"
 
-	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 func init() {

@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
-	"src.sourcegraph.com/sourcegraph/util/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 )
 
 func init() {

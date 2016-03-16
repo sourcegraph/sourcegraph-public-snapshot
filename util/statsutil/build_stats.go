@@ -3,7 +3,7 @@ package statsutil
 import (
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func ComputeBuildStats(cl *sourcegraph.Client, ctx context.Context) (map[string]int32, error) {

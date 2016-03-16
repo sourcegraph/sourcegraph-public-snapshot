@@ -9,11 +9,11 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	vcstesting "src.sourcegraph.com/sourcegraph/pkg/vcs/testing"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
-	"src.sourcegraph.com/sourcegraph/platform"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform"
 )
 
 func TestReposService_Get(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/url"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 // Flags defines settings (in the form of CLI flags) related to

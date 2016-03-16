@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/shurcooL/vfsgen"
-	"src.sourcegraph.com/sourcegraph/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 )
 
 func main() {

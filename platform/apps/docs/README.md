@@ -5,9 +5,9 @@ a static site for a repository. It renders and serves a
 [Hugo](http://gohugo.io/) static site defined in the repository itself.
 
 Check out the
-[Sourcegraph docs](https://src.sourcegraph.com/sourcegraph/.docs) and
-the 
-[site source files](https://src.sourcegraph.com/sourcegraph/.tree/docs)
+[Sourcegraph docs](https://sourcegraph.com/sourcegraph/sourcegraph/.docs) and
+the
+[site source files](https://sourcegraph.com/sourcegraph/sourcegraph/.tree/docs)
 for an example.
 
 

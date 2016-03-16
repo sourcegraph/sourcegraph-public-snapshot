@@ -3,11 +3,11 @@ package sgx
 import (
 	"log"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
 	srclibpkg "sourcegraph.com/sourcegraph/srclib"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
-	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 func init() {

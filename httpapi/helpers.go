@@ -7,14 +7,14 @@ import (
 	"net/url"
 	"reflect"
 
-	"src.sourcegraph.com/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 
 	"github.com/google/go-querystring/query"
 
 	"strconv"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // writeJSON writes a JSON Content-Type header and a JSON-encoded object to the

@@ -22,10 +22,10 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
-	"src.sourcegraph.com/sourcegraph/util/expvarutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/expvarutil"
 )
 
 func initStressTest(g *flags.Command) {

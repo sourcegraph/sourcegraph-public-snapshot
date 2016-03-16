@@ -3,7 +3,7 @@ package github
 import (
 	"github.com/sourcegraph/go-github/github"
 	"google.golang.org/grpc"
-	"src.sourcegraph.com/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 )
 
 // minimalClient contains the minimal set of GitHub API methods needed

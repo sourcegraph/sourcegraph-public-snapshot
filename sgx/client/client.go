@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 // Ctx is a context that accesses the configured Sourcegraph endpoint

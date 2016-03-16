@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/sourcegraph/mux"
-	gitrouter "src.sourcegraph.com/sourcegraph/gitserver/router"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/routevar"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
+	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/gitserver/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
 
 const (

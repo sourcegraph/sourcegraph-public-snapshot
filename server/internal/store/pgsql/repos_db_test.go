@@ -10,9 +10,9 @@ import (
 
 	"sourcegraph.com/sqs/pbtypes"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/jsonutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/jsonutil"
 )
 
 func repoURIs(repos []*sourcegraph.Repo) []string {

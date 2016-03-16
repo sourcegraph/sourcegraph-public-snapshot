@@ -5,7 +5,7 @@ import (
 
 	"github.com/resonancelabs/go-pub/instrument"
 	tg_client "github.com/resonancelabs/go-pub/instrument/client"
-	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 func init() {

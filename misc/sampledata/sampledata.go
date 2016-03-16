@@ -24,7 +24,7 @@ func importPathToDir(importPath string) string {
 // Data is a virtual filesystem that contains sample data that will be
 // added to the server's SGPATH.
 var Data = filter.New(
-	http.Dir(filepath.Join(importPathToDir("src.sourcegraph.com/sourcegraph/misc/sampledata"), "sgpath")),
+	http.Dir(filepath.Join(importPathToDir("sourcegraph.com/sourcegraph/sourcegraph/misc/sampledata"), "sgpath")),
 	func(path string, fi os.FileInfo) bool {
 		if fi.IsDir() {
 			return false

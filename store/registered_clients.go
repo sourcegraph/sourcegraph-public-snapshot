@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"golang.org/x/net/context"
 )

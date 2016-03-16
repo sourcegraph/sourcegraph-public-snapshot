@@ -3,7 +3,7 @@ package sgx
 import (
 	"log"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 	"bytes"
 

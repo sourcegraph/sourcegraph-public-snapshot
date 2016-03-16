@@ -9,7 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/sqltrace"
-	"src.sourcegraph.com/sourcegraph/util/dbutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 )
 
 // SQLExecutor records the timings of SQL queries in appdash and

@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/util/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
 )
 
 var (

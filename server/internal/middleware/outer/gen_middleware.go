@@ -5,7 +5,7 @@ package main
 import (
 	"text/template"
 
-	"src.sourcegraph.com/sourcegraph/gen"
+	"sourcegraph.com/sourcegraph/sourcegraph/gen"
 )
 
 func main() {
@@ -36,12 +36,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.

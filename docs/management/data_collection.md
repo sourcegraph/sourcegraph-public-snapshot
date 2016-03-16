@@ -8,7 +8,7 @@ Sourcegraph better. We want you to understand what information
 Sourcegraph collects, why we collect it, and the choices we offer.
 
 As a sign of our commitment to security and transparency, we have made
-[Sourcegraph's source code](https://src.sourcegraph.com/sourcegraph)
+[Sourcegraph's source code](https://sourcegraph.com/sourcegraph/sourcegraph)
 publicly available.
 
 # Information we collect
@@ -31,7 +31,7 @@ better:
   statistics and signals derived from code and sends aggregate
   information to us; none of your code is ever sent. We always invite
   you to
-  [inspect the code for this functionality](https://src.sourcegraph.com/sourcegraph@master/.tree/util/statsutil/basic_stats.go).
+  [inspect the code for this functionality](https://sourcegraph.com/sourcegraph/sourcegraph@master/.tree/util/statsutil/basic_stats.go).
 
 See the full [security policy](https://sourcegraph.com/security),
 [privacy policy](https://sourcegraph.com/privacy) and

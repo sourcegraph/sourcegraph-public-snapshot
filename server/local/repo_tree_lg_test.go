@@ -5,11 +5,11 @@ package local_test
 import (
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/server/testserver"
-	"src.sourcegraph.com/sourcegraph/util/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 func TestRepoTree_Search_lg(t *testing.T) {

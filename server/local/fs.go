@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/sqs/fileset"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // readDir uses the passed repo and commit to read from starting at the base path.

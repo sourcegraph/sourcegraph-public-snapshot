@@ -169,13 +169,13 @@ import math "math"
 
 // discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 import diff "sourcegraph.com/sourcegraph/go-diff/diff"
-import vcs "src.sourcegraph.com/sourcegraph/pkg/vcs"
+import vcs "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 import graph "sourcegraph.com/sourcegraph/srclib/graph"
 import graph1 "sourcegraph.com/sourcegraph/srclib/graph"
 import pbtypes "sourcegraph.com/sqs/pbtypes"
 import pbtypes1 "sourcegraph.com/sqs/pbtypes"
 import pbtypes2 "sourcegraph.com/sqs/pbtypes"
-import inventory "src.sourcegraph.com/sourcegraph/pkg/inventory"
+import inventory "sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 
 import (
 	context "golang.org/x/net/context"
@@ -2672,7 +2672,7 @@ type NotifyGenericEvent struct {
 	ObjectType string `protobuf:"bytes,7,opt,name=ObjectType,proto3" json:"ObjectType,omitempty"`
 	// ObjectTitle example: "mybranch"
 	ObjectTitle string `protobuf:"bytes,8,opt,name=ObjectTitle,proto3" json:"ObjectTitle,omitempty"`
-	// ObjectURL example: "https://src.sourcegraph.com/sourcegraph/.branches/mybranch"
+	// ObjectURL example: "https://sourcegraph.com/sourcegraph/sourcegraph/.branches/mybranch"
 	ObjectURL string `protobuf:"bytes,9,opt,name=ObjectURL,proto3" json:"ObjectURL,omitempty"`
 	// SlackMsg, if present, will override the Slack message for this event.
 	SlackMsg string `protobuf:"bytes,10,opt,name=SlackMsg,proto3" json:"SlackMsg,omitempty"`

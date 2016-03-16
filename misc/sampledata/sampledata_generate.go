@@ -5,7 +5,7 @@ package main
 import (
 	"log"
 
-	"src.sourcegraph.com/sourcegraph/misc/sampledata"
+	"sourcegraph.com/sourcegraph/sourcegraph/misc/sampledata"
 
 	"github.com/shurcooL/vfsgen"
 )

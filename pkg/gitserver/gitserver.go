@@ -5,7 +5,7 @@ import (
 	"net/rpc"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type Git struct {

@@ -3,7 +3,7 @@ package sourcegraph
 import (
 	"net/url"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/spec"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
 
 // IsSystemOfRecord returns true iff this repository is the source of truth (not a mirror, etc)

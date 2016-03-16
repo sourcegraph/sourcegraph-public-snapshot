@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
 )
 
 var emailObfuscationKey, emailObfuscationIV []byte

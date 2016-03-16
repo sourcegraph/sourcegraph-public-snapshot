@@ -10,14 +10,14 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/svc"
-	"src.sourcegraph.com/sourcegraph/util"
-	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/metricutil"
 )
 
 var Builds sourcegraph.BuildsServer = &builds{}

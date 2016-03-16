@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/platform/pctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform/pctx"
 
 	"golang.org/x/net/context"
 )

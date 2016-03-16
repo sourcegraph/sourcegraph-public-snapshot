@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/graphstoreutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/graphstoreutil"
 )
 
 type GraphStoreOpts struct {

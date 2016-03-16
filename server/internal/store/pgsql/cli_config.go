@@ -2,9 +2,9 @@ package pgsql
 
 import (
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/server/internal/store/fs"
-	"src.sourcegraph.com/sourcegraph/server/serverctx"
-	"src.sourcegraph.com/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/fs"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func init() {

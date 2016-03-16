@@ -7,10 +7,10 @@ import (
 	"strings"
 	"text/template"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/ui/payloads"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
 )
 
 // isVirtual returns true if the definition does not exist anywhere in

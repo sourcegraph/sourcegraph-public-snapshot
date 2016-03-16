@@ -8,9 +8,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/store"
 )
 
 func (s *Builds) MockGet(t *testing.T, wantBuild sourcegraph.BuildSpec) (called *bool) {

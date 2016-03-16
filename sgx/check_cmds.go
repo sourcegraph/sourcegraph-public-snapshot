@@ -13,14 +13,14 @@ import (
 	"github.com/drone/drone-plugin-go/plugin"
 	"golang.org/x/net/context"
 	"golang.org/x/tools/godoc/vfs"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
-	"src.sourcegraph.com/sourcegraph/worker/builder"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/worker/builder"
 )
 
 func init() {

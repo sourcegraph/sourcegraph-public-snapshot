@@ -4,11 +4,11 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph/mock"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/store/mockstore"
-	"src.sourcegraph.com/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph/mock"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 // testContext creates a new context.Context for use by tests that has

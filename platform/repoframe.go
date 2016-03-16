@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 // A RepoFrame is platform plugin point that allows an application to

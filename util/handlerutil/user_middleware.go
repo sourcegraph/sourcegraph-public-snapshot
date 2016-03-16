@@ -8,11 +8,11 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sqs/pbtypes"
-	appauth "src.sourcegraph.com/sourcegraph/app/auth"
-	"src.sourcegraph.com/sourcegraph/auth"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
 )
 
 // This file contains getters and middleware setters for data that

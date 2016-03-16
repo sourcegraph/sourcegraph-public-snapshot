@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 )
 
 func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {

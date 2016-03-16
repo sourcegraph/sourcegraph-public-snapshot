@@ -26,14 +26,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
-	"src.sourcegraph.com/sourcegraph/platform"
-	"src.sourcegraph.com/sourcegraph/platform/pctx"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform/pctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 func init() {

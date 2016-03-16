@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/sourcegraph/gddo/doc"
 	"github.com/sourcegraph/gddo/gosrc"

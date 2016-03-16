@@ -5,12 +5,12 @@ package authutil
 import (
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/app/internal"
-	"src.sourcegraph.com/sourcegraph/app/internal/returnto"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 func init() {

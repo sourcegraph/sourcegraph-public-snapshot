@@ -1,6 +1,6 @@
 package app
 
-import "src.sourcegraph.com/sourcegraph/notif"
+import "sourcegraph.com/sourcegraph/sourcegraph/notif"
 
 func init() {
 	notif.MustBeDisabled()

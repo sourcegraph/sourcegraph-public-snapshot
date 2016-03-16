@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"path"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type CreateArgs struct {

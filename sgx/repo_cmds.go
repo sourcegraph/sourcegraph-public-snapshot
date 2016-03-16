@@ -10,12 +10,12 @@ import (
 	"github.com/rogpeppe/rog-go/parallel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
-	"src.sourcegraph.com/sourcegraph/util/textutil"
-	"src.sourcegraph.com/sourcegraph/util/timeutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/textutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
 )
 
 func init() {

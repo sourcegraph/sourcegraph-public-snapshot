@@ -8,13 +8,13 @@ import (
 	"github.com/sourcegraph/mux"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/csp"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/conf"
-	httpapiauth "src.sourcegraph.com/sourcegraph/httpapi/auth"
-	apirouter "src.sourcegraph.com/sourcegraph/httpapi/router"
-	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/metricutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
+	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 )
 
 // NewHandler returns a new API handler that uses the provided API

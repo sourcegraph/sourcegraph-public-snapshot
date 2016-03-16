@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/env"
 )
 
 // UserAuth holds user auth credentials keyed on API endpoint

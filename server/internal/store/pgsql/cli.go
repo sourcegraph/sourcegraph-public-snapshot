@@ -3,9 +3,9 @@ package pgsql
 import (
 	"log"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
-	"src.sourcegraph.com/sourcegraph/util/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
 )
 
 func init() {

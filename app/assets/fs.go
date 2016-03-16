@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"src.sourcegraph.com/sourcegraph/app/internal/gzipfileserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gzipfileserver"
 )
 
 type cacheStrategy uint

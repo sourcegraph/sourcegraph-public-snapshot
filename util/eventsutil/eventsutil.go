@@ -3,7 +3,7 @@ package eventsutil
 import (
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/util/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 )
 
 // parses a URL/URI in string form and returns the org, if there is one

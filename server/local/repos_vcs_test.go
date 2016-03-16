@@ -7,10 +7,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	vcstest "src.sourcegraph.com/sourcegraph/pkg/vcs/testing"
-	localcli "src.sourcegraph.com/sourcegraph/server/local/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	localcli "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
 )
 
 type listCommitsTest struct {

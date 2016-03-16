@@ -8,7 +8,7 @@ import (
 	"path"
 	"syscall"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type ExecArgs struct {

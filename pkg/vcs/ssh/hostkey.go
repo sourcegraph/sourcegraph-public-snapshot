@@ -32,7 +32,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"src.sourcegraph.com/sourcegraph/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/env"
 )
 
 const (

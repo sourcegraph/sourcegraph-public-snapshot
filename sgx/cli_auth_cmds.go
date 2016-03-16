@@ -9,14 +9,14 @@ import (
 
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/userauth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/usercreds"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
 	"sourcegraph.com/sqs/pbtypes"
-	"src.sourcegraph.com/sourcegraph/auth/userauth"
-	"src.sourcegraph.com/sourcegraph/auth/usercreds"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
-	"src.sourcegraph.com/sourcegraph/sgx/sgxcmd"
 )
 
 func init() {

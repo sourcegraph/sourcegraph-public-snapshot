@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil/srclibtest"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/util/testutil/srclibtest"
 )
 
 func Test_HtmlEscapeStringWithCodeBreaks(t *testing.T) {

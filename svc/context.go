@@ -15,8 +15,8 @@ package svc
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 type contextKey int

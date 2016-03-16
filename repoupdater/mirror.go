@@ -7,10 +7,10 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"src.sourcegraph.com/sourcegraph/app/appconf"
-	"src.sourcegraph.com/sourcegraph/events"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	sgxcli "src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
+	"sourcegraph.com/sourcegraph/sourcegraph/events"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 )
 
 func init() {

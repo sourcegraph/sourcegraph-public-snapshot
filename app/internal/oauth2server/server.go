@@ -12,16 +12,16 @@ import (
 
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/app/internal"
-	appauthutil "src.sourcegraph.com/sourcegraph/app/internal/authutil"
-	"src.sourcegraph.com/sourcegraph/app/internal/schemautil"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/oauth2util"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
-	"src.sourcegraph.com/sourcegraph/util/httputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
+	appauthutil "sourcegraph.com/sourcegraph/sourcegraph/app/internal/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 )
 
 func init() {

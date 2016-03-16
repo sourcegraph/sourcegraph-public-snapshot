@@ -14,15 +14,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/sourcecode"
+	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/htmlutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/router_util"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/sourcecode"
-	"src.sourcegraph.com/sourcegraph/ui/payloads"
-	"src.sourcegraph.com/sourcegraph/util/htmlutil"
-	"src.sourcegraph.com/sourcegraph/util/router_util"
 )
 
 // RepoCommon holds all of the information necessary to render a

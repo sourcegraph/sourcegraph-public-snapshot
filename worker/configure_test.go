@@ -5,7 +5,7 @@ import (
 
 	"github.com/whilp/git-urls"
 
-	"src.sourcegraph.com/sourcegraph/pkg/dockerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
 )
 
 func TestGitURLsParse(t *testing.T) {

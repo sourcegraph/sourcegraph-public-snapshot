@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	"src.sourcegraph.com/sourcegraph/sgx/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

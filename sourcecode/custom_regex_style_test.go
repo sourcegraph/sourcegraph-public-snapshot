@@ -4,8 +4,8 @@ import (
 	"html/template"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/sourcecode"
-	"src.sourcegraph.com/sourcegraph/ui/uiconf"
+	"sourcegraph.com/sourcegraph/sourcegraph/sourcecode"
+	"sourcegraph.com/sourcegraph/sourcegraph/ui/uiconf"
 )
 
 func TestCustomRegexStyle(t *testing.T) {

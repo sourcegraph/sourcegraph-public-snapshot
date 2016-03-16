@@ -6,7 +6,7 @@ developers to make getting your contribution into Sourcegraph easier.
 
 ## Getting started
 
-- Clone the repo from https://src.sourcegraph.com/sourcegraph
+- Clone the repo from https://sourcegraph.com/sourcegraph/sourcegraph
 - Read the README.dev.md for build instructions
 
 ## Contacting us
@@ -18,7 +18,7 @@ developers to make getting your contribution into Sourcegraph easier.
 
 Reporting bugs is one of the best ways to contribute. However, a good bug report
 has some very specific qualities, so please read over our short document on
-[reporting bugs](https://src.sourcegraph.com/sourcegraph/.docs/dev/bugs)
+[reporting bugs](https://sourcegraph.com/sourcegraph/sourcegraph/.docs/dev/bugs)
 before you submit your bug report.
 
 [Contact support](mailto:support@sourcegraph.com) when you're ready

@@ -12,17 +12,17 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
-	"src.sourcegraph.com/sourcegraph/app/internal"
-	"src.sourcegraph.com/sourcegraph/app/internal/tmpl"
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/conf"
-	"src.sourcegraph.com/sourcegraph/errcode"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/platform"
-	"src.sourcegraph.com/sourcegraph/repoupdater"
-	"src.sourcegraph.com/sourcegraph/util/cacheutil"
-	"src.sourcegraph.com/sourcegraph/util/eventsutil"
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/platform"
+	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func init() {

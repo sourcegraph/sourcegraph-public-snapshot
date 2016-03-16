@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 	"sourcegraph.com/sourcegraph/go-flags"
 )

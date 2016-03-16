@@ -3,7 +3,7 @@ package internal
 import (
 	"net/http"
 
-	"src.sourcegraph.com/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 // Handlers is a map of routes (by name) and their handlers. Its

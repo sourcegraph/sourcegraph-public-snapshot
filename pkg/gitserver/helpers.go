@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 // InsecureSkipCheckVerifySSH controls whether the client verifies the

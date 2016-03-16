@@ -9,7 +9,7 @@ import (
 
 	"github.com/mattbaird/elastigo/lib"
 
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 var storage *elastigo.BulkIndexer

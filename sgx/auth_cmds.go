@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 
-	"src.sourcegraph.com/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
+	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
+	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 	"sourcegraph.com/sqs/pbtypes"
-	appauth "src.sourcegraph.com/sourcegraph/app/auth"
-	"src.sourcegraph.com/sourcegraph/auth/accesstoken"
-	"src.sourcegraph.com/sourcegraph/sgx/client"
 )
 
 func init() {

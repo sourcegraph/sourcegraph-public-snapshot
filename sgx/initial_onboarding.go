@@ -18,10 +18,10 @@ import (
 	"golang.org/x/tools/godoc/vfs"
 
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/misc/sampledata"
-	"src.sourcegraph.com/sourcegraph/pkg/vfsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/misc/sampledata"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 )
 
 // prepareInitialOnboarding adds sample repos to show off

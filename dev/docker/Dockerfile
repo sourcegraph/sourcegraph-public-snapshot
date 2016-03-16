@@ -20,8 +20,8 @@ RUN /usr/lib/postgresql/9.4/bin/pg_ctl -D db init
 USER root
 
 # Fetch Sourcegraph source
-RUN go get -d src.sourcegraph.com/sourcegraph
-WORKDIR /go/src/src.sourcegraph.com/sourcegraph
+RUN go get -d sourcegraph.com/sourcegraph/sourcegraph
+WORKDIR /go/src/sourcegraph.com/sourcegraph/sourcegraph
 RUN make dep
 RUN go get github.com/tools/godep
 RUN godep go install ./cmd/src

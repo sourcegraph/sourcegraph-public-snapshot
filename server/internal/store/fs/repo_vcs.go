@@ -2,13 +2,13 @@ package fs
 
 import (
 	"golang.org/x/net/context"
-	"src.sourcegraph.com/sourcegraph/pkg/gitproto"
-	"src.sourcegraph.com/sourcegraph/pkg/gitserver"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs"
-	"src.sourcegraph.com/sourcegraph/pkg/vcs/gitcmd"
-	"src.sourcegraph.com/sourcegraph/server/accesscontrol"
-	"src.sourcegraph.com/sourcegraph/store"
-	"src.sourcegraph.com/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 // RepoVCS is a local filesystem-backed implementation of the RepoVCS

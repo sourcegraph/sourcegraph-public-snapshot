@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/app/router"
-	"src.sourcegraph.com/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 )
 
 // Test_repoFrameBaseURI tests that RepoFrameBaseURI returns the correct URL

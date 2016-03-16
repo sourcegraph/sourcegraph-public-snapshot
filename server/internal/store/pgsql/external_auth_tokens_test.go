@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"src.sourcegraph.com/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 )
 
 func (s *externalAuthTokens) mustSetUserToken(ctx context.Context, t *testing.T, tok *auth.ExternalAuthToken) {

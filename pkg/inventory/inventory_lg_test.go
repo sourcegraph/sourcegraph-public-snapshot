@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"src.sourcegraph.com/sourcegraph/auth/authutil"
-	"src.sourcegraph.com/sourcegraph/go-sourcegraph/sourcegraph"
-	"src.sourcegraph.com/sourcegraph/pkg/inventory"
-	"src.sourcegraph.com/sourcegraph/server/testserver"
-	"src.sourcegraph.com/sourcegraph/util/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
