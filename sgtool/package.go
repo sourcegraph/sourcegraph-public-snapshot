@@ -79,7 +79,7 @@ func (c *PackageCmd) Execute(args []string) error {
 		return err
 	}
 
-	ldflags, err := c.getLDFlags()
+	ldflagsInput, err := c.getLDFlags()
 	if err != nil {
 		return err
 	}
@@ -94,15 +94,26 @@ func (c *PackageCmd) Execute(args []string) error {
 		}
 		bins = append(bins, dest)
 		par.Do(func() (err error) {
-			cmd := exec.Command("go", "build", "-installsuffix", "netgo", "-ldflags", ldflags, "-tags", "dist", "-o", dest, ".")
-			cmd.Dir = "./cmd/src"
-			cmd.Env = []string{
+			ldflags := make([]string, len(ldflagsInput))
+			copy(ldflags, ldflagsInput)
+
+			env := []string{
 				"GOOS=" + osName,
 				"GOARCH=amd64",
 				"GOPATH=" + gopath,
 				"PATH=" + os.Getenv("PATH"),
 			}
 
+			// For Linux we build static binaries using musl, this requires some
+			// additional options but gives us CGO without the glibc dependency.
+			if osName == "linux" {
+				ldflags = append(ldflags, []string{"-linkmode", "external", "-extldflags", "-static"}...)
+				env = append(env, "CC=/usr/local/musl/bin/musl-gcc")
+			}
+
+			cmd := exec.Command("go", "build", "-x", "-installsuffix", "netgo", "-ldflags", strings.Join(ldflags, " "), "-tags", "dist", "-o", dest, ".")
+			cmd.Dir = "./cmd/src"
+			cmd.Env = env
 			if err := execCmd(cmd); err != nil {
 				return err
 			} else {
@@ -122,7 +133,7 @@ func (c *PackageCmd) Execute(args []string) error {
 	return nil
 }
 
-func (c *PackageCmd) getLDFlags() (string, error) {
+func (c *PackageCmd) getLDFlags() ([]string, error) {
 	buildvars := map[string]string{
 		"Version": c.Args.Version,
 		"dateStr": time.Now().Format(time.UnixDate),
@@ -130,7 +141,7 @@ func (c *PackageCmd) getLDFlags() (string, error) {
 
 	commitID, err := cmdOutput("git", "rev-parse", "--verify", "HEAD")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if commitID != "" {
 		buildvars["commitID"] = strings.TrimSpace(commitID)
@@ -138,18 +149,18 @@ func (c *PackageCmd) getLDFlags() (string, error) {
 
 	status, err := cmdOutput("git", "status", "--porcelain")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if status != "" {
 		if !c.IgnoreDirty {
 			diff, err := cmdOutput("git", "diff")
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			if mb := 1024 * 1024; len(diff) > mb {
 				diff = diff[:mb] // Capped to 1MB in size at max
 			}
-			return "", fmt.Errorf(`
+			return nil, fmt.Errorf(`
 Aborting! Working directory is dirty, binary would be compromised!
 
 note: You can use --ignore-dirty to skip this check.
@@ -167,7 +178,7 @@ note: git diff reports:
 
 	uname, err := cmdOutput("uname", "-a")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if uname != "" {
 		buildvars["host"] = strings.TrimSpace(uname)
@@ -191,5 +202,5 @@ note: git diff reports:
 		ldflags = append(ldflags, fmt.Sprintf("-X main.%s %q", name, val))
 	}
 
-	return strings.Join(ldflags, " "), nil
+	return ldflags, nil
 }
