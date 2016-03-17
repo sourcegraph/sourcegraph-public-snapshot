@@ -13,12 +13,6 @@ class Dispatcher extends flux.Dispatcher {
 		super.dispatch(payload);
 	}
 
-	asyncDispatch(payload) {
-		setTimeout(() => {
-			this.dispatch(payload);
-		}, 0);
-	}
-
 	// catchDispatched returns the actions dispatched during the execution of f.
 	// Actions are not passed to the listeners. Use only in tests.
 	catchDispatched(f) {
@@ -33,6 +27,11 @@ class Dispatcher extends flux.Dispatcher {
 		}
 		return this._dispatched;
 	}
+}
+
+export default {
+	Stores: new Dispatcher(),
+	Backends: new Dispatcher(),
 
 	// directDispatch dispatches an action to a single store. Not affected by
 	// catchDispatched. Use only in tests.
@@ -40,13 +39,15 @@ class Dispatcher extends flux.Dispatcher {
 		testOnly();
 
 		deepFreeze(payload);
-		this._startDispatching(payload);
+		if (store.__dispatcher) {
+			store.__dispatcher._startDispatching(payload);
+		}
 		try {
 			store.__onDispatch(payload);
 		} finally {
-			this._stopDispatching();
+			if (store.__dispatcher) {
+				store.__dispatcher._stopDispatching();
+			}
 		}
-	}
-}
-
-export default new Dispatcher();
+	},
+};

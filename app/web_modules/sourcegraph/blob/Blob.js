@@ -222,7 +222,7 @@ class Blob extends Component {
 
 		if (sel.isCollapsed) {
 			// It's a click IN the file view with an empty (collapsed) selection.
-			Dispatcher.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, null));
+			Dispatcher.Stores.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, null));
 			return;
 		}
 
@@ -236,7 +236,7 @@ class Blob extends Component {
 		let startByte = this.state.lineStartBytes[startLine - 1] + startCol;
 		let endByte = this.state.lineStartBytes[endLine - 1] + endCol;
 
-		Dispatcher.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, startLine, startCol, startByte, endLine, endCol, endByte));
+		Dispatcher.Stores.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, startLine, startCol, startByte, endLine, endCol, endByte));
 	}
 
 	onStateTransition(prevState, nextState) {

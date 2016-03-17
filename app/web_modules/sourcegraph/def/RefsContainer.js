@@ -91,12 +91,12 @@ class RefsContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.def && prevState.def !== nextState.def) {
-			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.def));
-			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.def, nextState.path));
+			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.def));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.def, nextState.path));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
+			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.highlightedDef));
 		}
 
 		if (nextState.refs && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
@@ -106,8 +106,8 @@ class RefsContainer extends Container {
 				if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
 				// TODO Only fetch a portion of the file/annotations at a time for perf.
 				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
-				Dispatcher.asyncDispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
-				Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
+				Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
+				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
 				wantedFiles.add(ref.File);
 			}
 		}

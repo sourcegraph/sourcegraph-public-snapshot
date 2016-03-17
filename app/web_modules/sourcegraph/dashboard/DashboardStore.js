@@ -30,4 +30,4 @@ export class DashboardStore extends Store {
 	}
 }
 
-export default new DashboardStore(Dispatcher);
+export default new DashboardStore(Dispatcher.Stores);

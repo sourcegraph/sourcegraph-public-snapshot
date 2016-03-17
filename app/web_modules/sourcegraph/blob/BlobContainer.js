@@ -81,8 +81,8 @@ class BlobContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path)) {
-			Dispatcher.asyncDispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.path));
-			Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.path));
+			Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.path));
+			Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.path));
 		}
 		if (nextState.activeDef && prevState.activeDef !== nextState.activeDef) {
 			let activeDefData = nextState.activeDef && DefStore.defs.get(nextState.activeDef);
@@ -95,28 +95,28 @@ class BlobContainer extends Container {
 				if (typeof window !== "undefined") window.location.href = activeDefData.URL;
 				return;
 			}
-			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.activeDef));
-			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.activeDef));
+			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.activeDef));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.activeDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
+			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.highlightedDef));
 		}
 		if (nextState.defOptionsURLs && prevState.defOptionsURLs !== nextState.defOptionsURLs) {
 			nextState.defOptionsURLs.forEach((url) => {
-				Dispatcher.dispatch(new DefActions.WantDef(url));
+				Dispatcher.Backends.dispatch(new DefActions.WantDef(url));
 			});
 		}
 	}
 
 	_onClick() {
 		if (this.state.defOptionsURLs) {
-			Dispatcher.dispatch(new DefActions.SelectMultipleDefs(null, 0, 0));
+			Dispatcher.Stores.dispatch(new DefActions.SelectMultipleDefs(null, 0, 0));
 		}
 	}
 
 	_onKeyDown(event) {
 		if (event.keyCode === 27) {
-			Dispatcher.dispatch(new DefActions.SelectDef(null));
+			Dispatcher.Stores.dispatch(new DefActions.SelectDef(null));
 		}
 	}
 
@@ -182,7 +182,7 @@ class BlobContainer extends Container {
 							let data = this.state.defs.get(url);
 							return (
 								<li key={i} onClick={(ev) => {
-									Dispatcher.dispatch(new GoTo(url));
+									Dispatcher.Stores.dispatch(new GoTo(url));
 								}}>
 									{data ? <span dangerouslySetInnerHTML={data.QualifiedName} /> : "..."}
 								</li>

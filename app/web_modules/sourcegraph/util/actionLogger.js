@@ -1,11 +1,16 @@
 import Dispatcher from "sourcegraph/Dispatcher";
 
 if (typeof window !== "undefined") {
-	Dispatcher.register(function(action) {
-		if (window.localStorage["log-actions"] === "true") {
-			console.log(action);
-		}
-	});
+	let logger = function(dispatcherName) {
+		return function(action) {
+			if (window.localStorage["log-actions"] === "true") {
+				console.log(`${dispatcherName}:`, action);
+			}
+		};
+	};
+
+	Dispatcher.Stores.register(logger("Stores"));
+	Dispatcher.Backends.register(logger("Backends"));
 
 	window.enableActionLog = function() {
 		window.localStorage["log-actions"] = "true";

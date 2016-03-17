@@ -17,10 +17,10 @@ class FileDiff extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.baseRepo !== prevState.baseRepo || nextState.baseRev !== prevState.baseRev || nextState.diff.OrigName !== prevState.diff.OrigName) {
-			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, "", nextState.diff.OrigName));
+			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, "", nextState.diff.OrigName));
 		}
 		if (nextState.headRepo !== prevState.headRepo || nextState.headRev !== prevState.headRev || nextState.diff.NewName !== prevState.diff.NewName) {
-			if (!isDevNull(nextState.diff.NewName)) Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(nextState.headRepo, nextState.headRev, "", nextState.diff.NewName));
+			if (!isDevNull(nextState.diff.NewName)) Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.headRepo, nextState.headRev, "", nextState.diff.NewName));
 		}
 	}
 

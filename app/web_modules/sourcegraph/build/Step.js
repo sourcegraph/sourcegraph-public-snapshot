@@ -38,7 +38,7 @@ class Step extends Component {
 
 	_updateLog() {
 		if (this.state && this.state.task !== null) {
-			Dispatcher.asyncDispatch(new BuildActions.WantLog(this.state.task.Build.Repo.URI, this.state.task.Build.ID, this.state.task.ID));
+			Dispatcher.Backends.dispatch(new BuildActions.WantLog(this.state.task.Build.Repo.URI, this.state.task.Build.ID, this.state.task.ID));
 			if (this.state.task.EndedAt) {
 				this._stopUpdateLog();
 			}
@@ -68,7 +68,7 @@ class Step extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.task !== nextState.task) {
-			Dispatcher.asyncDispatch(new BuildActions.WantLog(nextState.task.Build.Repo.URI, nextState.task.Build.ID, nextState.task.ID));
+			Dispatcher.Backends.dispatch(new BuildActions.WantLog(nextState.task.Build.Repo.URI, nextState.task.Build.ID, nextState.task.ID));
 		}
 	}
 

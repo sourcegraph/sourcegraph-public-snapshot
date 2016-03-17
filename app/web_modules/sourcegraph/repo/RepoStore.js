@@ -75,4 +75,4 @@ export class RepoStore extends Store {
 	}
 }
 
-export default new RepoStore(Dispatcher);
+export default new RepoStore(Dispatcher.Stores);

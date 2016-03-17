@@ -27,13 +27,13 @@ const DashboardBackend = {
 					console.log(resp);
 					return;
 				}
-				Dispatcher.dispatch(new DashboardActions.UsersInvited(body));
+				Dispatcher.Stores.dispatch(new DashboardActions.UsersInvited(body));
 			});
 			break;
 		}
 	},
 };
 
-Dispatcher.register(DashboardBackend.__onDispatch);
+Dispatcher.Backends.register(DashboardBackend.__onDispatch);
 
 export default DashboardBackend;

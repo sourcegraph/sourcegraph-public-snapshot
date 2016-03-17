@@ -59,7 +59,7 @@ class BlobRouter extends Component {
 	}
 
 	componentDidMount() {
-		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
+		this.dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 
 		// Normally this is a bad practice, but it's done out of neccessity with a good
 		// reason here. We're rendering this component server-side, where the hash fragment

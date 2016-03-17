@@ -24,7 +24,7 @@ class AlertContainer extends Container {
 					<div className="alert alert-info" key={i}>
 						<div className="alert-content">
 							<i className="sg-icon sg-icon-close btn-icon alert-dismiss"
-								onClick={_ => Dispatcher.dispatch(new AlertActions.RemoveAlert(alert.id))}></i>
+								onClick={_ => Dispatcher.Stores.dispatch(new AlertActions.RemoveAlert(alert.id))}></i>
 							{alert.component}
 						</div>
 					</div>

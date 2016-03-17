@@ -11,7 +11,7 @@ describe("DefBackend", () => {
 				expect(options.uri).to.be("/.api/repos/someURL");
 				callback(null, {statusCode: 200}, "someDefData");
 			};
-			expect(Dispatcher.catchDispatched(() => {
+			expect(Dispatcher.Stores.catchDispatched(() => {
 				Dispatcher.directDispatch(DefBackend, new DefActions.WantDef("/someURL"));
 			})).to.eql([new DefActions.DefFetched("/someURL", "someDefData")]);
 		});
@@ -21,7 +21,7 @@ describe("DefBackend", () => {
 				expect(options.uri).to.be("/.api/repos/someURL");
 				callback(null, {statusCode: 404}, null);
 			};
-			expect(Dispatcher.catchDispatched(() => {
+			expect(Dispatcher.Stores.catchDispatched(() => {
 				Dispatcher.directDispatch(DefBackend, new DefActions.WantDef("/someURL"));
 			})).to.eql([new DefActions.DefFetched("/someURL", {Error: true})]);
 		});
@@ -32,7 +32,7 @@ describe("DefBackend", () => {
 			expect(options.uri).to.be("/.api/.defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
 			callback(null, {statusCode: 200}, {Defs: ["someDefData"]});
 		};
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(DefBackend, new DefActions.WantDefs("myrepo", "myrev", "myquery"));
 		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
 	});
@@ -43,7 +43,7 @@ describe("DefBackend", () => {
 				expect(options.uri).to.be("/.ui/someURL/.refs");
 				callback(null, null, ["someRefData"]);
 			};
-			expect(Dispatcher.catchDispatched(() => {
+			expect(Dispatcher.Stores.catchDispatched(() => {
 				Dispatcher.directDispatch(DefBackend, new DefActions.WantRefs("/someURL"));
 			})).to.eql([new DefActions.RefsFetched("/someURL", null, ["someRefData"])]);
 		});
@@ -52,7 +52,7 @@ describe("DefBackend", () => {
 				expect(options.uri).to.be("/.ui/someURL/.refs?Files=f");
 				callback(null, {statusCode: 200}, ["someRefData"]);
 			};
-			expect(Dispatcher.catchDispatched(() => {
+			expect(Dispatcher.Stores.catchDispatched(() => {
 				Dispatcher.directDispatch(DefBackend, new DefActions.WantRefs("/someURL", "f"));
 			})).to.eql([new DefActions.RefsFetched("/someURL", "f", ["someRefData"])]);
 		});

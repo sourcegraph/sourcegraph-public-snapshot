@@ -22,7 +22,7 @@ const RepoBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new RepoActions.FetchedRepo(action.repo, body));
+						Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, body));
 					});
 				}
 				break;
@@ -41,7 +41,7 @@ const RepoBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new RepoActions.FetchedBranches(action.repo, body.Branches || [], err));
+						Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, body.Branches || [], err));
 					});
 				}
 				break;
@@ -60,7 +60,7 @@ const RepoBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new RepoActions.FetchedTags(action.repo, body.Tags || [], err));
+						Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, body.Tags || [], err));
 					});
 				}
 				break;
@@ -69,6 +69,6 @@ const RepoBackend = {
 	},
 };
 
-Dispatcher.register(RepoBackend.__onDispatch);
+Dispatcher.Backends.register(RepoBackend.__onDispatch);
 
 export default RepoBackend;

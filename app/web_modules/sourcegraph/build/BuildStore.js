@@ -110,4 +110,4 @@ export class BuildStore extends Store {
 	}
 }
 
-export default new BuildStore(Dispatcher);
+export default new BuildStore(Dispatcher.Stores);

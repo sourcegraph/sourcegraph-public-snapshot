@@ -17,7 +17,7 @@ describe("BuildBackend", () => {
 			expect(options.uri).to.be(expectedURI);
 			callback(null, null, {ID: 123});
 		};
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantBuild(action.repo, action.buildID));
 		})).to.eql([new BuildActions.BuildFetched(action.repo, action.buildID, {ID: 123})]);
 	});
@@ -34,7 +34,7 @@ describe("BuildBackend", () => {
 			expect(options.uri).to.be(expectedURI);
 			callback(null, {headers: {"x-sourcegraph-log-max-id": 789}, statusCode: 200}, "a");
 		};
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
 		})).to.eql([new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, 0, 789, "a")]);
 	});
@@ -57,7 +57,7 @@ describe("BuildBackend", () => {
 			callback(null, {headers: {"x-sourcegraph-log-max-id": 34}, statusCode: 200}, "c");
 		};
 
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
 		})).to.eql([new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, 12, 34, "c")]);
 	});
@@ -73,7 +73,7 @@ describe("BuildBackend", () => {
 			expect(options.uri).to.be(expectedURI);
 			callback(null, null, [{ID: 456}]);
 		};
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(BuildBackend, new BuildActions.WantTasks(action.repo, action.buildID));
 		})).to.eql([new BuildActions.TasksFetched(action.repo, action.buildID, [{ID: 456}])]);
 	});

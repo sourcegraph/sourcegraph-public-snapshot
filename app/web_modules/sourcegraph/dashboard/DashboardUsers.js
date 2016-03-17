@@ -67,16 +67,16 @@ class UserList extends Component {
 	}
 
 	_handleInviteUser(user) {
-		Dispatcher.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
+		Dispatcher.Backends.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
 		let InvitedUserAlert = (<strong className="invited-user-notification">Invited {this._name(user)}</strong>);
-		Dispatcher.dispatch(new AlertActions.AddAlert(true, InvitedUserAlert));
+		Dispatcher.Stores.dispatch(new AlertActions.AddAlert(true, InvitedUserAlert));
 	}
 
 	_handleInviteAll() {
 		const usersToInvite = this._invitableUsers();
 		const emails = usersToInvite.map(user => user.Email);
-		if (emails.length > 0) Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
-		Dispatcher.dispatch(new AlertActions.AddAlert(true, this._alertInviteAll(usersToInvite)));
+		if (emails.length > 0) Dispatcher.Backends.dispatch(new DashboardActions.WantInviteUsers(emails));
+		Dispatcher.Stores.dispatch(new AlertActions.AddAlert(true, this._alertInviteAll(usersToInvite)));
 		this.setState({confirmInviteAll: false});
 	}
 

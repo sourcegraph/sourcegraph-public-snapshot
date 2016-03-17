@@ -22,7 +22,7 @@ const BlobBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new BlobActions.FileFetched(action.repo, action.rev, action.tree, body));
+						Dispatcher.Stores.dispatch(new BlobActions.FileFetched(action.repo, action.rev, action.tree, body));
 					});
 				}
 				break;
@@ -41,7 +41,7 @@ const BlobBackend = {
 							return;
 						}
 						body.Annotations = prepareAnnotations(body.Annotations);
-						Dispatcher.dispatch(new BlobActions.AnnotationsFetched(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte, body));
+						Dispatcher.Stores.dispatch(new BlobActions.AnnotationsFetched(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte, body));
 					});
 				}
 				break;
@@ -50,6 +50,6 @@ const BlobBackend = {
 	},
 };
 
-Dispatcher.register(BlobBackend.__onDispatch);
+Dispatcher.Backends.register(BlobBackend.__onDispatch);
 
 export default BlobBackend;

@@ -20,7 +20,7 @@ const BuildBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new BuildActions.BuildFetched(action.repo, action.buildID, body));
+						Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, action.buildID, body));
 					});
 				}
 				break;
@@ -39,7 +39,7 @@ const BuildBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new BuildActions.BuildsFetchedForCommit(action.repo, action.commitID, body.Builds || []));
+						Dispatcher.Stores.dispatch(new BuildActions.BuildsFetchedForCommit(action.repo, action.commitID, body.Builds || []));
 					});
 				}
 				break;
@@ -61,7 +61,7 @@ const BuildBackend = {
 						console.error(err);
 						return;
 					}
-					Dispatcher.dispatch(new BuildActions.BuildFetched(action.repo, body.ID, body));
+					Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, body.ID, body));
 				});
 				break;
 			}
@@ -95,7 +95,7 @@ const BuildBackend = {
 					if (maxID) {
 						maxID = parseInt(maxID, 10);
 					}
-					Dispatcher.dispatch(new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, minID, maxID, body));
+					Dispatcher.Stores.dispatch(new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, minID, maxID, body));
 				});
 				break;
 			}
@@ -112,7 +112,7 @@ const BuildBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new BuildActions.TasksFetched(action.repo, action.buildID, body));
+						Dispatcher.Stores.dispatch(new BuildActions.TasksFetched(action.repo, action.buildID, body));
 					});
 				}
 				break;
@@ -121,6 +121,6 @@ const BuildBackend = {
 	},
 };
 
-Dispatcher.register(BuildBackend.__onDispatch);
+Dispatcher.Backends.register(BuildBackend.__onDispatch);
 
 export default BuildBackend;

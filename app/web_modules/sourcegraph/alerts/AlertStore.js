@@ -33,7 +33,7 @@ export class AlertStore extends Store {
 				this.alerts = update(this.alerts, {$push: [{component: action.component, id: id}]});
 				if (action.autoDismiss) {
 					setTimeout(() => {
-						Dispatcher.dispatch(new AlertActions.RemoveAlert(id));
+						Dispatcher.Stores.dispatch(new AlertActions.RemoveAlert(id));
 					}, 3000);
 				}
 				break;
@@ -51,4 +51,4 @@ export class AlertStore extends Store {
 	}
 }
 
-export default new AlertStore(Dispatcher);
+export default new AlertStore(Dispatcher.Stores);

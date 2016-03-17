@@ -13,7 +13,7 @@ describe("DashboardBackend", () => {
 			expect(options.json).to.have.property("Emails");
 			callback(null, {statusCode: 200}, "someFile");
 		};
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(DashboardBackend, new DashboardActions.WantInviteUsers("someEmails"));
 		})).to.eql([new DashboardActions.UsersInvited("someFile")]);
 	});

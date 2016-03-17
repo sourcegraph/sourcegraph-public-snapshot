@@ -80,4 +80,4 @@ export class DefStore extends Store {
 	}
 }
 
-export default new DefStore(Dispatcher);
+export default new DefStore(Dispatcher.Stores);

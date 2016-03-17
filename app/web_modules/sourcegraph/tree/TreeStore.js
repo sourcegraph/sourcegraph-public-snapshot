@@ -89,4 +89,4 @@ export class TreeStore extends Store {
 	}
 }
 
-export default new TreeStore(Dispatcher);
+export default new TreeStore(Dispatcher.Stores);

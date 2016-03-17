@@ -20,7 +20,7 @@ const TreeBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, body));
+						Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, body));
 					});
 				}
 				break;
@@ -38,7 +38,7 @@ const TreeBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, action.commitID, body));
+						Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, action.commitID, body));
 					});
 				}
 				break;
@@ -60,7 +60,7 @@ const TreeBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.commitID, action.path, body));
+						Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.commitID, action.path, body));
 					});
 				}
 				break;
@@ -69,6 +69,6 @@ const TreeBackend = {
 	},
 };
 
-Dispatcher.register(TreeBackend.__onDispatch);
+Dispatcher.Backends.register(TreeBackend.__onDispatch);
 
 export default TreeBackend;

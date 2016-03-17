@@ -26,7 +26,7 @@ class FileDiffs extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
+			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.highlightedDef));
 		}
 	}
 

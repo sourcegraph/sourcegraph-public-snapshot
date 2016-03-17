@@ -22,7 +22,8 @@
 														"props": {
 															"type": "text",
 															"onFocus": {
-																"dispatched": [
+																"dispatchedToStores": [],
+																"dispatchedToBackends": [
 																	{
 																		"$constructor": "WantSrclibDataVersion",
 																		"repo": "repo",

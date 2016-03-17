@@ -11,12 +11,13 @@
 						"className": "line-number",
 						"data-line": 42,
 						"onClick": {
-							"dispatched": [
+							"dispatchedToStores": [
 								{
 									"$constructor": "SelectLine",
 									"line": 42
 								}
-							]
+							],
+							"dispatchedToBackends": []
 						}
 					}
 				},

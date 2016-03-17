@@ -15,7 +15,7 @@ class TreeOverlay extends Component {
 	}
 
 	componentDidMount() {
-		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
+		this.dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	componentWillUnmount() {

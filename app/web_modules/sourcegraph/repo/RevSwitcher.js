@@ -42,8 +42,8 @@ class RevSwitcher extends Component {
 			// Don't load the file list when the page loads until we become open.
 			const initialLoad = !prevState.repo;
 			if (!initialLoad || nextState.prefetch) {
-				Dispatcher.asyncDispatch(new RepoActions.WantBranches(nextState.repo));
-				Dispatcher.asyncDispatch(new RepoActions.WantTags(nextState.repo));
+				Dispatcher.Backends.dispatch(new RepoActions.WantBranches(nextState.repo));
+				Dispatcher.Backends.dispatch(new RepoActions.WantTags(nextState.repo));
 			}
 		}
 

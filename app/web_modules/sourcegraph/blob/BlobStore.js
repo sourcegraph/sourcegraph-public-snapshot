@@ -59,4 +59,4 @@ export class BlobStore extends Store {
 	}
 }
 
-export default new BlobStore(Dispatcher);
+export default new BlobStore(Dispatcher.Stores);

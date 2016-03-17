@@ -21,7 +21,7 @@ const DefBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new DefActions.DefFetched(action.url, body));
+						Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.url, body));
 					});
 				}
 				break;
@@ -39,7 +39,7 @@ const DefBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, body));
+						Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, body));
 					});
 				}
 				break;
@@ -59,7 +59,7 @@ const DefBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new DefActions.RefsFetched(action.defURL, action.file, body));
+						Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.defURL, action.file, body));
 					});
 				}
 				break;
@@ -68,6 +68,6 @@ const DefBackend = {
 	},
 };
 
-Dispatcher.register(DefBackend.__onDispatch);
+Dispatcher.Backends.register(DefBackend.__onDispatch);
 
 export default DefBackend;

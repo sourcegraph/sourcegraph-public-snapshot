@@ -10,16 +10,22 @@ let noJSON = undefined; // eslint-disable-line no-undefined
 
 export default function(expected, filename, component) {
 	let renderer = TestUtils.createRenderer();
-	let dispatched = Dispatcher.catchDispatched(() => {
-		mockTimeout(() => {
-			renderer.render(component);
+	let dispatchedToStores, dispatchedToBackends;
+	dispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
+		dispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
+			mockTimeout(() => {
+				renderer.render(component);
+			});
 		});
 	});
+	if (dispatchedToStores.length !== 0) {
+		throw new Error("do not dispatch to stores on render");
+	}
 
 	let json = JSON.stringify(
 		{
 			renderOutput: renderer.getRenderOutput(),
-			dispatched: dispatched.length > 0 ? dispatched : noJSON,
+			dispatched: dispatchedToBackends.length > 0 ? dispatchedToBackends : noJSON,
 		},
 		(k, v) => {
 			if ((k.charAt(0) === "_" && k !== "__html") || v === null || v === undefined) { // eslint-disable-line no-undefined
@@ -45,34 +51,38 @@ export default function(expected, filename, component) {
 				if (k.substr(0, 2) === "on") {
 					let defaultPrevented = noJSON;
 					let propagationStopped = noJSON;
-					let funcDispatched = Dispatcher.catchDispatched(() => {
-						mockTimeout(() => {
-							v({
-								preventDefault() {
-									defaultPrevented = true;
-								},
-								stopPropagation() {
-									propagationStopped = true;
-								},
-								currentTarget: {
-									href: "[currentTarget.href]",
-								},
-								view: {
-									scrollX: 11,
-									scrollY: 22,
-								},
-								clientX: 10,
-								clientY: 20,
+					let funcDispatchedToStores, funcDispatchedToBackends;
+					funcDispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
+						funcDispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
+							mockTimeout(() => {
+								v({
+									preventDefault() {
+										defaultPrevented = true;
+									},
+									stopPropagation() {
+										propagationStopped = true;
+									},
+									currentTarget: {
+										href: "[currentTarget.href]",
+									},
+									view: {
+										scrollX: 11,
+										scrollY: 22,
+									},
+									clientX: 10,
+									clientY: 20,
+								});
 							});
 						});
 					});
-					if (!defaultPrevented && funcDispatched.length === 0) {
+					if (!defaultPrevented && funcDispatchedToStores.length === 0 && funcDispatchedToBackends.length === 0) {
 						return noJSON;
 					}
 					return {
 						defaultPrevented: defaultPrevented,
 						propagationStopped: propagationStopped,
-						dispatched: funcDispatched,
+						dispatchedToStores: funcDispatchedToStores,
+						dispatchedToBackends: funcDispatchedToBackends,
 					};
 				}
 				return noJSON;

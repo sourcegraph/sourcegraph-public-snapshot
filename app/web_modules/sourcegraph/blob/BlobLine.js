@@ -76,8 +76,8 @@ class BlobLine extends Component {
 							"active-def": hasURL(ann, this.state.activeDef),
 						})}
 						href={ann.URL || ann.URLs[0]}
-						onMouseOver={() => Dispatcher.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
-						onMouseOut={() => Dispatcher.dispatch(new DefActions.HighlightDef(null))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
+						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
 							ev.preventDefault();
@@ -86,12 +86,14 @@ class BlobLine extends Component {
 								//
 								// Dispatch async and stop propagation so the menu is not
 								// immediately closed by click handler on Document.
-								Dispatcher.asyncDispatch(new DefActions.SelectMultipleDefs(
-									ann.URLs,
-									ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY
-								));
+								setTimeout(() => {
+									Dispatcher.Stores.dispatch(new DefActions.SelectMultipleDefs(
+										ann.URLs,
+										ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY
+									));
+								}, 0);
 							} else {
-								Dispatcher.dispatch(new DefActions.SelectDef(ann.URL));
+								Dispatcher.Stores.dispatch(new DefActions.SelectDef(ann.URL));
 							}
 						}}
 						key={i}>{simpleContentsString(content)}</a>
@@ -117,10 +119,10 @@ class BlobLine extends Component {
 						data-line={this.state.lineNumber}
 						onClick={(event) => {
 							if (event.shiftKey) {
-								Dispatcher.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
+								Dispatcher.Stores.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
 								return;
 							}
-							Dispatcher.dispatch(new BlobActions.SelectLine(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
+							Dispatcher.Stores.dispatch(new BlobActions.SelectLine(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
 						}}>
 					</td>}
 				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}

@@ -153,12 +153,12 @@ class TreeSearch extends Container {
 		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
 		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.commitID !== prevState.commitID) {
-			Dispatcher.asyncDispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev, nextState.commitID));
-			Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev, nextState.commitID));
+			Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev, nextState.commitID));
+			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev, nextState.commitID));
 		}
 		if (nextState.srclibDataVersion !== prevState.srclibDataVersion) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
-				Dispatcher.asyncDispatch(
+				Dispatcher.Backends.dispatch(
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query)
 				);
 			}
@@ -166,7 +166,7 @@ class TreeSearch extends Container {
 
 		if (nextState.query !== prevState.query) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
-				Dispatcher.asyncDispatch(
+				Dispatcher.Backends.dispatch(
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query)
 				);
 			}
@@ -286,7 +286,7 @@ class TreeSearch extends Container {
 
 		case "ArrowLeft":
 			if (this.state.currPath.length !== 0) {
-				Dispatcher.dispatch(new TreeActions.UpDirectory());
+				Dispatcher.Stores.dispatch(new TreeActions.UpDirectory());
 			}
 
 			e.preventDefault();
@@ -295,7 +295,7 @@ class TreeSearch extends Container {
 		case "ArrowRight":
 			part = this._getSelectedPathPart();
 			if (part) {
-				Dispatcher.dispatch(new TreeActions.DownDirectory(part));
+				Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(part));
 			}
 
 			e.preventDefault();

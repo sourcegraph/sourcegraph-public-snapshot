@@ -12,7 +12,7 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 // window.location by themselves.
 class TreeRouter extends Component {
 	componentDidMount() {
-		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
+		this.dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	componentWillUnmount() {

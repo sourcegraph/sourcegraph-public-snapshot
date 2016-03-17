@@ -25,7 +25,7 @@ class BuildIndicator extends Component {
 	_updater(msec) {
 		if (this._interval !== null) clearInterval(this._interval);
 		this._interval = setInterval(() => {
-			Dispatcher.dispatch(new BuildActions.WantNewestBuildForCommit(this.state.repo, this.state.commitID, true));
+			Dispatcher.Backends.dispatch(new BuildActions.WantNewestBuildForCommit(this.state.repo, this.state.commitID, true));
 		}, msec);
 	}
 
@@ -43,7 +43,7 @@ class BuildIndicator extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID || nextState.branch !== prevState.branch) {
-			Dispatcher.asyncDispatch(new BuildActions.WantNewestBuildForCommit(nextState.repo, nextState.commitID, true));
+			Dispatcher.Backends.dispatch(new BuildActions.WantNewestBuildForCommit(nextState.repo, nextState.commitID, true));
 		}
 		if (nextState.build && nextState.build !== prevState.build) {
 			this._updater(nextState.build.EndedAt ? endedPollInterval : notYetEndedPollInterval);
@@ -51,7 +51,7 @@ class BuildIndicator extends Component {
 	}
 
 	_createBuild(ev) {
-		Dispatcher.asyncDispatch(new BuildActions.CreateBuild(this.state.repo, this.state.commitID, this.state.branch));
+		Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.repo, this.state.commitID, this.state.branch));
 	}
 
 	_statusLabel(b) {

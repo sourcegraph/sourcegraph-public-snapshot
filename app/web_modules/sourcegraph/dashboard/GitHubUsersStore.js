@@ -45,4 +45,4 @@ export class GitHubUsersStore extends Store {
 	}
 }
 
-export default new GitHubUsersStore(Dispatcher);
+export default new GitHubUsersStore(Dispatcher.Stores);

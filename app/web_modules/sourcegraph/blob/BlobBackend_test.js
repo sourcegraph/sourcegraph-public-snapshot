@@ -11,7 +11,7 @@ describe("BlobBackend", () => {
 			expect(options.uri).to.be("/.api/repos/aRepo@aRev/.tree/aTree?ContentsAsString=true");
 			callback(null, null, "someFile");
 		};
-		expect(Dispatcher.catchDispatched(() => {
+		expect(Dispatcher.Stores.catchDispatched(() => {
 			Dispatcher.directDispatch(BlobBackend, new BlobActions.WantFile("aRepo", "aRev", "aTree"));
 		})).to.eql([new BlobActions.FileFetched("aRepo", "aRev", "aTree", "someFile")]);
 	});

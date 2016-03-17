@@ -11,7 +11,7 @@ export default function hotLink(event) {
 		return;
 	}
 	event.preventDefault();
-	Dispatcher.dispatch(new GoTo(event.currentTarget.href || event.currentTarget.dataset.href));
+	Dispatcher.Stores.dispatch(new GoTo(event.currentTarget.href || event.currentTarget.dataset.href));
 }
 
 // hotLinkAnyElement lets clicks on child A elements continue with the default

@@ -41,8 +41,8 @@ class BuildContainer extends Container {
 	}
 
 	_update() {
-		Dispatcher.dispatch(new BuildActions.WantBuild(this.state.build.Repo, this.state.build.ID, true));
-		Dispatcher.dispatch(new BuildActions.WantTasks(this.state.build.Repo, this.state.build.ID, true));
+		Dispatcher.Backends.dispatch(new BuildActions.WantBuild(this.state.build.Repo, this.state.build.ID, true));
+		Dispatcher.Backends.dispatch(new BuildActions.WantTasks(this.state.build.Repo, this.state.build.ID, true));
 	}
 
 	reconcileState(state, props) {
@@ -56,8 +56,8 @@ class BuildContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.build !== nextState.build) {
-			Dispatcher.asyncDispatch(new BuildActions.WantBuild(nextState.build.Repo, nextState.build.ID));
-			Dispatcher.asyncDispatch(new BuildActions.WantTasks(nextState.build.Repo, nextState.build.ID));
+			Dispatcher.Backends.dispatch(new BuildActions.WantBuild(nextState.build.Repo, nextState.build.ID));
+			Dispatcher.Backends.dispatch(new BuildActions.WantTasks(nextState.build.Repo, nextState.build.ID));
 		}
 	}
 

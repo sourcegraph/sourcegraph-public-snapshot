@@ -17,7 +17,7 @@ class TreeEntryCommit extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path) {
-			Dispatcher.asyncDispatch(new TreeActions.WantCommit(nextState.repo, nextState.rev, nextState.path));
+			Dispatcher.Backends.dispatch(new TreeActions.WantCommit(nextState.repo, nextState.rev, nextState.path));
 		}
 	}
 
