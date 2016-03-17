@@ -14,7 +14,7 @@ describe("DashboardBackend", () => {
 			callback(null, {statusCode: 200}, "someFile");
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			Dispatcher.directDispatch(DashboardBackend, new DashboardActions.WantInviteUsers("someEmails"));
+			DashboardBackend.__onDispatch(new DashboardActions.WantInviteUsers("someEmails"));
 		})).to.eql([new DashboardActions.UsersInvited("someFile")]);
 	});
 });

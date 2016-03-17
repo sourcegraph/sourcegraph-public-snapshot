@@ -4,7 +4,6 @@ import expect from "expect.js";
 import React from "react";
 import TestUtils from "react-addons-test-utils";
 
-import Dispatcher from "sourcegraph/Dispatcher";
 import BlobRouter from "sourcegraph/blob/BlobRouter";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -51,7 +50,7 @@ describe("BlobRouter", () => {
 	});
 
 	it("should consult the RepoStore for the repo's default branch if the rev is empty", () => {
-		Dispatcher.directDispatch(RepoStore, new RepoActions.FetchedRepo("myrepo", {DefaultBranch: "mybranch"}));
+		RepoStore.directDispatch(new RepoActions.FetchedRepo("myrepo", {DefaultBranch: "mybranch"}));
 		[
 			"http://localhost:3080/myrepo",
 			"http://localhost:3080/myrepo/.tree/file.txt",
@@ -72,7 +71,7 @@ describe("BlobRouter", () => {
 	});
 
 	it("should handle DefActions.SelectDef and go to def when the def is in store", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someURL", {}));
+		DefStore.directDispatch(new DefActions.DefFetched("someURL", {}));
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new DefActions.SelectDef("someURL"),
@@ -81,7 +80,7 @@ describe("BlobRouter", () => {
 	});
 
 	it("should handle DefActions.SelectDef and NOT go to def when the def is errored", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("someURL", {Error: "x"}));
+		DefStore.directDispatch(new DefActions.DefFetched("someURL", {Error: "x"}));
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
 			new DefActions.SelectDef("someURL"),
@@ -143,6 +142,6 @@ describe("BlobRouter", () => {
 function testAction(uri, action, expectedURI) {
 	let renderer = TestUtils.createRenderer();
 	renderer.render(<BlobRouter location={uri} navigate={(newURI) => { uri = newURI; }} _isMounted={true} />);
-	Dispatcher.directDispatch(renderer._instance._instance, action);
+	renderer._instance._instance.__onDispatch(action);
 	expect(uri).to.be(expectedURI);
 }

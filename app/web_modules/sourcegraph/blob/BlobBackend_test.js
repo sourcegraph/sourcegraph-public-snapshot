@@ -12,7 +12,7 @@ describe("BlobBackend", () => {
 			callback(null, null, "someFile");
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			Dispatcher.directDispatch(BlobBackend, new BlobActions.WantFile("aRepo", "aRev", "aTree"));
+			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aTree"));
 		})).to.eql([new BlobActions.FileFetched("aRepo", "aRev", "aTree", "someFile")]);
 	});
 });

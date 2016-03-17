@@ -12,7 +12,7 @@ describe("DefBackend", () => {
 				callback(null, {statusCode: 200}, "someDefData");
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantDef("/someURL"));
+				DefBackend.__onDispatch(new DefActions.WantDef("/someURL"));
 			})).to.eql([new DefActions.DefFetched("/someURL", "someDefData")]);
 		});
 
@@ -22,7 +22,7 @@ describe("DefBackend", () => {
 				callback(null, {statusCode: 404}, null);
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantDef("/someURL"));
+				DefBackend.__onDispatch(new DefActions.WantDef("/someURL"));
 			})).to.eql([new DefActions.DefFetched("/someURL", {Error: true})]);
 		});
 	});
@@ -33,7 +33,7 @@ describe("DefBackend", () => {
 			callback(null, {statusCode: 200}, {Defs: ["someDefData"]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			Dispatcher.directDispatch(DefBackend, new DefActions.WantDefs("myrepo", "myrev", "myquery"));
+			DefBackend.__onDispatch(new DefActions.WantDefs("myrepo", "myrev", "myquery"));
 		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
 	});
 
@@ -44,7 +44,7 @@ describe("DefBackend", () => {
 				callback(null, null, ["someRefData"]);
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantRefs("/someURL"));
+				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL"));
 			})).to.eql([new DefActions.RefsFetched("/someURL", null, ["someRefData"])]);
 		});
 		it("for a specific file", () => {
@@ -53,7 +53,7 @@ describe("DefBackend", () => {
 				callback(null, {statusCode: 200}, ["someRefData"]);
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantRefs("/someURL", "f"));
+				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "f"));
 			})).to.eql([new DefActions.RefsFetched("/someURL", "f", ["someRefData"])]);
 		});
 	});

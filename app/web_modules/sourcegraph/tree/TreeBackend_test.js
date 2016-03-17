@@ -18,7 +18,7 @@ describe("TreeBackend", () => {
 			callback(null, null, {Commits: ["someTreeCommit"]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			Dispatcher.directDispatch(TreeBackend, new TreeActions.WantCommit(entry.repo, entry.rev, entry.path));
+			TreeBackend.__onDispatch(new TreeActions.WantCommit(entry.repo, entry.rev, entry.path));
 		})).to.eql([new TreeActions.CommitFetched(entry.repo, entry.rev, entry.path, {Commits: ["someTreeCommit"]})]);
 	});
 
@@ -33,7 +33,7 @@ describe("TreeBackend", () => {
 			callback(null, null, {Files: ["a", "b"]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			Dispatcher.directDispatch(TreeBackend, new TreeActions.WantFileList(repo, rev, commitID));
+			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, rev, commitID));
 		})).to.eql([new TreeActions.FileListFetched(repo, rev, commitID, {Files: ["a", "b"]})]);
 	});
 });

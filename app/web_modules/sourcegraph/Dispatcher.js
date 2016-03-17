@@ -32,22 +32,4 @@ class Dispatcher extends flux.Dispatcher {
 export default {
 	Stores: new Dispatcher(),
 	Backends: new Dispatcher(),
-
-	// directDispatch dispatches an action to a single store. Not affected by
-	// catchDispatched. Use only in tests.
-	directDispatch(store, payload) {
-		testOnly();
-
-		deepFreeze(payload);
-		if (store.__dispatcher) {
-			store.__dispatcher._startDispatching(payload);
-		}
-		try {
-			store.__onDispatch(payload);
-		} finally {
-			if (store.__dispatcher) {
-				store.__dispatcher._stopDispatching();
-			}
-		}
-	},
 };
