@@ -28,6 +28,8 @@ type Coverage struct {
 	FileScoreClass  string
 	RefScoreClass   string
 	TokDensityClass string
+
+	CommitsBehind int32
 }
 
 type langCoverage struct {
@@ -153,5 +155,6 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 	if cov.Cov.TokDensity > 1.0 {
 		cov.TokDensityClass = "success"
 	}
+	cov.CommitsBehind = dataVer.CommitsBehind
 	return &cov, nil
 }
