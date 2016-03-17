@@ -41,7 +41,7 @@ func TestRepoFlow(t *T) error {
 	}
 
 	t.WaitForCondition(
-		5*time.Second,
+		20*time.Second,
 		100*time.Millisecond,
 		getMuxLink,
 		"Wait for mux.go codefile link to appear",
@@ -110,7 +110,7 @@ func TestRepoFlow(t *T) error {
 	}
 
 	t.WaitForCondition(
-		5*time.Second,
+		20*time.Second,
 		4*time.Second,
 		getSpans,
 		"Wait for Router span to appear",
