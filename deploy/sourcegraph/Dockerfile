@@ -1,12 +1,17 @@
 FROM alpine:3.2
 MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
-RUN apk add --update openssh git mailcap && rm -rf /var/cache/apk/* # install mailcap for /etc/mime.types, needed by HTTP server
+RUN apk add --update \
+  openssh \
+  git \
+  # for /etc/mime.types, needed by HTTP server
+  mailcap \
+  && rm -rf /var/cache/apk/*
 
 RUN { \
-		echo 'Host *'; \
-		echo 'UseRoaming no'; \
-	} >> /etc/ssh/ssh_config
+    echo 'Host *'; \
+    echo 'UseRoaming no'; \
+  } >> /etc/ssh/ssh_config
 
 ENV STATIC_SITE_VERSION 9fc7a38cafbcfcdd48642c4c6c30c30e29bcaf63
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar
