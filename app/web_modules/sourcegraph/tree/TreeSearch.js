@@ -250,12 +250,13 @@ class TreeSearch extends Container {
 			<div className={ctx}>
 				<div className={classNames({overlay: this.state.overlay})} onClick={this._blurInput} />
 				<div className={searchInputClass}>
-					<div className="tree-search-input">
+					<div className={classNames("tree-search-input", {"input-group": !this.state.overlay})}>
 						<input type="text"
 							placeholder="Search this repository..."
 							ref="input"
 							onKeyUp={this._onType} />
-						<div className="spinner"><i className="fa fa-spinner fa-spin" /></div>
+						{!this.state.overlay &&
+							<span className="input-group-addon">shortcut: <span className="hotkey">t</span></span>}
 					</div>
 					<div className="tree-search-label">
 						Symbols
