@@ -50,6 +50,8 @@ type T struct {
 	tr *testRunner
 }
 
+type internalError error
+
 // Fatalf implements the selenium.TestingT interface. Because unlike the testing
 // package we are a single process, we instead cause a panic (which is caught
 // by the test executor).
@@ -208,7 +210,15 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		test := testToCopy
 		run.Do(func() error {
 			unitStart := time.Now()
+			// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
+			// but we want all tests to run regardless.
 			err, screenshot := t.runTest(test)
+			if _, ok := err.(internalError); ok {
+				t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
+				t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
+				return nil
+			}
+
 			unitTime := time.Since(unitStart)
 			if err != nil {
 				t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
@@ -298,7 +308,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	})
 	wd, err := selenium.NewRemote(caps, t.executor)
 	if err != nil {
-		return err, nil
+		return internalError(err), nil
 	}
 
 	// Handle things after the test has finished executing.
