@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mutexmap"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -25,8 +26,12 @@ type CreateReply struct {
 	RepoAlreadyExists bool
 }
 
+var createMu = mutexmap.New()
+
 func (g *Git) Create(args *CreateArgs, reply *CreateReply) error {
 	dir := path.Join(ReposDir, args.Repo)
+	createMu.Lock(dir)
+	defer createMu.Unlock(dir)
 	if repoExists(dir) {
 		reply.RepoAlreadyExists = true
 		return nil
