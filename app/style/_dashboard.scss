@@ -336,8 +336,12 @@
 		}
 	}
 
-	.invite-user-form {
+	.confirm-invite-all {
 		text-align: center;
-		margin: 30px;
+	}
+
+	.invited-user-notification {
+		flex: 6;
+		margin-right: 30px;
 	}
 }

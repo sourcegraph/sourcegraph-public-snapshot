@@ -1,7 +1,7 @@
 export class AddAlert {
-	constructor(autoDismiss, html) {
+	constructor(autoDismiss, component) {
 		this.autoDismiss = autoDismiss;
-		this.html = html;
+		this.component = component;
 	}
 }
 

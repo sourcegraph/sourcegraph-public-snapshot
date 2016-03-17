@@ -3,11 +3,15 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
+import * as AlertActions from "sourcegraph/alerts/AlertActions";
 import classNames from "classnames";
 
 class UserList extends Component {
 	constructor(props) {
 		super(props);
+		this.state = {
+			confirmInviteAll: false,
+		};
 		this._isCurrentUser = this._isCurrentUser.bind(this);
 		this._existsLocally = this._existsLocally.bind(this);
 		this._isInvited = this._isInvited.bind(this);
@@ -17,6 +21,8 @@ class UserList extends Component {
 		this._handleInviteUser = this._handleInviteUser.bind(this);
 		this._handleInviteAll = this._handleInviteAll.bind(this);
 		this._userSort = this._userSort.bind(this);
+		this._alertInviteAll = this._alertInviteAll.bind(this);
+		this._invitableUsers = this._invitableUsers.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -49,15 +55,29 @@ class UserList extends Component {
 		return user.RemoteAccount.Name || user.RemoteAccount.Login;
 	}
 
+	_invitableUsers() {
+		return this.state.users
+			.filter(user => this._hasEmail(user) && !this._isInvited(user) && !this._existsLocally(user));
+	}
+
+	_alertInviteAll(users) {
+		if (users.length === 0) return (<strong className="invited-user-notification">No Users Invited</strong>);
+		if (users.length === 1) return (<strong className="invited-user-notification">Invited {this._name(users[0])}</strong>);
+		return (<strong className="invited-user-notification">Invited {users.length} users</strong>);
+	}
+
 	_handleInviteUser(user) {
 		Dispatcher.dispatch(new DashboardActions.WantInviteUsers([user.Email]));
+		let InvitedUserAlert = (<strong className="invited-user-notification">Invited {this._name(user)}</strong>);
+		Dispatcher.dispatch(new AlertActions.AddAlert(true, InvitedUserAlert));
 	}
 
 	_handleInviteAll() {
-		const emails = this.state.users
-			.filter(user => this._hasEmail(user) && !this._isInvited(user) && !this._existsLocally(user))
-			.map(user => user.Email);
+		const usersToInvite = this._invitableUsers();
+		const emails = usersToInvite.map(user => user.Email);
 		if (emails.length > 0) Dispatcher.dispatch(new DashboardActions.WantInviteUsers(emails));
+		Dispatcher.dispatch(new AlertActions.AddAlert(true, this._alertInviteAll(usersToInvite)));
+		this.setState({confirmInviteAll: false});
 	}
 
 	_userSort(a, b) {
@@ -81,10 +101,18 @@ class UserList extends Component {
 						<h5>Team</h5>
 						{!this.state.onboarding.linkGitHub &&
 							<i className="btn-icon sg-icon-plus-box"
-								onClick={this._handleInviteAll}
+								onClick={() => this.setState({confirmInviteAll: !this.state.confirmInviteAll})}
 								title="Invite all teammates" />
 						}
 					</div>
+					{this.state.confirmInviteAll &&
+						<div className="well empty-well confirm-invite-all">
+							<button className="btn btn-primary link-github-button"
+								onClick={() => this._handleInviteAll()}>
+								Invite {this._invitableUsers().length === 1 ? `1 user` :
+									`${this._invitableUsers().length} users`}
+							</button>
+						</div>}
 				</div>
 				<div className="users-list panel-body">
 					{this.state.users.length === 0 ?

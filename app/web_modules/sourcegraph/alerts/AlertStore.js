@@ -30,7 +30,7 @@ export class AlertStore extends Store {
 		case AlertActions.AddAlert:
 			{
 				const id = ++this.counter;
-				this.alerts = update(this.alerts, {$push: [{html: action.html, id: id}]});
+				this.alerts = update(this.alerts, {$push: [{component: action.component, id: id}]});
 				if (action.autoDismiss) {
 					setTimeout(() => {
 						Dispatcher.dispatch(new AlertActions.RemoveAlert(id));
