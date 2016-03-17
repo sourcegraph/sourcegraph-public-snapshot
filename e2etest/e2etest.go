@@ -24,6 +24,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
+	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/nlopes/slack"
@@ -41,6 +42,10 @@ type T struct {
 
 	// Target is the target Sourcegraph server to test, e.g. https://sourcegraph.com
 	Target string
+
+	// TestLogin is a username prefixed with e2etestuser.Prefix which is unique
+	// for this test. In specific it is e2etestuser.prefix + Test.Name.
+	TestLogin string
 
 	// WebDriver is the underlying selenium web driver. Useful if you want to
 	// handle errors yourself (the embedded WebDriverT handles them for you by
@@ -339,6 +344,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	ctx := &T{
 		Log:       t.log,
 		Target:    t.target,
+		TestLogin: e2etestuser.Prefix + test.Name,
 		WebDriver: wd,
 		tr:        t,
 	}

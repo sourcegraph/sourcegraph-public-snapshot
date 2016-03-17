@@ -27,7 +27,7 @@ func TestRegisterFlow(t *T) error {
 
 	// Delete the test user account.
 	_, err := c.Accounts.Delete(ctx, &sourcegraph.PersonSpec{
-		Login: "test123",
+		Login: t.TestLogin,
 	})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
@@ -88,9 +88,9 @@ func TestRegisterFlow(t *T) error {
 	}
 
 	// Enter username and password for test account.
-	username.SendKeys("test123")
-	password.SendKeys("test123")
-	email.SendKeys("test123@sourcegraph.com")
+	username.SendKeys(t.TestLogin)
+	password.SendKeys("e2etest")
+	email.SendKeys("e2etest@sourcegraph.com")
 
 	// Click the submit button.
 	submit := t.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")
