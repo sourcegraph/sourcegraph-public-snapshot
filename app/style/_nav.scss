@@ -31,9 +31,18 @@
 	}
 
 	.title {
+		font-size: 20px;
+		span {
+			display: inline-block;
+		}
+		span.part {
+			padding: 0px 8px;
+		}
 		a {
+			display: inline-block !important;
 			font-weight: bold;
 			color: white;
+			display: inline;
 		}
 	}
 }
