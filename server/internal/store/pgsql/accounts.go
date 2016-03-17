@@ -52,7 +52,12 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 			return err
 		}
 
-		if err := tx.Insert(&userEmailAddrRow{UID: int(newUser.UID), EmailAddr: *email}); err != nil {
+		var insertedUser dbUser
+		if err := tx.SelectOne(&insertedUser, "SELECT * FROM users WHERE login=$1 LIMIT 1", newUser.Login); err != nil {
+			return err
+		}
+
+		if err := tx.Insert(&userEmailAddrRow{UID: int(insertedUser.UID), EmailAddr: *email}); err != nil {
 			return grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", email.Email)
 		}
 		return nil
