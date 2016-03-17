@@ -2,32 +2,6 @@
 {{if .Entry}}
 
 <div class="panel panel-repo-tree">
-	<header class="rev-and-breadcrumb">
-		<span class="tree-breadcrumb">
-		{{template "Breadcrumb" (fileToBreadcrumb .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path)}}
-		</span>
-	<ul class="nav nav-pills list-inline branch-commit-tag">
-		<li>
-			<a href="{{urlToRepoSubrouteRev "repo.rev.commits" .Repo.URI .RepoRevSpec.Rev}}">
-				<span class="text">Commits</span>
-			</a>
-		</li>
-		<li>
-			<a href="{{urlToRepoSubroute "repo.branches" .Repo.URI}}">
-				<span class="text">Branches</span>
-			</a>
-		</li>
-		<li>
-			<a href="{{urlToRepoSubroute "repo.tags" .Repo.URI}}">
-				<span class="text">Tags</span>
-			</a>
-		</li>
-	</ul>
-	{{if showRepoRevSwitcher .CurrentRoute}}
-		<div data-react="RevSwitcher" data-rev="{{if .CurrentRouteVars.Rev}}{{.CurrentRouteVars.Rev}}{{else}}{{.Repo.DefaultBranch}}{{end}}" data-route="tree" data-repo-spec="{{.CurrentRouteVars.Repo}}" data-path="{{.EntrySpec.Path}}"></div>
-	{{end}}
-
-	</header>
 
 	{{$repo:=.Repo}}
 	{{$repoRevSpec:=.EntrySpec.RepoRev}}

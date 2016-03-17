@@ -98,11 +98,12 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	.tree-search-label {
-		background-color: gray;
+		background-color: rgba(137, 137, 137, 0.5);
 		font-size: 16px;
 		padding: 10px;
 		padding-left: 12px;
 		font-weight: bold;
+		color: #4F4F4F;
 
 		button {
 			margin-top: -5px;
