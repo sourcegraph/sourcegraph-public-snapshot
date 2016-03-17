@@ -467,7 +467,7 @@ func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, p
 
 	msg := fmt.Sprintf("User *%s* added a %s repo", user, repoType)
 	if !private {
-		msg += fmt.Sprintf(": *%s*", uri)
+		msg += fmt.Sprintf(": <https://sourcegraph.com/%s|%s>", uri, uri)
 	}
 	if language != "" {
 		msg += fmt.Sprintf(" (%s)", language)
