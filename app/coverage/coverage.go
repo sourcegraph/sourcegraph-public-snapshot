@@ -28,6 +28,8 @@ type Coverage struct {
 	FileScoreClass  string
 	RefScoreClass   string
 	TokDensityClass string
+
+	CommitsBehind int32
 }
 
 type langCoverage struct {
@@ -108,8 +110,14 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Coverage, error) {
-	repoSpec := sourcegraph.RepoSpec{URI: repo}
-	commit, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{RepoSpec: repoSpec})
+	repoRevSpec := sourcegraph.RepoRevSpec{
+		RepoSpec: sourcegraph.RepoSpec{URI: repo},
+	}
+	// Query for srclib data with an empty path, which will force a lookback on the default branch
+	// as far as necessary (upto a limit), until a built commit is found.
+	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+		RepoRev: repoRevSpec,
+	})
 	if err != nil {
 		if handlerutil.IsRepoNoVCSDataError(err) {
 			log15.Warn("getCoverage: no VCS data found, attempting to clone", "repo", repo)
@@ -117,8 +125,9 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 		}
 		return nil, err
 	}
+	repoRevSpec.CommitID = dataVer.CommitID
 
-	cstatus, err := cl.RepoStatuses.GetCombined(ctx, &sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: string(commit.ID)})
+	cstatus, err := cl.RepoStatuses.GetCombined(ctx, &repoRevSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -146,5 +155,6 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 	if cov.Cov.TokDensity > 1.0 {
 		cov.TokDensityClass = "success"
 	}
+	cov.CommitsBehind = dataVer.CommitsBehind
 	return &cov, nil
 }

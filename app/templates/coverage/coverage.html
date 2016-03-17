@@ -12,16 +12,18 @@
 <th title="% internal refs that resolve to a def">Ref score</th>
 <th title="avg # of ref+defs per LoC">Token density</th>
 <th title="# files not successfully processed">Uncovered files</th>
+<th title="# commits between last built and latest commit">Commits behind</th>
 </tr>
 {{range .Langs}}
-<tr><th colspan="5"><a href="/.coverage?lang={{.Lang}}">{{.Lang}}</a></th></tr>
+<tr><th colspan="6"><a href="/.coverage?lang={{.Lang}}">{{.Lang}}</a></th></tr>
 {{range .RepoCov}}
 <tr>
 <td><a href="/.coverage?repo={{.Repo}}">{{.Repo}}</a></td>
 <td class="{{.FileScoreClass}}">{{.Cov.FileScore}}</td>
 <td class="{{.RefScoreClass}}">{{.Cov.RefScore}}</td>
 <td class="{{.TokDensityClass}}">{{.Cov.TokDensity}}</td>
-<td title="{{json .Cov.UncoveredFiles}}">{{len .Cov.UncoveredFiles}}</td>
+<td>{{len .Cov.UncoveredFiles}}</td>
+<td>{{.CommitsBehind}}</td>
 </tr>
 {{end}}
 {{end}}
