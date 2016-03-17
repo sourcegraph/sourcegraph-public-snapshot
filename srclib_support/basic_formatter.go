@@ -12,6 +12,7 @@ func init() {
 	graph.RegisterMakeDefFormatter("basic-php", newBasicFormatter("PHP"))
 	graph.RegisterMakeDefFormatter("basic-objc", newBasicFormatter("Objective-C"))
 	graph.RegisterMakeDefFormatter("TypeScriptModule", newBasicFormatter("TypeScript"))
+	graph.RegisterMakeDefFormatter("myunittype", newBasicFormatter("Generic")) // for quick lang prototypes
 }
 
 // DefData should be kept in sync with the def 'Data' field emitted by the
