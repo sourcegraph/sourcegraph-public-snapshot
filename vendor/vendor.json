@@ -403,6 +403,11 @@
 			"revisionTime": "2016-02-11T19:18:39-08:00"
 		},
 		{
+			"path": "github.com/nlopes/slack",
+			"revision": "5e8064e706a2cb3d2581c1298d9428db2c0984fa",
+			"revisionTime": "2016-03-17T11:22:45Z"
+		},
+		{
 			"path": "github.com/opennota/urlesc",
 			"revision": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587",
 			"revisionTime": "2015-02-08T15:19:50+07:00"
