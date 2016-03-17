@@ -1,9 +1,12 @@
 FROM alpine:3.2
 MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
-RUN apk add --update \
+RUN echo '@edge http://nl.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories
+
+RUN apk add --update --update-cache \
   openssh \
-  git \
+  # Need edge for >2.7.1 See CVE-2016-2324, CVE-2016-2315
+  git@edge \
   # for /etc/mime.types, needed by HTTP server
   mailcap \
   && rm -rf /var/cache/apk/*
