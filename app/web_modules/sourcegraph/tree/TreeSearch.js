@@ -195,7 +195,7 @@ class TreeSearch extends Container {
 
 	_listItems() {
 		const items = this.state.fileResults;
-		if (!this.state.visible || !items) return [];
+		if (!this.state.visible || !items || items.length === 0) return [<li key="_nofiles"><i>No matches!</i></li>];
 
 		let list = [],
 			limit = items.length > FILE_LIMIT ? FILE_LIMIT : items.length;
@@ -225,7 +225,9 @@ class TreeSearch extends Container {
 	}
 
 	_symbolItems() {
-		if (!this.state.visible || !this.state.matchingSymbols) return [];
+		if (!this.state.visible || !this.state.matchingSymbols || this.state.matchingSymbols.Results.length === 0) {
+			return [<li key="_nosymbol"><i>No matches!</i></li>];
+		}
 
 		let list = [],
 			limit = this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
