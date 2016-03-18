@@ -1,14 +1,11 @@
 package app
 
 import (
-	"bytes"
 	"fmt"
-	htmpl "html/template"
 	"reflect"
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
 )
@@ -92,24 +89,6 @@ func splitCommitMessage(message string) (summary, rest string) {
 		rest = parts[1]
 	}
 	return summary, rest
-}
-
-// ifTemplate will look up the template name in the specified file, pass it
-// the given data and return the result. If the template does not exist or
-// any error occurs, ifTemplate returns an empty string.
-// The file parameter can be obtained in the HTML templates via $.Common.TemplateName
-func ifTemplate(file, name string, data interface{}) htmpl.HTML {
-	f := tmpl.Get(file)
-	if f == nil {
-		return ""
-	}
-	t := f.Lookup(name)
-	if t == nil {
-		return ""
-	}
-	var buf bytes.Buffer
-	t.Execute(&buf, data)
-	return htmpl.HTML(buf.String())
 }
 
 // hasStructField returns true if v is a struct that contains a field with
