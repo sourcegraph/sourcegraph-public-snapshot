@@ -32,7 +32,7 @@ func (r *SearchReply) repoExists() bool {
 
 func (g *Git) Search(args *SearchArgs, reply *SearchReply) error {
 	dir := path.Join(ReposDir, args.Repo)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if !repoExists(dir) {
 		return nil
 	}
 	reply.RepoExists = true

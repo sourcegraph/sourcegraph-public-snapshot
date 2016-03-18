@@ -133,3 +133,10 @@ func makeGitPassHelper(pass string) (passHelper string, tempDir string, err erro
 	err = util.WriteFileWithPermissions(tmpFile, []byte(script), 0500)
 	return tmpFile, dir, err
 }
+
+// repoExists checks if dir is a valid GIT_DIR.
+func repoExists(dir string) bool {
+	// TODO better check than just dir existance
+	_, err := os.Stat(dir)
+	return !os.IsNotExist(err)
+}

@@ -3,7 +3,6 @@ package gitserver
 import (
 	"bytes"
 	"errors"
-	"os"
 	"os/exec"
 	"path"
 	"syscall"
@@ -32,7 +31,7 @@ func (r *ExecReply) repoExists() bool {
 
 func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
 	dir := path.Join(ReposDir, args.Repo)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if !repoExists(dir) {
 		return nil
 	}
 	reply.RepoExists = true

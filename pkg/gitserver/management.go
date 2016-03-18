@@ -101,7 +101,7 @@ func (r *RemoveReply) repoExists() bool {
 
 func (g *Git) Remove(args *RemoveArgs, reply *RemoveReply) error {
 	dir := path.Join(ReposDir, args.Repo)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if !repoExists(dir) {
 		return nil
 	}
 	reply.RepoExists = true
