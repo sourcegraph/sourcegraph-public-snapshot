@@ -38,6 +38,9 @@ func TestLoginFlow(t *T) error {
 	// Get login page.
 	t.Get(t.Endpoint("/login"))
 
+	// Give the JS time to set element focus, etc.
+	time.Sleep(1 * time.Second)
+
 	// Validate username input field.
 	username := t.FindElement(selenium.ById, "login")
 	if username.TagName() != "input" {
@@ -51,6 +54,9 @@ func TestLoginFlow(t *T) error {
 	}
 	if !username.IsEnabled() {
 		t.Fatalf("username input field should be enabled")
+	}
+	if !username.IsSelected() {
+		t.Fatalf("username input field should be selected")
 	}
 
 	// Validate password input field.
@@ -72,7 +78,9 @@ func TestLoginFlow(t *T) error {
 	}
 
 	// Enter username and password for test account.
+	username.Click()
 	username.SendKeys("e2eloginflow")
+	password.Click()
 	password.SendKeys("e2eloginflow")
 
 	// Click the submit button.

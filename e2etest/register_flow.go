@@ -36,6 +36,9 @@ func TestRegisterFlow(t *T) error {
 	// Get join page.
 	t.Get(t.Endpoint("/join"))
 
+	// Give the JS time to set element focus, etc.
+	time.Sleep(1 * time.Second)
+
 	// Validate username input field.
 	username := t.FindElement(selenium.ById, "login")
 	if username.TagName() != "input" {
@@ -49,6 +52,9 @@ func TestRegisterFlow(t *T) error {
 	}
 	if !username.IsEnabled() {
 		t.Fatalf("username input field should be enabled")
+	}
+	if !username.IsSelected() {
+		t.Fatalf("username input field should be selected")
 	}
 
 	// Validate password input field.
@@ -88,8 +94,11 @@ func TestRegisterFlow(t *T) error {
 	}
 
 	// Enter username and password for test account.
+	username.Click()
 	username.SendKeys(t.TestLogin)
+	password.Click()
 	password.SendKeys("e2etest")
+	email.Click()
 	email.SendKeys(t.TestEmail)
 
 	// Click the submit button.
