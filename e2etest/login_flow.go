@@ -55,9 +55,6 @@ func TestLoginFlow(t *T) error {
 	if !username.IsEnabled() {
 		t.Fatalf("username input field should be enabled")
 	}
-	if !username.IsSelected() {
-		t.Fatalf("username input field should be selected")
-	}
 
 	// Validate password input field.
 	password := t.FindElement(selenium.ById, "password")
