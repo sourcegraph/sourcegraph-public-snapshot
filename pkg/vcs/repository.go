@@ -11,6 +11,7 @@ import (
 )
 
 var ErrRepoNotExist = errors.New("repository does not exist")
+var ErrRepoExist = errors.New("repository already exists")
 
 // A Repository is a VCS repository.
 type Repository interface {

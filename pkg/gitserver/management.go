@@ -21,8 +21,16 @@ type CreateArgs struct {
 	Opt          *vcs.RemoteOpts
 }
 
-func (g *Git) Create(args *CreateArgs, reply *struct{}) error {
+type CreateReply struct {
+	RepoAlreadyExists bool
+}
+
+func (g *Git) Create(args *CreateArgs, reply *CreateReply) error {
 	dir := path.Join(ReposDir, args.Repo)
+	if repoExists(dir) {
+		reply.RepoAlreadyExists = true
+		return nil
+	}
 
 	if args.MirrorRemote != "" {
 		cmd := exec.Command("git", "clone", "--mirror", args.MirrorRemote, dir)
@@ -62,7 +70,7 @@ func create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
 	cmd.Repo = repo
 	err := cmd.Run()
 	if err == nil {
-		return errors.New("repository already exists")
+		return vcs.ErrRepoExist
 	}
 	if err != vcs.ErrRepoNotExist {
 		return err
@@ -78,13 +86,21 @@ func create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(servers))
 
 	done := make(chan *rpc.Call, 1)
+	reply := &CreateReply{}
 	servers[serverIndex] <- &rpc.Call{
 		ServiceMethod: "Git.Create",
 		Args:          &CreateArgs{Repo: repo, MirrorRemote: mirrorRemote, Opt: opt},
-		Reply:         &struct{}{},
+		Reply:         reply,
 		Done:          done,
 	}
-	return (<-done).Error
+	err = (<-done).Error
+	if err != nil {
+		return err
+	}
+	if reply.RepoAlreadyExists {
+		return vcs.ErrRepoExist
+	}
+	return nil
 }
 
 type RemoveArgs struct {
