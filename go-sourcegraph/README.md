@@ -18,7 +18,6 @@ If you run into errors while compiling protobufs, try again with these versions 
 
 -  `protoc` - version `github.com/google/protobuf@v3.0.0-beta-1`.
 -  `protoc-gen-gogo` - commit `github.com/gogo/protobuf@200875106f3bf0eb01eb297dae30b250a25ffc84`.
--  `grpc-go` - commit `google.golang.org/grpc@f7d1653e300d6ad9f019bce7a5f5ab3b4821f637`.
 
 1. **Install protoc**, the protobuf compiler. Find more details in the [protobuf README](https://github.com/google/protobuf/tree/v3.0.0-beta-1#c-installation---unix).
 
@@ -30,22 +29,10 @@ If you run into errors while compiling protobufs, try again with these versions 
    go get -u github.com/gogo/protobuf/...
    ```
 
-3. **Install [grpc](https://github.com/grpc/grpc-go)**:
-
-   ```
-   go get google.golang.org/grpc
-   ```
-
-4. **Install [gen-mocks](https://sourcegraph.com/sourcegraph/gen-mocks)** by running:
+3. **Install [gen-mocks](https://sourcegraph.com/sourcegraph/gen-mocks)** by running:
 
    ```
    go get -u sourcegraph.com/sourcegraph/gen-mocks
-   ```
-
-5. **Install `gopathexec`**:
-
-   ```
-   go get -u sourcegraph.com/sourcegraph/gopathexec
    ```
 
 ### Regenerating Go code after changing `sourcegraph.proto`

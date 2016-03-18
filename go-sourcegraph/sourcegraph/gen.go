@@ -1,6 +1,6 @@
 package sourcegraph
 
-//go:generate gopathexec protoc -I$GOPATH/src -I$GOPATH/src/github.com/gogo/protobuf/protobuf -I. --gogo_out=plugins=grpc:. sourcegraph.proto
+//go:generate protoc -I$../../vendor -I$../../../../.. -I. --gogo_out=plugins=grpc:. sourcegraph.proto
 
 //go:generate gen-mocks -w -i=.+(Server|Client|Service)$ -o mock -outpkg mock -name_prefix= -no_pass_args=opts
 
