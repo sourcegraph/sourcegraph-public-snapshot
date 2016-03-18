@@ -7,7 +7,7 @@
 				{
 					"type": "div",
 					"props": {
-						"className": "overlay"
+						"className": ""
 					}
 				},
 				{
@@ -18,30 +18,75 @@
 							{
 								"type": "div",
 								"props": {
-									"className": "tree-search-input",
+									"className": "tree-search-input input-group",
 									"children": [
 										{
 											"type": "input",
 											"ref": "input",
 											"props": {
 												"type": "text",
-												"placeholder": "Search files in this repository..."
+												"placeholder": "Search this repository..."
 											}
 										},
 										{
-											"type": "div",
+											"type": "span",
 											"props": {
-												"className": "spinner",
+												"className": "input-group-addon",
 												"children": [
+													"shortcut: ",
 													{
-														"type": "i",
+														"type": "span",
 														"props": {
-															"className": "fa fa-spinner fa-spin"
+															"className": "hotkey",
+															"children": [
+																"t"
+															]
 														}
 													}
 												]
 											}
 										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "tree-search-label",
+									"children": [
+										"Symbols"
+									]
+								}
+							},
+							{
+								"type": "ul",
+								"props": {
+									"className": "tree-search-symbol-list",
+									"children": [
+										{
+											"type": "li",
+											"props": {
+												"children": [
+													{
+														"type": "i",
+														"props": {
+															"children": [
+																"Sourcegraph is analyzing your code — results will be available soon!"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"className": "tree-search-label",
+									"children": [
+										"Files"
 									]
 								}
 							},
@@ -62,6 +107,15 @@
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"rev": "rev"
+		},
+		{
+			"$constructor": "WantResults",
+			"repo": "repo",
+			"rev": "rev",
+			"type": "tokens",
+			"page": 1,
+			"perPage": 5,
+			"query": ""
 		}
 	]
 }

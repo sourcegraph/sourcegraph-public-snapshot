@@ -11,7 +11,7 @@ describe("TreeStore", () => {
 	});
 
 	it("should handle ResultsFetched", () => {
-		Dispatcher.directDispatch(TreeStore, new TreeActions.FileListFetched("aRepo", "aRev", "someResults"));
-		expect(TreeStore.fileLists.get("aRepo", "aRev")).to.be("someResults");
+		Dispatcher.directDispatch(TreeStore, new TreeActions.FileListFetched("aRepo", "aRev", {Files: ["someResults"]}));
+		expect(TreeStore.fileLists.get("aRepo", "aRev")).to.have.property("Files");
 	});
 });
