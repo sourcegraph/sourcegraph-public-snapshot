@@ -2,6 +2,12 @@
 [data-react="sourcegraph/repo/RevSwitcherContainer"] {
 	display: inline-block;
 }
+
+.repo-home {
+	display: flex;
+	flex-wrap: wrap;
+}
+
 .repo-rev-switcher {
 	display: inline-block;
 	padding-left: 10px;

@@ -1,5 +1,9 @@
 $panel-repo-tree-padding-horizontal: 9px;
 
+.panel-repo-tree {
+	min-width: 300px;
+}
+
 .tree-entry-search {
 	display: block;
 
@@ -16,7 +20,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 	.search-input-group {
 		@include z-index(tree-search-modal);
 		@include box-shadow(0 2px 8px transparentize(#000, 0.6));
-		// width: 700px;
 
 		.tree-search-input {
 			position: relative;
@@ -126,6 +129,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 .panel-repo-tree {
 	box-shadow: none;
+	flex: 1;
 
 	header.rev-and-breadcrumb {
 		@include clearfix;
@@ -284,6 +288,10 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 .readme {
 	overflow: hidden;
+	flex: 1;
+	margin-top: 0px !important;
+	margin-left: 15px !important;
+	min-width: 300px;
 
 	img {
 		max-width: 100%;
