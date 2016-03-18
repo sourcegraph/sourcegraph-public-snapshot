@@ -213,7 +213,92 @@
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
+			"path": "github.com/gogo/protobuf/plugin/defaultcheck",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/description",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/embedcheck",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/enumstringer",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/equal",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/face",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/gostring",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/grpc",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/marshalto",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/oneofcheck",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/populate",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/size",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/stringer",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/testgen",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/union",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/plugin/unmarshal",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
 			"path": "github.com/gogo/protobuf/proto",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/protoc-gen-gogo",
 			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
@@ -223,7 +308,27 @@
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
+			"path": "github.com/gogo/protobuf/protoc-gen-gogo/generator",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/protoc-gen-gogo/plugin",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
 			"path": "github.com/gogo/protobuf/sortkeys",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/vanity",
+			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
+			"revisionTime": "2015-10-07T17:10:53+02:00"
+		},
+		{
+			"path": "github.com/gogo/protobuf/vanity/command",
 			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},

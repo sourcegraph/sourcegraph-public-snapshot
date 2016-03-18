@@ -17,19 +17,12 @@ You need to install and run the protobuf compiler before you can regenerate Go c
 If you run into errors while compiling protobufs, try again with these versions that are known to work:
 
 -  `protoc` - version `github.com/google/protobuf@v3.0.0-beta-1`.
--  `protoc-gen-gogo` - commit `github.com/gogo/protobuf@200875106f3bf0eb01eb297dae30b250a25ffc84`.
 
 1. **Install protoc**, the protobuf compiler. Find more details in the [protobuf README](https://github.com/google/protobuf/tree/v3.0.0-beta-1#c-installation---unix).
 
    Make sure the `protoc` binary is in your `$PATH`.
 
-2. **Install [gogo/protobuf](https://github.com/gogo/protobuf)**.
-
-   ```
-   go get -u github.com/gogo/protobuf/...
-   ```
-
-3. **Install [gen-mocks](https://sourcegraph.com/sourcegraph/gen-mocks)** by running:
+2. **Install [gen-mocks](https://sourcegraph.com/sourcegraph/gen-mocks)** by running:
 
    ```
    go get -u sourcegraph.com/sourcegraph/gen-mocks

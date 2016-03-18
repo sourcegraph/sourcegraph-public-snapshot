@@ -116,9 +116,6 @@ smoke: src
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
 
-${GOBIN}/protoc-gen-gogo:
-	go get github.com/gogo/protobuf/protoc-gen-gogo
-
 ${GOBIN}/gen-mocks:
 	go get sourcegraph.com/sourcegraph/gen-mocks
 
@@ -128,7 +125,7 @@ ${GOBIN}/go-template-lint:
 ${GOBIN}/sgtool: $(wildcard sgtool/*.go)
 	go install ./sgtool
 
-dist-dep: libvfsgen ${GOBIN}/protoc-gen-gogo ${GOBIN}/sgtool
+dist-dep: libvfsgen ${GOBIN}/sgtool
 
 dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)

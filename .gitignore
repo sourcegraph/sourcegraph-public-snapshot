@@ -71,3 +71,5 @@ eb-bundle.zip
 # Sublime
 *.sublime-project
 *.sublime-workspace
+
+/vendor/.bin
