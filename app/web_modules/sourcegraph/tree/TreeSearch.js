@@ -11,8 +11,8 @@ import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
-const SYMBOL_LIMIT = 7;
-const FILE_LIMIT = 7;
+const SYMBOL_LIMIT = 5;
+const FILE_LIMIT = 5;
 
 class TreeSearch extends Container {
 	constructor(props) {
@@ -22,6 +22,7 @@ class TreeSearch extends Container {
 			loading: false,
 			matchingSymbols: {Results: [], SrclibDataVersion: null},
 			matchingFiles: [],
+			fileResults: [], // either the full directory tree (for empty query) or matching file paths
 			query: "",
 			selectionIndex: 0,
 		};
@@ -56,13 +57,14 @@ class TreeSearch extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) || {Results: [], SrclibDataVersion: null};
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo && nextState.rev) {
 			let fileList = TreeStore.fileLists.get(nextState.repo, nextState.rev);
 			nextState.allFiles = fileList ? fileList.Files : null;
+			nextState.fileTree = TreeStore.fileTree.get(nextState.repo, nextState.rev);
+			nextState.matchingSymbols = SearchResultsStore.results.get(nextState.repo, nextState.rev, nextState.query, "tokens", 1) || {Results: [], SrclibDataVersion: null};
 		}
 
 		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
@@ -94,6 +96,16 @@ class TreeSearch extends Container {
 			Dispatcher.asyncDispatch(
 				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
 			);
+		}
+
+		if (nextState.query === "") {
+			// Show entire file tree as file results.
+			if (nextState.fileTree) {
+				const dirs = Object.keys(nextState.fileTree.Dirs).map(dir => ({name: dir, isDirectory: true}));
+				nextState.fileResults = dirs.concat(nextState.fileTree.Files.map(file => ({name: file, isDirectory: false})));
+			}
+		} else if (nextState.matchingFiles && nextState.matchingFiles !== prevState.matchingFiles) {
+			nextState.fileResults = nextState.matchingFiles.map(file => ({name: file, isDirectory: false}));
 		}
 	}
 
@@ -131,7 +143,8 @@ class TreeSearch extends Container {
 	}
 
 	_numResults() {
-		const fileResults = this.state.matchingFiles.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingFiles.length;
+		let fileResults = this.state.fileResults.length > FILE_LIMIT ? FILE_LIMIT : this.state.fileResults.length;
+		if (this.state.query === "") fileResults = this.state.fileResults.length; // override to show full directory tree on empty query
 		const symbolResults = this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
 		return fileResults + symbolResults;
 	}
@@ -142,7 +155,7 @@ class TreeSearch extends Container {
 			const def = this.state.matchingSymbols.Results[i].Def;
 			return router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
 		}
-		return router.tree(this.props.repo, this.props.rev, this.state.matchingFiles[i - this.state.matchingSymbols.Results.length]);
+		return router.tree(this.props.repo, this.props.rev, this.state.fileResults[i - this.state.matchingSymbols.Results.length].name);
 	}
 
 	_onType(e) {
@@ -181,22 +194,29 @@ class TreeSearch extends Container {
 	}
 
 	_listItems() {
-		if (!this.state.visible || !this.state.matchingFiles) return [];
+		const items = this.state.fileResults;
+		if (!this.state.visible || !items) return [];
 
 		let list = [],
-			limit = this.state.matchingFiles.length > FILE_LIMIT ? FILE_LIMIT : this.state.matchingFiles.length;
+			limit = items.length > FILE_LIMIT ? FILE_LIMIT : items.length;
+
+		// Override limit if query is empty to show the full directory tree.
+		if (this.state.query === "") limit = items.length;
 
 		for (let i = 0; i < limit; i++) {
-			let file = this.state.matchingFiles[i],
-				fileURL = router.tree(this.props.repo, this.props.rev, file);
+			let item = items[i],
+				itemURL = router.tree(this.props.repo, this.props.rev, item.name);
 
 			let ctx = classNames({
 				selected: this.state.selectionIndex - this.state.matchingSymbols.Results.length === i,
 			});
 
 			list.push(
-				<li className={ctx} key={fileURL}>
-				<i className="fa fa-file-text-o"></i><a href={fileURL}>{file}</a>
+				<li className={ctx} key={itemURL}>
+				<i className={classNames("fa", {
+					"fa-file-text-o": !item.isDirectory,
+					"fa-folder": item.isDirectory,
+				})}></i><a href={itemURL}>{item.name}</a>
 				</li>
 			);
 		}
@@ -271,15 +291,6 @@ class TreeSearch extends Container {
 					</ul>
 					<div className="tree-search-label">
 						Files
-						<button className="btn btn-default pull-right" onClick={() => {
-							const location = window.location.href,
-								index = location.indexOf("/.tree");
-							if (index === -1) {
-								window.location.href = `${window.location.href}${"/.tree/"}`;
-							} else {
-								window.location.href = `${window.location.href.substring(0, index) }${"/.tree/"}`;
-							}
-						}}>View all</button>
 					</div>
 					<ul className="tree-search-file-list">
 						{this._listItems()}

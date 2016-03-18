@@ -16,6 +16,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 	.search-input-group {
 		@include z-index(tree-search-modal);
 		@include box-shadow(0 2px 8px transparentize(#000, 0.6));
+		// width: 700px;
 
 		.tree-search-input {
 			position: relative;
@@ -98,7 +99,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	.tree-search-label {
-		background-color: rgba(137, 137, 137, 0.5);
+		background-color: rgb(196, 196, 196);
 		font-size: 16px;
 		padding: 10px;
 		padding-left: 12px;
