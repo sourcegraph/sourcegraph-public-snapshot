@@ -415,7 +415,7 @@ func (t *testRunner) slackFileUpload(f []byte, title string) error {
 		return err
 	}
 	if !slackResp.Ok {
-		return fmt.Errorf("slack file upload failed, response:", string(body))
+		return fmt.Errorf("slack file upload failed, response: %s", string(body))
 	}
 	return nil
 }
