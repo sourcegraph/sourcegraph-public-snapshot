@@ -136,7 +136,6 @@ func makeGitPassHelper(pass string) (passHelper string, tempDir string, err erro
 
 // repoExists checks if dir is a valid GIT_DIR.
 func repoExists(dir string) bool {
-	// TODO better check than just dir existance
-	_, err := os.Stat(dir)
+	_, err := os.Stat(filepath.Join(dir, "HEAD"))
 	return !os.IsNotExist(err)
 }
