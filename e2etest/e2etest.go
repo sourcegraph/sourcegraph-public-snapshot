@@ -228,9 +228,9 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
 			// but we want all tests to run regardless.
 			err, screenshot := t.runTest(test)
-			if internalErr, ok := err.(*internalError); ok {
-				t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, internalErr.err)
-				t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, internalErr.err), "")
+			if _, ok := err.(*internalError); ok {
+				t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
+				t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
 				return nil
 			}
 
