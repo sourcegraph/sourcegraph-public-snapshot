@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -226,6 +227,9 @@ func getOAuth2Conf(ctx context.Context) *oauth2.Config {
 }
 
 func sendLinkGitHubSlackMsg(ctx context.Context, sgUser *sourcegraph.UserSpec, ghUser *github.User) {
+	if strings.HasPrefix(sgUser.Login, e2etestuser.Prefix) {
+		return
+	}
 	var ghLogin, ghName, ghEmail string
 	if ghUser.Login != nil {
 		ghLogin = *ghUser.Login

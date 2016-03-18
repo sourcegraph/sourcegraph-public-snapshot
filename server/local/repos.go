@@ -23,6 +23,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/doc"
+	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -454,6 +455,9 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 
 func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, private bool) {
 	user := authpkg.ActorFromContext(ctx).Login
+	if strings.HasPrefix(user, e2etestuser.Prefix) {
+		return
+	}
 
 	repoType := "public"
 	if private {

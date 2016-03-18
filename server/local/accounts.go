@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
@@ -378,6 +380,9 @@ func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (
 }
 
 func sendAccountCreateSlackMsg(ctx context.Context, login, email string, invite bool) {
+	if strings.HasPrefix(login, e2etestuser.Prefix) {
+		return
+	}
 	msg := fmt.Sprintf("New user *%s* signed up! (%s)", login, email)
 	if invite {
 		msg += " (via an invite)"
