@@ -2,6 +2,8 @@ $panel-repo-tree-padding-horizontal: 9px;
 
 .panel-repo-tree {
 	min-width: 300px;
+	margin-left: 7px;
+	margin-right: 7px;
 }
 
 .tree-entry-search {
@@ -290,7 +292,8 @@ $panel-repo-tree-padding-horizontal: 9px;
 	overflow: hidden;
 	flex: 1;
 	margin-top: 0px !important;
-	margin-left: 15px !important;
+	margin-left: 7px !important;
+	margin-right: 7px !important;
 	min-width: 300px;
 
 	img {
