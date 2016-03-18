@@ -1388,14 +1388,14 @@
 			"revisionTime": "2015-08-16T15:47:22-07:00"
 		},
 		{
-			"path": "sourcegraph.com/sqs/pbtypes",
-			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
-			"revisionTime": "2016-01-07T01:09:29-08:00"
-		},
-		{
 			"path": "sourcegraph.com/sourcegraph/syntaxhighlight",
 			"revision": "3440cd8bca7fa63b875e190cad38d2e961c82f99",
 			"revisionTime": "2015-12-17T07:28:40Z"
+		},
+		{
+			"path": "sourcegraph.com/sqs/pbtypes",
+			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
+			"revisionTime": "2016-01-07T01:09:29-08:00"
 		}
 	]
 }
