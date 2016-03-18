@@ -28,7 +28,7 @@ func TestLoginFlow(t *T) error {
 	// Create the test user account.
 	_, err := c.Accounts.Create(ctx, &sourcegraph.NewAccount{
 		Login:    t.TestLogin,
-		Email:    "e2etest@sourcegraph.com",
+		Email:    t.TestEmail,
 		Password: "e2etest",
 	})
 	if err != nil && grpc.Code(err) != codes.AlreadyExists {

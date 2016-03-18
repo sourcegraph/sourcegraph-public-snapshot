@@ -90,7 +90,7 @@ func TestRegisterFlow(t *T) error {
 	// Enter username and password for test account.
 	username.SendKeys(t.TestLogin)
 	password.SendKeys("e2etest")
-	email.SendKeys("e2etest@sourcegraph.com")
+	email.SendKeys(t.TestEmail)
 
 	// Click the submit button.
 	submit := t.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")

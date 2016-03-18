@@ -44,8 +44,12 @@ type T struct {
 	Target string
 
 	// TestLogin is a username prefixed with e2etestuser.Prefix which is unique
-	// for this test. In specific it is e2etestuser.prefix + Test.Name.
+	// for this test. In specific it is e2etestuser.Prefix + Test.Name.
 	TestLogin string
+
+	// TestEmail is a email address prefixed with e2etestuser.Prefix which is
+	// unique for this test. In specific it is e2etestuser.Prefix + Test.Name + "@sourcegraph.com".
+	TestEmail string
 
 	// WebDriver is the underlying selenium web driver. Useful if you want to
 	// handle errors yourself (the embedded WebDriverT handles them for you by
@@ -345,6 +349,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 		Log:       t.log,
 		Target:    t.target,
 		TestLogin: e2etestuser.Prefix + test.Name,
+		TestEmail: e2etestuser.Prefix + test.Name + "@sourcegraph.com",
 		WebDriver: wd,
 		tr:        t,
 	}
