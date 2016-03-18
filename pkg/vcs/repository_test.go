@@ -1087,7 +1087,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 		wantUpdateResult *vcs.UpdateResult
 	}{
 		{
-			vcs: "git", baseDir: initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty", "git tag initial"), headDir: path.Join(makeTmpDir(t, "git-clone"), "repo"),
+			vcs: "git", baseDir: initGitRepositoryWorkingCopy(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty", "git tag initial"), headDir: path.Join(makeTmpDir(t, "git-clone"), "repo"),
 			newCmds: []string{"touch newfile", "git add newfile", "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m newfile --author='a <a@a.com>' --date 2006-01-02T15:04:05Z", "git tag second"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{
@@ -1131,6 +1131,7 @@ func TestRepository_UpdateEverything(t *testing.T) {
 				t.Fatalf("%s: exec `%s` failed: %s. Output was:\n\n%s", test.vcs, cmd, err, out)
 			}
 		}
+		makeGitRepositoryBare(t, test.baseDir)
 
 		// update the mirror.
 		result, err := r.UpdateEverything(vcs.RemoteOpts{})
@@ -1171,7 +1172,13 @@ func TestRepository_UpdateEverything(t *testing.T) {
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
 // temporary directory (returned as dir).
-func initGitRepository(t testing.TB, cmds ...string) (dir string) {
+func initGitRepository(t testing.TB, cmds ...string) string {
+	dir := initGitRepositoryWorkingCopy(t, cmds...)
+	makeGitRepositoryBare(t, dir)
+	return dir
+}
+
+func initGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
 	dir = makeTmpDir(t, "git")
 	cmds = append([]string{"git init"}, cmds...)
 	for _, cmd := range cmds {
@@ -1183,6 +1190,24 @@ func initGitRepository(t testing.TB, cmds ...string) (dir string) {
 		}
 	}
 	return dir
+}
+
+func makeGitRepositoryBare(t testing.TB, dir string) {
+	c := exec.Command("git", "config", "--bool", "core.bare", "true")
+	c.Dir = dir
+	out, err := c.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Failed to convert to bare repo: %s\nOut: %s", err, out)
+	}
+	wc := dir + "-workingcopy"
+	err = os.Rename(dir, wc)
+	if err != nil {
+		t.Fatalf("Failed to convert to bare repo: %s", err)
+	}
+	err = os.Rename(filepath.Join(wc, ".git"), dir)
+	if err != nil {
+		t.Fatalf("Failed to convert to bare repo: %s", err)
+	}
 }
 
 // makeGitRepositoryCmd calls initGitRepository to create a new Git

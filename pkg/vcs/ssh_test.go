@@ -113,7 +113,7 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 		wantUpdateResult *vcs.UpdateResult
 	}{
 		"git cmd": { // gitcmd
-			vcs: "git", baseDir: initGitRepository(t, gitCommands...), headDir: path.Join(makeTmpDir(t, "git-update-ssh"), "repo"),
+			vcs: "git", baseDir: initGitRepositoryWorkingCopy(t, gitCommands...), headDir: path.Join(makeTmpDir(t, "git-update-ssh"), "repo"),
 			newCmds: []string{"git tag t0", "git checkout -b b0"},
 			wantUpdateResult: &vcs.UpdateResult{
 				Changes: []vcs.Change{
@@ -159,6 +159,8 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 					t.Fatalf("%s: exec `%s` failed: %s. Output was:\n\n%s", label, cmd, err, out)
 				}
 			}
+
+			makeGitRepositoryBare(t, test.baseDir)
 
 			// update the mirror.
 			result, err := r.UpdateEverything(remoteOpts)
