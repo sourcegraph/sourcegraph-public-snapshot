@@ -16,11 +16,9 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -425,13 +423,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
 	}
-	// TODO: if we keep this old behavior of `go get` cloning GH repos, do it
-	// under a better-named environment variable.
-	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GO_GET")); v {
-		mw = append(mw, goGetGitHubHandler)
-	} else {
-		mw = append(mw, goGetHandler)
-	}
+	mw = append(mw, sourcegraphComGoGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {
 		mw = append(mw, gitCloneHandler)
 	}
@@ -749,77 +741,6 @@ func secureHeaderMiddleware(w http.ResponseWriter, r *http.Request, next http.Ha
 	w.Header().Set("x-xss-protection", "1; mode=block")
 	w.Header().Set("x-frame-options", "DENY")
 	next(w, r)
-}
-
-func goGetHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if r.URL.Query().Get("go-get") != "1" {
-		next(w, r)
-		return
-	}
-
-	ctx := httpctx.FromRequest(r)
-	cl := client.Client()
-
-	// The user may be requesting a subpackage, e.g. "src.example.com/my/repo/sub/pkg"
-	// so we must find the right repo ("src.example.com/my/repo") by walking up
-	// directories until we find a valid repository.
-	repoURI := strings.TrimPrefix(template.HTMLEscapeString(r.URL.Path), "/")
-	for {
-		_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
-			URI: repoURI,
-		})
-		if err == nil {
-			// We found the repo!
-			break
-		}
-		split := strings.Split(repoURI, "/")
-		if len(split) <= 1 {
-			// This was our last attempt; there isn't a repo for this request.
-			http.Error(w, "no such repository", http.StatusNotFound)
-			return
-		}
-		split = split[:len(split)-1]
-		repoURI = path.Join(split...)
-	}
-
-	// Build git repository clone URL.
-	appURL := conf.AppURL(httpctx.FromRequest(r))
-	gitRepo := &url.URL{
-		Scheme: appURL.Scheme,
-		Host:   appURL.Host,
-		Path:   template.HTMLEscapeString(repoURI),
-	}
-
-	// Build the Go package path (e.g. "src.example.com/my/go/pkg") corresponding
-	// to the repo root.
-	pkgPath := strings.TrimPrefix(appURL.Host, "www.") + "/" + repoURI // for when AppURL has a leading www
-
-	// For details on the meta tag, see:
-	//
-	//  https://golang.org/cmd/go/#hdr-Remote_import_paths
-	//
-	fmt.Fprintf(w, `<html><head><meta name="go-import" content="%s git %s"></head><body>go get %s</body></html>`, pkgPath, gitRepo, pkgPath)
-	log.Println("go get", pkgPath)
-}
-
-func goGetGitHubHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if r.URL.Query().Get("go-get") != "1" {
-		next(w, r)
-		return
-	}
-	// handle `go get`
-	path := r.URL.Path
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	if len(parts) < 2 {
-		http.Error(w, "import paths must have at least 2 URL path components", http.StatusNotFound)
-		return
-	}
-	repo := template.HTMLEscapeString(strings.Join(parts[:2], "/"))
-	// Determine the host (without protocol) prefix.
-	host := conf.AppURL(httpctx.FromRequest(r)).Host
-	host = strings.TrimPrefix(host, "www.") // for when AppURL has a leading www
-	fmt.Fprintf(w, `<html><head><meta name="go-import" content="%s/%s git https://github.com/%s"></head><body>go-get</body></html>`, host, repo, repo)
-	log.Println("go-get", strings.Join(parts, "/"))
 }
 
 func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
