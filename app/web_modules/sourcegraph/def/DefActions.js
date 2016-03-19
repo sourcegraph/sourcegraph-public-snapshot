@@ -69,3 +69,16 @@ export class NoExampleAvailable {
 		this.index = index;
 	}
 }
+
+export class WantRefs {
+	constructor(defURL) {
+		this.defURL = defURL;
+	}
+}
+
+export class RefsFetched {
+	constructor(defURL, refs) {
+		this.defURL = defURL;
+		this.refs = refs;
+	}
+}

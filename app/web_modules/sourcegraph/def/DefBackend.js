@@ -68,6 +68,23 @@ const DefBackend = {
 				break;
 			}
 
+		case DefActions.WantRefs:
+			{
+				{
+					DefBackend.xhr({
+						uri: `/.ui${action.defURL}/.refs`,
+						json: {},
+					}, function(err, resp, body) {
+						if (err) {
+							console.error(err);
+							return;
+						}
+						console.log(body);
+						Dispatcher.dispatch(new DefActions.RefsFetched(action.defURL, body));
+					});
+				}
+				break;
+			}
 		}
 	},
 };

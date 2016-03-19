@@ -59,6 +59,8 @@ func NewHandler(r *mux.Router) http.Handler {
 		r = ui_router.New(nil)
 	}
 
+	r.Get(ui_router.References).Handler(handler(serveRefs))
+
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(handler(serveAppdashUploadPageLoad))
 
 	if !appconf.Flags.DisableUserContent {

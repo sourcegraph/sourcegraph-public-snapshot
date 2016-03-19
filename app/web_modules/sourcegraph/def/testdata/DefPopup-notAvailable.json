@@ -2,7 +2,7 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-details card",
+			"className": "sidebar-section token-details",
 			"children": [
 				{
 					"type": "section",
@@ -23,25 +23,9 @@
 				{
 					"type": "header",
 					"props": {
+						"className": "usage-header",
 						"children": [
-							"Usage Examples"
-						]
-					}
-				},
-				{
-					"type": "section",
-					"props": {
-						"className": "examples-card",
-						"children": [
-							{
-								"type": "ExampleView",
-								"props": {
-									"defURL": "someURL",
-									"examples": {
-										"test": "examples"
-									}
-								}
-							}
+							"Usages"
 						]
 					}
 				}

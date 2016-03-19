@@ -64,7 +64,7 @@ class BlobContainer extends Container {
 		}
 
 		state.defs = DefStore.defs;
-		state.examples = DefStore.examples;
+		state.refs = DefStore.refs.get(state.activeDef);
 		state.highlightedDef = DefStore.highlightedDef || null;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
@@ -91,6 +91,7 @@ class BlobContainer extends Container {
 				return;
 			}
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.activeDef));
+			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.activeDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
@@ -152,7 +153,8 @@ class BlobContainer extends Container {
 						<DefPopup
 							def={activeDefData}
 							byte={activeDefData.DefStart}
-							examples={this.state.examples}
+							refs={this.state.refs}
+							path={this.state.path}
 							annotations={this.state.annotations}
 							activeDef={this.state.activeDef}
 							highlightedDef={this.state.highlightedDef} />}

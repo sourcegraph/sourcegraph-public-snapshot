@@ -11,6 +11,10 @@ function exampleKeyFor(defURL, index) {
 	return `${defURL}#${index}`;
 }
 
+function refsKeyFor(defURL) {
+	return `${defURL}`;
+}
+
 export class DefStore extends Store {
 	reset(data) {
 		this.defs = deepFreeze({
@@ -24,6 +28,13 @@ export class DefStore extends Store {
 		});
 		this.activeDef = null;
 		this.highlightedDef = null;
+		this.refs = deepFreeze({
+			content: {},
+			counts: {},
+			get(defURL) {
+				return this.content[refsKeyFor(defURL)] || null;
+			},
+		});
 		this.examples = deepFreeze({
 			content: {},
 			counts: {},
@@ -74,6 +85,14 @@ export class DefStore extends Store {
 			this.examples = deepFreeze(Object.assign({}, this.examples, {
 				counts: Object.assign({}, this.examples.counts, {
 					[action.defURL]: Math.min(this.examples.getCount(action.defURL), action.index),
+				}),
+			}));
+			break;
+
+		case DefActions.RefsFetched:
+			this.refs = deepFreeze(Object.assign({}, this.refs, {
+				content: Object.assign({}, this.refs.content, {
+					[refsKeyFor(action.defURL)]: action.refs,
 				}),
 			}));
 			break;

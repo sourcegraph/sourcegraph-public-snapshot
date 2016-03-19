@@ -39,10 +39,7 @@
 													"File": "somePath",
 													"Kind": "someKind"
 												},
-												"examples": {
-													"content": {},
-													"counts": {}
-												},
+												"path": "somePath",
 												"annotations": {
 													"content": {}
 												},
@@ -75,6 +72,10 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
+		},
+		{
+			"$constructor": "WantRefs",
+			"defURL": "someDef"
 		}
 	]
 }

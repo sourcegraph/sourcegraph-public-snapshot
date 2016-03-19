@@ -80,6 +80,10 @@
 			"url": "someDef"
 		},
 		{
+			"$constructor": "WantRefs",
+			"defURL": "someDef"
+		},
+		{
 			"$constructor": "WantDef",
 			"url": "otherDef"
 		}

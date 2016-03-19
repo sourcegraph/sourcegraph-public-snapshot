@@ -66,6 +66,10 @@
 		{
 			"$constructor": "WantDef",
 			"url": "someDef"
+		},
+		{
+			"$constructor": "WantRefs",
+			"defURL": "someDef"
 		}
 	]
 }

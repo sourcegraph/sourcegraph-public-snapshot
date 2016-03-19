@@ -1,30 +1,35 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
-import ExampleView from "sourcegraph/def/ExampleView";
 
 class DefPopup extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
+		state.path = props.path || null;
 	}
 
 	render() {
 		let def = this.state.def;
 		return (
-			<div className="token-details card">
+			<div className="sidebar-section token-details">
 				<section>
 					<p className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 				</section>
 
-				<header>Usage Examples</header>
-				<section className="examples-card">
-					<ExampleView
-						defURL={def.URL}
-						examples={this.state.examples}
-						annotations={this.state.annotations}
-						activeDef={this.state.activeDef}
-						highlightedDef={this.state.highlightedDef} />
-				</section>
+				<header className="usage-header">Usages</header>
+				{this.state.refs && this.state.refs.Total === 0 &&
+					<i>No usages found</i>
+				}
+				{this.state.refs && this.state.refs.Files &&
+					<div>
+						{this.state.refs.Files.map((file, i) => (
+							<div key={i}>
+								<i className="fa fa-file-text-o"></i> {this.state.path === file.Name ?
+									"Current File" : file.Name} ({file.RefCount})
+							</div>
+						))}
+					</div>
+				}
 			</div>
 		);
 	}
@@ -32,7 +37,7 @@ class DefPopup extends Component {
 
 DefPopup.propTypes = {
 	def: React.PropTypes.object,
-	examples: React.PropTypes.object,
+	refs: React.PropTypes.object,
 	annotations: React.PropTypes.object,
 	activeDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
