@@ -18,6 +18,7 @@ import (
 
 func TestGoImportPath(t *testing.T) {
 	_, mock := httptestutil.NewTest(nil)
+	defer httptestutil.ResetGlobals()
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		switch repo.URI {
 		case "sourcegraph/sourcegraph": // Hosted repo.
@@ -84,6 +85,7 @@ func TestGoImportPath(t *testing.T) {
 // 	repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
 func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	_, mock := httptestutil.NewTest(nil)
+	defer httptestutil.ResetGlobals()
 	var attemptedRepoURIs []string
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		attemptedRepoURIs = append(attemptedRepoURIs, repo.URI)
