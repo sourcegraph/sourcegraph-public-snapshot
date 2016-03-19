@@ -1,4 +1,5 @@
 import React from "react";
+import update from "react/lib/update";
 import Fuze from "fuse.js";
 import classNames from "classnames";
 import Container from "sourcegraph/Container";
@@ -23,6 +24,7 @@ class TreeSearch extends Container {
 			matchingSymbols: {Results: [], SrclibDataVersion: null},
 			matchingFiles: [],
 			fileResults: [], // either the full directory tree (for empty query) or matching file paths
+			currPath: [], // current parth of directory tree to display, as array of parts
 			query: "",
 			selectionIndex: 0,
 		};
@@ -30,7 +32,7 @@ class TreeSearch extends Container {
 		this._focusInput = this._focusInput.bind(this);
 		this._blurInput = this._blurInput.bind(this);
 		this._onType = this._onType.bind(this);
-		this._numResults = this._numResults.bind(this);
+		this._currentNumResults = this._currentNumResults.bind(this);
 		this._getSelectionURL = this._getSelectionURL.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState({query: query, selectionIndex: 0});
@@ -60,12 +62,12 @@ class TreeSearch extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.repo && nextState.rev) {
-			let fileList = TreeStore.fileLists.get(nextState.repo, nextState.rev);
-			nextState.allFiles = fileList ? fileList.Files : null;
-			nextState.fileTree = TreeStore.fileTree.get(nextState.repo, nextState.rev);
-			nextState.matchingSymbols = SearchResultsStore.results.get(nextState.repo, nextState.rev, nextState.query, "tokens", 1) || {Results: [], SrclibDataVersion: null};
-		}
+		let fileList = TreeStore.fileLists.get(nextState.repo, nextState.rev);
+		nextState.allFiles = fileList ? fileList.Files : null;
+		nextState.fileTree = TreeStore.fileTree.get(nextState.repo, nextState.rev);
+		nextState.matchingSymbols =
+			SearchResultsStore.results.get(nextState.repo, nextState.rev, nextState.query, "tokens", 1) ||
+			{Results: [], SrclibDataVersion: null};
 
 		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
 		if (becameVisible || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
@@ -89,7 +91,9 @@ class TreeSearch extends Container {
 		}
 
 		if (nextState.fuzzyFinder !== prevState.fuzzyFinder || nextState.query !== prevState.query) {
-			nextState.matchingFiles = (nextState.query && nextState.fuzzyFinder) ? nextState.fuzzyFinder.search(nextState.query).map(i => nextState.allFiles[i]) : nextState.allFiles;
+			nextState.matchingFiles = (nextState.query && nextState.fuzzyFinder) ?
+			nextState.fuzzyFinder.search(nextState.query).map(i => nextState.allFiles[i]) :
+			nextState.allFiles;
 		}
 
 		if (nextState.query !== prevState.query) {
@@ -101,11 +105,49 @@ class TreeSearch extends Container {
 		if (nextState.query === "") {
 			// Show entire file tree as file results.
 			if (nextState.fileTree) {
-				const dirs = Object.keys(nextState.fileTree.Dirs).map(dir => ({name: dir, isDirectory: true}));
-				nextState.fileResults = dirs.concat(nextState.fileTree.Files.map(file => ({name: file, isDirectory: false})));
+				let dirLevel = nextState.fileTree;
+				for (const part of nextState.currPath) {
+					if (dirLevel.Dirs[part]) {
+						dirLevel = dirLevel.Dirs[part];
+					} else {
+						console.error("invalid part: ", part, "curr path:", nextState.currPath, "file tree:", nextState.fileTree);
+						break;
+					}
+				}
+				const dirs = Object.keys(dirLevel.Dirs).map(dir => ({
+					name: dir,
+					isDirectory: true,
+					url: router.tree(this.props.repo, this.props.rev,
+						`${nextState.currPath.join("/")}${nextState.currPath.length > 0 ? "/" : ""}${dir}`),
+				}));
+
+				nextState.fileResults = dirs.concat(dirLevel.Files.map(file => ({
+					name: file,
+					isDirectory: false,
+					url: router.tree(this.props.repo, this.props.rev,
+						`${nextState.currPath.join("/")}${nextState.currPath.length > 0 ? "/" : ""}${file}`),
+				})));
 			}
 		} else if (nextState.matchingFiles && nextState.matchingFiles !== prevState.matchingFiles) {
-			nextState.fileResults = nextState.matchingFiles.map(file => ({name: file, isDirectory: false}));
+			nextState.fileResults = nextState.matchingFiles.map(file => ({
+				name: file,
+				isDirectory: false,
+				url: router.tree(this.props.repo, this.props.rev, file),
+			}));
+		}
+
+		// Prevent out-of-bounds, e.g. after directory navigation.
+		if (nextState.matchingSymbols !== prevState.matchingSymbols ||
+			nextState.fileResults !== prevState.fileResults) {
+			const nextNumResults =
+				this._numResults(nextState.query, nextState.fileResults || [], nextState.matchingSymbols || []);
+			const prevNumResults =
+				this._numResults(prevState.query, prevState.fileResults || [], prevState.matchingSymbols || []);
+			if (nextNumResults < prevNumResults) {
+				if (nextState.selectionIndex >= nextNumResults) {
+					nextState.selectionIndex = nextNumResults - 1;
+				}
+			}
 		}
 	}
 
@@ -142,11 +184,15 @@ class TreeSearch extends Container {
 		});
 	}
 
-	_numResults() {
-		let fileResults = this.state.fileResults.length > FILE_LIMIT ? FILE_LIMIT : this.state.fileResults.length;
-		if (this.state.query === "") fileResults = this.state.fileResults.length; // override to show full directory tree on empty query
-		const symbolResults = this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
-		return fileResults + symbolResults;
+	_numResults(query, fileResults, matchingSymbols) {
+		let numFileResults = fileResults.length > FILE_LIMIT ? FILE_LIMIT : fileResults.length;
+		if (query === "") numFileResults = fileResults.length; // override to show full directory tree on empty query
+		const numSymbolResults = matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : matchingSymbols.Results.length;
+		return numFileResults + numSymbolResults;
+	}
+
+	_currentNumResults() {
+		return this._numResults(this.state.query, this.state.fileResults, this.state.matchingSymbols);
 	}
 
 	_getSelectionURL() {
@@ -155,15 +201,27 @@ class TreeSearch extends Container {
 			const def = this.state.matchingSymbols.Results[i].Def;
 			return router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
 		}
-		return router.tree(this.props.repo, this.props.rev, this.state.fileResults[i - this.state.matchingSymbols.Results.length].name);
+		return this.state.fileResults[i - this.state.matchingSymbols.Results.length].url;
+	}
+
+	// returns the selected directory name, or null
+	_getSelectedPathPart() {
+		const i = this.state.selectionIndex;
+		if (i < this.state.matchingSymbols.Results.length) {
+			return null;
+		}
+
+		const result = this.state.fileResults[i - this.state.matchingSymbols.Results.length];
+		if (result.isDirectory) return result.name;
+		return null;
 	}
 
 	_onType(e) {
-		let idx, max;
+		let idx, max, part;
 		switch (e.key) {
 		case "ArrowDown":
 			idx = this.state.selectionIndex;
-			max = this._numResults();
+			max = this._currentNumResults();
 
 			this.setState({
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
@@ -174,11 +232,32 @@ class TreeSearch extends Container {
 
 		case "ArrowUp":
 			idx = this.state.selectionIndex;
-			max = this._numResults();
+			max = this._currentNumResults();
 
 			this.setState({
 				selectionIndex: idx < 1 ? max-1 : idx-1,
 			});
+
+			e.preventDefault();
+			break;
+
+		case "ArrowLeft":
+			if (this.state.currPath.length !== 0) {
+				this.setState({
+					currPath: update(this.state.currPath, {$splice: [[this.state.currPath.length - 1, 1]]}),
+				});
+			}
+
+			e.preventDefault();
+			break;
+
+		case "ArrowRight":
+			part = this._getSelectedPathPart();
+			if (part) {
+				this.setState({
+					currPath: update(this.state.currPath, {$push: [part]}),
+				});
+			}
 
 			e.preventDefault();
 			break;
@@ -205,7 +284,7 @@ class TreeSearch extends Container {
 
 		for (let i = 0; i < limit; i++) {
 			let item = items[i],
-				itemURL = router.tree(this.props.repo, this.props.rev, item.name);
+				itemURL = item.url;
 
 			let ctx = classNames({
 				selected: this.state.selectionIndex - this.state.matchingSymbols.Results.length === i,
