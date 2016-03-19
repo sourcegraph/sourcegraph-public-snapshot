@@ -371,7 +371,9 @@ class TreeSearch extends Container {
 						}
 					</ul>
 					<div className="tree-search-label">
-						Files
+						<span>Files</span>
+						{this.state.query === "" &&
+							<span className="file-path">{this.state.currPath.join("/")}</span>}
 					</div>
 					<ul className="tree-search-file-list">
 						{this._listItems()}
