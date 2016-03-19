@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
@@ -61,7 +63,7 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 
 	// Check if the requested path or its prefix is a hosted repository.
 	//
-	// If there are 3 path elements {"alpha", "beta", "gamma"}, start by checking
+	// If there are 3 path elements, e.g., "/alpha/beta/gamma", start by checking
 	// repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
 	for i := 1; i <= len(pathElements); i++ {
 		repoPath := strings.Join(pathElements[:i], "/")
@@ -69,8 +71,15 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 		_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
 			URI: repoPath,
 		})
-		if err != nil {
+		if grpc.Code(err) == codes.NotFound {
 			continue
+		} else if err != nil {
+			// TODO: Distinguish between other known/expected errors vs unexpected errors,
+			//       and treat unexpected errors appropriately. Doing this requires Repos.Get
+			//       method to be documented to specify which known error types it can return.
+			log.Println("sourcegraphComGoGetHandler: cl.Repos.Get:", err)
+			http.Error(w, "error getting repository", http.StatusInternalServerError)
+			return
 		}
 
 		// Repo found. Serve a go-import meta tag.
@@ -78,9 +87,6 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 		appURL := conf.AppURL(ctx)
 		scheme := appURL.Scheme
 		host := appURL.Host
-
-		// TODO: Is this needed? Don't think so, delete it.
-		//host = strings.TrimPrefix(host, "www.") // For when AppURL has a leading www.
 
 		goImportMetaTagTemplate.Execute(w, goImportMetaTag{
 			ImportPrefix: path.Join(host, repoPath),
@@ -93,19 +99,10 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 		return
 	}
 
-	// Handle "go get sourcegraph.com/sourcegraph/*" as a special case.
+	// Handle "go get sourcegraph.com/sourcegraph/*" for all non-hosted repositories.
 	// It's a vanity import path that maps to "github.com/sourcegraph/*" clone URLs.
 	if len(pathElements) >= 2 && pathElements[0] == "sourcegraph" {
-		// TODO: Consider checking github API if repo exists. Is it needed?
-		//       I can't think of a reason why... so not going to do it unless convinced otherwise.
-
-		// TODO: What about private github repos, any special considerations with regard to go-import meta tag?
-		//       I don't think so, but confirm.
-
 		host := conf.AppURL(ctx).Host
-
-		// TODO: Is this needed? Don't think so, delete it.
-		//host = strings.TrimPrefix(host, "www.") // For when AppURL has a leading www.
 
 		user := pathElements[0]
 		repo := pathElements[1]
@@ -125,29 +122,3 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 	http.Error(w, "no such repository", http.StatusNotFound)
 	return
 }
-
-/* TODO: Add tests for sourcegraphComGoGetHandler.
-
-They should cover the following situations:
-
-	# Assuming --app-url="http://localhost.com:3080" where localhost.com is 127.0.0.1 in hosts file.
-	emptygopath $ go get -insecure -d localhost.com:3080/sourcegraph/sourcegraph/usercontent
-	emptygopath $ go get -insecure -d localhost.com:3080/sourcegraph/srclib/ann
-	emptygopath $ go get -insecure -d localhost.com:3080/sourcegraph/doesntexist/foobar
-	# cd .; git clone https://github.com/sourcegraph/doesntexist /tmp/emptygopath/src/localhost.com:3080/sourcegraph/doesntexist
-	Cloning into '/tmp/emptygopath/src/localhost.com:3080/sourcegraph/doesntexist'...
-	remote: Repository not found.
-	fatal: repository 'https://github.com/sourcegraph/doesntexist/' not found
-	package localhost.com:3080/sourcegraph/doesntexist/foobar: exit status 128
-	emptygopath $ go get -insecure -d localhost.com:3080/gorilla/mux
-	package localhost.com:3080/gorilla/mux: unrecognized import path "localhost.com:3080/gorilla/mux" (parse http://localhost.com:3080/gorilla/mux?go-get=1: no go-import meta tags)
-
-And ensure the following outcomes:
-
-	emptygopath $ cd src/localhost.com:3080/sourcegraph/sourcegraph/usercontent && git remote show origin | sed -n 2p  && cd $GOPATH
-	  Fetch URL: http://localhost.com:3080/sourcegraph/sourcegraph
-	emptygopath $ cd src/localhost.com:3080/sourcegraph/srclib/ann && git remote show origin | sed -n 2p && cd $GOPATH
-	  Fetch URL: https://github.com/sourcegraph/srclib
-	emptygopath $ ls src/localhost.com:3080/sourcegraph/
-	sourcegraph	srclib
-*/
