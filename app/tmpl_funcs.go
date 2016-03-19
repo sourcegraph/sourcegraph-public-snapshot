@@ -122,6 +122,12 @@ var tmplFuncs = htmpl.FuncMap{
 	"isNil":        isNil,
 	"minTime":      minTime,
 	"pathJoin":     path.Join,
+	"pathSplit": func(path string) []string {
+		return strings.Split(path, "/")
+	},
+	"subpath": func(parts []string, i int) string {
+		return path.Join(parts[:(i + 1)]...)
+	},
 	"toInt": func(v interface{}) (int, error) {
 		switch v := v.(type) {
 		case int:

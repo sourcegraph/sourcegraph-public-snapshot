@@ -21,9 +21,15 @@
 	</header>
 	<table class="table repo-tree-dir">
 	{{if not (eq .EntryPath ".")}}
-		<tr class="entry">
+		<tr class="entry entry-parent-nav">
 			<td class="icon"></td>
-			<td class="name"><a href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev (pathJoin $parentEntryPath "..")}}">..</a></td>
+			<td class="name">
+				{{$pathParts := pathSplit $parentEntryPath}}
+				{{range $index, $part := $pathParts}}
+					<a {{if eq 0 $index}}class="first-part"{{end}} href="{{urlToRepoTreeEntry $repo.URI $repoRevSpec.Rev (subpath $pathParts $index)}}">{{$part}}</a>
+					<span> / </span>
+				{{end}}
+			</td>
 		</tr>
 	{{end}}
 	{{range .Entry.Entries}}

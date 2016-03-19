@@ -248,7 +248,6 @@ $panel-repo-tree-padding-horizontal: 9px;
 	}
 
 	td.name {
-		width: 190px;
 		max-width: 190px;
 		margin-left: 5px;
 		padding: 0;
@@ -272,6 +271,25 @@ $panel-repo-tree-padding-horizontal: 9px;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
+		}
+	}
+
+	.entry-parent-nav {
+		td.icon {
+		}
+		td.name {
+			display: table;
+			position: relative;
+			left: -2.5em;
+			a, span {
+				display: table-cell;
+			}
+			a {
+				padding-left: 8px;
+			}
+			a.first-part {
+				padding-left: 0px;
+			}
 		}
 	}
 
