@@ -8,9 +8,8 @@ import (
 	"path"
 	"strings"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
@@ -71,7 +70,7 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 		_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
 			URI: repoPath,
 		})
-		if grpc.Code(err) == codes.NotFound {
+		if errcode.HTTP(err) == http.StatusNotFound {
 			continue
 		} else if err != nil {
 			// TODO: Distinguish between other known/expected errors vs unexpected errors,

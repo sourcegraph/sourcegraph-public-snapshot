@@ -9,10 +9,9 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
@@ -24,7 +23,7 @@ func TestGoImportPath(t *testing.T) {
 		case "sourcegraph/sourcegraph": // Hosted repo.
 			return &sourcegraph.Repo{}, nil
 		default:
-			return nil, grpc.Errorf(codes.NotFound, "repo %s not found", repo.URI)
+			return nil, &store.RepoNotFoundError{Repo: repo.URI}
 		}
 	}
 	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "https", Host: "sourcegraph.com", Path: "/"})
@@ -51,6 +50,10 @@ func TestGoImportPath(t *testing.T) {
 		},
 		{
 			path:       "/gorilla/mux",
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			path:       "/github.com/gorilla/mux",
 			wantStatus: http.StatusNotFound,
 		},
 	}
@@ -84,7 +87,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	var attemptedRepoURIs []string
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		attemptedRepoURIs = append(attemptedRepoURIs, repo.URI)
-		return nil, grpc.Errorf(codes.NotFound, "repo %s not found", repo.URI)
+		return nil, &store.RepoNotFoundError{Repo: repo.URI}
 	}
 
 	rw := httptest.NewRecorder()
