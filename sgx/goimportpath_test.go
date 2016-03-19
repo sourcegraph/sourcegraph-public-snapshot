@@ -50,6 +50,11 @@ func TestGoImportPath(t *testing.T) {
 			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/doesntexist git https://github.com/sourcegraph/doesntexist">`,
 		},
 		{
+			path:       "/sqs/pbtypes",
+			wantStatus: http.StatusOK,
+			wantBody:   `<meta name="go-import" content="sourcegraph.com/sqs/pbtypes git https://github.com/sqs/pbtypes">`,
+		},
+		{
 			path:       "/gorilla/mux",
 			wantStatus: http.StatusNotFound,
 		},

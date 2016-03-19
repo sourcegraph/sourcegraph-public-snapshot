@@ -98,9 +98,9 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 		return
 	}
 
-	// Handle "go get sourcegraph.com/sourcegraph/*" for all non-hosted repositories.
-	// It's a vanity import path that maps to "github.com/sourcegraph/*" clone URLs.
-	if len(pathElements) >= 2 && pathElements[0] == "sourcegraph" {
+	// Handle "go get sourcegraph.com/{sourcegraph,sqs}/*" for all non-hosted repositories.
+	// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
+	if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
 		host := conf.AppURL(ctx).Host
 
 		user := pathElements[0]
