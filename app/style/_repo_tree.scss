@@ -99,7 +99,7 @@ $panel-repo-tree-padding-horizontal: 9px;
 		position: fixed;
 		width: 700px;
 		top: 10%;
-		bottom: 10%;
+		max-height: 600%;
 		overflow-y: scroll;
 		left: 50%;
 		margin-left: -350px;
