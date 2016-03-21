@@ -1,3 +1,5 @@
+@value light-blue from "./colors.css";
+
 .link {
 	composes: link from "./tachyons.css";
 	composes: blue from "./colors.css";
@@ -5,4 +7,5 @@
 
 .link:hover {
 	text-decoration: none;
+	color: light-blue;
 }

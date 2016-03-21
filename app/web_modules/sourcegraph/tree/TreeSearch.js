@@ -13,8 +13,8 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
 import TreeStyles from "./styles/Tree.css";
-import ListStyles from "sourcegraph/components/styles/List.css";
 import linkStyle from "sourcegraph/components/styles/link.css";
+import modals from "sourcegraph/components/styles/modals.css";
 
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 5;
@@ -278,7 +278,7 @@ class TreeSearch extends Container {
 
 	_listItems() {
 		const items = this.state.fileResults;
-		if (!this.state.visible || !items || items.length === 0) return [<li key="_nofiles"><i>No matches!</i></li>];
+		if (!this.state.visible || !items || items.length === 0) return [<div className={TreeStyles.list_item} key="_nofiles"><i>No matches!</i></div>];
 
 		let list = [],
 			limit = items.length > FILE_LIMIT ? FILE_LIMIT : items.length;
@@ -290,17 +290,22 @@ class TreeSearch extends Container {
 			let item = items[i],
 				itemURL = item.url;
 
-			let ctx = classNames({
-				selected: this.state.selectionIndex - this.state.matchingSymbols.Results.length === i,
-			});
+			const selected = this.state.selectionIndex - this.state.matchingSymbols.Results.length === i;
 
 			list.push(
-				<li className={ctx} key={itemURL}>
-				<i className={classNames("fa", {
-					"fa-file-text-o": !item.isDirectory,
-					"fa-folder": item.isDirectory,
-				})}></i><a className={linkStyle.link} href={itemURL}>{item.name}</a>
-				</li>
+				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={itemURL}>
+					<span className={TreeStyles.list_item_icon}><i className={classNames("fa", {
+						"fa-file-text-o": !item.isDirectory,
+						"fa-folder": item.isDirectory,
+					})}></i>
+					</span>
+					<a className={linkStyle.link} href={itemURL}>{item.name}</a>
+					{this.state.query === "" && item.isDirectory &&
+						<span className={TreeStyles.directory_nav_icon}>
+						<i className="fa fa-chevron-right" />
+						</span>
+					}
+				</div>
 			);
 		}
 
@@ -309,7 +314,7 @@ class TreeSearch extends Container {
 
 	_symbolItems() {
 		if (!this.state.visible || !this.state.matchingSymbols || this.state.matchingSymbols.Results.length === 0) {
-			return [<li key="_nosymbol"><i>No matches!</i></li>];
+			return [<div className={TreeStyles.list_item} key="_nosymbol"><i>No matches!</i></div>];
 		}
 
 		let list = [],
@@ -320,19 +325,17 @@ class TreeSearch extends Container {
 			let def = result.Def,
 				defURL = router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
 
-			let ctx = classNames({
-				selected: this.state.selectionIndex === i,
-			});
+			const selected = this.state.selectionIndex === i;
 
 			list.push(
-				<li className={ctx} key={defURL}>
+				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={defURL}>
 					<div key={defURL}>
 						<a className={linkStyle.link} href={defURL}>
 							<code>{def.Kind}</code>
 							<code dangerouslySetInnerHTML={result.QualifiedName}></code>
 						</a>
 					</div>
-				</li>
+				</div>
 			);
 		}
 
@@ -340,47 +343,38 @@ class TreeSearch extends Container {
 	}
 
 	render() {
-		let ctx = classNames({
-			"tree-entry-search": true,
-			"hidden": !this.state.visible,
-		});
-
-		let searchInputClass = classNames({
-			"search-input-group": true,
-			"search-input-group-overlay": this.state.overlay,
-		});
-
 		return (
-			<div className={ctx}>
-				<div className={classNames({overlay: this.state.overlay})} onClick={this._blurInput} />
-				<div className={searchInputClass}>
+			<div className={!this.state.visible ? modals.hidden : TreeStyles.tree}>
+				<div className={this.state.overlay ? modals.overlay : modals.hidden} onClick={this._blurInput} />
+				<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
 					<div className={TreeStyles.input_group}>
-						<input className={TreeStyles.input} type="text"
+						<input className={TreeStyles.input}
+							type="text"
 							placeholder="Search this repository..."
 							ref="input"
 							onKeyUp={this._onType} />
 						{!this.state.overlay &&
 							<div className={TreeStyles.input_addon}>t</div>}
 					</div>
-					<div className={ListStyles.list_section}>
-						<span className={ListStyles.list_section_label}>Symbols</span>
+					<div className={TreeStyles.list_header}>
+						Symbols
 					</div>
-					<ul className="tree-search-symbol-list">
+					<div>
 						{this.state.matchingSymbols.SrclibDataVersion && this._symbolItems()}
 						{!this.state.matchingSymbols.SrclibDataVersion &&
-							<li>
+							<div className={TreeStyles.list_item}>
 								<i>Sourcegraph is analyzing your code &mdash; results will be available soon!</i>
-							</li>
+							</div>
 						}
-					</ul>
-					<div className={"tree-search-label"}>
-						<span>Files</span>
-						{this.state.query === "" &&
-							<span className="file-path">{this.state.currPath.join("/")}</span>}
 					</div>
-					<ul className="tree-search-file-list">
+					<div className={TreeStyles.list_header}>
+						Files
+						{this.state.query === "" &&
+							<span className={TreeStyles.file_path}>{this.state.currPath.join("/")}</span>}
+					</div>
+					<div>
 						{this._listItems()}
-					</ul>
+					</div>
 				</div>
 			</div>
 		);

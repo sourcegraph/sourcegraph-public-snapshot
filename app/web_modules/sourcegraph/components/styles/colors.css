@@ -1,20 +1,28 @@
-@value navy from "./vars.css";
-@value blue from "./vars.css";
-@value aqua from "./vars.css";
-@value teal from "./vars.css";
-@value olive from "./vars.css";
-@value green from "./vars.css";
-@value lime from "./vars.css";
-@value yellow from "./vars.css";
-@value orange from "./vars.css";
-@value red from "./vars.css";
-@value fuchsia from "./vars.css";
-@value purple from "./vars.css";
-@value maroon from "./vars.css";
-@value white from "./vars.css";
-@value gray from "./vars.css";
-@value silver from "./vars.css";
-@value black from "./vars.css";
+@value navy #001F3F;
+@value blue rgba(0, 116, 217, 1);
+@value blue-8 rgba(0, 116, 217, .8);
+@value blue-5 rgba(0, 116, 217, .5);
+@value blue-2 rgba(0, 116, 217, .2);
+@value light-blue rgba(77, 193, 255, 1); /* 30% lightened */
+@value dark-blue rgba(0, 40, 141, 1); /* 30% darkened */
+@value brand-blue #0698EE;
+@value aqua #7FDBFF;
+@value teal #39CCCC;
+@value olive #3D9970;
+@value green #2ECC40;
+@value lime #01FF70;
+@value yellow #FFDC00;
+@value orange #FF851B;
+@value brand-orange #EB602E;
+@value red #FF4136;
+@value fuchsia #F012BE;
+@value purple #B10DC9;
+@value brand-purple #9D00D8;
+@value maroon #85144B;
+@value white #FFFFFF;
+@value gray #AAAAAA;
+@value silver #DDDDDD;
+@value black #111111;
 
 /* Colors */
 .navy { color: navy; }

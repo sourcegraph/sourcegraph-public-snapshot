@@ -1,9 +1,12 @@
+@value tachyons "sourcegraph/components/styles/tachyons.css";
+
 .input_group {
 	composes: input_group from "sourcegraph/components/styles/input.css";
 	composes: flex items-center from "sourcegraph/components/styles/flexbox.css";
-	composes: br2 ba b--light-silver from "sourcegraph/components/styles/tachyons.css";
+	composes: br2 ba b--light-silver from tachyons;
+	composes: ma3 from tachyons;
 	composes: focus-border from "sourcegraph/components/styles/input.css";
-	width: 100%;
+	max-width: 100%;
 }
 
 .input {
@@ -13,94 +16,62 @@
 }
 
 .input_addon {
-	composes: f5 from "sourcegraph/components/styles/tachyons.css";
-	composes: mr3 pv2 ph3 from "sourcegraph/components/styles/tachyons.css";
-	composes: br3 from "sourcegraph/components/styles/tachyons.css";
-	composes: dark-gray from "sourcegraph/components/styles/tachyons.css";
-	composes: code from "sourcegraph/components/styles/tachyons.css";
-	composes: bg-black-20 from "sourcegraph/components/styles/tachyons.css";
+	composes: f5 from tachyons;
+	composes: mr3 pv2 ph3 from tachyons;
+	composes: br3 from tachyons;
+	composes: dark-gray from tachyons;
+	composes: code from tachyons;
+	composes: bg-black-20 from tachyons;
 	box-shadow: 0 1px 0 rgba(0,0,0,.2),0 0 0 2px #fff inset;
 	text-shadow: 0 1px 0 #fff;
 }
 
-
-.tree {
-	composes: db from "sourcegraph/components/styles/tachyons.css";
-
-	.search-input-group {
-		@include z-index(tree-search-modal);
-		@include box-shadow(0 2px 8px transparentize(#000, 0.6));
-
-		.tree-search-input {
-			position: relative;
-
-			input {
-				font-size: 18px;
-				width: 100%;
-				padding: $table-cell-padding 12px;
-				border: 1px solid $white;
-				border-bottom: $content-border;
-				background-color: $white;
-				&:focus {
-					outline: none;
-				}
-			}
-
-			.input-group-addon {
-				background-color: white;
-				border: none;
-				border-bottom: solid 1px rgba(191, 194, 208, 0.44);
-				color: $dark-blue-grey;
-
-
-			}
-		}
-
-		ul.tree-search-file-list, ul.tree-search-symbol-list {
-			list-style: none;
-			list-style-type: none;
-			padding: 0;
-			margin: 0;
-			border-width: 0 1px 1px 1px;
-			background-color: $white;
-			font-weight: normal;
-
-			li {
-				padding: $table-cell-padding 12px;
-				border-bottom: $content-border;
-
-				&.selected {
-					background-color: darken($white, 5)
-				}
-
-				.name {
-					font-weight: bold;
-				}
-
-				.fa {
-					margin-right: 10px;
-				}
-			}
-		}
-	}
-
-	.search-input-group-overlay {
-		position: fixed;
-		width: 700px;
-		top: 10%;
-		max-height: 600%;
-		overflow-y: scroll;
-		left: 50%;
-		margin-left: -350px;
-	}
-
-	.file-path {
-		padding-left: 13px;
-		font-size: 12px;
-	}
+.list_header {
+	composes: b f3 ph3 pt4 pb2 tracked from tachyons;
+	composes: black from "sourcegraph/components/styles/colors.css";
+	text-transform: uppercase;
 }
 
-.tree_overlay {
+.list_item {
+	composes: pa3 from tachyons;
+	composes: mh3 from tachyons;
+	composes: bt b--black-20 from tachyons;
+	composes: sans-serif from tachyons;
+}
+
+.list_item_icon {
+	composes: blue from "sourcegraph/components/styles/colors.css";
+	composes: pr3 from tachyons;
+}
+
+.directory_nav_icon {
+	composes: blue from "sourcegraph/components/styles/colors.css";
+	float: right;
+}
+
+.list_item_selected {
+	composes: list_item;
+	composes: f3 from tachyons;
+	background-color: rgba(235, 96, 46, .1);
+}
+
+.file_path {
+	composes: pl3 f4 sans-serif normal from tachyons;
+	letter-spacing: initial;
+	text-transform: none;
+}
+
+.icon {
+	composes: pr3 from tachyons;
+}
+
+.tree {
+	composes: f4 from tachyons;
+	display: block;
+	background-color: rgb(256, 256, 256);
+}
+
+.tree_modal {
 	composes: tree;
-	composes: overlay from "sourcegraph/components/styles/Overlay.css";
+	composes: modal_panel from "sourcegraph/components/styles/modals.css";
 }
