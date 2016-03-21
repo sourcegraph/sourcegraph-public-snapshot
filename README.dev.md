@@ -143,10 +143,13 @@ generate`. Code generation is used for a variety of tasks:
 * generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
 * pack app templates and assets into binaries
 
-To re-generate codegenned code, run:
+To re-generate codegenned code, install `protoc` version `v3.0.0-beta-1`, see
+[installation instructions](https://github.com/google/protobuf/tree/v3.0.0-beta-1#c-installation---unix).
+
+Then run:
 
 ```
-go generate ./...
+go generate (go list ./... | grep -v /vendor/)
 ```
 
 Note that you should always run this after you run `godep update` to
@@ -156,9 +159,6 @@ Also, sometimes there are erroneous diffs. This occurs for a few
 reasons, none of which are legitimate (i.e., they are tech debt items
 we need to address):
 
-* Your codegen tool (e.g., `gen-mocks`) version might differ from
-  the last committer's in the code it produces. We need to version
-  these tools.
 * The codegen tool might emit code that depends on system
   configuration, such as the system timezone. We need to submit PRs to
   the tools to eliminate these issues.
