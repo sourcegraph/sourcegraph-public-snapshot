@@ -1,6 +1,6 @@
 {
 	"comment": "",
-	"ignore": "test",
+	"ignore": "test appengine",
 	"package": [
 		{
 			"path": "bitbucket.org/pkg/inflect",
@@ -183,11 +183,6 @@
 			"revisionTime": "2014-07-29T21:48:43-07:00"
 		},
 		{
-			"path": "github.com/gengo/grpc-gateway/internal",
-			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
-			"revisionTime": "2015-06-19T14:51:51+09:00"
-		},
-		{
 			"path": "github.com/gengo/grpc-gateway/protoc-gen-grpc-gateway/descriptor",
 			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
 			"revisionTime": "2015-06-19T14:51:51+09:00"
@@ -213,11 +208,6 @@
 			"revisionTime": "2015-09-08T20:16:57-07:00"
 		},
 		{
-			"path": "github.com/go-ldap/ldap",
-			"revision": "71555ef0e2f6f27e05878527b32030134d4f8774",
-			"revisionTime": "2015-10-31T12:22:57-04:00"
-		},
-		{
 			"path": "github.com/gogo/protobuf/io",
 			"revision": "200875106f3bf0eb01eb297dae30b250a25ffc84",
 			"revisionTime": "2015-10-07T17:10:53+02:00"
@@ -233,6 +223,7 @@
 			"revisionTime": "2015-10-07T17:10:53+02:00"
 		},
 		{
+			"checksumSHA1": "HmbftipkadrLlCfzzVQ+iFHbl6g=",
 			"path": "github.com/golang/glog",
 			"revision": "23def4e6c14b4da8ac2ed8007337bc5eb5007998",
 			"revisionTime": "2016-01-25T21:49:56+01:00"
@@ -244,16 +235,6 @@
 		},
 		{
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
-			"revisionTime": "2015-04-30T09:19:26+10:00"
-		},
-		{
-			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
-			"revisionTime": "2015-04-30T09:19:26+10:00"
-		},
-		{
-			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
 			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
 			"revisionTime": "2015-04-30T09:19:26+10:00"
 		},
@@ -283,9 +264,58 @@
 			"revisionTime": "2016-03-09T10:36:44-08:00"
 		},
 		{
-			"path": "github.com/hashicorp/go-version",
-			"revision": "2b9865f60ce11e527bd1255ba82036d465570aa3",
-			"revisionTime": "2015-09-14T23:04:35-07:00"
+			"checksumSHA1": "5LrCq/ydlbL6pq1cdmuxiw7QV98=",
+			"path": "github.com/hashicorp/hcl",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "WP5ODRo9+USuAsKYPu5RW3q8Epg=",
+			"path": "github.com/hashicorp/hcl/hcl/ast",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "SVw0qm83Anf5T2GkYabn+f7Ibv0=",
+			"path": "github.com/hashicorp/hcl/hcl/parser",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "WZM0q7Sya8PcGj607x1npgcEPa4=",
+			"path": "github.com/hashicorp/hcl/hcl/scanner",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "wh2mSXMC88JiAy8FIrTtL7OmY7Q=",
+			"path": "github.com/hashicorp/hcl/hcl/strconv",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "VGNVyGYDGTTCTRqGH5R+CL0u6xw=",
+			"path": "github.com/hashicorp/hcl/hcl/token",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "uEaK2zagnGctsUmjWt8ZYmK1Yvs=",
+			"path": "github.com/hashicorp/hcl/json/parser",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "S1e0F9ZKSnqgOLfjDTYazRL28tA=",
+			"path": "github.com/hashicorp/hcl/json/scanner",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
+		},
+		{
+			"checksumSHA1": "fNlXQCQEnb+B3k5UDL/r15xtSJY=",
+			"path": "github.com/hashicorp/hcl/json/token",
+			"revision": "2604f3bda7e8960c1be1063709e7d7f0765048d0",
+			"revisionTime": "2016-03-21T14:46:21Z"
 		},
 		{
 			"path": "github.com/howeyc/gopass",
@@ -388,11 +418,6 @@
 			"revisionTime": "2015-10-11T12:25:29+02:00"
 		},
 		{
-			"path": "github.com/mb0/diff",
-			"revision": "d8d9a906c24d7b0ee77287e0463e5ca7f026032e",
-			"revisionTime": "2013-11-18T17:23:22+01:00"
-		},
-		{
 			"path": "github.com/microcosm-cc/bluemonday",
 			"revision": "4ac6f27528d0a3f2a59e0b0a6f6b3ff0bb89fe20",
 			"revisionTime": "2015-11-02T10:20:00-08:00"
@@ -416,6 +441,12 @@
 			"path": "github.com/opennota/urlesc",
 			"revision": "5fa9ff0392746aeae1c4b37fcc42c65afa7a9587",
 			"revisionTime": "2015-02-08T15:19:50+07:00"
+		},
+		{
+			"checksumSHA1": "Mud+5WNq90BFb4gTeM5AByN8f2Y=",
+			"path": "github.com/pkg/sftp",
+			"revision": "e84cc8c755ca39b7b64f510fe1fffc1b51f210a5",
+			"revisionTime": "2016-01-18T14:07:21-05:00"
 		},
 		{
 			"path": "github.com/prometheus/client_golang/prometheus",
@@ -518,97 +549,12 @@
 			"revisionTime": "2015-08-29T05:49:07+03:00"
 		},
 		{
-			"path": "github.com/sergi/go-diff/diffmatchpatch",
-			"revision": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7",
-			"revisionTime": "2015-10-21T21:14:53+02:00"
-		},
-		{
-			"path": "github.com/shurcooL/github_flavored_markdown",
-			"revision": "b3921bea4a899100a4fd522dd940b819af56e437",
-			"revisionTime": "2015-08-22T15:07:51-07:00"
-		},
-		{
-			"path": "github.com/shurcooL/go-goon",
-			"revision": "ba57724c4f5117dc5ec4fabac854b2b073eac5e4",
-			"revisionTime": "2015-11-06T22:35:47-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gists/gist5639599",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gists/gist5707298",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gists/gist6418290",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gists/gist6418462",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gists/gist6433744",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gists/gist6445065",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gopherjs_http",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/gzip_file_server",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
-		},
-		{
 			"path": "github.com/shurcooL/go/vfs/godocfs/godocfs",
 			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
 			"revisionTime": "2016-02-18T21:16:50-08:00"
 		},
 		{
-			"path": "github.com/shurcooL/gopherjslib",
-			"revision": "f855ed7bcd82b53f720f6bf4a0c9b562e89276f6",
-			"revisionTime": "2016-02-12T21:42:40-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/highlight_diff",
-			"revision": "8f0db662adc4a5ba63b4ca15bf66ab08123f7161",
-			"revisionTime": "2015-08-22T15:16:28-07:00"
-		},
-		{
-			"path": "github.com/shurcooL/highlight_go",
-			"revision": "562bf7c1e73e56cf3c10c2506b1e29fccc63d1c9",
-			"revisionTime": "2015-08-22T15:08:31-07:00"
-		},
-		{
 			"path": "github.com/shurcooL/httpfs/filter",
-			"revision": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e",
-			"revisionTime": "2016-01-18T22:47:14-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/httpfs/html/vfstemplate",
-			"revision": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e",
-			"revisionTime": "2016-01-18T22:47:14-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/httpfs/path/vfspath",
-			"revision": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e",
-			"revisionTime": "2016-01-18T22:47:14-08:00"
-		},
-		{
-			"path": "github.com/shurcooL/httpfs/union",
 			"revision": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e",
 			"revisionTime": "2016-01-18T22:47:14-08:00"
 		},
@@ -638,9 +584,10 @@
 			"revisionTime": "2016-02-27T18:16:04-05:00"
 		},
 		{
+			"checksumSHA1": "aBkIJSgGZ2yNMWUEFvHoXewKAaY=",
 			"path": "github.com/sourcegraph/annotate",
-			"revision": "f4cad6c6324d3f584e1743d8b3e0e017a5f3a636",
-			"revisionTime": "2016-01-22T17:39:49-08:00"
+			"revision": "cebcce68942725de59a25b3f5fb202c5d0d4a01d",
+			"revisionTime": "2014-06-01T20:15:51-07:00"
 		},
 		{
 			"path": "github.com/sourcegraph/gddo/doc",
@@ -683,12 +630,19 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"path": "github.com/sourcegraph/syntaxhighlight",
-			"revision": "637a8b8b94eca8bb8cd559b950cc4f42629ec137",
-			"revisionTime": "2015-05-12T12:25:41+09:00"
+			"path": "github.com/spf13/afero",
+			"revision": "2f194a29d557d6d46aa202870df1e9062dbda4d4",
+			"revisionTime": "2016-02-17T11:33:17+01:00"
 		},
 		{
-			"path": "github.com/spf13/afero",
+			"checksumSHA1": "ZoU9aRjKQcb8i+8nCzIr94bcRmI=",
+			"path": "github.com/spf13/afero/mem",
+			"revision": "2f194a29d557d6d46aa202870df1e9062dbda4d4",
+			"revisionTime": "2016-02-17T11:33:17+01:00"
+		},
+		{
+			"checksumSHA1": "sLyAUiIT7V0DNVp6yBhW4Ms5BEs=",
+			"path": "github.com/spf13/afero/sftp",
 			"revision": "2f194a29d557d6d46aa202870df1e9062dbda4d4",
 			"revisionTime": "2016-02-17T11:33:17+01:00"
 		},
@@ -833,11 +787,6 @@
 			"revisionTime": "2015-05-20T08:14:43-07:00"
 		},
 		{
-			"path": "github.com/termie/go-shutil",
-			"revision": "bcacb06fecaeec8dc42af03c87c6949f4a05c74c",
-			"revisionTime": "2014-07-29T14:59:57-07:00"
-		},
-		{
 			"path": "github.com/whilp/git-urls",
 			"revision": "e4bd4b1ee3861df27451acebbe81d7a5d67991fe",
 			"revisionTime": "2016-01-12T21:55:23Z"
@@ -913,6 +862,12 @@
 			"revisionTime": "2016-03-05T22:47:48Z"
 		},
 		{
+			"checksumSHA1": "GBceL1L5Xjf0HVX5dwlj5xNuh/Q=",
+			"path": "golang.org/x/net/websocket",
+			"revision": "35b06af0720201bc2f326773a80767387544f8c4",
+			"revisionTime": "2016-03-15T14:00:09+11:00"
+		},
+		{
 			"path": "golang.org/x/oauth2",
 			"revision": "045497edb6234273d67dbc25da3f2ddbc4c4cacf",
 			"revisionTime": "2016-03-04T15:22:30-06:00"
@@ -951,11 +906,6 @@
 			"path": "golang.org/x/text/unicode/norm",
 			"revision": "a71fd10341b064c10f4a81ceac72bcf70f26ea34",
 			"revisionTime": "2016-02-15T14:41:26+01:00"
-		},
-		{
-			"path": "golang.org/x/tools/go/buildutil",
-			"revision": "498e5ca20752b991e09551fa8fdebca879eaeedb",
-			"revisionTime": "2016-03-09T09:17:37+11:00"
 		},
 		{
 			"path": "golang.org/x/tools/godoc/vfs",
@@ -1038,16 +988,6 @@
 			"revisionTime": "2016-03-01T13:50:00+11:00"
 		},
 		{
-			"path": "google.golang.org/appengine/internal/urlfetch",
-			"revision": "12d5545dc1cfa6047a286d5e853841b6471f4c19",
-			"revisionTime": "2016-03-01T13:50:00+11:00"
-		},
-		{
-			"path": "google.golang.org/appengine/urlfetch",
-			"revision": "12d5545dc1cfa6047a286d5e853841b6471f4c19",
-			"revisionTime": "2016-03-01T13:50:00+11:00"
-		},
-		{
 			"path": "google.golang.org/cloud/compute/metadata",
 			"revision": "08d53874e89b5a4786b0d1fbe7957443d82b2299",
 			"revisionTime": "2015-04-16T11:42:47+10:00"
@@ -1101,11 +1041,6 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "7ed4629849ee2967ae82bff77fbde8c2cc7adac4",
 			"revisionTime": "2016-01-07T14:58:23-08:00"
-		},
-		{
-			"path": "gopkg.in/asn1-ber.v1",
-			"revision": "4e86f4367175e39f69d9358a5f17b4dda270378d",
-			"revisionTime": "2015-09-23T22:17:56-07:00"
 		},
 		{
 			"path": "gopkg.in/fsnotify.v1",
@@ -1198,19 +1133,15 @@
 			"revisionTime": "2015-12-31T08:22:44-08:00"
 		},
 		{
+			"checksumSHA1": "NwpkSiatvV0nJtgdZtgcKcKzugk=",
+			"path": "sourcegraph.com/sourcegraph/go-selenium",
+			"revision": "aa3f38fc2d8fabf50055d9552e567b52889331c7",
+			"revisionTime": "2016-03-16T13:57:33-07:00"
+		},
+		{
 			"path": "sourcegraph.com/sourcegraph/makex",
 			"revision": "9a03b093bc189b7f30af07076ff81a309d8c7621",
 			"revisionTime": "2015-12-12T22:14:40-08:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/prototools/tmpl",
-			"revision": "98c62fcf1cc50e6a79ba27b9a112e6f6eda0bac1",
-			"revisionTime": "2016-02-22T21:44:02-08:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/prototools/util",
-			"revision": "98c62fcf1cc50e6a79ba27b9a112e6f6eda0bac1",
-			"revisionTime": "2016-02-22T21:44:02-08:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/rwvfs",
@@ -1412,5 +1343,6 @@
 			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
 			"revisionTime": "2016-01-07T01:09:29-08:00"
 		}
-	]
+	],
+	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph"
 }
