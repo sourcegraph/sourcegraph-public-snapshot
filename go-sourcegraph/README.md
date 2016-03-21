@@ -22,12 +22,6 @@ If you run into errors while compiling protobufs, try again with these versions 
 
    Make sure the `protoc` binary is in your `$PATH`.
 
-2. **Install [gen-mocks](https://sourcegraph.com/sourcegraph/gen-mocks)** by running:
-
-   ```
-   go get -u sourcegraph.com/sourcegraph/gen-mocks
-   ```
-
 ### Regenerating Go code after changing `sourcegraph.proto`
 
 1. In `go-sourcegraph` (this repository), run:

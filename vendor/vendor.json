@@ -1018,6 +1018,12 @@
 			"revisionTime": "2016-02-15T14:41:26+01:00"
 		},
 		{
+			"checksumSHA1": "UozwJCtg4ATQvolqbn8iblLjxqY=",
+			"path": "golang.org/x/tools/go/ast/astutil",
+			"revision": "093d7650abf0a26882924de03a6c840a00356572",
+			"revisionTime": "2016-03-09T21:59:58Z"
+		},
+		{
 			"path": "golang.org/x/tools/godoc/vfs",
 			"revision": "093d7650abf0a26882924de03a6c840a00356572",
 			"revisionTime": "2016-03-09T21:59:58Z"
@@ -1034,6 +1040,12 @@
 		},
 		{
 			"path": "golang.org/x/tools/godoc/vfs/zipfs",
+			"revision": "093d7650abf0a26882924de03a6c840a00356572",
+			"revisionTime": "2016-03-09T21:59:58Z"
+		},
+		{
+			"checksumSHA1": "g7fTu5iujB9s81036/WwR2s7e1o=",
+			"path": "golang.org/x/tools/imports",
 			"revision": "093d7650abf0a26882924de03a6c840a00356572",
 			"revisionTime": "2016-03-09T21:59:58Z"
 		},
@@ -1231,6 +1243,12 @@
 			"path": "sourcegraph.com/sourcegraph/csp",
 			"revision": "5e0e1a994e85987c1eb097e2f7dbc6797bb4d16f",
 			"revisionTime": "2015-02-08T11:36:13-05:00"
+		},
+		{
+			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",
+			"path": "sourcegraph.com/sourcegraph/gen-mocks",
+			"revision": "f796f89ae7a552c8c2ff5bf21c23f1cc78231820",
+			"revisionTime": "2015-04-25T02:47:25-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/go-diff/diff",

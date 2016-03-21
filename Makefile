@@ -116,9 +116,6 @@ smoke: src
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
 
-${GOBIN}/gen-mocks:
-	go get sourcegraph.com/sourcegraph/gen-mocks
-
 ${GOBIN}/go-template-lint:
 	go get sourcegraph.com/sourcegraph/go-template-lint
 
@@ -133,7 +130,7 @@ dist: dist-dep app-dep
 generate: generate-dep
 	./dev/go-generate-all
 
-generate-dep: ${GOBIN}/gen-mocks ${GOBIN}/go-template-lint
+generate-dep: ${GOBIN}/go-template-lint
 
 db-reset: src
 	src pgsql reset
