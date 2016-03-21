@@ -7,7 +7,7 @@
  *  See Duktape AUTHORS.rst and LICENSE.txt for copyright and
  *  licensing information.
  */
-
+#define __va_copy(d,s)  __builtin_va_copy(d,s)
 /* LICENSE.txt */
 /*
 *  ===============

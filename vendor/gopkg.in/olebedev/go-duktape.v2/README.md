@@ -111,5 +111,5 @@ The package is not fully tested, so be careful.
 
 ### Contribution
 
-Pull requests are welcome!  
+Pull requests are welcome! Also, if you want to discuss something send a pull request with proposal and changes.
 __Convention:__ fork the repository and make changes on your fork in a feature branch.
