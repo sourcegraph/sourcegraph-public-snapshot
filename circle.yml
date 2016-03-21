@@ -7,7 +7,7 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/google-cloud-sdk/bin:$PATH
+    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
@@ -28,6 +28,7 @@ dependencies:
 
   cache_directories:
     - ~/google-cloud-sdk
+    - ~/protobuf-3.0.0-beta-1
 
   override:
     - rm -rf $HOME/.go_workspace/src
@@ -42,6 +43,7 @@ dependencies:
     - git config --global user.name "CI User"
 
     - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
+    - if [ ! -d ~/protobuf-3.0.0-beta-1 ]; then cd ~ && wget https://github.com/google/protobuf/archive/v3.0.0-beta-1.tar.gz && tar -xzf v3.0.0-beta-1.tar.gz && cd protobuf-3.0.0-beta-1 && ./autogen.sh && ./configure && make && cp src/.libs/lt-protoc src/protoc; fi
 
 test:
   override:
