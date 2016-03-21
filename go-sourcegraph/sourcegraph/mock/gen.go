@@ -10,4 +10,5 @@ package mock
 //
 //go:generate go run gen/goreplace.go -from "pbtypes1" -to "pbtypes" sourcegraph.pb_mock.go
 
+//go:generate go get golang.org/x/tools/cmd/goimports
 //go:generate goimports -w sourcegraph.pb_mock.go
