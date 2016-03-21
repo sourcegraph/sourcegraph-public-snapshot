@@ -12,6 +12,9 @@ import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
+import TreeStyles from "./styles/Tree.css";
+import ListStyles from "sourcegraph/components/styles/List.css";
+
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 5;
 
@@ -339,7 +342,6 @@ class TreeSearch extends Container {
 		let ctx = classNames({
 			"tree-entry-search": true,
 			"hidden": !this.state.visible,
-			"loading": this.state.loading,
 		});
 
 		let searchInputClass = classNames({
@@ -351,16 +353,16 @@ class TreeSearch extends Container {
 			<div className={ctx}>
 				<div className={classNames({overlay: this.state.overlay})} onClick={this._blurInput} />
 				<div className={searchInputClass}>
-					<div className={classNames("tree-search-input", {"input-group": !this.state.overlay})}>
-						<input type="text"
+					<div className={TreeStyles.input_group}>
+						<input className={TreeStyles.input} type="text"
 							placeholder="Search this repository..."
 							ref="input"
 							onKeyUp={this._onType} />
 						{!this.state.overlay &&
-							<span className="input-group-addon">shortcut: <span className="hotkey">t</span></span>}
+							<div className={TreeStyles.input_addon}>t</div>}
 					</div>
-					<div className="tree-search-label">
-						Symbols
+					<div className={ListStyles.list_section}>
+						<span className={ListStyles.list_section_label}>Symbols</span>
 					</div>
 					<ul className="tree-search-symbol-list">
 						{this.state.matchingSymbols.SrclibDataVersion && this._symbolItems()}
@@ -370,7 +372,7 @@ class TreeSearch extends Container {
 							</li>
 						}
 					</ul>
-					<div className="tree-search-label">
+					<div className={"tree-search-label"}>
 						<span>Files</span>
 						{this.state.query === "" &&
 							<span className="file-path">{this.state.currPath.join("/")}</span>}

@@ -89,9 +89,13 @@ module.exports = {
 			// No extract-text-webpack-plugin:
 			// {test: /\.scss$/, loader: "style!css!sass?outputStyle=expanded"},
 			// With extract-text-webpack-plugin:
+			// {
+			// 	test: /\.css$/,
+			// 	loader: ExtractTextPlugin.extract("style-loader", "css-loader"),
+			// },
 			{
 				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("style-loader", "css-loader"),
+				loader: "style!css-loader?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]",
 			},
 			{
 				test: /\.scss$/,

@@ -1,0 +1,4 @@
+.link {
+	composes: link from "./tachyons.css";
+	composes: blue from "./colors.css";
+}
