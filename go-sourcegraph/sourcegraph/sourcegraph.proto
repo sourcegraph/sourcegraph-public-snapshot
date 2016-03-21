@@ -2181,10 +2181,10 @@ message Annotation {
 	string URL = 1;
 
 	// StartByte is the start of the byte range.
-	uint32 StartByte = 2;
+	uint32 StartByte = 2 [(gogoproto.jsontag) = "StartByte"];
 
 	// EndByte is the end of the byte range.
-	uint32 EndByte = 3;
+	uint32 EndByte = 3 [(gogoproto.jsontag) = "EndByte"];
 
 	// Class is the HTML class name that should be applied to this
 	// region.

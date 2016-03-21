@@ -2694,9 +2694,9 @@ type Annotation struct {
 	// the def's URL).
 	URL string `protobuf:"bytes,1,opt,name=URL,proto3" json:"URL,omitempty"`
 	// StartByte is the start of the byte range.
-	StartByte uint32 `protobuf:"varint,2,opt,name=StartByte,proto3" json:"StartByte,omitempty"`
+	StartByte uint32 `protobuf:"varint,2,opt,name=StartByte,proto3" json:"StartByte"`
 	// EndByte is the end of the byte range.
-	EndByte uint32 `protobuf:"varint,3,opt,name=EndByte,proto3" json:"EndByte,omitempty"`
+	EndByte uint32 `protobuf:"varint,3,opt,name=EndByte,proto3" json:"EndByte"`
 	// Class is the HTML class name that should be applied to this
 	// region.
 	Class string `protobuf:"bytes,4,opt,name=Class,proto3" json:"Class,omitempty"`

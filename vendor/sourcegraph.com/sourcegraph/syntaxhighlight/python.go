@@ -186,7 +186,7 @@ func init() {
 				MS.Consume("\\\n", true),
 				MS.MatcherToken(Words(`as`), Keyword_Namespace, `#pop`),
 				MS.Token(`,`, Operator),
-				MS.Token(`[a-zA-Z_][\w.]*`, Name_Namespace),
+				MS.Token(`[a-zA-Z_][\w.]*`, Name_Namespace, `#pop`),
 				Default(`#pop`),
 			},
 			`fromimport`: {
