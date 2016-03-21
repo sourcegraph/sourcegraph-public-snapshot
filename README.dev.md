@@ -149,7 +149,7 @@ To re-generate codegenned code, install `protoc` version `v3.0.0-beta-1`, see
 Then run:
 
 ```
-go generate (go list ./... | grep -v /vendor/)
+make generate
 ```
 
 Note that you should always run this after you run `godep update` to
