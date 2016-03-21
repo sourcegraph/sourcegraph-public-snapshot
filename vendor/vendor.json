@@ -343,6 +343,11 @@
 			"revisionTime": "2013-09-10T18:55:32-07:00"
 		},
 		{
+			"path": "github.com/kyokomi/emoji",
+			"revision": "1ee4529aea609e7364bf629527f390d9d1b88dfb",
+			"revisionTime": "2016-03-03T10:14:41+09:00"
+		},
+		{
 			"path": "github.com/lib/pq",
 			"revision": "3e3efe51a0c4b23e817075438703cb15bd58c1a8",
 			"revisionTime": "2014-12-27T13:56:34+01:00"
@@ -684,8 +689,8 @@
 		},
 		{
 			"path": "github.com/spf13/afero",
-			"revision": "6ced24dbe1566cf2b7793528f2ca24370669d2c6",
-			"revisionTime": "2015-08-08T22:55:14+01:00"
+			"revision": "2f194a29d557d6d46aa202870df1e9062dbda4d4",
+			"revisionTime": "2016-02-17T11:33:17+01:00"
 		},
 		{
 			"path": "github.com/spf13/cast",
@@ -694,83 +699,88 @@
 		},
 		{
 			"path": "github.com/spf13/cobra",
-			"revision": "53d96508f5c9311f5dade714e1de7bd6a9d2af4a",
-			"revisionTime": "2015-09-17T16:09:08-05:00"
+			"revision": "1bacefc9a216c93293e670067bd159a64b4d72c3",
+			"revisionTime": "2016-03-15T16:50:08-05:00"
+		},
+		{
+			"path": "github.com/spf13/cobra/doc",
+			"revision": "1bacefc9a216c93293e670067bd159a64b4d72c3",
+			"revisionTime": "2016-03-15T16:50:08-05:00"
 		},
 		{
 			"path": "github.com/spf13/fsync",
-			"revision": "1fdf08f822b05e59a6515ee151b683c3a02efea5",
-			"revisionTime": "2014-11-01T11:54:58-04:00"
+			"revision": "eefee59ad7de621617d4ff085cf768aab4b919b1",
+			"revisionTime": "2016-03-01T15:40:27+01:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/bufferpool",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/commands",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/create",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/helpers",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/hugofs",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/hugolib",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/livereload",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/parser",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/source",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/target",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/tpl",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/transform",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/utils",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/hugo/watcher",
-			"revision": "9c1319cdea812adea96166ce2bbb41bdf7dc8127",
-			"revisionTime": "2015-11-25T08:33:38-05:00"
+			"revision": "d45b55bdd405ae019c065bc6fa0888c25f7952c9",
+			"revisionTime": "2016-03-21T15:16:39+08:00"
 		},
 		{
 			"path": "github.com/spf13/jwalterweatherman",
@@ -789,8 +799,8 @@
 		},
 		{
 			"path": "github.com/spf13/viper",
-			"revision": "1967d93db724f4a5c0e101307e96d82ff520a067",
-			"revisionTime": "2015-08-23T23:40:56-04:00"
+			"revision": "c975dc1b4eacf4ec7fdbf0873638de5d090ba323",
+			"revisionTime": "2015-12-29T23:11:39-07:00"
 		},
 		{
 			"path": "github.com/sqs/fileset",

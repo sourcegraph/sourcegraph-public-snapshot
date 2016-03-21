@@ -25,10 +25,20 @@ import (
 // (http://golang.org/pkg/os/).
 type OsFs struct{}
 
+func NewOsFs() Fs {
+	return &OsFs{}
+}
+
 func (OsFs) Name() string { return "OsFs" }
 
 func (OsFs) Create(name string) (File, error) {
-	return os.Create(name)
+	f, e := os.Create(name)
+	if f == nil {
+		// while this looks strange, we need to return a bare nil (of type nil) not
+		// a nil value of type *os.File or nil won't be nil
+		return nil, e
+	}
+	return f, e
 }
 
 func (OsFs) Mkdir(name string, perm os.FileMode) error {
@@ -40,11 +50,23 @@ func (OsFs) MkdirAll(path string, perm os.FileMode) error {
 }
 
 func (OsFs) Open(name string) (File, error) {
-	return os.Open(name)
+	f, e := os.Open(name)
+	if f == nil {
+		// while this looks strange, we need to return a bare nil (of type nil) not
+		// a nil value of type *os.File or nil won't be nil
+		return nil, e
+	}
+	return f, e
 }
 
 func (OsFs) OpenFile(name string, flag int, perm os.FileMode) (File, error) {
-	return os.OpenFile(name, flag, perm)
+	f, e := os.OpenFile(name, flag, perm)
+	if f == nil {
+		// while this looks strange, we need to return a bare nil (of type nil) not
+		// a nil value of type *os.File or nil won't be nil
+		return nil, e
+	}
+	return f, e
 }
 
 func (OsFs) Remove(name string) error {

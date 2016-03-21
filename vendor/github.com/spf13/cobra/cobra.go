@@ -27,11 +27,12 @@ import (
 )
 
 var templateFuncs template.FuncMap = template.FuncMap{
-	"trim":           strings.TrimSpace,
-	"trimRightSpace": trimRightSpace,
-	"rpad":           rpad,
-	"gt":             Gt,
-	"eq":             Eq,
+	"trim":               strings.TrimSpace,
+	"trimRightSpace":     trimRightSpace,
+	"appendIfNotPresent": appendIfNotPresent,
+	"rpad":               rpad,
+	"gt":                 Gt,
+	"eq":                 Eq,
 }
 
 var initializers []func()
@@ -39,14 +40,6 @@ var initializers []func()
 // automatic prefix matching can be a dangerous thing to automatically enable in CLI tools.
 // Set this to true to enable it
 var EnablePrefixMatching bool = false
-
-// enables an information splash screen on Windows if the CLI is started from explorer.exe.
-var EnableWindowsMouseTrap bool = true
-
-var MousetrapHelpText string = `This is a command line tool
-
-You need to open cmd.exe and run it from there.
-`
 
 //AddTemplateFunc adds a template function that's available to Usage and Help
 //template generation.
@@ -117,6 +110,14 @@ func Eq(a interface{}, b interface{}) bool {
 
 func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
+}
+
+// appendIfNotPresent will append stringToAppend to the end of s, but only if it's not yet present in s
+func appendIfNotPresent(s, stringToAppend string) string {
+	if strings.Contains(s, stringToAppend) {
+		return s
+	}
+	return s + " " + stringToAppend
 }
 
 //rpad adds padding to the right of a string

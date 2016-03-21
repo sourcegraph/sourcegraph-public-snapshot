@@ -26,9 +26,12 @@ import (
 	"errors"
 	"io"
 	"os"
-	"sort"
 	"time"
 )
+
+type Afero struct {
+	Fs
+}
 
 // File represents a file in the filesystem.
 type File interface {
@@ -38,13 +41,14 @@ type File interface {
 	io.Seeker
 	io.Writer
 	io.WriterAt
-	//Fd() uintptr
-	Stat() (os.FileInfo, error)
+
+	Name() string
 	Readdir(count int) ([]os.FileInfo, error)
 	Readdirnames(n int) ([]string, error)
-	WriteString(s string) (ret int, err error)
+	Stat() (os.FileInfo, error)
+	Sync() error
 	Truncate(size int64) error
-	Name() string
+	WriteString(s string) (ret int, err error)
 }
 
 // Fs is the filesystem interface.
@@ -102,26 +106,3 @@ var (
 	ErrFileExists        = os.ErrExist
 	ErrDestinationExists = os.ErrExist
 )
-
-// ReadDir reads the directory named by dirname and returns
-// a list of sorted directory entries.
-func ReadDir(dirname string, fs Fs) ([]os.FileInfo, error) {
-	f, err := fs.Open(dirname)
-	if err != nil {
-		return nil, err
-	}
-	list, err := f.Readdir(-1)
-	f.Close()
-	if err != nil {
-		return nil, err
-	}
-	sort.Sort(byName(list))
-	return list, nil
-}
-
-// byName implements sort.Interface.
-type byName []os.FileInfo
-
-func (f byName) Len() int           { return len(f) }
-func (f byName) Less(i, j int) bool { return f[i].Name() < f[j].Name() }
-func (f byName) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }

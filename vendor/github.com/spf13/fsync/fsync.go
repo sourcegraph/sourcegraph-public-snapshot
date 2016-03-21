@@ -1,3 +1,6 @@
+// Copyright (C) 2012 Mostafa Hajizadeh
+// Copyright (C) 2014-5 Steve Francia
+
 // package fsync keeps two files or directories in sync.
 //
 //         err := fsync.Sync("~/dst", ".")
@@ -7,11 +10,11 @@
 // will only copy changed or new files.
 //
 // SyncTo is a helper function which helps you sync a groups of files or
-// directories into a signle destination. For instance, calling
+// directories into a single destination. For instance, calling
 //
 //     SyncTo("public", "build/app.js", "build/app.css", "images", "fonts")
 //
-// is equivalient to calling
+// is equivalent to calling
 //
 //     Sync("public/app.js", "build/app.js")
 //     Sync("public/app.css", "build/app.css")
@@ -23,6 +26,7 @@
 // By default, sync code ignores extra files in the destination that don’t have
 // identicals in the source. Setting Delete field of a Syncer to true changes
 // this behavior and deletes these extra files.
+
 package fsync
 
 import (
@@ -31,6 +35,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/spf13/afero"
@@ -89,7 +94,7 @@ func (s *Syncer) Sync(dst, src string) error {
 // SyncTo syncs srcs files or directories into to directory.
 func (s *Syncer) SyncTo(to string, srcs ...string) error {
 	for _, src := range srcs {
-		dst := path.Join(to, path.Base(src))
+		dst := filepath.Join(to, path.Base(src))
 		if err := s.Sync(dst, src); err != nil {
 			return err
 		}
@@ -118,7 +123,7 @@ func (s *Syncer) sync(dst, src string) {
 	defer s.syncstats(dst, src)
 
 	// read files info
-	dstat, err := s.SrcFs.Stat(dst)
+	dstat, err := s.DestFs.Stat(dst)
 	if err != nil && !os.IsNotExist(err) {
 		panic(err)
 	}
@@ -166,7 +171,7 @@ func (s *Syncer) sync(dst, src string) {
 	}
 
 	// go through sf files and sync them
-	files, err := afero.ReadDir(src, s.SrcFs)
+	files, err := afero.ReadDir(s.SrcFs, src)
 	if os.IsNotExist(err) {
 		return
 	}
@@ -175,19 +180,19 @@ func (s *Syncer) sync(dst, src string) {
 	// deletion below
 	m := make(map[string]bool, len(files))
 	for _, file := range files {
-		dst2 := path.Join(dst, file.Name())
-		src2 := path.Join(src, file.Name())
+		dst2 := filepath.Join(dst, file.Name())
+		src2 := filepath.Join(src, file.Name())
 		s.sync(dst2, src2)
 		m[file.Name()] = true
 	}
 
 	// delete files from dst that does not exist in src
 	if s.Delete {
-		files, err = afero.ReadDir(dst, s.DestFs)
+		files, err = afero.ReadDir(s.DestFs, dst)
 		check(err)
 		for _, file := range files {
 			if !m[file.Name()] {
-				check(s.DestFs.RemoveAll(path.Join(dst, file.Name())))
+				check(s.DestFs.RemoveAll(filepath.Join(dst, file.Name())))
 			}
 		}
 	}
@@ -207,23 +212,22 @@ func (s *Syncer) syncstats(dst, src string) {
 	// update dst's permission bits
 	if dstat.Mode().Perm() != sstat.Mode().Perm() {
 		check(s.DestFs.Chmod(dst, sstat.Mode().Perm()))
-		return
 	}
 
 	// update dst's modification time
 	if !s.NoTimes {
 		if !dstat.ModTime().Equal(sstat.ModTime()) {
-			err := os.Chtimes(dst, sstat.ModTime(), sstat.ModTime())
+			err := s.DestFs.Chtimes(dst, sstat.ModTime(), sstat.ModTime())
 			check(err)
 		}
 	}
 }
 
-// equal returns true if both files are equal
-func (s *Syncer) equal(a, b string) bool {
+// equal returns true if both dst and src files are equal
+func (s *Syncer) equal(dst, src string) bool {
 	// get file infos
-	info1, err1 := os.Stat(a)
-	info2, err2 := os.Stat(b)
+	info1, err1 := s.DestFs.Stat(dst)
+	info2, err2 := s.SrcFs.Stat(src)
 	if os.IsNotExist(err1) || os.IsNotExist(err2) {
 		return false
 	}
@@ -236,10 +240,10 @@ func (s *Syncer) equal(a, b string) bool {
 	}
 
 	// both have the same size, check the contents
-	f1, err := os.Open(a)
+	f1, err := s.DestFs.Open(dst)
 	check(err)
 	defer f1.Close()
-	f2, err := os.Open(b)
+	f2, err := s.SrcFs.Open(src)
 	check(err)
 	defer f2.Close()
 	buf1 := make([]byte, 1000)
@@ -272,13 +276,13 @@ func (s *Syncer) equal(a, b string) bool {
 // checkDir returns true if dst is a non-empty directory and src is a file
 func (s *Syncer) checkDir(dst, src string) (b bool, err error) {
 	// read file info
-	dstat, err := os.Stat(dst)
+	dstat, err := s.DestFs.Stat(dst)
 	if os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {
 		return false, err
 	}
-	sstat, err := os.Stat(src)
+	sstat, err := s.SrcFs.Stat(src)
 	if err != nil {
 		return false, err
 	}
@@ -292,7 +296,7 @@ func (s *Syncer) checkDir(dst, src string) (b bool, err error) {
 	// check if dst is non-empty
 	// read dst directory
 
-	files, err := afero.ReadDir(dst, s.DestFs)
+	files, err := afero.ReadDir(s.DestFs, dst)
 	if err != nil {
 		return false, err
 	}

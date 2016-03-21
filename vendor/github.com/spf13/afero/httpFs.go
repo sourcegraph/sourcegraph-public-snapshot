@@ -20,6 +20,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type httpDir struct {
@@ -45,7 +46,11 @@ func (d httpDir) Open(name string) (http.File, error) {
 }
 
 type HttpFs struct {
-	SourceFs Fs
+	source Fs
+}
+
+func NewHttpFs(source Fs) *HttpFs {
+	return &HttpFs{source: source}
 }
 
 func (h HttpFs) Dir(s string) *httpDir {
@@ -55,19 +60,27 @@ func (h HttpFs) Dir(s string) *httpDir {
 func (h HttpFs) Name() string { return "h HttpFs" }
 
 func (h HttpFs) Create(name string) (File, error) {
-	return h.SourceFs.Create(name)
+	return h.source.Create(name)
+}
+
+func (h HttpFs) Chmod(name string, mode os.FileMode) error {
+	return h.source.Chmod(name, mode)
+}
+
+func (h HttpFs) Chtimes(name string, atime time.Time, mtime time.Time) error {
+	return h.source.Chtimes(name, atime, mtime)
 }
 
 func (h HttpFs) Mkdir(name string, perm os.FileMode) error {
-	return h.SourceFs.Mkdir(name, perm)
+	return h.source.Mkdir(name, perm)
 }
 
 func (h HttpFs) MkdirAll(path string, perm os.FileMode) error {
-	return h.SourceFs.MkdirAll(path, perm)
+	return h.source.MkdirAll(path, perm)
 }
 
 func (h HttpFs) Open(name string) (http.File, error) {
-	f, err := h.SourceFs.Open(name)
+	f, err := h.source.Open(name)
 	if err == nil {
 		if httpfile, ok := f.(http.File); ok {
 			return httpfile, nil
@@ -77,21 +90,21 @@ func (h HttpFs) Open(name string) (http.File, error) {
 }
 
 func (h HttpFs) OpenFile(name string, flag int, perm os.FileMode) (File, error) {
-	return h.SourceFs.OpenFile(name, flag, perm)
+	return h.source.OpenFile(name, flag, perm)
 }
 
 func (h HttpFs) Remove(name string) error {
-	return h.SourceFs.Remove(name)
+	return h.source.Remove(name)
 }
 
 func (h HttpFs) RemoveAll(path string) error {
-	return h.SourceFs.RemoveAll(path)
+	return h.source.RemoveAll(path)
 }
 
 func (h HttpFs) Rename(oldname, newname string) error {
-	return h.SourceFs.Rename(oldname, newname)
+	return h.source.Rename(oldname, newname)
 }
 
 func (h HttpFs) Stat(name string) (os.FileInfo, error) {
-	return h.SourceFs.Stat(name)
+	return h.source.Stat(name)
 }

@@ -89,7 +89,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	rw := httptest.NewRecorder()
 	rw.Body = new(bytes.Buffer)
 
-	fileserver := http.FileServer((&afero.HttpFs{SourceFs: fs}).Dir("."))
+	fileserver := http.FileServer((afero.NewHttpFs(fs)).Dir("."))
 	fileserver.ServeHTTP(rw, r)
 	rw.Header().Del("content-length")
 	for k, vs := range rw.HeaderMap {
@@ -166,14 +166,16 @@ func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, erro
 	if err != nil {
 		return nil, err
 	}
+	absHugoDir, _ := filepath.Abs(hugoDir)
+	cfgFile := filepath.Join(hugoDir, "config.toml")
 
 	hugofs.SourceFs = fs
 	hugofs.DestinationFS = &afero.MemMapFs{}
 	hugofs.OsFs = nil
 
-	commands.Source = hugoDir
-	commands.CfgFile = filepath.Join(hugoDir, "config.toml")
-
+	viper.SetConfigFile(cfgFile)
+	viper.AddConfigPath(hugoDir)
+	viper.Set("WorkingDir", absHugoDir)
 	viper.SetDefault("DataDir", hugoDir)
 	viper.SetDefault("LayoutDir", filepath.Join(hugoDir, "layouts"))
 	viper.SetDefault("ArchetypeDir", filepath.Join(hugoDir, "archetype"))
@@ -184,7 +186,7 @@ func build(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (afero.Fs, erro
 	viper.Set("BuildDrafts", true)
 	viper.SetDefault("BaseURL", pctx.BaseURI(ctx))
 
-	configFile, err := hugofs.SourceFs.Open(commands.CfgFile)
+	configFile, err := hugofs.SourceFs.Open(cfgFile)
 	if err != nil {
 		return nil, err
 	}
