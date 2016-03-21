@@ -112,7 +112,7 @@ func (c *PackageCmd) Execute(args []string) error {
 			}
 
 			cmd := exec.Command("go", "build", "-x", "-installsuffix", "netgo", "-ldflags", strings.Join(ldflags, " "), "-tags", "dist", "-o", dest, ".")
-			cmd.Dir = "./cmd/src"
+			cmd.Dir = filepath.Join("cmd", "src")
 			cmd.Env = env
 			if err := execCmd(cmd); err != nil {
 				return err
