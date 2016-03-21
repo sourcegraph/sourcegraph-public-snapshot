@@ -14,6 +14,7 @@ import * as SearchActions from "sourcegraph/search/SearchActions";
 
 import TreeStyles from "./styles/Tree.css";
 import ListStyles from "sourcegraph/components/styles/List.css";
+import linkStyle from "sourcegraph/components/styles/link.css";
 
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 5;
@@ -298,7 +299,7 @@ class TreeSearch extends Container {
 				<i className={classNames("fa", {
 					"fa-file-text-o": !item.isDirectory,
 					"fa-folder": item.isDirectory,
-				})}></i><a href={itemURL}>{item.name}</a>
+				})}></i><a className={linkStyle.link} href={itemURL}>{item.name}</a>
 				</li>
 			);
 		}
@@ -326,7 +327,7 @@ class TreeSearch extends Container {
 			list.push(
 				<li className={ctx} key={defURL}>
 					<div key={defURL}>
-						<a href={defURL}>
+						<a className={linkStyle.link} href={defURL}>
 							<code>{def.Kind}</code>
 							<code dangerouslySetInnerHTML={result.QualifiedName}></code>
 						</a>

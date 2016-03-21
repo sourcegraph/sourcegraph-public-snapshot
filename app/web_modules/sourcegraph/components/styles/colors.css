@@ -1,112 +1,112 @@
-/*
-  COLORS
-  Better default colors for the web
-*/
-/*
-   VARIABLES
-   - Cool
-   - Warm
-   - Gray Scale
-*/
-/*
-   SKINS
-   - Backgrounds
-   - Colors
-   - Border colors
-   - SVG fills
-   - SVG Strokes
-*/
-/* Backgrounds */
-.bg-navy { background-color: #001F3F; }
-.bg-blue { background-color: #0698EE; }
-.bg-aqua { background-color: #7FDBFF; }
-.bg-teal { background-color: #39CCCC; }
-.bg-olive { background-color: #3D9970; }
-.bg-green { background-color: #2ECC40; }
-.bg-lime { background-color: #04D76C; }
-.bg-yellow { background-color:  #FFA31F; }
-.bg-orange { background-color: #FF851B; }
-.bg-red { background-color: #DF2454; }
-.bg-fuchsia { background-color: #F012BE; }
-.bg-purple { background-color: #9D00D8; }
-.bg-maroon { background-color: #85144B; }
-.bg-white { background-color: #FFFFFF; }
-.bg-gray { background-color: #AAAAAA; }
-.bg-silver { background-color: #DDDDDD; }
-.bg-black { background-color: #111111; }
+@value navy from "./vars.css";
+@value blue from "./vars.css";
+@value aqua from "./vars.css";
+@value teal from "./vars.css";
+@value olive from "./vars.css";
+@value green from "./vars.css";
+@value lime from "./vars.css";
+@value yellow from "./vars.css";
+@value orange from "./vars.css";
+@value red from "./vars.css";
+@value fuchsia from "./vars.css";
+@value purple from "./vars.css";
+@value maroon from "./vars.css";
+@value white from "./vars.css";
+@value gray from "./vars.css";
+@value silver from "./vars.css";
+@value black from "./vars.css";
+
 /* Colors */
-.navy { color: #001F3F; }
-.blue { color: #0698EE; }
-.aqua { color: #7FDBFF; }
-.teal { color: #39CCCC; }
-.olive { color: #3D9970; }
-.green { color: #2ECC40; }
-.lime { color: #04D76C; }
-.yellow { color:  #FFA31F; }
-.orange { color: #FF851B; }
-.red { color: #DF2454; }
-.fuchsia { color: #F012BE; }
-.purple { color: #9D00D8; }
-.maroon { color: #85144B; }
-.white { color: #FFFFFF; }
-.silver { color: #DDDDDD; }
-.gray { color: #AAAAAA; }
-.black { color: #111111; }
-/* Border colors
-   Use with another border utility that sets border-width and style
-   i.e .border { border-width: 1px); border-style: solid); }
-*/
-.border--navy { border-color: #001F3F; }
-.border--blue { border-color: #0698EE; }
-.border--aqua { border-color: #7FDBFF; }
-.border--teal { border-color: #39CCCC; }
-.border--olive { border-color: #3D9970; }
-.border--green { border-color: #2ECC40; }
-.border--lime { border-color: #04D76C; }
-.border--yellow { border-color:  #FFA31F; }
-.border--orange { border-color: #FF851B; }
-.border--red { border-color: #DF2454; }
-.border--fuchsia { border-color: #F012BE; }
-.border--purple { border-color: #9D00D8; }
-.border--maroon { border-color: #85144B; }
-.border--white { border-color: #FFFFFF; }
-.border--gray { border-color: #AAAAAA; }
-.border--silver { border-color: #DDDDDD; }
-.border--black { border-color: #111111; }
+.navy { color: navy; }
+.blue { color: blue; }
+.aqua { color: aqua; }
+.teal { color: teal; }
+.olive { color: olive; }
+.green { color: green; }
+.lime { color: lime; }
+.yellow { color: yellow; }
+.orange { color: orange; }
+.red { color: red; }
+.fuchsia { color: fuchsia; }
+.purple { color: purple; }
+.maroon { color: maroon; }
+.white { color: white; }
+.gray { color: gray; }
+.silver { color: silver; }
+.black { color: black; }
+
+/* Backgrounds */
+.bg-navy { background-color: navy; }
+.bg-blue { background-color: blue; }
+.bg-aqua { background-color: aqua; }
+.bg-teal { background-color: teal; }
+.bg-olive { background-color: olive; }
+.bg-green { background-color: green; }
+.bg-lime { background-color: lime; }
+.bg-yellow { background-color: yellow; }
+.bg-orange { background-color: orange; }
+.bg-red { background-color: red; }
+.bg-fuchsia { background-color: fuchsia; }
+.bg-purple { background-color: purple; }
+.bg-maroon { background-color: maroon; }
+.bg-white { background-color: white; }
+.bg-gray { background-color: gray; }
+.bg-silver { background-color: silver; }
+.bg-black { background-color: black; }
+
+/* Borders */
+.border--navy { border-color: navy; }
+.border--blue { border-color: blue; }
+.border--aqua { border-color: aqua; }
+.border--teal { border-color: teal; }
+.border--olive { border-color: olive; }
+.border--green { border-color: green; }
+.border--lime { border-color: lime; }
+.border--yellow { border-color: yellow; }
+.border--orange { border-color: orange; }
+.border--red { border-color: red; }
+.border--fuchsia { border-color: fuchsia; }
+.border--purple { border-color: purple; }
+.border--maroon { border-color: maroon; }
+.border--white { border-color: white; }
+.border--gray { border-color: gray; }
+.border--silver { border-color: silver; }
+.border--black { border-color: black; }
 
 /* Fills for SVG */
-.fill-navy { fill: #001F3F; }
-.fill-blue { fill: #0698EE; }
-.fill-aqua { fill: #7FDBFF; }
-.fill-teal { fill: #39CCCC; }
-.fill-olive { fill: #3D9970; }
-.fill-green { fill: #2ECC40; }
-.fill-lime { fill: #04D76C; }
-.fill-yellow { fill:  #FFA31F; }
-.fill-orange { fill: #FF851B; }
-.fill-red { fill: #DF2454; }
-.fill-fuchsia { fill: #F012BE; }
-.fill-purple { fill: #9D00D8; }
-.fill-maroon { fill: #85144B; }
-.fill-white { fill: #FFFFFF; }
-.fill-gray { fill: #AAAAAA; }
-.fill-silver { fill: #DDDDDD; }
-.fill-black { fill: #111111; }
+.fill-navy { fill: navy; }
+.fill-blue { fill: blue; }
+.fill-aqua { fill: aqua; }
+.fill-teal { fill: teal; }
+.fill-olive { fill: olive; }
+.fill-green { fill: green; }
+.fill-lime { fill: lime; }
+.fill-yellow { fill: yellow; }
+.fill-orange { fill: orange; }
+.fill-red { fill: red; }
+.fill-fuchsia { fill: fuchsia; }
+.fill-purple { fill: purple; }
+.fill-maroon { fill: maroon; }
+.fill-white { fill: white; }
+.fill-gray { fill: gray; }
+.fill-silver { fill: silver; }
+.fill-black { fill: black; }
+
 /* Strokes for SVG */
-.stroke-navy { stroke: #001F3F; }
-.stroke-blue { stroke: #0698EE; }
-.stroke-aqua { stroke: #7FDBFF; }
-.stroke-teal { stroke: #39CCCC; }
-.stroke-olive { stroke: #3D9970; }
-.stroke-green { stroke: #2ECC40; }
-.stroke-lime { stroke: #04D76C; }
-.stroke-yellow { stroke:  #FFA31F; }
-.stroke-orange { stroke: #FF851B; }
-.stroke-red { stroke: #DF2454; }
-.stroke-fuchsia { stroke: #F012BE; }
-.stroke-purple { stroke: #9D00D8; }
-.stroke-maroon { stroke: #85144B; }
-.stroke-white { stroke: #FFFFFF; }
-.stroke-gray { stroke: #AAAAAA; }
-.stroke-silver { stroke: #DDDDDD; }
-.stroke-black { stroke: #111111; }
+.stroke-navy { stroke: navy; }
+.stroke-blue { stroke: blue; }
+.stroke-aqua { stroke: aqua; }
+.stroke-teal { stroke: teal; }
+.stroke-olive { stroke: olive; }
+.stroke-green { stroke: green; }
+.stroke-lime { stroke: lime; }
+.stroke-yellow { stroke: yellow; }
+.stroke-orange { stroke: orange; }
+.stroke-red { stroke: red; }
+.stroke-fuchsia { stroke: fuchsia; }
+.stroke-purple { stroke: purple; }
+.stroke-maroon { stroke: maroon; }
+.stroke-white { stroke: white; }
+.stroke-gray { stroke: gray; }
+.stroke-silver { stroke: silver; }
+.stroke-black { stroke: black; }
