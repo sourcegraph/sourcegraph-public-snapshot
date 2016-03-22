@@ -6,7 +6,8 @@ let BuildContainer = require("sourcegraph/build/BuildContainer").default;
 let FileDiffs = require("sourcegraph/delta/FileDiffs").default;
 let BuildIndicatorContainer = require("sourcegraph/build/BuildIndicatorContainer").default;
 let RevSwitcherContainer = require("sourcegraph/repo/RevSwitcherContainer").default;
-let TreeSearch = require("sourcegraph/tree/TreeSearch").default;
+let TreeRouter = require("sourcegraph/tree/TreeRouter").default;
+let TreeOverlay = require("sourcegraph/tree/TreeOverlay").default;
 let TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 let BlobRouter = require("sourcegraph/blob/BlobRouter").default;
 let LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
@@ -105,6 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			overlay = true;
 		}
 
-		ReactDOM.render(<TreeSearch repo={repo} rev={rev} overlay={overlay} />, el);
+		if (overlay) {
+			ReactDOM.render(<TreeOverlay repo={repo} rev={rev} />, el);
+		} else {
+			ReactDOM.render(<LocationAdaptor component={TreeRouter} repo={repo} rev={rev} />, el);
+		}
 	}
 });

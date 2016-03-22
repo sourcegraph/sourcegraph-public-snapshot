@@ -1,5 +1,4 @@
 import React from "react";
-import update from "react/lib/update";
 import Fuze from "fuse.js";
 import classNames from "classnames";
 import Container from "sourcegraph/Container";
@@ -28,7 +27,6 @@ class TreeSearch extends Container {
 			matchingSymbols: {Results: [], SrclibDataVersion: null},
 			matchingFiles: [],
 			fileResults: [], // either the full directory tree (for empty query) or matching file paths
-			currPath: [], // current parth of directory tree to display, as array of parts
 			query: "",
 			selectionIndex: 0,
 		};
@@ -114,7 +112,6 @@ class TreeSearch extends Container {
 					if (dirLevel.Dirs[part]) {
 						dirLevel = dirLevel.Dirs[part];
 					} else {
-						console.error("invalid part: ", part, "curr path:", nextState.currPath, "file tree:", nextState.fileTree);
 						break;
 					}
 				}
@@ -247,9 +244,7 @@ class TreeSearch extends Container {
 
 		case "ArrowLeft":
 			if (this.state.currPath.length !== 0) {
-				this.setState({
-					currPath: update(this.state.currPath, {$splice: [[this.state.currPath.length - 1, 1]]}),
-				});
+				Dispatcher.dispatch(new TreeActions.UpDirectory());
 			}
 
 			e.preventDefault();
@@ -258,9 +253,7 @@ class TreeSearch extends Container {
 		case "ArrowRight":
 			part = this._getSelectedPathPart();
 			if (part) {
-				this.setState({
-					currPath: update(this.state.currPath, {$push: [part]}),
-				});
+				Dispatcher.dispatch(new TreeActions.DownDirectory(part));
 			}
 
 			e.preventDefault();
@@ -384,6 +377,7 @@ class TreeSearch extends Container {
 TreeSearch.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
+	currPath: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 	overlay: React.PropTypes.bool.isRequired,
 	prefetch: React.PropTypes.bool,
 };

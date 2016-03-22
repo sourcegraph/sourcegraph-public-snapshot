@@ -201,8 +201,4 @@ var tmplFuncs = htmpl.FuncMap{
 		mac.Write([]byte(email))
 		return string(mac.Sum(nil))
 	},
-
-	"isRepoTreePage": func(url *url.URL) bool {
-		return strings.Contains(url.Path, "/.tree")
-	},
 }
