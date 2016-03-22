@@ -1,120 +1,195 @@
-@value navy #001F3F;
-@value blue rgba(0, 116, 217, 1);
-@value blue-8 rgba(0, 116, 217, .8);
-@value blue-5 rgba(0, 116, 217, .5);
-@value blue-2 rgba(0, 116, 217, .2);
-@value light-blue rgba(77, 193, 255, 1); /* 30% lightened */
-@value dark-blue rgba(0, 40, 141, 1); /* 30% darkened */
-@value brand-blue #0698EE;
-@value aqua #7FDBFF;
-@value teal #39CCCC;
-@value olive #3D9970;
-@value green #2ECC40;
-@value lime #01FF70;
-@value yellow #FFDC00;
-@value orange #FF851B;
-@value brand-orange #EB602E;
-@value red #FF4136;
-@value fuchsia #F012BE;
-@value purple #B10DC9;
-@value brand-purple #9D00D8;
-@value maroon #85144B;
-@value white #FFFFFF;
-@value gray #AAAAAA;
-@value silver #DDDDDD;
-@value black #111111;
+@value c_navy #001F3F;
+@value c_blue rgba(0, 116, 217, 1);
+@value c_blue-8 rgba(0, 116, 217, .8);
+@value c_blue-5 rgba(0, 116, 217, .5);
+@value c_blue-2 rgba(0, 116, 217, .2);
+@value c_light-blue rgba(77, 193, 255, 1); /* 30% lightened */
+@value c_dark-blue rgba(0, 40, 141, 1); /* 30% darkened */
+@value c_brand-blue #0698EE;
+@value c_aqua #7FDBFF;
+@value c_teal #39CCCC;
+@value c_olive #3D9970;
+@value c_green #2ECC40;
+@value c_lime #01FF70;
+@value c_yellow #FFDC00;
+@value c_orange rgba(255, 133, 27, 1);
+@value c_orange-8 rgba(255, 133, 27, .8);
+@value c_orange-5 rgba(255, 133, 27, .5);
+@value c_orange-2 rgba(255, 133, 27, .2);
+@value c_light-orange rgba(255, 210, 104, 1); /* 30% lightened */
+@value c_dark-orange rgba(179, 57, 0, 1); /* 30% darkened */
+@value c_brand-orange #EB602E;
+@value c_red #FF4136;
+@value c_fuchsia #F012BE;
+@value c_purple #B10DC9;
+@value c_brand-purple #9D00D8;
+@value c_maroon #85144B;
+
+@valuec_ c_black black;
+@value c_dark-gray #333;
+@value c_mid-gray #555;
+@value c_gray #777;
+@value c_silver #999;
+@value c_light-silver #aaa;
+@value c_light-gray #eee;
+@value c_near-white #f4f4f4;
+@value c_moon-gray #ccc;
+@value c_white #fff;
+@value c_black-90 rgba( 0, 0, 0, .9 );
+@value c_black-70 rgba( 0, 0, 0, .7 );
+@value c_black-60 rgba( 0, 0, 0, .6 );
+@value c_black-50 rgba( 0, 0, 0, .5 );
+@value c_black-40 rgba( 0, 0, 0, .4 );
+@value c_black-30 rgba( 0, 0, 0, .3 );
+@value c_black-20 rgba( 0, 0, 0, .2 );
+@value c_black-10 rgba( 0, 0, 0, .1 );
+@value c_black-05 rgba( 0, 0, 0, .05 );
+@value c_black-025 rgba( 0, 0, 0, .025 );
+@value c_black-0125 rgba( 0, 0, 0, .0125 );
+@value c_white-90 rgba( 0, 0, 0, .9 );
+@value c_white-70 rgba( 0, 0, 0, .7 );
+@value c_white-60 rgba( 0, 0, 0, .6 );
+@value c_white-50 rgba( 0, 0, 0, .5 );
+@value c_white-40 rgba( 0, 0, 0, .4 );
+@value c_white-30 rgba( 0, 0, 0, .3 );
+@value c_white-20 rgba( 0, 0, 0, .2 );
+@value c_white-10 rgba( 0, 0, 0, .1 );
+@value c_white-05 rgba( 0, 0, 0, .05 );
+@value c_white-025 rgba( 0, 0, 0, .025 );
+@value c_white-0125 rgba( 0, 0, 0, .0125 );
 
 /* Colors */
-.navy { color: navy; }
-.blue { color: blue; }
-.aqua { color: aqua; }
-.teal { color: teal; }
-.olive { color: olive; }
-.green { color: green; }
-.lime { color: lime; }
-.yellow { color: yellow; }
-.orange { color: orange; }
-.red { color: red; }
-.fuchsia { color: fuchsia; }
-.purple { color: purple; }
-.maroon { color: maroon; }
-.white { color: white; }
-.gray { color: gray; }
-.silver { color: silver; }
-.black { color: black; }
+.navy { color: c_navy; }
+.blue { color: c_blue; }
+.blue-8 { color: c_blue-8; }
+.blue-5 { color: c_blue-5; }
+.blue-2 { color: c_blue-2; }
+.light-blue { color: c_light-blue; }
+.dark-blue { color: c_dark-blue; }
+.brand-blue { color: c_brand-blue; }
+.aqua { color: c_aqua; }
+.teal { color: c_teal; }
+.olive { color: c_olive; }
+.green { color: c_green; }
+.lime { color: c_lime; }
+.yellow { color: c_yellow; }
+.orange { color: c_orange; }
+.orange-8 { color: c_orange-8; }
+.orange-5 { color: c_orange-5; }
+.orange-2 { color: c_orange-2; }
+.light-orange { color: c_light-orange; }
+.dark-orange { color: c_dark-orange; }
+.brand-orange { color: brand-orange; }
+.red { color: c_red; }
+.fuchsia { color: c_fuchsia; }
+.purple { color: c_purple; }
+.maroon { color: c_maroon; }
 
 /* Backgrounds */
-.bg-navy { background-color: navy; }
-.bg-blue { background-color: blue; }
-.bg-aqua { background-color: aqua; }
-.bg-teal { background-color: teal; }
-.bg-olive { background-color: olive; }
-.bg-green { background-color: green; }
-.bg-lime { background-color: lime; }
-.bg-yellow { background-color: yellow; }
-.bg-orange { background-color: orange; }
-.bg-red { background-color: red; }
-.bg-fuchsia { background-color: fuchsia; }
-.bg-purple { background-color: purple; }
-.bg-maroon { background-color: maroon; }
-.bg-white { background-color: white; }
-.bg-gray { background-color: gray; }
-.bg-silver { background-color: silver; }
-.bg-black { background-color: black; }
+.bg-navy { background-color: c_navy; }
+.bg-blue { background-color: c_blue; }
+.bg-blue-8 { background-color: c_blue-8; }
+.bg-blue-5 { background-color: c_blue-5; }
+.bg-blue-2 { background-color: c_blue-2; }
+.bg-light-blue { background-color: c_light-blue; }
+.bg-dark-blue { background-color: c_dark-blue; }
+.bg-brand-blue { background-color: c_brand-blue; }
+.bg-aqua { background-color: c_aqua; }
+.bg-teal { background-color: c_teal; }
+.bg-olive { background-color: c_olive; }
+.bg-green { background-color: c_green; }
+.bg-lime { background-color: c_lime; }
+.bg-yellow { background-color: c_yellow; }
+.bg-orange { background-color: c_orange; }
+.bg-orange-8 { background-color: c_orange-8; }
+.bg-orange-5 { background-color: c_orange-5; }
+.bg-orange-2 { background-color: c_orange-2; }
+.bg-light-orange { background-color: c_light-orange; }
+.bg-dark-orange { background-color: c_dark-orange; }
+.bg-brand-orange { background-color: c_brand-orange; }
+.bg-red { background-color: c_red; }
+.bg-fuchsia { background-color: c_fuchsia; }
+.bg-purple { background-color: c_purple; }
+.bg-maroon { background-color: c_maroon; }
 
 /* Borders */
-.border--navy { border-color: navy; }
-.border--blue { border-color: blue; }
-.border--aqua { border-color: aqua; }
-.border--teal { border-color: teal; }
-.border--olive { border-color: olive; }
-.border--green { border-color: green; }
-.border--lime { border-color: lime; }
-.border--yellow { border-color: yellow; }
-.border--orange { border-color: orange; }
-.border--red { border-color: red; }
-.border--fuchsia { border-color: fuchsia; }
-.border--purple { border-color: purple; }
-.border--maroon { border-color: maroon; }
-.border--white { border-color: white; }
-.border--gray { border-color: gray; }
-.border--silver { border-color: silver; }
-.border--black { border-color: black; }
+.b--navy { border-color: c_navy; }
+.b--blue { border-color: c_blue; }
+.b--blue-8 { border-color: c_blue-8; }
+.b--blue-5 { border-color: c_blue-5; }
+.b--blue-2 { border-color: c_blue-2; }
+.b--light-blue { border-color: c_light-blue; }
+.b--dark-blue { border-color: c_dark-blue; }
+.b--brand-blue { border-color: c_brand-blue; }
+.b--aqua { border-color: c_aqua; }
+.b--teal { border-color: c_teal; }
+.b--olive { border-color: c_olive; }
+.b--green { border-color: c_green; }
+.b--lime { border-color: c_lime; }
+.b--yellow { border-color: c_yellow; }
+.b--orange { border-color: c_orange; }
+.b--orange-8 { border-color: c_orange-8; }
+.b--orange-5 { border-color: c_orange-5; }
+.b--orange-2 { border-color: c_orange-2; }
+.b--light-orange { border-color: c_light-orange; }
+.b--dark-orange { border-color: c_dark-orange; }
+.b--brand-orange { border-color: c_brand-orange; }
+.b--red { border-color: c_red; }
+.b--fuchsia { border-color: c_fuchsia; }
+.b--purple { border-color: c_purple; }
+.b--maroon { border-color: c_maroon; }
+
 
 /* Fills for SVG */
-.fill-navy { fill: navy; }
-.fill-blue { fill: blue; }
-.fill-aqua { fill: aqua; }
-.fill-teal { fill: teal; }
-.fill-olive { fill: olive; }
-.fill-green { fill: green; }
-.fill-lime { fill: lime; }
-.fill-yellow { fill: yellow; }
-.fill-orange { fill: orange; }
-.fill-red { fill: red; }
-.fill-fuchsia { fill: fuchsia; }
-.fill-purple { fill: purple; }
-.fill-maroon { fill: maroon; }
-.fill-white { fill: white; }
-.fill-gray { fill: gray; }
-.fill-silver { fill: silver; }
-.fill-black { fill: black; }
+.fill-navy { fill: c_navy; }
+.fill-blue { fill: c_blue; }
+.fill-blue-8 { fill: c_blue-8; }
+.fill-blue-5 { fill: c_blue-5; }
+.fill-blue-2 { fill: c_blue-2; }
+.fill-light-blue { fill: c_light-blue; }
+.fill-dark-blue { fill: c_dark-blue; }
+.fill-brand-blue { fill: c_brand-blue; }
+.fill-aqua { fill: c_aqua; }
+.fill-teal { fill: c_teal; }
+.fill-olive { fill: c_olive; }
+.fill-green { fill: c_green; }
+.fill-lime { fill: c_lime; }
+.fill-yellow { fill: c_yellow; }
+.fill-orange { fill: c_orange; }
+.fill-orange-8 { fill: c_orange-8; }
+.fill-orange-5 { fill: c_orange-5; }
+.fill-orange-2 { fill: c_orange-2; }
+.fill-light-orange { fill: c_light-orange; }
+.fill-dark-orange { fill: c_dark-orange; }
+.fill-brand-orange { fill: c_brand-orange; }
+.fill-red { fill: c_red; }
+.fill-fuchsia { fill: c_fuchsia; }
+.fill-purple { fill: c_purple; }
+.fill-maroon { fill: c_maroon; }
 
 /* Strokes for SVG */
-.stroke-navy { stroke: navy; }
-.stroke-blue { stroke: blue; }
-.stroke-aqua { stroke: aqua; }
-.stroke-teal { stroke: teal; }
-.stroke-olive { stroke: olive; }
-.stroke-green { stroke: green; }
-.stroke-lime { stroke: lime; }
-.stroke-yellow { stroke: yellow; }
-.stroke-orange { stroke: orange; }
-.stroke-red { stroke: red; }
-.stroke-fuchsia { stroke: fuchsia; }
-.stroke-purple { stroke: purple; }
-.stroke-maroon { stroke: maroon; }
-.stroke-white { stroke: white; }
-.stroke-gray { stroke: gray; }
-.stroke-silver { stroke: silver; }
-.stroke-black { stroke: black; }
+.stroke-navy { stroke: c_navy; }
+.stroke-blue { stroke: c_blue; }
+.stroke-blue-8 { stroke: c_blue-8; }
+.stroke-blue-5 { stroke: c_blue-5; }
+.stroke-blue-2 { stroke: c_blue-2; }
+.stroke-light-blue { stroke: c_light-blue; }
+.stroke-dark-blue { stroke: c_dark-blue; }
+.stroke-brand-blue { stroke: c_brand-blue; }
+.stroke-aqua { stroke: c_aqua; }
+.stroke-teal { stroke: c_teal; }
+.stroke-olive { stroke: c_olive; }
+.stroke-green { stroke: c_green; }
+.stroke-lime { stroke: c_lime; }
+.stroke-yellow { stroke: c_yellow; }
+.stroke-orange { stroke: c_orange; }
+.stroke-orange-8 { stroke: c_orange-8; }
+.stroke-orange-5 { stroke: c_orange-5; }
+.stroke-orange-2 { stroke: c_orange-2; }
+.stroke-light-orange { stroke: c_light-orange; }
+.stroke-dark-orange { stroke: c_dark-orange; }
+.stroke-brand-orange { stroke: c_brand-orange; }
+.stroke-red { stroke: c_red; }
+.stroke-fuchsia { stroke: c_fuchsia; }
+.stroke-purple { stroke: c_purple; }
+.stroke-maroon { stroke: c_maroon; }

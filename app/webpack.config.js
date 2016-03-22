@@ -1,7 +1,6 @@
 var webpack = require("webpack");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var autoprefixer = require("autoprefixer");
-var modulesValues = require("postcss-modules-values");
 var glob = require("glob");
 var URL = require("url");
 require("lintspaces-loader");
@@ -116,7 +115,7 @@ module.exports = {
 
 	plugins: plugins,
 
-	postcss: [modulesValues, autoprefixer({remove: false})],
+	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 
 	devServer: {
 		port: webpackDevServerPort,

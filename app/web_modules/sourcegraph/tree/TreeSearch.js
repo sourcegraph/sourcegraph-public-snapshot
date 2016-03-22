@@ -12,8 +12,7 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
 import TreeStyles from "./styles/Tree.css";
-import linkStyle from "sourcegraph/components/styles/link.css";
-import modals from "sourcegraph/components/styles/modals.css";
+import BaseStyles from "sourcegraph/components/styles/base.css";
 
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 5;
@@ -287,12 +286,12 @@ class TreeSearch extends Container {
 
 			list.push(
 				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={itemURL}>
-					<span className={TreeStyles.list_item_icon}><i className={classNames("fa", {
+					<span className={TreeStyles.filetype_icon}><i className={classNames("fa", {
 						"fa-file-text-o": !item.isDirectory,
 						"fa-folder": item.isDirectory,
 					})}></i>
 					</span>
-					<a className={linkStyle.link} href={itemURL}>{item.name}</a>
+					<a className={BaseStyles.link} href={itemURL}>{item.name}</a>
 					{this.state.query === "" && item.isDirectory &&
 						<span className={TreeStyles.directory_nav_icon}>
 						<i className="fa fa-chevron-right" />
@@ -323,7 +322,7 @@ class TreeSearch extends Container {
 			list.push(
 				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={defURL}>
 					<div key={defURL}>
-						<a className={linkStyle.link} href={defURL}>
+						<a className={BaseStyles.link} href={defURL}>
 							<code>{def.Kind}</code>
 							<code dangerouslySetInnerHTML={result.QualifiedName}></code>
 						</a>
@@ -337,8 +336,8 @@ class TreeSearch extends Container {
 
 	render() {
 		return (
-			<div className={!this.state.visible ? modals.hidden : TreeStyles.tree}>
-				<div className={this.state.overlay ? modals.overlay : modals.hidden} onClick={this._blurInput} />
+			<div className={this.state.visible ? TreeStyles.tree : BaseStyles.hidden}>
+				<div className={this.state.overlay ? BaseStyles.overlay : BaseStyles.hidden} onClick={this._blurInput} />
 				<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
 					<div className={TreeStyles.input_group}>
 						<input className={TreeStyles.input}
@@ -347,7 +346,7 @@ class TreeSearch extends Container {
 							ref="input"
 							onKeyUp={this._onType} />
 						{!this.state.overlay &&
-							<div className={TreeStyles.input_addon}>t</div>}
+							<div className={TreeStyles.search_hotkey}>t</div>}
 					</div>
 					<div className={TreeStyles.list_header}>
 						Symbols
