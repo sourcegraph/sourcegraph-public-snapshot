@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/http/pprof"
 	"net/url"
 	"os"
 	"os/exec"
@@ -25,7 +24,6 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/soheilhy/cmux"
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
@@ -58,7 +56,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/expvarutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	httputil2 "sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
@@ -268,23 +265,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	if c.ProfBindAddr != "" {
-		// Starts a pprof server by default, but this is OK, because only
-		// whitelisted ports on the web server machines should be publicly
-		// accessible anyway.
-		go func() {
-			pp := http.NewServeMux()
-			pp.Handle("/debug/vars", http.HandlerFunc(expvarutil.ExpvarHandler))
-			pp.Handle("/debug/gc", http.HandlerFunc(expvarutil.GCHandler))
-			pp.Handle("/debug/freeosmemory", http.HandlerFunc(expvarutil.FreeOSMemoryHandler))
-			pp.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
-			pp.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
-			pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
-			pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
-			pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-			pp.Handle("/metrics", prometheus.Handler())
-			log.Println("warning: could not start pprof HTTP server:", http.ListenAndServe(c.ProfBindAddr, pp))
-		}()
-		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/debug/pprof", c.ProfBindAddr))
+		startDebugServer(c.ProfBindAddr)
 	}
 
 	var (

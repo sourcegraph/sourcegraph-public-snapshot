@@ -28,6 +28,7 @@ type gitServerCmd struct {
 	Addr          string `long:"addr" default:"127.0.0.1:0" description:"RPC listen address for git server" env:"SRC_ADDR"`
 	ReposDir      string `long:"repos-dir" description:"root dir containing repos" env:"SRC_REPOS_DIR"`
 	AutoTerminate bool   `long:"auto-terminate" description:"terminate if stdin gets closed (e.g. parent process died)" env:"SRC_AUTO_TERMINATE"`
+	ProfBindAddr  string `long:"prof-http" description:"net/http/pprof http bind address" value-name:"BIND-ADDR" env:"SRC_PROF_HTTP"`
 }
 
 func (c *gitServerCmd) Execute(args []string) error {
@@ -41,6 +42,10 @@ func (c *gitServerCmd) Execute(args []string) error {
 			io.Copy(ioutil.Discard, os.Stdin)
 			log.Fatal("git-server: stdin closed, terminating")
 		}()
+	}
+
+	if c.ProfBindAddr != "" {
+		startDebugServer(c.ProfBindAddr)
 	}
 
 	gitserver.RegisterHandler()
