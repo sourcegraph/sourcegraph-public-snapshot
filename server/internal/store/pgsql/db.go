@@ -1,8 +1,11 @@
 package pgsql
 
 import (
+	"database/sql"
 	"fmt"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"gopkg.in/gorp.v1"
 
@@ -39,6 +42,7 @@ func globalDB() (*dbutil2.Handle, error) {
 	if err != nil {
 		return nil, err
 	}
+	registerPrometheusCollector(dbh.DbMap.Db)
 
 	globalDBH = dbh
 	return globalDBH, nil
@@ -53,4 +57,20 @@ func OpenDB(mode dbutil2.Mode) (*dbutil2.Handle, error) {
 		return nil, fmt.Errorf("open DB: %s", err)
 	}
 	return dbh, nil
+}
+
+func registerPrometheusCollector(db *sql.DB) {
+	c := prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Namespace: "src",
+			Subsystem: "pgsql",
+			Name:      "open_connections",
+			Help:      "Number of open connections to pgsql globalDB, as reported by pgsql.DB.Stats()",
+		},
+		func() float64 {
+			s := db.Stats()
+			return float64(s.OpenConnections)
+		},
+	)
+	prometheus.MustRegister(c)
 }
