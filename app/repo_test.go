@@ -1,7 +1,9 @@
 package app_test
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -112,5 +114,38 @@ func TestRepo_NotFound(t *testing.T) {
 	}
 	if !calledGet {
 		t.Error("!calledGet")
+	}
+}
+
+// TestRepo_GitHubRedirect tests that serveRepo redirects to the
+// correct URL when the users requests a mirrored GitHub repository
+// that has been renamed. E.g., when there is a redirect on GitHub from
+// "my/repo" to "alice/repo", Sourcegraph should redirect from
+// "/github.com/my/repo" to "/github.com/alice/repo".
+func TestRepo_GitHubRedirect(t *testing.T) {
+	c, mock := apptest.New()
+	mock.Repos.MockResolve_Remote(t, "github.com/my/repo", &sourcegraph.RemoteRepo{
+		GitHubID: 123,
+		Owner:    "alice",
+		Name:     "repo",
+	})
+
+	// Prevent redirect from being followed
+	e := fmt.Errorf("redirect occurred")
+	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return e
+	}
+
+	resp, err := c.Get(router.Rel.URLToRepo("github.com/my/repo").String())
+	if err != nil {
+		if err, ok := err.(*url.Error); !ok || err.Err != e {
+			t.Fatal(err)
+		}
+	}
+	if want := http.StatusMovedPermanently; want != resp.StatusCode {
+		t.Errorf("got status %d, want %d", http.StatusMovedPermanently, want)
+	}
+	if want := "/github.com/alice/repo"; resp.Header.Get("Location") != want {
+		t.Errorf("got redirect to %q, want %q", resp.Header.Get("Location"), want)
 	}
 }

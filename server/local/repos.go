@@ -38,6 +38,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -193,7 +194,7 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 	ts := pbtypes.NewTimestamp(time.Now())
 	return &sourcegraph.Repo{
 		Name:         ghrepo.Name,
-		URI:          "github.com/" + ghrepo.Owner + "/" + ghrepo.Name,
+		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
 		HTTPCloneURL: ghrepo.HTTPCloneURL,
 		Mirror:       true,
 		CreatedAt:    &ts,

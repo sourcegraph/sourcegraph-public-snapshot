@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/platform"
 	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -49,6 +50,11 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repoSpec.URI {
+			http.Redirect(w, r, router.Rel.URLToRepo(actualURI).String(), http.StatusMovedPermanently)
+			return nil
+		}
+
 		// Automatically create a local mirror.
 		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
 		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
