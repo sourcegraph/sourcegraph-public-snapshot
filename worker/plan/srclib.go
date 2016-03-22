@@ -69,7 +69,7 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	return nil
 }
 
-var droneSrclibGoImage = "srclib/drone-srclib-go@sha256:af069725ea5fe4e8e657f16f06d772e4f4e7ae3fc74fdac34f1961277b208149"
+var droneSrclibGoImage = "srclib/drone-srclib-go@sha256:c4d2678d1c69abebb75ac6c19bce7a69111a8e07a59aa288cd165df2f3102170"
 
 // Note: If you push new Docker images for the srclib build steps, you
 // MUST update the SHA256 digest, or else users will continue using
