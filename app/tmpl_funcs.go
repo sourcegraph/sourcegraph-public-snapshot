@@ -8,7 +8,6 @@ import (
 	htmpl "html/template"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -29,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/sourcecode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/textutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
@@ -89,9 +87,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"snippetToBreadcrumb":   SnippetToBreadcrumb,
 	"router":                func() *router.Router { return router.Rel },
 
-	"flattenName":     handlerutil.FlattenName,
-	"flattenNameHTML": handlerutil.FlattenNameHTML,
-
 	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
 
 	"classForRoute": func(route string) string {
@@ -121,13 +116,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"duration":     duration,
 	"isNil":        isNil,
 	"minTime":      minTime,
-	"pathJoin":     path.Join,
-	"pathSplit": func(path string) []string {
-		return strings.Split(path, "/")
-	},
-	"subpath": func(parts []string, i int) string {
-		return path.Join(parts[:(i + 1)]...)
-	},
 	"toInt": func(v interface{}) (int, error) {
 		switch v := v.(type) {
 		case int:
