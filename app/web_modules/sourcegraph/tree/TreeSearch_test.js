@@ -13,14 +13,14 @@ import testdataLoading from "sourcegraph/tree/testdata/TreeSearch-loading.json";
 describe("TreeSearch", () => {
 	it("should show a loading indicator", () => {
 		autotest(testdataLoading, `${__dirname}/testdata/TreeSearch-loading.json`,
-			<TreeSearch repo="repo" rev="rev" prefetch={true} />
+			<TreeSearch repo="repo" rev="rev" prefetch={true} currPath={[]} overlay={true} />
 		);
 	});
 
 	it("should render files", () => {
 		Dispatcher.directDispatch(TreeStore, new TreeActions.FileListFetched("repo", "rev", {Files: ["a", "b"]}));
 		autotest(testdataFiles, `${__dirname}/testdata/TreeSearch-files.json`,
-			<TreeSearch repo="repo" rev="rev" prefetch={true} />
+			<TreeSearch repo="repo" rev="rev" prefetch={true} currPath={[]} overlay={true} />
 		);
 	});
 });

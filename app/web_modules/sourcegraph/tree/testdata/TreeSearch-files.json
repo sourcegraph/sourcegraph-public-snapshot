@@ -2,23 +2,18 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "tree-entry-search hidden",
 			"children": [
 				{
 					"type": "div",
-					"props": {
-						"className": ""
-					}
+					"props": {}
 				},
 				{
 					"type": "div",
 					"props": {
-						"className": "search-input-group",
 						"children": [
 							{
 								"type": "div",
 								"props": {
-									"className": "tree-search-input input-group",
 									"children": [
 										{
 											"type": "input",
@@ -27,24 +22,6 @@
 												"type": "text",
 												"placeholder": "Search this repository..."
 											}
-										},
-										{
-											"type": "span",
-											"props": {
-												"className": "input-group-addon",
-												"children": [
-													"shortcut: ",
-													{
-														"type": "span",
-														"props": {
-															"className": "hotkey",
-															"children": [
-																"t"
-															]
-														}
-													}
-												]
-											}
 										}
 									]
 								}
@@ -52,29 +29,20 @@
 							{
 								"type": "div",
 								"props": {
-									"className": "tree-search-label",
 									"children": [
 										"Symbols"
 									]
 								}
 							},
 							{
-								"type": "ul",
+								"type": "div",
 								"props": {
-									"className": "tree-search-symbol-list",
 									"children": [
 										{
-											"type": "li",
+											"type": "i",
 											"props": {
 												"children": [
-													{
-														"type": "i",
-														"props": {
-															"children": [
-																"Sourcegraph is analyzing your code — results will be available soon!"
-															]
-														}
-													}
+													"Sourcegraph is analyzing your code — results will be available soon!"
 												]
 											}
 										}
@@ -84,16 +52,29 @@
 							{
 								"type": "div",
 								"props": {
-									"className": "tree-search-label",
 									"children": [
-										"Files"
+										"Files",
+										{
+											"type": "span",
+											"props": {}
+										}
 									]
 								}
 							},
 							{
-								"type": "ul",
+								"type": "div",
+								"key": "_nofiles",
 								"props": {
-									"className": "tree-search-file-list"
+									"children": [
+										{
+											"type": "i",
+											"props": {
+												"children": [
+													"No matches!"
+												]
+											}
+										}
+									]
 								}
 							}
 						]
