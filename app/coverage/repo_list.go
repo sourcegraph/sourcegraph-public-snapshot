@@ -3,6 +3,7 @@ package coverage
 var langs_ = []string{"Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++"}
 var langRepos_ = map[string][]string{
 	"Go": []string{
+		"sourcegraph/sourcegraph",
 		"github.com/gorilla/mux",
 		"github.com/gorilla/pat",
 		"github.com/docker/docker",
