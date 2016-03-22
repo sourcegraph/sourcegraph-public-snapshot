@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//go:generate go run generate.go
+//go:generate go run gen/generate.go
 
 // A Language represents a programming or markup language.
 //

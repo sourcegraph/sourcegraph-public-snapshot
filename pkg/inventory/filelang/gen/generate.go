@@ -1,5 +1,3 @@
-// +build ignore
-
 package main
 
 import (
@@ -14,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/shurcooL/go-goon"
+
 	"gopkg.in/yaml.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 )
