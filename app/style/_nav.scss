@@ -1,4 +1,22 @@
 #nav {
+	background-color: #F4F4F4;
+	border: 1px solid #eaeaf2;
+
+	a, button {
+		display: inline-block !important;
+		font-weight: bold;
+		color: #0698EE;
+		transition: color .15s ease-in;
+	}
+	a:link, a:visited { transition: color .15s ease-in; }
+	a:hover, button:hover {
+		background-color: transparent;
+		transition: color .15s ease-in;
+		color: #9D00D8;
+	}
+	a:active { transition: color .15s ease-in; }
+	a:focus { transition: color .15s ease-in; }
+
 	.navbar-brand {
 		$size: $navbar-height - 14px;
 		img {
@@ -37,12 +55,10 @@
 		}
 		span.part {
 			padding: 0px 8px;
+			color: #555;
 		}
-		a {
-			display: inline-block !important;
-			font-weight: bold;
-			color: white;
-			display: inline;
+		span.sep {
+			color: #555;
 		}
 	}
 }

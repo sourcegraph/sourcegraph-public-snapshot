@@ -1,9 +1,9 @@
 {{define "Nav"}}
-<nav class="navbar navbar-inverse no-collapse-nav" role="navigation" id="nav">
+<nav class="navbar no-collapse-nav" role="navigation" id="nav">
 	<div class="container">
 		<div class="navbar-header">
 			<div class="global navbar-brand">
-				<a href="/"><img src="{{assetURL "/img/mark-white.svg"}}"></a>
+				<a href="/"><img src="{{assetURL "/img/sourcegraph_mark.svg"}}"></a>
 			</div>
 		</div>
 
@@ -20,16 +20,12 @@
 				{{if .CurrentUser}}
 					<li class="current-user name">
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
+							{{if .CurrentUser.AvatarURL}}
+							<img class="avatar-sm" src="{{.CurrentUser.AvatarURL}}" />
+							{{else}}
 							{{.CurrentUser.Login}}
+							{{end}}
 						</a>
-					</li>
-					<li class="sign-out">
-						<form action="{{urlTo "log-out"}}" method="POST" class="navbar-form">
-							<button class="btn btn-link" title="Sign out">
-								<i class="fa fa-times"></i>
-							</button>
-							<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-						</form>
 					</li>
 				{{else}}
 					{{if authFlags.HasSignup}}
