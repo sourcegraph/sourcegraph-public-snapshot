@@ -37,7 +37,7 @@ class TreeSearch extends Container {
 		this._getSelectionURL = this._getSelectionURL.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState({query: query, selectionIndex: 0});
-		}, 300, {leading: false, trailing: true});
+		}, 75, {leading: false, trailing: true});
 	}
 
 	componentDidMount() {

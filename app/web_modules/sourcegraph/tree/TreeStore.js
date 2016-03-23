@@ -41,7 +41,6 @@ export class TreeStore extends Store {
 
 		case TreeActions.FileListFetched:
 			{
-				// TODO: this technically only needs to be one level deep for the UI; optimize.
 				let fileTree = {Dirs: {}, Files: []};
 				action.fileList.Files.forEach(file => {
 					const parts = file.split("/");
