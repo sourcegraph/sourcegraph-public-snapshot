@@ -34,13 +34,11 @@ class TreeSearch extends Container {
 		this._focusInput = this._focusInput.bind(this);
 		this._blurInput = this._blurInput.bind(this);
 		this._onType = this._onType.bind(this);
-		this._currentNumResults = this._currentNumResults.bind(this);
-		this._getSelectionURL = this._getSelectionURL.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			const matchingFiles = (query && this.state.fuzzyFinder) ?
 				this.state.fuzzyFinder.search(query).map(i => this.state.allFiles[i]) :
 				this.state.allFiles;
-			this.setState({query: query, matchingFiles: matchingFiles, selectionIndex: 0});
+			this.setState({query: query, matchingFiles: matchingFiles});
 		}, 75, {leading: false, trailing: true});
 	}
 
@@ -63,13 +61,56 @@ class TreeSearch extends Container {
 	stores() { return [TreeStore, SearchResultsStore]; }
 
 	reconcileState(state, props) {
+		let navigatedDirectory = false;
+		if (state.currPath !== props.currPath) {
+			// Directory navigation should reset selectionIndex to the first result.
+			navigatedDirectory = true;
+		}
+		state.navigatedDirectory = navigatedDirectory;
+
 		Object.assign(state, props);
+
+		const setFileList = () => {
+			if (state.query === "") {
+				// Show entire file tree as file results.
+				if (state.fileTree) {
+					let dirLevel = state.fileTree;
+					for (const part of state.currPath) {
+						if (dirLevel.Dirs[part]) {
+							dirLevel = dirLevel.Dirs[part];
+						} else {
+							break;
+						}
+					}
+					const dirs = Object.keys(dirLevel.Dirs).map(dir => ({
+						name: dir,
+						isDirectory: true,
+						url: router.tree(this.props.repo, this.props.rev,
+							`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${dir}`),
+					}));
+
+					state.fileResults = dirs.concat(dirLevel.Files.map(file => ({
+						name: file,
+						isDirectory: false,
+						url: router.tree(this.props.repo, this.props.rev,
+							`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${file}`),
+					})));
+				}
+
+			} else if (state.matchingFiles) {
+				state.fileResults = state.matchingFiles.map(file => ({
+					name: file,
+					isDirectory: false,
+					url: router.tree(this.props.repo, this.props.rev, file),
+				}));
+			}
+		};
+
+		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
 
 		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev);
 		sourceFileList = sourceFileList ? sourceFileList.Files : null;
 		if (state.allFiles !== sourceFileList) {
-			// Prevent unnecessarily computating fuzzy matcher; only do this when
-			// the file list changes.
 			state.allFiles = sourceFileList;
 			if (sourceFileList) {
 				state.fuzzyFinder = state.allFiles && new Fuze(state.allFiles, {
@@ -78,43 +119,18 @@ class TreeSearch extends Container {
 					threshold: 0.1,
 				});
 			}
+			setFileList();
 		}
-		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
 		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) ||
 			{Results: [], SrclibDataVersion: null};
 
-		// TODO: do we need to recompute this every time?
-		if (state.query === "") {
-			// Show entire file tree as file results.
-			if (state.fileTree) {
-				let dirLevel = state.fileTree;
-				for (const part of state.currPath) {
-					if (dirLevel.Dirs[part]) {
-						dirLevel = dirLevel.Dirs[part];
-					} else {
-						break;
-					}
-				}
-				const dirs = Object.keys(dirLevel.Dirs).map(dir => ({
-					name: dir,
-					isDirectory: true,
-					url: router.tree(this.props.repo, this.props.rev,
-						`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${dir}`),
-				}));
-
-				state.fileResults = dirs.concat(dirLevel.Files.map(file => ({
-					name: file,
-					isDirectory: false,
-					url: router.tree(this.props.repo, this.props.rev,
-						`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${file}`),
-				})));
-			}
-		} else if (state.matchingFiles) {
-			state.fileResults = state.matchingFiles.map(file => ({
-				name: file,
-				isDirectory: false,
-				url: router.tree(this.props.repo, this.props.rev, file),
-			}));
+		if (state.processedQuery !== state.query) {
+			// Recompute file list when query changes.
+			state.processedQuery = state.query;
+			setFileList();
+		}
+		if (navigatedDirectory) {
+			setFileList();
 		}
 	}
 
@@ -132,20 +148,6 @@ class TreeSearch extends Container {
 			Dispatcher.asyncDispatch(
 				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
 			);
-		}
-
-		// Prevent out-of-bounds, e.g. after directory navigation.
-		if (nextState.matchingSymbols !== prevState.matchingSymbols ||
-			nextState.fileResults !== prevState.fileResults) {
-			const nextNumResults =
-				this._numResults(nextState.query, nextState.fileResults || [], nextState.matchingSymbols || []);
-			const prevNumResults =
-				this._numResults(prevState.query, prevState.fileResults || [], prevState.matchingSymbols || []);
-			if (nextNumResults < prevNumResults) {
-				if (nextState.selectionIndex >= nextNumResults) {
-					nextState.selectionIndex = nextNumResults - 1;
-				}
-			}
 		}
 	}
 
@@ -181,19 +183,31 @@ class TreeSearch extends Container {
 		});
 	}
 
-	_numResults(query, fileResults, matchingSymbols) {
-		let numFileResults = fileResults.length > FILE_LIMIT ? FILE_LIMIT : fileResults.length;
-		if (query === "") numFileResults = fileResults.length; // override to show full directory tree on empty query
-		const numSymbolResults = matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : matchingSymbols.Results.length;
-		return numFileResults + numSymbolResults;
+	_numSymbolResults() {
+		return this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
 	}
 
-	_currentNumResults() {
-		return this._numResults(this.state.query, this.state.fileResults, this.state.matchingSymbols);
+	_numFileResults() {
+		let numFileResults = this.state.fileResults.length > FILE_LIMIT ? FILE_LIMIT : this.state.fileResults.length;
+		// Override file results to show full directory tree on empty query.
+		if (this.state.query === "") numFileResults = this.state.fileResults.length;
+		return numFileResults;
+	}
+
+	_numResults() {
+		return this._numFileResults() + this._numSymbolResults();
+	}
+
+	_normalizedSelectionIndex() {
+		const numResults = this._numResults();
+		if (this.state.navigatedDirectory) {
+			return Math.min(this.state.selectionIndex, this._numSymbolResults(), numResults - 1);
+		}
+		return Math.min(this.state.selectionIndex, numResults - 1);
 	}
 
 	_getSelectionURL() {
-		const i = this.state.selectionIndex;
+		const i = this._normalizedSelectionIndex();
 		if (i < this.state.matchingSymbols.Results.length) {
 			const def = this.state.matchingSymbols.Results[i].Def;
 			return router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
@@ -203,7 +217,7 @@ class TreeSearch extends Container {
 
 	// returns the selected directory name, or null
 	_getSelectedPathPart() {
-		const i = this.state.selectionIndex;
+		const i = this._normalizedSelectionIndex();
 		if (i < this.state.matchingSymbols.Results.length) {
 			return null;
 		}
@@ -217,8 +231,8 @@ class TreeSearch extends Container {
 		let idx, max, part;
 		switch (e.key) {
 		case "ArrowDown":
-			idx = this.state.selectionIndex;
-			max = this._currentNumResults();
+			idx = this._normalizedSelectionIndex();
+			max = this._numResults();
 
 			this.setState({
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
@@ -228,8 +242,8 @@ class TreeSearch extends Container {
 			break;
 
 		case "ArrowUp":
-			idx = this.state.selectionIndex;
-			max = this._currentNumResults();
+			idx = this._normalizedSelectionIndex();
+			max = this._numResults();
 
 			this.setState({
 				selectionIndex: idx < 1 ? max-1 : idx-1,
@@ -267,7 +281,8 @@ class TreeSearch extends Container {
 
 	_listItems() {
 		const items = this.state.fileResults;
-		if (!this.state.visible || !items || items.length === 0) return [<div className={TreeStyles.list_item} key="_nofiles"><i>No matches!</i></div>];
+		const emptyItem = <div className={TreeStyles.list_item} key="_nofiles"><i>No matches!</i></div>;
+		if (!items || items.length === 0) return [emptyItem];
 
 		let list = [],
 			limit = items.length > FILE_LIMIT ? FILE_LIMIT : items.length;
@@ -279,7 +294,7 @@ class TreeSearch extends Container {
 			let item = items[i],
 				itemURL = item.url;
 
-			const selected = this.state.selectionIndex - this.state.matchingSymbols.Results.length === i;
+			const selected = this._normalizedSelectionIndex() - this.state.matchingSymbols.Results.length === i;
 
 			list.push(
 				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={itemURL}>
@@ -302,9 +317,8 @@ class TreeSearch extends Container {
 	}
 
 	_symbolItems() {
-		if (!this.state.visible || !this.state.matchingSymbols || this.state.matchingSymbols.Results.length === 0) {
-			return [<div className={TreeStyles.list_item} key="_nosymbol"><i>No matches!</i></div>];
-		}
+		const emptyItem = <div className={TreeStyles.list_item} key="_nosymbol"><i>No matches!</i></div>;
+		if (!this.state.matchingSymbols || this.state.matchingSymbols.Results.length === 0) return [emptyItem];
 
 		let list = [],
 			limit = this.state.matchingSymbols.Results.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingSymbols.Results.length;
@@ -314,7 +328,7 @@ class TreeSearch extends Container {
 			let def = result.Def,
 				defURL = router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
 
-			const selected = this.state.selectionIndex === i;
+			const selected = this._normalizedSelectionIndex() === i;
 
 			list.push(
 				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={defURL}>
