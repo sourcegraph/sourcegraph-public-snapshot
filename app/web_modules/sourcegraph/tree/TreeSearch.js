@@ -22,9 +22,9 @@ class TreeSearch extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
-			visible: false,
-			loading: false,
+			visible: !props.overlay,
 			matchingSymbols: {Results: [], SrclibDataVersion: null},
+			allFiles: [],
 			matchingFiles: [],
 			fileResults: [], // either the full directory tree (for empty query) or matching file paths
 			query: "",
@@ -37,7 +37,10 @@ class TreeSearch extends Container {
 		this._currentNumResults = this._currentNumResults.bind(this);
 		this._getSelectionURL = this._getSelectionURL.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
-			this.setState({query: query, selectionIndex: 0});
+			const matchingFiles = (query && this.state.fuzzyFinder) ?
+				this.state.fuzzyFinder.search(query).map(i => this.state.allFiles[i]) :
+				this.state.allFiles;
+			this.setState({query: query, matchingFiles: matchingFiles, selectionIndex: 0});
 		}, 75, {leading: false, trailing: true});
 	}
 
@@ -61,54 +64,31 @@ class TreeSearch extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-	}
 
-	onStateTransition(prevState, nextState) {
-		let fileList = TreeStore.fileLists.get(nextState.repo, nextState.rev);
-		nextState.allFiles = fileList ? fileList.Files : null;
-		nextState.fileTree = TreeStore.fileTree.get(nextState.repo, nextState.rev);
-		nextState.matchingSymbols =
-			SearchResultsStore.results.get(nextState.repo, nextState.rev, nextState.query, "tokens", 1) ||
-			{Results: [], SrclibDataVersion: null};
-
-		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
-		if (becameVisible || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
-			// Don't load the file list when the page loads until we become visible.
-			const initialLoad = !prevState.repo && !prevState.rev;
-			if (!initialLoad || nextState.prefetch) {
-				Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
-				Dispatcher.asyncDispatch(
-					new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
-				);
+		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev);
+		sourceFileList = sourceFileList ? sourceFileList.Files : null;
+		if (state.allFiles !== sourceFileList) {
+			// Prevent unnecessarily computating fuzzy matcher; only do this when
+			// the file list changes.
+			state.allFiles = sourceFileList;
+			if (sourceFileList) {
+				state.fuzzyFinder = state.allFiles && new Fuze(state.allFiles, {
+					distance: 1000,
+					location: 0,
+					threshold: 0.1,
+				});
 			}
 		}
+		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
+		state.matchingSymbols = SearchResultsStore.results.get(state.repo, state.rev, state.query, "tokens", 1) ||
+			{Results: [], SrclibDataVersion: null};
 
-		if (nextState.allFiles !== prevState.allFiles) {
-			nextState.fuzzyFinder = nextState.allFiles && new Fuze(nextState.allFiles, {
-				distance: 1000,
-				location: 0,
-				threshold: 0.1,
-			});
-			nextState.loading = nextState.allFiles === null;
-		}
-
-		if (nextState.fuzzyFinder !== prevState.fuzzyFinder || nextState.query !== prevState.query) {
-			nextState.matchingFiles = (nextState.query && nextState.fuzzyFinder) ?
-			nextState.fuzzyFinder.search(nextState.query).map(i => nextState.allFiles[i]) :
-			nextState.allFiles;
-		}
-
-		if (nextState.query !== prevState.query) {
-			Dispatcher.asyncDispatch(
-				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
-			);
-		}
-
-		if (nextState.query === "") {
+		// TODO: do we need to recompute this every time?
+		if (state.query === "") {
 			// Show entire file tree as file results.
-			if (nextState.fileTree) {
-				let dirLevel = nextState.fileTree;
-				for (const part of nextState.currPath) {
+			if (state.fileTree) {
+				let dirLevel = state.fileTree;
+				for (const part of state.currPath) {
 					if (dirLevel.Dirs[part]) {
 						dirLevel = dirLevel.Dirs[part];
 					} else {
@@ -119,22 +99,39 @@ class TreeSearch extends Container {
 					name: dir,
 					isDirectory: true,
 					url: router.tree(this.props.repo, this.props.rev,
-						`${nextState.currPath.join("/")}${nextState.currPath.length > 0 ? "/" : ""}${dir}`),
+						`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${dir}`),
 				}));
 
-				nextState.fileResults = dirs.concat(dirLevel.Files.map(file => ({
+				state.fileResults = dirs.concat(dirLevel.Files.map(file => ({
 					name: file,
 					isDirectory: false,
 					url: router.tree(this.props.repo, this.props.rev,
-						`${nextState.currPath.join("/")}${nextState.currPath.length > 0 ? "/" : ""}${file}`),
+						`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${file}`),
 				})));
 			}
-		} else if (nextState.matchingFiles && nextState.matchingFiles !== prevState.matchingFiles) {
-			nextState.fileResults = nextState.matchingFiles.map(file => ({
+		} else if (state.matchingFiles) {
+			state.fileResults = state.matchingFiles.map(file => ({
 				name: file,
 				isDirectory: false,
 				url: router.tree(this.props.repo, this.props.rev, file),
 			}));
+		}
+	}
+
+	onStateTransition(prevState, nextState) {
+		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
+		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
+		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
+			Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
+			Dispatcher.asyncDispatch(
+				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
+			);
+		}
+
+		if (nextState.query !== prevState.query) {
+			Dispatcher.asyncDispatch(
+				new SearchActions.WantResults(nextState.repo, nextState.rev, "tokens", 1, SYMBOL_LIMIT, nextState.query)
+			);
 		}
 
 		// Prevent out-of-bounds, e.g. after directory navigation.
@@ -181,7 +178,6 @@ class TreeSearch extends Container {
 
 		this.setState({
 			visible: false,
-			loading: false,
 		});
 	}
 

@@ -49,6 +49,7 @@ class TreeOverlay extends Component {
 				repo={this.state.repo}
 				rev={this.state.rev}
 				overlay={true}
+				prefetch={true}
 				currPath={this.state.currPath} />
 		);
 	}
