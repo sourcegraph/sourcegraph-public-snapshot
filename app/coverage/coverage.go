@@ -25,9 +25,10 @@ type Coverage struct {
 	Repo string
 	Cov  cvg.Coverage
 
-	FileScoreClass  string
-	RefScoreClass   string
-	TokDensityClass string
+	SuccessfullyBuilt bool
+	FileScoreClass    string
+	RefScoreClass     string
+	TokDensityClass   string
 
 	CommitsBehind int32
 }
@@ -121,7 +122,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 	if err != nil {
 		if handlerutil.IsRepoNoVCSDataError(err) {
 			log15.Warn("getCoverage: no VCS data found, attempting to clone", "repo", repo)
-			return &Coverage{Repo: repo, FileScoreClass: "fail", RefScoreClass: "fail", TokDensityClass: "fail"}, nil
+			return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
 		}
 		return nil, err
 	}
@@ -134,6 +135,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 
 	var cov Coverage
 	cov.Repo = repo
+	cov.SuccessfullyBuilt = true
 	for _, status := range cstatus.Statuses {
 		if status.Context == "coverage" {
 			var c cvg.Coverage

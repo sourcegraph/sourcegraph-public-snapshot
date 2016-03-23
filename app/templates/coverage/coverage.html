@@ -11,20 +11,31 @@
 <th title="% files successfully processed">File score</th>
 <th title="% internal refs that resolve to a def">Ref score</th>
 <th title="avg # of ref+defs per LoC">Token density</th>
-<th title="# files not successfully processed">Uncovered files</th>
 <th title="# commits between last built and latest commit">Commits behind</th>
+<th title="# files not successfully processed">Uncovered files</th>
 </tr>
 {{range .Langs}}
 <tr><th colspan="6"><a href="/.coverage?lang={{.Lang}}">{{.Lang}}</a></th></tr>
 {{range .RepoCov}}
+{{if .SuccessfullyBuilt}}
 <tr>
 <td><a href="/{{.Repo}}">{{.Repo}}</a></td>
 <td class="{{.FileScoreClass}}">{{.Cov.FileScore}}</td>
 <td class="{{.RefScoreClass}}">{{.Cov.RefScore}}</td>
 <td class="{{.TokDensityClass}}">{{.Cov.TokDensity}}</td>
-<td>{{len .Cov.UncoveredFiles}}</td>
-<td>{{.CommitsBehind}}</td>
+<td class="{{if lt .CommitsBehind 10}}success{{else}}fail{{end}}">{{.CommitsBehind}}</td>
+<td class="hover-area">{{len .Cov.UncoveredFiles}}<div class="hide">{{.Cov.UncoveredFiles}}</div></td>
 </tr>
+{{else}}
+<tr>
+<td><a href="/{{.Repo}}">{{.Repo}}</a></td>
+<td class="unbuilt">-</td>
+<td class="unbuilt">-</td>
+<td class="unbuilt">-</td>
+<td class="unbuilt">-</td>
+<td>-</td>
+</tr>
+{{end}}
 {{end}}
 {{end}}
 </table>

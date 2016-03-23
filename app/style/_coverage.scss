@@ -5,4 +5,17 @@ table.coverage {
 		.fail {
 				background-color: lighten($brand-danger, 30%);
 		}
+		.unbuilt {
+				background-color: $gray-lighter;
+		}
+		.hover-area {
+				.hide {
+						display: none;
+				}
+				&:hover {
+						.hide {
+								display: block !important;
+						}
+				}
+		}
 }
