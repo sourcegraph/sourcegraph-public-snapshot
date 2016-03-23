@@ -1,4 +1,5 @@
 import React from "react";
+import URL from "url";
 import Fuze from "fuse.js";
 import classNames from "classnames";
 import Container from "sourcegraph/Container";
@@ -334,6 +335,16 @@ class TreeSearch extends Container {
 		return list;
 	}
 
+	_buildsURL() {
+		if (window && window.location && window.location.href) {
+			let url = URL.parse(window.location.href);
+			url.pathname = `${this.state.repo}/.builds`;
+			return URL.format(url);
+		}
+
+		return "";
+	}
+
 	render() {
 		return (
 			<div className={this.state.visible ? TreeStyles.tree : BaseStyles.hidden}>
@@ -355,7 +366,10 @@ class TreeSearch extends Container {
 						{this.state.matchingSymbols.SrclibDataVersion && this._symbolItems()}
 						{!this.state.matchingSymbols.SrclibDataVersion &&
 							<div className={TreeStyles.list_item}>
-								<i>Sourcegraph is analyzing your code &mdash; results will be available soon!</i>
+								<span className={TreeStyles.icon}><i className="fa fa-spinner fa-spin"></i></span>
+								<i>Sourcegraph is analyzing your code &mdash;&nbsp;
+									<a className={BaseStyles.link} href={this._buildsURL()}>results will be available soon!</a>
+								</i>
 							</div>
 						}
 					</div>
