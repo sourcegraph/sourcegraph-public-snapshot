@@ -40,9 +40,17 @@ class Blob extends Component {
 	componentDidMount() {
 		setTimeout(() => this._updateVisibleLines(), 0);
 		window.addEventListener("scroll", this._updateVisibleLines);
-		if (this.state.startLine && this.state.scrollToStartLine) {
-			this._scrollTo(this.state.startLine);
-		}
+
+		// TODO: This is hacky, but the alternative was too costly (time and code volume)
+		//       and unreliable to implement. Revisit this later if it's neccessary.
+		//
+		// Delay scrolling to give BlobRouter a chance to populate startLine.
+		window.setTimeout(() => {
+			if (this.state.startLine && this.state.scrollToStartLine) {
+				this._scrollTo(this.state.startLine);
+			}
+		}, 100);
+
 		document.addEventListener("selectionchange", this._handleSelectionChange);
 		this._isMounted = true;
 	}
