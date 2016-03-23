@@ -52,6 +52,7 @@ npm-debug.log
 /app/assets/sourcebox.js
 /app/assets/sourcebox.css
 /app/assets/test.js
+/app/assets/test.css
 /app/assets/*.html
 /app/assets/*.map
 *.json.actual
