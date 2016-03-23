@@ -18,6 +18,13 @@ development environment. Here's what you need:
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
 
+### Optional
+
+- [GitHub](https://github.com/settings/applications/new): Register
+  your local instance of Sourcegraph as a GitHub OAuth application to
+  enable users to connect their GitHub account. This enables higher
+  rate limits against the GitHub API.
+
 ## Get the code
 
 Then, clone the `sourcegraph` repository into `$GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph`
