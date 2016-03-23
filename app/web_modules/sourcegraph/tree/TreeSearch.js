@@ -346,8 +346,8 @@ class TreeSearch extends Container {
 	}
 
 	_buildsURL() {
-		if (window && window.location && window.location.href) {
-			let url = URL.parse(window.location.href);
+		if (global.location && global.location.href) {
+			let url = URL.parse(global.location.href);
 			url.pathname = `${this.state.repo}/.builds`;
 			return URL.format(url);
 		}
