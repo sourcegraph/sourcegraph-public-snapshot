@@ -3,6 +3,9 @@ package pgsql
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -43,6 +46,7 @@ func globalDB() (*dbutil2.Handle, error) {
 		return nil, err
 	}
 	registerPrometheusCollector(dbh.DbMap.Db)
+	limitConnectionPool(dbh.DbMap.Db)
 
 	globalDBH = dbh
 	return globalDBH, nil
@@ -73,4 +77,22 @@ func registerPrometheusCollector(db *sql.DB) {
 		},
 	)
 	prometheus.MustRegister(c)
+}
+
+// limitConnectionPool sets reasonable sizes on the built in DB queue. By
+// default the connection pool is unbounded, which leads to the error `pq:
+// sorry too many clients already`.
+func limitConnectionPool(db *sql.DB) {
+	// The default value for max_connections is 100 in pgsql. Defaults
+	// allow for roughly 3 servers to burst. We don't change idle
+	// connection size, which defaults to 2
+	var err error
+	maxOpen := 30
+	if e := os.Getenv("SRC_PGSQL_MAX_OPEN"); e != "" {
+		maxOpen, err = strconv.Atoi(e)
+		if err != nil {
+			log.Fatalf("SRC_PGSQL_MAX_OPEN is not an int: %s", e)
+		}
+	}
+	db.SetMaxOpenConns(maxOpen)
 }
