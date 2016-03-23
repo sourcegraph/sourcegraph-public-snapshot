@@ -361,13 +361,13 @@ class TreeSearch extends Container {
 				<div className={this.state.overlay ? BaseStyles.overlay : BaseStyles.hidden} onClick={this._blurInput} />
 				<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
 					<div className={TreeStyles.input_group}>
+						{!this.state.overlay &&
+							<div className={TreeStyles.search_hotkey} data-hint="Use search from any page with this shortcut.">t</div>}
 						<input className={TreeStyles.input}
 							type="text"
 							placeholder="Search this repository..."
 							ref="input"
 							onKeyUp={this._onType} />
-						{!this.state.overlay &&
-							<div className={TreeStyles.search_hotkey}>t</div>}
 					</div>
 					<div className={TreeStyles.list_header}>
 						Symbols

@@ -38,6 +38,7 @@
 @value c_moon-gray from "./colors.css";
 @value c_white from "./colors.css";
 @value c_black-90 from "./colors.css";
+@value c_black-80 from "./colors.css";
 @value c_black-70 from "./colors.css";
 @value c_black-60 from "./colors.css";
 @value c_black-50 from "./colors.css";
@@ -49,6 +50,7 @@
 @value c_black-025 from "./colors.css";
 @value c_black-0125 from "./colors.css";
 @value c_white-90 from "./colors.css";
+@value c_white-80 from "./colors.css";
 @value c_white-70 from "./colors.css";
 @value c_white-60 from "./colors.css";
 @value c_white-50 from "./colors.css";
@@ -2139,4 +2141,29 @@ code, .code { font-family: Consolas, monaco, monospace; }
 
 .hidden {
 	display: none;
+}
+
+/* TOOLTIPS */
+
+@value hint "./hint.css";
+
+.tooltip-common {
+	composes: hint--bounce hint--rounded from hint;
+}
+
+.tooltip-top {
+	composes: tooltip-common;
+	composes: hint--top from hint;
+}
+.tooltip-bottom {
+	composes: tooltip-common;
+	composes: hint--bottom from hint;
+}
+.tooltip-left {
+	composes: tooltip-common;
+	composes: hint--left from hint;
+}
+.tooltip-right {
+	composes: tooltip-common;
+	composes: hint--right from hint;
 }

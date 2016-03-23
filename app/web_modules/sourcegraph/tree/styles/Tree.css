@@ -30,12 +30,13 @@
 }
 
 .search_hotkey {
-	composes: f5 from base;
-	composes: mr3 pv2 ph3 from base;
+	composes: f5 b from base;
+	composes: ml3 mr2 pv2 ph3 from base;
 	composes: br3 from base;
 	composes: dark-gray from base;
 	composes: code from base;
-	composes: bg-black-20 from base;
+	composes: bg-black-10 from base;
+	composes: tooltip-top from base;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
 	text-shadow: 0 1px 0 c_white;
 }
