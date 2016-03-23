@@ -18,7 +18,7 @@
 <tr><th colspan="6"><a href="/.coverage?lang={{.Lang}}">{{.Lang}}</a></th></tr>
 {{range .RepoCov}}
 <tr>
-<td><a href="/.coverage?repo={{.Repo}}">{{.Repo}}</a></td>
+<td><a href="/{{.Repo}}">{{.Repo}}</a></td>
 <td class="{{.FileScoreClass}}">{{.Cov.FileScore}}</td>
 <td class="{{.RefScoreClass}}">{{.Cov.RefScore}}</td>
 <td class="{{.TokDensityClass}}">{{.Cov.TokDensity}}</td>
