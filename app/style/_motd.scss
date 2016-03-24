@@ -1,9 +1,0 @@
-.motd {
-	width: 100%;
-	text-align: center;
-	font-size: $font-size-base * 0.95;
-	background-color: $alert-warning-bg;
-	border-bottom: solid 1px darken($alert-warning-border, 5%);
-	padding: 5px 10px;
-	z-index: $zindex-navbar-fixed + 1;
-}

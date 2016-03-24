@@ -98,13 +98,6 @@ var tmplFuncs = htmpl.FuncMap{
 		return strings.Join(classes, " ")
 	},
 
-	"ifTrue": func(cond bool, v interface{}) interface{} {
-		if cond {
-			return v
-		}
-		return nil
-	},
-
 	"commitSummary":       commitSummary,
 	"commitRestOfMessage": commitRestOfMessage,
 
