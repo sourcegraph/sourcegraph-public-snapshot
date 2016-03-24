@@ -12,6 +12,8 @@ import lineFromByte from "sourcegraph/blob/lineFromByte";
 import hotLink from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
 
+import RefStyles from "sourcegraph/def/styles/Refs.css";
+
 const FILES_PER_PAGE = 5;
 
 class RefsContainer extends Container {
@@ -112,6 +114,7 @@ class RefsContainer extends Container {
 	render() {
 		let defData = this.state.def && this.state.defs.get(this.state.def);
 		let highlightedDefData = this.state.highlightedDef && this.state.defs.get(this.state.highlightedDef);
+		let maxFilesShown = this.state.page * FILES_PER_PAGE;
 
 		return (
 			<div>
@@ -142,9 +145,9 @@ class RefsContainer extends Container {
 									</div>
 								);
 							})}
-							{this.state.files && this.state.files.length > (this.state.page * FILES_PER_PAGE) &&
+							{this.state.files && this.state.files.length > maxFilesShown &&
 								<div className="refs-footer">
-									<div className="btn btn-default" onClick={this._nextPage}>View more</div>
+									<span className={RefStyles.search_hotkey} data-hint={`Refs from ${maxFilesShown} out of ${this.state.files.length} files currently shown`}><div className="btn btn-default" onClick={this._nextPage}>View more</div></span>
 								</div>
 							}
 						</div>
