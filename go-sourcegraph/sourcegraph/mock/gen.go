@@ -1,7 +1,7 @@
 package mock
 
 //go:generate sh -c "env GOBIN=`pwd`/../../../vendor/.bin go install ../../../vendor/sourcegraph.com/sourcegraph/gen-mocks"
-//go:generate ../../../vendor/.bin/gen-mocks -p .. -w -i=.+(Server|Client|Service)$ -o mock -outpkg mock -name_prefix= -no_pass_args=opts
+//go:generate ../../../vendor/.bin/gen-mocks -p .. -w -i=.+(Server|Client|Service)$ -o . -outpkg mock -name_prefix= -no_pass_args=opts
 
 //go:generate go run gen_client_helpers.go
 
