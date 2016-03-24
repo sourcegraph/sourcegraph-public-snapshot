@@ -45,12 +45,12 @@ const DefBackend = {
 				break;
 			}
 
-		case DefActions.WantExample:
+		case DefActions.WantExamples:
 			{
-				let example = DefStore.examples.get(action.defURL, action.index);
-				if (example === null && action.index < DefStore.examples.getCount(action.defURL)) {
+				let examples = DefStore.examples.get(action.defURL, action.page);
+				if (examples === null) {
 					DefBackend.xhr({
-						uri: `/.api/repos${action.defURL}/.examples?PerPage=1&Page=${action.index + 1}`,
+						uri: `/.api/repos${action.defURL}/.examples?PerPage=10&Page=${action.page}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (!err && (resp.statusCode !== 200)) err = `HTTP ${resp.statusCode}`;
@@ -59,10 +59,10 @@ const DefBackend = {
 							return;
 						}
 						if (!body || !body.Examples || body.Examples.length === 0) {
-							Dispatcher.dispatch(new DefActions.NoExampleAvailable(action.defURL, action.index));
+							Dispatcher.dispatch(new DefActions.NoExamplesAvailable(action.defURL, action.page));
 							return;
 						}
-						Dispatcher.dispatch(new DefActions.ExampleFetched(action.defURL, action.index, body.Examples[0]));
+						Dispatcher.dispatch(new DefActions.ExamplesFetched(action.defURL, action.page, body));
 					});
 				}
 				break;
@@ -79,7 +79,6 @@ const DefBackend = {
 							console.error(err);
 							return;
 						}
-						console.log(body);
 						Dispatcher.dispatch(new DefActions.RefsFetched(action.defURL, body));
 					});
 				}

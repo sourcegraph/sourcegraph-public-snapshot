@@ -71,6 +71,8 @@ $file-toolbar-path-color: $warm-grey;
 $line-number-bg: $pale-grey;
 $line-number-text: $muted-grey;
 $line-content-bg: $white;
+$line-expander-bg: $duck-egg-blue;
+$line-expander-text: darken($line-expander-bg, 16%);
 $active-code-line-number-bg: transparentize($brand-azure, 0.85);
 $active-code-bg: transparentize($brand-azure, 0.90);
 $active-code-flash-bg: transparentize($brand-azure, 0.85);
@@ -190,6 +192,9 @@ $content-border: solid 1px $content-border-color;
 $line-panel-shadow: 0 1px 3px 0 transparentize($cloudy-blue, 0.72);
 
 $footer-height: 110px;
+
+$navbar-height: 50px;
+$line-number-width: 50px;
 
 /* Bootstrap Overrides */
 $border-radius-base:  3px;

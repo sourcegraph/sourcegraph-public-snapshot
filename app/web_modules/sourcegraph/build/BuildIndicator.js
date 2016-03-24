@@ -16,7 +16,6 @@ class BuildIndicator extends Component {
 	}
 
 	componentWillUnmount() {
-		super.componentWillUnmount();
 		if (this._interval !== null) clearInterval(this._interval);
 	}
 

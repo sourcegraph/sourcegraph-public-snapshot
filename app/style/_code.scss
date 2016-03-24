@@ -32,7 +32,7 @@
 	}
 
 	.line-number {
-		min-width: 50px;
+		min-width: $line-number-width;
 		text-align: right;
 		vertical-align: top;
 		background-color: $line-number-bg;
@@ -52,6 +52,15 @@
 
 	.line-content {
 		padding-left: 11px;
+	}
+
+	.line-expander {
+		background-color: $line-expander-bg;
+		color: $line-expander-text;
+		text-align: center;
+		.line-content {
+			padding-right: $line-number-width;
+		}
 	}
 
 	tr:hover .line-number {

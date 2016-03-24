@@ -46,8 +46,7 @@ func init() {
 var tmplFuncs = htmpl.FuncMap{
 	"personLabel": personLabel,
 
-	"repoBasename": repoBasename,
-	"repoLink":     repoLink,
+	"repoLink": repoLink,
 
 	"repoMetaDescription": repoMetaDescription,
 
@@ -90,13 +89,10 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlToRepoCommit":    router.Rel.URLToRepoCommit,
 	"urlWithSchema":      schemautil.URLWithSchema,
 	"urlToDef":           router.Rel.URLToDef,
-	"urlToDefAtRev":      router.Rel.URLToDefAtRev,
-	"urlToDefSubroute":   router.Rel.URLToDefSubroute,
 	"urlToWithReturnTo":  urlToWithReturnTo,
 
-	"fileToBreadcrumb":    fileToBreadcrumb,
-	"snippetToBreadcrumb": snippetToBreadcrumb,
-	"router":              func() *router.Router { return router.Rel },
+	"fileToBreadcrumb": fileToBreadcrumb,
+	"router":           func() *router.Router { return router.Rel },
 
 	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
 
@@ -132,23 +128,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"duration":     duration,
 	"isNil":        isNil,
 	"minTime":      minTime,
-	"toInt": func(v interface{}) (int, error) {
-		switch v := v.(type) {
-		case int:
-			return v, nil
-		case uint32:
-			return int(v), nil
-		case int32:
-			return int(v), nil
-		case uint:
-			return int(v), nil
-		case uint64:
-			return int(v), nil
-		case int64:
-			return int(v), nil
-		}
-		return 0, fmt.Errorf("toInt: unexpected type %T", v)
-	},
 
 	"truncate":         textutil.Truncate,
 	"truncateCommitID": truncateCommitID,

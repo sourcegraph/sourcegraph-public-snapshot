@@ -1,11 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import last from "lodash/array/last";
 import utf8 from "utf8";
 
 import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
 import Component from "sourcegraph/Component";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobLine from "sourcegraph/blob/BlobLine";
+import BlobLineExpander from "sourcegraph/blob/BlobLineExpander";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import fileLines from "sourcegraph/util/fileLines";
@@ -21,8 +23,10 @@ class Blob extends Component {
 			firstVisibleLine: 0,
 			visibleLinesCount: tilingFactor * 3,
 			lineAnns: [],
+			expandedRanges: [],
 		};
 		this._updateVisibleLines = this._updateVisibleLines.bind(this);
+		this._expandRange = this._expandRange.bind(this);
 		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 200, {
 			leading: false,
 			trailing: true,
@@ -56,6 +60,7 @@ class Blob extends Component {
 		state.activeDef = props.activeDef || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
+		state.displayRanges = props.displayRanges ? this._consolidateRanges(props.displayRanges.concat(state.expandedRanges)) : null;
 
 		let updateAnns = false;
 
@@ -83,6 +88,42 @@ class Blob extends Component {
 			// Encode the line using utf8 to account for multi-byte unicode characters.
 			pos += utf8.encode(line).length + 1; // add 1 to account for newline
 			return start;
+		});
+	}
+
+	_consolidateRanges(ranges) {
+		if (ranges.length === 0) return [];
+
+		ranges = ranges.sort((a, b) => {
+			if (a[0] < b[0]) return -1;
+			if (a[0] > b[0]) return 1;
+			return 0;
+		});
+
+		let newRanges = [ranges[0]];
+		for (let range of ranges) {
+			let lastRange = last(newRanges);
+			if (lastRange[1] < range[0]) {
+				newRanges.push(range);
+			} else if (lastRange[1] < range[1]) {
+				// If the ranges overlap and range's ending value is greater, update
+				// the ending value of lastRange.
+				lastRange[1] = range[1];
+			}
+		}
+		return newRanges;
+	}
+
+	_withinDisplayedRange(lineNumber) {
+		for (let range of this.state.displayRanges) {
+			if (range[0] <= lineNumber && lineNumber <= range[1]) return true;
+		}
+		return false;
+	}
+
+	_expandRange(range) {
+		this.setState({
+			expandedRanges: this.state.expandedRanges.concat([range]),
 		});
 	}
 
@@ -165,7 +206,6 @@ class Blob extends Component {
 		let startByte = this.state.lineStartBytes[startLine - 1] + startCol;
 		let endByte = this.state.lineStartBytes[endLine - 1] + endCol;
 
-		// console.log("%d:%d[%d] - %d:%d[%d]", startLine, startCol, startByte, endLine, endCol, endByte);
 		Dispatcher.dispatch(new BlobActions.SelectCharRange(startLine, startCol, startByte, endLine, endCol, endByte));
 	}
 
@@ -211,10 +251,27 @@ class Blob extends Component {
 		let visibleLinesStart = this.state.firstVisibleLine;
 		let visibleLinesEnd = visibleLinesStart + this.state.visibleLinesCount;
 
-		let lines = this.state.lines.map((line, i) => {
+		let lastDisplayedLine = 0;
+		let lastRangeEnd = 0;
+		let lines = [];
+		this.state.lines.forEach((line, i) => {
 			const visible = i >= visibleLinesStart && i < visibleLinesEnd;
 			const lineNumber = 1 + i + this.state.contentsOffsetLine;
-			return (
+			if (this.state.displayRanges && !this._withinDisplayedRange(lineNumber)) {
+				return;
+			}
+			if (lastDisplayedLine !== lineNumber - 1) {
+				// Prevent expanding above the last displayed range.
+				let expandTo = [Math.max(lastRangeEnd, lineNumber-30), lineNumber-1];
+				lines.push(
+					<BlobLineExpander key={`expand-${i}`}
+						expandRange={expandTo}
+						onExpand={this._expandRange} />
+				);
+				lastRangeEnd = lineNumber;
+			}
+			lastDisplayedLine = lineNumber;
+			lines.push(
 				<BlobLine
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
@@ -226,6 +283,13 @@ class Blob extends Component {
 					key={i} />
 			);
 		});
+		if (this.state.lines && lastDisplayedLine < this.state.lines.length) {
+			lines.push(
+				<BlobLineExpander key={`expand-${this.state.lines.length}`}
+					expandRange={[lastDisplayedLine, lastDisplayedLine+30]}
+					onExpand={this._expandRange} />
+			);
+		}
 
 		return (
 			<div className="blob-scroller">

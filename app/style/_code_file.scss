@@ -157,6 +157,12 @@
 		font-weight: bold;
 	}
 
+	.usage-header {
+		.fa-spin {
+			color: $text-muted;
+		}
+	}
+
 	.qualified-name {
 		margin-bottom: 0;
 		font-size: 13px;
@@ -168,4 +174,8 @@
 			color: $text-header;
 		}
 	}
+}
+
+.file-list-item {
+	margin-bottom: $padding-large-vertical*2;
 }

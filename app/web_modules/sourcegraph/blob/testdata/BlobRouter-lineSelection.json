@@ -1,12 +1,19 @@
 {
 	"renderOutput": {
-		"type": "BlobContainer",
+		"type": "div",
 		"props": {
-			"repo": "github.com/gorilla/mux",
-			"rev": "master",
-			"path": "mux.go",
-			"startLine": 40,
-			"endLine": 53
+			"children": [
+				{
+					"type": "BlobContainer",
+					"props": {
+						"repo": "github.com/gorilla/mux",
+						"rev": "master",
+						"path": "mux.go",
+						"startLine": 40,
+						"endLine": 53
+					}
+				}
+			]
 		}
 	}
 }

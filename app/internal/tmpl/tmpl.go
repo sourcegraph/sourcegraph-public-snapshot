@@ -81,8 +81,6 @@ func repoTemplates() error {
 		{"repo/branches.html"},
 		{"repo/tags.html"},
 		{"repo/no_vcs_data.html"},
-
-		{"def/examples.html", "def/examples.inc.html", "def/def.html"},
 	}, []string{
 		"repo/repo.html",
 

@@ -196,7 +196,6 @@ BlobContainer.propTypes = {
 	startCol: React.PropTypes.number,
 	endLine: React.PropTypes.number,
 	endCol: React.PropTypes.number,
-	example: React.PropTypes.number,
 };
 
 export default BlobContainer;

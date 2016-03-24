@@ -25,7 +25,13 @@
 					"props": {
 						"className": "usage-header",
 						"children": [
-							"Usages"
+							"Usages ",
+							{
+								"type": "i",
+								"props": {
+									"className": "fa fa-circle-o-notch fa-spin"
+								}
+							}
 						]
 					}
 				}

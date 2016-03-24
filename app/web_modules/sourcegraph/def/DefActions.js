@@ -48,25 +48,25 @@ export class HighlightDef {
 	}
 }
 
-export class WantExample {
-	constructor(defURL, index) {
+export class WantExamples {
+	constructor(defURL, page) {
 		this.defURL = defURL;
-		this.index = index;
+		this.page = page;
 	}
 }
 
-export class ExampleFetched {
-	constructor(defURL, index, example) {
+export class ExamplesFetched {
+	constructor(defURL, page, examples) {
 		this.defURL = defURL;
-		this.index = index;
-		this.example = example;
+		this.page = page;
+		this.examples = examples;
 	}
 }
 
-export class NoExampleAvailable {
-	constructor(defURL, index) {
+export class NoExamplesAvailable {
+	constructor(defURL, page) {
 		this.defURL = defURL;
-		this.index = index;
+		this.page = page;
 	}
 }
 

@@ -1,10 +1,17 @@
 {
 	"renderOutput": {
-		"type": "BlobContainer",
+		"type": "div",
 		"props": {
-			"repo": "github.com/gorilla/mux",
-			"rev": "master",
-			"activeDef": "/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
+			"children": [
+				{
+					"type": "BlobContainer",
+					"props": {
+						"repo": "github.com/gorilla/mux",
+						"rev": "master",
+						"activeDef": "/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
+					}
+				}
+			]
 		}
 	}
 }

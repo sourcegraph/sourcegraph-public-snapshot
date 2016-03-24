@@ -1,6 +1,7 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
+import hotLink from "sourcegraph/util/hotLink";
 
 class DefPopup extends Component {
 	reconcileState(state, props) {
@@ -16,7 +17,7 @@ class DefPopup extends Component {
 					<p className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 				</section>
 
-				<header className="usage-header">Usages</header>
+				<header className="usage-header">Usages {!this.state.refs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
 				{this.state.refs && this.state.refs.Total === 0 &&
 					<i>No usages found</i>
 				}
@@ -24,8 +25,7 @@ class DefPopup extends Component {
 					<div>
 						{this.state.refs.Files.map((file, i) => (
 							<div key={i}>
-								<i className="fa fa-file-text-o"></i> {this.state.path === file.Name ?
-									"Current File" : file.Name} ({file.RefCount})
+								<i className="fa fa-file-text-o"></i> <a href={`${this.state.def.URL}/.examples`} onClick={hotLink}>{this.state.path === file.Name ? "Current File" : file.Name}</a> ({file.RefCount})
 							</div>
 						))}
 					</div>
