@@ -1,3 +1,10 @@
+.clearfix:before,
+.clearfix:after{
+  content:" ";
+  display:table
+}
+.clearfix:after{ clear:both }
+
 .col {
 	float: left;
 	box-sizing: border-box;

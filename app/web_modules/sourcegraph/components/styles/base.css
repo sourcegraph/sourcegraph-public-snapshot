@@ -2113,8 +2113,9 @@ code, .code { font-family: Consolas, monaco, monospace; }
 }
 
 /* MODALS */
-.overlay {
+.modal_container {
 	composes: bg-black-50;
+	composes: center;
 	z-index: 100;
 	position: fixed;
 	top: 0;
@@ -2129,14 +2130,14 @@ code, .code { font-family: Consolas, monaco, monospace; }
 
 .modal {
 	composes: br2 modal-shadow;
+
+	/*composes: col-3 from "./grid.css";*/
+	max-width: 600px;
+	min-width: 300px;
 	z-index: 101;
-	position: fixed;
-	width: 700px;
-	top: 10%;
-	max-height: 600%;
+	max-height: 75%;
+	composes: mv6;
 	overflow-y: scroll;
-	left: 50%;
-	margin-left: -350px;
 }
 
 .hidden {

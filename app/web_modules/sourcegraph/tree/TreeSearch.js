@@ -12,6 +12,8 @@ import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
+import Modal from "sourcegraph/components/Modal";
+
 import TreeStyles from "./styles/Tree.css";
 import BaseStyles from "sourcegraph/components/styles/base.css";
 
@@ -355,11 +357,15 @@ class TreeSearch extends Container {
 		return "";
 	}
 
+	_wrapModalContainer(elem) {
+		if (this.state.overlay) return <Modal onClickOverlay={this._blurInput}>{elem}</Modal>;
+		return elem;
+	}
+
 	render() {
 		return (
-			<div className={this.state.visible ? TreeStyles.tree : BaseStyles.hidden}>
-				<div className={this.state.overlay ? BaseStyles.overlay : BaseStyles.hidden} onClick={this._blurInput} />
-				<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
+			<div className={this.state.visible ? TreeStyles.tree_container : BaseStyles.hidden}>
+				{this._wrapModalContainer(<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
 					<div className={TreeStyles.input_group}>
 						{!this.state.overlay &&
 							<div className={TreeStyles.search_hotkey} data-hint="Use search from any page with this shortcut.">t</div>}
@@ -388,10 +394,10 @@ class TreeSearch extends Container {
 						{this.state.query === "" &&
 							<span className={TreeStyles.file_path}>{this.state.currPath.join("/")}</span>}
 					</div>
-					<div>
+					<div className={TreeStyles.list_item_group}>
 						{this._listItems()}
 					</div>
-				</div>
+				</div>)}
 			</div>
 		);
 	}

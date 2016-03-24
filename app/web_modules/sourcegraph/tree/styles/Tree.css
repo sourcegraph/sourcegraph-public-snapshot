@@ -1,13 +1,20 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value flexbox "sourcegraph/components/styles/flexbox.css";
+@value grid "sourcegraph/components/styles/grid.css";
 
 @value c_black-20 from colors;
 @value c_white from colors;
 
+.tree_container {
+	composes: cf from base;
+}
+
 .tree {
 	composes: f4 from base;
 	composes: bg-white from base;
+	composes: center from base;
+	composes: col-8 from grid;
 }
 
 .tree_modal {
@@ -45,6 +52,10 @@
 	composes: b f3 ph3 pt4 pb2 tracked from base;
 	composes: gray from base;
 	text-transform: uppercase;
+}
+
+.list_item_group {
+	composes: pb3 from base;
 }
 
 .list_item {
