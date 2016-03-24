@@ -35,6 +35,6 @@
 
 .fade-enter.fade-enter-active {
 	opacity: 1;
-	@include transition(opacity 100ms ease-in);
+	transition: opacity 100ms ease-in;
 	transition-delay: 500ms;
 }
