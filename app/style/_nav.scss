@@ -1,6 +1,24 @@
-#nav {
+$navbar-height: 40px;
+$navbar-padding-vertical: 10px;
+$nav-link-padding: 4px;
+$navbar-inverse-brand-color: lighten($navbar-inverse-link-color, 15%);
+
+nav.global {
+	display: flex;
+	align-items: center;
+	& > * {
+		margin: 0;
+		padding: $nav-link-padding;
+		font-size: $font-size-large;
+		line-height: 1;
+	}
+	& > .context {
+		flex: 1 0 auto;
+	}
+
 	background-color: #F4F4F4;
-	border: 1px solid #eaeaf2;
+	border-bottom: 1px solid #eaeaf2;
+	margin-bottom: $navbar-padding-vertical;
 
 	a, button {
 		display: inline-block !important;
@@ -17,39 +35,21 @@
 	a:active { transition: color .15s ease-in; }
 	a:focus { transition: color .15s ease-in; }
 
-	.navbar-brand {
-		$size: $navbar-height - 14px;
+	.logo {
+		$size: $navbar-height - (2*$nav-link-padding);
 		img {
 			height: $size;
 			width: $size;
-
 			&:hover {
 				animation: spin 0.4s ease-in-out 1;
 				@keyframes spin { 100% { transform:rotate(360deg); } }
 			}
 		}
-		padding-top: ($navbar-height - $size)/2;
-		padding-bottom: ($navbar-height - $size)/2;
 		padding: $nav-link-padding;
 	}
 
-	.current-user.name {
-		font-weight: bold;
-	}
-
-	.navbar-form {
-		margin: 0;
-		padding: 0;
-		border: none;
-		box-shadow: none;
-		.btn-link {
-			padding-top:    10px;
-			padding-bottom: 10px;
-		}
-	}
-
-	.title {
-		font-size: 20px;
+	.repo {
+		font-size: $font-size-large;
 		span {
 			display: inline-block;
 		}
@@ -62,20 +62,11 @@
 		}
 	}
 
-	li.repo {
-		margin-top: 1px;
+	.current-user.name {
+		font-weight: bold;
 	}
-}
 
-// Don't collapse or stack on small screens.
-.no-collapse-nav {
-	ul.navbar-right {
-		float: right !important;
-	}
-	.navbar-header {
-		float: left !important;
-	}
-	li {
-		float: left !important;
+	& > ul, & > ul > li {
+		list-style-type: none;
 	}
 }

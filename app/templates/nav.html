@@ -1,48 +1,44 @@
 {{define "Nav"}}
-<nav class="navbar no-collapse-nav" role="navigation" id="nav">
-	<div class="container">
-		<div class="navbar-header">
-			<div class="global navbar-brand">
-				<a href="/"><img src="{{assetURL "/img/sourcegraph_mark.svg"}}"></a>
-			</div>
-		</div>
+<nav class="global" role="navigation">
+	<h1 class="logo">
+		<a href="/"><img src="{{assetURL "/img/sourcegraph_mark.svg"}}" /></a>
+	</h1>
 
-		{{if hasField . "Repo"}}
-			<ul class="nav navbar-nav title">
-				<li class="repo">
-					{{template "RepoLink" (repoLink .Repo.URI)}}
-				</li>
-			</ul>
-		{{end}}
+	{{if hasField . "Repo"}}
+		<h2 class="context repo">
+			{{template "RepoLink" (repoLink .Repo.URI)}}
+		</h2>
+	{{else}}
+		<div class="context"></div>
+	{{end}}
 
-		<ul class="nav navbar-nav navbar-right">
-			{{if authFlags.HasUserAccounts}}
-				{{if .CurrentUser}}
-					<li class="current-user name">
-						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
-							{{if .CurrentUser.AvatarURL}}
+	<ul class="actions">
+		{{if authFlags.HasUserAccounts}}
+			{{if .CurrentUser}}
+				<li class="current-user">
+					<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
+						{{if .CurrentUser.AvatarURL}}
 							<img class="avatar-sm" src="{{.CurrentUser.AvatarURL}}" />
-							{{else}}
-							{{.CurrentUser.Login}}
-							{{end}}
-						</a>
-					</li>
-				{{else}}
-					{{if authFlags.HasSignup}}
-						<li class="sign-up">
-							<a class="sign-up" href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">
-								Sign up
-							</a>
-						</li>
-					{{end}}
-					<li class="sign-in">
-						<a class="sign-in" href="{{urlToWithReturnTo "log-in" .ReturnTo}}">
-							Sign in
+						{{else}}
+							<span class="name">{{.CurrentUser.Login}}</span>
+						{{end}}
+					</a>
+				</li>
+			{{else}}
+				{{if authFlags.HasSignup}}
+					<li class="sign-up">
+						<a class="sign-up" href="{{urlToWithReturnTo "sign-up" .ReturnTo}}">
+							Sign up
 						</a>
 					</li>
 				{{end}}
+				<li class="sign-in">
+					<a class="sign-in" href="{{urlToWithReturnTo "log-in" .ReturnTo}}">
+						Sign in
+					</a>
+				</li>
 			{{end}}
-		</ul>
-	</div>
+		{{end}}
+	</ul>
 </nav>
 {{end}}
