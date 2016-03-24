@@ -1,0 +1,101 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value flexbox "sourcegraph/components/styles/flexbox.css";
+@value grid "sourcegraph/components/styles/grid.css";
+
+@value c_black-20 from colors;
+@value c_white from colors;
+
+.tree_container {
+	composes: cf from base;
+}
+
+.tree {
+	composes: f4 from base;
+	composes: bg-white from base;
+	composes: center from base;
+	composes: col-9 from grid;
+}
+
+.tree_modal {
+	composes: tree;
+	composes: modal from base;
+}
+
+.input_group {
+	composes: flex items-center from flexbox;
+	composes: br3 ba from base;
+	composes: ma3 from base;
+	max-width: 100%;
+}
+.input_group_focused {
+	composes: input_group;
+	composes: input-focus-border from base;
+}
+.input_group_unfocused {
+	composes: input_group;
+	composes: input-border from base;
+}
+
+.input {
+	composes: text-input from base;
+	composes: flex-auto from flexbox;
+	border: none; /* explicit override should not be composed */
+}
+
+.search_hotkey {
+	composes: f5 b from base;
+	composes: ml3 mr2 pv2 ph3 from base;
+	composes: br3 from base;
+	composes: dark-gray from base;
+	composes: code from base;
+	composes: bg-black-10 from base;
+	composes: tooltip-top-right from base;
+	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
+	text-shadow: 0 1px 0 c_white;
+}
+
+.list_header {
+	composes: b f3 ph3 pt4 pb2 tracked from base;
+	composes: gray from base;
+	text-transform: uppercase;
+}
+
+.list_item_group {
+	composes: pb3 from base;
+}
+
+.list_item {
+	composes: pa3 from base;
+	composes: mh3 from base;
+	composes: bt b--black-20 from base;
+	composes: sans-serif from base;
+}
+
+.list_item_selected {
+	composes: list_item;
+	composes: f3 from base;
+	composes: bg-blue-1 from colors;
+}
+
+/* TODO: this wrapper only needed until we can pull compose our icon fonts from CSS sheet in a single component. */
+.icon {
+	composes: pr3 from base;
+}
+
+.filetype_icon {
+	composes: blue from colors;
+	composes: pr3 from base;
+}
+
+.directory_nav_icon {
+	composes: blue from colors;
+	float: right;
+}
+
+.file_path {
+	composes: pl3 from base;
+	composes: f4 sans-serif from base;
+	letter-spacing: initial;
+	text-transform: none;
+}

@@ -8,14 +8,12 @@ import (
 	htmpl "html/template"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
@@ -30,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/sourcecode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/textutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
@@ -68,33 +65,27 @@ var tmplFuncs = htmpl.FuncMap{
 		return string(b), nil
 	},
 
-	"customLogo":         func() htmpl.HTML { return appconf.Flags.CustomLogo },
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
 	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },
 
-	"urlTo":                router.Rel.URLTo,
-	"urlToUserSubroute":    router.Rel.URLToUserSubroute,
-	"urlToRepo":            router.Rel.URLToRepo,
-	"urlToRepoRev":         router.Rel.URLToRepoRev,
-	"urlToRepoBuild":       router.Rel.URLToRepoBuild,
-	"urlToRepoSubroute":    router.Rel.URLToRepoSubroute,
-	"urlToRepoSubrouteRev": router.Rel.URLToRepoSubrouteRev,
-	"urlToRepoTreeEntry":   router.Rel.URLToRepoTreeEntry,
-	"urlToRepoCommit":      router.Rel.URLToRepoCommit,
-	"urlToRepoApp":         router.Rel.URLToRepoApp,
-	"urlWithSchema":        schemautil.URLWithSchema,
-	"urlToDef":             router.Rel.URLToDef,
-	"urlToDefAtRev":        router.Rel.URLToDefAtRev,
-	"urlToDefSubroute":     router.Rel.URLToDefSubroute,
-	"urlToWithReturnTo":    urlToWithReturnTo,
+	"urlTo":              router.Rel.URLTo,
+	"urlToUserSubroute":  router.Rel.URLToUserSubroute,
+	"urlToRepo":          router.Rel.URLToRepo,
+	"urlToRepoRev":       router.Rel.URLToRepoRev,
+	"urlToRepoBuild":     router.Rel.URLToRepoBuild,
+	"urlToRepoSubroute":  router.Rel.URLToRepoSubroute,
+	"urlToRepoTreeEntry": router.Rel.URLToRepoTreeEntry,
+	"urlToRepoCommit":    router.Rel.URLToRepoCommit,
+	"urlWithSchema":      schemautil.URLWithSchema,
+	"urlToDef":           router.Rel.URLToDef,
+	"urlToDefAtRev":      router.Rel.URLToDefAtRev,
+	"urlToDefSubroute":   router.Rel.URLToDefSubroute,
+	"urlToWithReturnTo":  urlToWithReturnTo,
 
 	"fileToBreadcrumb":      FileToBreadcrumb,
 	"fileLinesToBreadcrumb": FileLinesToBreadcrumb,
 	"snippetToBreadcrumb":   SnippetToBreadcrumb,
 	"router":                func() *router.Router { return router.Rel },
-
-	"flattenName":     handlerutil.FlattenName,
-	"flattenNameHTML": handlerutil.FlattenNameHTML,
 
 	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
 
@@ -117,7 +108,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"commitSummary":       commitSummary,
 	"commitRestOfMessage": commitRestOfMessage,
 
-	"toString2":    func(v interface{}) string { return fmt.Sprintf("%s", v) },
 	"sanitizeHTML": sanitizeHTML,
 	"textFromHTML": textutil.TextFromHTML,
 	"timeOrNil":    timeutil.TimeOrNil,
@@ -126,7 +116,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"duration":     duration,
 	"isNil":        isNil,
 	"minTime":      minTime,
-	"pathJoin":     path.Join,
 	"toInt": func(v interface{}) (int, error) {
 		switch v := v.(type) {
 		case int:
@@ -148,9 +137,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"truncate":         textutil.Truncate,
 	"truncateCommitID": truncateCommitID,
 	"maxLen":           maxLen,
-	"displayURL": func(urlStr string) string {
-		return strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(urlStr, "https://"), "http://"), "/")
-	},
 
 	"assetURL": assets.URL,
 
@@ -172,38 +158,18 @@ var tmplFuncs = htmpl.FuncMap{
 
 	"hasField": hasStructField,
 
-	"ifTemplate":                ifTemplate,
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
 	"hostname":            func() string { return hostname },
 
-	"showRepoRevSwitcher": showRepoRevSwitcher,
-
-	"orderedRepoEnabledFrames": func(repo *sourcegraph.Repo, repoConf *sourcegraph.RepoConfig) []platform.RepoFrame {
-		frames, orderedIDs := orderedRepoEnabledFrames(repo, repoConf)
-		orderedFrames := make([]platform.RepoFrame, len(orderedIDs))
-		for i, id := range orderedIDs {
-			orderedFrames[i] = frames[id]
-		}
-		return orderedFrames
-	},
 	"platformSearchFrames": func() map[string]platform.SearchFrame {
 		return platform.SearchFrames()
 	},
-	"showSearchForm":     showSearchForm,
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 
 	"isAdmin": func(ctx context.Context, method string) bool {
 		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
-	},
-
-	"activeRepoApp": func(currentURL *url.URL, repoURI, appID string) (bool, error) {
-		u, err := router.Rel.URLToRepoApp(repoURI, appID)
-		if err != nil {
-			return false, err
-		}
-		return strings.HasPrefix(currentURL.Path, u.Path), nil
 	},
 
 	"publicRavenDSN": func() string { return conf.PublicRavenDSN },

@@ -1,38 +1,9 @@
 {{define "Body"}}
 <div class="padded-container">
 	<div class="row">
-		<div class="col-sm-3 sidebar">
-			{{template "settingsSidebar" $}}
-		</div>
 		<div class="col-sm-9">
 			{{template "PersonSettingsBody" $}}
 		</div>
 	</div>
-</div>
-{{end}}
-
-{{define "settingsSidebar"}}
-<div class="panel-group orgs-and-self">
-	{{$currentURI := .CurrentURI}}
-	{{$currentlyDisplayedUserOrOrg := .User}}
-	{{range .OrgsAndSelf}}
-	<div class="panel panel-main panel-default adminable {{if .IsOrganization}}org{{else}}self{{end}}" data-name="{{.Login}}">
-		<div class="panel-heading">
-			<a href="{{urlToUserSubroute "person.settings.profile" .Login}}">
-				<img src="{{.AvatarURLOfSize 56}}" class="avatar img-rounded">
-				{{.Login}}
-			</a>
-		</div>
-		{{if eq $currentlyDisplayedUserOrOrg.UID .UID}}
-		<ul class="list-group">
-			<a href="{{urlToUserSubroute "person.settings.profile" .Login}}">
-				<li class="list-group-item {{if eq $currentURI.String ((urlToUserSubroute "person.settings.profile" .Login).String)}}active{{end}}">
-					{{if .IsOrganization}}Organization profile{{else}}Profile{{end}}
-				</li>
-			</a>
-		</ul>
-		{{end}}
-	</div>
-	{{end}}
 </div>
 {{end}}

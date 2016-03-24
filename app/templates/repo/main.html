@@ -8,23 +8,8 @@
 
 {{define "RepoBody"}}
 
-{{if or .Repo.Description .Repo.HomepageURL}}
-	<div class="repo-meta row">
-		<p class="description col-sm-12">
-			{{if or .Repo.Description .Repo.HomepageURL}}
-				{{sanitizeHTML .Repo.Description}}
-				{{if and .Repo.Description .Repo.HomepageURL}}&mdash;{{end}}
-				{{if .Repo.HomepageURL}}
-					<a href="{{.Repo.HomepageURL}}" target="_blank" rel="nofollow">{{displayURL (toString2 .Repo.HomepageURL)}}</a>
-				{{end}}
-			{{end}}
-		</p>
-	</div>
-
-	<hr/>
-{{end}}
-
+<div class="repo-home">
 {{template "RepoTree" $}}
-{{template "RepoReadme" $}}
+</div>
 
 {{end}}

@@ -1,31 +1,17 @@
-.navbar-header {
-	$repo-text-color: #636363;
-	.navbar-brand.repo {
-		font-size: 1.4em;
-		margin-right: 10px;
-		.repo-attr-icon {
-			font-size: 1.1em;
-			color: $repo-text-color;
-			margin-left: 1px;
-			margin-right: 5px;
-			vertical-align: middle;
-			display: inline-block;
-		}
-	.repo-link {
-		color: $repo-text-color;
-	}
-		.name {
-			font-weight: bold;
-		}
-	}
-}
 
-[data-react="RevSwitcher"] {
+[data-react="sourcegraph/repo/RevSwitcherContainer"] {
 	display: inline-block;
 }
+
+.repo-home {
+	display: flex;
+	flex-wrap: wrap;
+}
+
 .repo-rev-switcher {
 	display: inline-block;
 	padding-left: 10px;
+	margin-top: -3px;
 	.button {
 		color: $btn-default-dark;
 		font-weight: bold;
@@ -35,6 +21,9 @@
 			}
 		}
 		padding: 2px 12px;
+		label {
+			margin-bottom: 0;
+		}
 	}
 
 	.search-section {
@@ -70,10 +59,6 @@
 		padding-right: 3px;
 		margin-left: -10px;
 	}
-}
-
-.route-repo .subnav.repo .repo-link .name {
-	font-weight: bold;
 }
 
 .fork, .mirror {

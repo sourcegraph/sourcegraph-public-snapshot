@@ -211,21 +211,3 @@ func repoMetaDescription(rp *sourcegraph.Repo) string {
 func repoBasename(repoURI string) string {
 	return filepath.Base(repoURI)
 }
-
-// showRepoRevSwitcher returns whether the repo switcher (that lets you
-// choose branches/tags) should be displayed on pages generated for
-// this route. We only want to show it where it makes sense, when the
-// data on the page is dependent on the revision.
-//
-// The list of routes should be all routes that let you specify a repo
-// with a revision, as in "repoURI@revspec".
-func showRepoRevSwitcher(routeName string) bool {
-	if strings.HasPrefix(routeName, "def") || strings.HasPrefix(routeName, "repo.tree") {
-		return true
-	}
-	switch routeName {
-	case router.Repo:
-		return true
-	}
-	return false
-}

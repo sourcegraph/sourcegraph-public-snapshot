@@ -1,37 +1,31 @@
 {{define "Nav"}}
-<nav class="navbar navbar-tint no-collapse-nav" role="navigation" id="nav">
+<nav class="navbar no-collapse-nav" role="navigation" id="nav">
 	<div class="container">
 		<div class="navbar-header">
-			{{if appconf.CustomLogo}}
-				<a class="navbar-brand logo logo-symbol-and-text" href="/">
-					{{customLogo}}
-				</a>
-			{{else}}
-				<a class="sourcegraph-logo" href="/">
-					<img src="{{assetURL "/img/sourcegraph-logo.svg"}}">
-				</a>
-			{{end}}
-
-			{{if appconf.CustomNavLayout}}
-				{{appconf.CustomNavLayout}}
-			{{end}}
+			<div class="global navbar-brand">
+				<a href="/"><img src="{{assetURL "/img/sourcegraph_mark.svg"}}"></a>
+			</div>
 		</div>
+
+		{{if hasField . "Repo"}}
+			<ul class="nav navbar-nav title">
+				<li class="repo">
+					{{template "RepoLink" (repoLink .Repo.URI)}}
+				</li>
+			</ul>
+		{{end}}
 
 		<ul class="nav navbar-nav navbar-right">
 			{{if authFlags.HasUserAccounts}}
 				{{if .CurrentUser}}
 					<li class="current-user name">
 						<a href="{{urlToUserSubroute "person.settings.profile" .CurrentUser.Login}}" class="user">
+							{{if .CurrentUser.AvatarURL}}
+							<img class="avatar-sm" src="{{.CurrentUser.AvatarURL}}" />
+							{{else}}
 							{{.CurrentUser.Login}}
+							{{end}}
 						</a>
-					</li>
-					<li class="sign-out">
-						<form action="{{urlTo "log-out"}}" method="POST" class="navbar-form">
-							<button class="btn btn-link" title="Sign out">
-								<i class="octicon octicon-sign-out"></i>
-							</button>
-							<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-						</form>
 					</li>
 				{{else}}
 					{{if authFlags.HasSignup}}
@@ -49,14 +43,6 @@
 				{{end}}
 			{{end}}
 		</ul>
-
-		{{if (showSearchForm .Common)}}
-			<div id="SearchBar" class="search-bar"></div>
-		{{end}}
 	</div>
 </nav>
-{{end}}
-
-{{define "iconBadge"}}
-<div class="icon-badge"></div>
 {{end}}

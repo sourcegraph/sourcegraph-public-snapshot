@@ -2,53 +2,174 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "tree-entry-search hidden",
 			"children": [
 				{
-					"type": "div",
+					"type": "Modal",
 					"props": {
-						"className": "overlay"
-					}
-				},
-				{
-					"type": "div",
-					"props": {
-						"className": "search-input-group",
+						"shown": false,
 						"children": [
 							{
 								"type": "div",
 								"props": {
-									"className": "tree-search-input",
 									"children": [
 										{
-											"type": "input",
-											"ref": "input",
+											"type": "div",
 											"props": {
-												"type": "text",
-												"placeholder": "Search files in this repository..."
+												"children": [
+													{
+														"type": "input",
+														"ref": "input",
+														"props": {
+															"type": "text",
+															"onFocus": {
+																"dispatched": [
+																	{
+																		"$constructor": "WantFileList",
+																		"repo": "repo",
+																		"rev": "rev"
+																	},
+																	{
+																		"$constructor": "WantResults",
+																		"repo": "repo",
+																		"rev": "rev",
+																		"type": "tokens",
+																		"page": 1,
+																		"perPage": 5,
+																		"query": ""
+																	}
+																]
+															},
+															"placeholder": "Search this repository..."
+														}
+													}
+												]
 											}
 										},
 										{
 											"type": "div",
 											"props": {
-												"className": "spinner",
 												"children": [
+													"Symbols"
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"children": [
+													{
+														"type": "span",
+														"props": {
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-spinner fa-spin"
+																	}
+																}
+															]
+														}
+													},
 													{
 														"type": "i",
 														"props": {
-															"className": "fa fa-spinner fa-spin"
+															"children": [
+																"Sourcegraph is analyzing your code — ",
+																{
+																	"type": "a",
+																	"props": {
+																		"href": "",
+																		"children": [
+																			"results will be available soon!"
+																		]
+																	}
+																}
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"children": [
+													"Files",
+													{
+														"type": "span",
+														"props": {}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"children": [
+													{
+														"type": "div",
+														"key": "/repo@rev/.tree/a",
+														"props": {
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "i",
+																				"props": {
+																					"className": "fa fa-file-text-o"
+																				}
+																			}
+																		]
+																	}
+																},
+																{
+																	"type": "a",
+																	"props": {
+																		"href": "/repo@rev/.tree/a",
+																		"children": [
+																			"a"
+																		]
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "div",
+														"key": "/repo@rev/.tree/b",
+														"props": {
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "i",
+																				"props": {
+																					"className": "fa fa-file-text-o"
+																				}
+																			}
+																		]
+																	}
+																},
+																{
+																	"type": "a",
+																	"props": {
+																		"href": "/repo@rev/.tree/b",
+																		"children": [
+																			"b"
+																		]
+																	}
+																}
+															]
 														}
 													}
 												]
 											}
 										}
 									]
-								}
-							},
-							{
-								"type": "ul",
-								"props": {
-									"className": "tree-search-file-list"
 								}
 							}
 						]
@@ -62,6 +183,15 @@
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"rev": "rev"
+		},
+		{
+			"$constructor": "WantResults",
+			"repo": "repo",
+			"rev": "rev",
+			"type": "tokens",
+			"page": 1,
+			"perPage": 5,
+			"query": ""
 		}
 	]
 }

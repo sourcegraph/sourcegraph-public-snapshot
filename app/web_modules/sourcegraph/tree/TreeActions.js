@@ -29,3 +29,13 @@ export class FileListFetched {
 		this.fileList = fileList;
 	}
 }
+
+export class UpDirectory {
+	constructor() {}
+}
+
+export class DownDirectory {
+	constructor(part) {
+		this.part = part;
+	}
+}

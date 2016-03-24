@@ -86,12 +86,10 @@ module.exports = {
 			{test: /\.(eot|ttf|woff)$/, loader: "file?name=fonts/[name].[ext]"},
 			{test: /\.(png|svg)$/, loader: "url?limit=10000&name=images/[name]-[hash].[ext]&size=6"},
 
-			// No extract-text-webpack-plugin:
-			// {test: /\.scss$/, loader: "style!css!sass?outputStyle=expanded"},
-			// With extract-text-webpack-plugin:
 			{
 				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("style-loader", "css-loader"),
+				loader: ExtractTextPlugin.extract("style-loader",
+					"css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader!"),
 			},
 			{
 				test: /\.scss$/,
@@ -110,7 +108,7 @@ module.exports = {
 
 	plugins: plugins,
 
-	postcss: [autoprefixer({remove: false})],
+	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 
 	devServer: {
 		port: webpackDevServerPort,

@@ -79,9 +79,12 @@
 												"href": "#F0",
 												"children": [
 													{
-														"type": "i",
+														"type": "code",
 														"props": {
-															"className": "fa change-type octicon octicon-diff-modified changes-color"
+															"className": "change-type changes-color",
+															"children": [
+																"•"
+															]
 														}
 													},
 													{
@@ -154,9 +157,12 @@
 												"href": "#F1",
 												"children": [
 													{
-														"type": "i",
+														"type": "code",
 														"props": {
-															"className": "fa change-type octicon octicon-diff-added additions-color"
+															"className": "change-type additions-color",
+															"children": [
+																"+"
+															]
 														}
 													},
 													"b",
@@ -214,9 +220,12 @@
 												"href": "#F2",
 												"children": [
 													{
-														"type": "i",
+														"type": "code",
 														"props": {
-															"className": "fa change-type octicon octicon-diff-removed deletions-color"
+															"className": "change-type deletions-color",
+															"children": [
+																"−"
+															]
 														}
 													},
 													"a",

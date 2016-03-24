@@ -40,7 +40,6 @@
 		</script>
 
 		<link href="{{assetURL "/bundle.css"}}" rel="stylesheet">
-		<link href="{{assetURL "/font/octicons/octicons.css"}}" rel="stylesheet">
 
 		<link rel="canonical" href="{{.CanonicalURL}}">
 
@@ -120,16 +119,7 @@
 			{{end}}
 		{{end}}
 
-		<header class="page-header">
-			{{with $motd}}<div class="motd">{{.}}</div>{{end}}
-
-			{{template "Nav" $}}
-
-			<!-- If the "RepoSubnav" template is defined in the current -->
-			<!-- template, include it. -->
-			<!-- The "RepoSubnav" definition is in "repo/subnav.html" -->
-			{{ifTemplate .Common.TemplateName "RepoSubnav" $}}
-		</header>
+		{{template "Nav" $}}
 
 		<div class="container body" id="main">
 			{{template "Body" $}}

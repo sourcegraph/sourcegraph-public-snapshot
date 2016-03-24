@@ -16,7 +16,7 @@ type SearchFrame struct {
 	// tab of results for this search frame.
 	Name string
 
-	// Icon specifies which octicon should serve as the applications
+	// Icon specifies which icon should serve as the applications
 	// search icon.
 	Icon string
 

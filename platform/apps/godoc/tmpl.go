@@ -37,7 +37,7 @@ var tmplHTML = `
 			{{.Doc|godoc_comment}}
 
 			<!-- Index -->
-			<h3 id="pkg-index" class="anchor section-header">Index <a class="permalink" href="#pkg-index"><i class="octicon octicon-link"></i></a></h3>
+			<h3 id="pkg-index" class="anchor section-header">Index <a class="permalink" href="#pkg-index"></a></h3>
 
 			{{if .Truncated}}
 				<div class="alert">The documentation displayed here is incomplete. Use the godoc command to read the complete documentation.</div>
@@ -59,7 +59,7 @@ var tmplHTML = `
 
 				<!-- Examples -->
 				{{with .AllExamples}}
-					<h4 class="anchor" id="pkg-examples">Examples <a class="permalink" href="#pkg-examples"><i class="octicon octicon-link"></i></a></h4>
+					<h4 class="anchor" id="pkg-examples">Examples <a class="permalink" href="#pkg-examples"></a></h4>
 					<ul class="list-unstyled">
 						{{range . }}<li><a href="#example-{{.ID}}" onclick="var e=document.getElementById('ex-{{.ID}}');e.classList.add('in');e.classList.remove('collapse');e.style.height='auto';">{{.Label}}</a></li>{{end}}
 					</ul>
@@ -70,20 +70,20 @@ var tmplHTML = `
 				<!-- Files -->
 				<h4 class="anchor" id="pkg-files">
 					{{with .BrowseURL}}<a href="{{.}}">Package Files</a>{{else}}Package Files{{end}}
-					<a class="permalink" href="#pkg-files"><i class="octicon octicon-link"></i></a>
+					<a class="permalink" href="#pkg-files"></a>
 				</h4>
 
 				<p>{{range .Files}}{{if .URL}}<a href="{{.URL}}">{{.Name}}</a>{{else}}{{.Name}}{{end}} {{end}}</p>
 
 				<!-- Contants -->
 				{{if .Consts}}
-					<h3 class="anchor" id="pkg-constants">Constants <a class="permalink" href="#pkg-constants"><i class="octicon octicon-link"></i></a></h3>
+					<h3 class="anchor" id="pkg-constants">Constants <a class="permalink" href="#pkg-constants"></a></h3>
 					{{range .Consts}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
 				{{end}}
 
 				<!-- Variables -->
 				{{if .Vars}}
-					<h3 class="anchor" id="pkg-variables">Variables <a class="permalink" href="#pkg-variables"><i class="octicon octicon-link"></i></a></h3>
+					<h3 class="anchor" id="pkg-variables">Variables <a class="permalink" href="#pkg-variables"></a></h3>
 					{{range .Vars}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
 				{{end}}
 
@@ -91,7 +91,7 @@ var tmplHTML = `
 				{{range .Funcs}}
 					<h3 class="anchor" id="{{.Name}}" data-kind="f">
 						func <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-						<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
+						<a class="permalink" href="#{{.Name}}"></a>
 					</h3>
 					<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 					{{template "Examples" .|$.PDoc.ObjExamples}}
@@ -101,7 +101,7 @@ var tmplHTML = `
 				{{range $t := .Types}}
 					<h3 class="anchor" id="{{.Name}}" data-kind="t">
 						type <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-						<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
+						<a class="permalink" href="#{{.Name}}"></a>
 					</h3>
 					<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 					{{range .Consts}}<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}{{end}}
@@ -111,7 +111,7 @@ var tmplHTML = `
 					{{range .Funcs}}
 						<h4 class="anchor" id="{{.Name}}" data-kind="f">
 							func <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-							<a class="permalink" href="#{{.Name}}"><i class="octicon octicon-link"></i></a>
+							<a class="permalink" href="#{{.Name}}"></a>
 						</h4>
 						<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 						{{template "Examples" .|$.PDoc.ObjExamples}}
@@ -120,7 +120,7 @@ var tmplHTML = `
 					{{range .Methods}}
 						<h4 class="anchor" id="{{$t.Name}}.{{.Name}}" data-kind="m">
 							func ({{.Recv}}) <a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">{{.Name}}</a>
-							<a class="permalink" href="#{{$t.Name}}.{{.Name}}"><i class="octicon octicon-link"></i></a>
+							<a class="permalink" href="#{{$t.Name}}.{{.Name}}"></a>
 						</h4>
 						<pre>{{$.PDoc.Code .Pos $.RepoRevSpec}}</pre>{{.Doc|godoc_comment}}
 						{{template "Examples" .|$.PDoc.ObjExamples}}
@@ -157,11 +157,11 @@ var tmplHTML = `
 {{with .PDoc}}
 	{{$pdoc := .}}
 	{{with .Notes.BUG}}
-		<h3 class="anchor" id="pkg-note-bug">Bugs <a class="permalink" href="#pkg-note-bug"><i class="octicon octicon-link"></i></a></h3>{{range .}}<p><a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">☞</a> {{.Body}}{{end}}
+		<h3 class="anchor" id="pkg-note-bug">Bugs <a class="permalink" href="#pkg-note-bug"></a></h3>{{range .}}<p><a title="View Source" href="{{printf $.PDoc.LineFmt (index $pdoc.Files .Pos.File).URL .Pos.Line}}">☞</a> {{.Body}}{{end}}
 	{{end}}
 {{end}}
 
-{{if .Subpkgs}}<h3 class="anchor" id="pkg-subdirectories">Directories <a class="permalink" href="#pkg-subdirectories"><i class="octicon octicon-link"></i></a></h3>
+{{if .Subpkgs}}<h3 class="anchor" id="pkg-subdirectories">Directories <a class="permalink" href="#pkg-subdirectories"></a></h3>
 		<table class="table table-condensed">
 		<thead><tr><th>Path</th></tr></thead>
 		<tbody>{{range .Subpkgs}}<tr><td><a href="{{urlToRepoGoDoc $.Repo.URI $.RepoRevSpec.Rev .Path}}">{{pathBase .Path}}</a></tr>{{end}}</tbody>

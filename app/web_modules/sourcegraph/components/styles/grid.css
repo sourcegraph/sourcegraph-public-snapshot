@@ -1,0 +1,242 @@
+/*! This file was adapted from Basscss (grid module) v8.0.1 | http://basscss.com | MIT License */
+
+.col {
+	float: left;
+	box-sizing: border-box;
+}
+
+.col-right {
+	float: right;
+	box-sizing: border-box;
+}
+
+.col-1 {
+	width: 8.33333%;
+}
+
+.col-2 {
+	width: 16.66667%;
+}
+
+.col-3 {
+	width: 25%;
+}
+
+.col-4 {
+	width: 33.33333%;
+}
+
+.col-5 {
+	width: 41.66667%;
+}
+
+.col-6 {
+	width: 50%;
+}
+
+.col-7 {
+	width: 58.33333%;
+}
+
+.col-8 {
+	width: 66.66667%;
+}
+
+.col-9 {
+	width: 75%;
+}
+
+.col-10 {
+	width: 83.33333%;
+}
+
+.col-11 {
+	width: 91.66667%;
+}
+
+.col-12 {
+	width: 100%;
+}
+
+@media screen and (min-width: 48em) {
+
+	.col-ns {
+		float: left;
+		box-sizing: border-box;
+	}
+
+	.col-right-ns {
+		float: right;
+		box-sizing: border-box;
+	}
+
+	.col-1-ns {
+		width: 8.33333%;
+	}
+
+	.col-2-ns {
+		width: 16.66667%;
+	}
+
+	.col-3-ns {
+		width: 25%;
+	}
+
+	.col-4-ns {
+		width: 33.33333%;
+	}
+
+	.col-5-ns {
+		width: 41.66667%;
+	}
+
+	.col-6-ns {
+		width: 50%;
+	}
+
+	.col-7-ns {
+		width: 58.33333%;
+	}
+
+	.col-8-ns {
+		width: 66.66667%;
+	}
+
+	.col-9-ns {
+		width: 75%;
+	}
+
+	.col-10-ns {
+		width: 83.33333%;
+	}
+
+	.col-11-ns {
+		width: 91.66667%;
+	}
+
+	.col-12-ns {
+		width: 100%;
+	}
+}
+
+@media screen and (min-width: 48em) and (max-width: 64em) {
+
+	.col-m {
+		float: left;
+		box-sizing: border-box;
+	}
+
+	.col-right-m {
+		float: right;
+		box-sizing: border-box;
+	}
+
+	.col-1-m {
+		width: 8.33333%;
+	}
+
+	.col-2-m {
+		width: 16.66667%;
+	}
+
+	.col-3-m {
+		width: 25%;
+	}
+
+	.col-4-m {
+		width: 33.33333%;
+	}
+
+	.col-5-m {
+		width: 41.66667%;
+	}
+
+	.col-6-m {
+		width: 50%;
+	}
+
+	.col-7-m {
+		width: 58.33333%;
+	}
+
+	.col-8-m {
+		width: 66.66667%;
+	}
+
+	.col-9-m {
+		width: 75%;
+	}
+
+	.col-10-m {
+		width: 83.33333%;
+	}
+
+	.col-11-m {
+		width: 91.66667%;
+	}
+
+	.col-12-m {
+		width: 100%;
+	}
+}
+
+@media screen and (min-width: 64em) {
+
+	.col-l {
+		float: left;
+		box-sizing: border-box;
+	}
+
+	.col-right-l {
+		float: right;
+		box-sizing: border-box;
+	}
+
+	.col-1-l {
+		width: 8.33333%;
+	}
+
+	.col-2-l {
+		width: 16.66667%;
+	}
+
+	.col-3-l {
+		width: 25%;
+	}
+
+	.col-4-l {
+		width: 33.33333%;
+	}
+
+	.col-5-l {
+		width: 41.66667%;
+	}
+
+	.col-6-l {
+		width: 50%;
+	}
+
+	.col-7-l {
+		width: 58.33333%;
+	}
+
+	.col-8-l {
+		width: 66.66667%;
+	}
+
+	.col-9-l {
+		width: 75%;
+	}
+
+	.col-10-l {
+		width: 83.33333%;
+	}
+
+	.col-11-l {
+		width: 91.66667%;
+	}
+
+	.col-12-l {
+		width: 100%;
+	}
+}

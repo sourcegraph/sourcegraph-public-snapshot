@@ -32,8 +32,6 @@ var Flags struct {
 
 	DisableUserContent bool `long:"app.disable-user-content" description:"if set, disable ability to upload user content (e.g., pasting images into textareas)" env:"SRC_APP_DISABLE_USER_CONTENT"`
 
-	CustomLogo template.HTML `long:"app.custom-logo" description:"custom logo to display in the top nav bar (HTML)" env:"SRC_APP_CUSTOM_LOGO"`
-
 	CustomNavLayout template.HTML `long:"app.custom-nav-layout" description:"custom layout to display in place of the search form (HTML)" env:"SRC_APP_CUSTOM_NAV_LAYOUT"`
 
 	// MOTD is a message of the day that is shown in a ribbon at the
