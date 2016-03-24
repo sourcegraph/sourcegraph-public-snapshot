@@ -20,21 +20,6 @@ nav.global {
 	border-bottom: 1px solid #eaeaf2;
 	margin-bottom: $navbar-padding-vertical;
 
-	a, button {
-		display: inline-block !important;
-		font-weight: bold;
-		color: #0698EE;
-		transition: color .15s ease-in;
-	}
-	a:link, a:visited { transition: color .15s ease-in; }
-	a:hover, button:hover {
-		background-color: transparent;
-		transition: color .15s ease-in;
-		color: #9D00D8;
-	}
-	a:active { transition: color .15s ease-in; }
-	a:focus { transition: color .15s ease-in; }
-
 	.logo {
 		$size: $navbar-height - (2*$nav-link-padding);
 		img {
