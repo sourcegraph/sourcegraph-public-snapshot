@@ -197,6 +197,7 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
 		HTTPCloneURL: ghrepo.HTTPCloneURL,
 		Mirror:       true,
+		Private:      ghrepo.Private,
 		CreatedAt:    &ts,
 	}, nil
 }
