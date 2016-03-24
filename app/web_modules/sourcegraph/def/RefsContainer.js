@@ -23,8 +23,8 @@ class RefsContainer extends Container {
 		state.defs = DefStore.defs;
 		state.refs = DefStore.refs.get(state.def);
 		state.annotations = BlobStore.annotations;
-		state.tree = props.tree || "";
-		state.refs = DefStore.refs.get(state.def, state.tree);
+		state.path = props.path || "";
+		state.refs = DefStore.refs.get(state.def, state.path);
 		state.files = [];
 		state.ranges = {};
 		state.anns = {};
@@ -61,7 +61,7 @@ class RefsContainer extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.def && prevState.def !== nextState.def) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.def));
-			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.def, nextState.tree));
+			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.def, nextState.path));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
@@ -87,7 +87,7 @@ class RefsContainer extends Container {
 
 		return (
 			<div>
-				<header>Refs of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.tree ? `in ${this.state.tree}` : `in ${this.state.repo}`}</header>
+				<header>Refs of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.path ? `in ${this.state.path}` : `in ${this.state.repo}`}</header>
 				<hr/>
 				<div className="file-container">
 					<div className="content-view">

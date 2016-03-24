@@ -105,7 +105,7 @@ class BlobRouter extends Component {
 			state.def = state.url.pathname.replace(/\/\.refs\/?$/, "");
 			state.viewRefs = last(pathParts) === "refs";
 			if (state.viewRefs) {
-				state.tree = state.url.query.Files ? state.url.query.Files : null;
+				state.path = state.url.query.Files ? state.url.query.Files : null;
 			}
 		}
 	}
@@ -187,7 +187,7 @@ class BlobRouter extends Component {
 					<RefsContainer
 						repo={this.state.repo}
 						rev={this.state.rev}
-						tree={this.state.tree}
+						path={this.state.path}
 						def={this.state.def} />
 				}
 				{!this.state.viewRefs &&
