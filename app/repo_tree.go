@@ -125,18 +125,18 @@ func isDocFile(filename string) bool {
 	return len(langs) > 0 && langs[0].Type == "prose"
 }
 
-// FileToBreadcrumb returns the file link without line number
-func FileToBreadcrumb(repoURI string, rev, path string) []*BreadcrumbLink {
-	return FileLinesToBreadcrumb(repoURI, rev, path, 0)
+// fileToBreadcrumb returns the file link without line number
+func fileToBreadcrumb(repoURI string, rev, path string) []*BreadcrumbLink {
+	return fileLinesToBreadcrumb(repoURI, rev, path, 0)
 }
 
-// FileLinesToBreadcrumb returns the file link with line number
-func FileLinesToBreadcrumb(repo string, rev, path string, startLine int) []*BreadcrumbLink {
-	return SnippetToBreadcrumb(repo, rev, path, startLine, 0)
+// fileLinesToBreadcrumb returns the file link with line number
+func fileLinesToBreadcrumb(repo string, rev, path string, startLine int) []*BreadcrumbLink {
+	return snippetToBreadcrumb(repo, rev, path, startLine, 0)
 }
 
-func SnippetToBreadcrumb(repo string, rev, path string, startLine int, endLine int) []*BreadcrumbLink {
-	return AbsSnippetToBreadcrumb(nil, repo, rev, path, startLine, endLine, true)
+func snippetToBreadcrumb(repo string, rev, path string, startLine int, endLine int) []*BreadcrumbLink {
+	return absSnippetToBreadcrumb(nil, repo, rev, path, startLine, endLine, true)
 }
 
 type BreadcrumbLink struct {
@@ -144,8 +144,8 @@ type BreadcrumbLink struct {
 	URL  string
 }
 
-// AbsSnippetToBreadcrumb returns the breadcrumb to a specific set of lines in a file. The URLs are absolute if appURL is given.
-func AbsSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, startLine int, endLine int, includeRepo bool) []*BreadcrumbLink {
+// absSnippetToBreadcrumb returns the breadcrumb to a specific set of lines in a file. The URLs are absolute if appURL is given.
+func absSnippetToBreadcrumb(appURL *url.URL, repo string, rev, path string, startLine int, endLine int, includeRepo bool) []*BreadcrumbLink {
 	curPath := ""
 	if appURL != nil {
 		curPath = appURL.String()
