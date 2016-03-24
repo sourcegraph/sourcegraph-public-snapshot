@@ -64,6 +64,9 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		}
 		refFilters = append(refFilters, srcstore.ByFiles(false, opt.Files...))
 	}
+	if defSpec.CommitID != "" {
+		refFilters = append(refFilters, srcstore.ByCommitIDs(defSpec.CommitID))
+	}
 
 	filters := append(repoFilters, refFilters...)
 	bareRefs, err := store.GraphFromContext(ctx).Refs(filters...)
