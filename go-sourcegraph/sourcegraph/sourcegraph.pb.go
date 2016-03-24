@@ -1978,8 +1978,10 @@ func (*DefGetOptions) ProtoMessage()    {}
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
 type DefListExamplesOptions struct {
 	// Filter by a specific Repo URI
-	Repo        string `protobuf:"bytes,2,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
-	ListOptions `protobuf:"bytes,4,opt,name=ListOptions,embedded=ListOptions" json:""`
+	Repo string `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
+	// Filter by specific file paths
+	Files       []string `protobuf:"bytes,2,rep,name=Files" json:"Files,omitempty" url:",omitempty"`
+	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *DefListExamplesOptions) Reset()         { *m = DefListExamplesOptions{} }
@@ -2035,7 +2037,8 @@ func (m *DefListOptions) String() string { return proto.CompactTextString(m) }
 func (*DefListOptions) ProtoMessage()    {}
 
 type DefListRefsOptions struct {
-	Repo        string `protobuf:"bytes,2,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
+	Repo        string   `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
+	Files       []string `protobuf:"bytes,2,rep,name=Files" json:"Files,omitempty" url:",omitempty"`
 	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
@@ -10008,12 +10011,27 @@ func (m *DefListExamplesOptions) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.Repo) > 0 {
-		data[i] = 0x12
+		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Repo)))
 		i += copy(data[i:], m.Repo)
 	}
-	data[i] = 0x22
+	if len(m.Files) > 0 {
+		for _, s := range m.Files {
+			data[i] = 0x12
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			data[i] = uint8(l)
+			i++
+			i += copy(data[i:], s)
+		}
+	}
+	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
 	n93, err := m.ListOptions.MarshalTo(data[i:])
@@ -10241,10 +10259,25 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.Repo) > 0 {
-		data[i] = 0x12
+		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Repo)))
 		i += copy(data[i:], m.Repo)
+	}
+	if len(m.Files) > 0 {
+		for _, s := range m.Files {
+			data[i] = 0x12
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			data[i] = uint8(l)
+			i++
+			i += copy(data[i:], s)
+		}
 	}
 	data[i] = 0x1a
 	i++
@@ -14222,6 +14255,12 @@ func (m *DefListExamplesOptions) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
+	if len(m.Files) > 0 {
+		for _, s := range m.Files {
+			l = len(s)
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
+	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
 	return n
@@ -14318,6 +14357,12 @@ func (m *DefListRefsOptions) Size() (n int) {
 	l = len(m.Repo)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if len(m.Files) > 0 {
+		for _, s := range m.Files {
+			l = len(s)
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
@@ -28923,7 +28968,7 @@ func (m *DefListExamplesOptions) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: DefListExamplesOptions: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Repo", wireType)
 			}
@@ -28952,7 +28997,36 @@ func (m *DefListExamplesOptions) Unmarshal(data []byte) error {
 			}
 			m.Repo = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Files", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Files = append(m.Files, string(data[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
 			}
@@ -29600,7 +29674,7 @@ func (m *DefListRefsOptions) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: DefListRefsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Repo", wireType)
 			}
@@ -29628,6 +29702,35 @@ func (m *DefListRefsOptions) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Repo = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Files", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Files = append(m.Files, string(data[iNdEx:postIndex]))
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {

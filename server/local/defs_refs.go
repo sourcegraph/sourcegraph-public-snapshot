@@ -1,6 +1,8 @@
 package local
 
 import (
+	"path"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -43,6 +45,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 			srcstore.ByCommitIDs(defSpec.CommitID),
 		}
 	}
+
 	refFilters := []srcstore.RefFilter{
 		srcstore.ByRefDef(graph.RefDefKey{
 			DefRepo:     defSpec.Repo,
@@ -53,6 +56,15 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		srcstore.RefFilterFunc(func(ref *graph.Ref) bool { return !ref.Def }),
 		srcstore.Limit(opt.Offset()+opt.Limit()+1, 0),
 	}
+
+	if len(opt.Files) > 0 {
+		for i, f := range opt.Files {
+			// Files need to be clean or else graphstore will panic.
+			opt.Files[i] = path.Clean(f)
+		}
+		refFilters = append(refFilters, srcstore.ByFiles(false, opt.Files...))
+	}
+
 	filters := append(repoFilters, refFilters...)
 	bareRefs, err := store.GraphFromContext(ctx).Refs(filters...)
 	if err != nil {

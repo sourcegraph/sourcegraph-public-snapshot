@@ -24,6 +24,7 @@ func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExample
 		Def: defSpec,
 		Opt: &sourcegraph.DefListRefsOptions{
 			Repo:        opt.Repo,
+			Files:       opt.Files,
 			ListOptions: opt.ListOptions,
 		},
 	})

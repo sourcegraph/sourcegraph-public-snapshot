@@ -1447,9 +1447,10 @@ message DefGetOptions {
 // DefListExamplesOptions specifies options for DefsService.ListExamples.
 message DefListExamplesOptions {
 	// Filter by a specific Repo URI
-	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-
-	ListOptions ListOptions = 4 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	// Filter by specific file paths
+	repeated string Files = 2 [(gogoproto.nullable) = false, (gogoproto.moretags) = "url:\",omitempty\""];
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // DefListOptions specifies options for DefsService.List.
@@ -1512,7 +1513,8 @@ message DefListOptions {
 }
 
 message DefListRefsOptions {
-	string Repo = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string Files = 2 [(gogoproto.nullable) = false, (gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
