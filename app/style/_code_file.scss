@@ -43,12 +43,6 @@
 	}
 }
 
-@media (max-width: $screen-xs-max) {
-	.line-numbered-code td {
-		font-size: 11px !important;
-	}
-}
-
 .blob-scroller {
 	overflow-x: auto;
 	overflow-y: hidden;
@@ -56,8 +50,6 @@
 
 .line-numbered-code {
 	width: 100%;
-	.line-content {
-	}
 }
 
 .file-diff-hunk .line-number {
@@ -65,31 +57,8 @@
 }
 
 .file-container {
-
-	a.ref {
-		&:hover {
-			text-decoration: none;
-		}
-	}
-
-	.line-number {
-		cursor: pointer;
-	}
-
 	.line-numbered-code {
-		border: 0px;
-		table-layout: fixed;
 		display: block;
-		background-color: white;
-		overflow-x: auto;
-
-		&.placeholder {
-			width: 100%;
-		}
-
-		td {
-			vertical-align: top;
-		}
 		.line-content {
 			width: 100%;
 		}
@@ -183,11 +152,6 @@
 	border: $content-border;
 	border-radius: $border-radius-base;
 	background-color: #fff;
-
-	.go-to-def {
-		color: $text-color;
-		float: right;
-	}
 }
 
 .token-details {
@@ -198,21 +162,11 @@
 		opacity: 0;
 		height: 0 !important;
 		width: 0 !important;
-		@include transform(scale(0.8));
-	}
-
-	.fileInfo {
-		font-family: $font-family-monospace;
-		font-size: 11px;
 	}
 
 	.qualified-name {
-		padding: 4px;
-		margin-bottom: 0;
-		font-size: 12px;
 		font-family: $font-family-monospace;
 		word-wrap: break-word;
-		color: #333;
 		.name {
 			font-weight: bold;
 		}
@@ -261,31 +215,6 @@
 			text-decoration: none;
 			overflow-wrap: break-word;
 		}
-
-		nav {
-			float: left;
-			margin-right: 5px;
-
-			.btnNav {
-				width: 18px;
-				height: 18px;
-				display: block;
-				float: left;
-				cursor: pointer;
-				font-size: 17px;
-				cursor: pointer;
-				opacity: 0.9;
-
-				&:hover {
-					opacity: 1;
-				}
-
-				&.disabled {
-					opacity: 0.5;
-					cursor: default;
-				}
-			}
-		}
 	}
 
 	.body {
@@ -300,11 +229,4 @@
 		font-size: 80%;
 		background-color: $line-content-bg;
 	}
-}
-
-.line-panel-group {
-	position: absolute;
-	line-height: $line-height-base;
-	font-size: $font-size-base;
-	font-family: $font-family-sans-serif;
 }

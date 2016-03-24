@@ -1,49 +1,10 @@
-.heading-tight {
-	margin-top: 0;
-	margin-bottom: 3px;
-}
-
-li.spacer {
-	height: 10px;
-}
-
 .sep {
 	color: $gray-light;
 	padding: 0 0.2em;
 }
 
-a.block-link {
-	display: block;
-	text-decoration: none;
-	color: inherit;
-}
-
 [data-href]:hover {
 	cursor: pointer;
-}
-
-textarea.code {
-	font-family: $font-family-monospace;
-	font-size: 0.9em;
-	word-wrap: break-word;
-}
-
-.padded-container {
-	padding-top: 15px;
-}
-
-.help-sm-fade {
-	color: #666;
-	font-size: $font-size-small;
-}
-
-.noselect {
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
 }
 
 .alert-info {
@@ -51,15 +12,5 @@ textarea.code {
 		// Blue links are difficult to see on a blue background.
 		// Make links stand out more by underlining.
 		text-decoration: underline;
-	}
-}
-
-blockquote {
-	margin-bottom: ($line-height-computed / 2);
-}
-
-.actions {
-	.btn:nth-child(n+2) {
-		margin-left: 5px;
 	}
 }

@@ -83,8 +83,6 @@
 		{{end}}
 	</head>
 
-	{{$motd := ifTrue (not .HideMOTD) appconf.MOTD}}
-
 	<body class="{{classForRoute .CurrentRoute}}"
 		{{if hasField . "Repo"}}
 			data-current-repo-url="{{(urlToRepo .Repo.URI).String}}"

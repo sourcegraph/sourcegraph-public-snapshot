@@ -1,39 +1,10 @@
-pre.code {
-	border: 0;
-	border-radius: 0;
-	white-space: nowrap;
-	background-color: transparent;
-}
-
-pre code {
-	display: block;
-	border: none;
-	border-radius: 0;
-}
-
-pre code {
-	overflow: auto;
-	white-space: pre;
-}
-
-.code-box {
-	background: #ffffff;
-	border: 1px solid #979797;
-}
-
 .line-numbered-code td {
 	overflow: visible;
 	white-space: pre;
 }
 
-pre code, .line-numbered-code td {
+.line-numbered-code td {
 	tab-size: 4;
-
-	padding-top: 0;
-	padding-bottom: 0;
-
-	line-height: $code-line-height;
-	font-size: $code-font-size;
 	font-family: $font-family-monospace;
 
 	a.ref {
@@ -47,17 +18,10 @@ pre code, .line-numbered-code td {
 		background: $token-hover-color;
 		color: $text-color !important;
 	}
-
-	a.def.highlight {
-		font-weight: bold;
-	}
 }
 
 .line-numbered-code {
-	word-wrap: break-word;
-	word-break: break-all;
 	table-layout: fixed;
-	border-collapse: separate;
 
 	.line {
 		&:first-child {
@@ -75,12 +39,10 @@ pre code, .line-numbered-code td {
 		color: $line-number-text;
 		// match code
 		font-family: $font-family-monospace;
-		font-size: $code-font-size;
-		line-height: $code-line-height;
 
 		color: $line-number-text;
 
-		padding: $line-number-padding;
+		padding: 0 8px 0 8px;
 
 		user-select: none;
 		&:before { content: attr(data-line); }
@@ -94,15 +56,6 @@ pre code, .line-numbered-code td {
 
 	tr:hover .line-number {
 		color: darken($line-number-text, 10%);
-	}
-
-	&.static-code-view {
-		a.ref {
-			&:hover {
-				background: $token-hover-color;
-				box-shadow: inset 0px 0px 0px 1px $token-hover-border;
-			}
-		}
 	}
 }
 

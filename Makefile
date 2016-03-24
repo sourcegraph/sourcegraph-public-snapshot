@@ -75,7 +75,6 @@ serve-beyang-dev:
 --app.disable-external-links \
 --app.disable-repo-tree-search \
 --app.disable-search \
---app.motd 'Message of the day here' \
 --app.no-ui-build \
 --app.show-latest-built-commit \
 --app.check-for-updates 0 \

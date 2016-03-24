@@ -1,20 +1,18 @@
-/*! This file was adapted from Basscss (flexbox module) v8.0.1 | http://basscss.com | MIT License */
-
 .flex { display: flex; }
 
-@media screen and (min-width: 48em) {
-	.flex-ns { display: flex; }
+@media screen and (--breakpoint-sm) {
+	.sm-flex { display: flex; }
 }
 
-@media screen and (min-width: 48em) and (max-width: 64em) {
-	.flex-m { display: flex; }
+@media screen and (--breakpoint-md) {
+	.md-flex { display: flex; }
 }
 
-@media screen and (min-width: 64em) {
-	.flex-l { display: flex; }
+@media screen and (--breakpoint-lg) {
+	.lg-flex { display: flex; }
 }
 
-.flex-column { flex-direction: column }
+.flex-column { flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
 
 .items-start { align-items: flex-start; }
@@ -29,11 +27,11 @@
 .self-baseline { align-self: baseline; }
 .self-stretch { align-self: stretch; }
 
-.justify-start { justify-content: flex-start }
-.justify-end { justify-content: flex-end }
-.justify-center { justify-content: center }
-.justify-between { justify-content: space-between }
-.justify-around { justify-content: space-around }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
 
 .content-start { align-content: flex-start; }
 .content-end { align-content: flex-end; }
@@ -50,8 +48,12 @@
 }
 .flex-none { flex: none; }
 
-.order-0 { order: 0 }
-.order-1 { order: 1 }
-.order-2 { order: 2 }
-.order-3 { order: 3 }
-.order-last { order: 99999 }
+.order-0 { order: 0; }
+.order-1 { order: 1; }
+.order-2 { order: 2; }
+.order-3 { order: 3; }
+.order-last { order: 99999; }
+
+@custom-media --breakpoint-sm (min-width: 40em);
+@custom-media --breakpoint-md (min-width: 52em);
+@custom-media --breakpoint-lg (min-width: 64em);

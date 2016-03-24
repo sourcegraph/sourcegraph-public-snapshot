@@ -83,7 +83,7 @@ func repoTemplates() error {
 		{"repo/tags.html"},
 		{"repo/no_vcs_data.html"},
 
-		{"def/examples.html", "def/examples.inc.html", "def/snippet.inc.html", "def/def.html"},
+		{"def/examples.html", "def/examples.inc.html", "def/def.html"},
 	}, []string{
 		"repo/repo.html",
 
@@ -189,10 +189,6 @@ type Common struct {
 	// AJAX requests originating from this page.
 	CacheControl string
 
-	// HideMOTD, if true, prevents the MOTD (message of the day) from
-	// being displayed at the top of the template.
-	HideMOTD bool
-
 	// HideSearch, if set, hides the search bar from the top
 	// navigation bar.
 	HideSearch bool
@@ -289,8 +285,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			ErrorID: existingCommon.ErrorID,
 
 			CacheControl: cacheControl,
-
-			HideMOTD: existingCommon.HideMOTD,
 
 			DeviceID: eventsutil.DeviceIdFromContext(ctx),
 		}))

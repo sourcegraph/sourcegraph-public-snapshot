@@ -188,15 +188,8 @@ $content-border: solid 1px $content-border-color;
 $line-panel-shadow: 0 1px 3px 0 transparentize($cloudy-blue, 0.72);
 
 $footer-height: 110px;
-$motd-height: 29px;
 
 $navbar-height: 50px;
-
-// TODO(sqs): Remove hardcoded dimensions.
-$code-line-height: 1.35em;
-$code-font-size: 13px;
-$code-popup-width: 600px;
-$line-number-padding: 0 8px 0 8px;
 
 /* Bootstrap Overrides */
 $border-radius-base:  3px;

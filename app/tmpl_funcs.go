@@ -82,10 +82,9 @@ var tmplFuncs = htmpl.FuncMap{
 	"urlToDefSubroute":   router.Rel.URLToDefSubroute,
 	"urlToWithReturnTo":  urlToWithReturnTo,
 
-	"fileToBreadcrumb":      FileToBreadcrumb,
-	"fileLinesToBreadcrumb": FileLinesToBreadcrumb,
-	"snippetToBreadcrumb":   SnippetToBreadcrumb,
-	"router":                func() *router.Router { return router.Rel },
+	"fileToBreadcrumb":    fileToBreadcrumb,
+	"snippetToBreadcrumb": snippetToBreadcrumb,
+	"router":              func() *router.Router { return router.Rel },
 
 	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
 
@@ -96,13 +95,6 @@ var tmplFuncs = htmpl.FuncMap{
 			classes[i] = "route-" + strings.Join(parts[:i+1], "-")
 		}
 		return strings.Join(classes, " ")
-	},
-
-	"ifTrue": func(cond bool, v interface{}) interface{} {
-		if cond {
-			return v
-		}
-		return nil
 	},
 
 	"commitSummary":       commitSummary,
