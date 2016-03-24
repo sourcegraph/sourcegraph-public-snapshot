@@ -1,5 +1,5 @@
 img.avatar-md {
-	border-radius: 50%;
+	border-radius: $border-radius-base;
 	width: 40px;
 	height: 40px;
 	max-width: 40px;
@@ -8,7 +8,7 @@ img.avatar-md {
 }
 
 img.avatar-sm {
-	border-radius: 50%;
+	border-radius: $border-radius-base;
 	width: 24px;
 	height: 24px;
 	max-width: 24px;
