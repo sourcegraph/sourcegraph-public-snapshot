@@ -57,8 +57,3 @@ $fa-font-path: "/.assets/font/font-awesome";
 @import "_theme_default";
 @import "_tooltip";
 @import "_vcs";
-
-// Application-specific SCSS
-//
-// TODO(sqs): Bundle this with the applications.
-@import "_app_docs";
