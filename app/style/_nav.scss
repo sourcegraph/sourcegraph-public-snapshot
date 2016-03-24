@@ -41,8 +41,8 @@ nav.global {
 			height: $size;
 			width: $size;
 			&:hover {
-				animation: spin 0.4s ease-in-out 1;
-				@keyframes spin { 100% { transform:rotate(360deg); } }
+				animation: spin 0.5s ease-in-out 1;
+				@keyframes spin { 50% { transform: rotate(180deg) scale(1.5) } 100% { transform: rotate(180deg) scale(1)} }
 			}
 		}
 		padding: $nav-link-padding;

@@ -2088,12 +2088,15 @@ code, .code { font-family: Consolas, monaco, monospace; }
 
 .input-border {
 	composes: br3 ba b--light-silver;
+  transition: border-color .15s ease-in;
 }
 .input-focus-border {
 	composes: b--blue-8 from "./colors.css";
+  transition: border-color .15s ease-in;
 }
 .input-border:focus {
 	outline: none;
+  transition: border-color .15s ease-in;
 	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
 }
 

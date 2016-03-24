@@ -14,4 +14,9 @@ img.avatar-sm {
 	max-width: 24px;
 	max-height: 24px;
 	display: inline-block;
+	transition: transform .2s ease-out;
+}
+img.avatar-sm:hover {
+	transition: transform .2s ease-out;
+	transform: scale(1.2);
 }

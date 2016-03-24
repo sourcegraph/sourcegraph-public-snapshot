@@ -22,19 +22,26 @@
 	composes: modal from base;
 }
 
+.border-transition {
+	transition: border-color .15s ease-in;
+}
+
 .input_group {
 	composes: flex items-center from flexbox;
 	composes: br3 ba from base;
 	composes: ma3 from base;
+	composes: border-transition;
 	max-width: 100%;
 }
 .input_group_focused {
 	composes: input_group;
 	composes: input-focus-border from base;
+	composes: border-transition;
 }
 .input_group_unfocused {
 	composes: input_group;
 	composes: input-border from base;
+	composes: border-transition;
 }
 
 .input {
@@ -65,17 +72,22 @@
 	composes: pb3 from base;
 }
 
+.item-transition {
+	transition: background-color .2s ease-out;
+}
+
 .list_item {
 	composes: pa3 from base;
 	composes: mh3 from base;
 	composes: bt b--black-20 from base;
 	composes: sans-serif from base;
+	composes: item-transition;
 }
 
 .list_item_selected {
 	composes: list_item;
-	composes: f3 from base;
 	composes: bg-blue-1 from colors;
+	composes: item-transition;
 }
 
 /* TODO: this wrapper only needed until we can pull compose our icon fonts from CSS sheet in a single component. */
