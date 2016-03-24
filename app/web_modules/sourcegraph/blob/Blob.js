@@ -129,8 +129,14 @@ class Blob extends Component {
 
 	_updateVisibleLines() {
 		let rect = this.refs.table.getBoundingClientRect();
-		let firstVisibleLine = Math.max(0, Math.floor(this.state.lines.length / rect.height * -rect.top / tilingFactor - 1) * tilingFactor);
+		let lineCount = this.state.lines.length;
+		if (this.state.displayRanges) {
+			// If specifically display ranges are set, we only want to count the lines that will be rendered.
+			lineCount = this.state.displayRanges.reduce((prev, curr) => prev + curr[1] - curr[0], 0); // Sum of all displayed lines
+		}
+		let firstVisibleLine = Math.max(0, Math.floor(lineCount / rect.height * -rect.top / tilingFactor - 1) * tilingFactor);
 		let visibleLinesCount = Math.ceil(this.state.lines.length / rect.height * window.innerHeight / tilingFactor + 2) * tilingFactor;
+
 		if (this.state.firstVisibleLine !== firstVisibleLine || this.state.visibleLinesCount !== visibleLinesCount) {
 			this.setState({
 				firstVisibleLine: firstVisibleLine,
@@ -254,8 +260,9 @@ class Blob extends Component {
 		let lastDisplayedLine = 0;
 		let lastRangeEnd = 0;
 		let lines = [];
+		let renderedLines = 0;
 		this.state.lines.forEach((line, i) => {
-			const visible = i >= visibleLinesStart && i < visibleLinesEnd;
+			const visible = renderedLines >= visibleLinesStart && renderedLines < visibleLinesEnd;
 			const lineNumber = 1 + i + this.state.contentsOffsetLine;
 			if (this.state.displayRanges && !this._withinDisplayedRange(lineNumber)) {
 				return;
@@ -282,6 +289,7 @@ class Blob extends Component {
 					activeDef={visible ? this.state.activeDef : null}
 					key={i} />
 			);
+			renderedLines += 1;
 		});
 		if (this.state.lines && lastDisplayedLine < this.state.lines.length) {
 			lines.push(
