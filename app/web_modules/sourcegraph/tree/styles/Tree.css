@@ -63,7 +63,7 @@
 }
 
 .list_header {
-	composes: b f3 ph3 pt4 pb2 tracked from base;
+	composes: b f4 ph3 pt4 pb2 tracked from base;
 	composes: gray from base;
 	text-transform: uppercase;
 }

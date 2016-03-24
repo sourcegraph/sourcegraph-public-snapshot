@@ -683,7 +683,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
    LETTER SPACING
 
 */
-.tracked { letter-spacing: .16em; }
+.tracked { letter-spacing: .09em; }
 .tracked-tight { letter-spacing: -.05em; }
 .tracked-mega { letter-spacing: .32em; }
 /*
