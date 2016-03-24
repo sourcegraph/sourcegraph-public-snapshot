@@ -17,7 +17,7 @@ $fa-font-path: "/.assets/font/font-awesome";
 
 @import "_overrides";
 @import "_mixins";
-//@import "_fonts";
+@import "_fonts";
 
 @import "_error";
 @import "_avatar";

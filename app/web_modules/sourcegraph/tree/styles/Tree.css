@@ -14,7 +14,7 @@
 	composes: f4 from base;
 	composes: bg-white from base;
 	composes: center from base;
-	composes: col-8 from grid;
+	composes: col-9 from grid;
 }
 
 .tree_modal {
@@ -24,10 +24,17 @@
 
 .input_group {
 	composes: flex items-center from flexbox;
-	composes: br2 ba from base;
+	composes: br3 ba from base;
 	composes: ma3 from base;
-	composes: input-focus-border from base;
 	max-width: 100%;
+}
+.input_group_focused {
+	composes: input_group;
+	composes: input-focus-border from base;
+}
+.input_group_unfocused {
+	composes: input_group;
+	composes: br2 ba b--light-silver from base;
 }
 
 .input {
@@ -43,7 +50,7 @@
 	composes: dark-gray from base;
 	composes: code from base;
 	composes: bg-black-10 from base;
-	composes: tooltip-top from base;
+	composes: tooltip-top-right from base;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
 	text-shadow: 0 1px 0 c_white;
 }
@@ -68,7 +75,7 @@
 .list_item_selected {
 	composes: list_item;
 	composes: f3 from base;
-	composes: bg-orange-2 from colors;
+	composes: bg-blue-1 from colors;
 }
 
 /* TODO: this wrapper only needed until we can pull compose our icon fonts from CSS sheet in a single component. */

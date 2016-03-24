@@ -3,6 +3,7 @@
 @value c_blue-8 rgba(0, 116, 217, .8);
 @value c_blue-5 rgba(0, 116, 217, .5);
 @value c_blue-2 rgba(0, 116, 217, .2);
+@value c_blue-1 rgba(0, 116, 217, .1);
 @value c_light-blue rgba(77, 193, 255, 1); /* 30% lightened */
 @value c_dark-blue rgba(0, 40, 141, 1); /* 30% darkened */
 @value c_brand-blue #0698EE;
@@ -66,6 +67,7 @@
 .blue-8 { color: c_blue-8; }
 .blue-5 { color: c_blue-5; }
 .blue-2 { color: c_blue-2; }
+.blue-1 { color: c_blue-1; }
 .light-blue { color: c_light-blue; }
 .dark-blue { color: c_dark-blue; }
 .brand-blue { color: c_brand-blue; }
@@ -93,6 +95,7 @@
 .bg-blue-8 { background-color: c_blue-8; }
 .bg-blue-5 { background-color: c_blue-5; }
 .bg-blue-2 { background-color: c_blue-2; }
+.bg-blue-1 { background-color: c_blue-1; }
 .bg-light-blue { background-color: c_light-blue; }
 .bg-dark-blue { background-color: c_dark-blue; }
 .bg-brand-blue { background-color: c_brand-blue; }
@@ -120,6 +123,7 @@
 .b--blue-8 { border-color: c_blue-8; }
 .b--blue-5 { border-color: c_blue-5; }
 .b--blue-2 { border-color: c_blue-2; }
+.b--blue-1 { border-color: c_blue-1; }
 .b--light-blue { border-color: c_light-blue; }
 .b--dark-blue { border-color: c_dark-blue; }
 .b--brand-blue { border-color: c_brand-blue; }
@@ -148,6 +152,7 @@
 .fill-blue-8 { fill: c_blue-8; }
 .fill-blue-5 { fill: c_blue-5; }
 .fill-blue-2 { fill: c_blue-2; }
+.fill-blue-1 { fill: c_blue-1; }
 .fill-light-blue { fill: c_light-blue; }
 .fill-dark-blue { fill: c_dark-blue; }
 .fill-brand-blue { fill: c_brand-blue; }
@@ -175,6 +180,7 @@
 .stroke-blue-8 { stroke: c_blue-8; }
 .stroke-blue-5 { stroke: c_blue-5; }
 .stroke-blue-2 { stroke: c_blue-2; }
+.stroke-blue-1 { stroke: c_blue-1; }
 .stroke-light-blue { stroke: c_light-blue; }
 .stroke-dark-blue { stroke: c_dark-blue; }
 .stroke-brand-blue { stroke: c_brand-blue; }

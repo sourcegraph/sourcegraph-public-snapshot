@@ -2087,7 +2087,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 /* INPUTS */
 
 .text-input-border {
-	composes: br2 ba b--light-silver;
+	composes: br3 ba b--light-silver;
 }
 .text-input-border:focus {
 	outline: none;
@@ -2125,7 +2125,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 }
 
 .modal-shadow {
-	box-shadow: 2px 2px 10px 0px c_black-60;
+	box-shadow: 2px 2px 10px 0px c_black-30;
 }
 
 .modal {
@@ -2137,7 +2137,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 	z-index: 101;
 	max-height: 75%;
 	composes: mv6;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 .hidden {
@@ -2155,6 +2155,10 @@ code, .code { font-family: Consolas, monaco, monospace; }
 .tooltip-top {
 	composes: tooltip-common;
 	composes: hint--top from hint;
+}
+.tooltip-top-right {
+	composes: tooltip-common;
+	composes: hint--top-right from hint;
 }
 .tooltip-bottom {
 	composes: tooltip-common;

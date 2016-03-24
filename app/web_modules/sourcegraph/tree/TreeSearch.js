@@ -25,6 +25,7 @@ class TreeSearch extends Container {
 		super(props);
 		this.state = {
 			visible: !props.overlay,
+			focused: !props.overlay,
 			matchingSymbols: {Results: [], SrclibDataVersion: null},
 			allFiles: [],
 			matchingFiles: [],
@@ -35,12 +36,13 @@ class TreeSearch extends Container {
 		this._handleKeyUp = this._handleKeyUp.bind(this);
 		this._focusInput = this._focusInput.bind(this);
 		this._blurInput = this._blurInput.bind(this);
+		this._dismissModal = this._dismissModal.bind(this);
 		this._onType = this._onType.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			const matchingFiles = (query && this.state.fuzzyFinder) ?
 				this.state.fuzzyFinder.search(query).map(i => this.state.allFiles[i]) :
 				this.state.allFiles;
-			this.setState({query: query, matchingFiles: matchingFiles});
+			this.setState({query: query, matchingFiles: matchingFiles, selectionIndex: 0});
 		}, 75, {leading: false, trailing: true});
 	}
 
@@ -162,7 +164,7 @@ class TreeSearch extends Container {
 			break;
 
 		case 27: // ESC
-			this._blurInput();
+			this._dismissModal();
 		}
 	}
 
@@ -173,16 +175,23 @@ class TreeSearch extends Container {
 
 		this.setState({
 			visible: true,
-			selectionIndex: 0,
+			focused: true,
 		}, () => this.refs.input && this.refs.input.focus());
 	}
 
 	_blurInput() {
 		if (this.refs.input) this.refs.input.blur();
-
 		this.setState({
-			visible: false,
+			focused: false,
 		});
+	}
+
+	_dismissModal() {
+		if (this.state.overlay) {
+			this.setState({
+				visible: false,
+			});
+		}
 	}
 
 	_numSymbolResults() {
@@ -358,7 +367,7 @@ class TreeSearch extends Container {
 	}
 
 	_wrapModalContainer(elem) {
-		if (this.state.overlay) return <Modal onClickOverlay={this._blurInput}>{elem}</Modal>;
+		if (this.state.overlay) return <Modal shown={this.state.visible} onDismiss={this._dismissModal}>{elem}</Modal>;
 		return elem;
 	}
 
@@ -366,11 +375,13 @@ class TreeSearch extends Container {
 		return (
 			<div className={this.state.visible ? TreeStyles.tree_container : BaseStyles.hidden}>
 				{this._wrapModalContainer(<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
-					<div className={TreeStyles.input_group}>
+					<div className={this.state.focused ? TreeStyles.input_group_focused : TreeStyles.input_group_unfocused}>
 						{!this.state.overlay &&
 							<div className={TreeStyles.search_hotkey} data-hint="Use search from any page with this shortcut.">t</div>}
 						<input className={TreeStyles.input}
 							type="text"
+							onFocus={this._focusInput}
+							onBlur={this._blurInput}
 							placeholder="Search this repository..."
 							ref="input"
 							onKeyUp={this._onType} />

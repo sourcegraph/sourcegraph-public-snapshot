@@ -9,6 +9,8 @@ $navbar-padding-vertical: 10px;
 $nav-link-padding: 8px 8px;
 $navbar-inverse-brand-color: lighten($navbar-inverse-link-color, 15%);
 
+$link-hover-color: rgba(77, 193, 255, 1);
+
 // Reset and dependencies
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/normalize";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/print";
