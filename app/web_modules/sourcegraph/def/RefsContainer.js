@@ -8,6 +8,7 @@ import DefTooltip from "sourcegraph/def/DefTooltip";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
+import lineFromByte from "sourcegraph/blob/lineFromByte";
 import hotLink from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
 
@@ -29,13 +30,25 @@ class RefsContainer extends Container {
 		state.anns = {};
 
 		if (state.refs) {
-			let fileIndex = new Set();
+			let fileIndex = {};
 			for (let ref of state.refs.Refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
-				if (!fileIndex.has(ref.File)) {
-					state.files.push(BlobStore.files.get(ref.Repo, refRev, ref.File));
-					fileIndex.add(ref.File);
+				if (!fileIndex[ref.File]) {
+					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
+					state.files.push(file);
+					state.ranges[ref.File] = [];
+					fileIndex[ref.File] = file;
+				}
+				let file = fileIndex[ref.File];
+				// Determine the line range that should be displayed for each ref.
+				if (file) {
+					const context = 4; // Number of additional lines to show above/below a ref
+					let contents = file.Entry.ContentsString;
+					state.ranges[ref.File].push([
+						Math.max(lineFromByte(contents, ref.Start) - context, 0),
+						lineFromByte(contents, ref.End) + context,
+					]);
 				}
 				let anns = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
 				state.anns[ref.File] = anns ? anns.Annotations : null;
@@ -96,7 +109,7 @@ class RefsContainer extends Container {
 											annotations={this.state.anns[path] || null}
 											activeDef={this.state.def}
 											lineNumbers={true}
-											displayRanges={null}
+											displayRanges={this.state.ranges[path] || null}
 											highlightedDef={this.state.highlightedDef} />
 									</div>
 								);
