@@ -36,9 +36,7 @@ class BlobLine extends Component {
 	}
 
 	_hasLink(content) {
-		if (!content || !content.length) {
-			return false;
-		}
+		if (!(content instanceof Array)) return false;
 		return content.some(item => {
 			if (item.type === "a") {
 				return true;
