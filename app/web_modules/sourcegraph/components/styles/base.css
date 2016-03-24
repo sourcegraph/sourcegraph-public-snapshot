@@ -2130,7 +2130,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 
 .modal {
 	composes: br2 modal-shadow;
-	max-width: 600px;
+	max-width: 700px;
 	min-width: 300px;
 	z-index: 101;
 	max-height: 75%;

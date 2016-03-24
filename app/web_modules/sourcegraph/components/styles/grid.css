@@ -1,3 +1,5 @@
+/*! This file was adapted from Basscss (grid module) v8.0.1 | http://basscss.com | MIT License */
+
 .col {
 	float: left;
 	box-sizing: border-box;

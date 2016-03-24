@@ -1,3 +1,5 @@
+/*! This file was adapted from Basscss (flexbox module) v8.0.1 | http://basscss.com | MIT License */
+
 .flex { display: flex; }
 
 @media screen and (min-width: 48em) {
