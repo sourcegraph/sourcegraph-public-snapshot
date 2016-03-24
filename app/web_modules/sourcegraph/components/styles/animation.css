@@ -1,0 +1,11 @@
+/*
+
+Unnecessary animations make the application feel slow. Use animation
+sparingly!
+
+*/
+
+
+@value passive_animation_duration 0.1s; /* for hover, focus actions */
+@value active_animation_duration 0.2s; /* for click actions */
+@value visual_animation_duration 0.25s; /* for visually showing a transition */
