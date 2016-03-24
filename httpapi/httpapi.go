@@ -38,8 +38,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware)
 	}
 	if !metricutil.DisableMetricsCollection() {
-		// TODO(rothfels): check what other special characters (besides semis) need to be sanitized
-		// mw = append(mw, eventsutil.AgentMiddleware)
+		mw = append(mw, eventsutil.AgentMiddleware)
 		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 

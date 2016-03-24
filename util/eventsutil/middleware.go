@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/satori/go.uuid"
 
@@ -35,7 +36,7 @@ const (
 // in the context for downstream HTTP handlers.
 func AgentMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	ctx := httpctx.FromRequest(r)
-	ctx = WithUserAgent(ctx, r.UserAgent())
+	ctx = WithUserAgent(ctx, url.QueryEscape(r.UserAgent()))
 	httpctx.SetForRequest(r, ctx)
 	next(w, r)
 }
