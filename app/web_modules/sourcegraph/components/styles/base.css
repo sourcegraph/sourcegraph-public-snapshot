@@ -2086,21 +2086,21 @@ code, .code { font-family: Consolas, monaco, monospace; }
 
 /* INPUTS */
 
-.text-input-border {
+.input-border {
 	composes: br3 ba b--light-silver;
-}
-.text-input-border:focus {
-	outline: none;
-	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
 }
 .input-focus-border {
 	composes: b--blue-8 from "./colors.css";
+}
+.input-border:focus {
+	outline: none;
+	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
 }
 
 .text-input-common {
 	composes: f3 pa3 sans-serif;
 	composes: blue from "./colors.css";
-	composes: text-input-border;
+	composes: input-border;
 }
 
 /* TODO: can we do this without vendor prefixing? */
@@ -2130,8 +2130,6 @@ code, .code { font-family: Consolas, monaco, monospace; }
 
 .modal {
 	composes: br2 modal-shadow;
-
-	/*composes: col-3 from "./grid.css";*/
 	max-width: 600px;
 	min-width: 300px;
 	z-index: 101;

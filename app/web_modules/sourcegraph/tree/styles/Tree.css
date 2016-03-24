@@ -34,7 +34,7 @@
 }
 .input_group_unfocused {
 	composes: input_group;
-	composes: br2 ba b--light-silver from base;
+	composes: input-border from base;
 }
 
 .input {
