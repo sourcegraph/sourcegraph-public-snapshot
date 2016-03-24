@@ -1,16 +1,3 @@
-pre.diff {
-	ins, del {
-		display: inline-block;
-		text-decoration: none;
-	}
-	ins {
-		background-color: #dfd;
-	}
-	del {
-		background-color: #fdd;
-	}
-}
-
 div.file-list {
 	.file-list-header {
 		display: block;

@@ -14,9 +14,9 @@
 		{{if not .Commit}}disabled{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}disabled{{end}}
 		type="submit" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i>&nbsp; Rebuild</button>
 		{{if not .Commit}}
-		<span class="help-sm-fade">Disabled because the commit could not be retrieved</span>
+		<span class="text-muted">Disabled because the commit could not be retrieved</span>
 		{{else if and .Build.Success (not (isAdmin .Ctx "Builds.Create"))}}
-		<span class="help-sm-fade">Disabled because the commit is successfully built</span>
+		<span class="text-muted">Disabled because the commit is successfully built</span>
 		{{end}}
 		<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 	</form>
