@@ -1037,14 +1037,16 @@
 			"revisionTime": "2015-12-12T22:14:40-08:00"
 		},
 		{
+			"checksumSHA1": "thalOxMGUln4he8/AKgUOVgEgmg=",
 			"path": "sourcegraph.com/sourcegraph/rwvfs",
-			"revision": "22b5bc3bc4d486b48f75cf78b7c1e8e1204c3521",
-			"revisionTime": "2015-12-19T17:10:18-08:00"
+			"revision": "d433415e8d1212f40c9a508851f08ba91e5996da",
+			"revisionTime": "2016-03-24T15:23:09+01:00"
 		},
 		{
+			"checksumSHA1": "XTY4PuHkKjo+BZCbZoGS2+yQ+vY=",
 			"path": "sourcegraph.com/sourcegraph/rwvfs/cloudstoragevfs",
-			"revision": "22b5bc3bc4d486b48f75cf78b7c1e8e1204c3521",
-			"revisionTime": "2015-12-19T17:10:18-08:00"
+			"revision": "d433415e8d1212f40c9a508851f08ba91e5996da",
+			"revisionTime": "2016-03-24T15:23:09+01:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/s3vfs",

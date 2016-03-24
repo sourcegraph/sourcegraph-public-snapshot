@@ -9,6 +9,7 @@ import (
 	"os"
 	pathpkg "path"
 	"strings"
+	"sync"
 	"time"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
@@ -22,15 +23,21 @@ import (
 
 const dirKind = "storage#objects"
 
+var defaultClient *http.Client
+var defaultClientErr error
+var defaultClientOnce sync.Once
+
 // NewDefault returns a partial RWVFS implementation backed by Google Cloud Storage.
 func NewDefault(bucket string) (rwvfs.FileSystem, error) {
-	// Authentication is provided by the gcloud tool when running locally, and
-	// by the associated service account when running on Compute Engine.
-	client, err := google.DefaultClient(context.Background(), storage.DevstorageFullControlScope)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get default client: %v", err)
+	defaultClientOnce.Do(func() {
+		// Authentication is provided by the gcloud tool when running locally, and
+		// by the associated service account when running on Compute Engine.
+		defaultClient, defaultClientErr = google.DefaultClient(context.Background(), storage.DevstorageFullControlScope)
+	})
+	if defaultClientErr != nil {
+		return nil, fmt.Errorf("unable to get default client: %v", defaultClientErr)
 	}
-	return New(client, bucket)
+	return New(defaultClient, bucket)
 }
 
 // New returns a partial RWVFS implementation backed by the Cloud Storage API.
