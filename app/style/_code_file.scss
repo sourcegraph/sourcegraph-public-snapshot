@@ -169,6 +169,21 @@
 		.usage-category {
 			margin-left: $padding-base-horizontal;
 		}
+
+		.badge {
+			min-width: 23px;
+			font-size: 13px;
+			background-color: $muted-badge-bg;
+			color: $muted-badge-text;
+			vertical-align: initial;
+		}
+
+		.current-file {
+			.badge {
+				background-color: $token-active-color;
+				color: $jet-black;
+			}
+		}
 	}
 
 	.qualified-name {

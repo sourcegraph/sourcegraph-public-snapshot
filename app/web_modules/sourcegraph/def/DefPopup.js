@@ -22,13 +22,13 @@ class DefPopup extends Component {
 				{this.state.refs && this.state.refs.Total === 0 &&
 					<i>No usages found</i>
 				}
-				{this.state.refs && this.state.refs.Files &&
+				{this.state.refs && this.state.refs.Files && this.state.refs.Total > 0 &&
 					<div className="usages">
-						<div><i className="fa fa-bookmark"></i> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> ({this.state.refs.Total})</div>
+						<div><i className="fa fa-bookmark"></i> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> <span className="badge">{this.state.refs.Total}</span></div>
 						<div className="usage-category">
 							{this.state.refs.Files.map((file, i) => (
-								<div key={i}>
-									<i className="fa fa-file-text-o"></i> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{this.state.path === file.Name ? "Current File" : file.Name}</a> ({file.RefCount})
+								<div key={i} className={this.state.path === file.Name ? "current-file" : ""}>
+									<i className="fa fa-file-text-o"></i> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{file.Name}</a> <span className="badge">{file.RefCount}</span>
 								</div>
 							))}
 						</div>
