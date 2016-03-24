@@ -7,8 +7,8 @@ function defsListKeyFor(repo, rev, query) {
 	return `${repo}#${rev}#${query}`;
 }
 
-function exampleKeyFor(defURL, page) {
-	return `${defURL}#${page}`;
+function exampleKeyFor(defURL, file, page) {
+	return `${defURL}#${file}#${page}`;
 }
 
 function refsKeyFor(defURL) {
@@ -38,8 +38,8 @@ export class DefStore extends Store {
 		this.examples = deepFreeze({
 			content: {},
 			counts: {},
-			get(defURL, page) {
-				return this.content[exampleKeyFor(defURL, page)] || null;
+			get(defURL, file, page) {
+				return this.content[exampleKeyFor(defURL, file, page)] || null;
 			},
 			// TODO Fix this.
 			getCount(defURL) {
@@ -77,7 +77,7 @@ export class DefStore extends Store {
 		case DefActions.ExamplesFetched:
 			this.examples = deepFreeze(Object.assign({}, this.examples, {
 				content: Object.assign({}, this.examples.content, {
-					[exampleKeyFor(action.defURL, action.page)]: action.examples,
+					[exampleKeyFor(action.defURL, action.file, action.page)]: action.examples,
 				}),
 			}));
 			break;

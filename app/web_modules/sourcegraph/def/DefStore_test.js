@@ -24,8 +24,8 @@ describe("DefStore", () => {
 	});
 
 	it("should handle ExamplesFetched", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.ExamplesFetched("/someURL", 42, ["someData"]));
-		expect(DefStore.examples.get("/someURL", 42)).to.eql(["someData"]);
+		Dispatcher.directDispatch(DefStore, new DefActions.ExamplesFetched("/someURL", "f", 42, ["someData"]));
+		expect(DefStore.examples.get("/someURL", "f", 42)).to.eql(["someData"]);
 	});
 
 	it("should handle NoExamplesAvailable", () => {

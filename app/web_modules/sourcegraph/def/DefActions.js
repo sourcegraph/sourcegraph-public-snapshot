@@ -49,15 +49,17 @@ export class HighlightDef {
 }
 
 export class WantExamples {
-	constructor(defURL, page) {
+	constructor(defURL, file, page) {
 		this.defURL = defURL;
+		this.file = file;
 		this.page = page;
 	}
 }
 
 export class ExamplesFetched {
-	constructor(defURL, page, examples) {
+	constructor(defURL, file, page, examples) {
 		this.defURL = defURL;
+		this.file = file;
 		this.page = page;
 		this.examples = examples;
 	}

@@ -47,10 +47,11 @@ const DefBackend = {
 
 		case DefActions.WantExamples:
 			{
-				let examples = DefStore.examples.get(action.defURL, action.page);
+				let examples = DefStore.examples.get(action.defURL, action.file, action.page);
 				if (examples === null) {
+					let files = action.file ? `&files=${action.file}` : "";
 					DefBackend.xhr({
-						uri: `/.api/repos${action.defURL}/.examples?PerPage=10&Page=${action.page}`,
+						uri: `/.api/repos${action.defURL}/.examples?PerPage=10&Page=${action.page}${files}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (!err && (resp.statusCode !== 200)) err = `HTTP ${resp.statusCode}`;
@@ -62,7 +63,7 @@ const DefBackend = {
 							Dispatcher.dispatch(new DefActions.NoExamplesAvailable(action.defURL, action.page));
 							return;
 						}
-						Dispatcher.dispatch(new DefActions.ExamplesFetched(action.defURL, action.page, body));
+						Dispatcher.dispatch(new DefActions.ExamplesFetched(action.defURL, action.file, action.page, body));
 					});
 				}
 				break;

@@ -40,21 +40,21 @@ describe("DefBackend", () => {
 	describe("should handle WantExamples", () => {
 		it("with result available", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=10&Page=42");
+				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=10&Page=42&files=f");
 				callback(null, {statusCode: 200}, {Examples: [{test: "exampleData"}]});
 			};
 			expect(Dispatcher.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantExamples("/someURL", 42));
-			})).to.eql([new DefActions.ExamplesFetched("/someURL", 42, {Examples: [{test: "exampleData"}]})]);
+				Dispatcher.directDispatch(DefBackend, new DefActions.WantExamples("/someURL", "f", 42));
+			})).to.eql([new DefActions.ExamplesFetched("/someURL", "f", 42, {Examples: [{test: "exampleData"}]})]);
 		});
 
 		it("with no result available", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=10&Page=42");
+				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=10&Page=42&files=f");
 				callback(null, {statusCode: 200}, null);
 			};
 			expect(Dispatcher.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantExamples("/someURL", 42));
+				Dispatcher.directDispatch(DefBackend, new DefActions.WantExamples("/someURL", "f", 42));
 			})).to.eql([new DefActions.NoExamplesAvailable("/someURL", 42)]);
 		});
 	});

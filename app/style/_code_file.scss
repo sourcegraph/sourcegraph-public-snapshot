@@ -157,9 +157,17 @@
 		font-weight: bold;
 	}
 
-	.usage-header {
-		.fa-spin {
-			color: $text-muted;
+	.usages {
+		line-height: 1.7;
+
+		.usage-header {
+			.fa-spin {
+				color: $text-muted;
+			}
+		}
+
+		.usage-category {
+			margin-left: $padding-base-horizontal;
 		}
 	}
 

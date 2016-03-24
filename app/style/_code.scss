@@ -58,6 +58,12 @@
 		background-color: $line-expander-bg;
 		color: $line-expander-text;
 		text-align: center;
+		cursor: pointer;
+
+		&:hover {
+			background-color: darken($line-expander-bg, 1%);
+		}
+
 		.line-content {
 			padding-right: $line-number-width;
 		}

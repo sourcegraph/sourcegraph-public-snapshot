@@ -29,13 +29,15 @@ class ExamplesContainer extends Container {
 		state.defs = DefStore.defs;
 		state.refs = DefStore.refs.get(state.def);
 		state.annotations = BlobStore.annotations;
-		state.examples = DefStore.examples.get(state.def, state.currentPage);
+		state.tree = props.tree || "";
+		state.examples = DefStore.examples.get(state.def, state.tree, state.currentPage);
 		state.files = [];
 		state.ranges = {};
 		state.anns = {};
 
 		let fileIndex = new Set();
 		for (let ex of state.examples || []) {
+			if (!ex) continue;
 			if (!fileIndex.has(ex.File)) {
 				state.files.push(BlobStore.files.get(ex.Repo, ex.Rev, ex.File));
 				state.ranges[ex.File] = [];
@@ -53,7 +55,7 @@ class ExamplesContainer extends Container {
 		if (nextState.def && prevState.def !== nextState.def) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.def));
 			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.def));
-			Dispatcher.asyncDispatch(new DefActions.WantExamples(nextState.def, 1));
+			Dispatcher.asyncDispatch(new DefActions.WantExamples(nextState.def, nextState.tree, 1));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
@@ -78,7 +80,7 @@ class ExamplesContainer extends Container {
 
 		return (
 			<div>
-				<header>Examples for {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>}</header>
+				<header>Examples of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.tree ? `in ${this.state.tree}` : `in ${this.state.repo}`}</header>
 				<hr/>
 				<div className="file-container">
 					<div className="content-view">

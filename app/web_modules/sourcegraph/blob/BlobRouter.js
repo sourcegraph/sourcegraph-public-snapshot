@@ -104,6 +104,9 @@ class BlobRouter extends Component {
 			// TODO better way to do this routing.
 			state.def = state.url.pathname.replace(/\/\.examples\/?$/, "");
 			state.viewExamples = last(pathParts) === "examples";
+			if (state.viewExamples) {
+				state.tree = state.url.query.file ? state.url.query.file : null;
+			}
 		}
 	}
 
@@ -183,6 +186,7 @@ class BlobRouter extends Component {
 				{this.state.viewExamples &&
 					<ExamplesContainer
 						repo={this.state.repo}
+						tree={this.state.tree}
 						def={this.state.def} />
 				}
 				{!this.state.viewExamples &&
