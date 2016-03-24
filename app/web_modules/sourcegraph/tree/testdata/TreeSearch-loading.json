@@ -4,95 +4,124 @@
 		"props": {
 			"children": [
 				{
-					"type": "div",
-					"props": {}
-				},
-				{
-					"type": "div",
+					"type": "Modal",
 					"props": {
+						"shown": false,
 						"children": [
 							{
 								"type": "div",
 								"props": {
 									"children": [
 										{
-											"type": "input",
-											"ref": "input",
-											"props": {
-												"type": "text",
-												"placeholder": "Search this repository..."
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"children": [
-										"Symbols"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"children": [
-										{
-											"type": "span",
+											"type": "div",
 											"props": {
 												"children": [
 													{
-														"type": "i",
+														"type": "input",
+														"ref": "input",
 														"props": {
-															"className": "fa fa-spinner fa-spin"
+															"type": "text",
+															"onFocus": {
+																"dispatched": [
+																	{
+																		"$constructor": "WantFileList",
+																		"repo": "repo",
+																		"rev": "rev"
+																	},
+																	{
+																		"$constructor": "WantResults",
+																		"repo": "repo",
+																		"rev": "rev",
+																		"type": "tokens",
+																		"page": 1,
+																		"perPage": 5,
+																		"query": ""
+																	}
+																]
+															},
+															"placeholder": "Search this repository..."
 														}
 													}
 												]
 											}
 										},
 										{
-											"type": "i",
+											"type": "div",
 											"props": {
 												"children": [
-													"Sourcegraph is analyzing your code — ",
+													"Symbols"
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"children": [
 													{
-														"type": "a",
+														"type": "span",
 														"props": {
-															"href": "",
 															"children": [
-																"results will be available soon!"
+																{
+																	"type": "i",
+																	"props": {
+																		"className": "fa fa-spinner fa-spin"
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "i",
+														"props": {
+															"children": [
+																"Sourcegraph is analyzing your code — ",
+																{
+																	"type": "a",
+																	"props": {
+																		"href": "",
+																		"children": [
+																			"results will be available soon!"
+																		]
+																	}
+																}
 															]
 														}
 													}
 												]
 											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"children": [
-										"Files",
+										},
 										{
-											"type": "span",
-											"props": {}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": "_nofiles",
-								"props": {
-									"children": [
-										{
-											"type": "i",
+											"type": "div",
 											"props": {
 												"children": [
-													"No matches!"
+													"Files",
+													{
+														"type": "span",
+														"props": {}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"children": [
+													{
+														"type": "div",
+														"key": "_nofiles",
+														"props": {
+															"children": [
+																{
+																	"type": "i",
+																	"props": {
+																		"children": [
+																			"No matches!"
+																		]
+																	}
+																}
+															]
+														}
+													}
 												]
 											}
 										}

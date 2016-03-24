@@ -169,7 +169,7 @@ class TreeSearch extends Container {
 	}
 
 	_focusInput() {
-		if (document.body.dataset.fileSearchDisabled) {
+		if (typeof document !== "undefined" && document.body.dataset.fileSearchDisabled) {
 			return null;
 		}
 
