@@ -6,19 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
-var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "requests_total",
-	Help:      "Total number of HTTP requests made.",
-}, metricLabels)
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "http",
@@ -34,7 +29,6 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, metricLabels)
 
 func init() {
-	prometheus.MustRegister(requestCount)
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 }
@@ -62,7 +56,6 @@ func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFu
 		"code":   strconv.Itoa(code),
 		"repo":   util.GetTrackedRepo(r.URL.Path),
 	}
-	requestCount.With(labels).Inc()
 	requestDuration.With(labels).Observe(duration.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
