@@ -12,7 +12,21 @@ import lineFromByte from "sourcegraph/blob/lineFromByte";
 import hotLink from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
 
+const FILES_PER_PAGE = 5;
+
 class RefsContainer extends Container {
+	constructor(props) {
+		super(props);
+		this.state = {
+			// Pagination limits the amount of files that are initiallly loaded to
+			// prevent a flood of large requests.
+			// TODO: This is only set when the component is created, which means if
+			// you navigate to refs for another def, the page will not be reset.
+			page: 1,
+		};
+		this._nextPage = this._nextPage.bind(this);
+	}
+
 	stores() {
 		return [DefStore, BlobStore];
 	}
@@ -30,20 +44,20 @@ class RefsContainer extends Container {
 		state.anns = null;
 
 		if (state.refs) {
-			let fileIndex = {};
 			let files = [];
 			let ranges = {};
 			let anns = {};
+			let fileIndex = new Map();
 			for (let ref of state.refs.Refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
-				if (!fileIndex[ref.File]) {
+				if (!fileIndex.has(ref.File)) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
 					files.push(file);
 					ranges[ref.File] = [];
-					fileIndex[ref.File] = file;
+					fileIndex.set(ref.File, file);
 				}
-				let file = fileIndex[ref.File];
+				let file = fileIndex.get(ref.File);
 				// Determine the line range that should be displayed for each ref.
 				if (file) {
 					const context = 4; // Number of additional lines to show above/below a ref
@@ -74,9 +88,10 @@ class RefsContainer extends Container {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
 		}
 
-		if (nextState.refs && nextState.refs !== prevState.refs) {
+		if (nextState.refs && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
 			let wantedFiles = new Set();
 			for (let ref of nextState.refs.Refs) {
+				if (wantedFiles.size === (nextState.page * FILES_PER_PAGE)) break;
 				if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
 				// TODO Only fetch a portion of the file/annotations at a time for perf.
 				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
@@ -85,6 +100,13 @@ class RefsContainer extends Container {
 				wantedFiles.add(ref.File);
 			}
 		}
+	}
+
+	_nextPage() {
+		this.setState({
+			page: this.state.page + 1,
+		});
+		console.log("FILS", this.state.files);
 	}
 
 	render() {
@@ -120,6 +142,11 @@ class RefsContainer extends Container {
 									</div>
 								);
 							})}
+							{this.state.files && this.state.files.length > (this.state.page * FILES_PER_PAGE) &&
+								<div className="refs-footer">
+									<div className="btn btn-default" onClick={this._nextPage}>View more</div>
+								</div>
+							}
 						</div>
 					</div>
 				</div>
