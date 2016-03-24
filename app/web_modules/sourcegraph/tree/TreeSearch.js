@@ -33,7 +33,7 @@ class TreeSearch extends Container {
 			query: "",
 			selectionIndex: 0,
 		};
-		this._handleKeyUp = this._handleKeyUp.bind(this);
+		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._focusInput = this._focusInput.bind(this);
 		this._blurInput = this._blurInput.bind(this);
 		this._dismissModal = this._dismissModal.bind(this);
@@ -51,14 +51,14 @@ class TreeSearch extends Container {
 		if (!this.state.overlay) {
 			this._focusInput();
 		} else {
-			document.addEventListener("keyup", this._handleKeyUp);
+			document.addEventListener("keydown", this._handleKeyDown);
 		}
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
 		if (this.state.overlay) {
-			document.removeEventListener("keyup", this._handleKeyUp);
+			document.removeEventListener("keydown", this._handleKeyDown);
 		}
 	}
 
@@ -155,7 +155,7 @@ class TreeSearch extends Container {
 		}
 	}
 
-	_handleKeyUp(ev) {
+	_handleKeyDown(ev) {
 		const tag = ev.target.tagName;
 		switch (ev.keyCode) {
 		case 84: // "t"
@@ -384,7 +384,7 @@ class TreeSearch extends Container {
 							onBlur={this._blurInput}
 							placeholder="Search this repository..."
 							ref="input"
-							onKeyUp={this._onType} />
+							onKeyDown={this._onType} />
 					</div>
 					<div className={TreeStyles.list_header}>
 						Symbols
