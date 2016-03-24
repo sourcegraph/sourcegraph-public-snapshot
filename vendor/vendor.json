@@ -935,9 +935,10 @@
 			"revisionTime": "2016-01-07T14:58:23-08:00"
 		},
 		{
+			"checksumSHA1": "0vRxoJBB9TdAb/qp9kM9+wKQwcQ=",
 			"path": "gopkg.in/gorp.v1",
-			"revision": "c87af80f3cc5036b55b83d77171e156791085e2e",
-			"revisionTime": "2015-02-04T09:55:30+01:00"
+			"revision": "cfc99f60faeef6479ec4c06eca8c8b4439608024",
+			"revisionTime": "2016-03-22T12:14:41+01:00"
 		},
 		{
 			"path": "gopkg.in/inconshreveable/go-update.v0",
