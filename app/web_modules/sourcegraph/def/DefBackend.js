@@ -45,42 +45,21 @@ const DefBackend = {
 				break;
 			}
 
-		case DefActions.WantExamples:
-			{
-				let examples = DefStore.examples.get(action.defURL, action.file, action.page);
-				if (examples === null) {
-					let files = action.file ? `&files=${action.file}` : "";
-					DefBackend.xhr({
-						uri: `/.api/repos${action.defURL}/.examples?PerPage=10&Page=${action.page}${files}`,
-						json: {},
-					}, function(err, resp, body) {
-						if (!err && (resp.statusCode !== 200)) err = `HTTP ${resp.statusCode}`;
-						if (err) {
-							console.error(err);
-							return;
-						}
-						if (!body || !body.Examples || body.Examples.length === 0) {
-							Dispatcher.dispatch(new DefActions.NoExamplesAvailable(action.defURL, action.page));
-							return;
-						}
-						Dispatcher.dispatch(new DefActions.ExamplesFetched(action.defURL, action.file, action.page, body));
-					});
-				}
-				break;
-			}
-
 		case DefActions.WantRefs:
 			{
-				{
+				let refs = DefStore.refs.get(action.defURL, action.file);
+				if (refs === null) {
+					let url = `/.ui${action.defURL}/.refs`;
+					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
 					DefBackend.xhr({
-						uri: `/.ui${action.defURL}/.refs`,
+						uri: url,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new DefActions.RefsFetched(action.defURL, body));
+						Dispatcher.dispatch(new DefActions.RefsFetched(action.defURL, action.file, body));
 					});
 				}
 				break;

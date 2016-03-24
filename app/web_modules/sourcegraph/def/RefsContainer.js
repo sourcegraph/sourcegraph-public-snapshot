@@ -11,14 +11,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import hotLink from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
 
-class ExamplesContainer extends Container {
-	constructor(props) {
-		super(props);
-		this.state = {
-			currentPage: 1,
-		};
-	}
-
+class RefsContainer extends Container {
 	stores() {
 		return [DefStore, BlobStore];
 	}
@@ -30,22 +23,23 @@ class ExamplesContainer extends Container {
 		state.refs = DefStore.refs.get(state.def);
 		state.annotations = BlobStore.annotations;
 		state.tree = props.tree || "";
-		state.examples = DefStore.examples.get(state.def, state.tree, state.currentPage);
+		state.refs = DefStore.refs.get(state.def, state.tree);
 		state.files = [];
 		state.ranges = {};
 		state.anns = {};
 
-		let fileIndex = new Set();
-		for (let ex of state.examples || []) {
-			if (!ex) continue;
-			if (!fileIndex.has(ex.File)) {
-				state.files.push(BlobStore.files.get(ex.Repo, ex.Rev, ex.File));
-				state.ranges[ex.File] = [];
-				fileIndex.add(ex.File);
+		if (state.refs) {
+			let fileIndex = new Set();
+			for (let ref of state.refs.Refs || []) {
+				if (!ref) continue;
+				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
+				if (!fileIndex.has(ref.File)) {
+					state.files.push(BlobStore.files.get(ref.Repo, refRev, ref.File));
+					fileIndex.add(ref.File);
+				}
+				let anns = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
+				state.anns[ref.File] = anns ? anns.Annotations : null;
 			}
-			state.ranges[ex.File].push([ex.Range.StartLine, ex.Range.EndLine]);
-			let anns = state.annotations.get(ex.Repo, ex.Rev, "", ex.File);
-			state.anns[ex.File] = anns ? anns.Annotations : null;
 		}
 
 		state.highlightedDef = DefStore.highlightedDef || null;
@@ -54,22 +48,22 @@ class ExamplesContainer extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.def && prevState.def !== nextState.def) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.def));
-			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.def));
-			Dispatcher.asyncDispatch(new DefActions.WantExamples(nextState.def, nextState.tree, 1));
+			Dispatcher.asyncDispatch(new DefActions.WantRefs(nextState.def, nextState.tree));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.asyncDispatch(new DefActions.WantDef(nextState.highlightedDef));
 		}
 
-		if (nextState.examples && (prevState.examples && prevState.examples.length) !== nextState.examples) {
+		if (nextState.refs && nextState.refs !== prevState.refs) {
 			let wantedFiles = new Set();
-			for (let ex of nextState.examples) {
-				if (wantedFiles.has(ex.File)) continue; // Prevent many requests for the same file.
+			for (let ref of nextState.refs.Refs) {
+				if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
 				// TODO Only fetch a portion of the file/annotations at a time for perf.
-				Dispatcher.asyncDispatch(new BlobActions.WantFile(ex.Repo, ex.Rev, ex.File));
-				Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(ex.Repo, ex.Rev, "", ex.File));
-				wantedFiles.add(ex.File);
+				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
+				Dispatcher.asyncDispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
+				Dispatcher.asyncDispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
+				wantedFiles.add(ref.File);
 			}
 		}
 	}
@@ -80,7 +74,7 @@ class ExamplesContainer extends Container {
 
 		return (
 			<div>
-				<header>Examples of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.tree ? `in ${this.state.tree}` : `in ${this.state.repo}`}</header>
+				<header>Refs of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.tree ? `in ${this.state.tree}` : `in ${this.state.repo}`}</header>
 				<hr/>
 				<div className="file-container">
 					<div className="content-view">
@@ -102,7 +96,7 @@ class ExamplesContainer extends Container {
 											annotations={this.state.anns[path] || null}
 											activeDef={this.state.def}
 											lineNumbers={true}
-											displayRanges={this.state.ranges[path] || null}
+											displayRanges={null}
 											highlightedDef={this.state.highlightedDef} />
 									</div>
 								);
@@ -117,4 +111,4 @@ class ExamplesContainer extends Container {
 	}
 }
 
-export default ExamplesContainer;
+export default RefsContainer;

@@ -63,7 +63,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.Builds).Handler(handler(serveBuilds))
 	m.Get(apirouter.Def).Handler(handler(serveDef))
 	m.Get(apirouter.Defs).Handler(handler(serveDefs))
-	m.Get(apirouter.DefExamples).Handler(handler(serveDefExamples))
 	m.Get(apirouter.Repo).Handler(handler(serveRepo))
 	m.Get(apirouter.RepoBranches).Handler(handler(serveRepoBranches))
 	m.Get(apirouter.RepoCommits).Handler(handler(serveRepoCommits))

@@ -54,8 +54,8 @@ const (
 	GitHubOAuth2Initiate = "github-oauth2.initiate"
 	GitHubOAuth2Receive  = "github-oauth2.receive"
 
-	Def         = "def"
-	DefExamples = "def.examples"
+	Def     = "def"
+	DefRefs = "def.refs"
 
 	UserContent = "usercontent"
 
@@ -122,7 +122,7 @@ func New(base *mux.Router) *Router {
 	defPath := "/" + routevar.Def
 	repoRev.Path(defPath).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
 	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
-	def.Path("/.examples").Methods("GET").Name(DefExamples)
+	def.Path("/.refs").Methods("GET").Name(DefRefs)
 	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
 
 	// See router_util/tree_route.go for an explanation of how we match tree

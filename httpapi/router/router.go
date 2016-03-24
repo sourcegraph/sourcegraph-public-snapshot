@@ -19,7 +19,6 @@ const (
 	Builds           = "builds"
 	Def              = "def"
 	Defs             = "defs"
-	DefExamples      = "def.examples"
 	Repo             = "repo"
 	RepoBranches     = "repo.branches"
 	RepoTree         = "repo.tree"
@@ -81,8 +80,6 @@ func New(base *mux.Router) *mux.Router {
 
 	// See router_util/def_route.go for an explanation of how we match def
 	// routes.
-	def := repoRev.PathPrefix("/" + routevar.Def).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
-	def.Path("/.examples").Methods("GET").Name(DefExamples)
 	repoRev.Path("/" + routevar.Def).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
 
 	return base

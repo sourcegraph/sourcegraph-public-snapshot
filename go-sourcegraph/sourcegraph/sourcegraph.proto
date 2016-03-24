@@ -1444,15 +1444,6 @@ message DefGetOptions {
 	bool Doc = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// DefListExamplesOptions specifies options for DefsService.ListExamples.
-message DefListExamplesOptions {
-	// Filter by a specific Repo URI
-	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	// Filter by specific file paths
-	repeated string Files = 2 [(gogoproto.nullable) = false, (gogoproto.moretags) = "url:\",omitempty\""];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
 // DefListOptions specifies options for DefsService.List.
 message DefListOptions {
 	string Name = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
@@ -1514,7 +1505,7 @@ message DefListOptions {
 
 message DefListRefsOptions {
 	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
-	repeated string Files = 2 [(gogoproto.nullable) = false, (gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string Files = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
@@ -1544,19 +1535,6 @@ message DefsListRefsOp {
 
 message RefList {
 	repeated graph.Ref Refs = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message DefsListExamplesOp {
-	DefSpec Def = 1 [(gogoproto.nullable) = false];
-	// If set, source code in the examples will be linked to this branch, rather
-	// than to the commit ID.
-	string Rev = 2;
-	DefListExamplesOptions Opt = 3;
-}
-
-message ExampleList {
-	repeated Example Examples = 1;
 	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
@@ -1624,22 +1602,6 @@ message DeltaSpec {
 message DeltasListFilesOp {
 	DeltaSpec Ds = 1 [(gogoproto.nullable) = false];
 	DeltaListFilesOptions Opt = 2;
-}
-// Example is a usage example of a def.
-message Example {
-	graph.Ref Ref = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-
-	// Contents is the file excerpt of the example.
-	string Contents = 2;
-
-	FileRange Range = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true];
-
-	// Error is whether an error occurred while fetching this example.
-	bool Error = 6;
-
-	// If the example has been requested by revision name (ie. branch, tag), this
-	// value will be set.
-	string Rev = 7 [(gogoproto.jsontag) = ",omitempty"];
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
@@ -1768,9 +1730,6 @@ service Defs {
 
 	// ListRefs lists references to def.
 	rpc ListRefs(DefsListRefsOp) returns (RefList);
-
-	// ListExamples lists examples for def.
-	rpc ListExamples(DefsListExamplesOp) returns (ExampleList);
 }
 
 // DeltasService interacts with the delta-related endpoints of the Sourcegraph API.

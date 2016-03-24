@@ -114,10 +114,4 @@ func mockBasicRepoMainPage(c *httptestutil.MockClients) {
 // 	}
 // }
 
-// func mockNoDefExamples(c *httptestutil.MockClients) {
-// 	c.Defs.ListExamples_ = func(_ context.Context,sourcegraph.DefSpec, *sourcegraph.DefListExamplesOptions) ([]*sourcegraph.Example, error) {
-// 		return nil, nil, nil
-// 	}
-// }
-
 func commitID(c string) vcs.CommitID { return vcs.CommitID(strings.Repeat(c, 40)) }

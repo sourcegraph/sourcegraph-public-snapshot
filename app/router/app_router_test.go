@@ -149,18 +149,18 @@ func TestMatch(t *testing.T) {
 
 		// Def sub-routes
 		{
-			path:          "/repohost.com/foo/.t/.def/p/.examples",
-			wantRouteName: DefExamples,
+			path:          "/repohost.com/foo/.t/.def/p/.refs",
+			wantRouteName: DefRefs,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
 		},
 		{
-			path:          "/repohost.com/foo/.t/.def/.examples", // empty path
-			wantRouteName: DefExamples,
+			path:          "/repohost.com/foo/.t/.def/.refs", // empty path
+			wantRouteName: DefRefs,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
 		},
 		{
-			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2/.examples",
-			wantRouteName: DefExamples,
+			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2/.refs",
+			wantRouteName: DefRefs,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
 		},
 	}

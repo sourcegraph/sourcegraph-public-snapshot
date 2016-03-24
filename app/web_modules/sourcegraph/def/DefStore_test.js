@@ -23,24 +23,8 @@ describe("DefStore", () => {
 		expect(DefStore.highlightedDef).to.be(null);
 	});
 
-	it("should handle ExamplesFetched", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.ExamplesFetched("/someURL", "f", 42, ["someData"]));
-		expect(DefStore.examples.get("/someURL", "f", 42)).to.eql(["someData"]);
-	});
-
-	it("should handle NoExamplesAvailable", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.NoExamplesAvailable("/someURL", 50));
-		Dispatcher.directDispatch(DefStore, new DefActions.NoExamplesAvailable("/someURL", 42));
-		Dispatcher.directDispatch(DefStore, new DefActions.NoExamplesAvailable("/someURL", 100));
-		expect(DefStore.examples.getCount("/someURL")).to.be(42);
-		Dispatcher.directDispatch(DefStore, new DefActions.NoExamplesAvailable("/someURL", 0));
-		expect(DefStore.examples.getCount("/someURL")).to.be(0);
-	});
-
-	it("should handle SelectMultipleDefs", () => {
-		Dispatcher.directDispatch(DefStore, new DefActions.SelectMultipleDefs(["/someURL", "/otherURL"], 10, 20));
-		expect(DefStore.defOptionsURLs).to.eql(["/someURL", "/otherURL"]);
-		expect(DefStore.defOptionsLeft).to.be(10);
-		expect(DefStore.defOptionsTop).to.be(20);
+	it("should handle RefsFetched", () => {
+		Dispatcher.directDispatch(DefStore, new DefActions.RefsFetched("/someURL", "f", ["someData"]));
+		expect(DefStore.refs.get("/someURL", "f")).to.eql(["someData"]);
 	});
 });

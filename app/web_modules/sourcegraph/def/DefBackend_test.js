@@ -37,25 +37,24 @@ describe("DefBackend", () => {
 		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
 	});
 
-	describe("should handle WantExamples", () => {
-		it("with result available", () => {
+	describe("should handle WantRefs", () => {
+		it("for all files", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=10&Page=42&files=f");
-				callback(null, {statusCode: 200}, {Examples: [{test: "exampleData"}]});
+				expect(options.uri).to.be("/.ui/someURL/.refs");
+				callback(null, null, ["someRefData"]);
 			};
 			expect(Dispatcher.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantExamples("/someURL", "f", 42));
-			})).to.eql([new DefActions.ExamplesFetched("/someURL", "f", 42, {Examples: [{test: "exampleData"}]})]);
+				Dispatcher.directDispatch(DefBackend, new DefActions.WantRefs("/someURL"));
+			})).to.eql([new DefActions.RefsFetched("/someURL", null, ["someRefData"])]);
 		});
-
-		it("with no result available", () => {
+		it("for a specific file", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.api/repos/someURL/.examples?PerPage=10&Page=42&files=f");
-				callback(null, {statusCode: 200}, null);
+				expect(options.uri).to.be("/.ui/someURL/.refs?Files=f");
+				callback(null, {statusCode: 200}, ["someRefData"]);
 			};
 			expect(Dispatcher.catchDispatched(() => {
-				Dispatcher.directDispatch(DefBackend, new DefActions.WantExamples("/someURL", "f", 42));
-			})).to.eql([new DefActions.NoExamplesAvailable("/someURL", 42)]);
+				Dispatcher.directDispatch(DefBackend, new DefActions.WantRefs("/someURL", "f"));
+			})).to.eql([new DefActions.RefsFetched("/someURL", "f", ["someRefData"])]);
 		});
 	});
 });

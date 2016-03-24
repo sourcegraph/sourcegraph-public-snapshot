@@ -39,7 +39,7 @@ describe("BlobContainer", () => {
 		Dispatcher.directDispatch(BlobStore, new BlobActions.FileFetched("aRepo", "aRev", "aPath", exampleFile));
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("otherDef"));
 		Dispatcher.directDispatch(DefStore, new DefActions.DefFetched("otherDef", {File: {Path: "aPath"}}));
-		Dispatcher.directDispatch(DefStore, new DefActions.ExamplesFetched("foo", [{test: "exampleData"}]));
+		Dispatcher.directDispatch(DefStore, new DefActions.RefsFetched("foo", null, [{test: "exampleData"}]));
 		autotest(testdataAvailableDefinition, `${__dirname}/testdata/BlobContainer-availableDefinition.json`,
 			<BlobContainer repo="aRepo" rev="aRev" path="aPath" activeDef="someDef" />
 		);

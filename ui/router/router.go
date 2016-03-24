@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	References            = "def.refs"
+	References = "def.refs"
+
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 
 	UserContentUpload = "usercontent.upload"

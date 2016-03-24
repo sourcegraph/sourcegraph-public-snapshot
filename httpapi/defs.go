@@ -73,34 +73,3 @@ func serveDefs(w http.ResponseWriter, r *http.Request) error {
 	}
 	return writeJSON(w, defs)
 }
-
-func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
-
-	var opt sourcegraph.DefListExamplesOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
-		return err
-	}
-
-	dc, _, vc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
-	if err != nil {
-		return err
-	}
-	def := dc.Def
-	spec := sourcegraph.DefSpec{
-		Repo:     def.Repo,
-		CommitID: def.CommitID,
-		Unit:     def.Unit,
-		UnitType: def.UnitType,
-		Path:     def.Path,
-	}
-	examples, err := cl.Defs.ListExamples(ctx, &sourcegraph.DefsListExamplesOp{
-		Def: spec,
-		Rev: vc.RepoRevSpec.Rev,
-		Opt: &opt,
-	})
-	if err != nil {
-		return err
-	}
-	return writeJSON(w, examples)
-}

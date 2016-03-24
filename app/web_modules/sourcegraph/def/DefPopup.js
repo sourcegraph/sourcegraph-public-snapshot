@@ -11,7 +11,7 @@ class DefPopup extends Component {
 
 	render() {
 		let def = this.state.def;
-		let examplesURL = `${this.state.def.URL}/.examples`;
+		let refsURL = `${this.state.def.URL}/.refs`;
 		return (
 			<div className="sidebar-section token-details">
 				<section>
@@ -24,11 +24,11 @@ class DefPopup extends Component {
 				}
 				{this.state.refs && this.state.refs.Files &&
 					<div className="usages">
-						<div><i className="fa fa-bookmark"></i> <a href={examplesURL} onClick={hotLink}>{def.Data.Repo}</a> ({this.state.refs.Total})</div>
+						<div><i className="fa fa-bookmark"></i> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> ({this.state.refs.Total})</div>
 						<div className="usage-category">
 							{this.state.refs.Files.map((file, i) => (
 								<div key={i}>
-									<i className="fa fa-file-text-o"></i> <a href={`${examplesURL}?file=${file.Name}`} onClick={hotLink}>{this.state.path === file.Name ? "Current File" : file.Name}</a> ({file.RefCount})
+									<i className="fa fa-file-text-o"></i> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{this.state.path === file.Name ? "Current File" : file.Name}</a> ({file.RefCount})
 								</div>
 							))}
 						</div>

@@ -472,19 +472,6 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 	return
 }
 
-func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.ExampleList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Defs", "ListExamples", param)
-	defer func() {
-		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Defs.ListExamples(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
-	}
-	return
-}
-
 type wrappedDeltas struct{}
 
 func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (res *sourcegraph.Delta, err error) {

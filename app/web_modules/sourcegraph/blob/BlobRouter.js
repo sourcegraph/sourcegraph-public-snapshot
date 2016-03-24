@@ -5,7 +5,7 @@ import last from "lodash/array/last";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import BlobContainer from "sourcegraph/blob/BlobContainer";
-import ExamplesContainer from "sourcegraph/def/ExamplesContainer";
+import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefStore from "sourcegraph/def/DefStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -91,7 +91,7 @@ class BlobRouter extends Component {
 		state.def = null;
 		state.startLine = null;
 		state.endLine = null;
-		state.viewExamples = false;
+		state.viewRefs = false;
 		if (pathParts[1].startsWith("tree/")) {
 			state.path = pathParts[1].slice("tree/".length);
 
@@ -102,10 +102,10 @@ class BlobRouter extends Component {
 			}
 		} else {
 			// TODO better way to do this routing.
-			state.def = state.url.pathname.replace(/\/\.examples\/?$/, "");
-			state.viewExamples = last(pathParts) === "examples";
-			if (state.viewExamples) {
-				state.tree = state.url.query.file ? state.url.query.file : null;
+			state.def = state.url.pathname.replace(/\/\.refs\/?$/, "");
+			state.viewRefs = last(pathParts) === "refs";
+			if (state.viewRefs) {
+				state.tree = state.url.query.Files ? state.url.query.Files : null;
 			}
 		}
 	}
@@ -183,13 +183,14 @@ class BlobRouter extends Component {
 		// TODO more solid routing here.
 		return (
 			<div>
-				{this.state.viewExamples &&
-					<ExamplesContainer
+				{this.state.viewRefs &&
+					<RefsContainer
 						repo={this.state.repo}
+						rev={this.state.rev}
 						tree={this.state.tree}
 						def={this.state.def} />
 				}
-				{!this.state.viewExamples &&
+				{!this.state.viewRefs &&
 					<BlobContainer
 						repo={this.state.repo}
 						rev={this.state.rev}

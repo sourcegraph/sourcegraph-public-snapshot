@@ -7,12 +7,8 @@ function defsListKeyFor(repo, rev, query) {
 	return `${repo}#${rev}#${query}`;
 }
 
-function exampleKeyFor(defURL, file, page) {
-	return `${defURL}#${file}#${page}`;
-}
-
-function refsKeyFor(defURL) {
-	return `${defURL}`;
+function refsKeyFor(defURL, file) {
+	return `${defURL}:${file || ""}`;
 }
 
 export class DefStore extends Store {
@@ -30,20 +26,8 @@ export class DefStore extends Store {
 		this.highlightedDef = null;
 		this.refs = deepFreeze({
 			content: {},
-			counts: {},
-			get(defURL) {
-				return this.content[refsKeyFor(defURL)] || null;
-			},
-		});
-		this.examples = deepFreeze({
-			content: {},
-			counts: {},
-			get(defURL, file, page) {
-				return this.content[exampleKeyFor(defURL, file, page)] || null;
-			},
-			// TODO Fix this.
-			getCount(defURL) {
-				return this.counts.hasOwnProperty(defURL) ? this.counts[defURL] : 1000; // high initial value until count is known
+			get(defURL, file) {
+				return this.content[refsKeyFor(defURL, file)] || null;
 			},
 		});
 
@@ -74,26 +58,10 @@ export class DefStore extends Store {
 			this.highlightedDef = action.url;
 			break;
 
-		case DefActions.ExamplesFetched:
-			this.examples = deepFreeze(Object.assign({}, this.examples, {
-				content: Object.assign({}, this.examples.content, {
-					[exampleKeyFor(action.defURL, action.file, action.page)]: action.examples,
-				}),
-			}));
-			break;
-
-		case DefActions.NoExamplesAvailable:
-			this.examples = deepFreeze(Object.assign({}, this.examples, {
-				counts: Object.assign({}, this.examples.counts, {
-					[action.defURL]: Math.min(this.examples.getCount(action.defURL), action.page),
-				}),
-			}));
-			break;
-
 		case DefActions.RefsFetched:
 			this.refs = deepFreeze(Object.assign({}, this.refs, {
 				content: Object.assign({}, this.refs.content, {
-					[refsKeyFor(action.defURL)]: action.refs,
+					[refsKeyFor(action.defURL, action.file)]: action.refs,
 				}),
 			}));
 			break;

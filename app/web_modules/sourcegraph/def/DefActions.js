@@ -48,39 +48,17 @@ export class HighlightDef {
 	}
 }
 
-export class WantExamples {
-	constructor(defURL, file, page) {
-		this.defURL = defURL;
-		this.file = file;
-		this.page = page;
-	}
-}
-
-export class ExamplesFetched {
-	constructor(defURL, file, page, examples) {
-		this.defURL = defURL;
-		this.file = file;
-		this.page = page;
-		this.examples = examples;
-	}
-}
-
-export class NoExamplesAvailable {
-	constructor(defURL, page) {
-		this.defURL = defURL;
-		this.page = page;
-	}
-}
-
 export class WantRefs {
-	constructor(defURL) {
+	constructor(defURL, file) {
 		this.defURL = defURL;
+		this.file = file || null;
 	}
 }
 
 export class RefsFetched {
-	constructor(defURL, refs) {
+	constructor(defURL, file, refs) {
 		this.defURL = defURL;
+		this.file = file || null;
 		this.refs = refs;
 	}
 }
