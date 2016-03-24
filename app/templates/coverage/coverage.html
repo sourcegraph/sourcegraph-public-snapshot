@@ -5,6 +5,15 @@
 {{define "Body"}}
 <h1><a href="/.coverage">Coverage</a></h1>
 
+<p>
+<form action="/.coverage" method="post">
+<input type="submit" value="Process empty">
+<label>(click only once and then refresh after a bit)</label>
+<input type="hidden" name="process-empty" value="1">
+<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+</form>
+</p>
+
 <table class="table coverage">
 <tr>
 <th></th>

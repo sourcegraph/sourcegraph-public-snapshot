@@ -8,8 +8,8 @@ import (
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 
+	"strings"
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
@@ -39,7 +39,7 @@ type langCoverage struct {
 }
 
 func AddRoutes(r *router.Router) {
-	r.Path("/.coverage").Methods("GET").Handler(internal.Handler(serveCoverage))
+	r.Path("/.coverage").Methods("GET", "POST").Handler(internal.Handler(serveCoverage))
 }
 
 // serveCoverage serves a dashboard summarizing Sourcegraph's coverage of the top repositories in
@@ -47,6 +47,11 @@ func AddRoutes(r *router.Router) {
 // the optional `lang` URL parameter to show coverage for the top 100 repositories in a given
 // language.
 func serveCoverage(w http.ResponseWriter, r *http.Request) error {
+	rebuildMissing := false
+	if r.Form.Get("process-empty") != "" {
+		rebuildMissing = true
+	}
+
 	ctx, cl := handlerutil.Client(r)
 
 	if !auth.ActorFromContext(ctx).HasAdminAccess() {
@@ -90,7 +95,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, ctx, repo)
+				cov, err := getCoverage(cl, ctx, repo, rebuildMissing)
 				if err != nil {
 					return err
 				}
@@ -107,10 +112,15 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	if r.Method == "POST" {
+		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+		return nil
+	}
+
 	return tmpl.Exec(r, w, "coverage/coverage.html", http.StatusOK, nil, &data)
 }
 
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Coverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, rebuildMissing bool) (*Coverage, error) {
 	repoRevSpec := sourcegraph.RepoRevSpec{
 		RepoSpec: sourcegraph.RepoSpec{URI: repo},
 	}
@@ -119,13 +129,42 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (*Cov
 	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
 		RepoRev: repoRevSpec,
 	})
+
+	// Handle the potential error. If rebuildMissing, attempt to
+	// generate the data, but return empty Coverage for now
 	if err != nil {
-		if handlerutil.IsRepoNoVCSDataError(err) {
-			log15.Warn("getCoverage: no VCS data found, attempting to clone", "repo", repo)
-			return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
+		if rebuildMissing {
+			if strings.Contains(err.Error(), "not found") && strings.Contains(err.Error(), "repo") {
+				if _, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+					Op: &sourcegraph.ReposCreateOp_New{
+						New: &sourcegraph.ReposCreateOp_NewRepo{
+							URI:      repoRevSpec.URI,
+							CloneURL: fmt.Sprintf("https://%s.git", repoRevSpec.URI),
+							Mirror:   true,
+						},
+					},
+				}); err != nil {
+					return nil, err
+				}
+			} else if handlerutil.IsRepoNoVCSDataError(err) {
+				masterCommit, err := cl.Repos.GetCommit(ctx, &repoRevSpec)
+				if err != nil {
+					return nil, err
+				}
+				if _, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
+					Repo:     repoRevSpec.RepoSpec,
+					CommitID: string(masterCommit.ID),
+					Config:   sourcegraph.BuildConfig{Queue: true, Priority: 100},
+				}); err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
 		}
-		return nil, err
+		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
 	}
+
 	repoRevSpec.CommitID = dataVer.CommitID
 
 	cstatus, err := cl.RepoStatuses.GetCombined(ctx, &repoRevSpec)
