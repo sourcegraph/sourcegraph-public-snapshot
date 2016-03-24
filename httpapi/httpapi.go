@@ -74,6 +74,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.Repos).Handler(handler(serveRepos))
 	m.Get(apirouter.SrclibImport).Handler(handler(serveSrclibImport))
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
+	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

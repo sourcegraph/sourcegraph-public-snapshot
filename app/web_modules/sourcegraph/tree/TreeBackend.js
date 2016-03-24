@@ -43,6 +43,28 @@ const TreeBackend = {
 				}
 				break;
 			}
+
+		case TreeActions.WantSrclibDataVersion:
+			{
+				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.path);
+				if (version === null) {
+					TreeBackend.xhr({
+						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}/.srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`,
+						json: {},
+					}, function(err, resp, body) {
+						if (resp.statusCode === 404) {
+							body = {};
+							err = null;
+						}
+						if (err) {
+							console.error(err);
+							return;
+						}
+						Dispatcher.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, body));
+					});
+				}
+				break;
+			}
 		}
 	},
 };

@@ -66,8 +66,6 @@ func Services() svc.Services {
 
 		Repos: wrappedRepos{},
 
-		Search: wrappedSearch{},
-
 		Users: wrappedUsers{},
 	}
 }
@@ -1051,34 +1049,6 @@ func (s wrappedRepos) UploadPack(ctx context.Context, param *sourcegraph.UploadP
 	res, err = local.Services.Repos.UploadPack(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Repos.UploadPack returned nil, nil")
-	}
-	return
-}
-
-type wrappedSearch struct{}
-
-func (s wrappedSearch) SearchTokens(ctx context.Context, param *sourcegraph.TokenSearchOptions) (res *sourcegraph.DefList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "SearchTokens", param)
-	defer func() {
-		trace.After(ctx, "Search", "SearchTokens", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Search.SearchTokens(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Search.SearchTokens returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedSearch) SearchText(ctx context.Context, param *sourcegraph.TextSearchOptions) (res *sourcegraph.VCSSearchResultList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Search", "SearchText", param)
-	defer func() {
-		trace.After(ctx, "Search", "SearchText", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Search.SearchText(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Search.SearchText returned nil, nil")
 	}
 	return
 }

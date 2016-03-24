@@ -81,7 +81,7 @@ class BlobRouter extends Component {
 		}
 
 		if (!state.url.pathname.match(/\/\.(tree|def)/)) {
-			// Not a file view. Could be a new URL navigated to by the search bar.
+			// Not a file view.
 			return;
 		}
 

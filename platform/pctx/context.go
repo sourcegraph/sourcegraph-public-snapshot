@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 )
 
 type contextKey int
@@ -59,25 +58,6 @@ func WithRepoFrameInfo(ctx context.Context, r *http.Request) (context.Context, e
 	return ctx, nil
 }
 
-// WithRepoSearchInfo attaches the following information to the given context:
-// - CSRF Token
-// - BaseURI
-func WithRepoSearchInfo(ctx context.Context, r *http.Request) (context.Context, error) {
-	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
-	if err != nil {
-		return nil, err
-	}
-	baseURI, err := repoSearchBaseURI(ctx, r)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx = context.WithValue(ctx, csrfTokenKey, nosurf.Token(r))
-	ctx = context.WithValue(ctx, repoRevSpecKey, repoRevSpec)
-	ctx = context.WithValue(ctx, baseURIKey, baseURI)
-	return ctx, nil
-}
-
 // repoFrameBaseURI computes the root URI of an application repository frame.
 // Repository frames often will contain their own URL subrouters.
 func repoFrameBaseURI(ctx context.Context, r *http.Request) (string, error) {
@@ -99,25 +79,4 @@ func repoFrameBaseURI(ctx context.Context, r *http.Request) (string, error) {
 		return "", fmt.Errorf("could not produce base URL for app request url %s: %s", r.URL, err)
 	}
 	return baseURI.String(), nil
-}
-
-func repoSearchBaseURI(ctx context.Context, r *http.Request) (string, error) {
-	vars := mux.Vars(r)
-
-	urlVars := []string{
-		"Repo", vars["Repo"],
-		"App", vars["AppID"],
-		"AppPath", "",
-	}
-	if resolvedRev, exists := vars["ResolvedRev"]; exists {
-		urlVars = append(urlVars, "ResolvedRev", resolvedRev)
-	} else {
-		urlVars = append(urlVars, "Rev", vars["Rev"], "CommitID", vars["CommitID"])
-	}
-
-	baseURI, err := approuter.New(nil).Get(approuter.RepoAppFrame).URLPath(urlVars...)
-	if err != nil {
-		return "", fmt.Errorf("could not produce base URL for search request url %s: %s", r.URL, err)
-	}
-	return conf.AppURL(ctx).ResolveReference(baseURI).String(), nil
 }

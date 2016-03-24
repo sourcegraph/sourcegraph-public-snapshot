@@ -15,9 +15,6 @@ const (
 
 	RepoCommits = "repo.commits"
 
-	SearchTokens = "search.tokens"
-	SearchText   = "search.text"
-
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 
 	UserContentUpload = "usercontent.upload"
@@ -60,14 +57,6 @@ func New(base *mux.Router) *mux.Router {
 	def.Path("/.examples").
 		Methods("GET").
 		Name(DefExamples)
-
-	repoRev.Path("/.search/tokens").
-		Methods("GET").
-		Name(SearchTokens)
-
-	repoRev.Path("/.search/text").
-		Methods("GET").
-		Name(SearchText)
 
 	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
 

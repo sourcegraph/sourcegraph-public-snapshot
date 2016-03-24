@@ -3,6 +3,10 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
 
+function defsListKeyFor(repo, rev, query) {
+	return `${repo}#${rev}#${query}`;
+}
+
 function exampleKeyFor(defURL, index) {
 	return `${defURL}#${index}`;
 }
@@ -13,6 +17,9 @@ export class DefStore extends Store {
 			content: {},
 			get(url) {
 				return this.content[url] || null;
+			},
+			list(repo, rev, query) {
+				return this.content[defsListKeyFor(repo, rev, query)] || null;
 			},
 		});
 		this.activeDef = null;
@@ -39,6 +46,14 @@ export class DefStore extends Store {
 			this.defs = deepFreeze(Object.assign({}, this.defs, {
 				content: Object.assign({}, this.defs.content, {
 					[action.url]: action.def,
+				}),
+			}));
+			break;
+
+		case DefActions.DefsFetched:
+			this.defs = deepFreeze(Object.assign({}, this.defs, {
+				content: Object.assign({}, this.defs.content, {
+					[defsListKeyFor(action.repo, action.rev, action.query)]: action.defs,
 				}),
 			}));
 			break;

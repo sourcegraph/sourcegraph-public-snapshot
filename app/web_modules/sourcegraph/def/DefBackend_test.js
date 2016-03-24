@@ -16,6 +16,15 @@ describe("DefBackend", () => {
 		})).to.eql([new DefActions.DefFetched("/someURL", {Data: "someDefData"})]);
 	});
 
+	it("should handle WantDefs", () => {
+		DefBackend.xhr = function(options, callback) {
+			expect(options.uri).to.be("/.api/.defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
+			callback(null, null, {Defs: ["someDefData"]});
+		};
+		expect(Dispatcher.catchDispatched(() => {
+			Dispatcher.directDispatch(DefBackend, new DefActions.WantDefs("myrepo", "myrev", "myquery"));
+		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
+	});
 
 	describe("should handle WantExample", () => {
 		it("with result available", () => {

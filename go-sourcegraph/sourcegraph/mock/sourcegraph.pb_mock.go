@@ -781,36 +781,6 @@ func (s *RepoTreeServer) List(v0 context.Context, v1 *sourcegraph.RepoTreeListOp
 
 var _ sourcegraph.RepoTreeServer = (*RepoTreeServer)(nil)
 
-type SearchClient struct {
-	SearchTokens_ func(ctx context.Context, in *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error)
-	SearchText_   func(ctx context.Context, in *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error)
-}
-
-func (s *SearchClient) SearchTokens(ctx context.Context, in *sourcegraph.TokenSearchOptions, opts ...grpc.CallOption) (*sourcegraph.DefList, error) {
-	return s.SearchTokens_(ctx, in)
-}
-
-func (s *SearchClient) SearchText(ctx context.Context, in *sourcegraph.TextSearchOptions, opts ...grpc.CallOption) (*sourcegraph.VCSSearchResultList, error) {
-	return s.SearchText_(ctx, in)
-}
-
-var _ sourcegraph.SearchClient = (*SearchClient)(nil)
-
-type SearchServer struct {
-	SearchTokens_ func(v0 context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error)
-	SearchText_   func(v0 context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error)
-}
-
-func (s *SearchServer) SearchTokens(v0 context.Context, v1 *sourcegraph.TokenSearchOptions) (*sourcegraph.DefList, error) {
-	return s.SearchTokens_(v0, v1)
-}
-
-func (s *SearchServer) SearchText(v0 context.Context, v1 *sourcegraph.TextSearchOptions) (*sourcegraph.VCSSearchResultList, error) {
-	return s.SearchText_(v0, v1)
-}
-
-var _ sourcegraph.SearchServer = (*SearchServer)(nil)
-
 type MetaClient struct {
 	Status_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerStatus, error)
 	Config_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.ServerConfig, error)

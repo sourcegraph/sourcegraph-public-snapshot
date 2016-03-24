@@ -1705,17 +1705,6 @@ message VCSSearchResultList {
 	ListResponse ListResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
-message TokenSearchOptions {
-	string Query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
-	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message TextSearchOptions {
-	string Query = 1 [(gogoproto.moretags) = "url:\"q\" schema:\"q\""];
-	RepoRevSpec RepoRev = 2 [(gogoproto.nullable) = false];
-	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
 
 // TreeEntry is a file or directory in a repository.
 message TreeEntry {
@@ -1795,16 +1784,6 @@ service RepoTree {
 	// List returns a list of all the files in the repo tree at
 	// the given revision.
 	rpc List(RepoTreeListOp) returns (RepoTreeListResult);
-}
-
-// SearchService communicates with the search-related endpoints in the Sourcegraph
-// API.
-service Search {
-	// SearchTokens searches the index of tokens.
-	rpc SearchTokens(TokenSearchOptions) returns (DefList);
-
-	// SearchText searches the content of files in the repo tree.
-	rpc SearchText(TextSearchOptions) returns (VCSSearchResultList);
 }
 
 message Checklist {

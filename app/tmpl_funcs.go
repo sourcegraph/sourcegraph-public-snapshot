@@ -24,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/sourcecode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
@@ -155,9 +154,6 @@ var tmplFuncs = htmpl.FuncMap{
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
 	"hostname":            func() string { return hostname },
 
-	"platformSearchFrames": func() map[string]platform.SearchFrame {
-		return platform.SearchFrames()
-	},
 	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 
 	"isAdmin": func(ctx context.Context, method string) bool {

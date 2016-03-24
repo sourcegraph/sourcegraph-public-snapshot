@@ -30,6 +30,23 @@ export class FileListFetched {
 	}
 }
 
+export class WantSrclibDataVersion {
+	constructor(repo, rev, pathOrNull) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = pathOrNull || null;
+	}
+}
+
+export class FetchedSrclibDataVersion {
+	constructor(repo, rev, pathOrNull, versionOrNull) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = pathOrNull || null;
+		this.version = versionOrNull || null;
+	}
+}
+
 export class UpDirectory {
 	constructor() {}
 }

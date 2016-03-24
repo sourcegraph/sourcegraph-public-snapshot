@@ -72,36 +72,10 @@ func (r *Router) URLToRepoTreeEntrySpec(e sourcegraph.TreeEntrySpec) *url.URL {
 	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", e.RepoRev.Rev, "CommitID", e.RepoRev.CommitID, "Path", e.Path)
 }
 
-func (r *Router) URLToRepoSearch(repoURI, rev, query string) (*url.URL, error) {
-	var url *url.URL
-	var err error
-	if rev != "" {
-		url, err = r.URLToRepoSubrouteRev(RepoSearch, repoURI, rev)
-	} else {
-		url = r.URLToRepoSubroute(RepoSearch, repoURI)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	q := url.Query()
-	q.Set("q", query)
-	url.RawQuery = q.Encode()
-	return url, nil
-}
-
 func (r *Router) URLToRepoTreeEntryLines(repoURI string, rev, path string, startLine int) *url.URL {
 	u := r.URLTo(RepoTree, "Repo", repoURI, "Rev", rev, "Path", path)
 	u.Fragment = fmt.Sprintf("L%d", startLine)
 	return u
-}
-
-func (r *Router) URLToSearch(query string) *url.URL {
-	url := r.URLTo(SearchResults)
-	q := url.Query()
-	q.Set("q", query)
-	url.RawQuery = q.Encode()
-	return url
 }
 
 func (r *Router) URLToDef(key graph.DefKey) *url.URL {

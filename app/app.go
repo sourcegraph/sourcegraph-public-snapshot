@@ -104,7 +104,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoBuildTaskLog).Handler(internal.Handler(serveRepoBuildTaskLog))
 	r.Get(router.RepoBuilds).Handler(internal.Handler(serveRepoBuilds))
 	r.Get(router.RepoBuildsCreate).Handler(internal.Handler(serveRepoBuildsCreate))
-	r.Get(router.RepoSearch).Handler(internal.Handler(serveRepoSearch))
 	r.Get(router.RepoTree).Handler(internal.Handler(serveRepoTree))
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
 
@@ -112,9 +111,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoRevCommits).Handler(internal.Handler(serveRepoCommits))
 	r.Get(router.RepoTags).Handler(internal.Handler(serveRepoTags))
 	r.Get(router.RepoBranches).Handler(internal.Handler(serveRepoBranches))
-
-	// This route dispatches to registered SearchFrames.
-	r.Get(router.RepoPlatformSearch).Handler(internal.Handler(serveRepoPlatformSearchResults))
 
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))

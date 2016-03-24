@@ -53,16 +53,6 @@ func TestMatch(t *testing.T) {
 
 		// Repo sub-routes
 		{
-			path:          "/repohost.com/foo/.search",
-			wantRouteName: RepoSearch,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
-		},
-		{
-			path:          "/repohost.com/foo@myrev/.search",
-			wantRouteName: RepoSearch,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "myrev"},
-		},
-		{
 			path:          "/repohost.com/foo/.commits",
 			wantRouteName: RepoRevCommits,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo"},

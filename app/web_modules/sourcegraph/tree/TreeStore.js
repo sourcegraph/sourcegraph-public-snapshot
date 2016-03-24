@@ -27,6 +27,12 @@ export class TreeStore extends Store {
 				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
+		this.srclibDataVersions = deepFreeze({
+			content: {},
+			get(repo, rev, path) {
+				return this.content[keyFor(repo, rev, path)] || null;
+			},
+		});
 	}
 
 	__onDispatch(action) {
@@ -66,6 +72,14 @@ export class TreeStore extends Store {
 				}));
 				break;
 			}
+
+		case TreeActions.FetchedSrclibDataVersion:
+			this.srclibDataVersions = deepFreeze(Object.assign({}, this.srclibDataVersions, {
+				content: Object.assign({}, this.srclibDataVersions.content, {
+					[keyFor(action.repo, action.rev, action.path)]: action.version,
+				}),
+			}));
+			break;
 
 		default:
 			return; // don't emit change

@@ -75,7 +75,6 @@ func repoTemplates() error {
 		{"repo/tree/file.html"},
 		{"repo/tree/doc.html", "repo/commit.inc.html"},
 		{"repo/tree/dir.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/search.html"},
 		{"repo/frame.html", "error/common.html"},
 		{"repo/commit.html", "repo/commit.inc.html"},
 		{"repo/commits.html", "repo/commit.inc.html"},
@@ -94,8 +93,8 @@ func repoTemplates() error {
 	})
 }
 
-// commonTemplates returns all common templates such as user pages, search,
-// etc. if successful.
+// commonTemplates returns all common templates such as user pages,
+// etc., if successful.
 func commonTemplates() error {
 	return parseHTMLTemplates([][]string{
 		{"user/login.html"},
@@ -188,10 +187,6 @@ type Common struct {
 	// CacheControl is the HTTP cache-control header value that should be set in all
 	// AJAX requests originating from this page.
 	CacheControl string
-
-	// HideSearch, if set, hides the search bar from the top
-	// navigation bar.
-	HideSearch bool
 
 	// DeviceID is the correlation id given to user activity from a particular
 	// device, pre- and post- authentication.

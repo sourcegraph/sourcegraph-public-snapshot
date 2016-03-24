@@ -39,7 +39,6 @@ const (
 	_RepoStatusesKey      contextKey = iota
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
-	_SearchKey            contextKey = iota
 	_UsersKey             contextKey = iota
 )
 
@@ -62,7 +61,6 @@ type Services struct {
 	RepoStatuses      sourcegraph.RepoStatusesServer
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
-	Search            sourcegraph.SearchServer
 	Users             sourcegraph.UsersServer
 }
 
@@ -135,10 +133,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Repos != nil {
 		sourcegraph.RegisterReposServer(s, svcs.Repos)
-	}
-
-	if svcs.Search != nil {
-		sourcegraph.RegisterSearchServer(s, svcs.Search)
 	}
 
 	if svcs.Users != nil {
@@ -216,10 +210,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Repos != nil {
 		ctx = WithRepos(ctx, s.Repos)
-	}
-
-	if s.Search != nil {
-		ctx = WithSearch(ctx, s.Search)
 	}
 
 	if s.Users != nil {
@@ -614,29 +604,6 @@ func Repos(ctx context.Context) sourcegraph.ReposServer {
 // ReposOrNil returns the context's Repos service if present, or else nil.
 func ReposOrNil(ctx context.Context) sourcegraph.ReposServer {
 	s, ok := ctx.Value(_ReposKey).(sourcegraph.ReposServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithSearch returns a copy of parent that uses the given Search service.
-func WithSearch(ctx context.Context, s sourcegraph.SearchServer) context.Context {
-	return context.WithValue(ctx, _SearchKey, s)
-}
-
-// Search gets the context's Search service. If the service is not present, it panics.
-func Search(ctx context.Context) sourcegraph.SearchServer {
-	s, ok := ctx.Value(_SearchKey).(sourcegraph.SearchServer)
-	if !ok || s == nil {
-		panic("no Search set in context")
-	}
-	return s
-}
-
-// SearchOrNil returns the context's Search service if present, or else nil.
-func SearchOrNil(ctx context.Context) sourcegraph.SearchServer {
-	s, ok := ctx.Value(_SearchKey).(sourcegraph.SearchServer)
 	if ok {
 		return s
 	}

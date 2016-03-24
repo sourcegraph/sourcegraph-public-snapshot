@@ -340,7 +340,6 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Requ
 		organization = returnOrganization(repoSpec.URI)
 	}
 	userAgent := UserAgentFromContext(ctx)
-	referer := req.Referer()
 
 	var eventProperties map[string]string
 	if organization != "" {
@@ -353,22 +352,6 @@ func LogPageView(ctx context.Context, user *sourcegraph.UserSpec, req *http.Requ
 			eventProperties = make(map[string]string)
 		}
 		eventProperties["UserAgent"] = userAgent
-	}
-
-	if strings.Contains(referer, ".search") {
-		var searchClick string
-
-		if strings.Contains(referer, "type=token") {
-			searchClick = "token"
-		} else if strings.Contains(referer, "type=text") {
-			searchClick = "text"
-		}
-		if eventProperties == nil && searchClick != "" {
-			eventProperties = make(map[string]string)
-			eventProperties["SearchClick"] = searchClick
-		} else if searchClick != "" {
-			eventProperties["SearchClick"] = searchClick
-		}
 	}
 
 	Log(&sourcegraph.Event{

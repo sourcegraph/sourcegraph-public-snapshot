@@ -11,7 +11,6 @@ let TreeOverlay = require("sourcegraph/tree/TreeOverlay").default;
 let TreeEntryCommit = require("sourcegraph/tree/TreeEntryCommit").default;
 let BlobRouter = require("sourcegraph/blob/BlobRouter").default;
 let LocationAdaptor = require("sourcegraph/LocationAdaptor").default;
-let SearchBar = require("sourcegraph/search/SearchBar").default;
 
 // TODO use some common method for all components
 document.addEventListener("DOMContentLoaded", () => {
@@ -21,14 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (el) {
 		ReactDOM.render(
 			<DashboardContainer />,
-			el
-		);
-	}
-
-	el = document.getElementById("SearchBar");
-	if (el) {
-		ReactDOM.render(
-			<LocationAdaptor component={SearchBar} />,
 			el
 		);
 	}

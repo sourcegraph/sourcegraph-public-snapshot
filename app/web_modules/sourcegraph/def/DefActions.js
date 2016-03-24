@@ -11,6 +11,23 @@ export class DefFetched {
 	}
 }
 
+export class WantDefs {
+	constructor(repo, rev, query) {
+		this.repo = repo;
+		this.rev = rev;
+		this.query = query;
+	}
+}
+
+export class DefsFetched {
+	constructor(repo, rev, query, defs) {
+		this.repo = repo;
+		this.rev = rev;
+		this.query = query;
+		this.defs = defs;
+	}
+}
+
 export class SelectDef {
 	constructor(url) {
 		this.url = url;

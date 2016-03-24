@@ -18,7 +18,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform"
 	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
@@ -140,25 +139,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		Common: tmpl.Common{
 			CanonicalURL: canonicalURL,
 		},
-	})
-}
-
-func serveRepoSearch(w http.ResponseWriter, r *http.Request) error {
-	ctx, _ := handlerutil.Client(r)
-	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
-	return tmpl.Exec(r, w, "repo/search.html", http.StatusOK, nil, &struct {
-		handlerutil.RepoCommon
-		handlerutil.RepoRevCommon
-		SearchFrames map[string]platform.SearchFrame
-		tmpl.Common
-	}{
-		RepoCommon:    *rc,
-		RepoRevCommon: *vc,
-		SearchFrames:  platform.SearchFrames(),
 	})
 }
 

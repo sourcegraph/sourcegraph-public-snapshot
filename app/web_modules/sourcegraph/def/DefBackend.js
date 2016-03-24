@@ -29,6 +29,24 @@ const DefBackend = {
 				break;
 			}
 
+		case DefActions.WantDefs:
+			{
+				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
+				if (defs === null) {
+					DefBackend.xhr({
+						uri: `/.api/.defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`,
+						json: {},
+					}, function(err, resp, body) {
+						if (err) {
+							console.error(err);
+							return;
+						}
+						Dispatcher.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, body));
+					});
+				}
+				break;
+			}
+
 		case DefActions.WantExample:
 			{
 				let example = DefStore.examples.get(action.defURL, action.index);

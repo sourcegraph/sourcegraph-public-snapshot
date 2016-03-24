@@ -13,26 +13,24 @@ import (
 )
 
 const (
-	Annotations       = "annotations"
-	BlackHole         = "blackhole"
-	Build             = "build"
-	Builds            = "builds"
-	Def               = "def"
-	Defs              = "defs"
-	Repo              = "repo"
-	RepoBranches      = "repo.branches"
-	RepoTree          = "repo.tree"
-	RepoBuild         = "repo.build"
-	RepoBuildTasks    = "build.tasks"
-	RepoBuildsCreate  = "repo.builds.create"
-	RepoTags          = "repo.tags"
-	RepoTreeList      = "repo.tree-list"
-	Repos             = "repos"
-	Search            = "search"
-	SearchComplete    = "search.complete"
-	SearchSuggestions = "search.suggestions"
-	SrclibImport      = "srclib.import"
-	SrclibCoverage    = "srclib.coverage"
+	Annotations      = "annotations"
+	BlackHole        = "blackhole"
+	Build            = "build"
+	Builds           = "builds"
+	Def              = "def"
+	Defs             = "defs"
+	Repo             = "repo"
+	RepoBranches     = "repo.branches"
+	RepoTree         = "repo.tree"
+	RepoBuild        = "repo.build"
+	RepoBuildTasks   = "build.tasks"
+	RepoBuildsCreate = "repo.builds.create"
+	RepoTags         = "repo.tags"
+	RepoTreeList     = "repo.tree-list"
+	Repos            = "repos"
+	SrclibImport     = "srclib.import"
+	SrclibCoverage   = "srclib.coverage"
+	SrclibDataVer    = "srclib.data-version"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -68,14 +66,11 @@ func New(base *mux.Router) *mux.Router {
 	build := repo.PathPrefix(buildPath).Subrouter()
 	build.Path("/.tasks").Methods("GET").Name(RepoBuildTasks)
 
-	base.Path("/search").Methods("GET").Name(Search)
-	base.Path("/search/complete").Methods("GET").Name(SearchComplete)
-	base.Path("/search/suggestions").Methods("GET").Name(SearchSuggestions)
-
 	base.Path("/.defs").Methods("GET").Name(Defs)
 
 	repoRev.Path("/.srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/.srclib-coverage").Methods("PUT").Name(SrclibCoverage)
+	repoRev.Path("/.srclib-data-version").Methods("GET").Name(SrclibDataVer)
 
 	// Old paths we used to support. Explicitly handle them to avoid bad
 	// signal in no route logs

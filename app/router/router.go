@@ -35,16 +35,12 @@ const (
 	RepoBuildUpdate  = "repo.build.update"
 	RepoBuildTaskLog = "repo.build.task.log"
 	RepoBuildsCreate = "repo.builds.create"
-	RepoSearch       = "repo.search"
 	RepoTree         = "repo.tree"
 
 	RepoRevCommits = "repo.rev.commits"
 	RepoCommit     = "repo.commit"
 	RepoTags       = "repo.tags"
 	RepoBranches   = "repo.branches"
-
-	SearchForm    = "search.form"
-	SearchResults = "search.results"
 
 	LogIn          = "log-in"
 	LogOut         = "log-out"
@@ -64,8 +60,7 @@ const (
 	UserContent = "usercontent"
 
 	// Platform routes
-	RepoAppFrame       = "repo.appframe"
-	RepoPlatformSearch = "repo.platformsearch"
+	RepoAppFrame = "repo.appframe"
 )
 
 // Router is an app URL router.
@@ -88,9 +83,6 @@ func New(base *mux.Router) *Router {
 	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
 
 	base.Path("/.builds").Methods("GET").Name(Builds)
-
-	base.Path("/search").Methods("GET").Queries("q", "").Name(SearchResults)
-	base.Path("/search").Methods("GET").Name(SearchForm)
 
 	base.Path("/login").Methods("GET", "POST").Name(LogIn)
 	base.Path("/join").Methods("GET", "POST").Name(SignUp)
@@ -139,8 +131,6 @@ func New(base *mux.Router) *Router {
 	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
 	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 
-	repoRev.Path("/.search").Methods("GET").Name(RepoSearch)
-
 	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
 
 	repo.Path("/.commits/{Rev:" + spec.PathNoLeadingDotComponentPattern + "}").Methods("GET").Name(RepoCommit)
@@ -155,10 +145,6 @@ func New(base *mux.Router) *Router {
 	repo.Path(repoBuildPath).Methods("POST").Name(RepoBuildUpdate)
 	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
 	repoBuild.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(RepoBuildTaskLog)
-
-	// This route dispatches to all SearchFrames that were registered through
-	// RegisterSearchFrame in the platform package.
-	repoRev.Path("/.search/{AppID}").Methods("GET").Name(RepoPlatformSearch)
 
 	// This route should be AFTER all other repo/repoRev routes;
 	// otherwise it will match every subroute.

@@ -24,18 +24,14 @@
 															"onFocus": {
 																"dispatched": [
 																	{
-																		"$constructor": "WantFileList",
+																		"$constructor": "WantSrclibDataVersion",
 																		"repo": "repo",
 																		"rev": "rev"
 																	},
 																	{
-																		"$constructor": "WantResults",
+																		"$constructor": "WantFileList",
 																		"repo": "repo",
-																		"rev": "rev",
-																		"type": "tokens",
-																		"page": 1,
-																		"perPage": 5,
-																		"query": ""
+																		"rev": "rev"
 																	}
 																]
 															},
@@ -50,43 +46,6 @@
 											"props": {
 												"children": [
 													"Symbols"
-												]
-											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"children": [
-																{
-																	"type": "i",
-																	"props": {
-																		"className": "fa fa-spinner fa-spin"
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "i",
-														"props": {
-															"children": [
-																"Sourcegraph is analyzing your code — ",
-																{
-																	"type": "a",
-																	"props": {
-																		"href": "",
-																		"children": [
-																			"results will be available soon!"
-																		]
-																	}
-																}
-															]
-														}
-													}
 												]
 											}
 										},
@@ -180,18 +139,14 @@
 	},
 	"dispatched": [
 		{
-			"$constructor": "WantFileList",
+			"$constructor": "WantSrclibDataVersion",
 			"repo": "repo",
 			"rev": "rev"
 		},
 		{
-			"$constructor": "WantResults",
+			"$constructor": "WantFileList",
 			"repo": "repo",
-			"rev": "rev",
-			"type": "tokens",
-			"page": 1,
-			"perPage": 5,
-			"query": ""
+			"rev": "rev"
 		}
 	]
 }

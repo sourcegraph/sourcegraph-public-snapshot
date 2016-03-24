@@ -10,6 +10,11 @@ describe("DefStore", () => {
 		expect(DefStore.defs.get("/someURL")).to.be("someData");
 	});
 
+	it("should handle DefsFetched", () => {
+		Dispatcher.directDispatch(DefStore, new DefActions.DefsFetched("r", "v", "q", ["someData"]));
+		expect(DefStore.defs.list("r", "v", "q")).to.eql(["someData"]);
+	});
+
 	it("should handle HighlightDef", () => {
 		Dispatcher.directDispatch(DefStore, new DefActions.HighlightDef("someDef"));
 		expect(DefStore.highlightedDef).to.be("someDef");

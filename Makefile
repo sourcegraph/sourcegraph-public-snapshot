@@ -65,7 +65,7 @@ serve-mothership-dev:
 
 BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
-	SG_FEATURE_SEARCHNEXT=f SG_FEATURE_DISCUSSIONS=f $(MAKE) serve-dev SRCFLAGS="-v --grpc-endpoint http://localhost:3100 $(SRCFLAGS)" SERVEFLAGS="\
+	SG_FEATURE_DISCUSSIONS=f $(MAKE) serve-dev SRCFLAGS="-v --grpc-endpoint http://localhost:3100 $(SRCFLAGS)" SERVEFLAGS="\
 --graphstore.root='$(BD_SGPATH)/repos' \
 --no-worker \
 --app-url '' \
