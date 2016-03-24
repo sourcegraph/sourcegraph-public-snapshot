@@ -11,8 +11,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 )
 
-func init() {
-	tmpl.FuncMap["component"] = func(ctx context.Context, stores *StoreData, component string, props ...interface{}) (template.HTML, error) {
+var funcs = template.FuncMap{
+	"component": func(ctx context.Context, stores *StoreData, component string, props ...interface{}) (template.HTML, error) {
 		if len(props)%2 == 1 {
 			return "", errors.New("component requires an even number of prop key-value items (key1 val1 key2 val2 ...)")
 		}
@@ -36,5 +36,11 @@ func init() {
 			html.EscapeString(component),
 			html.EscapeString(string(propsJSON)),
 		)), nil
+	},
+}
+
+func init() {
+	for name, f := range funcs {
+		tmpl.FuncMap[name] = f
 	}
 }
