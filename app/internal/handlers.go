@@ -17,8 +17,8 @@ var Handlers = map[string]func(w http.ResponseWriter, r *http.Request) error{}
 // Handler is a wrapper func for app HTTP handlers that enables app
 // error pages.
 func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return handlerutil.Handler(handlerutil.HandlerWithErrorReturn{
+	return handlerutil.HandlerWithErrorReturn{
 		Handler: h,
 		Error:   HandleError,
-	})
+	}
 }

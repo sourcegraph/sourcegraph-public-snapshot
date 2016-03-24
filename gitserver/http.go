@@ -9,8 +9,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/mux"
 	"gopkg.in/inconshreveable/log15.v2"
+
+	"github.com/sourcegraph/mux"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
@@ -31,10 +32,10 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		httpapiauth.PasswordMiddleware,
 		httpapiauth.OAuth2AccessTokenMiddleware,
 	}
-	hh := handlerutil.Handler(handlerutil.HandlerWithErrorReturn{
+	hh := handlerutil.HandlerWithErrorReturn{
 		Handler: h,
 		Error:   handleError,
-	})
+	}
 	return handlerutil.WithMiddleware(hh, mw...)
 }
 

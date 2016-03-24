@@ -73,10 +73,10 @@ func NewHandler(r *mux.Router) http.Handler {
 }
 
 func handler(fn func(w http.ResponseWriter, r *http.Request) error) http.Handler {
-	return handlerutil.Handler(handlerutil.HandlerWithErrorReturn{
+	return handlerutil.HandlerWithErrorReturn{
 		Handler: jsonContentType(fn),
 		Error:   serveError,
-	})
+	}
 }
 
 func jsonContentType(fn func(w http.ResponseWriter, r *http.Request) error) func(http.ResponseWriter, *http.Request) error {

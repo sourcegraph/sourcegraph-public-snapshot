@@ -4,9 +4,10 @@ import (
 	"log"
 	"net/http"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/schema"
 	"github.com/sourcegraph/mux"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
@@ -87,10 +88,10 @@ func NewHandler(m *mux.Router) http.Handler {
 
 // handler is a wrapper func for API handlers.
 func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return handlerutil.Handler(handlerutil.HandlerWithErrorReturn{
+	return handlerutil.HandlerWithErrorReturn{
 		Handler: h,
 		Error:   handleError,
-	})
+	}
 }
 
 // cspConfig is the Content Security Policy config for API handlers.

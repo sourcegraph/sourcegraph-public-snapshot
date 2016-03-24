@@ -7,15 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"google.golang.org/grpc"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/resonancelabs/go-pub/instrument"
-	tg_context "github.com/resonancelabs/go-pub/instrument/context"
-
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -47,15 +45,6 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 		spanID = appdash.NewSpanID(spanID)
 	}
 	ctx = traceutil.NewContext(ctx, spanID)
-
-	// Traceguide instrumentation
-	ctx, span := tg_context.StartSpan(ctx)
-	span.SetName(fmt.Sprintf("%s/%s", server, method))
-	if arg != nil {
-		span.Log(instrument.Printf("%s arg", method).Payload(prepareArg(server, method, arg)))
-	}
-	span.Log(instrument.EventName("appdash_span_id").Payload(spanID))
-	span.AddTraceJoinId("appdash_trace_id", spanID.Trace)
 
 	log15.Debug("gRPC before", "rpc", server+"."+method, "spanID", spanID)
 
@@ -102,8 +91,6 @@ func init() {
 // execution time since the method's BeforeFunc was called and the
 // error returned, if any.
 func After(ctx context.Context, server, method string, arg interface{}, err error, elapsed time.Duration) {
-	tg_context.FinishSpan(ctx)
-
 	elapsed += time.Millisecond // HACK: make everything show up in the chart
 	sr := time.Now().Add(-1 * elapsed)
 	call := &traceutil.GRPCCall{

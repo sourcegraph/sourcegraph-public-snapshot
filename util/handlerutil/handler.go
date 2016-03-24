@@ -11,14 +11,10 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/schema"
-	"github.com/resonancelabs/go-pub/instrument"
-	"github.com/resonancelabs/go-pub/instrument/httpwrapper"
 
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 var (
@@ -30,24 +26,6 @@ func init() {
 	once.Do(func() {
 		schemaDecoder.IgnoreUnknownKeys(true)
 	})
-}
-
-// Handler is the outermost http.Handler wrapper per route.
-func Handler(h HandlerWithErrorReturn) http.Handler {
-	return WithMiddleware(h, httpwrapper.MakeMiddleware(httpwrapperConfig))
-}
-
-var httpwrapperConfig = &httpwrapper.ServerConfig{
-	WithActiveSpanFunc: func(r *http.Request, span instrument.ActiveSpan) {
-		span.SetName(fmt.Sprintf("http/%s", httpctx.RouteName(r)))
-		span.Log(instrument.EventName("cr/span_attributes").Payload(map[string]string{
-			"route_path": r.URL.Path,
-		}))
-
-		spanID := traceutil.SpanID(r)
-		span.Log(instrument.EventName("appdash_span_id").Payload(spanID))
-		span.AddTraceJoinId("appdash_trace_id", spanID.Trace)
-	},
 }
 
 // HandlerWithErrorReturn wraps a http.HandlerFunc-like func that also
