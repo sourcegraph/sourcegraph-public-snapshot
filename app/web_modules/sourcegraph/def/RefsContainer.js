@@ -25,19 +25,22 @@ class RefsContainer extends Container {
 		state.annotations = BlobStore.annotations;
 		state.path = props.path || "";
 		state.refs = DefStore.refs.get(state.def, state.path);
-		state.files = [];
-		state.ranges = {};
-		state.anns = {};
+		state.files = null;
+		state.ranges = null;
+		state.anns = null;
 
 		if (state.refs) {
 			let fileIndex = {};
+			let files = [];
+			let ranges = {};
+			let anns = {};
 			for (let ref of state.refs.Refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
 				if (!fileIndex[ref.File]) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
-					state.files.push(file);
-					state.ranges[ref.File] = [];
+					files.push(file);
+					ranges[ref.File] = [];
 					fileIndex[ref.File] = file;
 				}
 				let file = fileIndex[ref.File];
@@ -45,14 +48,17 @@ class RefsContainer extends Container {
 				if (file) {
 					const context = 4; // Number of additional lines to show above/below a ref
 					let contents = file.Entry.ContentsString;
-					state.ranges[ref.File].push([
+					ranges[ref.File].push([
 						Math.max(lineFromByte(contents, ref.Start) - context, 0),
 						lineFromByte(contents, ref.End) + context,
 					]);
 				}
-				let anns = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
-				state.anns[ref.File] = anns ? anns.Annotations : null;
+				let fileAnns = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
+				anns[ref.File] = fileAnns ? fileAnns.Annotations : null;
 			}
+			state.files = files;
+			state.ranges = ranges;
+			state.anns = anns;
 		}
 
 		state.highlightedDef = DefStore.highlightedDef || null;
