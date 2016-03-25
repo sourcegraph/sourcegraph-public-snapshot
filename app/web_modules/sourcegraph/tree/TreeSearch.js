@@ -178,6 +178,7 @@ class TreeSearch extends Container {
 		case 84: // "t"
 			if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
 			this._focusInput();
+			ev.preventDefault();
 			break;
 
 		case 27: // ESC
