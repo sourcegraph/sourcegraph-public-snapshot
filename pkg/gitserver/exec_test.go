@@ -2,8 +2,6 @@ package gitserver
 
 import (
 	"bytes"
-	"errors"
-	"net/rpc"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -11,79 +9,71 @@ import (
 
 func TestExec(t *testing.T) {
 	type execTest struct {
-		reply1         ExecReply
-		reply2         ExecReply
-		error1         error
-		error2         error
+		reply1         *execReply
+		reply2         *execReply
 		expectedErr    error
 		expectedStdout []byte
 		expectedStderr []byte
 	}
 
-	rpcError := errors.New("rpc error")
-
 	tests := []*execTest{
 		{
-			reply1:      ExecReply{RepoExists: false},
-			reply2:      ExecReply{RepoExists: false},
+			reply1:      &execReply{RepoNotExist: true},
+			reply2:      &execReply{RepoNotExist: true},
 			expectedErr: vcs.ErrRepoNotExist,
 		},
 		{
-			reply1:         ExecReply{RepoExists: true, Stdout: []byte("out"), Stderr: []byte("err")},
-			reply2:         ExecReply{RepoExists: false},
+			reply1:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
+			reply2:         &execReply{RepoNotExist: true},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
-			reply1:         ExecReply{RepoExists: false},
-			reply2:         ExecReply{RepoExists: true, Stdout: []byte("out"), Stderr: []byte("err")},
+			reply1:         &execReply{RepoNotExist: true},
+			reply2:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
-			reply1:         ExecReply{RepoExists: true, Stdout: []byte("out"), Stderr: []byte("err")},
-			error2:         rpcError,
+			reply1:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
-			error1:         rpcError,
-			reply2:         ExecReply{RepoExists: true, Stdout: []byte("out"), Stderr: []byte("err")},
+			reply2:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
-			reply1:      ExecReply{RepoExists: false},
-			error2:      rpcError,
-			expectedErr: rpcError,
+			reply1:      &execReply{RepoNotExist: true},
+			expectedErr: errRPCFailed,
 		},
 		{
-			error1:      rpcError,
-			reply2:      ExecReply{RepoExists: false},
-			expectedErr: rpcError,
+			reply2:      &execReply{RepoNotExist: true},
+			expectedErr: errRPCFailed,
 		},
 		{
-			error1:      rpcError,
-			error2:      rpcError,
-			expectedErr: rpcError,
+			expectedErr: errRPCFailed,
 		},
 	}
 
 	for _, test := range tests {
-		server1 := make(chan *rpc.Call)
-		server2 := make(chan *rpc.Call)
-		servers = [](chan<- *rpc.Call){server1, server2}
+		server1 := make(chan *request)
+		server2 := make(chan *request)
+		servers = [](chan<- *request){server1, server2}
 
 		go func(test *execTest) {
-			call1 := <-server1
-			*call1.Reply.(*ExecReply) = test.reply1
-			call1.Error = test.error1
-			call1.Done <- call1
+			req1 := <-server1
+			if test.reply1 != nil {
+				req1.Exec.ReplyChan <- test.reply1
+			}
+			close(req1.Exec.ReplyChan)
 
-			call2 := <-server2
-			*call2.Reply.(*ExecReply) = test.reply2
-			call2.Error = test.error2
-			call2.Done <- call2
+			req2 := <-server2
+			if test.reply2 != nil {
+				req2.Exec.ReplyChan <- test.reply2
+			}
+			close(req2.Exec.ReplyChan)
 		}(test)
 
 		stdout, stderr, err := Command("git", "test").DividedOutput()

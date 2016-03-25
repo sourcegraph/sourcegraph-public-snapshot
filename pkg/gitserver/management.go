@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"net/rpc"
 	"os"
 	"os/exec"
 	"path"
@@ -16,44 +15,52 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-type CreateArgs struct {
+type createRequest struct {
 	Repo         string
 	MirrorRemote string
 	Opt          *vcs.RemoteOpts
+	ReplyChan    chan<- *createReply
 }
 
-type CreateReply struct {
-	RepoAlreadyExists bool
+type createReply struct {
+	RepoExist bool
+	Error     string
 }
 
 var createMu = mutexmap.New()
 
-func (g *Git) Create(args *CreateArgs, reply *CreateReply) error {
-	dir := path.Join(ReposDir, args.Repo)
+func handleCreateRequest(req *createRequest) {
+	defer recoverAndLog()
+	defer close(req.ReplyChan)
+
+	dir := path.Join(ReposDir, req.Repo)
 	createMu.Lock(dir)
 	defer createMu.Unlock(dir)
 	if repoExists(dir) {
-		reply.RepoAlreadyExists = true
-		return nil
+		req.ReplyChan <- &createReply{RepoExist: true}
+		return
 	}
 
-	if args.MirrorRemote != "" {
-		cmd := exec.Command("git", "clone", "--mirror", args.MirrorRemote, dir)
+	if req.MirrorRemote != "" {
+		cmd := exec.Command("git", "clone", "--mirror", req.MirrorRemote, dir)
 
 		var outputBuf bytes.Buffer
 		cmd.Stdout = &outputBuf
 		cmd.Stderr = &outputBuf
-		if err := runWithRemoteOpts(cmd, args.Opt); err != nil {
-			return fmt.Errorf("cloning repository %s failed with output:\n%s", args.Repo, outputBuf.String())
+		if err := runWithRemoteOpts(cmd, req.Opt); err != nil {
+			req.ReplyChan <- &createReply{Error: fmt.Sprintf("cloning repository %s failed with output:\n%s", req.Repo, outputBuf.String())}
+			return
 		}
-		return nil
+		req.ReplyChan <- &createReply{}
+		return
 	}
 
 	cmd := exec.Command("git", "init", "--bare", dir)
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("initializing repository %s failed with output:\n%s", args.Repo, string(out))
+		req.ReplyChan <- &createReply{Error: fmt.Sprintf("initializing repository %s failed with output:\n%s", req.Repo, string(out))}
+		return
 	}
-	return nil
+	req.ReplyChan <- &createReply{}
 }
 
 func Init(repo string) error {
@@ -90,57 +97,78 @@ func create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
 	sum := md5.Sum([]byte(repo))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(servers))
 
-	done := make(chan *rpc.Call, 1)
-	reply := &CreateReply{}
-	servers[serverIndex] <- &rpc.Call{
-		ServiceMethod: "Git.Create",
-		Args:          &CreateArgs{Repo: repo, MirrorRemote: mirrorRemote, Opt: opt},
-		Reply:         reply,
-		Done:          done,
+	replyChan := make(chan *createReply, 1)
+	servers[serverIndex] <- &request{Create: &createRequest{
+		Repo:         repo,
+		MirrorRemote: mirrorRemote,
+		Opt:          opt,
+		ReplyChan:    replyChan,
+	}}
+
+	reply, ok := <-replyChan
+	if !ok {
+		return errors.New("gitserver: create failed")
 	}
-	err = (<-done).Error
-	if err != nil {
-		return err
+	if reply.Error != "" {
+		return errors.New(reply.Error)
 	}
-	if reply.RepoAlreadyExists {
+	if reply.RepoExist {
 		return vcs.ErrRepoExist
 	}
 	return nil
 }
 
-type RemoveArgs struct {
-	Repo string
+type removeRequest struct {
+	Repo      string
+	ReplyChan chan<- *removeReply
 }
 
-type RemoveReply struct {
-	RepoExists bool
+type removeReply struct {
+	RepoNotExist bool
+	Error        string
 }
 
-func (r *RemoveReply) repoExists() bool {
-	return r.RepoExists
+func (r *removeReply) repoNotExist() bool {
+	return r.RepoNotExist
 }
 
-func (g *Git) Remove(args *RemoveArgs, reply *RemoveReply) error {
-	dir := path.Join(ReposDir, args.Repo)
+func handleRemoveRequest(req *removeRequest) {
+	defer recoverAndLog()
+	defer close(req.ReplyChan)
+
+	dir := path.Join(ReposDir, req.Repo)
 	if !repoExists(dir) {
-		return nil
+		req.ReplyChan <- &removeReply{RepoNotExist: true}
+		return
 	}
-	reply.RepoExists = true
 
 	cmd := exec.Command("git", "remote")
 	cmd.Dir = dir
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("not a repository: %s", args.Repo)
+		req.ReplyChan <- &removeReply{Error: fmt.Sprintf("not a repository: %s", req.Repo)}
+		return
 	}
 
-	return os.RemoveAll(dir)
+	if err := os.RemoveAll(dir); err != nil {
+		req.ReplyChan <- &removeReply{Error: err.Error()}
+		return
+	}
+	req.ReplyChan <- &removeReply{}
 }
 
 func Remove(repo string) error {
-	_, err := broadcastCall(
-		"Git.Remove",
-		&RemoveArgs{Repo: repo},
-		func() repoExistsReply { return new(RemoveReply) },
-	)
-	return err
+	genReply, err := broadcastCall(func() (*request, func() (genericReply, bool)) {
+		replyChan := make(chan *removeReply, 1)
+		return &request{Remove: &removeRequest{Repo: repo, ReplyChan: replyChan}},
+			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
+	})
+	if err != nil {
+		return err
+	}
+
+	reply := genReply.(*removeReply)
+	if reply.Error != "" {
+		return errors.New(reply.Error)
+	}
+	return nil
 }

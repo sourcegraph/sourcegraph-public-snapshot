@@ -10,48 +10,58 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-type ExecArgs struct {
-	Repo  string
-	Args  []string
-	Opt   *vcs.RemoteOpts
-	Stdin []byte
+type execRequest struct {
+	Repo      string
+	Args      []string
+	Opt       *vcs.RemoteOpts
+	Stdin     []byte
+	ReplyChan chan<- *execReply
 }
 
-type ExecReply struct {
-	RepoExists bool
-	Error      string
-	ExitStatus int
-	Stdout     []byte
-	Stderr     []byte
+type execReply struct {
+	RepoNotExist bool
+	Error        string
+	ExitStatus   int
+	Stdout       []byte
+	Stderr       []byte
 }
 
-func (r *ExecReply) repoExists() bool {
-	return r.RepoExists
+func (r *execReply) repoNotExist() bool {
+	return r.RepoNotExist
 }
 
-func (g *Git) Exec(args *ExecArgs, reply *ExecReply) error {
-	dir := path.Join(ReposDir, args.Repo)
+func handleExecRequest(req *execRequest) {
+	defer recoverAndLog()
+	defer close(req.ReplyChan)
+
+	dir := path.Join(ReposDir, req.Repo)
 	if !repoExists(dir) {
-		return nil
+		req.ReplyChan <- &execReply{RepoNotExist: true}
+		return
 	}
-	reply.RepoExists = true
 
-	cmd := exec.Command("git", args.Args...)
+	cmd := exec.Command("git", req.Args...)
 	cmd.Dir = dir
-	cmd.Stdin = bytes.NewReader(args.Stdin)
+	cmd.Stdin = bytes.NewReader(req.Stdin)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 
-	if err := runWithRemoteOpts(cmd, args.Opt); err != nil {
-		reply.Error = err.Error()
+	var errStr string
+	var exitStatus int
+	if err := runWithRemoteOpts(cmd, req.Opt); err != nil {
+		errStr = err.Error()
 	}
 	if cmd.ProcessState != nil { // is nil if process failed to start
-		reply.ExitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
-	reply.Stdout = stdoutBuf.Bytes()
-	reply.Stderr = stderrBuf.Bytes()
-	return nil
+
+	req.ReplyChan <- &execReply{
+		Error:      errStr,
+		ExitStatus: exitStatus,
+		Stdout:     stdoutBuf.Bytes(),
+		Stderr:     stderrBuf.Bytes(),
+	}
 }
 
 type Cmd struct {
@@ -72,15 +82,16 @@ func Command(name string, arg ...string) *Cmd {
 }
 
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
-	rawReply, err := broadcastCall(
-		"Git.Exec",
-		&ExecArgs{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input},
-		func() repoExistsReply { return new(ExecReply) },
-	)
+	genReply, err := broadcastCall(func() (*request, func() (genericReply, bool)) {
+		replyChan := make(chan *execReply, 1)
+		return &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input, ReplyChan: replyChan}},
+			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
+	})
 	if err != nil {
 		return nil, nil, err
 	}
-	reply := rawReply.(*ExecReply)
+
+	reply := genReply.(*execReply)
 	if reply.Error != "" {
 		err = errors.New(reply.Error)
 	}

@@ -3,6 +3,7 @@ package gitserver
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,63 +16,72 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-type SearchArgs struct {
-	Repo   string
-	Commit vcs.CommitID
-	Opt    vcs.SearchOptions
+type searchRequest struct {
+	Repo      string
+	Commit    vcs.CommitID
+	Opt       vcs.SearchOptions
+	ReplyChan chan<- *searchReply
 }
 
-type SearchReply struct {
-	RepoExists bool
-	Results    []*vcs.SearchResult
+type searchReply struct {
+	RepoNotExist bool
+	Results      []*vcs.SearchResult
+	Error        string
 }
 
-func (r *SearchReply) repoExists() bool {
-	return r.RepoExists
+func (r *searchReply) repoNotExist() bool {
+	return r.RepoNotExist
 }
 
-func (g *Git) Search(args *SearchArgs, reply *SearchReply) error {
-	dir := path.Join(ReposDir, args.Repo)
+func handleSearchRequest(req *searchRequest) {
+	defer recoverAndLog()
+	defer close(req.ReplyChan)
+
+	dir := path.Join(ReposDir, req.Repo)
 	if !repoExists(dir) {
-		return nil
+		req.ReplyChan <- &searchReply{RepoNotExist: true}
+		return
 	}
-	reply.RepoExists = true
 
 	var queryType string
-	switch args.Opt.QueryType {
+	switch req.Opt.QueryType {
 	case vcs.FixedQuery:
 		queryType = "--fixed-strings"
 	default:
-		return fmt.Errorf("unrecognized QueryType: %q", args.Opt.QueryType)
+		req.ReplyChan <- &searchReply{Error: fmt.Sprintf("unrecognized QueryType: %q", req.Opt.QueryType)}
+		return
 	}
 
-	cmd := exec.Command("git", "grep", "--null", "--line-number", "-I", "--no-color", "--context", strconv.Itoa(int(args.Opt.ContextLines)), queryType, "-e", args.Opt.Query, string(args.Commit))
+	cmd := exec.Command("git", "grep", "--null", "--line-number", "-I", "--no-color", "--context", strconv.Itoa(int(req.Opt.ContextLines)), queryType, "-e", req.Opt.Query, string(req.Commit))
 	cmd.Dir = dir
 	cmd.Stderr = os.Stderr
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		req.ReplyChan <- &searchReply{Error: err.Error()}
+		return
 	}
 	defer out.Close()
 	if err := cmd.Start(); err != nil {
-		return err
+		req.ReplyChan <- &searchReply{Error: err.Error()}
+		return
 	}
 
+	var results []*vcs.SearchResult
 	errc := make(chan error)
 	go func() {
 		rd := bufio.NewReader(out)
 		var r *vcs.SearchResult
 		addResult := func(rr *vcs.SearchResult) bool {
 			if rr != nil {
-				if args.Opt.Offset == 0 {
-					reply.Results = append(reply.Results, rr)
+				if req.Opt.Offset == 0 {
+					results = append(results, rr)
 				} else {
-					args.Opt.Offset--
+					req.Opt.Offset--
 				}
 				r = nil
 			}
 			// Return true if no more need to be added.
-			return len(reply.Results) == int(args.Opt.N)
+			return len(results) == int(req.Opt.N)
 		}
 		for {
 			line, err := rd.ReadBytes('\n')
@@ -94,7 +104,7 @@ func (g *Git) Search(args *SearchArgs, reply *SearchReply) error {
 			} else {
 				// Match line looks like: "HEAD:filename\x00lineno\x00matchline\n".
 				fileEnd := bytes.Index(line, []byte{'\x00'})
-				file := string(line[len(args.Commit)+1 : fileEnd])
+				file := string(line[len(req.Commit)+1 : fileEnd])
 				lineNoStart, lineNoEnd := fileEnd+1, fileEnd+1+bytes.Index(line[fileEnd+1:], []byte{'\x00'})
 				lineNo, err := strconv.Atoi(string(line[lineNoStart:lineNoEnd]))
 				if err != nil {
@@ -138,10 +148,13 @@ func (g *Git) Search(args *SearchArgs, reply *SearchReply) error {
 	err = <-errc
 	cmd.Process.Kill()
 	if err != nil {
-		return err
+		req.ReplyChan <- &searchReply{Error: err.Error()}
+		return
 	}
 
-	return nil
+	req.ReplyChan <- &searchReply{
+		Results: results,
+	}
 }
 
 func exitStatus(err error) int {
@@ -159,13 +172,18 @@ func exitStatus(err error) int {
 }
 
 func Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	reply, err := broadcastCall(
-		"Git.Search",
-		&SearchArgs{Repo: repo, Commit: commit, Opt: opt},
-		func() repoExistsReply { return new(SearchReply) },
-	)
+	genReply, err := broadcastCall(func() (*request, func() (genericReply, bool)) {
+		replyChan := make(chan *searchReply, 1)
+		return &request{Search: &searchRequest{Repo: repo, Commit: commit, Opt: opt, ReplyChan: replyChan}},
+			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
+	})
 	if err != nil {
 		return nil, err
 	}
-	return reply.(*SearchReply).Results, nil
+
+	reply := genReply.(*searchReply)
+	if reply.Error != "" {
+		return nil, errors.New(reply.Error)
+	}
+	return reply.Results, nil
 }

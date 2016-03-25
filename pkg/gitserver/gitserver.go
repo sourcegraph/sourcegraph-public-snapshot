@@ -1,100 +1,97 @@
 package gitserver
 
 import (
+	"errors"
 	"log"
-	"net/rpc"
+	"net"
 	"time"
+
+	"github.com/neelance/chanrpc"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-type Git struct {
+type request struct {
+	Exec   *execRequest
+	Search *searchRequest
+	Create *createRequest
+	Remove *removeRequest
 }
 
 var ReposDir string
-var servers [](chan<- *rpc.Call)
+var servers [](chan<- *request)
 
-func RegisterHandler() {
-	rpc.Register(&Git{})
-	rpc.HandleHTTP()
+func Serve(l net.Listener) error {
+	requests := make(chan *request, 100)
+	go processRequests(requests)
+	srv := &chanrpc.Server{RequestChan: requests}
+	return srv.Serve(l)
 }
 
-func Dial(addr string) error {
-	clientSingleton, err := rpc.DialHTTP("tcp", addr)
-	if err != nil {
-		return err
+func processRequests(requests <-chan *request) {
+	for req := range requests {
+		if req.Exec != nil {
+			go handleExecRequest(req.Exec)
+		}
+		if req.Search != nil {
+			go handleSearchRequest(req.Search)
+		}
+		if req.Create != nil {
+			go handleCreateRequest(req.Create)
+		}
+		if req.Remove != nil {
+			go handleRemoveRequest(req.Remove)
+		}
 	}
+}
 
-	callChan := make(chan *rpc.Call, 10)
-	servers = append(servers, callChan)
-	resetConnectionChan := make(chan *rpc.Client)
+func Connect(addr string) {
+	requestsChan := make(chan *request, 100)
+	servers = append(servers, requestsChan)
 
 	go func() {
 		for {
-			select {
-			case call := <-callChan:
-				clientForCall := clientSingleton
-				done := make(chan *rpc.Call, 1)
-				clientForCall.Go(call.ServiceMethod, call.Args, call.Reply, done)
-				go func() {
-					call.Error = (<-done).Error
-					if call.Error == rpc.ErrShutdown {
-						resetConnectionChan <- clientForCall
-						callChan <- call // retry
-						return
-					}
-					call.Done <- call
-				}()
-
-			case client := <-resetConnectionChan:
-				if client != clientSingleton {
-					continue
-				}
-				clientSingleton.Close()
-				for {
-					newClient, err := rpc.DialHTTP("tcp", addr)
-					if err != nil {
-						log.Printf("dial to git server failed: %s", err)
-						time.Sleep(time.Second)
-						continue
-					}
-					clientSingleton = newClient
-					break
-				}
-			}
+			err := chanrpc.DialAndDeliver(addr, requestsChan)
+			log.Printf("gitserver: DialAndDeliver error: %v", err)
+			time.Sleep(time.Second)
 		}
 	}()
-
-	return nil
 }
 
-type repoExistsReply interface {
-	repoExists() bool
+type genericReply interface {
+	repoNotExist() bool
 }
 
-func broadcastCall(serviceMethod string, args interface{}, newReply func() repoExistsReply) (interface{}, error) {
-	done := make(chan *rpc.Call, len(servers))
+var errRPCFailed = errors.New("gitserver: rpc failed")
+
+func broadcastCall(newRequest func() (*request, func() (genericReply, bool))) (interface{}, error) {
+	allReplies := make(chan genericReply, len(servers))
 	for _, server := range servers {
-		server <- &rpc.Call{
-			ServiceMethod: serviceMethod,
-			Args:          args,
-			Reply:         newReply(),
-			Done:          done,
-		}
+		req, getReply := newRequest()
+		server <- req
+		go func() {
+			reply, ok := getReply()
+			if !ok {
+				allReplies <- nil
+				return
+			}
+			allReplies <- reply
+		}()
 	}
-	var rpcError error
+
+	rpcError := false
 	for range servers {
-		call := <-done
-		if call.Error != nil {
-			rpcError = call.Error
+		reply := <-allReplies
+		if reply == nil {
+			rpcError = true
 			continue
 		}
-		if call.Reply.(repoExistsReply).repoExists() {
-			return call.Reply, nil
+		if !reply.repoNotExist() {
+			return reply, nil
 		}
 	}
-	if rpcError != nil {
-		return nil, rpcError
+	if rpcError {
+		return nil, errRPCFailed
 	}
 	return nil, vcs.ErrRepoNotExist
 }

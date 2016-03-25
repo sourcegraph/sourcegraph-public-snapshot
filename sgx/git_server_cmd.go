@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"net/http"
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -48,12 +47,10 @@ func (c *gitServerCmd) Execute(args []string) error {
 		startDebugServer(c.ProfBindAddr)
 	}
 
-	gitserver.RegisterHandler()
-
 	l, err := net.Listen("tcp", c.Addr)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("git-server: listening on %s\n", l.Addr())
-	return http.Serve(l, nil)
+	return gitserver.Serve(l)
 }

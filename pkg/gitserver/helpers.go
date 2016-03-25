@@ -139,3 +139,9 @@ func repoExists(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, "HEAD"))
 	return !os.IsNotExist(err)
 }
+
+func recoverAndLog() {
+	if err := recover(); err != nil {
+		log.Print(err)
+	}
+}

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"testing"
 
@@ -14,17 +13,13 @@ import (
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	gitserver.RegisterHandler()
-
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		log.Fatalf("listen failed: %s", err)
 	}
-	go http.Serve(l, nil)
+	go gitserver.Serve(l)
 
-	if err := gitserver.Dial(l.Addr().String()); err != nil {
-		log.Fatalf("dial failed: %s", err)
-	}
+	gitserver.Connect(l.Addr().String())
 
 	os.Exit(m.Run())
 }

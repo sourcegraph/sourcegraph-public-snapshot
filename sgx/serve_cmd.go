@@ -846,9 +846,7 @@ func (c *ServeCmd) runGitServer() {
 	gitServers := strings.Fields(c.GitServers)
 	if len(c.GitServers) != 0 {
 		for _, addr := range gitServers {
-			if err := gitserver.Dial(addr); err != nil {
-				log.Fatalf("git-server dial failed: %s", err)
-			}
+			gitserver.Connect(addr)
 		}
 		return
 	}
@@ -873,9 +871,7 @@ func (c *ServeCmd) runGitServer() {
 	addr := line[strings.LastIndexByte(line, ' ')+1 : len(line)-1]
 	go io.Copy(ioutil.Discard, stdoutReader) // drain pipe
 
-	if err := gitserver.Dial(addr); err != nil {
-		log.Fatalf("git-server dial failed: %s", err)
-	}
+	gitserver.Connect(addr)
 }
 
 // runSnapshotProfiler starts up the snapshotprof in a goroutine
