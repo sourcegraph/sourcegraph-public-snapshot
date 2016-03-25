@@ -1,11 +1,12 @@
 package gitserver
 
 import (
-	"bytes"
 	"errors"
 	"os/exec"
 	"path"
 	"syscall"
+
+	"github.com/neelance/chanrpc/chanrpcutil"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -14,16 +15,20 @@ type execRequest struct {
 	Repo      string
 	Args      []string
 	Opt       *vcs.RemoteOpts
-	Stdin     []byte
+	Stdin     <-chan []byte
 	ReplyChan chan<- *execReply
 }
 
 type execReply struct {
-	RepoNotExist bool
-	Error        string
-	ExitStatus   int
-	Stdout       []byte
-	Stderr       []byte
+	RepoNotExist  bool
+	Stdout        <-chan []byte
+	Stderr        <-chan []byte
+	ProcessResult <-chan *processResult
+}
+
+type processResult struct {
+	Error      string
+	ExitStatus int
 }
 
 func (r *execReply) repoNotExist() bool {
@@ -36,16 +41,26 @@ func handleExecRequest(req *execRequest) {
 
 	dir := path.Join(ReposDir, req.Repo)
 	if !repoExists(dir) {
+		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{RepoNotExist: true}
 		return
 	}
 
+	stdoutC, stdoutW := chanrpcutil.NewWriter()
+	stderrC, stderrW := chanrpcutil.NewWriter()
+
 	cmd := exec.Command("git", req.Args...)
 	cmd.Dir = dir
-	cmd.Stdin = bytes.NewReader(req.Stdin)
-	var stdoutBuf, stderrBuf bytes.Buffer
-	cmd.Stdout = &stdoutBuf
-	cmd.Stderr = &stderrBuf
+	cmd.Stdin = chanrpcutil.NewReader(req.Stdin)
+	cmd.Stdout = stdoutW
+	cmd.Stderr = stderrW
+
+	processResultChan := make(chan *processResult, 1)
+	req.ReplyChan <- &execReply{
+		Stdout:        stdoutC,
+		Stderr:        stderrC,
+		ProcessResult: processResultChan,
+	}
 
 	var errStr string
 	var exitStatus int
@@ -56,12 +71,15 @@ func handleExecRequest(req *execRequest) {
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 
-	req.ReplyChan <- &execReply{
+	chanrpcutil.Drain(req.Stdin)
+	stdoutW.Close()
+	stderrW.Close()
+
+	processResultChan <- &processResult{
 		Error:      errStr,
 		ExitStatus: exitStatus,
-		Stdout:     stdoutBuf.Bytes(),
-		Stderr:     stderrBuf.Bytes(),
 	}
+	close(processResultChan)
 }
 
 type Cmd struct {
@@ -84,7 +102,7 @@ func Command(name string, arg ...string) *Cmd {
 func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	genReply, err := broadcastCall(func() (*request, func() (genericReply, bool)) {
 		replyChan := make(chan *execReply, 1)
-		return &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: c.Input, ReplyChan: replyChan}},
+		return &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}},
 			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
 	})
 	if err != nil {
@@ -92,11 +110,16 @@ func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	}
 
 	reply := genReply.(*execReply)
-	if reply.Error != "" {
-		err = errors.New(reply.Error)
+	stdout := chanrpcutil.ReadAll(reply.Stdout)
+	stderr := chanrpcutil.ReadAll(reply.Stderr)
+
+	processResult := <-reply.ProcessResult
+	if processResult.Error != "" {
+		err = errors.New(processResult.Error)
 	}
-	c.ExitStatus = reply.ExitStatus
-	return reply.Stdout, reply.Stderr, err
+	c.ExitStatus = processResult.ExitStatus
+
+	return <-stdout, <-stderr, err
 }
 
 func (c *Cmd) Run() error {

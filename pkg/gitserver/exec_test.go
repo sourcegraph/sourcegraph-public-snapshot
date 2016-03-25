@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/neelance/chanrpc/chanrpcutil"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -23,24 +25,24 @@ func TestExec(t *testing.T) {
 			expectedErr: vcs.ErrRepoNotExist,
 		},
 		{
-			reply1:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
+			reply1:         &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			reply2:         &execReply{RepoNotExist: true},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
 			reply1:         &execReply{RepoNotExist: true},
-			reply2:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
+			reply2:         &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
-			reply1:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
+			reply1:         &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
 		{
-			reply2:         &execReply{Stdout: []byte("out"), Stderr: []byte("err")},
+			reply2:         &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 		},
@@ -64,12 +66,14 @@ func TestExec(t *testing.T) {
 
 		go func(test *execTest) {
 			req1 := <-server1
+			chanrpcutil.Drain(req1.Exec.Stdin)
 			if test.reply1 != nil {
 				req1.Exec.ReplyChan <- test.reply1
 			}
 			close(req1.Exec.ReplyChan)
 
 			req2 := <-server2
+			chanrpcutil.Drain(req2.Exec.Stdin)
 			if test.reply2 != nil {
 				req2.Exec.ReplyChan <- test.reply2
 			}
@@ -87,4 +91,10 @@ func TestExec(t *testing.T) {
 			t.Errorf("expected stdout %#v, got %#v", test.expectedStderr, stderr)
 		}
 	}
+}
+
+func emptyProcessResult() <-chan *processResult {
+	processResultChan := make(chan *processResult, 1)
+	processResultChan <- &processResult{}
+	return processResultChan
 }
