@@ -1,8 +1,14 @@
 @value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
 
 .search_hotkey {
 	composes: bg-black-10 from base;
 	composes: tooltip-bottom from base;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
 	text-shadow: 0 1px 0 c_white;
+}
+
+.refs_container {
+	composes: col-12 col-9-ns col-6-m from grid;
+	composes: ml3 mr3 pv3 ph3 from base;
 }

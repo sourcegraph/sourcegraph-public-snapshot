@@ -125,7 +125,7 @@ class RefsContainer extends Container {
 		let maxFilesShown = this.state.page * FILES_PER_PAGE;
 
 		return (
-			<div>
+			<div className={RefStyles.refs_container}>
 				<header>Refs of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.path ? `in ${this.state.path}` : `in ${this.state.repo}`}</header>
 				<hr/>
 				<div className="file-container">
