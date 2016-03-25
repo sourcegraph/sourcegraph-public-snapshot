@@ -22,8 +22,9 @@ class BlobLineExpander extends Component {
 				<td className="line-expander-toggle">
 				</td>
 				<td className="line-content">
-					<i className="fa fa-angle-double-up"></i><br/>
-					<i className="fa fa-angle-double-down"></i>
+					{/* TODO support doing the up/down arrow logic automatically */}
+					{this.state.direction !== "down" && <i className="fa fa-angle-double-up expand-icon"></i>}
+					{this.state.direction !== "up" && <i className="fa fa-angle-double-down expand-icon"></i>}
 				</td>
 			</tr>
 		);

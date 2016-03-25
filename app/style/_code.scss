@@ -56,6 +56,8 @@
 	}
 
 	.line-expander {
+		height: 26px;
+		vertical-align: middle;
 		background-color: $line-expander-bg;
 		color: $line-expander-text;
 		text-align: center;
@@ -66,8 +68,12 @@
 		}
 
 		.line-content {
-			line-height: 1.1;
+			line-height: 1;
 			padding-right: $line-number-width;
+		}
+
+		.expand-icon {
+			display: block;
 		}
 	}
 

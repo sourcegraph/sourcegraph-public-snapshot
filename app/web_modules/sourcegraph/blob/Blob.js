@@ -272,6 +272,7 @@ class Blob extends Component {
 				let expandTo = [Math.max(lastRangeEnd, lineNumber-30), lineNumber-1];
 				lines.push(
 					<BlobLineExpander key={`expand-${i}`}
+						direction={renderedLines === 0 ? "up" : null}
 						expandRange={expandTo}
 						onExpand={this._expandRange} />
 				);
@@ -295,7 +296,8 @@ class Blob extends Component {
 			lines.push(
 				<BlobLineExpander key={`expand-${this.state.lines.length}`}
 					expandRange={[lastDisplayedLine, lastDisplayedLine+30]}
-					onExpand={this._expandRange} />
+					onExpand={this._expandRange}
+					direction={"down"} />
 			);
 		}
 
