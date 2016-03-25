@@ -19,7 +19,7 @@ import TreeStyles from "./styles/Tree.css";
 import BaseStyles from "sourcegraph/components/styles/base.css";
 
 const SYMBOL_LIMIT = 5;
-const FILE_LIMIT = 5;
+const FILE_LIMIT = 15;
 
 class TreeSearch extends Container {
 	constructor(props) {
@@ -219,8 +219,9 @@ class TreeSearch extends Container {
 
 	_numFileResults() {
 		let numFileResults = this.state.fileResults.length > FILE_LIMIT ? FILE_LIMIT : this.state.fileResults.length;
-		// Override file results to show full directory tree on empty query.
-		if (this.state.query === "") numFileResults = this.state.fileResults.length;
+		// Override file results to show full directory tree on empty query, or when
+		// query is 3+ chars.
+		if (this.state.query === "" || this.state.query.length >= 3) numFileResults = this.state.fileResults.length;
 		return numFileResults;
 	}
 
