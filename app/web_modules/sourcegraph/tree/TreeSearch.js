@@ -305,7 +305,7 @@ class TreeSearch extends Container {
 			break;
 
 		default:
-			this._debouncedSetQuery(this.refs.input ? this.refs.input.value : "");
+			setTimeout(() => this._debouncedSetQuery(this.refs.input ? this.refs.input.value : ""), 0);
 		}
 	}
 
