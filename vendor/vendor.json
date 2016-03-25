@@ -419,6 +419,18 @@
 			"revisionTime": "2015-11-02T10:20:00-08:00"
 		},
 		{
+			"checksumSHA1": "cq5lGyxm+tH2QbdrUqnHpILY0T0=",
+			"path": "github.com/neelance/chanrpc",
+			"revision": "7baf9d660c145c59cb28e2f85fe12258e5f1f050",
+			"revisionTime": "2016-03-27T22:39:32+02:00"
+		},
+		{
+			"checksumSHA1": "yOBW3lnFnE3Vn8WD6GMM+qBo2FA=",
+			"path": "github.com/neelance/chanrpc/chanrpcutil",
+			"revision": "7baf9d660c145c59cb28e2f85fe12258e5f1f050",
+			"revisionTime": "2016-03-27T22:39:32+02:00"
+		},
+		{
 			"path": "github.com/nlopes/slack",
 			"revision": "5e8064e706a2cb3d2581c1298d9428db2c0984fa",
 			"revisionTime": "2016-03-17T11:22:45Z"
