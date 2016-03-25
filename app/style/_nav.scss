@@ -34,15 +34,12 @@ nav.global {
 
 	.repo {
 		font-size: $font-size-large;
-		span {
-			display: inline-block;
-		}
-		span.part {
-			padding: 0px 8px;
+		span.part, span.sep {
+			padding: 0;
 			color: #555;
 		}
-		span.sep {
-			color: #555;
+		.name {
+			font-weight: bold;
 		}
 	}
 
