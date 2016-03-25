@@ -31,8 +31,8 @@
 	</noscript>
 	{{end}}
 	<div class="theme-default">
-		{{component .Ctx nil "sourcegraph/LocationAdaptor" "component" "sourcegraph/blob/BlobRouter"}}
+		{{component nil nil "sourcegraph/LocationAdaptor" "component" "sourcegraph/blob/BlobRouter"}}
 	</div>
 
-	{{component nil .StoreData "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.Rev}}
+	{{component nil nil "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.Rev}}
 {{end}}
