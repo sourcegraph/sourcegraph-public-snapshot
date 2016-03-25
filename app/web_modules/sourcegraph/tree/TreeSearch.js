@@ -324,7 +324,7 @@ class TreeSearch extends Container {
 						"fa-folder": item.isDirectory,
 					})}></i>
 					</span>
-					<a className={BaseStyles.link} href={itemURL}>{item.name}</a>
+					<a className={TreeStyles.link} href={itemURL}>{item.name}</a>
 					{this.state.query === "" && item.isDirectory &&
 						<span className={TreeStyles.directory_nav_icon}>
 						<i className="fa fa-chevron-right" />
@@ -356,7 +356,7 @@ class TreeSearch extends Container {
 			list.push(
 				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={defURL}>
 					<div key={defURL}>
-						<a className={BaseStyles.link} href={defURL}>
+						<a className={TreeStyles.link} href={defURL}>
 							<code>{qualifiedNameAndType(def)}</code>
 						</a>
 					</div>
@@ -406,7 +406,7 @@ class TreeSearch extends Container {
 							<div className={TreeStyles.list_item}>
 								<span className={TreeStyles.icon}><i className="fa fa-spinner fa-spin"></i></span>
 								<i>Sourcegraph is analyzing your code &mdash;&nbsp;
-									<a className={BaseStyles.link} href={this._buildsURL()}>results will be available soon!</a>
+									<a className={TreeStyles.link} href={this._buildsURL()}>results will be available soon!</a>
 								</i>
 							</div>
 						}

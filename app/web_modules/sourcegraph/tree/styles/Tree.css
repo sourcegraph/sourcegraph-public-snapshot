@@ -77,6 +77,11 @@
 	composes: bg-blue-1 from colors;
 }
 
+.link {
+	composes: link from base;
+	composes: pa2 from base;
+}
+
 /* TODO: this wrapper only needed until we can pull compose our icon fonts from CSS sheet in a single component. */
 .icon {
 	composes: pr3 from base;
