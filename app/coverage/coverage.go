@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/net/context"
@@ -17,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 )
@@ -135,15 +140,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, rebui
 	if err != nil {
 		if rebuildMissing {
 			if strings.Contains(err.Error(), "not found") && strings.Contains(err.Error(), "repo") {
-				if _, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-					Op: &sourcegraph.ReposCreateOp_New{
-						New: &sourcegraph.ReposCreateOp_NewRepo{
-							URI:      repoRevSpec.URI,
-							CloneURL: fmt.Sprintf("https://%s.git", repoRevSpec.URI),
-							Mirror:   true,
-						},
-					},
-				}); err != nil {
+				if err := createMirrorRepo(cl, ctx, repo); err != nil {
 					return nil, err
 				}
 			} else if handlerutil.IsRepoNoVCSDataError(err) {
@@ -198,4 +195,32 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, rebui
 	}
 	cov.CommitsBehind = dataVer.CommitsBehind
 	return &cov, nil
+}
+
+func createMirrorRepo(cl *sourcegraph.Client, ctx context.Context, repo string) error {
+	// Resolve repo path, and create local mirror for remote repo if
+	// needed.
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo})
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return err
+	}
+	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repo {
+			// Repo path is invalid, possibly because repo has been renamed.
+			return fmt.Errorf("repo %s redirects to %s; update dashboard with correct repo path", repo, actualURI)
+		}
+
+		// Automatically create a local mirror.
+		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
+		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: int32(remoteRepo.GitHubID)},
+		})
+		if err != nil {
+			return err
+		}
+	}
+	// If we reach here, either
+	//    (1) err == nil (i.e. repo exists in our db), or
+	//    (2) err == codes.NotFound and repo is not a GitHub repo.
+	return err
 }
