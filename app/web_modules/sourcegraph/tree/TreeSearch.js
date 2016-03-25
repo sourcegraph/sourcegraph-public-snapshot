@@ -351,7 +351,7 @@ class TreeSearch extends Container {
 		if (!this.state.matchingDefs) return [loadingItem];
 
 		const emptyItem = <div className={TreeStyles.list_item} key="_nosymbol"><i>No matches!</i></div>;
-		if (this.state.matchingDefs && this.state.matchingDefs.Defs.length === 0) return [emptyItem];
+		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
 
 		let list = [],
 			limit = this.state.matchingDefs.Defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingDefs.Defs.length;
