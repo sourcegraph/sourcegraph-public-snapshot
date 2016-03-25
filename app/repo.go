@@ -7,7 +7,6 @@ import (
 
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strings"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -186,8 +185,4 @@ func repoMetaDescription(rp *sourcegraph.Repo) string {
 		desc += ": " + rp.Description
 	}
 	return desc
-}
-
-func repoBasename(repoURI string) string {
-	return filepath.Base(repoURI)
 }

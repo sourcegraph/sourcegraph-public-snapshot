@@ -81,32 +81,3 @@ func URLWithSchema(v interface{}) string {
 	}
 	return "?" + qs.Encode()
 }
-
-// currentQueryIsSupersetOf returns true iff currentQuery is a
-// "superset" of other.  For example, in rough notation,
-// currentQueryMatches(`?a=1&b=2`, `?b=2`) is true, but
-// currentQueryMatches(`?a=1`, `?a=2`) and currentQueryMatches(`?a=1`,
-// `?b=1`) are false.
-func currentQueryIsSupersetOf(currentQuery url.Values, otherQuery url.Values) bool {
-	for k, v := range currentQuery {
-		v2, present := otherQuery[k]
-		if present {
-			delete(otherQuery, k)
-			if !reflect.DeepEqual(v, v2) {
-				return false
-			}
-		}
-	}
-
-	// reject if keys (with non-nil values) exist in other that aren't in currentQuery
-	for k, v := range otherQuery {
-		if v == nil {
-			delete(otherQuery, k)
-		}
-	}
-	if len(otherQuery) > 0 {
-		return false
-	}
-
-	return true
-}

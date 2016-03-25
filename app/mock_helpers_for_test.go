@@ -101,13 +101,6 @@ func mockRepoCommit(c *httptestutil.MockClients, commit *vcs.Commit) (called *bo
 	return called
 }
 
-func mockBasicRepoMainPage(c *httptestutil.MockClients) {
-	mockEmptyTreeEntry(c)
-	mockEmptyRepoConfig(c)
-	mockNoRepoReadme(c)
-	mockCurrentSrclibData(c)
-}
-
 // func mockEmptyRepoList(c *httptestutil.MockClients) {
 // 	c.Repos.List_ = func(_ context.Context,*sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 // 		return nil, &fakeResponse{totalCount: 0}, nil

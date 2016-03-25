@@ -45,7 +45,6 @@ import (
 var Repos sourcegraph.ReposServer = &repos{}
 
 var errEmptyRepoURI = grpc.Errorf(codes.InvalidArgument, "repo URI is empty")
-var errPermissionDenied = grpc.Errorf(codes.PermissionDenied, "cannot view this repo")
 
 type repos struct{}
 

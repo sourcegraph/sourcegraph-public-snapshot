@@ -24,31 +24,6 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, def)
 }
 
-func getDefSpec(r *http.Request) (defSpec sourcegraph.DefSpec, err error) {
-	v := mux.Vars(r)
-	ctx, _ := handlerutil.Client(r)
-
-	_, repoRevSpec, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
-	if err != nil {
-		return sourcegraph.DefSpec{}, err
-	}
-
-	spec := sourcegraph.DefSpec{
-		Repo:     repoRevSpec.URI,
-		CommitID: repoRevSpec.CommitID,
-		UnitType: v["UnitType"],
-		Unit:     v["Unit"],
-		Path:     v["Path"],
-	}
-	if spec.Repo == "" {
-		panic("empty RepoURI")
-	}
-	if spec.UnitType == "" {
-		panic("empty UnitType")
-	}
-	return spec, nil
-}
-
 func serveDefs(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 

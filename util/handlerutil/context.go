@@ -6,5 +6,4 @@ const (
 	userKey contextKey = iota
 	fullUserKey
 	emailAddrKey
-	repoFallbackKey
 )
