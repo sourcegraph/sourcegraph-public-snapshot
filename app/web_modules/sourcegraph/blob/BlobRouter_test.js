@@ -85,13 +85,13 @@ describe("BlobRouter", () => {
 	it("should handle BlobActions.SelectLine", () => {
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
-			new BlobActions.SelectLine(42),
+			new BlobActions.SelectLine(null, null, null, 42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
 		);
 
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20-60",
-			new BlobActions.SelectLine(42),
+			new BlobActions.SelectLine(null, null, null, 42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
 		);
 	});
@@ -99,19 +99,19 @@ describe("BlobRouter", () => {
 	it("should handle BlobActions.SelectLineRange", () => {
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
-			new BlobActions.SelectLineRange(42),
+			new BlobActions.SelectLineRange(null, null, null, 42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
 		);
 
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20",
-			new BlobActions.SelectLineRange(42),
+			new BlobActions.SelectLineRange(null, null, null, 42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20-42"
 		);
 
 		testAction(
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L50",
-			new BlobActions.SelectLineRange(42),
+			new BlobActions.SelectLineRange(null, null, null, 42),
 			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42-50"
 		);
 	});

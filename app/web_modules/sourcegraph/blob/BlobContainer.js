@@ -134,6 +134,9 @@ class BlobContainer extends Container {
 							path={this.state.path} />
 						{this.state.file &&
 						<Blob
+							repo={this.state.repo}
+							rev={this.state.rev}
+							path={this.state.path}
 							ref={(e) => this._blob = e}
 							contents={this.state.file.ContentsString}
 							annotations={this.state.anns}

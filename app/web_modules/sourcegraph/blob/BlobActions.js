@@ -39,13 +39,19 @@ export class AnnotationsFetched {
 }
 
 export class SelectLine {
-	constructor(line) {
+	constructor(repo, rev, path, line) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = path;
 		this.line = line;
 	}
 }
 
 export class SelectLineRange {
-	constructor(line) {
+	constructor(repo, rev, path, line) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = path;
 		this.line = line;
 	}
 }
@@ -57,7 +63,10 @@ export class SelectCharRange {
 	//
 	// If startLine is null, then all other fields' values are ignored and the action
 	// is interpreted as "deselect the current selection."
-	constructor(startLine, startCol, startByte, endLine, endCol, endByte) {
+	constructor(repo, rev, path, startLine, startCol, startByte, endLine, endCol, endByte) {
+		this.repo = repo;
+		this.rev = rev;
+		this.path = path;
 		this.startLine = startLine;
 		this.startCol = startCol;
 		this.startByte = startByte;

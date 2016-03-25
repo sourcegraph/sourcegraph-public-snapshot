@@ -128,18 +128,18 @@ class BlobRouter extends Component {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case BlobActions.SelectLine:
-			this._navigate(this._filePath(), {startLine: action.line});
+			this._navigate(this._filePath(action.repo, action.rev, action.path), {startLine: action.line});
 			break;
 
 		case BlobActions.SelectLineRange:
-			this._navigate(this._filePath(), {
+			this._navigate(this._filePath(action.repo, action.rev, action.path), {
 				startLine: Math.min(this.state.startLine || action.line, action.line),
 				endLine: Math.max(this.state.endLine || this.state.startLine || action.line, action.line),
 			});
 			break;
 
 		case BlobActions.SelectCharRange:
-			this._navigate(this._filePath(), {
+			this._navigate(this._filePath(action.repo, action.rev, action.path), {
 				startLine: action.startLine,
 				startCol: action.startCol,
 				endLine: action.endLine,
@@ -173,9 +173,12 @@ class BlobRouter extends Component {
 		}
 	}
 
-	_filePath() {
-		let path = this.state.path || DefStore.defs.get(this.state.def).File;
-		let revPart = this.state.rev ? `@${this.state.rev}` : "";
+	_filePath(repo, rev, path) {
+		if (!repo) repo = this.state.repo;
+		if (!rev) rev = this.state.rev;
+		if (!path) path = this.state.path || DefStore.defs.get(this.state.def).File;
+
+		let revPart = rev ? `@${rev}` : "";
 		return `/${this.state.repo}${revPart}/.tree/${path}`;
 	}
 

@@ -51,6 +51,9 @@ class Blob extends Component {
 	}
 
 	reconcileState(state, props) {
+		state.repo = props.repo || null;
+		state.rev = props.rev || null;
+		state.path = props.path || null;
 		state.startLine = props.startLine || null;
 		state.endLine = props.endLine || null;
 		state.scrollToStartLine = Boolean(props.scrollToStartLine);
@@ -198,7 +201,7 @@ class Blob extends Component {
 
 		if (sel.isCollapsed) {
 			// It's a click IN the file view with an empty (collapsed) selection.
-			Dispatcher.dispatch(new BlobActions.SelectCharRange(null));
+			Dispatcher.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, null));
 			return;
 		}
 
@@ -212,7 +215,7 @@ class Blob extends Component {
 		let startByte = this.state.lineStartBytes[startLine - 1] + startCol;
 		let endByte = this.state.lineStartBytes[endLine - 1] + endCol;
 
-		Dispatcher.dispatch(new BlobActions.SelectCharRange(startLine, startCol, startByte, endLine, endCol, endByte));
+		Dispatcher.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, startLine, startCol, startByte, endLine, endCol, endByte));
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -281,6 +284,9 @@ class Blob extends Component {
 			lastDisplayedLine = lineNumber;
 			lines.push(
 				<BlobLine
+					repo={this.state.repo}
+					rev={this.state.rev}
+					path={this.state.path}
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
@@ -327,6 +333,12 @@ Blob.propTypes = {
 	scrollToStartLine: React.PropTypes.bool,
 	highlightedDef: React.PropTypes.string,
 	activeDef: React.PropTypes.string,
+
+	// Optional: for linking line numbers to the file they came from (e.g., in
+	// ref snippets).
+	repo: React.PropTypes.string,
+	rev: React.PropTypes.string,
+	path: React.PropTypes.string,
 
 	// contentsOffsetLine indicates that the contents string does not
 	// start at line 1 within the file, but rather some other line number.

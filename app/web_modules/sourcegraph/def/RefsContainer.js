@@ -145,6 +145,9 @@ class RefsContainer extends Container {
 											</div>
 										</div>
 										<Blob
+											repo={repoRev.URI}
+											rev={repoRev.Rev}
+											path={path}
 											contents={file.ContentsString}
 											annotations={this.state.anns[path] || null}
 											activeDef={this.state.def}

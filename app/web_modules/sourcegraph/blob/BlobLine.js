@@ -9,6 +9,10 @@ import * as DefActions from "sourcegraph/def/DefActions";
 
 class BlobLine extends Component {
 	reconcileState(state, props) {
+		state.repo = props.repo || null;
+		state.rev = props.rev || null;
+		state.path = props.path || null;
+
 		// Update ownAnnURLs when they change.
 		if (state.annotations !== props.annotations) {
 			state.annotations = props.annotations;
@@ -99,10 +103,10 @@ class BlobLine extends Component {
 						data-line={this.state.lineNumber}
 						onClick={(event) => {
 							if (event.shiftKey) {
-								Dispatcher.dispatch(new BlobActions.SelectLineRange(this.state.lineNumber));
+								Dispatcher.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
 								return;
 							}
-							Dispatcher.dispatch(new BlobActions.SelectLine(this.state.lineNumber));
+							Dispatcher.dispatch(new BlobActions.SelectLine(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
 						}}>
 					</td>}
 				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
@@ -125,6 +129,12 @@ BlobLine.propTypes = {
 			return new Error("If lineNumber is set, then oldLineNumber/newLineNumber (which are for diff hunks) may not be used");
 		}
 	},
+
+	// Optional: for linking line numbers to the file they came from (e.g., in
+	// ref snippets).
+	repo: React.PropTypes.string,
+	rev: React.PropTypes.string,
+	path: React.PropTypes.string,
 
 	// For diff hunks.
 	oldLineNumber: React.PropTypes.number,

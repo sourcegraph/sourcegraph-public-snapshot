@@ -28,6 +28,9 @@
 										{
 											"type": "Blob",
 											"props": {
+												"repo": "aRepo",
+												"rev": "aRev",
+												"path": "aPath",
 												"contents": "hello\nworld",
 												"lineNumbers": true,
 												"highlightSelectedLines": true,
