@@ -8,6 +8,7 @@ import DefTooltip from "sourcegraph/def/DefTooltip";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
+import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import hotLink from "sourcegraph/util/hotLink";
 import * as router from "sourcegraph/util/router";
@@ -31,6 +32,11 @@ class RefsContainer extends Container {
 
 	stores() {
 		return [DefStore, BlobStore];
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+		animatedScrollTo(document.body, 0, 100);
 	}
 
 	reconcileState(state, props) {
