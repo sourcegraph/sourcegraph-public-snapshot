@@ -7,7 +7,7 @@ export class GoTo {
 }
 
 export default function hotLink(event) {
-	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.button === 1 || event.button === 2) {
 		return;
 	}
 	event.preventDefault();
