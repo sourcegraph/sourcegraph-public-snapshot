@@ -115,7 +115,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
 	})
-	if err != nil {
+	if err != nil && err != vcs.ErrRepoExist {
 		return err
 	}
 

@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sqs/pbtypes"
@@ -360,7 +361,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	// live in PostgreSQL.)
 	// A mirrored repo is automatically cloned by the repo updater instead of here.
 	if !newRepo.Mirror && !skipFS {
-		if err := gitserver.Init(newRepo.URI); err != nil {
+		if err := gitserver.Init(newRepo.URI); err != nil && err != vcs.ErrRepoExist {
 			return err
 		}
 	}
