@@ -55,6 +55,11 @@ nav.global {
 		}
 	}
 
+	.actions > li {
+		display: inline-block;
+		margin-right: (2*$nav-link-padding);
+	}
+
 	& > ul, & > ul > li {
 		list-style-type: none;
 	}
