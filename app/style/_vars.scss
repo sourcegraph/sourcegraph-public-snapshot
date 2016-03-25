@@ -49,7 +49,7 @@ $diff-changed-color: lighten(#c98d00, 4%);
 $diff-deleted-color: lighten(#c71111, 3%);
 
 /* Components */
-$content-border-color: transparentize($cloudy-blue, 0.56);
+$content-border-color: lighten($cloudy-blue, 11%);
 $text-header: $jet-black;
 $text-strong-color: $blue-grey;
 $text-quieted: $shadow-blue;
@@ -73,12 +73,11 @@ $line-number-text: $muted-grey;
 $line-content-bg: $white;
 $line-expander-bg: $duck-egg-blue;
 $line-expander-text: darken($line-expander-bg, 16%);
-$active-code-line-number-bg: transparentize($brand-azure, 0.85);
-$active-code-bg: transparentize($brand-azure, 0.90);
-$active-code-flash-bg: transparentize($brand-azure, 0.85);
-$token-hover-color: transparentize($lemon, 0.63);
+$active-code-line-number-bg: lighten($brand-azure, 53%);
+$active-code-bg: lighten($brand-azure, 55%);
+$token-hover-color: lighten($lemon, 8%);
 $token-hover-border: darken($token-hover-color, 5%);
-$token-active-color: transparentize($lemon, 0.20);
+$token-active-color: lighten($lemon, 5%);
 $token-active-border: darken($token-active-color, 2%);
 
 $content-primary-bg: $duck-egg-blue;
@@ -86,8 +85,6 @@ $content-primary-border: lighten($brand-azure, 27%);
 $content-primary-text: $brand-azure;
 
 $select-list-bg: #fcfcfc;
-
-$panel-box-shadow: 0 5px 9px rgba(0, 0, 0, 0.05);
 
 $repo-attr-color: $cloudy-blue;
 
@@ -191,7 +188,6 @@ $zindex-modal:            z-index(modal);
 // ----------------------------------------------------------------------------
 
 $content-border: solid 1px $content-border-color;
-$line-panel-shadow: 0 1px 3px 0 transparentize($cloudy-blue, 0.72);
 
 $footer-height: 110px;
 
