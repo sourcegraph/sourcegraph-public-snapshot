@@ -18,17 +18,17 @@ class DefPopup extends Component {
 					<p className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 				</section>
 
-				<header className="usage-header">Usages {!this.state.refs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
+				<header className="usage-header">Used in {!this.state.refs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
 				{this.state.refs && this.state.refs.Total === 0 &&
 					<i>No usages found</i>
 				}
 				{this.state.refs && this.state.refs.Files && this.state.refs.Total > 0 &&
 					<div className="usages">
-						<div><i className="fa fa-bookmark"></i> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> <span className="badge">{this.state.refs.Total}</span></div>
+						<header><span className="badge">{this.state.refs.Total}</span> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> </header>
 						<div className="usage-category">
 							{this.state.refs.Files.map((file, i) => (
 								<div key={i} className={this.state.path === file.Name ? "current-file" : ""}>
-									<i className="fa fa-file-text-o"></i> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{file.Name}</a> <span className="badge">{file.RefCount}</span>
+									<span className="badge">{file.RefCount}</span> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{file.Name}</a>
 								</div>
 							))}
 						</div>

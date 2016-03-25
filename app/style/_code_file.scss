@@ -166,24 +166,27 @@
 			}
 		}
 
+		header {
+			margin-bottom: 0;
+			font-weight: normal;
+		}
+
 		.usage-category {
-			margin-left: $padding-base-horizontal;
+			margin-left: $padding-large-horizontal;
+			white-space: nowrap;
 		}
 
 		.badge {
-			min-width: 23px;
-			font-size: 11px;
+			font-size: 9.5px;
 			font-weight: normal;
 			background-color: $muted-badge-bg;
 			color: $muted-badge-text;
-			vertical-align: initial;
+			vertical-align: 1px;
+			padding: 3px 5px;
 		}
 
 		.current-file {
-			.badge {
-				background-color: $token-active-color;
-				color: $jet-black;
-			}
+			font-weight: bold;
 		}
 	}
 

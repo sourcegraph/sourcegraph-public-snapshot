@@ -25,7 +25,7 @@
 					"props": {
 						"className": "usage-header",
 						"children": [
-							"Usages ",
+							"Used in ",
 							{
 								"type": "i",
 								"props": {
