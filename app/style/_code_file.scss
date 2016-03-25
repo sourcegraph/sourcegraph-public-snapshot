@@ -108,9 +108,11 @@
 	border-bottom: solid 1px $content-border-color;
 	padding: 8px;
 
-	.file-breadcrumb {
-		display: inline-block;
+	display: flex;
+	justify-content: space-between;
+	flex-wrap: wrap;
 
+	.file-breadcrumb {
 		& > i {
 			margin-right: 10px;
 			font-size: 14px;
@@ -136,16 +138,14 @@
 			}
 		}
 	}
-
-	.actions {
-		float: right;
-	}
 }
 
 .card {
 	display: block;
-	border: $content-border;
-	border-radius: $border-radius-base;
+}
+
+.file-content.card {
+	border-right: $content-border;
 }
 
 .token-details {

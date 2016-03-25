@@ -1,7 +1,9 @@
 .sidebar {
 	.sidebar-section {
-		border-left: solid 3px transparent;
+		$border-width: 4px;
+		border-left: solid $border-width transparent;
+		margin-left: -1 * $border-width;
 		border-color: $code-sidebar-border-color;
-		padding: $padding-base-vertical $padding-small-horizontal;
+		padding: $padding-small-vertical $padding-small-horizontal $padding-base-vertical;
 	}
 }
