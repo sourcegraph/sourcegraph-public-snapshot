@@ -8,6 +8,8 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import BlobRouter from "sourcegraph/blob/BlobRouter";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
+import RepoStore from "sourcegraph/repo/RepoStore";
 import DefStore from "sourcegraph/def/DefStore";
 import {GoTo} from "sourcegraph/util/hotLink";
 
@@ -46,6 +48,19 @@ describe("BlobRouter", () => {
 		autotest(testdataDefinition, `${__dirname}/testdata/BlobRouter-definition.json`,
 			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router" />
 		);
+	});
+
+	it("should consult the RepoStore for the repo's default branch if the rev is empty", () => {
+		Dispatcher.directDispatch(RepoStore, new RepoActions.FetchedRepo("myrepo", {DefaultBranch: "mybranch"}));
+		[
+			"http://localhost:3080/myrepo",
+			"http://localhost:3080/myrepo/.tree/file.txt",
+			"http://localhost:3080/myrepo/.GoPackage/u/.def/p",
+		].forEach((url) => {
+			let renderer = TestUtils.createRenderer();
+			renderer.render(<BlobRouter location={url} />);
+			expect(renderer._instance._instance.state.rev).to.be("mybranch");
+		});
 	});
 
 	it("should handle DefActions.SelectDef and trigger WantDef when no def is in store", () => {

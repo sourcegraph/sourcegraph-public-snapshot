@@ -8,8 +8,20 @@ import (
 
 // StoreData contains preloaded data for the React Flux stores.
 type StoreData struct {
+	RepoStore RepoStore
 	DefStore  DefStore
 	BlobStore BlobStore
+}
+
+type RepoStore struct {
+	Repos map[string]*sourcegraph.Repo `json:"repos"`
+}
+
+func (s *RepoStore) AddRepo(repo *sourcegraph.Repo) {
+	if s.Repos == nil {
+		s.Repos = make(map[string]*sourcegraph.Repo, 1)
+	}
+	s.Repos[repo.URI] = repo
 }
 
 type DefStore struct {

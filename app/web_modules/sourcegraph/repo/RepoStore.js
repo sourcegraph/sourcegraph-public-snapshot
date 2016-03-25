@@ -2,13 +2,20 @@ import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import "sourcegraph/repo/RepoBackend";
 
 function keyFor(repo) {
 	return repo;
 }
 
 export class RepoStore extends Store {
-	reset() {
+	reset(data) {
+		this.repos = deepFreeze({
+			content: data && data.repos ? data.repos : {},
+			get(repo) {
+				return this.content[keyFor(repo)] || null;
+			},
+		});
 		this.branches = deepFreeze({
 			content: {},
 			errors: {},
@@ -29,6 +36,14 @@ export class RepoStore extends Store {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
+
+		case RepoActions.FetchedRepo:
+			this.repos = deepFreeze(Object.assign({}, this.repos, {
+				content: Object.assign({}, this.repos.content, {
+					[keyFor(action.repo)]: action.repoObj,
+				}),
+			}));
+			break;
 
 		case RepoActions.FetchedBranches:
 			this.branches = deepFreeze(Object.assign({}, this.branches, {

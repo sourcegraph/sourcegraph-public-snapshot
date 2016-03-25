@@ -7,6 +7,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import BlobContainer from "sourcegraph/blob/BlobContainer";
 import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefStore from "sourcegraph/def/DefStore";
+import RepoStore from "sourcegraph/repo/RepoStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {GoTo} from "sourcegraph/util/hotLink";
@@ -65,6 +66,19 @@ class BlobRouter extends Component {
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
 		state.rev = decodeURIComponent(repoParts[1] || "");
+
+		// If no branch is specified, aggressively resolve it to the default branch
+		// so that any data fetched under this rev is more easily cacheable. (If we
+		// didn't do this, then we'd have 2 cache entries for a lot of the same data:
+		// one with the key including the default branch, and one with the key
+		// having a rev of "").
+		//
+		// But don't actually block fetching on this. Usually we will have the repo
+		// available synchronously because it was preloaded.
+		if (state.rev === "") {
+			let repoObj = RepoStore.repos.get(state.repo);
+			if (repoObj) state.rev = repoObj.DefaultBranch;
+		}
 
 		// We split the path based on `/.` because that usually denotes an
 		// operation, but in the case of the tree operation consider this path:

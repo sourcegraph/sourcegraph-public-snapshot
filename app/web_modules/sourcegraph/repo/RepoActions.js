@@ -1,3 +1,16 @@
+export class WantRepo {
+	constructor(repo) {
+		this.repo = repo;
+	}
+}
+
+export class FetchedRepo {
+	constructor(repo, repoObj) {
+		this.repo = repo;
+		this.repoObj = repoObj;
+	}
+}
+
 export class WantBranches {
 	constructor(repo) {
 		this.repo = repo;

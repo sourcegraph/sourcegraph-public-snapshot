@@ -4,9 +4,11 @@ import requireComponent from "sourcegraph/init/requireComponent";
 
 import BlobStore from "sourcegraph/blob/BlobStore";
 import DefStore from "sourcegraph/def/DefStore";
+import RepoStore from "sourcegraph/repo/RepoStore";
 
 if (typeof document !== "undefined") {
 	if (window.__StoreData) {
+		RepoStore.reset(window.__StoreData.RepoStore || {});
 		BlobStore.reset(window.__StoreData.BlobStore || {});
 		DefStore.reset(window.__StoreData.DefStore || {});
 	}

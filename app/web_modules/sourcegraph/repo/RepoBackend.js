@@ -9,6 +9,25 @@ const RepoBackend = {
 	__onDispatch(action) {
 		switch (action.constructor) {
 
+		case RepoActions.WantRepo:
+			{
+				let repo = RepoStore.repos.get(action.repo);
+				if (repo === null) {
+					RepoBackend.xhr({
+						uri: `/.api/repos/${action.repo}`,
+						json: {},
+					}, function(err, resp, body) {
+						if (!err && resp.statusCode !== 200) err = `HTTP ${resp.statusCode}`;
+						if (err) {
+							console.error(err);
+							return;
+						}
+						Dispatcher.dispatch(new RepoActions.FetchedRepo(action.repo, body));
+					});
+				}
+				break;
+			}
+
 		case RepoActions.WantBranches:
 			{
 				let branches = RepoStore.branches.list(action.repo);
