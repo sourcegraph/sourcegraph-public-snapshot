@@ -48,11 +48,13 @@ class RefsContainer extends Container {
 		state.path = props.path || "";
 		state.refs = DefStore.refs.get(state.def, state.path);
 		state.files = null;
+		state.entrySpecs = null;
 		state.ranges = null;
 		state.anns = null;
 
 		if (state.refs) {
 			let files = [];
+			let entrySpecs = [];
 			let ranges = {};
 			let anns = {};
 			let fileIndex = new Map();
@@ -62,6 +64,7 @@ class RefsContainer extends Container {
 				if (!fileIndex.has(ref.File)) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
 					files.push(file);
+					entrySpecs.push({RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File});
 					ranges[ref.File] = [];
 					fileIndex.set(ref.File, file);
 				}
@@ -69,16 +72,16 @@ class RefsContainer extends Container {
 				// Determine the line range that should be displayed for each ref.
 				if (file) {
 					const context = 4; // Number of additional lines to show above/below a ref
-					let contents = file.Entry.ContentsString;
+					let contents = file.ContentsString;
 					ranges[ref.File].push([
 						Math.max(lineFromByte(contents, ref.Start) - context, 0),
 						lineFromByte(contents, ref.End) + context,
 					]);
 				}
-				let fileAnns = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
-				anns[ref.File] = fileAnns ? fileAnns.Annotations : null;
+				anns[ref.File] = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
 			}
 			state.files = files;
+			state.entrySpecs = entrySpecs;
 			state.ranges = ranges;
 			state.anns = anns;
 		}
@@ -114,7 +117,6 @@ class RefsContainer extends Container {
 		this.setState({
 			page: this.state.page + 1,
 		});
-		console.log("FILS", this.state.files);
 	}
 
 	render() {
@@ -131,8 +133,9 @@ class RefsContainer extends Container {
 						<div className="content file-content">
 							{this.state.files && this.state.files.map((file, i) => {
 								if (!file) return null;
-								let path = file.EntrySpec.Path;
-								let repoRev = file.EntrySpec.RepoRev;
+								let entrySpec = this.state.entrySpecs[i];
+								let path = entrySpec.Path;
+								let repoRev = entrySpec.RepoRev;
 								return (
 									<div className="card file-list-item" key={path}>
 										<div className="code-file-toolbar" ref="toolbar">
@@ -142,7 +145,7 @@ class RefsContainer extends Container {
 											</div>
 										</div>
 										<Blob
-											contents={file.Entry.ContentsString}
+											contents={file.ContentsString}
 											annotations={this.state.anns[path] || null}
 											activeDef={this.state.def}
 											lineNumbers={true}
