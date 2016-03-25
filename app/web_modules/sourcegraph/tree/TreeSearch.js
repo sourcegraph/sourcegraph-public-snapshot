@@ -54,12 +54,20 @@ class TreeSearch extends Container {
 		} else {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
+		if (global.window) {
+			global.window.addEventListener("focus", () => {
+				if (this.state.visible) this._focusInput();
+			});
+		}
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
 		if (this.state.overlay) {
 			document.removeEventListener("keydown", this._handleKeyDown);
+		}
+		if (global.window) {
+			global.window.removeEventListener("focus");
 		}
 	}
 
