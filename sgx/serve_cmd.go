@@ -47,14 +47,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
 	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/server"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/ui"
 	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	httputil2 "sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
@@ -246,9 +244,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	if err := checkSysReqs(client.Ctx, os.Stderr); err != nil {
 		return err
 	}
-
-	cacheutil.Precache = c.Prefetch
-	log15.Debug("Cache prefetching", "enabled", cacheutil.Precache)
 
 	// Clear auth specified on the CLI. If we didn't do this, then the
 	// app, git, and HTTP API would all inherit the process's owner's
@@ -496,8 +491,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	c.checkReachability()
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
-	cacheutil.HTTPAddr = c.AppURL // TODO: HACK
-
 	// Start background repo updater worker.
 	repoUpdaterCtx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:repoupdater"})
 	if err != nil {
@@ -522,9 +515,6 @@ func (c *ServeCmd) Execute(args []string) error {
 			log15.Warn("Failed to register (or check registration) with server", "error", err, "registerURL", c.RegisterURL)
 		}
 	}()
-
-	// Refresh commit list periodically
-	go c.repoStatusCommitLogCacheRefresher()
 
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
@@ -828,60 +818,6 @@ func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
 	eventsutil.LogRegisterServer(regClient.ClientName)
 	log15.Debug("Registered as client", "registerURL", registerURL, "client", idKey.ID)
 	return nil
-}
-
-// repoStatusCommitLogCacheRefresher periodically refreshes the commit log cache
-// for each repository's default branch
-func (c *ServeCmd) repoStatusCommitLogCacheRefresher() {
-	if localcli.Flags.CommitLogCachePeriod == 0 {
-		return
-	}
-	log15.Debug("commit-log-cache", "refresh-period", localcli.Flags.CommitLogCachePeriod)
-
-	cl := client.Client()
-Outer:
-	for {
-		var allRepos []*sourcegraph.Repo
-		for page := int32(1); ; page++ {
-			repos, err := cl.Repos.List(client.Ctx, &sourcegraph.RepoListOptions{
-				ListOptions: sourcegraph.ListOptions{Page: page},
-			})
-			if err != nil {
-				log.Printf("RepoStatusCommits: Repos.List error: %s", err)
-				time.Sleep(localcli.Flags.CommitLogCachePeriod)
-				continue Outer
-			}
-			if len(repos.Repos) == 0 {
-				break
-			}
-			allRepos = append(allRepos, repos.Repos...)
-		}
-
-		for _, repo := range allRepos {
-			_, err := cl.Repos.ListCommits(client.Ctx, &sourcegraph.ReposListCommitsOp{
-				Repo: sourcegraph.RepoSpec{URI: repo.URI},
-				Opt: &sourcegraph.RepoListCommitsOptions{
-					Head:         repo.DefaultBranch,
-					RefreshCache: true,
-					ListOptions: sourcegraph.ListOptions{
-						// Note: this number should be greater than or equal to the number of
-						// commits that builds.getRepoBuildInfoInexact (in svc/local/builds_repo.go)
-						// looks back for a successful build.
-						PerPage: 250,
-					},
-				},
-			})
-			log15.Debug("commit-log-cache", "refreshed-repo", repo.URI)
-			if err != nil {
-				log.Printf("RepoStatusCommits: Repos.ListCommits error: %s", err)
-				continue
-			}
-
-			// pre-cache root dir
-			cacheutil.PrecacheRoot(repo.URI)
-		}
-		time.Sleep(localcli.Flags.CommitLogCachePeriod)
-	}
 }
 
 // safeConfigFlags returns the commandline flag data for the `src serve` command,

@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
@@ -99,14 +98,6 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 	if err := srclib.Import(bdfs, srcstore, importOpt); err != nil {
 		return fmt.Errorf("import failed: %s", err)
 	}
-
-	// Precache root dir
-	appURL, err := getRemoteAppURL(client.Ctx)
-	if err != nil {
-		return err
-	}
-	cacheutil.HTTPAddr = appURL.String()
-	cacheutil.PrecacheRoot(repoRevSpec.URI)
 
 	return nil
 }

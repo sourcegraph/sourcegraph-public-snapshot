@@ -839,11 +839,10 @@ func (m *ReposListCommitsOp) String() string { return proto.CompactTextString(m)
 func (*ReposListCommitsOp) ProtoMessage()    {}
 
 type RepoListCommitsOptions struct {
-	Head         string `protobuf:"bytes,1,opt,name=Head,proto3" json:"Head,omitempty" url:",omitempty"`
-	Base         string `protobuf:"bytes,2,opt,name=Base,proto3" json:"Base,omitempty" url:",omitempty"`
-	ListOptions  `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
-	Path         string `protobuf:"bytes,4,opt,name=Path,proto3" json:"Path,omitempty" url:",omitempty"`
-	RefreshCache bool   `protobuf:"varint,5,opt,name=RefreshCache,proto3" json:"RefreshCache,omitempty" url:",omitempty"`
+	Head        string `protobuf:"bytes,1,opt,name=Head,proto3" json:"Head,omitempty" url:",omitempty"`
+	Base        string `protobuf:"bytes,2,opt,name=Base,proto3" json:"Base,omitempty" url:",omitempty"`
+	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
+	Path        string `protobuf:"bytes,4,opt,name=Path,proto3" json:"Path,omitempty" url:",omitempty"`
 }
 
 func (m *RepoListCommitsOptions) Reset()         { *m = RepoListCommitsOptions{} }
@@ -6733,16 +6732,6 @@ func (m *RepoListCommitsOptions) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Path)))
 		i += copy(data[i:], m.Path)
-	}
-	if m.RefreshCache {
-		data[i] = 0x28
-		i++
-		if m.RefreshCache {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
 	}
 	return i, nil
 }
@@ -12705,9 +12694,6 @@ func (m *RepoListCommitsOptions) Size() (n int) {
 	l = len(m.Path)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if m.RefreshCache {
-		n += 2
 	}
 	return n
 }
@@ -18754,26 +18740,6 @@ func (m *RepoListCommitsOptions) Unmarshal(data []byte) error {
 			}
 			m.Path = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RefreshCache", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.RefreshCache = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

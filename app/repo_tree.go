@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
@@ -66,9 +65,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeDir(w http.ResponseWriter, r *http.Request, tc *handlerutil.TreeEntryCommon, rc *handlerutil.RepoCommon, vc *handlerutil.RepoRevCommon) error {
-	ctx, cl := handlerutil.Client(r)
-	go cacheutil.PrecacheTreeEntry(cl, ctx, tc.Entry, tc.EntrySpec)
-
+	ctx, _ := handlerutil.Client(r)
 	eventsutil.LogBrowseCode(ctx, "dir", tc, rc)
 	return tmpl.Exec(r, w, "repo/tree/dir.html", http.StatusOK, nil, &repoTreeTemplate{
 		TreeEntryCommon: tc,
