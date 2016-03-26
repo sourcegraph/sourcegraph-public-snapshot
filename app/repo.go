@@ -1,6 +1,9 @@
 package app
 
 import (
+	"time"
+
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -65,6 +68,27 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
+		if noVCSDataErr, ok := err.(*handlerutil.NoVCSDataError); ok && noVCSDataErr.RepoCommon.Repo.Mirror {
+			// Trigger cloning/updating this repo from its remote
+			// mirror if it has one. Only wait a short time. That's
+			// usually enough to see if it failed immediately with an
+			// error, but it lets us avoid blocking on the entire
+			// clone process.
+			ctx, cancel := context.WithTimeout(ctx, time.Second*1)
+			defer cancel()
+			if _, err := cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: vc.RepoRevSpec.RepoSpec}); err != nil {
+				if ctx.Err() == context.DeadlineExceeded {
+					return noVCSDataErr
+				}
+				return err
+			}
+		}
+
+		// Even if the RefreshVCS call above succeeded within the
+		// timeout, still return the no-VCS-data error and display the
+		// interstitial. This avoids having multiple complex code
+		// paths and having to retry VCS operations (which is tricky
+		// to do right).
 		return err
 	}
 

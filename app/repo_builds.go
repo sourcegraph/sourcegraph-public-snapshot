@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/sourcegraph/mux"
@@ -108,7 +111,7 @@ func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	commit0, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{RepoSpec: rc.Repo.RepoSpec(), Rev: build.CommitID, CommitID: build.CommitID})
-	if handlerutil.IsRepoNoVCSDataError(err) {
+	if grpc.Code(err) == codes.NotFound {
 		// Commit remains nil, will not be displayed in template.
 	} else if err != nil {
 		return err

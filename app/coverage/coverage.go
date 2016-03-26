@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -141,7 +144,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, rebui
 				if err := createMirrorRepo(cl, ctx, repo); err != nil {
 					return nil, err
 				}
-			} else if handlerutil.IsRepoNoVCSDataError(err) {
+			} else if grpc.Code(err) == codes.NotFound {
 				masterCommit, err := cl.Repos.GetCommit(ctx, &repoRevSpec)
 				if err != nil {
 					return nil, err
