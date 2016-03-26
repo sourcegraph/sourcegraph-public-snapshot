@@ -1,10 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import requireComponent from "sourcegraph/init/requireComponent";
-
-import BlobStore from "sourcegraph/blob/BlobStore";
-import DefStore from "sourcegraph/def/DefStore";
-import RepoStore from "sourcegraph/repo/RepoStore";
+import preloadStores from "sourcegraph/init/preloadStores";
 
 let logTimings = false;
 if (typeof window !== "undefined") {
@@ -23,9 +20,7 @@ if (typeof window !== "undefined") {
 
 if (typeof document !== "undefined") {
 	if (window.__StoreData) {
-		RepoStore.reset(window.__StoreData.RepoStore || {});
-		BlobStore.reset(window.__StoreData.BlobStore || {});
-		DefStore.reset(window.__StoreData.DefStore || {});
+		preloadStores(window.__StoreData);
 	}
 
 	let els = document.querySelectorAll("[data-react]");
