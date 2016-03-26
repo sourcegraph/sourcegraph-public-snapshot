@@ -99,10 +99,9 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
 		Repo: repo.RepoSpec(),
 		Opt: &sourcegraph.RepoListCommitsOptions{
-			Head:         event.Commit,
-			Base:         event.Last,
-			RefreshCache: true,
-			ListOptions:  sourcegraph.ListOptions{PerPage: 1000},
+			Head:        event.Commit,
+			Base:        event.Last,
+			ListOptions: sourcegraph.ListOptions{PerPage: 1000},
 		},
 	})
 	if err != nil {

@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -99,11 +98,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 		base = lastPathCommitID
 	}
 
-	// TODO(beyang): move clcache flag into lookbackLimit flag
-	var lookbackLimit int32 = 250
-	if localcli.Flags.CommitLogCacheSize > 250 {
-		lookbackLimit = localcli.Flags.CommitLogCacheSize
-	}
+	const lookbackLimit = 250
 
 	// List the recent commits that we'll use to check for builds.
 	candidateCommits, err := svc.Repos(ctx).ListCommits(ctx,

@@ -1,15 +1,11 @@
 package local
 
 import (
-	"encoding/json"
-
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/server/local/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
@@ -18,13 +14,6 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 	// Get default branch if no revision specified
 	if err := s.resolveRepoRevBranch(ctx, repoRev); err != nil {
 		return nil, err
-	}
-
-	// Return cached commit if available
-	if cachedCommits, err := s.listCommitsCached(ctx, *repoRev); err == nil && cachedCommits != nil {
-		if len(cachedCommits.Commits) > 0 {
-			return cachedCommits.Commits[0], nil
-		}
 	}
 
 	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
@@ -55,91 +44,6 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		}
 		op.Opt.Head = defBr
 	}
-
-	// Uncacheable case
-	if op.Opt.Base != "" || op.Opt.Path != "" || op.Opt.Page > 1 {
-		return s.listCommitsUncached(ctx, op)
-	}
-
-	// Refresh cache if RefreshCache is true
-	repoRev := sourcegraph.RepoRevSpec{RepoSpec: op.Repo, Rev: op.Opt.Head}
-	if op.Opt.RefreshCache {
-		if _, err := s.refreshCommitsCache(ctx, repoRev); err != nil {
-			return nil, err
-		}
-	}
-
-	// Return cached value if it exists
-	commitList, err := s.listCommitsCached(ctx, repoRev)
-	if err != nil {
-		return nil, err
-	}
-	if commitList != nil {
-		if len(commitList.Commits) > int(op.Opt.PerPage) {
-			commitList.Commits = commitList.Commits[:op.Opt.PerPage]
-		}
-		return commitList, nil
-	}
-
-	return s.listCommitsUncached(ctx, op)
-}
-
-func (s *repos) listCommitsCached(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CommitList, error) {
-	log15.Debug("svc.local.repos.listCommitsCached", "repo-rev", repoRev)
-
-	// Don't try to use cache if it's not enabled at all.
-	if localcli.Flags.CommitLogCachePeriod == 0 {
-		return nil, nil
-	}
-
-	cmbStatus, err := svc.RepoStatuses(ctx).GetCombined(ctx, &repoRev)
-	if err != nil {
-		return nil, err
-	}
-
-	var commitList sourcegraph.CommitList
-	if status := cmbStatus.GetStatus("graph_data_commit"); status != nil {
-		if err := json.Unmarshal([]byte(status.Description), &commitList); err != nil {
-			return nil, err
-		}
-	}
-	if commitList.Commits == nil {
-		return nil, nil
-	}
-	return &commitList, nil
-}
-
-func (s *repos) refreshCommitsCache(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CommitList, error) {
-	commitList, err := s.listCommitsUncached(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: repoRev.RepoSpec,
-		Opt: &sourcegraph.RepoListCommitsOptions{
-			Head:        repoRev.Rev,
-			ListOptions: sourcegraph.ListOptions{PerPage: localcli.Flags.CommitLogCacheSize},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	commitListJSON, err := json.Marshal(commitList)
-	if err != nil {
-		return nil, err
-	}
-	_, err = svc.RepoStatuses(ctx).Create(ctx, &sourcegraph.RepoStatusesCreateOp{
-		Repo: repoRev,
-		Status: sourcegraph.RepoStatus{
-			Description: string(commitListJSON),
-			Context:     "graph_data_commit",
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return commitList, nil
-}
-
-func (s *repos) listCommitsUncached(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
-	log15.Debug("svc.local.repos.listCommitsUncached", "op", op)
 
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
 	if err != nil {
