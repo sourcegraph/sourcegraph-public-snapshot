@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -201,7 +199,7 @@ func createMirrorRepo(cl *sourcegraph.Client, ctx context.Context, repo string) 
 	// Resolve repo path, and create local mirror for remote repo if
 	// needed.
 	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo})
-	if err != nil && grpc.Code(err) != codes.NotFound {
+	if err != nil {
 		return err
 	}
 	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
@@ -218,9 +216,8 @@ func createMirrorRepo(cl *sourcegraph.Client, ctx context.Context, repo string) 
 		if err != nil {
 			return err
 		}
+	} else {
+		return fmt.Errorf("remote repo for resolution %+v was nil", res)
 	}
-	// If we reach here, either
-	//    (1) err == nil (i.e. repo exists in our db), or
-	//    (2) err == codes.NotFound and repo is not a GitHub repo.
-	return err
+	return nil
 }
