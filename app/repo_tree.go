@@ -133,7 +133,7 @@ func serveRepoTreeEntry(w http.ResponseWriter, r *http.Request, tc *handlerutil.
 		data.StoreData.BlobStore.AddAnnotations(annListOpts, anns)
 		data.StoreData.BlobStore.AddFile(tc.EntrySpec, tc.Entry)
 		if dc != nil {
-			data.StoreData.DefStore.AddDef(r.URL.Path, dc)
+			data.StoreData.DefStore.AddDef(dc.URL, dc)
 		}
 	}
 
