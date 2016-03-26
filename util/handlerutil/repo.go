@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
@@ -52,40 +51,19 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 		return
 	}
 
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return
-	}
-
 	vc = &RepoRevCommon{}
 	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
 	var commit0 *vcs.Commit
 	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
-	if IsRepoNoVCSDataError(err) {
-		if rc.Repo.Mirror {
-			// Trigger cloning/updating this repo from its remote
-			// mirror if it has one. Only wait 1 second. That's
-			// usually enough to see if it failed immediately with an
-			// error, but it lets us avoid blocking on the entire
-			// clone process.
-			ctx, cancel := context.WithTimeout(ctx, time.Second*1)
-			defer cancel()
-			if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: vc.RepoRevSpec.RepoSpec}); err != nil {
-				if ctx.Err() == context.DeadlineExceeded {
-					// If deadline exceeded, fall through to NoVCSDataError return below.
-				} else {
-					return
-				}
-			}
-		}
-		if err != nil {
+	if err != nil {
+		if noVCSData := grpc.Code(err) == codes.NotFound || strings.Contains(err.Error(), "has no default branch"); noVCSData {
 			if _, ok := vars["Rev"]; ok {
-				return nil, nil, vcs.ErrRevisionNotFound
+				err = vcs.ErrRevisionNotFound
+			} else {
+				err = &NoVCSDataError{rc}
 			}
-			return nil, nil, &NoVCSDataError{rc}
 		}
-	} else if err != nil {
 		return
 	}
 
@@ -99,11 +77,6 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 	}
 
 	return
-}
-
-func IsRepoNoVCSDataError(err error) bool {
-	return err != nil && (strings.Contains(err.Error(), "vcsstore") || errcode.IsHTTPErrorCode(err, http.StatusNotFound) ||
-		strings.Contains(err.Error(), "has no default branch"))
 }
 
 // GetRepoCommon returns the repository and RepoSpec based on the
