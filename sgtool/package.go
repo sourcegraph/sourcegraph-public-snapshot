@@ -116,7 +116,7 @@ func (c *PackageCmd) Execute(args []string) error {
 				env = append(env, "CC="+muslGCCPath)
 			}
 
-			cmd := exec.Command("go", "build", "-x", "-installsuffix", "netgo", "-ldflags", strings.Join(ldflags, " "), "-tags", "dist", "-o", dest, ".")
+			cmd := exec.Command("go", "build", "-installsuffix", "netgo", "-ldflags", strings.Join(ldflags, " "), "-tags", "dist", "-o", dest, ".")
 			cmd.Dir = filepath.Join("cmd", "src")
 			cmd.Env = env
 			if err := execCmd(cmd); err != nil {
