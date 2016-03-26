@@ -143,7 +143,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 	anns := make([]*sourcegraph.Annotation, len(refs))
 	for i, ref := range refs {
 		var rev string
-		if ref.Repo == opt.Entry.RepoRev.URI {
+		if ref.DefRepo == opt.Entry.RepoRev.URI {
 			rev = opt.Entry.RepoRev.Rev
 		}
 
