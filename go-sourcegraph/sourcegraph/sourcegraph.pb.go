@@ -13,7 +13,6 @@
 		ListOptions
 		ListResponse
 		StreamResponse
-		Readme
 		RepoConfig
 		Repo
 		RepoListOptions
@@ -309,18 +308,6 @@ type StreamResponse struct {
 func (m *StreamResponse) Reset()         { *m = StreamResponse{} }
 func (m *StreamResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamResponse) ProtoMessage()    {}
-
-// A Readme represents a formatted "README"-type file in a repository.
-type Readme struct {
-	// Path is the relative path of this readme file from the repository root.
-	Path string `protobuf:"bytes,1,opt,name=Path,proto3" json:"Path,omitempty"`
-	// HTML is the formatted HTML of this readme.
-	HTML string `protobuf:"bytes,2,opt,name=HTML,proto3" json:"HTML,omitempty"`
-}
-
-func (m *Readme) Reset()         { *m = Readme{} }
-func (m *Readme) String() string { return proto.CompactTextString(m) }
-func (*Readme) ProtoMessage()    {}
 
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
@@ -2785,8 +2772,6 @@ type ReposClient interface {
 	Update(ctx context.Context, in *ReposUpdateOp, opts ...grpc.CallOption) (*Repo, error)
 	// Delete removes a repository.
 	Delete(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// GetReadme fetches the formatted README file for a repository.
-	GetReadme(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Readme, error)
 	// GetConfig retrieves the configuration for a repository.
 	GetConfig(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*RepoConfig, error)
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
@@ -2891,15 +2876,6 @@ func (c *reposClient) Update(ctx context.Context, in *ReposUpdateOp, opts ...grp
 func (c *reposClient) Delete(ctx context.Context, in *RepoSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
 	out := new(pbtypes1.Void)
 	err := grpc.Invoke(ctx, "/sourcegraph.Repos/Delete", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reposClient) GetReadme(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Readme, error) {
-	out := new(Readme)
-	err := grpc.Invoke(ctx, "/sourcegraph.Repos/GetReadme", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3031,8 +3007,6 @@ type ReposServer interface {
 	Update(context.Context, *ReposUpdateOp) (*Repo, error)
 	// Delete removes a repository.
 	Delete(context.Context, *RepoSpec) (*pbtypes1.Void, error)
-	// GetReadme fetches the formatted README file for a repository.
-	GetReadme(context.Context, *RepoRevSpec) (*Readme, error)
 	// GetConfig retrieves the configuration for a repository.
 	GetConfig(context.Context, *RepoSpec) (*RepoConfig, error)
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
@@ -3154,18 +3128,6 @@ func _Repos_Delete_Handler(srv interface{}, ctx context.Context, dec func(interf
 		return nil, err
 	}
 	out, err := srv.(ReposServer).Delete(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Repos_GetReadme_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RepoRevSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(ReposServer).GetReadme(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -3335,10 +3297,6 @@ var _Repos_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _Repos_Delete_Handler,
-		},
-		{
-			MethodName: "GetReadme",
-			Handler:    _Repos_GetReadme_Handler,
 		},
 		{
 			MethodName: "GetConfig",
@@ -5634,36 +5592,6 @@ func (m *StreamResponse) MarshalTo(data []byte) (int, error) {
 			data[i] = 0
 		}
 		i++
-	}
-	return i, nil
-}
-
-func (m *Readme) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *Readme) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Path) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Path)))
-		i += copy(data[i:], m.Path)
-	}
-	if len(m.HTML) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.HTML)))
-		i += copy(data[i:], m.HTML)
 	}
 	return i, nil
 }
@@ -12233,20 +12161,6 @@ func (m *StreamResponse) Size() (n int) {
 	return n
 }
 
-func (m *Readme) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Path)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.HTML)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
 func (m *RepoConfig) Size() (n int) {
 	var l int
 	_ = l
@@ -15284,114 +15198,6 @@ func (m *StreamResponse) Unmarshal(data []byte) error {
 				}
 			}
 			m.HasMore = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Readme) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Readme: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Readme: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Path = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HTML", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.HTML = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
