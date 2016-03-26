@@ -6,7 +6,10 @@ import BuildIndicator from "sourcegraph/build/BuildIndicator";
 
 class BlobToolbar extends Component {
 	reconcileState(state, props) {
-		Object.assign(state, props);
+		state.repo = props.repo;
+		state.rev = props.rev;
+		state.path = props.path;
+		state.builds = props.builds;
 	}
 
 	render() {

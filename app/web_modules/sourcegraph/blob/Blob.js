@@ -14,14 +14,25 @@ import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 
-const tilingFactor = 50;
+const tilingFactor = 100;
+
+function estimateVisibleLinesCount() {
+	const estLineHeight = 17; // px height of a line of code
+	const estTopChromeHeight = 75; // px height of top nav, file nav, etc. above the blob
+	if (typeof window !== "undefined") {
+		const screen = window.screen;
+		if (screen) return Math.ceil((screen.availHeight - estTopChromeHeight) / estLineHeight);
+	}
+	return 75; // default
+}
 
 class Blob extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			firstVisibleLine: 0,
-			visibleLinesCount: tilingFactor * 3,
+			// The smaller the visibleLinesCount, the faster the initial load.
+			visibleLinesCount: estimateVisibleLinesCount(),
 			lineAnns: [],
 			expandedRanges: [],
 		};
@@ -35,7 +46,7 @@ class Blob extends Component {
 	}
 
 	componentDidMount() {
-		this._updateVisibleLines();
+		setTimeout(() => this._updateVisibleLines(), 0);
 		window.addEventListener("scroll", this._updateVisibleLines);
 		if (this.state.startLine && this.state.scrollToStartLine) {
 			this._scrollTo(this.state.startLine);
@@ -95,7 +106,7 @@ class Blob extends Component {
 	}
 
 	_consolidateRanges(ranges) {
-		if (ranges.length === 0) return [];
+		if (ranges.length === 0) return null;
 
 		ranges = ranges.sort((a, b) => {
 			if (a[0] < b[0]) return -1;
@@ -118,6 +129,7 @@ class Blob extends Component {
 	}
 
 	_withinDisplayedRange(lineNumber) {
+		if (!this.state.displayRanges) return false;
 		for (let range of this.state.displayRanges) {
 			if (range[0] <= lineNumber && lineNumber <= range[1]) return true;
 		}
@@ -141,10 +153,12 @@ class Blob extends Component {
 		let visibleLinesCount = Math.ceil(this.state.lines.length / rect.height * window.innerHeight / tilingFactor + 2) * tilingFactor;
 
 		if (this.state.firstVisibleLine !== firstVisibleLine || this.state.visibleLinesCount !== visibleLinesCount) {
-			this.setState({
-				firstVisibleLine: firstVisibleLine,
-				visibleLinesCount: visibleLinesCount,
-			});
+			setTimeout(() => {
+				this.setState({
+					firstVisibleLine: firstVisibleLine,
+					visibleLinesCount: visibleLinesCount,
+				});
+			}, 0);
 		}
 	}
 
@@ -271,7 +285,7 @@ class Blob extends Component {
 			if (this.state.displayRanges && !this._withinDisplayedRange(lineNumber)) {
 				return;
 			}
-			if (lastDisplayedLine !== lineNumber - 1) {
+			if (this.state.displayRanges && lastDisplayedLine !== lineNumber - 1) {
 				// Prevent expanding above the last displayed range.
 				let expandTo = [Math.max(lastRangeEnd, lineNumber-30), lineNumber-1];
 				lines.push(

@@ -22,6 +22,8 @@ class BlobLine extends Component {
 					if (ann.URL) state.ownAnnURLs[ann.URL] = true;
 					if (ann.URLs) ann.URLs.forEach((url) => state.ownAnnURLs[url] = true);
 				});
+			} else {
+				state.ownAnnURLs = null;
 			}
 		}
 
@@ -113,8 +115,7 @@ class BlobLine extends Component {
 				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
 
 				<td className="line-content">
-					{contents}
-					{this.state.contents === "" && <span>&nbsp;</span>}
+					{contents || "\u00a0"}
 				</td>
 			</tr>
 		);

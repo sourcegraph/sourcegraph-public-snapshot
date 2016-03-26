@@ -111,7 +111,11 @@ class BlobRouter extends Component {
 
 			if (state.url.hash) {
 				if (state.url.hash.startsWith("#L")) {
-					Object.assign(state, parseLineRange(state.url.hash.slice(2)));
+					const range = parseLineRange(state.url.hash.slice(2));
+					state.startLine = range.startLine || null;
+					state.startCol = range.startCol || null;
+					state.endLine = range.endLine || null;
+					state.endCol = range.endCol || null;
 				}
 			}
 		} else {
