@@ -25,14 +25,15 @@ describe("TreeBackend", () => {
 	it("should handle WantFileList", () => {
 		const repo = "aRepo";
 		const rev = "aRev";
-		let expectedURI = `/.api/repos/${repo}@${rev}/.tree-list`;
+		const commitID = "aCommit";
+		let expectedURI = `/.api/repos/${repo}@${rev}===${commitID}/.tree-list`;
 
 		TreeBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
 			callback(null, null, {Files: ["a", "b"]});
 		};
 		expect(Dispatcher.catchDispatched(() => {
-			Dispatcher.directDispatch(TreeBackend, new TreeActions.WantFileList(repo, rev));
-		})).to.eql([new TreeActions.FileListFetched(repo, rev, {Files: ["a", "b"]})]);
+			Dispatcher.directDispatch(TreeBackend, new TreeActions.WantFileList(repo, rev, commitID));
+		})).to.eql([new TreeActions.FileListFetched(repo, rev, commitID, {Files: ["a", "b"]})]);
 	});
 });

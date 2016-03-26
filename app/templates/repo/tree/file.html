@@ -34,5 +34,5 @@
 		{{component nil nil "sourcegraph/LocationAdaptor" "component" "sourcegraph/blob/BlobRouter"}}
 	</div>
 
-	{{component nil nil "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.Rev}}
+	{{component nil nil "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.Rev "commitID" .EntrySpec.RepoRev.CommitID}}
 {{end}}
