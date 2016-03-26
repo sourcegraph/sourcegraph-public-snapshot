@@ -117,6 +117,16 @@ class BlobRouter extends Component {
 		} else {
 			// TODO better way to do this routing.
 			state.def = state.url.pathname.replace(/\/\.refs\/?$/, "");
+			if (state.rev) {
+				// If state.def is a rev-less def URL (referring to the repo's default branch),
+				// make state.def contain the def URL with the rev, if the rev can be determined.
+				// This ensures that the BlobContainer's activeDef is an exact string match to
+				// the def's ref links, so that the def gets highlighted.
+				const repoNoRevPrefix = `/${state.repo}/.`;
+				if (state.def.startsWith(repoNoRevPrefix)) {
+					state.def = `/${state.repo}@${state.rev}/.${state.def.slice(repoNoRevPrefix.length)}`;
+				}
+			}
 			state.viewRefs = last(pathParts) === "refs";
 			if (state.viewRefs) {
 				state.path = state.url.query.Files ? state.url.query.Files : null;
