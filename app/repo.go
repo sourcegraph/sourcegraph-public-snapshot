@@ -21,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/cacheutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
@@ -112,11 +111,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 				RecurseSingleSubfolderLimit: 200,
 			}}
 			tree, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
-			if err == nil {
-				tree_ := *tree
-				go cacheutil.PrecacheTreeEntry(cl, ctx, &tree_, treeEntrySpec)
-			}
-
 			return
 		})
 		if err := run.Wait(); err != nil {
