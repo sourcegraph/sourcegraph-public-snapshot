@@ -107,8 +107,13 @@ func (c *PackageCmd) Execute(args []string) error {
 			// For Linux we build static binaries using musl, this requires some
 			// additional options but gives us CGO without the glibc dependency.
 			if osName == "linux" {
+				muslGCCPath, err := exec.LookPath("musl-gcc")
+				if err != nil {
+					return fmt.Errorf("%s\n\nTo install musl-gcc (necessary to compile a static binary due to the cgo go-duktape dependency), follow the musl installation steps in the CI script. On Ubuntu, you can install the `musl-tools` apt package.", err)
+				}
+
 				ldflags = append(ldflags, []string{"-linkmode", "external", "-extldflags", "-static"}...)
-				env = append(env, "CC=/usr/local/musl/bin/musl-gcc")
+				env = append(env, "CC="+muslGCCPath)
 			}
 
 			cmd := exec.Command("go", "build", "-x", "-installsuffix", "netgo", "-ldflags", strings.Join(ldflags, " "), "-tags", "dist", "-o", dest, ".")

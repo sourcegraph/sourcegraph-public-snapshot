@@ -7,7 +7,7 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH
+    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH:/usr/local/musl/bin
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
