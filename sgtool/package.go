@@ -190,7 +190,7 @@ note: git diff reports:
 
 	var ldflags []string
 	for name, val := range buildvars {
-		ldflags = append(ldflags, fmt.Sprintf("-X sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar.%s %q", name, val))
+		ldflags = append(ldflags, fmt.Sprintf("-X %q", fmt.Sprintf("sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar.%s=%s", name, val)))
 	}
 
 	// main ldflags
@@ -199,7 +199,7 @@ note: git diff reports:
 		"BUILD_DATE": time.Now().Format(time.RFC3339),
 	}
 	for name, val := range mainLDFlags {
-		ldflags = append(ldflags, fmt.Sprintf("-X main.%s %q", name, val))
+		ldflags = append(ldflags, fmt.Sprintf("-X %q", fmt.Sprintf("main.%s=%s", name, val)))
 	}
 
 	return ldflags, nil
