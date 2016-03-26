@@ -4,16 +4,22 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"runtime"
 	"sync"
+	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/golang/groupcache/lru"
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/reactbridge"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 const maxEntries = 10000
@@ -21,10 +27,26 @@ const maxEntries = 10000
 var (
 	rendererMu       sync.Mutex       // guards renderer
 	rendererCacheKey string           // used to evict singleton renderer when bundle.js changes
+	rendererOnce     *sync.Once       // ensures max 1 in-flight call to newCachingRenderer
+	rendererInFlight string           // cache key of in-flight call to newCachingRenderer
+	rendererInit     time.Time        // when the renderer creation began
 	renderer         *cachingRenderer // singleton renderer (pooled)
+	rendererErr      error            // error from last attempt to create renderer
 
 	renderPoolSize = runtime.GOMAXPROCS(0)
 )
+
+type createRendererEvent struct {
+	S, E time.Time
+}
+
+func init() {
+	appdash.RegisterEvent(createRendererEvent{})
+}
+
+func (createRendererEvent) Schema() string     { return "createRenderer" }
+func (e createRendererEvent) Start() time.Time { return e.S }
+func (e createRendererEvent) End() time.Time   { return e.E }
 
 func readBundleJS() (string, error) {
 	f, err := assets.Assets.Open("/bundle.js")
@@ -38,59 +60,128 @@ func readBundleJS() (string, error) {
 	return string(data), nil
 }
 
-func getRenderer() (*cachingRenderer, error) {
-	rendererMu.Lock()
-	defer rendererMu.Unlock()
-
+// getRenderer gets (creating if needed) a JS renderer. It returns the
+// error errRendererCreationTimedOut if the renderer could not be
+// created within the ctx' deadline.
+func getRenderer(ctx context.Context) (*cachingRenderer, error) {
+	// Don't respect the ctx timeout for getting the bundle JS, since
+	// that is only an async operation in dev. In production, it is
+	// read from the in-memory bundled asset data structure, so it
+	// will never block (in practice; obviously memory access takes
+	// some nanoseconds).
 	js, cacheKey, err := getBundleJS()
 	if err != nil {
 		return nil, err
 	}
 
+	// Fastpath for when the renderer has already been created and the
+	// bundle JS hasn't changed.
+	rendererMu.Lock()
 	if cacheKey == rendererCacheKey {
-		return renderer, nil
+		rendererMu.Unlock()
+		return renderer, rendererErr
 	}
 
-	rendererCacheKey = cacheKey
-	renderer = newCachingRenderer(js)
-	return renderer, nil
-}
-
-func newCachingRenderer(js string) *cachingRenderer {
-	errCh := make(chan error)
-	loadedOneVM := make(chan struct{})
-	r := &cachingRenderer{
-		bridge:      reactbridge.New(js, renderPoolSize, errCh),
-		cache:       synclru.New(lru.New(maxEntries)),
-		loadedOneVM: loadedOneVM,
-	}
-
-	go func() {
-		// See if there's a SyntaxError. If there are none, this channel
-		// will be closed, and r.err will be nil.
-		r.err = <-errCh
-		close(loadedOneVM)
+	start := time.Now()
+	ctx = traceutil.NewContext(ctx, appdash.NewSpanID(traceutil.SpanIDFromContext(ctx)))
+	defer func() {
+		rec := traceutil.Recorder(ctx)
+		rec.Name("ui.getRenderer")
+		rec.Event(&createRendererEvent{S: start, E: time.Now()})
 	}()
 
-	return r
+	// We need to create a new renderer. Only allow 1 at a time because
+	// this is an expensive operation and all operations will return the
+	// same results (and overwrite each other anyway).
+	if rendererInFlight != cacheKey {
+		rendererInFlight = cacheKey
+		rendererOnce = new(sync.Once)
+		rendererInit = time.Now()
+	}
+	rendererMu.Unlock()
+
+	done := make(chan struct{})
+	go func() {
+		// Obtain the ptr with the lock to avoid a race.
+		rendererMu.Lock()
+		tmp := rendererOnce
+		rendererMu.Unlock()
+
+		tmp.Do(func() {
+			r, err := newCachingRenderer(js)
+
+			rendererMu.Lock()
+			rendererCacheKey = cacheKey
+			renderer = r
+			rendererErr = err
+			rendererMu.Unlock()
+		})
+		close(done)
+	}()
+	select {
+	case <-done:
+		rendererMu.Lock()
+		defer rendererMu.Unlock()
+		return renderer, rendererErr
+
+	case <-ctx.Done():
+		if ctx.Err() == context.DeadlineExceeded {
+			// Warn if taking longer than it should.
+			rendererMu.Lock()
+			elapsed := time.Since(rendererInit)
+			rendererMu.Unlock()
+			if threshold := 15 * time.Second; elapsed > threshold {
+				log15.Warn("JS renderer creation is taking longer than expected", "elapsed", elapsed, "threshold", threshold)
+			}
+
+			return nil, errRendererCreationTimedOut
+		}
+		return nil, err
+	}
+}
+
+var errRendererCreationTimedOut = errors.New("JS renderer creation timed out")
+
+func newCachingRenderer(js string) (*cachingRenderer, error) {
+	errCh := make(chan error)
+	r := &cachingRenderer{
+		bridge: reactbridge.New(js, renderPoolSize, errCh),
+		cache:  synclru.New(lru.New(maxEntries)),
+	}
+
+	// See if there's a SyntaxError. If there are none, this channel
+	// will be closed, and err will be nil.
+	//
+	// This only waits for 1 VM to load, not the whole pool, so we
+	// get results more quickly.
+	if err := <-errCh; err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 type cachingRenderer struct {
 	bridge *reactbridge.Bridge
 	cache  *synclru.Cache
-
-	loadedOneVM <-chan struct{} // closed after at least 1 JS VM loads (and been checked for SyntaxError)
-	err         error           // init error (likely a SyntaxError)
 }
+
+type prerenderEvent struct {
+	Props    string
+	CacheHit bool
+	S, E     time.Time
+}
+
+func init() {
+	appdash.RegisterEvent(prerenderEvent{})
+}
+
+func (prerenderEvent) Schema() string     { return "prerenderReactComponent" }
+func (e prerenderEvent) Start() time.Time { return e.S }
+func (e prerenderEvent) End() time.Time   { return e.E }
 
 // callMain calls r.bridge.CallMain with caching.
 func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string, error) {
-	// Don't proceed if init failed (likely a SyntaxError).
-	<-r.loadedOneVM
-	if r.err != nil {
-		return "", r.err
-	}
-
 	argJSON, err := json.Marshal(arg)
 	if err != nil {
 		return "", err
@@ -100,9 +191,31 @@ func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string
 	keyArray := sha256.Sum256(argJSON)
 	key := string(keyArray[:])
 
-	hit, ok := r.cache.Get(key)
-	if ok {
-		return hit.(string), nil
+	// Get from cache.
+	cachedRes, cacheHit := r.cache.Get(key)
+
+	// Log in Appdash.
+	start := time.Now()
+	ctx = traceutil.NewContext(ctx, appdash.NewSpanID(traceutil.SpanIDFromContext(ctx)))
+	defer func() {
+		truncatedProps := argJSON
+		if max := 300; len(truncatedProps) > max {
+			truncatedProps = truncatedProps[:max]
+		}
+
+		rec := traceutil.Recorder(ctx)
+		rec.Name("prerender React component")
+		rec.Event(&prerenderEvent{
+			Props:    string(truncatedProps),
+			CacheHit: cacheHit,
+			S:        start,
+			E:        time.Now(),
+		})
+	}()
+
+	// Return cache hit if present.
+	if cacheHit {
+		return cachedRes.(string), nil
 	}
 
 	// Optimization: pass the already-JSON-marshaled argJSON instead of
@@ -130,8 +243,7 @@ func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string
 // Be sure that the app/node_modules/react/lib/DOMProperty.js file has
 // a manual edit to make this "\u00B7".
 func renderReactComponent(ctx context.Context, componentModule string, props interface{}, stores *StoreData) (string, error) {
-
-	r, err := getRenderer()
+	r, err := getRenderer(ctx)
 	if err != nil {
 		return "", err
 	}
