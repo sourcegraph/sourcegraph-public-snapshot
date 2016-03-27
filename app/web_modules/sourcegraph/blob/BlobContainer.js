@@ -42,11 +42,16 @@ class BlobContainer extends Container {
 	}
 
 	stores() {
-		return [BuildStore, BlobStore, BuildStore, DefStore];
+		return [BuildStore, BlobStore, DefStore];
 	}
 
 	reconcileState(state, props) {
-		Object.assign(state, props);
+		state.repo = props.repo;
+		state.rev = props.rev;
+		state.startLine = props.startLine || null;
+		state.startCol = props.startCol || null;
+		state.endLine = props.endLine || null;
+		state.endCol = props.endCol || null;
 
 		state.activeDef = props.activeDef || null;
 		let activeDefData = props.activeDef && DefStore.defs.get(state.activeDef);

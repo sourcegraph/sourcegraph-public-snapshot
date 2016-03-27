@@ -7,6 +7,14 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 
+// simpleContentsString converts [string...] (like ["a", "b", "c"]) to
+// a string by joining the elements (to produce "abc", for example).
+function simpleContentsString(contents) {
+	if (!(contents instanceof Array)) return contents;
+	if (contents.some((e) => typeof e !== "string")) return contents;
+	return contents.join("");
+}
+
 class BlobLine extends Component {
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
@@ -22,6 +30,8 @@ class BlobLine extends Component {
 					if (ann.URL) state.ownAnnURLs[ann.URL] = true;
 					if (ann.URLs) ann.URLs.forEach((url) => state.ownAnnURLs[url] = true);
 				});
+			} else {
+				state.ownAnnURLs = null;
 			}
 		}
 
@@ -84,10 +94,10 @@ class BlobLine extends Component {
 								Dispatcher.dispatch(new DefActions.SelectDef(ann.URL));
 							}
 						}}
-						key={i}>{content}</a>
+						key={i}>{simpleContentsString(content)}</a>
 				);
 			}
-			return <span key={i} className={ann.Class}>{content}</span>;
+			return <span key={i} className={ann.Class}>{simpleContentsString(content)}</span>;
 		});
 	}
 
@@ -95,8 +105,12 @@ class BlobLine extends Component {
 		let contents = this.state.annotations ? this._annotate() : this.state.contents;
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
+		let cls = classNames("line", this.state.className, {
+			"main-byte-range": this.state.selected,
+		});
+
 		return (
-			<tr className={`line ${this.state.selected ? "main-byte-range" : ""} ${this.state.className}`}
+			<tr className={cls}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
 					<td className="line-number"
@@ -113,8 +127,7 @@ class BlobLine extends Component {
 				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
 
 				<td className="line-content">
-					{contents}
-					{this.state.contents === "" && <span>&nbsp;</span>}
+					{simpleContentsString(contents)}
 				</td>
 			</tr>
 		);

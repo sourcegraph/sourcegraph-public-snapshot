@@ -3,7 +3,6 @@ package local
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	pathpkg "path"
 	"path/filepath"
 	"runtime"
@@ -22,7 +21,6 @@ import (
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/doc"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
@@ -279,50 +277,6 @@ func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, erro
 		return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repoURI)
 	}
 	return repo.DefaultBranch, nil
-}
-
-func (s *repos) GetReadme(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
-	if repoRev.URI == "" {
-		return nil, errEmptyRepoURI
-	}
-
-	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
-	if err != nil {
-		return nil, err
-	}
-
-	commit := vcs.CommitID(repoRev.CommitID)
-
-	entries, err := vcsrepo.ReadDir(commit, ".", false)
-	if err != nil {
-		return nil, err
-	}
-
-	filenames := make([]string, len(entries))
-	for i, e := range entries {
-		filenames[i] = e.Name()
-	}
-
-	readme := &sourcegraph.Readme{Path: doc.ChooseReadme(filenames)}
-	if readme.Path == "" {
-		return nil, grpc.Errorf(codes.NotFound, "no README found in %v", repoRev)
-	}
-
-	data, err := vcsrepo.ReadFile(commit, readme.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	formatted, err := doc.ToHTML(doc.Format(readme.Path), data)
-	if err != nil {
-		log.Printf("Warning: doc.ToHTML on readme %q in repo %s failed: %s.", readme.Path, repoRev.URI, err)
-	}
-	readme.HTML = string(formatted)
-	return readme, nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {

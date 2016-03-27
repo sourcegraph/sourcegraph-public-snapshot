@@ -56,15 +56,6 @@ func mockSpecificVersionSrclibData(c *httptestutil.MockClients, commitID string)
 	return called
 }
 
-func mockNoRepoReadme(c *httptestutil.MockClients) (called *bool) {
-	called = new(bool)
-	c.Repos.GetReadme_ = func(context.Context, *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
-		*called = true
-		return nil, grpc.Errorf(codes.NotFound, "")
-	}
-	return called
-}
-
 func mockEmptyTreeEntry(c *httptestutil.MockClients) (called *bool) {
 	called = new(bool)
 	c.RepoTree.Get_ = func(context.Context, *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {

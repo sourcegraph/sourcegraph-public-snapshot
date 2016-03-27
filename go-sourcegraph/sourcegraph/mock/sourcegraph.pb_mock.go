@@ -49,7 +49,6 @@ type ReposClient struct {
 	Create_                      func(ctx context.Context, in *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(ctx context.Context, in *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	GetReadme_                   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
 	GetConfig_                   func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
 	GetCommit_                   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ListCommits_                 func(ctx context.Context, in *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
@@ -89,10 +88,6 @@ func (s *ReposClient) Update(ctx context.Context, in *sourcegraph.ReposUpdateOp,
 
 func (s *ReposClient) Delete(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	return s.Delete_(ctx, in)
-}
-
-func (s *ReposClient) GetReadme(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*sourcegraph.Readme, error) {
-	return s.GetReadme_(ctx, in)
 }
 
 func (s *ReposClient) GetConfig(ctx context.Context, in *sourcegraph.RepoSpec, opts ...grpc.CallOption) (*sourcegraph.RepoConfig, error) {
@@ -149,7 +144,6 @@ type ReposServer struct {
 	Create_                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update_                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
-	GetReadme_                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error)
 	GetConfig_                   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
 	GetCommit_                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ListCommits_                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
@@ -189,10 +183,6 @@ func (s *ReposServer) Update(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) 
 
 func (s *ReposServer) Delete(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
 	return s.Delete_(v0, v1)
-}
-
-func (s *ReposServer) GetReadme(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Readme, error) {
-	return s.GetReadme_(v0, v1)
 }
 
 func (s *ReposServer) GetConfig(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {

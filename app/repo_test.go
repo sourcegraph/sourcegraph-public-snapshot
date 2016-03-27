@@ -22,7 +22,6 @@ func TestRepo(t *testing.T) {
 	calledGet := mockRepoGet(mock, "my/repo")
 	calledGetConfig := mockEmptyRepoConfig(mock)
 	calledGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	calledGetReadme := mockNoRepoReadme(mock)
 	calledRepoTreeGet := mockEmptyTreeEntry(mock)
 
 	if _, err := c.GetOK(router.Rel.URLToRepo("my/repo").String()); err != nil {
@@ -40,9 +39,6 @@ func TestRepo(t *testing.T) {
 	if !*calledGetCommit {
 		t.Error("!calledGetCommit")
 	}
-	if !*calledGetReadme {
-		t.Error("!calledGetReadme")
-	}
 	if !*calledRepoTreeGet {
 		t.Error("!calledRepoTreeGet")
 	}
@@ -56,7 +52,6 @@ func TestRepo_branchWithSlashes(t *testing.T) {
 	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockCurrentSrclibData(mock)
-	mockNoRepoReadme(mock)
 	mockEmptyTreeEntry(mock)
 
 	url, err := router.Rel.URLToRepoRev("my/repo", "some/branch")
@@ -82,7 +77,6 @@ func TestRepo_defaultBranchWithSlashes(t *testing.T) {
 	mockEmptyRepoConfig(mock)
 	mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mockCurrentSrclibData(mock)
-	mockNoRepoReadme(mock)
 	mockEmptyTreeEntry(mock)
 
 	if _, err := c.GetOK(router.Rel.URLToRepo("my/repo").String()); err != nil {

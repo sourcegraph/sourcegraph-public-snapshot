@@ -2,6 +2,8 @@
 // is the array of annotations that intersect that line.
 //
 // Assumes annotations has been sorted by sortAnns.
+//
+// NOTE: This must stay in sync with blob.go annotationsByLine.
 export default function annotationsByLine(lineStartBytes, annotations, lines) {
 	const lineAnns = new Array(lineStartBytes.length);
 	for (let i = 0; i < lineStartBytes.length; i++) {

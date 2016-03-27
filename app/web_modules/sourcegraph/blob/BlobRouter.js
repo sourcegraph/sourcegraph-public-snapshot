@@ -50,12 +50,32 @@ function parseLineRange(range) {
 // component gets re-rendered. Sub-components should never access
 // window.location by themselves.
 class BlobRouter extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			// _isMounted is set by BlobRouter_test.js to test frontend behavior.
+			_isMounted: Boolean(props._isMounted), // eslint-disable-line react/prop-types
+		};
+	}
+
 	componentDidMount() {
 		this.dispatcherToken = Dispatcher.register(this.__onDispatch.bind(this));
+
+		// Normally this is a bad practice, but it's done out of neccessity with a good
+		// reason here. We're rendering this component server-side, where the hash fragment
+		// cannot be known. So on initial load, we render without the hash fragment taken
+		// into consideration (both on server- and client-side), but after loading client-side,
+		// we re-render with hash fragment used.
+		this.setState({ // eslint-disable-line react/no-did-mount-set-state
+			_isMounted: true,
+		});
 	}
 
 	componentWillUnmount() {
 		Dispatcher.unregister(this.dispatcherToken);
+		this.setState({
+			_isMounted: false,
+		});
 	}
 
 	reconcileState(state, props) {
@@ -109,9 +129,15 @@ class BlobRouter extends Component {
 		if (pathParts[1].startsWith("tree/")) {
 			state.path = pathParts[1].slice("tree/".length);
 
-			if (state.url.hash) {
-				if (state.url.hash.startsWith("#L")) {
-					Object.assign(state, parseLineRange(state.url.hash.slice(2)));
+			if (state._isMounted) {
+				if (state.url.hash) {
+					if (state.url.hash.startsWith("#L")) {
+						const range = parseLineRange(state.url.hash.slice(2));
+						state.startLine = range.startLine || null;
+						state.startCol = range.startCol || null;
+						state.endLine = range.endLine || null;
+						state.endCol = range.endCol || null;
+					}
 				}
 			}
 		} else {

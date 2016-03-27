@@ -1,7 +1,6 @@
 package local
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
@@ -12,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/platform"
 )
 
@@ -165,52 +163,6 @@ func TestReposService_resolveRepoRev_revSpecIsAlreadyResolved_noop(t *testing.T)
 	}
 	if !reflect.DeepEqual(repoRev, wantRepoRev) {
 		t.Errorf("got %+v, want %+v", repoRev, wantRepoRev)
-	}
-}
-
-func TestReposService_GetReadme(t *testing.T) {
-	var s repos
-	ctx, mock := testContext()
-
-	wantReadme := &sourcegraph.Readme{
-		Path: "README.txt",
-		HTML: "<pre>hello</pre>",
-	}
-
-	var calledReadDir, calledReadFile bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
-		ReadDir_: func(commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
-			if name != "." {
-				t.Error("name != .")
-			}
-			calledReadDir = true
-			return []os.FileInfo{&util.FileInfo{Name_: "README.txt"}}, nil
-		},
-		ReadFile_: func(commit vcs.CommitID, name string) ([]byte, error) {
-			if name != "README.txt" {
-				t.Error("name != README.txt")
-			}
-			calledReadFile = true
-			return []byte("hello"), nil
-		},
-	})
-
-	readme, err := s.GetReadme(ctx, &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		Rev:      "v",
-		CommitID: strings.Repeat("a", 40),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !calledReadDir {
-		t.Error("!calledReadDir")
-	}
-	if !calledReadFile {
-		t.Error("!calledReadFile")
-	}
-	if !reflect.DeepEqual(readme, wantReadme) {
-		t.Errorf("got %+v, want %+v", readme, wantReadme)
 	}
 }
 

@@ -884,19 +884,6 @@ func (s wrappedRepos) Delete(ctx context.Context, param *sourcegraph.RepoSpec) (
 	return
 }
 
-func (s wrappedRepos) GetReadme(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *sourcegraph.Readme, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Repos", "GetReadme", param)
-	defer func() {
-		trace.After(ctx, "Repos", "GetReadme", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Repos.GetReadme(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Repos.GetReadme returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedRepos) GetConfig(ctx context.Context, param *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "GetConfig", param)

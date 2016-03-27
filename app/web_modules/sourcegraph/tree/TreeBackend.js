@@ -28,17 +28,17 @@ const TreeBackend = {
 
 		case TreeActions.WantFileList:
 			{
-				let fileList = TreeStore.fileLists.get(action.repo, action.rev);
+				let fileList = TreeStore.fileLists.get(action.repo, action.rev, action.commitID);
 				if (fileList === null) {
 					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}/.tree-list`,
+						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}===${encodeURIComponent(action.commitID)}/.tree-list`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, body));
+						Dispatcher.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, action.commitID, body));
 					});
 				}
 				break;
@@ -46,10 +46,10 @@ const TreeBackend = {
 
 		case TreeActions.WantSrclibDataVersion:
 			{
-				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.path);
+				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.commitID, action.path);
 				if (version === null) {
 					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}/.srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`,
+						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}===${encodeURIComponent(action.commitID)}/.srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (resp.statusCode === 404) {
@@ -60,7 +60,7 @@ const TreeBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, body));
+						Dispatcher.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.commitID, action.path, body));
 					});
 				}
 				break;

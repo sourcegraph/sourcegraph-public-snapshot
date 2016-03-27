@@ -10,3 +10,4 @@ import paths.)
 * github.com/spf13/hugo: github.com/sqs/hugo branch `vfs`
 * github.com/drone/drone-exec: github.com/sourcegraph/drone-exec branch `dev`
 * github.com/drone/drone-plugin-go: github.com/sqs/drone-plugin-go branch `multiple-netrc-entries`
+* gopkg.in/olebedev/go-duktape.v2: github.com/sourcegraph/go-duktape branch `v2`

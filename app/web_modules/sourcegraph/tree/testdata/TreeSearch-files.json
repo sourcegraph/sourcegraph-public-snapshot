@@ -26,12 +26,14 @@
 																	{
 																		"$constructor": "WantSrclibDataVersion",
 																		"repo": "repo",
-																		"rev": "rev"
+																		"rev": "rev",
+																		"commitID": "c"
 																	},
 																	{
 																		"$constructor": "WantFileList",
 																		"repo": "repo",
-																		"rev": "rev"
+																		"rev": "rev",
+																		"commitID": "c"
 																	}
 																]
 															},
@@ -141,12 +143,14 @@
 		{
 			"$constructor": "WantSrclibDataVersion",
 			"repo": "repo",
-			"rev": "rev"
+			"rev": "rev",
+			"commitID": "c"
 		},
 		{
 			"$constructor": "WantFileList",
 			"repo": "repo",
-			"rev": "rev"
+			"rev": "rev",
+			"commitID": "c"
 		}
 	]
 }

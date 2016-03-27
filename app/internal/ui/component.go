@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"os"
+	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
@@ -32,9 +36,29 @@ var funcs = template.FuncMap{
 			return "", err
 		}
 
-		return template.HTML(fmt.Sprintf(`<div data-react="%s" data-props="%s"></div>`,
+		var componentHTML string
+		if ctx != nil && shouldPrerenderReact(ctx) {
+			var err error
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
+			componentHTML, err = renderReactComponent(ctx, component, propMap, stores)
+			if err == errRendererCreationTimedOut {
+				log15.Debug("Not rendering React component on the server because the JS renderer creation timed out. This is expected to occur right after the process starts (or in dev mode if the bundle JS was recently changed) before the JS renderer is ready.")
+			} else if err != nil {
+				if os.Getenv("DEBUG") != "" {
+					// Strict error handling in dev mode.
+					return "", err
+				}
+				// In prod, be lenient until we understand the ops
+				// implications and reliability of go-duktape better.
+				log15.Error("Error rendering React component on the server (falling back to client-side rendering)", "err", err, "component", component, "props", string(propsJSON), "hasPreloadedStoreData", stores != nil)
+			}
+		}
+
+		return template.HTML(fmt.Sprintf(`<div data-react="%s" data-props="%s">%s</div>`,
 			html.EscapeString(component),
 			html.EscapeString(string(propsJSON)),
+			componentHTML,
 		)), nil
 	},
 }

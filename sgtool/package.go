@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -26,7 +27,7 @@ func init() {
 }
 
 type PackageCmd struct {
-	OS string `long:"os" description:"operating system targets to cross-compile for" default:"linux darwin"`
+	OS string `long:"os" description:"operating system targets to cross-compile for" default-mask:"$GOOS"`
 
 	SkipWebpack bool `long:"skip-webpack" description:"skip webpack (JS/SCSS preparation, concatenation, minification, etc.)"`
 	IgnoreDirty bool `long:"ignore-dirty" description:"ignore dirty working directory"`
@@ -42,6 +43,10 @@ func (c *PackageCmd) Execute(args []string) error {
 	// Check for dependencies before starting.
 	if err := requireCmds("npm", "go"); err != nil {
 		return err
+	}
+
+	if c.OS == "" {
+		c.OS = runtime.GOOS
 	}
 
 	if c.Args.Version == "" {
@@ -74,30 +79,46 @@ func (c *PackageCmd) Execute(args []string) error {
 		return err
 	}
 
-	ldflags, err := c.getLDFlags()
+	ldflagsInput, err := c.getLDFlags()
 	if err != nil {
 		return err
 	}
 
 	bins := []string{}
 	par := parallel.NewRun(2)
-	for _, os := range strings.Split(c.OS, " ") {
-		os := os
-		dest, err := filepath.Abs(filepath.Join("release", c.Args.Version, os+"-amd64"))
+	for _, osName := range strings.Split(c.OS, " ") {
+		osName := osName
+		dest, err := filepath.Abs(filepath.Join("release", c.Args.Version, osName+"-amd64"))
 		if err != nil {
 			return err
 		}
 		bins = append(bins, dest)
 		par.Do(func() (err error) {
-			cmd := exec.Command("go", "build", "-installsuffix", "netgo", "-ldflags", ldflags, "-tags", "dist netgo", "-o", dest, ".")
-			cmd.Dir = "./cmd/src"
-			cmd.Env = []string{
-				"GOOS=" + os,
+			ldflags := make([]string, len(ldflagsInput))
+			copy(ldflags, ldflagsInput)
+
+			env := []string{
+				"GOOS=" + osName,
 				"GOARCH=amd64",
-				"CGO_ENABLED=0",
 				"GOPATH=" + gopath,
+				"PATH=" + os.Getenv("PATH"),
 			}
 
+			// For Linux we build static binaries using musl, this requires some
+			// additional options but gives us CGO without the glibc dependency.
+			if osName == "linux" {
+				muslGCCPath, err := exec.LookPath("musl-gcc")
+				if err != nil {
+					return fmt.Errorf("%s\n\nTo install musl-gcc (necessary to compile a static binary due to the cgo go-duktape dependency), follow the musl installation steps in the CI script. On Ubuntu, you can install the `musl-tools` apt package.", err)
+				}
+
+				ldflags = append(ldflags, []string{"-linkmode", "external", "-extldflags", "-static"}...)
+				env = append(env, "CC="+muslGCCPath)
+			}
+
+			cmd := exec.Command("go", "build", "-installsuffix", "netgo", "-ldflags", strings.Join(ldflags, " "), "-tags", "dist", "-o", dest, ".")
+			cmd.Dir = filepath.Join("cmd", "src")
+			cmd.Env = env
 			if err := execCmd(cmd); err != nil {
 				return err
 			} else {
@@ -117,7 +138,7 @@ func (c *PackageCmd) Execute(args []string) error {
 	return nil
 }
 
-func (c *PackageCmd) getLDFlags() (string, error) {
+func (c *PackageCmd) getLDFlags() ([]string, error) {
 	buildvars := map[string]string{
 		"Version": c.Args.Version,
 		"dateStr": time.Now().Format(time.UnixDate),
@@ -125,7 +146,7 @@ func (c *PackageCmd) getLDFlags() (string, error) {
 
 	commitID, err := cmdOutput("git", "rev-parse", "--verify", "HEAD")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if commitID != "" {
 		buildvars["commitID"] = strings.TrimSpace(commitID)
@@ -133,18 +154,18 @@ func (c *PackageCmd) getLDFlags() (string, error) {
 
 	status, err := cmdOutput("git", "status", "--porcelain")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if status != "" {
 		if !c.IgnoreDirty {
 			diff, err := cmdOutput("git", "diff")
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			if mb := 1024 * 1024; len(diff) > mb {
 				diff = diff[:mb] // Capped to 1MB in size at max
 			}
-			return "", fmt.Errorf(`
+			return nil, fmt.Errorf(`
 Aborting! Working directory is dirty, binary would be compromised!
 
 note: You can use --ignore-dirty to skip this check.
@@ -162,7 +183,7 @@ note: git diff reports:
 
 	uname, err := cmdOutput("uname", "-a")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if uname != "" {
 		buildvars["host"] = strings.TrimSpace(uname)
@@ -174,7 +195,7 @@ note: git diff reports:
 
 	var ldflags []string
 	for name, val := range buildvars {
-		ldflags = append(ldflags, fmt.Sprintf("-X sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar.%s %q", name, val))
+		ldflags = append(ldflags, fmt.Sprintf("-X %q", fmt.Sprintf("sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar.%s=%s", name, val)))
 	}
 
 	// main ldflags
@@ -183,8 +204,8 @@ note: git diff reports:
 		"BUILD_DATE": time.Now().Format(time.RFC3339),
 	}
 	for name, val := range mainLDFlags {
-		ldflags = append(ldflags, fmt.Sprintf("-X main.%s %q", name, val))
+		ldflags = append(ldflags, fmt.Sprintf("-X %q", fmt.Sprintf("main.%s=%s", name, val)))
 	}
 
-	return strings.Join(ldflags, " "), nil
+	return ldflags, nil
 }

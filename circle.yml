@@ -7,7 +7,7 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH
+    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH:/usr/local/musl/bin
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
@@ -25,6 +25,11 @@ dependencies:
     # Tools for testing.
     - go get github.com/jstemmer/go-junit-report
     - go get github.com/wadey/gocovmerge
+
+    # Install musl for glibc-free statically linked CGO binaries
+    - wget http://www.musl-libc.org/releases/musl-1.1.10.tar.gz
+    - tar -xvf musl-1.1.10.tar.gz
+    - cd musl-1.1.10 && ./configure && make && sudo make install && cd .. && rm -rf musl-1.1.10 musl-1.1.10.tar.gz
 
   cache_directories:
     - ~/google-cloud-sdk
@@ -49,6 +54,9 @@ test:
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit:
         parallel: true
+    - make dep && cd app && npm run build:
+        pwd: $REPO
+        parallel: true # Need the files created as result of npm run build to be avilable to all nodes.
     - ./dev/circle-ci-run-tests.sh:
         pwd: $REPO
         parallel: true

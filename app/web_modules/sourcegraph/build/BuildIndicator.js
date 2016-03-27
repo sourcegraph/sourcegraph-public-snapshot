@@ -30,7 +30,11 @@ class BuildIndicator extends Component {
 	}
 
 	reconcileState(state, props) {
-		Object.assign(state, props);
+		state.repo = props.repo;
+		state.commitID = props.commitID;
+		state.branch = props.branch || null;
+		state.buildable = Boolean(props.buildable);
+		state.builds = props.builds;
 
 		let builds = state.builds.listNewestByCommitID(state.repo, state.commitID);
 		state.build = (builds && builds.length > 0) ? builds[0] : null;

@@ -14,14 +14,24 @@ import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 
-const tilingFactor = 50;
+const tilingFactor = 100;
+
+// The smaller the visibleLinesCount, the faster the initial load.
+const initialVisibleLinesCount = 80;
+
+function initialFirstVisibleLine(props) {
+	if (props.scrollToStartLine && props.startLine) {
+		return Math.max(0, props.startLine - (initialVisibleLinesCount / 2));
+	}
+	return 0;
+}
 
 class Blob extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			firstVisibleLine: 0,
-			visibleLinesCount: tilingFactor * 3,
+			firstVisibleLine: initialFirstVisibleLine(props),
+			visibleLinesCount: initialVisibleLinesCount,
 			lineAnns: [],
 			expandedRanges: [],
 		};
@@ -35,11 +45,19 @@ class Blob extends Component {
 	}
 
 	componentDidMount() {
-		this._updateVisibleLines();
+		setTimeout(() => this._updateVisibleLines(), 0);
 		window.addEventListener("scroll", this._updateVisibleLines);
-		if (this.state.startLine && this.state.scrollToStartLine) {
-			this._scrollTo(this.state.startLine);
-		}
+
+		// TODO: This is hacky, but the alternative was too costly (time and code volume)
+		//       and unreliable to implement. Revisit this later if it's neccessary.
+		//
+		// Delay scrolling to give BlobRouter a chance to populate startLine.
+		setTimeout(() => {
+			if (this.state.startLine && this.state.scrollToStartLine) {
+				this._scrollTo(this.state.startLine);
+			}
+		}, 0);
+
 		document.addEventListener("selectionchange", this._handleSelectionChange);
 		this._isMounted = true;
 	}
@@ -59,7 +77,7 @@ class Blob extends Component {
 		state.scrollToStartLine = Boolean(props.scrollToStartLine);
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
-		state.highlightedDef = props.highlightedDef;
+		state.highlightedDef = props.highlightedDef || null;
 		state.activeDef = props.activeDef || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
@@ -95,7 +113,7 @@ class Blob extends Component {
 	}
 
 	_consolidateRanges(ranges) {
-		if (ranges.length === 0) return [];
+		if (ranges.length === 0) return null;
 
 		ranges = ranges.sort((a, b) => {
 			if (a[0] < b[0]) return -1;
@@ -118,6 +136,7 @@ class Blob extends Component {
 	}
 
 	_withinDisplayedRange(lineNumber) {
+		if (!this.state.displayRanges) return false;
 		for (let range of this.state.displayRanges) {
 			if (range[0] <= lineNumber && lineNumber <= range[1]) return true;
 		}
@@ -141,10 +160,12 @@ class Blob extends Component {
 		let visibleLinesCount = Math.ceil(this.state.lines.length / rect.height * window.innerHeight / tilingFactor + 2) * tilingFactor;
 
 		if (this.state.firstVisibleLine !== firstVisibleLine || this.state.visibleLinesCount !== visibleLinesCount) {
-			this.setState({
-				firstVisibleLine: firstVisibleLine,
-				visibleLinesCount: visibleLinesCount,
-			});
+			setTimeout(() => {
+				this.setState({
+					firstVisibleLine: firstVisibleLine,
+					visibleLinesCount: visibleLinesCount,
+				});
+			}, 0);
 		}
 	}
 
@@ -271,7 +292,7 @@ class Blob extends Component {
 			if (this.state.displayRanges && !this._withinDisplayedRange(lineNumber)) {
 				return;
 			}
-			if (lastDisplayedLine !== lineNumber - 1) {
+			if (this.state.displayRanges && lastDisplayedLine !== lineNumber - 1) {
 				// Prevent expanding above the last displayed range.
 				let expandTo = [Math.max(lastRangeEnd, lineNumber-30), lineNumber-1];
 				lines.push(
@@ -354,5 +375,37 @@ Blob.propTypes = {
 	// not for secondary file views (e.g., usage examples).
 	dispatchSelections: React.PropTypes.bool,
 };
+
+// ServerBlob is used on the server instead of Blob. Its render method calls into Go
+// for a fastpath for generating its markup.
+class ServerBlob extends Component { // eslint-disable-line react/no-multi-comp
+	render() {
+		let reactID = this._reactInternalInstance._nativeContainerInfo._idCounter;
+		let props = Object.assign({
+			visibleLinesCount: initialVisibleLinesCount,
+			firstVisibleLine: initialFirstVisibleLine(this.props),
+		}, this.props);
+
+		// On the server, __goRenderBlob__ is a globally injected Go function that behaves like a
+		// stateless component. It accepts props and returns the HTML for the blob.
+		let html = {
+			__html: __goRenderBlob__(reactID, JSON.stringify(props)), // eslint-disable-line react/display-name, react/jsx-key, no-undef
+		};
+
+		// HACK: Update the react-id counter based on how many IDs we used, so that
+		// rendering other components works.
+		// This method is accurate because a " that's not part of the HTML tag attr
+		// would be escaped, so including the " ensures we only count valid matches.
+		let numReactIDsUsed = (html.__html.match(/(<!-- react-text: |data-reactid=")/g) || []).length;
+		this._reactInternalInstance._nativeContainerInfo._idCounter += numReactIDsUsed;
+
+		return (
+			<div className="blob-scroller" dangerouslySetInnerHTML={html} data-reactid={reactID} data-remove-second-reactid="yes"></div>
+		);
+	}
+}
+if (typeof document === "undefined" && typeof __goRenderBlob__ !== "undefined") {
+	Blob = ServerBlob;
+}
 
 export default Blob;

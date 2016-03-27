@@ -1,16 +1,26 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import requireComponent from "sourcegraph/init/requireComponent";
+import preloadStores from "sourcegraph/init/preloadStores";
 
-import BlobStore from "sourcegraph/blob/BlobStore";
-import DefStore from "sourcegraph/def/DefStore";
-import RepoStore from "sourcegraph/repo/RepoStore";
+let logTimings = false;
+if (typeof window !== "undefined") {
+	logTimings = window.localStorage["log-timings"] === "true";
+
+	window.enableTimingsLog = function() {
+		window.localStorage["log-timings"] = "true";
+		console.log("Timings log enabled.");
+	};
+
+	window.disableTimingsLog = function() {
+		Reflect.deleteProperty(window.localStorage, "log-timings");
+		console.log("Timings log disabled.");
+	};
+}
 
 if (typeof document !== "undefined") {
 	if (window.__StoreData) {
-		RepoStore.reset(window.__StoreData.RepoStore || {});
-		BlobStore.reset(window.__StoreData.BlobStore || {});
-		DefStore.reset(window.__StoreData.DefStore || {});
+		preloadStores(window.__StoreData);
 	}
 
 	let els = document.querySelectorAll("[data-react]");
@@ -26,5 +36,10 @@ if (typeof document !== "undefined") {
 }
 
 function render(Component, props, el) {
-	setTimeout(() => ReactDOM.render(<Component {...props} />, el), 0);
+	setTimeout(() => {
+		const label = props && props.component ? props.component.name : Component.name;
+		if (logTimings) console.time(`render ${label}`);
+		ReactDOM.render(<Component {...props} />, el);
+		if (logTimings) console.timeEnd(`render ${label}`);
+	}, 0);
 }

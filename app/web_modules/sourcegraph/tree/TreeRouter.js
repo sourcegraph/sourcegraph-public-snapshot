@@ -62,6 +62,7 @@ class TreeRouter extends Component {
 			<TreeSearch
 				repo={this.state.repo}
 				rev={this.state.rev}
+				commitID={this.state.commitID}
 				overlay={false}
 				currPath={this._currPath()} />
 		);
@@ -73,6 +74,7 @@ TreeRouter.propTypes = {
 	navigate: React.PropTypes.func.isRequired,
 	repo: React.PropTypes.string, // currently passed, but can (and should?) be inferred by the URL
 	rev: React.PropTypes.string,  // same as above
+	commitID: React.PropTypes.string,
 };
 
 export default TreeRouter;

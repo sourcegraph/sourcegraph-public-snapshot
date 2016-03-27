@@ -120,9 +120,9 @@ class TreeSearch extends Container {
 			}
 		};
 
-		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
+		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev, state.commitID);
 
-		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev);
+		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev, state.commitID);
 		sourceFileList = sourceFileList ? sourceFileList.Files : null;
 		if (state.allFiles !== sourceFileList) {
 			state.allFiles = sourceFileList;
@@ -136,7 +136,7 @@ class TreeSearch extends Container {
 			setFileList();
 		}
 
-		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
+		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev, state.commitID);
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query) : null;
 
 		if (state.processedQuery !== state.query) {
@@ -152,9 +152,9 @@ class TreeSearch extends Container {
 	onStateTransition(prevState, nextState) {
 		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
-		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
-			Dispatcher.asyncDispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev));
-			Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
+		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.commitID !== prevState.commitID) {
+			Dispatcher.asyncDispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev, nextState.commitID));
+			Dispatcher.asyncDispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev, nextState.commitID));
 		}
 		if (nextState.srclibDataVersion !== prevState.srclibDataVersion) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
@@ -439,6 +439,7 @@ class TreeSearch extends Container {
 TreeSearch.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
+	commitID: React.PropTypes.string.isRequired,
 	currPath: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 	overlay: React.PropTypes.bool.isRequired,
 	prefetch: React.PropTypes.bool,

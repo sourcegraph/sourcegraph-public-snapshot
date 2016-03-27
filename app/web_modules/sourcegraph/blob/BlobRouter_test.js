@@ -34,7 +34,7 @@ describe("BlobRouter", () => {
 
 	it("should handle line selection URLs", () => {
 		autotest(testdataLineSelection, `${__dirname}/testdata/BlobRouter-lineSelection.json`,
-			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L40-53" />
+			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L40-53" _isMounted={true} />
 		);
 	});
 
@@ -142,7 +142,7 @@ describe("BlobRouter", () => {
 
 function testAction(uri, action, expectedURI) {
 	let renderer = TestUtils.createRenderer();
-	renderer.render(<BlobRouter location={uri} navigate={(newURI) => { uri = newURI; }} />);
+	renderer.render(<BlobRouter location={uri} navigate={(newURI) => { uri = newURI; }} _isMounted={true} />);
 	Dispatcher.directDispatch(renderer._instance._instance, action);
 	expect(uri).to.be(expectedURI);
 }

@@ -12,13 +12,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
@@ -91,29 +89,17 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var readme *sourcegraph.Readme
 	var tree *sourcegraph.TreeEntry
 	var treeEntrySpec sourcegraph.TreeEntrySpec
 	if vc.RepoCommit != nil {
 		treeEntrySpec = sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec, Path: "."}
-		run := parallel.NewRun(2)
-		run.Do(func() (err error) {
-			readme, err = cl.Repos.GetReadme(ctx, &vc.RepoRevSpec)
-			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
-				// Lack of a readme is not a fatal error.
-				err = nil
-				readme = nil
-			}
-			return
-		})
-		run.Do(func() (err error) {
-			opt := sourcegraph.RepoTreeGetOptions{GetFileOptions: sourcegraph.GetFileOptions{
+		tree, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+			Entry: treeEntrySpec,
+			Opt: &sourcegraph.RepoTreeGetOptions{GetFileOptions: sourcegraph.GetFileOptions{
 				RecurseSingleSubfolderLimit: 200,
-			}}
-			tree, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: treeEntrySpec, Opt: &opt})
-			return
+			}},
 		})
-		if err := run.Wait(); err != nil {
+		if err != nil {
 			return err
 		}
 	}
@@ -132,7 +118,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "repo/main.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
 		handlerutil.RepoRevCommon
-		Readme    *sourcegraph.Readme
 		EntryPath string
 		Entry     *sourcegraph.TreeEntry
 		EntrySpec sourcegraph.TreeEntrySpec
@@ -144,7 +129,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	}{
 		RepoCommon:    *rc,
 		RepoRevCommon: *vc,
-		Readme:        readme,
 		EntryPath:     ".",
 		Entry:         tree,
 		EntrySpec:     treeEntrySpec,

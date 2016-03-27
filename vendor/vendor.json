@@ -916,6 +916,13 @@
 			"revisionTime": "2015-05-13T20:26:30-04:00"
 		},
 		{
+			"checksumSHA1": "KqLCob+p1jjs8QKvVEIMs0qAndw=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/gopkg.in/olebedev/go-duktape.v2",
+			"path": "gopkg.in/olebedev/go-duktape.v2",
+			"revision": "0855da86d89c13f78dd07c2995830cf7a2b7f3fd",
+			"revisionTime": "2016-03-21T16:33:22-07:00"
+		},
+		{
 			"path": "gopkg.in/yaml.v2",
 			"revision": "7ad95dd0798a40da1ccdff6dff35fd177b5edf40",
 			"revisionTime": "2015-06-24T11:29:02+01:00"

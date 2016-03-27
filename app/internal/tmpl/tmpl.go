@@ -69,7 +69,7 @@ func Delete(name string) {
 // repoTemplates returns all repository template pages if successful.
 func repoTemplates() error {
 	return parseHTMLTemplates([][]string{
-		{"repo/main.html", "repo/readme.inc.html", "repo/tree.inc.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
+		{"repo/main.html", "repo/tree.inc.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
 		{"repo/builds.html", "builds/build.inc.html"},
 		{"repo/build.html", "builds/build.inc.html", "repo/commit.inc.html"},
 		{"repo/tree/file.html"},

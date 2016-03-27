@@ -52,15 +52,6 @@ message StreamResponse {
 	bool HasMore = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
-// A Readme represents a formatted "README"-type file in a repository.
-message Readme {
-	// Path is the relative path of this readme file from the repository root.
-	string Path = 1;
-
-	// HTML is the formatted HTML of this readme.
-	string HTML = 2;
-}
-
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
 message RepoConfig {
@@ -272,9 +263,6 @@ service Repos {
 
 	// Delete removes a repository.
 	rpc Delete(RepoSpec) returns (pbtypes.Void);
-
-	// GetReadme fetches the formatted README file for a repository.
-	rpc GetReadme(RepoRevSpec) returns (Readme);
 
 	// GetConfig retrieves the configuration for a repository.
 	rpc GetConfig(RepoSpec) returns (RepoConfig);
@@ -2135,6 +2123,16 @@ message Annotation {
 	// Class is the HTML class name that should be applied to this
 	// region.
 	string Class = 4;
+
+	// WantInner indicates that this annotation, when being applied to
+	// the underlying text, should be inner (i.e., more deeply
+	// nested). Larger numbers mean greater precedence for being
+	// nested more deeply.
+	int32 WantInner = 5;
+
+	// URLs can be set instead of URL if there are multiple URLs on an
+	// annotation.
+	repeated string URLs = 6;
 }
 
 // AnnotationList is a list of annotations.

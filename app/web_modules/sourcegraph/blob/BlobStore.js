@@ -2,7 +2,6 @@ import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 
 // keyFor must stay in sync with the key func in
 // (*ui.BlobStore).AddFile.
@@ -25,9 +24,9 @@ export class BlobStore extends Store {
 			},
 		});
 
-		// annotations are assumed to be sorted (with Annotations.sortAnns) by all callers of BlobStore.
+		// annotations are assumed to be sorted & prepared (with Annotations.prepareAnnotations).
 		this.annotations = deepFreeze({
-			content: data && data.annotations ? prepareAnnotationsInPlace(data.annotations) : {},
+			content: data && data.annotations ? data.annotations : {},
 			get(repo, rev, commitID, path, startByte, endByte) {
 				return this.content[keyForAnns(repo, rev, commitID, path, startByte, endByte)] || null;
 			},
@@ -58,13 +57,6 @@ export class BlobStore extends Store {
 
 		this.__emitChange();
 	}
-}
-
-function prepareAnnotationsInPlace(anns) {
-	Object.keys(anns).forEach((key) => {
-		anns[key].Annotations = prepareAnnotations(anns[key].Annotations);
-	});
-	return anns;
 }
 
 export default new BlobStore(Dispatcher);

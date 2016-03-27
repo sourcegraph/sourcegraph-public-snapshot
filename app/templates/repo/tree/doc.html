@@ -4,8 +4,8 @@
 
 {{define "RepoBody"}}
 {{if .Documentation}}
-<div class="plain-file readme panel panel-default">
-	<div class="panel-heading readme-file">
+<div class="plain-file panel panel-default">
+	<div class="panel-heading">
 		<div class="btn-group pull-right">
 			<a href="{{router.URLToRepoTreeEntryRaw .EntrySpec.RepoRev.URI .EntrySpec.RepoRev.Rev .EntrySpec.Path}}">View source</a>
 		</div>

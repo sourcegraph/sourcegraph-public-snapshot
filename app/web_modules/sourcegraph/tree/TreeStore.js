@@ -3,8 +3,8 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 
-function keyFor(repo, rev, path) {
-	return `${repo}#${rev}#${path || ""}`;
+function keyFor(repo, rev, commitID, path) {
+	return `${repo}#${rev}#${commitID || ""}#${path || ""}`;
 }
 
 export class TreeStore extends Store {
@@ -17,20 +17,20 @@ export class TreeStore extends Store {
 		});
 		this.fileLists = deepFreeze({
 			content: {},
-			get(repo, rev) {
-				return this.content[keyFor(repo, rev)] || null;
+			get(repo, rev, commitID) {
+				return this.content[keyFor(repo, rev, commitID)] || null;
 			},
 		});
 		this.fileTree = deepFreeze({
 			content: {},
-			get(repo, rev) {
-				return this.content[keyFor(repo, rev)] || null;
+			get(repo, rev, commitID) {
+				return this.content[keyFor(repo, rev, commitID)] || null;
 			},
 		});
 		this.srclibDataVersions = deepFreeze({
 			content: {},
-			get(repo, rev, path) {
-				return this.content[keyFor(repo, rev, path)] || null;
+			get(repo, rev, commitID, path) {
+				return this.content[keyFor(repo, rev, commitID, path)] || null;
 			},
 		});
 	}
@@ -62,12 +62,12 @@ export class TreeStore extends Store {
 				});
 				this.fileLists = deepFreeze(Object.assign({}, this.fileLists, {
 					content: Object.assign({}, this.fileLists.content, {
-						[keyFor(action.repo, action.rev)]: action.fileList,
+						[keyFor(action.repo, action.rev, action.commitID)]: action.fileList,
 					}),
 				}));
 				this.fileTree = deepFreeze(Object.assign({}, this.fileTree, {
 					content: Object.assign({}, this.fileTree.content, {
-						[keyFor(action.repo, action.rev)]: fileTree,
+						[keyFor(action.repo, action.rev, action.commitID)]: fileTree,
 					}),
 				}));
 				break;
@@ -76,7 +76,7 @@ export class TreeStore extends Store {
 		case TreeActions.FetchedSrclibDataVersion:
 			this.srclibDataVersions = deepFreeze(Object.assign({}, this.srclibDataVersions, {
 				content: Object.assign({}, this.srclibDataVersions.content, {
-					[keyFor(action.repo, action.rev, action.path)]: action.version,
+					[keyFor(action.repo, action.rev, action.commitID, action.path)]: action.version,
 				}),
 			}));
 			break;
