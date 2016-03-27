@@ -53,7 +53,8 @@ class BlobRouter extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			_isMounted: false,
+			// _isMounted is set by BlobRouter_test.js to test frontend behavior.
+			_isMounted: Boolean(props._isMounted), // eslint-disable-line react/prop-types
 		};
 	}
 
