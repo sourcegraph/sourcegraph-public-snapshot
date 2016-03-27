@@ -82,7 +82,7 @@ module.exports = {
 			{test: /\.html$/, loader: "file"},
 
 			{test: /_test\.js$/, exclude: /node_modules/, loader: "mocha"},
-			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader"},
+			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 
 			{test: /\.(eot|ttf|woff)$/, loader: "file?name=fonts/[name].[ext]"},

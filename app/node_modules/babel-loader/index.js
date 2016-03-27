@@ -83,8 +83,8 @@ module.exports = function(source, inputSourceMap) {
       if (err) { return callback(err); }
       return callback(null, result.code, result.map);
     });
-  } else {
-    result = transpile(source, options);
-    this.callback(null, result.code, result.map);
   }
+
+  result = transpile(source, options);
+  this.callback(null, result.code, result.map);
 };

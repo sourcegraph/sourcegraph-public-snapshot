@@ -10,7 +10,6 @@ var fs = require('fs');
  * read('.babelrc'); // file contents...
  */
 module.exports = function(cache) {
-
   cache = cache || {};
 
   return function(filename) {

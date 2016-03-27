@@ -1,5 +1,9 @@
 # Changelog
 
+## v6.2.2
+  * Update peerDependencies to accept webpack 2 [#208](https://github.com/babel/babel-loader/pull/208)
+  * Remove duplicated dependencies
+
 ## v6.2.0
   * Pass true filenames [#106](https://github.com/babel/babel-loader/issues/106)
   * Remove babel-core from devDependencies
