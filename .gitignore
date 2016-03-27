@@ -44,6 +44,7 @@ npm-debug.log
 /app/node_modules/node-sass/vendor
 /app/node_modules/fsevents/build
 /app/node_modules/fsevents/lib
+/app/node_modules/flow-bin/vendor
 /app/.sass-cache
 /app/assets/_goTemplates.js
 /app/assets/analytics.js

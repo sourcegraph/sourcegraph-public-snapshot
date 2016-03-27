@@ -3,6 +3,8 @@ var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var autoprefixer = require("autoprefixer");
 var glob = require("glob");
 var URL = require("url");
+var log = require("logalot");
+var FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
 require("lintspaces-loader");
 
 try {
@@ -12,11 +14,23 @@ try {
 	process.exit(1);
 }
 
-if (process.platform === "darwin") {
-	try {
-		require("fsevents");
-	} catch (error) {
-		console.log("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'make dep' to fix.");
+// Check dev dependencies.
+if (process.env.NODE_ENV === "development") {
+	const flow = require('flow-bin/lib');
+	flow.run(['--version'], function (err) {
+		if (err) {
+			log.error(err.message);
+			log.error("ERROR: flow is not properly installed. Run 'rm app/node_modules/flow-bin/vendor/flow; make dep' to fix.");
+			return;
+		}
+	});
+
+	if (process.platform === "darwin") {
+		try {
+			require("fsevents");
+		} catch (error) {
+			log.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'make dep' to fix.");
+		}
 	}
 }
 
@@ -30,6 +44,7 @@ var plugins = [
 		},
 	}),
 	new ExtractTextPlugin("[name].css"),
+	new FlowStatusWebpackPlugin({restartFlow: false}),
 ];
 
 if (process.env.NODE_ENV === "production") {
