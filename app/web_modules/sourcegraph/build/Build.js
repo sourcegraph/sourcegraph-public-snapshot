@@ -1,5 +1,4 @@
 import classNames from "classnames";
-import moment from "moment";
 import React from "react";
 
 export function updatedAt(b) {
@@ -67,17 +66,17 @@ export function elapsed(buildOrTask) {
 	return (
 		<div className="elapsed">
 			<i className="fa fa-clock-o"></i>&nbsp;
-			{formatDurationHHMMSS(moment.duration(moment(buildOrTask.EndedAt).diff(buildOrTask.StartedAt)))}
+			{formatDurationHHMMSS(new Date(buildOrTask.EndedAt).getTime() - new Date(buildOrTask.StartedAt).getTime())}
 		</div>
 	);
 }
 
 // formatDurationHHMMSS returns a string like "9:03" (meaning 9
-// minutes, 3 seconds) given a moment duration value.
-export function formatDurationHHMMSS(d) {
-	let h = Math.floor(d.asHours());
-	let m = d.minutes();
-	let s = d.seconds();
+// minutes, 3 seconds) given a number of milliseconds.
+export function formatDurationHHMMSS(ms) {
+	let s = Math.floor(ms / 1000);
+	let m = Math.floor(s / 60);
+	let h = Math.floor(m / 60);
 
 	let str = "";
 

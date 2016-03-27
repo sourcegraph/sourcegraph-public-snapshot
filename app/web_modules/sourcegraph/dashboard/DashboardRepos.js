@@ -2,11 +2,11 @@ import React from "react";
 import update from "react/lib/update";
 
 import Component from "sourcegraph/Component";
-import moment from "moment";
 import repoLink from "sourcegraph/util/repoLink";
 import Styles from "./styles/Dashboard.css";
 import context from "sourcegraph/context";
 import NotificationWell from "sourcegraph/dashboard/NotificationWell";
+import TimeAgo from "sourcegraph/util/TimeAgo";
 
 class DashboardRepos extends Component {
 	constructor(props) {
@@ -88,9 +88,11 @@ class DashboardRepos extends Component {
 	_repoSort(a, b) {
 		if (!this._canMirror(a) && this._canMirror(b)) return 1;
 		if (this._canMirror(a) && !this._canMirror(b)) return -1;
-		if (moment(this._repoTime(a)).isBefore(moment(this._repoTime(b)))) return 1;
-		if (moment(this._repoTime(a)).isAfter(moment(this._repoTime(b)))) return -1;
-		return -1;
+		let ta = this._repoTime(a);
+		let tb = this._repoTime(b);
+		if (ta < tb) return -1;
+		else if (ta === tb) return 0;
+		return 1;
 	}
 
 	_repoDisabled(repo) {
@@ -168,7 +170,7 @@ class DashboardRepos extends Component {
 										</div>
 										<div>
 											<p className={Styles.repo_description}>{repo.Description}</p>
-											<p className={Styles.repo_updated}>{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
+											{this._repoTime(repo) && <p className={Styles.repo_updated}><TimeAgo time={this._repoTime(repo)} /></p>}
 										</div>
 									</div>
 								</div>

@@ -26,7 +26,6 @@ var plugins = [
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
 	}),
-	new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/), // Don't load all moment locales
 	new ExtractTextPlugin("[name].css"),
 ];
 

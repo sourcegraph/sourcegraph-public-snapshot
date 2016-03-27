@@ -1,4 +1,3 @@
-import moment from "moment";
 import React from "react";
 
 import Container from "sourcegraph/Container";
@@ -30,11 +29,10 @@ class TreeEntryCommit extends Container {
 		commit = commit.Commits[0];
 
 		let sig = commit.Author || commit.Committer;
-		let time = moment(sig.Date);
 
 		return (
 				<div className="commit">
-					<time title={time.calendar()}>{time.fromNow()}</time>
+					<time>{sig.Date}</time>
 					<div className="message">
 						<a href={`/${this.state.repo}/-/commits/${commit.ID}`}>{commit.Message}</a>
 					</div>

@@ -151,7 +151,12 @@
 											"type": "p",
 											"props": {
 												"children": [
-													"Updated a few seconds ago"
+													{
+														"type": "TimeAgo",
+														"props": {
+															"time": "1970-01-01T00:00:00.001Z"
+														}
+													}
 												]
 											}
 										}
@@ -201,7 +206,7 @@
 											"type": "span",
 											"props": {
 												"children": [
-													"C++ coming soon"
+													"Python coming soon"
 												]
 											}
 										},
@@ -217,7 +222,12 @@
 											"type": "p",
 											"props": {
 												"children": [
-													"Updated a few seconds ago"
+													{
+														"type": "TimeAgo",
+														"props": {
+															"time": "1970-01-01T00:00:00.002Z"
+														}
+													}
 												]
 											}
 										}
@@ -275,7 +285,12 @@
 											"type": "p",
 											"props": {
 												"children": [
-													"Updated a few seconds ago"
+													{
+														"type": "TimeAgo",
+														"props": {
+															"time": "1970-01-01T00:00:00.003Z"
+														}
+													}
 												]
 											}
 										}
@@ -317,7 +332,7 @@
 											"type": "span",
 											"props": {
 												"children": [
-													"Python coming soon"
+													"C++ coming soon"
 												]
 											}
 										},
@@ -333,7 +348,12 @@
 											"type": "p",
 											"props": {
 												"children": [
-													"Updated a few seconds ago"
+													{
+														"type": "TimeAgo",
+														"props": {
+															"time": "1970-01-01T00:00:00.004Z"
+														}
+													}
 												]
 											}
 										}

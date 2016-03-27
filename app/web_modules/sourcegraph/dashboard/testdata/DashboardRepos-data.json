@@ -151,7 +151,12 @@
 											"type": "p",
 											"props": {
 												"children": [
-													"Updated a few seconds ago"
+													{
+														"type": "TimeAgo",
+														"props": {
+															"time": "2016-02-24T10:18:55-08:00"
+														}
+													}
 												]
 											}
 										}

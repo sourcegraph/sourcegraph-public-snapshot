@@ -1,7 +1,6 @@
 import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
-import moment from "moment";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 
 import testdataData from "sourcegraph/dashboard/testdata/DashboardRepos-data.json";
@@ -13,7 +12,7 @@ describe("DashboardRepos", () => {
 			Private: false,
 			URI: "someURL",
 			Description: "someDescription",
-			UpdatedAt: moment(),
+			UpdatedAt: "2016-02-24T10:18:55-08:00",
 			Language: "Go",
 		}];
 		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
@@ -27,10 +26,10 @@ describe("DashboardRepos", () => {
 describe("DashboardRepos", () => {
 	it("should render unsupported repos", () => {
 		let repos = [
-			{GitHubID: 1, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment(), Language: "C++"},
-			{GitHubID: 2, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(1, "seconds"), Language: "C"},
-			{GitHubID: 3, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(2, "seconds"), Language: "Python"},
-			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: moment().subtract(3, "seconds"), Language: "Scala"},
+			{GitHubID: 1, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(4).toISOString(), Language: "C++"},
+			{GitHubID: 2, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(3).toISOString(), Language: "C"},
+			{GitHubID: 3, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(2).toISOString(), Language: "Python"},
+			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(1).toISOString(), Language: "Scala"},
 		];
 		autotest(testdataUnsupported, `${__dirname}/testdata/DashboardRepos-unsupported.json`,
 			<DashboardRepos
