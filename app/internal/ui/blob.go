@@ -32,6 +32,7 @@ type blob struct {
 	HighlightSelectedLines bool                        `json:"highlightSelectedLines"`
 
 	// State
+	FirstVisibleLine  int `json:"firstVisibleLine"`
 	VisibleLinesCount int `json:"visibleLinesCount"`
 
 	reactID int
@@ -55,6 +56,9 @@ func (b *blob) lines() ([]byte, error) {
 	lines := bytes.Split([]byte(b.Contents), []byte("\n"))
 	lineAnns := annotationsByLine(b.Annotations, lines)
 
+	visibleLinesStart := b.FirstVisibleLine
+	visibleLinesEnd := visibleLinesStart + b.VisibleLinesCount
+
 	var buf bytes.Buffer
 	for i, line := range lines {
 		lineNum := i + 1
@@ -68,7 +72,7 @@ func (b *blob) lines() ([]byte, error) {
 		fmt.Fprintf(&buf, `<td class="line-number" data-line="%d" data-reactid="%s"></td>`, i+1, b.nextReactID())
 		fmt.Fprintf(&buf, `<td class="line-content" data-reactid="%s">`, b.nextReactID())
 
-		if i >= b.VisibleLinesCount {
+		if i < visibleLinesStart || i >= visibleLinesEnd {
 			reactCompatibleHTMLEscape(&buf, line)
 		} else {
 			lineAnns2 := make([]*annotate.Annotation, len(lineAnns[i]))

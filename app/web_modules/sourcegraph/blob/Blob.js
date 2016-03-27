@@ -19,11 +19,18 @@ const tilingFactor = 100;
 // The smaller the visibleLinesCount, the faster the initial load.
 const initialVisibleLinesCount = 80;
 
+function initialFirstVisibleLine(props) {
+	if (props.scrollToStartLine && props.startLine) {
+		return Math.max(0, props.startLine - (initialVisibleLinesCount / 2));
+	}
+	return 0;
+}
+
 class Blob extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			firstVisibleLine: 0,
+			firstVisibleLine: initialFirstVisibleLine(props),
 			visibleLinesCount: initialVisibleLinesCount,
 			lineAnns: [],
 			expandedRanges: [],
@@ -45,11 +52,11 @@ class Blob extends Component {
 		//       and unreliable to implement. Revisit this later if it's neccessary.
 		//
 		// Delay scrolling to give BlobRouter a chance to populate startLine.
-		window.setTimeout(() => {
+		setTimeout(() => {
 			if (this.state.startLine && this.state.scrollToStartLine) {
 				this._scrollTo(this.state.startLine);
 			}
-		}, 100);
+		}, 0);
 
 		document.addEventListener("selectionchange", this._handleSelectionChange);
 		this._isMounted = true;
@@ -374,7 +381,10 @@ Blob.propTypes = {
 class ServerBlob extends Component { // eslint-disable-line react/no-multi-comp
 	render() {
 		let reactID = this._reactInternalInstance._nativeContainerInfo._idCounter;
-		let props = Object.assign({visibleLinesCount: initialVisibleLinesCount}, this.props);
+		let props = Object.assign({
+			visibleLinesCount: initialVisibleLinesCount,
+			firstVisibleLine: initialFirstVisibleLine(this.props),
+		}, this.props);
 
 		// On the server, __goRenderBlob__ is a globally injected Go function that behaves like a
 		// stateless component. It accepts props and returns the HTML for the blob.
