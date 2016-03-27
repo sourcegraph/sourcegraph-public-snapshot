@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,9 +11,18 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
+
+// Thresholds under which we should fail the build
+const (
+	FileScoreThresh = 0.2
+	RefScoreThresh  = 0.5
+)
+
+var errCoverageIsBad = errcode.HTTPErr{Status: http.StatusNotAcceptable, Err: fmt.Errorf("coverage did not meet minimum thresholds")}
 
 func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
@@ -30,6 +40,10 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	var cov cvg.Coverage
 	if err := json.NewDecoder(r.Body).Decode(&cov); err != nil {
 		return err
+	}
+
+	if cov.FileScore < FileScoreThresh || cov.RefScore < RefScoreThresh {
+		return &errCoverageIsBad
 	}
 
 	covJSON, err := json.Marshal(cov)
