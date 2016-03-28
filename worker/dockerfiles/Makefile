@@ -19,7 +19,7 @@ clean:
 
 $(TOOLCHAINS): srclib
 	@$(eval HASH = $(shell git ls-remote https://github.com/sourcegraph/$@ | head -1 | sed "s/HEAD//" | sed "s/[[:space:]]*//g"))
-	docker build -t sourcegraph/$@ -f ./Dockerfile.$@ .
+	docker build -t sourcegraph/$@ --build-arg TOOLCHAIN_VERSION=${HASH} -f ./Dockerfile.$@ .
 
 # Generates srclib binary
 srclib:
