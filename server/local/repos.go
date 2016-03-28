@@ -220,12 +220,16 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
 func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
+	return resolveRepoRev(ctx, repoRev)
+}
+
+func resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
 	// Resolve revs like "master===commitid".
 	if repoRev.CommitID == "" {
 		repoRev.Rev, repoRev.CommitID = spec.ParseResolvedRev(repoRev.Rev)
 	}
 
-	if err := s.resolveRepoRevBranch(ctx, repoRev); err != nil {
+	if err := resolveRepoRevBranch(ctx, repoRev); err != nil {
 		return err
 	}
 
@@ -244,10 +248,10 @@ func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRev
 	return nil
 }
 
-func (s *repos) resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
+func resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
 	if repoRev.CommitID == "" && repoRev.Rev == "" {
 		// Get default branch.
-		defBr, err := s.defaultBranch(ctx, repoRev.URI)
+		defBr, err := defaultBranch(ctx, repoRev.URI)
 		if err != nil {
 			return err
 		}
@@ -274,8 +278,8 @@ func (s *repos) resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.R
 	return nil
 }
 
-func (s *repos) defaultBranch(ctx context.Context, repoURI string) (string, error) {
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
+func defaultBranch(ctx context.Context, repoURI string) (string, error) {
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
 	if err != nil {
 		return "", err
 	}

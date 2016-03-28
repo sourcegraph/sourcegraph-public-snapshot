@@ -33,7 +33,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		op.Opt.PerPage = 20
 	}
 	if op.Opt.Head == "" {
-		defBr, err := s.defaultBranch(ctx, op.Repo.URI)
+		defBr, err := defaultBranch(ctx, op.Repo.URI)
 		if err != nil {
 			return nil, err
 		}
