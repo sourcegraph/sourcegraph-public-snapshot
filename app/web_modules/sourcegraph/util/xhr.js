@@ -3,6 +3,18 @@ import defaultXhr from "xhr";
 import context from "sourcegraph/context";
 
 export default function(options, callback) {
+	if (typeof document === "undefined") {
+		// On the server (in the Duktape JS VM), there is no XHR. This HTTP request
+		// will not be issued nor satisfied, but that's OK, since the client will
+		// pick up where the server left off by issuing the same request.
+		//
+		// Calling XHR on the server indicates that data was not preloaded. This is
+		// OK, but you can improve performance by preloading the necessary data. NOTE:
+		// manual preloading of data will no longer be necessary in the upcoming
+		// pure-react branch (this was written on 2016 Mar 28).
+		return;
+	}
+
 	let defaultOptions = {
 		headers: {
 			"X-Csrf-Token": context.csrfToken,
