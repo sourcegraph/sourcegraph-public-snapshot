@@ -69,7 +69,7 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	return nil
 }
 
-var droneSrclibGoImage = "srclib/drone-srclib-go@sha256:c4d2678d1c69abebb75ac6c19bce7a69111a8e07a59aa288cd165df2f3102170"
+var droneSrclibGoImage = "sourcegraph/srclib-go:latest"
 
 // Note: If you push new Docker images for the srclib build steps, you
 // MUST update the SHA256 digest, or else users will continue using
@@ -91,7 +91,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "JavaScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-javascript@sha256:d02d302667c4cd8efa998b82ec95643c5924d774e247a77649aa7618d45a46cf",
+				Image: "sourcegraph/srclib-javascript:latest",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -101,7 +101,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-java:ff79de9-6e4c64a-1e6121e",
+				Image: "sourcegraph/srclib-java:latest",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -111,7 +111,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "PHP (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-basic@sha256:f1d229c9895b860e8709a3d2bbd707ac15a092a97eec2f3e961454d064f3dc14",
+				Image: "sourcegraph/srclib-basic:latest",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -121,7 +121,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Objective-C (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-basic@sha256:f1d229c9895b860e8709a3d2bbd707ac15a092a97eec2f3e961454d064f3dc14",
+				Image: "sourcegraph/srclib-basic:latest",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -131,7 +131,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Python (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-python@sha256:30f6405d6ced73bdf418dec5a97ba5e650d1c6967acfefebc43de2dd75792d01",
+				Image: "sourcegraph/srclib-python:latest",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -141,7 +141,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "srclib/drone-srclib-typescript:8644e04-056526a-5e3eceb",
+				Image: "sourcegraph/srclib-typescript:latest",
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,

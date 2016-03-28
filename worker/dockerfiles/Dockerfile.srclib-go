@@ -1,0 +1,19 @@
+#
+# Docker image for srclib-go
+#
+
+# Install dependencies
+FROM golang:1.6-alpine
+RUN apk --update add git make
+
+# Install srclib-go executable
+RUN go get -d sourcegraph.com/sourcegraph/srclib-go/...
+ENV SRCLIBPATH $GOPATH/src
+RUN cd $GOPATH/src/sourcegraph.com/sourcegraph/srclib-go && make
+
+# Install srclib binary (assumes this has been built on the Docker host)
+ADD ./srclib /bin/srclib
+
+# Run environment
+ENV GOPATH /drone
+ENTRYPOINT srclib config && srclib make

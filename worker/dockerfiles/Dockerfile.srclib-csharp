@@ -1,0 +1,13 @@
+#
+# Docker image for srclib-csharp
+#
+
+# Dependencies
+FROM microsoft/aspnet:1.0.0-rc1-update1-coreclr
+
+# Install srclib-csharp executable
+ENV SRCLIBPATH /srclib
+RUN git clone https://github.com/sourcegraph/srclib-csharp /srclib/srclib-csharp
+RUN cd /srclib/srclib-csharp && dnu restore
+
+# TODO(beyang): fill in once you get Dockerfile from Ildar

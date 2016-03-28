@@ -1,0 +1,41 @@
+#
+# Docker image for srclib-basic
+#
+
+#
+# Dependencies
+#
+FROM maven:3-jdk-8
+RUN apt-get update -y
+RUN apt-get install -qq git make wget
+
+# FROM alpine:3.2
+# RUN echo "http://dl-4.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+# RUN echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+# RUN apk add --update curl ca-certificates git bash openjdk8 make wget
+# RUN apk add --update wget
+# RUN rm -rf /var/cache/apk/*
+
+# # Gradle
+# ENV GRADLE_VERSION 2.10
+# WORKDIR /usr/lib
+# RUN wget -q --no-check-certificate https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
+# RUN unzip "gradle-${GRADLE_VERSION}-bin.zip"
+# RUN ln -s "/usr/lib/gradle-${GRADLE_VERSION}/bin/gradle" /usr/bin/gradle
+# RUN rm "gradle-${GRADLE_VERSION}-bin.zip"
+
+#
+# Install srclib-basic executable
+#
+ENV SRCLIBPATH /srclib
+RUN git clone https://github.com/sourcegraph/srclib-basic /srclib/srclib-basic
+WORKDIR /srclib/srclib-basic
+RUN make install
+
+#
+# Install srclib binary (assumes this has been built on the Docker host)
+#
+ADD ./srclib /bin/srclib
+
+# Run environment
+ENTRYPOINT srclib config && srclib make

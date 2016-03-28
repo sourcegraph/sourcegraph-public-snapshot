@@ -1,0 +1,21 @@
+#
+# Docker image for srclib-typescript
+#
+
+# Install dependencies
+FROM node:5.7.0-slim
+RUN apt-get update -y
+RUN apt-get install -qq git
+
+# Install srclib-typescript executable
+ENV SRCLIBPATH /srclib
+RUN git clone https://github.com/sourcegraph/srclib-typescript /srclib/srclib-typescript
+WORKDIR /srclib/srclib-typescript
+RUN npm install
+RUN npm install typescript -g
+RUN tsc -p .
+
+# Install srclib binary (assumes this has been built on the Docker host)
+ADD ./srclib /bin/srclib
+
+ENTRYPOINT srclib config && srclib make

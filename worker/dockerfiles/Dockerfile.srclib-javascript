@@ -1,0 +1,30 @@
+#
+# Docker image for srclib-javascript
+#
+
+#
+# Dependencies
+#
+FROM node:5.7.0-slim
+RUN apt-get update -y
+RUN apt-get install -qq git
+RUN npm install --silent -g node-gyp-install
+
+#
+# Install srclib-javascript executable
+#
+ENV SRCLIBPATH /srclib
+ENV IN_DOCKER_CONTAINER true
+RUN git clone https://github.com/sourcegraph/srclib-javascript /srclib/srclib-javascript
+# Otherwise these get picked up as being in the jsg package
+ENV NODEJS_CORE_MODULES_DIR /tmp/node_core_modules
+RUN ln -rs /srclib/srclib-javascript/node_modules/jsg/testdata/node_core_modules $NODEJS_CORE_MODULES_DIR
+
+#
+# Install srclib binary (assumes this has been built on the Docker host)
+#
+ADD ./srclib /bin/srclib
+
+# Run environment
+ENV IN_DOCKER_CONTAINER=
+ENTRYPOINT srclib config && srclib make
