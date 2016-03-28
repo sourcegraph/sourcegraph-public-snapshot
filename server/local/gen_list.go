@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/gen"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gen"
 )
 
 var (

@@ -5,7 +5,7 @@ package main
 import (
 	"text/template"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/gen"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gen"
 )
 
 func main() {
