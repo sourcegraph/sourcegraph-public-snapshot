@@ -6,6 +6,8 @@
 # Dependencies
 #
 FROM maven:3-jdk-8
+ARG TOOLCHAIN_VERSION
+
 RUN apt-get update -y
 RUN apt-get install -qq git make
 
@@ -41,7 +43,6 @@ RUN wget -q https://srclib-support.s3-us-west-2.amazonaws.com/srclib-java/build/
 RUN tar xfz bundled-jdk1.8.0_45.tar.gz
 RUN rm bundled-jdk1.8.0_45.tar.gz
 # Install
-ENV TOOLCHAIN_VERSION e0f1cb29d7b4e3da2816cbbff341ce2b683ea088
 RUN git fetch origin && git checkout $TOOLCHAIN_VERSION
 RUN make
 

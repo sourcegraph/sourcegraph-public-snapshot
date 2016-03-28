@@ -4,10 +4,10 @@
 
 # Dependencies
 FROM microsoft/aspnet:1.0.0-rc1-update1-coreclr
+ARG TOOLCHAIN_VERSION
 
 # Install srclib-csharp executable
 ENV SRCLIBPATH /srclib
-ENV TOOLCHAIN_VERSION TODO
 RUN git clone https://github.com/sourcegraph/srclib-csharp /srclib/srclib-csharp
 RUN cd /srclib/srclib-csharp && git checkout $TOOLCHAIN_VERSION
 RUN cd /srclib/srclib-csharp && dnu restore

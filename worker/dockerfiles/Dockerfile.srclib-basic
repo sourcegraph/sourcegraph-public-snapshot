@@ -6,6 +6,8 @@
 # Dependencies
 #
 FROM maven:3-jdk-8
+ARG TOOLCHAIN_VERSION
+
 RUN apt-get update -y
 RUN apt-get install -qq git make wget
 
@@ -28,7 +30,6 @@ RUN apt-get install -qq git make wget
 # Install srclib-basic executable
 #
 ENV SRCLIBPATH /srclib
-ENV TOOLCHAIN_VERSION 6c458fb05d587e521c0aad930bf7995f74a28d56
 RUN git clone https://github.com/sourcegraph/srclib-basic /srclib/srclib-basic
 RUN cd /srclib/srclib-basic && git checkout $TOOLCHAIN_VERSION
 WORKDIR /srclib/srclib-basic

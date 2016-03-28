@@ -17,25 +17,12 @@ push:
 clean:
 	rm ./srclib
 
-srclib-go: srclib
-	docker build -t sourcegraph/srclib-go -f ./Dockerfile.srclib-go .
-
-srclib-java: srclib
-	docker build -t sourcegraph/srclib-java -f ./Dockerfile.srclib-java .
-
-srclib-typescript: srclib
-	docker build -t sourcegraph/srclib-typescript -f ./Dockerfile.srclib-typescript .
-
-srclib-python: srclib
-	docker build -t sourcegraph/srclib-python -f ./Dockerfile.srclib-python .
-
-srclib-basic: srclib
-	docker build -t sourcegraph/srclib-basic -f ./Dockerfile.srclib-basic .
-
-srclib-javascript: srclib
-	docker build -t sourcegraph/srclib-javascript -f ./Dockerfile.srclib-javascript .
+$(TOOLCHAINS): srclib
+	@$(eval HASH = $(shell git ls-remote https://github.com/sourcegraph/$@ | head -1 | sed "s/HEAD//" | sed "s/[[:space:]]*//g"))
+	docker build -t sourcegraph/$@ -f ./Dockerfile.$@ .
 
 # Generates srclib binary
 srclib:
-	docker build -t sourcegraph/srclib .
+	@$(eval HASH = $(shell git ls-remote https://github.com/sourcegraph/srclib | head -1 | sed "s/HEAD//" | sed "s/[[:space:]]*//g"))
+	docker build -t sourcegraph/srclib --build-arg SRCLIB_VERSION=${HASH} .
 	docker run -v ${PWD}:/out sourcegraph/srclib

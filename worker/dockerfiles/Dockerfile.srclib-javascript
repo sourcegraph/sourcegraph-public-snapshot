@@ -6,6 +6,8 @@
 # Dependencies
 #
 FROM node:5.7.0-slim
+ARG TOOLCHAIN_VERSION
+
 RUN apt-get update -y
 RUN apt-get install -qq git
 RUN npm install --silent -g node-gyp-install
@@ -14,7 +16,6 @@ RUN npm install --silent -g node-gyp-install
 # Install srclib-javascript executable
 #
 ENV SRCLIBPATH /srclib
-ENV TOOLCHAIN_VERSION 38cb738a5c5b00e89aba23e1d34c166e11460100
 ENV IN_DOCKER_CONTAINER true
 RUN git clone https://github.com/sourcegraph/srclib-javascript /srclib/srclib-javascript
 RUN cd /srclib/srclib-javascript && git checkout $TOOLCHAIN_VERSION
