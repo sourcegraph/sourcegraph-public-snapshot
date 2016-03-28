@@ -148,7 +148,7 @@ test: check app/assets/bundle.js
 	$(MAKE) go-test
 
 go-test: src
-	SG_PEM_ENCRYPTION_PASSWORD=a SG_TICKET_SIGNING_KEY=a go test $(GORACE) ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
+	go test $(GORACE) ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
 
 smtest:
 	$(MAKE) go-test GOFLAGS=""
