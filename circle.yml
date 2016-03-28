@@ -73,7 +73,7 @@ deployment:
   master-branch:
     branch: master
     commands:
-      - ./circle-build-docker-image.sh $LONG_VERSION:
+      - ./dev/circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
@@ -83,14 +83,14 @@ deployment:
   staging-branch:
     branch: [staging, staging2, staging3]
     commands:
-      - ./circle-build-docker-image.sh $LONG_VERSION:
+      - ./dev/circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
       - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION"
 
   release-tag:
     tag: /[0-9]+\.[0-9]+\.[0-9]+/
     commands:
-      - ./circle-build-docker-image.sh $CIRCLE_TAG:
+      - ./dev/circle-build-docker-image.sh $CIRCLE_TAG:
           pwd: $REPO
 
       # push to Docker Hub
