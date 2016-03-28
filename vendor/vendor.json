@@ -582,11 +582,6 @@
 			"revisionTime": "2015-07-26T08:41:08-07:00"
 		},
 		{
-			"path": "github.com/sourcegraph/go-ses",
-			"revision": "e187601ed17143661213aa24a7376efd6f676918",
-			"revisionTime": "2014-02-28T07:07:28-08:00"
-		},
-		{
 			"path": "github.com/sourcegraph/httpcache",
 			"revision": "96098fca6c2a134f51950e0bf8ba4ebf6f14fdef",
 			"revisionTime": "2016-01-31T22:50:39-08:00"
