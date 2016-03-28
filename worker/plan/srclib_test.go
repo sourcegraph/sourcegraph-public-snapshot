@@ -35,7 +35,7 @@ func TestConfigureSrclib_withLangs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wants := []string{"srclib/drone-srclib-go", "srclib/drone-srclib-javascript"}
+	wants := []string{"sourcegraph/srclib-go", "sourcegraph/srclib-javascript"}
 	for _, want := range wants {
 		if !strings.Contains(config2yaml(config), want) {
 			t.Errorf("### got\n%s\n\n### want to contain %q", config2yaml(config), want)
