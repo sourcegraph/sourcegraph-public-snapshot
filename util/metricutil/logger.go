@@ -12,7 +12,6 @@ import (
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 	"sourcegraph.com/sqs/pbtypes"
@@ -268,7 +267,7 @@ func LogConfig(ctx context.Context, clientID, flagsSafe string) {
 			Message:  flagsSafe,
 		})
 
-		env := env.GetWhitelistedEnvironment()
+		env := getWhitelistedEnvironment()
 		env = append(env, "GOOS="+runtime.GOOS)
 		env = append(env, "GOARCH="+runtime.GOARCH)
 
