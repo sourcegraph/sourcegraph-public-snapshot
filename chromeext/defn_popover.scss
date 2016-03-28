@@ -1,0 +1,47 @@
+$popover-border-color:                rgba(0,0,0,.2) !default;
+$font-family-sans-serif:  "Helvetica Neue", Helvetica, Arial, sans-serif !default;
+$font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace !default;
+$padding-base-vertical:     6px !default;
+$padding-base-horizontal:   12px !default;
+$font-size-base:          14px !default;
+$border-radius-base:        4px !default;
+
+.sourcegraph-popover {
+  background-color: rgba(255, 255, 255, 0.93);
+  max-width: 360px !important;
+  width: 360px !important;
+
+  border: solid 1px lighten($popover-border-color, 5%);
+  border-radius: $border-radius-base;
+  font-family: $font-family-sans-serif;
+  padding: $padding-base-vertical $padding-base-horizontal;
+  font-size: $font-size-base !important;
+
+  .title {
+      word-wrap: break-word;
+      .name {
+          font-weight: bold;
+      }
+  }
+
+  tt, code, pre {
+      font-family: $font-family-monospace;
+  }
+
+  p {
+      margin-top: 7px;
+  }
+
+  .repo {
+      color: #888;
+  }
+
+  opacity: 0;
+  &.visible {
+      opacity: 1;
+      -webkit-transition: opacity 0.1s ease-in-out;
+      -transition: opacity 0.1s ease-in-out;
+  }
+  -webkit-transition: opacity 0.1s ease-in-out;
+  transition: opacity 0.1s ease-in-out;
+}

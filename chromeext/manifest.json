@@ -1,0 +1,28 @@
+{ 
+	"manifest_version": 2,
+	"name": "Sourcegraph",
+	"version": "0.0.3",
+	"description": "Enhance code browsing on GitHub: semantic code search, instant documentaton tooltips, and jump-to-definition links for GitHub code.",
+	"icons": {"128": "/assets/sg-sourcegraph-mark.png"},
+
+	"content_scripts": [
+		{
+		"matches": ["https://github.com/*"],
+		"css": ["sgsearch.css", "defn_popover.css"],
+		"js": ["jquery-1.12.0.min.js", "annotations.js", "sgsearch.js", "defn-popover.js"]
+		
+		}],
+	"web_accessible_resources": ["sgsearch.css", "defn_popover.css", "assets/t.png", "/assets/src4.png", "/assets/search.png"],
+	"background": {
+		"scripts": ["background_page.js"]
+
+	},
+	"permissions": [
+		"activeTab",
+		"https://sourcegraph.com/*",
+		"storage"
+		],
+
+	"content_security_policy": "script-src https://assets-cdn.github.com 'unsafe-eval'; object-src 'self'"
+
+}
