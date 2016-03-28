@@ -178,7 +178,7 @@ type ServeCmd struct {
 	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
 	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
-	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default" env:"SRC_GIT_SERVERS"`
+	GitServers string `long:"new-git-servers" description:"addresses of the remote git servers; a local git server process is used by default" env:"SRC_NEW_GIT_SERVERS"`
 }
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
