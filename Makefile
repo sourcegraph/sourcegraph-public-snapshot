@@ -118,8 +118,8 @@ libvfsgen:
 ${GOBIN}/go-template-lint:
 	go get sourcegraph.com/sourcegraph/go-template-lint
 
-${GOBIN}/sgtool: $(wildcard sgtool/*.go)
-	go install ./sgtool
+${GOBIN}/sgtool: $(wildcard dev/sgtool/*.go)
+	go install ./dev/sgtool
 
 dist-dep: libvfsgen ${GOBIN}/sgtool
 
