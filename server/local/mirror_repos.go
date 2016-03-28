@@ -6,7 +6,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/AaronO/go-git-http"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
@@ -25,17 +24,6 @@ var MirrorRepos sourcegraph.MirrorReposServer = &mirrorRepos{}
 type mirrorRepos struct{}
 
 var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
-
-var activeGitGC = prometheus.NewGauge(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "git",
-	Name:      "active_gc",
-	Help:      `Total number of "git gc" commands that are currently running.`,
-})
-
-func init() {
-	prometheus.MustRegister(activeGitGC)
-}
 
 // TODO(sqs): What if multiple goroutines or processes
 // simultaneously clone or update the same repo? Race conditions
