@@ -11,7 +11,7 @@ set -e
 set -o pipefail
 
 i=0
-cmds=("./sh/gofmt.sh" "(cd app; npm run dep)" "(cd app; npm test)" "make check")
+cmds=("./dev/gofmt.sh" "(cd app; npm run dep)" "(cd app; npm test)" "make check")
 for cmd in "${cmds[@]}"; do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
