@@ -1,5 +1,4 @@
 .dashboard {
-
 	padding: 0 20px 0;
 
 	/* These styles are temporary, until we implement our UI kit standard styles. */
@@ -9,9 +8,9 @@
 	input:not([type='radio']), .input-group {
 		height: 40px;
 	}
-
 	input {
 		transition: none;
+
 		&:focus {
 			border-color: $input-border-focus;
 			box-shadow: none;
@@ -20,7 +19,6 @@
 			border-color: $brand-danger;
 		}
 	}
-
 	.alert-content {
 		color: $alert-default-text;
 		font-size: 16px;
@@ -30,13 +28,11 @@
 			margin-right: 15px;
 		}
 	}
-
 	.btn {
 		text-transform: uppercase;
 		font-weight: 500;
 		letter-spacing: 1px;
 	}
-
 	.btn-icon {
 		font-size: 16px;
 		cursor: pointer;
@@ -46,11 +42,9 @@
 			color: $brand-azure;
 		}
 	}
-
 	.dashboard-container {
 		margin-top: 55px;
 	}
-
 	.link-github-well {
 		display: flex;
 		flex-wrap: wrap;
@@ -60,12 +54,10 @@
 			flex: 6;
 			margin-right: 30px;
 		}
-
 		.link-github-button {
 			flex: 2;
 			text-transform: uppercase;
 		}
-
 		.avatar-container {
 			position: relative;
 			width: 40px;
@@ -73,12 +65,10 @@
 			display: inline-block;
 			margin-right: 20px;
 		}
-
 		.avatar-github {
 			opacity: 0.5;
 			background-color: $brand-success;
 		}
-
 		.github-link-success-icon {
 			width: 24px;
 			height: 24px;
@@ -101,7 +91,6 @@
 			}
 		}
 	}
-
 	.dash-repos {
 		border: none;
 
@@ -117,11 +106,10 @@
 				flex: 9;
 			}
 		}
-
 		.repos-list nav {
 			@include clearfix;
 			border: none;
-			padding: 25px 0;
+			padding-top: 25px;
 			$list-button-height: 36px;
 
 			.toggles {
@@ -138,45 +126,43 @@
 					font-size: 12px;
 				}
 			}
-
 			.search-bar {
 				height: $list-button-height;
 				display: block;
 				width: 240px;
 				margin-top: $padding-large-vertical;
 
-				@media (min-width: $screen-sm-min) {
+				@media (min-width:$screen-sm-min) {
 					float: right;
 					display: inline-block;
 					margin-top: 0;
 				}
-
 				.search-addon {
 					background-color: white;
 					color: #7794ae;
 				}
-
 				.search-input {
 					margin: 0px;
 					border-right: none;
 					transition: none;
+
 					&:focus + .search-addon {
 						border-color: $input-border-focus;
 					}
 				}
 			}
+			h3 {
+				margin-top: 7px;
+			}
 		}
-
 		.repo-disabled {
 			background-color: $pale-grey;
 		}
-
 		.disabled-reason {
 			font-style: italic;
 			color: $text-disabled;
 			font-size: $font-size-small;
 		}
-
 		h4 {
 			margin-bottom: $padding-base-vertical;
 			color: $text-header;
@@ -202,128 +188,20 @@
 			letter-spacing: 1px;
 		}
 	}
-
-	.dash-users {
-		.empty-well {
-			margin-top: 20px;
-		}
-
-		.add-user-well {
-			margin-top: 18px;
-			text-align: center;
-		}
-
-		.user-permissions {
-			text-align: left;
-		}
-
-		.panel-heading {
-			@include clearfix;
-			background-color: $body-bg;
-			padding: 4px 15px;
-			h5 {
-				flex: 6;
-				font-size: 18px;
-				margin-top: 0;
-				margin-bottom: 0;
-			}
-		}
-
-		.panel-heading-content {
-			display: flex;
-			align-items: center;
-			height: 40px;
-		}
-
-		.users-list {
-			padding-top: 0;
-			padding-bottom: 0;
-
-			.list-group {
-				margin-bottom: $padding-base-vertical;
-			}
-
-			.list-group-item {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-
-				min-height: 45px;
-				text-align: left;
-				border: none;
-				border-bottom: $content-border;
-				margin-top: 1px;
-				padding: $padding-base-vertical 0;
-
-				&:last-child {
-					border-bottom: none;
-				}
-
-				.avatar-sm {
-					flex: 1
-				}
-
-				.add-user-icon-disabled {
-					cursor: not-allowed !important;
-					opacity: .3;
-
-					&:hover {
-						color: $shadow-blue;
-					}
-				}
-
-				.user-name {
-					margin-left: 15px;
-					margin-top: 4px;
-					flex: 6;
-					overflow-wrap: break-word;
-					overflow: auto;
-					margin-right: 10px;
-				}
-
-				.user-permissions {
-					margin-top: 4px;
-					color: $text-light;
-					flex: 1;
-				}
-			}
-		}
-
-		.plus-btn {
-			display: inline-block;
-			background-color: $btn-primary-bg;
-
-			width: 16px;
-			height: 16px;
-			border-radius: 2px;
-			margin-right: 10px;
-		}
-
-		h5 {
-			display: inline-block;
-			float: left;
-		}
-
-	}
-
 	.add-repos-widget, .add-users-widget {
 		.add-repo-label {
 			margin-top: 20px;
 		}
-
 		.selectable-list-widget {
 			margin-top: 25px;
 		}
 	}
-
 	.widget-footer {
 		width: 80%;
 		margin: auto;
 		margin-top: 25px;
 		margin-bottom: 10px;
-
 	}
-
 	.widget-footer, .github-link-welcome > footer {
 		button {
 			height: 48px;
@@ -337,11 +215,9 @@
 			margin-right: auto;
 		}
 	}
-
 	.confirm-invite-all {
 		text-align: center;
 	}
-
 	.invited-user-notification {
 		flex: 6;
 		margin-right: 30px;

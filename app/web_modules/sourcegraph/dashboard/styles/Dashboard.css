@@ -1,0 +1,139 @@
+@value base "sourcegraph/components/styles/base.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value grid "sourcegraph/components/styles/grid.css";
+
+@value repo_title from typography;
+@value repo_updated from typography;
+@value repo_disabled_background from typography;
+@value section_header_color from typography;
+
+/*<div className="dashboard-container row">
+<div className="dash-repos col-lg-8 col-md-8 col-lg-offset-2 col-md-offset-2">
+*/
+
+.logo {
+	composes: center from base;
+	display: block;
+	composes: col-6 from grid;
+}
+
+.wrap_link {
+	margin-left: 3px;
+}
+
+.anon_header {
+	composes: center from base;
+}
+
+.bold_link {
+	composes: b from typography;
+}
+
+.anon_title {
+	composes: f1 from typography;
+	composes: tc from typography;
+	composes: mt3 from base;
+	color: #344a66;
+}
+
+.anon_header_sub {
+	composes: f3 from typography;
+	composes: tc from typography;
+	composes: mt3 from base;
+	color: #7794ae;
+}
+
+.anon_repo {
+	composes: col from grid;
+	composes: col-4 from grid;
+}
+
+.dashboard_container {
+	composes: pt5 from base;
+}
+
+.section_header {
+	composes: f1 from typography;
+	composes: mt4 from base;
+	display: block;
+	color: section_header_color;
+	composes: b from base;
+}
+
+.repo_list_header {
+	composes: b f3 ph3 pt4 pb2 tracked from base;
+	composes: gray from base;
+	text-transform: uppercase;
+}
+
+.repo_list_header_temp {
+	composes: b f3 ph3 pt4 pb2 tracked from base;
+	composes: gray from base;
+	text-transform: uppercase;
+	margin-left: -1em;
+}
+
+.repo_description {
+	composes: fw4 from typography;
+	composes: f3 from typography;
+	composes: mb3 from base;
+	composes: mt3 from base;
+	color: #969896;
+}
+
+.repo_updated {
+	composes: fw7 from typography;
+	text-transform: uppercase;
+	composes: mb3 from base;
+	composes: f4 from typography;
+	composes: tracked from base;
+	color: repo_updated;
+}
+
+.repo_title {
+	composes: fw4 from typography;
+	composes: f2 from typography;
+	color: repo_title;
+	display: block;
+}
+
+.repo_title_link {
+	composes: repo_title;
+	composes: b from typography;
+}
+
+.list_item_group {
+	composes: pb3 from base;
+}
+
+.list_item {
+	composes: pa3 from base;
+	composes: mh3 from base;
+	/*composes: bt b--black-20 from base;*/
+	composes: sans-serif from base;
+	border-bottom: 1px solid #ddd;
+}
+
+.list_item_bottom {
+	composes: list_item;
+	border-bottom-style: none; 
+	/*composes: bb0 from typography;*/
+}
+
+.list_item_disabled {
+	composes: list_item;
+	background-color: repo_disabled_background;
+}
+
+.list_item_disabled_bottom {
+	composes: list_item_disabled;
+	border-bottom-style: none; 
+	/*composes: bb0 from typography;*/
+}
+
+.repo_disable_reason {
+	composes: i from typography;
+	color: #bfc2d0;
+	composes: f4 from typography;
+	display: block;
+}

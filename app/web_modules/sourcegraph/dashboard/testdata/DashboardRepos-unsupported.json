@@ -11,76 +11,6 @@
 							{
 								"type": "div",
 								"props": {
-									"className": "toggles",
-									"children": [
-										{
-											"type": "div",
-											"props": {
-												"className": "btn-group",
-												"children": [
-													{
-														"type": "button",
-														"key": "0",
-														"props": {
-															"className": "btn btn-block toggle btn-primary",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "toggle-label",
-																		"children": [
-																			"all"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "button",
-														"key": "1",
-														"props": {
-															"className": "btn btn-block toggle btn-default",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "toggle-label",
-																		"children": [
-																			"private"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "button",
-														"key": "2",
-														"props": {
-															"className": "btn btn-block toggle btn-default",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "toggle-label",
-																		"children": [
-																			"public"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
 									"className": "search-bar",
 									"children": [
 										{
@@ -92,7 +22,7 @@
 														"type": "input",
 														"props": {
 															"className": "form-control search-input",
-															"placeholder": "Find a repository...",
+															"placeholder": "Filter repositories...",
 															"value": "",
 															"type": "text"
 														}
@@ -116,6 +46,70 @@
 										}
 									]
 								}
+							},
+							{
+								"type": "NotificationWell",
+								"props": {
+									"initVisible": true,
+									"children": [
+										{
+											"type": "span",
+											"props": {
+												"children": [
+													"We've set up Sourcegraph on some of the top Go repositories for you to check out. When you are ready, you can"
+												]
+											}
+										},
+										{
+											"type": "a",
+											"props": {
+												"children": [
+													"set up Sourcegraph for your own repositories!"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "NotificationWell",
+								"props": {
+									"initVisible": false,
+									"children": [
+										{
+											"type": "span",
+											"props": {
+												"children": [
+													"Almost there! You'll need to "
+												]
+											}
+										},
+										{
+											"type": "a",
+											"props": {
+												"children": [
+													"link your GitHub account"
+												]
+											}
+										},
+										{
+											"type": "span",
+											"props": {
+												"children": [
+													" to use Sourcegraph on your personal repositories"
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "span",
+								"props": {
+									"children": [
+										"Repositories"
+									]
+								}
 							}
 						]
 					}
@@ -123,34 +117,34 @@
 				{
 					"type": "div",
 					"props": {
-						"className": "repos",
+						"className": "list-group",
 						"children": [
 							{
 								"type": "div",
 								"props": {
-									"className": "list-group",
+									"children": [
+										"Go Repositories"
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": "0",
+								"props": {
 									"children": [
 										{
 											"type": "div",
-											"key": "0",
 											"props": {
-												"className": "list-group-item",
+												"className": "repo-header",
 												"children": [
 													{
-														"type": "div",
+														"type": "span",
 														"props": {
-															"className": "repo-header",
 															"children": [
 																{
-																	"type": "h4",
+																	"type": "span",
 																	"props": {
 																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "sg-icon repo-attr-icon sg-icon-public"
-																				}
-																			},
 																			{
 																				"type": "span",
 																				"props": {
@@ -160,7 +154,6 @@
 																							"type": "a",
 																							"key": "name0",
 																							"props": {
-																								"className": "name",
 																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
@@ -171,32 +164,6 @@
 																					]
 																				}
 																			}
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "div",
-														"props": {
-															"className": "repo-body",
-															"children": [
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "description",
-																		"children": [
-																			"someDescription"
-																		]
-																	}
-																},
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "updated",
-																		"children": [
-																			"Updated a few seconds ago"
 																		]
 																	}
 																}
@@ -208,25 +175,57 @@
 										},
 										{
 											"type": "div",
-											"key": "1",
 											"props": {
-												"className": "list-group-item",
+												"className": "repo-body",
 												"children": [
 													{
-														"type": "div",
+														"type": "p",
 														"props": {
-															"className": "repo-header",
+															"children": [
+																"someDescription"
+															]
+														}
+													},
+													{
+														"type": "p",
+														"props": {
+															"children": [
+																"Updated a few seconds ago"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"props": {
+									"children": [
+										"Coming Soon"
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": "1",
+								"props": {
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "repo-header",
+												"children": [
+													{
+														"type": "span",
+														"props": {
 															"children": [
 																{
-																	"type": "h4",
+																	"type": "span",
 																	"props": {
 																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "sg-icon repo-attr-icon sg-icon-public"
-																				}
-																			},
 																			{
 																				"type": "span",
 																				"props": {
@@ -236,7 +235,6 @@
 																							"type": "a",
 																							"key": "name0",
 																							"props": {
-																								"className": "name",
 																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
@@ -249,42 +247,15 @@
 																			}
 																		]
 																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "disabled-reason",
-																		"children": [
-																			"C++ coming soon"
-																		]
-																	}
 																}
 															]
 														}
 													},
 													{
-														"type": "div",
+														"type": "span",
 														"props": {
-															"className": "repo-body",
 															"children": [
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "description",
-																		"children": [
-																			"someDescription"
-																		]
-																	}
-																},
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "updated",
-																		"children": [
-																			"Updated a few seconds ago"
-																		]
-																	}
-																}
+																"C++ coming soon"
 															]
 														}
 													}
@@ -293,25 +264,49 @@
 										},
 										{
 											"type": "div",
-											"key": "2",
 											"props": {
-												"className": "list-group-item",
+												"className": "repo-body",
 												"children": [
 													{
-														"type": "div",
+														"type": "p",
 														"props": {
-															"className": "repo-header",
+															"children": [
+																"someDescription"
+															]
+														}
+													},
+													{
+														"type": "p",
+														"props": {
+															"children": [
+																"Updated a few seconds ago"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": "2",
+								"props": {
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "repo-header",
+												"children": [
+													{
+														"type": "span",
+														"props": {
 															"children": [
 																{
-																	"type": "h4",
+																	"type": "span",
 																	"props": {
 																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "sg-icon repo-attr-icon sg-icon-public"
-																				}
-																			},
 																			{
 																				"type": "span",
 																				"props": {
@@ -321,7 +316,6 @@
 																							"type": "a",
 																							"key": "name0",
 																							"props": {
-																								"className": "name",
 																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
@@ -334,42 +328,15 @@
 																			}
 																		]
 																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "disabled-reason",
-																		"children": [
-																			"C coming soon"
-																		]
-																	}
 																}
 															]
 														}
 													},
 													{
-														"type": "div",
+														"type": "span",
 														"props": {
-															"className": "repo-body",
 															"children": [
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "description",
-																		"children": [
-																			"someDescription"
-																		]
-																	}
-																},
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "updated",
-																		"children": [
-																			"Updated a few seconds ago"
-																		]
-																	}
-																}
+																"C coming soon"
 															]
 														}
 													}
@@ -378,25 +345,49 @@
 										},
 										{
 											"type": "div",
-											"key": "3",
 											"props": {
-												"className": "list-group-item",
+												"className": "repo-body",
 												"children": [
 													{
-														"type": "div",
+														"type": "p",
 														"props": {
-															"className": "repo-header",
+															"children": [
+																"someDescription"
+															]
+														}
+													},
+													{
+														"type": "p",
+														"props": {
+															"children": [
+																"Updated a few seconds ago"
+															]
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": "3",
+								"props": {
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"className": "repo-header",
+												"children": [
+													{
+														"type": "span",
+														"props": {
 															"children": [
 																{
-																	"type": "h4",
+																	"type": "span",
 																	"props": {
 																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "sg-icon repo-attr-icon sg-icon-public"
-																				}
-																			},
 																			{
 																				"type": "span",
 																				"props": {
@@ -406,7 +397,6 @@
 																							"type": "a",
 																							"key": "name0",
 																							"props": {
-																								"className": "name",
 																								"href": "/someURL",
 																								"title": "someURL",
 																								"children": [
@@ -419,42 +409,39 @@
 																			}
 																		]
 																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "disabled-reason",
-																		"children": [
-																			"Python coming soon"
-																		]
-																	}
 																}
 															]
 														}
 													},
 													{
-														"type": "div",
+														"type": "span",
 														"props": {
-															"className": "repo-body",
 															"children": [
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "description",
-																		"children": [
-																			"someDescription"
-																		]
-																	}
-																},
-																{
-																	"type": "p",
-																	"props": {
-																		"className": "updated",
-																		"children": [
-																			"Updated a few seconds ago"
-																		]
-																	}
-																}
+																"Python coming soon"
+															]
+														}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"className": "repo-body",
+												"children": [
+													{
+														"type": "p",
+														"props": {
+															"children": [
+																"someDescription"
+															]
+														}
+													},
+													{
+														"type": "p",
+														"props": {
+															"children": [
+																"Updated a few seconds ago"
 															]
 														}
 													}

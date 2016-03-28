@@ -1,10 +1,12 @@
 import React from "react";
 import update from "react/lib/update";
-import classNames from "classnames";
 
 import Component from "sourcegraph/Component";
 import moment from "moment";
 import repoLink from "sourcegraph/util/repoLink";
+import Styles from "./styles/Dashboard.css";
+import context from "sourcegraph/context";
+import NotificationWell from "sourcegraph/dashboard/NotificationWell";
 
 class DashboardRepos extends Component {
 	constructor(props) {
@@ -21,7 +23,6 @@ class DashboardRepos extends Component {
 		this._disabledReason = this._disabledReason.bind(this);
 		this._repoSort = this._repoSort.bind(this);
 	}
-
 	reconcileState(state, props) {
 		Object.assign(state, props);
 	}
@@ -87,59 +88,73 @@ class DashboardRepos extends Component {
 		if (moment(this._repoTime(a)).isAfter(moment(this._repoTime(b)))) return -1;
 		return -1;
 	}
-
 	render() {
-		const toggles = [null, "private", "public"].map((filterValue, i) =>
-			<button key={i}
-				className={`btn btn-block toggle ${this.state.filter === filterValue ? "btn-primary" : "btn-default"}`}
-				onClick={() => this._selectFilter(filterValue)}>
-				<span className="toggle-label">{filterValue ? filterValue : "all"}</span>
-			</button>
-		);
-
 		const repoDisabled = (repo) => !repo.URI && !this._canMirror(repo);
 
-		const repoRowClass = (repo) => classNames("list-group-item", {
-			"repo-disabled": repoDisabled(repo),
-		});
+		const repoRowClass = (repo, index, size) => {
+			if (!repoDisabled(repo)) {
+				if (index === (size-1)) {
+					return Styles.list_item_bottom;
+				}
+				return Styles.list_item;
+			}
+			if (index === (size-1)) {
+				return Styles.list_item_disabled_bottom;
+			}
+			return Styles.list_item_disabled;
+		};
 
 		const filteredRepos = this.state.repos.filter(this._showRepo);
-
+		const showCreateUserWell = !context.currentUser || !context.currentUser.Login;
+		const showGitHubLinkWell = Boolean(context.currentUser) && Boolean(context.currentUser.Login) && this.state.linkGitHub;
+		let seenInvalid = false;
+		// <i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
 		return (
 			<div className="repos-list">
-				<nav>
-					<div className="toggles">
-						<div className="btn-group">{toggles}</div>
-					</div>
+				<nav>{!this.state.linkGitHub &&
 					<div className="search-bar">
 						<div className="input-group">
 							<input className="form-control search-input"
-								placeholder="Find a repository..."
+								placeholder="Filter repositories..."
 								value={this.state.searchQuery}
 								onChange={this._handleSearch}
 								type="text" />
 							<span className="input-group-addon search-addon"><i className="fa fa-search search-icon"></i></span>
 						</div>
-					</div>
+					</div>}
+					<NotificationWell initVisible={showCreateUserWell}>
+						<span>We've set up Sourcegraph on some of the top Go repositories for you to check out. When you are ready, you can</span>
+					<a className={Styles.wrap_link} href={this.state.signup}>set up Sourcegraph for your own repositories!</a>
+					</NotificationWell>
+					<NotificationWell initVisible={showGitHubLinkWell}>
+						<span>Almost there! You'll need to </span>
+						<a href={this.state.linkGitHubURL}>link your GitHub account</a>
+						<span> to use Sourcegraph on your personal repositories</span>
+					</NotificationWell>
+					<span className={Styles.section_header}>{"Repositories"}</span>
 				</nav>
-				<div className="repos">
-					{this.state.repos.length === 0 ?
-						<div className="well">{"Link your GitHub account to add repositories."}</div> :
+				<div>
+					{this.state.repos.length > 0 &&
 						<div className="list-group">
+							<div className={Styles.repo_list_header}>Go Repositories</div>
 							{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
-								<div className={repoRowClass(repo)} key={i}>
-									<div className="repo-header">
-										<h4>
-											<i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
-											{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, repoDisabled(repo))}
-										</h4>
-										{!this._canMirror(repo) &&
-											<span className="disabled-reason">{this._disabledReason(repo)}</span>
-										}
-									</div>
-									<div className="repo-body">
-										<p className="description">{repo.Description}</p>
-										<p className="updated">{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
+								<div key={i}>
+									{!this._canMirror(repo) && seenInvalid++ === 0 &&
+										<div className={Styles.repo_list_header_temp}>Coming Soon</div>
+									}
+									<div className={repoRowClass(repo, i, this.state.repos.length)} key={i}>
+										<div className="repo-header">
+											<span className={Styles.repo_title}>
+												<span className={Styles.repo_title}>{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, repoDisabled(repo))}</span>
+											</span>
+											{!this._canMirror(repo) &&
+												<span className={Styles.repo_disable_reason}>{this._disabledReason(repo)}</span>
+											}
+										</div>
+										<div className="repo-body">
+											<p className={Styles.repo_description}>{repo.Description}</p>
+											<p className={Styles.repo_updated}>{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
+										</div>
 									</div>
 								</div>
 							))}
@@ -154,6 +169,8 @@ class DashboardRepos extends Component {
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
 	linkGitHub: React.PropTypes.bool.isRequired,
+	linkGitHubURL: React.PropTypes.string.isRequired,
+	signup: React.PropTypes.string.isRequired,
 };
 
 export default DashboardRepos;

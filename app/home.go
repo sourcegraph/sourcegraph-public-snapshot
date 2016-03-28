@@ -6,10 +6,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	appauthutil "sourcegraph.com/sourcegraph/sourcegraph/app/internal/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
@@ -17,10 +15,6 @@ import (
 func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
-
-	if currentUser == nil && authutil.ActiveFlags.HasUserAccounts() {
-		return appauthutil.RedirectToLogIn(w, r)
-	}
 
 	var data struct {
 		Repos       *sourcegraph.RepoList

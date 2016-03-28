@@ -3,16 +3,19 @@ import React from "react";
 import Container from "sourcegraph/Container";
 import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
-import GitHubUsersStore from "sourcegraph/dashboard/GitHubUsersStore";
 
-import DashboardUsers from "sourcegraph/dashboard/DashboardUsers";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 
-import AlertContainer from "sourcegraph/alerts/AlertContainer";
+import Styles from "./styles/Dashboard.css";
 
 class DashboardContainer extends Container {
+
+
 	constructor(props) {
 		super(props);
+		const logoUrl = !global.document ? "" : document.getElementById("DashboardContainer").dataset.logo;
+		const signup_url = !global.document ? "" : document.getElementById("DashboardContainer").dataset.signupurl;
+		this.state = {logo: logoUrl, signup_url: signup_url};
 		this._username = this._username.bind(this);
 		this._userAvatar = this._userAvatar.bind(this);
 		this._dismissWelcome = this._dismissWelcome.bind(this);
@@ -30,7 +33,6 @@ class DashboardContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.repos = DashboardStore.repos;
-		state.users = GitHubUsersStore.users.getUnique();
 		state.currentUser = DashboardStore.currentUser || {}; // empty if anonymous user
 		state.onboarding = DashboardStore.onboarding;
 	}
@@ -49,50 +51,27 @@ class DashboardContainer extends Container {
 		this.setState({dismissWelcome: true});
 	}
 
-	stores() { return [DashboardStore, GitHubUsersStore]; }
+	stores() { return [DashboardStore]; }
 
 	render() {
 		return (
 			<div className="dashboard-container row">
-				<div className="dash-repos col-lg-9 col-md-8">
-					<AlertContainer />
-					{(this.state.currentUser.Login && this.state.onboarding.linkGitHub ||
-						(this.state.onboarding.linkGitHubRedirect && !this.state.dismissWelcome)) &&
-						<div className="well link-github-well">
-							<div className="avatar-container">
-								<div className="avatar-md">
-									<img className={`avatar-md ${this.state.onboarding.linkGitHub ? "avatar-github" : ""}`} src={this._userAvatar()} />
-									{this.state.onboarding.linkGitHubRedirect &&
-										<div className="github-link-success-icon">
-											<span className="check-icon"><i className="fa fa-check"></i></span>
-										</div>
-									}
-								</div>
-							</div>
-							<strong className="link-github-label">{this.state.onboarding.linkGitHub ?
-								"Link your GitHub account to get started." :
-								`Welcome ${this._username().split(" ")[0]}!`
-							}</strong>
-							{this.state.onboarding.linkGitHub &&
-								<button className="btn btn-primary link-github-button"
-									onClick={() => window.location.href = this.state.onboarding.linkGitHubURL}>
-									Connect
-								</button>
-							}
+				<div className="dash-repos col-lg-8 col-md-8 col-lg-offset-2 col-md-offset-2">
+				{!this.state.currentUser.Login &&
+					<div>
+						<img className={Styles.logo} src={this.state.logo}/>
+						<div className={Styles.anon_title}>Understand and use code better</div>
+						<div className={Styles.anon_header_sub}>Use Sourcegraph to search, browse, and cross-reference code. <br />
+						Works with both public and private GitHub repositories written in Go.
 						</div>
-					}
-					<div className="dash-repos-header">
-						<h3 className="your-repos">Repositories</h3>
 					</div>
+				}
 					<div>
 						<DashboardRepos repos={this.state.repos}
-							linkGitHub={this.state.onboarding.linkGitHub} />
+							linkGitHub={this.state.onboarding.linkGitHub}
+							linkGitHubURL={this.state.onboarding.linkGitHubURL || ""}
+							onboarding={this.state.onboarding} signup={this.state.signup_url} />
 					</div>
-				</div>
-				<div className="dash-users col-lg-3 col-md-4">
-					<DashboardUsers users={this.state.users}
-						currentUser={this.state.currentUser}
-						onboarding={this.state.onboarding} />
 				</div>
 			</div>
 		);
@@ -101,5 +80,6 @@ class DashboardContainer extends Container {
 
 DashboardContainer.propTypes = {
 };
+
 
 export default DashboardContainer;
