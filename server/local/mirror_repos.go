@@ -62,7 +62,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		}
 	}
 
-	repo, err := (&repos{}).Get(ctx, &op.Repo)
+	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)
 	if err != nil {
 		return nil, err
 	}
