@@ -63,7 +63,6 @@ func TestReposService_List(t *testing.T) {
 }
 
 func TestReposService_resolveRepoRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
-	var s repos
 	ctx, mock := testContext()
 
 	wantRepoRev := &sourcegraph.RepoRevSpec{
@@ -72,7 +71,7 @@ func TestReposService_resolveRepoRev_noRevSpecified_getsDefaultBranch(t *testing
 		CommitID: strings.Repeat("a", 40),
 	}
 
-	calledGet := mock.stores.Repos.MockGet_Return(t, &sourcegraph.Repo{URI: "r", DefaultBranch: "b"})
+	calledGet := mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{URI: "r", DefaultBranch: "b"})
 	var calledVCSRepoResolveRevision bool
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
@@ -85,7 +84,7 @@ func TestReposService_resolveRepoRev_noRevSpecified_getsDefaultBranch(t *testing
 		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
 		// (no rev/branch specified)
 	}
-	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
+	if err := resolveRepoRev(ctx, repoRev); err != nil {
 		t.Fatal(err)
 	}
 	if !*calledGet {
@@ -100,7 +99,6 @@ func TestReposService_resolveRepoRev_noRevSpecified_getsDefaultBranch(t *testing
 }
 
 func TestReposService_resolveRepoRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
-	var s repos
 	ctx, mock := testContext()
 
 	wantRepoRev := &sourcegraph.RepoRevSpec{
@@ -123,7 +121,7 @@ func TestReposService_resolveRepoRev_noCommitIDSpecified_resolvesRev(t *testing.
 		Rev:      "b",
 		// (no commit ID specified)
 	}
-	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
+	if err := resolveRepoRev(ctx, repoRev); err != nil {
 		t.Fatal(err)
 	}
 	if *calledGet {
@@ -138,7 +136,6 @@ func TestReposService_resolveRepoRev_noCommitIDSpecified_resolvesRev(t *testing.
 }
 
 func TestReposService_resolveRepoRev_revSpecIsAlreadyResolved_noop(t *testing.T) {
-	var s repos
 	ctx, mock := testContext()
 
 	calledGet := mock.stores.Repos.MockGet(t, "r")
@@ -155,7 +152,7 @@ func TestReposService_resolveRepoRev_revSpecIsAlreadyResolved_noop(t *testing.T)
 		Rev:      "b",
 		CommitID: strings.Repeat("a", 40),
 	}
-	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
+	if err := resolveRepoRev(ctx, repoRev); err != nil {
 		t.Fatal(err)
 	}
 	if *calledGet {

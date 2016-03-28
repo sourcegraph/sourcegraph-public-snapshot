@@ -31,7 +31,7 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 		fileRange = *opt.Range
 	}
 
-	if err := (&repos{}).resolveRepoRev(ctx, &opt.Entry.RepoRev); err != nil {
+	if err := resolveRepoRev(ctx, &opt.Entry.RepoRev); err != nil {
 		return nil, err
 	}
 

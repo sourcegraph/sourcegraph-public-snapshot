@@ -58,7 +58,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		opt = &sourcegraph.GetFileOptions{}
 	}
 
-	if err := (&repos{}).resolveRepoRev(ctx, &entrySpec.RepoRev); err != nil {
+	if err := resolveRepoRev(ctx, &entrySpec.RepoRev); err != nil {
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
 	repoRevSpec := op.Rev
 
-	if err := (&repos{}).resolveRepoRev(ctx, &repoRevSpec); err != nil {
+	if err := resolveRepoRev(ctx, &repoRevSpec); err != nil {
 		return nil, err
 	}
 

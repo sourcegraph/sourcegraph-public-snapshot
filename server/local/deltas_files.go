@@ -50,7 +50,7 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 			// TODO(slimsag): write a test exactly for this case.
 			unresolvedRev := *repoRev
 			unresolvedRev.CommitID = ""
-			if err := (&repos{}).resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
+			if err := resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
 				// Rev no longer exists, so fallback to the CommitID instead. This is a
 				// last-ditch effort to ensure tokenized source displays well in diffs
 				// that are very old / have had one or more of their revs/branches
@@ -60,7 +60,7 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 				return err
 			}
 		}
-		return (&repos{}).resolveRepoRev(ctx, repoRev)
+		return resolveRepoRev(ctx, repoRev)
 	}
 	par := parallel.NewRun(2)
 	par.Do(func() error {

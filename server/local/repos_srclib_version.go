@@ -21,7 +21,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return nil, err
 	}
 
-	if err := s.resolveRepoRev(ctx, &entry.RepoRev); err != nil {
+	if err := resolveRepoRev(ctx, &entry.RepoRev); err != nil {
 		return nil, err
 	}
 

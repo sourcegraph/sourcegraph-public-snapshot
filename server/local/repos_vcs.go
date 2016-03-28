@@ -11,7 +11,7 @@ import (
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
 
-	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
+	if err := resolveRepoRev(ctx, repoRev); err != nil {
 		return nil, err
 	}
 

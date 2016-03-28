@@ -219,10 +219,6 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 // resolveRepoRev resolves repoRev to an absolute commit ID (by
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
-func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
-	return resolveRepoRev(ctx, repoRev)
-}
-
 func resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
 	// Resolve revs like "master===commitid".
 	if repoRev.CommitID == "" {
@@ -348,7 +344,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
 	}
 
-	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
+	if err := resolveRepoRev(ctx, repoRev); err != nil {
 		return nil, err
 	}
 
