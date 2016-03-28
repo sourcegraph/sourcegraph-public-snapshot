@@ -28,6 +28,7 @@ const (
 	RepoCommits      = "repo.commits"
 	RepoTags         = "repo.tags"
 	RepoTreeList     = "repo.tree-list"
+	RepoTreeSearch   = "repo-tree.search"
 	Repos            = "repos"
 	SrclibImport     = "srclib.import"
 	SrclibCoverage   = "srclib.coverage"
@@ -59,6 +60,7 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/.commits").Methods("GET").Name(RepoCommits)
 	repoRev.Path("/.tree" + routevar.TreeEntryPath).PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 	repoRev.Path("/.tree-list").Methods("GET").Name(RepoTreeList)
+	repoRev.Path("/.tree-search").Methods("GET").Name(RepoTreeSearch)
 	repo.Path("/.tags").Methods("GET").Name(RepoTags)
 
 	repoRev.Path("/.build").Methods("GET").Name(RepoBuild)
