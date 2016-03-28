@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -46,7 +47,7 @@ func (s *auth) GetAuthorizationCode(ctx context.Context, op *sourcegraph.Authori
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid response_type")
 	}
 
-	client, err := (&registeredClients{}).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: op.ClientID})
+	client, err := svc.RegisteredClients(ctx).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: op.ClientID})
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func (s *auth) exchangeCodeForAccessToken(ctx context.Context, code *sourcegraph
 	usersStore := store.UsersFromContext(ctx)
 
 	clientID := authpkg.ActorFromContext(ctx).ClientID
-	client, err := (&registeredClients{}).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: clientID})
+	client, err := svc.RegisteredClients(ctx).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: clientID})
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +173,7 @@ func (s *auth) authenticateBearerJWT(ctx context.Context, rawTok *sourcegraph.Be
 			return nil, errors.New("bearer JWT has empty issuer, can't look up key")
 		}
 		var err error
-		regClient, err = (&registeredClients{}).Get(elevatedActor(ctx), &sourcegraph.RegisteredClientSpec{ID: clientID})
+		regClient, err = svc.RegisteredClients(ctx).Get(elevatedActor(ctx), &sourcegraph.RegisteredClientSpec{ID: clientID})
 		if err != nil {
 			return nil, err
 		}

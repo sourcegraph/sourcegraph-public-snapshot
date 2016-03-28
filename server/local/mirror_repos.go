@@ -87,7 +87,7 @@ func getUIDFromUserSpec(ctx context.Context, userSpec *sourcegraph.UserSpec) (in
 	if userSpec.UID != 0 {
 		return userSpec.UID, nil
 	}
-	user, err := (&users{}).Get(ctx, userSpec)
+	user, err := svc.Users(ctx).Get(ctx, userSpec)
 	if err != nil {
 		return int32(0), err
 	}
