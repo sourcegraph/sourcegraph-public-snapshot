@@ -15,13 +15,10 @@ import (
 // Use it in tests to ensure that they do not send live notifications.
 func MustBeDisabled() {
 	slackEnabled := (slack.Config.GetWebhookURLIfConfigured() != "")
-	if !AwsEmailEnabled && !mandrillEnabled && !slackEnabled {
+	if !mandrillEnabled && !slackEnabled {
 		return
 	}
 	m := "notif.MustBeDisabled: the following notifications are enabled:\n"
-	if AwsEmailEnabled {
-		m += "AwsEmailEnabled\n"
-	}
 	if mandrillEnabled {
 		m += "mandrillEnabled\n"
 	}

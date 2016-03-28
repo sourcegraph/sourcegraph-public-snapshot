@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/mattbaird/gochimp"
-	"github.com/sourcegraph/go-ses"
 )
 
 const notifAdmin = "all@sourcegraph.com"
 const notifFrom = "notify@sourcegraph.com"
 
-var AwsEmailEnabled bool
 var mandrillEnabled bool
 
 var mandrill *gochimp.MandrillAPI
@@ -30,23 +27,6 @@ func init() {
 			log.Panicf("could not initialize mandrill client: %s", err)
 		}
 	}
-	AwsEmailEnabled, _ = strconv.ParseBool(os.Getenv("SG_SEND_NOTIFS"))
-}
-
-// SendAdminEmail sends email to Sourcegraph. It is for internal purposes
-// only. For sending email to users, see 'SendMandrillTemplate'.
-func SendAdminEmail(title string, body string) error {
-	desc := fmt.Sprintf("From: %s\nTo: %s\nTitle: %s\nBody: %s\n", notifFrom, notifAdmin, title, body)
-	if !AwsEmailEnabled {
-		return fmt.Errorf("skipped sending email because SG_SEND_NOTIFS is false:\n%s", desc)
-	}
-	c := &ses.EnvConfig
-	_, err := c.SendEmail(notifFrom, notifAdmin, title, body)
-	if err != nil {
-		return fmt.Errorf("error sending email notification: %s\n%s", err, desc)
-	}
-	log.Println("Email sent:", desc)
-	return nil
 }
 
 // SendMandrillTemplate sends an email template through mandrill.
