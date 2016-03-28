@@ -13,9 +13,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/usercontent"
 	"sourcegraph.com/sourcegraph/sourcegraph/ui"
 	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 )
 

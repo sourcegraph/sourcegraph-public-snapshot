@@ -11,7 +11,7 @@ import (
 	"github.com/satori/go.uuid"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/usercontent"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 

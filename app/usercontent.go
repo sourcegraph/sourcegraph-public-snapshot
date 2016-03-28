@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/usercontent"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/usercontent"
 )
 
 func serveUserContent(w http.ResponseWriter, req *http.Request) error {
