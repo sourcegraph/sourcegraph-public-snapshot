@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/emailaddrs"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -38,7 +38,7 @@ func getUser(ctx context.Context, r *http.Request) (*sourcegraph.User, *sourcegr
 
 func personLabel(loginOrEmail string) string {
 	if strings.Contains(loginOrEmail, "@") {
-		user, _, err := util.SplitEmail(loginOrEmail)
+		user, _, err := emailaddrs.Split(loginOrEmail)
 		if err != nil {
 			user = "unknown"
 		}

@@ -1,11 +1,11 @@
-package util
+package emailaddrs
 
 import (
 	"fmt"
 	"strings"
 )
 
-func SplitEmail(email string) (user, domain string, err error) {
+func Split(email string) (user, domain string, err error) {
 	parts := strings.SplitN(email, "@", 2)
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("email has no '@': %q", email)

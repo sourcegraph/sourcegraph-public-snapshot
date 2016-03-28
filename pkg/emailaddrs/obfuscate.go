@@ -6,8 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
 )
 
 var emailObfuscationKey, emailObfuscationIV []byte
@@ -39,7 +37,7 @@ const ObfuscatedEmailDomainPrefix = "-x-"
 // holder. It is a tame anti-spam and privacy technique but should not
 // be relied on for secrecy.
 func Obfuscate(email string) (obfuscated string, err error) {
-	user, domain, err := util.SplitEmail(email)
+	user, domain, err := Split(email)
 	if err != nil {
 		return "", err
 	}
@@ -49,7 +47,7 @@ func Obfuscate(email string) (obfuscated string, err error) {
 // Deobfuscate returns the original, unobfuscated email given an
 // obfuscated email string originally obtained from Obfuscate.
 func Deobfuscate(obfuscatedEmail string) (email string, err error) {
-	user, obfuscatedDomainWithPrefix, err := util.SplitEmail(obfuscatedEmail)
+	user, obfuscatedDomainWithPrefix, err := Split(obfuscatedEmail)
 	if err != nil {
 		return "", err
 	}
