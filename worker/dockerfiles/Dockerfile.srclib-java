@@ -41,8 +41,9 @@ RUN wget -q https://srclib-support.s3-us-west-2.amazonaws.com/srclib-java/build/
 RUN tar xfz bundled-jdk1.8.0_45.tar.gz
 RUN rm bundled-jdk1.8.0_45.tar.gz
 # Install
-RUN git fetch origin && git checkout ff79de95cf99362bc58cbc6ef3d20231ce9b3740 ### TODO(beyang): remove after srclib-java master is fixed
-RUN cd /srclib/srclib-java && make
+ENV TOOLCHAIN_VERSION e0f1cb29d7b4e3da2816cbbff341ce2b683ea088
+RUN git fetch origin && git checkout $TOOLCHAIN_VERSION
+RUN make
 
 #
 # Install srclib binary (assumes this has been built on the Docker host)

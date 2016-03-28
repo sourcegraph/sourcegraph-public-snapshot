@@ -9,7 +9,9 @@ RUN apt-get install -qq git
 
 # Install srclib-typescript executable
 ENV SRCLIBPATH /srclib
+ENV TOOLCHAIN_VERSION 0413bf1210a7e7d828201a5f08160492413349e2
 RUN git clone https://github.com/sourcegraph/srclib-typescript /srclib/srclib-typescript
+RUN cd /srclib/srclib-typescript && git checkout $TOOLCHAIN_VERSION
 WORKDIR /srclib/srclib-typescript
 RUN npm install
 RUN npm install typescript -g

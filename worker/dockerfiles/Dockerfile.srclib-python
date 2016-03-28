@@ -29,7 +29,9 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 # Install srclib-python executable
 #
 ENV SRCLIBPATH $GOPATH/src
+ENV TOOLCHAIN_VERSION 36d1771e1a1d04b2f6a643cd7ba2edb8e4817f7a
 RUN git clone https://github.com/sourcegraph/srclib-python $GOPATH/src/sourcegraph.com/sourcegraph/srclib-python
+RUN cd https://github.com/sourcegraph/srclib-python && git checkout $TOOLCHAIN_VERSION
 RUN cd $GOPATH/src/sourcegraph.com/sourcegraph/srclib-python && make install
 
 # Cleanup
