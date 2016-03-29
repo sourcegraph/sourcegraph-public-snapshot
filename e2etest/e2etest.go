@@ -349,7 +349,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 				t.log.Println("could not upload screenshot to Slack", test.Name, err2)
 			}
 		}
-		wd.Close()
+		wd.Quit()
 	}()
 
 	// Setup the context for the test.
