@@ -22,7 +22,7 @@ func TestRepoBuildsCreate(t *testing.T) {
 	}
 
 	var build *sourcegraph.Build
-	if err := c.DoJSON("POST", "/repos/r/r/.builds", &sourcegraph.BuildsCreateOp{}, &build); err != nil {
+	if err := c.DoJSON("POST", "/repos/r/r/-/builds", &sourcegraph.BuildsCreateOp{}, &build); err != nil {
 		t.Fatal(err)
 	}
 	if !*calledRepoGet {

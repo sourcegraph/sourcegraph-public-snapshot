@@ -1,6 +1,6 @@
 export function tree(repoPath, rev, path, startLine, endLine) {
 	let line = startLine && endLine ? `#L${startLine}-${endLine}` : "";
-	return `${repoRev(repoPath, rev)}/.tree/${path}${line}`;
+	return `${repoRev(repoPath, rev)}/-/tree/${path}${line}`;
 }
 
 export function repo(repoPath) {
@@ -23,13 +23,13 @@ export function def(repoPath, rev, unitType, unit, path) {
 		unit = defSpec.Unit;
 		path = defSpec.Path;
 	}
-	return `${repo(repoPath, rev)}/.${unitType}/${unit}/.def${path !== "." ? `/${path}` : ""}`;
+	return `${repo(repoPath, rev)}/-/def/${unitType}/${unit.replace("/", "-")}/${path.replace("/", "-")}`;
 }
 
 export function build(repoPath, id) {
-	return `${repo(repoPath)}/.builds/${id}`;
+	return `${repo(repoPath)}/-/builds/${id}`;
 }
 
 export function repoCommits(repoPath, rev) {
-	return `${repoRev(repoPath, rev)}/.commits`;
+	return `${repoRev(repoPath, rev)}/commits`;
 }

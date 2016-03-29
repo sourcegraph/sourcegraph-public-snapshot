@@ -6,11 +6,11 @@ javascript:
         return;
     }
     var pats = [
-      ["^/([^/]+)/([^/]+)/commits/([^/]+)$", "/github.com/$1/$2@$3/.commits", "^/github\.com/([^/]+)/([^/]+)@([^/]+)/.commits$", "/$1/$2/commits/$3"],
-      ["^/([^/]+)/([^/]+)/branches$", "/github.com/$1/$2/.branches", "^/github\.com/([^/]+)/([^/]+)/.branches$", "/$1/$2/branches"],
+      ["^/([^/]+)/([^/]+)/commits/([^/]+)$", "/github.com/$1/$2@$3/commits", "^/github\.com/([^/]+)/([^/]+)@([^/]+)/-/commits$", "/$1/$2/commits/$3"],
+      ["^/([^/]+)/([^/]+)/branches$", "/github.com/$1/$2/branches", "^/github\.com/([^/]+)/([^/]+)/-/branches$", "/$1/$2/-/branches"],
       ["^/([^/]+)/([^/]+)/tree/([^/]+)$", "/github.com/$1/$2@$3", "^/github\.com/([^/]+)/([^/@]+)@([^/]+)$", "/$1/$2/tree/$3"],
-      ["^/([^/]+)/([^/]+)/tree/([^/]+)/(.+)$", "/github.com/$1/$2@$3/.tree/$4", "^/github\.com/([^/]+)/([^/@]+)@([^/]+)/.tree/(.+)$", "/$1/$2/tree/$3/$4"],
-      ["^/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$", "/github.com/$1/$2@$3/.tree/$4", "", ""], // can't disambiguate between blob and tree on GitHub
+      ["^/([^/]+)/([^/]+)/tree/([^/]+)/(.+)$", "/github.com/$1/$2@$3/-/tree/$4", "^/github\.com/([^/]+)/([^/@]+)@([^/]+)/-/tree/(.+)$", "/$1/$2/tree/$3/$4"],
+      ["^/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$", "/github.com/$1/$2@$3/-/tree/$4", "", ""], // can't disambiguate between blob and tree on GitHub
       ["^/([^/]+)/([^/]+)$", "/github.com/$1/$2", "^/github\.com/([^/]+)/([^/]+)$", "/$1/$2"],
       ["^/([^/]+)$", "/$1", "^/([^/]+)$", "/$1"],
     ];

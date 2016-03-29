@@ -163,7 +163,7 @@ var srclibBuildCommands = []string{"srclib config", "srclib make"}
 
 // srclibImportStep returns a Drone build step that imports srclib
 // data to the httpapi srclib import endpoint given by importURL
-// (e.g., http://localhost:3080/.api/repos/my/repo/.srclib-import).
+// (e.g., http://localhost:3080/.api/repos/my/repo/-/srclib-import).
 func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 	return droneyaml.BuildItem{
 		Key: "srclib import",

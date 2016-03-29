@@ -11,7 +11,7 @@ describe("BuildBackend", () => {
 			repo: "aRepo",
 			buildID: 123,
 		};
-		let expectedURI = `/.api/repos/${action.repo}/.builds/${action.buildID}`;
+		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}`;
 
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
@@ -28,7 +28,7 @@ describe("BuildBackend", () => {
 			buildID: 123,
 			taskID: 456,
 		};
-		let expectedURI = `/${action.repo}/.builds/${action.buildID}/tasks/${action.taskID}/log`;
+		let expectedURI = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
 
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
@@ -51,7 +51,7 @@ describe("BuildBackend", () => {
 
 		// Trigger "second" fetch, which should reuse MaxID from
 		// initial fetch as MinID of this fetch.
-		let expectedURI = `/${action.repo}/.builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
+		let expectedURI = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
 			callback(null, {headers: {"x-sourcegraph-log-max-id": 34}, statusCode: 200}, "c");
@@ -67,7 +67,7 @@ describe("BuildBackend", () => {
 			repo: "aRepo",
 			buildID: 123,
 		};
-		let expectedURI = `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks?PerPage=1000`;
+		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks?PerPage=1000`;
 
 		BuildBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);

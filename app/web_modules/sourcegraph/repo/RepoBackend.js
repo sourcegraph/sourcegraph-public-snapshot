@@ -33,7 +33,7 @@ const RepoBackend = {
 				let branches = RepoStore.branches.list(action.repo);
 				if (branches === null) {
 					RepoBackend.xhr({
-						uri: `/.api/repos/${action.repo}/.branches`,
+						uri: `/.api/repos/${action.repo}/-/branches`,
 						json: {},
 					}, function(err, resp, body) {
 						if (!err && resp.statusCode !== 200) err = `HTTP ${resp.statusCode}`;
@@ -52,7 +52,7 @@ const RepoBackend = {
 				let tags = RepoStore.tags.list(action.repo);
 				if (tags === null) {
 					RepoBackend.xhr({
-						uri: `/.api/repos/${action.repo}/.tags`,
+						uri: `/.api/repos/${action.repo}/-/tags`,
 						json: {},
 					}, function(err, resp, body) {
 						if (!err && resp.statusCode !== 200) err = `HTTP ${resp.statusCode}`;

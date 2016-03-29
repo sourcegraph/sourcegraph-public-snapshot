@@ -2072,7 +2072,7 @@ message NotifyGenericEvent {
 	// ObjectTitle example: "mybranch"
 	string ObjectTitle = 8;
 
-	// ObjectURL example: "https://sourcegraph.com/sourcegraph/sourcegraph/.branches/mybranch"
+	// ObjectURL example: "https://sourcegraph.com/sourcegraph/sourcegraph/-/branches/mybranch"
 	string ObjectURL = 9;
 
 	// SlackMsg, if present, will override the Slack message for this event.

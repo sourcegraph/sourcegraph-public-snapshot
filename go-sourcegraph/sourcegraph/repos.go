@@ -2,6 +2,7 @@ package sourcegraph
 
 import (
 	"net/url"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
@@ -69,7 +70,7 @@ func UnmarshalRepoSpec(routeVars map[string]string) (RepoSpec, error) {
 // repository commit.
 func (s RepoRevSpec) RouteVars() map[string]string {
 	m := s.RepoSpec.RouteVars()
-	m["Rev"] = s.ResolvedRevString()
+	m["Rev"] = "@" + s.ResolvedRevString()
 	return m
 }
 
@@ -96,7 +97,11 @@ func UnmarshalRepoRevSpec(routeVars map[string]string) (RepoRevSpec, error) {
 	}
 
 	rrspec := RepoRevSpec{RepoSpec: repo}
-	if revStr, ok := routeVars["Rev"]; ok {
+	if revStr := routeVars["Rev"]; revStr != "" {
+		if !strings.HasPrefix(revStr, "@") {
+			panic("Rev should have had '@' prefix from route")
+		}
+		revStr = strings.TrimPrefix(revStr, "@")
 		rrspec.Rev, rrspec.CommitID = spec.ParseResolvedRev(revStr)
 	}
 	if _, ok := routeVars["CommitID"]; ok {

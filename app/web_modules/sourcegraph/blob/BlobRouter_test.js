@@ -21,31 +21,31 @@ import testdataDefinition from "sourcegraph/blob/testdata/BlobRouter-definition.
 describe("BlobRouter", () => {
 	it("should handle file URLs", () => {
 		autotest(testdataFile, `${__dirname}/testdata/BlobRouter-file.json`,
-			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go" />
+			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go" />
 		);
 	});
 
 	it("should handle dotfile URLs", () => {
 		autotest(testdataDotfile, `${__dirname}/testdata/BlobRouter-dotfile.json`,
-			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/.travis.yml" />
+			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/-/tree/.travis.yml" />
 		);
 	});
 
 	it("should handle line selection URLs", () => {
 		autotest(testdataLineSelection, `${__dirname}/testdata/BlobRouter-lineSelection.json`,
-			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L40-53" _isMounted={true} />
+			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L40-53" _isMounted={true} />
 		);
 	});
 
 	it("should handle definition selection URLs", () => {
 		autotest(testdataDefSelection, `${__dirname}/testdata/BlobRouter-defSelection.json`,
-			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#def-someDef" />
+			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#def-someDef" />
 		);
 	});
 
 	it("should handle definition URLs", () => {
 		autotest(testdataDefinition, `${__dirname}/testdata/BlobRouter-definition.json`,
-			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router" />
+			<BlobRouter location="http://localhost:3080/github.com/gorilla/mux@master/-/def/GoPackage/github.com-gorilla-mux/Router" />
 		);
 	});
 
@@ -53,8 +53,8 @@ describe("BlobRouter", () => {
 		RepoStore.directDispatch(new RepoActions.FetchedRepo("myrepo", {DefaultBranch: "mybranch"}));
 		[
 			"http://localhost:3080/myrepo",
-			"http://localhost:3080/myrepo/.tree/file.txt",
-			"http://localhost:3080/myrepo/.GoPackage/u/.def/p",
+			"http://localhost:3080/myrepo/-/tree/file.txt",
+			"http://localhost:3080/myrepo/-/def/GoPackage/u/p",
 		].forEach((url) => {
 			let renderer = TestUtils.createRenderer();
 			renderer.render(<BlobRouter location={url} />);
@@ -64,16 +64,16 @@ describe("BlobRouter", () => {
 
 	it("should handle DefActions.SelectDef and trigger WantDef when no def is in store", () => {
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go",
 			new DefActions.SelectDef("someURL"),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go"
 		);
 	});
 
 	it("should handle DefActions.SelectDef and go to def when the def is in store", () => {
 		DefStore.directDispatch(new DefActions.DefFetched("someURL", {}));
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go",
 			new DefActions.SelectDef("someURL"),
 			"http://localhost:3080/someURL"
 		);
@@ -82,59 +82,59 @@ describe("BlobRouter", () => {
 	it("should handle DefActions.SelectDef and NOT go to def when the def is errored", () => {
 		DefStore.directDispatch(new DefActions.DefFetched("someURL", {Error: "x"}));
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go",
 			new DefActions.SelectDef("someURL"),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go"
 		);
 	});
 
 	it("should ignore standalone DefActions.DefFetched actions for defs that are not its active def", () => {
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go",
 			new DefActions.DefFetched("someURL", {}),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go"
 		);
 	});
 
 	it("should handle BlobActions.SelectLine", () => {
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go",
 			new BlobActions.SelectLine(null, null, null, 42),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L42"
 		);
 
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20-60",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L20-60",
 			new BlobActions.SelectLine(null, null, null, 42),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L42"
 		);
 	});
 
 	it("should handle BlobActions.SelectLineRange", () => {
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go",
 			new BlobActions.SelectLineRange(null, null, null, 42),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L42"
 		);
 
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L20",
 			new BlobActions.SelectLineRange(null, null, null, 42),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L20-42"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L20-42"
 		);
 
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L50",
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L50",
 			new BlobActions.SelectLineRange(null, null, null, 42),
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42-50"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L42-50"
 		);
 	});
 
 	it("should handle GoTo", () => {
 		testAction(
-			"http://localhost:3080/github.com/gorilla/mux@master/.tree/mux.go#L42",
-			new GoTo("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"),
-			"http://localhost:3080/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"
+			"http://localhost:3080/github.com/gorilla/mux@master/-/tree/mux.go#L42",
+			new GoTo("/github.com/gorilla/mux@master/-/def/GoPackage/github.com-gorilla-mux/Router"),
+			"http://localhost:3080/github.com/gorilla/mux@master/-/def/GoPackage/github.com-gorilla-mux/Router"
 		);
 	});
 });

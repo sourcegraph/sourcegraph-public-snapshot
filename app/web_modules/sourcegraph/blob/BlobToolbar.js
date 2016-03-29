@@ -15,7 +15,7 @@ class BlobToolbar extends Component {
 	render() {
 		// TODO replace with proper shared component
 		let revPart = this.state.rev ? `@${this.state.rev}` : "";
-		let basePath = `/${this.state.repo}${revPart}/.tree`;
+		let basePath = `/${this.state.repo}${revPart}/-/tree`;
 		let repoSegs = this.state.repo.split("/");
 		let breadcrumb = [
 			<span key="base" className="path-component">

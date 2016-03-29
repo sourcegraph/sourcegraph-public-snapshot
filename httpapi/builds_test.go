@@ -15,7 +15,7 @@ func TestBuild(t *testing.T) {
 	calledGet := mock.Builds.MockGet_Return(t, wantBuild)
 
 	var build *sourcegraph.Build
-	if err := c.GetJSON("/repos/r/r/.builds/123", &build); err != nil {
+	if err := c.GetJSON("/repos/r/r/-/builds/123", &build); err != nil {
 		t.Logf("%#v", build)
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestBuildTasks(t *testing.T) {
 	calledListBuildTasks := mock.Builds.MockListBuildTasks(t, wantTasks.BuildTasks...)
 
 	var tasks *sourcegraph.BuildTaskList
-	if err := c.GetJSON("/repos/r/.builds/123/.tasks", &tasks); err != nil {
+	if err := c.GetJSON("/repos/r/-/builds/123/tasks", &tasks); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(tasks, wantTasks) {

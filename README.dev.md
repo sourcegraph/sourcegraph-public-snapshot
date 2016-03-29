@@ -67,7 +67,7 @@ ulimit -n 10000
 # PostgreSQL
 
 [Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
-steps to [initialize and configure your database](https://sourcegraph.com/sourcegraph/sourcegraph@master/.tree/docs/config/storage.md).
+steps to [initialize and configure your database](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/tree/docs/config/storage.md).
 
 Finally, issue the following command to set up your database tables:
 

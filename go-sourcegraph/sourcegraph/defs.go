@@ -7,9 +7,13 @@ import (
 )
 
 func (s DefSpec) RouteVars() map[string]string {
+	var rev string
+	if s.CommitID != "" {
+		rev = "@" + s.CommitID
+	}
 	return map[string]string{
 		"Repo":     s.Repo,
-		"Rev":      s.CommitID,
+		"Rev":      rev,
 		"UnitType": s.UnitType,
 		"Unit":     oldToNewDefRouteComponent(s.Unit),
 		"Path":     oldToNewDefRouteComponent(pathEscape(s.Path)),

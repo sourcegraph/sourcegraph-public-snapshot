@@ -108,7 +108,7 @@ func TestRenderReactComponent_BlobRouter(t *testing.T) {
 	defer cancel()
 	resp, err := renderReactComponent(ctx, "sourcegraph/LocationAdaptor", map[string]interface{}{
 		"component": "sourcegraph/blob/BlobRouter",
-		"location":  "/myrepo@master/.tree/myfile.txt",
+		"location":  "/myrepo@master/-/tree/myfile.txt",
 	}, &stores)
 	if err != nil {
 		t.Fatal(err)

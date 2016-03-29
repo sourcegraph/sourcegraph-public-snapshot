@@ -68,7 +68,7 @@
 												"children": [
 													{
 														"type": "div",
-														"key": "/repo@rev/.tree/a",
+														"key": "/repo@rev/-/tree/a",
 														"props": {
 															"children": [
 																{
@@ -87,7 +87,7 @@
 																{
 																	"type": "a",
 																	"props": {
-																		"href": "/repo@rev/.tree/a",
+																		"href": "/repo@rev/-/tree/a",
 																		"children": [
 																			"a"
 																		]
@@ -98,7 +98,7 @@
 													},
 													{
 														"type": "div",
-														"key": "/repo@rev/.tree/b",
+														"key": "/repo@rev/-/tree/b",
 														"props": {
 															"children": [
 																{
@@ -117,7 +117,7 @@
 																{
 																	"type": "a",
 																	"props": {
-																		"href": "/repo@rev/.tree/b",
+																		"href": "/repo@rev/-/tree/b",
 																		"children": [
 																			"b"
 																		]

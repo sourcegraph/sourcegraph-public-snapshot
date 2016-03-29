@@ -11,7 +11,7 @@ describe("TreeBackend", () => {
 			rev: "aRev",
 			path: "aPath",
 		};
-		let expectedURI = `/.api/repos/${entry.repo}/.commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
+		let expectedURI = `/.api/repos/${entry.repo}/-/commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
 
 		TreeBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
@@ -25,7 +25,7 @@ describe("TreeBackend", () => {
 	it("should handle WantFileList", () => {
 		const repo = "aRepo";
 		const rev = "aRev";
-		let expectedURI = `/.api/repos/${repo}@${rev}/.tree-list`;
+		let expectedURI = `/.api/repos/${repo}@${rev}/-/tree-list`;
 
 		TreeBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);

@@ -1,6 +1,8 @@
 package sourcegraph
 
 import (
+	"strings"
+
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
@@ -9,7 +11,12 @@ import (
 // delta specified by this DeltaSpec.
 func (s DeltaSpec) RouteVars() map[string]string {
 	m := s.Base.RouteVars()
-	m["DeltaHeadRev"] = s.Head.ResolvedRevString()
+	if rev := s.Head.ResolvedRevString(); rev != "" {
+		if !strings.HasPrefix(rev, "@") {
+			rev = "@" + rev
+		}
+		m["DeltaHeadRev"] = rev
+	}
 	return m
 }
 
@@ -25,7 +32,8 @@ func UnmarshalDeltaSpec(routeVars map[string]string) (DeltaSpec, error) {
 	}
 	s.Base = rr
 
-	rev, commitID := spec.ParseResolvedRev(routeVars["DeltaHeadRev"])
+	dhr := strings.TrimPrefix(routeVars["DeltaHeadRev"], "@")
+	rev, commitID := spec.ParseResolvedRev(dhr)
 	s.Head = RepoRevSpec{RepoSpec: rr.RepoSpec, Rev: rev, CommitID: commitID}
 
 	return s, nil

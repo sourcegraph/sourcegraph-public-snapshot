@@ -13,7 +13,7 @@ const BuildBackend = {
 				let build = BuildStore.builds.get(action.repo, action.buildID);
 				if (build === null || action.force) {
 					BuildBackend.xhr({
-						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}`,
+						uri: `/.api/repos/${action.repo}/-/builds/${action.buildID}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {
@@ -48,7 +48,7 @@ const BuildBackend = {
 		case BuildActions.CreateBuild:
 			{
 				BuildBackend.xhr({
-					uri: `/.api/repos/${action.repo}/.builds`,
+					uri: `/.api/repos/${action.repo}/-/builds`,
 					method: "post",
 					json: {
 						CommitID: action.commitID,
@@ -75,7 +75,7 @@ const BuildBackend = {
 					minID = log.maxID;
 				}
 
-				let url = `/${action.repo}/.builds/${action.buildID}/tasks/${action.taskID}/log`;
+				let url = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
 				if (minID) {
 					url += `?MinID=${minID}`;
 				}
@@ -105,7 +105,7 @@ const BuildBackend = {
 				let tasks = BuildStore.tasks.get(action.repo, action.buildID);
 				if (tasks === null || action.force) {
 					BuildBackend.xhr({
-						uri: `/.api/repos/${action.repo}/.builds/${action.buildID}/.tasks?PerPage=1000`,
+						uri: `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks?PerPage=1000`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {

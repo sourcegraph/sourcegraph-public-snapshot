@@ -381,7 +381,7 @@ class TreeSearch extends Container {
 	_buildsURL() {
 		if (global.location && global.location.href) {
 			let url = URL.parse(global.location.href);
-			url.pathname = `${this.state.repo}/.builds`;
+			url.pathname = `${this.state.repo}/-/builds`;
 			return URL.format(url);
 		}
 

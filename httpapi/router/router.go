@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
 
 const (
@@ -49,36 +50,35 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 
-	repoRev := base.PathPrefix(`/repos/` + routevar.RepoRev).PostMatchFunc(routevar.FixRepoRevVars).BuildVarsFunc(routevar.PrepareRepoRevRouteVars).Subrouter()
-
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
-	repo := base.PathPrefix(repoPath).Subrouter()
-	repo.Path("/.branches").Methods("GET").Name(RepoBranches)
-	repo.Path("/.commits").Methods("GET").Name(RepoCommits)
-	repoRev.Path("/.tree" + routevar.TreeEntryPath).PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
-	repoRev.Path("/.tree-list").Methods("GET").Name(RepoTreeList)
-	repoRev.Path("/.tree-search").Methods("GET").Name(RepoTreeSearch)
-	repo.Path("/.tags").Methods("GET").Name(RepoTags)
+	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repo.Path("/branches").Methods("GET").Name(RepoBranches)
+	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
+	repoRev.Path("/tree" + routevar.TreeEntryPath).PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
+	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
+	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
+	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
-	repo.Path("/.builds").Methods("POST").Name(RepoBuildsCreate)
-	buildPath := `/.builds/{Build:\d+}`
+	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)
+	buildPath := `/builds/{Build:\d+}`
 	repo.Path(buildPath).Methods("GET").Name(Build)
 	build := repo.PathPrefix(buildPath).Subrouter()
-	build.Path("/.tasks").Methods("GET").Name(RepoBuildTasks)
+	build.Path("/tasks").Methods("GET").Name(RepoBuildTasks)
 
 	base.Path("/.defs").Methods("GET").Name(Defs)
 
-	repoRev.Path("/.srclib-import").Methods("PUT").Name(SrclibImport)
-	repoRev.Path("/.srclib-coverage").Methods("PUT").Name(SrclibCoverage)
-	repoRev.Path("/.srclib-data-version").Methods("GET").Name(SrclibDataVer)
+	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
+	repoRev.Path("/srclib-coverage").Methods("PUT").Name(SrclibCoverage)
+	repoRev.Path("/srclib-data-version").Methods("GET").Name(SrclibDataVer)
 
 	// Old paths we used to support. Explicitly handle them to avoid bad
 	// signal in no route logs
 	base.Path("/ext/github/webhook").Methods("GET", "POST").Name(BlackHole)
 
-	repoRev.Path("/.def/" + routevar.Def).Methods("GET").Name(Def)
+	repoRev.Path("/def/" + routevar.Def).Methods("GET").Name(Def)
 
 	return base
 }

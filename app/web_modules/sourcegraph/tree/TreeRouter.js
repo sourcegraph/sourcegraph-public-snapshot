@@ -37,8 +37,8 @@ class TreeRouter extends Component {
 
 		case TreeActions.DownDirectory:
 			if (this.state.location.indexOf(".tree") === -1) {
-				// We are at the root of the directory tree; prefix /.tree on path.
-				this.state.navigate(`${this.state.location}/.tree/${action.part}`);
+				// We are at the root of the directory tree; prefix /-/tree on path.
+				this.state.navigate(`${this.state.location}/-/tree/${action.part}`);
 			} else {
 				// Just append the part.
 				this.state.navigate(`${this.state.location}/${action.part}`);
@@ -49,10 +49,10 @@ class TreeRouter extends Component {
 	}
 
 	_currPath() {
-		const index = this.state.location.indexOf(".tree");
+		const index = this.state.location.indexOf("/-/tree");
 		if (index === -1) return [];
 
-		const pathString = this.state.location.substring(index + ".tree/".length);
+		const pathString = this.state.location.substring(index + "/-/tree/".length);
 		if (pathString === "") return [];
 		return pathString.split("/");
 	}

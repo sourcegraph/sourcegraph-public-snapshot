@@ -47,7 +47,7 @@ func TestRepoFlow(t *T) error {
 		"Wait for mux.go codefile link to appear",
 	)
 
-	want := "/github.com/gorilla/mux@master/.tree/mux.go"
+	want := "/github.com/gorilla/mux@master/-/tree/mux.go"
 
 	have, err := muxLink.GetAttribute("href")
 	if err != nil {
@@ -83,7 +83,7 @@ func TestRepoFlow(t *T) error {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
-		wantURL(t.Endpoint("/github.com/gorilla/mux@master/.tree/mux.go"), wd),
+		wantURL(t.Endpoint("/github.com/gorilla/mux@master/-/tree/mux.go"), wd),
 		"wait for mux.go codefile to load",
 	)
 
@@ -122,7 +122,7 @@ func TestRepoFlow(t *T) error {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
-		wantURL(t.Endpoint("/github.com/gorilla/mux@master/.GoPackage/github.com/gorilla/mux/.def/Router"), wd),
+		wantURL(t.Endpoint("/github.com/gorilla/mux@master/-/def/GoPackage/github.com-gorilla-mux/Router"), wd),
 		"wait for Router def to load",
 	)
 

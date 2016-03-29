@@ -117,7 +117,7 @@ func (s *Server) Start() error {
 }
 
 // SSH server code adapted from gitreceived in Flynn
-// (https://sourcegraph.com/flynn/flynn/.tree/gitreceived/gitreceived.go).
+// (https://sourcegraph.com/flynn/flynn/-/tree/gitreceived/gitreceived.go).
 
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()

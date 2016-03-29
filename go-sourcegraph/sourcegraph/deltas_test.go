@@ -25,8 +25,8 @@ func TestDeltas(t *testing.T) {
 			},
 			wantRouteVars: map[string]string{
 				"Repo":         "samerepo",
-				"Rev":          "baserev===" + baseCommit,
-				"DeltaHeadRev": "headrev===" + headCommit,
+				"Rev":          "@baserev===" + baseCommit,
+				"DeltaHeadRev": "@headrev===" + headCommit,
 			},
 		},
 	}
