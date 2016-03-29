@@ -1,9 +1,6 @@
 package sourcegraph
 
 import (
-	"encoding/base64"
-	"strings"
-
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
@@ -28,22 +25,9 @@ func UnmarshalDeltaSpec(routeVars map[string]string) (DeltaSpec, error) {
 	}
 	s.Base = rr
 
-	dhr := routeVars["DeltaHeadRev"]
-	if i := strings.Index(dhr, ":"); i != -1 {
-		// base repo != head repo
-		repoPCB64, revPC := dhr[:i], dhr[i+1:]
+	rev, commitID := spec.ParseResolvedRev(routeVars["DeltaHeadRev"])
+	s.Head = RepoRevSpec{RepoSpec: rr.RepoSpec, Rev: rev, CommitID: commitID}
 
-		repoPC, err := base64.URLEncoding.DecodeString(repoPCB64)
-		if err != nil {
-			return DeltaSpec{}, err
-		}
-
-		rev, commitID := spec.ParseResolvedRev(revPC)
-		s.Head = RepoRevSpec{RepoSpec: RepoSpec{URI: string(repoPC)}, Rev: rev, CommitID: commitID}
-	} else {
-		rev, commitID := spec.ParseResolvedRev(dhr)
-		s.Head = RepoRevSpec{RepoSpec: rr.RepoSpec, Rev: rev, CommitID: commitID}
-	}
 	return s, nil
 }
 
