@@ -68,7 +68,7 @@ func New(base *mux.Router) *mux.Router {
 	build := repo.PathPrefix(buildPath).Subrouter()
 	build.Path("/tasks").Methods("GET").Name(RepoBuildTasks)
 
-	base.Path("/.defs").Methods("GET").Name(Defs)
+	base.Path("/defs").Methods("GET").Name(Defs)
 
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/srclib-coverage").Methods("PUT").Name(SrclibCoverage)

@@ -32,7 +32,7 @@ const DefBackend = {
 				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
 				if (defs === null) {
 					DefBackend.xhr({
-						uri: `/.api/.defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`,
+						uri: `/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {

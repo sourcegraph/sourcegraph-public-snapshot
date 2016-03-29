@@ -29,7 +29,7 @@ describe("DefBackend", () => {
 
 	it("should handle WantDefs", () => {
 		DefBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be("/.api/.defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
+			expect(options.uri).to.be("/.api/defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
 			callback(null, {statusCode: 200}, {Defs: ["someDefData"]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
