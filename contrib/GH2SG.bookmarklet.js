@@ -11,9 +11,6 @@ javascript:
       ["^/([^/]+)/([^/]+)/tree/([^/]+)$", "/github.com/$1/$2@$3", "^/github\.com/([^/]+)/([^/@]+)@([^/]+)$", "/$1/$2/tree/$3"],
       ["^/([^/]+)/([^/]+)/tree/([^/]+)/(.+)$", "/github.com/$1/$2@$3/.tree/$4", "^/github\.com/([^/]+)/([^/@]+)@([^/]+)/.tree/(.+)$", "/$1/$2/tree/$3/$4"],
       ["^/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$", "/github.com/$1/$2@$3/.tree/$4", "", ""], // can't disambiguate between blob and tree on GitHub
-      ["^/([^/]+)/([^/]+)/pull/(\\d+)", "/github.com/$1/$2/.pulls/$3", "^/github\.com/([^/]+)/([^/]+)/.pulls/(\\d+)", "/$1/$2/pull/$3"],
-      ["^/([^/]+)/([^/]+)/pull/(\\d+)/(files|commits)", "/github.com/$1/$2/.pulls/$3/$4", "^/github\.com/([^/]+)/([^/]+)/.pulls/(\\d+)/(files|commits)", "/$1/$2/pull/$3/$4"],
-      ["^/([^/]+)/([^/]+)/pulls", "/github.com/$1/$2/.pulls", "^/github\.com/([^/]+)/([^/]+)/.pulls", "/$1/$2/pulls"],
       ["^/([^/]+)/([^/]+)$", "/github.com/$1/$2", "^/github\.com/([^/]+)/([^/]+)$", "/$1/$2"],
       ["^/([^/]+)$", "/$1", "^/([^/]+)$", "/$1"],
     ];
