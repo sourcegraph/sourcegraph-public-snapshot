@@ -117,11 +117,9 @@ func New(base *mux.Router) *Router {
 	base.Path(repoRevPath).Methods("GET").PostMatchFunc(routevar.FixRepoRevVars).BuildVarsFunc(routevar.PrepareRepoRevRouteVars).Name(Repo)
 	repoRev := base.PathPrefix(repoRevPath).PostMatchFunc(routevar.FixRepoRevVars).BuildVarsFunc(routevar.PrepareRepoRevRouteVars).Subrouter()
 
-	// See router_util/def_route.go for an explanation of how we match def
-	// routes.
-	defPath := "/" + routevar.Def
-	repoRev.Path(defPath).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
-	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
+	defPath := "/.def/" + routevar.Def
+	repoRev.Path(defPath).Methods("GET").Name(Def)
+	def := repoRev.PathPrefix(defPath).Subrouter()
 	def.Path("/.refs").Methods("GET").Name(DefRefs)
 	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
 

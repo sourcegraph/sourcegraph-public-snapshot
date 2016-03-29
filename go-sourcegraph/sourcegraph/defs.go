@@ -1,13 +1,52 @@
 package sourcegraph
 
-import "sourcegraph.com/sourcegraph/srclib/graph"
+import (
+	"strings"
 
-func (s *DefSpec) RouteVars() map[string]string {
-	m := map[string]string{"Repo": s.Repo, "UnitType": s.UnitType, "Unit": s.Unit, "Path": s.Path}
-	if s.CommitID != "" {
-		m["Rev"] = s.CommitID
+	"sourcegraph.com/sourcegraph/srclib/graph"
+)
+
+func (s DefSpec) RouteVars() map[string]string {
+	return map[string]string{
+		"Repo":     s.Repo,
+		"Rev":      s.CommitID,
+		"UnitType": s.UnitType,
+		"Unit":     oldToNewDefRouteComponent(s.Unit),
+		"Path":     oldToNewDefRouteComponent(pathEscape(s.Path)),
 	}
-	return m
+}
+
+func UnmarshalDefSpec(routeVars map[string]string) (DefSpec, error) {
+	repoRev, err := UnmarshalRepoRevSpec(routeVars)
+	if err != nil {
+		return DefSpec{}, err
+	}
+
+	return DefSpec{
+		Repo:     repoRev.URI,
+		CommitID: repoRev.ResolvedRevString(),
+		UnitType: routeVars["UnitType"],
+		Unit:     newToOldDefRouteComponent(routeVars["Unit"]),
+		Path:     newToOldDefRouteComponent(pathUnescape(routeVars["Path"])),
+	}, nil
+}
+
+func newToOldDefRouteComponent(v string) string {
+	return strings.Replace(v, "-", "/", -1)
+}
+
+func oldToNewDefRouteComponent(v string) string {
+	return strings.Replace(v, "/", "-", -1)
+}
+
+// pathEscape is a limited version of url.QueryEscape that only escapes '?'.
+func pathEscape(p string) string {
+	return strings.Replace(p, "?", "%3F", -1)
+}
+
+// pathUnescape is a limited version of url.QueryEscape that only unescapes '?'.
+func pathUnescape(p string) string {
+	return strings.Replace(p, "%3F", "?", -1)
 }
 
 // DefKey returns the def key specified by s, using the Repo, UnitType,

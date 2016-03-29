@@ -112,56 +112,21 @@ func TestMatch(t *testing.T) {
 
 		// Defs
 		{
-			path:          "/repohost.com/foo@mycommitid/.t/.def/p",
+			path:          "/repohost.com/foo@mycommitid/.def/t/u/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "mycommitid"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "mycommitid"},
 		},
 		{
-			path:          "/repohost.com/foo@myrev/subrev/.t/.def/p",
+			path:          "/repohost.com/foo@myrev/subrev/.def/t/u/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "myrev/subrev"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def/p",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def/p%3F", // Ruby-like def that ends in '?', like `directory?`
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p?"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def", // empty path
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
-		},
-		{
-			path:          "/repohost.com/foo/.t/u1/.def/p",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1", "Path": "p"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "myrev/subrev"},
 		},
 
 		// Def sub-routes
 		{
-			path:          "/repohost.com/foo/.t/.def/p/.refs",
+			path:          "/repohost.com/foo/.def/t/u/p/.refs",
 			wantRouteName: DefRefs,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def/.refs", // empty path
-			wantRouteName: DefRefs,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
-		},
-		{
-			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2/.refs",
-			wantRouteName: DefRefs,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p"},
 		},
 	}
 	for _, test := range tests {

@@ -331,12 +331,11 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 // dc.Def.DefKey will be set to the def specification based on the
 // request when getting actual def fails.
 func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, rc *RepoCommon, vc *RepoRevCommon, err error) {
-	defSpec := sourcegraph.DefSpec{
-		Repo:     vars["Repo"],
-		Unit:     vars["Unit"],
-		UnitType: vars["UnitType"],
-		Path:     router_util.EscapePath(vars["Path"]),
+	defSpec, err := sourcegraph.UnmarshalDefSpec(vars)
+	if err != nil {
+		return dc, rc, vc, err
 	}
+
 	// If we fail to get a def, return the best known information to the caller.
 	dc = &sourcegraph.Def{
 		Def: graph.Def{

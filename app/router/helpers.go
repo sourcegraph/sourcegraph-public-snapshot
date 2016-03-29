@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/router_util"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -83,7 +84,7 @@ func (r *Router) URLToDef(key graph.DefKey) *url.URL {
 }
 
 func (r *Router) URLToDefSubroute(routeName string, key graph.DefKey) *url.URL {
-	return r.URLTo(routeName, "Repo", string(key.Repo), "UnitType", key.UnitType, "Unit", key.Unit, "Path", string(key.Path))
+	return r.URLTo(routeName, router_util.MapToArray(sourcegraph.NewDefSpecFromDefKey(key).RouteVars())...)
 }
 
 func (r *Router) URLToDefAtRev(key graph.DefKey, rev interface{}) *url.URL {
@@ -91,7 +92,8 @@ func (r *Router) URLToDefAtRev(key graph.DefKey, rev interface{}) *url.URL {
 }
 
 func (r *Router) URLToDefAtRevSubroute(routeName string, key graph.DefKey, rev interface{}) *url.URL {
-	return r.URLTo(routeName, "Repo", string(key.Repo), "Rev", commitIDStr(rev), "UnitType", key.UnitType, "Unit", key.Unit, "Path", string(key.Path))
+	key.CommitID = commitIDStr(rev)
+	return r.URLTo(routeName, router_util.MapToArray(sourcegraph.NewDefSpecFromDefKey(key).RouteVars())...)
 }
 
 func (r *Router) URLToRepoCommit(repoURI string, commitID interface{}) *url.URL {

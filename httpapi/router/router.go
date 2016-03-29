@@ -78,9 +78,7 @@ func New(base *mux.Router) *mux.Router {
 	// signal in no route logs
 	base.Path("/ext/github/webhook").Methods("GET", "POST").Name(BlackHole)
 
-	// See router_util/def_route.go for an explanation of how we match def
-	// routes.
-	repoRev.Path("/" + routevar.Def).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
+	repoRev.Path("/.def/" + routevar.Def).Methods("GET").Name(Def)
 
 	return base
 }

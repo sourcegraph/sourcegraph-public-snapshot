@@ -29,9 +29,7 @@ func New(base *mux.Router) *mux.Router {
 		BuildVarsFunc(routevar.PrepareRepoRevRouteVars).
 		Subrouter()
 
-	def := repoRev.PathPrefix("/" + routevar.Def).
-		PostMatchFunc(routevar.FixDefUnitVars).
-		BuildVarsFunc(routevar.PrepareDefRouteVars).
+	def := repoRev.PathPrefix("/.def/" + routevar.Def).
 		Subrouter()
 
 	def.Path("/.refs").
