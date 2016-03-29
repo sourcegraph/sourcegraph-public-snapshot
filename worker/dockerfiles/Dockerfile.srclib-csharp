@@ -19,4 +19,7 @@ ADD toolchains/sourcegraph.com/sourcegraph/srclib-csharp $SRCLIBPATH/sourcegraph
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
 RUN make
 
-# TODO(beyang): fill in once you get Dockerfile from Ildar
+# Install srclib binary (assumes this has been built on the Docker host)
+ADD ./srclib /bin/srclib
+
+ENTRYPOINT srclib config && srclib make
