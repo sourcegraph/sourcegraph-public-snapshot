@@ -1,8 +1,12 @@
-/*! Hint.css - v2.2.0 - 2016-03-08
+/* This file has been modified from Hint.css - v2.2.0 - 2016-03-08
 * http://kushagragour.in/lab/hint/
 * Copyright (c) 2016 Kushagra Gour; Licensed  */
 
-@value c_black-70 from "./colors.css";
+@value colors "./colors.css";
+@value c_black-70 from colors;
+@value c_black-30 from colors;
+@value c_white from colors;
+@value c_black from colors;
 
 /*-------------------------------------*	HINT.css - A CSS tooltip library
 \*-------------------------------------*/
@@ -66,7 +70,7 @@
 	[data-hint]:after {
 		content: attr(data-hint);
 		background: c_black-70;
-		color: white;
+		color: c_white;
 		padding: 8px 10px;
 		font-size: 12px;
 		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -322,8 +326,8 @@
 	 * tooltip body
 	 */ }
 	[data-hint]:after {
-		text-shadow: 0 -1px 0px black;
-		box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3); }
+		text-shadow: 0 -1px 0px c_black;
+		box-shadow: 4px 4px 8px c_black-30; }
 
 /**
  * source: hint-color-types.scss
@@ -545,3 +549,30 @@
 	-webkit-transition: opacity 0.3s ease, visibility 0.3s ease, -webkit-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
 	-moz-transition: opacity 0.3s ease, visibility 0.3s ease, -moz-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
 	transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24); }
+
+
+/* Sourcegraph tooltip classes. */
+.tooltip-common {
+	composes: hint--bounce hint--rounded;
+}
+
+.tooltip-top {
+	composes: tooltip-common;
+	composes: hint--top;
+}
+.tooltip-top-right {
+	composes: tooltip-common;
+	composes: hint--top-right;
+}
+.tooltip-bottom {
+	composes: tooltip-common;
+	composes: hint--bottom;
+}
+.tooltip-left {
+	composes: tooltip-common;
+	composes: hint--left;
+}
+.tooltip-right {
+	composes: tooltip-common;
+	composes: hint--right;
+}

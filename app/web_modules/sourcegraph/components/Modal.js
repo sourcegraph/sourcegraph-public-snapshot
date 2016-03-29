@@ -3,6 +3,7 @@ import React from "react";
 import Component from "sourcegraph/Component";
 
 import BaseStyles from "./styles/base.css";
+import ModalStyles from "./styles/modals.css";
 
 class Modal extends Component {
 	constructor(props) {
@@ -23,7 +24,7 @@ class Modal extends Component {
 	render() {
 		return (
 			<div ref="modal_container"
-				className={this.state.shown ? BaseStyles.modal_container : BaseStyles.hidden}
+				className={this.state.shown ? ModalStyles.modal_container : BaseStyles.hidden}
 				onClick={this._onClick}>
 					{this.state.children}
 			</div>

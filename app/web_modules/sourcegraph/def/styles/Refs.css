@@ -1,9 +1,14 @@
 @value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value tooltips "sourcegraph/components/styles/tooltips.css";
 @value grid "sourcegraph/components/styles/grid.css";
 
+@value c_black-20 from colors;
+@value c_white from colors;
+
 .search_hotkey {
-	composes: bg-black-10 from base;
-	composes: tooltip-bottom from base;
+	composes: bg-black-10 from colors;
+	composes: tooltip-bottom from tooltips;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
 	text-shadow: 0 1px 0 c_white;
 }

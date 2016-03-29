@@ -2,6 +2,9 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value flexbox "sourcegraph/components/styles/flexbox.css";
 @value grid "sourcegraph/components/styles/grid.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value modals "sourcegraph/components/styles/modals.css";
+@value tooltips "sourcegraph/components/styles/tooltips.css";
 
 @value c_black-20 from colors;
 @value c_white from colors;
@@ -11,21 +14,20 @@
 }
 
 .tree {
-	composes: f4 from base;
-	composes: bg-white from base;
+	composes: f4 from typography;
+	composes: bg-white from colors;
 	composes: center from base;
 	composes: col-9 from grid;
 }
 
 .tree_modal {
 	composes: tree;
-	composes: modal from base;
+	composes: modal from modals;
 }
 
 .input_group {
 	composes: flex items-center from flexbox;
-	composes: br3 ba from base;
-	composes: ma3 from base;
+	composes: br3 ba ma3 from base;
 	max-width: 100%;
 }
 .input_group_focused {
@@ -44,20 +46,18 @@
 }
 
 .search_hotkey {
-	composes: f5 b from base;
-	composes: ml3 mr2 pv2 ph3 from base;
-	composes: br3 from base;
-	composes: dark-gray from base;
-	composes: code from base;
-	composes: bg-black-10 from base;
-	composes: tooltip-top-right from base;
+	composes: f5 b from typography;
+	composes: ml3 mr2 pv2 ph3 br3 code from base;
+	composes: dark-gray bg-black-10 from colors;
+	composes: tooltip-top-right from tooltips;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
 	text-shadow: 0 1px 0 c_white;
 }
 
 .list_header {
-	composes: b f4 ph3 pt4 pb2 tracked from base;
-	composes: gray from base;
+	composes: b f4 tracked from typography;
+	composes: ph3 pt4 pb2 from base;
+	composes: gray from colors;
 	text-transform: uppercase;
 }
 
@@ -66,10 +66,9 @@
 }
 
 .list_item {
-	composes: pa3 from base;
-	composes: mh3 from base;
-	composes: bt b--black-20 from base;
-	composes: sans-serif from base;
+	composes: pa3 mh3 bt from base;
+	composes: b--black-20 from colors;
+	composes: sans-serif from typography;
 }
 
 .list_item_selected {
@@ -78,8 +77,7 @@
 }
 
 .link {
-	composes: link from base;
-	composes: pa2 from base;
+	composes: pa2 link from base;
 }
 
 /* TODO: this wrapper only needed until we can pull compose our icon fonts from CSS sheet in a single component. */
@@ -99,7 +97,7 @@
 
 .file_path {
 	composes: pl3 from base;
-	composes: f4 sans-serif from base;
+	composes: f4 sans-serif from typography;
 	letter-spacing: initial;
 	text-transform: none;
 }
