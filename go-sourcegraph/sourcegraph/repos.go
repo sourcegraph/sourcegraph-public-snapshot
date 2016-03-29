@@ -69,12 +69,7 @@ func UnmarshalRepoSpec(routeVars map[string]string) (RepoSpec, error) {
 // repository commit.
 func (s RepoRevSpec) RouteVars() map[string]string {
 	m := s.RepoSpec.RouteVars()
-	if s.Rev != "" {
-		m["Rev"] = s.Rev
-	}
-	if s.CommitID != "" {
-		m["CommitID"] = s.CommitID
-	}
+	m["Rev"] = s.ResolvedRevString()
 	return m
 }
 
@@ -102,12 +97,12 @@ func UnmarshalRepoRevSpec(routeVars map[string]string) (RepoRevSpec, error) {
 
 	rrspec := RepoRevSpec{RepoSpec: repo}
 	if revStr, ok := routeVars["Rev"]; ok {
-		rrspec.Rev = revStr
+		rrspec.Rev, rrspec.CommitID = spec.ParseResolvedRev(revStr)
 	}
-	if commitStr, ok := routeVars["CommitID"]; ok {
-		rrspec.CommitID = commitStr
+	if _, ok := routeVars["CommitID"]; ok {
+		panic("unexpected CommitID route var; was removed in the simple-routes branch")
 	}
-	return rrspec, err
+	return rrspec, nil
 }
 
 // IsAppEnabled returns a boolean indicating whether the given app is

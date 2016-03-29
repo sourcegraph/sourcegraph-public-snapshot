@@ -12,7 +12,7 @@ import (
 // delta specified by this DeltaSpec.
 func (s DeltaSpec) RouteVars() map[string]string {
 	m := s.Base.RouteVars()
-	m["DeltaHeadResolvedRev"] = s.Head.ResolvedRevString()
+	m["DeltaHeadRev"] = s.Head.ResolvedRevString()
 	return m
 }
 
@@ -28,7 +28,7 @@ func UnmarshalDeltaSpec(routeVars map[string]string) (DeltaSpec, error) {
 	}
 	s.Base = rr
 
-	dhr := routeVars["DeltaHeadResolvedRev"]
+	dhr := routeVars["DeltaHeadRev"]
 	if i := strings.Index(dhr, ":"); i != -1 {
 		// base repo != head repo
 		repoPCB64, revPC := dhr[:i], dhr[i+1:]
@@ -38,18 +38,10 @@ func UnmarshalDeltaSpec(routeVars map[string]string) (DeltaSpec, error) {
 			return DeltaSpec{}, err
 		}
 
-		rev, commitID, err := spec.ParseResolvedRev(revPC)
-		if err != nil {
-			return DeltaSpec{}, err
-		}
-
+		rev, commitID := spec.ParseResolvedRev(revPC)
 		s.Head = RepoRevSpec{RepoSpec: RepoSpec{URI: string(repoPC)}, Rev: rev, CommitID: commitID}
 	} else {
-		rev, commitID, err := spec.ParseResolvedRev(dhr)
-		if err != nil {
-			return DeltaSpec{}, err
-		}
-
+		rev, commitID := spec.ParseResolvedRev(dhr)
 		s.Head = RepoRevSpec{RepoSpec: rr.RepoSpec, Rev: rev, CommitID: commitID}
 	}
 	return s, nil

@@ -141,7 +141,7 @@ func TestRepoRevPattern(t *testing.T) {
 }
 
 func TestResolvedRevPattern(t *testing.T) {
-	pat, err := regexp.Compile("^" + ResolvedRevPattern + "$")
+	pat, err := regexp.Compile("^" + RevPattern + "$")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,11 +175,8 @@ func TestResolvedRevPattern(t *testing.T) {
 			t.Errorf("%q: got match == %v, want %v", test.input, match, test.wantMatch)
 		}
 
-		rev, commitID, err := ParseResolvedRev(test.input)
-		if gotErr, wantErr := err != nil, !test.wantMatch; gotErr != wantErr {
-			t.Errorf("%q: got err == %v, want error? == %v", test.input, err, wantErr)
-		}
-		if err == nil {
+		if test.wantMatch {
+			rev, commitID := ParseResolvedRev(test.input)
 			if rev != test.wantRev {
 				t.Errorf("%q: got rev == %q, want %q", test.input, rev, test.wantRev)
 			}

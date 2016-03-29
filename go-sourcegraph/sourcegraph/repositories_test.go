@@ -50,7 +50,7 @@ func TestRepoRevSpec(t *testing.T) {
 	}{
 		{RepoRevSpec{RepoSpec: RepoSpec{URI: "a.com/x"}, Rev: "r"}, map[string]string{"Repo": "a.com/x", "Rev": "r"}},
 		{RepoRevSpec{RepoSpec: RepoSpec{URI: "x"}, Rev: "r"}, map[string]string{"Repo": "x", "Rev": "r"}},
-		{RepoRevSpec{RepoSpec: RepoSpec{URI: "a.com/x"}, Rev: "r", CommitID: "aaa"}, map[string]string{"Repo": "a.com/x", "Rev": "r", "CommitID": "aaa"}},
+		{RepoRevSpec{RepoSpec: RepoSpec{URI: "a.com/x"}, Rev: "r", CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, map[string]string{"Repo": "a.com/x", "Rev": "r===aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
 	}
 
 	for _, test := range tests {
@@ -64,7 +64,7 @@ func TestRepoRevSpec(t *testing.T) {
 			continue
 		}
 		if spec != test.spec {
-			t.Errorf("got spec %+v, want %+v", spec, test.spec)
+			t.Errorf("got spec %+v from route vars %+v, want %+v", spec, routeVars, test.spec)
 		}
 	}
 }

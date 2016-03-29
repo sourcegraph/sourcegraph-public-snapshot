@@ -61,10 +61,10 @@ func TestRepoRev(t *testing.T) {
 	}{
 		{path: "/foo", wantVars: map[string]string{"Repo": "foo"}},
 		{path: "/foo@v", wantVars: map[string]string{"Repo": "foo", "Rev": "v"}},
-		{path: "/foo@v===" + commitID, wantVars: map[string]string{"Repo": "foo", "Rev": "v", "CommitID": commitID}},
+		{path: "/foo@v===" + commitID, wantVars: map[string]string{"Repo": "foo", "Rev": "v===" + commitID}},
 		{path: "/foo.com/bar", wantVars: map[string]string{"Repo": "foo.com/bar"}},
 		{path: "/foo.com/bar@v", wantVars: map[string]string{"Repo": "foo.com/bar", "Rev": "v"}},
-		{path: "/foo.com/bar@v===" + commitID, wantVars: map[string]string{"Repo": "foo.com/bar", "Rev": "v", "CommitID": commitID}},
+		{path: "/foo.com/bar@v===" + commitID, wantVars: map[string]string{"Repo": "foo.com/bar", "Rev": "v===" + commitID}},
 
 		{path: "/", wantNoMatch: true},
 		{path: "/.foo", wantNoMatch: true},

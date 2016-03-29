@@ -13,23 +13,24 @@ const (
 	// RepoRevPattern is the regexp pattern that matches RepoRevSpec
 	// strings (which encode a repository path, optional revision, and
 	// optional commit).
-	RepoRevPattern = RepoPattern + `(?:@` + ResolvedRevPattern + `)?`
-
-	// ResolvedRevPattern is the regexp pattern that matches a VCS
-	// revision and, optionally, a resolved commit ID. The format is
-	// "rev" or "rev===commit".
-	ResolvedRevPattern = RevPattern + `(?:` + resolvedCommitSep + CommitPattern + `)?`
+	RepoRevPattern = RepoPattern + `(?:@` + RevPattern + `)?`
 
 	// RevPattern is the regexp pattern that matches a VCS revision
-	// specifier (e.g., "master" or "my/branch~1").  The revision may
+	// and, optionally, a resolved commit ID. The format is "rev" or
+	// "rev===commit".
+	RevPattern = unresolvedRevPattern + `(?:` + resolvedRevSep + CommitPattern + `)?`
+
+	// unresolvedRevPattern is the regexp pattern that matches a VCS
+	// revision specifier (e.g., "master" or "my/branch~1") without
+	// the "===" indicating the resolved commit ID. The revision may
 	// not contain "=" or "/." to avoid ambiguity.
-	RevPattern = `(?P<rev>[^/=]+(?:/[^/.=][^/=]*)*)`
+	unresolvedRevPattern = `(?P<rev>[^/=]+(?:/[^/.=][^/=]*)*)`
 
 	// CommitPattern is the regexp pattern that matches absolute
 	// (40-character) hexidecimal commit IDs.
 	CommitPattern = `(?P<commit>[[:xdigit:]]{40})`
 
-	resolvedCommitSep = `===`
+	resolvedRevSep = `===`
 
 	// PathNoLeadingDotComponentPattern is a pattern that matches any
 	// string that doesn't contain "/.".
@@ -41,9 +42,9 @@ const (
 )
 
 var (
-	repoPattern        = regexp.MustCompile("^" + RepoPattern + "$")
-	repoRevPattern     = regexp.MustCompile("^" + RepoRevPattern + "$")
-	resolvedRevPattern = regexp.MustCompile("^" + ResolvedRevPattern + "$")
+	repoPattern    = regexp.MustCompile("^" + RepoPattern + "$")
+	repoRevPattern = regexp.MustCompile("^" + RepoRevPattern + "$")
+	revPattern     = regexp.MustCompile("^" + RevPattern + "$")
 )
 
 // ParseRepo parses a RepoSpec string. If spec is invalid, an
@@ -87,16 +88,16 @@ func RepoRevString(repo, rev, commitID string) string {
 }
 
 // ParseResolvedRev parses a ResolvedRevSpec string ("rev" or
-// "rev===commit"). If spec is invalid, an InvalidError is returned.
-func ParseResolvedRev(spec string) (rev, commitID string, err error) {
-	if m := resolvedRevPattern.FindStringSubmatch(spec); m != nil {
+// "rev===commit").
+func ParseResolvedRev(spec string) (rev, commitID string) {
+	if m := revPattern.FindStringSubmatch(spec); m != nil {
 		rev = m[1]
 		if len(m) >= 3 {
 			commitID = m[2]
 		}
 		return
 	}
-	return "", "", InvalidError{"ResolvedRevSpec", spec, nil}
+	return spec, ""
 }
 
 // ResolvedRevString returns a ResolvedRevSpec string. It is the
@@ -105,12 +106,12 @@ func ParseResolvedRev(spec string) (rev, commitID string, err error) {
 func ResolvedRevString(rev, commitID string) string {
 	n := len(rev)
 	if commitID != "" {
-		n += len(resolvedCommitSep) + len(commitID)
+		n += len(resolvedRevSep) + len(commitID)
 	}
 	buf := bytes.NewBuffer(make([]byte, 0, n))
 	buf.WriteString(rev)
 	if commitID != "" {
-		buf.Write([]byte(resolvedCommitSep))
+		buf.Write([]byte(resolvedRevSep))
 		buf.WriteString(commitID)
 	}
 	return buf.String()
