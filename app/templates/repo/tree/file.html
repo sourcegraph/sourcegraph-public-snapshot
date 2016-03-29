@@ -34,5 +34,5 @@
 		{{component .Ctx .StoreData "sourcegraph/LocationAdaptor" "component" "sourcegraph/blob/BlobRouter" "location" .CurrentURL.RequestURI}}
 	</div>
 
-	{{component .Ctx nil "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.Rev "commitID" .EntrySpec.RepoRev.CommitID}}
+	{{component nil nil "sourcegraph/tree/TreeOverlay" "repo" .EntrySpec.RepoRev.URI "rev" .EntrySpec.RepoRev.ResolvedRevString}}
 {{end}}
