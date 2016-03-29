@@ -5,9 +5,25 @@ from an end user's perspective (i.e. from within an actual web browser) using
 [Selenium](http://www.seleniumhq.org/).
 
 - These tests should be run locally as you would any other Go tests (see `README.dev.md`).
-- These tests are run automatically as part of CI.
 - These tests are run automatically against sourcegraph.com and, in the event of
   a regression in the deployed version, a rollback will occur automatically.
+
+## Running locally
+
+End-to-end tests are run constantly against sourcegraph.com.
+You may additionally run them locally on your machine:
+
+1. Run Selenium server via Docker:
+    - `docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0`
+3. Run the E2E tests once:
+    - `go install sourcegraph.com/sourcegraph/infrastructure/docker-images/e2etest`
+    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com e2etest -once`
+        - OS X: use `docker-machine ls` to find the IP of the machine.
+        - Linux: Just use `localhost`.
+4. Run a specific E2E test once: `e2etest -once -run="login_flow"`
+5. Run tests against local Sourcegraph instance: specify `TARGET=<LOCAL_MACHINE_IP>:4444` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
+
+For authentication with the `TARGET` server, your `~/.sourcegraph/id.pem` is used by default. Set `ID_KEY_DATA=...` to specify a Base64-encoded form of this file.
 
 ## Adding new tests
 
