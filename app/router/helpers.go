@@ -71,7 +71,7 @@ func (r *Router) URLToRepoTreeEntrySubroute(routeName string, repo string, rev i
 }
 
 func (r *Router) URLToRepoTreeEntrySpec(e sourcegraph.TreeEntrySpec) *url.URL {
-	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", e.RepoRev.ResolvedRevString(), "Path", e.Path)
+	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", revStr(e.RepoRev.ResolvedRevString()), "Path", e.Path)
 }
 
 func (r *Router) URLToRepoTreeEntryLines(repoURI string, rev, path string, startLine int) *url.URL {

@@ -367,7 +367,7 @@ function showDefResults(dataArray) {
 		}
 		var strToReturn = "<span style=color:#4078C0>" + eachRes.FmtStrings.Name.ScopeQualified + "</span>" + eachRes.FmtStrings.Type.ScopeQualified;
 		console.log(strToReturn)
-		var hrefurl = "https://sourcegraph.com/"+eachRes.Repo+"/-/def/GoPackage/"+eachRes.Repo.replace("/", "-")+"/"+eachRes.Path.replace("/", "-");
+		var hrefurl = "https://sourcegraph.com/"+eachRes.Repo+"/-/def/GoPackage/"+eachRes.Repo.replace("/", "--")+"/"+eachRes.Path.replace("/", "--");
 
 		if (i !== dataArray.Defs.length-1) { 
 			$('.tree-browser:last tbody:last').after("<tbody class='js-tree-finder-results'><tr id='searchrow' class='js-navigation-item tree-browser-result' style='border-bottom: 1px solid rgb(238, 238, 238);'><td class='icon' width='21px'><svg aria-hidden='true' class='octicon octicon-chevron-right' height='16' role='img' version='1.1' viewBox='0 0 8 16' width='8'><path d='M7.5 8L2.5 13l-1.5-1.5 3.75-3.5L1 4.5l1.5-1.5 5 5z'></path></svg></td><td class='icon'><svg aria-hidden='true' class='octicon octicon-file-text' height='16' role='img' version='1.1' viewBox='0 0 12 16' width='12'><path d='M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z'></path></svg></td></td><td><a href="+hrefurl+" target='blank'><span class='res'>"+eachRes.Kind+ " "+ strToReturn + "</span></a></td></tr></tbody>");

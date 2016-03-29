@@ -70,7 +70,12 @@ func UnmarshalRepoSpec(routeVars map[string]string) (RepoSpec, error) {
 // repository commit.
 func (s RepoRevSpec) RouteVars() map[string]string {
 	m := s.RepoSpec.RouteVars()
-	m["Rev"] = "@" + s.ResolvedRevString()
+
+	rev := s.ResolvedRevString()
+	if rev != "" {
+		rev = "@" + rev
+	}
+	m["Rev"] = rev
 	return m
 }
 
@@ -78,7 +83,7 @@ func (s RepoRevSpec) RouteVars() map[string]string {
 // is set, the return value is "Rev===CommitID"; otherwise, it is just
 // "Rev". See the docstring for RepoRevSpec for an explanation why.
 func (s RepoRevSpec) ResolvedRevString() string {
-	return spec.ResolvedRevString(s.Rev, s.CommitID)
+	return strings.TrimPrefix(spec.ResolvedRevString(s.Rev, s.CommitID), "@")
 }
 
 // Resolved reports whether the revspec has been fully resolved to an

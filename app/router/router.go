@@ -59,6 +59,8 @@ const (
 
 	UserContent = "usercontent"
 
+	OldDefRedirect = "old-def-redirect"
+
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
 )
@@ -107,6 +109,8 @@ func New(base *mux.Router) *Router {
 	userPath := `/~` + routevar.User
 	user := base.PathPrefix(userPath).Subrouter()
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
+
+	addOldDefRedirectRoute(&Router{*base}, base)
 
 	// attach git transport endpoints
 	gitrouter.New(base)

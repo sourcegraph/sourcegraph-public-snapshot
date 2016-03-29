@@ -6,17 +6,27 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
+// Hack to support "." path components in def routes (e.g., for Go
+// packages, the package itself has Path == "." or Path == "").
+func defURLPathToKeyPath(s string) string {
+	return strings.Replace(s, "--", "/", -1)
+}
+
+func defKeyPathToURLPath(s string) string {
+	return strings.Replace(s, "/", "--", -1)
+}
+
 func (s DefSpec) RouteVars() map[string]string {
-	var rev string
-	if s.CommitID != "" {
-		rev = "@" + s.CommitID
+	rev := s.CommitID
+	if !strings.HasPrefix(s.CommitID, "@") && rev != "" {
+		rev = "@" + rev
 	}
 	return map[string]string{
 		"Repo":     s.Repo,
 		"Rev":      rev,
 		"UnitType": s.UnitType,
-		"Unit":     oldToNewDefRouteComponent(s.Unit),
-		"Path":     oldToNewDefRouteComponent(pathEscape(s.Path)),
+		"Unit":     defKeyPathToURLPath(s.Unit),
+		"Path":     defKeyPathToURLPath(pathEscape(s.Path)),
 	}
 }
 
@@ -30,17 +40,9 @@ func UnmarshalDefSpec(routeVars map[string]string) (DefSpec, error) {
 		Repo:     repoRev.URI,
 		CommitID: repoRev.ResolvedRevString(),
 		UnitType: routeVars["UnitType"],
-		Unit:     newToOldDefRouteComponent(routeVars["Unit"]),
-		Path:     newToOldDefRouteComponent(pathUnescape(routeVars["Path"])),
+		Unit:     defURLPathToKeyPath(routeVars["Unit"]),
+		Path:     defURLPathToKeyPath(pathUnescape(routeVars["Path"])),
 	}, nil
-}
-
-func newToOldDefRouteComponent(v string) string {
-	return strings.Replace(v, "-", "/", -1)
-}
-
-func oldToNewDefRouteComponent(v string) string {
-	return strings.Replace(v, "/", "-", -1)
 }
 
 // pathEscape is a limited version of url.QueryEscape that only escapes '?'.
