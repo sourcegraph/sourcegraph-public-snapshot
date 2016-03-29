@@ -18,18 +18,12 @@ machine:
 
 dependencies:
   pre:
-    # Use Go 1.6.
-    - cd /usr/local && sudo rm -rf go && curl https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz | sudo tar -xz && sudo chmod -R a+rwx /usr/local/go
-    # Update git, curl, and libcurl ( both openssl and gnutls flavours ).
-    - sudo apt-get update; sudo apt-get install --reinstall git curl libcurl3 libcurl3-gnutls
-    # Tools for testing.
-    - go get github.com/jstemmer/go-junit-report
-    - go get github.com/wadey/gocovmerge
+    - ./dev/ci/install-go.sh
+    - ./dev/ci/packages.sh
+    - ./dev/ci/install-test-tools.sh
 
     # Install musl for glibc-free statically linked CGO binaries
-    - wget http://www.musl-libc.org/releases/musl-1.1.10.tar.gz
-    - tar -xvf musl-1.1.10.tar.gz
-    - cd musl-1.1.10 && ./configure && make && sudo make install && cd .. && rm -rf musl-1.1.10 musl-1.1.10.tar.gz
+    - ./dev/ci/install-musl.sh
 
   cache_directories:
     - ~/google-cloud-sdk
@@ -40,15 +34,13 @@ dependencies:
     - mkdir -p $HOME/.go_workspace/src/sourcegraph.com/sourcegraph
     - cp -r $PWD $REPO
 
-    - git --version
-    - curl --version
-    - curl-config --version
+    - ./dev/ci/versions.sh
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"
 
-    - if [ ! -d ~/google-cloud-sdk ]; then curl https://sdk.cloud.google.com | bash; fi
-    - if [ ! -d ~/protobuf-3.0.0-beta-1 ]; then cd ~ && wget https://github.com/google/protobuf/archive/v3.0.0-beta-1.tar.gz && tar -xzf v3.0.0-beta-1.tar.gz && cd protobuf-3.0.0-beta-1 && ./autogen.sh && ./configure && make && cp src/.libs/lt-protoc src/protoc; fi
+    - ./dev/ci/install-gcloud.sh
+    - ./dev/ci/install-protobuf.sh
 
 test:
   override:
