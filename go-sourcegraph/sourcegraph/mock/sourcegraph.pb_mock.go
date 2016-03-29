@@ -253,7 +253,6 @@ var _ sourcegraph.MirrorReposServer = (*MirrorReposServer)(nil)
 
 type BuildsClient struct {
 	Get_            func(ctx context.Context, in *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
-	GetRepoBuild_   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error)
 	List_           func(ctx context.Context, in *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error)
 	Create_         func(ctx context.Context, in *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error)
 	Update_         func(ctx context.Context, in *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error)
@@ -266,10 +265,6 @@ type BuildsClient struct {
 
 func (s *BuildsClient) Get(ctx context.Context, in *sourcegraph.BuildSpec, opts ...grpc.CallOption) (*sourcegraph.Build, error) {
 	return s.Get_(ctx, in)
-}
-
-func (s *BuildsClient) GetRepoBuild(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*sourcegraph.Build, error) {
-	return s.GetRepoBuild_(ctx, in)
 }
 
 func (s *BuildsClient) List(ctx context.Context, in *sourcegraph.BuildListOptions, opts ...grpc.CallOption) (*sourcegraph.BuildList, error) {
@@ -308,7 +303,6 @@ var _ sourcegraph.BuildsClient = (*BuildsClient)(nil)
 
 type BuildsServer struct {
 	Get_            func(v0 context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error)
-	GetRepoBuild_   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error)
 	List_           func(v0 context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error)
 	Create_         func(v0 context.Context, v1 *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error)
 	Update_         func(v0 context.Context, v1 *sourcegraph.BuildsUpdateOp) (*sourcegraph.Build, error)
@@ -321,10 +315,6 @@ type BuildsServer struct {
 
 func (s *BuildsServer) Get(v0 context.Context, v1 *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	return s.Get_(v0, v1)
-}
-
-func (s *BuildsServer) GetRepoBuild(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.Build, error) {
-	return s.GetRepoBuild_(v0, v1)
 }
 
 func (s *BuildsServer) List(v0 context.Context, v1 *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {

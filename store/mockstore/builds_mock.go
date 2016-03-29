@@ -11,16 +11,15 @@ import (
 )
 
 type Builds struct {
-	Get_                   func(ctx context.Context, build sourcegraph.BuildSpec) (*sourcegraph.Build, error)
-	List_                  func(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error)
-	GetFirstInCommitOrder_ func(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error)
-	Create_                func(v0 context.Context, v1 *sourcegraph.Build) (*sourcegraph.Build, error)
-	Update_                func(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error
-	ListBuildTasks_        func(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error)
-	CreateTasks_           func(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error)
-	UpdateTask_            func(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error
-	DequeueNext_           func(ctx context.Context) (*sourcegraph.Build, error)
-	GetTask_               func(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error)
+	Get_            func(ctx context.Context, build sourcegraph.BuildSpec) (*sourcegraph.Build, error)
+	List_           func(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error)
+	Create_         func(v0 context.Context, v1 *sourcegraph.Build) (*sourcegraph.Build, error)
+	Update_         func(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error
+	ListBuildTasks_ func(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error)
+	CreateTasks_    func(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error)
+	UpdateTask_     func(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error
+	DequeueNext_    func(ctx context.Context) (*sourcegraph.Build, error)
+	GetTask_        func(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error)
 }
 
 func (s *Builds) Get(ctx context.Context, build sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
@@ -29,10 +28,6 @@ func (s *Builds) Get(ctx context.Context, build sourcegraph.BuildSpec) (*sourceg
 
 func (s *Builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error) {
 	return s.List_(ctx, opt)
-}
-
-func (s *Builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
-	return s.GetFirstInCommitOrder_(ctx, repo, commitIDs, successfulOnly)
 }
 
 func (s *Builds) Create(v0 context.Context, v1 *sourcegraph.Build) (*sourcegraph.Build, error) {

@@ -43,15 +43,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-	_, err = buildsGroup.AddCommand("repo",
-		"get repo build info",
-		"The get-repo subcommand gets the latest repo build.",
-		&buildsGetRepoBuildInfoCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	_, err = buildsGroup.AddCommand("stats",
 		"get builds statistics",
 		"The stats subcommand displays statistics about previous and current builds.",
@@ -143,37 +134,6 @@ func (c *buildsListCmd) Execute(args []string) error {
 			}
 			fmt.Printf("\t%s\n", b.CommitID)
 		}
-	}
-
-	return nil
-}
-
-type buildsGetRepoBuildInfoCmd struct {
-	Args struct {
-		Repo []string `name:"repositories to fetch build info for"`
-	} `positional-args:"yes"`
-}
-
-func (c *buildsGetRepoBuildInfoCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	for _, repo := range c.Args.Repo {
-		repo, rev := sourcegraph.ParseRepoAndCommitID(repo)
-		build, err := cl.Builds.GetRepoBuild(client.Ctx,
-			&sourcegraph.RepoRevSpec{
-				RepoSpec: sourcegraph.RepoSpec{URI: repo},
-				Rev:      rev,
-			},
-		)
-		if err != nil {
-			return err
-		}
-		fmt.Println(repo)
-		b, err := json.MarshalIndent(build, "\t", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(b))
 	}
 
 	return nil

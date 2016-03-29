@@ -314,19 +314,6 @@ func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (r
 	return
 }
 
-func (s wrappedBuilds) GetRepoBuild(ctx context.Context, param *sourcegraph.RepoRevSpec) (res *sourcegraph.Build, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Builds", "GetRepoBuild", param)
-	defer func() {
-		trace.After(ctx, "Builds", "GetRepoBuild", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Builds.GetRepoBuild(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Builds.GetRepoBuild returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedBuilds) List(ctx context.Context, param *sourcegraph.BuildListOptions) (res *sourcegraph.BuildList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "List", param)

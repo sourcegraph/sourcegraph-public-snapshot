@@ -1032,15 +1032,6 @@ service Builds {
 	// Get fetches a build.
 	rpc Get(BuildSpec) returns (Build);
 
-	// GetRepoBuild returns the build for the repo at the given exact
-	// commit or branch head commit.
-	//
-	// NOTE: Previously, this method looked at the build and commit
-	// history to find the "best recent build." This method no longer
-	// implements that functionality. Refer to
-	// Repos.GetSrclibDataVersionForPath.
-	rpc GetRepoBuild(RepoRevSpec) returns (Build);
-
 	// List builds.
 	rpc List(BuildListOptions) returns (BuildList);
 

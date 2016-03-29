@@ -3418,14 +3418,6 @@ var _MirrorRepos_serviceDesc = grpc.ServiceDesc{
 type BuildsClient interface {
 	// Get fetches a build.
 	Get(ctx context.Context, in *BuildSpec, opts ...grpc.CallOption) (*Build, error)
-	// GetRepoBuild returns the build for the repo at the given exact
-	// commit or branch head commit.
-	//
-	// NOTE: Previously, this method looked at the build and commit
-	// history to find the "best recent build." This method no longer
-	// implements that functionality. Refer to
-	// Repos.GetSrclibDataVersionForPath.
-	GetRepoBuild(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Build, error)
 	// List builds.
 	List(ctx context.Context, in *BuildListOptions, opts ...grpc.CallOption) (*BuildList, error)
 	// Create a new build. The build will run asynchronously (Create does not wait for
@@ -3460,15 +3452,6 @@ func NewBuildsClient(cc *grpc.ClientConn) BuildsClient {
 func (c *buildsClient) Get(ctx context.Context, in *BuildSpec, opts ...grpc.CallOption) (*Build, error) {
 	out := new(Build)
 	err := grpc.Invoke(ctx, "/sourcegraph.Builds/Get", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *buildsClient) GetRepoBuild(ctx context.Context, in *RepoRevSpec, opts ...grpc.CallOption) (*Build, error) {
-	out := new(Build)
-	err := grpc.Invoke(ctx, "/sourcegraph.Builds/GetRepoBuild", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3552,14 +3535,6 @@ func (c *buildsClient) DequeueNext(ctx context.Context, in *BuildsDequeueNextOp,
 type BuildsServer interface {
 	// Get fetches a build.
 	Get(context.Context, *BuildSpec) (*Build, error)
-	// GetRepoBuild returns the build for the repo at the given exact
-	// commit or branch head commit.
-	//
-	// NOTE: Previously, this method looked at the build and commit
-	// history to find the "best recent build." This method no longer
-	// implements that functionality. Refer to
-	// Repos.GetSrclibDataVersionForPath.
-	GetRepoBuild(context.Context, *RepoRevSpec) (*Build, error)
 	// List builds.
 	List(context.Context, *BuildListOptions) (*BuildList, error)
 	// Create a new build. The build will run asynchronously (Create does not wait for
@@ -3593,18 +3568,6 @@ func _Builds_Get_Handler(srv interface{}, ctx context.Context, dec func(interfac
 		return nil, err
 	}
 	out, err := srv.(BuildsServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Builds_GetRepoBuild_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RepoRevSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(BuildsServer).GetRepoBuild(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -3714,10 +3677,6 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _Builds_Get_Handler,
-		},
-		{
-			MethodName: "GetRepoBuild",
-			Handler:    _Builds_GetRepoBuild_Handler,
 		},
 		{
 			MethodName: "List",

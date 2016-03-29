@@ -22,7 +22,6 @@ const (
 	Repo             = "repo"
 	RepoBranches     = "repo.branches"
 	RepoTree         = "repo.tree"
-	RepoBuild        = "repo.build"
 	RepoBuildTasks   = "build.tasks"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoCommits      = "repo.commits"
@@ -63,7 +62,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/.tree-search").Methods("GET").Name(RepoTreeSearch)
 	repo.Path("/.tags").Methods("GET").Name(RepoTags)
 
-	repoRev.Path("/.build").Methods("GET").Name(RepoBuild)
 	repo.Path("/.builds").Methods("POST").Name(RepoBuildsCreate)
 	buildPath := `/.builds/{Build:\d+}`
 	repo.Path(buildPath).Methods("GET").Name(Build)
