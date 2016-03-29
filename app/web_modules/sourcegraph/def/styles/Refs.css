@@ -6,6 +6,11 @@
 @value c_black-20 from colors;
 @value c_white from colors;
 
+.refs_container {
+	composes: ml3 mr3 pv3 ph3 from base;
+	composes: col-12 col-9-ns col-6-m from grid;
+}
+
 .search_hotkey {
 	composes: bg-black-10 from colors;
 	composes: tooltip-bottom from tooltips;
@@ -13,7 +18,3 @@
 	text-shadow: 0 1px 0 c_white;
 }
 
-.refs_container {
-	composes: col-12 col-9-ns col-6-m from grid;
-	composes: ml3 mr3 pv3 ph3 from base;
-}
