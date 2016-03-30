@@ -2,16 +2,16 @@
 # Docker images
 
 FROM golang:1.6-alpine
-ARG SRCLIB_VERSION
 
 # Install srclib from source
 RUN apk --update add git make
-RUN go get -d sourcegraph.com/sourcegraph/srclib/cmd/srclib
+RUN go get github.com/laher/goxc
+
+ADD toolchains/sourcegraph.com/sourcegraph/srclib $GOPATH/src/sourcegraph.com/sourcegraph/srclib
 WORKDIR $GOPATH/src/sourcegraph.com/sourcegraph/srclib
-RUN git checkout $SRCLIB_VERSION
 
 # Generate static binary
-RUN go get github.com/laher/goxc
+RUN make govendor
 RUN goxc -q
 
 # Run environment

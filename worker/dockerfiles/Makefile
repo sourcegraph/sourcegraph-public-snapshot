@@ -17,14 +17,18 @@ push:
 clean:
 	rm ./srclib
 
+$(TOOLCHAINS): TOOLCHAIN_URL ?= https://github.com/sourcegraph/$@
 $(TOOLCHAINS): srclib
 	rm -rf toolchains/sourcegraph.com/sourcegraph/$@
 	mkdir -p toolchains/sourcegraph.com/sourcegraph
-	git clone https://github.com/sourcegraph/$@ toolchains/sourcegraph.com/sourcegraph/$@
+	git clone ${TOOLCHAIN_URL} toolchains/sourcegraph.com/sourcegraph/$@
 	docker build -t sourcegraph/$@ -f ./Dockerfile.$@ .
 
 # Generates srclib binary
+srclib: SRCLIB_URL ?= https://github.com/sourcegraph/srclib
 srclib:
-	@$(eval HASH = $(shell git ls-remote https://github.com/sourcegraph/srclib | head -1 | sed "s/HEAD//" | sed "s/[[:space:]]*//g"))
-	docker build -t sourcegraph/srclib --build-arg SRCLIB_VERSION=${HASH} .
+	rm -rf toolchains/sourcegraph.com/sourcegraph/srclib
+	mkdir -p toolchains/sourcegraph.com/sourcegraph
+	git clone ${SRCLIB_URL} toolchains/sourcegraph.com/sourcegraph/srclib
+	docker build -t sourcegraph/srclib .
 	docker run -v ${PWD}:/out sourcegraph/srclib
