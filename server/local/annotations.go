@@ -113,6 +113,10 @@ func (s *annotations) listSyntaxHighlights(ctx context.Context, opt *sourcegraph
 // It returns nil if the file should not be annotated.
 func selectAppropriateLexer(path string) syntaxhighlight.Lexer {
 	ext := filepath.Ext(path)
+	if ext == "" {
+		// Files with no extensions (e.g., AUTHORS, README, LICENSE, etc.) don't get annotated.
+		return nil
+	}
 	lexer := syntaxhighlight.NewLexerByExtension(ext)
 	if lexer == nil {
 		// Use a fallback lexer for other types.
