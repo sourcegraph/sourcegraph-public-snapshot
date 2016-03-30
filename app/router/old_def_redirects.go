@@ -12,14 +12,14 @@ import (
 	"github.com/sourcegraph/mux"
 )
 
+// same as spec.unresolvedRevPattern but also not allowing path
+// components starting with ".".
+const revSuffixNoDots = `{Rev:(?:@(?:(?:[^@=/.-]|(?:[^=/@.]{2,}))/)*(?:[^@=/.-]|(?:[^=/@.]{2,})))?}`
+
 // Note: This does not support def paths and units that are equal to
 // "." or "". It is too complex for too little value to support those
 // in this transition URL period.
 func addOldDefRedirectRoute(genURLRouter *Router, matchRouter *mux.Router) {
-	// same as spec.unresolvedRevPattern but also not allowing path
-	// components starting with ".".
-	const revSuffixNoDots = `{Rev:(?:@(?:(?:[^@=/.-]|(?:[^=/@.]{2,}))/)*(?:[^@=/.-]|(?:[^=/@.]{2,})))?}`
-
 	matchRouter.Path("/" + routevar.Repo + revSuffixNoDots + `/.{UnitType:(?:GoPackage|JavaPackage|JavaArtifact|CommonJSPackage)}/{rawUnit:.*}.def{Path:(?:(?:/(?:[^/.][^/]*/)*(?:[^/.][^/]*))|)}`).Methods("GET").Name(OldDefRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v := mux.Vars(r)
 		fixDefVars(v)

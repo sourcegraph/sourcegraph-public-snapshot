@@ -61,6 +61,8 @@ const (
 
 	OldDefRedirect = "old-def-redirect"
 
+	OldTreeRedirect = "old-tree-redirect"
+
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
 )
@@ -111,6 +113,7 @@ func New(base *mux.Router) *Router {
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
 
 	addOldDefRedirectRoute(&Router{*base}, base)
+	addOldTreeRedirectRoute(&Router{*base}, base)
 
 	// attach git transport endpoints
 	gitrouter.New(base)
