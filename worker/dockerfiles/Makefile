@@ -2,7 +2,7 @@
 #
 # Notes: this Makefile should be run from its containing directory
 
-TOOLCHAINS = srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript
+TOOLCHAINS = srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript srclib-csharp
 
 .PHONY: build push clean $(TOOLCHAINS)
 

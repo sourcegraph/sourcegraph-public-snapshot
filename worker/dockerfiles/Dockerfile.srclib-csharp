@@ -5,6 +5,14 @@
 # Dependencies
 FROM microsoft/aspnet:1.0.0-rc1-update1-coreclr
 
+RUN apt-get update -y
+RUN apt-get install -qq git make
+
+#
+# Install srclib binary (assumes this has been built on the Docker host)
+#
+ADD ./srclib /bin/srclib
+
 # Install srclib-csharp executable
 ENV SRCLIBPATH /srclib/toolchains
 ADD toolchains/sourcegraph.com/sourcegraph/srclib-csharp $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
