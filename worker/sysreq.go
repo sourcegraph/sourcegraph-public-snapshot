@@ -9,7 +9,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 )
 
-func init() {
+// AddSysReqCheck populates sysreq with the checks needed for the worker to
+// function
+func AddSysReqCheck() {
 	sysreq.AddCheck("Docker", func(ctx context.Context) (problem, fix string, err error) {
 		// TODO(sqs!native-ci): copied temporarily from
 		// https://github.com/drone/drone-exec/pull/13, godep
