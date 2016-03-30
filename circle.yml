@@ -28,7 +28,7 @@ dependencies:
   cache_directories:
     - ~/google-cloud-sdk
     - ~/protobuf-3.0.0-beta-1
-    - /usr/local/musl
+    - ~/musl
 
   override:
     - rm -rf $HOME/.go_workspace/src
