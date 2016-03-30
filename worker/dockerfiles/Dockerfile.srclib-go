@@ -4,17 +4,19 @@
 
 # Install dependencies
 FROM golang:1.6-alpine
-ARG TOOLCHAIN_VERSION
 
 RUN apk --update add git make
 
-# Install srclib-go executable
-RUN go get -d sourcegraph.com/sourcegraph/srclib-go/...
-ENV SRCLIBPATH $GOPATH/src
-RUN cd $GOPATH/src/sourcegraph.com/sourcegraph/srclib-go && git checkout $TOOLCHAIN_VERSION && make
-
 # Install srclib binary (assumes this has been built on the Docker host)
 ADD ./srclib /bin/srclib
+
+# Install srclib-go executable
+ENV GOPATH /srclib/toolchains
+ENV PATH $PATH:$GOPATH/bin
+ENV SRCLIBPATH $GOPATH/src
+ADD toolchains/sourcegraph.com/sourcegraph/srclib-go $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
+WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
+RUN make
 
 # Run environment
 ENV GOPATH /drone

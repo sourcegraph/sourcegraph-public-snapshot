@@ -4,12 +4,11 @@
 
 # Dependencies
 FROM microsoft/aspnet:1.0.0-rc1-update1-coreclr
-ARG TOOLCHAIN_VERSION
 
 # Install srclib-csharp executable
-ENV SRCLIBPATH /srclib
-RUN git clone https://github.com/sourcegraph/srclib-csharp /srclib/srclib-csharp
-RUN cd /srclib/srclib-csharp && git checkout $TOOLCHAIN_VERSION
-RUN cd /srclib/srclib-csharp && dnu restore
+ENV SRCLIBPATH /srclib/toolchains
+ADD toolchains/sourcegraph.com/sourcegraph/srclib-csharp $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
+WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
+RUN make
 
 # TODO(beyang): fill in once you get Dockerfile from Ildar

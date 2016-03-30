@@ -7,7 +7,7 @@ TOOLCHAINS = srclib-go srclib-java srclib-typescript srclib-python srclib-basic 
 .PHONY: build push clean $(TOOLCHAINS)
 
 default:
-	echo "See README.md for instructions"
+	@echo "See README.md for instructions"
 
 build: $(TOOLCHAINS)
 
@@ -18,8 +18,10 @@ clean:
 	rm ./srclib
 
 $(TOOLCHAINS): srclib
-	@$(eval HASH = $(shell git ls-remote https://github.com/sourcegraph/$@ | head -1 | sed "s/HEAD//" | sed "s/[[:space:]]*//g"))
-	docker build -t sourcegraph/$@ --build-arg TOOLCHAIN_VERSION=${HASH} -f ./Dockerfile.$@ .
+	rm -rf toolchains/sourcegraph.com/sourcegraph/$@
+	mkdir -p toolchains/sourcegraph.com/sourcegraph
+	git clone https://github.com/sourcegraph/$@ toolchains/sourcegraph.com/sourcegraph/$@
+	docker build -t sourcegraph/$@ -f ./Dockerfile.$@ .
 
 # Generates srclib binary
 srclib:

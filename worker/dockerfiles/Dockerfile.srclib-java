@@ -6,7 +6,6 @@
 # Dependencies
 #
 FROM maven:3-jdk-8
-ARG TOOLCHAIN_VERSION
 
 RUN apt-get update -y
 RUN apt-get install -qq git make
@@ -33,23 +32,23 @@ RUN echo y | android update sdk --filter extra-android-m2repository,extra-google
 RUN apt-get install -y lib32z1 lib32ncurses5 lib32stdc++6
 
 #
-# Install srclib-java executable
-#
-ENV SRCLIBPATH /srclib
-RUN git clone https://github.com/sourcegraph/srclib-java /srclib/srclib-java
-# Add special JDK
-WORKDIR /srclib/srclib-java
-RUN wget -q https://srclib-support.s3-us-west-2.amazonaws.com/srclib-java/build/bundled-jdk1.8.0_45.tar.gz
-RUN tar xfz bundled-jdk1.8.0_45.tar.gz
-RUN rm bundled-jdk1.8.0_45.tar.gz
-# Install
-RUN git fetch origin && git checkout $TOOLCHAIN_VERSION
-RUN make
-
-#
 # Install srclib binary (assumes this has been built on the Docker host)
 #
 ADD ./srclib /bin/srclib
+
+ENV SRCLIBPATH /srclib/toolchains
+
+# Add special JDK
+WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-java
+RUN wget -q https://srclib-support.s3-us-west-2.amazonaws.com/srclib-java/build/bundled-jdk1.8.0_45.tar.gz
+RUN tar xfz bundled-jdk1.8.0_45.tar.gz
+RUN rm bundled-jdk1.8.0_45.tar.gz
+
+#
+# Install srclib-java executable
+#
+ADD toolchains/sourcegraph.com/sourcegraph/srclib-java $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-java
+RUN make
 
 # Run environment
 ENV GOPATH /drone
