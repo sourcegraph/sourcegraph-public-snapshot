@@ -26,9 +26,9 @@ func init() {
 	flag.BoolVar(&jsonOutput, "json", false, "Print JSON representation of tokens instead of formatting them")
 	flag.BoolVar(&raw, "raw", false, "Do not output stylesheet and wrapping HTML")
 	flag.StringVar(&stylesheet, "stylesheet", "default.css", "Use specific stylesheet")
-	flag.StringVar(&ext, "ext", ``, "Force specific file extension")
-	flag.StringVar(&mime, "mime", ``, "Force specific MIME type")
-	flag.StringVar(&htmlConfig, "config", ``, "Force specific HTML config")
+	flag.StringVar(&ext, "ext", "", "Force specific file extension")
+	flag.StringVar(&mime, "mime", "", "Force specific MIME type")
+	flag.StringVar(&htmlConfig, "config", "", "Force specific HTML config")
 }
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 	re := regexp.MustCompile("\r\n|\r")
 	source = re.ReplaceAll(source, []byte{'\n'})
 
-	if ext == `` && mime == `` {
+	if ext == "" && mime == "" {
 		ext = filepath.Ext(sourceFile)
 	}
 

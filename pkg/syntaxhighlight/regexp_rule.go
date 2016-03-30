@@ -17,7 +17,7 @@ type Matcher func(source []byte) []int
 
 // Produces lexer rules by compiling regular expressions using specific flags (such as DOTALL, MULTILINE and so on)
 type FlagsRuleMaker struct {
-	// flags to be used, for example `ims`
+	// flags to be used, for example "ims"
 	flags string
 }
 
@@ -95,7 +95,7 @@ func (self FlagsRuleMaker) MatcherAction(matcher Matcher, action RuleAction, sta
 // Adjust RE to include flags and force anchor mode
 func (self FlagsRuleMaker) makeRegexp(pattern string) Matcher {
 	p := pattern
-	if self.flags != `` {
+	if self.flags != "" {
 		p = `(?` + self.flags + `)` + p
 	}
 	return regexp.MustCompile(`\A` + p).FindSubmatchIndex
@@ -103,13 +103,13 @@ func (self FlagsRuleMaker) makeRegexp(pattern string) Matcher {
 
 var (
 	// Predefined rule maker (no flags)
-	F = FlagsRuleMaker{``}
+	F = FlagsRuleMaker{""}
 	// Predefined rule maker (multiline, case-insensitive, dotall)
-	MSI = FlagsRuleMaker{`msi`}
+	MSI = FlagsRuleMaker{"msi"}
 	// Predefined rule maker (multiline, dotall)
-	MS = FlagsRuleMaker{`ms`}
+	MS = FlagsRuleMaker{"ms"}
 	// Predefined rule maker (multiline)
-	M = FlagsRuleMaker{`m`}
+	M = FlagsRuleMaker{"m"}
 )
 
 // Function that may produce zero or more tokens based on a given matcher
@@ -242,7 +242,7 @@ func WordWithBoundary(word string, boundary bool) Matcher {
 
 // Combines given Unicode classes into RE (\p{A}\p{B}...\p{Z}
 func UnicodeClasses(classes ...string) string {
-	ret := ``
+	ret := ""
 	for _, class := range classes {
 		ret += `\p{` + class + `}`
 	}

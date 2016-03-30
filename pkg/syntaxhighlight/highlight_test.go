@@ -80,7 +80,7 @@ func processFile(name string, t *testing.T) {
 	}
 
 	if len(tokens) != len(expectedTokens) {
-		actualTokensData, _ := json.MarshalIndent(tokens, ``, `  `)
+		actualTokensData, _ := json.MarshalIndent(tokens, "", "  ")
 		showDiff(string(expectedTokensData), string(actualTokensData), t)
 		t.Fatalf("Expected %d tokens, got %d", len(expectedTokens), len(tokens))
 	}
@@ -138,25 +138,25 @@ func tokenEquals(a syntaxhighlight.Token, b syntaxhighlight.Token) bool {
 }
 
 func showDiff(expected string, actual string, t *testing.T) {
-	f1, err := ioutil.TempFile(``, `diff`)
+	f1, err := ioutil.TempFile("", "diff")
 	if err != nil {
-		t.Fatalf(`Unable to create temporary file: %s`, err)
+		t.Fatalf("Unable to create temporary file: %s", err)
 	}
 	defer os.RemoveAll(f1.Name())
-	f2, err := ioutil.TempFile(``, `diff`)
+	f2, err := ioutil.TempFile("", "diff")
 	if err != nil {
-		t.Fatalf(`Unable to create temporary file: %s`, err)
+		t.Fatalf("Unable to create temporary file: %s", err)
 	}
 	defer os.RemoveAll(f2.Name())
 	err = ioutil.WriteFile(f1.Name(), []byte(expected), 0600)
 	if err != nil {
-		t.Fatalf(`Unable to create temporary file: %s`, err)
+		t.Fatalf("Unable to create temporary file: %s", err)
 	}
 	err = ioutil.WriteFile(f2.Name(), []byte(actual), 0600)
 	if err != nil {
-		t.Fatalf(`Unable to create temporary file: %s`, err)
+		t.Fatalf("Unable to create temporary file: %s", err)
 	}
-	cmd := exec.Command(`diff`, `-u`, f1.Name(), f2.Name())
+	cmd := exec.Command("diff", "-u", f1.Name(), f2.Name())
 	t.Log(cmd.Args)
 	diff, _ := cmd.CombinedOutput()
 	t.Log(string(diff))
