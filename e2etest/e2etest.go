@@ -467,6 +467,13 @@ func Main() {
 	if tr.target == "" {
 		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
 	}
+	tgt, err := url.Parse(tr.target)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if tgt.Scheme == "" {
+		log.Fatal("TARGET must specify scheme (http or https) prefix")
+	}
 
 	// Find server ID key information.
 	if key := os.Getenv("ID_KEY_DATA"); key != "" {
