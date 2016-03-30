@@ -14,7 +14,7 @@ ADD ./srclib /bin/srclib
 # Install srclib-typescript executable
 RUN npm install typescript -g
 ENV SRCLIBPATH /srclib/toolchains
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-typescript $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-typescript
+ADD cache/sourcegraph.com/sourcegraph/srclib-typescript $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-typescript
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-typescript
 RUN make
 

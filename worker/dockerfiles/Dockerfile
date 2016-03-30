@@ -5,12 +5,12 @@ FROM golang:1.6-alpine
 
 # Install srclib from source
 RUN apk --update add git make
-RUN go get github.com/laher/goxc
 
-ADD toolchains/sourcegraph.com/sourcegraph/srclib $GOPATH/src/sourcegraph.com/sourcegraph/srclib
+ADD cache/sourcegraph.com/sourcegraph/srclib $GOPATH/src/sourcegraph.com/sourcegraph/srclib
 WORKDIR $GOPATH/src/sourcegraph.com/sourcegraph/srclib
 
 # Generate static binary
+RUN go get github.com/laher/goxc
 RUN make govendor
 RUN goxc -q
 

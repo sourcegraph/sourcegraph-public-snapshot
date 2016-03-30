@@ -14,7 +14,7 @@ ADD ./srclib /bin/srclib
 ENV GOPATH /srclib/toolchains
 ENV PATH $PATH:$GOPATH/bin
 ENV SRCLIBPATH $GOPATH/src
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-go $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
+ADD cache/sourcegraph.com/sourcegraph/srclib-go $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
 RUN make
 

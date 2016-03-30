@@ -47,7 +47,7 @@ RUN rm bundled-jdk1.8.0_45.tar.gz
 #
 # Install srclib-java executable
 #
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-java $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-java
+ADD cache/sourcegraph.com/sourcegraph/srclib-java $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-java
 RUN make
 
 # Run environment

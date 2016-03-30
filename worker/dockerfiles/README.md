@@ -1,25 +1,45 @@
 srclib toolchain Docker images
 ==============
 
-This directory contains Dockerfiles to generate Docker images to run
-srclib toolchains inside the Drone environment the worker creates.
+This directory contains Dockerfiles to generate Docker images for the
+Sourcegraph worker.
 
 Instructions for deploying srclib updates to Sourcegraph.com
 ------------
 
-To deploy an update to a srclib toolchain to Sourcegraph, run `make build && make push`. The changes will be reflected on the next update to Sourcegraph.com workers (the workers must be bounced so they pull the latest Docker images).
+1. Push your changes to the upstream `master` of the srclib or srclib toolchain repository.
+2. Run:
 
-To deploy an update to srclib core to Sourcegraph, run `make clean && make build && make push`.
+```
+make srclib-clean
+make srclib
+make toolchain-repos-clean
+```
 
-dev
+If updating a single toolchain, run:
+
+```
+TOOLCHAINS=$TOOLCHAIN_NAME make build && make push
+```
+
+If updating all toolchains (or making an update to srclib core), run:
+
+```
+make build && make push
+```
+
+3. Bounce the Sourcegraph.com workers so they pick up the latest Docker images.
+
+Development
 -----------
-If you are working on toolchain srclib-LANG, in order to test your changes
-with the `src` you can do the following:
 
-- set TOOLCHAIN_URL environment variable that points to local directory 
-- make changes in your code
-- run `make srclib-LANG`
+The `Makefile` checks out copies of the srclib core and srclib
+toolchain repositories to the `cache/` directory and uses these to
+build the Docker images. These can be re-fetched using `make
+srclib-clean && make srclib` and `make toolchain-repos-clean && make
+toolchain-repos-all`.
 
-You may also set TOOLCHAIN_URL to HTTP, SSH, or Git URL if you need to build Docker image for not-standard toolchain repository.
-
-The same way, by setting SRCLIB_URL environment variable you may control origin of `srclib` binary 
+During development of srclib, clone your local copy of srclib core or
+srclib toolchain(s) to the proper subdirectory of `cache/` and then
+run `TOOLCHAINS=$TOOLCHAIN_NAME make build`. Then restart your
+Sourcegraph development server.

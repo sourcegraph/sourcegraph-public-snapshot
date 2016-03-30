@@ -20,7 +20,7 @@ ADD ./srclib /bin/srclib
 # Install srclib-javascript executable
 #
 ENV SRCLIBPATH /srclib/toolchains
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-javascript $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript
+ADD cache/sourcegraph.com/sourcegraph/srclib-javascript $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript
 RUN make
 # Otherwise these get picked up as being in the jsg package

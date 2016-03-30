@@ -34,7 +34,7 @@ ADD ./srclib /bin/srclib
 # Install srclib-basic executable
 #
 ENV SRCLIBPATH /srclib/toolchains
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-basic $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-basic
+ADD cache/sourcegraph.com/sourcegraph/srclib-basic $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-basic
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-basic
 RUN make
 

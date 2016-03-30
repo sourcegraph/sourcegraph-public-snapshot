@@ -35,7 +35,7 @@ ADD ./srclib /bin/srclib
 ENV GOPATH /srclib/toolchains
 ENV PATH $PATH:$GOPATH/bin
 ENV SRCLIBPATH $GOPATH/src
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-python $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
+ADD cache/sourcegraph.com/sourcegraph/srclib-python $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 RUN make
 

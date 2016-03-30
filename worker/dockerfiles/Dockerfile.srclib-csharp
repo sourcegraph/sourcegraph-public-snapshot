@@ -15,7 +15,7 @@ ADD ./srclib /bin/srclib
 
 # Install srclib-csharp executable
 ENV SRCLIBPATH /srclib/toolchains
-ADD toolchains/sourcegraph.com/sourcegraph/srclib-csharp $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
+ADD cache/sourcegraph.com/sourcegraph/srclib-csharp $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
 RUN make
 
