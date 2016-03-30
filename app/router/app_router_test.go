@@ -110,6 +110,11 @@ func TestMatch(t *testing.T) {
 
 		// Defs
 		{
+			path:          "/my/repo/-/def/t/u/p",
+			wantRouteName: Def,
+			wantVars:      map[string]string{"Repo": "my/repo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": ""},
+		},
+		{
 			path:          "/repohost.com/foo@mycommitid/-/def/t/u/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@mycommitid"},
