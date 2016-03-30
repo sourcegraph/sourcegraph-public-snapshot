@@ -117,6 +117,8 @@ func TestRepoFlow(t *T) error {
 	)
 	// TODO(poler) test the hover-over
 
+	// 1s sleep because the span needs time to be linkified.
+	time.Sleep(1 * time.Second)
 	routerSpan.Click()
 
 	t.WaitForCondition(
