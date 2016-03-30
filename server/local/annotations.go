@@ -1,6 +1,7 @@
 package local
 
 import (
+	"path/filepath"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -85,8 +86,13 @@ func (s *annotations) listSyntaxHighlights(ctx context.Context, opt *sourcegraph
 		opt.Range = &sourcegraph.FileRange{}
 	}
 
+	lexer := selectAppropriateLexer(opt.Entry.Path)
+	if lexer == nil {
+		return nil, nil
+	}
+
 	var c syntaxhighlight.TokenCollectorAnnotator
-	if _, err := syntaxhighlight.Annotate(entry.Contents, opt.Entry.Path, "", &c); err != nil {
+	if _, err := syntaxhighlight.Annotate(entry.Contents, lexer, &c); err != nil {
 		return nil, err
 	}
 
@@ -101,6 +107,18 @@ func (s *annotations) listSyntaxHighlights(ctx context.Context, opt *sourcegraph
 		}
 	}
 	return anns, nil
+}
+
+// selectAppropriateLexer selects an appropriate lexer to use given the file path.
+// It returns nil if the file should not be annotated.
+func selectAppropriateLexer(path string) syntaxhighlight.Lexer {
+	ext := filepath.Ext(path)
+	lexer := syntaxhighlight.NewLexerByExtension(ext)
+	if lexer == nil {
+		// Use a fallback lexer for other types.
+		lexer = &syntaxhighlight.FallbackLexer{}
+	}
+	return lexer
 }
 
 func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.AnnotationsListOptions, entry *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error) {

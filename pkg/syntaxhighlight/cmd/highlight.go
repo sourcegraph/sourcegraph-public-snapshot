@@ -31,6 +31,26 @@ func init() {
 	flag.StringVar(&htmlConfig, "config", "", "Force specific HTML config")
 }
 
+// Scans source code src and produces array of annotations.
+// src is source code to scan.
+// fileName is source code file name, used to determine lexer to use. It has precedence over mimeType.
+// mimeType is MIME type of source code, also used to determine lexer to use.
+// annotator transforms tokens to annotations.
+func Annotate(src []byte, fileName string, mimeType string, annotator syntaxhighlight.Annotator) (annotate.Annotations, error) {
+	var lexer syntaxhighlight.Lexer
+	if fileName != "" {
+		lexer = syntaxhighlight.NewLexerByExtension(filepath.Ext(fileName))
+	} else {
+		lexer = syntaxhighlight.NewLexerByMimeType(mimeType)
+	}
+	if lexer == nil {
+		// falling back
+		lexer = &syntaxhighlight.FallbackLexer{}
+	}
+
+	return syntaxhighlight.Annotate(src, lexer, annotator)
+}
+
 func main() {
 	flag.Parse()
 	sourceFile := flag.Arg(0)
@@ -49,7 +69,7 @@ func main() {
 	var annotator syntaxhighlight.Annotator
 	if jsonOutput {
 		annotator = syntaxhighlight.NewJSONAnnotator(true, os.Stdout)
-		syntaxhighlight.Annotate(source, ext, mime, annotator)
+		Annotate(source, ext, mime, annotator)
 	} else {
 		var cfg syntaxhighlight.HTMLConfig
 		if htmlConfig == `pygments` {
@@ -64,7 +84,7 @@ func main() {
 			fmt.Println(`<link rel="stylesheet" href="` + stylesheet + `"/>`)
 			fmt.Println(`<div class="codehilite"><pre>`)
 		}
-		annotations, _ := syntaxhighlight.Annotate(source, ext, mime, annotator)
+		annotations, _ := Annotate(source, ext, mime, annotator)
 		content, _ := annotate.Annotate(source, annotations, template.HTMLEscape)
 		fmt.Println(string(content))
 		if !raw {

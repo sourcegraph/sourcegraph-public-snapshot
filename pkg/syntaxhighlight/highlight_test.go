@@ -16,7 +16,6 @@ import (
 )
 
 func TestLexers(t *testing.T) {
-
 	files, err := ioutil.ReadDir("testdata/case")
 	if err != nil {
 		t.Fatal(err)
@@ -31,10 +30,9 @@ func TestLexers(t *testing.T) {
 }
 
 func TestUnknownFormat(t *testing.T) {
-
 	source := "do bats eat Cats"
 	collector := &syntaxhighlight.TokenCollectorAnnotator{}
-	syntaxhighlight.Annotate([]byte(source), ``, ``, collector)
+	syntaxhighlight.Annotate([]byte(source), &syntaxhighlight.FallbackLexer{}, collector)
 	expected := []syntaxhighlight.Token{
 		{"do", syntaxhighlight.Keyword, 0},
 		{" ", syntaxhighlight.Whitespace, 2},
@@ -68,7 +66,11 @@ func processFile(name string, t *testing.T) {
 	re := regexp.MustCompile("\r\n|\r")
 	source = re.ReplaceAll(source, []byte{'\n'})
 	collector := &syntaxhighlight.TokenCollectorAnnotator{}
-	syntaxhighlight.Annotate(source, filepath.Ext(name), ``, collector)
+	lexer := syntaxhighlight.NewLexerByExtension(filepath.Ext(name))
+	if lexer == nil {
+		lexer = &syntaxhighlight.FallbackLexer{}
+	}
+	syntaxhighlight.Annotate(source, lexer, collector)
 	tokens := collector.Tokens
 	expectedTokensData, err := ioutil.ReadFile(filepath.Join("testdata/expected/json", name+".json"))
 	if err != nil {
@@ -100,10 +102,7 @@ func processFile(name string, t *testing.T) {
 	// make sure that line feeds are normalized
 	expected := strings.TrimSpace(string(re.ReplaceAll(expectedb, []byte{'\n'})))
 
-	annotations, _ := syntaxhighlight.Annotate(source,
-		name,
-		``,
-		syntaxhighlight.NewHTMLAnnotator(syntaxhighlight.DefaultHTMLConfig))
+	annotations, _ := syntaxhighlight.Annotate(source, lexer, syntaxhighlight.NewHTMLAnnotator(syntaxhighlight.DefaultHTMLConfig))
 	annotated, _ := annotate.Annotate(source, annotations, template.HTMLEscape)
 
 	actual := strings.TrimSpace(string(annotated))

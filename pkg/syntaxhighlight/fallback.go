@@ -7,8 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-// fallback syntax highlight implementation, copied from https://github.com/sourcegraph/syntaxhighlight
-type fallbackLexer struct {
+// FallbackLexer is a fallback syntax highlight implementation,
+// taken from https://github.com/sourcegraph/syntaxhighlight.
+type FallbackLexer struct {
 	// scanner
 	s *scanner.Scanner
 	// current offset in source code
@@ -193,7 +194,7 @@ var keywords = map[string]struct{}{
 }
 
 // Initializes scanner object
-func (self *fallbackLexer) Init(source []byte) {
+func (self *FallbackLexer) Init(source []byte) {
 	self.s = &scanner.Scanner{}
 	self.s.Init(bytes.NewReader(source))
 	self.s.Error = func(_ *scanner.Scanner, _ string) {}
@@ -204,7 +205,7 @@ func (self *fallbackLexer) Init(source []byte) {
 }
 
 // Produces token using scanner's output
-func (self *fallbackLexer) NextToken() *Token {
+func (self *FallbackLexer) NextToken() *Token {
 
 	tok := self.s.Scan()
 	if tok == scanner.EOF {
