@@ -59,7 +59,7 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
 	if err != nil {
 		if noVCSData := grpc.Code(err) == codes.NotFound || strings.Contains(err.Error(), "has no default branch"); noVCSData {
-			if _, ok := vars["Rev"]; ok {
+			if rev := vars["Rev"]; rev != "" && rev != "@" {
 				err = vcs.ErrRevisionNotFound
 			} else {
 				err = &NoVCSDataError{rc}
