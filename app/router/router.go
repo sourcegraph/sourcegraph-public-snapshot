@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"

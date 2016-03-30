@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 

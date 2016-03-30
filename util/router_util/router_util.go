@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
 
 func URLTo(router *mux.Router, routeName string, params ...string) *url.URL {

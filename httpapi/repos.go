@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"

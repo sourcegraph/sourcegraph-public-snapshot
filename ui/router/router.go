@@ -2,7 +2,7 @@
 package router
 
 import (
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"

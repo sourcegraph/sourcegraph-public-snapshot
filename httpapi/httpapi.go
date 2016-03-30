@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"

@@ -6,8 +6,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
+	"github.com/gorilla/mux"
 	"github.com/justinas/nosurf"
-	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 )

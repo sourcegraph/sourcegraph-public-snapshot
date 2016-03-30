@@ -9,7 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
 
 func addOldTreeRedirectRoute(genURLRouter *Router, matchRouter *mux.Router) {

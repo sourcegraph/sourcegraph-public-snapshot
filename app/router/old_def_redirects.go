@@ -9,7 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
 
 // same as spec.unresolvedRevPattern but also not allowing path

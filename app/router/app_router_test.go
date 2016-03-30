@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/kr/pretty"
-	"github.com/sourcegraph/mux"
 )
 
 func TestMatch(t *testing.T) {

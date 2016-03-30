@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )

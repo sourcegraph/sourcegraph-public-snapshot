@@ -15,8 +15,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/gorilla/mux"
 	"github.com/justinas/nosurf"
-	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"

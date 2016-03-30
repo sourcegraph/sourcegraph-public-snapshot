@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"

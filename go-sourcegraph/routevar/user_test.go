@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
 
 func TestUser(t *testing.T) {

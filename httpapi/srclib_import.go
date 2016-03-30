@@ -10,7 +10,7 @@ import (
 	"os"
 	pathpkg "path"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"

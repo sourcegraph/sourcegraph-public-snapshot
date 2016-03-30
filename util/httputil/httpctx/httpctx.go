@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	gcontext "github.com/gorilla/context"
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 )
 
