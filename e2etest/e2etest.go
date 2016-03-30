@@ -207,8 +207,8 @@ func (t *testRunner) run() {
 func (t *testRunner) runTests(logSuccess bool) bool {
 	// Execute the registered tests in parallel.
 	var (
-		successMu sync.Mutex
-		success   int
+		failuresMu sync.Mutex
+		failures   int
 		start     = time.Now()
 		run       = parallel.NewRun(len(t.tests))
 		total     = 0
@@ -236,6 +236,10 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 
 			unitTime := time.Since(unitStart)
 			if err != nil {
+				failuresMu.Lock()
+				failures++
+				failuresMu.Unlock()
+
 				t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
 
 				// When running without Slack support, write the screenshot to a file
@@ -249,17 +253,14 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			}
 
 			t.log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
-			successMu.Lock()
-			success++
-			successMu.Unlock()
 			return nil
 		})
 	}
 	run.Wait()
 
-	t.log.Printf("%v tests finished in %v [%v success] [%v failure]\n", total, time.Since(start), success, total-success)
+	t.log.Printf("%v tests finished in %v [%v success] [%v failure]\n", total, time.Since(start), total-failures, failures)
 
-	if total == success {
+	if failures == 0 {
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
 			t.slackMessage(fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
@@ -273,7 +274,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			atChannel = " @channel"
 		}
 		t.slackMessage(
-			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, total-success, total, t.target),
+			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target),
 			t.slackLogBuffer.String(),
 		)
 
@@ -284,7 +285,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		}
 	}
 	t.slackLogBuffer.Reset()
-	return total == success
+	return failures == 0
 }
 
 func (t *testRunner) sendAlert() error {
