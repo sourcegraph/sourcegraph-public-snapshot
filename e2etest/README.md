@@ -21,7 +21,7 @@ You may additionally run them locally on your machine:
         - OS X: use `docker-machine ls` to find the IP of the machine.
         - Linux: Just use `localhost`.
 4. Run a specific E2E test once: `e2etest -once -run="login_flow"`
-5. Run tests against local Sourcegraph instance: specify `TARGET=<LOCAL_MACHINE_IP>:4444` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
+5. Run tests against local Sourcegraph instance: specify `TARGET=http://<LOCAL_MACHINE_IP>:3080` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
 
 For authentication with the `TARGET` server, your `~/.sourcegraph/id.pem` is used by default. Set `ID_KEY_DATA=...` to specify a Base64-encoded form of this file.
 
