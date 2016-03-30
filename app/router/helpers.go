@@ -48,12 +48,23 @@ func (r *Router) URLToRepoSubrouteRev(routeName string, repoURI string, rev stri
 	return r.URLToOrError(routeName, "Repo", repoURI, "Rev", revStr(rev))
 }
 
+// slash should be applied to all paths before URL route generation
+// because the route pattern itself is "/tree{Path:.*}", which means
+// that a non-slash-prefixed path would yield a (wrong) URL like
+// "/treemydir/myfile" (not "/tree/mydir/myfile").
+func slash(path string) string {
+	if strings.HasPrefix(path, "/") {
+		return path
+	}
+	return "/" + path
+}
+
 func (r *Router) URLToRepoTreeEntry(repoURI string, rev interface{}, path string) *url.URL {
-	return r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, revStr(rev), path)
+	return r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, revStr(rev), slash(path))
 }
 
 func (r *Router) URLToRepoTreeEntryRaw(repoURI string, rev, path string) *url.URL {
-	u := r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, revStr(rev), path)
+	u := r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, revStr(rev), slash(path))
 	u.RawQuery = "raw"
 	return u
 }
@@ -67,15 +78,15 @@ func IsRaw(u *url.URL) bool {
 }
 
 func (r *Router) URLToRepoTreeEntrySubroute(routeName string, repo string, rev interface{}, path string) *url.URL {
-	return r.URLTo(routeName, "Repo", repo, "Rev", revStr(rev), "Path", path)
+	return r.URLTo(routeName, "Repo", repo, "Rev", revStr(rev), "Path", slash(path))
 }
 
 func (r *Router) URLToRepoTreeEntrySpec(e sourcegraph.TreeEntrySpec) *url.URL {
-	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", revStr(e.RepoRev.ResolvedRevString()), "Path", e.Path)
+	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", revStr(e.RepoRev.ResolvedRevString()), "Path", slash(e.Path))
 }
 
 func (r *Router) URLToRepoTreeEntryLines(repoURI string, rev, path string, startLine int) *url.URL {
-	u := r.URLTo(RepoTree, "Repo", repoURI, "Rev", revStr(rev), "Path", path)
+	u := r.URLTo(RepoTree, "Repo", repoURI, "Rev", revStr(rev), "Path", slash(path))
 	u.Fragment = fmt.Sprintf("L%d", startLine)
 	return u
 }

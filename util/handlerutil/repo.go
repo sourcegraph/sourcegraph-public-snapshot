@@ -6,6 +6,7 @@ import (
 	"go/doc"
 	"html/template"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/sourcegraph/mux"
@@ -297,7 +298,7 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 	tc = &TreeEntryCommon{}
 	tc.EntrySpec = sourcegraph.TreeEntrySpec{
 		RepoRev: vc.RepoRevSpec,
-		Path:    vars["Path"],
+		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
 	}
 
 	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, tc.EntrySpec); err == nil {

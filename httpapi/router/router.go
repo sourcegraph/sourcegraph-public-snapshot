@@ -57,9 +57,9 @@ func New(base *mux.Router) *mux.Router {
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
 	repo.Path("/branches").Methods("GET").Name(RepoBranches)
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
-	repoRev.Path("/tree" + routevar.TreeEntryPath).PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
+	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)

@@ -89,23 +89,23 @@ func TestMatch(t *testing.T) {
 		{
 			path:          "/repohost.com/foo@mycommitid/-/tree",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": "."},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": ""},
 		},
 		{
 			path:          "/repohost.com/foo@my-commit.id_2/-/tree",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@my-commit.id_2", "Path": "."},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@my-commit.id_2", "Path": ""},
 		},
 		{
 			path:          "/repohost.com/foo@mycommitid/-/tree",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": "."},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": ""},
 			wantPath:      "/repohost.com/foo@mycommitid/-/tree",
 		},
 		{
 			path:          "/repohost.com/foo@mycommitid/-/tree/my/file",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": "my/file"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": "/my/file"},
 		},
 
 		// Defs

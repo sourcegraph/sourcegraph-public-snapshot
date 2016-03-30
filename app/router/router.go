@@ -131,9 +131,9 @@ func New(base *mux.Router) *Router {
 
 	// See router_util/tree_route.go for an explanation of how we match tree
 	// entry routes.
-	repoTreePath := "/tree" + routevar.TreeEntryPath
-	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
-	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
+	repoTreePath := "/tree{Path:.*}"
+	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").HandlerFunc(gone)
+	repoRev.Path(repoTreePath).Methods("GET").Name(RepoTree)
 
 	repoRev.Path("/commits").Methods("GET").Name(RepoRevCommits)
 
