@@ -1,24 +1,39 @@
 @value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 @value grid "sourcegraph/components/styles/grid.css";
+@value flexbox "sourcegraph/components/styles/flexbox.css";
 
-@value repo_title from typography;
-@value repo_updated from typography;
-@value repo_disabled_background from typography;
-@value section_header_color from typography;
+@value search_height 30px;
 
-/*<div className="dashboard-container row">
-<div className="dash-repos col-lg-8 col-md-8 col-lg-offset-2 col-md-offset-2">
-*/
+.repos {
+	composes: col-8 from grid;
+}
+.repos_list {
+	composes: mt5 from base;
+	/*composes: col-7 from grid;*/
+}
+
+.anon_section {
+	composes: mt5 from base
+}
+
+.dash_repos {
+	composes: flex from flexbox;
+	composes: flex-column from flexbox;
+	composes: items-center from flexbox;
+	composes: center from base;
+}
 
 .logo {
 	composes: center from base;
 	display: block;
-	composes: col-6 from grid;
+	/*composes: col-6 from grid;*/
 }
 
 .wrap_link {
-	margin-left: 3px;
+	composes: ml1 from base;
+	composes: mr1 from base;
 }
 
 .anon_header {
@@ -33,7 +48,7 @@
 	composes: f1 from typography;
 	composes: tc from typography;
 	composes: mt3 from base;
-	color: #344a66;
+	composes: text-dark from typography;
 }
 
 .anon_header_sub {
@@ -56,7 +71,7 @@
 	composes: f1 from typography;
 	composes: mt4 from base;
 	display: block;
-	color: section_header_color;
+	composes: text-dark from typography;
 	composes: b from base;
 }
 
@@ -87,13 +102,13 @@
 	composes: mb3 from base;
 	composes: f4 from typography;
 	composes: tracked from base;
-	color: repo_updated;
+	composes: moon-gray from colors;
 }
 
 .repo_title {
 	composes: fw4 from typography;
 	composes: f2 from typography;
-	color: repo_title;
+	composes: black from colors;
 	display: block;
 }
 
@@ -122,13 +137,12 @@
 
 .list_item_disabled {
 	composes: list_item;
-	background-color: repo_disabled_background;
+	composes: bg-near-white  from colors;
 }
 
 .list_item_disabled_bottom {
 	composes: list_item_disabled;
 	border-bottom-style: none; 
-	/*composes: bb0 from typography;*/
 }
 
 .repo_disable_reason {
@@ -136,4 +150,38 @@
 	color: #bfc2d0;
 	composes: f4 from typography;
 	display: block;
+}
+
+.section_header_searchbar {
+	composes: progress from base;
+}
+
+.search_bar {
+	composes: col-right col-2 from grid;
+	right: 20%;
+	display: flex;
+	height: search_height;
+}
+
+.search_button {
+	composes: bg-near-white from colors;
+	composes: b--black-20 from colors;
+	composes: b--solid br3 ba from base;
+	composes: flex items-center from flexbox;
+	border-top-left-radius: 0px;
+	border-bottom-left-radius: 0px;
+	border-left-style: none;
+	width: search_height;
+}
+
+.search_input {
+	composes: br3 ba pl2 from base;
+	border-top-right-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+.search_mag {
+	width:22px;
+	height:22px;
+	composes: ml1 mr1 from base;
 }

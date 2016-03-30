@@ -2,7 +2,6 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "repos-list",
 			"children": [
 				{
 					"type": "nav",
@@ -117,7 +116,6 @@
 				{
 					"type": "div",
 					"props": {
-						"className": "list-group",
 						"children": [
 							{
 								"type": "div",
@@ -133,37 +131,22 @@
 								"props": {
 									"children": [
 										{
-											"type": "div",
+											"type": "span",
 											"props": {
-												"className": "repo-header",
 												"children": [
 													{
 														"type": "span",
 														"props": {
+															"className": "repo-link",
 															"children": [
 																{
-																	"type": "span",
+																	"type": "a",
+																	"key": "name0",
 																	"props": {
+																		"href": "/someURL",
+																		"title": "someURL",
 																		"children": [
-																			{
-																				"type": "span",
-																				"props": {
-																					"className": "repo-link",
-																					"children": [
-																						{
-																							"type": "a",
-																							"key": "name0",
-																							"props": {
-																								"href": "/someURL",
-																								"title": "someURL",
-																								"children": [
-																									"someurl"
-																								]
-																							}
-																						}
-																					]
-																				}
-																			}
+																			"someurl"
 																		]
 																	}
 																}
@@ -174,26 +157,18 @@
 											}
 										},
 										{
-											"type": "div",
+											"type": "p",
 											"props": {
-												"className": "repo-body",
 												"children": [
-													{
-														"type": "p",
-														"props": {
-															"children": [
-																"someDescription"
-															]
-														}
-													},
-													{
-														"type": "p",
-														"props": {
-															"children": [
-																"Updated a few seconds ago"
-															]
-														}
-													}
+													"someDescription"
+												]
+											}
+										},
+										{
+											"type": "p",
+											"props": {
+												"children": [
+													"Updated a few seconds ago"
 												]
 											}
 										}

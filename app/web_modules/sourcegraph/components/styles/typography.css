@@ -148,17 +148,11 @@ code, .code { font-family: Consolas, monaco, monospace; }
 	.indent-l { text-indent: 1em; margin-top: 0; margin-bottom: 0; }
 	.truncate-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
-
-/* TODO: use standard colors; */
-/* TODO: use more generic names, like "list-element", instead of very specific things; */
-@value repo_title #2e3844;
 @value repo_updated #bfc2d0;
 
-/* cloudy blue */
-@value repo_disabled_background #fafafc;
-@value repo_disabled_text #bfc2d0;
-@value warning_color #ffffe6;
+@value c_text-dark #344a66;
+.bg-text-dark {background-color: c_text-dark;}
+.text-dark {color: c_text-dark;}
 
-@value section_header_color #344a66;
-
-.bb0 { border-bottom-style: none; }
+@value c_warning-color #ffffe6;
+.bg-warning-color {background-color: c_warning-color;}

@@ -3,9 +3,8 @@ import React from "react";
 import Container from "sourcegraph/Container";
 import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
-
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-
+import context from "sourcegraph/context";
 import Styles from "./styles/Dashboard.css";
 
 class DashboardContainer extends Container {
@@ -18,12 +17,6 @@ class DashboardContainer extends Container {
 		this.state = {logo: logoUrl, signup_url: signup_url};
 		this._username = this._username.bind(this);
 		this._userAvatar = this._userAvatar.bind(this);
-		this._dismissWelcome = this._dismissWelcome.bind(this);
-	}
-
-	componentDidMount() {
-		super.componentDidMount();
-		if (this.state.onboarding.linkGitHubRedirect) setTimeout(this._dismissWelcome, 5000);
 	}
 
 	componentWillUnmount() {
@@ -33,32 +26,27 @@ class DashboardContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.repos = DashboardStore.repos;
-		state.currentUser = DashboardStore.currentUser || {}; // empty if anonymous user
 		state.onboarding = DashboardStore.onboarding;
 	}
 
 	_username() {
-		return this.state.currentUser.Name || this.state.currentUser.Login || "";
+		return context.currentUser.Name || context.currentUser.Login || "";
 	}
 
 	_userAvatar() {
 		return this.state.onboarding.linkGitHub ?
 			"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png" :
-			(this.state.currentUser.AvatarURL || "");
-	}
-
-	_dismissWelcome() {
-		this.setState({dismissWelcome: true});
+			(context.currentUser.AvatarURL || "");
 	}
 
 	stores() { return [DashboardStore]; }
 
 	render() {
 		return (
-			<div className="dashboard-container row">
-				<div className="dash-repos col-lg-8 col-md-8 col-lg-offset-2 col-md-offset-2">
-				{!this.state.currentUser.Login &&
-					<div>
+			<div>
+				<div className={Styles.dash_repos}>
+				{!context.currentUser &&
+					<div className={Styles.anon_section}>
 						<img className={Styles.logo} src={this.state.logo}/>
 						<div className={Styles.anon_title}>Understand and use code better</div>
 						<div className={Styles.anon_header_sub}>Use Sourcegraph to search, browse, and cross-reference code. <br />
@@ -66,11 +54,11 @@ class DashboardContainer extends Container {
 						</div>
 					</div>
 				}
-					<div>
+					<div className={Styles.repos}>
 						<DashboardRepos repos={this.state.repos}
 							linkGitHub={this.state.onboarding.linkGitHub}
 							linkGitHubURL={this.state.onboarding.linkGitHubURL || ""}
-							onboarding={this.state.onboarding} signup={this.state.signup_url} />
+							signup={this.state.signup_url}/>
 					</div>
 				</div>
 			</div>

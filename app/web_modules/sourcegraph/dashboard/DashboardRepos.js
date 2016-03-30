@@ -22,6 +22,10 @@ class DashboardRepos extends Component {
 		this._canMirror = this._canMirror.bind(this);
 		this._disabledReason = this._disabledReason.bind(this);
 		this._repoSort = this._repoSort.bind(this);
+		this._repoDisabled = this._repoDisabled.bind(this);
+		this._repoRowClass = this._repoRowClass.bind(this);
+		this._showCreateUserWell = this._showCreateUserWell.bind(this);
+		this._showGitHubLinkWell = this._showGitHubLinkWell.bind(this);
 	}
 	reconcileState(state, props) {
 		Object.assign(state, props);
@@ -88,70 +92,82 @@ class DashboardRepos extends Component {
 		if (moment(this._repoTime(a)).isAfter(moment(this._repoTime(b)))) return -1;
 		return -1;
 	}
-	render() {
-		const repoDisabled = (repo) => !repo.URI && !this._canMirror(repo);
 
-		const repoRowClass = (repo, index, size) => {
-			if (!repoDisabled(repo)) {
-				if (index === (size-1)) {
-					return Styles.list_item_bottom;
-				}
-				return Styles.list_item;
-			}
+	_repoDisabled(repo) {
+		return !repo.URI && !this._canMirror(repo);
+	}
+
+	_repoRowClass(repo, index, size) {
+		if (!this._repoDisabled(repo)) {
 			if (index === (size-1)) {
-				return Styles.list_item_disabled_bottom;
+				return Styles.list_item_bottom;
 			}
-			return Styles.list_item_disabled;
-		};
+			return Styles.list_item;
+		}
+		if (index === (size-1)) {
+			return Styles.list_item_disabled_bottom;
+		}
+		return Styles.list_item_disabled;
+	}
+
+	_showCreateUserWell() {
+		return !context.currentUser || !context.currentUser.Login;
+	}
+
+	_showGitHubLinkWell() {
+		return Boolean(context.currentUser) && Boolean(context.currentUser.Login) && this.state.linkGitHub;
+	}
+
+	render() {
 
 		const filteredRepos = this.state.repos.filter(this._showRepo);
-		const showCreateUserWell = !context.currentUser || !context.currentUser.Login;
-		const showGitHubLinkWell = Boolean(context.currentUser) && Boolean(context.currentUser.Login) && this.state.linkGitHub;
 		let seenInvalid = false;
-		// <i className={`sg-icon repo-attr-icon sg-icon-${repo.Private ? "private" : "public"}`}></i>
+
 		return (
-			<div className="repos-list">
-				<nav>{!this.state.linkGitHub &&
-					<div className="search-bar">
-						<div className="input-group">
-							<input className="form-control search-input"
-								placeholder="Filter repositories..."
-								value={this.state.searchQuery}
-								onChange={this._handleSearch}
-								type="text" />
-							<span className="input-group-addon search-addon"><i className="fa fa-search search-icon"></i></span>
-						</div>
-					</div>}
-					<NotificationWell initVisible={showCreateUserWell}>
+			<div className={Styles.repos_list}>
+				<nav>
+					<NotificationWell initVisible={this._showCreateUserWell()}>
 						<span>We've set up Sourcegraph on some of the top Go repositories for you to check out. When you are ready, you can</span>
 					<a className={Styles.wrap_link} href={this.state.signup}>set up Sourcegraph for your own repositories!</a>
 					</NotificationWell>
-					<NotificationWell initVisible={showGitHubLinkWell}>
+					<NotificationWell initVisible={this._showGitHubLinkWell()}>
 						<span>Almost there! You'll need to </span>
-						<a href={this.state.linkGitHubURL}>link your GitHub account</a>
+						<a className={Styles.wrap_link} href={this.state.linkGitHubURL}>link your GitHub account</a>
 						<span> to use Sourcegraph on your personal repositories</span>
 					</NotificationWell>
-					<span className={Styles.section_header}>{"Repositories"}</span>
+					<div className={Styles.section_header_searchbar}>
+						<span className={Styles.section_header}>{"Repositories"}</span>
+						{!this.state.linkGitHub &&
+						<div className={Styles.search_bar}>
+								<input
+									className={Styles.search_input}
+									placeholder="Filter repositories..."
+									value={this.state.searchQuery}
+									onChange={this._handleSearch}
+									type="text" />
+								<div className={Styles.search_button}><img className={Styles.search_mag} src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Magnifying_glass_icon.svg/1024px-Magnifying_glass_icon.svg.png"></img></div>
+						</div>}
+					</div>
 				</nav>
 				<div>
 					{this.state.repos.length > 0 &&
-						<div className="list-group">
+						<div className={Styles.list_item_group}>
 							<div className={Styles.repo_list_header}>Go Repositories</div>
-							{filteredRepos.length === 0 ? <div className="well">No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
+							{filteredRepos.length === 0 ? <div>No matching repositories.</div> : filteredRepos.sort(this._repoSort).map((repo, i) => (
 								<div key={i}>
 									{!this._canMirror(repo) && seenInvalid++ === 0 &&
 										<div className={Styles.repo_list_header_temp}>Coming Soon</div>
 									}
-									<div className={repoRowClass(repo, i, this.state.repos.length)} key={i}>
-										<div className="repo-header">
+									<div className={this._repoRowClass(repo, i, this.state.repos.length)} key={i}>
+										<div>
 											<span className={Styles.repo_title}>
-												<span className={Styles.repo_title}>{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, repoDisabled(repo))}</span>
+												{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, this._repoDisabled(repo))}
 											</span>
 											{!this._canMirror(repo) &&
 												<span className={Styles.repo_disable_reason}>{this._disabledReason(repo)}</span>
 											}
 										</div>
-										<div className="repo-body">
+										<div>
 											<p className={Styles.repo_description}>{repo.Description}</p>
 											<p className={Styles.repo_updated}>{`Updated ${moment(this._repoTime(repo)).fromNow()}`}</p>
 										</div>

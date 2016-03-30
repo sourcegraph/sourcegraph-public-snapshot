@@ -16,14 +16,12 @@ export class DashboardStore extends Store {
 
 		if (typeof window !== "undefined") { // TODO(autotest) support document object.
 			this.repos = deepFreeze((window.repos || []).concat(window.remoteRepos || []));
-			this.currentUser = deepFreeze(window._currentUser);
 			this.onboarding = deepFreeze(window.onboarding);
 			if (this.onboarding.linkGitHub) {
 				this.repos = deepFreeze((window.repos || []).concat(exampleRepos));
 			}
 		} else {
 			this.repos = [];
-			this.currentUser = {Name: "abc xyz"};
 			this.onboarding = {};
 		}
 	}

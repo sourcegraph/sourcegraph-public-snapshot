@@ -32,7 +32,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 	data.GitHubOnboarding = r.URL.Query().Get("github-onboarding") == "true"
 
 	// TODO(sqs): add pagination
-	listOpt := sourcegraph.ListOptions{PerPage: 100}
+	listOpt := sourcegraph.ListOptions{PerPage: 250}
 
 	isAuthError := func(err error) bool {
 		return grpc.Code(err) == codes.Unauthenticated || grpc.Code(err) == codes.PermissionDenied

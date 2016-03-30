@@ -1,5 +1,6 @@
 import React from "react";
 import * as router from "sourcegraph/util/router";
+// TODO: Add a styles file for everyone to refer to
 import Styles from "sourcegraph/dashboard/styles/Dashboard.css";
 
 
