@@ -67,12 +67,8 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 	} else {
-		// Show Go starter repo if it is available.
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: "sample/golang/hello"})
-		if err == nil {
-			data.Repos = &sourcegraph.RepoList{
-				Repos: []*sourcegraph.Repo{repo},
-			}
+		data.Repos = &sourcegraph.RepoList{
+			Repos: []*sourcegraph.Repo{},
 		}
 	}
 
