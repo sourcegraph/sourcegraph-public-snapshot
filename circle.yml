@@ -29,6 +29,7 @@ dependencies:
     - ~/google-cloud-sdk
     - ~/protobuf-3.0.0-beta-1
     - ~/musl
+    - ~/cache
 
   override:
     - rm -rf $HOME/.go_workspace/src
