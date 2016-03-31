@@ -124,10 +124,9 @@ func New(base *mux.Router) *Router {
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
 
 	defPath := "/def/" + routevar.Def
-	repoRev.Path(defPath).Methods("GET").Name(Def)
-	def := repoRev.PathPrefix(defPath).Subrouter()
+	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
 	def.Path("/refs").Methods("GET").Name(DefRefs)
-	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
+	repoRev.Path(defPath).Methods("GET").Name(Def)
 
 	// See router_util/tree_route.go for an explanation of how we match tree
 	// entry routes.

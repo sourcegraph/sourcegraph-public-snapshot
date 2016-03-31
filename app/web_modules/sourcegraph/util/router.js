@@ -23,7 +23,7 @@ export function def(repoPath, rev, unitType, unit, path) {
 		unit = defSpec.Unit;
 		path = defSpec.Path;
 	}
-	return `${repo(repoPath, rev)}/-/def/${unitType}/${unit.replace(/\//g, "--")}/${path.replace(/\//g, "--")}`;
+	return `${repo(repoPath, rev)}/-/def/${unitType}/${unit}/-/${path === "." ? "_._" : path}`;
 }
 
 export function build(repoPath, id) {

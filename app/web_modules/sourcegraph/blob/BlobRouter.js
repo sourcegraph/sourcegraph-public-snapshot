@@ -141,7 +141,7 @@ class BlobRouter extends Component {
 			}
 		} else {
 			// TODO better way to do this routing.
-			state.def = state.url.pathname.replace(/\/refs$/, "");
+			state.def = state.url.pathname.replace(/\/-\/refs$/, "");
 			if (state.rev) {
 				// If state.def is a rev-less def URL (referring to the repo's default branch),
 				// make state.def contain the def URL with the rev, if the rev can be determined.
@@ -152,7 +152,7 @@ class BlobRouter extends Component {
 					state.def = `/${state.repo}@${state.rev}/-/def/${state.def.slice(repoNoRevPrefix.length)}`;
 				}
 			}
-			state.viewRefs = pathParts[pathParts.length - 1].match(/\/refs[^\/]*$/);
+			state.viewRefs = pathParts[pathParts.length - 1].match(/refs[^\/]*$/);
 			if (state.viewRefs) {
 				state.path = state.url.query.Files ? state.url.query.Files : null;
 			}

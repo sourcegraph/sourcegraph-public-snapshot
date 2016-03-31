@@ -66,12 +66,12 @@ func TestRouter(t *testing.T) {
 
 		// Defs
 		{
-			path:          "/repos/repohost.com/foo@mycommitid/-/def/t/u/p",
+			path:          "/repos/repohost.com/foo@mycommitid/-/def/t/u/-/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@mycommitid"},
 		},
 		{
-			path:          "/repos/repohost.com/foo@myrev/subrev/-/def/t/u/p",
+			path:          "/repos/repohost.com/foo@myrev/subrev/-/def/t/u/-/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@myrev/subrev"},
 		},

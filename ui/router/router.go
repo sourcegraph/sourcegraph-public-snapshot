@@ -28,7 +28,7 @@ func New(base *mux.Router) *mux.Router {
 	repoRev := base.PathPrefix("/" + routevar.Repo + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").
 		Subrouter()
 
-	def := repoRev.PathPrefix("/def/" + routevar.Def).
+	def := repoRev.PathPrefix("/def/" + routevar.Def + "/-/").
 		Subrouter()
 
 	def.Path("/refs").

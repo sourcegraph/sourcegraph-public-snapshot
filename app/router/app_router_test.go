@@ -110,24 +110,24 @@ func TestMatch(t *testing.T) {
 
 		// Defs
 		{
-			path:          "/my/repo/-/def/t/u/p",
+			path:          "/my/repo/-/def/t/u/-/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "my/repo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": ""},
 		},
 		{
-			path:          "/repohost.com/foo@mycommitid/-/def/t/u/p",
+			path:          "/repohost.com/foo@mycommitid/-/def/t/u/-/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@mycommitid"},
 		},
 		{
-			path:          "/repohost.com/foo@myrev/subrev/-/def/t/u/p",
+			path:          "/repohost.com/foo@myrev/subrev/-/def/t/u/-/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@myrev/subrev"},
 		},
 
 		// Def sub-routes
 		{
-			path:          "/repohost.com/foo@mycommitid/-/def/t/u/p/refs",
+			path:          "/repohost.com/foo@mycommitid/-/def/t/u/-/p/-/refs",
 			wantRouteName: DefRefs,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "UnitType": "t", "Unit": "u", "Path": "p"},
 		},

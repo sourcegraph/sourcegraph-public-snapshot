@@ -6,14 +6,18 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
-// Hack to support "." path components in def routes (e.g., for Go
-// packages, the package itself has Path == "." or Path == "").
 func defURLPathToKeyPath(s string) string {
-	return strings.Replace(s, "--", "/", -1)
+	if s == "_._" {
+		return "."
+	}
+	return s
 }
 
 func defKeyPathToURLPath(s string) string {
-	return strings.Replace(s, "/", "--", -1)
+	if s == "." {
+		return "_._"
+	}
+	return s
 }
 
 func (s DefSpec) RouteVars() map[string]string {

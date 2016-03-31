@@ -49,7 +49,7 @@ const DefBackend = {
 			{
 				let refs = DefStore.refs.get(action.defURL, action.file);
 				if (refs === null) {
-					let url = `/.ui${action.defURL}/refs`;
+					let url = `/.ui${action.defURL}/-/refs`;
 					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
 					DefBackend.xhr({
 						uri: url,

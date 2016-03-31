@@ -11,7 +11,7 @@ class DefPopup extends Component {
 
 	render() {
 		let def = this.state.def;
-		let refsURL = `${this.state.def.URL}/refs`;
+		let refsURL = `${this.state.def.URL}/-/refs`;
 		return (
 			<div className="sidebar-section token-details">
 				<section>
