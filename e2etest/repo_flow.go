@@ -2,7 +2,6 @@ package e2etest
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -27,17 +26,22 @@ func TestRepoFlow(t *T) error {
 
 	var muxLink selenium.WebElement
 	getMuxLink := func() bool {
-		var err error
-		muxLink, err = wd.FindElement(selenium.ByPartialLinkText, "mux.go")
-		if err != nil {
-			return false
-		}
-		text, err := muxLink.Text()
+		spans, err := wd.FindElements(selenium.ByTagName, "span")
 		if err != nil {
 			return false
 		}
 
-		return strings.Contains(text, "mux.go")
+		for _, span := range spans {
+			text, err := span.Text()
+			if err != nil {
+				return false
+			}
+			if strings.Contains(text, "mux.go") {
+				muxLink = span
+				return true
+			}
+		}
+		return false
 	}
 
 	t.WaitForCondition(
@@ -46,17 +50,6 @@ func TestRepoFlow(t *T) error {
 		getMuxLink,
 		"Wait for mux.go codefile link to appear",
 	)
-
-	want := "/github.com/gorilla/mux@master/-/tree/mux.go"
-
-	have, err := muxLink.GetAttribute("href")
-	if err != nil {
-		return err
-	}
-
-	if !strings.Contains(have, want) {
-		return fmt.Errorf("wanted: %s, got %s", want, have)
-	}
 
 	isDisplayed, err := muxLink.IsDisplayed()
 	if err != nil {
@@ -124,7 +117,7 @@ func TestRepoFlow(t *T) error {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
-		wantURL(t.Endpoint("/github.com/gorilla/mux@master/-/def/GoPackage/github.com-gorilla-mux/Router"), wd),
+		wantURL(t.Endpoint("/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router"), wd),
 		"wait for Router def to load",
 	)
 
