@@ -209,9 +209,9 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	var (
 		failuresMu sync.Mutex
 		failures   int
-		start     = time.Now()
-		run       = parallel.NewRun(len(t.tests))
-		total     = 0
+		start      = time.Now()
+		run        = parallel.NewRun(len(t.tests))
+		total      = 0
 	)
 	for _, testToCopy := range t.tests {
 		// If they want to run specifically just one test, check for that now.
@@ -224,36 +224,55 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 
 		test := testToCopy
 		run.Do(func() error {
-			unitStart := time.Now()
-			// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
-			// but we want all tests to run regardless.
-			err, screenshot := t.runTest(test)
-			if _, ok := err.(*internalError); ok {
-				t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
-				t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
-				return nil
-			}
-
-			unitTime := time.Since(unitStart)
-			if err != nil {
-				failuresMu.Lock()
-				failures++
-				failuresMu.Unlock()
-
-				t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
-
-				// When running without Slack support, write the screenshot to a file
-				// instead.
-				if t.slack == nil {
-					if e := ioutil.WriteFile(test.Name+".png", screenshot, 0666); e != nil {
-						t.log.Printf("[failure] [%v]: could not save screenshot: %v\n", test.Name, e)
-					}
+			// Attempt the test a number of times, to weed out any flakiness that could occur.
+			for attempt := 0; attempt < *retriesFlag; attempt++ {
+				unitStart := time.Now()
+				// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
+				// but we want all tests to run regardless.
+				err, screenshot := t.runTest(test)
+				if _, ok := err.(*internalError); ok {
+					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
+					t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
+					return nil
 				}
+
+				unitTime := time.Since(unitStart)
+				if err != nil {
+					// If we would attempt this test again, then just log warnings and retry.
+					if attempt+1 < *retriesFlag {
+						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
+						t.log.Printf(msg)
+						t.slackMessage(msg, "")
+
+						// When running without Slack support, write the screenshot to a file
+						// instead.
+						if t.slack == nil {
+							if e := ioutil.WriteFile(test.Name+".png", screenshot, 0666); e != nil {
+								t.log.Printf("[warning] [attempt %v] [%v]: could not save screenshot: %v\n", attempt, test.Name, e)
+							}
+						}
+						continue
+					}
+
+					failuresMu.Lock()
+					failures++
+					failuresMu.Unlock()
+
+					t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+
+					// When running without Slack support, write the screenshot to a file
+					// instead.
+					if t.slack == nil {
+						if e := ioutil.WriteFile(test.Name+".png", screenshot, 0666); e != nil {
+							t.log.Printf("[failure] [%v]: could not save screenshot: %v\n", test.Name, e)
+						}
+					}
+					return nil
+				}
+				t.log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
 				return nil
 			}
-
-			t.log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
-			return nil
+			panic("never here")
 		})
 	}
 	run.Wait()
@@ -431,8 +450,9 @@ var tr = &testRunner{
 }
 
 var (
-	runOnce = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
-	runFlag = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
+	runOnce     = flag.Bool("once", true, "run the tests only once (true) or forever (false)")
+	runFlag     = flag.String("run", "", "specify an exact test name to run (e.g. 'login_flow', 'register_flow')")
+	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
 )
 
 func Main() {
