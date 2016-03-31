@@ -131,7 +131,6 @@ class DashboardRepos extends Component {
 								It looks like you do not have any Go repositories. Support for other languages is coming soon!
 							</span>
 						}
-
 					</NotificationWell>
 					<div className={Styles.repos_header}>
 						<span className={Styles.repos_label}>Repositories</span>
