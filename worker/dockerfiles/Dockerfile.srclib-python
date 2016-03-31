@@ -25,11 +25,6 @@ RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
 ENV PATH /usr/local/go/bin:$PATH
 
 #
-# Install srclib binary (assumes this has been built on the Docker host)
-#
-ADD ./srclib /bin/srclib
-
-#
 # Install srclib-python executable
 #
 ENV GOPATH /srclib/toolchains
@@ -38,6 +33,11 @@ ENV SRCLIBPATH $GOPATH/src
 ADD cache/sourcegraph.com/sourcegraph/srclib-python $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 RUN make
+
+#
+# Install srclib binary (assumes this has been built on the Docker host)
+#
+ADD ./srclib /bin/srclib
 
 # Run environment
 ENV GOPATH /drone

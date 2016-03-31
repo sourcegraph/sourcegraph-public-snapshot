@@ -26,11 +26,6 @@ RUN apt-get install -qq git wget make
 # RUN rm "gradle-${GRADLE_VERSION}-bin.zip"
 
 #
-# Install srclib binary (assumes this has been built on the Docker host)
-#
-ADD ./srclib /bin/srclib
-
-#
 # Install srclib-basic executable
 #
 ENV SRCLIBPATH /srclib/toolchains
@@ -38,6 +33,10 @@ ADD cache/sourcegraph.com/sourcegraph/srclib-basic $SRCLIBPATH/sourcegraph.com/s
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-basic
 RUN make
 
+#
+# Install srclib binary (assumes this has been built on the Docker host)
+#
+ADD ./srclib /bin/srclib
 
 # Run environment
 ENTRYPOINT srclib config && srclib make

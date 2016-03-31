@@ -12,11 +12,6 @@ RUN apt-get install -qq git make
 RUN npm install --silent -g node-gyp-install
 
 #
-# Install srclib binary (assumes this has been built on the Docker host)
-#
-ADD ./srclib /bin/srclib
-
-#
 # Install srclib-javascript executable
 #
 ENV SRCLIBPATH /srclib/toolchains
@@ -26,6 +21,11 @@ RUN make
 # Otherwise these get picked up as being in the jsg package
 ENV NODEJS_CORE_MODULES_DIR /tmp/node_core_modules
 RUN ln -rs $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript/node_modules/jsg/testdata/node_core_modules $NODEJS_CORE_MODULES_DIR
+
+#
+# Install srclib binary (assumes this has been built on the Docker host)
+#
+ADD ./srclib /bin/srclib
 
 # Run environment
 ENTRYPOINT srclib config && srclib make
