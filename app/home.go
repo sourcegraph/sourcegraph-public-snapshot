@@ -31,15 +31,27 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 
 	data.GitHubOnboarding = r.URL.Query().Get("github-onboarding") == "true"
 
-	// TODO(sqs): add pagination
-	listOpt := sourcegraph.ListOptions{PerPage: 250}
-
 	isAuthError := func(err error) bool {
 		return grpc.Code(err) == codes.Unauthenticated || grpc.Code(err) == codes.PermissionDenied
 	}
 
 	var err error
-	data.RemoteRepos, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{ListOptions: listOpt})
+	var reposOnPage *sourcegraph.RemoteRepoList
+	data.RemoteRepos = &sourcegraph.RemoteRepoList{}
+	for page := 1; ; page++ {
+		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
+			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
+		})
+		if err != nil {
+			break
+		}
+
+		if len(reposOnPage.RemoteRepos) == 0 {
+			break
+		}
+		data.RemoteRepos.RemoteRepos = append(data.RemoteRepos.RemoteRepos, reposOnPage.RemoteRepos...)
+	}
+
 	if isAuthError(err) {
 		data.LinkGitHub = true
 	} else if err != nil {
@@ -61,7 +73,7 @@ func serveHomeDashboard(w http.ResponseWriter, r *http.Request) error {
 		data.Repos, err = cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			Sort:        "pushed",
 			Direction:   "desc",
-			ListOptions: listOpt,
+			ListOptions: sourcegraph.ListOptions{PerPage: 100},
 		})
 		if err != nil {
 			return err
