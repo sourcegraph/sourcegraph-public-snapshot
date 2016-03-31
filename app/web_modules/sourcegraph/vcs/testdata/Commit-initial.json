@@ -32,7 +32,7 @@
 										{
 											"type": "a",
 											"props": {
-												"href": "/undefined/.commits/abc",
+												"href": "/undefined@abc/-/commit",
 												"children": [
 													"msg"
 												]
@@ -64,7 +64,7 @@
 										{
 											"type": "a",
 											"props": {
-												"href": "/undefined/.commits/abc",
+												"href": "/undefined@abc/-/commit",
 												"children": [
 													{
 														"type": "code",

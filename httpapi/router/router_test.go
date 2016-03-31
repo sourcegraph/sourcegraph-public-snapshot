@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/kr/pretty"
-	"github.com/sourcegraph/mux"
 )
 
 func TestRouter(t *testing.T) {
@@ -36,62 +36,44 @@ func TestRouter(t *testing.T) {
 			wantVars:      map[string]string{"Repo": "a.com/b"},
 		},
 		{
-			path:        "/repos/a.com/b@mycommitid", // doesn't accept a commit ID
+			path:        "/repos/-/myrepo",
 			wantNoMatch: true,
 		},
 		{
-			path:        "/repos/.invalidrepo",
+			path:        "/repos/myrepo/-/invalidroute",
+			wantNoMatch: true,
+		},
+		{
+			path:        "/repos/myrepo/-",
 			wantNoMatch: true,
 		},
 
 		// Repo sub-routes
 		{
-			path:          "/repos/a.com/b/.builds/123",
+			path:          "/repos/a.com/b/-/builds/123",
 			wantRouteName: Build,
 			wantVars:      map[string]string{"Repo": "a.com/b", "Build": "123"},
 		},
-
-		// Repo sub-routes that don't allow an "@REVSPEC" revision.
 		{
-			path:          "/repos/repohost.com/foo/.tags",
+			path:          "/repos/repohost.com/foo/-/tags",
 			wantRouteName: RepoTags,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
 		},
 		{
-			path:        "/repos/repohost.com/foo@myrevspec/.tags", // no @REVSPEC match
+			path:        "/repos/repohost.com/foo/-/tags/myrevspec",
 			wantNoMatch: true,
 		},
 
 		// Defs
 		{
-			path:          "/repos/repohost.com/foo@mycommitid/.t/.def/p",
+			path:          "/repos/repohost.com/foo@mycommitid/-/def/t/u/-/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "mycommitid"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@mycommitid"},
 		},
 		{
-			path:          "/repos/repohost.com/foo@myrev/mysubrev/.t/.def/p",
+			path:          "/repos/repohost.com/foo@myrev/subrev/-/def/t/u/-/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "myrev/mysubrev"},
-		},
-		{
-			path:          "/repos/repohost.com/foo/.t/.def/p",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
-		},
-		{
-			path:          "/repos/repohost.com/foo/.t/.def", // empty path
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
-		},
-		{
-			path:          "/repos/repohost.com/foo/.t/u1/.def/p",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1", "Path": "p"},
-		},
-		{
-			path:          "/repos/repohost.com/foo/.t/u1/u2/.def/p1/p2",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@myrev/subrev"},
 		},
 	}
 	for _, test := range tests {

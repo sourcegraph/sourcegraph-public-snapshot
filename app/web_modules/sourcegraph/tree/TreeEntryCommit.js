@@ -36,7 +36,7 @@ class TreeEntryCommit extends Container {
 				<div className="commit">
 					<time title={time.calendar()}>{time.fromNow()}</time>
 					<div className="message">
-						<a href={`/${this.state.repo}/.commits/${commit.ID}`}>{commit.Message}</a>
+						<a href={`/${this.state.repo}/-/commits/${commit.ID}`}>{commit.Message}</a>
 					</div>
 				</div>
 		);

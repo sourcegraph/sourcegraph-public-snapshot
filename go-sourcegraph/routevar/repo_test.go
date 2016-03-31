@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
 
 const commitID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -23,9 +23,13 @@ func TestRepo(t *testing.T) {
 		{path: "/foo", wantVars: map[string]string{"Repo": "foo"}},
 		{path: "/foo.com/bar", wantVars: map[string]string{"Repo": "foo.com/bar"}},
 
+		{path: "/foo.com/bar/-/abc/def", wantNoMatch: true},
+		{path: "/foo.com/bar@a", wantNoMatch: true},
+		{path: "/foo.com/bar@a/b", wantNoMatch: true},
+		{path: "/foo.com/bar/@a", wantNoMatch: true},
+		{path: "/-/foo.com/bar", wantNoMatch: true},
 		{path: "/", wantNoMatch: true},
-		{path: "/.foo", wantNoMatch: true},
-		{path: "/foo/.bar", wantNoMatch: true},
+		{path: "/-/", wantNoMatch: true},
 	}
 	for _, test := range tests {
 		var m mux.RouteMatch
@@ -50,25 +54,24 @@ func TestRepo(t *testing.T) {
 	}
 }
 
-func TestRepoRev(t *testing.T) {
+func TestRev(t *testing.T) {
 	r := mux.NewRouter()
-	r.Path("/" + RepoRev).PostMatchFunc(FixRepoRevVars).BuildVarsFunc(PrepareRepoRevRouteVars)
+	r.Path("/" + Rev)
 
 	tests := []struct {
 		path        string
 		wantNoMatch bool
 		wantVars    map[string]string
 	}{
-		{path: "/foo", wantVars: map[string]string{"Repo": "foo"}},
-		{path: "/foo@v", wantVars: map[string]string{"Repo": "foo", "Rev": "v"}},
-		{path: "/foo@v===" + commitID, wantVars: map[string]string{"Repo": "foo", "Rev": "v", "CommitID": commitID}},
-		{path: "/foo.com/bar", wantVars: map[string]string{"Repo": "foo.com/bar"}},
-		{path: "/foo.com/bar@v", wantVars: map[string]string{"Repo": "foo.com/bar", "Rev": "v"}},
-		{path: "/foo.com/bar@v===" + commitID, wantVars: map[string]string{"Repo": "foo.com/bar", "Rev": "v", "CommitID": commitID}},
+		{path: "/v", wantVars: map[string]string{"Rev": "v"}},
+		{path: "/v/v/v", wantVars: map[string]string{"Rev": "v/v/v"}},
+		{path: "/v===" + commitID, wantVars: map[string]string{"Rev": "v===" + commitID}},
 
+		{path: "", wantNoMatch: true},
 		{path: "/", wantNoMatch: true},
-		{path: "/.foo", wantNoMatch: true},
-		{path: "/foo/.bar", wantNoMatch: true},
+		{path: "/===", wantNoMatch: true},
+		{path: "/v===", wantNoMatch: true},
+		{path: "/===" + commitID, wantNoMatch: true},
 	}
 	for _, test := range tests {
 		var m mux.RouteMatch

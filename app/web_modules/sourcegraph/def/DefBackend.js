@@ -32,7 +32,7 @@ const DefBackend = {
 				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
 				if (defs === null) {
 					DefBackend.xhr({
-						uri: `/.api/.defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`,
+						uri: `/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {
@@ -49,7 +49,7 @@ const DefBackend = {
 			{
 				let refs = DefStore.refs.get(action.defURL, action.file);
 				if (refs === null) {
-					let url = `/.ui${action.defURL}/.refs`;
+					let url = `/.ui${action.defURL}/-/refs`;
 					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
 					DefBackend.xhr({
 						uri: url,

@@ -19,23 +19,23 @@ func Test_repoFrameBaseURI(t *testing.T) {
 		url       string
 		expPrefix string
 	}{{
-		url:       "/github.com/gorilla/mux/.issues",
-		expPrefix: "/github.com/gorilla/mux/.issues",
+		url:       "/github.com/gorilla/mux/-/app/issues",
+		expPrefix: "/github.com/gorilla/mux/-/app/issues",
 	}, {
-		url:       "/github.com/gorilla/mux/.issues/",
-		expPrefix: "/github.com/gorilla/mux/.issues",
+		url:       "/github.com/gorilla/mux/-/app/issues/",
+		expPrefix: "/github.com/gorilla/mux/-/app/issues",
 	}, {
-		url:       "/github.com/gorilla/mux/.issues/foo",
-		expPrefix: "/github.com/gorilla/mux/.issues",
+		url:       "/github.com/gorilla/mux/-/app/issues/foo",
+		expPrefix: "/github.com/gorilla/mux/-/app/issues",
 	}, {
-		url:       "/github.com/gorilla/mux/.issues@branch/foo",
-		expPrefix: "/github.com/gorilla/mux/.issues@branch",
+		url:       "/github.com/gorilla/mux@branch/-/app/issues/foo",
+		expPrefix: "/github.com/gorilla/mux@branch/-/app/issues",
 	}, {
-		url:       "/github.com/gorilla/mux/.issues@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/foo",
-		expPrefix: "/github.com/gorilla/mux/.issues@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		url:       "/github.com/gorilla/mux@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/-/app/issues/foo",
+		expPrefix: "/github.com/gorilla/mux@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/-/app/issues",
 	}, {
-		url:       "/github.com/gorilla/mux/.issues@branch===aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/foo",
-		expPrefix: "/github.com/gorilla/mux/.issues@branch===aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		url:       "/github.com/gorilla/mux@branch===aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/-/app/issues/foo",
+		expPrefix: "/github.com/gorilla/mux@branch===aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/-/app/issues",
 	}}
 
 	appURL, err := url.Parse("https://src.foo.com")

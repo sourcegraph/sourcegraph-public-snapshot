@@ -1,6 +1,5 @@
 import React from "react";
 import URL from "url";
-import last from "lodash/array/last";
 
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -82,7 +81,7 @@ class BlobRouter extends Component {
 		state.url = URL.parse(props.location, true);
 		state.navigate = props.navigate || null;
 
-		let pathParts = state.url.pathname.substr(1).split("/.");
+		let pathParts = state.url.pathname.substr(1).split("/-/");
 		let repoParts = pathParts[0].split("@");
 		state.repo = repoParts[0];
 		state.rev = decodeURIComponent(repoParts[1] || "");
@@ -100,23 +99,23 @@ class BlobRouter extends Component {
 			if (repoObj) state.rev = repoObj.DefaultBranch;
 		}
 
-		// We split the path based on `/.` because that usually denotes an
+		// We split the path based on `/-/` because that usually denotes an
 		// operation, but in the case of the tree operation consider this path:
 		//
-		//  "/sourcegraph@master/.tree/.gitignore"
-		//  "/sourcegraph@master/.tree/subdirectory/.gitignore"
+		//  "/sourcegraph@master/-/tree/.gitignore"
+		//  "/sourcegraph@master/-/tree/subdirectory/.gitignore"
 		//
 		// In the above, .gitignore is the file name not the operation. So we handle
 		// this case specially here.
 		if (pathParts.length >= 2 && (pathParts[1] === "tree" || pathParts[1].indexOf("tree/") === 0)) {
-			// Parse the filepath following "/.tree/".
-			let treePath = state.url.pathname.substring(state.url.pathname.indexOf("/.tree/") + "/.tree/".length);
+			// Parse the filepath following "/-/tree/".
+			let treePath = state.url.pathname.substring(state.url.pathname.indexOf("/-/tree/") + "/-/tree/".length);
 
 			// Reform the pathParts array with the corrected path split.
 			pathParts = [pathParts[0], `tree/${treePath}`];
 		}
 
-		if (!state.url.pathname.match(/\/\.(tree|def)/)) {
+		if (!state.url.pathname.match(/\/-\/(tree|def)/)) {
 			// Not a file view.
 			return;
 		}
@@ -142,18 +141,18 @@ class BlobRouter extends Component {
 			}
 		} else {
 			// TODO better way to do this routing.
-			state.def = state.url.pathname.replace(/\/\.refs\/?$/, "");
+			state.def = state.url.pathname.replace(/\/-\/refs$/, "");
 			if (state.rev) {
 				// If state.def is a rev-less def URL (referring to the repo's default branch),
 				// make state.def contain the def URL with the rev, if the rev can be determined.
 				// This ensures that the BlobContainer's activeDef is an exact string match to
 				// the def's ref links, so that the def gets highlighted.
-				const repoNoRevPrefix = `/${state.repo}/.`;
+				const repoNoRevPrefix = `/${state.repo}/-/def/`;
 				if (state.def.startsWith(repoNoRevPrefix)) {
-					state.def = `/${state.repo}@${state.rev}/.${state.def.slice(repoNoRevPrefix.length)}`;
+					state.def = `/${state.repo}@${state.rev}/-/def/${state.def.slice(repoNoRevPrefix.length)}`;
 				}
 			}
-			state.viewRefs = last(pathParts) === "refs";
+			state.viewRefs = pathParts[pathParts.length - 1].match(/refs[^\/]*$/);
 			if (state.viewRefs) {
 				state.path = state.url.query.Files ? state.url.query.Files : null;
 			}
@@ -229,7 +228,7 @@ class BlobRouter extends Component {
 		if (!path) path = this.state.path || DefStore.defs.get(this.state.def).File;
 
 		let revPart = rev ? `@${rev}` : "";
-		return `/${this.state.repo}${revPart}/.tree/${path}`;
+		return `/${this.state.repo}${revPart}/-/tree/${path}`;
 	}
 
 	render() {

@@ -32,11 +32,11 @@ Sourcegraph is built on several components:
 ## Contributing to Sourcegraph
 
 Want to make Sourcegraph better? Great! Check out
-[CONTRIBUTING.md](https://sourcegraph.com/sourcegraph/sourcegraph@master/.tree/CONTRIBUTING.md). We
+[CONTRIBUTING.md](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/tree/CONTRIBUTING.md). We
 welcome all types of contributions--code, documentation, assets,
 community support, and user feedback.
 
-Our [developer README](https://sourcegraph.com/sourcegraph/sourcegraph@master/.tree/README.dev.md)
+Our [developer README](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/tree/README.dev.md)
 is a good place to start.
 
 ## Security

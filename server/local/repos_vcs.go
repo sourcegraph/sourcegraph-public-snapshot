@@ -11,11 +11,6 @@ import (
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
 
-	// Get default branch if no revision specified
-	if err := s.resolveRepoRevBranch(ctx, repoRev); err != nil {
-		return nil, err
-	}
-
 	if err := s.resolveRepoRev(ctx, repoRev); err != nil {
 		return nil, err
 	}

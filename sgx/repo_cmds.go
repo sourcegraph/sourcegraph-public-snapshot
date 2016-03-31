@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"github.com/rogpeppe/rog-go/parallel"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -356,7 +354,15 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	repoRevSpec.CommitID = string(commit.ID)
 	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], repo.DefaultBranch, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
 
-	if _, err := cl.Builds.GetRepoBuild(client.Ctx, &repoRevSpec); c.Force || grpc.Code(err) == codes.NotFound {
+	builds, err := cl.Builds.List(client.Ctx, &sourcegraph.BuildListOptions{
+		Repo:      repoRevSpec.URI,
+		CommitID:  repoRevSpec.CommitID,
+		Succeeded: true,
+	})
+	if err != nil {
+		return err
+	}
+	if c.Force || len(builds.Builds) == 0 {
 		b, err := cl.Builds.Create(client.Ctx, &sourcegraph.BuildsCreateOp{
 			Repo:     repoRevSpec.RepoSpec,
 			CommitID: repoRevSpec.CommitID,

@@ -9,33 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func TestRepoBuild(t *testing.T) {
-	c, mock := newTest()
-
-	wantBuild := &sourcegraph.Build{Host: "abc"}
-
-	calledRepoGet := mock.Repos.MockGet(t, "r/r")
-	calledRepoGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	calledGetRepoBuild := mock.Builds.MockGetRepoBuild(t, wantBuild)
-
-	var build *sourcegraph.Build
-	if err := c.GetJSON("/repos/r/r@c/.build", &build); err != nil {
-		t.Fatal(err)
-	}
-	if !*calledRepoGet {
-		t.Error("!calledRepoGet")
-	}
-	if !*calledRepoGetCommit {
-		t.Error("!calledRepoGetCommit")
-	}
-	if !*calledGetRepoBuild {
-		t.Error("!calledGetRepoBuild")
-	}
-	if !reflect.DeepEqual(build, wantBuild) {
-		t.Errorf("got %+v, want %+v", build, wantBuild)
-	}
-}
-
 func TestRepoBuildsCreate(t *testing.T) {
 	c, mock := newTest()
 
@@ -49,7 +22,7 @@ func TestRepoBuildsCreate(t *testing.T) {
 	}
 
 	var build *sourcegraph.Build
-	if err := c.DoJSON("POST", "/repos/r/r/.builds", &sourcegraph.BuildsCreateOp{}, &build); err != nil {
+	if err := c.DoJSON("POST", "/repos/r/r/-/builds", &sourcegraph.BuildsCreateOp{}, &build); err != nil {
 		t.Fatal(err)
 	}
 	if !*calledRepoGet {

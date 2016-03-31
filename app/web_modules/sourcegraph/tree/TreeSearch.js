@@ -120,9 +120,9 @@ class TreeSearch extends Container {
 			}
 		};
 
-		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev, state.commitID);
+		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
 
-		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev, state.commitID);
+		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev);
 		sourceFileList = sourceFileList ? sourceFileList.Files : null;
 		if (state.allFiles !== sourceFileList) {
 			state.allFiles = sourceFileList;
@@ -136,7 +136,7 @@ class TreeSearch extends Container {
 			setFileList();
 		}
 
-		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev, state.commitID);
+		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query) : null;
 
 		if (state.processedQuery !== state.query) {
@@ -152,9 +152,9 @@ class TreeSearch extends Container {
 	onStateTransition(prevState, nextState) {
 		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
-		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.commitID !== prevState.commitID) {
-			Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev, nextState.commitID));
-			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev, nextState.commitID));
+		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
+			Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev));
+			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
 		}
 		if (nextState.srclibDataVersion !== prevState.srclibDataVersion) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
@@ -422,7 +422,7 @@ class TreeSearch extends Container {
 	_buildsURL() {
 		if (global.location && global.location.href) {
 			let url = URL.parse(global.location.href);
-			url.pathname = `${this.state.repo}/.builds`;
+			url.pathname = `${this.state.repo}/-/builds`;
 			return URL.format(url);
 		}
 
@@ -500,7 +500,6 @@ class TreeSearch extends Container {
 TreeSearch.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
-	commitID: React.PropTypes.string.isRequired,
 	currPath: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 	overlay: React.PropTypes.bool.isRequired,
 	prefetch: React.PropTypes.bool,

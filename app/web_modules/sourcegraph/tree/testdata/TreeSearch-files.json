@@ -27,14 +27,12 @@
 																	{
 																		"$constructor": "WantSrclibDataVersion",
 																		"repo": "repo",
-																		"rev": "rev",
-																		"commitID": "c"
+																		"rev": "rev"
 																	},
 																	{
 																		"$constructor": "WantFileList",
 																		"repo": "repo",
-																		"rev": "rev",
-																		"commitID": "c"
+																		"rev": "rev"
 																	}
 																]
 															},
@@ -123,7 +121,7 @@
 												"children": [
 													{
 														"type": "div",
-														"key": "/repo@rev/.tree/a",
+														"key": "/repo@rev/-/tree/a",
 														"props": {
 															"children": [
 																{
@@ -152,7 +150,7 @@
 													},
 													{
 														"type": "div",
-														"key": "/repo@rev/.tree/b",
+														"key": "/repo@rev/-/tree/b",
 														"props": {
 															"children": [
 																{
@@ -195,14 +193,12 @@
 		{
 			"$constructor": "WantSrclibDataVersion",
 			"repo": "repo",
-			"rev": "rev",
-			"commitID": "c"
+			"rev": "rev"
 		},
 		{
 			"$constructor": "WantFileList",
 			"repo": "repo",
-			"rev": "rev",
-			"commitID": "c"
+			"rev": "rev"
 		}
 	]
 }

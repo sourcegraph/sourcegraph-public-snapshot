@@ -23,9 +23,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/soheilhy/cmux"
-	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"

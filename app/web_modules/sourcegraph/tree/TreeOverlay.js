@@ -54,7 +54,6 @@ class TreeOverlay extends Component {
 			<TreeSearch
 				repo={this.state.repo}
 				rev={this.state.rev}
-				commitID={this.state.commitID}
 				overlay={true}
 				prefetch={true}
 				currPath={this.state.currPath} />
@@ -65,7 +64,6 @@ class TreeOverlay extends Component {
 TreeOverlay.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
-	commitID: React.PropTypes.string.isRequired,
 };
 
 export default TreeOverlay;

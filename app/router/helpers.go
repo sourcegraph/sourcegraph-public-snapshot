@@ -3,8 +3,10 @@ package router
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/router_util"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -39,19 +41,30 @@ func (r *Router) URLToRepoBuildTaskSubroute(routeName string, repo string, build
 }
 
 func (r *Router) URLToRepoSubroute(routeName string, uri string) *url.URL {
-	return r.URLTo(routeName, "Repo", uri)
+	return r.URLTo(routeName, "Repo", uri, "Rev", "")
 }
 
 func (r *Router) URLToRepoSubrouteRev(routeName string, repoURI string, rev string) (*url.URL, error) {
-	return r.URLToOrError(routeName, "Repo", repoURI, "Rev", rev)
+	return r.URLToOrError(routeName, "Repo", repoURI, "Rev", revStr(rev))
+}
+
+// slash should be applied to all paths before URL route generation
+// because the route pattern itself is "/tree{Path:.*}", which means
+// that a non-slash-prefixed path would yield a (wrong) URL like
+// "/treemydir/myfile" (not "/tree/mydir/myfile").
+func slash(path string) string {
+	if strings.HasPrefix(path, "/") {
+		return path
+	}
+	return "/" + path
 }
 
 func (r *Router) URLToRepoTreeEntry(repoURI string, rev interface{}, path string) *url.URL {
-	return r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, commitIDStr(rev), path)
+	return r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, revStr(rev), slash(path))
 }
 
 func (r *Router) URLToRepoTreeEntryRaw(repoURI string, rev, path string) *url.URL {
-	u := r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, commitIDStr(rev), path)
+	u := r.URLToRepoTreeEntrySubroute(RepoTree, repoURI, revStr(rev), slash(path))
 	u.RawQuery = "raw"
 	return u
 }
@@ -65,15 +78,15 @@ func IsRaw(u *url.URL) bool {
 }
 
 func (r *Router) URLToRepoTreeEntrySubroute(routeName string, repo string, rev interface{}, path string) *url.URL {
-	return r.URLTo(routeName, "Repo", repo, "Rev", commitIDStr(rev), "Path", path)
+	return r.URLTo(routeName, "Repo", repo, "Rev", revStr(rev), "Path", slash(path))
 }
 
 func (r *Router) URLToRepoTreeEntrySpec(e sourcegraph.TreeEntrySpec) *url.URL {
-	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", e.RepoRev.Rev, "CommitID", e.RepoRev.CommitID, "Path", e.Path)
+	return r.URLTo(RepoTree, "Repo", e.RepoRev.RepoSpec.SpecString(), "Rev", revStr(e.RepoRev.ResolvedRevString()), "Path", slash(e.Path))
 }
 
 func (r *Router) URLToRepoTreeEntryLines(repoURI string, rev, path string, startLine int) *url.URL {
-	u := r.URLTo(RepoTree, "Repo", repoURI, "Rev", rev, "Path", path)
+	u := r.URLTo(RepoTree, "Repo", repoURI, "Rev", revStr(rev), "Path", slash(path))
 	u.Fragment = fmt.Sprintf("L%d", startLine)
 	return u
 }
@@ -83,7 +96,7 @@ func (r *Router) URLToDef(key graph.DefKey) *url.URL {
 }
 
 func (r *Router) URLToDefSubroute(routeName string, key graph.DefKey) *url.URL {
-	return r.URLTo(routeName, "Repo", string(key.Repo), "UnitType", key.UnitType, "Unit", key.Unit, "Path", string(key.Path))
+	return r.URLTo(routeName, router_util.MapToArray(sourcegraph.NewDefSpecFromDefKey(key).RouteVars())...)
 }
 
 func (r *Router) URLToDefAtRev(key graph.DefKey, rev interface{}) *url.URL {
@@ -91,16 +104,26 @@ func (r *Router) URLToDefAtRev(key graph.DefKey, rev interface{}) *url.URL {
 }
 
 func (r *Router) URLToDefAtRevSubroute(routeName string, key graph.DefKey, rev interface{}) *url.URL {
-	return r.URLTo(routeName, "Repo", string(key.Repo), "Rev", commitIDStr(rev), "UnitType", key.UnitType, "Unit", key.Unit, "Path", string(key.Path))
+	key.CommitID = revStr(rev)
+	return r.URLTo(routeName, router_util.MapToArray(sourcegraph.NewDefSpecFromDefKey(key).RouteVars())...)
 }
 
 func (r *Router) URLToRepoCommit(repoURI string, commitID interface{}) *url.URL {
-	return r.URLTo("repo.commit", "Repo", repoURI, "Rev", commitIDStr(commitID))
+	return r.URLTo("repo.commit", "Repo", repoURI, "Rev", revStr(commitID))
 }
 
-func commitIDStr(commitID interface{}) string {
-	if v, ok := commitID.(vcs.CommitID); ok {
-		return string(v)
+func revStr(rev interface{}) string {
+	var revStr string
+	if s, ok := rev.(vcs.CommitID); ok {
+		revStr = string(s)
+	} else {
+		revStr = rev.(string)
 	}
-	return commitID.(string)
+	if revStr != "" {
+		if !strings.HasPrefix(revStr, "@") {
+			revStr = "@" + revStr
+		}
+		return revStr
+	}
+	return ""
 }

@@ -25,7 +25,7 @@ func TestDefs(t *testing.T) {
 	calledList := mock.Defs.MockList(t, &sourcegraph.Def{Def: graph.Def{Name: "d", Data: pbtypes.RawMessage("{}")}})
 
 	var defs *sourcegraph.DefList
-	if err := c.GetJSON("/.defs", &defs); err != nil {
+	if err := c.GetJSON("/defs", &defs); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(defs, wantDefs) {
@@ -53,7 +53,7 @@ func TestDefs_caching_notModified(t *testing.T) {
 		}}, nil
 	}
 
-	req, _ := http.NewRequest("GET", "/.defs?RepoRevs=r/r@"+strings.Repeat("a", 40), nil)
+	req, _ := http.NewRequest("GET", "/defs?RepoRevs=r/r@"+strings.Repeat("a", 40), nil)
 	req.Header.Set("if-modified-since", mtime.Add(2*time.Second).Format(http.TimeFormat))
 
 	resp, err := c.Do(req)
@@ -83,7 +83,7 @@ func TestDefs_caching_modifiedSince(t *testing.T) {
 	}
 	calledList := mock.Defs.MockList(t)
 
-	req, _ := http.NewRequest("GET", "/.defs?RepoRevs=r/r@"+strings.Repeat("a", 40), nil)
+	req, _ := http.NewRequest("GET", "/defs?RepoRevs=r/r@"+strings.Repeat("a", 40), nil)
 	req.Header.Set("if-modified-since", mtime.Add(-2*time.Second).Format(http.TimeFormat))
 
 	resp, err := c.Do(req)

@@ -15,7 +15,7 @@ const BlobBackend = {
 				if (file === null) {
 					let revPart = action.rev ? `@${action.rev}` : "";
 					BlobBackend.xhr({
-						uri: `/.api/repos/${action.repo}${revPart}/.tree/${action.tree}?ContentsAsString=true`,
+						uri: `/.api/repos/${action.repo}${revPart}/-/tree/${action.tree}?ContentsAsString=true`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {

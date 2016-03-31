@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
@@ -59,6 +59,10 @@ const (
 
 	UserContent = "usercontent"
 
+	OldDefRedirect = "old-def-redirect"
+
+	OldTreeRedirect = "old-tree-redirect"
+
 	// Platform routes
 	RepoAppFrame = "repo.appframe"
 )
@@ -82,7 +86,7 @@ func New(base *mux.Router) *Router {
 	base.Path("/").Methods("GET").Name(Home)
 	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
 
-	base.Path("/.builds").Methods("GET").Name(Builds)
+	base.Path("/builds").Methods("GET").Name(Builds)
 
 	base.Path("/login").Methods("GET", "POST").Name(LogIn)
 	base.Path("/join").Methods("GET", "POST").Name(SignUp)
@@ -108,39 +112,38 @@ func New(base *mux.Router) *Router {
 	user := base.PathPrefix(userPath).Subrouter()
 	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
 
+	addOldDefRedirectRoute(&Router{*base}, base)
+	addOldTreeRedirectRoute(&Router{*base}, base)
+
 	// attach git transport endpoints
 	gitrouter.New(base)
 
-	repo := base.PathPrefix(`/` + routevar.Repo).Subrouter()
+	repoPath := `/` + routevar.Repo
+	base.Path(repoPath + routevar.RepoRevSuffix).Methods("GET").Name(Repo)
+	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
 
-	repoRevPath := `/` + routevar.RepoRev
-	base.Path(repoRevPath).Methods("GET").PostMatchFunc(routevar.FixRepoRevVars).BuildVarsFunc(routevar.PrepareRepoRevRouteVars).Name(Repo)
-	repoRev := base.PathPrefix(repoRevPath).PostMatchFunc(routevar.FixRepoRevVars).BuildVarsFunc(routevar.PrepareRepoRevRouteVars).Subrouter()
-
-	// See router_util/def_route.go for an explanation of how we match def
-	// routes.
-	defPath := "/" + routevar.Def
-	repoRev.Path(defPath).Methods("GET").PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Name(Def)
-	def := repoRev.PathPrefix(defPath).PostMatchFunc(routevar.FixDefUnitVars).BuildVarsFunc(routevar.PrepareDefRouteVars).Subrouter()
-	def.Path("/.refs").Methods("GET").Name(DefRefs)
-	def.Path("/.sourcebox.{Format}").Methods("GET").HandlerFunc(gone)
+	defPath := "/def/" + routevar.Def
+	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
+	def.Path("/refs").Methods("GET").Name(DefRefs)
+	repoRev.Path(defPath).Methods("GET").Name(Def)
 
 	// See router_util/tree_route.go for an explanation of how we match tree
 	// entry routes.
-	repoTreePath := "/.tree" + routevar.TreeEntryPath
-	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).HandlerFunc(gone)
-	repoRev.Path(repoTreePath).Methods("GET").PostMatchFunc(routevar.FixTreeEntryVars).BuildVarsFunc(routevar.PrepareTreeEntryRouteVars).Name(RepoTree)
+	repoTreePath := "/tree{Path:.*}"
+	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").HandlerFunc(gone)
+	repoRev.Path(repoTreePath).Methods("GET").Name(RepoTree)
 
-	repoRev.Path("/.commits").Methods("GET").Name(RepoRevCommits)
+	repoRev.Path("/commits").Methods("GET").Name(RepoRevCommits)
 
-	repo.Path("/.commits/{Rev:" + spec.PathNoLeadingDotComponentPattern + "}").Methods("GET").Name(RepoCommit)
-	repo.Path("/.branches").Methods("GET").Name(RepoBranches)
-	repo.Path("/.tags").Methods("GET").Name(RepoTags)
-	repo.Path("/.sitemap.xml").Methods("GET").Name(RepoSitemap)
+	repoRev.Path("/commit").Methods("GET").Name(RepoCommit)
+	repo.Path("/branches").Methods("GET").Name(RepoBranches)
+	repo.Path("/tags").Methods("GET").Name(RepoTags)
+	repo.Path("/sitemap.xml").Methods("GET").Name(RepoSitemap)
 
-	repo.Path("/.builds").Methods("GET").Name(RepoBuilds)
-	repo.Path("/.builds").Methods("POST").Name(RepoBuildsCreate)
-	repoBuildPath := `/.builds/{Build:\d+}`
+	repo.Path("/builds").Methods("GET").Name(RepoBuilds)
+	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)
+	repoBuildPath := `/builds/{Build:\d+}`
 	repo.Path(repoBuildPath).Methods("GET").Name(RepoBuild)
 	repo.Path(repoBuildPath).Methods("POST").Name(RepoBuildUpdate)
 	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
@@ -152,7 +155,7 @@ func New(base *mux.Router) *Router {
 	// App is the app ID (e.g., "issues"), and AppPath is an opaque
 	// path that Sourcegraph passes directly to the app. The empty
 	// AppPath is the app's homepage, and it manages its own subpaths.
-	repoRev.PathPrefix(`/.{App}{AppPath:(?:/.*)?}`).Name(RepoAppFrame)
+	repoRev.PathPrefix(`/app/{App}{AppPath:(?:/.*)?}`).Name(RepoAppFrame)
 
 	return &Router{*base}
 }

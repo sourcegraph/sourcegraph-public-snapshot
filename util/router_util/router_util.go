@@ -1,28 +1,11 @@
 package router_util
 
 import (
-	"bytes"
 	"log"
 	"net/url"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
-
-var charmap = map[byte]string{
-	'?': "%3F",
-}
-
-func EscapePath(in string) string {
-	var buf bytes.Buffer
-	for _, c := range []byte(in) {
-		if v, ok := charmap[c]; ok {
-			buf.WriteString(v)
-		} else {
-			buf.WriteByte(c)
-		}
-	}
-	return buf.String()
-}
 
 func URLTo(router *mux.Router, routeName string, params ...string) *url.URL {
 	route := router.Get(routeName)

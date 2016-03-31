@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/kr/pretty"
-	"github.com/sourcegraph/mux"
 )
 
 func TestMatch(t *testing.T) {
@@ -28,140 +28,108 @@ func TestMatch(t *testing.T) {
 		{
 			path:          "/repohost.com/foo",
 			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": ""},
 		},
 		{
 			path:          "/a/b/c/d",
 			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "a/b/c/d"},
+			wantVars:      map[string]string{"Repo": "a/b/c/d", "Rev": ""},
 		},
 		{
 			path:          "/a/b@mycommitid",
 			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "a/b", "Rev": "mycommitid"},
+			wantVars:      map[string]string{"Repo": "a/b", "Rev": "@mycommitid"},
 		},
 		{
 			path:          "/a/b@myrev/subrev",
 			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "a/b", "Rev": "myrev/subrev"},
+			wantVars:      map[string]string{"Repo": "a/b", "Rev": "@myrev/subrev"},
 		},
 		{
 			path:          "/a/b@myrev/subrev1/subrev2",
 			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "a/b", "Rev": "myrev/subrev1/subrev2"},
+			wantVars:      map[string]string{"Repo": "a/b", "Rev": "@myrev/subrev1/subrev2"},
 		},
 
 		// Repo sub-routes
 		{
-			path:          "/repohost.com/foo/.commits",
+			path:          "/repohost.com/foo@mybranch/-/commits",
 			wantRouteName: RepoRevCommits,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mybranch"},
 		},
 		{
-			path:          "/repohost.com/foo/.commits/123abc",
+			path:          "/repohost.com/foo@mycommit/-/commit",
 			wantRouteName: RepoCommit,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "123abc"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommit"},
 		},
 		{
-			path:          "/repohost.com/foo/.commits/branch/with/slash",
+			path:          "/repohost.com/foo@branch/with/slash/-/commit",
 			wantRouteName: RepoCommit,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "branch/with/slash"},
-		},
-
-		// Repo app sub-routes
-		{
-			path:          "/repohost.com/foo@myrev/.myapp",
-			wantRouteName: RepoAppFrame,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "myrev", "App": "myapp", "AppPath": ""},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@branch/with/slash"},
 		},
 		{
-			path:          "/repohost.com/foo@myrev/.myapp/foo/.bar/baz",
-			wantRouteName: RepoAppFrame,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "myrev", "App": "myapp", "AppPath": "/foo/.bar/baz"},
-		},
-
-		// Repo sub-routes that don't allow an "@REVSPEC" revision.
-		{
-			path:          "/repohost.com/foo/.tags",
+			path:          "/repohost.com/foo/-/tags",
 			wantRouteName: RepoTags,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
 		},
 
+		// Repo app sub-routes
+		{
+			path:          "/repohost.com/foo/-/app/myapp",
+			wantRouteName: RepoAppFrame,
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "", "App": "myapp", "AppPath": ""},
+		},
+		{
+			path:          "/repohost.com/foo/-/app/myapp/foo/.bar/baz",
+			wantRouteName: RepoAppFrame,
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "", "App": "myapp", "AppPath": "/foo/.bar/baz"},
+		},
+
 		// Repo tree
 		{
-			path:          "/repohost.com/foo@mycommitid/.tree",
+			path:          "/repohost.com/foo@mycommitid/-/tree",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "mycommitid", "Path": "."},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": ""},
 		},
 		{
-			path:          "/repohost.com/foo@my-commit.id_2/.tree",
+			path:          "/repohost.com/foo@my-commit.id_2/-/tree",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "my-commit.id_2", "Path": "."},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@my-commit.id_2", "Path": ""},
 		},
 		{
-			path:          "/repohost.com/foo@mycommitid/.tree/",
+			path:          "/repohost.com/foo@mycommitid/-/tree",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "mycommitid", "Path": "."},
-			wantPath:      "/repohost.com/foo@mycommitid/.tree",
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": ""},
+			wantPath:      "/repohost.com/foo@mycommitid/-/tree",
 		},
 		{
-			path:          "/repohost.com/foo@mycommitid/.tree/my/file",
+			path:          "/repohost.com/foo@mycommitid/-/tree/my/file",
 			wantRouteName: RepoTree,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "mycommitid", "Path": "my/file"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "Path": "/my/file"},
 		},
 
 		// Defs
 		{
-			path:          "/repohost.com/foo@mycommitid/.t/.def/p",
+			path:          "/my/repo/-/def/t/u/-/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "mycommitid"},
+			wantVars:      map[string]string{"Repo": "my/repo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": ""},
 		},
 		{
-			path:          "/repohost.com/foo@myrev/subrev/.t/.def/p",
+			path:          "/repohost.com/foo@mycommitid/-/def/t/u/-/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p", "Rev": "myrev/subrev"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@mycommitid"},
 		},
 		{
-			path:          "/repohost.com/foo/.t/.def/p",
+			path:          "/repohost.com/foo@myrev/subrev/-/def/t/u/-/p",
 			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def/p%3F", // Ruby-like def that ends in '?', like `directory?`
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p?"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def", // empty path
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
-		},
-		{
-			path:          "/repohost.com/foo/.t/u1/.def/p",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1", "Path": "p"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2",
-			wantRouteName: Def,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@myrev/subrev"},
 		},
 
 		// Def sub-routes
 		{
-			path:          "/repohost.com/foo/.t/.def/p/.refs",
+			path:          "/repohost.com/foo@mycommitid/-/def/t/u/-/p/-/refs",
 			wantRouteName: DefRefs,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "p"},
-		},
-		{
-			path:          "/repohost.com/foo/.t/.def/.refs", // empty path
-			wantRouteName: DefRefs,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": ".", "Path": "."},
-		},
-		{
-			path:          "/repohost.com/foo/.t/u1/u2/.def/p1/p2/.refs",
-			wantRouteName: DefRefs,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u1/u2", "Path": "p1/p2"},
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "@mycommitid", "UnitType": "t", "Unit": "u", "Path": "p"},
 		},
 	}
 	for _, test := range tests {

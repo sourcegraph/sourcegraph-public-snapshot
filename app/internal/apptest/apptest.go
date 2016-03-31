@@ -12,7 +12,7 @@ package apptest
 import (
 	"net/url"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"

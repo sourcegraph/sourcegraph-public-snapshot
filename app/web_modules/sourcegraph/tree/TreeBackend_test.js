@@ -11,7 +11,7 @@ describe("TreeBackend", () => {
 			rev: "aRev",
 			path: "aPath",
 		};
-		let expectedURI = `/.api/repos/${entry.repo}/.commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
+		let expectedURI = `/.api/repos/${entry.repo}/-/commits?Head=${entry.rev}&Path=${entry.path}&PerPage=1`;
 
 		TreeBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
@@ -25,15 +25,14 @@ describe("TreeBackend", () => {
 	it("should handle WantFileList", () => {
 		const repo = "aRepo";
 		const rev = "aRev";
-		const commitID = "aCommit";
-		let expectedURI = `/.api/repos/${repo}@${rev}===${commitID}/.tree-list`;
+		let expectedURI = `/.api/repos/${repo}@${rev}/-/tree-list`;
 
 		TreeBackend.xhr = function(options, callback) {
 			expect(options.uri).to.be(expectedURI);
 			callback(null, null, {Files: ["a", "b"]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, rev, commitID));
-		})).to.eql([new TreeActions.FileListFetched(repo, rev, commitID, {Files: ["a", "b"]})]);
+			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, rev));
+		})).to.eql([new TreeActions.FileListFetched(repo, rev, {Files: ["a", "b"]})]);
 	});
 });

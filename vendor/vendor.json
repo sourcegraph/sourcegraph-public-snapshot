@@ -320,8 +320,8 @@
 		},
 		{
 			"path": "github.com/gorilla/mux",
-			"revision": "acf3be1b335c8ce30b2c8d51300984666f0ceefa",
-			"revisionTime": "2016-03-07T14:01:44-08:00"
+			"revision": "dfc482b2558f4151fc8598139a686caf3fb2ef65",
+			"revisionTime": "2016-02-26T13:29:39-08:00"
 		},
 		{
 			"path": "github.com/gorilla/schema",
@@ -597,11 +597,6 @@
 			"path": "github.com/sourcegraph/httpcache",
 			"revision": "96098fca6c2a134f51950e0bf8ba4ebf6f14fdef",
 			"revisionTime": "2016-01-31T22:50:39-08:00"
-		},
-		{
-			"path": "github.com/sourcegraph/mux",
-			"revision": "dd22f369d469f65c3946889f5d8a1fb3933192e9",
-			"revisionTime": "2015-02-05T12:14:32-08:00"
 		},
 		{
 			"path": "github.com/sourcegraph/sitemap",

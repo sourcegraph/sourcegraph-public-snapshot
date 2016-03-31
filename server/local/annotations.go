@@ -31,6 +31,10 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 		fileRange = *opt.Range
 	}
 
+	if err := (&repos{}).resolveRepoRev(ctx, &opt.Entry.RepoRev); err != nil {
+		return nil, err
+	}
+
 	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: opt.Entry,
 		Opt: &sourcegraph.RepoTreeGetOptions{

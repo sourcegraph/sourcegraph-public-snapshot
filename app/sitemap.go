@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sitemap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

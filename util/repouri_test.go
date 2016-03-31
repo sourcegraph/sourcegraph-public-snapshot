@@ -10,10 +10,10 @@ func TestGetTrackedRepo(t *testing.T) {
 		// Top-level view
 		{"/github.com/kubernetes/kubernetes", "github.com/kubernetes/kubernetes"},
 		// Code view
-		{"/github.com/kubernetes/kubernetes@master/.tree/README.md", "github.com/kubernetes/kubernetes"},
+		{"/github.com/kubernetes/kubernetes@master/-/tree/README.md", "github.com/kubernetes/kubernetes"},
 
 		// Unrelated repo
-		{"/github.com/gorilla/mux@master/.tree/mux.go", "unknown"},
+		{"/github.com/gorilla/mux@master/-/tree/mux.go", "unknown"},
 		{"/github.com/gorilla/mux", "unknown"},
 
 		// Unrelated URL

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
 )
 

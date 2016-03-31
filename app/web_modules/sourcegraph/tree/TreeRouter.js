@@ -37,9 +37,9 @@ class TreeRouter extends Component {
 		case TreeActions.DownDirectory:
 			{
 				let url = URL.parse(this.state.location);
-				if (url.pathname.indexOf(".tree") === -1) {
-					url.pathname = `${this.state.repo}@${this.state.rev}/.tree/${action.part}`;
-					// We are at the root of the directory tree; prefix /.tree on path.
+				if (url.pathname.indexOf("/-/tree") === -1) {
+					url.pathname = `${this.state.repo}@${this.state.rev}/-/tree/${action.part}`;
+					// We are at the root of the directory tree; prefix /-/tree on path.
 					this.state.navigate(URL.format(url));
 				} else {
 					// Just append the part.
@@ -54,7 +54,7 @@ class TreeRouter extends Component {
 		case TreeActions.GoToDirectory:
 			{
 				let url = URL.parse(this.state.location);
-				url.pathname = `${this.state.repo}@${this.state.rev}/.tree/${action.path.join("/")}`;
+				url.pathname = `${this.state.repo}@${this.state.rev}/-/tree/${action.path.join("/")}`;
 				this.state.navigate(URL.format(url));
 				break;
 			}
@@ -63,10 +63,10 @@ class TreeRouter extends Component {
 	}
 
 	_currPath() {
-		const index = this.state.location.indexOf(".tree");
+		const index = this.state.location.indexOf("/-/tree");
 		if (index === -1) return [];
 
-		const pathString = this.state.location.substring(index + ".tree/".length);
+		const pathString = this.state.location.substring(index + "/-/tree/".length);
 		if (pathString === "") return [];
 		return pathString.split("/");
 	}
@@ -76,7 +76,6 @@ class TreeRouter extends Component {
 			<TreeSearch
 				repo={this.state.repo}
 				rev={this.state.rev}
-				commitID={this.state.commitID}
 				overlay={false}
 				currPath={this._currPath()} />
 		);
@@ -88,7 +87,6 @@ TreeRouter.propTypes = {
 	navigate: React.PropTypes.func.isRequired,
 	repo: React.PropTypes.string, // currently passed, but can (and should?) be inferred by the URL
 	rev: React.PropTypes.string,  // same as above
-	commitID: React.PropTypes.string,
 };
 
 export default TreeRouter;

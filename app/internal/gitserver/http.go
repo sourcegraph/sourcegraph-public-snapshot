@@ -11,7 +11,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"

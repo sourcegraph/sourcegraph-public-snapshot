@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/sourcegraph/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"

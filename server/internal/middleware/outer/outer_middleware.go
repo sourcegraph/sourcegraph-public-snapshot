@@ -616,36 +616,6 @@ func (s wrappedBuilds) Get(ctx context.Context, v1 *sourcegraph.BuildSpec) (retu
 	return rv, nil
 }
 
-func (s wrappedBuilds) GetRepoBuild(ctx context.Context, v1 *sourcegraph.RepoRevSpec) (returnedResult *sourcegraph.Build, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Builds.GetRepoBuild: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.BuildsOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Builds")
-	}
-
-	rv, err := innerSvc.GetRepoBuild(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedBuilds) List(ctx context.Context, v1 *sourcegraph.BuildListOptions) (returnedResult *sourcegraph.BuildList, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

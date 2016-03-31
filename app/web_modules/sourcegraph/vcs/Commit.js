@@ -21,14 +21,14 @@ class Commit extends Component {
 				</a>
 				<div className="media-body">
 					<h4 className="media-heading commit-title">
-						<a href={`/${this.state.commit.RepoURI}/.commits/${this.state.commit.ID}`}>
+						<a href={`/${this.state.commit.RepoURI}@${this.state.commit.ID}/-/commit`}>
 							{this.state.commit.Message.slice(0, 70)}
 						</a>
 					</h4>
 					<p className="author committer">
 						<span className="date">authored <TimeAgo time={this.state.commit.Author.Date} /></span>
 						{this.state.commit.Committer ? <span className="date">, committed <TimeAgo time={this.state.commit.Committer.Date} /></span> : null}
-						<a href={`/${this.state.commit.RepoURI}/.commits/${this.state.commit.ID}`}>
+						<a href={`/${this.state.commit.RepoURI}@${this.state.commit.ID}/-/commit`}>
 							<code className="commit-id pull-right">{this.state.commit.ID.substring(0, 6)}</code>
 						</a>
 					</p>

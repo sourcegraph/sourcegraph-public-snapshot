@@ -6,8 +6,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
+	"github.com/gorilla/mux"
 	"github.com/justinas/nosurf"
-	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 )
@@ -65,13 +65,9 @@ func repoFrameBaseURI(ctx context.Context, r *http.Request) (string, error) {
 
 	urlVars := []string{
 		"Repo", vars["Repo"],
+		"Rev", vars["Rev"],
 		"App", vars["App"],
 		"AppPath", "",
-	}
-	if resolvedRev, exists := vars["ResolvedRev"]; exists {
-		urlVars = append(urlVars, "ResolvedRev", resolvedRev)
-	} else {
-		urlVars = append(urlVars, "Rev", vars["Rev"], "CommitID", vars["CommitID"])
 	}
 
 	baseURI, err := approuter.Rel.Get(approuter.RepoAppFrame).URLPath(urlVars...)

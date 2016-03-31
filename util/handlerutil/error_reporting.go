@@ -18,7 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 
 	"github.com/getsentry/raven-go"
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 )
 
 var ravenClient *raven.Client

@@ -25,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 	"sourcegraph.com/sourcegraph/sourcegraph/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -219,6 +220,11 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
 func (s *repos) resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
+	// Resolve revs like "master===commitid".
+	if repoRev.CommitID == "" {
+		repoRev.Rev, repoRev.CommitID = spec.ParseResolvedRev(repoRev.Rev)
+	}
+
 	if err := s.resolveRepoRevBranch(ctx, repoRev); err != nil {
 		return err
 	}

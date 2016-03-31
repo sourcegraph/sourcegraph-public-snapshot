@@ -23,7 +23,6 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 	var calledGetLock sync.Mutex
 	var calledGet int
 	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "c")
-	mock.servers.Builds.MockGetRepoBuild(t, &sourcegraph.Build{})
 	mock.servers.Repos.GetCommit_ = func(ctx context.Context, repoRevSpec *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		calledGetLock.Lock()
 		calledGet++

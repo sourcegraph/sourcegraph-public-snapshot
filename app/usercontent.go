@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/usercontent"
 )
 

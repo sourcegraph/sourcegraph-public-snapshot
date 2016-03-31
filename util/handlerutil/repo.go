@@ -6,9 +6,10 @@ import (
 	"go/doc"
 	"html/template"
 	"net/http"
+	"path"
 	"strings"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -58,7 +59,7 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
 	if err != nil {
 		if noVCSData := grpc.Code(err) == codes.NotFound || strings.Contains(err.Error(), "has no default branch"); noVCSData {
-			if _, ok := vars["Rev"]; ok {
+			if rev := vars["Rev"]; rev != "" && rev != "@" {
 				err = vcs.ErrRevisionNotFound
 			} else {
 				err = &NoVCSDataError{rc}
@@ -297,7 +298,7 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 	tc = &TreeEntryCommon{}
 	tc.EntrySpec = sourcegraph.TreeEntrySpec{
 		RepoRev: vc.RepoRevSpec,
-		Path:    vars["Path"],
+		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
 	}
 
 	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, tc.EntrySpec); err == nil {
@@ -331,12 +332,11 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 // dc.Def.DefKey will be set to the def specification based on the
 // request when getting actual def fails.
 func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, rc *RepoCommon, vc *RepoRevCommon, err error) {
-	defSpec := sourcegraph.DefSpec{
-		Repo:     vars["Repo"],
-		Unit:     vars["Unit"],
-		UnitType: vars["UnitType"],
-		Path:     router_util.EscapePath(vars["Path"]),
+	defSpec, err := sourcegraph.UnmarshalDefSpec(vars)
+	if err != nil {
+		return dc, rc, vc, err
 	}
+
 	// If we fail to get a def, return the best known information to the caller.
 	dc = &sourcegraph.Def{
 		Def: graph.Def{

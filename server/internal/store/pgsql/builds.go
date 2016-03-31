@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -315,63 +314,6 @@ SELECT b.* FROM builds b
 	}
 
 	return toBuilds(builds), nil
-}
-
-func (s *builds) GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetFirstInCommitOrder", repo); err != nil {
-		return nil, 0, err
-	}
-	if len(commitIDs) == 0 {
-		return nil, -1, nil
-	}
-
-	var args []interface{}
-	arg := func(v interface{}) string {
-		args = append(args, v)
-		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
-	}
-
-	sortCases := make([]string, len(commitIDs))
-	for i, commitID := range commitIDs {
-		sortCases[i] = fmt.Sprintf("WHEN commit_id=%s THEN %d", arg(commitID), i)
-	}
-	sortFn := "CASE " + strings.Join(sortCases, " ") + " END ASC NULLS LAST, started_at DESC NULLS LAST"
-
-	var successCond string
-	if successfulOnly {
-		successCond = " AND success "
-	}
-
-	sql := `-- Builds.GetFirstInCommitOrder
-SELECT * FROM repo_build
-WHERE repo=` + arg(repo) + ` AND (NOT purged) ` + successCond + `
-      AND commit_id=ANY(` + arg(&dbutil.StringSlice{Slice: commitIDs}) + `)
-ORDER BY ` + sortFn + `
-LIMIT 1
-`
-
-	var builds []*dbBuild
-	if _, err := dbh(ctx).Select(&builds, sql, args...); err != nil {
-		return nil, 0, err
-	}
-	if len(builds) == 1 {
-		// Found it!
-		build := builds[0].toBuild()
-
-		// Determine which commit ID position this belongs to.
-		nth := -1
-		for i, c := range commitIDs {
-			if build.CommitID == c {
-				nth = i
-			}
-		}
-		if nth == -1 {
-			panic("build commit ID " + build.CommitID + " was not in arg list")
-		}
-
-		return build, nth, nil
-	}
-	return nil, -1, nil
 }
 
 func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sourcegraph.Build, error) {

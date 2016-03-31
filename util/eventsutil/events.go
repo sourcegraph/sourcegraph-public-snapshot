@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/go-github/github"
-	"github.com/sourcegraph/mux"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 

@@ -2,6 +2,7 @@ package sourcegraph
 
 import (
 	"net/url"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
@@ -69,12 +70,12 @@ func UnmarshalRepoSpec(routeVars map[string]string) (RepoSpec, error) {
 // repository commit.
 func (s RepoRevSpec) RouteVars() map[string]string {
 	m := s.RepoSpec.RouteVars()
-	if s.Rev != "" {
-		m["Rev"] = s.Rev
+
+	rev := s.ResolvedRevString()
+	if rev != "" {
+		rev = "@" + rev
 	}
-	if s.CommitID != "" {
-		m["CommitID"] = s.CommitID
-	}
+	m["Rev"] = rev
 	return m
 }
 
@@ -82,7 +83,7 @@ func (s RepoRevSpec) RouteVars() map[string]string {
 // is set, the return value is "Rev===CommitID"; otherwise, it is just
 // "Rev". See the docstring for RepoRevSpec for an explanation why.
 func (s RepoRevSpec) ResolvedRevString() string {
-	return spec.ResolvedRevString(s.Rev, s.CommitID)
+	return strings.TrimPrefix(spec.ResolvedRevString(s.Rev, s.CommitID), "@")
 }
 
 // Resolved reports whether the revspec has been fully resolved to an
@@ -101,13 +102,17 @@ func UnmarshalRepoRevSpec(routeVars map[string]string) (RepoRevSpec, error) {
 	}
 
 	rrspec := RepoRevSpec{RepoSpec: repo}
-	if revStr, ok := routeVars["Rev"]; ok {
-		rrspec.Rev = revStr
+	if revStr := routeVars["Rev"]; revStr != "" {
+		if !strings.HasPrefix(revStr, "@") {
+			panic("Rev should have had '@' prefix from route")
+		}
+		revStr = strings.TrimPrefix(revStr, "@")
+		rrspec.Rev, rrspec.CommitID = spec.ParseResolvedRev(revStr)
 	}
-	if commitStr, ok := routeVars["CommitID"]; ok {
-		rrspec.CommitID = commitStr
+	if _, ok := routeVars["CommitID"]; ok {
+		panic("unexpected CommitID route var; was removed in the simple-routes branch")
 	}
-	return rrspec, err
+	return rrspec, nil
 }
 
 // IsAppEnabled returns a boolean indicating whether the given app is

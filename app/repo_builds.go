@@ -11,7 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
-	"github.com/sourcegraph/mux"
+	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"

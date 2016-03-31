@@ -10,7 +10,7 @@ describe("TreeStore", () => {
 	});
 
 	it("should handle ResultsFetched", () => {
-		TreeStore.directDispatch(new TreeActions.FileListFetched("aRepo", "aRev", "aCommit", {Files: ["someResults"]}));
-		expect(TreeStore.fileLists.get("aRepo", "aRev", "aCommit")).to.have.property("Files");
+		TreeStore.directDispatch(new TreeActions.FileListFetched("aRepo", "aRev", {Files: ["someResults"]}));
+		expect(TreeStore.fileLists.get("aRepo", "aRev")).to.have.property("Files");
 	});
 });

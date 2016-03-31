@@ -129,7 +129,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	apiURL := httpURL.ResolveReference(&url.URL{Path: "/.api/.defs"}).String()
+	apiURL := httpURL.ResolveReference(&url.URL{Path: "/.api/defs"}).String()
 	resp, err := http.Get(apiURL)
 	if err != nil {
 		t.Fatal(err)

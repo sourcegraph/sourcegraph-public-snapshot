@@ -8,7 +8,7 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {
 		BlobBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be("/.api/repos/aRepo@aRev/.tree/aTree?ContentsAsString=true");
+			expect(options.uri).to.be("/.api/repos/aRepo@aRev/-/tree/aTree?ContentsAsString=true");
 			callback(null, null, "someFile");
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {

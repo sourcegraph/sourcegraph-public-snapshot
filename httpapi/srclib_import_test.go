@@ -85,7 +85,7 @@ func TestSrclibImport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, _ := http.NewRequest("PUT", "/repos/r@v/.srclib-import", &zipData)
+	req, _ := http.NewRequest("PUT", "/repos/r@v/-/srclib-import", &zipData)
 	req.Header.Set("content-type", "application/x-zip-compressed")
 	req.Header.Set("content-transfer-encoding", "binary")
 	if _, err := c.DoOK(req); err != nil {
@@ -112,7 +112,7 @@ func TestSrclibImport_empty(t *testing.T) {
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 
 	// POST an empty zip archive.
-	req, _ := http.NewRequest("PUT", "/repos/r@v/.srclib-import", nil)
+	req, _ := http.NewRequest("PUT", "/repos/r@v/-/srclib-import", nil)
 	req.Header.Set("content-type", "application/x-zip-compressed")
 	req.Header.Set("content-transfer-encoding", "binary")
 	resp, err := c.Do(req)

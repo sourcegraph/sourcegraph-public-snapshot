@@ -29,7 +29,7 @@ describe("DefBackend", () => {
 
 	it("should handle WantDefs", () => {
 		DefBackend.xhr = function(options, callback) {
-			expect(options.uri).to.be("/.api/.defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
+			expect(options.uri).to.be("/.api/defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
 			callback(null, {statusCode: 200}, {Defs: ["someDefData"]});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
@@ -40,7 +40,7 @@ describe("DefBackend", () => {
 	describe("should handle WantRefs", () => {
 		it("for all files", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.ui/someURL/.refs");
+				expect(options.uri).to.be("/.ui/someURL/-/refs");
 				callback(null, null, ["someRefData"]);
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
@@ -49,7 +49,7 @@ describe("DefBackend", () => {
 		});
 		it("for a specific file", () => {
 			DefBackend.xhr = function(options, callback) {
-				expect(options.uri).to.be("/.ui/someURL/.refs?Files=f");
+				expect(options.uri).to.be("/.ui/someURL/-/refs?Files=f");
 				callback(null, {statusCode: 200}, ["someRefData"]);
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {

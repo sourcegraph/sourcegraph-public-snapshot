@@ -13,15 +13,6 @@ import (
 type Builds interface {
 	Get(ctx context.Context, build sourcegraph.BuildSpec) (*sourcegraph.Build, error)
 	List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([]*sourcegraph.Build, error)
-
-	// GetFirstInCommitOrder returns the newest build for the
-	// repository at the first commit ID in commitIDs. If no such
-	// builds are found, the next commit ID is tried, and so on.
-	//
-	// The "nth" return value is the 0-based index of the commit ID
-	// (in commitIDs) of the returned build, or -1 if none was found.
-	GetFirstInCommitOrder(ctx context.Context, repo string, commitIDs []string, successfulOnly bool) (build *sourcegraph.Build, nth int, err error)
-
 	Create(context.Context, *sourcegraph.Build) (*sourcegraph.Build, error)
 	Update(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error
 	ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error)

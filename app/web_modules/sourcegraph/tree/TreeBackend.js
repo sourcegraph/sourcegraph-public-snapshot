@@ -13,7 +13,7 @@ const TreeBackend = {
 				let commit = TreeStore.commits.get(action.repo, action.rev, action.path);
 				if (commit === null) {
 					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}/.commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`,
+						uri: `/.api/repos/${action.repo}/-/commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {
@@ -28,17 +28,17 @@ const TreeBackend = {
 
 		case TreeActions.WantFileList:
 			{
-				let fileList = TreeStore.fileLists.get(action.repo, action.rev, action.commitID);
+				let fileList = TreeStore.fileLists.get(action.repo, action.rev);
 				if (fileList === null) {
 					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}===${encodeURIComponent(action.commitID)}/.tree-list`,
+						uri: `/.api/repos/${action.repo}@${action.rev}/-/tree-list`,
 						json: {},
 					}, function(err, resp, body) {
 						if (err) {
 							console.error(err);
 							return;
 						}
-						Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, action.commitID, body));
+						Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, body));
 					});
 				}
 				break;
@@ -46,10 +46,10 @@ const TreeBackend = {
 
 		case TreeActions.WantSrclibDataVersion:
 			{
-				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.commitID, action.path);
+				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.path);
 				if (version === null) {
 					TreeBackend.xhr({
-						uri: `/.api/repos/${action.repo}@${encodeURIComponent(action.rev)}===${encodeURIComponent(action.commitID)}/.srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`,
+						uri: `/.api/repos/${action.repo}@${action.rev}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`,
 						json: {},
 					}, function(err, resp, body) {
 						if (resp.statusCode === 404) {
@@ -60,7 +60,7 @@ const TreeBackend = {
 							console.error(err);
 							return;
 						}
-						Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.commitID, action.path, body));
+						Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, body));
 					});
 				}
 				break;
