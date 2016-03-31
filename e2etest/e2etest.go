@@ -346,8 +346,10 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 			screenshot, err2 = wd.Screenshot()
 			if err2 != nil {
 				t.log.Println("could not capture screenshot for", test.Name, err2)
-			} else if err2 = t.slackFileUpload(screenshot, test.Name+".png"); err2 != nil {
-				t.log.Println("could not upload screenshot to Slack", test.Name, err2)
+			} else if t.slack != nil {
+				if err2 = t.slackFileUpload(screenshot, test.Name+".png"); err2 != nil {
+					t.log.Println("could not upload screenshot to Slack", test.Name, err2)
+				}
 			}
 		}
 		wd.Quit()
