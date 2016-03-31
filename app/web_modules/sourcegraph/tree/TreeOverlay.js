@@ -39,8 +39,14 @@ class TreeOverlay extends Component {
 			this.setState({
 				currPath: update(this.state.currPath, {$push: [action.part]}),
 			});
-		}
+			break;
 
+		case TreeActions.GoToDirectory:
+			this.setState({
+				currPath: action.path,
+			});
+			break;
+		}
 	}
 
 	render() {

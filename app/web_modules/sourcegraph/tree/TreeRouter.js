@@ -21,7 +21,6 @@ class TreeRouter extends Component {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.url = URL.parse(props.location);
 	}
 
 	__onDispatch(action) {
@@ -36,14 +35,29 @@ class TreeRouter extends Component {
 			}
 
 		case TreeActions.DownDirectory:
-			if (this.state.location.indexOf(".tree") === -1) {
-				// We are at the root of the directory tree; prefix /.tree on path.
-				this.state.navigate(`${this.state.location}/.tree/${action.part}`);
-			} else {
-				// Just append the part.
-				this.state.navigate(`${this.state.location}/${action.part}`);
+			{
+				let url = URL.parse(this.state.location);
+				if (url.pathname.indexOf(".tree") === -1) {
+					url.pathname = `${this.state.repo}@${this.state.rev}/.tree/${action.part}`;
+					// We are at the root of the directory tree; prefix /.tree on path.
+					this.state.navigate(URL.format(url));
+				} else {
+					// Just append the part.
+					let pathname = url.pathname;
+					if (pathname[pathname.length - 1] !== "/") pathname = `${pathname}/`;
+					url.pathname = `${pathname}${action.part}`;
+					this.state.navigate(URL.format(url));
+				}
+				break;
 			}
-			break;
+
+		case TreeActions.GoToDirectory:
+			{
+				let url = URL.parse(this.state.location);
+				url.pathname = `${this.state.repo}@${this.state.rev}/.tree/${action.path.join("/")}`;
+				this.state.navigate(URL.format(url));
+				break;
+			}
 		}
 
 	}

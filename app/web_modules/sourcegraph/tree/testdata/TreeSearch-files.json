@@ -38,7 +38,8 @@
 																	}
 																]
 															},
-															"placeholder": "Search this repository..."
+															"autoFocus": true,
+															"placeholder": "Jump to symbols or files..."
 														}
 													}
 												]
@@ -58,8 +59,60 @@
 												"children": [
 													"Files",
 													{
-														"type": "span",
-														"props": {}
+														"type": "div",
+														"props": {
+															"children": [
+																{
+																	"type": "span",
+																	"props": {
+																		"onClick": {
+																			"dispatchedToStores": [
+																				{
+																					"$constructor": "GoToDirectory",
+																					"path": []
+																				}
+																			],
+																			"dispatchedToBackends": []
+																		},
+																		"children": [
+																			"thesrc"
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"props": {
+																		"onClick": {
+																			"dispatchedToStores": [
+																				{
+																					"$constructor": "GoToDirectory",
+																					"path": []
+																				}
+																			],
+																			"dispatchedToBackends": []
+																		},
+																		"children": [
+																			"/"
+																		]
+																	}
+																},
+																{
+																	"type": "span",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "span",
+																				"props": {
+																					"children": [
+																						"a"
+																					]
+																				}
+																			}
+																		]
+																	}
+																}
+															]
+														}
 													}
 												]
 											}
@@ -87,9 +140,8 @@
 																	}
 																},
 																{
-																	"type": "a",
+																	"type": "span",
 																	"props": {
-																		"href": "/repo@rev/.tree/a",
 																		"children": [
 																			"a"
 																		]
@@ -117,9 +169,8 @@
 																	}
 																},
 																{
-																	"type": "a",
+																	"type": "span",
 																	"props": {
-																		"href": "/repo@rev/.tree/b",
 																		"children": [
 																			"b"
 																		]

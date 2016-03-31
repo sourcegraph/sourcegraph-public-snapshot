@@ -1,4 +1,5 @@
 import React from "react";
+import update from "react/lib/update";
 import URL from "url";
 import Fuze from "fuse.js";
 import classNames from "classnames";
@@ -39,7 +40,7 @@ class TreeSearch extends Container {
 		this._focusInput = this._focusInput.bind(this);
 		this._blurInput = this._blurInput.bind(this);
 		this._dismissModal = this._dismissModal.bind(this);
-		this._onType = this._onType.bind(this);
+		this._getSelectionURL = this._getSelectionURL.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			const matchingFiles = (query && this.state.fuzzyFinder) ?
 				this.state.fuzzyFinder.search(query).map(i => this.state.allFiles[i]) :
@@ -50,13 +51,12 @@ class TreeSearch extends Container {
 
 	componentDidMount() {
 		super.componentDidMount();
-		if (!this.state.overlay) {
-			this._focusInput();
-		} else {
+		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
+
 		if (global.window) {
-			global.window.addEventListener("focus", () => {
+			window.addEventListener("focus", () => {
 				if (this.state.visible) this._focusInput();
 			});
 		}
@@ -64,11 +64,11 @@ class TreeSearch extends Container {
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
-		if (this.state.overlay) {
+		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
 		if (global.window) {
-			global.window.removeEventListener("focus");
+			window.removeEventListener("focus");
 		}
 	}
 
@@ -173,22 +173,83 @@ class TreeSearch extends Container {
 		}
 	}
 
-	_handleKeyDown(ev) {
-		const tag = ev.target.tagName;
-		switch (ev.keyCode) {
-		case 84: // "t"
-			if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
-			this._focusInput();
-			ev.preventDefault();
+	_handleKeyDown(e) {
+		const tag = e.target.tagName;
+
+		if (this.state.overlay) {
+			switch (e.keyCode) {
+			case 84: // "t"
+				if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+				this._focusInput();
+				e.preventDefault();
+				break;
+
+			case 27: // ESC
+				this._dismissModal();
+			}
+		}
+
+		let idx, max, part;
+		switch (e.keyCode) {
+		case 40: // ArrowDown
+			idx = this._normalizedSelectionIndex();
+			max = this._numResults();
+
+			this.setState({
+				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
+			});
+
+			e.preventDefault(); // TODO: make keyboard actions scroll automatically with selection
 			break;
 
-		case 27: // ESC
-			this._dismissModal();
+		case 38: // ArrowUp
+			idx = this._normalizedSelectionIndex();
+			max = this._numResults();
+
+			this.setState({
+				selectionIndex: idx < 1 ? max-1 : idx-1,
+			});
+
+			e.preventDefault(); // TODO: make keyboard actions scroll automatically with selection
+			break;
+
+		case 37: // ArrowLeft
+			if (this.state.currPath.length !== 0) {
+				Dispatcher.Stores.dispatch(new TreeActions.UpDirectory());
+			}
+
+			// Allow default (cursor movement in <input>)
+			break;
+
+		case 39: // ArrowRight
+			part = this._getSelectedPathPart();
+			if (part) {
+				Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(part));
+			}
+
+			// Allow default (cursor movement in <input>)
+			break;
+
+		case 13: // Enter
+			part = this._getSelectedPathPart();
+			if (part) {
+				Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(part));
+			} else {
+				window.location = this._getSelectionURL();
+			}
+			e.preventDefault();
+			break;
+
+		default:
+			if (this.state.focused) {
+				setTimeout(() => this._debouncedSetQuery(this.refs.input ? this.refs.input.value : ""), 0);
+			}
+			break;
 		}
 	}
 
 	_focusInput() {
-		if (typeof document !== "undefined" && document.body.dataset.fileSearchDisabled) {
+		if (global.document && document.body.dataset.fileSearchDisabled) {
 			return null;
 		}
 
@@ -259,61 +320,21 @@ class TreeSearch extends Container {
 		return null;
 	}
 
-	_onType(e) {
-		let idx, max, part;
-		switch (e.key) {
-		case "ArrowDown":
-			idx = this._normalizedSelectionIndex();
-			max = this._numResults();
-
-			this.setState({
-				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
-			});
-
-			e.preventDefault();
-			break;
-
-		case "ArrowUp":
-			idx = this._normalizedSelectionIndex();
-			max = this._numResults();
-
-			this.setState({
-				selectionIndex: idx < 1 ? max-1 : idx-1,
-			});
-
-			e.preventDefault();
-			break;
-
-		case "ArrowLeft":
-			if (this.state.currPath.length !== 0) {
-				Dispatcher.Stores.dispatch(new TreeActions.UpDirectory());
-			}
-
-			e.preventDefault();
-			break;
-
-		case "ArrowRight":
-			part = this._getSelectedPathPart();
-			if (part) {
-				Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(part));
-			}
-
-			e.preventDefault();
-			break;
-
-		case "Enter":
-			window.location = this._getSelectionURL();
-			e.preventDefault();
-			break;
-
-		default:
-			setTimeout(() => this._debouncedSetQuery(this.refs.input ? this.refs.input.value : ""), 0);
+	// returns the selected file name, or null
+	_getSelectedFile() {
+		const i = this._normalizedSelectionIndex();
+		if (i < this._numSymbolResults()) {
+			return null;
 		}
+
+		const result = this.state.fileResults[i - this._numSymbolResults()];
+		if (!result.isDirectory) return result.name;
+		return null;
 	}
 
 	_listItems() {
 		const items = this.state.fileResults;
-		const emptyItem = <div className={TreeStyles.list_item} key="_nofiles"><i>No matches!</i></div>;
+		const emptyItem = <div className={TreeStyles.list_item} key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list = [],
@@ -321,6 +342,13 @@ class TreeSearch extends Container {
 
 		// Override limit if query is empty to show the full directory tree.
 		if (this.state.query === "") limit = items.length;
+		const onClick = (item) => {
+			if (item.isDirectory) return () => Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(item.name));
+			if (global.window) {
+				return () => window.location.href = item.url;
+			}
+			return null;
+		};
 
 		for (let i = 0; i < limit; i++) {
 			let item = items[i],
@@ -329,18 +357,17 @@ class TreeSearch extends Container {
 			const selected = this._normalizedSelectionIndex() - this._numSymbolResults() === i;
 
 			list.push(
-				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={itemURL}>
+				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item}
+					onMouseOver={() => this._selectItem(i + this._numSymbolResults())}
+					onClick={onClick(item)}
+					key={itemURL}>
 					<span className={TreeStyles.filetype_icon}><i className={classNames("fa", {
 						"fa-file-text-o": !item.isDirectory,
 						"fa-folder": item.isDirectory,
 					})}></i>
 					</span>
-					<a className={TreeStyles.link} href={itemURL}>{item.name}</a>
-					{this.state.query === "" && item.isDirectory &&
-						<span className={TreeStyles.directory_nav_icon}>
-						<i className="fa fa-chevron-right" />
-						</span>
-					}
+					{false && <a className={TreeStyles.link} href={itemURL}>{item.name}</a>}
+					{<span>{item.name}</span>}
 				</div>
 			);
 		}
@@ -348,15 +375,28 @@ class TreeSearch extends Container {
 		return list;
 	}
 
+	_selectItem(i) {
+		this.setState({
+			selectionIndex: i,
+		});
+	}
+
 	_symbolItems() {
 		const loadingItem = <div className={TreeStyles.list_item} key="_loadingsymbol"><i>Loading...</i></div>;
 		if (!this.state.matchingDefs) return [loadingItem];
 
-		const emptyItem = <div className={TreeStyles.list_item} key="_nosymbol"><i>No matches!</i></div>;
+		const emptyItem = <div className={TreeStyles.list_item} key="_nosymbol"><i>No matches.</i></div>;
 		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
 
 		let list = [],
 			limit = this.state.matchingDefs.Defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingDefs.Defs.length;
+
+		const onClick = (url) => {
+			if (global.window) {
+				return () => window.location.href = url;
+			}
+			return null;
+		};
 
 		for (let i = 0; i < limit; i++) {
 			let def = this.state.matchingDefs.Defs[i];
@@ -365,11 +405,12 @@ class TreeSearch extends Container {
 			const selected = this._normalizedSelectionIndex() === i;
 
 			list.push(
-				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item} key={defURL}>
+				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item}
+					onMouseOver={() => this._selectItem(i)}
+					onClick={onClick(defURL)}
+					key={defURL}>
 					<div key={defURL}>
-						<a className={TreeStyles.link} href={defURL}>
-							<code>{qualifiedNameAndType(def)}</code>
-						</a>
+						<code>{qualifiedNameAndType(def)}</code>
 					</div>
 				</div>
 			);
@@ -394,19 +435,39 @@ class TreeSearch extends Container {
 	}
 
 	render() {
+
+		const pathNav = (i) => () => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory(
+			update(this.state.currPath, {$splice: [[i + 1, this.state.currPath.length - 1 - i]]})
+		));
+		const path = (<div className={TreeStyles.file_path}>
+			<span className={TreeStyles.repo_part}
+				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>thesrc</span>
+			<span className={TreeStyles.path_sep}
+				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>/</span>
+			{this.state.currPath.map((part, i) => <span key={i}>
+				<span className={TreeStyles.path_part} onClick={pathNav(i)}>{part}</span>
+				<span className={TreeStyles.path_sep} onClick={pathNav(i)}>/</span>
+				</span>)}
+			{this._getSelectedPathPart() &&
+				<span className={TreeStyles.path_selected}>
+				<span className={TreeStyles.path_part}>{this._getSelectedPathPart()}</span>
+				<span className={TreeStyles.path_sep}>/</span></span>}
+			{this._getSelectedFile() &&
+				<span className={TreeStyles.path_selected}>
+				<span className={TreeStyles.path_part}>{this._getSelectedFile()}</span></span>}
+		</div>);
+
 		return (
 			<div className={this.state.visible ? TreeStyles.tree_container : BaseStyles.hidden}>
 				{this._wrapModalContainer(<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
-					<div className={this.state.focused ? TreeStyles.input_group_focused : TreeStyles.input_group_unfocused}>
-						{!this.state.overlay &&
-							<div className={TreeStyles.search_hotkey} data-hint="Use search from any page with this shortcut.">t</div>}
+					<div className={TreeStyles.input_container}>
 						<input className={TreeStyles.input}
 							type="text"
 							onFocus={this._focusInput}
 							onBlur={this._blurInput}
-							placeholder="Search this repository..."
-							ref="input"
-							onKeyDown={this._onType} />
+							autoFocus={true}
+							placeholder="Jump to symbols or files..."
+							ref="input" />
 					</div>
 					<div className={TreeStyles.list_header}>
 						Symbols
@@ -424,8 +485,7 @@ class TreeSearch extends Container {
 					</div>
 					<div className={TreeStyles.list_header}>
 						Files
-						{this.state.query === "" &&
-							<span className={TreeStyles.file_path}>{this.state.currPath.join("/")}</span>}
+						{this.state.query === "" && path}
 					</div>
 					<div className={TreeStyles.list_item_group}>
 						{this._listItems()}

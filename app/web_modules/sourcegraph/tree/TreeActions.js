@@ -60,3 +60,9 @@ export class DownDirectory {
 		this.part = part;
 	}
 }
+
+export class GoToDirectory {
+	constructor(path) {
+		this.path = path;
+	}
+}

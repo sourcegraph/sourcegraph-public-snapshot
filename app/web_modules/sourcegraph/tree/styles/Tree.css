@@ -11,51 +11,33 @@
 
 .tree_container {
 	composes: cf from base;
+	composes: flex justify-center from flexbox;
 }
 
 .tree {
 	composes: f4 from typography;
 	composes: bg-white from colors;
-	composes: center from base;
 	composes: col-9 from grid;
 }
 
 .tree_modal {
 	composes: tree;
 	composes: modal from modals;
+	composes: center from base;
 }
 
-.input_group {
-	composes: flex items-center from flexbox;
-	composes: br3 ba ma3 from base;
-	max-width: 100%;
+.input_container {
+	composes: flex from flexbox;
 }
-.input_group_focused {
-	composes: input_group;
-	composes: input-focus-border from base;
-}
-.input_group_unfocused {
-	composes: input_group;
-	composes: input-border from base;
-}
-
 .input {
+	composes: ma3 from base;
 	composes: text-input from base;
 	composes: flex-auto from flexbox;
-	border: none; /* explicit override should not be composed */
-}
-
-.search_hotkey {
-	composes: f5 b from typography;
-	composes: ml3 mr2 pv2 ph3 br3 code from base;
-	composes: dark-gray bg-black-10 from colors;
-	composes: tooltip-top-right from tooltips;
-	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
-	text-shadow: 0 1px 0 c_white;
 }
 
 .list_header {
-	composes: b f4 tracked from typography;
+	composes: flex items-center from flexbox;
+	composes: b tracked f4 from typography;
 	composes: ph3 pt4 pb2 from base;
 	composes: gray from colors;
 	text-transform: uppercase;
@@ -67,13 +49,15 @@
 
 .list_item {
 	composes: pa3 mh3 bt from base;
-	composes: b--black-20 from colors;
+	composes: blue b--black-20 from colors;
 	composes: sans-serif from typography;
+	word-wrap: break-word;
+	cursor: pointer;
 }
 
 .list_item_selected {
 	composes: list_item;
-	composes: bg-blue-1 from colors;
+	composes: dark-blue bg-blue-1 from colors;
 }
 
 .link {
@@ -86,18 +70,35 @@
 }
 
 .filetype_icon {
-	composes: blue from colors;
-	composes: pr3 from base;
+	composes: pl2 pr3 from base;
 }
 
-.directory_nav_icon {
-	composes: blue from colors;
-	float: right;
+.path_common {
+	composes: ph2 from base;
+	cursor: pointer;
 }
-
+.path_part {
+	composes: path_common;
+	composes: mid-gray from colors;
+}
+.repo_part {
+	composes: path_common;
+	composes: blue-8 from colors;
+}
+.path_sep {
+	composes: path_common;
+	composes: light-silver from colors;
+}
+.path_selected {
+	composes: mid-gray from colors;
+	opacity: .3;
+}
 .file_path {
-	composes: pl3 from base;
+	composes: pl2 pv2 from base;
 	composes: f4 sans-serif from typography;
+	composes: flex flex-wrap items-center flex-auto from flexbox;
+	font-weight: bold;
 	letter-spacing: initial;
 	text-transform: none;
 }
+

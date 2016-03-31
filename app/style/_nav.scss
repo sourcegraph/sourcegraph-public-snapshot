@@ -26,16 +26,19 @@ nav.global {
 			width: $size;
 			&:hover {
 				animation: spin 0.5s ease-in-out 1;
-				@keyframes spin { 50% { transform: rotate(180deg) scale(1.5) } 100% { transform: rotate(180deg) scale(1)} }
+				@keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
 			}
 		}
 		padding: (2*$nav-link-padding);
 	}
 
 	.repo {
-		font-size: $font-size-large;
-		span.part, span.sep {
-			padding: 0;
+		font-size: 2rem;
+		span {
+			display: inline-block;
+		}
+		span.part {
+			padding: 0px 8px;
 			color: #555;
 		}
 		.name {

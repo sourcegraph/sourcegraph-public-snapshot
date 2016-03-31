@@ -1029,7 +1029,7 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 .input-reset { appearance: none; }
 
 .input-border {
-	composes: br3 ba;
+	composes: br2 ba;
 	composes: b--light-silver from colors;
 }
 .input-focus-border {
