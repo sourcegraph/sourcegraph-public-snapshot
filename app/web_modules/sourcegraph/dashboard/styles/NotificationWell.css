@@ -12,4 +12,3 @@
 	composes: notification_box;
 	display: none; /* explicitly override display: flex */
 }
-
