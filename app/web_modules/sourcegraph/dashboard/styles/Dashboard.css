@@ -175,7 +175,7 @@
 }
 
 .search_input {
-	composes: br3 ba pl2 from base;
+	composes: br3 ba pl2 text-input from base;
 	border-top-right-radius: 0px;
 	border-bottom-right-radius: 0px;
 }
