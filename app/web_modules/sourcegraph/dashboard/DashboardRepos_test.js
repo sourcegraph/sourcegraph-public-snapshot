@@ -18,7 +18,9 @@ describe("DashboardRepos", () => {
 		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
 			<DashboardRepos
 				repos={repos}
-				onboarding={{linkGitHub: true}} />
+				linkGitHub={true}
+				linkGitHubURL={""}
+				signup={""} />
 		);
 	});
 });
@@ -34,7 +36,9 @@ describe("DashboardRepos", () => {
 		autotest(testdataUnsupported, `${__dirname}/testdata/DashboardRepos-unsupported.json`,
 			<DashboardRepos
 				repos={repos}
-				onboarding={{linkGitHub: true}} />
+				linkGitHub={true}
+				linkGitHubURL={""}
+				signup={""}/>
 		);
 	});
 });

@@ -16,47 +16,16 @@
 											"type": "span",
 											"props": {
 												"children": [
-													"We've set up Sourcegraph on some of the top Go repositories for you to check out. When you are ready, you can"
-												]
-											}
-										},
-										{
-											"type": "a",
-											"props": {
-												"children": [
-													"set up Sourcegraph for your own repositories!"
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "NotificationWell",
-								"props": {
-									"initVisible": false,
-									"children": [
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													"Almost there! You'll need to "
-												]
-											}
-										},
-										{
-											"type": "a",
-											"props": {
-												"children": [
-													"link your GitHub account"
-												]
-											}
-										},
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													" to use Sourcegraph on your personal repositories"
+													"We've set up Sourcegraph on some of the top Go repositories for you to check out. When you are ready, you can",
+													{
+														"type": "a",
+														"props": {
+															"href": "",
+															"children": [
+																"set up Sourcegraph for your own repositories!"
+															]
+														}
+													}
 												]
 											}
 										}
@@ -74,21 +43,6 @@
 													"Repositories"
 												]
 											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"children": [
-													{
-														"type": "input",
-														"props": {
-															"placeholder": "Filter repositories...",
-															"value": "",
-															"type": "text"
-														}
-													}
-												]
-											}
 										}
 									]
 								}
@@ -101,263 +55,50 @@
 					"props": {
 						"children": [
 							{
-								"type": "div",
+								"type": "RepoList",
 								"props": {
-									"children": [
-										"Go Repositories"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": "0",
-								"props": {
-									"children": [
+									"repos": [
 										{
-											"type": "span",
-											"props": {
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "repo-link",
-															"children": [
-																{
-																	"type": "a",
-																	"key": "name0",
-																	"props": {
-																		"href": "/someURL",
-																		"title": "someURL",
-																		"children": [
-																			"someurl"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													"someDescription"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													{
-														"type": "TimeAgo",
-														"props": {
-															"time": "1970-01-01T00:00:00.001Z"
-														}
-													}
-												]
-											}
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.001Z",
+											"Language": "Scala"
 										}
-									]
+									],
+									"reposDisabled": false
 								}
 							},
 							{
-								"type": "div",
+								"type": "RepoList",
 								"props": {
-									"children": [
-										"Coming Soon"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": "1",
-								"props": {
-									"children": [
+									"repos": [
 										{
-											"type": "span",
-											"props": {
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "repo-link",
-															"children": [
-																{
-																	"type": "a",
-																	"key": "name0",
-																	"props": {
-																		"href": "/someURL",
-																		"title": "someURL",
-																		"children": [
-																			"someurl"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
+											"GitHubID": 1,
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.004Z",
+											"Language": "C++"
 										},
 										{
-											"type": "span",
-											"props": {
-												"children": [
-													"C++ coming soon"
-												]
-											}
+											"GitHubID": 2,
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.003Z",
+											"Language": "C"
 										},
 										{
-											"type": "p",
-											"props": {
-												"children": [
-													"someDescription"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													{
-														"type": "TimeAgo",
-														"props": {
-															"time": "1970-01-01T00:00:00.004Z"
-														}
-													}
-												]
-											}
+											"GitHubID": 3,
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.002Z",
+											"Language": "Python"
 										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": "2",
-								"props": {
-									"children": [
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "repo-link",
-															"children": [
-																{
-																	"type": "a",
-																	"key": "name0",
-																	"props": {
-																		"href": "/someURL",
-																		"title": "someURL",
-																		"children": [
-																			"someurl"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													"C coming soon"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													"someDescription"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													{
-														"type": "TimeAgo",
-														"props": {
-															"time": "1970-01-01T00:00:00.003Z"
-														}
-													}
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": "3",
-								"props": {
-									"children": [
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "repo-link",
-															"children": [
-																{
-																	"type": "a",
-																	"key": "name0",
-																	"props": {
-																		"href": "/someURL",
-																		"title": "someURL",
-																		"children": [
-																			"someurl"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													"Python coming soon"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													"someDescription"
-												]
-											}
-										},
-										{
-											"type": "p",
-											"props": {
-												"children": [
-													{
-														"type": "TimeAgo",
-														"props": {
-															"time": "1970-01-01T00:00:00.002Z"
-														}
-													}
-												]
-											}
-										}
-									]
+									],
+									"reposDisabled": true
 								}
 							}
 						]

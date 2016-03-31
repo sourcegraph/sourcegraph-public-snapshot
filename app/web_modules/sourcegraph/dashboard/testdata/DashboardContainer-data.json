@@ -29,7 +29,7 @@
 											"type": "div",
 											"props": {
 												"children": [
-													"Use Sourcegraph to search, browse, and cross-reference code. ",
+													"Use Sourcegraph to search, browse, and cross-reference code.",
 													{
 														"type": "br",
 														"props": {}

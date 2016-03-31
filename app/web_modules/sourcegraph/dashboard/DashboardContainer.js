@@ -47,22 +47,23 @@ class DashboardContainer extends Container {
 				<div className={Styles.dash_repos}>
 				{!context.currentUser &&
 					<div className={Styles.anon_section}>
-						<img className={Styles.logo} src={this.state.logo}/>
+						<img className={Styles.logo} src={this.state.logo} />
 						<div className={Styles.anon_title}>Understand and use code better</div>
-						<div className={Styles.anon_header_sub}>Use Sourcegraph to search, browse, and cross-reference code. <br />
-						Works with both public and private GitHub repositories written in Go.
+						<div className={Styles.anon_header_sub}>
+							Use Sourcegraph to search, browse, and cross-reference code.
+							<br />
+							Works with both public and private GitHub repositories written in Go.
 						</div>
 					</div>
 				}
-					<div className={Styles.repos}>
-						<DashboardRepos repos={this.state.repos}
-							linkGitHub={this.state.onboarding.linkGitHub}
-							linkGitHubURL={this.state.onboarding.linkGitHubURL || ""}
-							signup={this.state.signup_url}/>
-					</div>
+				<div className={Styles.repos}>
+					<DashboardRepos repos={this.state.repos}
+						linkGitHub={this.state.onboarding.linkGitHub}
+						linkGitHubURL={this.state.onboarding.linkGitHubURL || ""}
+						signup={this.state.signup_url} />
 				</div>
 			</div>
-		);
+		</div>);
 	}
 }
 
