@@ -3,10 +3,10 @@
 {{end}}
 
 {{define "Body"}}
-<h1><a href="/.coverage">Coverage</a></h1>
+<h1><a href="/-/coverage">Coverage</a></h1>
 
 <p>
-<form action="/.coverage" method="post">
+<form action="/-/coverage" method="post">
 <input type="submit" value="Process empty">
 <label>(click only once and then refresh after a bit)</label>
 <input type="hidden" name="process-empty" value="1">
@@ -24,7 +24,7 @@
 <th title="# files not successfully processed">Uncovered files</th>
 </tr>
 {{range .Langs}}
-<tr><th colspan="6"><a href="/.coverage?lang={{.Lang}}">{{.Lang}}</a></th></tr>
+<tr><th colspan="6"><a href="/-/coverage?lang={{.Lang}}">{{.Lang}}</a></th></tr>
 {{range .RepoCov}}
 {{if .SuccessfullyBuilt}}
 <tr>
