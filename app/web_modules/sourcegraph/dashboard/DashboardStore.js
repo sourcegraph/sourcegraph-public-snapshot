@@ -18,7 +18,7 @@ export class DashboardStore extends Store {
 			this.repos = deepFreeze((window.repos || []).concat(window.remoteRepos || []));
 			this.onboarding = deepFreeze(window.onboarding);
 			if (this.onboarding.linkGitHub) {
-				this.repos = deepFreeze((window.repos || []).concat(exampleRepos));
+				this.repos = deepFreeze(exampleRepos);
 			}
 		} else {
 			this.repos = [];
