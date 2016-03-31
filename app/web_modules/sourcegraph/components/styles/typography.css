@@ -148,3 +148,11 @@ code, .code { font-family: Consolas, monaco, monospace; }
 	.indent-l { text-indent: 1em; margin-top: 0; margin-bottom: 0; }
 	.truncate-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+@value repo_updated #bfc2d0;
+
+@value c_text-dark #344a66;
+.bg-text-dark {background-color: c_text-dark;}
+.text-dark {color: c_text-dark;}
+
+@value c_warning-color #ffffe6;
+.bg-warning-color {background-color: c_warning-color;}

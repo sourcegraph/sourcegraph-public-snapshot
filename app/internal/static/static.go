@@ -21,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
@@ -110,7 +109,7 @@ func (mw *staticMiddleware) Middleware(w http.ResponseWriter, r *http.Request, n
 	mw.debugf("request for %q from dir %q\n", r.URL.Path, Flags.Dir)
 
 	// If user is logged in and visits the home page, redirect them to dashboard.
-	if r.URL.Path == "/" && handlerutil.UserFromRequest(r) != nil {
+	if r.URL.Path == "/" {
 		mw.debugf("request for %q, redirecting user to app home page\n", r.URL.Path)
 		next(w, r)
 		return

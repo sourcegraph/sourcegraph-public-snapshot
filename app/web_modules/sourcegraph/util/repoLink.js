@@ -1,6 +1,7 @@
 import React from "react";
-
 import * as router from "sourcegraph/util/router";
+// TODO: Add a styles file for everyone to refer to
+import Styles from "sourcegraph/dashboard/styles/Dashboard.css";
 
 
 // repoLink is swiped from app/repo.go.
@@ -18,7 +19,7 @@ function repoLink(repoURI, disableLink) {
 			if (disableLink) {
 				collection.push(<span className="name" key={`name${i}`} title={repoURI}>{parts[i]}</span>);
 			} else {
-				collection.push(<a className="name" key={`name${i}`} href={router.repo(repoURI)} title={repoURI}>{parts[i]}</a>);
+				collection.push(<a className={Styles.bold_link} key={`name${i}`} href={router.repo(repoURI)} title={repoURI}>{parts[i]}</a>);
 			}
 		} else {
 			collection.push(<span className="part" key={`part${i}`}>{parts[i]}</span>);

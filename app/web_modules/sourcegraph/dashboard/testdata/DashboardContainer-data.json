@@ -2,28 +2,39 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "dashboard-container row",
 			"children": [
 				{
 					"type": "div",
 					"props": {
-						"className": "dash-repos col-lg-9 col-md-8",
 						"children": [
-							{
-								"type": "AlertContainer",
-								"props": {}
-							},
 							{
 								"type": "div",
 								"props": {
-									"className": "dash-repos-header",
 									"children": [
 										{
-											"type": "h3",
+											"type": "img",
 											"props": {
-												"className": "your-repos",
+												"src": ""
+											}
+										},
+										{
+											"type": "div",
+											"props": {
 												"children": [
-													"Repositories"
+													"Understand and use code better"
+												]
+											}
+										},
+										{
+											"type": "div",
+											"props": {
+												"children": [
+													"Use Sourcegraph to search, browse, and cross-reference code. ",
+													{
+														"type": "br",
+														"props": {}
+													},
+													"Works with both public and private GitHub repositories written in Go."
 												]
 											}
 										}
@@ -31,27 +42,18 @@
 								}
 							},
 							{
-								"type": "DashboardRepos",
+								"type": "div",
 								"props": {
-									"repos": []
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"props": {
-						"className": "dash-users col-lg-3 col-md-4",
-						"children": [
-							{
-								"type": "UserList",
-								"props": {
-									"users": [],
-									"currentUser": {
-										"Name": "abc xyz"
-									},
-									"onboarding": {}
+									"children": [
+										{
+											"type": "DashboardRepos",
+											"props": {
+												"repos": [],
+												"linkGitHubURL": "",
+												"signup": ""
+											}
+										}
+									]
 								}
 							}
 						]

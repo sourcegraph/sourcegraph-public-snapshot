@@ -1,0 +1,22 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value flexbox "sourcegraph/components/styles/flexbox.css";
+
+.notification_box {
+	composes: flex from flexbox;
+	composes: flex-wrap from flexbox;
+	composes: bg-warning-color from typography;
+	composes: ba from base;
+	composes: b--light-gray from colors;
+	composes: br3 from base;
+	composes: pa4 from base;
+	composes: text-dark from typography;
+}
+
+.notification_box_hidden {
+	composes: notification_box;
+	/* TODO: Figure out to get composes: hidden from base */
+	display: none;
+}
+

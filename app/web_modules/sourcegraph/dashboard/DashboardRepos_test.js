@@ -9,16 +9,17 @@ import testdataUnsupported from "sourcegraph/dashboard/testdata/DashboardRepos-u
 
 describe("DashboardRepos", () => {
 	it("should render repos", () => {
+		let repos=[{
+			Private: false,
+			URI: "someURL",
+			Description: "someDescription",
+			UpdatedAt: moment(),
+			Language: "Go",
+		}];
 		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
 			<DashboardRepos
-				repos={[{
-					Private: false,
-					URI: "someURL",
-					Description: "someDescription",
-					UpdatedAt: moment(),
-					Language: "Go",
-				}]}
-				linkGitHub={false} />
+				repos={repos}
+				onboarding={{linkGitHub: true}} />
 		);
 	});
 });
@@ -34,7 +35,7 @@ describe("DashboardRepos", () => {
 		autotest(testdataUnsupported, `${__dirname}/testdata/DashboardRepos-unsupported.json`,
 			<DashboardRepos
 				repos={repos}
-				linkGitHub={false} />
+				onboarding={{linkGitHub: true}} />
 		);
 	});
 });

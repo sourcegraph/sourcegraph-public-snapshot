@@ -1,0 +1,168 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value flexbox "sourcegraph/components/styles/flexbox.css";
+
+@value search_height 30px;
+
+.repos {
+	composes: col-8 from grid;
+}
+.repos_list {
+	composes: mt5 from base;
+	/*composes: col-7 from grid;*/
+}
+
+.anon_section {
+	composes: mt5 from base
+}
+
+.dash_repos {
+	composes: flex from flexbox;
+	composes: flex-column from flexbox;
+	composes: items-center from flexbox;
+	composes: center from base;
+}
+
+.logo {
+	composes: center from base;
+	display: block;
+	/*composes: col-6 from grid;*/
+}
+
+.wrap_link {
+	composes: ml1 from base;
+	composes: mr1 from base;
+}
+
+.anon_header {
+	composes: center from base;
+}
+
+.bold_link {
+	composes: b from typography;
+}
+
+.anon_title {
+	composes: f1 from typography;
+	composes: tc from typography;
+	composes: mt3 from base;
+	composes: text-dark from typography;
+}
+
+.anon_header_sub {
+	composes: f3 from typography;
+	composes: tc from typography;
+	composes: mt3 from base;
+	color: #7794ae;
+}
+
+.anon_repo {
+	composes: col from grid;
+	composes: col-4 from grid;
+}
+
+.dashboard_container {
+	composes: pt5 from base;
+}
+
+.section_header {
+	composes: f1 from typography;
+	composes: mt4 from base;
+	display: block;
+	composes: text-dark from typography;
+	composes: b from base;
+}
+
+.repo_list_header {
+	composes: b f3 ph3 pt4 pb2 tracked from base;
+	composes: gray from base;
+	text-transform: uppercase;
+}
+
+.repo_list_header_temp {
+	composes: b f3 ph3 pt4 pb2 tracked from base;
+	composes: gray from base;
+	text-transform: uppercase;
+	margin-left: -1em;
+}
+
+.repo_description {
+	composes: fw4 from typography;
+	composes: f3 from typography;
+	composes: mb3 from base;
+	composes: mt3 from base;
+	color: #969896;
+}
+
+.repo_updated {
+	composes: fw7 from typography;
+	text-transform: uppercase;
+	composes: mb3 from base;
+	composes: f4 from typography;
+	composes: tracked from base;
+	composes: moon-gray from colors;
+}
+
+.repo_title {
+	composes: fw4 from typography;
+	composes: f2 from typography;
+	composes: black from colors;
+	display: block;
+}
+
+.repo_title_link {
+	composes: repo_title;
+	composes: b from typography;
+}
+
+.list_item_group {
+	composes: pb3 from base;
+}
+
+.list_item {
+	composes: pa3 from base;
+	composes: mh3 from base;
+	/*composes: bt b--black-20 from base;*/
+	composes: sans-serif from base;
+	border-bottom: 1px solid #ddd;
+}
+
+.list_item_bottom {
+	composes: list_item;
+	border-bottom-style: none; 
+	/*composes: bb0 from typography;*/
+}
+
+.list_item_disabled {
+	composes: list_item;
+	composes: bg-near-white  from colors;
+}
+
+.list_item_disabled_bottom {
+	composes: list_item_disabled;
+	border-bottom-style: none; 
+}
+
+.repo_disable_reason {
+	composes: i from typography;
+	color: #bfc2d0;
+	composes: f4 from typography;
+	display: block;
+}
+
+.section_header_searchbar {
+	composes: progress from base;
+}
+
+.search_bar {
+	composes: col-right col-2 from grid;
+	right: 20%;
+	display: flex;
+	height: search_height;
+}
+
+.search_input {
+	composes: br3 ba pl2 text-input from base;
+}
