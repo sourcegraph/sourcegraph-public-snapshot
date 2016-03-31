@@ -145,7 +145,6 @@ class DashboardRepos extends Component {
 									value={this.state.searchQuery}
 									onChange={this._handleSearch}
 									type="text" />
-								<div className={Styles.search_button}><img className={Styles.search_mag} src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Magnifying_glass_icon.svg/1024px-Magnifying_glass_icon.svg.png"></img></div>
 						</div>}
 					</div>
 				</nav>
