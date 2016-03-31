@@ -90,9 +90,9 @@ class DashboardRepos extends Component {
 		if (this._canMirror(a) && !this._canMirror(b)) return -1;
 		let ta = this._repoTime(a);
 		let tb = this._repoTime(b);
-		if (ta < tb) return -1;
+		if (ta < tb) return 1;
 		else if (ta === tb) return 0;
-		return 1;
+		return -1;
 	}
 
 	_repoDisabled(repo) {

@@ -206,7 +206,7 @@
 											"type": "span",
 											"props": {
 												"children": [
-													"Python coming soon"
+													"C++ coming soon"
 												]
 											}
 										},
@@ -225,7 +225,7 @@
 													{
 														"type": "TimeAgo",
 														"props": {
-															"time": "1970-01-01T00:00:00.002Z"
+															"time": "1970-01-01T00:00:00.004Z"
 														}
 													}
 												]
@@ -332,7 +332,7 @@
 											"type": "span",
 											"props": {
 												"children": [
-													"C++ coming soon"
+													"Python coming soon"
 												]
 											}
 										},
@@ -351,7 +351,7 @@
 													{
 														"type": "TimeAgo",
 														"props": {
-															"time": "1970-01-01T00:00:00.004Z"
+															"time": "1970-01-01T00:00:00.002Z"
 														}
 													}
 												]
