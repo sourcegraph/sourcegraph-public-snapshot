@@ -134,7 +134,7 @@ func processState(unprocessed map[string][]RegexpRule, processed map[string][]Re
 	tokens := []RegexpRule{}
 
 	for _, tdef := range unprocessed[state] {
-		if tdef.include != `` {
+		if tdef.include != "" {
 			processed[state] = []RegexpRule{}
 			tokens = append(tokens, processState(unprocessed, processed, tdef.include)...)
 			processed[state] = tokens

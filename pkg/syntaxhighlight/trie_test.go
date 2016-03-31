@@ -162,8 +162,8 @@ func TestTrie(t *testing.T) {
 
 func compareTries(t *testing.T, label string, actual *trie, expected *trie) {
 	if !reflect.DeepEqual(actual, expected) {
-		aJson, _ := json.MarshalIndent(actual, ``, `  `)
-		eJson, _ := json.MarshalIndent(expected, ``, `  `)
+		aJson, _ := json.MarshalIndent(actual, "", "  ")
+		eJson, _ := json.MarshalIndent(expected, "", "  ")
 		t.Errorf("%s got != want\ngot:\n%s\nwant:\n%s",
 			"ab",
 			aJson,

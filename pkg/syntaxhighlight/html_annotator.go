@@ -1,8 +1,9 @@
 package syntaxhighlight
 
 import (
-	"github.com/sourcegraph/annotate"
 	"strings"
+
+	"github.com/sourcegraph/annotate"
 )
 
 // HTMLConfig is an object responsible for producing CSS classes for lexer tokens
@@ -26,7 +27,7 @@ func (self pygmentsHTMLConfig) GetTokenClass(token Token) string {
 		tokens = append([]string{ttype.Name}, tokens...)
 		ttype = ttype.parent
 	}
-	return strings.Join(tokens, `-`)
+	return strings.Join(tokens, "-")
 }
 
 // HTMLConfig implementation that keeps mapping between token type and CSS class to use.
@@ -41,12 +42,12 @@ func (self PaletteHTMLConfig) GetTokenClass(token Token) string {
 	ttype := token.Type
 	for ttype != nil {
 		ret := self.Palette[ttype.Name]
-		if ret != `` {
+		if ret != "" {
 			return ret
 		}
 		ttype = ttype.parent
 	}
-	return ``
+	return ""
 }
 
 // Pygments-like HTML config

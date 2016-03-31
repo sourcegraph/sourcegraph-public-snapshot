@@ -1,10 +1,6 @@
 package syntaxhighlight
 
-import (
-	"path/filepath"
-
-	"github.com/sourcegraph/annotate"
-)
+import "github.com/sourcegraph/annotate"
 
 // Annotator receives tokens from lexer and converts them into annotations
 type Annotator interface {
@@ -16,29 +12,15 @@ type Annotator interface {
 	Done() error
 }
 
-// Scans source code and produces array of annotations
-// - src source code to scan
-// - fileName source code's name. Using it to determine lexer to use. Has precedence over mimeType
-// - mimeType source code's MIME type. Using it to determine lexer to use.
-// - annotator object that transforms tokens to annotations
-func Annotate(src []byte, fileName string, mimeType string, annotator Annotator) (annotate.Annotations, error) {
+// Annotate scans source code with the lexer and annotator.
+func Annotate(src []byte, lexer Lexer, annotator Annotator) (annotate.Annotations, error) {
 	annotations := make(annotate.Annotations, 0, 100)
 
-	var lexer Lexer
-	if fileName != `` {
-		lexer = NewLexerByExtension(filepath.Ext(fileName))
-	} else {
-		lexer = NewLexerByMimeType(mimeType)
-	}
+	lexer.Init(src)
 	err := annotator.Init()
 	if err != nil {
 		return nil, err
 	}
-	if lexer == nil {
-		// falling back
-		lexer = &fallbackLexer{}
-	}
-	lexer.Init(src)
 	pos := 0
 	t := lexer.NextToken()
 	for t != nil {
