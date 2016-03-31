@@ -27,7 +27,7 @@ dependencies:
 
   cache_directories:
     - ~/google-cloud-sdk
-    - ~/protobuf-3.0.0-beta-1
+    - ~/protobuf-3.0.0-beta-1/src
     - ~/musl
     - ~/cache
 
