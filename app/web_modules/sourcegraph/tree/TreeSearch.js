@@ -439,9 +439,10 @@ class TreeSearch extends Container {
 		const pathNav = (i) => () => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory(
 			update(this.state.currPath, {$splice: [[i + 1, this.state.currPath.length - 1 - i]]})
 		));
+		const repoParts = this.state.repo.split("/");
 		const path = (<div className={TreeStyles.file_path}>
 			<span className={TreeStyles.repo_part}
-				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>thesrc</span>
+				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>{repoParts[repoParts.length - 1]}</span>
 			<span className={TreeStyles.path_sep}
 				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>/</span>
 			{this.state.currPath.map((part, i) => <span key={i}>
