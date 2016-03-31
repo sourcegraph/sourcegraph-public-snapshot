@@ -45,7 +45,7 @@ type langCoverage struct {
 }
 
 func AddRoutes(r *router.Router) {
-	r.Path("/.coverage").Methods("GET", "POST").Handler(internal.Handler(serveCoverage))
+	r.Path("/-/coverage").Methods("GET", "POST").Handler(internal.Handler(serveCoverage))
 }
 
 // serveCoverage serves a dashboard summarizing Sourcegraph's coverage of the top repositories in
