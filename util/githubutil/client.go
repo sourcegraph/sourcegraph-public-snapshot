@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 
@@ -105,6 +107,9 @@ func (c *Config) baseTransport() http.RoundTripper {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
+	if githubcli.Config.Disable {
+		transport = disabledTransport{}
+	}
 
 	// Retry GitHub API requests (sometimes the connection is dropped,
 	// and we don't want to fail the whole request tree because of 1
@@ -132,6 +137,12 @@ func (c *Config) applyAppdash(t http.RoundTripper) http.RoundTripper {
 		Recorder:  appdash.NewRecorder(c.AppdashSpanID, traceutil.DefaultCollector),
 		Transport: t,
 	}
+}
+
+type disabledTransport struct{}
+
+func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	return nil, errors.New("http: github communication disabled")
 }
 
 // Default is the default configuration for the GitHub API client, with auth and token URLs for github.com and client ID/secret values taken from the environment.
