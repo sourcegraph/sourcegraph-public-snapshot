@@ -17,7 +17,7 @@ push:
 
 $(TOOLCHAINS): srclib
 	@if [ ! -d cache/sourcegraph.com/sourcegraph/$@ ]; then \
-		git clone https://sourcegraph.com/sourcegraph/$@ cache/sourcegraph.com/sourcegraph/$@; \
+		git clone https://github.com/sourcegraph/$@ cache/sourcegraph.com/sourcegraph/$@; \
 	fi;
 	docker build -t sourcegraph/$@ -f ./Dockerfile.$@ .
 
@@ -35,7 +35,7 @@ srclib: cache/sourcegraph.com/sourcegraph/srclib
 	docker run -v ${PWD}:/out sourcegraph/srclib
 
 cache/sourcegraph.com/sourcegraph/srclib:
-	git clone https://sourcegraph.com/sourcegraph/srclib cache/sourcegraph.com/sourcegraph/srclib
+	git clone https://github.com/sourcegraph/srclib cache/sourcegraph.com/sourcegraph/srclib
 
 srclib-clean:
 	rm ./srclib
