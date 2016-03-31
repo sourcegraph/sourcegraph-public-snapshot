@@ -86,7 +86,7 @@ func New(base *mux.Router) *Router {
 	base.Path("/").Methods("GET").Name(Home)
 	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
 
-	base.Path("/builds").Methods("GET").Name(Builds)
+	base.Path("/.builds").Methods("GET").Name(Builds)
 
 	base.Path("/login").Methods("GET", "POST").Name(LogIn)
 	base.Path("/join").Methods("GET", "POST").Name(SignUp)
