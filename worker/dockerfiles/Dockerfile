@@ -6,7 +6,10 @@ FROM golang:1.6-alpine
 # Install srclib from source
 RUN apk --update add git make
 
-ADD cache/sourcegraph.com/sourcegraph/srclib $GOPATH/src/sourcegraph.com/sourcegraph/srclib
+ARG URL
+ADD $URL /toolchain/t
+RUN (cd /toolchain && tar xfz t && rm t && mv * t) || true
+RUN mkdir -p $GOPATH/src/sourcegraph.com/sourcegraph && mv /toolchain/t $GOPATH/src/sourcegraph.com/sourcegraph/srclib
 WORKDIR $GOPATH/src/sourcegraph.com/sourcegraph/srclib
 
 # Generate static binary

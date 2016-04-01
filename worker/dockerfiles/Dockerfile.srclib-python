@@ -5,7 +5,6 @@
 # Dependencies
 #
 FROM python:2.7-slim
-ARG TOOLCHAIN_VERSION
 
 # Adding Golang based on
 # https://github.com/docker-library/golang/blob/1eab0db63794152b4516dbcb70270eb9dced4cbd/1.5/Dockerfile
@@ -30,7 +29,10 @@ ENV PATH /usr/local/go/bin:$PATH
 ENV GOPATH /srclib/toolchains
 ENV PATH $PATH:$GOPATH/bin
 ENV SRCLIBPATH $GOPATH/src
-ADD cache/sourcegraph.com/sourcegraph/srclib-python $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
+ARG TOOLCHAIN_URL
+ADD $TOOLCHAIN_URL /toolchain/t
+RUN (cd /toolchain && tar xfz t && rm t && mv * /toolchain/t) || true
+RUN mkdir -p $SRCLIBPATH/sourcegraph.com/sourcegraph && mv /toolchain/t $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 RUN make
 

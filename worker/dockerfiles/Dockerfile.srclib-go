@@ -11,7 +11,10 @@ RUN apk --update add git make
 ENV GOPATH /srclib/toolchains
 ENV PATH $PATH:$GOPATH/bin
 ENV SRCLIBPATH $GOPATH/src
-ADD cache/sourcegraph.com/sourcegraph/srclib-go $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
+ARG TOOLCHAIN_URL
+ADD $TOOLCHAIN_URL /toolchain/t
+RUN (cd /toolchain && tar xfz t && rm t && mv * t) || true
+RUN mkdir -p $SRCLIBPATH/sourcegraph.com/sourcegraph && mv /toolchain/t $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-go
 RUN make
 

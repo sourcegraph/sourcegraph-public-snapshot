@@ -10,7 +10,10 @@ RUN apt-get install -qq git make
 
 # Install srclib-csharp executable
 ENV SRCLIBPATH /srclib/toolchains
-ADD cache/sourcegraph.com/sourcegraph/srclib-csharp $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
+ARG TOOLCHAIN_URL
+ADD $TOOLCHAIN_URL /toolchain/t
+RUN (cd /toolchain && tar xfz t && rm t && mv * /toolchain/t) || true
+RUN mkdir -p $SRCLIBPATH/sourcegraph.com/sourcegraph && mv /toolchain/t $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-csharp
 RUN make
 

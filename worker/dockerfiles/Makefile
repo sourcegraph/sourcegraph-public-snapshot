@@ -3,9 +3,8 @@
 # Note: this Makefile should be run from its containing directory.
 
 TOOLCHAINS ?= srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript srclib-csharp
-TOOLCHAIN_REPOS = $(shell echo $(addprefix "cache/sourcegraph.com/sourcegraph/", $(TOOLCHAINS)))
 
-.PHONY: default build push $(TOOLCHAINS) toolchain-repos-all toolchain-repos-clean srclib-clean
+.PHONY: default build push $(TOOLCHAINS) srclib-clean
 
 default:
 	@echo "See README.md for instructions"
@@ -16,27 +15,14 @@ push:
 	for t in $(TOOLCHAINS); do docker push sourcegraph/$$t; done;
 
 $(TOOLCHAINS): srclib
-	@if [ ! -d cache/sourcegraph.com/sourcegraph/$@ ]; then \
-		git clone https://github.com/sourcegraph/$@ cache/sourcegraph.com/sourcegraph/$@; \
-	fi;
-	docker build -t sourcegraph/$@ -f ./Dockerfile.$@ .
-
-$(TOOLCHAIN_REPOS):
-	git clone $(subst cache/,https://,$@) $@
-
-toolchain-repos-all: $(TOOLCHAIN_REPOS)
-
-toolchain-repos-clean:
-	for t in $(TOOLCHAIN_REPOS); do rm -rf $$t; done;
+	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/$@ master | awk '{ print $$1 }'))
+	docker build --build-arg TOOLCHAIN_URL=https://github.com/sourcegraph/$@/tarball/${COMMIT} -t sourcegraph/$@ -f ./Dockerfile.$@ .
 
 # Generates srclib binary
-srclib: cache/sourcegraph.com/sourcegraph/srclib
-	docker build -t sourcegraph/srclib .
+srclib:
+	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/srclib master | awk '{ print $$1 }'))
+	docker build --build-arg URL=https://github.com/sourcegraph/srclib/tarball/${COMMIT} -t sourcegraph/srclib .
 	docker run -v ${PWD}:/out sourcegraph/srclib
-
-cache/sourcegraph.com/sourcegraph/srclib:
-	git clone https://github.com/sourcegraph/srclib cache/sourcegraph.com/sourcegraph/srclib
 
 srclib-clean:
 	rm ./srclib
-	rm -rf cache/sourcegraph.com/sourcegraph/srclib

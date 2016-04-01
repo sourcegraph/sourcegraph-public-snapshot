@@ -11,9 +11,8 @@ Instructions for deploying srclib updates to Sourcegraph.com
 2. Run:
 
 ```
-make srclib-clean
-make srclib
-make toolchain-repos-clean
+make srclib-clean && make srclib
+make build && make push
 ```
 
 If updating a single toolchain, run:
@@ -22,24 +21,14 @@ If updating a single toolchain, run:
 TOOLCHAINS=$TOOLCHAIN_NAME make build && make push
 ```
 
-If updating all toolchains (or making an update to srclib core), run:
-
-```
-make build && make push
-```
-
 3. Bounce the Sourcegraph.com workers so they pick up the latest Docker images.
 
 Development
 -----------
 
-The `Makefile` checks out copies of the srclib core and srclib
-toolchain repositories to the `cache/` directory and uses these to
-build the Docker images. These can be re-fetched using `make
-srclib-clean && make srclib` and `make toolchain-repos-clean && make
-toolchain-repos-all`.
+During development of srclib, clone a local copy of your toolchain
+repository to a subdirectory and pass it to the Dockerfile:
 
-During development of srclib, clone your local copy of srclib core or
-srclib toolchain(s) to the proper subdirectory of `cache/` and then
-run `TOOLCHAINS=$TOOLCHAIN_NAME make build`. Then restart your
-Sourcegraph development server.
+```
+docker build --build-arg TOOLCHAIN_URL=path/to/local/toolchain/repo -t sourcegraph/$@ -f ./Dockerfile.$@ .
+```
