@@ -25,4 +25,4 @@ srclib:
 	docker run -v ${PWD}:/out sourcegraph/srclib
 
 srclib-clean:
-	rm ./srclib
+	rm -f ./srclib
