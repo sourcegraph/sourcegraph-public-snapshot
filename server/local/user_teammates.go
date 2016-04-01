@@ -48,8 +48,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		ghOrgNames = append(ghOrgNames, org.Login)
 	}
 
-	numUsers := 0
-	userList := make([]*sourcegraph.RemoteUser, 0)
+	var userList []*sourcegraph.RemoteUser
 	for _, org := range ghOrgs {
 		members, err := ghOrgsStore.ListMembers(githubCtx, sourcegraph.OrgSpec{Org: org.Login}, &sourcegraph.OrgListMembersOptions{
 			ListOptions: sourcegraph.ListOptions{PerPage: 1000},
@@ -62,12 +61,11 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		var wg sync.WaitGroup
 		for i := range members {
 			currentOrgLogin := org.Login
-			userList = append(userList, &sourcegraph.RemoteUser{
+			currentUser := &sourcegraph.RemoteUser{
 				RemoteAccount: members[i],
 				Organization:  currentOrgLogin,
-			})
-			currentUser := userList[numUsers]
-			numUsers += 1
+			}
+			userList = append(userList, currentUser)
 
 			wg.Add(1)
 			go func() {
@@ -91,16 +89,15 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		wg.Wait()
 	}
 
-	if numUsers == 0 {
+	if len(userList) == 0 {
 		currentUser, _ := usersStore.Get(ctx, *user)
 		userList = append(userList, &sourcegraph.RemoteUser{
 			RemoteAccount: currentUser,
 			Organization:  currentUser.Login,
 		})
-		numUsers += 1
 	}
 
-	githubUIDs := make([]int, 0)
+	var githubUIDs []int
 	for _, user := range userList {
 		githubUIDs = append(githubUIDs, int(user.RemoteAccount.UID))
 	}
@@ -112,7 +109,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	// uidMap maps a github UID to the list of UIDs of Sourcegraph user
 	// accounts that are linked to that GitHub account.
 	uidMap := make(map[int32][]int32)
-	sgUIDs := make([]int32, 0)
+	var sgUIDs []int32
 	for _, tok := range linkedUserTokens {
 		ghID := int32(tok.ExtUID)
 		sgID := int32(tok.User)
