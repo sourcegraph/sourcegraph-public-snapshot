@@ -14,7 +14,7 @@ Test plan
 [TODO: Description of what you've done to test the change and what the reviewer should do]
 
 - [ ] Security: there are no any security regressions.
-- [ ] [Ops](checklist.md#ops): monitoring / alerts / user tracking have been updated or are unnecessary.
+- [ ] [Ops](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/tree/.github/checklist.md#ops): monitoring / alerts / user tracking have been updated or are unnecessary.
 - [ ] Performance: there are no performance regressions.
 - [ ] Integration tests: integration tests are implemented or unnecessary.
 - [ ] Unit tests: every new exported function has a unit test (for both primary and edge cases).
