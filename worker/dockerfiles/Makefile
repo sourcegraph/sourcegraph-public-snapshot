@@ -4,7 +4,7 @@
 
 TOOLCHAINS ?= srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript srclib-csharp
 
-.PHONY: default build push $(TOOLCHAINS) srclib-clean
+.PHONY: default build push $(TOOLCHAINS) clean
 
 default:
 	@echo "See README.md for instructions"
@@ -21,8 +21,15 @@ $(TOOLCHAINS): srclib
 # Generates srclib binary
 srclib:
 	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/srclib master | awk '{ print $$1 }'))
-	docker build --build-arg URL=https://github.com/sourcegraph/srclib/tarball/${COMMIT} -t sourcegraph/srclib .
+	@if [ -z "$$DEV" ]; then \
+		docker build --build-arg URL=https://github.com/sourcegraph/srclib/tarball/${COMMIT} -t sourcegraph/srclib . ; \
+	else \
+		rm -rf cache/srclib; \
+		mkdir -p cache; \
+		git clone $$GOPATH/src/sourcegraph.com/sourcegraph/srclib cache/srclib; \
+		docker build --build-arg URL=cache/srclib -t sourcegraph/srclib . ; \
+	fi;
 	docker run -v ${PWD}:/out sourcegraph/srclib
 
-srclib-clean:
+clean:
 	rm -f ./srclib
