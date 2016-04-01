@@ -6,7 +6,7 @@ Description
 ----------
 [TODO: Detailed description of the change]
 
-- [ ] This change includes hacks or adds significant complexity.
+- [ ] This change does NOT include hacks or add significant complexity (if it does, explain why and how above).
 - [ ] Every exported definition has a docstring. New packages have a package doc.
 
 Test plan
