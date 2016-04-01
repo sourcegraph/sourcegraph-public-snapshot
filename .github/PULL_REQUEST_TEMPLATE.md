@@ -1,20 +1,17 @@
 TL;DR
 -----
-
-[One-line description of the change]
+[TODO: One-line description of the change]
 
 Description
 ----------
-
-[Detailed description of the change]
+[TODO: Detailed description of the change]
 
 - [ ] This change includes hacks or adds significant complexity.
 - [ ] Every exported definition has a docstring. New packages have a package doc.
 
 Test plan
 ---------
-
-[Description of what you've done to test the change and what the reviewer should do]
+[TODO: Description of what you've done to test the change and what the reviewer should do]
 
 - [ ] Security: there are no any security regressions.
 - [ ] [Ops](checklist.md#ops): monitoring / alerts / user tracking have been updated or are unnecessary.
