@@ -101,7 +101,6 @@ class DashboardRepos extends Component {
 	}
 
 	render() {
-		console.log(this._showNoGoRepoWell());
 		const filteredRepos = this.state.repos.filter(this._showRepo).sort(this._repoSort);
 
 		return (
