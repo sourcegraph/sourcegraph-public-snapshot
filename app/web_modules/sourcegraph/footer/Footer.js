@@ -15,8 +15,8 @@ class Footer extends Component {
 	}
 	render() {
 		return (
-			<div className={Styles.footer_div}>
-				<div className={Styles.left_div}>
+			<div className={Styles.footer}>
+				<div className={Styles.left_container}>
 					<div className={Styles.left_inline}>
 						<a href="#">
 							<img src={this.state.logo} />
@@ -31,28 +31,28 @@ class Footer extends Component {
 						</span>
 					</div>
 				</div>
-				<div className={Styles.list_container}>
+				<div className={Styles.right_container}>
 					<div className={Styles.list}>
-						<span className={Styles.list_header}>Company</span>
+						<div className={Styles.list_header}>Company</div>
 						<a className={Styles.list_element} href="/about/">About</a>
 						<a className={Styles.list_element} href="/careers/">Careers</a>
 						<a className={Styles.list_element} href="/blog/">Blog</a>
 						<a className={Styles.list_element} href="mailto:support@sourcegraph.com">Contact</a>
 					</div>
 					<div className={Styles.list}>
-						<span className={Styles.list_header}>Community</span>
+						<div className={Styles.list_header}>Community</div>
 						<a className={Styles.list_element} href="http://www.meetup.com/Sourcegraph-Hacker-Meetup/">Meetups</a>
 						<a className={Styles.list_element} href="https://twitter.com/srcgraph">Twitter</a>
 						<a className={Styles.list_element} href="https://www.facebook.com/sourcegraph">Facebook</a>
 						<a className={Styles.list_element} href="https://www.youtube.com/channel/UCOy2N25-AHqE43XupT9mwZQ">YouTube</a>
 					</div>
 					<div className={Styles.list}>
-						<span className={Styles.list_header}>Initiatives</span>
+						<div className={Styles.list_header}>Initiatives</div>
 						<a className={Styles.list_element} href="https://srclib.org/" _target="_blank">srclib</a>
 						<a className={Styles.list_element} href="https://fair.io/" _target="_blank">fair.io</a>
 					</div>
 					<div className={Styles.rightmost_list}>
-						<span className={Styles.list_header}>Legal</span>
+						<div className={Styles.list_header}>Legal</div>
 						<a className={Styles.list_element} href="/about/">Security</a>
 						<a className={Styles.list_element} href="/privacy/">Privacy</a>
 						<a className={Styles.list_element} href="/legal/">Terms</a>

@@ -3,14 +3,15 @@
 @value typography "sourcegraph/components/styles/typography.css";
 @value flexbox "sourcegraph/components/styles/flexbox.css";
 
-.footer_div{
+.footer {
 	composes: bt mb4 pt5 mh7 ph3 from base;
 	composes: b--light-gray from colors;
 	composes: flex flex-wrap from flexbox;
 }
 
-.left_div {
+.left_container {
 	composes: flex-auto from flexbox;
+	composes: mr3 from base;
 }
 
 .left_inline {
@@ -32,7 +33,7 @@
 	display: block;
 }
 
-.list_container {
+.right_container {
 	composes: flex flex-wrap from flexbox;
 }
 
@@ -48,12 +49,11 @@
 .list_header {
 	composes: f3 from typography;
 	composes: mb3 from base;
-	display: block;
 	text-transform: uppercase;
 }
 
 .list_element {
-	display: block;
 	composes: f3 from typography;
 	composes: mb2 from base;
+	display: block;
 }

@@ -20,10 +20,7 @@
 													{
 														"type": "a",
 														"props": {
-<<<<<<< 58ae7227a1a2de804f821efd538d633130fc338a
 															"href": "",
-=======
->>>>>>> Fixed tests, and added proper newlines to EOF
 															"children": [
 																"set up Sourcegraph for your own repositories!"
 															]
@@ -46,17 +43,6 @@
 													"Repositories"
 												]
 											}
-<<<<<<< 58ae7227a1a2de804f821efd538d633130fc338a
-=======
-										},
-										{
-											"type": "input",
-											"props": {
-												"placeholder": "Filter repositories...",
-												"value": "",
-												"type": "text"
-											}
->>>>>>> Fixed tests, and added proper newlines to EOF
 										}
 									]
 								}
