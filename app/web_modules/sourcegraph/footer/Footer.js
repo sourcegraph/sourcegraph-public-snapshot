@@ -8,7 +8,8 @@ class Footer extends Component {
 		super(props);
 		const logoUrl = !global.document ? "" : document.getElementById("FooterContainer").dataset.logo;
 		const versionNumber = !global.document ? "" : document.getElementById("FooterContainer").dataset.version;
-		this.state = {logo: logoUrl, version: versionNumber};
+		const buildVersion = !global.document ? "" : document.getElementById("FooterContainer").dataset.buildversion;
+		this.state = {logo: logoUrl, version: versionNumber, build_version: buildVersion};
 	}
 	reconcileState(state, props) {
 		Object.assign(state, props);
@@ -26,8 +27,10 @@ class Footer extends Component {
 							<span className={Styles.address_line}>121 2nd St, Ste 200</span>
 							<span className={Styles.address_line}>San Francisco, CA 94105</span>
 						</div>
-						<span className={Styles.version_number}>
-							{this.state.version}
+						<span title={this.state.build_version}>
+							<span className={Styles.version_number}>
+								{this.state.version}
+							</span>
 						</span>
 					</div>
 				</div>
