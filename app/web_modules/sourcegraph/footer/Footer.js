@@ -56,7 +56,7 @@ class Footer extends Component {
 					</div>
 					<div className={Styles.rightmost_list}>
 						<div className={Styles.list_header}>Legal</div>
-						<a className={Styles.list_element} href="/about/">Security</a>
+						<a className={Styles.list_element} href="/security/">Security</a>
 						<a className={Styles.list_element} href="/privacy/">Privacy</a>
 						<a className={Styles.list_element} href="/legal/">Terms</a>
 					</div>
