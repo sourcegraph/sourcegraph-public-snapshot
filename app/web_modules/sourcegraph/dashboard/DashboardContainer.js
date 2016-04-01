@@ -1,7 +1,6 @@
 import React from "react";
 
 import Container from "sourcegraph/Container";
-import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import context from "sourcegraph/context";

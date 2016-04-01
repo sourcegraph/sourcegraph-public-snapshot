@@ -43,10 +43,6 @@ func New(base *mux.Router) *mux.Router {
 		Methods("POST").
 		Name(UserContentUpload)
 
-	base.Path("/.invite-bulk").
-		Methods("POST").
-		Name(UserInviteBulk)
-
 	return base
 }
 
