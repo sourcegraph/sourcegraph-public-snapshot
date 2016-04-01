@@ -24,6 +24,7 @@ func TestRepoFlow(t *T) error {
 		return err
 	}
 
+	// Check that the "mux.go" codefile link appears.
 	var muxLink selenium.WebElement
 	getMuxLink := func() bool {
 		spans, err := wd.FindElements(selenium.ByTagName, "span")
@@ -51,6 +52,7 @@ func TestRepoFlow(t *T) error {
 		"Wait for mux.go codefile link to appear",
 	)
 
+	// If the link is displayed and enabled, click it.
 	isDisplayed, err := muxLink.IsDisplayed()
 	if err != nil {
 		return err
@@ -72,7 +74,6 @@ func TestRepoFlow(t *T) error {
 	muxLink.Click()
 
 	// Wait for redirect.
-
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
@@ -80,8 +81,8 @@ func TestRepoFlow(t *T) error {
 		"wait for mux.go codefile to load",
 	)
 
+	// Wait for the "Router" ref span to appear.
 	var routerSpan selenium.WebElement
-
 	getSpans := func() bool {
 		spans, err := wd.FindElements(selenium.ByTagName, "span")
 		if err != nil {
@@ -110,7 +111,7 @@ func TestRepoFlow(t *T) error {
 	)
 	// TODO(poler) test the hover-over
 
-	// 1s sleep because the span needs time to be linkified.
+	// Perform a 1s sleep because the span needs time to be linkified.
 	time.Sleep(1 * time.Second)
 	routerSpan.Click()
 
