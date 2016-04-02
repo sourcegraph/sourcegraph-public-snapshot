@@ -1,12 +1,12 @@
-Description
-----------
+## Description
+
 [TODO: Detailed description of the change]
 
 - [ ] This change does NOT include hacks or add significant complexity (if it does, explain why and how above).
 - [ ] Every exported identifier has a docstring. New packages have a package doc.
 
-Test plan
----------
+## Test plan
+
 [TODO: Description of what you've done to test the change and what the reviewer should do]
 
 - [ ] Security: there are no any security regressions.

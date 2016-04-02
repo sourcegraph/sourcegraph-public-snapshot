@@ -1,5 +1,5 @@
 Code Review Checklist Details
-=========
+=============================
 
 This document provides a detailed descriptions of items in [`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md).
 
@@ -32,7 +32,7 @@ Ops
 - FullStory
 
 Explicit omissions
----------------
+------------------
 
 - Public API: we currently do not support backcompat against our API. This will change when we publish it.
 - Data migration: this should be obvious enough to the person making the change, and given that we have continuous deployment, migration issues should be detected and rolled back pretty quickly.
