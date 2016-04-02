@@ -1,7 +1,3 @@
-TL;DR
------
-[TODO: One-line description of the change]
-
 Description
 ----------
 [TODO: Detailed description of the change]
