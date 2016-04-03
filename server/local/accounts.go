@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mattbaird/gochimp"
@@ -16,7 +15,6 @@ import (
 	"google.golang.org/grpc/codes"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -28,12 +26,9 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-var Accounts sourcegraph.AccountsServer = &accounts{mu: &sync.Mutex{}}
+var Accounts sourcegraph.AccountsServer = &accounts{}
 
-type accounts struct {
-	// Used for gating access to AcceptInvite method
-	mu *sync.Mutex
-}
+type accounts struct{}
 
 func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
 	usersStore := store.UsersFromContext(ctx)
@@ -47,10 +42,6 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	if numUsers == 0 {
 		write = true
 		admin = true
-	} else if !authutil.ActiveFlags.AllowAllLogins && !authpkg.ActorFromContext(ctx).HasAdminAccess() {
-		// This is not the first user and this instance does not allow
-		// non-admin users to create an account without an invite.
-		return nil, grpc.Errorf(codes.PermissionDenied, "cannot sign up without an invite")
 	}
 
 	user, err := s.createWithPermissions(ctx, newAcct, write, admin)
@@ -67,8 +58,8 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		URL:     newAcct.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
 	})
-	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0, "")
-	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email, false)
+	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0)
+	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email)
 
 	return user, err
 }
@@ -114,139 +105,6 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {
 	if err := store.AccountsFromContext(ctx).Update(ctx, in); err != nil {
-		return nil, err
-	}
-
-	return &pbtypes.Void{}, nil
-}
-
-func (s *accounts) Invite(ctx context.Context, invite *sourcegraph.AccountInvite) (*sourcegraph.PendingInvite, error) {
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Invite"); err != nil {
-		invite.Admin = false
-		invite.Write = false
-	}
-
-	senderUID := int32(authpkg.ActorFromContext(ctx).UID)
-	if senderUID == 0 {
-		return nil, grpc.Errorf(codes.PermissionDenied, "need to be signed in to complete this operation")
-	}
-
-	usersStore := store.UsersFromContext(ctx)
-	senderUser, err := usersStore.Get(ctx, sourcegraph.UserSpec{UID: senderUID})
-	if err != nil {
-		return nil, grpc.Errorf(codes.PermissionDenied, "sender must be a valid user")
-	}
-
-	var senderIdentifier string
-	if senderUser.Name != "" {
-		senderIdentifier = senderUser.Name
-	} else {
-		senderIdentifier = senderUser.Login
-	}
-
-	user, _ := usersStore.GetWithEmail(elevatedActor(ctx), sourcegraph.EmailAddr{Email: invite.Email})
-	if user != nil {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "a user already exists with this email")
-	}
-
-	invitesStore := store.InvitesFromContext(ctx)
-
-	token, err := invitesStore.CreateOrUpdate(elevatedActor(ctx), invite)
-	if err != nil {
-		return nil, err
-	}
-
-	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.SignUp))
-	v := url.Values{}
-	v.Set("email", invite.Email)
-	v.Set("token", token)
-	u.RawQuery = v.Encode()
-	var emailSent bool
-	if notif.EmailIsConfigured() {
-		_, err = sendEmail("invite-user", "", invite.Email, "You've been invited to Sourcegraph", nil,
-			[]gochimp.Var{gochimp.Var{Name: "INVITE_LINK", Content: u.String()},
-				gochimp.Var{Name: "SENDER", Content: senderIdentifier}})
-		if err == nil {
-			emailSent = true
-		} else if err != errEmailNotConfigured {
-			return nil, grpc.Errorf(codes.Internal, "Error sending email: %s", err)
-		}
-	}
-
-	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
-		Type:    "notif",
-		Service: "user_invite",
-		Method:  "Accounts.Invite",
-		URL:     invite.Email,
-		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
-	})
-	eventsutil.LogSendInvite(ctx, invite.Email, token, invite.Admin, invite.Write)
-
-	return &sourcegraph.PendingInvite{
-		Link:      u.String(),
-		Token:     token,
-		EmailSent: emailSent,
-	}, nil
-}
-
-func (s *accounts) AcceptInvite(ctx context.Context, acceptedInvite *sourcegraph.AcceptedInvite) (*sourcegraph.UserSpec, error) {
-	// Prevent concurrent executions of this method to avoid creation of multiple
-	// accounts from the same invite token.
-	// TODO(performance): partition lock on token string.
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	invitesStore := store.InvitesFromContext(ctx)
-
-	invite, err := invitesStore.Retrieve(ctx, acceptedInvite.Token)
-	if err != nil {
-		return nil, grpc.Errorf(codes.PermissionDenied, "Invite is invalid: %v", err)
-	}
-
-	if invite.Email != acceptedInvite.Account.Email {
-		return nil, grpc.Errorf(codes.PermissionDenied, "Invite is invalid for the provided email: %s", acceptedInvite.Account.Email)
-	}
-
-	userSpec, err := s.createWithPermissions(ctx, acceptedInvite.Account, invite.Write, invite.Admin)
-	// If an account could not be created, mark the invite as unused.
-	if err != nil {
-		// If MarkUnused fails, we ignore the error. This makes the invite unusable,
-		// so the admin must send a new invite to the user.
-		invitesStore.MarkUnused(ctx, acceptedInvite.Token)
-		return nil, err
-	}
-
-	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
-		Type:    "notif",
-		UID:     userSpec.UID,
-		Service: "new_user",
-		Method:  "Accounts.AcceptInvite",
-		Result:  userSpec.Login,
-		URL:     invite.Email,
-		Message: fmt.Sprintf("write:%v admin:%v", invite.Write, invite.Admin),
-	})
-
-	eventsutil.LogCreateAccount(ctx, acceptedInvite.Account, invite.Admin, invite.Write, false, acceptedInvite.Token[:5])
-	sendAccountCreateSlackMsg(ctx, userSpec.Login, invite.Email, true)
-
-	if err := invitesStore.Delete(ctx, acceptedInvite.Token); err != nil {
-		return nil, err
-	}
-
-	return userSpec, err
-}
-
-func (s *accounts) ListInvites(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AccountInviteList, error) {
-	invites, err := store.InvitesFromContext(ctx).List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sourcegraph.AccountInviteList{Invites: invites}, err
-}
-
-func (s *accounts) DeleteInvite(ctx context.Context, inviteSpec *sourcegraph.InviteSpec) (*pbtypes.Void, error) {
-	if err := store.InvitesFromContext(ctx).DeleteByEmail(ctx, inviteSpec.Email); err != nil {
 		return nil, err
 	}
 
@@ -379,13 +237,10 @@ func (s *accounts) Delete(ctx context.Context, person *sourcegraph.PersonSpec) (
 	return &pbtypes.Void{}, nil
 }
 
-func sendAccountCreateSlackMsg(ctx context.Context, login, email string, invite bool) {
+func sendAccountCreateSlackMsg(ctx context.Context, login, email string) {
 	if strings.HasPrefix(login, e2etestuser.Prefix) {
 		return
 	}
 	msg := fmt.Sprintf("New user *%s* signed up! (%s)", login, email)
-	if invite {
-		msg += " (via an invite)"
-	}
 	notif.PostOnboardingNotif(msg)
 }

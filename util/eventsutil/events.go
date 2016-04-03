@@ -46,9 +46,8 @@ func LogRegisterServer(clientName string) {
 	})
 }
 
-// LogCreateAccount records that an account got created, possibly with
-// an invite code.
-func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admin, write, firstUser bool, inviteCode string) {
+// LogCreateAccount records that an account got created.
+func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admin, write, firstUser bool) {
 	clientID := sourcegraphClientID
 	userID, deviceID := getUserAndDeviceID(ctx, newAcct.Login)
 
@@ -74,15 +73,8 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 		firstUserStr = "True"
 	}
 
-	// Truncate the invite code to avoid any possibility of leaking it, but
-	// preserve the ability to link the sign up event with the invite event
-	if len(inviteCode) > 5 {
-		inviteCode = inviteCode[:5]
-	}
-
 	eventProperties := map[string]string{
-		"FirstUser":  firstUserStr,
-		"InviteCode": inviteCode,
+		"FirstUser": firstUserStr,
 	}
 
 	Log(&sourcegraph.Event{
@@ -91,32 +83,6 @@ func LogCreateAccount(ctx context.Context, newAcct *sourcegraph.NewAccount, admi
 		UserID:          userID,
 		DeviceID:        deviceID,
 		UserProperties:  userProperties,
-		EventProperties: eventProperties,
-	})
-}
-
-// LogSendInvite records that an invite link was created.
-func LogSendInvite(ctx context.Context, email, inviteCode string, admin, write bool) {
-	clientID := sourcegraphClientID
-	userID, deviceID := getUserAndDeviceID(ctx, auth.ActorFromContext(ctx).Login)
-
-	// Truncate the invite code to avoid any possibility of leaking it, but
-	// preserve the ability to link the sign up event with the invite event
-	if len(inviteCode) > 5 {
-		inviteCode = inviteCode[:5]
-	}
-
-	eventProperties := map[string]string{
-		"Invitee":     email,
-		"InviteCode":  inviteCode,
-		"AccessLevel": getAccessLevel(admin, write),
-	}
-
-	Log(&sourcegraph.Event{
-		Type:            "SendInvite",
-		ClientID:        clientID,
-		UserID:          userID,
-		DeviceID:        deviceID,
 		EventProperties: eventProperties,
 	})
 }

@@ -9,7 +9,7 @@ The default authentication mechanism for Sourcegraph is via username & password.
 Passwords are hashed and stored in your PostgreSQL database.
 
 The first user to create an account on a Sourcegraph instance becomes the instance
-admin. The admin may [invite other users and manage access controls]
+admin. The admin may [manage access controls]
 ({{< relref "management/access-control.md" >}}).
 
 ### Resetting passwords

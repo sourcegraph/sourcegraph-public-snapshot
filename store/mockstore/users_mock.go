@@ -73,37 +73,6 @@ func (s *Accounts) Delete(v0 context.Context, v1 int32) error { return s.Delete_
 
 var _ store.Accounts = (*Accounts)(nil)
 
-type Invites struct {
-	CreateOrUpdate_ func(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error)
-	Retrieve_       func(ctx context.Context, token string) (*sourcegraph.AccountInvite, error)
-	MarkUnused_     func(ctx context.Context, token string) error
-	Delete_         func(ctx context.Context, token string) error
-	DeleteByEmail_  func(ctx context.Context, email string) error
-	List_           func(ctx context.Context) ([]*sourcegraph.AccountInvite, error)
-}
-
-func (s *Invites) CreateOrUpdate(ctx context.Context, invite *sourcegraph.AccountInvite) (string, error) {
-	return s.CreateOrUpdate_(ctx, invite)
-}
-
-func (s *Invites) Retrieve(ctx context.Context, token string) (*sourcegraph.AccountInvite, error) {
-	return s.Retrieve_(ctx, token)
-}
-
-func (s *Invites) MarkUnused(ctx context.Context, token string) error {
-	return s.MarkUnused_(ctx, token)
-}
-
-func (s *Invites) Delete(ctx context.Context, token string) error { return s.Delete_(ctx, token) }
-
-func (s *Invites) DeleteByEmail(ctx context.Context, email string) error {
-	return s.DeleteByEmail_(ctx, email)
-}
-
-func (s *Invites) List(ctx context.Context) ([]*sourcegraph.AccountInvite, error) { return s.List_(ctx) }
-
-var _ store.Invites = (*Invites)(nil)
-
 type Directory struct {
 	GetUserByEmail_ func(ctx context.Context, email string) (*sourcegraph.UserSpec, error)
 }

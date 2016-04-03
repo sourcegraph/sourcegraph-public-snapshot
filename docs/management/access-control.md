@@ -10,23 +10,6 @@ The first user to register the Sourcegraph server becomes the server's
 admin. Server admins can use the `src` CLI to grant and revoke other
 users' permissions to access the server.
 
-# Inviting new users
-Admins can create invite links from their Sourcegraph homepage,
-or via the CLI via this command:
-
-	src user invite person1@domain.com person2@domain.com
-
-This will generate invite links for each email address, which must be shared
-with the user to allow them to create an account.
-
-By default, new users have only `read` access on the server, which allows them
-to read and clone code, and create issues. To grant additional privileges to
-the new users, pass the `--write` or `--admin` flag in the command:
-
-	src user invite --write person1@domain.com person2@domain.com
-
-This will grant write access to the accounts created from the generated invite links.
-
 ## Anonymous readers and open logins
 You can set your Sourcegraph server to be publicly readable, for example if your
 code is open or fair source. To configure this, pass the flag `--auth.allow-anon-readers`

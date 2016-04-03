@@ -152,58 +152,6 @@ func (s wrappedAccounts) Update(ctx context.Context, param *sourcegraph.User) (r
 	return
 }
 
-func (s wrappedAccounts) Invite(ctx context.Context, param *sourcegraph.AccountInvite) (res *sourcegraph.PendingInvite, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "Invite", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "Invite", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Accounts.Invite(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.Invite returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedAccounts) AcceptInvite(ctx context.Context, param *sourcegraph.AcceptedInvite) (res *sourcegraph.UserSpec, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "AcceptInvite", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "AcceptInvite", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Accounts.AcceptInvite(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.AcceptInvite returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedAccounts) ListInvites(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.AccountInviteList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "ListInvites", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "ListInvites", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Accounts.ListInvites(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.ListInvites returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedAccounts) DeleteInvite(ctx context.Context, param *sourcegraph.InviteSpec) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Accounts", "DeleteInvite", param)
-	defer func() {
-		trace.After(ctx, "Accounts", "DeleteInvite", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Accounts.DeleteInvite(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Accounts.DeleteInvite returned nil, nil")
-	}
-	return
-}
-
 func (s wrappedAccounts) Delete(ctx context.Context, param *sourcegraph.PersonSpec) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Delete", param)

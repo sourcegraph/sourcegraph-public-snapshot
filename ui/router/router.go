@@ -10,8 +10,6 @@ const (
 	References = "def.refs"
 
 	AppdashUploadPageLoad = "appdash.upload-page-load"
-
-	UserInviteBulk = "user.invite.bulk"
 )
 
 func New(base *mux.Router) *mux.Router {

@@ -914,9 +914,6 @@ message RemoteUser {
 	// Email specifies the primary email of the GitHub user.
 	string Email = 3;
 
-	// IsInvited specifies if a pending invite exists for the user's email (if present).
-	bool IsInvited = 4;
-
 	// Organization specifies which organization this user is part of
 	string Organization = 5;
 }
@@ -1105,18 +1102,6 @@ service Accounts {
 	// Update profile of existing account.
 	rpc Update(User) returns (pbtypes.Void);
 
-	// Invite creates a pending invite and notifies the recipient via email.
-	rpc Invite(AccountInvite) returns (PendingInvite);
-
-	// AcceptInvite uses a pending invite to create a new user account.
-	rpc AcceptInvite(AcceptedInvite) returns (UserSpec);
-
-	// ListInvites lists the pending invites on this server.
-	rpc ListInvites(pbtypes.Void) returns (AccountInviteList);
-
-	// DeleteInvite deletes an existing invite.
-	rpc DeleteInvite(InviteSpec) returns (pbtypes.Void);
-
 	// Delete deletes a user account from this server.
 	rpc Delete(PersonSpec) returns (pbtypes.Void);
 }
@@ -1166,46 +1151,6 @@ message NewAccount {
 
 	// UID is the desired UID for the new user account.
 	int32 UID = 4;
-}
-
-message AccountInvite {
-	// Email is the primary email address for the new user account.
-	string Email = 1;
-
-	// Write, if set, will grant write access to the user.
-	bool Write = 2;
-
-	// Admin, if set, will grant admin access to the user.
-	bool Admin = 3;
-}
-
-// An InviteSpec specifies an existing invite.
-message InviteSpec {
-	// Email is the email address for which the invite was generated.
-	string Email = 1;
-}
-
-message PendingInvite {
-	// Link is the URL for signing up using this invite.
-	string Link = 1;
-
-	// Token identifies the pending invite.
-	string Token = 2;
-
-	// EmailSent is set if the invite link was emailed to the user.
-	bool EmailSent = 3;
-}
-
-message AccountInviteList {
-	repeated AccountInvite Invites = 1;
-}
-
-message AcceptedInvite {
-	// Account holds the desired account details.
-	NewAccount Account = 1;
-
-	// Token identifies the pending invite.
-	string Token = 2;
 }
 
 // UsersService communicates with the users-related endpoints in the Sourcegraph

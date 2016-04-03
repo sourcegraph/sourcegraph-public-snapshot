@@ -45,7 +45,6 @@
 			</p>
 			<button type="submit" class="btn btn-primary btn-lg" tabindex=1>{{if $beforeConnect}}GRANT PERMISSION{{else}}NEXT{{end}}</button>
 			<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-			{{with .SignupForm.Token}}<input type="hidden" name="Token" value="{{.}}">{{end}}
 		</form>
 	</div>
 </div>

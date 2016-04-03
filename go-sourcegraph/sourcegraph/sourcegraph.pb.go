@@ -89,11 +89,6 @@
 		PendingPasswordReset
 		NewPassword
 		NewAccount
-		AccountInvite
-		InviteSpec
-		PendingInvite
-		AccountInviteList
-		AcceptedInvite
 		AuthorizationCodeRequest
 		AuthorizationCode
 		LoginCredentials
@@ -1415,8 +1410,6 @@ type RemoteUser struct {
 	LocalAccount *User `protobuf:"bytes,2,opt,name=LocalAccount" json:"LocalAccount,omitempty"`
 	// Email specifies the primary email of the GitHub user.
 	Email string `protobuf:"bytes,3,opt,name=Email,proto3" json:"Email,omitempty"`
-	// IsInvited specifies if a pending invite exists for the user's email (if present).
-	IsInvited bool `protobuf:"varint,4,opt,name=IsInvited,proto3" json:"IsInvited,omitempty"`
 	// Organization specifies which organization this user is part of
 	Organization string `protobuf:"bytes,5,opt,name=Organization,proto3" json:"Organization,omitempty"`
 }
@@ -1605,61 +1598,6 @@ type NewAccount struct {
 func (m *NewAccount) Reset()         { *m = NewAccount{} }
 func (m *NewAccount) String() string { return proto.CompactTextString(m) }
 func (*NewAccount) ProtoMessage()    {}
-
-type AccountInvite struct {
-	// Email is the primary email address for the new user account.
-	Email string `protobuf:"bytes,1,opt,name=Email,proto3" json:"Email,omitempty"`
-	// Write, if set, will grant write access to the user.
-	Write bool `protobuf:"varint,2,opt,name=Write,proto3" json:"Write,omitempty"`
-	// Admin, if set, will grant admin access to the user.
-	Admin bool `protobuf:"varint,3,opt,name=Admin,proto3" json:"Admin,omitempty"`
-}
-
-func (m *AccountInvite) Reset()         { *m = AccountInvite{} }
-func (m *AccountInvite) String() string { return proto.CompactTextString(m) }
-func (*AccountInvite) ProtoMessage()    {}
-
-// An InviteSpec specifies an existing invite.
-type InviteSpec struct {
-	// Email is the email address for which the invite was generated.
-	Email string `protobuf:"bytes,1,opt,name=Email,proto3" json:"Email,omitempty"`
-}
-
-func (m *InviteSpec) Reset()         { *m = InviteSpec{} }
-func (m *InviteSpec) String() string { return proto.CompactTextString(m) }
-func (*InviteSpec) ProtoMessage()    {}
-
-type PendingInvite struct {
-	// Link is the URL for signing up using this invite.
-	Link string `protobuf:"bytes,1,opt,name=Link,proto3" json:"Link,omitempty"`
-	// Token identifies the pending invite.
-	Token string `protobuf:"bytes,2,opt,name=Token,proto3" json:"Token,omitempty"`
-	// EmailSent is set if the invite link was emailed to the user.
-	EmailSent bool `protobuf:"varint,3,opt,name=EmailSent,proto3" json:"EmailSent,omitempty"`
-}
-
-func (m *PendingInvite) Reset()         { *m = PendingInvite{} }
-func (m *PendingInvite) String() string { return proto.CompactTextString(m) }
-func (*PendingInvite) ProtoMessage()    {}
-
-type AccountInviteList struct {
-	Invites []*AccountInvite `protobuf:"bytes,1,rep,name=Invites" json:"Invites,omitempty"`
-}
-
-func (m *AccountInviteList) Reset()         { *m = AccountInviteList{} }
-func (m *AccountInviteList) String() string { return proto.CompactTextString(m) }
-func (*AccountInviteList) ProtoMessage()    {}
-
-type AcceptedInvite struct {
-	// Account holds the desired account details.
-	Account *NewAccount `protobuf:"bytes,1,opt,name=Account" json:"Account,omitempty"`
-	// Token identifies the pending invite.
-	Token string `protobuf:"bytes,2,opt,name=Token,proto3" json:"Token,omitempty"`
-}
-
-func (m *AcceptedInvite) Reset()         { *m = AcceptedInvite{} }
-func (m *AcceptedInvite) String() string { return proto.CompactTextString(m) }
-func (*AcceptedInvite) ProtoMessage()    {}
 
 // AuthorizationCodeRequest: see
 // https://tools.ietf.org/html/rfc6749#section-4.1.1.
@@ -3906,14 +3844,6 @@ type AccountsClient interface {
 	ResetPassword(ctx context.Context, in *NewPassword, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Update profile of existing account.
 	Update(ctx context.Context, in *User, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// Invite creates a pending invite and notifies the recipient via email.
-	Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*PendingInvite, error)
-	// AcceptInvite uses a pending invite to create a new user account.
-	AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error)
-	// ListInvites lists the pending invites on this server.
-	ListInvites(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AccountInviteList, error)
-	// DeleteInvite deletes an existing invite.
-	DeleteInvite(ctx context.Context, in *InviteSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 	// Delete deletes a user account from this server.
 	Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
 }
@@ -3962,42 +3892,6 @@ func (c *accountsClient) Update(ctx context.Context, in *User, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *accountsClient) Invite(ctx context.Context, in *AccountInvite, opts ...grpc.CallOption) (*PendingInvite, error) {
-	out := new(PendingInvite)
-	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/Invite", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *accountsClient) AcceptInvite(ctx context.Context, in *AcceptedInvite, opts ...grpc.CallOption) (*UserSpec, error) {
-	out := new(UserSpec)
-	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/AcceptInvite", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *accountsClient) ListInvites(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*AccountInviteList, error) {
-	out := new(AccountInviteList)
-	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/ListInvites", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *accountsClient) DeleteInvite(ctx context.Context, in *InviteSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/DeleteInvite", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *accountsClient) Delete(ctx context.Context, in *PersonSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
 	out := new(pbtypes1.Void)
 	err := grpc.Invoke(ctx, "/sourcegraph.Accounts/Delete", in, out, c.cc, opts...)
@@ -4019,14 +3913,6 @@ type AccountsServer interface {
 	ResetPassword(context.Context, *NewPassword) (*pbtypes1.Void, error)
 	// Update profile of existing account.
 	Update(context.Context, *User) (*pbtypes1.Void, error)
-	// Invite creates a pending invite and notifies the recipient via email.
-	Invite(context.Context, *AccountInvite) (*PendingInvite, error)
-	// AcceptInvite uses a pending invite to create a new user account.
-	AcceptInvite(context.Context, *AcceptedInvite) (*UserSpec, error)
-	// ListInvites lists the pending invites on this server.
-	ListInvites(context.Context, *pbtypes1.Void) (*AccountInviteList, error)
-	// DeleteInvite deletes an existing invite.
-	DeleteInvite(context.Context, *InviteSpec) (*pbtypes1.Void, error)
 	// Delete deletes a user account from this server.
 	Delete(context.Context, *PersonSpec) (*pbtypes1.Void, error)
 }
@@ -4083,54 +3969,6 @@ func _Accounts_Update_Handler(srv interface{}, ctx context.Context, dec func(int
 	return out, nil
 }
 
-func _Accounts_Invite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AccountInvite)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AccountsServer).Invite(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Accounts_AcceptInvite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AcceptedInvite)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AccountsServer).AcceptInvite(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Accounts_ListInvites_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(pbtypes1.Void)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AccountsServer).ListInvites(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _Accounts_DeleteInvite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(InviteSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AccountsServer).DeleteInvite(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func _Accounts_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(PersonSpec)
 	if err := dec(in); err != nil {
@@ -4162,22 +4000,6 @@ var _Accounts_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Update",
 			Handler:    _Accounts_Update_Handler,
-		},
-		{
-			MethodName: "Invite",
-			Handler:    _Accounts_Invite_Handler,
-		},
-		{
-			MethodName: "AcceptInvite",
-			Handler:    _Accounts_AcceptInvite_Handler,
-		},
-		{
-			MethodName: "ListInvites",
-			Handler:    _Accounts_ListInvites_Handler,
-		},
-		{
-			MethodName: "DeleteInvite",
-			Handler:    _Accounts_DeleteInvite_Handler,
 		},
 		{
 			MethodName: "Delete",
@@ -8491,16 +8313,6 @@ func (m *RemoteUser) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Email)))
 		i += copy(data[i:], m.Email)
 	}
-	if m.IsInvited {
-		data[i] = 0x20
-		i++
-		if m.IsInvited {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
 	if len(m.Organization) > 0 {
 		data[i] = 0x2a
 		i++
@@ -9096,178 +8908,6 @@ func (m *NewAccount) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *AccountInvite) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AccountInvite) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Email) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Email)))
-		i += copy(data[i:], m.Email)
-	}
-	if m.Write {
-		data[i] = 0x10
-		i++
-		if m.Write {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	if m.Admin {
-		data[i] = 0x18
-		i++
-		if m.Admin {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	return i, nil
-}
-
-func (m *InviteSpec) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *InviteSpec) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Email) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Email)))
-		i += copy(data[i:], m.Email)
-	}
-	return i, nil
-}
-
-func (m *PendingInvite) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *PendingInvite) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Link) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Link)))
-		i += copy(data[i:], m.Link)
-	}
-	if len(m.Token) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Token)))
-		i += copy(data[i:], m.Token)
-	}
-	if m.EmailSent {
-		data[i] = 0x18
-		i++
-		if m.EmailSent {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	return i, nil
-}
-
-func (m *AccountInviteList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AccountInviteList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Invites) > 0 {
-		for _, msg := range m.Invites {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	return i, nil
-}
-
-func (m *AcceptedInvite) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AcceptedInvite) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Account != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Account.Size()))
-		n84, err := m.Account.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n84
-	}
-	if len(m.Token) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Token)))
-		i += copy(data[i:], m.Token)
-	}
-	return i, nil
-}
-
 func (m *AuthorizationCodeRequest) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -9424,11 +9064,11 @@ func (m *AccessTokenRequest) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.AuthorizationGrant != nil {
-		nn85, err := m.AuthorizationGrant.MarshalTo(data[i:])
+		nn84, err := m.AuthorizationGrant.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn85
+		i += nn84
 	}
 	if len(m.Scope) > 0 {
 		for _, s := range m.Scope {
@@ -9456,11 +9096,11 @@ func (m *AccessTokenRequest_AuthorizationCode) MarshalTo(data []byte) (int, erro
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.AuthorizationCode.Size()))
-		n86, err := m.AuthorizationCode.MarshalTo(data[i:])
+		n85, err := m.AuthorizationCode.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n86
+		i += n85
 	}
 	return i, nil
 }
@@ -9470,11 +9110,11 @@ func (m *AccessTokenRequest_ResourceOwnerPassword) MarshalTo(data []byte) (int, 
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.ResourceOwnerPassword.Size()))
-		n87, err := m.ResourceOwnerPassword.MarshalTo(data[i:])
+		n86, err := m.ResourceOwnerPassword.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n87
+		i += n86
 	}
 	return i, nil
 }
@@ -9484,11 +9124,11 @@ func (m *AccessTokenRequest_BearerJWT) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BearerJWT.Size()))
-		n88, err := m.BearerJWT.MarshalTo(data[i:])
+		n87, err := m.BearerJWT.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n88
+		i += n87
 	}
 	return i, nil
 }
@@ -9723,40 +9363,40 @@ func (m *Def) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n89, err := m.Def.MarshalTo(data[i:])
+	n88, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n89
+	i += n88
 	if m.DocHTML != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.DocHTML.Size()))
-		n90, err := m.DocHTML.MarshalTo(data[i:])
+		n89, err := m.DocHTML.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n90
+		i += n89
 	}
 	if m.FmtStrings != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FmtStrings.Size()))
-		n91, err := m.FmtStrings.MarshalTo(data[i:])
+		n90, err := m.FmtStrings.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n91
+		i += n90
 	}
 	if m.QualifiedName != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.QualifiedName.Size()))
-		n92, err := m.QualifiedName.MarshalTo(data[i:])
+		n91, err := m.QualifiedName.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n92
+		i += n91
 	}
 	if len(m.URL) > 0 {
 		data[i] = 0x2a
@@ -9988,11 +9628,11 @@ func (m *DefListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n93, err := m.ListOptions.MarshalTo(data[i:])
+	n92, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n93
+	i += n92
 	return i, nil
 }
 
@@ -10035,11 +9675,11 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n94, err := m.ListOptions.MarshalTo(data[i:])
+	n93, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n94
+	i += n93
 	return i, nil
 }
 
@@ -10109,20 +9749,20 @@ func (m *DefsGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n95, err := m.Def.MarshalTo(data[i:])
+	n94, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n95
+	i += n94
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n96, err := m.Opt.MarshalTo(data[i:])
+		n95, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n96
+		i += n95
 	}
 	return i, nil
 }
@@ -10157,11 +9797,11 @@ func (m *DefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n97, err := m.ListResponse.MarshalTo(data[i:])
+	n96, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n97
+	i += n96
 	return i, nil
 }
 
@@ -10183,20 +9823,20 @@ func (m *DefsListRefsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n98, err := m.Def.MarshalTo(data[i:])
+	n97, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n98
+	i += n97
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n99, err := m.Opt.MarshalTo(data[i:])
+		n98, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n99
+		i += n98
 	}
 	return i, nil
 }
@@ -10231,11 +9871,11 @@ func (m *RefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n100, err := m.StreamResponse.MarshalTo(data[i:])
+	n99, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n100
+	i += n99
 	return i, nil
 }
 
@@ -10257,38 +9897,38 @@ func (m *Delta) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n101, err := m.Base.MarshalTo(data[i:])
+	n100, err := m.Base.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n100
+	data[i] = 0x12
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
+	n101, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n101
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n102, err := m.Head.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n102
 	if m.BaseCommit != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BaseCommit.Size()))
-		n103, err := m.BaseCommit.MarshalTo(data[i:])
+		n102, err := m.BaseCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n103
+		i += n102
 	}
 	if m.HeadCommit != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeadCommit.Size()))
-		n104, err := m.HeadCommit.MarshalTo(data[i:])
+		n103, err := m.HeadCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n104
+		i += n103
 	}
 	return i, nil
 }
@@ -10311,11 +9951,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileDiff.Size()))
-	n105, err := m.FileDiff.MarshalTo(data[i:])
+	n104, err := m.FileDiff.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n105
+	i += n104
 	if len(m.FileDiffHunks) > 0 {
 		for _, msg := range m.FileDiffHunks {
 			data[i] = 0x12
@@ -10343,11 +9983,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n106, err := m.Stats.MarshalTo(data[i:])
+	n105, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n106
+	i += n105
 	if m.Filtered {
 		data[i] = 0x30
 		i++
@@ -10392,20 +10032,20 @@ func (m *DeltaFiles) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Delta.Size()))
-		n107, err := m.Delta.MarshalTo(data[i:])
+		n106, err := m.Delta.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n107
+		i += n106
 	}
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n108, err := m.Stats.MarshalTo(data[i:])
+	n107, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n108
+	i += n107
 	return i, nil
 }
 
@@ -10463,11 +10103,11 @@ func (m *DeltaListFilesOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n109, err := m.DeltaFilter.MarshalTo(data[i:])
+	n108, err := m.DeltaFilter.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n109
+	i += n108
 	if len(m.Ignore) > 0 {
 		for _, s := range m.Ignore {
 			data[i] = 0x32
@@ -10504,19 +10144,19 @@ func (m *DeltaSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n110, err := m.Base.MarshalTo(data[i:])
+	n109, err := m.Base.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n109
+	data[i] = 0x12
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
+	n110, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n110
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n111, err := m.Head.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n111
 	return i, nil
 }
 
@@ -10538,20 +10178,20 @@ func (m *DeltasListFilesOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n112, err := m.Ds.MarshalTo(data[i:])
+	n111, err := m.Ds.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n112
+	i += n111
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n113, err := m.Opt.MarshalTo(data[i:])
+		n112, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n113
+		i += n112
 	}
 	return i, nil
 }
@@ -10584,11 +10224,11 @@ func (m *RepoTreeGetOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.GetFileOptions.Size()))
-	n114, err := m.GetFileOptions.MarshalTo(data[i:])
+	n113, err := m.GetFileOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n114
+	i += n113
 	return i, nil
 }
 
@@ -10610,11 +10250,11 @@ func (m *GetFileOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-	n115, err := m.FileRange.MarshalTo(data[i:])
+	n114, err := m.FileRange.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n115
+	i += n114
 	if m.EntireFile {
 		data[i] = 0x10
 		i++
@@ -10676,11 +10316,11 @@ func (m *RepoTreeSearchOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchOptions.Size()))
-	n116, err := m.SearchOptions.MarshalTo(data[i:])
+	n115, err := m.SearchOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n116
+	i += n115
 	return i, nil
 }
 
@@ -10702,19 +10342,19 @@ func (m *RepoTreeSearchResult) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchResult.Size()))
-	n117, err := m.SearchResult.MarshalTo(data[i:])
+	n116, err := m.SearchResult.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n116
+	data[i] = 0x12
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
+	n117, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n117
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n118, err := m.RepoRev.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n118
 	return i, nil
 }
 
@@ -10736,20 +10376,20 @@ func (m *RepoTreeGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n119, err := m.Entry.MarshalTo(data[i:])
+	n118, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n119
+	i += n118
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n120, err := m.Opt.MarshalTo(data[i:])
+		n119, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n120
+		i += n119
 	}
 	return i, nil
 }
@@ -10772,20 +10412,20 @@ func (m *RepoTreeSearchOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n121, err := m.Rev.MarshalTo(data[i:])
+	n120, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n121
+	i += n120
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n122, err := m.Opt.MarshalTo(data[i:])
+		n121, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n122
+		i += n121
 	}
 	return i, nil
 }
@@ -10808,11 +10448,11 @@ func (m *RepoTreeListOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n123, err := m.Rev.MarshalTo(data[i:])
+	n122, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n123
+	i += n122
 	return i, nil
 }
 
@@ -10879,11 +10519,11 @@ func (m *VCSSearchResultList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n124, err := m.ListResponse.MarshalTo(data[i:])
+	n123, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n124
+	i += n123
 	return i, nil
 }
 
@@ -10906,21 +10546,21 @@ func (m *TreeEntry) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BasicTreeEntry.Size()))
-		n125, err := m.BasicTreeEntry.MarshalTo(data[i:])
+		n124, err := m.BasicTreeEntry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n125
+		i += n124
 	}
 	if m.FileRange != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-		n126, err := m.FileRange.MarshalTo(data[i:])
+		n125, err := m.FileRange.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n126
+		i += n125
 	}
 	if len(m.ContentsString) > 0 {
 		data[i] = 0x1a
@@ -10998,11 +10638,11 @@ func (m *TreeEntrySpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n127, err := m.RepoRev.MarshalTo(data[i:])
+	n126, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n127
+	i += n126
 	if len(m.Path) > 0 {
 		data[i] = 0x12
 		i++
@@ -11103,11 +10743,11 @@ func (m *FileToken) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-		n128, err := m.Entry.MarshalTo(data[i:])
+		n127, err := m.Entry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n128
+		i += n127
 	}
 	return i, nil
 }
@@ -11290,19 +10930,19 @@ func (m *RegisteredClient) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x5a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n129, err := m.CreatedAt.MarshalTo(data[i:])
+	n128, err := m.CreatedAt.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n128
+	data[i] = 0x62
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
+	n129, err := m.UpdatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n129
-	data[i] = 0x62
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
-	n130, err := m.UpdatedAt.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n130
 	return i, nil
 }
 
@@ -11383,11 +11023,11 @@ func (m *RegisteredClientListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n131, err := m.ListOptions.MarshalTo(data[i:])
+	n130, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n131
+	i += n130
 	return i, nil
 }
 
@@ -11421,11 +11061,11 @@ func (m *RegisteredClientList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n132, err := m.StreamResponse.MarshalTo(data[i:])
+	n131, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n132
+	i += n131
 	return i, nil
 }
 
@@ -11537,11 +11177,11 @@ func (m *UserPermissionsOptions) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.ClientSpec.Size()))
-		n133, err := m.ClientSpec.MarshalTo(data[i:])
+		n132, err := m.ClientSpec.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n133
+		i += n132
 	}
 	if m.UID != 0 {
 		data[i] = 0x10
@@ -11636,11 +11276,11 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-		n134, err := m.CreatedAt.MarshalTo(data[i:])
+		n133, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n134
+		i += n133
 	}
 	if len(m.Message) > 0 {
 		data[i] = 0x42
@@ -11736,11 +11376,11 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
-		n135, err := m.Timestamp.MarshalTo(data[i:])
+		n134, err := m.Timestamp.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n135
+		i += n134
 	}
 	if len(m.UserProperties) > 0 {
 		keysForUserProperties := make([]string, 0, len(m.UserProperties))
@@ -11850,11 +11490,11 @@ func (m *NotifyGenericEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Actor.Size()))
-		n136, err := m.Actor.MarshalTo(data[i:])
+		n135, err := m.Actor.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n136
+		i += n135
 	}
 	if len(m.Recipients) > 0 {
 		for _, msg := range m.Recipients {
@@ -12049,20 +11689,20 @@ func (m *AnnotationsListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n137, err := m.Entry.MarshalTo(data[i:])
+	n136, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n137
+	i += n136
 	if m.Range != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Range.Size()))
-		n138, err := m.Range.MarshalTo(data[i:])
+		n137, err := m.Range.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n138
+		i += n137
 	}
 	return i, nil
 }
@@ -13306,9 +12946,6 @@ func (m *RemoteUser) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
-	if m.IsInvited {
-		n += 2
-	}
 	l = len(m.Organization)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
@@ -13554,75 +13191,6 @@ func (m *NewAccount) Size() (n int) {
 	}
 	if m.UID != 0 {
 		n += 1 + sovSourcegraph(uint64(m.UID))
-	}
-	return n
-}
-
-func (m *AccountInvite) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Email)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if m.Write {
-		n += 2
-	}
-	if m.Admin {
-		n += 2
-	}
-	return n
-}
-
-func (m *InviteSpec) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Email)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *PendingInvite) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Link)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if m.EmailSent {
-		n += 2
-	}
-	return n
-}
-
-func (m *AccountInviteList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.Invites) > 0 {
-		for _, e := range m.Invites {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *AcceptedInvite) Size() (n int) {
-	var l int
-	_ = l
-	if m.Account != nil {
-		l = m.Account.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	return n
 }
@@ -24311,26 +23879,6 @@ func (m *RemoteUser) Unmarshal(data []byte) error {
 			}
 			m.Email = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsInvited", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsInvited = bool(v != 0)
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Organization", wireType)
@@ -26186,525 +25734,6 @@ func (m *NewAccount) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AccountInvite) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AccountInvite: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AccountInvite: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Email", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Email = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Write", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Write = bool(v != 0)
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Admin", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Admin = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *InviteSpec) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: InviteSpec: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: InviteSpec: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Email", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Email = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PendingInvite) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PendingInvite: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PendingInvite: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Link", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Link = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EmailSent", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.EmailSent = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AccountInviteList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AccountInviteList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AccountInviteList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Invites", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Invites = append(m.Invites, &AccountInvite{})
-			if err := m.Invites[len(m.Invites)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AcceptedInvite) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AcceptedInvite: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AcceptedInvite: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Account", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Account == nil {
-				m.Account = &NewAccount{}
-			}
-			if err := m.Account.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

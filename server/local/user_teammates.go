@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
-	"sourcegraph.com/sqs/pbtypes"
 )
 
 func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.Teammates, error) {
@@ -134,15 +133,6 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 		sgUserMap[u.UID] = u
 	}
 
-	// Fetch pending invites.
-	invitesMap := make(map[string]struct{})
-	inviteList, err := svc.Accounts(ctx).ListInvites(elevatedActor(ctx), &pbtypes.Void{})
-	if err == nil {
-		for _, invite := range inviteList.Invites {
-			invitesMap[invite.Email] = struct{}{}
-		}
-	}
-
 	for _, user := range userList {
 		ghUID := user.RemoteAccount.UID
 		if sgUIDs, ok := uidMap[ghUID]; ok {
@@ -152,13 +142,6 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 				if sgUser, ok := sgUserMap[id]; ok {
 					user.LocalAccount = sgUser
 				}
-			}
-		}
-		// Check if there is a pending invite for this user.
-		ghEmail := user.Email
-		if ghEmail != "" {
-			if _, ok := invitesMap[ghEmail]; ok {
-				user.IsInvited = true
 			}
 		}
 	}

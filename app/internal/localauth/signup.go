@@ -31,8 +31,6 @@ func init() {
 type signupForm struct {
 	sourcegraph.NewAccount
 	form.Validation
-
-	Token string
 }
 
 func (f *signupForm) Validate() {
@@ -62,14 +60,12 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return fmt.Errorf("parse form error: %s", err)
 	}
-	inviteToken := r.Form.Get("token")
 	email := r.Form.Get("email")
 
 	switch r.Method {
 	case "GET":
 		return serveSignupForm(w, r, signupForm{
 			NewAccount: sourcegraph.NewAccount{Email: email},
-			Token:      inviteToken,
 		})
 	case "POST":
 		return serveSignupSubmit(w, r)
@@ -120,18 +116,7 @@ func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
 		return serveSignupForm(w, r, form)
 	}
 
-	var err error
-
-	if form.Token == "" {
-		_, err = cl.Accounts.Create(ctx, &form.NewAccount)
-	} else {
-		_, err = cl.Accounts.AcceptInvite(ctx, &sourcegraph.AcceptedInvite{
-			Account: &form.NewAccount,
-			Token:   form.Token,
-		})
-	}
-
-	if err != nil {
+	if _, err := cl.Accounts.Create(ctx, &form.NewAccount); err != nil {
 		switch errcode.GRPC(err) {
 		case codes.InvalidArgument:
 			form.AddFieldError("Login", formErrorInvalidUsername)

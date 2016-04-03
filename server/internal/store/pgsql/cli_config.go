@@ -23,7 +23,6 @@ func init() {
 			Repos:              &repos{},
 			RepoStatuses:       &repoStatuses{},
 			Users:              &users{},
-			Invites:            &invites{},
 			RepoPerms:          &repoPerms{},
 		}), nil
 	})

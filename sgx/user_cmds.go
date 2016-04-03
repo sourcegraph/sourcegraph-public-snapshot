@@ -35,24 +35,6 @@ func init() {
 	}
 	createCmd.Aliases = []string{"add"}
 
-	_, err = userGroup.AddCommand("invite",
-		"send an invite to access this server",
-		"Send a user invite.",
-		&userInviteCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = userGroup.AddCommand("rm-invite",
-		"remove an existing, not-yet-accepted invite",
-		"Remove an existing, not-yet-accepted invite.",
-		&userRmInviteCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	listCmd, err := userGroup.AddCommand("list",
 		"list users",
 		"List users.",
@@ -121,71 +103,6 @@ func (c *userCreateCmd) Execute(args []string) error {
 	}
 
 	log.Printf("# Created user %q with UID %d", user.Login, user.UID)
-	return nil
-}
-
-type userInviteCmd struct {
-	Args struct {
-		Emails []string `value-name:"EMAILS" description:"user emails"`
-	} `positional-args:"yes"`
-	Write bool `long:"write" description:"set write permissions on all specified users"`
-	Admin bool `long:"admin" description:"set admin permissions on all specified users"`
-}
-
-func (c *userInviteCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	if len(c.Args.Emails) == 0 {
-		return fmt.Errorf(`Must specify at least one email to invite (e.g. "src user invite EMAIL")`)
-	}
-
-	var success bool
-	for _, email := range c.Args.Emails {
-		pendingInvite, err := cl.Accounts.Invite(client.Ctx, &sourcegraph.AccountInvite{
-			Email: email,
-			Write: c.Write || c.Admin,
-			Admin: c.Admin,
-		})
-		if err != nil {
-			fmt.Printf("FAIL %s: %v\n", email, err)
-			continue
-		}
-		status := fmt.Sprintf("  OK %s: %s", email, pendingInvite.Link)
-		if pendingInvite.EmailSent {
-			status += " (email sent)"
-		}
-		fmt.Println(status)
-		success = true
-	}
-
-	if success {
-		fmt.Println("# Share the above link with the user(s) to accept the invite")
-	}
-
-	return nil
-}
-
-type userRmInviteCmd struct {
-	Args struct {
-		Emails []string `value-name:"EMAILS" description:"user emails"`
-	} `positional-args:"yes"`
-}
-
-func (c *userRmInviteCmd) Execute(args []string) error {
-	cl := client.Client()
-
-	if len(c.Args.Emails) == 0 {
-		return fmt.Errorf(`Must specify at least one email (e.g. "src user rm-invite EMAIL")`)
-	}
-
-	for _, email := range c.Args.Emails {
-		_, err := cl.Accounts.DeleteInvite(client.Ctx, &sourcegraph.InviteSpec{Email: email})
-		if err != nil {
-			return fmt.Errorf("deleting invite for %s: %s", email, err)
-		}
-		log.Printf("%s: deleted invite", email)
-	}
-
 	return nil
 }
 
