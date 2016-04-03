@@ -586,9 +586,6 @@ func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
 // authenticateScopedContext adds a token with the specified scope to the given
 // context. This context can only make gRPC calls that are permitted for the given
 // scope. See the accesscontrol package for information about different scopes.
-//
-// This should be used for authenticating platform apps that will run in-process with
-// the server, but which should have limited access to gRPC operations.
 func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey, scopes []string) (context.Context, error) {
 	src := sharedsecret.TokenSource(k, scopes...)
 	tok, err := src.Token()

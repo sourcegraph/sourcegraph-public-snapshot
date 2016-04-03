@@ -190,9 +190,9 @@ func TestReposService_ConfigureApp_Enable(t *testing.T) {
 	ctx, mock := testContext()
 
 	// Add dummy app.
-	platform.Frames()["b"] = platform.RepoFrame{}
+	platform.Apps["b"] = struct{}{}
 	defer func() {
-		delete(platform.Frames(), "b")
+		delete(platform.Apps, "b")
 	}()
 
 	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", &sourcegraph.RepoConfig{Apps: []string{"a"}})
@@ -226,9 +226,9 @@ func TestReposService_ConfigureApp_Disable(t *testing.T) {
 	ctx, mock := testContext()
 
 	// Add dummy app.
-	platform.Frames()["b"] = platform.RepoFrame{}
+	platform.Apps["b"] = struct{}{}
 	defer func() {
-		delete(platform.Frames(), "b")
+		delete(platform.Apps, "b")
 	}()
 
 	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", &sourcegraph.RepoConfig{Apps: []string{"a", "b"}})

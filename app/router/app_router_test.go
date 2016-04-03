@@ -73,18 +73,6 @@ func TestMatch(t *testing.T) {
 			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
 		},
 
-		// Repo app sub-routes
-		{
-			path:          "/repohost.com/foo/-/app/myapp",
-			wantRouteName: RepoAppFrame,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "", "App": "myapp", "AppPath": ""},
-		},
-		{
-			path:          "/repohost.com/foo/-/app/myapp/foo/.bar/baz",
-			wantRouteName: RepoAppFrame,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo", "Rev": "", "App": "myapp", "AppPath": "/foo/.bar/baz"},
-		},
-
 		// Repo tree
 		{
 			path:          "/repohost.com/foo@mycommitid/-/tree",

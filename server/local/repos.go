@@ -304,7 +304,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 	if op.Enable {
 		// Check that app ID is a valid app. Allow disabling invalid
 		// apps so that obsolete apps can always be removed.
-		if _, present := platform.Frames()[op.App]; !present {
+		if _, present := platform.Apps[op.App]; !present {
 			return nil, grpc.Errorf(codes.InvalidArgument, "app %q is not a valid app ID", op.App)
 		}
 	}

@@ -24,9 +24,6 @@ import (
 	// Misc.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
-
-	// Platform applications
-	_ "sourcegraph.com/sourcegraph/sourcegraph/platform/apps/godoc"
 )
 
 func main() {

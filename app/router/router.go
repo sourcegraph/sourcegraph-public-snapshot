@@ -60,9 +60,6 @@ const (
 	OldDefRedirect = "old-def-redirect"
 
 	OldTreeRedirect = "old-tree-redirect"
-
-	// Platform routes
-	RepoAppFrame = "repo.appframe"
 )
 
 // Router is an app URL router.
@@ -144,14 +141,6 @@ func New(base *mux.Router) *Router {
 	repo.Path(repoBuildPath).Methods("POST").Name(RepoBuildUpdate)
 	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
 	repoBuild.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(RepoBuildTaskLog)
-
-	// This route should be AFTER all other repo/repoRev routes;
-	// otherwise it will match every subroute.
-	//
-	// App is the app ID (e.g., "issues"), and AppPath is an opaque
-	// path that Sourcegraph passes directly to the app. The empty
-	// AppPath is the app's homepage, and it manages its own subpaths.
-	repoRev.PathPrefix(`/app/{App}{AppPath:(?:/.*)?}`).Name(RepoAppFrame)
 
 	return &Router{*base}
 }
