@@ -2,6 +2,7 @@ package coverage
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -21,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
@@ -61,7 +63,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	if !auth.ActorFromContext(ctx).HasAdminAccess() {
-		return fmt.Errorf("must be admin to access coverage dashboard")
+		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("must be admin to access coverage dashboard")}
 	}
 
 	var langs []string
