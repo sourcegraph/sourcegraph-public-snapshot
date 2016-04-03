@@ -4,8 +4,6 @@ package router
 import (
 	"github.com/gorilla/mux"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 )
 
 const (
@@ -22,16 +20,6 @@ func New(base *mux.Router) *mux.Router {
 	}
 
 	base.StrictSlash(true)
-
-	repoRev := base.PathPrefix("/" + routevar.Repo + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").
-		Subrouter()
-
-	def := repoRev.PathPrefix("/def/" + routevar.Def + "/-/").
-		Subrouter()
-
-	def.Path("/refs").
-		Methods("GET").
-		Name(References)
 
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").

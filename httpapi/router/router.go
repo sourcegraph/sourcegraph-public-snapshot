@@ -19,6 +19,7 @@ const (
 	Build            = "build"
 	Builds           = "builds"
 	Def              = "def"
+	DefRefs          = "def.refs"
 	Defs             = "defs"
 	Repo             = "repo"
 	RepoBranches     = "repo.branches"
@@ -78,7 +79,10 @@ func New(base *mux.Router) *mux.Router {
 	// signal in no route logs
 	base.Path("/ext/github/webhook").Methods("GET", "POST").Name(BlackHole)
 
-	repoRev.Path("/def/" + routevar.Def).Methods("GET").Name(Def)
+	defPath := "/def/" + routevar.Def
+	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
+	def.Path("/refs").Methods("GET").Name(DefRefs)
+	repoRev.Path(defPath).Methods("GET").Name(Def) // match subroutes first
 
 	return base
 }

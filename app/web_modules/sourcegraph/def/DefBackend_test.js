@@ -41,7 +41,7 @@ describe("DefBackend", () => {
 	describe("should handle WantRefs", () => {
 		it("for all files", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.ui/someURL/-/refs");
+				expect(url).to.be("/.api/repos/someURL/-/refs");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
@@ -50,7 +50,7 @@ describe("DefBackend", () => {
 		});
 		it("for a specific file", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.ui/someURL/-/refs?Files=f");
+				expect(url).to.be("/.api/repos/someURL/-/refs?Files=f");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
@@ -59,7 +59,7 @@ describe("DefBackend", () => {
 		});
 		it("with no result available", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.ui/someURL/-/refs");
+				expect(url).to.be("/.api/repos/someURL/-/refs");
 				return immediateSyncPromise({status: 200, json: () => null});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {

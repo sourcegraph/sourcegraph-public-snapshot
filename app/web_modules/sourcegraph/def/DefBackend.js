@@ -46,7 +46,7 @@ const DefBackend = {
 			{
 				let refs = DefStore.refs.get(action.defURL, action.file);
 				if (refs === null) {
-					let url = `/.ui${action.defURL}/-/refs`;
+					let url = `/.api/repos${action.defURL}/-/refs`;
 					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
 					DefBackend.fetch(url)
 							.then(checkStatus)

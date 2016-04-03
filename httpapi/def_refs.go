@@ -1,12 +1,10 @@
-package ui
+package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
 	"sort"
 
 	"github.com/gorilla/mux"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -34,7 +32,7 @@ func sortByRefCount(refsPerFile map[string]int) fileList {
 	return fl
 }
 
-func serveRefs(w http.ResponseWriter, r *http.Request) error {
+func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.DefListRefsOptions
@@ -72,11 +70,11 @@ func serveRefs(w http.ResponseWriter, r *http.Request) error {
 
 	refsPerFile := make(map[string]int)
 	for _, ref := range refs.Refs {
-		refsPerFile[ref.File] += 1
+		refsPerFile[ref.File]++
 	}
 	fl := sortByRefCount(refsPerFile)
 
-	return json.NewEncoder(w).Encode(struct {
+	return writeJSON(w, &struct {
 		Total int
 		Files fileList
 		Refs  []*graph.Ref
