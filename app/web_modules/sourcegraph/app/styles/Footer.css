@@ -1,0 +1,60 @@
+@value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.footer {
+	composes: bt mt6 pt5 ph5 center from base;
+	composes: col-11 from grid;
+	composes: b--light-gray from colors;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.left-container {
+	flex: 1 1 auto;
+	composes: mh4 from base;
+}
+
+.left-content {
+	display: inline-block;
+	composes: mb4 from base;
+}
+
+.address {
+	composes: mt3 from base;
+}
+
+.address-line {
+	composes: f4 sans-serif from typography;
+	composes: pt1 from base;
+	display: block;
+}
+
+.version-number {
+	composes: small-text from typography;
+	composes: mt3 from base;
+	display: block;
+}
+
+.right-container {
+	display: flex;
+	flex-wrap: wrap;
+	composes: mh4 from base;
+}
+
+.list {
+	composes: pr6 mb4 from base;
+	flex: 1;
+}
+
+.list-header {
+	composes: subsection-header from typography;
+	composes: mb3 from base;
+}
+
+.list-element {
+	composes: f4 sans-serif from typography;
+	composes: mb2 from base;
+	display: block;
+}

@@ -1,39 +1,46 @@
+// @flow weak
+
 import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
+import {defPath} from "sourcegraph/def";
+import type {Def} from "sourcegraph/def";
+
+function defKey(repo: string, rev: ?string, def: string): string {
+	return `${repo}#${rev || ""}#${def}`;
+}
 
 function defsListKeyFor(repo, rev, query) {
 	return `${repo}#${rev}#${query}`;
 }
 
-function refsKeyFor(defURL, file) {
-	return `${defURL}:${file || ""}`;
+function refsKeyFor(repo: string, rev: ?string, def: string, file: ?string): string {
+	return `${defKey(repo, rev, def)}#${file || ""}`;
 }
 
 export class DefStore extends Store {
-	reset(data) {
+	reset(data?: {defs: any, refs: any}) {
 		this.defs = deepFreeze({
-			content: data && data.defs ? data.defs : {},
-			get(url) {
-				return this.content[url] || null;
+			content: data && data.defs ? data.defs.content : {},
+			get(repo: string, rev: ?string, def: string): ?Def {
+				return this.content[defKey(repo, rev, def)] || null;
 			},
 			list(repo, rev, query) {
 				return this.content[defsListKeyFor(repo, rev, query)] || null;
 			},
 		});
-		this.activeDef = null;
 		this.highlightedDef = null;
 		this.refs = deepFreeze({
-			content: {},
-			get(defURL, file) {
-				return this.content[refsKeyFor(defURL, file)] || null;
+			content: data && data.refs ? data.refs.content : {},
+			get(repo: string, rev: ?string, def: string, file: ?string) {
+				return this.content[refsKeyFor(repo, rev, def, file)] || null;
 			},
 		});
+	}
 
-		this.defOptionsURLs = null;
-		this.defOptionsLeft = 0;
-		this.defOptionsTop = 0;
+	toJSON() {
+		return {defs: this.defs, refs: this.refs};
 	}
 
 	__onDispatch(action) {
@@ -41,18 +48,28 @@ export class DefStore extends Store {
 		case DefActions.DefFetched:
 			this.defs = deepFreeze(Object.assign({}, this.defs, {
 				content: Object.assign({}, this.defs.content, {
-					[action.url]: action.def,
+					[defKey(action.repo, action.rev, action.def)]: action.defObj,
 				}),
 			}));
 			break;
 
 		case DefActions.DefsFetched:
-			this.defs = deepFreeze(Object.assign({}, this.defs, {
-				content: Object.assign({}, this.defs.content, {
+			{
+				// Store the list of defs AND each def individually so we can
+				// perform more operations quickly.
+				let data = {
 					[defsListKeyFor(action.repo, action.rev, action.query)]: action.defs,
-				}),
-			}));
-			break;
+				};
+				if (action.defs && action.defs.Defs) {
+					action.defs.Defs.forEach((d) => {
+						data[defKey(d.Repo, action.rev, defPath(d))] = d;
+					});
+				}
+				this.defs = deepFreeze(Object.assign({}, this.defs, {
+					content: Object.assign({}, this.defs.content, data),
+				}));
+				break;
+			}
 
 		case DefActions.HighlightDef:
 			this.highlightedDef = action.url;
@@ -61,15 +78,9 @@ export class DefStore extends Store {
 		case DefActions.RefsFetched:
 			this.refs = deepFreeze(Object.assign({}, this.refs, {
 				content: Object.assign({}, this.refs.content, {
-					[refsKeyFor(action.defURL, action.file)]: action.refs,
+					[refsKeyFor(action.repo, action.rev, action.def, action.file)]: action.refs,
 				}),
 			}));
-			break;
-
-		case DefActions.SelectMultipleDefs:
-			this.defOptionsURLs = action.urls;
-			this.defOptionsLeft = action.left;
-			this.defOptionsTop = action.top;
 			break;
 
 		default:

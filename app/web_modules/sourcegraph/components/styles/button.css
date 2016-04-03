@@ -1,0 +1,112 @@
+@value base "./base.css";
+@value colors "./colors.css";
+@value typography "./typography.css";
+
+.btn {
+    composes: br3 from base;
+    composes: button-text from typography;
+    display: inline-block;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+}
+.normal {
+    composes: pa3 from base;
+}
+.small {
+    composes: pa2 from base;
+}
+.btn:focus {
+    outline: 0;
+}
+
+.active-shadow:active {
+    box-shadow: 0 0 0 1px rgba(0,0,0, 0.1) inset, 0 0 6px rgba(0,0,0, 0.1) inset;
+    border-color: #000\9;
+}
+
+.block {
+    composes: btn;
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: center;
+}
+
+.outline {
+    composes: btn active-shadow;
+    composes: ba from base;
+    composes: bg-white from colors;
+    background-image: none;
+}
+.outline:hover,
+.outline:focus {
+}
+
+@value c_blue-5 from colors;
+@value c_blue from colors;
+.outline-primary {
+    composes: outline;
+    composes: b--blue-8 blue-8 from colors;
+}
+.outline-primary:hover,
+.outline-primary:focus {
+    border-color: c_blue;
+    color: c_blue;
+}
+@value c_mid-gray from colors;
+@value c_dark-gray from colors;
+@value c_black-50 from colors;
+.outline-default {
+    composes: outline;
+    composes: b--black-50 from colors;
+    composes: mid-gray from colors;
+}
+.outline-default:hover,
+.outline-default:focus {
+    border-color: c_dark-gray;
+    color: c_dark-gray;
+}
+
+/* Firefox: Get rid of the inner focus border */
+.btn::-moz-focus-inner {
+    padding: 0;
+    border: 0;
+}
+
+.btn[disabled],
+.disabled,
+.disabled:hover,
+.disabled:focus,
+.disabled:active {
+    border: none;
+    background-image: none;
+    filter: alpha(opacity=70);
+    opacity: 0.70;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Get rid of the inner focus border. */
+.btn::-moz-focus-inner{
+    padding: 0;
+    border: 0;
+}
+
+.btn-solid {
+    border: none;
+}
+.btn-solid:hover,
+.btn-solid:focus {
+    background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+}
+
+.default {
+	composes: btn active-shadow btn-solid;
+	composes: mid-gray bg-moon-gray from colors;
+}
+
+.primary {
+	composes: btn active-shadow btn-solid;
+	composes: white bg-blue from colors;
+}

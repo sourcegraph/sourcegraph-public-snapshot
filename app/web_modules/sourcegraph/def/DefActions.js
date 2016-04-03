@@ -1,18 +1,39 @@
-export class WantDef {
-	constructor(url) {
-		this.url = url;
-	}
-}
+// @flow
 
-export class DefFetched {
-	constructor(url, def) {
-		this.url = url;
+import type {Def, Ref} from "sourcegraph/def";
+
+export class WantDef {
+	repo: string;
+	rev: ?string;
+	def: string;
+
+	constructor(repo: string, rev: ?string, def: string) {
+		this.repo = repo;
+		this.rev = rev;
 		this.def = def;
 	}
 }
 
+export class DefFetched {
+	repo: string;
+	rev: ?string;
+	def: string;
+	defObj: Def;
+
+	constructor(repo: string, rev: ?string, def: string, defObj: Def) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
+		this.defObj = defObj;
+	}
+}
+
 export class WantDefs {
-	constructor(repo, rev, query) {
+	repo: string;
+	rev: ?string;
+	query: string;
+
+	constructor(repo: string, rev: ?string, query: string) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
@@ -20,7 +41,12 @@ export class WantDefs {
 }
 
 export class DefsFetched {
-	constructor(repo, rev, query, defs) {
+	repo: string;
+	rev: ?string;
+	query: string;
+	defs: Array<Def>;
+
+	constructor(repo: string, rev: ?string, query: string, defs: Array<Def>) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
@@ -29,35 +55,50 @@ export class DefsFetched {
 }
 
 export class SelectDef {
-	constructor(url) {
-		this.url = url;
-	}
-}
+	repo: string;
+	rev: ?string;
+	def: string;
 
-export class SelectMultipleDefs {
-	constructor(urls, left, top) {
-		this.urls = urls;
-		this.left = left;
-		this.top = top;
+	constructor(repo: string, rev: ?string, def: string) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
 	}
 }
 
 export class HighlightDef {
-	constructor(url) {
+	url: ?string;
+
+	constructor(url: ?string) {
 		this.url = url;
 	}
 }
 
 export class WantRefs {
-	constructor(defURL, file) {
-		this.defURL = defURL;
+	repo: string;
+	rev: ?string;
+	def: string;
+	file: ?string; // only return refs in this file
+
+	constructor(repo: string, rev: ?string, def: string, file: ?string) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
 		this.file = file || null;
 	}
 }
 
 export class RefsFetched {
-	constructor(defURL, file, refs) {
-		this.defURL = defURL;
+	repo: string;
+	rev: ?string;
+	def: string;
+	file: ?string;
+	refs: Array<Ref>;
+
+	constructor(repo: string, rev: ?string, def: string, file: ?string, refs: Array<Ref>) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
 		this.file = file || null;
 		this.refs = refs;
 	}

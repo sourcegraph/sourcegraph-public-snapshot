@@ -1,21 +1,20 @@
 import React from "react";
 
 import Container from "sourcegraph/Container";
+import Dispatcher from "sourcegraph/Dispatcher";
+import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
+import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import context from "sourcegraph/context";
-import Styles from "./styles/Dashboard.css";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Dashboard.css";
 
 class DashboardContainer extends Container {
 
-
 	constructor(props) {
 		super(props);
-		const logoUrl = !global.document ? "" : document.getElementById("DashboardContainer").dataset.logo;
-		const signup_url = !global.document ? "" : document.getElementById("DashboardContainer").dataset.signupurl;
-		this.state = {logo: logoUrl, signup_url: signup_url};
-		this._username = this._username.bind(this);
-		this._userAvatar = this._userAvatar.bind(this);
 	}
 
 	componentWillUnmount() {
@@ -24,43 +23,39 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.repos = DashboardStore.repos;
-		state.onboarding = DashboardStore.onboarding;
+		state.exampleRepos = DashboardStore.exampleRepos;
+		state.home = DashboardStore.home.get();
+		state.repos = state.home ? state.home.repos : [];
+		state.onboarding = state.home ? state.home.onboarding: {hasLinkedGitHub: true, linkGitHubURL: ""};
+		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
 	}
 
-	_username() {
-		return context.currentUser.Name || context.currentUser.Login || "";
-	}
-
-	_userAvatar() {
-		return this.state.onboarding.linkGitHub ?
-			"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Mark.png" :
-			(context.currentUser.AvatarURL || "");
+	onStateTransition(prevState, nextState) {
+		if (!nextState.home) {
+			Dispatcher.Backends.dispatch(new DashboardActions.WantHome());
+		}
 	}
 
 	stores() { return [DashboardStore]; }
 
 	render() {
-		return (
-			<div>
-				<div className={Styles.dash_repos}>
-				{!context.currentUser &&
-					<div className={Styles.anon_section}>
-						<img className={Styles.logo} src={this.state.logo} />
-						<div className={Styles.anon_title}>Understand and use code better</div>
-						<div className={Styles.anon_header_sub}>
-							Use Sourcegraph to search, browse, and cross-reference code.
-							<br />
-							Works with both public and private GitHub repositories written in Go.
-						</div>
+		return (<div styleName="container">
+			{!context.currentUser &&
+				<div styleName="anon-section">
+					<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-logo.svg`}/>
+					<div styleName="anon-title">Understand and use code better</div>
+					<div styleName="anon-header-sub">
+						Use Sourcegraph to search, browse, and cross-reference code.
+						<br />
+						Works with both public and private GitHub repositories written in Go.
 					</div>
-				}
-				<div className={Styles.repos}>
-					<DashboardRepos repos={this.state.repos}
-						linkGitHub={this.state.onboarding.linkGitHub}
-						linkGitHubURL={this.state.onboarding.linkGitHubURL || ""}
-						signup={this.state.signup_url} />
 				</div>
+			}
+			<div styleName="repos">
+				<DashboardRepos repos={this.state.repos}
+					exampleRepos={this.state.exampleRepos}
+					hasLinkedGitHub={this.state.onboarding.hasLinkedGitHub}
+					linkGitHubURL={this.state.onboarding.linkGitHubURL} />
 			</div>
 		</div>);
 	}
@@ -70,4 +65,4 @@ DashboardContainer.propTypes = {
 };
 
 
-export default DashboardContainer;
+export default CSSModules(DashboardContainer, styles);

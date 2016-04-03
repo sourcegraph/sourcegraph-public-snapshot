@@ -1,22 +1,40 @@
+// @flow
+
 export class WantFile {
-	constructor(repo, rev, tree) {
+	repo: string;
+	rev: string;
+	path: string;
+
+	constructor(repo: string, rev: string, path: string) {
 		this.repo = repo;
 		this.rev = rev;
-		this.tree = tree;
+		this.path = path;
 	}
 }
 
 export class FileFetched {
-	constructor(repo, rev, tree, file) {
+	repo: string;
+	rev: string;
+	path: string;
+	file: any;
+
+	constructor(repo: string, rev: string, path: string, file: any) {
 		this.repo = repo;
 		this.rev = rev;
-		this.tree = tree;
+		this.path = path;
 		this.file = file;
 	}
 }
 
 export class WantAnnotations {
-	constructor(repo, rev, commitID, path, startByte, endByte) {
+	repo: string;
+	rev: string;
+	commitID: string;
+	path: string;
+	startByte: ?number;
+	endByte: ?number;
+
+	constructor(repo: string, rev: string, commitID: string, path: string, startByte: ?number, endByte: ?number) {
 		this.repo = repo;
 		this.rev = rev;
 		this.commitID = commitID;
@@ -27,7 +45,15 @@ export class WantAnnotations {
 }
 
 export class AnnotationsFetched {
-	constructor(repo, rev, commitID, path, startByte, endByte, annotations) {
+	repo: string;
+	rev: string;
+	commitID: string;
+	path: string;
+	startByte: ?number;
+	endByte: ?number;
+	annotations: any;
+
+	constructor(repo: string, rev: string, commitID: string, path: string, startByte: ?number, endByte: ?number, annotations: any) {
 		this.repo = repo;
 		this.rev = rev;
 		this.commitID = commitID;
@@ -39,7 +65,12 @@ export class AnnotationsFetched {
 }
 
 export class SelectLine {
-	constructor(repo, rev, path, line) {
+	repo: string;
+	rev: string;
+	path: string;
+	line: ?number;
+
+	constructor(repo: string, rev: string, path: string, line: ?number) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
@@ -48,7 +79,12 @@ export class SelectLine {
 }
 
 export class SelectLineRange {
-	constructor(repo, rev, path, line) {
+	repo: string;
+	rev: string;
+	path: string;
+	line: number;
+
+	constructor(repo: string, rev: string, path: string, line: number) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
@@ -57,13 +93,23 @@ export class SelectLineRange {
 }
 
 export class SelectCharRange {
+	repo: string;
+	rev: string;
+	path: string;
+	startLine: ?number;
+	startCol: ?number;
+	startByte: ?number;
+	endLine: ?number;
+	endCol: ?number;
+	endByte: ?number;
+
 	// startByte and endByte are absolute in the file. It is redundant to specify both
 	// the line+col and the byte, but we need both in various places, and it's easier
 	// to compute them and pass them together.
 	//
 	// If startLine is null, then all other fields' values are ignored and the action
 	// is interpreted as "deselect the current selection."
-	constructor(repo, rev, path, startLine, startCol, startByte, endLine, endCol, endByte) {
+	constructor(repo: string, rev: string, path: string, startLine: ?number, startCol: ?number, startByte: ?number, endLine: ?number, endCol: ?number, endByte: ?number) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;

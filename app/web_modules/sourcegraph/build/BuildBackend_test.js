@@ -29,7 +29,7 @@ describe("BuildBackend", () => {
 			buildID: 123,
 			taskID: 456,
 		};
-		let expectedURI = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
+		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
 
 		BuildBackend.fetch = function(url, options) {
 			expect(url).to.be(expectedURI);
@@ -52,7 +52,7 @@ describe("BuildBackend", () => {
 
 		// Trigger "second" fetch, which should reuse MaxID from
 		// initial fetch as MinID of this fetch.
-		let expectedURI = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
+		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
 		BuildBackend.fetch = function(url, options) {
 			expect(url).to.be(expectedURI);
 			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("c"), headers: {"x-sourcegraph-log-max-id": 34}});

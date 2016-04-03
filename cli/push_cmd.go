@@ -58,11 +58,7 @@ func (c *pushCmd) Execute(args []string) error {
 		return err
 	}
 
-	u, err := router.Rel.URLToRepoRev(repoRevSpec.URI, repoRevSpec.Rev)
-	if err != nil {
-		return err
-	}
-	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(u))
+	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(repoRevSpec.URI, repoRevSpec.Rev)))
 
 	return nil
 }

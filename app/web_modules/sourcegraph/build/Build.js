@@ -1,4 +1,3 @@
-import classNames from "classnames";
 import React from "react";
 
 export function updatedAt(b) {
@@ -7,21 +6,11 @@ export function updatedAt(b) {
 
 // buildStatus returns a textual status description for the build.
 export function buildStatus(b) {
-	if (b.Killed) {
-		return "Killed";
-	}
-	if (b.Warnings) {
-		return "Warnings";
-	}
-	if (b.Failure) {
-		return "Failed";
-	}
-	if (b.Success) {
-		return "Succeeded";
-	}
-	if (b.StartedAt && !b.EndedAt) {
-		return "Started";
-	}
+	if (b.Killed) return "Killed";
+	if (b.Warnings) return "Warnings";
+	if (b.Failure) return "Failed";
+	if (b.Success) return "Succeeded";
+	if (b.StartedAt && !b.EndedAt) return "Started";
 	return "Queued";
 }
 
@@ -43,29 +32,17 @@ export function buildClass(b) {
 }
 
 export function taskClass(task) {
-	if (task.Skipped) {
-		return {icon: "fa fa-ban", text: "text-muted", listGroupItem: ""};
-	}
-	if (!task.StartedAt) {
-		return {icon: "fa fa-circle-o-notch", text: "", listGroupItem: ""};
-	}
-	if (task.Warnings) {
-		return {icon: "fa fa-exclamation-circle", text: "text-warning", listGroupItem: "list-group-item-warning"};
-	}
-	if (task.Success) {
-		return {icon: "fa fa-check", text: "text-success", listGroupItem: "list-group-item-success"};
-	}
-	if (task.Failure) {
-		return {icon: "fa fa-exclamation-circle", text: "text-danger", listGroupItem: "list-group-item-danger"};
-	}
-	return {icon: "fa fa-circle-o-notch fa-spin", text: "", listGroupItem: "list-group-item-info"};
+	if (task.Success && !task.Skipped) return "success";
+	if (task.Failure && !task.Skippe) return "danger";
+	if (task.Warnings) return "warning";
+	if (!task.Success && !task.Failure && !task.Skipped) return "info";
+	return "default";
 }
 
 export function elapsed(buildOrTask) {
 	if (!buildOrTask.StartedAt) return null;
 	return (
-		<div className="elapsed">
-			<i className="fa fa-clock-o"></i>&nbsp;
+		<div>
 			{formatDurationHHMMSS(new Date(buildOrTask.EndedAt).getTime() - new Date(buildOrTask.StartedAt).getTime())}
 		</div>
 	);
@@ -99,13 +76,3 @@ export function formatDurationHHMMSS(ms) {
 	return str;
 }
 
-export function panelClass(buildOrTask) {
-	return classNames({
-		"panel": true,
-		"panel-default": true,
-		"panel-success": buildOrTask.Success && !buildOrTask.Skipped,
-		"panel-danger": buildOrTask.Failure && !buildOrTask.Skipped,
-		"panel-warning": buildOrTask.Warnings,
-		"panel-info": !buildOrTask.Success && !buildOrTask.Failure && !buildOrTask.Skipped,
-	});
-}

@@ -20,8 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
@@ -66,64 +65,25 @@ func Delete(name string) {
 	templatesMu.Unlock()
 }
 
-// repoTemplates returns all repository template pages if successful.
-func repoTemplates() error {
-	return parseHTMLTemplates([][]string{
-		{"repo/main.html", "repo/tree.inc.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/builds.html", "builds/build.inc.html"},
-		{"repo/build.html", "builds/build.inc.html", "repo/commit.inc.html"},
-		{"repo/tree/file.html"},
-		{"repo/tree/doc.html", "repo/commit.inc.html"},
-		{"repo/tree/dir.html", "repo/tree/dir.inc.html", "repo/commit.inc.html"},
-		{"repo/frame.html", "error/common.html"},
-		{"repo/commit.html", "repo/commit.inc.html"},
-		{"repo/commits.html", "repo/commit.inc.html"},
-		{"repo/branches.html"},
-		{"repo/tags.html"},
-		{"repo/no_vcs_data.html"},
-	}, []string{
-		"repo/repo.html",
-
-		"common.html",
-		"layout.html",
-		"nav.html",
-		"footer.html",
-	})
-}
-
 // commonTemplates returns all common templates such as user pages,
 // etc., if successful.
 func commonTemplates() error {
 	return parseHTMLTemplates([][]string{
-		{"user/login.html"},
-		{"user/signup.html"},
-		{"user/logged_out.html"},
-		{"user/forgot_password.html"},
-		{"user/password_reset.html"},
-		{"user/new_password.html"},
-		{"user/settings/profile.html", "user/settings/common.inc.html"},
-
-		{"home/dashboard.html"},
-
-		{"builds/builds.html", "builds/build.inc.html"},
-		{"coverage/coverage.html"},
-		{"error/error.html", "error/common.html"},
-
-		{"oauth-provider/authorize.html"},
+		{"error/error.html"},
 	}, []string{
-		"common.html",
 		"layout.html",
 		"nav.html",
 		"footer.html",
+		"scripts.html",
 	})
 }
 
 // Load loads (or re-loads) all template files from disk.
 func Load() {
-	if err := repoTemplates(); err != nil {
+	if err := commonTemplates(); err != nil {
 		log.Fatal(err)
 	}
-	if err := commonTemplates(); err != nil {
+	if err := parseHTMLTemplates([][]string{{"ui.html", "layout.html", "scripts.html"}}, nil); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -189,6 +149,8 @@ type Common struct {
 	// DeviceID is the correlation id given to user activity from a particular
 	// device, pre- and post- authentication.
 	DeviceID string
+
+	JSCtx jscontext.JSContext
 }
 
 func executeTemplateBase(w http.ResponseWriter, templateName string, data interface{}) error {
@@ -225,12 +187,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		existingCommon := field.Interface().(Common)
 
 		currentURL := conf.AppURL(ctx).ResolveReference(req.URL)
-		canonicalURL := existingCommon.CanonicalURL
-		if canonicalURL == nil {
-			canonicalURL = canonicalurl.FromURL(currentURL)
-		}
-
-		returnTo, _ := returnto.BestGuess(req)
 
 		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
 		if errField.IsValid() {
@@ -244,6 +200,11 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		var cacheControl string
 		if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
 			cacheControl = "no-cache"
+		}
+
+		jsctx, err := jscontext.NewJSContextFromRequest(req)
+		if err != nil {
+			return err
 		}
 
 		field.Set(reflect.ValueOf(Common{
@@ -262,15 +223,13 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			CurrentURL:   currentURL,
 			CurrentQuery: req.URL.Query(),
 
-			AppURL:       conf.AppURL(ctx),
-			CanonicalURL: canonicalURL,
+			AppURL: conf.AppURL(ctx),
 
 			Ctx: ctx,
 
 			CurrentSpanID:    traceutil.SpanID(req),
 			CurrentRouteVars: mux.Vars(req),
 			Debug:            handlerutil.DebugMode(req),
-			ReturnTo:         returnTo,
 
 			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
 			Features:             feature.Features,
@@ -280,6 +239,8 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			CacheControl: cacheControl,
 
 			DeviceID: eventsutil.DeviceIdFromContext(ctx),
+
+			JSCtx: jsctx,
 		}))
 	}
 

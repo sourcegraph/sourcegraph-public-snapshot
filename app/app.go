@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/coverage"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
@@ -74,39 +73,18 @@ func NewHandler(r *router.Router) http.Handler {
 	// Add git transport routes
 	gitserver.AddHandlers(&r.Router)
 
-	r.Get(router.Builds).Handler(internal.Handler(serveBuilds))
+	r.Get("ui").Handler(internal.Handler(serveUI))
 
 	r.Get(router.RobotsTxt).HandlerFunc(robotsTxt)
 	r.Get(router.Favicon).HandlerFunc(favicon)
 
 	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
 
-	r.Get(router.Def).Handler(internal.Handler(serveDef))
-	r.Get(router.DefRefs).Handler(internal.Handler(serveDef))
-	r.Get(router.Home).Handler(internal.Handler(serveHomeDashboard))
-	r.Get(router.LogOut).Handler(internal.Handler(serveLogOut))
-
-	r.Get(router.UserSettingsProfile).Handler(internal.Handler(serveUserSettingsProfile))
-
-	r.Get(router.Repo).Handler(internal.Handler(serveRepo))
-	r.Get(router.RepoBuild).Handler(internal.Handler(serveRepoBuild))
-	r.Get(router.RepoBuildUpdate).Handler(internal.Handler(serveRepoBuildUpdate))
-	r.Get(router.RepoBuildTaskLog).Handler(internal.Handler(serveRepoBuildTaskLog))
-	r.Get(router.RepoBuilds).Handler(internal.Handler(serveRepoBuilds))
-	r.Get(router.RepoBuildsCreate).Handler(internal.Handler(serveRepoBuildsCreate))
-	r.Get(router.RepoTree).Handler(internal.Handler(serveRepoTree))
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
-
-	r.Get(router.RepoCommit).Handler(internal.Handler(serveRepoCommit))
-	r.Get(router.RepoRevCommits).Handler(internal.Handler(serveRepoCommits))
-	r.Get(router.RepoTags).Handler(internal.Handler(serveRepoTags))
-	r.Get(router.RepoBranches).Handler(internal.Handler(serveRepoBranches))
 
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
 	}
-
-	coverage.AddRoutes(r)
 
 	return handlerutil.WithMiddleware(m, mw...)
 }

@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
@@ -437,6 +436,5 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	qualifiedName := sourcecode.DefQualifiedNameAndType(dc, "scope")
 	qualifiedName = sourcecode.OverrideStyleViaRegexpFlags(qualifiedName)
 	dc.QualifiedName = htmlutil.SanitizeForPB(string(qualifiedName))
-	dc.URL = router.Rel.URLToDefAtRev(dc.DefKey, vc.RepoRevSpec.Rev).String()
 	return dc, rc, vc, nil
 }

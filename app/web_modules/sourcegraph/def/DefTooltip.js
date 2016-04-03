@@ -1,7 +1,6 @@
 import React from "react";
-import classNames from "classnames";
-
 import Component from "sourcegraph/Component";
+import s from "sourcegraph/def/styles/Def.css";
 
 // function created to update cursor position in constructor()
 let cursorX;
@@ -37,6 +36,7 @@ class DefTooltip extends Component {
 	}
 
 	componentWillUnmount() {
+		this._elem = null;
 		document.removeEventListener("mousemove", this._updatePosition);
 	}
 
@@ -45,29 +45,35 @@ class DefTooltip extends Component {
 	}
 
 	_updatePosition(event) {
-		this.setState({
-			top: event.clientY + 15,
-			left: Math.min(event.clientX + 15, window.innerWidth - 380),
-		});
+		if (!this._elem) return;
+		if (typeof window !== "undefined") {
+			window.requestAnimationFrame(() => {
+				if (!this._elem) return;
+				this._elem.style.top = `${event.clientY + 15}px`;
+				this._elem.style.left = `${Math.min(event.clientX + 15, window.innerWidth - 380)}px`;
+			});
+		}
 	}
 
 	render() {
 		let def = this.state.def;
-		let classes = classNames({
-			"token-popover": true,
-			"error": Boolean(def.Error),
-			"found": !Boolean(def.Error),
-		});
+
+		let inner;
+		if (def.Error) {
+			inner = <span className={s.error}>Definition not available</span>;
+		} else {
+			inner = [
+				<div key="title" className={s.tooltipTitle} dangerouslySetInnerHTML={def.QualifiedName}></div>,
+				<div key="content" className={s.content}>
+					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
+					{def && def.Repo !== this.state.currentRepo && <span className={s.repo}>{def.Repo}</span>}
+				</div>,
+			];
+		}
+
 		return (
-			<div className={classes} style={{left: this.state.left, top: this.state.top}}>
-				<div className="popover-data">
-					<span className="error-message">{def.Error && "Definition not available"}</span>
-					<div className="title"><pre dangerouslySetInnerHTML={def.QualifiedName}></pre></div>
-					<div className="content">
-						{def && def.DocHTML && <div className="doc" style={{maxHeight: 100, overflowY: "hidden"}} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
-						{def && def.Repo !== this.state.currentRepo && <span className="repo">{def.Repo}</span>}
-					</div>
-				</div>
+			<div ref={(e) => this._elem = e} className={def.Error ? s.tooltipError : s.tooltipFound}>
+				{inner}
 			</div>
 		);
 	}

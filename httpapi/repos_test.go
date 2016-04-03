@@ -16,6 +16,7 @@ func TestRepo(t *testing.T) {
 	wantRepo := &sourcegraph.Repo{URI: "r/r"}
 
 	calledGet := mock.Repos.MockGet(t, "r/r")
+	calledResolve := mock.Repos.MockResolve_Local(t, "r/r")
 
 	var repo *sourcegraph.Repo
 	if err := c.GetJSON("/repos/r/r", &repo); err != nil {
@@ -26,6 +27,9 @@ func TestRepo(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
 	}
 }
 
@@ -41,6 +45,7 @@ func TestRepo_caching_notModified(t *testing.T) {
 		URI:       "r/r",
 		UpdatedAt: &ts,
 	})
+	calledResolve := mock.Repos.MockResolve_Local(t, "r/r")
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)
 	req.Header.Set("if-modified-since", mtime.Add(2*time.Second).Format(http.TimeFormat))
@@ -54,6 +59,9 @@ func TestRepo_caching_notModified(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
 	}
 }
 
@@ -69,6 +77,7 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 		URI:       "r/r",
 		UpdatedAt: &ts,
 	})
+	calledResolve := mock.Repos.MockResolve_Local(t, "r/r")
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)
 	req.Header.Set("if-modified-since", mtime.Add(-2*time.Second).Format(http.TimeFormat))
@@ -82,6 +91,9 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
 	}
 }
 

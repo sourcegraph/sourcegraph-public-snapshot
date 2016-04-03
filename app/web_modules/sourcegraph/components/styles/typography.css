@@ -1,3 +1,6 @@
+@value colors "./colors.css";
+@value base "./base.css";
+
 /*
 	 TYPE SCALE
 */
@@ -43,7 +46,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 .bodoni { font-family: "Bodoni MT", serif; }
 .calisto { font-family: "Calisto MT", serif; }
 .garamond { font-family: garamond, serif; }
-.brand-circular { font-family: "Circular"; }
+.circular { font-family: "Circular"; }
 
 /*
 	 FONT STYLE
@@ -71,7 +74,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 */
 .tracked { letter-spacing: .09em; }
 .tracked-tight { letter-spacing: -.05em; }
-.tracked-mega { letter-spacing: .32em; }
+.tracked-mega { letter-spacing: .18em; }
 
 /*
 	 LINE HEIGHT / LEADING
@@ -147,4 +150,132 @@ code, .code { font-family: Consolas, monaco, monospace; }
 	.measure-narrow-l { max-width: 20em; }
 	.indent-l { text-indent: 1em; margin-top: 0; margin-bottom: 0; }
 	.truncate-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* Circular-Book */
+@font-face {
+	font-family: "Circular";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/circular/circular-book.ttf") format("truetype");
+}
+
+/* Circular-Book Italic */
+@font-face {
+	font-family: "Circular";
+	font-style: italic;
+	font-weight: 400;
+	src: url("../fonts/circular/circular-book-italic.ttf") format("truetype");
+}
+
+/* Circular-Medium */
+@font-face {
+	font-family: "Circular";
+	font-style: normal;
+	font-weight: 500;
+	src: url("../fonts/circular/circular-medium.ttf") format("truetype");
+}
+
+/* Circular-Medium Italic */
+@font-face {
+	font-family: "Circular";
+	font-style: italic;
+	font-weight: 500;
+	src: url("../fonts/circular/circular-medium-italic.ttf") format("truetype");
+}
+
+/* Circular-Bold */
+@font-face {
+	font-family: "Circular";
+	font-style: normal;
+	font-weight: 700;
+	src: url("../fonts/circular/circular-bold.ttf") format("truetype");
+}
+
+/* Circular-Bold Italic */
+@font-face {
+	font-family: "Circular";
+	font-style: italic;
+	font-weight: 700;
+	src: url("../fonts/circular/circular-bold-italic.ttf") format("truetype");
+}
+
+/* Circular-Black */
+@font-face {
+	font-family: "Circular";
+	font-style: normal;
+	font-weight: 800;
+	src: url("../fonts/circular/circular-black.ttf") format("truetype");
+}
+
+/* Circular-Black Italic */
+@font-face {
+	font-family: "Circular";
+	font-style: italic;
+	font-weight: 800;
+	src: url("../fonts/circular/circular-black-italic.ttf") format("truetype");
+}
+
+.header {
+	composes: circular f2 f1-ns;
+	composes: dark-gray from colors;
+}
+@value c_brand-orange from colors;
+.header::after {
+	content: '';
+	display: block;
+	margin-top: 10px;
+	margin-left: 10px;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+.header-center {
+	composes: header tc;
+}
+.header-center::after {
+	content: '';
+	display: block;
+	margin-right: auto;
+	margin-left: auto;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+
+.subheader {
+	composes: f3 lh-copy sans-serif;
+	composes: silver from colors;
+}
+
+.section-header {
+	composes: f2 b sans-serif;
+	composes: mid-gray from colors;
+}
+
+.subsection-header {
+	composes: b f4 tracked circular;
+	composes: gray from colors;
+	text-transform: uppercase;
+}
+
+.small-text {
+	composes: sans-serif f6;
+	composes: silver from colors;
+}
+
+.normal-text {
+	composes: f4;
+	composes: mid-gray from colors;
+}
+
+.button-text {
+	composes: circular tc tracked-mega f5;
+}
+
+.input-text {
+	composes: f4 sans-serif;
+	composes: blue from colors;
 }

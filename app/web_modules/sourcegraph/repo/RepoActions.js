@@ -18,10 +18,9 @@ export class WantBranches {
 }
 
 export class FetchedBranches {
-	constructor(repo, branches, err) {
+	constructor(repo, branches) {
 		this.repo = repo;
 		this.branches = branches;
-		this.err = err;
 	}
 }
 
@@ -32,9 +31,8 @@ export class WantTags {
 }
 
 export class FetchedTags {
-	constructor(repo, tags, err) {
+	constructor(repo, tags) {
 		this.repo = repo;
 		this.tags = tags;
-		this.err = err;
 	}
 }

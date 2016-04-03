@@ -41,6 +41,12 @@ TestServer.prototype.router = function(req, res) {
 		res.end('text');
 	}
 
+	if (p === '/options') {
+		res.statusCode = 200;
+		res.setHeader('Allow', 'GET, HEAD, OPTIONS');
+		res.end('hello world');
+	}
+
 	if (p === '/html') {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'text/html');
@@ -165,6 +171,29 @@ TestServer.prototype.router = function(req, res) {
 	if (p === '/encoding/order2') {
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'text/plain; charset=gbk; qs=1');
+		res.end(convert('中文', 'gbk'));
+	}
+
+	if (p === '/encoding/chunked') {
+		res.statusCode = 200;
+		res.setHeader('Content-Type', 'text/html');
+		res.setHeader('Transfer-Encoding', 'chunked');
+		var padding = 'a';
+		for (var i = 0; i < 10; i++) {
+			res.write(padding);
+		}
+		res.end(convert('<meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS" /><div>日本語</div>', 'Shift_JIS'));
+	}
+
+	if (p === '/encoding/invalid') {
+		res.statusCode = 200;
+		res.setHeader('Content-Type', 'text/html');
+		res.setHeader('Transfer-Encoding', 'chunked');
+		// because node v0.12 doesn't have str.repeat
+		var padding = new Array(120 + 1).join('a');
+		for (var i = 0; i < 10; i++) {
+			res.write(padding);
+		}
 		res.end(convert('中文', 'gbk'));
 	}
 

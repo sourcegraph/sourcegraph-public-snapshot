@@ -14,16 +14,26 @@ import (
 )
 
 const (
+	Signup = "signup"
+	Login  = "login"
+	Logout = "logout"
+
+	ForgotPassword = "forgot"
+	ResetPassword  = "reset"
+
 	Annotations      = "annotations"
 	BlackHole        = "blackhole"
-	Build            = "build"
 	Builds           = "builds"
+	BuildTaskLog     = "build.task.log"
 	Def              = "def"
 	DefRefs          = "def.refs"
 	Defs             = "defs"
+	Home             = "home"
 	Repo             = "repo"
 	RepoBranches     = "repo.branches"
+	RepoBuild        = "repo.build"
 	RepoTree         = "repo.tree"
+	RepoBuilds       = "repo.builds"
 	RepoBuildTasks   = "build.tasks"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoCommits      = "repo.commits"
@@ -45,6 +55,12 @@ func New(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 
+	base.Path("/join").Methods("POST").Name(Signup)
+	base.Path("/login").Methods("POST").Name(Login)
+	base.Path("/logout").Methods("POST").Name(Logout)
+	base.Path("/forgot").Methods("POST").Name(ForgotPassword)
+	base.Path("/reset").Methods("POST").Name(ResetPassword)
+
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
 	base.Path("/builds").Methods("GET").Name(Builds)
@@ -63,13 +79,17 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
+	repo.Path("/builds").Methods("GET").Name(RepoBuilds)
 	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)
 	buildPath := `/builds/{Build:\d+}`
-	repo.Path(buildPath).Methods("GET").Name(Build)
+	repo.Path(buildPath).Methods("GET").Name(RepoBuild)
 	build := repo.PathPrefix(buildPath).Subrouter()
 	build.Path("/tasks").Methods("GET").Name(RepoBuildTasks)
+	build.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(BuildTaskLog)
 
 	base.Path("/defs").Methods("GET").Name(Defs)
+
+	base.Path("/home").Methods("GET").Name(Home)
 
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/srclib-coverage").Methods("PUT").Name(SrclibCoverage)

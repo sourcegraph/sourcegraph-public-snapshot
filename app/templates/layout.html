@@ -2,26 +2,10 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head
-		{{if not appconf.DisableSupportServices}}
-			{{if googleAnalyticsTrackingID}}data-google-analytics-tracking-id="{{googleAnalyticsTrackingID}}"{{end}}
-			{{if publicRavenDSN}}data-public-raven-dsn="{{publicRavenDSN}}"{{end}}
-		{{end}}
-		{{/* Using data attributes is deprecated. Use the script tag below to add data to context.js. */}}
-		{{if deployedGitCommitID}}data-deployed-git-commit-id="{{deployedGitCommitID}}"{{end}}
+		{{/* Using data attributes is deprecated. Use scripts.html to add data to context.js. */}}
 		data-current-route="{{.CurrentRoute}}"
 		data-template-name="{{.TemplateName}}"
-		{{if .CacheControl}}data-cache-control="{{.CacheControl}}"{{end}}
-		{{if .CurrentUser}}data-current-user-login="{{.CurrentUser.Login}}"{{end}}
-		{{if .CurrentUser}}data-current-user-uid="{{.CurrentUser.UID}}"{{end}}
-		{{if .CurrentUser}}data-current-user-admin="{{.CurrentUser.Admin}}"{{end}}
-		{{if .CurrentUser}}data-current-user-write="{{.CurrentUser.Write}}"{{end}}
-		{{with .Session}}data-current-user-oauth2-access-token="{{.AccessToken}}"{{end}}
-		{{if .CurrentSpanID}}data-appdash-current-span-id="{{.CurrentSpanID}}"{{end}}
-		{{if .CurrentSpanID}}data-appdash-current-span-id-trace="{{.CurrentSpanID.Trace}}"{{end}}
-		{{if .CurrentSpanID}}data-appdash-current-span-id-span="{{.CurrentSpanID.Span}}"{{end}}
-		{{if .CurrentSpanID}}data-appdash-current-span-id-parent="{{.CurrentSpanID.Parent}}"{{end}}
-		data-csrf-token="{{.CSRFToken}}"
-		data-device-id="{{.DeviceID}}"
+		data-webpack-public-path="{{assetURL ""}}/"
 		>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -30,121 +14,40 @@
 		<link rel="shortcut icon" href="{{assetURL "/img/favicon.png"}}?v=1">
 
 		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
-		<script ignore-csp type="text/javascript">
-			{{/* Do not access these directly via the window object, import them using context.js. */}}
-			{{if .Features}}window._featureToggles = JSON.parse({{.Features|json}});{{end}}
-			window._csrfToken = "{{.CSRFToken}}";
-			window._currentUser = JSON.parse({{.CurrentUser|json}});
-			{{if .CacheControl}}window._cacheControl = "{{.CacheControl}}";{{end}}
-		</script>
+		{{template "Scripts" $}}
 
-		<link href="{{assetURL "/bundle.css"}}" rel="stylesheet">
-
-		<link rel="canonical" href="{{.CanonicalURL}}">
-
-		{{/* Add a noindex tag UNLESS the template data has a RobotsIndex field AND it is truthy. */}}
-		{{if hasField . "RobotsIndex"}}
-		{{if not .RobotsIndex}}<meta name="robots" content="noindex">{{end}}
-		{{else}}
-		<meta name="robots" content="noindex">
-		{{end}}
+		<link href="{{assetURL "/main.css"}}" rel="stylesheet">
 
 		{{template "Head" $}}
 
 		{{appconf.ExtraHeadHTML}}
 
-		{{if not appconf.DisableSupportServices}}
-			<!-- Start of FullStory script -->
-			<script ignore-csp>
-				window["_fs_debug"] = false;
-				window["_fs_host"] = "www.fullstory.com";
-				window["_fs_org"] = "WQW7";
-				(function(m,n,e,t,l,o,g,y){g=m[e]=function(a,b){g.q?g.q.push([a,b]):g._api(a,b);};g.q=[];o=n.createElement(t);o.async=1;o.src="https://"+_fs_host+"/s/fs.js";y=n.getElementsByTagName(t)[0];y.parentNode.insertBefore(o,y);g.identify=function(i,v){g(l,{uid:i});if(v)g(l,v)};g.setUserVars=function(v){FS(l,v)};g.identifyAccount=function(i,v){o="account";v=v||{};v.acctId=i;FS(o,v)};g.clearUserCookie=function(d,i){d=n.domain;while(1){n.cookie="fs_uid=;domain="+d+";path=/;expires="+new Date(0);i=d.indexOf(".");if(i<0)break;d=d.slice(i+1)}}})(window,document,"FS","script","user");
-				{{if .CurrentUser}}
-					FS.identify("{{.CurrentUser.Login}}@{{getClientIDOrHostName .Ctx .AppURL}}", {
-						{{if .CurrentUser.Name}}
-						displayName: window._currentUser.Name,
-						{{end}}
-						{{if .UserEmail}}
-						email: "{{.UserEmail}}",
-						{{end}}
-					});
-				{{end}}
-			</script>
-			<!-- End of FullStory script -->
-
-			<!-- Start of Google Analytics script -->
-			<script ignore-csp>
-				if (document.head.dataset.googleAnalyticsTrackingId) {
-					(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","https://www.google-analytics.com/analytics.js","ga");
-					window.ga("create", document.head.dataset.googleAnalyticsTrackingId, "auto");
-					window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
-					window.ga("require", "urlChangeTracker");
-					window.ga("set", "dimension1", Boolean(document.head.dataset.currentUserLogin));
-					window.ga("set", "dimension4", "web");
-					window.ga("send", "pageview");
-				}
-			</script>
-			<!-- End of Google Analytics script -->
-		{{end}}
 	</head>
 
-	<body class="{{classForRoute .CurrentRoute}}"
-		{{if hasField . "Repo"}}
-			data-current-repo-url="{{(urlToRepo .Repo.URI).String}}"
-		{{end}}
+	<body
 		{{if fileSearchDisabled}}
 			data-file-search-disabled="true"
-		{{end}}
-	>
-		{{if not appconf.DisableSupportServices}}
-			{{if .CurrentUser}}
-				<script ignore-csp>
-					{{if .UserEmail}}
-					window.intercomSettings = {
-						app_id: "wd8xxn47",
-						name: window._currentUser.Name || window._currentUser.Login,
-						email: {{.UserEmail}},
-						user_hash: {{intercomHMAC .UserEmail}},
-						created_at: Math.floor(new Date(window._currentUser.RegisteredAt).getTime() / 1000),
-					};
-					{{else}}
-					window.intercomSettings = {
-						app_id: "wd8xxn47",
-					}
-					{{end}}
-				</script>
-			{{else}}
-				<script ignore-csp>
-					window.intercomSettings = {
-						app_id: "wd8xxn47",
-					}
-				</script>
-			{{end}}
-		{{end}}
+		{{end}}>
 
 		{{template "Nav" $}}
 
-		<div class="xcontainer">
-			{{template "Body" $}}
-		</div>
+		<div class="xcontainer" id="main">{{template "Body" $}}</div>
 
 		{{template "Footer" $}}
 
 		{{if .Debug}}
-		<div id="debug">
-			<div class="verbose">
-			{{if not (eq buildvar.Version "dev")}}{{buildvar.Version}}<br>{{end}}
-			{{if buildvar.CommitID}}
-				{{hostname}}<br>
-				@{{buildvar.CommitID|maxLen 7}} &nbsp;
-			{{end}}
-			</div>
+			<div id="debug">
+				<div class="verbose">
+				{{if not (eq buildvar.Version "dev")}}{{buildvar.Version}}<br>{{end}}
+				{{if buildvar.CommitID}}
+					@{{buildvar.CommitID|maxLen 7}} &nbsp;
+				{{end}}
+				</div>
 
-			{{if .CurrentSpanID.Span}}
-				<a href="{{urlToAppdashTrace .Ctx .CurrentSpanID.Trace}}" target="_blank">...</a>
-			{{end}}
-		</div>
+				{{if .CurrentSpanID.Span}}
+					<a href="{{urlToAppdashTrace .Ctx .CurrentSpanID.Trace}}" target="_blank">...</a>
+				{{end}}
+			</div>
 		{{end}}
 
 		{{if appconf.CustomFeedbackForm}}
@@ -155,19 +58,9 @@
 			<script src="{{.}}/webpack-dev-server.js"></script>
 		{{end}}
 
-			{{if hasField . "StoreData"}}
-				<script ignore-csp>
-					window.__StoreData = {{rawJSON .StoreData}};
-				</script>
-			{{end}}
-
-		<script src="{{assetURL "/bundle.js"}}"></script>
+		<script src="{{assetURL "/main.browser.js"}}"></script>
 
 		{{appconf.ExtraBodyHTML}}
-
-		{{if not appconf.DisableSupportServices}}
-			<script ignore-csp>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wd8xxn47';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
-		{{end}}
 	</body>
 </html>
 {{end}}

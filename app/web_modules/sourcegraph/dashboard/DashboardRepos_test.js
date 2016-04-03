@@ -18,9 +18,9 @@ describe("DashboardRepos", () => {
 		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
 			<DashboardRepos
 				repos={repos}
-				linkGitHub={true}
-				linkGitHubURL={""}
-				signup={""} />
+				exampleRepos={repos}
+				hasLinkedGitHub={true}
+				linkGitHubURL={""} />
 		);
 	});
 });
@@ -36,9 +36,9 @@ describe("DashboardRepos", () => {
 		autotest(testdataUnsupported, `${__dirname}/testdata/DashboardRepos-unsupported.json`,
 			<DashboardRepos
 				repos={repos}
-				linkGitHub={true}
-				linkGitHubURL={""}
-				signup={""}/>
+				exampleRepos={repos}
+				hasLinkedGitHub={true}
+				linkGitHubURL={""} />
 		);
 	});
 });

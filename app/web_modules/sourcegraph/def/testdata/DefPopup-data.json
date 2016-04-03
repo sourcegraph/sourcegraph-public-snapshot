@@ -2,28 +2,18 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "sidebar-section token-details",
 			"children": [
 				{
-					"type": "section",
+					"type": "header",
 					"props": {
-						"children": [
-							{
-								"type": "p",
-								"props": {
-									"className": "qualified-name",
-									"dangerouslySetInnerHTML": {
-										"__html": "someName"
-									}
-								}
-							}
-						]
+						"dangerouslySetInnerHTML": {
+							"__html": "someName"
+						}
 					}
 				},
 				{
 					"type": "header",
 					"props": {
-						"className": "usage-header",
 						"children": [
 							"Used in ",
 							{

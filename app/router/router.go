@@ -3,7 +3,6 @@ package router
 
 import (
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 
@@ -14,48 +13,17 @@ import (
 )
 
 const (
-	Builds = "builds"
-
-	Home = "home"
-
-	RegisterClient = "register-client"
-
 	RobotsTxt = "robots-txt"
 	Favicon   = "favicon"
 
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 
-	User                = "person"
-	UserSettingsProfile = "person.settings.profile"
-
-	Repo             = "repo"
-	RepoBuilds       = "repo.builds"
-	RepoBuild        = "repo.build"
-	RepoBuildUpdate  = "repo.build.update"
-	RepoBuildTaskLog = "repo.build.task.log"
-	RepoBuildsCreate = "repo.builds.create"
-	RepoTree         = "repo.tree"
-
-	RepoRevCommits = "repo.rev.commits"
-	RepoCommit     = "repo.commit"
-	RepoTags       = "repo.tags"
-	RepoBranches   = "repo.branches"
-
-	LogIn          = "log-in"
-	LogOut         = "log-out"
-	SignUp         = "sign-up"
-	ForgotPassword = "forgot-password"
-	ResetPassword  = "reset-password"
-
 	OAuth2ServerAuthorize = "oauth-provider.authorize"
 	OAuth2ServerToken     = "oauth-provider.token"
 
 	GitHubOAuth2Initiate = "github-oauth2.initiate"
 	GitHubOAuth2Receive  = "github-oauth2.receive"
-
-	Def     = "def"
-	DefRefs = "def.refs"
 
 	OldDefRedirect = "old-def-redirect"
 
@@ -78,17 +46,6 @@ func New(base *mux.Router) *Router {
 
 	base.StrictSlash(true)
 
-	base.Path("/").Methods("GET").Name(Home)
-	base.Path("/register-client").Methods("GET", "POST").Name(RegisterClient)
-
-	base.Path("/.builds").Methods("GET").Name(Builds)
-
-	base.Path("/login").Methods("GET", "POST").Name(LogIn)
-	base.Path("/join").Methods("GET", "POST").Name(SignUp)
-	base.Path("/logout").Methods("POST").Name(LogOut)
-	base.Path("/forgot").Methods("GET", "POST").Name(ForgotPassword)
-	base.Path("/reset").Methods("GET", "POST").Name(ResetPassword)
-
 	base.Path("/login/oauth/authorize").Methods("GET").Name(OAuth2ServerAuthorize)
 	base.Path("/login/oauth/token").Methods("POST").Name(OAuth2ServerToken)
 
@@ -100,47 +57,17 @@ func New(base *mux.Router) *Router {
 	base.Path("/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
 	base.Path("/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
 
-	// User routes begin with tilde (~).
-	userPath := `/~` + routevar.User
-	user := base.PathPrefix(userPath).Subrouter()
-	user.Path("/.settings/profile").Methods("GET", "POST").Name(UserSettingsProfile)
-
 	addOldDefRedirectRoute(&Router{*base}, base)
 	addOldTreeRedirectRoute(&Router{*base}, base)
 
 	// attach git transport endpoints
 	gitrouter.New(base)
 
+	base.PathPrefix("/").Methods("GET").Name("ui")
+
 	repoPath := `/` + routevar.Repo
-	base.Path(repoPath + routevar.RepoRevSuffix).Methods("GET").Name(Repo)
 	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
-	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
-
-	defPath := "/def/" + routevar.Def
-	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
-	def.Path("/refs").Methods("GET").Name(DefRefs)
-	repoRev.Path(defPath).Methods("GET").Name(Def)
-
-	// See router_util/tree_route.go for an explanation of how we match tree
-	// entry routes.
-	repoTreePath := "/tree{Path:.*}"
-	repoRev.Path(repoTreePath + "/.sourcebox.{Format}").HandlerFunc(gone)
-	repoRev.Path(repoTreePath).Methods("GET").Name(RepoTree)
-
-	repoRev.Path("/commits").Methods("GET").Name(RepoRevCommits)
-
-	repoRev.Path("/commit").Methods("GET").Name(RepoCommit)
-	repo.Path("/branches").Methods("GET").Name(RepoBranches)
-	repo.Path("/tags").Methods("GET").Name(RepoTags)
 	repo.Path("/sitemap.xml").Methods("GET").Name(RepoSitemap)
-
-	repo.Path("/builds").Methods("GET").Name(RepoBuilds)
-	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)
-	repoBuildPath := `/builds/{Build:\d+}`
-	repo.Path(repoBuildPath).Methods("GET").Name(RepoBuild)
-	repo.Path(repoBuildPath).Methods("POST").Name(RepoBuildUpdate)
-	repoBuild := repo.PathPrefix(repoBuildPath).Subrouter()
-	repoBuild.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(RepoBuildTaskLog)
 
 	return &Router{*base}
 }
@@ -170,9 +97,3 @@ func (r *Router) URLTo(routeName string, params ...string) *url.URL {
 }
 
 var Rel = New(nil)
-
-// gone returns HTTP 410 Gone, which indicates that this is an
-// "expected 404" and suppresses it from our 404 logs.
-func gone(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusGone)
-}

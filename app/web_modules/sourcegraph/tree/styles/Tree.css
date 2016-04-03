@@ -1,9 +1,7 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
-@value flexbox "sourcegraph/components/styles/flexbox.css";
-@value grid "sourcegraph/components/styles/grid.css";
 @value typography "sourcegraph/components/styles/typography.css";
-@value modals "sourcegraph/components/styles/modals.css";
+@value grid "sourcegraph/components/styles/grid.css";
 @value tooltips "sourcegraph/components/styles/tooltips.css";
 
 @value c_black-20 from colors;
@@ -11,7 +9,8 @@
 
 .tree_container {
 	composes: cf from base;
-	composes: flex justify-center from flexbox;
+	display: flex;
+	justify-content: center;
 }
 
 .tree {
@@ -22,21 +21,22 @@
 
 .tree_modal {
 	composes: tree;
-	composes: modal from modals;
+	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: center from base;
 }
 
 .input_container {
-	composes: flex from flexbox;
+	display: flex;
 }
 .input {
 	composes: ma3 from base;
 	composes: text-input from base;
-	composes: flex-auto from flexbox;
+	flex: 1 1 auto;
 }
 
 .list_header {
-	composes: flex items-center from flexbox;
+	display: flex;
+	align-items: center;
 	composes: b tracked f4 from typography;
 	composes: ph3 pt4 pb2 from base;
 	composes: gray from colors;
@@ -48,6 +48,7 @@
 }
 
 .list_item {
+	display: block;
 	composes: pa3 mh3 bt from base;
 	composes: blue b--black-20 from colors;
 	composes: sans-serif from typography;
@@ -96,7 +97,10 @@
 .file_path {
 	composes: pl2 pv2 from base;
 	composes: f4 sans-serif from typography;
-	composes: flex flex-wrap items-center flex-auto from flexbox;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	flex: 1 1 auto;
 	font-weight: bold;
 	letter-spacing: initial;
 	text-transform: none;

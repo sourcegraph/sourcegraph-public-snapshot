@@ -1,1 +1,0 @@
-(function ( window, angular, undefined ) {

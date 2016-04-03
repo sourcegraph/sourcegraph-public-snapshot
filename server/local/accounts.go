@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
@@ -162,11 +161,12 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 	}
 
 	token, err := accountsStore.RequestPasswordReset(elevatedActor(ctx), user)
+	fmt.Println("token: ", token)
 	if err != nil {
 		return nil, err
 	}
 
-	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.ResetPassword))
+	u := conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/reset"})
 	v := url.Values{}
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()

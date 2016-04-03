@@ -1,0 +1,43 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.navbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	composes: bb from base;
+	composes: b--black-20 bg-near-white from colors;
+}
+
+/* Logo */
+.logoHeader {
+}
+.logo {
+	composes: ma3 from base;
+	width: 3rem;
+	height: 3rem;
+}
+.logo:hover {
+	animation: spin 0.5s ease-in-out 1;
+}
+@keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
+
+.contextContainer {
+	flex: 1 1 auto;
+	align-items: center;
+	composes: pa2 from base;
+}
+
+.actions {
+	composes: ph2 from base;
+}
+.action {
+	composes: pa3 from base;
+	composes: f4 from typography;
+	display: inline-block;
+}
+
+.userName {
+	composes: b from typography;
+}

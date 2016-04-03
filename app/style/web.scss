@@ -17,13 +17,13 @@ $fa-font-path: "/.assets/font/font-awesome";
 
 @import "_overrides";
 @import "_mixins";
-@import "_fonts";
+//@import "_fonts";
 
 @import "_error";
 @import "_avatar";
 @import "_builds";
 @import "_coverage";
-@import "_content_view";
+@import "_dashboard";
 @import "_diff";
 @import "_code";
 @import "_code_file";
@@ -44,9 +44,7 @@ $fa-font-path: "/.assets/font/font-awesome";
 @import "_repo_interstitial";
 @import "_repo_tree";
 @import "_repo_doc";
-@import "_sidebar";
 @import "_signup";
 @import "_def";
-@import "_theme_default";
 @import "_tooltip";
 @import "_vcs";

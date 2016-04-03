@@ -1,0 +1,14 @@
+{{define "Head"}}<title>Sourcegraph</title>
+{{end}}
+
+{{define "Nav"}}{{end}}
+
+{{define "Footer"}}
+{{if .RenderResult}}
+	<script ignore-csp>
+		window.__StoreData = {{rawJSON .RenderResult.Stores}};
+	</script>
+{{end}}
+{{end}}
+
+{{define "Body"}}{{if .RenderResult}}{{.RenderResult.HTML}}{{end}}{{end}}

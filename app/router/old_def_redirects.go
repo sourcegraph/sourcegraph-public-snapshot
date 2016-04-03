@@ -30,13 +30,7 @@ func addOldDefRedirectRoute(genURLRouter *Router, matchRouter *mux.Router) {
 			return
 		}
 
-		u := genURLRouter.URLToDef(defSpec.DefKey())
-		if u == nil {
-			log15.Error("Failed to generate new URL in oldDefRedirect", "err", err, "defSpec", defSpec, "routeVars", v)
-			http.Error(w, "failed to generate redirect to new def URL", http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, genURLRouter.URLToDef(defSpec.DefKey()).String(), http.StatusMovedPermanently)
 	})
 }
 

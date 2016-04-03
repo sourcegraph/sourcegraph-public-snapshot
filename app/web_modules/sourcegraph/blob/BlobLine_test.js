@@ -1,3 +1,5 @@
+// @flow weak
+
 import autotest from "sourcegraph/util/autotest";
 
 import React from "react";

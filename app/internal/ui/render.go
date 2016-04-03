@@ -31,7 +31,7 @@ var (
 )
 
 func readBundleJS() ([]byte, error) {
-	f, err := assets.Assets.Open("/bundle.js")
+	f, err := assets.Assets.Open("/main.server.js")
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (e prerenderEvent) Start() time.Time { return e.S }
 func (e prerenderEvent) End() time.Time   { return e.E }
 
 // call calls r.s.Call with caching.
-func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) ([]byte, error) {
+func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) (json.RawMessage, error) {
 	// Construct cache key.
 	keyArray := sha256.Sum256(arg)
 	key := string(keyArray[:])
@@ -131,7 +131,7 @@ func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) ([]byte
 
 	// Return cache hit if present.
 	if cacheHit {
-		return cachedRes.([]byte), nil
+		return cachedRes.(json.RawMessage), nil
 	}
 
 	res, err := r.s.Call(ctx, arg)
@@ -146,26 +146,12 @@ func (r *cachingRenderer) Close() error {
 	return r.s.Close()
 }
 
-func renderReactComponent(ctx context.Context, componentModule string, props interface{}, stores *StoreData) ([]byte, error) {
+func renderReactComponent(ctx context.Context, arg json.RawMessage) (json.RawMessage, error) {
 	r, err := getRenderer(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	data, err := json.Marshal(struct {
-		ComponentModule string
-		Props           interface{}
-		Stores          *StoreData
-	}{
-		ComponentModule: componentModule,
-		Props:           props,
-		Stores:          stores,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return r.Call(ctx, data)
+	return r.Call(ctx, arg)
 }
 
 type contextKey int

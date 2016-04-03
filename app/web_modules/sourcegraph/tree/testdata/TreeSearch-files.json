@@ -4,7 +4,7 @@
 		"props": {
 			"children": [
 				{
-					"type": "Modal",
+					"type": "WrappedComponent",
 					"props": {
 						"shown": false,
 						"children": [
@@ -37,6 +37,7 @@
 																]
 															},
 															"autoFocus": true,
+															"defaultValue": "",
 															"placeholder": "Jump to symbols or files..."
 														}
 													}
@@ -61,36 +62,90 @@
 														"props": {
 															"children": [
 																{
-																	"type": "span",
+																	"type": "",
 																	"props": {
-																		"onClick": {
-																			"dispatchedToStores": [
-																				{
-																					"$constructor": "GoToDirectory",
-																					"path": []
-																				}
-																			],
-																			"dispatchedToBackends": []
-																		},
+																		"className": "",
+																		"to": "/repo@rev",
 																		"children": [
 																			"repo"
+																		],
+																		"onlyActiveOnIndex": false,
+																		"style": {}
+																	}
+																},
+																{
+																	"type": "",
+																	"props": {
+																		"className": "",
+																		"to": "/repo@rev",
+																		"children": [
+																			"/"
+																		],
+																		"onlyActiveOnIndex": false,
+																		"style": {}
+																	}
+																},
+																{
+																	"type": "span",
+																	"key": "0",
+																	"props": {
+																		"children": [
+																			{
+																				"type": "",
+																				"props": {
+																					"className": "",
+																					"to": "/repo@rev/-/tree/p1",
+																					"children": [
+																						"p1"
+																					],
+																					"onlyActiveOnIndex": false,
+																					"style": {}
+																				}
+																			},
+																			{
+																				"type": "",
+																				"props": {
+																					"className": "",
+																					"to": "/repo@rev/-/tree/p1",
+																					"children": [
+																						"/"
+																					],
+																					"onlyActiveOnIndex": false,
+																					"style": {}
+																				}
+																			}
 																		]
 																	}
 																},
 																{
 																	"type": "span",
+																	"key": "1",
 																	"props": {
-																		"onClick": {
-																			"dispatchedToStores": [
-																				{
-																					"$constructor": "GoToDirectory",
-																					"path": []
-																				}
-																			],
-																			"dispatchedToBackends": []
-																		},
 																		"children": [
-																			"/"
+																			{
+																				"type": "",
+																				"props": {
+																					"className": "",
+																					"to": "/repo@rev/-/tree/p1/p2",
+																					"children": [
+																						"p2"
+																					],
+																					"onlyActiveOnIndex": false,
+																					"style": {}
+																				}
+																			},
+																			{
+																				"type": "",
+																				"props": {
+																					"className": "",
+																					"to": "/repo@rev/-/tree/p1/p2",
+																					"children": [
+																						"/"
+																					],
+																					"onlyActiveOnIndex": false,
+																					"style": {}
+																				}
+																			}
 																		]
 																	}
 																},
@@ -102,7 +157,7 @@
 																				"type": "span",
 																				"props": {
 																					"children": [
-																						"a"
+																						"f3"
 																					]
 																				}
 																			}
@@ -120,9 +175,11 @@
 											"props": {
 												"children": [
 													{
-														"type": "div",
-														"key": "/repo@rev/-/tree/a",
+														"type": "",
+														"key": "/repo@rev/-/blob/p1/p2/f3",
 														"props": {
+															"className": "",
+															"to": "/repo@rev/-/blob/p1/p2/f3",
 															"children": [
 																{
 																	"type": "span",
@@ -137,44 +194,10 @@
 																		]
 																	}
 																},
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			"a"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "div",
-														"key": "/repo@rev/-/tree/b",
-														"props": {
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "fa fa-file-text-o"
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			"b"
-																		]
-																	}
-																}
-															]
+																"f3"
+															],
+															"onlyActiveOnIndex": false,
+															"style": {}
 														}
 													}
 												]

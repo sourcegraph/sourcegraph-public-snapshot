@@ -4,43 +4,42 @@
 		"props": {
 			"children": [
 				{
-					"type": "nav",
+					"type": "WrappedComponent",
+					"key": ".0",
 					"props": {
+						"visible": true,
 						"children": [
 							{
-								"type": "NotificationWell",
+								"type": "span",
+								"key": ".0:$copy",
 								"props": {
-									"initVisible": true,
 									"children": [
-										{
-											"type": "span",
-											"props": {
-												"children": [
-													"We've set up Sourcegraph on some of the top Go repositories for you to check out. When you are ready, you can",
-													{
-														"type": "a",
-														"props": {
-															"href": "",
-															"children": [
-																"set up Sourcegraph for your own repositories!"
-															]
-														}
-													}
-												]
-											}
-										}
+										"Want Sourcegraph for your own code?"
 									]
 								}
 							},
 							{
-								"type": "div",
+								"type": "span",
+								"key": ".0:$cta",
 								"props": {
+									"styleName": "onboarding-cta",
 									"children": [
 										{
-											"type": "span",
+											"type": "WrappedComponent",
 											"props": {
+												"outline": true,
+												"small": true,
 												"children": [
-													"Repositories"
+													{
+														"type": "a",
+														"props": {
+															"styleName": "cta-link",
+															"href": "/join",
+															"children": [
+																"Sign up"
+															]
+														}
+													}
 												]
 											}
 										}
@@ -52,12 +51,73 @@
 				},
 				{
 					"type": "div",
+					"key": ".1",
 					"props": {
+						"styleName": "header",
 						"children": [
 							{
-								"type": "RepoList",
+								"type": "span",
+								"key": ".0",
+								"props": {
+									"styleName": "repos-label",
+									"children": [
+										" "
+									]
+								}
+							},
+							{
+								"type": "WrappedComponent",
+								"key": ".1",
+								"props": {
+									"type": "text",
+									"placeholder": "Filter repositories..."
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".2",
+					"props": {
+						"styleName": "list",
+						"children": [
+							{
+								"type": "WrappedComponent",
+								"key": ".1",
 								"props": {
 									"repos": [
+										{
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.001Z",
+											"Language": "Scala"
+										},
+										{
+											"GitHubID": 1,
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.004Z",
+											"Language": "C++"
+										},
+										{
+											"GitHubID": 2,
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.003Z",
+											"Language": "C"
+										},
+										{
+											"GitHubID": 3,
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.002Z",
+											"Language": "Python"
+										},
 										{
 											"Private": false,
 											"URI": "someURL",
@@ -70,7 +130,8 @@
 								}
 							},
 							{
-								"type": "RepoList",
+								"type": "WrappedComponent",
+								"key": ".2",
 								"props": {
 									"repos": [
 										{

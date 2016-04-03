@@ -19,7 +19,7 @@ const TreeBackend = {
 								console.error(err);
 								return {Error: true};
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, data)));
+							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, data.Commits[0])));
 				}
 				break;
 			}

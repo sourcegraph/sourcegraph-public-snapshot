@@ -1,0 +1,88 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value blob "sourcegraph/blob/styles/Blob.css";
+
+.title {
+	composes: code f5 from typography;
+	word-wrap: break-word;
+	white-space: pre-line;
+}
+.title :global .name {
+	font-weight: bold;
+}
+
+/* Def box (in blob margin) */
+.marginBox {
+	composes: w-100 from base;
+	composes: marginBox from blob;
+}
+.boxTitle {
+	composes: black from colors;
+	composes: title;
+}
+.sectionTitle {
+	composes: pt2 from base;
+	composes: b f6 from typography;
+}
+.allRefs {
+	line-height: 1.7;
+	white-space: nowrap;
+}
+.refsGroup {
+	white-space: nowrap;
+	composes: pl4 from base;
+}
+.refsCount {
+	composes: br3 from base;
+	composes: bg-blue-1 blue-8 from colors;
+	composes: b from typography;
+	font-size: 10px;
+	vertical-align: 1px;
+	padding: 3px 5px;
+}
+.currentFileRefs {
+	composes: b from base;
+}
+
+/* Def tooltip */
+.tooltip {
+	position: fixed;
+	z-index: 1000;
+	max-width: 360px;
+	min-width: 120px;
+	composes: br1 pa2 from base;
+	composes: f6 from typography;
+	color: white;
+}
+.tooltipFound {
+	composes: tooltip;
+	composes: bg-near-black from colors;
+}
+.tooltipError {
+	composes: tooltip;
+	background-color: #a00;
+}
+.error {
+	
+}
+.content {
+}
+.tooltipTitle {
+	composes: light-gray from colors;
+	composes: title;
+}
+.doc {
+	max-height: 100px;
+	overflow-y: hidden;
+	word-wrap: break-word;
+}
+.doc p {
+	margin: 5px 0 0;
+}
+.repo {
+	display: block;
+	composes: mt2 from base;
+	composes: mid-gray from colors;
+	composes: f6 from typography;
+}

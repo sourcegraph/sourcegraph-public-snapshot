@@ -6,6 +6,14 @@ export class WantBuild {
 	}
 }
 
+export class WantBuilds {
+	constructor(repo, search, force) {
+		this.repo = repo;
+		this.search = search;
+		this.force = force;
+	}
+}
+
 export class WantNewestBuildForCommit {
 	constructor(repo, commitID, force) {
 		this.repo = repo;
@@ -27,6 +35,14 @@ export class BuildFetched {
 		this.repo = repo;
 		this.buildID = buildID;
 		this.build = build;
+	}
+}
+
+export class BuildsFetched {
+	constructor(repo, builds, search) {
+		this.repo = repo;
+		this.builds = builds;
+		this.search = search;
 	}
 }
 

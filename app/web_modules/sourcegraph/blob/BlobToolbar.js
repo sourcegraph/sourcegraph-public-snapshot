@@ -1,43 +1,19 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
-import RevSwitcherContainer from "sourcegraph/repo/RevSwitcherContainer";
-import BuildIndicator from "sourcegraph/build/BuildIndicator";
+import s from "sourcegraph/blob/styles/Blob.css";
 
 class BlobToolbar extends Component {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev;
-		state.path = props.path;
-		state.builds = props.builds;
+		state.path = props.path || null;
 	}
 
 	render() {
-		// TODO replace with proper shared component
-		let revPart = this.state.rev ? `@${this.state.rev}` : "";
-		let basePath = `/${this.state.repo}${revPart}/-/tree`;
-		let repoSegs = this.state.repo.split("/");
-		let breadcrumb = [
-			<span key="base" className="path-component">
-				<a className="path-component" href={basePath}>{repoSegs[repoSegs.length-1]}</a>
-			</span>,
-		];
-		this.state.path.split("/").forEach((seg, i) => {
-			basePath += `/${seg}`;
-			breadcrumb.push(<span key={i} className="path-component"> / <a href={basePath}>{seg}</a></span>);
-		});
-
 		return (
-			<div className="code-file-toolbar" ref="toolbar">
-				<div className="file-breadcrumb">{breadcrumb}</div>
+			<div className={s.toolbar}>
 				<div className="actions">
-					<BuildIndicator repo={this.state.repo} commitID={this.state.rev} builds={this.state.builds} />
-
-					<RevSwitcherContainer repo={this.state.repo}
-						rev={this.state.rev}
-						path={this.state.path}
-						route="tree"
-						alignRight={true} />
 				</div>
 			</div>
 		);
@@ -47,10 +23,7 @@ class BlobToolbar extends Component {
 BlobToolbar.propTypes = {
 	repo: React.PropTypes.string.isRequired,
 	rev: React.PropTypes.string.isRequired,
-	path: React.PropTypes.string.isRequired,
-
-	// builds is BuildStore.builds.
-	builds: React.PropTypes.object.isRequired,
+	path: React.PropTypes.string,
 };
 
 export default BlobToolbar;

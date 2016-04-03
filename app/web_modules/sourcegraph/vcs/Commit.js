@@ -1,7 +1,13 @@
 import React from "react";
+import {Link} from "react-router";
 
 import Component from "sourcegraph/Component";
 import TimeAgo from "sourcegraph/util/TimeAgo";
+
+import {Avatar} from "sourcegraph/components";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Commit.css";
 
 class Commit extends Component {
 	reconcileState(state, props) {
@@ -11,27 +17,22 @@ class Commit extends Component {
 	}
 
 	render() {
-		const defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=96";
 		return (
-			<div className="commit single media repo-build">
-				<a className="pull-left">
-					<img className="media-object avatar img-rounded" src={
-						this.state.commit.AuthorPerson ? this.state.commit.AuthorPerson.AvatarURL : defaultAvatar
-					}/>
-				</a>
-				<div className="media-body">
-					<h4 className="media-heading commit-title">
-						<a href={`/${this.state.commit.RepoURI}@${this.state.commit.ID}/-/commit`}>
+			<div styleName="container">
+				<div styleName="avatar">
+					<Avatar img={this.state.commit.AuthorPerson ? this.state.commit.AuthorPerson.AvatarURL : ""} size="large" />
+				</div>
+				<div styleName="body">
+					<div styleName="title">
+						<Link to={`/${this.state.commit.RepoURI}@${this.state.commit.ID}/-/commit`}>
+							<code styleName="sha">{this.state.commit.ID.substring(0, 6)}</code>
 							{this.state.commit.Message.slice(0, 70)}
-						</a>
-					</h4>
-					<p className="author committer">
-						<span className="date">authored <TimeAgo time={this.state.commit.Author.Date} /></span>
-						{this.state.commit.Committer ? <span className="date">, committed <TimeAgo time={this.state.commit.Committer.Date} /></span> : null}
-						<a href={`/${this.state.commit.RepoURI}@${this.state.commit.ID}/-/commit`}>
-							<code className="commit-id pull-right">{this.state.commit.ID.substring(0, 6)}</code>
-						</a>
-					</p>
+						</Link>
+					</div>
+					<div styleName="text">
+						<span>authored <TimeAgo time={this.state.commit.Author.Date} /></span>
+						{this.state.commit.Committer ? <span>, committed <TimeAgo time={this.state.commit.Committer.Date} /></span> : null}
+					</div>
 				</div>
 			</div>
 		);
@@ -42,4 +43,4 @@ Commit.propTypes = {
 	commit: React.PropTypes.object.isRequired,
 };
 
-export default Commit;
+export default CSSModules(Commit, styles);

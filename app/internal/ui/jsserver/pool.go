@@ -30,7 +30,7 @@ type pool struct {
 // Call sends the argument to one of the servers in the pool. If an
 // error occurs, it attempts to replenish the pool by creating a new
 // server in the failed server's place.
-func (p *pool) Call(ctx context.Context, arg json.RawMessage) ([]byte, error) {
+func (p *pool) Call(ctx context.Context, arg json.RawMessage) (json.RawMessage, error) {
 	s := <-p.servers
 
 	if s == nil {

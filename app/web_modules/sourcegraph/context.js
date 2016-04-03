@@ -1,22 +1,28 @@
-let context;
+const context = {
+	appURL: "",
+	authorization: "",
+	currentUser: null,
+	csrfToken: "",
+	cacheControl: null,
+	parentSpanID: null,
+	assetsRoot: "",
+	deviceID: "",
+	buildVars: null,
+};
 
-// TODO(autotest) support window object.
-if (typeof window !== "undefined") {
-	context = {
-		currentUser: window._currentUser,
-		csrfToken: window._csrfToken,
-		cacheControl: window._cacheControl || null,
-		parentSpanID: window.document.head.dataset.appdashCurrentSpanId,
-		deviceID: window.document.head.dataset.deviceId,
-	};
-} else {
-	context = {
-		currentUser: null,
-		csrfToken: "",
-		cacheControl: null,
-		parentSpanID: null,
-		deviceID: "",
-	};
+// Sets the values of the context given a JSContext object from the server.
+//
+// TODO(pure-react) Type check this.
+export function reset(ctx) {
+	context.appURL = ctx.AppURL;
+	context.authorization = ctx.Authorization;
+	context.currentUser = ctx.CurrentUser;
+	context.csrfToken = ctx.CSRFToken;
+	context.cacheControl = ctx.CacheControl || null;
+	context.currentSpan = ctx.CurrentSpanID;
+	context.assetsRoot = ctx.AssetsRoot;
+	context.deviceID = ctx.DeviceID;
+	context.buildVars = ctx.BuildVars;
 }
 
 export default context;

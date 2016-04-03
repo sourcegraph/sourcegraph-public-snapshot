@@ -1,18 +1,29 @@
+// @flow
+
 import React from "react";
 
 import Component from "sourcegraph/Component";
 
+export type Range = [number, number];
+
 class BlobLineExpander extends Component {
-	constructor(props) {
+	constructor(props: BlobLineExpander.props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
 	}
 
-	reconcileState(state, props) {
+	state: BlobLineExpander.props;
+
+	props: {
+		expandRange: Range;
+		onExpand: (range: Range) => any;
+	};
+
+	reconcileState(state: BlobLineExpander.state, props: BlobLineExpander.props) {
 		Object.assign(state, props);
 	}
 
-	_onClick(e) {
+	_onClick(e: Event) {
 		this.state.onExpand(this.state.expandRange);
 	}
 

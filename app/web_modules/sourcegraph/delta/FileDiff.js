@@ -6,7 +6,7 @@ import Component from "sourcegraph/Component";
 import DiffStatScale from "sourcegraph/delta/DiffStatScale";
 import Dispatcher from "sourcegraph/Dispatcher";
 import Hunk from "sourcegraph/delta/Hunk";
-import * as router from "sourcegraph/util/router";
+import {urlToBlob} from "sourcegraph/blob/routes";
 import fileLines from "sourcegraph/util/fileLines";
 import {isDevNull} from "sourcegraph/delta/util";
 
@@ -95,8 +95,8 @@ class FileDiff extends Component {
 					) : null}
 
 					<div className="btn-group pull-right">
-						{!isDevNull(diff.OrigName) && <a className="button btn btn-default btn-xs" href={router.tree(this.props.baseRepo, this.props.baseRev, diff.OrigName)}>Original</a>}
-						{!isDevNull(diff.NewName) && <a className="button btn btn-default btn-xs" href={router.tree(this.props.headRepo, this.props.headRev, diff.NewName)}>New</a>}
+						{!isDevNull(diff.OrigName) && <a className="button btn btn-default btn-xs" href={urlToBlob(this.props.baseRepo, this.props.baseRev, diff.OrigName)}>Original</a>}
+						{!isDevNull(diff.NewName) && <a className="button btn btn-default btn-xs" href={urlToBlob(this.props.headRepo, this.props.headRev, diff.NewName)}>New</a>}
 					</div>
 				</header>
 

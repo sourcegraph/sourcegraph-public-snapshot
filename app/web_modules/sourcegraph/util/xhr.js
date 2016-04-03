@@ -1,3 +1,4 @@
+import {btoa} from "abab";
 import "whatwg-fetch";
 
 import context from "sourcegraph/context";
@@ -16,8 +17,8 @@ function defaultOptions() {
 		},
 		credentials: "same-origin",
 	};
-	if (typeof document !== "undefined" && document.head.dataset && document.head.dataset.currentUserOauth2AccessToken) {
-		let auth = `x-oauth-basic:${document.head.dataset.currentUserOauth2AccessToken}`;
+	if (context.authorization) {
+		let auth = `x-oauth-basic:${context.authorization}`;
 		options.headers["authorization"] = `Basic ${btoa(auth)}`;
 	}
 	if (context.cacheControl) {
@@ -27,30 +28,41 @@ function defaultOptions() {
 	return options;
 }
 
-// for server-side rendering
-let fetchDisabled = false;
-export function disableFetch() { fetchDisabled = true; }
-const noopPromise = {
-	then: () => noopPromise,
-	catch: () => noopPromise,
-};
-
+const allFetches = [];
 export function defaultFetch(url, options) {
-	if (fetchDisabled) return noopPromise;
+	if (typeof global !== "undefined" && global.process && global.process.env.JSSERVER) {
+		url = `${context.appURL}${url}`;
+	}
 
 	let defaults = defaultOptions();
 
 	// Combine headers.
 	const headers = Object.assign({}, defaults.headers, options ? options.headers : null);
 
-	return fetch(url, Object.assign(defaults, options, {headers: headers}));
+	const f = fetch(url, Object.assign(defaults, options, {headers: headers}));
+	allFetches.push(f);
+	return f;
 }
+
+// allFetchesCount returns the total number of fetches initiated.
+//
+// Only this count, not the allFetches list itself, is exported, for
+// better encapsulation.
+export function allFetchesCount(): number { return allFetches.length; }
 
 // checkStatus is intended to be chained in a fetch call. For example:
 //   fetch(...).then(checkStatus) ...
 export function checkStatus(resp) {
 	if (resp.status === 200 || resp.status === 201) return resp;
-	let err = new Error(resp.statusText || `HTTP ${resp.status}`);
-	err.response = resp;
-	throw err;
+	return resp.text().then((body) => {
+		let err = new Error(body || resp.statusText);
+		err.body = body;
+		err.response = resp;
+		throw err;
+	});
 }
+
+// allFetchesResolved returns a promise that is resolved when all fetch calls
+// so far are resolved. It lets server.js determine when the initial data
+// loading is complete.
+export function allFetchesResolved() { return Promise.all(allFetches); }

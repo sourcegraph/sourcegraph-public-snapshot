@@ -10,7 +10,7 @@ class TreeOverlay extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			currPath: [],
+			path: [],
 		};
 	}
 
@@ -31,19 +31,19 @@ class TreeOverlay extends Component {
 
 		case TreeActions.UpDirectory:
 			this.setState({
-				currPath: update(this.state.currPath, {$splice: [[this.state.currPath.length - 1, 1]]}),
+				path: update(this.state.path, {$splice: [[this.state.path.length - 1, 1]]}),
 			});
 			break;
 
 		case TreeActions.DownDirectory:
 			this.setState({
-				currPath: update(this.state.currPath, {$push: [action.part]}),
+				path: update(this.state.path, {$push: [action.part]}),
 			});
 			break;
 
 		case TreeActions.GoToDirectory:
 			this.setState({
-				currPath: action.path,
+				path: action.path,
 			});
 			break;
 		}
@@ -55,8 +55,8 @@ class TreeOverlay extends Component {
 				repo={this.state.repo}
 				rev={this.state.rev}
 				overlay={true}
-				prefetch={true}
-				currPath={this.state.currPath} />
+				prefetch={false}
+				path={this.state.path} />
 		);
 	}
 }

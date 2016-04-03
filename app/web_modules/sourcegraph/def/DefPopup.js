@@ -1,34 +1,35 @@
+// @flow weak
+
 import React from "react";
+import {Link} from "react-router";
+import {urlToDefRefs} from "sourcegraph/def/routes";
+import s from "sourcegraph/def/styles/Def.css";
 
-import Component from "sourcegraph/Component";
-import hotLink from "sourcegraph/util/hotLink";
-
-class DefPopup extends Component {
-	reconcileState(state, props) {
-		Object.assign(state, props);
-		state.path = props.path || null;
-	}
+class DefPopup extends React.Component {
+	static propTypes = {
+		def: React.PropTypes.object.isRequired,
+		refs: React.PropTypes.object,
+		path: React.PropTypes.string.isRequired,
+	};
 
 	render() {
-		let def = this.state.def;
-		let refsURL = `${this.state.def.URL}/-/refs`;
+		let def = this.props.def;
+		let refs = this.props.refs;
 		return (
-			<div className="sidebar-section token-details">
-				<section>
-					<p className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
-				</section>
+			<div className={s.marginBox}>
+				<header className={s.boxTitle} dangerouslySetInnerHTML={def.QualifiedName} />
 
-				<header className="usage-header">Used in {!this.state.refs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
-				{this.state.refs && this.state.refs.Total === 0 &&
+				<header className={s.sectionTitle}>Used in {!refs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
+				{refs && refs.Total === 0 &&
 					<i>No usages found</i>
 				}
-				{this.state.refs && this.state.refs.Files && this.state.refs.Total > 0 &&
-					<div className="usages">
-						<header><span className="badge">{this.state.refs.Total}</span> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> </header>
-						<div className="usage-category">
-							{this.state.refs.Files.map((file, i) => (
-								<div key={i} className={this.state.path === file.Name ? "current-file" : ""}>
-									<span className="badge">{file.RefCount}</span> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{file.Name}</a>
+				{refs && refs.Files && refs.Total > 0 &&
+					<div className={s.allRefs}>
+						<header><span className={s.refsCount}>{refs.Total}</span> <Link to={urlToDefRefs(def)}>{def.Repo}</Link></header>
+						<div className={s.refsGroup}>
+							{refs.Files.map((file, i) => (
+								<div key={i} className={this.props.path === file.Name ? s.currentFileRefs : ""}>
+									<span className={s.refsCount}>{file.RefCount}</span> <Link to={urlToDefRefs(def, file.Name)}>{file.Name}</Link>
 								</div>
 							))}
 						</div>
@@ -38,13 +39,5 @@ class DefPopup extends Component {
 		);
 	}
 }
-
-DefPopup.propTypes = {
-	def: React.PropTypes.object,
-	refs: React.PropTypes.object,
-	annotations: React.PropTypes.object,
-	activeDef: React.PropTypes.string,
-	highlightedDef: React.PropTypes.string,
-};
 
 export default DefPopup;

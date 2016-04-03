@@ -1,45 +1,51 @@
+import "babel-polyfill";
 import React from "react";
 import ReactDOM from "react-dom";
-import requireComponent from "sourcegraph/init/requireComponent";
+import "sourcegraph/util/actionLogger";
+import "sourcegraph/init/AppdashRecordPerfTiming";
+import {Router, browserHistory as history, match} from "react-router";
+import {rootRoute} from "sourcegraph/app/App";
 import resetStores from "sourcegraph/init/resetStores";
+import * as context from "sourcegraph/context";
 
-let logTimings = false;
-if (typeof window !== "undefined") {
-	logTimings = window.localStorage["log-timings"] === "true";
+// REQUIRED. Configures Sentry error monitoring.
+import "sourcegraph/init/Sentry";
 
-	window.enableTimingsLog = function() {
-		window.localStorage["log-timings"] = "true";
-		console.log("Timings log enabled.");
-	};
+// REQUIRED. Enables HTML history API (pushState) tracking in Google Analytics.
+// See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
+import "autotrack/lib/plugins/url-change-tracker";
 
-	window.disableTimingsLog = function() {
-		Reflect.deleteProperty(window.localStorage, "log-timings");
-		console.log("Timings log disabled.");
-	};
+if (typeof window !== "undefined" && window.__StoreData) {
+	resetStores(window.__StoreData);
 }
 
-if (typeof document !== "undefined") {
-	if (window.__StoreData) {
-		resetStores(window.__StoreData);
-	}
+context.reset(window.__sourcegraphJSContext);
+__webpack_public_path__ = document.head.dataset.webpackPublicPath; // eslint-disable-line no-undef
 
-	let els = document.querySelectorAll("[data-react]");
-	for (let i = 0; i < els.length; i++) {
-		let el = els[i];
-		const Component = requireComponent(el.dataset.react);
-		let props = el.dataset.props ? JSON.parse(el.dataset.props) : null;
-		if (props && props.component) {
-			props.component = requireComponent(props.component);
+// matchWithRedirectHandling calls the router match func. If the router issues
+// a redirect, it calls match recursively after replacing the location with the
+// new one.
+function matchWithRedirectHandling(recursed) {
+	match({history, routes: rootRoute}, (err, redirectLocation, renderProps) => {
+		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
+			console.error("404 not found (no route)");
+			return;
 		}
-		render(Component, props, el);
-	}
+
+		if (redirectLocation) {
+			let prevLocation = window.location.href;
+			history.replace(redirectLocation);
+			if (recursed) {
+				console.error(`Possible redirect loop: ${prevLocation} -> ${redirectLocation.pathname}`);
+				window.location.reload();
+				return;
+			}
+			matchWithRedirectHandling(true);
+			return;
+		}
+
+		setTimeout(() => ReactDOM.render(<Router {...renderProps} />, document.getElementById("main")));
+	});
 }
 
-function render(Component, props, el) {
-	setTimeout(() => {
-		const label = props && props.component ? props.component.name : Component.name;
-		if (logTimings) console.time(`render ${label}`);
-		ReactDOM.render(<Component {...props} />, el);
-		if (logTimings) console.timeEnd(`render ${label}`);
-	}, 0);
-}
+matchWithRedirectHandling(false);

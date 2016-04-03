@@ -2,35 +2,32 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 @value grid "sourcegraph/components/styles/grid.css";
-@value flexbox "sourcegraph/components/styles/flexbox.css";
 
-@value search_height 30px;
-
-.dash_repos {
-	composes: flex flex-column items-center from flexbox;
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	composes: center from base;
 }
 
-.anon_section {
-	composes: mt5 from base
+.anon-section {
+	composes: mt5 ph3 from base;
 }
 
 .logo {
 	composes: ma4 from base;
 }
 
-.anon_title {
-	composes: f1 tc from typography;
-	composes: pv3 from base;
-	composes: mid-gray from colors;
+.anon-title {
+	composes: header-center from typography;
+	composes: pt3 pb4 from base;
 }
 
-.anon_header_sub {
-	composes: f3 tc from typography;
-	composes: silver from colors;
+.anon-header-sub {
+	composes: subheader tc from typography;
 }
 
-.anon_repo {
+.anon-repo {
 	composes: col-4 from grid;
 }
 
@@ -39,70 +36,66 @@
 	composes: mt5 from base;
 }
 
-.onboarding_cta_link {
-	composes: ml1 mr1 link from base;
+.onboarding-cta {
+	composes: pv2 ph3 from base;
 }
 
-.repos_header {
-	composes: flex flex-wrap from flexbox;
+.cta-link {
+	color: inherit;
+	font-weight: normal;
+}
+
+.header {
+	display: flex;
+	flex-wrap: wrap;
 	composes: mt4 from base;
 }
 
-.repos_label {
-	composes: flex-auto from flexbox;
-	composes: f1 b from typography;
-	composes: mid-gray from colors;
+.repos-label {
+	flex: 1 1 auto;
+	composes: section-header from typography;
 }
 
-.search_input {
-	composes: pa2 text-input from base;
-}
-
-.list_item_group {
+.list {
 	composes: pb3 from base;
 }
 
-.repo_section_header {
+.list-section-header {
 	composes: ph3 pt4 pb2 from base;
-	composes: b f4 tracked from typography;
-	composes: gray from colors;
-	text-transform: uppercase;
+	composes: subsection-header from typography;
 }
 
-.list_item {
+.list-item {
 	composes: pa3 mh3 bt from base;
 	composes: sans-serif from typography;
 	composes: b--black-20 from colors;
 }
-.list_item_disabled {
-	composes: list_item;
+
+.list-item-disabled {
+	composes: list-item;
 	composes: bg-near-white from colors;
 }
 
-.repo_description {
-	composes: fw4 f3 from typography;
+.description {
+	composes: normal-text from typography;
 	composes: mv3 from base;
-	color: #969896;
 }
 
-.repo_updated {
+.updated {
 	composes: fw7 f4 tracked from typography;
 	composes: mb3 from base;
 	composes: moon-gray from colors;
 	text-transform: uppercase;
 }
 
-.repo_title {
-	composes: fw4 f2 from typography;
-	composes: black from colors;
+.uri {
+	composes: pv2 from base;
+	composes: fw5 f2 from typography;
+	composes: dark-gray from colors;
+	display: block;
 }
 
-.repo_title_link {
-	composes: repo_title;
-	composes: b from typography;
-}
-
-.repo_disable_reason {
+.disable-reason {
 	composes: i f4 from typography;
 	composes: brand-orange from colors;
 	display: block;

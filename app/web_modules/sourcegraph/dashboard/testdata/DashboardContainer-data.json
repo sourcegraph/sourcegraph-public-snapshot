@@ -2,58 +2,100 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"styleName": "container",
 			"children": [
 				{
 					"type": "div",
+					"key": ".0",
 					"props": {
+						"styleName": "anon-section",
 						"children": [
 							{
-								"type": "div",
+								"type": "img",
+								"key": ".0",
 								"props": {
+									"styleName": "logo",
+									"src": "/img/sourcegraph-logo.svg"
+								}
+							},
+							{
+								"type": "div",
+								"key": ".1",
+								"props": {
+									"styleName": "anon-title",
 									"children": [
-										{
-											"type": "img",
-											"props": {
-												"src": ""
-											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"children": [
-													"Understand and use code better"
-												]
-											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"children": [
-													"Use Sourcegraph to search, browse, and cross-reference code.",
-													{
-														"type": "br",
-														"props": {}
-													},
-													"Works with both public and private GitHub repositories written in Go."
-												]
-											}
-										}
+										"Understand and use code better"
 									]
 								}
 							},
 							{
 								"type": "div",
+								"key": ".2",
 								"props": {
+									"styleName": "anon-header-sub",
 									"children": [
+										"Use Sourcegraph to search, browse, and cross-reference code.",
 										{
-											"type": "DashboardRepos",
-											"props": {
-												"repos": [],
-												"linkGitHubURL": "",
-												"signup": ""
-											}
-										}
+											"type": "br",
+											"key": ".1",
+											"props": {}
+										},
+										"Works with both public and private GitHub repositories written in Go."
 									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".1",
+					"props": {
+						"styleName": "repos",
+						"children": [
+							{
+								"type": "WrappedComponent",
+								"props": {
+									"repos": [],
+									"exampleRepos": [
+										{
+											"URI": "github.com/docker/docker",
+											"Owner": "docker",
+											"Name": "docker",
+											"Language": "Go",
+											"Description": "Docker - the open-source application container engine http://www.docker.com"
+										},
+										{
+											"URI": "github.com/drone/drone",
+											"Owner": "drone",
+											"Name": "drone",
+											"Language": "Go",
+											"Description": "Drone is a Continuous Delivery platform built on Docker, written in Go"
+										},
+										{
+											"URI": "github.com/golang/go",
+											"Owner": "golang",
+											"Name": "go",
+											"Language": "Go",
+											"Description": "The Go programming language https://golang.org"
+										},
+										{
+											"URI": "github.com/influxdata/influxdb",
+											"Owner": "influxdata",
+											"Name": "influxdb",
+											"Language": "Go",
+											"Description": "Scalable datastore for metrics, events, and real-time analytics https://influxdata.com"
+										},
+										{
+											"URI": "github.com/gorilla/mux",
+											"Owner": "gorilla",
+											"Name": "mux",
+											"Language": "Go",
+											"Description": "A powerful URL router and dispatcher for golang. http://www.gorillatoolkit.org/pkg/mux"
+										}
+									],
+									"hasLinkedGitHub": true,
+									"linkGitHubURL": ""
 								}
 							}
 						]
@@ -61,5 +103,10 @@
 				}
 			]
 		}
-	}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantHome"
+		}
+	]
 }

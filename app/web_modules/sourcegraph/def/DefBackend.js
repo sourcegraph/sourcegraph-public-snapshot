@@ -1,3 +1,5 @@
+// @flow weak
+
 import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -10,16 +12,16 @@ const DefBackend = {
 		switch (action.constructor) {
 		case DefActions.WantDef:
 			{
-				let def = DefStore.defs.get(action.url);
+				let def = DefStore.defs.get(action.repo, action.rev, action.def);
 				if (def === null) {
-					DefBackend.fetch(`/.api/repos${action.url}`)
+					DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								console.error(err);
 								return {Error: true};
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.url, data)));
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)));
 				}
 				break;
 			}
@@ -44,9 +46,9 @@ const DefBackend = {
 
 		case DefActions.WantRefs:
 			{
-				let refs = DefStore.refs.get(action.defURL, action.file);
+				let refs = DefStore.refs.get(action.repo, action.rev, action.def, action.file);
 				if (refs === null) {
-					let url = `/.api/repos${action.defURL}/-/refs`;
+					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/refs`;
 					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
 					DefBackend.fetch(url)
 							.then(checkStatus)
@@ -56,7 +58,7 @@ const DefBackend = {
 								return null;
 							})
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.defURL, action.file, data));
+								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.file, data));
 							});
 				}
 				break;

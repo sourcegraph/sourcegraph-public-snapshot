@@ -1,16 +1,16 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
-@value flexbox "sourcegraph/components/styles/flexbox.css";
 
 .footer {
 	composes: bt mb4 pt5 mh7 ph3 from base;
 	composes: b--light-gray from colors;
-	composes: flex flex-wrap from flexbox;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .left_container {
-	composes: flex-auto from flexbox;
+	flex: 1 1 auto;
 	composes: mr3 from base;
 }
 
@@ -34,7 +34,8 @@
 }
 
 .right_container {
-	composes: flex flex-wrap from flexbox;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .list {

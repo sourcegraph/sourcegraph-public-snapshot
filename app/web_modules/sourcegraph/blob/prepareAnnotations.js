@@ -1,3 +1,5 @@
+// @flow weak
+
 import {sortAnns} from "sourcegraph/blob/Annotations";
 
 // prepareAnnotations should be called on annotations added on the client side

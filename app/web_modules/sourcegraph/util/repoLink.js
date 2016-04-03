@@ -1,6 +1,7 @@
 import React from "react";
-import * as router from "sourcegraph/util/router";
-import Styles from "sourcegraph/components/styles/base.css";
+import {Link} from "react-router";
+import {urlToRepo} from "sourcegraph/repo/routes";
+import style from "sourcegraph/components/styles/breadcrumb.css";
 
 // repoLink is swiped from app/repo.go.
 function repoLink(repoURI, disableLink) {
@@ -17,13 +18,13 @@ function repoLink(repoURI, disableLink) {
 			if (disableLink) {
 				collection.push(<span className="name" key={`name${i}`} title={repoURI}>{parts[i]}</span>);
 			} else {
-				collection.push(<a className={Styles.link} key={`name${i}`} href={router.repo(repoURI)} title={repoURI}>{parts[i]}</a>);
+				collection.push(<Link className={style.link} key={`name${i}`} to={urlToRepo(repoURI)} title={repoURI}>{parts[i]}</Link>);
 			}
 		} else {
 			collection.push(<span className="part" key={`part${i}`}>{parts[i]}</span>);
 		}
 		if (i < parts.length - 1) {
-			collection.push(<span className="sep" key={`sep${i}`}>/</span>);
+			collection.push(<span className={style.sep} key={`sep${i}`}>/</span>);
 		}
 	}
 

@@ -1,14 +1,17 @@
 @value base "sourcegraph/components/styles/base.css";
+@value typography "sourcegraph/components/styles/typography.css";
 @value colors "sourcegraph/components/styles/colors.css";
-@value flexbox "sourcegraph/components/styles/flexbox.css";
 
-.notification_box {
-	composes: flex flex-wrap from flexbox;
-	composes: ba br3 pa4 from base;
-	composes: b--light-gray bg-orange-2 dark-gray from colors;
+.notification-box {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	composes: ba br3 pv3 ph4 from base;
+	composes: b--orange bg-orange-1 from colors;
+	composes: normal-text tc b from typography;
 }
 
-.notification_box_hidden {
-	composes: notification_box;
-	display: none; /* explicitly override display: flex */
+.hidden {
+	display: none;
 }

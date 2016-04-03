@@ -20,7 +20,7 @@ describe("TreeBackend", () => {
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			TreeBackend.__onDispatch(new TreeActions.WantCommit(entry.repo, entry.rev, entry.path));
-		})).to.eql([new TreeActions.CommitFetched(entry.repo, entry.rev, entry.path, {Commits: ["someTreeCommit"]})]);
+		})).to.eql([new TreeActions.CommitFetched(entry.repo, entry.rev, entry.path, "someTreeCommit")]);
 	});
 
 	it("should handle WantFileList", () => {

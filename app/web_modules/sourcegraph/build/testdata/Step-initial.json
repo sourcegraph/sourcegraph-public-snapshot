@@ -1,72 +1,21 @@
 {
 	"renderOutput": {
-		"type": "div",
+		"type": "Collapsible",
 		"props": {
-			"className": "panel panel-default panel-info step",
+			"collapsed": true,
 			"children": [
 				{
 					"type": "div",
+					"key": ".0",
 					"props": {
-						"className": "panel-heading",
-						"role": "tab",
-						"id": "T456",
-						"children": [
-							{
-								"type": "h5",
-								"props": {
-									"className": "panel-title",
-									"children": [
-										{
-											"type": "a",
-											"props": {
-												"role": "button",
-												"data-parent": "task-undefined-subtasks",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"className": "",
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"className": "pull-right"
-																	}
-																},
-																{
-																	"type": "i",
-																	"props": {
-																		"className": "fa fa-circle-o-notch"
-																	}
-																},
-																" "
-															]
-														}
-													}
-												]
-											}
-										}
-									]
-								}
-							}
-						]
+						"styleName": "step-title info"
 					}
 				},
 				{
 					"type": "div",
+					"key": ".1",
 					"props": {
-						"id": "T456-log-body",
-						"className": "panel-collapse collapse in",
-						"role": "tabpanel",
-						"aria-labelledby": "T456",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"className": "panel-body"
-								}
-							}
-						]
+						"styleName": "step-body"
 					}
 				}
 			]

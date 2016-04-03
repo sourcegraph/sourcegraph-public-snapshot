@@ -1,4 +1,5 @@
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import context from "sourcegraph/context";
 
 // TODO(slimsag): for finer-grained access consider sending all of the info in
 // performance.timing to Appdash for display (when available). This would narrow
@@ -32,7 +33,7 @@ function record() {
 	if (debug) debug.text = `${loadTimeSeconds}s`;
 }
 
-if (typeof document !== "undefined" && document.head.dataset.appdashCurrentSpanId) {
+if (typeof context.currentSpan) {
 	document.addEventListener("readystatechange", () => {
 		if (document.readyState === "complete") record();
 	});

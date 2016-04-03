@@ -1,10 +1,6 @@
 @value colors "./colors.css";
-@value typography "./typography.css";
-
-@value c_blue-8 from colors;
 @value c_light-blue from colors;
 @value c_moon-gray from colors;
-@value c_light-silver from colors;
 
 
 /*! normalize.css v4.0.0 | MIT License | github.com/necolas/normalize.css */
@@ -15,6 +11,7 @@
  */
 
 html {
+	font-size: 12px;
 	font-family: sans-serif; /* 1 */
 	-ms-text-size-adjust: 100%; /* 2 */
 	-webkit-text-size-adjust: 100%; /* 2 */
@@ -106,8 +103,7 @@ a {
  * in all browsers (opinionated).
  */
 
-a:active,
-a:hover {
+a:active {
 	outline-width: 0;
 }
 
@@ -230,7 +226,7 @@ code,
 kbd,
 pre,
 samp {
-	font-family: monospace, monospace; /* 1 */
+	font-family: Consolas, monaco, monospace; /* 1 */
 	font-size: 1em; /* 2 */
 }
 
@@ -475,6 +471,11 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 /*
 	 LINKS
 */
+
+a {
+	text-decoration: none;
+}
+
 .link {
 	text-decoration: none;
 	composes: blue from colors;
@@ -1016,42 +1017,21 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 	.mh6-l { margin-left: 8rem; margin-right: 8rem; }
 	.mh7-l { margin-left: 16rem; margin-right: 16rem; }
 }
-/*
-	 UTILITIES
-*/
-.hidden {
+
+:global #debug {
+	position: fixed;
+	bottom: 15px;
+	left: 0;
+	padding: 5px 8px;
+	font-family: monospace;
+	font-size: 0.75em;
+	background-color: #efefef;
+	color: #999;
+	z-index: 999999;
+}
+:global #debug .verbose {
 	display: none;
 }
-
-/*
-	 INPUTS / FORMS
-*/
-.input-reset { appearance: none; }
-
-.input-border {
-	composes: br2 ba;
-	composes: b--light-silver from colors;
-}
-.input-focus-border {
-	composes: b--blue-8 from colors;
-}
-.input-border:focus {
-	outline: none;
-	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
-}
-
-.text-input-common {
-	composes: pa3;
-	composes: input-border input-reset;
-	composes: f3 sans-serif from typography;
-	composes: blue from colors;
-}
-
-/* TODO: can we do this without vendor prefixing? */
-.text-input-common::-webkit-input-placeholder {
-	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
-}
-
-.text-input {
-	composes: text-input-common;
+:global #debug:hover .verbose {
+	display: block;
 }

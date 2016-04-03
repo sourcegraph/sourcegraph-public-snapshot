@@ -1,38 +1,50 @@
+// @flux weak
+
 import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
+import "sourcegraph/tree/TreeBackend";
 
 function keyFor(repo, rev, path) {
 	return `${repo}#${rev}#${path || ""}`;
 }
 
 export class TreeStore extends Store {
-	reset() {
+	reset(data?: {commits: any, fileLists: any, fileTree: any, srclibDataVersions: any}) {
 		this.commits = deepFreeze({
-			content: {},
+			content: data && data.commits ? data.commits.content : {},
 			get(repo, rev, path) {
 				return this.content[keyFor(repo, rev, path)] || null;
 			},
 		});
 		this.fileLists = deepFreeze({
-			content: {},
+			content: data && data.fileLists ? data.fileLists.content : {},
 			get(repo, rev) {
 				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
 		this.fileTree = deepFreeze({
-			content: {},
+			content: data && data.fileTree ? data.fileTree.content : {},
 			get(repo, rev) {
 				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
 		this.srclibDataVersions = deepFreeze({
-			content: {},
+			content: data && data.srclibDataVersions ? data.srclibDataVersions.content : {},
 			get(repo, rev, path) {
 				return this.content[keyFor(repo, rev, path)] || null;
 			},
 		});
+	}
+
+	toJSON(): any {
+		return {
+			commits: this.commits,
+			fileLists: this.fileLists,
+			fileTree: this.fileTree,
+			srclibDataVersions: this.srclibDataVersions,
+		};
 	}
 
 	__onDispatch(action) {

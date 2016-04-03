@@ -1,0 +1,34 @@
+@value base "./base.css";
+
+.loader {
+	display: inline-block;
+}
+
+.loader-label {
+	display: inline-block;
+	animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+}
+
+.loader-1 {
+	composes: loader-label;
+	animation-delay: -0.32s;
+}
+
+.loader-2 {
+	composes: loader-label;
+	animation-delay: -0.16s;
+}
+
+.loader-3 {
+	composes: loader-label;
+}
+
+@keyframes sk-bouncedelay {
+	0%, 80%, 100% {
+		-webkit-transform: scale(0);
+		transform: scale(0);
+	} 40% {
+		-webkit-transform: scale(1.0);
+		transform: scale(1.0);
+	}
+}

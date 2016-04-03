@@ -1,3 +1,5 @@
+// @flow weak
+
 import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
@@ -9,9 +11,9 @@ function keyFor(repo) {
 }
 
 export class RepoStore extends Store {
-	reset(data) {
+	reset(data?: {repos: any, branches: any, tags: any}) {
 		this.repos = deepFreeze({
-			content: data && data.repos ? data.repos : {},
+			content: data && data.repos ? data.repos.content : {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
 			},
@@ -32,6 +34,10 @@ export class RepoStore extends Store {
 				return this.content[keyFor(repo)] || null;
 			},
 		});
+	}
+
+	toJSON(): any {
+		return {repos: this.repos, branches: this.branches, tags: this.tags};
 	}
 
 	__onDispatch(action) {

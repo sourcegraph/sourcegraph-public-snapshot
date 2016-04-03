@@ -2,12 +2,11 @@
 	"renderOutput": {
 		"type": "tr",
 		"props": {
-			"className": "line main-byte-range",
 			"children": [
 				{
 					"type": "td",
 					"props": {
-						"className": "line-content",
+						"className": "code undefined",
 						"children": [
 							"hello\nworld"
 						]

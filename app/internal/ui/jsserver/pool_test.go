@@ -34,7 +34,7 @@ func TestPool(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := `got hello`; string(resp) != want {
+	if want := `"got hello"`; string(resp) != want {
 		t.Errorf("got %q, want %q", resp, want)
 	}
 }
@@ -55,7 +55,7 @@ func TestPool_parallel(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := `got hello`; string(resp) != want {
+			if want := `"got hello"`; string(resp) != want {
 				t.Errorf("got %q, want %q", resp, want)
 			}
 		}(i)
@@ -117,7 +117,7 @@ func TestPool_closeServer(t *testing.T) {
 				mu.Lock()
 				numErrs++
 				mu.Unlock()
-			} else if want := `got hello`; string(resp) != want {
+			} else if want := `"got hello"`; string(resp) != want {
 				t.Errorf("got %q, want %q", resp, want)
 			}
 		}(i)

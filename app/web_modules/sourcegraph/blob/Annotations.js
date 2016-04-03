@@ -1,3 +1,14 @@
+// @flow weak
+
+export type Annotation = {
+	StartByte: number;
+	EndByte: number;
+	URL?: string;
+	URLs?: string[];
+	Class?: string;
+	WantInner?: number;
+};
+
 // sortAnns sorts annotations *in place* by start position, breaking ties by preferring
 // longer annotations.
 //
@@ -25,7 +36,7 @@ export function sortAnns(anns) {
 //
 // TODO(sqs): This is mixing bytes (in anns.StartByte/EndByte) and code points
 // (when we iterate over a string). Fix this! Need to use Int8Array or similar?
-export function annotate(text, startByte, anns, render) {
+export function annotate(text: string, startByte: number, anns: Annotation[], render) {
 	let out = [[]];
 
 	// Keep a stack of open annotations (i.e., that have been opened and not

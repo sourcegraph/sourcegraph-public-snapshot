@@ -6,8 +6,6 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
@@ -27,12 +25,6 @@ func init() {
 // RedirectToLogIn issues an HTTP redirect to begin the login
 // process.
 func RedirectToLogIn(w http.ResponseWriter, r *http.Request) error {
-	u := router.Rel.URLTo(router.LogIn)
-	returnTo, err := returnto.BestGuess(r)
-	if err != nil {
-		return err
-	}
-	returnto.SetOnURL(u, returnTo)
-	http.Redirect(w, r, u.String(), http.StatusSeeOther)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 	return nil
 }

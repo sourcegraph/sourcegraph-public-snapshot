@@ -3,6 +3,9 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import TopLevelTask from "sourcegraph/build/TopLevelTask";
 
+import CSSModules from "react-css-modules";
+import styles from "./styles/Build.css";
+
 class BuildTasks extends Component {
 	constructor(props) {
 		super(props);
@@ -29,7 +32,7 @@ class BuildTasks extends Component {
 
 	render() {
 		return (
-			<div className="panel-group top-level-tasks">
+			<div styleName="tasks">
 				{this.state.topLevelTasks.map((task, i) =>
 					<TopLevelTask key={task.ID}
 						task={task} subtasks={this.state.subtasks[task.ID]} logs={this.state.logs} />)}
@@ -43,4 +46,4 @@ BuildTasks.propTypes = {
 	logs: React.PropTypes.object.isRequired,
 };
 
-export default BuildTasks;
+export default CSSModules(BuildTasks, styles);

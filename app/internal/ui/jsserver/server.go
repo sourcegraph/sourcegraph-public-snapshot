@@ -27,7 +27,7 @@ func init() {
 
 // Server represents an interface to a JavaScript function.
 type Server interface {
-	Call(ctx context.Context, arg json.RawMessage) ([]byte, error)
+	Call(ctx context.Context, arg json.RawMessage) (json.RawMessage, error)
 	Close() error
 }
 
@@ -106,7 +106,7 @@ func (s *server) recv() (json.RawMessage, error) {
 }
 
 // Call calls the node process with the given argument.
-func (s *server) Call(ctx context.Context, arg json.RawMessage) ([]byte, error) {
+func (s *server) Call(ctx context.Context, arg json.RawMessage) (json.RawMessage, error) {
 	var resp json.RawMessage
 	var err error
 
@@ -121,11 +121,7 @@ func (s *server) Call(ctx context.Context, arg json.RawMessage) ([]byte, error) 
 	}()
 	select {
 	case <-done:
-		var resp2 string
-		if err := json.Unmarshal(resp, &resp2); err != nil {
-			return nil, err
-		}
-		return []byte(resp2), err
+		return resp, err
 
 	case <-ctx.Done():
 		return nil, ctx.Err()

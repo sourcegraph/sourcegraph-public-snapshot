@@ -8,18 +8,36 @@ const BuildBackend = {
 
 	__onDispatch(action) {
 		switch (action.constructor) {
+		case BuildActions.WantBuilds:
+			{
+				let builds = BuildStore.buildLists.get(action.repo, action.search);
+				if (builds === null || action.force) {
+					let endpoint = !action.repo ? "/.api/builds" : `/.api/repos/${action.repo}/-/builds`;
+					if (action.search) endpoint = `${endpoint}${action.search}`;
+					BuildBackend.fetch(endpoint)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							console.error(err);
+							return {Error: true};
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildsFetched(action.repo, data, action.search)));
+				}
+				break;
+			}
+
 		case BuildActions.WantBuild:
 			{
 				let build = BuildStore.builds.get(action.repo, action.buildID);
 				if (build === null || action.force) {
 					BuildBackend.fetch(`/.api/repos/${action.repo}/-/builds/${action.buildID}`)
-													.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, action.buildID, data)));
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							console.error(err);
+							return {Error: true};
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, action.buildID, data)));
 				}
 				break;
 			}
@@ -29,13 +47,13 @@ const BuildBackend = {
 				let builds = BuildStore.builds.listNewestByCommitID(action.repo, action.commitID);
 				if (builds === null || action.force) {
 					BuildBackend.fetch(`/.api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${encodeURIComponent(action.repo)}&CommitID=${encodeURIComponent(action.commitID)}`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildsFetchedForCommit(action.repo, action.commitID, data.Builds || [])));
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							console.error(err);
+							return {Error: true};
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildsFetchedForCommit(action.repo, action.commitID, data.Builds || [])));
 				}
 				break;
 			}
@@ -50,13 +68,13 @@ const BuildBackend = {
 						Config: {Queue: true},
 					}),
 				})
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, data.ID, data)));
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => {
+						console.error(err);
+						return {Error: true};
+					})
+					.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, data.ID, data)));
 				break;
 			}
 
@@ -69,26 +87,26 @@ const BuildBackend = {
 					minID = log.maxID;
 				}
 
-				let url = `/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
+				let url = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log`;
 				if (minID) {
 					url += `?MinID=${minID}`;
 				}
 
 				BuildBackend.fetch(url)
-							.then(checkStatus)
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((resp) => {
-								resp.text().then((text) => {
-									let maxID = resp.headers["x-sourcegraph-log-max-id"];
-									if (maxID) {
-										maxID = parseInt(maxID, 10);
-									}
-									Dispatcher.Stores.dispatch(new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, minID, maxID, text));
-								});
-							});
+					.then(checkStatus)
+					.catch((err) => {
+						console.error(err);
+						return {Error: true};
+					})
+					.then((resp) => {
+						resp.text().then((text) => {
+							let maxID = resp.headers["x-sourcegraph-log-max-id"];
+							if (maxID) {
+								maxID = parseInt(maxID, 10);
+							}
+							Dispatcher.Stores.dispatch(new BuildActions.LogFetched(action.repo, action.buildID, action.taskID, minID, maxID, text));
+						});
+					});
 				break;
 			}
 
@@ -97,13 +115,13 @@ const BuildBackend = {
 				let tasks = BuildStore.tasks.get(action.repo, action.buildID);
 				if (tasks === null || action.force) {
 					BuildBackend.fetch(`/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks?PerPage=1000`)
-							.then(checkStatus)
-							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new BuildActions.TasksFetched(action.repo, action.buildID, data)));
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							console.error(err);
+							return {Error: true};
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new BuildActions.TasksFetched(action.repo, action.buildID, data)));
 				}
 				break;
 			}

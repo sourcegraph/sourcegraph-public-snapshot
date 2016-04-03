@@ -1,10 +1,14 @@
 import React from "react";
-import classNames from "classnames";
 
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import {elapsed, panelClass, taskClass} from "sourcegraph/build/Build";
+import {taskClass} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
+
+import {Collapsible} from "sourcegraph/components";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Build.css";
 
 const updateLogIntervalMsec = 1500;
 
@@ -73,39 +77,15 @@ class Step extends Component {
 	}
 
 	render() {
-		let panelCls = classNames(panelClass(this.state.task), "step");
-
-		let explicitlyInteracted = typeof this.state.expanded !== "undefined";
-		let expanded = (explicitlyInteracted && this.state.expanded) || (!explicitlyInteracted && !this.state.task.Success);
-		let bodyClass = classNames({
-			"panel-collapse": true,
-			"collapse": true,
-			"in": expanded,
-		});
-
-		let headerID = `T${this.state.task.ID}`;
-		let bodyID = `T${this.state.task.ID}-log-body`;
-
 		return (
-			<div className={panelCls}>
-				<div className="panel-heading" role="tab" id={headerID}>
-					<h5 className="panel-title">
-						<a role="button"
-							onClick={() => this.setState({expanded: !expanded})}
-							data-parent={`task-${this.state.task.ParentID}-subtasks`}>
-							<span className={taskClass(this.state.task).text}>
-								<span className="pull-right">{elapsed(this.state.task)}</span>
-								<i className={taskClass(this.state.task).icon}></i> {this.state.task.Label}
-							</span>
-						</a>
-					</h5>
+			<Collapsible collapsed={true}>
+				<div styleName={`step-title ${taskClass(this.state.task)}`}>
+					{this.state.task.Label}
 				</div>
-				<div id={bodyID} className={bodyClass} role="tabpanel" aria-labelledby={headerID}>
-					<div className="panel-body">
-						{this.state.log ? <pre className="build-log">{this.state.log.log}</pre> : null}
-					</div>
+				<div styleName="step-body">
+					{this.state.log && <pre>{this.state.log.log}</pre>}
 				</div>
-			</div>
+			</Collapsible>
 		);
 	}
 }
@@ -115,4 +95,4 @@ Step.propTypes = {
 	logs: React.PropTypes.object.isRequired,
 };
 
-export default Step;
+export default CSSModules(Step, styles, {allowMultiple: true});

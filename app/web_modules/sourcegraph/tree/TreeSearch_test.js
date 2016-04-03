@@ -1,3 +1,5 @@
+// @flow
+
 import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
@@ -10,9 +12,9 @@ import testdataFiles from "sourcegraph/tree/testdata/TreeSearch-files.json";
 
 describe("TreeSearch", () => {
 	it("should render files", () => {
-		TreeStore.directDispatch(new TreeActions.FileListFetched("repo", "rev", {Files: ["a", "b"]}));
+		TreeStore.directDispatch(new TreeActions.FileListFetched("repo", "rev", {Files: ["p1/p2/f3", "p1/f2"]}));
 		autotest(testdataFiles, `${__dirname}/testdata/TreeSearch-files.json`,
-			<TreeSearch repo="repo" rev="rev" prefetch={true} currPath={[]} overlay={true} />
+			<TreeSearch repo="repo" rev="rev" path="p1/p2" prefetch={true} overlay={true} location={{query: {q: ""}}} />
 		);
 	});
 });

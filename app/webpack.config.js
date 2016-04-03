@@ -2,10 +2,9 @@ var webpack = require("webpack");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var autoprefixer = require("autoprefixer");
 var glob = require("glob");
-var URL = require("url");
+var url = require("url");
 var log = require("logalot");
 var FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
-require("lintspaces-loader");
 
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
@@ -27,21 +26,24 @@ if (process.env.NODE_ENV === "development") {
 	}
 }
 
-var plugins = [
+var commonPlugins = [
+	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
 	new webpack.ProvidePlugin({
-		fetch: "imports?this=>global!exports?global.fetch!whatwg-fetch",
+		fetch: "imports?this=>global!exports?global.fetch!isomorphic-fetch",
 	}),
 	new webpack.DefinePlugin({
 		"process.env": {
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
 	}),
-	new ExtractTextPlugin("[name].css"),
-	new FlowStatusWebpackPlugin({restartFlow: false}),
+	new webpack.IgnorePlugin(/testdata\//),
+	new webpack.IgnorePlugin(/\.json$/),
+	new webpack.IgnorePlugin(/\_test\.js$/),
+	new webpack.optimize.OccurrenceOrderPlugin(),
 ];
 
-if (process.env.NODE_ENV === "production") {
-	plugins.push(
+if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
+	commonPlugins.push(
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
 			compress: {
@@ -53,76 +55,88 @@ if (process.env.NODE_ENV === "production") {
 
 var webpackDevServerPort = 8080;
 if (process.env.WEBPACK_DEV_SERVER_URL) {
-	webpackDevServerPort = URL.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
+	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
 }
 
-module.exports = {
+var eslintPreloader = {
+	test:	/\.js$/,
+	exclude: [__dirname+"/node_modules"],
+	loader: "eslint-loader",
+};
+
+function config(opts) {
+	return Object.assign({}, {
+		resolve: {
+			modulesDirectories: ["web_modules", "node_modules"],
+		},
+	}, opts);
+};
+
+var browserConfig = {
+	name: "browser",
+	target: "web",
 	cache: true,
-	context: __dirname,
-	entry: {
-		bundle: "./script/app.js",
-		_goTemplates: glob.sync("./templates/**/*.html"),
-		test: glob.sync("./web_modules/sourcegraph/**/*_test.js"),
-	},
+	entry: "./web_modules/sourcegraph/init/browser.js",
 	output: {
 		path: __dirname+"/assets",
-		publicPath: "/assets",
-		filename: "[name].js",
+		filename: "[name].browser.js",
 	},
-
+	plugins: commonPlugins.concat([
+		new FlowStatusWebpackPlugin({restartFlow: false}),
+		new ExtractTextPlugin("[name].css", {allChunks: true}),
+		new webpack.optimize.MinChunkSizePlugin({minChunkSize: 700000}),
+	]),
 	module: {
-		preLoaders: [
-			{
-				test:	/\.js$/,
-				exclude: [__dirname+"/node_modules", __dirname+"/bower_components"],
-				loader: "eslint-loader",
-			},
-			{
-				// TODO(slimsag): determine why this doesn't check each file. Travis
-				// will still, but this doesn't for some reason.
-				test: /(\.scss|\.html)$/,
-				exclude: [__dirname+"/node_modules", __dirname+"/bower_components"],
-				loader: "lintspaces-loader",
-			},
-		],
+		preLoaders: [eslintPreloader],
 		loaders: [
-			// Add Go templates as 'raw' so that we reload the browser whenever they change.
-			{test: /\.html$/, loader: "file"},
-
-			{test: /_test\.js$/, exclude: /node_modules/, loader: "mocha"},
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
-
-			{test: /\.(eot|ttf|woff)$/, loader: "file?name=fonts/[name].[ext]"},
-			{test: /\.(png|svg)$/, loader: "url?limit=10000&name=images/[name]-[hash].[ext]&size=6"},
-
+			{test: /\.(eot|ttf|woff)$/, loader: "file-loader?name=fonts/[name].[ext]"},
+			{test: /\.svg$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{
 				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("style-loader",
-					"css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader!"),
-			},
-			{
-				test: /\.scss$/,
-				loader: ExtractTextPlugin.extract("style-loader",
-					"css-loader?sourceMap!" +
-					"postcss-loader!" +
-					"sass-loader?sourceMap&sourceMapContents!"),
+				loader: require.resolve("./non-caching-extract-text-loader") + "?{remove:true}!" +
+						"css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader",
 			},
 		],
+		noParse: /\.min\.js$/,
 	},
-
-	resolve: {
-		modulesDirectories: ["web_modules", "node_modules", "bower_components"],
-		unsafeCache: true,
-	},
-
-	plugins: plugins,
-
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
-
 	devServer: {
 		port: webpackDevServerPort,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 	},
 };
+
+var serverConfig = {
+	name: "server",
+	target: "node",
+	cache: true,
+	entry: "./web_modules/sourcegraph/init/server.js",
+	output: {
+		path: __dirname+"/assets",
+		filename: "[name].server.js",
+	},
+	plugins: commonPlugins.concat([
+		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
+	]),
+	module: {
+		preLoaders: [eslintPreloader],
+		loaders: [
+			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
+			//{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
+			{
+				test: /\.css$/,
+				loader: "css-loader/locals?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader",
+			},
+		],
+	},
+	// PostCSS is necessary here for some reason (otherwise postcss-modules-scope complains).
+	postcss: [require("postcss-modules-values")],
+};
+
+module.exports = [
+	config(browserConfig),
+	config(serverConfig),
+];

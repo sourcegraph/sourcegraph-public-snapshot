@@ -2,64 +2,32 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "token-popover found",
-			"style": {
-				"left": null,
-				"top": null
-			},
 			"children": [
 				{
 					"type": "div",
+					"key": "title",
 					"props": {
-						"className": "popover-data",
+						"dangerouslySetInnerHTML": {
+							"__html": "someName"
+						}
+					}
+				},
+				{
+					"type": "div",
+					"key": "content",
+					"props": {
 						"children": [
+							{
+								"type": "div",
+								"props": {
+									"dangerouslySetInnerHTML": "someDoc"
+								}
+							},
 							{
 								"type": "span",
 								"props": {
-									"className": "error-message"
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"className": "title",
 									"children": [
-										{
-											"type": "pre",
-											"props": {
-												"dangerouslySetInnerHTML": {
-													"__html": "someName"
-												}
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"className": "content",
-									"children": [
-										{
-											"type": "div",
-											"props": {
-												"className": "doc",
-												"style": {
-													"maxHeight": 100,
-													"overflowY": "hidden"
-												},
-												"dangerouslySetInnerHTML": "someDoc"
-											}
-										},
-										{
-											"type": "span",
-											"props": {
-												"className": "repo",
-												"children": [
-													"someRepo"
-												]
-											}
-										}
+										"someRepo"
 									]
 								}
 							}

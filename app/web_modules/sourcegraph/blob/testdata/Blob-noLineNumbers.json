@@ -2,13 +2,11 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "blob-scroller",
 			"children": [
 				{
 					"type": "table",
 					"ref": "table",
 					"props": {
-						"className": "line-numbered-code",
 						"children": [
 							{
 								"type": "tbody",

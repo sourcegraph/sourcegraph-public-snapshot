@@ -26,8 +26,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gorilla/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
@@ -52,61 +50,4 @@ func CheckSafe(urlStr string) error {
 		}
 	}
 	return nil
-}
-
-// ExactURLFromQuery returns the "return-to" querystring value if it
-// is a valid relative (non-absolute) URL. If is an absolute URL, an
-// error is returned. This prevents app endpoints from being used as
-// [open redirects](https://www.owasp.org/index.php/Open_redirect).
-func ExactURLFromQuery(r *http.Request) (string, error) {
-	returnTo := r.URL.Query().Get(ParamName)
-	if err := CheckSafe(returnTo); err != nil {
-		return "", err
-	}
-	return returnTo, nil
-}
-
-// BestGuess first calls ExactURLFromQuery to try to get the URL to
-// return to. If that is not present, it falls back on reasonable
-// guesses. See the code itself for details. It will never return a
-// URL that refers to a different host than the current one.
-func BestGuess(r *http.Request) (string, error) {
-	returnTo, err := ExactURLFromQuery(r)
-	if err != nil {
-		return "", err
-	}
-	if returnTo == "" {
-		if rt := mux.CurrentRoute(r); rt != nil && (rt.GetName() == router.LogIn || rt.GetName() == router.SignUp) {
-			returnTo = r.Referer()
-		} else if rt != nil && rt.GetName() == router.LogOut {
-			returnTo = ""
-		} else {
-			returnTo = r.URL.RequestURI()
-		}
-	}
-	if err := CheckSafe(returnTo); err != nil {
-		return "", err
-	}
-	if returnTo == "" {
-		returnTo = router.Rel.URLTo(router.Home).String()
-	}
-	return returnTo, nil
-}
-
-// SetOnURL sets the URL's "return-to" query param to the value of
-// returnTo. It modifies url.
-//
-// If returnTo itself has a "return-to" query param, it is removed.
-func SetOnURL(u *url.URL, returnTo string) {
-	if returnToURL, err := url.Parse(returnTo); err == nil {
-		// remove existing ?return-to querystring param
-		q := returnToURL.Query()
-		q.Del(ParamName)
-		returnToURL.RawQuery = q.Encode()
-		returnTo = returnToURL.String()
-	}
-
-	q := u.Query()
-	q.Set(ParamName, returnTo)
-	u.RawQuery = q.Encode()
 }

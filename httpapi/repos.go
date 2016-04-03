@@ -5,14 +5,49 @@ import (
 	"net/http"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
+
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	isCloning := false
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return err
+	}
+	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repoSpec.URI {
+			return &handlerutil.URLMovedError{actualURI}
+		}
+		// Automatically create a local mirror.
+		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
+		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
+			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: int32(remoteRepo.GitHubID)},
+		})
+		if err != nil {
+			return err
+		}
+		isCloning = true
+	}
+	// TODO(rothfels): trigger cloning/updating this repo from its remote mirror (if it has one).
 
 	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
@@ -28,7 +63,15 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, repo)
+	response := struct {
+		*sourcegraph.Repo
+		IsCloning bool
+	}{
+		Repo:      repo,
+		IsCloning: isCloning,
+	}
+
+	return writeJSON(w, &response)
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {

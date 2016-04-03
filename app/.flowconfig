@@ -11,5 +11,7 @@
 
 [options]
 module.system.node.resolve_dirname=web_modules
+module.name_mapper='^\(.*\)\.css$' -> '<PROJECT_ROOT>/flow/stub/CSSModule.js.flow'
 esproposal.class_static_fields=enable
 esproposal.class_instance_fields=enable
+suppress_comment= \\(.\\|\n\\)*\\$FlowHack

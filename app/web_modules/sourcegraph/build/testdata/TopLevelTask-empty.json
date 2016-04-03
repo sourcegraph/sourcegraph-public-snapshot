@@ -2,50 +2,25 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "panel panel-default panel-info top-level-task",
 			"children": [
 				{
 					"type": "div",
+					"key": ".0",
 					"props": {
-						"className": "panel-heading",
-						"role": "tab",
+						"styleName": "top-level-task-header info",
 						"children": [
 							{
-								"type": "div",
+								"type": "span",
+								"key": ".0",
 								"props": {
-									"className": "pull-right"
+									"styleName": "header-label"
 								}
 							},
 							{
-								"type": "h4",
+								"type": "span",
+								"key": ".1",
 								"props": {
-									"className": "panel-title",
-									"id": "T456",
-									"children": [
-										{
-											"type": "i",
-											"props": {
-												"className": "fa fa-circle-o-notch"
-											}
-										},
-										" "
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"props": {
-						"className": "panel-body",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"className": "panel-group steps",
-									"role": "tablist",
-									"aria-multiselectable": "true"
+									"styleName": "elapsed-label"
 								}
 							}
 						]

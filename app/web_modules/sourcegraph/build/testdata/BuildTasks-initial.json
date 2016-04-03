@@ -2,11 +2,11 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "panel-group top-level-tasks",
+			"styleName": "tasks",
 			"children": [
 				{
-					"type": "TopLevelTask",
-					"key": "456",
+					"type": "WrappedComponent",
+					"key": ".$456",
 					"props": {
 						"task": {
 							"ID": 456,
@@ -22,8 +22,8 @@
 					}
 				},
 				{
-					"type": "TopLevelTask",
-					"key": "567",
+					"type": "WrappedComponent",
+					"key": ".$567",
 					"props": {
 						"task": {
 							"ID": 567,

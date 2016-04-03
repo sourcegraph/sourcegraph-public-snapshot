@@ -1,0 +1,36 @@
+{
+	"renderOutput": {
+		"type": "div",
+		"props": {
+			"children": [
+				{
+					"type": "div",
+					"props": {
+						"children": [
+							{
+								"type": "BlobToolbar",
+								"props": {
+									"repo": "r",
+									"rev": "v",
+									"path": "p"
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "FileMargin",
+					"props": {}
+				}
+			]
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantDef",
+			"repo": "r",
+			"rev": "v",
+			"def": "d"
+		}
+	]
+}

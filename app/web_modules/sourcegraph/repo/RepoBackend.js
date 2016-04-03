@@ -1,3 +1,5 @@
+// @flow weak
+
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -14,13 +16,14 @@ const RepoBackend = {
 				let repo = RepoStore.repos.get(action.repo);
 				if (repo === null) {
 					RepoBackend.fetch(`/.api/repos/${action.repo}`)
-							.then((resp) => resp.json())
-							.then(checkStatus)
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data)));
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => {
+							console.error(err);
+							// TODO Better httpapi error responses.
+							return {Error: {Body: err.body, Status: err.response.status}};
+						})
+						.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data)));
 				}
 				break;
 			}

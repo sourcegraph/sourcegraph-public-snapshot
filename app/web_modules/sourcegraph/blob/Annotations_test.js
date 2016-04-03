@@ -1,3 +1,5 @@
+// @flow weak
+
 import expect from "expect.js";
 
 import {annotate, sortAnns} from "sourcegraph/blob/Annotations";

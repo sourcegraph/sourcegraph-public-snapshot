@@ -5,8 +5,8 @@ import * as DefActions from "sourcegraph/def/DefActions";
 
 describe("DefStore", () => {
 	it("should handle DefFetched", () => {
-		DefStore.directDispatch(new DefActions.DefFetched("/someURL", "someData"));
-		expect(DefStore.defs.get("/someURL")).to.be("someData");
+		DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", "someData"));
+		expect(DefStore.defs.get("r", "v", "d")).to.be("someData");
 	});
 
 	it("should handle DefsFetched", () => {
@@ -23,7 +23,7 @@ describe("DefStore", () => {
 	});
 
 	it("should handle RefsFetched", () => {
-		DefStore.directDispatch(new DefActions.RefsFetched("/someURL", "f", ["someData"]));
-		expect(DefStore.refs.get("/someURL", "f")).to.eql(["someData"]);
+		DefStore.directDispatch(new DefActions.RefsFetched("r", "v", "d", "f", ["someData"]));
+		expect(DefStore.refs.get("r", "v", "d", "f")).to.eql(["someData"]);
 	});
 });

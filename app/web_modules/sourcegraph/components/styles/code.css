@@ -1,0 +1,95 @@
+@media screen {
+	:global .code a {
+		text-decoration: none;
+	}
+	:global .pln {
+		color: #1f1f1f;
+	}
+	:global .str {
+		color: #DD1144;
+	}
+	:global .kwd {
+		color: #334499;
+	}
+	:global .com {
+		color: #555;
+	}
+	:global .typ {
+		color: #008080;
+	}
+	:global .lit {
+		color: #DD1144;
+	}
+	:global .pun,
+	:global .opn,
+	:global .clo {
+		color: #414f5c;
+	}
+	:global .tag {
+		color: #017c9d;
+	}
+	:global .atn {
+		color: #008080;
+	}
+	:global .atv {
+		color: #15b8ae;
+	}
+	:global .dec,
+	:global .var {
+		color: #15b8ae;
+	}
+	:global .fun {
+		color: #017c9d;
+	}
+}
+
+/*
+PREVIOUS THEME
+
+@value colors "sourcegraph/components/styles/colors.css";
+@value c_yellow from colors;
+:global .code {
+	color: #222222;
+	background-color: white;
+}
+:global .code .hl, :global .code a:hover {
+	background-color: c_yellow;
+	outline: solid 1px c_yellow;
+}
+:global .pln {
+	color: #222222;
+}
+:global .str {
+	color: #f64800;
+}
+:global .kwd {
+	color: #0d9acd;;
+}
+:global .com {
+	color: #9b9b9b;
+}
+:global .typ {
+	color: #b114f7;
+}
+:global .lit {
+	color: #0dceb7;
+}
+:global .pun, :global .opn, :global .clo {
+	color: #344a66;
+}
+:global .tag {
+	color: #0d9acd;;
+}
+:global .atn {
+	color: #222222;
+}
+:global .atv {
+	color: #0dceb7;
+}
+:global .dec, :global .var {
+	color: #0dceb7;
+}
+:global .fun {
+	color: #ef3e82;
+}
+*/
