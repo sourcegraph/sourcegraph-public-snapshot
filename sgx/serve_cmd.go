@@ -32,7 +32,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
@@ -45,7 +44,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/usercontent"
 	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
@@ -271,15 +269,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// graphstore
 	serverCtxFuncs = append(serverCtxFuncs, c.GraphStoreOpts.context)
-
-	// User Content.
-	if !appconf.Flags.DisableUserContent {
-		var err error
-		usercontent.Store, err = usercontent.LocalStore()
-		if err != nil {
-			return err
-		}
-	}
 
 	app.Init()
 

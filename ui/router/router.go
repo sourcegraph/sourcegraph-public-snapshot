@@ -13,8 +13,6 @@ const (
 
 	AppdashUploadPageLoad = "appdash.upload-page-load"
 
-	UserContentUpload = "usercontent.upload"
-
 	UserInviteBulk = "user.invite.bulk"
 )
 
@@ -38,10 +36,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/.appdash/upload-page-load").
 		Methods("POST").
 		Name(AppdashUploadPageLoad)
-
-	base.Path("/.usercontent").
-		Methods("POST").
-		Name(UserContentUpload)
 
 	return base
 }

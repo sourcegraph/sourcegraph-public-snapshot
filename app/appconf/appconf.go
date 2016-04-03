@@ -30,8 +30,6 @@ var Flags struct {
 
 	DisableSupportServices bool `long:"app.disable-support-services" description:"disable 3rd party support services, including Zendesk, FullStory, Google Analytics" env:"SRC_APP_DISABLE_SUPPORT_SERVICES"`
 
-	DisableUserContent bool `long:"app.disable-user-content" description:"if set, disable ability to upload user content (e.g., pasting images into textareas)" env:"SRC_APP_DISABLE_USER_CONTENT"`
-
 	CustomNavLayout template.HTML `long:"app.custom-nav-layout" description:"custom layout to display in place of the search form (HTML)" env:"SRC_APP_CUSTOM_NAV_LAYOUT"`
 
 	GoogleAnalyticsTrackingID string `long:"app.google-analytics-tracking-id" description:"Google Analytics tracking ID (UA-########-#)" env:"GOOGLE_ANALYTICS_TRACKING_ID"`

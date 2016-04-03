@@ -13,7 +13,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
@@ -62,10 +61,6 @@ func NewHandler(r *mux.Router) http.Handler {
 	r.Get(ui_router.References).Handler(handler(serveRefs))
 
 	r.Get(ui_router.AppdashUploadPageLoad).Handler(handler(serveAppdashUploadPageLoad))
-
-	if !appconf.Flags.DisableUserContent {
-		r.Get(ui_router.UserContentUpload).Handler(handler(serveUserContentUpload))
-	}
 
 	return handlerutil.WithMiddleware(r, mw...)
 }

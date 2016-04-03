@@ -57,8 +57,6 @@ const (
 	Def     = "def"
 	DefRefs = "def.refs"
 
-	UserContent = "usercontent"
-
 	OldDefRedirect = "old-def-redirect"
 
 	OldTreeRedirect = "old-tree-redirect"
@@ -104,8 +102,6 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
 	base.Path("/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
-
-	base.Path("/usercontent/{Name}").Methods("GET").Name(UserContent)
 
 	// User routes begin with tilde (~).
 	userPath := `/~` + routevar.User

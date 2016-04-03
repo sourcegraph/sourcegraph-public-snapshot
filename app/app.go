@@ -87,10 +87,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.SitemapIndex).Handler(internal.Handler(serveSitemapIndex))
 
-	if !appconf.Flags.DisableUserContent {
-		r.Get(router.UserContent).Handler(internal.Handler(serveUserContent))
-	}
-
 	r.Get(router.Def).Handler(internal.Handler(serveDef))
 	r.Get(router.DefRefs).Handler(internal.Handler(serveDef))
 	r.Get(router.RepoAppFrame).Handler(internal.Handler(serveRepoFrame))
