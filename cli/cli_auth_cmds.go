@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"os"
 
-	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/userauth"
+	"golang.org/x/oauth2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/usercreds"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/userauth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"

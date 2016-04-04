@@ -5,8 +5,9 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/userauth"
+
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/userauth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
