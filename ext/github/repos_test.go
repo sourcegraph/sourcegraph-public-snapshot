@@ -50,7 +50,11 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 	ctx := testContext(&minimalClient{
 		repos: mockGitHubRepos{
 			Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
-				resp := &http.Response{StatusCode: http.StatusNotFound, Body: ioutil.NopCloser(bytes.NewReader(nil))}
+				resp := &http.Response{
+					StatusCode: http.StatusNotFound,
+					Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+					Request:    &http.Request{},
+				}
 				return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
 			},
 		},
@@ -104,7 +108,11 @@ func TestRepos_GetByID_nonexistent(t *testing.T) {
 	ctx := testContext(&minimalClient{
 		repos: mockGitHubRepos{
 			GetByID_: func(id int) (*github.Repository, *github.Response, error) {
-				resp := &http.Response{StatusCode: http.StatusNotFound, Body: ioutil.NopCloser(bytes.NewReader(nil))}
+				resp := &http.Response{
+					StatusCode: http.StatusNotFound,
+					Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+					Request:    &http.Request{},
+				}
 				return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
 			},
 		},
