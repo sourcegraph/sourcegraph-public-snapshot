@@ -136,7 +136,7 @@ func write(servers []*serverImpl, outPkgName string) ([]byte, error) {
 	fmt.Fprint(&w, "package ", outPkgName, "\n")
 	fmt.Fprintln(&w)
 	fmt.Fprintln(&w, "import (")
-	fmt.Fprint(&w, "\t", `"sourcegraph.com/sourcegraph/sourcegraph/svc"`, "\n")
+	fmt.Fprint(&w, "\t", `"sourcegraph.com/sourcegraph/sourcegraph/services/svc"`, "\n")
 	fmt.Fprintln(&w, ")")
 	fmt.Fprintln(&w)
 

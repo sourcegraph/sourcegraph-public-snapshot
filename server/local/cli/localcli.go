@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 )
 
 func init() {

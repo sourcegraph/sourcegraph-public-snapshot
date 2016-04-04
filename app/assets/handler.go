@@ -11,8 +11,8 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 )
 
 const URLPathPrefix = "/.assets"

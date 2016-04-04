@@ -23,7 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/inner/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/local"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
 )

@@ -53,6 +53,10 @@ func TestUserSettingsAccess(t *testing.T) {
 		t.Error("!calledGet")
 	}
 
+	if !calledListEmails {
+		t.Error("!calledListEmails")
+	}
+
 	if !calledOrgsList {
 		t.Error("!calledOrgsList")
 	}

@@ -14,7 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 

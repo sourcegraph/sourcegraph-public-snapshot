@@ -15,13 +15,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/sourcecode"
 	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/router_util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/sourcecode"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 

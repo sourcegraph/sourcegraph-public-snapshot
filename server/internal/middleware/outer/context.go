@@ -6,10 +6,10 @@ import (
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 

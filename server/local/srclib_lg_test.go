@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/executil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
@@ -70,7 +70,7 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 
 	_, srclibpath, _ := testserver.SrclibSampleToolchain(false)
 	srclibCmd := func(args ...string) *exec.Cmd {
-		cmd := exec.Command(sgxcmd.Path, "srclib")
+		cmd := exec.Command(srccmd.Path, "srclib")
 		cmd.Args = append(cmd.Args, args...)
 		executil.OverrideEnv(cmd, "SRCLIBPATH", srclibpath)
 		return cmd

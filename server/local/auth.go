@@ -18,11 +18,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
 

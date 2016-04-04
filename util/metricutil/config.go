@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 )
 
 // Flags defines settings for metrics.

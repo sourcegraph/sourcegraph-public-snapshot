@@ -11,8 +11,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 

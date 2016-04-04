@@ -6,9 +6,9 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph/mock"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 // testContext creates a new context.Context for use by tests that has

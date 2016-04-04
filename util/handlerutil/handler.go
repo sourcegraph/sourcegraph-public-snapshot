@@ -14,7 +14,7 @@ import (
 
 	"github.com/rogpeppe/rog-go/parallel"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
 var (

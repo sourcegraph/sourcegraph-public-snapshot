@@ -13,10 +13,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/doc"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/doc"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )

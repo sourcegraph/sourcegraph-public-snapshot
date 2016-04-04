@@ -1,7 +1,7 @@
 package local
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 
 	"golang.org/x/net/context"

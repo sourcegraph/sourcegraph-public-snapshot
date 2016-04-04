@@ -3,7 +3,7 @@ package pgsql
 import (
 	"log"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
 )

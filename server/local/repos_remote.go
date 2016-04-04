@@ -5,10 +5,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
 // This file deals with remote repos (e.g., GitHub repos) that are not

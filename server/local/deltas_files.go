@@ -14,12 +14,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {

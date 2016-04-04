@@ -10,9 +10,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 	"sourcegraph.com/sqs/pbtypes"
 )
 

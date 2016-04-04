@@ -15,9 +15,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 

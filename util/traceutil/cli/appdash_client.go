@@ -11,8 +11,8 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )

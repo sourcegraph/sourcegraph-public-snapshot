@@ -26,14 +26,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/client"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/sgxcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	appdashcli "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/worker"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
 
@@ -70,14 +70,14 @@ type Server struct {
 	// basePortListener is used to reserve ports. The N ports (where N
 	// is the number of args to selectUnusedPorts) after the port that
 	// basePortListener listens on are considered reserved for
-	// listeners that sgx spawns.
+	// listeners that src spawns.
 	basePortListener net.Listener
 }
 
 type Config struct {
 	Flags      []interface{} // flags to `src`
 	Endpoint   client.EndpointOpts
-	Serve      sgx.ServeCmd
+	Serve      cli.ServeCmd
 	ServeFlags []interface{} // flags to `src serve`
 }
 
@@ -145,7 +145,7 @@ func (s *Server) Cmd(env []string, args []string) *exec.Cmd {
 		log.Fatal(err)
 	}
 
-	cmd := exec.Command(sgxcmd.Path)
+	cmd := exec.Command(srccmd.Path)
 	cmd.Args = append(cmd.Args, configArgs...)
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Stdout = os.Stderr
@@ -417,7 +417,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 
 	// Server command.
-	s.ServerCmd = exec.Command(sgxcmd.Path)
+	s.ServerCmd = exec.Command(srccmd.Path)
 	s.ServerCmd.Stdout = os.Stderr
 	s.ServerCmd.Stderr = os.Stderr
 	s.ServerCmd.Env = append(bareEnvConfig(), s.allEnvConfig()...)

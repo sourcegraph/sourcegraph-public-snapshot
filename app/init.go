@@ -9,7 +9,7 @@ import (
 	// Load in toolchain formatters.
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/srclib_support"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/util/srclib_support"
 )
 
 var initOnce sync.Once

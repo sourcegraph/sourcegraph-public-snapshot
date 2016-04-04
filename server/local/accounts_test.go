@@ -11,7 +11,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 
 	"golang.org/x/net/context"
 )

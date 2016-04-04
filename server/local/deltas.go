@@ -15,8 +15,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 )
 
 var Deltas sourcegraph.DeltasServer = &deltas{

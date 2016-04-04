@@ -9,11 +9,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 )
 

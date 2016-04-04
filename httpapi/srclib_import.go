@@ -17,7 +17,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"

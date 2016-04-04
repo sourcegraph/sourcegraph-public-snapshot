@@ -7,9 +7,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/emailaddrs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/emailaddrs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 

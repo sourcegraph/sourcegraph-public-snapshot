@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github/githubcli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 )
 
 // SplitGitHubRepoURI splits a string like "github.com/alice/myrepo" to "alice"

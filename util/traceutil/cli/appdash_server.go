@@ -13,7 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/traceapp"
-	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 )
 

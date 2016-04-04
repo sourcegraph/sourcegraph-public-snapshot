@@ -3,7 +3,7 @@ package httpapi
 import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 )
 

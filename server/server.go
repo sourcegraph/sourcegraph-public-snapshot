@@ -6,7 +6,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/inner"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/outer"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // NewServer creates a new gRPC server with all RPC services

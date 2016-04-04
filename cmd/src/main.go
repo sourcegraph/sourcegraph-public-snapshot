@@ -4,8 +4,8 @@ package main
 import (
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx"
-	"sourcegraph.com/sourcegraph/sourcegraph/worker"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 
 	// App
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
@@ -14,12 +14,12 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/server/cmd"
 
 	// Events
-	_ "sourcegraph.com/sourcegraph/sourcegraph/events"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/events/listeners"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/services/events"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/services/events/listeners"
 
 	// External services
-	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/github"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/ext/papertrail"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/papertrail"
 
 	// Misc.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	err := sgx.Main()
+	err := cli.Main()
 	worker.CloseLogs()
 	if err != nil {
 		os.Exit(1)

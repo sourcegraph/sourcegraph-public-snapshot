@@ -9,13 +9,13 @@ import (
 
 	"golang.org/x/net/context"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/events"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
 

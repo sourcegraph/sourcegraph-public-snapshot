@@ -43,7 +43,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/middleware/inner/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/local"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // Services returns the local services wrapped with auth, etc.

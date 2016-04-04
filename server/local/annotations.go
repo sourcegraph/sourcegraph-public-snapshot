@@ -15,8 +15,8 @@ import (
 	annotationspkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/annotations"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/syntaxhighlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )

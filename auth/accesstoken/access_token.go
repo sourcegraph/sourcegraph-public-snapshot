@@ -16,7 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // New creates and signs a new OAuth2 access token that grants the

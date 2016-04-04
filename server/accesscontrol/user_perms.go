@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 // VerifyUserHasReadAccess checks if the user in the current context
@@ -182,7 +182,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method str
 }
 
 // Check if the actor is authorized with an access token
-// having a valid scope. This token is set in package sgx on server
+// having a valid scope. This token is set in package cli on server
 // startup, and is only available to client commands spawned
 // in the server process.
 //

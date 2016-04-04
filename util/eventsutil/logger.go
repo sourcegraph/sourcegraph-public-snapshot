@@ -14,9 +14,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sqs/pbtypes"
 )

@@ -41,7 +41,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/svc"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // Services returns a full set of services with an implementation of each service method that lets you customize the initial context.Context and map Go errors to gRPC error codes. It is similar to HTTP handler middleware, but for gRPC servers.

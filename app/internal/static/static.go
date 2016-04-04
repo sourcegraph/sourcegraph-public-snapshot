@@ -20,7 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/sgx/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 

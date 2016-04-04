@@ -18,7 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
