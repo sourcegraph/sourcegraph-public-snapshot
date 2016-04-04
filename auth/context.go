@@ -11,7 +11,6 @@ type key int
 
 const (
 	actorKey key = iota
-	ticketsKey
 	repoCheckerKey
 	repoCheckerStartedKey
 )
@@ -48,15 +47,6 @@ func LoginFromContext(ctx context.Context) (string, bool) {
 
 func WithActor(ctx context.Context, a Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
-}
-
-func TicketsFromContext(ctx context.Context) []Perm {
-	tix, _ := ctx.Value(ticketsKey).([]Perm)
-	return tix
-}
-
-func WithTickets(ctx context.Context, tix []Perm) context.Context {
-	return context.WithValue(ctx, ticketsKey, tix)
 }
 
 // IsAuthenticated returns whether the context has an authenticated

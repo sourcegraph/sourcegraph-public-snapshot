@@ -2,16 +2,6 @@ package auth
 
 import "fmt"
 
-// Perm describes the ability to access a Resource in a certain way (the PermissionType).
-type Perm struct {
-	Resource `json:"Resource"`
-	Type     PermType
-}
-
-func (p Perm) String() string {
-	return fmt.Sprintf("%s on %s", p.Type, p.Resource)
-}
-
 type PermType int
 
 const (
