@@ -87,7 +87,6 @@ Starts an HTTP server serving the app and API.
       -a, --help-all                             Show all serve flags
 
     Authentication:
-          --auth.allow-anon-readers              allow unauthenticated users to perform read operations (viewing repos, etc.)
           --auth.source=                         source of authentication to use (none|local|oauth) (none)
 
     Local:

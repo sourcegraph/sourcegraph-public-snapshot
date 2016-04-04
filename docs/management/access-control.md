@@ -10,21 +10,6 @@ The first user to register the Sourcegraph server becomes the server's
 admin. Server admins can use the `src` CLI to grant and revoke other
 users' permissions to access the server.
 
-## Anonymous readers and open logins
-You can set your Sourcegraph server to be publicly readable, for example if your
-code is open or fair source. To configure this, pass the flag `--auth.allow-anon-readers`
-to `src serve`, or set this in your config file `/etc/sourcegraph/config.ini`:
-
-	[serve.Auth]
-	AllowAnonymousReaders = true
-
-To allow anyone to create a read-only account on your server, by
-setting the flag `--auth.allow-all-logins` on the CLI, or by adding to
-your config file:
-
-	[serve.Auth]
-	AllowAllLogins = true
-
 # Listing current users
 Admins can list the existing users and their access levels by running:
 

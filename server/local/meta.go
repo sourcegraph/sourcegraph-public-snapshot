@@ -36,9 +36,8 @@ func (s *meta) Status(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Server
 
 func (s *meta) Config(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.ServerConfig, error) {
 	c := &sourcegraph.ServerConfig{
-		Version:               buildvar.Version,
-		AppURL:                conf.AppURL(ctx).String(),
-		AllowAnonymousReaders: authutil.ActiveFlags.AllowAnonymousReaders,
+		Version:    buildvar.Version,
+		AppURL:     conf.AppURL(ctx).String(),
 		IDKey:      idkey.FromContext(ctx).ID,
 		AuthSource: authutil.ActiveFlags.Source,
 	}

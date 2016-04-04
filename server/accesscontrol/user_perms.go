@@ -91,17 +91,6 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		}
 	}
 
-	if authutil.ActiveFlags.AllowAnonymousReaders {
-		return nil
-	}
-
-	if !actor.IsAuthenticated() {
-		if len(actor.Scope) > 0 {
-			return nil
-		}
-		return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
-	}
-
 	return nil
 }
 

@@ -3,18 +3,19 @@
 package httpapi_test
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 )
@@ -38,43 +39,22 @@ func TestAuth(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	httpClient := &httptestutil.Client{Client: *http.DefaultClient}
+	httpClient := &httptestutil.Client{Client: http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return errors.New("redirect")
+		},
+	}}
 
-	url, err := apirouter.URL(apirouter.Repos, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	url.Path = "/.api" + url.Path
+	url := router.Rel.URLTo(router.UserSettingsProfile, "User", "u")
 	url = a.Config.Endpoint.URLOrDefault().ResolveReference(url)
 
 	// No auth for an endpoint that requires auth.
-	resp, err := httpClient.Get(url.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := http.StatusUnauthorized; resp.StatusCode != want {
-		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
+	_, err = httpClient.Get(url.String())
+	if err == nil {
+		t.Error("error expected")
 	}
 
-	// Try successful password auth.
-	req, _ := http.NewRequest("GET", url.String(), nil)
-	req.SetBasicAuth("u", "p")
-	if _, err := httpClient.DoOK(req); err != nil {
-		t.Fatal(err)
-	}
-
-	// Unsuccessful password auth.
-	req, _ = http.NewRequest("GET", url.String(), nil)
-	req.SetBasicAuth("u", "badpw")
-	resp, err = httpClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := http.StatusForbidden; resp.StatusCode != want {
-		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
-	}
-
-	// Now OAuth2 tests.
+	// OAuth2 tests.
 	oauth2Client := func(tok *oauth2.Token) *httptestutil.Client {
 		oauth2Client := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(tok))
 		return &httptestutil.Client{Client: *oauth2Client}
@@ -92,11 +72,8 @@ func TestAuth(t *testing.T) {
 
 	// Unsuccessful OAuth2 access token auth.
 	badTok := &oauth2.Token{AccessToken: "badtoken", TokenType: "Bearer"}
-	resp, err = oauth2Client(badTok).Get(url.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := http.StatusUnauthorized; resp.StatusCode != want {
-		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
+	_, err = oauth2Client(badTok).Get(url.String())
+	if err == nil {
+		t.Error("error expected")
 	}
 }

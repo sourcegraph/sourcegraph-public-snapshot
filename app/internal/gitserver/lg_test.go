@@ -34,7 +34,7 @@ func TestGitServerWithAnonymousReaders(t *testing.T) {
 		gitPushTest{false, true, false, true},
 		gitPushTest{false, true, true, true},
 	}
-	testGitServer(t, &authutil.Flags{Source: "local", AllowAnonymousReaders: true}, tests)
+	testGitServer(t, &authutil.Flags{Source: "local"}, tests)
 }
 
 func TestGitServerWithAuth(t *testing.T) {

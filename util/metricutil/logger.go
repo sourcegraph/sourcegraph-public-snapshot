@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"time"
 
-	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"golang.org/x/net/context"
+
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
@@ -148,10 +148,6 @@ func (l *logger) Filter(ctx context.Context, event *sourcegraph.UserEvent) bool 
 	if event.Type != "grpc" {
 		// all events that are not grpc calls are important
 		return true
-	}
-	if event.UID == 0 && !authutil.ActiveFlags.AllowAnonymousReaders {
-		// this is not a user initiated grpc call
-		return false
 	}
 	switch event.Service {
 	case "GraphUplink":

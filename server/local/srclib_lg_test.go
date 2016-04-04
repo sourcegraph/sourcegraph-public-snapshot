@@ -22,7 +22,7 @@ func TestSrclibPush(t *testing.T) {
 
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
+		&authutil.Flags{Source: "none"},
 	)
 	if err := a.Start(); err != nil {
 		t.Fatal(err)

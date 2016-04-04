@@ -111,7 +111,7 @@ func testServer(t *testing.T) {
 
 func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none", AllowAnonymousReaders: true},
+		&authutil.Flags{Source: "none"},
 	)
 
 	if err := a.Start(); err != nil {

@@ -2286,10 +2286,6 @@ type ServerConfig struct {
 	AppURL string `protobuf:"bytes,2,opt,name=AppURL,proto3" json:"AppURL,omitempty"`
 	// IDKey is the server's identity key (ID key).
 	IDKey string `protobuf:"bytes,7,opt,name=IDKey,proto3" json:"IDKey,omitempty"`
-	// AllowAnonymousReaders is whether anonymous (unauthenticated)
-	// users may perform "read" operations, such as viewing
-	// repositories.
-	AllowAnonymousReaders bool `protobuf:"varint,9,opt,name=AllowAnonymousReaders,proto3" json:"AllowAnonymousReaders,omitempty"`
 	// AuthSource is which mode of authentication is set up on the
 	// server (none|local).
 	AuthSource string `protobuf:"bytes,10,opt,name=AuthSource,proto3" json:"AuthSource,omitempty"`
@@ -10809,16 +10805,6 @@ func (m *ServerConfig) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.IDKey)))
 		i += copy(data[i:], m.IDKey)
 	}
-	if m.AllowAnonymousReaders {
-		data[i] = 0x48
-		i++
-		if m.AllowAnonymousReaders {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
 	if len(m.AuthSource) > 0 {
 		data[i] = 0x52
 		i++
@@ -13967,9 +13953,6 @@ func (m *ServerConfig) Size() (n int) {
 	l = len(m.IDKey)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if m.AllowAnonymousReaders {
-		n += 2
 	}
 	l = len(m.AuthSource)
 	if l > 0 {
@@ -31653,26 +31636,6 @@ func (m *ServerConfig) Unmarshal(data []byte) error {
 			}
 			m.IDKey = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 9:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AllowAnonymousReaders", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.AllowAnonymousReaders = bool(v != 0)
 		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AuthSource", wireType)
