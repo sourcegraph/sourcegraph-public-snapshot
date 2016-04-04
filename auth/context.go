@@ -11,8 +11,6 @@ type key int
 
 const (
 	actorKey key = iota
-	repoCheckerKey
-	repoCheckerStartedKey
 )
 
 func ActorFromContext(ctx context.Context) Actor {
