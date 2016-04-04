@@ -7,13 +7,6 @@ var log = require("logalot");
 var FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
 require("lintspaces-loader");
 
-try {
-	require("node-sass");
-} catch (error) {
-	console.log("ERROR: node-sass not properly installed. Run 'make dep' to fix.");
-	process.exit(1);
-}
-
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
 	const flow = require('flow-bin/lib');
