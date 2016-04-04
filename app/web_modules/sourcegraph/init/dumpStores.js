@@ -4,6 +4,7 @@ import RepoStore from "sourcegraph/repo/RepoStore";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
+import EventLogger from "sourcegraph/util/EventLogger";
 
 export default function dumpStores() {
 	return {
@@ -13,5 +14,6 @@ export default function dumpStores() {
 		TreeStore,
 		DashboardStore,
 		BuildStore,
+		EventLogger,
 	};
 }

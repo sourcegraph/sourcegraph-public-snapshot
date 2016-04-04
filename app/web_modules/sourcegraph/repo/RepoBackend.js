@@ -23,7 +23,9 @@ const RepoBackend = {
 							// TODO Better httpapi error responses.
 							return {Error: {Body: err.body, Status: err.response.status}};
 						})
-						.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data)));
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
+						});
 				}
 				break;
 			}

@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
@@ -25,7 +26,7 @@ type JSContext struct {
 	CSRFToken     string
 	CurrentUser   *sourcegraph.User
 	CurrentSpanID appdash.SpanID
-	DeviceID      string
+	UserAgent     string
 	AssetsRoot    string
 	BuildVars     buildvar.Vars
 	Features      struct{}
@@ -51,7 +52,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		CSRFToken:     nosurf.Token(req),
 		CurrentUser:   handlerutil.FullUserFromRequest(req),
 		CurrentSpanID: traceutil.SpanID(req),
-		DeviceID:      "", // TODO(pure-react)
+		UserAgent:     eventsutil.UserAgentFromContext(httpctx.FromRequest(req)),
 		AssetsRoot:    assets.URL("/").String(),
 		BuildVars:     buildvar.All,
 		Features:      feature.Features,

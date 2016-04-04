@@ -6,8 +6,8 @@ const context = {
 	cacheControl: null,
 	parentSpanID: null,
 	assetsRoot: "",
-	deviceID: "",
 	buildVars: null,
+	userAgent: "",
 };
 
 // Sets the values of the context given a JSContext object from the server.
@@ -21,8 +21,8 @@ export function reset(ctx) {
 	context.cacheControl = ctx.CacheControl || null;
 	context.currentSpan = ctx.CurrentSpanID;
 	context.assetsRoot = ctx.AssetsRoot;
-	context.deviceID = ctx.DeviceID;
 	context.buildVars = ctx.BuildVars;
+	context.userAgent = ctx.UserAgent;
 }
 
 export default context;

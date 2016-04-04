@@ -331,7 +331,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Listen for events and periodically push them to analytics gateway.
 	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
-	eventsutil.LogStartServer()
 
 	c.runGitServer()
 
@@ -785,7 +784,7 @@ func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
 		return err
 	}
 
-	regClient, err := cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
+	_, err = cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
 		ID:         idKey.ID,
 		ClientName: fmt.Sprintf("Client #%s", shortClientID),
 		ClientURI:  appURL.String(),
@@ -797,7 +796,6 @@ func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
 	} else if err != nil {
 		return fmt.Errorf("registering client with %s: %s", registerURL, err)
 	}
-	eventsutil.LogRegisterServer(regClient.ClientName)
 	log15.Debug("Registered as client", "registerURL", registerURL, "client", idKey.ID)
 	return nil
 }

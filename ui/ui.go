@@ -48,7 +48,6 @@ func NewHandler(r *mux.Router) http.Handler {
 	mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
-		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 
 	if r == nil {

@@ -5,6 +5,7 @@ import urlTo from "sourcegraph/util/urlTo";
 import {makeRepoRev} from "sourcegraph/repo";
 import type {Route} from "react-router";
 
+
 let _components;
 
 const common = {

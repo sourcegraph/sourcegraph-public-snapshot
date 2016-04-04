@@ -176,7 +176,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	eventsutil.LogLinkGitHub(ctx, user)
+	eventsutil.LogLinkGitHubCompleted(ctx)
 	sendLinkGitHubSlackMsg(ctx, currentUser, user)
 
 	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: currentUser.UID})

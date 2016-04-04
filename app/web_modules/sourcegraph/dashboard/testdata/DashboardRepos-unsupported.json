@@ -31,13 +31,16 @@
 												"small": true,
 												"children": [
 													{
-														"type": "a",
+														"type": "",
 														"props": {
 															"styleName": "cta-link",
-															"href": "/join",
+															"to": "/join",
 															"children": [
 																"Sign up"
-															]
+															],
+															"onlyActiveOnIndex": false,
+															"className": "",
+															"style": {}
 														}
 													}
 												]

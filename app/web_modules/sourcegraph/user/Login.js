@@ -1,4 +1,5 @@
 import React from "react";
+import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -63,7 +64,7 @@ class Login extends Container {
 				<div styleName="alt-action">
 					<span>Don't have an account yet?</span>
 					<span styleName="alt-button">
-						<Button color="default" outline={true} small={true}><a styleName="alt-link" href="/join">Sign up</a></Button>
+						<Button color="default" outline={true} small={true}><Link styleName="alt-link" to="/join">Sign up</Link></Button>
 					</span>
 				</div>
 			</div>

@@ -57,7 +57,6 @@ func NewHandler(r *router.Router) http.Handler {
 	mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
-		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 	mw = append(mw, internal.Middleware...)
 

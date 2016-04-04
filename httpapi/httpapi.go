@@ -34,7 +34,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	mw = append(mw, httpapiauth.PasswordMiddleware, httpapiauth.OAuth2AccessTokenMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
-		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 
 	if conf.GetenvBool("SG_USE_CSP") {

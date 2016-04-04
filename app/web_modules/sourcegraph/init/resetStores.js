@@ -4,6 +4,7 @@ import RepoStore from "sourcegraph/repo/RepoStore";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
+import EventLogger from "sourcegraph/util/EventLogger";
 
 // resetStores resets all stores with the provided data. If null is provided,
 // then the stories are cleared.
@@ -14,4 +15,5 @@ export default function resetStores(data) {
 	TreeStore.reset(data ? data.TreeStore : null);
 	DashboardStore.reset(data ? data.DashboardStore : null);
 	BuildStore.reset(data ? data.BuildStore : null);
+	EventLogger.reset(data ? data.EventLogger : null);
 }

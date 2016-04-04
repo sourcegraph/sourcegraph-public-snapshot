@@ -7,7 +7,8 @@ export class SubmitSignup {
 }
 
 export class SignupCompleted {
-	constructor(resp) {
+	constructor(email, resp) {
+		this.email = email;
 		this.resp = resp;
 	}
 }

@@ -23,7 +23,7 @@ const UserBackend = {
 					return {Error: true, err: err};
 				})
 				.then((data) => {
-					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(data));
+					Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 					if (!data.Error) {
 						window.location.href = "/";
 					}
@@ -104,7 +104,7 @@ const UserBackend = {
 					return {Error: true, err: err};
 				})
 				.then((data) => {
-					Dispatcher.Stores.dispatch(new UserActions.ForgotPasswordCompleted(data));
+					Dispatcher.Stores.dispatch(new UserActions.ResetPasswordCompleted(data));
 					if (!data.Error) {
 						window.location.href = "/";
 					}

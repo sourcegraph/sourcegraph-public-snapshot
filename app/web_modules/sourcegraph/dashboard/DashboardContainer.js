@@ -5,6 +5,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
+import EventLogger from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import context from "sourcegraph/context";
 
@@ -12,13 +13,15 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
 
 class DashboardContainer extends Container {
-
 	constructor(props) {
 		super(props);
 	}
 
-	componentWillUnmount() {
-		super.componentWillUnmount();
+	componentDidMount() {
+		super.componentDidMount();
+		if (this.state.githubRedirect) {
+			EventLogger.logEvent("LinkGitHubCompleted");
+		}
 	}
 
 	reconcileState(state, props) {
@@ -31,10 +34,10 @@ class DashboardContainer extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (!nextState.repos && nextState.repos !== prevState.repos) {
+		if (nextState.repos === null && nextState.repos !== prevState.repos) {
 			Dispatcher.Backends.dispatch(new DashboardActions.WantRepos());
 		}
-		if (!nextState.remoteRepos && nextState.remoteRepos !== prevState.remoteRepos) {
+		if (nextState.remoteRepos === null && nextState.remoteRepos !== prevState.remoteRepos) {
 			Dispatcher.Backends.dispatch(new DashboardActions.WantRemoteRepos());
 		}
 	}

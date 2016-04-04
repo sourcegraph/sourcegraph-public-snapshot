@@ -1,8 +1,9 @@
 // @flow
 
+import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
-export type RouteName = "dashboard" | "def" | "defRefs" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin";
+export type RouteName = "dashboard" | "def" | "defRefs" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds";
 
 export const rel: {[key: RouteName]: string} = {
 	dashboard: "",
@@ -27,6 +28,7 @@ export const abs: {[key: RouteName]: string} = {
 	forgot: rel.forgot,
 	reset: rel.reset,
 	admin: rel.admin,
+	adminBuilds: `${rel.admin}${rel.builds}`,
 	def: `${rel.repo}/-/${rel.def}`,
 	defRefs: `${rel.repo}/-/${rel.def}/-/refs`,
 	repo: rel.repo,
@@ -35,6 +37,28 @@ export const abs: {[key: RouteName]: string} = {
 	build: `${rel.repo}/-/${rel.build}`,
 	builds: `${rel.repo}/-/${rel.builds}`,
 };
+
+const routeNamesByPattern: {[key: string]: RouteName} = {};
+// $FlowHack
+for (let name: RouteName of Object.keys(abs)) {
+	routeNamesByPattern[abs[name]] = name;
+}
+
+export function getRoutePattern(routes: Array<Route>): string {
+	return routes.map((route) => route.path).join("").slice(1); // remove leading '/''
+}
+
+export function getRouteName(routes: Array<Route>): ?string {
+	return routeNamesByPattern[getRoutePattern(routes)];
+}
+
+export function getViewName(routes: Array<Route>): ?string {
+	let name = getRouteName(routes);
+	if (name) {
+		return `View${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+	}
+	return null;
+}
 
 export function getRouteParams(pattern: string, pathname: string): ?{[key: string]: string | string[]} {
 	const {paramNames, paramValues} = matchPattern(pattern, pathname);

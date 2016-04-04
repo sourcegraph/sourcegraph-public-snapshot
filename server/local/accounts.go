@@ -57,8 +57,8 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		URL:     newAcct.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
 	})
-	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0)
 	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email)
+	eventsutil.LogCreateAccountCompleted(ctx)
 
 	return user, err
 }
