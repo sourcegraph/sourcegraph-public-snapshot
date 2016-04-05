@@ -19,8 +19,6 @@ func init() {
 type Flags struct {
 	Source string `long:"auth.source" description:"source of authentication to use (none|local)" default:"local" env:"SRC_AUTH_SOURCE"`
 
-	AllowAllLogins bool `long:"auth.allow-all-logins" description:"do not check access permissions of a user at login." env:"SRC_AUTH_ALLOW_ALL_LOGINS"`
-
 	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations" env:"SRC_AUTH_DISABLE_ACCESS_CONTROL"`
 }
 

@@ -27,7 +27,7 @@ func TestAuth(t *testing.T) {
 
 	a, ctx := testserver.NewUnstartedServer()
 	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "local", AllowAllLogins: true},
+		&authutil.Flags{Source: "local"},
 	)
 	if err := a.Start(); err != nil {
 		t.Fatal(err)

@@ -58,7 +58,7 @@ func TestGitServerWithAuth(t *testing.T) {
 		gitPushTest{false, true, false, true},
 		gitPushTest{false, true, true, true},
 	}
-	testGitServer(t, &authutil.Flags{Source: "local", AllowAllLogins: true}, tests)
+	testGitServer(t, &authutil.Flags{Source: "local"}, tests)
 }
 
 type gitCloneTest struct {

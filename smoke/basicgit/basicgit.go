@@ -81,7 +81,7 @@ func main_() error {
 	os.Setenv("SG_EMAIL", *email)
 
 	// launch local server
-	server, err := async(`src serve --auth.allow-all-logins --id-key=$SGPATH/id.pem`)
+	server, err := async(`src serve --id-key=$SGPATH/id.pem`)
 	if err != nil {
 		return err
 	}
