@@ -46,6 +46,7 @@ class Login extends Container {
 				<div styleName="title">Hey there, welcome back!</div>
 				<div styleName="action">
 					<Input type="text"
+						id="e2etest-login-field"
 						autoFocus={true}
 						placeholder="Username"
 						domRef={(e) => this._loginInput = e}
@@ -53,12 +54,14 @@ class Login extends Container {
 				</div>
 				<div styleName="action">
 					<Input type="password"
+						id="e2etest-password-field"
 						placeholder="Password"
 						domRef={(e) => this._passwordInput = e}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
+						id="e2etest-login-button"
 						block={true}
 						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Sign in</Button>
 				</div>

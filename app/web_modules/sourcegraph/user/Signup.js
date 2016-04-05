@@ -48,6 +48,7 @@ class Signup extends Container {
 				<div styleName="title">Get started with Sourcegraph</div>
 				<div styleName="action">
 					<Input type="text"
+						id="e2etest-login-field"
 						placeholder="Username"
 						domRef={(e) => this._loginInput = e}
 						autoFocus={true}
@@ -55,18 +56,21 @@ class Signup extends Container {
 				</div>
 				<div styleName="action">
 					<Input type="password"
+						id="e2etest-password-field"
 						placeholder="Password"
 						domRef={(e) => this._passwordInput = e}
 						block={true} />
 				</div>
 				<div styleName="action">
 					<Input type="email"
+						id="e2etest-email-field"
 						placeholder="Email"
 						domRef={(e) => this._emailInput = e}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
+						id="e2etest-register-button"
 						block={true}
 						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account & Add GitHub Repositories</Button>
 				</div>
