@@ -70,7 +70,7 @@ class Input extends Component {
 		let style = this.state.block ? "block" : "input";
 		style = `${style} ${this.state.valid ? "normal" : "error"}`;
 		return (
-			<input styleName={style}
+			<input {...this.props} styleName={style}
 				ref="input"
 				type={this.state.type}
 				value={this.state.value}

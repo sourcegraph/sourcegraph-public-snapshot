@@ -22,7 +22,7 @@ class Button extends Component {
 		style = `${style} ${this.state.size ? this.state.size : "normal"}`;
 
 		return (
-			<button styleName={style}
+			<button {...this.props} styleName={style}
 				onClick={this.state.onClick}>
 				{this.state.loading && <Loader stretch={Boolean(this.state.block)} />}
 				{!this.state.loading && this.state.children}
