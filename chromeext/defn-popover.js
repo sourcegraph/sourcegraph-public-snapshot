@@ -20,9 +20,11 @@ function sourcegraph_activateDefnPopovers(el) {
     // if (activeA != t) console.log('ACTIVE:', t.href);
     if (activeA != t) {
       activeA = t;
-      //need to add /.ui to URL, so split and take everything after sourcegraph.com
+      //console.log(activeA.href)
       var URLend = activeA.href.split('https://sourcegraph.com')[1]
-      var URLtoUse = 'https://sourcegraph.com/.api/repos' + URLend;
+      var URLendNoChrome = URLend.split('?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext')[0]
+      var URLtoUse = 'https://sourcegraph.com/.api/repos' + URLendNoChrome;
+      //console.log(URLtoUse)
       ajaxGet(URLtoUse, function(html) {
         if (activeA) showPopover(html);
       });
@@ -80,14 +82,10 @@ function sourcegraph_activateDefnPopovers(el) {
     request = new XMLHttpRequest();
     request.open('GET', url, true);
     request.onload = function() {
-      console.log(request)
       var response = (JSON.parse(request.response));
       if (request.status >= 200 && 400 > request.status) {
-        console.log('success')
         var html;
-        console.log(response)
         if (response.Data) {
-          console.log('data')
           if (response.DocHTML){
             html = "<div><span class='title'>" + defQualifiedName(response) +"</span>\n<span class='p'>"+ response.DocHTML.__html + "</span>\n<span class='repo'>" + response.Repo + "</span></div>";  
           }

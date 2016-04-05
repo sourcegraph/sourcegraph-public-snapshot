@@ -1,39 +1,37 @@
-# Sourcegraph Chrome Extension
+# Sourcegraph chrome extension
 
-This extension enhances file pages on GitHub by annotating code with links to usage examples and documentation. It also adds a keyboard shortcut (Shift+T) that allows you to search for functions, classes, and other code definitions in the repository (in lieu of the text-based search on GitHub).  
+Enhance code browsing on GitHub: code search, instant documentaton tooltips, and jump-to-definition links for code on GitHub.
 
-You can also browse code on Sourcegraph itself at https://sourcegraph.com.
+This extension enhances file pages on GitHub by adding instant documentation and type tooltips to code on GitHub, and making every identifer a jump-to-definition link. It also adds a search button and keyboard shortcut (shift-T) that allow you to search for functions, types, and other code definitions within your repository. The search function also provides complete text results. You'll wonder how you browsed code on GitHub without it.
 
-Currently, Sourcegraph supports <b>Go</b> and <b>Java</b>.  This extension will work on all public Go and Java code as well as most of the popular repositories in Python and JavaScript.  Support for more languages will be rolled out soon - stay tuned!   
+Here's what people are saying about Sourcegraph:
 
-To use code search on private repositories, code must first be mirrored onto Sourcegraph.com (for free). 
+- "it's already my favorite online doc tool. give it a try" - @edapx
+- "Sourcegraph has been quickly moving in priority on my Chrome bookmarks. You need to check out this tool." - @goinggodotnet
+- "Loving Sourcegraph.com to find documentation and real code examples" - @IndianGuru
+- "Being able to search actual open source code is amazing. Very very fast as well!" and Sourcegraph is blowing my mind right now." - @joshtaylor
+- "Sourcegraph is amazing" - Jakub W.
+- "Sourcegraph is an essential tool for every Pythonist, Gopher, and Nodester." - @nimolix
+- "Impressive #golang code navigation by Sourcegraph!" - @francesc
 
-SECURITY MATTERS: This extension never sends any information about private
-repositories to Sourcegraph.
+You can also search and browse code on Sourcegraph itself at https://sourcegraph.com.
+
+Currently, Sourcegraph supports Go repositories. This extension will work on all public Go code. To use code search on private Go repositories, sign up for Sourcegraph at https://sourcegraph.com and link your GitHub account. Support for more languages will be rolled out soon. Stay tuned!   
+
+Prerequisite: Using the extension requires the repository to be built on Sourcegraph. All popular Go repositories are already built. To trigger a build of a repository, visit https://sourcegraph.com/github.com/USER/REPO.    
 
 ## Development
 
 ## Prerequisites
 
-Install [Gulp](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started) and [NodeJS](https://nodejs.org/en/download/), then install the dependencies:
-```
-cd chrome/
-npm install
-```
-
 ## Building
 
-To build and watch the source files for changes, run `gulp`. Then go to `chrome://extensions`
-in Chrome, check "Developer mode" and use *Load Unpacked Extension* to load the
-`chrome/build` extension directory.
+Go to `chrome://extensions`in Chrome, check `Developer mode` and use `Load Unpacked Extension` to load the
+`chromeext` directory.
 
 To reload the Chrome extension when you change files, install
-[Extensions Reloader](https://chrome.google.com/webstore/detail/fimgfedafeadlieiabdeeaodndnlbhid)
-and run `gulp watch`.
-
-To inject content from http://localhost:3080 instead of from
-https://sourcegraph.com, run `DEV=1 grunt`. GitHub is HTTPS-only, so you may
-need to [allow mixed content](http://superuser.com/a/487772) temporarily.
+[Extensions Reloader](https://chrome.google.com/webstore/detail/fimgfedafeadlieiabdeeaodndnlbhid), 
+or simply `Update extensions` and `Reload` the extension at chrome://extensions.
 
 ## Publishing
 
@@ -43,10 +41,10 @@ To publish a new version:
 1. Click the Settings gear in top right corner -> `Developer Dashboard`.
 1. Choose the right extension with the `Status` of `Published` and click `Edit`.
 1. Bump the version in `manifest.json` to be greater than the current one.
-1. Run `gulp build` to build the extension -> test that it works by loading it into Chrome via *Load Unpacked Extension*!
-1. `cd build/ && zip -r ../../release.zip .` to create the zip.
-1. Click `Upload Updated Package` on the developer dashboard to upload the new `release.zip`.
-1. Scroll to bottom of page and hit `Publish Changes`.
+1. Test that it works by loading it into Chrome via `Load Unpacked Extension`.
+1. `cd chromeext` and `zip -r chromeext.zip *` to create a zip of the `chromeext` directory.
+1. Click `Upload Updated Package` on the developer dashboard to upload the new zip file.
+1. Scroll to the bottom of the page and hit `Publish Changes`.
 
 
 
