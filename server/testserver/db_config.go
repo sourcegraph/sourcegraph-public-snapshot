@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/gorp.v1"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/store/pgsql"
+	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/testdb"
 )
@@ -21,7 +21,7 @@ type dbConfig struct {
 }
 
 func (s *dbConfig) configDB() error {
-	s.MainDBH, s.dbDone = testdb.NewHandle(&pgsql.Schema)
+	s.MainDBH, s.dbDone = testdb.NewHandle(&localstore.Schema)
 	if _, ok := s.MainDBH.(*dbutil2.Handle); !ok {
 		return fmt.Errorf("test app requires a real main *dbutil.Handle not %T (must run with -pgsqltest.init=full)", s.MainDBH)
 	}
