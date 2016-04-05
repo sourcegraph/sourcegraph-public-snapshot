@@ -53,7 +53,11 @@ func checkResponse(resp *github.Response, err error, op string) error {
 
 	statusCode := errcode.HTTPToGRPC(resp.StatusCode)
 
-	if statusCode == codes.Unknown && resp.StatusCode >= 400 && resp.StatusCode <= 500 {
+	// Calling out to github could result in some HTTP status codes that don't directly map to
+	// gRPC status codes. If github returns anything in the 400 range that isn't known to us,
+	// we don't want to indicate a server-side error (which would happen if we don't convert
+	// to 404 here).
+	if statusCode == codes.Unknown && resp.StatusCode >= 400 && resp.StatusCode < 500 {
 		statusCode = codes.NotFound
 	}
 
