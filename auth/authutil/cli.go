@@ -18,8 +18,6 @@ func init() {
 // Flags defines some command-line flags for this package.
 type Flags struct {
 	Source string `long:"auth.source" description:"source of authentication to use (none|local)" default:"local" env:"SRC_AUTH_SOURCE"`
-
-	DisableAccessControl bool `long:"auth.disable-access-control" description:"do not check access level of a user for write/admin operations" env:"SRC_AUTH_DISABLE_ACCESS_CONTROL"`
 }
 
 // IsLocal returns true if users are stored and authenticated locally.
@@ -40,7 +38,7 @@ func (f Flags) HasLogin() bool { return f.HasUserAccounts() }
 // HasSignup returns whether signing up is enabled.
 func (f Flags) HasSignup() bool { return f.IsLocal() }
 
-func (f Flags) HasAccessControl() bool { return !f.DisableAccessControl && f.HasUserAccounts() }
+func (f Flags) HasAccessControl() bool { return f.HasUserAccounts() }
 
 // ActiveFlags are the flag values passed from the command line, if
 // we're running as a CLI.
