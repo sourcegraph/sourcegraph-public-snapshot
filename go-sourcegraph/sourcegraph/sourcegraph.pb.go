@@ -2286,9 +2286,6 @@ type ServerConfig struct {
 	AppURL string `protobuf:"bytes,2,opt,name=AppURL,proto3" json:"AppURL,omitempty"`
 	// IDKey is the server's identity key (ID key).
 	IDKey string `protobuf:"bytes,7,opt,name=IDKey,proto3" json:"IDKey,omitempty"`
-	// AuthSource is which mode of authentication is set up on the
-	// server (none|local).
-	AuthSource string `protobuf:"bytes,10,opt,name=AuthSource,proto3" json:"AuthSource,omitempty"`
 }
 
 func (m *ServerConfig) Reset()         { *m = ServerConfig{} }
@@ -10805,12 +10802,6 @@ func (m *ServerConfig) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.IDKey)))
 		i += copy(data[i:], m.IDKey)
 	}
-	if len(m.AuthSource) > 0 {
-		data[i] = 0x52
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.AuthSource)))
-		i += copy(data[i:], m.AuthSource)
-	}
 	return i, nil
 }
 
@@ -13951,10 +13942,6 @@ func (m *ServerConfig) Size() (n int) {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	l = len(m.IDKey)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.AuthSource)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
@@ -31635,35 +31622,6 @@ func (m *ServerConfig) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.IDKey = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AuthSource", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AuthSource = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

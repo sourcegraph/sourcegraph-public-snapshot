@@ -7,18 +7,11 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func TestUserSettingsAccess(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "local"
-
 	c, mock := apptest.New()
 
 	var calledGet bool

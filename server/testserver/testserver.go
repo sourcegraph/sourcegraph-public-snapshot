@@ -116,7 +116,7 @@ func (s *Server) CmdAs(login string, args []string) (*exec.Cmd, error) {
 	k := idkey.FromContext(s.Ctx)
 	token, err := accesstoken.New(
 		k,
-		auth.Actor{UID: int(u.UID), ClientID: k.ID},
+		auth.Actor{UID: int(u.UID), ClientID: k.ID, Scope: map[string]bool{"user:write": true}},
 		map[string]string{"GrantType": "CmdAs"},
 		0,
 	)

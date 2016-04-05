@@ -21,13 +21,15 @@ func TestSrclibPush(t *testing.T) {
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none"},
-	)
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}
 	defer a.Close()
+
+	_, err := testutil.CreateAccount(t, ctx, "u")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, _, close, err := testutil.CreateAndPushRepo(t, ctx, "r/rr")
 	if err != nil {
@@ -41,14 +43,14 @@ func TestSrclibPush(t *testing.T) {
 	}
 
 	// Clone and build the repo locally.
-	if err := cloneAndLocallyBuildRepo(t, a, repo, ""); err != nil {
+	if err := cloneAndLocallyBuildRepo(t, a, repo); err != nil {
 		t.Fatal(err)
 	}
 
 	testutil.CheckImport(t, ctx, "r/rr", "")
 }
 
-func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegraph.Repo, asUser string) (err error) {
+func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegraph.Repo) (err error) {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
@@ -85,17 +87,9 @@ func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegr
 	}
 
 	// Push the repo.
-	var cmd *exec.Cmd
-	if asUser != "" {
-		cmd, err = a.CmdAs(asUser, []string{"push", "--repo", repo.URI})
-		if err != nil {
-			return err
-		}
-	} else {
-		cmd, err = a.CmdAsSystem([]string{"push", "--repo", repo.URI})
-		if err != nil {
-			return err
-		}
+	cmd, err := a.CmdAs("u", []string{"push", "--repo", repo.URI})
+	if err != nil {
+		return err
 	}
 	if err := testutil.RunCmd(cmd, repoDir); err != nil {
 		return err

@@ -5,17 +5,10 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestVerifyAccess(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "local"
-
 	asUID := func(uid int) context.Context {
 		var user *sourcegraph.User
 		switch uid {
@@ -111,10 +104,6 @@ func TestVerifyAccess(t *testing.T) {
 
 	// Test that for local auth, all authenticated users have write access,
 	// but unauthenticated users don't.
-	authutil.ActiveFlags = authutil.Flags{
-		Source: "local",
-	}
-
 	uid = 0
 	ctx = asUID(uid)
 

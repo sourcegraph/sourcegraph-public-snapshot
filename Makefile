@@ -61,7 +61,7 @@ serve-dev: serve-dep
 
 serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
-	$(MAKE) serve-dev SERVEFLAGS="--auth.source=local --http-addr=:13080 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
+	$(MAKE) serve-dev SERVEFLAGS="--http-addr=:13080 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
 
 BD_SGPATH = $(HOME)/.sourcegraph
 serve-beyang-dev:
@@ -80,7 +80,6 @@ serve-beyang-dev:
 --app.check-for-updates 0 \
 --appdash.http-addr ':7800' \
 --appdash.url 'http://localhost:7800' \
---auth.source none \
 --clean \
 --grpc-addr ':3100' \
 --http-addr ':3000' \

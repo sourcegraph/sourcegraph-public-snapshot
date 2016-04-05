@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
@@ -46,9 +45,7 @@ func init() {
 // the provided router as a base.
 func NewHandler(r *mux.Router) http.Handler {
 	var mw []handlerutil.Middleware
-	if authutil.ActiveFlags.HasUserAccounts() {
-		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
-	}
+	mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
 		mw = append(mw, eventsutil.DeviceIdMiddleware)

@@ -15,40 +15,10 @@ import (
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-// TestSignUp_disabled_404 tests that the signup endpoint returns 404s
-// when user accounts are disabled.
-func TestSignUp_disabled_404(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "none"
-
-	c, _ := apptest.New()
-
-	for _, method := range []string{"GET", "POST"} {
-		req, _ := http.NewRequest(method, router.Rel.URLTo(router.SignUp).String(), nil)
-		resp, err := c.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := http.StatusNotFound; resp.StatusCode != want {
-			t.Errorf("%s: got HTTP %d, want %d", method, resp.StatusCode, want)
-		}
-	}
-}
-
 func TestSignUp_form(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "local"
-
 	c, _ := apptest.New()
 
 	if _, err := c.GetOK(router.Rel.URLTo(router.SignUp).String()); err != nil {
@@ -57,12 +27,6 @@ func TestSignUp_form(t *testing.T) {
 }
 
 func TestSignUp_submit(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "local"
-
 	c, mock := apptest.New()
 
 	frm := sourcegraph.NewAccount{Login: "u", Email: "a@a.com", Password: "password"}
@@ -127,12 +91,6 @@ func TestSignUp_submit(t *testing.T) {
 }
 
 func TestSignUp_loginAlreadyExists(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "local"
-
 	c, mock := apptest.New()
 
 	frm := sourcegraph.NewAccount{Login: "u", Email: "a@a.com", Password: "password"}
@@ -176,12 +134,6 @@ func TestSignUp_loginAlreadyExists(t *testing.T) {
 }
 
 func TestSignUp_emailAlreadyExists(t *testing.T) {
-	origSource := authutil.ActiveFlags.Source
-	defer func() {
-		authutil.ActiveFlags.Source = origSource
-	}()
-	authutil.ActiveFlags.Source = "local"
-
 	c, mock := apptest.New()
 
 	frm := sourcegraph.NewAccount{Login: "u", Email: "a@a.com", Password: "password"}

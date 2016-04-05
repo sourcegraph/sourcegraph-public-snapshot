@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
@@ -56,12 +55,7 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	var mw []handlerutil.Middleware
-	if authutil.ActiveFlags.HasAccessControl() {
-		mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware)
-	}
-	if authutil.ActiveFlags.HasUserAccounts() {
-		mw = append(mw, appauth.CookieMiddleware, handlerutil.UserMiddleware)
-	}
+	mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware, appauth.CookieMiddleware, handlerutil.UserMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
 		mw = append(mw, eventsutil.DeviceIdMiddleware)

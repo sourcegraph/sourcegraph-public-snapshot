@@ -1,6 +1,7 @@
 package local
 
 import (
+	"errors"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -24,6 +25,9 @@ func TestRefreshVCS(t *testing.T) {
 			return &vcs.UpdateResult{Changes: []vcs.Change{}}, nil
 		},
 	})
+	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+		return nil, errors.New("mock")
+	}
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: "r"}})
 	if !updatedEverything {
@@ -51,6 +55,9 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	mock.servers.Builds.Create_ = func(_ context.Context, _ *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 		built = true
 		return &sourcegraph.Build{}, nil
+	}
+	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+		return nil, errors.New("mock")
 	}
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: "r"}})
@@ -81,6 +88,9 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	mock.servers.Builds.Create_ = func(_ context.Context, _ *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 		built = true
 		return &sourcegraph.Build{}, nil
+	}
+	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+		return nil, errors.New("mock")
 	}
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: "r"}})

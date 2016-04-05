@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
@@ -26,9 +25,6 @@ func TestAuth(t *testing.T) {
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "local"},
-	)
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}

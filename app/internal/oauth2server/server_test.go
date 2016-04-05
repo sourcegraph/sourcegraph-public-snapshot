@@ -14,18 +14,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/apptest"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local"}
-	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
-	}()
-
 	c, _ := apptest.New()
 
 	u := router.Rel.URLTo(router.OAuth2ServerAuthorize)
@@ -48,11 +42,6 @@ func TestOAuth2ServerAuthorize_notLoggedIn(t *testing.T) {
 }
 
 func TestOAuth2ServerAuthorize(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local"}
-	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
-	}()
-
 	c, mock := apptest.New()
 
 	var calledRegisteredClientsGet, calledAuthGetAuthorizationCode bool
@@ -125,11 +114,6 @@ func readOAuth2ServerAuthorizePage(resp *http.Response) (*oauthProviderAuthorize
 }
 
 func TestOAuth2ServerAuthorize_newClientID(t *testing.T) {
-	authutil.ActiveFlags = authutil.Flags{Source: "local"}
-	defer func() {
-		authutil.ActiveFlags = authutil.Flags{}
-	}()
-
 	c, mock := apptest.New()
 
 	mock.RegisteredClients.Get_ = func(ctx context.Context, regClient *sourcegraph.RegisteredClientSpec) (*sourcegraph.RegisteredClient, error) {

@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
@@ -54,8 +53,7 @@ var tmplFuncs = htmpl.FuncMap{
 	"defQualifiedNameAndType":     sourcecode.DefQualifiedNameAndType,
 	"overrideStyleViaRegexpFlags": sourcecode.OverrideStyleViaRegexpFlags,
 
-	"appconf":   func() interface{} { return &appconf.Flags },
-	"authFlags": func() *authutil.Flags { return &authutil.ActiveFlags },
+	"appconf": func() interface{} { return &appconf.Flags },
 
 	"buildClass":  buildClass,
 	"buildStatus": buildStatus,

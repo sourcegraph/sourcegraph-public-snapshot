@@ -1,7 +1,6 @@
 package localauth
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
@@ -46,10 +44,6 @@ func (f *signupForm) Validate() {
 }
 
 func serveSignUp(w http.ResponseWriter, r *http.Request) error {
-	if err := checkSignupEnabled(); err != nil {
-		return err
-	}
-
 	ctx := httpctx.FromRequest(r)
 	u := handlerutil.UserFromContext(ctx)
 	if u != nil && u.UID != 0 {
@@ -75,10 +69,6 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSignupForm(w http.ResponseWriter, r *http.Request, form signupForm) error {
-	if err := checkSignupEnabled(); err != nil {
-		return err
-	}
-
 	ctx, cl := handlerutil.Client(r)
 
 	numUsers, err := cl.Users.Count(ctx, &pbtypes.Void{})
@@ -97,10 +87,6 @@ func serveSignupForm(w http.ResponseWriter, r *http.Request, form signupForm) er
 }
 
 func serveSignupSubmit(w http.ResponseWriter, r *http.Request) error {
-	if err := checkSignupEnabled(); err != nil {
-		return err
-	}
-
 	ctx, cl := handlerutil.Client(r)
 
 	var form signupForm
@@ -170,10 +156,3 @@ const (
 	formErrorUsernameAlreadyTaken = "This username is already taken. Try another."
 	formErrorEmailAlreadyTaken    = "A user already exists with this email."
 )
-
-func checkSignupEnabled() error {
-	if !authutil.ActiveFlags.HasSignup() {
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("signup not enabled")}
-	}
-	return nil
-}

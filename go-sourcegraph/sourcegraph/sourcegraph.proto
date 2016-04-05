@@ -1721,10 +1721,6 @@ message ServerConfig {
 
 	// IDKey is the server's identity key (ID key).
 	string IDKey = 7;
-
-	// AuthSource is which mode of authentication is set up on the
-	// server (none|local).
-	string AuthSource = 10;
 }
 
 // A RegisteredClient is a registered API client.

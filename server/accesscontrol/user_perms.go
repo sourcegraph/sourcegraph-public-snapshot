@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -73,11 +72,6 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // VerifyUserHasAdminAccess should be used to authorize a user for
 // gRPC operations.
 func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
-	if !authutil.ActiveFlags.HasAccessControl() {
-		// Access controls are disabled on the server, so everyone has read access.
-		return nil
-	}
-
 	// TODO: move to a security model that is more robust, readable, has better separation
 	// when dealing with multiple configurations, actor types, resource types and actions.
 	//
@@ -105,10 +99,6 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
 	// TODO: redesign the permissions model to avoid short-circuited "return nil"s.
 	// (because it makes modifying authorization logic more error-prone.)
-	if !authutil.ActiveFlags.HasAccessControl() {
-		// Access controls are disabled on the server, so everyone has write access.
-		return nil
-	}
 
 	if !actor.IsAuthenticated() {
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
@@ -152,11 +142,6 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 // all other cases, VerifyUserHasAdminAccess should be used to
 // authorize a user for gRPC operations.
 func VerifyActorHasAdminAccess(ctx context.Context, actor auth.Actor, method string) error {
-	if !authutil.ActiveFlags.HasAccessControl() {
-		// Access controls are disabled on the server, so everyone has admin access.
-		return nil
-	}
-
 	if !actor.IsAuthenticated() {
 		if VerifyScopeHasAccess(ctx, actor.Scope, method, "") {
 			return nil

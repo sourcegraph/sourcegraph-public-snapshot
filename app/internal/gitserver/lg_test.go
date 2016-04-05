@@ -34,7 +34,7 @@ func TestGitServerWithAnonymousReaders(t *testing.T) {
 		gitPushTest{false, true, false, true},
 		gitPushTest{false, true, true, true},
 	}
-	testGitServer(t, &authutil.Flags{Source: "local"}, tests)
+	testGitServer(t, tests)
 }
 
 func TestGitServerWithAuth(t *testing.T) {
@@ -58,7 +58,7 @@ func TestGitServerWithAuth(t *testing.T) {
 		gitPushTest{false, true, false, true},
 		gitPushTest{false, true, true, true},
 	}
-	testGitServer(t, &authutil.Flags{Source: "local"}, tests)
+	testGitServer(t, tests)
 }
 
 type gitCloneTest struct {
@@ -84,13 +84,12 @@ func (t gitPushTest) String() string {
 		t.expectError, t.authenticated, t.canWrite, t.isAdmin)
 }
 
-func testGitServer(t *testing.T, authFlags *authutil.Flags, tests []interface{}) {
+func testGitServer(t *testing.T, tests []interface{}) {
 	t.Parallel()
 
 	// Start test server.
 	server, ctx := testserver.NewUnstartedServer()
 	server.Config.Serve.NoWorker = true
-	server.Config.ServeFlags = append(server.Config.ServeFlags, authFlags)
 	if err := server.Start(); err != nil {
 		t.Fatal("Unable to start the test server:", err)
 	}

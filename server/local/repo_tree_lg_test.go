@@ -5,7 +5,6 @@ package local_test
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
@@ -16,9 +15,6 @@ func TestRepoTree_Search_lg(t *testing.T) {
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none"},
-	)
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}

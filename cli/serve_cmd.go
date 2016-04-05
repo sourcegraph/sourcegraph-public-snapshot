@@ -86,9 +86,6 @@ Starts an HTTP server serving the app and API.
       -h, --help                                 Show common serve flags
       -a, --help-all                             Show all serve flags
 
-    Authentication:
-          --auth.source=                         source of authentication to use (none|local|oauth) (none)
-
     Local:
           --local.clcache=                       how often to refresh the commit-log cache in seconds; if 0, then no cache is used (0)
           --local.clcachesize=                   number of commits to cache on refresh (500)

@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph/mock"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -19,6 +20,7 @@ func testContext() (context.Context, *mocks) {
 	ctx = store.WithStores(ctx, m.stores.Stores())
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test"})
 	return ctx, &m
 }
 

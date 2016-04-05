@@ -5,7 +5,6 @@ package local_test
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
@@ -15,9 +14,6 @@ var httpClient = &httptestutil.Client{}
 
 func TestHostedRepo_CreateCloneAndView(t *testing.T) {
 	a, ctx := testserver.NewUnstartedServer()
-	a.Config.ServeFlags = append(a.Config.ServeFlags,
-		&authutil.Flags{Source: "none"},
-	)
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}

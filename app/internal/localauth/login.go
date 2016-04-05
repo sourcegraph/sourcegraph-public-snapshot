@@ -1,7 +1,6 @@
 package localauth
 
 import (
-	"errors"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -14,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
@@ -42,10 +40,6 @@ func (f *loginForm) Validate() {
 }
 
 func serveLogIn(w http.ResponseWriter, r *http.Request) error {
-	if err := checkLoginEnabled(); err != nil {
-		return err
-	}
-
 	ctx := httpctx.FromRequest(r)
 	u := handlerutil.UserFromContext(ctx)
 	if u != nil && u.UID != 0 {
@@ -71,7 +65,7 @@ func serveLoginForm(w http.ResponseWriter, r *http.Request, form loginForm) erro
 		return err
 	}
 
-	if numUsers.Count == 0 && authutil.ActiveFlags.IsLocal() {
+	if numUsers.Count == 0 {
 		http.Redirect(w, r, "/join", http.StatusSeeOther)
 		return nil
 	}
@@ -152,10 +146,3 @@ const (
 	formErrorNoEmailExists   = "No user exists with this email address."
 	formErrorWrongPassword   = "Wrong password."
 )
-
-func checkLoginEnabled() error {
-	if !authutil.ActiveFlags.HasLogin() {
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("login not enabled")}
-	}
-	return nil
-}
