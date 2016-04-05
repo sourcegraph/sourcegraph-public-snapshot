@@ -596,22 +596,22 @@ func (s *indexedUnitStore) Import(data graph.Output) error {
 	var defOfs, refOfs byteOffsets
 	var refFBRs fileByteRanges
 
-	par := parallel.NewRun(2)
-	par.Do(func() (err error) {
-		defOfs, err = s.fsUnitStore.writeDefs(data.Defs)
-		return err
-	})
-	par.Do(func() (err error) {
-		refFBRs, refOfs, err = s.fsUnitStore.writeRefs(data.Refs)
-		return err
-	})
-	if err := par.Wait(); err != nil {
+	var err error
+
+	// Complete each write operation serially which eliminates
+	// a lock contention bug on slower underlying file stores
+	defOfs, err = s.fsUnitStore.writeDefs(data.Defs)
+	if err != nil {
 		return err
 	}
-
+	refFBRs, refOfs, err = s.fsUnitStore.writeRefs(data.Refs)
+	if err != nil {
+		return err
+	}
 	if err := s.buildIndexes(s.Indexes(), &data, defOfs, refFBRs, refOfs); err != nil {
 		return err
 	}
+
 	return nil
 }
 

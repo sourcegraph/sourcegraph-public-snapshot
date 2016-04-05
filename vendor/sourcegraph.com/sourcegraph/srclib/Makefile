@@ -17,14 +17,18 @@ MAKEFLAGS+=--no-print-directory
 
 .PHONY: default install srclib release upload-release check-release
 
-default: install
+default: govendor install
 
 install: srclib
 
 srclib: ${GOBIN}/${EXE}
 
 ${GOBIN}/${EXE}: $(shell /usr/bin/find . -type f -and -name '*.go')
-	go install ./cmd/srclib
+	GO15VENDOREXPERIMENT=1 go install ./cmd/srclib
+
+govendor:
+	go get github.com/kardianos/govendor
+	govendor sync
 
 release: upload-release check-release
 

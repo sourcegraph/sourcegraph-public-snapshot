@@ -30,4 +30,7 @@ message Doc {
 
     // End is the byte offset of this Doc's last byte in File.
     uint32 End = 6 [(gogoproto.jsontag) = "End,omitempty"];
+
+    // DocUnit is the source unit containing this Doc.
+    string DocUnit = 7 [(gogoproto.jsontag) = "DocUnit,omitempty"];
 };

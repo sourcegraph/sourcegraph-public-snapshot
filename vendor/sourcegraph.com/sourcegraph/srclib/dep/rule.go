@@ -61,5 +61,3 @@ func (r *ResolveDepsRule) Recipes() []string {
 		fmt.Sprintf("%s tool %q %q < $^ 1> $@", util.SafeCommandName(srclib.CommandName), r.Tool.Toolchain, r.Tool.Subcmd),
 	}
 }
-
-func (r *ResolveDepsRule) SourceUnit() *unit.SourceUnit { return r.Unit }
