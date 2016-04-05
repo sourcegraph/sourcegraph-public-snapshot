@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
@@ -49,5 +50,12 @@ func checkResponse(resp *github.Response, err error, op string) error {
 	if resp.StatusCode != http.StatusUnauthorized {
 		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
 	}
-	return grpc.Errorf(errcode.HTTPToGRPC(resp.StatusCode), "%s", op)
+
+	statusCode := errcode.HTTPToGRPC(resp.StatusCode)
+
+	if statusCode == codes.Unknown && resp.StatusCode >= 400 && resp.StatusCode <= 500 {
+		statusCode = codes.NotFound
+	}
+
+	return grpc.Errorf(statusCode, "%s", op)
 }
