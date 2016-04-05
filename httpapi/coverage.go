@@ -37,12 +37,19 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var cov cvg.Coverage
+	var cov map[string]*cvg.Coverage
 	if err := json.NewDecoder(r.Body).Decode(&cov); err != nil {
 		return err
 	}
 
-	if cov.FileScore < FileScoreThresh || cov.RefScore < RefScoreThresh {
+	foundGoodLang := false
+	for _, langcov := range cov {
+		if langcov.FileScore >= FileScoreThresh && langcov.RefScore >= RefScoreThresh {
+			foundGoodLang = true
+			break
+		}
+	}
+	if !foundGoodLang {
 		return &errCoverageIsBad
 	}
 

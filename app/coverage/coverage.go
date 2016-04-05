@@ -103,7 +103,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, ctx, repo, rebuildMissing)
+				cov, err := getCoverage(cl, ctx, repo, lang, rebuildMissing)
 				if err != nil {
 					return err
 				}
@@ -128,7 +128,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "coverage/coverage.html", http.StatusOK, nil, &data)
 }
 
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, rebuildMissing bool) (*Coverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang string, rebuildMissing bool) (*Coverage, error) {
 	repoRevSpec := sourcegraph.RepoRevSpec{
 		RepoSpec: sourcegraph.RepoSpec{URI: repo},
 	}
@@ -177,12 +177,14 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, rebui
 	cov.SuccessfullyBuilt = true
 	for _, status := range cstatus.Statuses {
 		if status.Context == "coverage" {
-			var c cvg.Coverage
+			var c map[string]*cvg.Coverage
 			err := json.Unmarshal([]byte(status.Description), &c)
 			if err != nil {
 				return nil, err
 			}
-			cov.Cov = c
+			if langC := c[lang]; langC != nil {
+				cov.Cov = *langC
+			}
 			break
 		}
 	}
