@@ -25,7 +25,7 @@ func testContext() (ctx context.Context, done func()) {
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Scope: map[string]bool{"user:admin": true}})
 
-	dbh, dbDone := testdb.NewHandle(&Schema)
+	dbh, dbDone := testdb.NewHandle("app", &Schema)
 
 	return NewContext(ctx, dbh), func() {
 		dbDone()
