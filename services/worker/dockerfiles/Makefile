@@ -4,7 +4,7 @@
 
 TOOLCHAINS ?= srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript srclib-csharp
 
-.PHONY: default build push $(TOOLCHAINS) clean
+.PHONY: default build push pull $(TOOLCHAINS) clean
 
 default:
 	@echo "See README.md for instructions"
@@ -13,6 +13,9 @@ build: $(TOOLCHAINS)
 
 push:
 	for t in $(TOOLCHAINS); do docker push sourcegraph/$$t; done;
+
+pull:
+	for t in $(TOOLCHAINS); do docker pull sourcegraph/$$t; done;
 
 $(TOOLCHAINS): srclib
 	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/$@ master | awk '{ print $$1 }'))
