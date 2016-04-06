@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/coverage"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
@@ -105,8 +104,6 @@ func NewHandler(r *router.Router) http.Handler {
 	for route, handlerFunc := range internal.Handlers {
 		r.Get(route).Handler(internal.Handler(handlerFunc))
 	}
-
-	coverage.AddRoutes(r)
 
 	return handlerutil.WithMiddleware(m, mw...)
 }

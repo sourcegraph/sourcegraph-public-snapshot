@@ -1,31 +1,24 @@
-package coverage
+package cli
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
-	"gopkg.in/inconshreveable/log15.v2"
+	"log"
+	"os"
 
 	"github.com/rogpeppe/rog-go/parallel"
-
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 )
 
@@ -46,35 +39,35 @@ type langCoverage struct {
 	RepoCov []*Coverage
 }
 
-func AddRoutes(r *router.Router) {
-	r.Path("/-/coverage").Methods("GET", "POST").Handler(internal.Handler(serveCoverage))
+func init() {
+	_, err := cli.CLI.AddCommand("coverage",
+		"get srclib coverage stats",
+		"Retrieve the coverage stats for repos/commits indexed by Sourcegraph",
+		&coverageCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-// serveCoverage serves a dashboard summarizing Sourcegraph's coverage of the top repositories in
-// each language. By default, it shows the top 5 repositories in each language. You can also specify
-// the optional `lang` URL parameter to show coverage for the top 100 repositories in a given
-// language.
-func serveCoverage(w http.ResponseWriter, r *http.Request) error {
-	rebuildMissing := false
-	if r.Form.Get("process-empty") != "" {
-		rebuildMissing = true
-	}
+type coverageCmd struct {
+	Repo    string `long:"repo" description:"repo URI"`
+	Lang    string `long:"lang" description:"coverage language"`
+	Refresh bool   `long:"rebuild" description:"refresh the coverage information or compute it if it doesn't exist yet"`
+}
 
-	ctx, cl := handlerutil.Client(r)
-
-	if !auth.ActorFromContext(ctx).HasAdminAccess() {
-		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("must be admin to access coverage dashboard")}
-	}
-
+func (c *coverageCmd) Execute(args []string) error {
+	cl := client.Client()
 	var langs []string
 	langRepos := make(map[string][]string)
-	if specificRepo := r.URL.Query().Get("repo"); specificRepo != "" {
+	if specificRepo := c.Repo; specificRepo != "" {
 		langs = []string{"Repository coverage"}
 		langRepos["Repository coverage"] = []string{specificRepo}
-	} else if l := r.URL.Query().Get("lang"); l != "" {
+	} else if l := c.Lang; l != "" {
 		langs = []string{l}
 		langRepos[l] = langRepos_[l]
 	} else {
+		// select top 5 repos for each lang
 		langs = append(langs, langs_...)
 		for _, lang := range langs {
 			repos := langRepos_[lang]
@@ -86,9 +79,10 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var data struct {
-		Langs []*langCoverage
-		tmpl.Common
+		Langs    []*langCoverage
+		Endpoint string
 	}
+	data.Endpoint = client.Endpoint.URL
 
 	p := parallel.NewRun(10)
 	var dlMu sync.Mutex
@@ -103,7 +97,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, ctx, repo, lang, rebuildMissing)
+				cov, err := getCoverage(cl, client.Ctx, repo, lang, c.Refresh)
 				if err != nil {
 					return err
 				}
@@ -120,12 +114,11 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if r.Method == "POST" {
-		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
-		return nil
+	if err := coverageTemplate.Execute(os.Stdout, &data); err != nil {
+		return err
 	}
 
-	return tmpl.Exec(r, w, "coverage/coverage.html", http.StatusOK, nil, &data)
+	return nil
 }
 
 func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang string, rebuildMissing bool) (*Coverage, error) {
