@@ -461,6 +461,27 @@ var (
 )
 
 func Main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, `
+Environment:
+  SELENIUM_SERVER_IP (required)
+      IP address of the Selenium server (run 'docker-machine ls' on OS X and Windows; use 'localhost' on Linux)
+  TARGET (required)
+      target Sourcegraph server to test against (e.g. 'http://192.168.1.1:3080', use LAN IP due to Docker!)
+  SELENIUM_SERVER_PORT = "4444"
+      port of the Selenium server
+  ID_KEY_DATA (optional)
+      If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
+  SLACK_API_TOKEN (optional)
+      If specified, send information about tests to Slack.
+  SLACK_CHANNEL = "e2etest"
+      Slack channel to which test result output and test failure screenshots will be sent to.
+
+Flags:
+`)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	// Prepare logging.
