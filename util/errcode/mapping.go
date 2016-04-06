@@ -46,4 +46,5 @@ var grpcToHTTPMap = map[codes.Code]int{
 	codes.FailedPrecondition: http.StatusPreconditionFailed,
 	codes.OutOfRange:         http.StatusRequestedRangeNotSatisfiable,
 	codes.Unimplemented:      http.StatusNotImplemented,
+	codes.ResourceExhausted:  http.StatusTooManyRequests,
 }
