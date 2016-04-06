@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
@@ -39,6 +40,9 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	if actor.ClientID != "" {
 		tok.Claims["ClientID"] = actor.ClientID
 	}
+	tok.Claims["Write"] = actor.Write
+	tok.Claims["Admin"] = actor.Admin
+
 	scopes := auth.MarshalScope(actor.Scope)
 	addScope(tok, scopes)
 	addExpiry(tok, expiry)
@@ -246,6 +250,8 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 
 	a.Login, _ = tok.Claims["Login"].(string)
 	a.ClientID, _ = tok.Claims["ClientID"].(string)
+	a.Write, _ = tok.Claims["Write"].(bool)
+	a.Admin, _ = tok.Claims["Admin"].(bool)
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
 	scopes := strings.Fields(scopeStr)

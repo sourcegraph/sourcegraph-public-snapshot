@@ -143,13 +143,8 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	a.UID = int(user.UID)
 	a.Login = user.Login
 	a.ClientID = idkey.FromContext(ctx).ID
-	a.Scope = make(map[string]bool)
-	if user.Write {
-		a.Scope["user:write"] = true
-	}
-	if user.Admin {
-		a.Scope["user:admin"] = true
-	}
+	a.Write = user.Write
+	a.Admin = user.Admin
 
 	tok, err := accesstoken.New(
 		idkey.FromContext(ctx),

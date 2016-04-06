@@ -116,7 +116,7 @@ func (s *Server) CmdAs(login string, args []string) (*exec.Cmd, error) {
 	k := idkey.FromContext(s.Ctx)
 	token, err := accesstoken.New(
 		k,
-		auth.Actor{UID: int(u.UID), ClientID: k.ID, Scope: map[string]bool{"user:write": true}},
+		auth.Actor{UID: int(u.UID), ClientID: k.ID, Write: true},
 		map[string]string{"GrantType": "CmdAs"},
 		0,
 	)
@@ -168,15 +168,15 @@ func (s *Server) AsUser(ctx context.Context, login string) (context.Context, err
 	if err != nil {
 		return nil, err
 	}
-	return s.AsUIDWithScope(ctx, int(u.UID), []string{"user:write"}), nil
+	return s.AsUIDWithAccess(ctx, int(u.UID), true, false), nil
 }
 
-func (s *Server) AsUIDWithScope(ctx context.Context, uid int, scope []string) context.Context {
+func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool) context.Context {
 	k := idkey.FromContext(s.Ctx)
 	token, err := accesstoken.New(
 		k,
-		auth.Actor{UID: uid, ClientID: k.ID, Scope: auth.UnmarshalScope(scope)},
-		map[string]string{"GrantType": "AsUIDWithScope"},
+		auth.Actor{UID: uid, ClientID: k.ID, Write: write, Admin: admin},
+		map[string]string{"GrantType": "AsUIDWithAccess"},
 		0,
 	)
 	if err != nil {
@@ -410,7 +410,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 	s.Ctx = idkey.NewContext(s.Ctx, idKey)
 
-	s.Ctx = s.AsUIDWithScope(s.Ctx, 1, []string{"user:admin"})
+	s.Ctx = s.AsUIDWithAccess(s.Ctx, 1, false, true)
 
 	if err := s.configDB(); err != nil {
 		log.Fatal(err)

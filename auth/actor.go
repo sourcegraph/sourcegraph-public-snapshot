@@ -29,6 +29,12 @@ type Actor struct {
 	// Scope is a set of authorized scopes that the actor has
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
+
+	// Write indicates if the actor has global write access.
+	Write bool
+
+	// Admin indicates if the actor has global write access.
+	Admin bool
 }
 
 func (a Actor) String() string {
@@ -56,14 +62,14 @@ func (a Actor) HasScope(s string) bool {
 	return ok && hasScope
 }
 
-// HasWriteAccess checks if the actor has "user:write" or "user:admin" scopes.
+// HasWriteAccess checks if the actor has write or admin access.
 func (a Actor) HasWriteAccess() bool {
-	return a.IsAuthenticated() && (a.HasScope("user:write") || a.HasScope("user:admin"))
+	return a.IsAuthenticated() && (a.Write || a.Admin)
 }
 
-// HasAdminAccess checks if the actor has "user:admin" scope.
+// HasAdminAccess checks if the actor has admin access.
 func (a Actor) HasAdminAccess() bool {
-	return a.IsAuthenticated() && (a.HasScope("user:admin"))
+	return a.IsAuthenticated() && (a.Admin)
 }
 
 func UnmarshalScope(scope []string) map[string]bool {
@@ -86,16 +92,10 @@ func MarshalScope(scopeMap map[string]bool) []string {
 }
 
 func GetActorFromUser(user *sourcegraph.User) Actor {
-	scope := make(map[string]bool)
-	if user.Write {
-		scope["user:write"] = true
-	}
-	if user.Admin {
-		scope["user:admin"] = true
-	}
 	return Actor{
 		UID:   int(user.UID),
 		Login: user.Login,
-		Scope: scope,
+		Write: user.Write,
+		Admin: user.Admin,
 	}
 }
