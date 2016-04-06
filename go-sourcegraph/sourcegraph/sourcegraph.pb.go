@@ -1826,9 +1826,6 @@ type AuthInfo struct {
 	Write bool `protobuf:"varint,5,opt,name=Write,proto3" json:"Write,omitempty"`
 	// Admin is set if the user (if any) has admin access on this server.
 	Admin bool `protobuf:"varint,6,opt,name=Admin,proto3" json:"Admin,omitempty"`
-	// Scopes represent the permissions granted to the authenticated
-	// user (if any).
-	Scopes []string `protobuf:"bytes,7,rep,name=Scopes" json:"Scopes,omitempty"`
 }
 
 func (m *AuthInfo) Reset()         { *m = AuthInfo{} }
@@ -9342,21 +9339,6 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 		}
 		i++
 	}
-	if len(m.Scopes) > 0 {
-		for _, s := range m.Scopes {
-			data[i] = 0x3a
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				data[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			data[i] = uint8(l)
-			i++
-			i += copy(data[i:], s)
-		}
-	}
 	return i, nil
 }
 
@@ -13645,12 +13627,6 @@ func (m *AuthInfo) Size() (n int) {
 	}
 	if m.Admin {
 		n += 2
-	}
-	if len(m.Scopes) > 0 {
-		for _, s := range m.Scopes {
-			l = len(s)
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
 	}
 	return n
 }
@@ -27116,35 +27092,6 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 				}
 			}
 			m.Admin = bool(v != 0)
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Scopes", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Scopes = append(m.Scopes, string(data[iNdEx:postIndex]))
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
