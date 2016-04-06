@@ -340,14 +340,15 @@ type RepoListOptions struct {
 	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty" url:",omitempty"`
 	// Specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
-	Query       string   `protobuf:"bytes,2,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
-	URIs        []string `protobuf:"bytes,3,rep,name=URIs" json:"URIs,omitempty" url:",comma,omitempty"`
-	Sort        string   `protobuf:"bytes,5,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
-	Direction   string   `protobuf:"bytes,6,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
-	NoFork      bool     `protobuf:"varint,7,opt,name=NoFork,proto3" json:"NoFork,omitempty" url:",omitempty"`
-	Type        string   `protobuf:"bytes,8,opt,name=Type,proto3" json:"Type,omitempty" url:",omitempty"`
-	Owner       string   `protobuf:"bytes,10,opt,name=Owner,proto3" json:"Owner,omitempty" url:",omitempty"`
-	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
+	Query                    string   `protobuf:"bytes,2,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
+	URIs                     []string `protobuf:"bytes,3,rep,name=URIs" json:"URIs,omitempty" url:",comma,omitempty"`
+	Sort                     string   `protobuf:"bytes,5,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
+	Direction                string   `protobuf:"bytes,6,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
+	NoFork                   bool     `protobuf:"varint,7,opt,name=NoFork,proto3" json:"NoFork,omitempty" url:",omitempty"`
+	Type                     string   `protobuf:"bytes,8,opt,name=Type,proto3" json:"Type,omitempty" url:",omitempty"`
+	Owner                    string   `protobuf:"bytes,10,opt,name=Owner,proto3" json:"Owner,omitempty" url:",omitempty"`
+	UnsafeIncludeGithubRepos bool     `protobuf:"varint,12,opt,name=UnsafeIncludeGithubRepos,proto3" json:"UnsafeIncludeGithubRepos,omitempty" url:",omitempty"`
+	ListOptions              `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RepoListOptions) Reset()         { *m = RepoListOptions{} }
@@ -5258,6 +5259,16 @@ func (m *RepoListOptions) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n5
+	if m.UnsafeIncludeGithubRepos {
+		data[i] = 0x60
+		i++
+		if m.UnsafeIncludeGithubRepos {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
 	return i, nil
 }
 
@@ -11839,6 +11850,9 @@ func (m *BuildListOptions) Size() (n int) {
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
+	if m.UnsafeIncludeGithubRepos {
+		n += 2
+	}
 	return n
 }
 
@@ -16155,6 +16169,26 @@ func (m *ReposListRemoteOptions) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnsafeIncludeGithubRepos", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.UnsafeIncludeGithubRepos = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

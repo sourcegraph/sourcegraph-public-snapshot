@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -210,11 +211,32 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
+	if opt.UnsafeIncludeGithubRepos {
+		repos = removePrivateGithubRepos(ctx, repos)
+	}
+
 	for _, repo := range repos {
 		setCloneURLField(ctx, repo)
 	}
 
 	return repos, nil
+}
+
+func removePrivateGithubRepos(ctx context.Context, repos []*sourcegraph.Repo) []*sourcegraph.Repo {
+	publicRepos := make([]*sourcegraph.Repo, 0)
+
+	var err error
+
+	for _, repo := range repos {
+		if strings.HasPrefix(repo.URI, "github.com/") {
+			_, err = (&github.Repos{}).Get(ctx, repo.URI)
+			if err == nil {
+				publicRepos = append(publicRepos, repo)
+			}
+		}
+	}
+
+	return publicRepos
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
@@ -289,7 +311,9 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		}
 
 		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		conds = append(conds, "uri NOT LIKE 'github.com/%'")
+		if !opt.UnsafeIncludeGithubRepos {
+			conds = append(conds, "uri NOT LIKE 'github.com/%'")
+		}
 
 		if conds != nil {
 			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
