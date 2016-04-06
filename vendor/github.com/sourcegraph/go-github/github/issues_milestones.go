@@ -13,6 +13,9 @@ import (
 // Milestone represents a Github repository milestone.
 type Milestone struct {
 	URL          *string    `json:"url,omitempty"`
+	HTMLURL      *string    `json:"html_url,omitempty"`
+	LabelsURL    *string    `json:"labels_url,omitempty"`
+	ID           *int       `json:"id,omitempty"`
 	Number       *int       `json:"number,omitempty"`
 	State        *string    `json:"state,omitempty"`
 	Title        *string    `json:"title,omitempty"`
@@ -22,6 +25,7 @@ type Milestone struct {
 	ClosedIssues *int       `json:"closed_issues,omitempty"`
 	CreatedAt    *time.Time `json:"created_at,omitempty"`
 	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+	ClosedAt     *time.Time `json:"closed_at,omitempty"`
 	DueOn        *time.Time `json:"due_on,omitempty"`
 }
 
@@ -49,7 +53,7 @@ type MilestoneListOptions struct {
 //
 // GitHub API docs: https://developer.github.com/v3/issues/milestones/#list-milestones-for-a-repository
 func (s *IssuesService) ListMilestones(owner string, repo string, opt *MilestoneListOptions) ([]Milestone, *Response, error) {
-	u := fmt.Sprintf("/repos/%v/%v/milestones", owner, repo)
+	u := fmt.Sprintf("repos/%v/%v/milestones", owner, repo)
 	u, err := addOptions(u, opt)
 	if err != nil {
 		return nil, nil, err
@@ -73,7 +77,7 @@ func (s *IssuesService) ListMilestones(owner string, repo string, opt *Milestone
 //
 // GitHub API docs: https://developer.github.com/v3/issues/milestones/#get-a-single-milestone
 func (s *IssuesService) GetMilestone(owner string, repo string, number int) (*Milestone, *Response, error) {
-	u := fmt.Sprintf("/repos/%v/%v/milestones/%d", owner, repo, number)
+	u := fmt.Sprintf("repos/%v/%v/milestones/%d", owner, repo, number)
 	req, err := s.client.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, nil, err
@@ -92,7 +96,7 @@ func (s *IssuesService) GetMilestone(owner string, repo string, number int) (*Mi
 //
 // GitHub API docs: https://developer.github.com/v3/issues/milestones/#create-a-milestone
 func (s *IssuesService) CreateMilestone(owner string, repo string, milestone *Milestone) (*Milestone, *Response, error) {
-	u := fmt.Sprintf("/repos/%v/%v/milestones", owner, repo)
+	u := fmt.Sprintf("repos/%v/%v/milestones", owner, repo)
 	req, err := s.client.NewRequest("POST", u, milestone)
 	if err != nil {
 		return nil, nil, err

@@ -35,6 +35,7 @@ type User struct {
 	Following         *int       `json:"following,omitempty"`
 	CreatedAt         *Timestamp `json:"created_at,omitempty"`
 	UpdatedAt         *Timestamp `json:"updated_at,omitempty"`
+	SuspendedAt       *Timestamp `json:"suspended_at,omitempty"`
 	Type              *string    `json:"type,omitempty"`
 	SiteAdmin         *bool      `json:"site_admin,omitempty"`
 	TotalPrivateRepos *int       `json:"total_private_repos,omitempty"`
@@ -59,6 +60,10 @@ type User struct {
 	// TextMatches is only populated from search results that request text matches
 	// See: search.go and https://developer.github.com/v3/search/#text-match-metadata
 	TextMatches []TextMatch `json:"text_matches,omitempty"`
+
+	// Permissions identifies the permissions that a user has on a given
+	// repository. This is only populated when calling Repositories.ListCollaborators.
+	Permissions *map[string]bool `json:"permissions,omitempty"`
 }
 
 func (u User) String() string {
@@ -128,7 +133,7 @@ func (s *UsersService) Edit(user *User) (*User, *Response, error) {
 	return uResp, resp, err
 }
 
-// UserListOptions specifies optional parameters to the UsersService.List
+// UserListOptions specifies optional parameters to the UsersService.ListAll
 // method.
 type UserListOptions struct {
 	// ID of the last user seen

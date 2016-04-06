@@ -28,23 +28,24 @@ Authentication
 
 The go-github library does not directly handle authentication. Instead, when
 creating a new client, pass an http.Client that can handle authentication for
-you. The easiest and recommended way to do this is using the goauth2 library,
-but you can always use any other library that provides an http.Client. If you
-have an OAuth2 access token (for example, a personal API token), you can use it
-with the goauth2 using:
+you. The easiest and recommended way to do this is using the golang.org/x/oauth2
+library, but you can always use any other library that provides an http.Client.
+If you have an OAuth2 access token (for example, a personal API token), you can
+use it with the oauth2 library using:
 
-	import "code.google.com/p/goauth2/oauth"
+	import "golang.org/x/oauth2"
 
-	// simple OAuth transport if you already have an access token;
-	// see goauth2 library for full usage
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: "..."},
+	func main() {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: "... your access token ..."},
+		)
+		tc := oauth2.NewClient(oauth2.NoContext, ts)
+
+		client := github.NewClient(tc)
+
+		// list all repositories for the authenticated user
+		repos, _, err := client.Repositories.List("", nil)
 	}
-
-	client := github.NewClient(t.Client())
-
-	// list all repositories for the authenticated user
-	repos, _, err := client.Repositories.List("", nil)
 
 Note that when using an authenticated Client, all calls made by the client will
 include the specified OAuth token. Therefore, authenticated clients should
@@ -58,11 +59,18 @@ limited to 60 requests per hour, while authenticated clients can make up to
 that are not issued on behalf of a user, use the
 UnauthenticatedRateLimitedTransport.
 
-The Rate field on a client tracks the rate limit information based on the most
+The Rate method on a client returns the rate limit information based on the most
 recent API call.  This is updated on every call, but may be out of date if it's
 been some time since the last API call and other clients have made subsequent
-requests since then.  You can always call RateLimit() directly to get the most
+requests since then.  You can always call RateLimits() directly to get the most
 up-to-date rate limit data for the client.
+
+To detect an API rate limit error, you can check if its type is *github.RateLimitError:
+
+	repos, _, err := client.Repositories.List("", nil)
+	if _, ok := err.(*github.RateLimitError); ok {
+		log.Println("hit rate limit")
+	}
 
 Learn more about GitHub rate limiting at
 http://developer.github.com/v3/#rate-limiting.
@@ -73,7 +81,7 @@ The GitHub API has good support for conditional requests which will help
 prevent you from burning through your rate limit, as well as help speed up your
 application.  go-github does not handle conditional requests directly, but is
 instead designed to work with a caching http.Transport.  We recommend using
-https://github.com/gregjones/httpcache, which can be used in conjuction with
+https://github.com/gregjones/httpcache, which can be used in conjunction with
 https://github.com/sourcegraph/apiproxy to provide additional flexibility and
 control of caching rules.
 
