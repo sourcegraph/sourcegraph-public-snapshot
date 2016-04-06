@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/util/executil"
+
 	"gopkg.in/gorp.v1"
 
 	_ "github.com/lib/pq"
@@ -66,9 +68,8 @@ tryOpen:
 	if err := db.Ping(); err != nil {
 		if !triedCreate && create && strings.Contains(err.Error(), "does not exist") {
 			// DB likely doesn't exist; try creating it.
-			ds := parseDataSource(dataSource, os.Getenv)
-			if err2 := createdb(ds); err2 != nil {
-				return nil, fmt.Errorf("creating DB %s failed: %s (tried to create DB because Ping failed: %s)", ds.dbname, err2, err)
+			if err2 := createdb(dataSource); err2 != nil {
+				return nil, fmt.Errorf("creating DB %s failed: %s (tried to create DB because Ping failed: %s)", dataSource, err2, err)
 			}
 			triedCreate = true
 			goto tryOpen
@@ -87,67 +88,17 @@ tryOpen:
 
 // createdb calls the PostgreSQL "createdb" program to create a new
 // PostgreSQL database using the info from ds.
-func createdb(ds dataSourceInfo) error {
-	out, err := exec.Command("createdb", "-U", ds.user, ds.dbname).CombinedOutput()
+func createdb(ds string) error {
+	cmd := exec.Command("createdb")
+	if ds != "" {
+		overrides := getPGEnvsFromDataSource(ds)
+		executil.OverrideEnvAll(cmd, overrides)
+	}
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("createdb %q failed (%s) with output:\n%s", ds.dbname, err, out)
+		return fmt.Errorf("createdb %q failed (%s) with output:\n%s", ds, err, out)
 	}
 	return nil
-}
-
-type dataSourceInfo struct{ user, dbname, host string }
-
-func (d dataSourceInfo) connString() string {
-	var parts []string
-	if d.user != "" {
-		parts = append(parts, "user="+d.user)
-	}
-	if d.dbname != "" {
-		parts = append(parts, "dbname="+d.dbname)
-	}
-	if d.host != "" {
-		parts = append(parts, "host="+d.host)
-	}
-	return strings.Join(parts, " ")
-}
-
-// parseDataSource parses a pq/PostgreSQL data source string like
-// "dbname=foo" into dataSourceInfo. Currently it only parses out the
-// dbname. It defaults to PGDATABASE if no dbname is set in the data
-// source string. If still no database name is found, it calls
-// log.Fatal.
-//
-// The getenv func is parameterized for testing; during normal
-// execution it should be os.Getenv.
-func parseDataSource(ds string, getenv func(string) string) dataSourceInfo {
-	dsi := dataSourceInfo{}
-	if dsi.user == "" {
-		dsi.user = getenv("PGUSER")
-	}
-	if dsi.dbname == "" {
-		dsi.dbname = getenv("PGDATABASE")
-	}
-	if dsi.host == "" {
-		dsi.host = getenv("PGHOST")
-	}
-
-	// ds overrides values from the environment.
-	fields := strings.Fields(ds)
-	for _, f := range fields {
-		if strings.HasPrefix(f, "dbname=") {
-			dsi.dbname = strings.TrimPrefix(f, "dbname=")
-		}
-		if strings.HasPrefix(f, "user=") {
-			dsi.user = strings.TrimPrefix(f, "user=")
-		}
-		if strings.HasPrefix(f, "host=") {
-			dsi.host = strings.TrimPrefix(f, "host=")
-		}
-	}
-	if dsi.dbname == "" {
-		dsi.dbname = dsi.user
-	}
-	return dsi
 }
 
 // Open creates a new DB handle with the given schema by connecting to
