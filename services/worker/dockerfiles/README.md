@@ -7,8 +7,8 @@ Sourcegraph worker.
 Instructions for deploying srclib updates to Sourcegraph.com
 ------------
 
-1. Push your changes to the upstream `master` of the srclib or srclib toolchain repository.
-2. Run:
+0. Push your changes to the upstream `master` of the srclib or srclib toolchain repository.
+0. Run:
 
 ```
 make clean && make srclib
@@ -21,7 +21,8 @@ If updating a single toolchain, run:
 TOOLCHAINS=$TOOLCHAIN_NAME make build && make push
 ```
 
-3. Bounce the Sourcegraph.com workers so they pick up the latest Docker images.
+0. Update `srclib_images.go`.
+0. Push the new version of Sourcegraph.
 
 Development
 -----------
