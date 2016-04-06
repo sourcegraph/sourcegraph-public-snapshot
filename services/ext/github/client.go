@@ -47,6 +47,10 @@ func checkResponse(resp *github.Response, err error, op string) error {
 		log15.Debug("no response from github", "error", err)
 		return err
 	}
+	if _, ok := err.(*github.RateLimitError); ok {
+		log15.Debug("exceeded github rate limit", "error", err, "op", op)
+		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
+	}
 	if resp.StatusCode != http.StatusUnauthorized {
 		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
 	}
