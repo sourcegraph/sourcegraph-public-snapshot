@@ -588,7 +588,7 @@ var langRepos_ = map[string][]string{
 	"Python": []string{
 		"github.com/jkbrzt/httpie",
 		"github.com/nvbn/thefuck",
-		"github.com/mitsuhiko/flask",
+		"github.com/pallets/flask",
 		"github.com/vinta/awesome-python",
 		"github.com/django/django",
 		"github.com/kennethreitz/requests",

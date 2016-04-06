@@ -312,7 +312,7 @@ type repoSyncCmd struct {
 }
 
 func (c *repoSyncCmd) Execute(args []string) error {
-	par := parallel.NewRun(20)
+	par := parallel.NewRun(30)
 	for _, repo_ := range c.Args.URIs {
 		repo := repo_
 		par.Do(func() error {

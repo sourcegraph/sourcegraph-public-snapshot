@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"strings"
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
@@ -53,7 +52,7 @@ func init() {
 type coverageCmd struct {
 	Repo    string `long:"repo" description:"repo URI"`
 	Lang    string `long:"lang" description:"coverage language"`
-	Refresh bool   `long:"rebuild" description:"refresh the coverage information or compute it if it doesn't exist yet"`
+	Refresh bool   `long:"refresh" description:"refresh the coverage information or compute it if it doesn't exist yet"`
 }
 
 func (c *coverageCmd) Execute(args []string) error {
@@ -61,8 +60,11 @@ func (c *coverageCmd) Execute(args []string) error {
 	var langs []string
 	langRepos := make(map[string][]string)
 	if specificRepo := c.Repo; specificRepo != "" {
-		langs = []string{"Repository coverage"}
-		langRepos["Repository coverage"] = []string{specificRepo}
+		if c.Lang == "" {
+			return fmt.Errorf("must specify language")
+		}
+		langs = []string{c.Lang}
+		langRepos[c.Lang] = []string{specificRepo}
 	} else if l := c.Lang; l != "" {
 		langs = []string{l}
 		langRepos[l] = langRepos_[l]
@@ -78,13 +80,26 @@ func (c *coverageCmd) Execute(args []string) error {
 		}
 	}
 
+	// If c.Refresh, then just call `src repo sync` for every repo
+	if c.Refresh {
+		var allRepos []string
+		for _, repos := range langRepos {
+			allRepos = append(allRepos, repos...)
+		}
+
+		syncCmd := &repoSyncCmd{Force: true}
+		syncCmd.Args.URIs = allRepos
+		return syncCmd.Execute(nil)
+	}
+
+	// Create coverage dashboard
 	var data struct {
 		Langs    []*langCoverage
 		Endpoint string
 	}
 	data.Endpoint = client.Endpoint.URL
 
-	p := parallel.NewRun(10)
+	p := parallel.NewRun(30)
 	var dlMu sync.Mutex
 
 	for _, lang := range langs {
@@ -97,7 +112,7 @@ func (c *coverageCmd) Execute(args []string) error {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, client.Ctx, repo, lang, c.Refresh)
+				cov, err := getCoverage(cl, client.Ctx, repo, lang)
 				if err != nil {
 					return err
 				}
@@ -111,7 +126,7 @@ func (c *coverageCmd) Execute(args []string) error {
 		}
 	}
 	if err := p.Wait(); err != nil {
-		return err
+		return fmt.Errorf("coverage errors: %s", err)
 	}
 
 	if err := coverageTemplate.Execute(os.Stdout, &data); err != nil {
@@ -121,43 +136,27 @@ func (c *coverageCmd) Execute(args []string) error {
 	return nil
 }
 
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang string, rebuildMissing bool) (*Coverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang string) (*Coverage, error) {
 	repoRevSpec := sourcegraph.RepoRevSpec{
 		RepoSpec: sourcegraph.RepoSpec{URI: repo},
 	}
+
+	if _, err := cl.Repos.Get(ctx, &repoRevSpec.RepoSpec); err != nil {
+		if err := ensureRepoExists(cl, ctx, repo); err != nil {
+			return nil, err
+		}
+		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
+	}
+
 	// Query for srclib data with an empty path, which will force a lookback on the default branch
 	// as far as necessary (upto a limit), until a built commit is found.
 	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
 		RepoRev: repoRevSpec,
 	})
-
-	// Handle the potential error. If rebuildMissing, attempt to
-	// generate the data, but return empty Coverage for now
 	if err != nil {
-		if rebuildMissing {
-			if strings.Contains(err.Error(), "not found") && strings.Contains(err.Error(), "repo") {
-				if err := createMirrorRepo(cl, ctx, repo); err != nil {
-					return nil, err
-				}
-			} else if grpc.Code(err) == codes.NotFound {
-				masterCommit, err := cl.Repos.GetCommit(ctx, &repoRevSpec)
-				if err != nil {
-					return nil, err
-				}
-				if _, err := cl.Builds.Create(ctx, &sourcegraph.BuildsCreateOp{
-					Repo:     repoRevSpec.RepoSpec,
-					CommitID: string(masterCommit.ID),
-					Config:   sourcegraph.BuildConfig{Queue: true, Priority: 100},
-				}); err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-		}
+		log.Printf("WARN: error getting srclib data version for %s due to error: %s", repo, err)
 		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
 	}
-
 	repoRevSpec.CommitID = dataVer.CommitID
 
 	cstatus, err := cl.RepoStatuses.GetCombined(ctx, &repoRevSpec)
@@ -195,13 +194,14 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang 
 	return &cov, nil
 }
 
-func createMirrorRepo(cl *sourcegraph.Client, ctx context.Context, repo string) error {
+func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) error {
 	// Resolve repo path, and create local mirror for remote repo if
 	// needed.
 	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo})
-	if err != nil {
+	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}
+
 	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
 		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repo {
 			// Repo path is invalid, possibly because repo has been renamed.
@@ -216,8 +216,7 @@ func createMirrorRepo(cl *sourcegraph.Client, ctx context.Context, repo string) 
 		if err != nil {
 			return err
 		}
-	} else {
-		return fmt.Errorf("remote repo for resolution %+v was nil", res)
 	}
+
 	return nil
 }
