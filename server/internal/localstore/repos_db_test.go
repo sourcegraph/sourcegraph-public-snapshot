@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/jsonutil"
@@ -153,6 +155,50 @@ func TestRepos_List_URIs(t *testing.T) {
 		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
 		}
+	}
+}
+
+type RepoGetterMock struct{}
+
+func (r *RepoGetterMock) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
+	return &sourcegraph.RemoteRepo{}, nil
+}
+
+func TestRepos_List_GithubURIs(t *testing.T) {
+	repoGetter = &RepoGetterMock{}
+
+	t.Parallel()
+	ctx, done := testContext()
+	defer done()
+
+	s := &repos{}
+
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/c", DefaultBranch: "master", Mirror: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"a/b"}
+	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
+		t.Fatalf("got repos: %v, want %v", got, want)
+	}
+
+	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{UnsafeIncludeGithubRepos: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want = []string{"a/b", "github.com/c"}
+	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
+		t.Fatalf("got repos: %v, want %v", got, want)
 	}
 }
 

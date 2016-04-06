@@ -99,6 +99,13 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	return r2
 }
 
+// GithubRepoGetter is useful for mocking the github API functionality.
+type GithubRepoGetter interface {
+	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
+}
+
+var repoGetter GithubRepoGetter = &github.Repos{}
+
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
 	r.Name = r2.Name
@@ -224,15 +231,16 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 
 func removePrivateGithubRepos(ctx context.Context, repos []*sourcegraph.Repo) []*sourcegraph.Repo {
 	publicRepos := make([]*sourcegraph.Repo, 0)
-
 	var err error
 
 	for _, repo := range repos {
 		if strings.HasPrefix(repo.URI, "github.com/") {
-			_, err = (&github.Repos{}).Get(ctx, repo.URI)
+			_, err = repoGetter.Get(ctx, repo.URI)
 			if err == nil {
 				publicRepos = append(publicRepos, repo)
 			}
+		} else {
+			publicRepos = append(publicRepos, repo)
 		}
 	}
 
