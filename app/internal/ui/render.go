@@ -1,11 +1,8 @@
 package ui
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
-	"io"
 	"io/ioutil"
 	"runtime"
 	"sync"
@@ -17,7 +14,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/reactbridge"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/jsserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
@@ -26,43 +23,27 @@ const maxEntries = 10000
 
 var (
 	rendererMu       sync.Mutex       // guards renderer
-	rendererCacheKey string           // used to evict singleton renderer when bundle.js changes
-	rendererOnce     *sync.Once       // ensures max 1 in-flight call to newCachingRenderer
-	rendererInFlight string           // cache key of in-flight call to newCachingRenderer
-	rendererInit     time.Time        // when the renderer creation began
-	renderer         *cachingRenderer // singleton renderer (pooled)
-	rendererErr      error            // error from last attempt to create renderer
+	rendererCacheKey string           // used to evict singleton renderer when bundle JS changes
+	renderer         *cachingRenderer // singleton renderer for this cache key
+	rendererErr      error            // error from generating renderer for this cache key
 
 	renderPoolSize = runtime.GOMAXPROCS(0)
 )
 
-type createRendererEvent struct {
-	S, E time.Time
-}
-
-func init() {
-	appdash.RegisterEvent(createRendererEvent{})
-}
-
-func (createRendererEvent) Schema() string     { return "createRenderer" }
-func (e createRendererEvent) Start() time.Time { return e.S }
-func (e createRendererEvent) End() time.Time   { return e.E }
-
-func readBundleJS() (string, error) {
+func readBundleJS() ([]byte, error) {
 	f, err := assets.Assets.Open("/bundle.js")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	defer f.Close()
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(data), nil
+	return data, nil
 }
 
-// getRenderer gets (creating if needed) a JS renderer. It returns the
-// error errRendererCreationTimedOut if the renderer could not be
-// created within the ctx' deadline.
+// getRenderer gets (creating if needed) a JS renderer.
 func getRenderer(ctx context.Context) (*cachingRenderer, error) {
 	// Don't respect the ctx timeout for getting the bundle JS, since
 	// that is only an async operation in dev. In production, it is
@@ -77,97 +58,37 @@ func getRenderer(ctx context.Context) (*cachingRenderer, error) {
 	// Fastpath for when the renderer has already been created and the
 	// bundle JS hasn't changed.
 	rendererMu.Lock()
+	defer rendererMu.Unlock()
 	if cacheKey == rendererCacheKey {
-		rendererMu.Unlock()
 		return renderer, rendererErr
 	}
 
-	start := time.Now()
-	ctx = traceutil.NewContext(ctx, appdash.NewSpanID(traceutil.SpanIDFromContext(ctx)))
-	defer func() {
-		rec := traceutil.Recorder(ctx)
-		rec.Name("ui.getRenderer")
-		rec.Event(&createRendererEvent{S: start, E: time.Now()})
-	}()
-
-	// We need to create a new renderer. Only allow 1 at a time because
-	// this is an expensive operation and all operations will return the
-	// same results (and overwrite each other anyway).
-	if rendererInFlight != cacheKey {
-		rendererInFlight = cacheKey
-		rendererOnce = new(sync.Once)
-		rendererInit = time.Now()
-	}
-	rendererMu.Unlock()
-
-	done := make(chan struct{})
-	go func() {
-		// Obtain the ptr with the lock to avoid a race.
-		rendererMu.Lock()
-		tmp := rendererOnce
-		rendererMu.Unlock()
-
-		tmp.Do(func() {
-			r, err := newCachingRenderer(js)
-
-			rendererMu.Lock()
-			rendererCacheKey = cacheKey
-			renderer = r
-			rendererErr = err
-			rendererMu.Unlock()
-		})
-		close(done)
-	}()
-	select {
-	case <-done:
-		rendererMu.Lock()
-		defer rendererMu.Unlock()
-		return renderer, rendererErr
-
-	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
-			// Warn if taking longer than it should.
-			rendererMu.Lock()
-			elapsed := time.Since(rendererInit)
-			rendererMu.Unlock()
-			if threshold := 15 * time.Second; elapsed > threshold {
-				log15.Warn("JS renderer creation is taking longer than expected", "elapsed", elapsed, "threshold", threshold)
-			}
-
-			return nil, errRendererCreationTimedOut
+	// Need to create a new renderer.
+	if renderer != nil {
+		if err := renderer.Close(); err != nil {
+			log15.Warn("Error closing existing JS renderer.", "err", err)
 		}
-		return nil, err
 	}
+
+	renderer = newCachingRenderer(js)
+	rendererCacheKey = cacheKey
+	return renderer, rendererErr
 }
 
-var errRendererCreationTimedOut = errors.New("JS renderer creation timed out")
-
-func newCachingRenderer(js string) (*cachingRenderer, error) {
-	errCh := make(chan error)
-	r := &cachingRenderer{
-		bridge: reactbridge.New(js, renderPoolSize, errCh),
-		cache:  synclru.New(lru.New(maxEntries)),
+func newCachingRenderer(js []byte) *cachingRenderer {
+	return &cachingRenderer{
+		s:     jsserver.NewPool(js, renderPoolSize),
+		cache: synclru.New(lru.New(maxEntries)),
 	}
-
-	// See if there's a SyntaxError. If there are none, this channel
-	// will be closed, and err will be nil.
-	//
-	// This only waits for 1 VM to load, not the whole pool, so we
-	// get results more quickly.
-	if err := <-errCh; err != nil {
-		return nil, err
-	}
-
-	return r, nil
 }
 
 type cachingRenderer struct {
-	bridge *reactbridge.Bridge
-	cache  *synclru.Cache
+	s     jsserver.Server
+	cache *synclru.Cache
 }
 
 type prerenderEvent struct {
-	Props    string
+	Arg      string
 	CacheHit bool
 	S, E     time.Time
 }
@@ -180,15 +101,10 @@ func (prerenderEvent) Schema() string     { return "prerenderReactComponent" }
 func (e prerenderEvent) Start() time.Time { return e.S }
 func (e prerenderEvent) End() time.Time   { return e.E }
 
-// callMain calls r.bridge.CallMain with caching.
-func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string, error) {
-	argJSON, err := json.Marshal(arg)
-	if err != nil {
-		return "", err
-	}
-
+// call calls r.s.Call with caching.
+func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) ([]byte, error) {
 	// Construct cache key.
-	keyArray := sha256.Sum256(argJSON)
+	keyArray := sha256.Sum256(arg)
 	key := string(keyArray[:])
 
 	// Get from cache.
@@ -198,15 +114,15 @@ func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string
 	start := time.Now()
 	ctx = traceutil.NewContext(ctx, appdash.NewSpanID(traceutil.SpanIDFromContext(ctx)))
 	defer func() {
-		truncatedProps := argJSON
-		if max := 300; len(truncatedProps) > max {
-			truncatedProps = truncatedProps[:max]
+		truncatedArg := arg
+		if max := 300; len(truncatedArg) > max {
+			truncatedArg = truncatedArg[:max]
 		}
 
 		rec := traceutil.Recorder(ctx)
 		rec.Name("prerender React component")
 		rec.Event(&prerenderEvent{
-			Props:    string(truncatedProps),
+			Arg:      string(truncatedArg),
 			CacheHit: cacheHit,
 			S:        start,
 			E:        time.Now(),
@@ -215,14 +131,10 @@ func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string
 
 	// Return cache hit if present.
 	if cacheHit {
-		return cachedRes.(string), nil
+		return cachedRes.([]byte), nil
 	}
 
-	// Optimization: pass the already-JSON-marshaled argJSON instead of
-	// having CallMain re-marshal arg.
-	arg = (*json.RawMessage)(&argJSON)
-
-	res, err := r.bridge.CallMain(ctx, arg)
+	res, err := r.s.Call(ctx, arg)
 	if err == nil {
 		r.cache.Add(key, res)
 	}
@@ -230,25 +142,17 @@ func (r *cachingRenderer) callMain(ctx context.Context, arg interface{}) (string
 
 }
 
-// renderReactComponent renders the React component exported (as
-// default) by the named JavaScript module. It passes the given props
-// as the component's props. If there is a prop named "component",
-// then its value resolved to the default-exported component at the
-// given path. The provided store data is preloaded into the stores
-// prior to rendering the components.
-//
-// NOTE: React 15 contains a syntactically incorrect RegExp that is
-// accepted by V8 but not Duktape. (It's the "\uB7" at
-// https://github.com/facebook/react/blob/f8046f2dc22e669e300d2d9a967e5c5bfa1b105b/src/renderers/dom/shared/DOMProperty.js#L169.)
-// Be sure that the app/node_modules/react/lib/DOMProperty.js file has
-// a manual edit to make this "\u00B7".
-func renderReactComponent(ctx context.Context, componentModule string, props interface{}, stores *StoreData) (string, error) {
+func (r *cachingRenderer) Close() error {
+	return r.s.Close()
+}
+
+func renderReactComponent(ctx context.Context, componentModule string, props interface{}, stores *StoreData) ([]byte, error) {
 	r, err := getRenderer(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	data := struct {
+	data, err := json.Marshal(struct {
 		ComponentModule string
 		Props           interface{}
 		Stores          *StoreData
@@ -256,8 +160,12 @@ func renderReactComponent(ctx context.Context, componentModule string, props int
 		ComponentModule: componentModule,
 		Props:           props,
 		Stores:          stores,
+	})
+	if err != nil {
+		return nil, err
 	}
-	return r.callMain(ctx, data)
+
+	return r.Call(ctx, data)
 }
 
 type contextKey int
@@ -274,56 +182,4 @@ func DisabledReactPrerendering(ctx context.Context) context.Context {
 
 func shouldPrerenderReact(ctx context.Context) bool {
 	return ctx.Value(dontPrerenderReactComponents) == nil
-}
-
-// reactCompatibleHTMLEscape is like template.HTMLEscape, but it uses
-// the same HTML entities that React does (in
-// escapeTextContentForBrowser). This ensures that the HTML rendered
-// by Go (e.g., in blob.render) is identical to that rendered by React
-// (which is necessary for server-side rendering).
-func reactCompatibleHTMLEscape(w io.Writer, b []byte) {
-	last := 0
-	for i, c := range b {
-		var html []byte
-		switch c {
-		case '"':
-			html = htmlQuot
-		case '\'':
-			html = htmlApos
-		case '&':
-			html = htmlAmp
-		case '<':
-			html = htmlLt
-		case '>':
-			html = htmlGt
-		default:
-			continue
-		}
-		w.Write(b[last:i])
-		w.Write(html)
-		last = i + 1
-	}
-	w.Write(b[last:])
-}
-
-var (
-	// Used by reactCompatibleHTMLEscape.
-	htmlQuot = []byte("&quot;")
-	htmlApos = []byte("&#x27;")
-	htmlAmp  = []byte("&amp;")
-	htmlLt   = []byte("&lt;")
-	htmlGt   = []byte("&gt;")
-
-	// Go-style, not React-style, HTML escapes.
-	htmlApos2 = []byte("&#39;")
-	htmlQuot2 = []byte("&#34;")
-)
-
-// convertToReactHTMLEscapeStyle uses React-style
-// (escapeTextContentForBrowser) escapes instead of
-// golang.org/x/net/html-style escapes.
-func convertToReactHTMLEscapeStyle(escapedHTML []byte) []byte {
-	escapedHTML = bytes.Replace(escapedHTML, htmlApos2, htmlApos, -1)
-	escapedHTML = bytes.Replace(escapedHTML, htmlQuot2, htmlQuot, -1)
-	return escapedHTML
 }

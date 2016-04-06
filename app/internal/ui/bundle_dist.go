@@ -5,17 +5,17 @@ package ui
 import "log"
 
 var (
-	bundleJS string // never changes because it's compiled into the "dist"-tagged binary
+	bundleJS []byte // never changes because it's compiled into the "dist"-tagged binary
 )
 
 func init() {
-	bundleJSBytes, err := readBundleJS()
+	var err error
+	bundleJS, err = readBundleJS()
 	if err != nil {
-		log.Fatalf("Failed to read bundle.js (for rendering React components): %s.", err)
+		log.Fatalf("Failed to read server bundle JS (for rendering React components): %s.", err)
 	}
-	bundleJS = string(bundleJSBytes)
 }
 
-func getBundleJS() (js, cacheKey string, err error) {
+func getBundleJS() (js []byte, cacheKey string, err error) {
 	return bundleJS, "_", nil
 }

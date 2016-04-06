@@ -13,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 )
 
-func getBundleJS() (js, cacheKey string, err error) {
+func getBundleJS() (js []byte, cacheKey string, err error) {
 	// Try all. appconf.Flags is not set when running this in a test,
 	// since that is only set when the `src serve` command is run. So,
 	// check the env vars manually.
@@ -40,27 +40,27 @@ func getBundleJS() (js, cacheKey string, err error) {
 
 		resp, err := http.Get(url.String())
 		if err != nil {
-			return "", "", wrapWebpackFetchError(url.String(), err)
+			return nil, "", wrapWebpackFetchError(url.String(), err)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			return "", "", wrapWebpackFetchError(url.String(), fmt.Errorf("HTTP status %d (not 200)", resp.StatusCode))
+			return nil, "", wrapWebpackFetchError(url.String(), fmt.Errorf("HTTP status %d (not 200)", resp.StatusCode))
 		}
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return "", "", wrapWebpackFetchError(url.String(), err)
+			return nil, "", wrapWebpackFetchError(url.String(), err)
 		}
-		return string(data), string(data), nil
+		return data, string(data), nil
 	}
 
 	// Support non-Webpack.
 	js, err = readBundleJS()
-	return js, js, err
+	return js, string(js), err
 }
 
 func wrapWebpackFetchError(url string, err error) error {
 	if err == nil {
 		return err
 	}
-	return fmt.Errorf("error fetching bundle.js from %s to render React components in Go server-side (is Webpack running?): %s", url, err)
+	return fmt.Errorf("error fetching server bundle JS from %s to render React components in Go server-side (is Webpack running?): %s", url, err)
 }

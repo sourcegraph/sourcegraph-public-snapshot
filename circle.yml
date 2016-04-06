@@ -7,7 +7,7 @@ machine:
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
-    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH:/usr/local/musl/bin
+    PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 
@@ -22,13 +22,9 @@ dependencies:
     - ./dev/ci/packages.sh
     - ./dev/ci/install-test-tools.sh
 
-    # Install musl for glibc-free statically linked CGO binaries
-    - ./dev/ci/install-musl.sh
-
   cache_directories:
     - ~/google-cloud-sdk
     - ~/protobuf-3.0.0-beta-1/src
-    - ~/musl
     - ~/cache
 
   override:

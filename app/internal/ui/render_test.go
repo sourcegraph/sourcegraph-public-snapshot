@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-
 	"golang.org/x/net/context"
 )
 
@@ -47,74 +45,50 @@ func ensureBundleJSFound(t *testing.T) {
 	}
 }
 
-func TestRenderReactComponent_BuildIndicatorContainer(t *testing.T) {
+func TestRenderReactComponent(t *testing.T) {
 	ensureBundleJSFound(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := renderReactComponent(ctx, "sourcegraph/build/BuildIndicatorContainer", map[string]interface{}{
-		"repo":      "myrepo",
-		"commitID":  "master",
-		"buildable": true,
+
+	resp, err := renderReactComponent(ctx, "sourcegraph/util/TimeAgo", map[string]interface{}{
+		"time": "2016-04-06T05:55:32.545Z",
 	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if want := `<a title="Build `; !strings.HasPrefix(resp, want) {
-		t.Errorf("got %q, want it to have prefix %q", resp, want)
+	if want := `<time title=`; !strings.HasPrefix(string(resp), want) {
+		t.Errorf("got %q, want it to start with %q", resp, want)
 	}
 }
 
-func TestRenderReactComponent_BlobRouter(t *testing.T) {
+func TestRenderReactComponent_stress(t *testing.T) {
 	ensureBundleJSFound(t)
-	entrySpec := sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{
-			RepoSpec: sourcegraph.RepoSpec{URI: "myrepo"},
-			Rev:      "master",
-			CommitID: "c",
-		},
-		Path: "myfile.txt",
+
+	tmp := renderPoolSize
+	renderPoolSize = 3
+	defer func() {
+		renderPoolSize = tmp
+	}()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			_, err := renderReactComponent(ctx, "sourcegraph/util/TimeAgo", map[string]interface{}{
+				"time": "2016-04-06T05:55:32.545Z",
+				"i":    i, // to bypass the render cache
+			}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}(i)
 	}
-
-	var stores StoreData
-	stores.BlobStore.AddFile(entrySpec, &sourcegraph.TreeEntry{ContentsString: "abcdefghi\njklmnopqr\nst"})
-	stores.BlobStore.AddAnnotations(
-		&sourcegraph.AnnotationsListOptions{
-			Entry: entrySpec,
-			Range: &sourcegraph.FileRange{},
-		},
-		&sourcegraph.AnnotationList{
-			Annotations: []*sourcegraph.Annotation{
-				{URL: "a", StartByte: 1, EndByte: 5},
-
-				// Multiple URLs
-				{URL: "b", StartByte: 3, EndByte: 6},
-				{URL: "b2", StartByte: 3, EndByte: 6},
-				{Class: "b", StartByte: 3, EndByte: 6},
-
-				{URL: "c", StartByte: 6, EndByte: 12},
-				{Class: "c", StartByte: 6, EndByte: 12},
-				{URL: "d", StartByte: 13, EndByte: 15},
-				{Class: "a", StartByte: 1, EndByte: 5},
-				{Class: "b", StartByte: 15, EndByte: 18},
-				{Class: "c", StartByte: 18, EndByte: 19},
-				{Class: "d", StartByte: 2, EndByte: 4},
-			},
-			LineStartBytes: []uint32{0, 10, 20},
-		},
-	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-	defer cancel()
-	resp, err := renderReactComponent(ctx, "sourcegraph/LocationAdaptor", map[string]interface{}{
-		"component": "sourcegraph/blob/BlobRouter",
-		"location":  "/myrepo@master/-/tree/myfile.txt",
-	}, &stores)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if want := `<a class="ref" href="a"`; !strings.Contains(resp, want) {
-		t.Errorf("got %q, want it to contain %q", resp, want)
-	}
+	wg.Wait()
 }

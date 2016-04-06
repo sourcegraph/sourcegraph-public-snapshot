@@ -27,7 +27,17 @@ function defaultOptions() {
 	return options;
 }
 
+// for server-side rendering
+let fetchDisabled = false;
+export function disableFetch() { fetchDisabled = true; }
+const noopPromise = {
+	then: () => noopPromise,
+	catch: () => noopPromise,
+};
+
 export function defaultFetch(url, options) {
+	if (fetchDisabled) return noopPromise;
+
 	let defaults = defaultOptions();
 
 	// Combine headers.

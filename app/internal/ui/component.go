@@ -35,16 +35,34 @@ var funcs = template.FuncMap{
 			return "", err
 		}
 
-		var componentHTML string
+		var componentHTML []byte
 		if ctx != nil && shouldPrerenderReact(ctx) {
-			var err error
-			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			// Only wait this long for components to render. Many
+			// components will NOT render within this time, but that's
+			// OK: they will simply be rendered on the browser. It's
+			// good to keep this low to reduce the consequences of
+			// unexpected jsserver failures (if it totally failed and
+			// the timeout was 5s, every page load would take at least
+			// 5s), at least until we get more familiar with the ops
+			// behavior of it.
+			const wait = 1 * time.Second
+
+			ctx, cancel := context.WithTimeout(ctx, wait)
 			defer cancel()
+
+			start := time.Now()
+			var err error
 			componentHTML, err = renderReactComponent(ctx, component, propMap, stores)
-			if err == errRendererCreationTimedOut {
-				log15.Debug("Not rendering React component on the server because the JS renderer creation timed out. This is expected to occur right after the process starts (or in dev mode if the bundle JS was recently changed) before the JS renderer is ready.")
-			} else if err != nil {
-				log15.Error("Error rendering React component on the server (falling back to client-side rendering)", "err", err, "component", component, "props", string(propsJSON), "hasPreloadedStoreData", stores != nil)
+			if err != nil {
+				propsSummary := propsJSON
+				if len(propsSummary) > 200 {
+					propsSummary = propsSummary[:200]
+				}
+				if err == context.DeadlineExceeded {
+					log15.Warn("Rendering React component on the server timed out.", "elapsed", time.Since(start), "component", component, "props", string(propsSummary))
+				} else {
+					log15.Error("Error rendering React component on the server (falling back to client-side rendering)", "err", err, "component", component, "props", string(propsSummary), "hasPreloadedStoreData", stores != nil)
+				}
 			}
 		}
 

@@ -1,7 +1,7 @@
 FROM alpine:3.2
 MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
-RUN apk add --update openssh git mailcap postgresql postgresql-contrib && rm -rf /var/cache/apk/* # install mailcap for /etc/mime.types, needed by HTTP server
+RUN apk add --update openssh git mailcap nodejs postgresql postgresql-contrib && rm -rf /var/cache/apk/* # install mailcap for /etc/mime.types, needed by HTTP server
 
 RUN { \
 		echo 'Host *'; \

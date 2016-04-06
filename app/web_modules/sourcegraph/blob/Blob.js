@@ -376,36 +376,4 @@ Blob.propTypes = {
 	dispatchSelections: React.PropTypes.bool,
 };
 
-// ServerBlob is used on the server instead of Blob. Its render method calls into Go
-// for a fastpath for generating its markup.
-class ServerBlob extends Component { // eslint-disable-line react/no-multi-comp
-	render() {
-		let reactID = this._reactInternalInstance._nativeContainerInfo._idCounter;
-		let props = Object.assign({
-			visibleLinesCount: initialVisibleLinesCount,
-			firstVisibleLine: initialFirstVisibleLine(this.props),
-		}, this.props);
-
-		// On the server, __goRenderBlob__ is a globally injected Go function that behaves like a
-		// stateless component. It accepts props and returns the HTML for the blob.
-		let html = {
-			__html: __goRenderBlob__(reactID, JSON.stringify(props)), // eslint-disable-line react/display-name, react/jsx-key, no-undef
-		};
-
-		// HACK: Update the react-id counter based on how many IDs we used, so that
-		// rendering other components works.
-		// This method is accurate because a " that's not part of the HTML tag attr
-		// would be escaped, so including the " ensures we only count valid matches.
-		let numReactIDsUsed = (html.__html.match(/(<!-- react-text: |data-reactid=")/g) || []).length;
-		this._reactInternalInstance._nativeContainerInfo._idCounter += numReactIDsUsed;
-
-		return (
-			<div className="blob-scroller" dangerouslySetInnerHTML={html} data-reactid={reactID} data-remove-second-reactid="yes"></div>
-		);
-	}
-}
-if (typeof document === "undefined" && typeof __goRenderBlob__ !== "undefined") {
-	Blob = ServerBlob;
-}
-
 export default Blob;

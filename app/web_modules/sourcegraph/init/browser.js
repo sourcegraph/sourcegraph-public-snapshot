@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import requireComponent from "sourcegraph/init/requireComponent";
-import preloadStores from "sourcegraph/init/preloadStores";
+import resetStores from "sourcegraph/init/resetStores";
 
 let logTimings = false;
 if (typeof window !== "undefined") {
@@ -20,7 +20,7 @@ if (typeof window !== "undefined") {
 
 if (typeof document !== "undefined") {
 	if (window.__StoreData) {
-		preloadStores(window.__StoreData);
+		resetStores(window.__StoreData);
 	}
 
 	let els = document.querySelectorAll("[data-react]");
