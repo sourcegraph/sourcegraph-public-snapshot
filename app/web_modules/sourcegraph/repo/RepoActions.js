@@ -36,3 +36,9 @@ export class FetchedTags {
 		this.tags = tags;
 	}
 }
+
+export class RefreshVCS {
+	constructor(repo) {
+		this.repo = repo;
+	}
+}

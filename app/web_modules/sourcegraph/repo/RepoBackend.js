@@ -59,6 +59,14 @@ const RepoBackend = {
 				}
 				break;
 			}
+
+		case RepoActions.RefreshVCS:
+			{
+				RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
+					.then(checkStatus)
+					.catch((err) => console.error(err));
+				break;
+			}
 		}
 	},
 };
