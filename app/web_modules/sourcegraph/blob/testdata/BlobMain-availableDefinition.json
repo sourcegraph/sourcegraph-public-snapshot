@@ -14,6 +14,17 @@
 									"rev": "v",
 									"path": "p"
 								}
+							},
+							{
+								"type": "DefTooltip",
+								"props": {
+									"currentRepo": "r",
+									"def": {
+										"File": {
+											"Path": "p"
+										}
+									}
+								}
 							}
 						]
 					}
