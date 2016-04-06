@@ -361,6 +361,11 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 
 		// If there was an error, capture a screenshot of the problem.
 		if err != nil {
+			// Wrap the error with the current URL.
+			currentURL, _ := wd.CurrentURL()
+			err = fmt.Errorf("%s (on page %s)", err, currentURL)
+
+			// Capture a screenshot of the problem.
 			var err2 error
 			screenshot, err2 = wd.Screenshot()
 			if err2 != nil {
