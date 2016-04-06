@@ -191,7 +191,7 @@ func TestRepos_List_GithubURIs(t *testing.T) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
 
-	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{UnsafeIncludeGithubRepos: true})
+	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{SlowlyIncludeGithubRepos: true})
 	if err != nil {
 		t.Fatal(err)
 	}

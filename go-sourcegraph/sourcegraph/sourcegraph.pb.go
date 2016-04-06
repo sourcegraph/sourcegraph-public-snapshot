@@ -347,7 +347,7 @@ type RepoListOptions struct {
 	NoFork                   bool     `protobuf:"varint,7,opt,name=NoFork,proto3" json:"NoFork,omitempty" url:",omitempty"`
 	Type                     string   `protobuf:"bytes,8,opt,name=Type,proto3" json:"Type,omitempty" url:",omitempty"`
 	Owner                    string   `protobuf:"bytes,10,opt,name=Owner,proto3" json:"Owner,omitempty" url:",omitempty"`
-	UnsafeIncludeGithubRepos bool     `protobuf:"varint,12,opt,name=UnsafeIncludeGithubRepos,proto3" json:"UnsafeIncludeGithubRepos,omitempty" url:",omitempty"`
+	SlowlyIncludeGithubRepos bool     `protobuf:"varint,12,opt,name=SlowlyIncludeGithubRepos,proto3" json:"SlowlyIncludeGithubRepos,omitempty" url:",omitempty"`
 	ListOptions              `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
@@ -5259,10 +5259,10 @@ func (m *RepoListOptions) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n5
-	if m.UnsafeIncludeGithubRepos {
+	if m.SlowlyIncludeGithubRepos {
 		data[i] = 0x60
 		i++
-		if m.UnsafeIncludeGithubRepos {
+		if m.SlowlyIncludeGithubRepos {
 			data[i] = 1
 		} else {
 			data[i] = 0
@@ -11850,7 +11850,7 @@ func (m *BuildListOptions) Size() (n int) {
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.UnsafeIncludeGithubRepos {
+	if m.SlowlyIncludeGithubRepos {
 		n += 2
 	}
 	return n
@@ -16171,7 +16171,7 @@ func (m *ReposListRemoteOptions) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 12:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnsafeIncludeGithubRepos", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SlowlyIncludeGithubRepos", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -16188,7 +16188,7 @@ func (m *ReposListRemoteOptions) Unmarshal(data []byte) error {
 					break
 				}
 			}
-			m.UnsafeIncludeGithubRepos = bool(v != 0)
+			m.SlowlyIncludeGithubRepos = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

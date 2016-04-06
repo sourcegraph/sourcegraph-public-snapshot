@@ -218,7 +218,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
-	if opt.UnsafeIncludeGithubRepos {
+	if opt.SlowlyIncludeGithubRepos {
 		repos = removePrivateGithubRepos(ctx, repos)
 	}
 
@@ -319,7 +319,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		}
 
 		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		if !opt.UnsafeIncludeGithubRepos {
+		if !opt.SlowlyIncludeGithubRepos {
 			conds = append(conds, "uri NOT LIKE 'github.com/%'")
 		}
 
