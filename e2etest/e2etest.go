@@ -153,14 +153,14 @@ type testRunner struct {
 	executor string
 	idKey    *idkey.IDKey
 
-	slack              *slack.Client
-	slackToken         string
-	slackChannel       slack.Channel
-	slackLogBuffer     *bytes.Buffer
-	slackSkipAtChannel bool
+	slack                             *slack.Client
+	slackToken                        string
+	slackChannel, slackWarningChannel *slack.Channel
+	slackLogBuffer                    *bytes.Buffer
+	slackSkipAtChannel                bool
 }
 
-func (t *testRunner) slackMessage(msg, quoted string) {
+func (t *testRunner) slackMessage(warning bool, msg, quoted string) {
 	if t.slack == nil {
 		return
 	}
@@ -175,7 +175,11 @@ func (t *testRunner) slackMessage(msg, quoted string) {
 			},
 		},
 	}
-	_, _, err := t.slack.PostMessage(t.slackChannel.ID, msg, params)
+	id := t.slackChannel.ID
+	if warning {
+		id = t.slackWarningChannel.ID
+	}
+	_, _, err := t.slack.PostMessage(id, msg, params)
 	if err != nil {
 		log.Println(err)
 		return
@@ -190,7 +194,7 @@ func (t *testRunner) run() {
 		if t.runTests(shouldLogSuccess < 5) {
 			shouldLogSuccess++
 			if shouldLogSuccess == 5 {
-				t.slackMessage(":star: *Five consecutive successes!* (silencing output until next failure)", "")
+				t.slackMessage(false, ":star: *Five consecutive successes!* (silencing output until next failure)", "")
 			}
 		} else {
 			shouldLogSuccess = 0
@@ -232,7 +236,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 				err, screenshot := t.runTest(test)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
-					t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
+					t.slackMessage(true, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
 					return nil
 				}
 
@@ -242,7 +246,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					if attempt+1 < *retriesFlag {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
-						t.slackMessage(msg, "")
+						t.slackMessage(true, msg, "")
 
 						// When running without Slack support, write the screenshot to a file
 						// instead.
@@ -282,7 +286,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	if failures == 0 {
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
-			t.slackMessage(fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
+			t.slackMessage(false, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
 		}
 	} else {
 		// Only send @channel on the first failure, not all consecutive ones (that
@@ -293,6 +297,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			atChannel = " @channel"
 		}
 		t.slackMessage(
+			false,
 			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target),
 			t.slackLogBuffer.String(),
 		)
@@ -477,6 +482,8 @@ Environment:
       If specified, send information about tests to Slack.
   SLACK_CHANNEL = "e2etest"
       Slack channel to which test result output and test failure screenshots will be sent to.
+  SLACK_WARNING_CHANNEL (optional)
+      If specified, send warning (verbose) log messages to this channel instead of SLACK_CHANNEL.
 
 Flags:
 `)
@@ -552,32 +559,48 @@ Flags:
 		tr.slack = slack.New(token)
 		tr.slackToken = token
 
-		// Find the channel ID.
+		// Determine which slack channel and warning channel we should use.
+		// Find the channel IDs.
 		channelName := os.Getenv("SLACK_CHANNEL")
+		warningChannelName := os.Getenv("SLACK_WARNING_CHANNEL")
 		if channelName == "" {
 			channelName = "e2etest"
 		}
+		if warningChannelName == "" {
+			warningChannelName = channelName
+		}
+
+		// Find the channel IDs.
 		channels, err := tr.slack.GetChannels(true)
 		if err != nil {
 			log.Fatal(err)
 		}
-		found := false
-		for _, c := range channels {
-			if c.Name == channelName {
-				found = true
-				tr.slackChannel = c
+		findChannel := func(name string) *slack.Channel {
+			for _, c := range channels {
+				if c.Name == name {
+					return &c
+				}
 			}
+			return nil
 		}
-		if !found {
+		tr.slackChannel = findChannel(channelName)
+		if tr.slackChannel == nil {
 			log.Println("could not find slack channel", channelName)
 			log.Println("disabling slack notifications")
 			tr.slack = nil
-		} else {
+		}
+		tr.slackWarningChannel = findChannel(warningChannelName)
+		if tr.slackWarningChannel == nil {
+			log.Println("could not find slack warning channel", warningChannelName)
+			log.Println("defaulting to SLACK_CHANNEL instead")
+			tr.slackWarningChannel = tr.slackChannel
+		}
+		if tr.slackChannel != nil {
 			registeredTests := &bytes.Buffer{}
 			for _, t := range tr.tests {
 				fmt.Fprintf(registeredTests, "[%v]: %v\n", t.Name, t.Description)
 			}
-			tr.slackMessage(":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
+			tr.slackMessage(false, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
 		}
 	}
 
