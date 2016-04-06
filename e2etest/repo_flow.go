@@ -2,6 +2,7 @@ package e2etest
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -53,6 +54,17 @@ func TestRepoFlow(t *T) error {
 	)
 
 	// If the link is displayed and enabled, click it.
+	want := "/github.com/gorilla/mux@master/-/blob/mux.go"
+
+	have, err := muxLink.GetAttribute("href")
+	if err != nil {
+		return err
+	}
+
+	if !strings.Contains(have, want) {
+		return fmt.Errorf("wanted: %s, got %s", want, have)
+	}
+
 	isDisplayed, err := muxLink.IsDisplayed()
 	if err != nil {
 		return err
@@ -73,13 +85,7 @@ func TestRepoFlow(t *T) error {
 
 	muxLink.Click()
 
-	// Wait for redirect.
-	t.WaitForCondition(
-		20*time.Second,
-		100*time.Millisecond,
-		wantURL(t.Endpoint("/github.com/gorilla/mux@master/-/tree/mux.go"), wd),
-		"wait for mux.go codefile to load",
-	)
+	t.WaitForRedirect(want, "wait for mux.go codefile to load")
 
 	// Wait for the "Router" ref span to appear.
 	var routerSpan selenium.WebElement
@@ -115,24 +121,10 @@ func TestRepoFlow(t *T) error {
 	time.Sleep(2 * time.Second)
 	routerSpan.Click()
 
-	t.WaitForCondition(
-		20*time.Second,
-		100*time.Millisecond,
-		wantURL(t.Endpoint("/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router"), wd),
+	t.WaitForRedirect(
+		"/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router",
 		"wait for Router def to load",
 	)
-
 	return nil
 
-}
-
-func wantURL(wantedURL string, wd selenium.WebDriver) func() bool {
-	return func() bool {
-		currentURL, err := wd.CurrentURL()
-		if err != nil {
-			return false
-		}
-
-		return currentURL == wantedURL
-	}
 }

@@ -121,6 +121,24 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
+// WaitForRedirect waits up to 20s for a redirect to the given endpoint (e.g.,
+// "/login").
+func (t *T) WaitForRedirect(endpoint, description string) {
+	endpointURL := t.Endpoint(endpoint)
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			currentURL, err := t.WebDriver.CurrentURL()
+			if err != nil {
+				return false
+			}
+			return currentURL == endpointURL
+		},
+		fmt.Sprintf("%s (%s)", description, endpointURL),
+	)
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,

@@ -85,18 +85,6 @@ func TestLoginFlow(t *T) error {
 	submit := t.FindElement(selenium.ByCSSSelector, ".log-in > button.btn")
 	submit.Click()
 
-	// Wait for redirect.
-	timeout := time.After(1 * time.Second)
-	for {
-		if t.CurrentURL() == t.Endpoint("/") {
-			break
-		}
-		select {
-		case <-timeout:
-			t.Fatalf("expected redirect to homepage after sign-in; CurrentURL=%q\n", t.CurrentURL())
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
+	t.WaitForRedirect("/", "wait for redirect to homepage after sign-in")
 	return nil
 }
