@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -18,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 )
 
@@ -148,49 +148,29 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang 
 		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
 	}
 
-	// Query for srclib data with an empty path, which will force a lookback on the default branch
-	// as far as necessary (upto a limit), until a built commit is found.
-	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: repoRevSpec,
-	})
-	if err != nil {
-		log.Printf("WARN: error getting srclib data version for %s due to error: %s", repo, err)
-		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
-	}
-	repoRevSpec.CommitID = dataVer.CommitID
-
-	cstatus, err := cl.RepoStatuses.GetCombined(ctx, &repoRevSpec)
-	if err != nil {
-		return nil, err
-	}
-
 	var cov Coverage
 	cov.Repo = repo
 	cov.SuccessfullyBuilt = true
-	for _, status := range cstatus.Statuses {
-		if status.Context == "coverage" {
-			var c map[string]*cvg.Coverage
-			err := json.Unmarshal([]byte(status.Description), &c)
-			if err != nil {
-				return nil, fmt.Errorf("JSON unmarshal error for %s: %s", repo, err)
-			}
-			if langC := c[lang]; langC != nil {
-				cov.Cov = *langC
-			}
-			break
-		}
+	langCov, dataVer, err := handlerutil.GetCoverage(cl, ctx, repoRevSpec.URI)
+	if err != nil {
+		return nil, err
+	}
+	if dataVer != nil {
+		cov.CommitsBehind = dataVer.CommitsBehind
+	}
+	if lc := langCov[lang]; lc != nil {
+		cov.Cov = *lc
 	}
 	cov.FileScoreClass, cov.RefScoreClass, cov.TokDensityClass = "fail", "fail", "fail"
-	if cov.Cov.FileScore > 0.8 {
+	if cov.Cov.FileScorePass() {
 		cov.FileScoreClass = "success"
 	}
-	if cov.Cov.RefScore > 0.95 {
+	if cov.Cov.RefScorePass() {
 		cov.RefScoreClass = "success"
 	}
-	if cov.Cov.TokDensity > 1.0 {
+	if cov.Cov.TokDensityPass() {
 		cov.TokDensityClass = "success"
 	}
-	cov.CommitsBehind = dataVer.CommitsBehind
 	return &cov, nil
 }
 

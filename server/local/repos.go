@@ -176,6 +176,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		DefaultBranch: op.DefaultBranch,
 		Description:   op.Description,
 		Mirror:        op.Mirror,
+		Private:       op.Private,
 		CreatedAt:     &ts,
 	}, nil
 }
@@ -186,18 +187,15 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 		return nil, err
 	}
 
-	// Purposefully set very few fields. We don't want to cache
-	// metadata, because it'll get stale, and fetching online from
-	// GitHub is quite easy and (with HTTP caching) performant.
-	ts := pbtypes.NewTimestamp(time.Now())
-	return &sourcegraph.Repo{
-		Name:         ghrepo.Name,
-		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
-		HTTPCloneURL: ghrepo.HTTPCloneURL,
-		Mirror:       true,
-		Private:      ghrepo.Private,
-		CreatedAt:    &ts,
-	}, nil
+	return s.newRepo(ctx, &sourcegraph.ReposCreateOp_NewRepo{
+		URI:           githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
+		CloneURL:      ghrepo.HTTPCloneURL,
+		DefaultBranch: ghrepo.DefaultBranch,
+		Mirror:        true,
+		Description:   ghrepo.Description,
+		Language:      ghrepo.Language,
+		Private:       ghrepo.Private,
+	})
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
@@ -279,6 +277,7 @@ func defaultBranch(ctx context.Context, repoURI string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if repo.DefaultBranch == "" {
 		return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repoURI)
 	}

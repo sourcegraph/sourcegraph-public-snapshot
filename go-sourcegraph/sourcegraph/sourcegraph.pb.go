@@ -787,6 +787,8 @@ type ReposCreateOp_NewRepo struct {
 	Description string `protobuf:"bytes,6,opt,name=Description,proto3" json:"Description,omitempty"`
 	// Language is the primary programming language of the repository.
 	Language string `protobuf:"bytes,7,opt,name=Language,proto3" json:"Language,omitempty"`
+	// Private is whether the repository is private.
+	Private bool `protobuf:"varint,8,opt,name=Private,proto3" json:"Private,omitempty"`
 }
 
 func (m *ReposCreateOp_NewRepo) Reset()         { *m = ReposCreateOp_NewRepo{} }
@@ -6318,6 +6320,16 @@ func (m *ReposCreateOp_NewRepo) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Language)))
 		i += copy(data[i:], m.Language)
+	}
+	if m.Private {
+		data[i] = 0x40
+		i++
+		if m.Private {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
 	}
 	return i, nil
 }
@@ -12161,6 +12173,9 @@ func (m *ReposCreateOp_NewRepo) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
+	if m.Private {
+		n += 2
+	}
 	return n
 }
 
@@ -17633,6 +17648,26 @@ func (m *ReposCreateOp_NewRepo) Unmarshal(data []byte) error {
 			}
 			m.Language = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Private", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Private = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
