@@ -172,7 +172,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang 
 			var c map[string]*cvg.Coverage
 			err := json.Unmarshal([]byte(status.Description), &c)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("JSON unmarshal error for %s: %s", repo, err)
 			}
 			if langC := c[lang]; langC != nil {
 				cov.Cov = *langC
