@@ -39,7 +39,12 @@ var (
 	// such as "svc.test").
 	label = strings.TrimSuffix(filepath.Base(os.Args[0]), ".test")
 
-	vlog *log.Logger
+	// backgroundDBPoolsByName holds backgroundDBPool objects, each of which
+	// maintains a pool of DBs that use a single schema.
+	backgroundDBPoolsByName = make(map[string]*backgroundDBPool)
+
+	// backgroundDBPoolsLock protects access to backgroundDBPoolsByName.
+	backgroundDBPoolsLock sync.Mutex
 )
 
 // pristineDBs returns DB handles to a main DB. The DBs have no data
@@ -47,20 +52,36 @@ var (
 // underlying DB connection is determined by the env config in the
 // same way as for non-test code.
 //
+// If a background db pool with the given poolName does not exist, a
+// new pool will be created using the given schema. Each pool is
+// tied to a particular schema. Subsequent calls to pristineDBs with
+// an existing poolName must pass in a second argument which is nil or
+// is the same schema used to initialize the pool.
+//
 // NOTE ABOUT DATA LOSS: If you run this func and your env vars are
 // set up to access an existing database, its data will be deleted.
-func pristineDBs(schema *dbutil2.Schema) (main *dbutil2.Handle, done func()) {
-	backgroundDBCreator(schema)
+func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle, done func()) {
+	backgroundDBPoolsLock.Lock()
+	if _, ok := backgroundDBPoolsByName[poolName]; !ok {
+		backgroundDBPoolsByName[poolName] = &backgroundDBPool{}
+		backgroundDBPoolsByName[poolName].start(poolName, schema)
+	}
+	backgroundDBPoolsLock.Unlock()
+
+	b := backgroundDBPoolsByName[poolName]
+	if schema != nil && b.schema != schema {
+		log.Fatal("schema mismatch for db pool: %q", poolName)
+	}
 
 	const timeout = 45 * time.Second
 
 	select {
-	case dbh := <-readyDBs:
+	case dbh := <-b.readyDBs:
 		if *verbose {
-			vlog.Printf("got new dbs: %s", dbh.DataSource)
+			b.vlog.Printf("got new dbs: %s", dbh.DataSource)
 		}
 		return dbh, func() {
-			doneDBs <- dbh
+			b.doneDBs <- dbh
 		}
 	case <-time.After(timeout):
 		log.Fatalf("testdb: DB creation wait exceeded timeout (%s)", timeout)
@@ -76,40 +97,109 @@ func newPristineDBs(datasource string, schema *dbutil2.Schema) *dbutil2.Handle {
 	return dbh
 }
 
-var (
-	// Only drop or create once per process, since truncation should
+// backgroundDBPool creates DBs and schemas in the background so
+// that there is always a pool of DBs ready to be used by the
+// tests. Without this background process, pristineDBs has to wait on
+// the full truncate operation for each invocation.
+// Each backgroundDBPool object maintains a pool of dbs pertaining
+// to a single schema.
+type backgroundDBPool struct {
+	schema *dbutil2.Schema // only 1 schema may be used per db pool
+
+	readyDBs chan *dbutil2.Handle
+	doneDBs  chan *dbutil2.Handle
+
+	// Only drop or create each table once, since truncation should
 	// handle clearing out everything.
 	//
 	// TODO(sqs): truncating doesn't get non-dbmapped tables, such as
 	// the simple queues.
 	dropped []bool
 	created []bool
-)
 
-func prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {
+	vlog *log.Logger
+}
+
+func (b *backgroundDBPool) start(poolName string, schema *dbutil2.Schema) {
+	b.schema = schema
+
+	if label == "" {
+		log.Fatal("No label set in package testdb. See the doc comment on label.")
+	}
+
+	if *verbose {
+		b.vlog = log.New(os.Stderr, "testdb: ", log.Lmicroseconds)
+	} else {
+		b.vlog = log.New(ioutil.Discard, "", 0)
+	}
+
+	dbutil2.CreateUnloggedTables = true
+
+	b.created = make([]bool, *poolSize)
+	b.dropped = make([]bool, *poolSize)
+	b.readyDBs = make(chan *dbutil2.Handle, *poolSize)
+	b.doneDBs = make(chan *dbutil2.Handle, *poolSize)
+
+	for id := 0; id < *poolSize; id++ {
+		go func(id int) {
+			datasource := "dbname=sgtmp-" + poolName + "-" + label + "-" + strconv.Itoa(id)
+			dbh := newPristineDBs(datasource, b.schema)
+			b.prepareDBs(id, dbh, *dropSchema, *createSchema, *truncate)
+			if *verbose {
+				b.vlog.Printf("opened new DB (%s)", datasource)
+			}
+			b.readyDBs <- dbh
+		}(id)
+	}
+
+	for i := 0; i < *poolSize; i++ {
+		go func() {
+			for dbh := range b.doneDBs {
+				if *verbose {
+					b.vlog.Println("(background) done with DB; truncating it and prepping for reuse")
+				}
+				if *truncate {
+					start := time.Now()
+					if *verbose {
+						b.vlog.Println("(background) Truncating all tables...")
+					}
+					if err := dbh.TruncateTables(); err != nil {
+						log.Fatal("testdb: truncate all tables:", err)
+					}
+					if *verbose {
+						b.vlog.Println("(background) Truncated all tables in ", time.Since(start))
+					}
+				}
+				b.readyDBs <- dbh
+			}
+		}()
+	}
+}
+
+func (b *backgroundDBPool) prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {
 	// Combine all DB handles so we can create schemas concurrently
 	// (which is faster).
-	if drop && !dropped[id] {
+	if drop && !b.dropped[id] {
 		if *verbose {
-			vlog.Printf("(%d) Dropping schema...", id)
+			b.vlog.Printf("(%d) Dropping schema...", id)
 		}
 		if err := mdb.DropSchema(); err != nil {
 			log.Fatal("testdb: drop schemas:", err)
 		}
-		dropped[id] = true
+		b.dropped[id] = true
 	}
-	if create && !created[id] {
+	if create && !b.created[id] {
 		if *verbose {
-			vlog.Printf("(%d) Creating schema...", id)
+			b.vlog.Printf("(%d) Creating schema...", id)
 		}
 		if err := mdb.CreateSchema(); err != nil {
 			log.Fatal("testdb: create schemas:", err)
 		}
-		created[id] = true
+		b.created[id] = true
 	}
 	if truncate {
 		if *verbose {
-			vlog.Printf("(%d) Truncating all tables...", id)
+			b.vlog.Printf("(%d) Truncating all tables...", id)
 		}
 		if err := mdb.TruncateTables(); err != nil {
 			log.Fatal("testdb: truncate all tables:", err)
@@ -117,84 +207,6 @@ func prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {
 	}
 
 	if *verbose {
-		vlog.Printf("(%d) Pristine DBs ready.", id)
+		b.vlog.Printf("(%d) Pristine DBs ready.", id)
 	}
 }
-
-// backgroundDBCreator creates DBs and schemas in the background so
-// that there is always a pool of DBs ready to be used by the
-// tests. Without this background process, PristineDBs has to wait on
-// the full truncate operation for each invocation.
-func backgroundDBCreator(schema *dbutil2.Schema) {
-	backgroundDBCreatorLock.Lock()
-	defer backgroundDBCreatorLock.Unlock()
-	if backgroundDBCreatorStarted {
-		if backgroundDBCreatorSchema != schema {
-			log.Fatal("Only 1 DB schema may be used at a given time with the background DB creator.")
-		}
-		return
-	}
-	backgroundDBCreatorStarted = true
-	backgroundDBCreatorSchema = schema
-
-	if label == "" {
-		log.Fatal("No label set in package testdb. See the doc comment on label.")
-	}
-
-	if *verbose {
-		vlog = log.New(os.Stderr, "testdb: ", log.Lmicroseconds)
-	} else {
-		vlog = log.New(ioutil.Discard, "", 0)
-	}
-
-	dbutil2.CreateUnloggedTables = true
-
-	created = make([]bool, *poolSize)
-	dropped = make([]bool, *poolSize)
-	readyDBs = make(chan *dbutil2.Handle, *poolSize)
-	doneDBs = make(chan *dbutil2.Handle, *poolSize)
-
-	for id := 0; id < *poolSize; id++ {
-		go func(id int) {
-			datasource := "dbname=sgtmp-" + label + "-" + strconv.Itoa(id)
-			dbh := newPristineDBs(datasource, schema)
-			prepareDBs(id, dbh, *dropSchema, *createSchema, *truncate)
-			if *verbose {
-				vlog.Printf("opened new DB (%s)", datasource)
-			}
-			readyDBs <- dbh
-		}(id)
-	}
-
-	for i := 0; i < *poolSize; i++ {
-		go func() {
-			for dbh := range doneDBs {
-				if *verbose {
-					vlog.Println("(background) done with DB; truncating it and prepping for reuse")
-				}
-				if *truncate {
-					start := time.Now()
-					if *verbose {
-						vlog.Println("(background) Truncating all tables...")
-					}
-					if err := dbh.TruncateTables(); err != nil {
-						log.Fatal("testdb: truncate all tables:", err)
-					}
-					if *verbose {
-						vlog.Println("(background) Truncated all tables in ", time.Since(start))
-					}
-				}
-				readyDBs <- dbh
-			}
-		}()
-	}
-}
-
-var (
-	backgroundDBCreatorStarted bool
-	backgroundDBCreatorSchema  *dbutil2.Schema // only 1 schema may be used
-	backgroundDBCreatorLock    sync.Mutex      // protects backgroundDBCreatorStarted
-
-	readyDBs chan *dbutil2.Handle
-	doneDBs  chan *dbutil2.Handle
-)

@@ -21,7 +21,7 @@ type dbConfig struct {
 }
 
 func (s *dbConfig) configDB() error {
-	s.MainDBH, s.dbDone = testdb.NewHandle(&localstore.Schema)
+	s.MainDBH, s.dbDone = testdb.NewHandle("app", &localstore.Schema)
 	if _, ok := s.MainDBH.(*dbutil2.Handle); !ok {
 		return fmt.Errorf("test app requires a real main *dbutil.Handle not %T (must run with -pgsqltest.init=full)", s.MainDBH)
 	}
