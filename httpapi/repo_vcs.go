@@ -37,6 +37,30 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, commits)
 }
 
+func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	var opt sourcegraph.MirrorReposRefreshVCSOp
+	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	if err != nil {
+		return err
+	}
+
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	_, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
+		Repo: repoSpec,
+	})
+	if err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return nil
+}
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
