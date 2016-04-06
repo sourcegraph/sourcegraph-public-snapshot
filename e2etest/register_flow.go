@@ -40,7 +40,7 @@ func TestRegisterFlow(t *T) error {
 	time.Sleep(1 * time.Second)
 
 	// Validate username input field.
-	username := t.FindElement(selenium.ById, "login")
+	username := t.FindElement(selenium.ById, "e2etest-login-field")
 	if username.TagName() != "input" {
 		t.Fatalf("username TagName should be input, found", username.TagName())
 	}
@@ -55,7 +55,7 @@ func TestRegisterFlow(t *T) error {
 	}
 
 	// Validate password input field.
-	password := t.FindElement(selenium.ById, "password")
+	password := t.FindElement(selenium.ById, "e2etest-password-field")
 	if password.TagName() != "input" {
 		t.Fatalf("password TagName should be input, found", password.TagName())
 	}
@@ -73,7 +73,7 @@ func TestRegisterFlow(t *T) error {
 	}
 
 	// Validate email input field.
-	email := t.FindElement(selenium.ById, "email")
+	email := t.FindElement(selenium.ById, "e2etest-email-field")
 	if email.TagName() != "input" {
 		t.Fatalf("email TagName should be input, found", email.TagName())
 	}
@@ -99,7 +99,7 @@ func TestRegisterFlow(t *T) error {
 	email.SendKeys(t.TestEmail)
 
 	// Click the submit button.
-	submit := t.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")
+	submit := t.FindElement(selenium.ById, "e2etest-register-button")
 	submit.Click()
 
 	t.WaitForRedirect("/", "wait for redirect to homepage after register")

@@ -43,7 +43,7 @@ func TestLoginFlow(t *T) error {
 	time.Sleep(1 * time.Second)
 
 	// Validate username input field.
-	username := t.FindElement(selenium.ById, "login")
+	username := t.FindElement(selenium.ById, "e2etest-login-field")
 	if username.TagName() != "input" {
 		t.Fatalf("username TagName should be input, found", username.TagName())
 	}
@@ -58,7 +58,7 @@ func TestLoginFlow(t *T) error {
 	}
 
 	// Validate password input field.
-	password := t.FindElement(selenium.ById, "password")
+	password := t.FindElement(selenium.ById, "e2etest-password-field")
 	if password.TagName() != "input" {
 		t.Fatalf("password TagName should be input, found", password.TagName())
 	}
@@ -82,7 +82,7 @@ func TestLoginFlow(t *T) error {
 	password.SendKeys(testPassword)
 
 	// Click the submit button.
-	submit := t.FindElement(selenium.ByCSSSelector, ".log-in > button.btn")
+	submit := t.FindElement(selenium.ById, "e2etest-login-button")
 	submit.Click()
 
 	t.WaitForRedirect("/", "wait for redirect to homepage after sign-in")
