@@ -46,7 +46,7 @@
 		{{if .CurrentUser}}
 			FS.identify("{{.CurrentUser.Login}}@{{getClientIDOrHostName .Ctx .AppURL}}", {
 				{{if .CurrentUser.Name}}
-				displayName: window._currentUser.Name,
+				displayName: "{{.CurrentUser.Name}}",
 				{{end}}
 				{{if .UserEmail}}
 				email: "{{.UserEmail}}",
@@ -76,10 +76,10 @@
 			{{if .UserEmail}}
 			window.intercomSettings = {
 				app_id: "wd8xxn47",
-				name: window._currentUser.Name || window._currentUser.Login,
+				name: "{{or .CurrentUser.Login .CurrentUser.Name}}",
 				email: {{.UserEmail}},
 				user_hash: {{intercomHMAC .UserEmail}},
-				created_at: Math.floor(new Date(window._currentUser.RegisteredAt).getTime() / 1000),
+				created_at: Math.floor(new Date("{{.CurrentUser.RegisteredAt}}").getTime() / 1000),
 			};
 			{{else}}
 			window.intercomSettings = {
