@@ -136,7 +136,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	}
 
 	a := authpkg.ActorFromContext(ctx)
-	if a.IsUser() {
+	if a.UID != 0 {
 		return nil, grpc.Errorf(codes.PermissionDenied, "refusing to issue access token from resource owner password to already authenticated user %d (only client, not user, must be authenticated)", a.UID)
 	}
 

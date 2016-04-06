@@ -42,15 +42,6 @@ func (a Actor) IsAuthenticated() bool {
 	return a.UID != 0
 }
 
-// IsUser returns a boolean indicating whether this actor represents a
-// user. When does an actor not represent a user? In two cases: (1) an
-// unauthenticated actor; and (2) an actor that just has a ClientID
-// (and UID 0) represents an authenticated client but not an
-// authenticated user.
-func (a Actor) IsUser() bool {
-	return a.UID != 0
-}
-
 // HasScope returns a boolean indicating whether this actor has the
 // given scope.
 func (a Actor) HasScope(s string) bool {
