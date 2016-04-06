@@ -12,7 +12,8 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {urlToDef} from "sourcegraph/def/routes";
+import {routeParams as defRouteParams} from "sourcegraph/def";
+import {urlToDef, urlToDef2} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import CSSModules from "react-css-modules";
@@ -42,6 +43,7 @@ class RefsMain extends Container {
 		state.rev = props.rev;
 		state.def = props.def;
 		state.defObj = props.defObj;
+		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
 		state.path = props.location.query.file || null;
 		state.refs = DefStore.refs.get(state.repo, state.rev, state.def, state.path);
 		state.files = null;
@@ -84,13 +86,24 @@ class RefsMain extends Container {
 		}
 
 		state.highlightedDef = DefStore.highlightedDef || null;
+		if (state.highlightedDef) {
+			let {repo, rev, def} = defRouteParams(state.highlightedDef);
+			state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
+		} else {
+			state.highlightedDefObj = null;
+		}
+
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.def && prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.path !== nextState.path) {
+		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.path !== nextState.path) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.path));
 		}
 
+		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
+			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
+			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
+		}
 
 		if (nextState.refs && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
 			let wantedFiles = new Set();
@@ -136,7 +149,7 @@ class RefsMain extends Container {
 								path={path}
 								contents={file.ContentsString}
 								annotations={this.state.anns[path] || null}
-								activeDef={this.state.def}
+								activeDef={this.state.activeDef}
 								lineNumbers={true}
 								displayRanges={this.state.ranges[path] || null}
 								highlightedDef={this.state.highlightedDef} />

@@ -53,3 +53,6 @@ export function urlToDefRefs(def: Def, file?: string): string {
 	return u;
 }
 
+export function urlToDef2(repo: string, rev: string, def: string): string {
+	return urlTo("def", {splat: [`${repo}@${rev}`, def]});
+}

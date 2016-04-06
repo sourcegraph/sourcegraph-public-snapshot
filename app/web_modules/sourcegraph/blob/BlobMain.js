@@ -7,6 +7,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import Blob from "sourcegraph/blob/Blob";
 import BlobToolbar from "sourcegraph/blob/BlobToolbar";
 import FileMargin from "sourcegraph/blob/FileMargin";
+import DefTooltip from "sourcegraph/def/DefTooltip";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {routeParams as defRouteParams} from "sourcegraph/def";
@@ -79,6 +80,12 @@ export default class BlobMain extends Container {
 
 		// Def-specific
 		state.highlightedDef = DefStore.highlightedDef;
+		if (state.highlightedDef) {
+			let {repo, rev, def} = defRouteParams(state.highlightedDef);
+			state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
+		} else {
+			state.highlightedDefObj = null;
+		}
 		state.activeDef = props.defObj ? urlToDef(props.defObj) : null;
 		state.startByte = props.defObj ? props.defObj.DefStart : null;
 		state.endByte = props.defObj ? props.defObj.DefEnd : null;
@@ -154,6 +161,7 @@ export default class BlobMain extends Container {
 						endByte={this.state.endByte}
 						scrollToStartLine={true}
 						dispatchSelections={true} />}
+					{this.state.highlightedDefObj && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
 				<FileMargin getOffsetTopForByte={this.state._getOffsetTopForByte || null} className={Style.margin}>
 					{this.props.children}

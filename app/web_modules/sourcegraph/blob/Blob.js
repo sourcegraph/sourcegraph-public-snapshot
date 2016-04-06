@@ -126,14 +126,12 @@ class Blob extends Component {
 		document.addEventListener("scroll", this._updateVisibleLines);
 		this._isMounted = true;
 		this._updateVisibleLines();
-		console.debug("%cBLOB MOUNTED", "color:green");
 	}
 
 	componentWillUnmount() {
 		document.removeEventListener("selectionchange", this._handleSelectionChange);
 		document.removeEventListener("scroll", this._updateVisibleLines);
 		this._isMounted = false;
-		console.debug("%cBLOB UNMOUNTED", "color:red");
 	}
 
 	reconcileState(state: Blob.state, props: Blob.props) {
