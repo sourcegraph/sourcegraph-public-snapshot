@@ -1,5 +1,7 @@
 import React from "react";
 
+import debounce from "lodash/function/debounce";
+
 import Component from "sourcegraph/Component";
 import context from "sourcegraph/context";
 
@@ -7,6 +9,8 @@ import {Input, Button} from "sourcegraph/components";
 
 import NotificationWell from "sourcegraph/dashboard/NotificationWell";
 import RepoList from "sourcegraph/dashboard/RepoList";
+
+import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
@@ -16,11 +20,11 @@ class DashboardRepos extends Component {
 		super(props);
 		this._filterInput = null;
 		this._handleSearch = this._handleSearch.bind(this);
+		this._handleSearch = debounce(this._handleSearch, 25);
 		this._showRepo = this._showRepo.bind(this);
 		this._canMirror = this._canMirror.bind(this);
 		this._repoSort = this._repoSort.bind(this);
 		this._showGitHubLinkWell = this._showGitHubLinkWell.bind(this);
-		this._showNoGoRepoWell = this._showNoGoRepoWell.bind(this);
 	}
 
 	reconcileState(state, props) {
@@ -74,22 +78,19 @@ class DashboardRepos extends Component {
 	}
 
 	_showGitHubLinkWell() {
-		return context.currentUser && !this.state.hasLinkedGitHub;
-	}
-
-	_showNoGoRepoWell() {
-		return this.state.hasLinkedGitHub && this.state.repos.filter(this._canMirror).length === 0;
+		return context.currentUser && this.state.hasLinkedGitHub !== null && !this.state.hasLinkedGitHub;
 	}
 
 	render() {
 		const filteredRepos = this.state.repos.filter(this._showRepo).sort(this._repoSort);
-		const showExampleRepos = this._showCreateUserWell() || this._showGitHubLinkWell() || this._showNoGoRepoWell();
-		const enabledRepos = filteredRepos.filter(this._canMirror).concat(showExampleRepos ? this.state.exampleRepos : []);
+		const filteredExampleRepos = this.state.exampleRepos.filter(this._showRepo);
+		const showExampleRepos = this._showCreateUserWell() || this._showGitHubLinkWell() || this.state.repos.length === 0;
+		const enabledRepos = filteredRepos.filter(this._canMirror).concat(showExampleRepos ? filteredExampleRepos : []);
 		const disabledRepos = filteredRepos.filter(repo => !this._canMirror(repo));
 
 		return (
 			<div>
-				<NotificationWell visible={showExampleRepos}>
+				<NotificationWell visible={this._showCreateUserWell() || this._showGitHubLinkWell()}>
 					{this._showCreateUserWell() &&
 						[<span key="copy">Want Sourcegraph for your own code?</span>,
 						<span key="cta" styleName="onboarding-cta"><Button outline={true} small={true}>
@@ -101,23 +102,18 @@ class DashboardRepos extends Component {
 					{this._showGitHubLinkWell() &&
 						[<span key="copy">Almost there! Link your GitHub account so Sourcegraph can analyze your repositories.</span>,
 						<span key="cta" styleName="onboarding-cta"><Button outline={true} small={true}>
-							<a styleName="cta-link" href={this.state.linkGitHubURL}>
+							<a styleName="cta-link" href={urlToGitHubOAuth}>
 							Import GitHub repos
 							</a>
 						</Button></span>]
 					}
-					{this._showNoGoRepoWell() &&
-						<span>It looks like you do not have any Go repositories. Support for other languages is coming soon!</span>
-					}
 				</NotificationWell>
 				<div styleName="header">
 					<span styleName="repos-label">{" "}</span>
-					{this.state.hasLinkedGitHub &&
-						<Input type="text"
-							placeholder="Filter repositories..."
-							ref={(c) => this._filterInput = c}
-							onChange={this._handleSearch} />
-					}
+					<Input type="text"
+						placeholder="Filter repositories..."
+						ref={(c) => this._filterInput = c}
+						onChange={this._handleSearch} />
 				</div>
 				<div styleName="list">
 					{enabledRepos.length + disabledRepos.length === 0 &&
@@ -134,8 +130,7 @@ class DashboardRepos extends Component {
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
 	exampleRepos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	hasLinkedGitHub: React.PropTypes.bool.isRequired,
-	linkGitHubURL: React.PropTypes.string.isRequired,
+	hasLinkedGitHub: React.PropTypes.bool,
 };
 
 export default CSSModules(DashboardRepos, styles);

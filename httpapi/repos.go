@@ -96,6 +96,45 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, repos)
 }
 
+func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	var err error
+	var reposOnPage *sourcegraph.RemoteRepoList
+	var remoteRepos = &sourcegraph.RemoteRepoList{}
+	for page := 1; ; page++ {
+		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
+			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
+		})
+		if err != nil {
+			break
+		}
+
+		if len(reposOnPage.RemoteRepos) == 0 {
+			break
+		}
+		remoteRepos.RemoteRepos = append(remoteRepos.RemoteRepos, reposOnPage.RemoteRepos...)
+	}
+
+	// true if the user has not yet linked GitHub
+	isAuthError := func(err error) bool {
+		return grpc.Code(err) == codes.Unauthenticated || grpc.Code(err) == codes.PermissionDenied
+	}
+	if err != nil && !isAuthError(err) {
+		return err
+	}
+
+	response := struct {
+		*sourcegraph.RemoteRepoList
+		HasLinkedGitHub bool
+	}{
+		RemoteRepoList:  remoteRepos,
+		HasLinkedGitHub: err == nil,
+	}
+
+	return writeJSON(w, &response)
+}
+
 // getRepoLastBuildTime returns the time of the newest build for the
 // specified repository and commitID. For performance reasons, commitID is
 // assumed to be canonical (and is not resolved); if not 40 characters, an error is

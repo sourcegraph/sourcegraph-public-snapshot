@@ -28,7 +28,6 @@ const (
 	Def              = "def"
 	DefRefs          = "def.refs"
 	Defs             = "defs"
-	Home             = "home"
 	Repo             = "repo"
 	RepoBranches     = "repo.branches"
 	RepoBuild        = "repo.build"
@@ -41,6 +40,7 @@ const (
 	RepoTreeList     = "repo.tree-list"
 	RepoTreeSearch   = "repo-tree.search"
 	Repos            = "repos"
+	RemoteRepos      = "repos.remote"
 	SrclibImport     = "srclib.import"
 	SrclibCoverage   = "srclib.coverage"
 	SrclibDataVer    = "srclib.data-version"
@@ -66,6 +66,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/builds").Methods("GET").Name(Builds)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
+	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -88,8 +89,6 @@ func New(base *mux.Router) *mux.Router {
 	build.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(BuildTaskLog)
 
 	base.Path("/defs").Methods("GET").Name(Defs)
-
-	base.Path("/home").Methods("GET").Name(Home)
 
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/srclib-coverage").Methods("PUT").Name(SrclibCoverage)

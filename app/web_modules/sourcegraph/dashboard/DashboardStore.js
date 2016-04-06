@@ -11,7 +11,9 @@ export class DashboardStore extends Store {
 
 	toJSON() {
 		return {
-			home: this.home,
+			repos: this.repos,
+			remoteRepos: this.remoteRepos,
+			hasLinkedGitHub: this.hasLinkedGitHub,
 		};
 	}
 
@@ -51,27 +53,20 @@ export class DashboardStore extends Store {
 			Description: "A powerful URL router and dispatcher for golang. http://www.gorillatoolkit.org/pkg/mux",
 		}]);
 
-		this.home = deepFreeze({
-			content: data && data.home ? data.home.content : null,
-			get() {
-				return this.content;
-			},
-		});
+		this.repos = data && data.repos ? data.repos : null;
+		this.remoteRepos = data && data.remoteRepos ? data.remoteRepos : null;
+		this.hasLinkedGitHub = data ? data.hasLinkedGitHub : null;
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.HomeFetched:
-			this.home = deepFreeze({
-				...this.home,
-				content: {
-					repos: [].concat(action.data.RemoteRepos || []).concat(action.data.Repos || []),
-					onboarding: {
-						hasLinkedGitHub: action.data.HasLinkedGitHub,
-						linkGitHubURL: action.data.LinkGitHubURL,
-					},
-				},
-			});
+		case DashboardActions.ReposFetched:
+			this.repos = deepFreeze((action.data && action.data.Repos) || []);
+			break;
+
+		case DashboardActions.RemoteReposFetched:
+			this.remoteRepos = deepFreeze((action.data && action.data.RemoteRepos) || []);
+			this.hasLinkedGitHub = action.data && action.data.HasLinkedGitHub;
 			break;
 
 		default:

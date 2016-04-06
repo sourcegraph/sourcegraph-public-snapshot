@@ -79,6 +79,10 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
+	if !authpkg.ActorFromContext(ctx).HasWriteAccess() {
+		return &sourcegraph.RepoList{}, nil
+	}
+
 	repos, err := store.ReposFromContext(ctx).List(ctx, opt)
 	if err != nil {
 		return nil, err

@@ -24,15 +24,18 @@ class DashboardContainer extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.exampleRepos = DashboardStore.exampleRepos;
-		state.home = DashboardStore.home.get();
-		state.repos = state.home ? state.home.repos : [];
-		state.onboarding = state.home ? state.home.onboarding: {hasLinkedGitHub: true, linkGitHubURL: ""};
+		state.repos = DashboardStore.repos;
+		state.remoteRepos = DashboardStore.remoteRepos;
+		state.hasLinkedGitHub = DashboardStore.hasLinkedGitHub;
 		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (!nextState.home) {
-			Dispatcher.Backends.dispatch(new DashboardActions.WantHome());
+		if (!nextState.repos && nextState.repos !== prevState.repos) {
+			Dispatcher.Backends.dispatch(new DashboardActions.WantRepos());
+		}
+		if (!nextState.remoteRepos && nextState.remoteRepos !== prevState.remoteRepos) {
+			Dispatcher.Backends.dispatch(new DashboardActions.WantRemoteRepos());
 		}
 	}
 
@@ -52,10 +55,9 @@ class DashboardContainer extends Container {
 				</div>
 			}
 			<div styleName="repos">
-				<DashboardRepos repos={this.state.repos}
+				<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])}
 					exampleRepos={this.state.exampleRepos}
-					hasLinkedGitHub={this.state.onboarding.hasLinkedGitHub}
-					linkGitHubURL={this.state.onboarding.linkGitHubURL} />
+					hasLinkedGitHub={this.state.hasLinkedGitHub} />
 			</div>
 		</div>);
 	}

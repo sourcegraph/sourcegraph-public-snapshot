@@ -93,9 +93,7 @@
 											"Language": "Go",
 											"Description": "A powerful URL router and dispatcher for golang. http://www.gorillatoolkit.org/pkg/mux"
 										}
-									],
-									"hasLinkedGitHub": true,
-									"linkGitHubURL": ""
+									]
 								}
 							}
 						]
@@ -106,7 +104,10 @@
 	},
 	"dispatched": [
 		{
-			"$constructor": "WantHome"
+			"$constructor": "WantRepos"
+		},
+		{
+			"$constructor": "WantRemoteRepos"
 		}
 	]
 }
