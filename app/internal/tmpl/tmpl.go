@@ -71,6 +71,8 @@ func commonTemplates() error {
 		{"error/error.html"},
 	}, []string{
 		"layout.html",
+		"nav.html",
+		"footer.html",
 		"scripts.html",
 	})
 }
