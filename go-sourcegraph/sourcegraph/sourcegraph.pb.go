@@ -340,15 +340,15 @@ type RepoListOptions struct {
 	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty" url:",omitempty"`
 	// Specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
-	Query                    string   `protobuf:"bytes,2,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
-	URIs                     []string `protobuf:"bytes,3,rep,name=URIs" json:"URIs,omitempty" url:",comma,omitempty"`
-	Sort                     string   `protobuf:"bytes,5,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
-	Direction                string   `protobuf:"bytes,6,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
-	NoFork                   bool     `protobuf:"varint,7,opt,name=NoFork,proto3" json:"NoFork,omitempty" url:",omitempty"`
-	Type                     string   `protobuf:"bytes,8,opt,name=Type,proto3" json:"Type,omitempty" url:",omitempty"`
-	Owner                    string   `protobuf:"bytes,10,opt,name=Owner,proto3" json:"Owner,omitempty" url:",omitempty"`
-	SlowlyIncludeGitHubRepos bool     `protobuf:"varint,12,opt,name=SlowlyIncludeGitHubRepos,proto3" json:"SlowlyIncludeGitHubRepos,omitempty" url:",omitempty"`
-	ListOptions              `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
+	Query                          string   `protobuf:"bytes,2,opt,name=Query,proto3" json:"Query,omitempty" url:",omitempty"`
+	URIs                           []string `protobuf:"bytes,3,rep,name=URIs" json:"URIs,omitempty" url:",comma,omitempty"`
+	Sort                           string   `protobuf:"bytes,5,opt,name=Sort,proto3" json:"Sort,omitempty" url:",omitempty"`
+	Direction                      string   `protobuf:"bytes,6,opt,name=Direction,proto3" json:"Direction,omitempty" url:",omitempty"`
+	NoFork                         bool     `protobuf:"varint,7,opt,name=NoFork,proto3" json:"NoFork,omitempty" url:",omitempty"`
+	Type                           string   `protobuf:"bytes,8,opt,name=Type,proto3" json:"Type,omitempty" url:",omitempty"`
+	Owner                          string   `protobuf:"bytes,10,opt,name=Owner,proto3" json:"Owner,omitempty" url:",omitempty"`
+	SlowlyIncludePublicGitHubRepos bool     `protobuf:"varint,12,opt,name=SlowlyIncludePublicGitHubRepos,proto3" json:"SlowlyIncludePublicGitHubRepos,omitempty" url:",omitempty"`
+	ListOptions                    `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
 func (m *RepoListOptions) Reset()         { *m = RepoListOptions{} }
@@ -5259,10 +5259,10 @@ func (m *RepoListOptions) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n5
-	if m.SlowlyIncludeGitHubRepos {
+	if m.SlowlyIncludePublicGitHubRepos {
 		data[i] = 0x60
 		i++
-		if m.SlowlyIncludeGitHubRepos {
+		if m.SlowlyIncludePublicGitHubRepos {
 			data[i] = 1
 		} else {
 			data[i] = 0
@@ -11850,7 +11850,7 @@ func (m *BuildListOptions) Size() (n int) {
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.SlowlyIncludeGitHubRepos {
+	if m.SlowlyIncludePublicGitHubRepos {
 		n += 2
 	}
 	return n
@@ -16171,7 +16171,7 @@ func (m *ReposListRemoteOptions) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 12:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SlowlyIncludeGitHubRepos", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SlowlyIncludePublicGitHubRepos", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -16188,7 +16188,7 @@ func (m *ReposListRemoteOptions) Unmarshal(data []byte) error {
 					break
 				}
 			}
-			m.SlowlyIncludeGitHubRepos = bool(v != 0)
+			m.SlowlyIncludePublicGitHubRepos = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

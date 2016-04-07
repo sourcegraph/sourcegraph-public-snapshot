@@ -197,7 +197,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	mustRemovePrivateRepos := opt.SlowlyIncludeGitHubRepos
+	mustRemovePrivateRepos := opt.SlowlyIncludePublicGitHubRepos
 	defer func() {
 		if mustRemovePrivateRepos {
 			panic("Failed to remove private repos during repos.List!")
@@ -243,12 +243,12 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 }
 
 func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) ([]*sourcegraph.Repo, error) {
-	publicRepos := make([]*sourcegraph.Repo, 0)
+	var publicRepos []*sourcegraph.Repo
 	for _, repo := range repos {
 		if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 			r, err := repoGetter.Get(ctx, repo.URI)
 			if err != nil {
-				if code := grpc.Code(err); code == codes.Unauthenticated {
+				if grpc.Code(err) == codes.Unauthenticated {
 					continue
 				} else {
 					return nil, err
@@ -338,7 +338,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		}
 
 		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		if !opt.SlowlyIncludeGitHubRepos {
+		if !opt.SlowlyIncludePublicGitHubRepos {
 			conds = append(conds, "uri NOT LIKE 'github.com/%'")
 		}
 

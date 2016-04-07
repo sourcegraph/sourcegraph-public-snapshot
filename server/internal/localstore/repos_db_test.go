@@ -205,7 +205,7 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
 
-	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{SlowlyIncludeGitHubRepos: true})
+	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{SlowlyIncludePublicGitHubRepos: true})
 	if err != nil {
 		t.Fatal(err)
 	}
