@@ -22,7 +22,31 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Import", op.Repo); err != nil {
 		return nil, err
 	}
-	return pb.Server(store.GraphFromContext(ctx)).Import(ctx, op)
+	if _, err := pb.Server(store.GraphFromContext(ctx)).Import(ctx, op); err != nil {
+		return nil, err
+	}
+
+	// If this build is for the head commit of the default branch of the repo,
+	// update the global ref index.
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo)
+	if err != nil {
+		return nil, err
+	}
+	commitID, err := vcsrepo.ResolveRevision("HEAD")
+	if err != nil {
+		return nil, err
+	}
+	if string(commitID) == op.CommitID {
+		// Currently the xref store holds data for only the HEAD commit of the default
+		// branch of the repo. We keep the commitID field empty to signify that
+		// the refs are always pointing to the HEAD commit of the default branch (which
+		// is the default behavior on our app for empty repoRevSpecs).
+		op.CommitID = ""
+		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
+			return nil, err
+		}
+	}
+	return &pbtypes.Void{}, nil
 }
 
 func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, error) {

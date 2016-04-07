@@ -88,3 +88,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		StreamResponse: sourcegraph.StreamResponse{HasMore: hasMore},
 	}, nil
 }
+
+func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	return store.GlobalRefsFromContext(ctx).Get(ctx, op)
+}
