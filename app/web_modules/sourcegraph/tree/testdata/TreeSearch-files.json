@@ -2,6 +2,7 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"styleName": "hidden",
 			"children": [
 				{
 					"type": "WrappedComponent",
@@ -11,16 +12,19 @@
 							{
 								"type": "div",
 								"props": {
+									"styleName": "tree-modal",
 									"children": [
 										{
 											"type": "div",
+											"key": ".0",
 											"props": {
+												"styleName": "input-container",
 												"children": [
 													{
-														"type": "input",
-														"ref": "input",
+														"type": "WrappedComponent",
 														"props": {
 															"type": "text",
+															"block": true,
 															"onFocus": {
 																"dispatchedToStores": [],
 																"dispatchedToBackends": [
@@ -46,7 +50,9 @@
 										},
 										{
 											"type": "div",
+											"key": ".1",
 											"props": {
+												"styleName": "list-header",
 												"children": [
 													"Symbols"
 												]
@@ -54,63 +60,75 @@
 										},
 										{
 											"type": "div",
+											"key": ".3",
 											"props": {
+												"styleName": "list-header",
 												"children": [
 													"Files",
 													{
 														"type": "div",
+														"key": ".1",
 														"props": {
+															"styleName": "file-path",
 															"children": [
 																{
 																	"type": "",
+																	"key": ".0",
 																	"props": {
-																		"className": "",
+																		"styleName": "repo-part",
 																		"to": "/repo@rev",
 																		"children": [
 																			"repo"
 																		],
 																		"onlyActiveOnIndex": false,
+																		"className": "",
 																		"style": {}
 																	}
 																},
 																{
 																	"type": "",
+																	"key": ".1",
 																	"props": {
-																		"className": "",
+																		"styleName": "path-sep",
 																		"to": "/repo@rev",
 																		"children": [
 																			"/"
 																		],
 																		"onlyActiveOnIndex": false,
+																		"className": "",
 																		"style": {}
 																	}
 																},
 																{
 																	"type": "span",
-																	"key": "0",
+																	"key": ".2:$0",
 																	"props": {
 																		"children": [
 																			{
 																				"type": "",
+																				"key": ".0",
 																				"props": {
-																					"className": "",
+																					"styleName": "path-part",
 																					"to": "/repo@rev/-/tree/p1",
 																					"children": [
 																						"p1"
 																					],
 																					"onlyActiveOnIndex": false,
+																					"className": "",
 																					"style": {}
 																				}
 																			},
 																			{
 																				"type": "",
+																				"key": ".1",
 																				"props": {
-																					"className": "",
+																					"styleName": "path-sep",
 																					"to": "/repo@rev/-/tree/p1",
 																					"children": [
 																						"/"
 																					],
 																					"onlyActiveOnIndex": false,
+																					"className": "",
 																					"style": {}
 																				}
 																			}
@@ -119,30 +137,34 @@
 																},
 																{
 																	"type": "span",
-																	"key": "1",
+																	"key": ".2:$1",
 																	"props": {
 																		"children": [
 																			{
 																				"type": "",
+																				"key": ".0",
 																				"props": {
-																					"className": "",
+																					"styleName": "path-part",
 																					"to": "/repo@rev/-/tree/p1/p2",
 																					"children": [
 																						"p2"
 																					],
 																					"onlyActiveOnIndex": false,
+																					"className": "",
 																					"style": {}
 																				}
 																			},
 																			{
 																				"type": "",
+																				"key": ".1",
 																				"props": {
-																					"className": "",
+																					"styleName": "path-sep",
 																					"to": "/repo@rev/-/tree/p1/p2",
 																					"children": [
 																						"/"
 																					],
 																					"onlyActiveOnIndex": false,
+																					"className": "",
 																					"style": {}
 																				}
 																			}
@@ -151,11 +173,14 @@
 																},
 																{
 																	"type": "span",
+																	"key": ".4",
 																	"props": {
+																		"styleName": "path-selected",
 																		"children": [
 																			{
 																				"type": "span",
 																				"props": {
+																					"styleName": "path-part",
 																					"children": [
 																						"f3"
 																					]
@@ -172,31 +197,21 @@
 										},
 										{
 											"type": "div",
+											"key": ".4",
 											"props": {
+												"styleName": "list-item-group",
 												"children": [
 													{
 														"type": "",
-														"key": "/repo@rev/-/blob/p1/p2/f3",
+														"key": ".$/repo@rev/-/blob/p1/p2/f3",
 														"props": {
-															"className": "",
+															"styleName": "list-item-selected",
 															"to": "/repo@rev/-/blob/p1/p2/f3",
 															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "fa fa-file-text-o"
-																				}
-																			}
-																		]
-																	}
-																},
 																"f3"
 															],
 															"onlyActiveOnIndex": false,
+															"className": "",
 															"style": {}
 														}
 													}

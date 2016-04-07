@@ -9,7 +9,7 @@ class Input extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			value: "",
+			value: props.defaultValue || "",
 			valid: true,
 		};
 		this._handleChange = this._handleChange.bind(this);
@@ -38,9 +38,10 @@ class Input extends Component {
 				// If error state triggered, update state.valid onChange.
 				valid = this.state.isValid(newValue);
 			}
+
 			this.setState({
-				value: newValue,
 				valid: valid,
+				value: newValue,
 			}, () => this.state.onChange && this.state.onChange(newValue, oldValue));
 		}
 	}
@@ -48,7 +49,7 @@ class Input extends Component {
 	_handleBlur() {
 		this.setState({
 			valid: this.state.isValid(this.state.value),
-		});
+		}, () => this.state.onBlur && this.state.onBlur());
 	}
 
 	_handleKeyPress(e) {
@@ -61,6 +62,10 @@ class Input extends Component {
 		return this.state.value;
 	}
 
+	focus() {
+		this.refs.input.focus();
+	}
+
 	render() {
 		let style = this.state.block ? "block" : "input";
 		style = `${style} ${this.state.valid ? "normal" : "error"}`;
@@ -71,6 +76,7 @@ class Input extends Component {
 				value={this.state.value}
 				placeholder={this.state.placeholder}
 				autoFocus={this.state.autoFocus}
+				onFocus={() => this.state.onFocus && this.state.onFocus()}
 				onChange={this._handleChange}
 				onKeyPress={this._handleKeyPress}
 				onBlur={this._handleBlur}
@@ -81,11 +87,14 @@ class Input extends Component {
 
 Input.propTypes = {
 	type: React.PropTypes.string.isRequired, // "text", "email", "password"
+	defaultValue: React.PropTypes.string,
 	autoFocus: React.PropTypes.bool,
 	block: React.PropTypes.bool, // display:inline-block by default
 	disabled: React.PropTypes.bool,
 	placeholder: React.PropTypes.string,
 	onChange: React.PropTypes.func,
+	onFocus: React.PropTypes.func,
+	onBlur: React.PropTypes.func,
 	onSubmit: React.PropTypes.func, // called when "Enter" key pressed
 	validate: React.PropTypes.func,
 };

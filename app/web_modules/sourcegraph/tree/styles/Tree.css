@@ -4,10 +4,7 @@
 @value grid "sourcegraph/components/styles/grid.css";
 @value tooltips "sourcegraph/components/styles/tooltips.css";
 
-@value c_black-20 from colors;
-@value c_white from colors;
-
-.tree_container {
+.tree-container {
 	composes: cf from base;
 	display: flex;
 	justify-content: center;
@@ -19,22 +16,18 @@
 	composes: col-9 from grid;
 }
 
-.tree_modal {
+.tree-modal {
 	composes: tree;
 	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: center from base;
 }
 
-.input_container {
-	display: flex;
-}
-.input {
+.input-container {
 	composes: ma3 from base;
-	composes: text-input from base;
-	flex: 1 1 auto;
+	display: flext;
 }
 
-.list_header {
+.list-header {
 	display: flex;
 	align-items: center;
 	composes: b tracked f4 from typography;
@@ -43,11 +36,11 @@
 	text-transform: uppercase;
 }
 
-.list_item_group {
+.list-item-group {
 	composes: pb3 from base;
 }
 
-.list_item {
+.list-item {
 	display: block;
 	composes: pa3 mh3 bt from base;
 	composes: blue b--black-20 from colors;
@@ -56,8 +49,8 @@
 	cursor: pointer;
 }
 
-.list_item_selected {
-	composes: list_item;
+.list-item-selected {
+	composes: list-item;
 	composes: dark-blue bg-blue-1 from colors;
 }
 
@@ -70,31 +63,31 @@
 	composes: pr3 from base;
 }
 
-.filetype_icon {
+.filetype-icon {
 	composes: pl2 pr3 from base;
 }
 
-.path_common {
+.path-common {
 	composes: ph2 from base;
 	cursor: pointer;
 }
-.path_part {
-	composes: path_common;
+.path-part {
+	composes: path-common;
 	composes: mid-gray from colors;
 }
-.repo_part {
-	composes: path_common;
+.repo-part {
+	composes: path-common;
 	composes: blue-8 from colors;
 }
-.path_sep {
-	composes: path_common;
+.path-sep {
+	composes: path-common;
 	composes: light-silver from colors;
 }
-.path_selected {
+.path-selected {
 	composes: mid-gray from colors;
 	opacity: .3;
 }
-.file_path {
+.file-path {
 	composes: pl2 pv2 from base;
 	composes: f4 sans-serif from typography;
 	display: flex;
@@ -104,5 +97,9 @@
 	font-weight: bold;
 	letter-spacing: initial;
 	text-transform: none;
+}
+
+.hidden {
+	display: none;
 }
 

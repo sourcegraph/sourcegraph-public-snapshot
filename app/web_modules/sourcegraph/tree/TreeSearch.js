@@ -4,7 +4,6 @@ import React from "react";
 import ReactDOM from "react-dom";
 import Fuze from "fuse.js";
 import {Link} from "react-router";
-import classNames from "classnames";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
@@ -23,10 +22,10 @@ import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
 
-import Modal from "sourcegraph/components/Modal";
+import {Modal, Input, Loader} from "sourcegraph/components";
 
-import TreeStyles from "./styles/Tree.css";
-import BaseStyles from "sourcegraph/components/styles/base.css";
+import CSSModules from "react-css-modules";
+import styles from "./styles/Tree.css";
 
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 15;
@@ -43,7 +42,7 @@ function pathJoin(pathComponents: string[]): string {
 	return pathComponents.join("/");
 }
 
-export default class TreeSearch extends Container {
+class TreeSearch extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string.isRequired,
@@ -85,6 +84,7 @@ export default class TreeSearch extends Container {
 			matchingDefs: {Defs: []},
 			selectionIndex: 0,
 		};
+		this._queryInput = null;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
@@ -285,7 +285,7 @@ export default class TreeSearch extends Container {
 
 		default:
 			if (this.state.focused) {
-				setTimeout(() => this._debouncedSetQuery(this.refs.input ? this.refs.input.value : ""), 0);
+				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.getValue() : ""), 0);
 			}
 			break;
 		}
@@ -307,7 +307,7 @@ export default class TreeSearch extends Container {
 		this.setState({
 			visible: true,
 			focused: true,
-		}, () => this.refs.input && this.refs.input.focus());
+		}, () => this._queryInput && this._queryInput.focus());
 	}
 
 	_handleFocus() {
@@ -389,7 +389,7 @@ export default class TreeSearch extends Container {
 
 	_listItems(): Array<any> {
 		const items = this.state.fileResults;
-		const emptyItem = <div className={TreeStyles.list_item} key="_nofiles"><i>No matches.</i></div>;
+		const emptyItem = <div styleName="list-item" key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list = [],
@@ -405,16 +405,11 @@ export default class TreeSearch extends Container {
 			const selected = this._normalizedSelectionIndex() - this._numSymbolResults() === i;
 
 			list.push(
-				<Link className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item}
+				<Link styleName={selected ? "list-item-selected" : "list-item"}
 					onMouseOver={() => this._selectItem(i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={itemURL}>
-					<span className={TreeStyles.filetype_icon}><i className={classNames("fa", {
-						"fa-file-text-o": !item.isDirectory,
-						"fa-folder": item.isDirectory,
-					})}></i>
-					</span>
 					{item.name}
 				</Link>
 			);
@@ -430,10 +425,10 @@ export default class TreeSearch extends Container {
 	}
 
 	_symbolItems(): Array<any> {
-		const loadingItem = <div className={TreeStyles.list_item} key="_loadingsymbol"><i>Loading...</i></div>;
+		const loadingItem = <div styleName="list-item" key="_loadingsymbol"><i>Loading...</i></div>;
 		if (!this.state.matchingDefs) return [loadingItem];
 
-		const emptyItem = <div className={TreeStyles.list_item} key="_nosymbol"><i>No matches.</i></div>;
+		const emptyItem = <div styleName="list-item" key="_nosymbol"><i>No matches.</i></div>;
 		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
 
 		let list = [],
@@ -446,7 +441,7 @@ export default class TreeSearch extends Container {
 			const selected = this._normalizedSelectionIndex() === i;
 
 			list.push(
-				<Link className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item}
+				<Link styleName={selected ? "list-item-selected" : "list-item"}
 					onMouseOver={() => this._selectItem(i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
@@ -471,54 +466,54 @@ export default class TreeSearch extends Container {
 			return urlToTree(this.state.repo, this.state.rev, pathPrefix);
 		};
 		const repoParts = this.state.repo.split("/");
-		const path = (<div className={TreeStyles.file_path}>
-			<Link className={TreeStyles.repo_part} to={urlToRepoRev(this.state.repo, this.state.rev)}>{repoParts[repoParts.length - 1]}</Link>
-			<Link className={TreeStyles.path_sep} to={urlToTree(this.state.repo, this.state.rev, "/")}>/</Link>
+		const path = (<div styleName="file-path">
+			<Link styleName="repo-part" to={urlToRepoRev(this.state.repo, this.state.rev)}>{repoParts[repoParts.length - 1]}</Link>
+			<Link styleName="path-sep" to={urlToTree(this.state.repo, this.state.rev, "/")}>/</Link>
 			{pathSplit(this.state.path).map((part, i) => <span key={i}>
-				<Link className={TreeStyles.path_part} to={urlToPathPrefix(i)}>{part}</Link>
-				<Link className={TreeStyles.path_sep} to={urlToPathPrefix(i)}>/</Link>
+				<Link styleName="path-part" to={urlToPathPrefix(i)}>{part}</Link>
+				<Link styleName="path-sep" to={urlToPathPrefix(i)}>/</Link>
 				</span>)}
 			{this._getSelectedPathPart() &&
-				<span className={TreeStyles.path_selected}>
-				<span className={TreeStyles.path_part}>{this._getSelectedPathPart()}</span>
-				<span className={TreeStyles.path_sep}>/</span></span>}
+				<span styleName="path-selected">
+				<span styleName="path-part">{this._getSelectedPathPart()}</span>
+				<span styleName="path-sep">/</span></span>}
 			{this._getSelectedFile() &&
-				<span className={TreeStyles.path_selected}>
-				<span className={TreeStyles.path_part}>{this._getSelectedFile()}</span></span>}
+				<span styleName="path-selected">
+				<span styleName="path-part">{this._getSelectedFile()}</span></span>}
 		</div>);
 
 		return (
-			<div className={this.state.visible ? TreeStyles.tree_container : BaseStyles.hidden}>
-				{this._wrapModalContainer(<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
-					<div className={TreeStyles.input_container}>
-						<input className={TreeStyles.input}
-							type="text"
+			<div styleName={this.state.visible ? "tree-container" : "hidden"}>
+				{this._wrapModalContainer(<div styleName={this.state.overlay ? "tree-modal" : "tree"}>
+					<div styleName="input-container">
+						<Input type="text"
+							block={true}
 							onFocus={this._focusInput}
 							onBlur={this._blurInput}
 							autoFocus={true}
 							defaultValue={this.state.query}
 							placeholder="Jump to symbols or files..."
-							ref="input" />
+							ref={(c) => this._queryInput = c} />
 					</div>
-					<div className={TreeStyles.list_header}>
+					<div styleName="list-header">
 						Symbols
 					</div>
 					<div>
 						{this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID && this._symbolItems()}
 						{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
-							<div className={TreeStyles.list_item}>
-								<span className={TreeStyles.icon}><i className="fa fa-spinner fa-spin"></i></span>
+							<div styleName="list-item">
+								<Loader stretch={true} />
 								<i>Sourcegraph is analyzing your code &mdash;&nbsp;
-									<Link className={TreeStyles.link} to={urlToBuilds(this.state.repo)}>results will be available soon!</Link>
+									<Link styleName="link" to={urlToBuilds(this.state.repo)}>results will be available soon!</Link>
 								</i>
 							</div>
 						}
 					</div>
-					<div className={TreeStyles.list_header}>
+					<div styleName="list-header">
 						Files
 						{!this.state.query && path}
 					</div>
-					<div className={TreeStyles.list_item_group}>
+					<div styleName="list-item-group">
 						{this._listItems()}
 					</div>
 				</div>)}
@@ -526,3 +521,5 @@ export default class TreeSearch extends Container {
 		);
 	}
 }
+
+export default CSSModules(TreeSearch, styles);
