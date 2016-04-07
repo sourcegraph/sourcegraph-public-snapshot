@@ -17,15 +17,16 @@ class Loader extends Component {
 	render() {
 		return (
 			<div styleName="loader">
-				<span styleName="loader-1">●</span>
-				<span styleName="loader-2">●</span>
-				<span styleName="loader-3">●</span>
+				<span styleName={`loader-1 ${this.state.stretch ? "stretch" : ""}`}>●</span>
+				<span styleName={`loader-2 ${this.state.stretch ? "stretch" : ""}`}>●</span>
+				<span styleName={`loader-3 ${this.state.stretch ? "stretch" : ""}`}>●</span>
 			</div>
 		);
 	}
 }
 
 Loader.propTypes = {
+	stretch: React.PropTypes.bool,
 };
 
-export default CSSModules(Loader, style);
+export default CSSModules(Loader, style, {allowMultiple: true});

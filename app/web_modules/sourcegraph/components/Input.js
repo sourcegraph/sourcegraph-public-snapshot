@@ -14,6 +14,7 @@ class Input extends Component {
 		};
 		this._handleChange = this._handleChange.bind(this);
 		this._handleBlur = this._handleBlur.bind(this);
+		this._handleKeyPress = this._handleKeyPress.bind(this);
 		this.getValue = this.getValue.bind(this);
 	}
 
@@ -50,6 +51,12 @@ class Input extends Component {
 		});
 	}
 
+	_handleKeyPress(e) {
+		if (e && e.key === "Enter") {
+			if (this.state.onSubmit) this.state.onSubmit();
+		}
+	}
+
 	getValue() {
 		return this.state.value;
 	}
@@ -65,6 +72,7 @@ class Input extends Component {
 				placeholder={this.state.placeholder}
 				autoFocus={this.state.autoFocus}
 				onChange={this._handleChange}
+				onKeyPress={this._handleKeyPress}
 				onBlur={this._handleBlur}
 				disabled={this.state.disabled} /> // TODO: styles for disabled input.
 		);
@@ -73,11 +81,12 @@ class Input extends Component {
 
 Input.propTypes = {
 	type: React.PropTypes.string.isRequired, // "text", "email", "password"
-	autoFocus: React.PropTypes.bool, // "text", "email", "password"
+	autoFocus: React.PropTypes.bool,
 	block: React.PropTypes.bool, // display:inline-block by default
 	disabled: React.PropTypes.bool,
 	placeholder: React.PropTypes.string,
 	onChange: React.PropTypes.func,
+	onSubmit: React.PropTypes.func, // called when "Enter" key pressed
 	validate: React.PropTypes.func,
 };
 

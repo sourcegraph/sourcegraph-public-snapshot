@@ -4,6 +4,10 @@
 	display: inline-block;
 }
 
+.stretch {
+	composes: ph2 from base;
+}
+
 .loader-label {
 	display: inline-block;
 	animation: sk-bouncedelay 1.4s infinite ease-in-out both;
@@ -25,10 +29,8 @@
 
 @keyframes sk-bouncedelay {
 	0%, 80%, 100% {
-		-webkit-transform: scale(0);
 		transform: scale(0);
 	} 40% {
-		-webkit-transform: scale(1.0);
 		transform: scale(1.0);
 	}
 }

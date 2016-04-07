@@ -266,6 +266,11 @@ code, .code { font-family: Consolas, monaco, monospace; }
 	composes: silver from colors;
 }
 
+.error-text {
+	composes: sans-serif f5;
+	composes: red from colors;
+}
+
 .normal-text {
 	composes: f4;
 	composes: mid-gray from colors;

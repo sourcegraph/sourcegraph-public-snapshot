@@ -57,14 +57,18 @@ class ResetPassword extends Container {
 					<Input type="password"
 						placeholder="Confirm password"
 						ref={(c) => this._confirmInput = c}
+						onSubmit={this._handleSubmit}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction}
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}
 						onClick={this._handleSubmit}>Reset Password</Button>
 				</div>
+				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
+					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.err.message}</div>
+				}
 			</div>
 		);
 	}

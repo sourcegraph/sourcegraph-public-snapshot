@@ -23,6 +23,11 @@
 	composes: mh3 from base;
 }
 
+.errtext {
+	composes: pb3 pt2 from base;
+	composes: error-text tc from typography;
+}
+
 .subtext {
 	composes: pv3 from base;
 	composes: small-text tc from typography;
