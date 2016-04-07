@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"sourcegraph.com/sourcegraph/analytics/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
