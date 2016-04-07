@@ -4,10 +4,6 @@
 @value typography "sourcegraph/components/styles/typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
-/* GlobalNav */
-.repoNavContext {
-	composes: context from GlobalNav;
-}
 .pathComponent {}
 .inactivePathComponent {
 	composes: pathComponent;

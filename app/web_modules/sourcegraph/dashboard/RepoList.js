@@ -1,7 +1,7 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
-import repoLink from "sourcegraph/util/repoLink";
+import RepoLink from "sourcegraph/components/RepoLink";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 
 import CSSModules from "react-css-modules";
@@ -42,7 +42,7 @@ class RepoList extends Component {
 								<div styleName={this.state.reposDisabled ? "list-item-disabled" : "list-item"} key={i}>
 									<div>
 										<span styleName="uri">
-											{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, this._repoDisabled(repo))}
+											<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} disabledLink={this._repoDisabled(repo)} />
 										</span>
 										{this.state.reposDisabled &&
 											<span styleName="disable-reason">{this._disabledReason(repo)}</span>

@@ -10,9 +10,6 @@
 	composes: b--black-20 bg-near-white from colors;
 }
 
-/* Logo */
-.logoHeader {
-}
 .logo {
 	composes: ma3 from base;
 	width: 3rem;
@@ -23,10 +20,11 @@
 }
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
 
-.contextContainer {
+.context-container {
 	flex: 1 1 auto;
 	align-items: center;
 	composes: pa2 from base;
+	composes: circular f3 from typography;
 }
 
 .actions {
@@ -38,6 +36,6 @@
 	display: inline-block;
 }
 
-.userName {
+.username {
 	composes: b from typography;
 }

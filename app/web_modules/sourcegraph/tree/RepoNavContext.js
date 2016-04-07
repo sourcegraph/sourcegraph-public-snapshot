@@ -18,21 +18,16 @@ class RepoNavContext extends Component {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.blobPath = props.params.splat[1];
-		state.pathParts = state.blobPath.split("/");
+		state.treePath = Array.isArray(props.params.splat) ? props.params.splat[1] : ""; // on the root of the tree, splat is a string
+		state.pathParts = state.treePath.split("/");
 	}
 
 	render() {
 		let pathBreadcrumb = breadcrumb(
-			`/${this.state.blobPath}`,
+			`/${this.state.treePath}`,
 			(i) => <span key={i} styleName="sep">/</span>,
 			(path, component, i, isLast) => (
-				<Link to={isLast ?
-					urlTo("blob", {...this.state.params}) :
-					urlTo("tree", {
-						...this.state.params,
-						splat: [this.state.params.splat[0], this.state.pathParts.slice(0, i).join("/")],
-					})}
+				<Link to={urlTo("tree", {...this.state.params, splat: [this.state.params.splat[0], this.state.pathParts.slice(0, i).join("/")]})}
 					key={i}
 					styleName={isLast ? "active" : "inactive"}>
 					{component}

@@ -38,6 +38,7 @@ export const routes = [
 					const withTree = require("sourcegraph/tree/withTree").default;
 					_components = {
 						main: withResolvedRepoRev(withTree(require("sourcegraph/tree/TreeSearch").default)),
+						repoNavContext: require("sourcegraph/tree/RepoNavContext").default,
 					};
 				}
 				callback(null, _components);

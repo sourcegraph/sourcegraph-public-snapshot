@@ -9,3 +9,11 @@
 .link {
 	composes: link from base;
 }
+
+.active {
+	composes: link from base;
+}
+
+.inactive {
+	composes: dark-gray from colors;
+}

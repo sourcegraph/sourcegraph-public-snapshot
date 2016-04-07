@@ -8,16 +8,17 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import "sourcegraph/user/UserBackend"; // for side effects
 import * as UserActions from "sourcegraph/user/UserActions";
 
-import Style from "./styles/GlobalNav.css";
 import {Avatar, Popover, Button} from "sourcegraph/components";
 import context from "sourcegraph/context";
 
+import CSSModules from "react-css-modules";
+import styles from "./styles/GlobalNav.css";
 
 type Props = {
 	navContext: Array<any>;
-}
+};
 
-export default class GlobalNav extends React.Component {
+class GlobalNav extends React.Component {
 	static propTypes = {
 		navContext: React.PropTypes.element,
 	};
@@ -25,20 +26,19 @@ export default class GlobalNav extends React.Component {
 	props: Props;
 
 	render() {
-		// TODO: fix links
 		const user = context.currentUser;
 		return (
-			<nav className={Style.navbar} role="navigation">
+			<nav styleName="navbar" role="navigation">
 				<Link to="/">
-					<img className={Style.logo} src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
+					<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
 				</Link>
 
-				<div className={Style.contextContainer}>{this.props.navContext}</div>
+				<div styleName="context-container">{this.props.navContext}</div>
 
-				<div className={Style.actions}>
+				<div styleName="actions">
 					{user &&
-						<div className={Style.action}>
-							<div className={Style.userName}>
+						<div styleName="action">
+							<div styleName="username">
 								<Popover left={true}>
 									{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
 									<Button outline={true}
@@ -50,15 +50,15 @@ export default class GlobalNav extends React.Component {
 						</div>
 					}
 					{!user &&
-						<div className={Style.action}>
-							<Link to="/join" className="sign-up">
+						<div styleName="action">
+							<Link to="/join">
 								Sign up
 							</Link>
 						</div>
 					}
 					{!user &&
-						<div className={Style.action}>
-							<Link to="/login" className="sign-in">
+						<div styleName="action">
+							<Link to="/login">
 								Sign in
 							</Link>
 						</div>
@@ -68,3 +68,5 @@ export default class GlobalNav extends React.Component {
 		);
 	}
 }
+
+export default CSSModules(GlobalNav, styles);

@@ -2,10 +2,14 @@
 
 import React from "react";
 import {Link} from "react-router";
-import Style from "./styles/Repo.css";
 import urlTo from "sourcegraph/util/urlTo";
 
-export default class NavContext extends React.Component {
+import RepoLink from "sourcegraph/components/RepoLink";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Repo.css";
+
+class NavContext extends React.Component {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
@@ -14,10 +18,19 @@ export default class NavContext extends React.Component {
 
 	render() {
 		return (
-			<div className={Style.navContext}>
-				<Link to={urlTo("repo", {splat: this.props.repo})} className={Style.repoName}>{this.props.repo}</Link>
+			<div style={{display: "inline-block"}}>
+				<RepoLink repo={this.props.repo} />
 				{this.props.repoNavContext}
 			</div>
 		);
+
+		// return (
+		// 	<div styleName="navContext">
+		// 		<Link to={urlTo("repo", {splat: this.props.repo})} styleName="repoName">{this.props.repo}</Link>
+		// 		{this.props.repoNavContext}
+		// 	</div>
+		// );
 	}
 }
+
+export default CSSModules(NavContext, styles);
