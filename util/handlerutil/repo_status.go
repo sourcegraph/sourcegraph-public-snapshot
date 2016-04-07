@@ -3,11 +3,14 @@ package handlerutil
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 )
+
+var ErrCovNotExist = fmt.Errorf("coverage does not exist")
 
 // GetCoverage retrieves the coverage data for the given repository
 func GetCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (map[string]*cvg.Coverage, *sourcegraph.SrclibDataVersion, error) {
@@ -18,6 +21,9 @@ func GetCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (map[
 	rootEntrySpec.RepoRev.URI = repo
 	srclibDataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &rootEntrySpec)
 	if err != nil {
+		if strings.Contains(err.Error(), "no srclib data versions found") {
+			return nil, nil, ErrCovNotExist
+		}
 		return nil, nil, err
 	}
 	repoRevSpec.CommitID = srclibDataVer.CommitID
@@ -37,5 +43,5 @@ func GetCoverage(cl *sourcegraph.Client, ctx context.Context, repo string) (map[
 			return c, srclibDataVer, nil
 		}
 	}
-	return nil, nil, fmt.Errorf("coverage data not found for repo %s", repo)
+	return nil, nil, ErrCovNotExist
 }

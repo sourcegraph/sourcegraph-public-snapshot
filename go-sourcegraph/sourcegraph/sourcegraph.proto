@@ -398,9 +398,6 @@ message ReposCreateOp {
 
 		// Language is the primary programming language of the repository.
 		string Language = 7;
-
-		// Private is whether the repository is private.
-		bool Private = 8;
 	}
 
 	oneof Op {

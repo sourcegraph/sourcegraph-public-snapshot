@@ -137,7 +137,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		return nil, err
 	}
 
-	repo, err = store.ReposFromContext(ctx).Get(ctx, repo.URI)
+	repo, err = s.Get(ctx, &sourcegraph.RepoSpec{URI: repo.URI})
 	if err != nil {
 		return
 	}
@@ -176,7 +176,6 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		DefaultBranch: op.DefaultBranch,
 		Description:   op.Description,
 		Mirror:        op.Mirror,
-		Private:       op.Private,
 		CreatedAt:     &ts,
 	}, nil
 }
@@ -187,15 +186,22 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 		return nil, err
 	}
 
-	return s.newRepo(ctx, &sourcegraph.ReposCreateOp_NewRepo{
-		URI:           githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
-		CloneURL:      ghrepo.HTTPCloneURL,
-		DefaultBranch: ghrepo.DefaultBranch,
-		Mirror:        true,
-		Description:   ghrepo.Description,
-		Language:      ghrepo.Language,
-		Private:       ghrepo.Private,
-	})
+	// Purposefully set very few fields. We don't want to cache
+	// metadata, because it'll get stale, and fetching online from
+	// GitHub is quite easy and (with HTTP caching) performant.
+	ts := pbtypes.NewTimestamp(time.Now())
+	return &sourcegraph.Repo{
+		Name:         ghrepo.Name,
+		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
+		HTTPCloneURL: ghrepo.HTTPCloneURL,
+		Mirror:       true,
+		CreatedAt:    &ts,
+
+		// KLUDGE: set this to be true to avoid accidentally treating
+		// a private GitHub repo as public (the real value should be
+		// populated from GitHub on the fly).
+		Private: true,
+	}, nil
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {

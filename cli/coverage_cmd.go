@@ -141,18 +141,17 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repo string, lang 
 		RepoSpec: sourcegraph.RepoSpec{URI: repo},
 	}
 
-	if _, err := cl.Repos.Get(ctx, &repoRevSpec.RepoSpec); err != nil {
-		if err := ensureRepoExists(cl, ctx, repo); err != nil {
-			return nil, err
-		}
-		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
+	if err := ensureRepoExists(cl, ctx, repo); err != nil {
+		return nil, err
 	}
 
 	var cov Coverage
 	cov.Repo = repo
 	cov.SuccessfullyBuilt = true
 	langCov, dataVer, err := handlerutil.GetCoverage(cl, ctx, repoRevSpec.URI)
-	if err != nil {
+	if err == handlerutil.ErrCovNotExist {
+		return &Coverage{Repo: repo, SuccessfullyBuilt: false}, nil
+	} else if err != nil {
 		return nil, err
 	}
 	if dataVer != nil {
