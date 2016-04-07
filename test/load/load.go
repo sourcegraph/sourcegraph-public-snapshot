@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
+
 	vegeta "github.com/tsenart/vegeta/lib"
 
 	"golang.org/x/net/context"
@@ -32,7 +34,7 @@ type LoadTest struct {
 func (t *LoadTest) Run(ctx context.Context) error {
 	var testDuration time.Duration
 	hdr := http.Header{}
-	hdr.Set("User-Agent", "Sourcegraph-Load-Test/0.1")
+	hdr.Set("User-Agent", e2etestuser.UserAgent)
 
 	cookie, err := t.getCookie()
 	if err != nil {
