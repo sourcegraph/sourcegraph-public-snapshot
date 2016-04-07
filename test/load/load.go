@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"time"
 
 	vegeta "github.com/tsenart/vegeta/lib"
 
@@ -18,6 +20,7 @@ type LoadTest struct {
 	AttackerOpts []func(*vegeta.Attacker)
 	TargetPaths  []string
 	Rate         uint64
+	ReportPeriod time.Duration
 
 	Username string
 	Password string
@@ -41,13 +44,24 @@ func (t *LoadTest) Run(ctx context.Context) error {
 	res := atk.Attack(tr, t.Rate, cookie.Expires)
 	defer atk.Stop()
 
+	mAll := &vegeta.Metrics{}
+	mPartial := &vegeta.Metrics{}
+	reportTicker := time.NewTicker(t.ReportPeriod)
+	defer reportTicker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			log.Printf("Stopping %v", t)
+		case <-reportTicker.C:
+			log.Printf("Report for the last %s:", t.ReportPeriod)
+			t.report(mPartial)
+			mPartial = &vegeta.Metrics{}
+			continue
 		case r, ok := <-res:
 			if ok {
-				log.Println(*r)
+				mAll.Add(r)
+				mPartial.Add(r)
 				continue
 			}
 		}
@@ -55,7 +69,8 @@ func (t *LoadTest) Run(ctx context.Context) error {
 	}
 
 	log.Printf("Finished %v", t)
-	// TODO dump some stats
+	log.Printf("Report for %s:", t)
+	t.report(mAll)
 	return ctx.Err()
 }
 
@@ -72,6 +87,12 @@ func (t *LoadTest) targeter(hdr http.Header) vegeta.Targeter {
 		log.Println("Target:", targets[i].URL)
 	}
 	return vegeta.NewStaticTargeter(targets...)
+}
+
+func (t *LoadTest) report(m *vegeta.Metrics) {
+	m.Close()
+	m.Errors = []string{} // Ignore noisy error list
+	vegeta.NewTextReporter(m)(os.Stderr)
 }
 
 func (t *LoadTest) String() string {

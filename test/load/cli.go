@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"time"
 
 	"golang.org/x/net/context"
 )
@@ -22,6 +23,7 @@ func Main() error {
 	flag.StringVar(&lt.Username, "username", "", "Username to authenticate as")
 	flag.StringVar(&lt.Password, "password", "", "Password for user")
 	flag.Uint64Var(&lt.Rate, "rate", 0, "Requests per second")
+	flag.DurationVar(&lt.ReportPeriod, "report-period", 10*time.Minute, "Rate at which to report partial metrics")
 	flag.Parse()
 	lt.TargetPaths = flag.Args()
 	lt.Endpoint, err = url.Parse(endpoint)
