@@ -49,7 +49,7 @@ export default class FileMargin extends Component {
 		return (
 			<div className={this.props.className} ref="sidebar" style={{paddingBottom: this.state.extraPadding}}>
 				{this.state.children && this.state.children.map((child, i) => (
-					<div key={i} style={{width: "100%", position: "absolute", top: `${child.top}px`}} data-offset={child.top}>
+					<div key={i} style={{position: "absolute", top: `${child.top}px`}} data-offset={child.top}>
 						{child.component}
 					</div>
 				))}
