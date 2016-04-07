@@ -240,6 +240,9 @@ func resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error
 		}
 		commitID, err := vcsrepo.ResolveRevision(repoRev.Rev)
 		if err != nil {
+			if vcs.IsRepoNotExist(err) && err.(vcs.RepoNotExistError).CloneInProgress {
+				return grpc.Errorf(codes.Unavailable, "%s", err.Error())
+			}
 			return err
 		}
 		repoRev.CommitID = string(commitID)

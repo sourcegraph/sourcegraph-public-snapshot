@@ -68,7 +68,7 @@ func (r *Repository) ResolveRevision(spec string) (vcs.CommitID, error) {
 	cmd.Repo = r.URL
 	stdout, stderr, err := cmd.DividedOutput()
 	if err != nil {
-		if err == vcs.ErrRepoNotExist {
+		if vcs.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
@@ -231,7 +231,7 @@ func (r *Repository) showRef(arg string) ([][2]string, error) {
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		if err == vcs.ErrRepoNotExist {
+		if vcs.IsRepoNotExist(err) {
 			return nil, err
 		}
 		// Exit status of 1 and no output means there were no
