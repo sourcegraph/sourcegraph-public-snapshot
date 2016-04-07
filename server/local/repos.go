@@ -5,7 +5,10 @@ import (
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
+	"runtime"
 	"time"
+
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"strings"
 
@@ -81,13 +84,15 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 		return nil, err
 	}
 
-	// This was parallelized. Removed because rego was detecting data races within the
-	// github client.
-	for _, repo := range repos {
-		err := s.setRepoFieldsFromRemote(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
+	par := parallel.NewRun(runtime.GOMAXPROCS(0))
+	for _, repo_ := range repos {
+		repo := repo_
+		par.Do(func() error {
+			return s.setRepoFieldsFromRemote(ctx, repo)
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
 	}
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
