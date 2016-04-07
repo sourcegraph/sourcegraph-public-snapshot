@@ -228,7 +228,7 @@ var langRepos_ = map[string][]string{
 		"github.com/eclipse/vert.x",
 		"github.com/daimajia/AndroidViewAnimations",
 		"github.com/spring-projects/spring-boot",
-		"github.com/facebook/presto",
+		"github.com/prestodb/presto",
 		"github.com/nickbutcher/plaid",
 		"github.com/umano/AndroidSlidingUpPanel",
 		"github.com/JetBrains/kotlin",
