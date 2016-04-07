@@ -12,7 +12,8 @@
 							"dispatchedToStores": [
 								{
 									"$constructor": "SelectLine",
-									"line": 42
+									"line": 42,
+									"eventName": "SelectLine"
 								}
 							],
 							"dispatchedToBackends": []
