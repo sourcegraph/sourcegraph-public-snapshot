@@ -17,7 +17,7 @@ func (s *directory) GetUserByEmail(ctx context.Context, email string) (*sourcegr
 		return nil, err
 	}
 	q := `SELECT uid FROM user_email WHERE (NOT blacklisted) AND email=$1 ORDER BY uid ASC LIMIT 1`
-	uid, err := dbh(ctx).SelectInt(q, email)
+	uid, err := appDBH(ctx).SelectInt(q, email)
 	switch {
 	case err != nil:
 		return nil, err

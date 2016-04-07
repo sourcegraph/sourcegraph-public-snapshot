@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,8 +15,19 @@ import (
 )
 
 var (
-	// Schema is the DB Schema for the database used by this package.
-	Schema = dbutil2.Schema{
+	// AppSchema is the DB Schema for the app database used by this package.
+	// Currently, all db stores except GlobalRefs are grouped under AppSchema.
+	AppSchema = dbutil2.Schema{
+		CreateSQL: []string{
+			`CREATE EXTENSION IF NOT EXISTS citext;`,
+			`CREATE EXTENSION IF NOT EXISTS hstore;`,
+		},
+		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
+	}
+
+	// GraphSchema is the DB Schema for the graphstore database used by this package.
+	// Currently, only GlobalRefs store is grouped under GraphSchema.
+	GraphSchema = dbutil2.Schema{
 		CreateSQL: []string{
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
@@ -25,49 +37,85 @@ var (
 )
 
 var (
-	globalDBH *dbutil2.Handle // global DB handle
-	dbLock    sync.Mutex      // protects globalDBH
+	globalAppDBH   *dbutil2.Handle // global app DB handle
+	globalGraphDBH *dbutil2.Handle // global graph DB handle
+	dbLock         sync.Mutex      // protects globalDBH
 )
 
-// globalDB opens the DB if it isn't already open, and returns
-// it. Subsequent calls return the same DB handle.
-func globalDB() (*dbutil2.Handle, error) {
+// globalDBs opens the app and graph DBs if they aren't already open,
+// and returns them. Subsequent calls return the same DB handles.
+func globalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 	dbLock.Lock()
 	defer dbLock.Unlock()
 
-	if globalDBH != nil {
-		return globalDBH, nil
+	if globalAppDBH == nil || globalGraphDBH == nil {
+		var err error
+		globalAppDBH, err = openDB(getAppDBDataSource(), AppSchema, 0)
+		if err != nil {
+			return nil, nil, err
+		}
+		registerPrometheusCollector(globalAppDBH.DbMap.Db, "_app")
+		limitConnectionPool(globalAppDBH.DbMap.Db)
+
+		globalGraphDBH, err = openDB(getGraphDBDataSource(), GraphSchema, 0)
+		if err != nil {
+			return nil, nil, err
+		}
+		// If graph db has the same data source as app db, they will share the
+		// underlying *sql.Db handle, so we do not re-register the prometheus
+		// metric or limit the connection pool again on the same db handle.
+		if globalGraphDBH.DbMap.Db != globalAppDBH.DbMap.Db {
+			registerPrometheusCollector(globalGraphDBH.DbMap.Db, "_graph")
+			limitConnectionPool(globalGraphDBH.DbMap.Db)
+		}
 	}
 
-	dbh, err := OpenDB(0)
-	if err != nil {
-		return nil, err
-	}
-	registerPrometheusCollector(dbh.DbMap.Db)
-	limitConnectionPool(dbh.DbMap.Db)
-
-	globalDBH = dbh
-	return globalDBH, nil
+	return globalAppDBH, globalGraphDBH, nil
 }
 
-// OpenDB opens and returns the DB handle for the DB. Use DB unless
+// openDB opens and returns the DB handle for the DB. Use DB unless
 // you need access to the low-level DB handle or need to handle
 // errors.
-func OpenDB(mode dbutil2.Mode) (*dbutil2.Handle, error) {
-	dbh, err := dbutil2.Open("", Schema, mode)
+func openDB(dataSource string, schema dbutil2.Schema, mode dbutil2.Mode) (*dbutil2.Handle, error) {
+	dbh, err := dbutil2.Open(dataSource, schema, mode)
 	if err != nil {
-		return nil, fmt.Errorf("open DB: %s", err)
+		return nil, fmt.Errorf("open DB (%s): %s", dataSource, err)
 	}
 	return dbh, nil
 }
 
-func registerPrometheusCollector(db *sql.DB) {
+func getAppDBDataSource() string {
+	// libpq defaults to the PG* env variable values when
+	// data source is empty.
+	return ""
+}
+
+func getGraphDBDataSource() string {
+	graphDBEnv := map[string]string{
+		"host":     os.Getenv("SG_GRAPH_PGHOST"),
+		"port":     os.Getenv("SG_GRAPH_PGPORT"),
+		"user":     os.Getenv("SG_GRAPH_PGUSER"),
+		"password": os.Getenv("SG_GRAPH_PGPASSWORD"),
+		"dbname":   os.Getenv("SG_GRAPH_PGDATABASE"),
+		"sslmode":  os.Getenv("SG_GRAPH_PGSSLMODE"),
+	}
+
+	var dataSource []string
+	for k, v := range graphDBEnv {
+		if v != "" {
+			dataSource = append(dataSource, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+	return strings.Join(dataSource, " ")
+}
+
+func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
 	c := prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
 			Namespace: "src",
-			Subsystem: "pgsql",
+			Subsystem: "pgsql" + dbNameSuffix,
 			Name:      "open_connections",
-			Help:      "Number of open connections to pgsql globalDB, as reported by pgsql.DB.Stats()",
+			Help:      "Number of open connections to pgsql DB, as reported by pgsql.DB.Stats()",
 		},
 		func() float64 {
 			s := db.Stats()

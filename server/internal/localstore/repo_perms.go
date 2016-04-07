@@ -14,8 +14,8 @@ type repoPermsRow struct {
 }
 
 func init() {
-	Schema.Map.AddTableWithName(repoPermsRow{}, "repo_perms").SetKeys(false, "UID", "Repo")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(repoPermsRow{}, "repo_perms").SetKeys(false, "UID", "Repo")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE repo_perms ALTER COLUMN granted_at TYPE timestamp with time zone USING granted_at::timestamp with time zone;`,
 	)
 }
@@ -33,7 +33,7 @@ func (r *repoPerms) ListRepoUsers(ctx context.Context, repo string) ([]int32, er
 
 	var repoPermsRows []*repoPermsRow
 	sql := `SELECT * FROM repo_perms WHERE repo=$1`
-	if _, err := dbh(ctx).Select(&repoPermsRows, sql, repo); err != nil {
+	if _, err := appDBH(ctx).Select(&repoPermsRows, sql, repo); err != nil {
 		return nil, err
 	}
 

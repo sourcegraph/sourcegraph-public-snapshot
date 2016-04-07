@@ -16,8 +16,8 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbAuthCode{}, "oauth2_auth_code").SetKeys(false, "Code", "client_id", "redirect_uri")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(dbAuthCode{}, "oauth2_auth_code").SetKeys(false, "Code", "client_id", "redirect_uri")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE oauth2_auth_code ALTER COLUMN expires_at TYPE timestamp with time zone USING expires_at::timestamp with time zone;`,
 		"ALTER TABLE oauth2_auth_code ALTER COLUMN scope TYPE text[] USING array[scope]::text[];",
 	)
@@ -53,7 +53,7 @@ func (s *authorizations) CreateAuthCode(ctx context.Context, req *sourcegraph.Au
 		ExpiresAt:   time.Now().Add(expires),
 	}
 
-	if err := dbh(ctx).Insert(code); err != nil {
+	if err := appDBH(ctx).Insert(code); err != nil {
 		return "", err
 	}
 
@@ -79,7 +79,7 @@ WHERE c.code=` + arg(code.Code) + ` AND c.redirect_uri=` + arg(code.RedirectURI)
       c.client_id=` + arg(clientID) + ` AND c.expires_at > current_timestamp;`
 
 	var dbCode dbAuthCode
-	if err := dbh(ctx).SelectOne(&dbCode, query, args...); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&dbCode, query, args...); err == sql.ErrNoRows {
 		return nil, store.ErrAuthCodeNotFound
 	} else if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ WHERE c.code=` + arg(code.Code) + ` AND c.redirect_uri=` + arg(code.RedirectURI)
 	}
 
 	dbCode.Exchanged = true
-	if _, err := dbh(ctx).Update(&dbCode); err != nil {
+	if _, err := appDBH(ctx).Update(&dbCode); err != nil {
 		return nil, err
 	}
 
@@ -112,6 +112,6 @@ WHERE c.code=` + arg(code.Code) + ` AND c.redirect_uri=` + arg(code.RedirectURI)
 // removeExpiredAuthCodes is run when we write to the auth code DB, to
 // occasionally purge the DB of expired grants.
 func (s *authorizations) removeExpiredAuthCodes(ctx context.Context) error {
-	_, err := dbh(ctx).Exec(`DELETE FROM oauth2_auth_code WHERE expires_at <= current_timestamp;`)
+	_, err := appDBH(ctx).Exec(`DELETE FROM oauth2_auth_code WHERE expires_at <= current_timestamp;`)
 	return err
 }
