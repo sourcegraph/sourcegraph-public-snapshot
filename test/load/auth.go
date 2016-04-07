@@ -5,10 +5,17 @@ import (
 	"net/url"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
+
+const testUserName = e2etestuser.Prefix + "loadtest"
+const testPassword = "e2etest"
 
 type authedCookie struct {
 	// HeaderValue is the cookie serialized for the Cookie header
@@ -49,4 +56,21 @@ func getAuthedCookie(endpoint *url.URL, username, password string) (*authedCooki
 		HeaderValue: cookie.String(),
 		Expires:     expires,
 	}, nil
+}
+
+func createLoadTestUser(endpoint *url.URL) error {
+	ctx := sourcegraph.WithGRPCEndpoint(context.Background(), endpoint)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = cl.Accounts.Create(ctx, &sourcegraph.NewAccount{
+		Login:    testUserName,
+		Email:    testUserName + "@sourcegraph.com",
+		Password: testPassword,
+	})
+	if err != nil && grpc.Code(err) != codes.AlreadyExists {
+		return err
+	}
+	return nil
 }

@@ -22,6 +22,7 @@ func Main() error {
 	flag.StringVar(&endpoint, "endpoint", "", "Endpoint to load test (eg https://staging.sourcegraph.com)")
 	flag.StringVar(&lt.Username, "username", "", "Username to authenticate as")
 	flag.StringVar(&lt.Password, "password", "", "Password for user")
+	flag.BoolVar(&lt.Anonymous, "anonymous", false, "Do not login")
 	flag.Uint64Var(&lt.Rate, "rate", 0, "Requests per second")
 	flag.DurationVar(&lt.ReportPeriod, "report-period", 10*time.Minute, "Rate at which to report partial metrics")
 	flag.Parse()

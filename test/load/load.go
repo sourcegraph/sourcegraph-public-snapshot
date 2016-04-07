@@ -22,8 +22,9 @@ type LoadTest struct {
 	Rate         uint64
 	ReportPeriod time.Duration
 
-	Username string
-	Password string
+	Username  string
+	Password  string
+	Anonymous bool
 }
 
 // Run runs the load test until the auth token expires
@@ -32,12 +33,10 @@ func (t *LoadTest) Run(ctx context.Context) error {
 	hdr := http.Header{}
 	hdr.Set("User-Agent", "Sourcegraph-Load-Test/0.1")
 
-	if t.Username != "" {
-		// We need the cookie to do load tests as an authenticated user
-		cookie, err := getAuthedCookie(t.Endpoint, t.Username, t.Password)
-		if err != nil {
-			return err
-		}
+	cookie, err := t.getCookie()
+	if err != nil {
+		return err
+	} else if cookie != nil {
 		hdr.Set("Cookie", cookie.HeaderValue)
 		testDuration = cookie.Expires
 	}
@@ -77,6 +76,21 @@ func (t *LoadTest) Run(ctx context.Context) error {
 	log.Printf("Report for %s:", t)
 	t.report(mAll)
 	return ctx.Err()
+}
+
+func (t *LoadTest) getCookie() (*authedCookie, error) {
+	if t.Anonymous {
+		return nil, nil
+	}
+	if t.Username == "" {
+		err := createLoadTestUser(t.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+		t.Username = testUserName
+		t.Password = testPassword
+	}
+	return getAuthedCookie(t.Endpoint, t.Username, t.Password)
 }
 
 func (t *LoadTest) targeter(hdr http.Header) vegeta.Targeter {
