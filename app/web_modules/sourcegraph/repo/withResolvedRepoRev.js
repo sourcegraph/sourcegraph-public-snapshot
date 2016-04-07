@@ -21,6 +21,7 @@ export default function withResolvedRepoRev(Component) {
 		}
 
 		componentDidMount() {
+			super.componentDidMount();
 			this._interval = setInterval(() => {
 				Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.state.repo));
 			}, 30*1000);
