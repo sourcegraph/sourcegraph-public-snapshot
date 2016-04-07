@@ -1,7 +1,7 @@
 @value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
-@value grid "sourcegraph/components/styles/grid.css";
 @value flexbox "sourcegraph/components/styles/flexbox.css";
 
 @value search_height 30px;

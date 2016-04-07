@@ -38,33 +38,43 @@ describe("DefBackend", () => {
 		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
 	});
 
+	it("should handle WantRefLocations", () => {
+		DefBackend.fetch = function(url, options) {
+			expect(url).to.be("/.api/repos/someURL/-/ref-locations");
+			return immediateSyncPromise({status: 200, json: () => "someRefData"});
+		};
+		expect(Dispatcher.Stores.catchDispatched(() => {
+			DefBackend.__onDispatch(new DefActions.WantRefLocations("/someURL"));
+		})).to.eql([new DefActions.RefLocationsFetched("/someURL", "someRefData")]);
+	});
+
 	describe("should handle WantRefs", () => {
 		it("for all files", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL/-/refs");
+				expect(url).to.be("/.api/repos/someURL/-/refs?Repo=someRepo");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL"));
-			})).to.eql([new DefActions.RefsFetched("/someURL", null, "someRefData")]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "someRepo"));
+			})).to.eql([new DefActions.RefsFetched("/someURL", "someRepo", null, "someRefData")]);
 		});
 		it("for a specific file", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL/-/refs?Files=f");
+				expect(url).to.be("/.api/repos/someURL/-/refs?Repo=someRepo&Files=f");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "f"));
-			})).to.eql([new DefActions.RefsFetched("/someURL", "f", "someRefData")]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "someRepo", "f"));
+			})).to.eql([new DefActions.RefsFetched("/someURL", "someRepo", "f", "someRefData")]);
 		});
 		it("with no result available", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL/-/refs");
+				expect(url).to.be("/.api/repos/someURL/-/refs?Repo=someRepo");
 				return immediateSyncPromise({status: 200, json: () => null});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL"));
-			})).to.eql([new DefActions.RefsFetched("/someURL", null, null)]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "someRepo"));
+			})).to.eql([new DefActions.RefsFetched("/someURL", "someRepo", null, null)]);
 		});
 	});
 });

@@ -17,6 +17,10 @@ import RefStyles from "sourcegraph/def/styles/Refs.css";
 
 const FILES_PER_PAGE = 5;
 
+function annsKeyFor(repo, file) {
+	return `${repo || ""}:${file || ""}`;
+}
+
 class RefsContainer extends Container {
 	constructor(props) {
 		super(props);
@@ -44,9 +48,13 @@ class RefsContainer extends Container {
 
 		state.defs = DefStore.defs;
 		state.refs = DefStore.refs.get(state.def);
+		state.refLocations = DefStore.refLocations.get(state.def);
 		state.annotations = BlobStore.annotations;
-		state.path = props.path || "";
-		state.refs = DefStore.refs.get(state.def, state.path);
+		state.refRepo = props.refRepo || "";
+		state.refFile = props.refFile || "";
+		// refs holds all references to 'def' from repo 'refRepo' and file 'refFile'.
+		// If 'refFile' is empty, refs contains references from all files in 'refRepo'.
+		state.refs = DefStore.refs.get(state.def, state.refRepo, state.refFile);
 		state.files = null;
 		state.entrySpecs = null;
 		state.ranges = null;
@@ -58,9 +66,9 @@ class RefsContainer extends Container {
 			let ranges = {};
 			let anns = {};
 			let fileIndex = new Map();
-			for (let ref of state.refs.Refs || []) {
+			for (let ref of state.refs || []) {
 				if (!ref) continue;
-				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
+				let refRev = ref.Repo === state.repo ? state.rev : "";
 				if (!fileIndex.has(ref.File)) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
 					files.push(file);
@@ -78,7 +86,7 @@ class RefsContainer extends Container {
 						lineFromByte(contents, ref.End) + context,
 					]);
 				}
-				anns[ref.File] = state.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
+				anns[annsKeyFor(ref.Repo, ref.File)] = state.annotations.get(ref.Repo, refRev, "", ref.File);
 			}
 			state.files = files;
 			state.entrySpecs = entrySpecs;
@@ -92,7 +100,12 @@ class RefsContainer extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.def && prevState.def !== nextState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.def));
-			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.def, nextState.path));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.def));
+		}
+
+		if ((nextState.refFile && prevState.refFile !== nextState.refFile) ||
+			(nextState.refRepo && prevState.refRepo !== nextState.refRepo)) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.def, nextState.refRepo, nextState.refFile));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
@@ -101,13 +114,13 @@ class RefsContainer extends Container {
 
 		if (nextState.refs && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
 			let wantedFiles = new Set();
-			for (let ref of nextState.refs.Refs) {
+			for (let ref of nextState.refs || []) {
 				if (wantedFiles.size === (nextState.page * FILES_PER_PAGE)) break;
 				if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
 				// TODO Only fetch a portion of the file/annotations at a time for perf.
-				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
+				let refRev = ref.Repo === nextState.repo ? nextState.rev : "";
 				Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
-				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
+				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, "", ref.File));
 				wantedFiles.add(ref.File);
 			}
 		}
@@ -126,11 +139,12 @@ class RefsContainer extends Container {
 
 		return (
 			<div className={RefStyles.refs_container}>
-				<header>Refs of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.path ? `in ${this.state.path}` : `in ${this.state.repo}`}</header>
+				<header>Refs of {defData && <a href={defData.URL} onClick={hotLink} dangerouslySetInnerHTML={defData.QualifiedName}/>} {this.state.refFile && `in ${this.state.refFile} `}in {this.state.refRepo}</header>
 				<hr/>
 				<div className="file-container">
 					<div className="content-view">
 						<div className="content file-content">
+							{!this.state.files && <i className="fa fa-circle-o-notch fa-spin"></i>}
 							{this.state.files && this.state.files.map((file, i) => {
 								if (!file) return null;
 								let entrySpec = this.state.entrySpecs[i];
@@ -149,7 +163,7 @@ class RefsContainer extends Container {
 											rev={repoRev.Rev}
 											path={path}
 											contents={file.ContentsString}
-											annotations={this.state.anns[path] || null}
+											annotations={this.state.anns[annsKeyFor(repoRev.URI, path)] || null}
 											activeDef={this.state.def}
 											lineNumbers={true}
 											displayRanges={this.state.ranges[path] || null}

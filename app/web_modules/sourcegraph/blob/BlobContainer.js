@@ -69,7 +69,7 @@ class BlobContainer extends Container {
 		}
 
 		state.defs = DefStore.defs;
-		state.refs = DefStore.refs.get(state.activeDef);
+		state.refLocations = DefStore.refLocations.get(state.activeDef);
 		state.highlightedDef = DefStore.highlightedDef || null;
 
 		state.defOptionsURLs = DefStore.defOptionsURLs;
@@ -96,7 +96,7 @@ class BlobContainer extends Container {
 				return;
 			}
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.activeDef));
-			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.activeDef));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.activeDef));
 		}
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.highlightedDef));
@@ -161,7 +161,7 @@ class BlobContainer extends Container {
 						<DefPopup
 							def={activeDefData}
 							byte={activeDefData.DefStart}
-							refs={this.state.refs}
+							refLocations={this.state.refLocations}
 							path={this.state.path}
 							annotations={this.state.annotations}
 							activeDef={this.state.activeDef}

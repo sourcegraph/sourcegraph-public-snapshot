@@ -18,21 +18,23 @@ class DefPopup extends Component {
 					<p className="qualified-name" dangerouslySetInnerHTML={def.QualifiedName} />
 				</section>
 
-				<header className="usage-header">Used in {!this.state.refs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
-				{this.state.refs && this.state.refs.Total === 0 &&
+				<header className="usage-header">Used in {!this.state.refLocations && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
+				{this.state.refLocations && this.state.refLocations.length === 0 &&
 					<i>No usages found</i>
 				}
-				{this.state.refs && this.state.refs.Files && this.state.refs.Total > 0 &&
-					<div className="usages">
-						<header><span className="badge">{this.state.refs.Total}</span> <a href={refsURL} onClick={hotLink}>{def.Repo}</a> </header>
-						<div className="usage-category">
-							{this.state.refs.Files.map((file, i) => (
-								<div key={i} className={this.state.path === file.Name ? "current-file" : ""}>
-									<span className="badge">{file.RefCount}</span> <a href={`${refsURL}?Files=${file.Name}`} onClick={hotLink}>{file.Name}</a>
-								</div>
-							))}
+				{this.state.refLocations && this.state.refLocations.length > 0 &&
+					this.state.refLocations.map((repoRef, i) => (
+						<div key={i} className="usages">
+							<header><span className="badge">{repoRef.Count}</span> <a href={`${refsURL}?Repo=${repoRef.Repo}`} onClick={hotLink}>{repoRef.Repo}</a> </header>
+							<div className="usage-category">
+								{repoRef.Files.map((file, j) => (
+									<div key={j} className={this.state.path === file.Path ? "current-file" : ""}>
+										<span className="badge">{file.Count}</span> <a href={`${refsURL}?Repo=${repoRef.Repo}&Files=${file.Path}`} onClick={hotLink}>{file.Path}</a>
+									</div>
+								))}
+							</div>
 						</div>
-					</div>
+					))
 				}
 			</div>
 		);
@@ -41,7 +43,7 @@ class DefPopup extends Component {
 
 DefPopup.propTypes = {
 	def: React.PropTypes.object,
-	refs: React.PropTypes.object,
+	refLocations: React.PropTypes.array,
 	annotations: React.PropTypes.object,
 	activeDef: React.PropTypes.string,
 	highlightedDef: React.PropTypes.string,
