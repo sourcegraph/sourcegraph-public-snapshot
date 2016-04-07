@@ -1,10 +1,2 @@
 {{define "Footer"}}
-{{if not .DisableExternalLinks}}
-	<div id="FooterContainer"
-		data-react="sourcegraph/footer/Footer"
-		data-logo={{assetURL "img/sourcegraph-logo.svg"}}
-		data-version="version {{buildvar.Version}}"
-		data-buildversion="version {{buildvar.Version}} {{with buildvar.CommitID}}commit {{.}}{{end}} {{if not buildvar.Date.IsZero}}built at {{buildvar.Date}}{{end}}">
-	</div>
-{{end}}
 {{end}}
