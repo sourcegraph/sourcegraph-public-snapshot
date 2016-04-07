@@ -67,7 +67,9 @@ export class App extends Component {
 			// Greedily log page views. Technically changing the pathname
 			// may match the same "view" (e.g. interacting with the directory
 			// tree navigations will change your URL,  but not feel like separate
-			// page events). We will log any change in pathname as a separate event
+			// page events). We will log any change in pathname as a separate event.
+			// NOTE: this will not log separate page views when query string / hash
+			// values are updated.
 			this._logView(nextState.routes);
 		}
 	}
