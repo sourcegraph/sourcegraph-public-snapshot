@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 
@@ -85,6 +86,7 @@ func New(js []byte) (Server, error) {
 }
 
 type server struct {
+	mu  sync.Mutex
 	c   *exec.Cmd
 	in  io.WriteCloser
 	out io.ReadCloser
@@ -107,16 +109,19 @@ func (s *server) recv() (json.RawMessage, error) {
 
 // Call calls the node process with the given argument.
 func (s *server) Call(ctx context.Context, arg json.RawMessage) ([]byte, error) {
-	var resp json.RawMessage
-	var err error
-
-	if err := json.NewEncoder(s.in).Encode(&arg); err != nil {
+	s.mu.Lock()
+	err := json.NewEncoder(s.in).Encode(&arg)
+	s.mu.Unlock()
+	if err != nil {
 		return nil, err
 	}
 
+	var resp json.RawMessage
 	done := make(chan struct{})
 	go func() {
+		s.mu.Lock()
 		resp, err = s.recv()
+		s.mu.Unlock()
 		close(done)
 	}()
 	select {
@@ -139,6 +144,8 @@ func (s *server) Close() error {
 	if err := s.c.Process.Kill(); err != nil {
 		return err
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	err := s.c.Wait()
 	if _, ok := err.(*exec.ExitError); ok {
 		return nil
