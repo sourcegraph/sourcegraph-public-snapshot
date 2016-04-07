@@ -10,8 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mutexmap"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -23,23 +23,45 @@ type createRequest struct {
 }
 
 type createReply struct {
-	RepoExist bool
-	Error     string
+	RepoExist       bool   // If true, create returned with noop because repo exists.
+	CloneInProgress bool   // If true, create returned with noop because clone is in progress.
+	Error           string // If non-empty, an error happened.
 }
 
-var createMu = mutexmap.New()
+var (
+	// cloning tracks repositories (key is '/'-separated path) that are
+	// in the process of being cloned.
+	cloningMu sync.Mutex
+	cloning   = make(map[string]struct{})
+)
 
 func handleCreateRequest(req *createRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
 	dir := path.Join(ReposDir, req.Repo)
-	createMu.Lock(dir)
-	defer createMu.Unlock(dir)
+	cloningMu.Lock()
+	if _, ok := cloning[dir]; ok {
+		cloningMu.Unlock()
+		req.ReplyChan <- &createReply{CloneInProgress: true}
+		return
+	}
 	if repoExists(dir) {
+		cloningMu.Unlock()
 		req.ReplyChan <- &createReply{RepoExist: true}
 		return
 	}
+
+	// We'll take this repo and start cloning it.
+	// Mark it as being cloned so no one else starts to.
+	cloning[dir] = struct{}{}
+	cloningMu.Unlock()
+
+	defer func() {
+		cloningMu.Lock()
+		delete(cloning, dir)
+		cloningMu.Unlock()
+	}()
 
 	if req.MirrorRemote != "" {
 		cmd := exec.Command("git", "clone", "--mirror", req.MirrorRemote, dir)
@@ -77,15 +99,27 @@ func Clone(repo string, remote string, opt *vcs.RemoteOpts) error {
 // create creates a new repository in the gitserver cluster by initializing an empty repository
 // if mirrorRemote is empty or clones the given remote otherwise, using opt for authentication.
 // The gitserver is selected pseudo-randomly.
+//
+// A nil error is returned if the new repository was created successfully, but vcs.ErrRepoExist
+// is returned if there was already an existing repository in its place, causing create to be noop.
+// If the repository is in process of being cloned, vcs.RepoNotExistError{CloneInProgress: true} is returned.
 func create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
+	// We check if repo already exists by executing `git remote`. It may seem redundant since the
+	// create request also checks that, but the purpose is to first do a broadcast and check if _any_
+	// server already has the repo available.
 	cmd := Command("git", "remote")
 	cmd.Repo = repo
 	err := cmd.Run()
 	if err == nil {
 		return vcs.ErrRepoExist
 	}
-	if err != vcs.ErrRepoNotExist {
+	if !vcs.IsRepoNotExist(err) {
+		// The only acceptable error is repo doesn't exist, if it's something else, there's a problem. Return the error.
 		return err
+	}
+	if repoNotExistError := err.(vcs.RepoNotExistError); repoNotExistError.CloneInProgress {
+		// If some server is already cloning this repository, report it and don't try to create another.
+		return repoNotExistError
 	}
 
 	// This hash is used to avoid concurrent init on two servers, it does not need to be stable over long timespans.
@@ -112,9 +146,13 @@ func create(repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
 	if reply.Error != "" {
 		return errors.New(reply.Error)
 	}
+	if reply.CloneInProgress {
+		return vcs.RepoNotExistError{CloneInProgress: true}
+	}
 	if reply.RepoExist {
 		return vcs.ErrRepoExist
 	}
+	// Repo did not exist and was successfully created.
 	return nil
 }
 
@@ -124,21 +162,27 @@ type removeRequest struct {
 }
 
 type removeReply struct {
-	RepoNotExist bool
-	Error        string
+	RepoNotFound    bool   // If true, remove returned with noop because repo is not found.
+	CloneInProgress bool   // If true, remove returned with noop because clone is in progress.
+	Error           string // If non-empty, an error happened.
 }
 
-func (r *removeReply) repoNotExist() bool {
-	return r.RepoNotExist
-}
+func (r *removeReply) repoFound() bool { return !r.RepoNotFound }
 
 func handleRemoveRequest(req *removeRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
 	dir := path.Join(ReposDir, req.Repo)
+	cloningMu.Lock()
+	_, cloneInProgress := cloning[dir]
+	cloningMu.Unlock()
+	if cloneInProgress {
+		req.ReplyChan <- &removeReply{CloneInProgress: true}
+		return
+	}
 	if !repoExists(dir) {
-		req.ReplyChan <- &removeReply{RepoNotExist: true}
+		req.ReplyChan <- &removeReply{RepoNotFound: true}
 		return
 	}
 
@@ -167,6 +211,9 @@ func Remove(repo string) error {
 	}
 
 	reply := genReply.(*removeReply)
+	if reply.CloneInProgress {
+		return vcs.RepoNotExistError{CloneInProgress: true}
+	}
 	if reply.Error != "" {
 		return errors.New(reply.Error)
 	}

@@ -20,19 +20,18 @@ type execRequest struct {
 }
 
 type execReply struct {
-	RepoNotExist  bool
-	Stdout        <-chan []byte
-	Stderr        <-chan []byte
-	ProcessResult <-chan *processResult
+	RepoNotFound    bool // If true, exec returned with noop because repo is not found.
+	CloneInProgress bool // If true, exec returned with noop because clone is in progress.
+	Stdout          <-chan []byte
+	Stderr          <-chan []byte
+	ProcessResult   <-chan *processResult
 }
+
+func (r *execReply) repoFound() bool { return !r.RepoNotFound }
 
 type processResult struct {
 	Error      string
 	ExitStatus int
-}
-
-func (r *execReply) repoNotExist() bool {
-	return r.RepoNotExist
 }
 
 func handleExecRequest(req *execRequest) {
@@ -40,9 +39,17 @@ func handleExecRequest(req *execRequest) {
 	defer close(req.ReplyChan)
 
 	dir := path.Join(ReposDir, req.Repo)
+	cloningMu.Lock()
+	_, cloneInProgress := cloning[dir]
+	cloningMu.Unlock()
+	if cloneInProgress {
+		chanrpcutil.Drain(req.Stdin)
+		req.ReplyChan <- &execReply{CloneInProgress: true}
+		return
+	}
 	if !repoExists(dir) {
 		chanrpcutil.Drain(req.Stdin)
-		req.ReplyChan <- &execReply{RepoNotExist: true}
+		req.ReplyChan <- &execReply{RepoNotFound: true}
 		return
 	}
 
@@ -110,6 +117,9 @@ func (c *Cmd) DividedOutput() ([]byte, []byte, error) {
 	}
 
 	reply := genReply.(*execReply)
+	if reply.CloneInProgress {
+		return nil, nil, vcs.RepoNotExistError{CloneInProgress: true}
+	}
 	stdout := chanrpcutil.ReadAll(reply.Stdout)
 	stderr := chanrpcutil.ReadAll(reply.Stderr)
 

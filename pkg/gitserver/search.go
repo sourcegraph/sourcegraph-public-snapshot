@@ -24,22 +24,28 @@ type searchRequest struct {
 }
 
 type searchReply struct {
-	RepoNotExist bool
-	Results      []*vcs.SearchResult
-	Error        string
+	RepoNotFound    bool // If true, search returned with noop because repo is not found.
+	CloneInProgress bool // If true, search returned with noop because clone is in progress.
+	Results         []*vcs.SearchResult
+	Error           string // If non-empty, an error happened.
 }
 
-func (r *searchReply) repoNotExist() bool {
-	return r.RepoNotExist
-}
+func (r *searchReply) repoFound() bool { return !r.RepoNotFound }
 
 func handleSearchRequest(req *searchRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
 	dir := path.Join(ReposDir, req.Repo)
+	cloningMu.Lock()
+	_, cloneInProgress := cloning[dir]
+	cloningMu.Unlock()
+	if cloneInProgress {
+		req.ReplyChan <- &searchReply{CloneInProgress: true}
+		return
+	}
 	if !repoExists(dir) {
-		req.ReplyChan <- &searchReply{RepoNotExist: true}
+		req.ReplyChan <- &searchReply{RepoNotFound: true}
 		return
 	}
 
@@ -182,6 +188,9 @@ func Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.Sea
 	}
 
 	reply := genReply.(*searchReply)
+	if reply.CloneInProgress {
+		return nil, vcs.RepoNotExistError{CloneInProgress: true}
+	}
 	if reply.Error != "" {
 		return nil, errors.New(reply.Error)
 	}
