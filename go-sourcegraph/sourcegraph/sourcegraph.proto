@@ -1461,6 +1461,68 @@ message RefList {
 	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
+// DefListRefLocationsOptions holds the options for fetching
+// all locations referencing a def.
+message DefListRefLocationsOptions {
+	// Repos is the list of repos to restrict the results to.
+	// If empty, all repos are searched for references.
+	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ReposOnly restricts the result to repo level counts;
+	// file names are not returned.
+	bool ReposOnly = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ListOptions specifies options for paginating
+	// the result.
+	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+// DefListRefLocationsOptions holds the options for fetching
+// all locations referencing the specified def.
+message DefsListRefLocationsOp {
+	// Def identifies the definition whose locations are requested.
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+
+	// Opt controls the scope of the search for ref locations of this def.
+	DefListRefLocationsOptions Opt = 2;
+}
+
+// RefLocationsList lists the repos and files that reference a def.
+message RefLocationsList {
+	// RepoRefs holds the repos and files referencing the def.
+	repeated DefRepoRef RepoRefs = 1;
+
+	// StreamResponse specifies if more results are available.
+	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+// DefRepoRef identifies a repo and its files that reference a def.
+message DefRepoRef {
+	// Repo is the name of repo that references the def.
+	string Repo = 1;
+
+	// Count is the number of references to the def in the repo.
+	int32 Count = 2;
+
+	// Score is the importance score of this repo for the def.
+	float Score = 3;
+
+	// Files is the list of files in this repo referencing the def.
+	repeated DefFileRef Files = 4;
+}
+
+// DefFileRef identifies a file that references a def.
+message DefFileRef {
+	// Path is the path of this file.
+	string Path = 1;
+
+	// Count is the number of references to the def in this file.
+	int32 Count = 2;
+
+	// Score is the importance score of this file for the def.
+	float Score = 3;
+}
+
 // Delta represents the difference between two commits (possibly in 2 separate
 // repositories).
 message Delta {
@@ -1653,6 +1715,9 @@ service Defs {
 
 	// ListRefs lists references to def.
 	rpc ListRefs(DefsListRefsOp) returns (RefList);
+
+	// ListRefLocations lists repos and files that refer to def.
+	rpc ListRefLocations(DefsListRefLocationsOp) returns (RefLocationsList);
 }
 
 // DeltasService interacts with the delta-related endpoints of the Sourcegraph API.

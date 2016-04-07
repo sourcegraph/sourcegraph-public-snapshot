@@ -407,6 +407,19 @@ func (s wrappedDefs) ListRefs(ctx context.Context, param *sourcegraph.DefsListRe
 	return
 }
 
+func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.DefsListRefLocationsOp) (res *sourcegraph.RefLocationsList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Defs", "ListRefLocations", param)
+	defer func() {
+		trace.After(ctx, "Defs", "ListRefLocations", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Defs.ListRefLocations(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListRefLocations returned nil, nil")
+	}
+	return
+}
+
 type wrappedDeltas struct{}
 
 func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (res *sourcegraph.Delta, err error) {

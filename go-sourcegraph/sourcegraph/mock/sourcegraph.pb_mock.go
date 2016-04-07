@@ -602,9 +602,10 @@ func (s *AuthServer) SetExternalToken(v0 context.Context, v1 *sourcegraph.Extern
 var _ sourcegraph.AuthServer = (*AuthServer)(nil)
 
 type DefsClient struct {
-	Get_      func(ctx context.Context, in *sourcegraph.DefsGetOp) (*sourcegraph.Def, error)
-	List_     func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
-	ListRefs_ func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
+	Get_              func(ctx context.Context, in *sourcegraph.DefsGetOp) (*sourcegraph.Def, error)
+	List_             func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
+	ListRefs_         func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
+	ListRefLocations_ func(ctx context.Context, in *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 }
 
 func (s *DefsClient) Get(ctx context.Context, in *sourcegraph.DefsGetOp, opts ...grpc.CallOption) (*sourcegraph.Def, error) {
@@ -619,12 +620,17 @@ func (s *DefsClient) ListRefs(ctx context.Context, in *sourcegraph.DefsListRefsO
 	return s.ListRefs_(ctx, in)
 }
 
+func (s *DefsClient) ListRefLocations(ctx context.Context, in *sourcegraph.DefsListRefLocationsOp, opts ...grpc.CallOption) (*sourcegraph.RefLocationsList, error) {
+	return s.ListRefLocations_(ctx, in)
+}
+
 var _ sourcegraph.DefsClient = (*DefsClient)(nil)
 
 type DefsServer struct {
-	Get_      func(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error)
-	List_     func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
-	ListRefs_ func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
+	Get_              func(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error)
+	List_             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
+	ListRefs_         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
+	ListRefLocations_ func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 }
 
 func (s *DefsServer) Get(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
@@ -637,6 +643,10 @@ func (s *DefsServer) List(v0 context.Context, v1 *sourcegraph.DefListOptions) (*
 
 func (s *DefsServer) ListRefs(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
 	return s.ListRefs_(v0, v1)
+}
+
+func (s *DefsServer) ListRefLocations(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	return s.ListRefLocations_(v0, v1)
 }
 
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)
