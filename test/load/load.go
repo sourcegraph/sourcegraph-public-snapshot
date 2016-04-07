@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+// LoadTest can Run an individual load test
 type LoadTest struct {
 	// Endpoint is Who we are testing (eg "sourcegraph.com")
 	Endpoint *url.URL
