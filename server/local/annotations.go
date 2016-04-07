@@ -166,11 +166,20 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		return nil, err
 	}
 
+	// Cache the default branch name for external repos, which is set as the Rev
+	// for external refs.
+	defaultBranchNames := make(map[string]string)
+
 	anns := make([]*sourcegraph.Annotation, len(refs))
 	for i, ref := range refs {
 		var rev string
 		if ref.DefRepo == opt.Entry.RepoRev.URI {
 			rev = opt.Entry.RepoRev.Rev
+		} else if d, ok := defaultBranchNames[ref.DefRepo]; ok {
+			rev = d
+		} else {
+			rev, _ = defaultBranch(ctx, ref.DefRepo)
+			defaultBranchNames[ref.DefRepo] = rev
 		}
 
 		anns[i] = &sourcegraph.Annotation{
