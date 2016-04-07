@@ -159,13 +159,17 @@ export class EventLogger {
 		case UserActions.LogoutCompleted:
 		case UserActions.ForgotPasswordCompleted:
 		case UserActions.ResetPasswordCompleted:
-			this.logEvent(action.constructor.name, {error: Boolean(action.resp.Error)});
+			if (action.eventName) {
+				this.logEvent(action.eventName, {error: Boolean(action.resp.Error)});
+			}
 			break;
 
 		default:
-			// All dispatched actions to stores will automatically be tracked by the name
-			// of the action. Override this behavior by including another case above.
-			this.logEvent(action.constructor.name);
+			// All dispatched actions to stores will automatically be tracked by the eventName
+			// of the action (if set). Override this behavior by including another case above.
+			if (action.eventName) {
+				this.logEvent(action.eventName);
+			}
 			break;
 		}
 

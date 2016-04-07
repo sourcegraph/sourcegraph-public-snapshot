@@ -10,6 +10,7 @@ export class SignupCompleted {
 	constructor(email, resp) {
 		this.email = email;
 		this.resp = resp;
+		this.eventName = "SignupCompleted";
 	}
 }
 
@@ -23,6 +24,7 @@ export class SubmitLogin {
 export class LoginCompleted {
 	constructor(resp) {
 		this.resp = resp;
+		this.eventName = "LoginCompleted";
 	}
 }
 
@@ -33,6 +35,7 @@ export class SubmitLogout {
 export class LogoutCompleted {
 	constructor(resp) {
 		this.resp = resp;
+		this.eventName = "LogoutCompleted";
 	}
 }
 
@@ -45,6 +48,7 @@ export class SubmitForgotPassword {
 export class ForgotPasswordCompleted {
 	constructor(resp) {
 		this.resp = resp;
+		this.eventName = "ForgotPasswordCompleted";
 	}
 }
 
@@ -59,5 +63,6 @@ export class SubmitResetPassword {
 export class ResetPasswordCompleted {
 	constructor(resp) {
 		this.resp = resp;
+		this.eventName = "ResetPasswordCompleted";
 	}
 }

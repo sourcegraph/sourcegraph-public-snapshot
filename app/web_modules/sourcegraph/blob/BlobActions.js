@@ -17,12 +17,14 @@ export class FileFetched {
 	rev: string;
 	path: string;
 	file: any;
+	eventName: string;
 
 	constructor(repo: string, rev: string, path: string, file: any) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
 		this.file = file;
+		this.eventName = "FileFetched";
 	}
 }
 
@@ -69,12 +71,14 @@ export class SelectLine {
 	rev: string;
 	path: string;
 	line: ?number;
+	eventName: string;
 
 	constructor(repo: string, rev: string, path: string, line: ?number) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
 		this.line = line;
+		this.eventName = "SelectLine";
 	}
 }
 
@@ -83,12 +87,14 @@ export class SelectLineRange {
 	rev: string;
 	path: string;
 	line: number;
+	eventName: string;
 
 	constructor(repo: string, rev: string, path: string, line: number) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
 		this.line = line;
+		this.eventName = "SelectLineRange";
 	}
 }
 
@@ -102,6 +108,7 @@ export class SelectCharRange {
 	endLine: ?number;
 	endCol: ?number;
 	endByte: ?number;
+	eventName: string;
 
 	// startByte and endByte are absolute in the file. It is redundant to specify both
 	// the line+col and the byte, but we need both in various places, and it's easier
@@ -119,5 +126,6 @@ export class SelectCharRange {
 		this.endLine = endLine;
 		this.endCol = endCol;
 		this.endByte = endByte;
+		this.eventName = "SelectCharRange";
 	}
 }
