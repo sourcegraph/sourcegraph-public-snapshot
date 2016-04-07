@@ -99,12 +99,12 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	return r2
 }
 
-// GithubRepoGetter is useful for mocking the github API functionality.
-type GithubRepoGetter interface {
+// GitHubRepoGetter is useful for mocking the github API functionality.
+type GitHubRepoGetter interface {
 	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
 }
 
-var repoGetter GithubRepoGetter = &github.Repos{}
+var repoGetter GitHubRepoGetter = &github.Repos{}
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
@@ -218,8 +218,8 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
-	if opt.SlowlyIncludeGithubRepos {
-		repos = removePrivateGithubRepos(ctx, repos)
+	if opt.SlowlyIncludeGitHubRepos {
+		repos = removePrivateGitHubRepos(ctx, repos)
 	}
 
 	for _, repo := range repos {
@@ -229,13 +229,11 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	return repos, nil
 }
 
-func removePrivateGithubRepos(ctx context.Context, repos []*sourcegraph.Repo) []*sourcegraph.Repo {
+func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) []*sourcegraph.Repo {
 	publicRepos := make([]*sourcegraph.Repo, 0)
-	var err error
-
 	for _, repo := range repos {
-		if strings.HasPrefix(repo.URI, "github.com/") {
-			_, err = repoGetter.Get(ctx, repo.URI)
+		if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+			_, err := repoGetter.Get(ctx, repo.URI)
 			if err == nil {
 				publicRepos = append(publicRepos, repo)
 			}
@@ -319,7 +317,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		}
 
 		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		if !opt.SlowlyIncludeGithubRepos {
+		if !opt.SlowlyIncludeGitHubRepos {
 			conds = append(conds, "uri NOT LIKE 'github.com/%'")
 		}
 
