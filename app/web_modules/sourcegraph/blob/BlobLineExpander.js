@@ -1,8 +1,10 @@
 // @flow
 
 import React from "react";
+import CSSModules from "react-css-modules";
 
 import Component from "sourcegraph/Component";
+import styles from "sourcegraph/blob/styles/Blob.css";
 
 export type Range = [number, number];
 
@@ -29,17 +31,17 @@ class BlobLineExpander extends Component {
 
 	render() {
 		return (
-			<tr className="line-expander" onClick={this._onClick}>
-				<td className="line-expander-toggle">
+			<tr styleName="line-expander" onClick={this._onClick}>
+				<td>
 				</td>
-				<td className="line-content">
+				<td>
 					{/* TODO support doing the up/down arrow logic automatically */}
-					{this.state.direction !== "down" && <i className="fa fa-angle-double-up expand-icon"></i>}
-					{this.state.direction !== "up" && <i className="fa fa-angle-double-down expand-icon"></i>}
+					{this.state.direction !== "down" && <span className="line-expander-icon">&#8679;</span>}
+					{this.state.direction !== "up" && <span className="line-expander-icon">&#8681;</span>}
 				</td>
 			</tr>
 		);
 	}
 }
 
-export default BlobLineExpander;
+export default CSSModules(BlobLineExpander, styles);

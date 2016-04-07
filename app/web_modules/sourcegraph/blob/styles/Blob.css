@@ -1,5 +1,6 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
+@value icons "sourcegraph/components/styles/icons.css";
 @value typography "sourcegraph/components/styles/typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
@@ -111,4 +112,13 @@ by a lot of other modules (e.g., for def boxes)? */
 	color: black;
 	outline: solid 2.5px #ffe68d;
 	background-color: #ffe998;
+}
+.line-expander {
+	composes: bg-blue-1 from colors;
+	height: 26px;
+	text-align: center;
+}
+.line-expander-icon {
+	composes: blue-1 from colors;
+	display: block;
 }
