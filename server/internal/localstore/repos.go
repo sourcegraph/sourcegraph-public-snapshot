@@ -99,7 +99,7 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	return r2
 }
 
-// GitHubRepoGetter is useful for mocking the github API functionality.
+// GitHubRepoGetter is useful for mocking the GitHub API functionality.
 type GitHubRepoGetter interface {
 	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
 }
@@ -192,9 +192,17 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
 		return nil, err
 	}
+
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
 	}
+
+	mustRemovePrivateRepos := opt.SlowlyIncludeGitHubRepos
+	defer func() {
+		if mustRemovePrivateRepos {
+			panic("Failed to remove private repos during repos.List!")
+		}
+	}()
 
 	sql, args, err := s.listSQL(opt)
 	if err != nil {
@@ -218,8 +226,13 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
-	if opt.SlowlyIncludeGitHubRepos {
-		repos = removePrivateGitHubRepos(ctx, repos)
+	if mustRemovePrivateRepos {
+		// Record that we attempted to remove private repos.
+		mustRemovePrivateRepos = false
+		repos, err = removePrivateGitHubRepos(ctx, repos)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for _, repo := range repos {
@@ -229,12 +242,20 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	return repos, nil
 }
 
-func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) []*sourcegraph.Repo {
+func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) ([]*sourcegraph.Repo, error) {
 	publicRepos := make([]*sourcegraph.Repo, 0)
 	for _, repo := range repos {
 		if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
-			_, err := repoGetter.Get(ctx, repo.URI)
-			if err == nil {
+			r, err := repoGetter.Get(ctx, repo.URI)
+			if err != nil {
+				if code := grpc.Code(err); code == codes.Unauthenticated {
+					continue
+				} else {
+					return nil, err
+				}
+			}
+
+			if !r.Private {
 				publicRepos = append(publicRepos, repo)
 			}
 		} else {
@@ -242,7 +263,7 @@ func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) []
 		}
 	}
 
-	return publicRepos
+	return publicRepos, nil
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")

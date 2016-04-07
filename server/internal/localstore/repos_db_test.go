@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -158,16 +161,27 @@ func TestRepos_List_URIs(t *testing.T) {
 	}
 }
 
-type RepoGetterMock struct{}
+type RepoGetterMockPublicRepo struct{}
 
-func (r *RepoGetterMock) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return &sourcegraph.RemoteRepo{}, nil
+func (r *RepoGetterMockPublicRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
+	return &sourcegraph.RemoteRepo{Private: false}, nil
 }
 
-func TestRepos_List_GithubURIs(t *testing.T) {
-	repoGetter = &RepoGetterMock{}
+type RepoGetterMockPrivateRepo struct{}
 
-	t.Parallel()
+func (r *RepoGetterMockPrivateRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
+	return &sourcegraph.RemoteRepo{Private: true}, nil
+}
+
+type RepoGetterMockUnauthorizedRepo struct{}
+
+func (r *RepoGetterMockUnauthorizedRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
+	return nil, grpc.Errorf(codes.Unauthenticated, "%s", "github.Repos.Get")
+}
+
+func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
+	repoGetter = &RepoGetterMockPublicRepo{}
+
 	ctx, done := testContext()
 	defer done()
 
@@ -177,7 +191,7 @@ func TestRepos_List_GithubURIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/c", DefaultBranch: "master", Mirror: true}); err != nil {
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/public", DefaultBranch: "master", Mirror: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -196,10 +210,55 @@ func TestRepos_List_GithubURIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want = []string{"a/b", "github.com/c"}
+	want = []string{"a/b", "github.com/public"}
 	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
+}
+
+func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
+	repoGetter = &RepoGetterMockPrivateRepo{}
+
+	ctx, done := testContext()
+	defer done()
+
+	s := &repos{}
+
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", DefaultBranch: "master", Mirror: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := repoURIs(repoList); len(got) != 0 {
+		t.Fatal("List should not have returned any repos, got:", got)
+	}
+}
+
+func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
+	repoGetter = &RepoGetterMockUnauthorizedRepo{}
+
+	ctx, done := testContext()
+	defer done()
+
+	s := &repos{}
+
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", DefaultBranch: "master", Mirror: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := repoURIs(repoList); len(got) != 0 {
+		t.Fatal("List should not have returned any repos, got:", got)
+	}
+
 }
 
 func TestRepos_Create(t *testing.T) {
