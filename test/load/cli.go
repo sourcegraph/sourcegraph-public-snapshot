@@ -30,8 +30,8 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-	if endpoint == "" || lt.Username == "" || lt.Password == "" || lt.Rate == 0 {
-		return errors.New("-endpoint, -username, -password, -rate are required")
+	if endpoint == "" || lt.Rate == 0 {
+		return errors.New("-endpoint, -rate are required")
 	}
 
 	// Setup a context and signal listener so we can gracefully quit
