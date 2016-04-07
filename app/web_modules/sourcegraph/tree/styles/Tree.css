@@ -24,7 +24,7 @@
 
 .input-container {
 	composes: ma3 from base;
-	display: flext;
+	display: flex;
 }
 
 .list-header {
