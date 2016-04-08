@@ -35,6 +35,7 @@ class RepoMain extends React.Component {
 			treeSearchPath: "/",
 			treeSearchQuery: "",
 		};
+		this._isMounted = false;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._showTreeSearchModal = this._showTreeSearchModal.bind(this);
 		this._dismissTreeSearchModal = this._dismissTreeSearchModal.bind(this);
@@ -51,6 +52,7 @@ class RepoMain extends React.Component {
 	}
 
 	componentDidMount() {
+		this._isMounted = true;
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
@@ -67,6 +69,7 @@ class RepoMain extends React.Component {
 	}
 
 	componentWillUnmount() {
+		this._isMounted = false;
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
@@ -89,6 +92,7 @@ class RepoMain extends React.Component {
 	}
 
 	_dismissTreeSearchModal() {
+		if (!this._isMounted) return;
 		this.setState({treeSearchActive: false});
 	}
 
