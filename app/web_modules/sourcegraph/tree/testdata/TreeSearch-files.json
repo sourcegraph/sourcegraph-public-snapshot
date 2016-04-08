@@ -208,6 +208,23 @@
 															"styleName": "list-item-selected",
 															"to": "/repo@rev/-/blob/p1/p2/f3",
 															"children": [
+																{
+																	"type": "span",
+																	"key": ".0",
+																	"props": {
+																		"style": {
+																			"paddingRight": "1rem"
+																		},
+																		"children": [
+																			{
+																				"type": "WrappedComponent",
+																				"props": {
+																					"name": "file"
+																				}
+																			}
+																		]
+																	}
+																},
 																"f3"
 															],
 															"onlyActiveOnIndex": false,

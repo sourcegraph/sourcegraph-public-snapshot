@@ -389,7 +389,7 @@ class TreeSearch extends Container {
 
 	_listItems(): Array<any> {
 		const items = this.state.fileResults;
-		const emptyItem = <div styleName="list-item" key="_nofiles"><i>No matches.</i></div>;
+		const emptyItem = <div styleName="list-item list-item-empty" key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list = [],
@@ -426,10 +426,9 @@ class TreeSearch extends Container {
 	}
 
 	_symbolItems(): Array<any> {
-		const loadingItem = <div styleName="list-item" key="_loadingsymbol"><i>Loading...</i></div>;
-		if (!this.state.matchingDefs) return [loadingItem];
+		const emptyItem = <div styleName="list-item list-item-empty" key="_nosymbol"><i>No matches.</i></div>;
+		if (!this.state.matchingDefs) return [emptyItem];
 
-		const emptyItem = <div styleName="list-item" key="_nosymbol"><i>No matches.</i></div>;
 		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
 
 		let list = [],
@@ -502,9 +501,9 @@ class TreeSearch extends Container {
 					<div>
 						{this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID && this._symbolItems()}
 						{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
-							<div styleName="list-item">
-								<Loader stretch={true} />
-								<i>Sourcegraph is analyzing your code &mdash;&nbsp;
+							<div styleName="list-item list-item-empty">
+								<span style={{paddingRight: "1rem"}}><Loader /></span>
+								<i>Sourcegraph is analyzing your code &mdash;
 									<Link styleName="link" to={urlToBuilds(this.state.repo)}>results will be available soon!</Link>
 								</i>
 							</div>
@@ -523,4 +522,4 @@ class TreeSearch extends Container {
 	}
 }
 
-export default CSSModules(TreeSearch, styles);
+export default CSSModules(TreeSearch, styles, {allowMultiple: true});

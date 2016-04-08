@@ -54,6 +54,11 @@
 	cursor: pointer;
 }
 
+@value c_mid-gray from colors;
+.list-item-empty {
+	color: c_mid-gray;
+}
+
 .list-item-selected {
 	composes: list-item;
 	composes: dark-blue bg-blue-1 from colors;
