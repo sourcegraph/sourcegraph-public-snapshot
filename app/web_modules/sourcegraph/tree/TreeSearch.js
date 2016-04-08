@@ -18,12 +18,13 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToDef} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
-import {urlToRepoRev} from "sourcegraph/repo/routes";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
 
-import {Input, Loader, Icon} from "sourcegraph/components";
+import {Input, Loader, Icon, RepoLink} from "sourcegraph/components";
+
+import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tree.css";
@@ -420,29 +421,37 @@ class TreeSearch extends Container {
 		return list;
 	}
 
-	render() {
+	_overlayBreadcrumb() {
 		const urlToPathPrefix = (i) => {
 			const parts = pathSplit(this.state.path);
 			const pathPrefix = pathJoin(parts.splice(0, i + 1));
 			return urlToTree(this.state.repo, this.state.rev, pathPrefix);
 		};
-		const repoParts = this.state.repo.split("/");
-		const path = (<div styleName="file-path">
-			<Link styleName="repo-part" to={urlToRepoRev(this.state.repo, this.state.rev)}>{repoParts[repoParts.length - 1]}</Link>
-			<Link styleName="path-sep" to={urlToTree(this.state.repo, this.state.rev, "/")}>/</Link>
-			{pathSplit(this.state.path).map((part, i) => <span key={i}>
-				<Link styleName="path-part" to={urlToPathPrefix(i)}>{part}</Link>
-				<Link styleName="path-sep" to={urlToPathPrefix(i)}>/</Link>
-				</span>)}
-			{this._getSelectedPathPart() &&
-				<span styleName="path-selected">
-				<span styleName="path-part">{this._getSelectedPathPart()}</span>
-				<span styleName="path-sep">/</span></span>}
-			{this._getSelectedFile() &&
-				<span styleName="path-selected">
-				<span styleName="path-part">{this._getSelectedFile()}</span></span>}
-		</div>);
 
+		let filepath = this.state.path;
+		if (filepath.indexOf("/") === 0) filepath = filepath.substring(1);
+
+		let fileBreadcrumb = breadcrumb(
+			filepath,
+			(i) => <span key={i} styleName="path-sep">/</span>,
+			(path, component, i, isLast) => (
+				<Link to={urlToPathPrefix(i)}
+					key={i}
+					styleName={isLast ? "path-active" : "path-inactive"}>
+					{component}
+				</Link>
+			),
+		);
+
+		return (
+			<span styleName="file-path">
+				<RepoLink repo={`${this.state.repo}/`} />
+				{fileBreadcrumb}
+			</span>
+		);
+	}
+
+	render() {
 		return (
 			<div styleName="tree-common">
 				<div styleName="input-container">
@@ -471,7 +480,7 @@ class TreeSearch extends Container {
 				</div>
 				<div styleName="list-header">
 					Files
-					{!this.state.query && path}
+					{!this.state.query && this.state.overlay && this._overlayBreadcrumb()}
 				</div>
 				<div styleName="list-item-group">
 					{this._listItems()}

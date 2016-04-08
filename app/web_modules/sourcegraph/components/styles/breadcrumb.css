@@ -15,7 +15,7 @@
 }
 
 .inactive {
-	composes: dark-gray from colors;
+	color: inherit !important;
 }
 .inactive:hover {
 	color: inherit !important; /* don't show hover effect for inactive components */

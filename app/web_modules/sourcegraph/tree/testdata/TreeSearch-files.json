@@ -41,33 +41,26 @@
 						"children": [
 							"Files",
 							{
-								"type": "div",
+								"type": "span",
 								"key": ".1",
 								"props": {
 									"styleName": "file-path",
 									"children": [
 										{
-											"type": "",
+											"type": "WrappedComponent",
 											"key": ".0",
 											"props": {
-												"styleName": "repo-part",
-												"to": "/repo@rev",
-												"children": [
-													"repo"
-												],
-												"onlyActiveOnIndex": false,
-												"className": "",
-												"style": {}
+												"repo": "repo/"
 											}
 										},
 										{
 											"type": "",
-											"key": ".1",
+											"key": ".1:$0",
 											"props": {
-												"styleName": "path-sep",
-												"to": "/repo@rev",
+												"to": "/repo@rev/-/tree/p1",
+												"styleName": "path-inactive",
 												"children": [
-													"/"
+													"p1"
 												],
 												"onlyActiveOnIndex": false,
 												"className": "",
@@ -76,92 +69,26 @@
 										},
 										{
 											"type": "span",
-											"key": ".2:$0",
+											"key": ".1:$-1",
 											"props": {
+												"styleName": "path-sep",
 												"children": [
-													{
-														"type": "",
-														"key": ".0",
-														"props": {
-															"styleName": "path-part",
-															"to": "/repo@rev/-/tree/p1",
-															"children": [
-																"p1"
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													},
-													{
-														"type": "",
-														"key": ".1",
-														"props": {
-															"styleName": "path-sep",
-															"to": "/repo@rev/-/tree/p1",
-															"children": [
-																"/"
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													}
+													"/"
 												]
 											}
 										},
 										{
-											"type": "span",
-											"key": ".2:$1",
+											"type": "",
+											"key": ".1:$1",
 											"props": {
+												"to": "/repo@rev/-/tree/p1/p2",
+												"styleName": "path-active",
 												"children": [
-													{
-														"type": "",
-														"key": ".0",
-														"props": {
-															"styleName": "path-part",
-															"to": "/repo@rev/-/tree/p1/p2",
-															"children": [
-																"p2"
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													},
-													{
-														"type": "",
-														"key": ".1",
-														"props": {
-															"styleName": "path-sep",
-															"to": "/repo@rev/-/tree/p1/p2",
-															"children": [
-																"/"
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "span",
-											"key": ".4",
-											"props": {
-												"styleName": "path-selected",
-												"children": [
-													{
-														"type": "span",
-														"props": {
-															"styleName": "path-part",
-															"children": [
-																"f3"
-															]
-														}
-													}
-												]
+													"p2"
+												],
+												"onlyActiveOnIndex": false,
+												"className": "",
+												"style": {}
 											}
 										}
 									]

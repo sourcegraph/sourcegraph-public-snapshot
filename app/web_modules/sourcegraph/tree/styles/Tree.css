@@ -3,6 +3,7 @@
 @value typography "sourcegraph/components/styles/typography.css";
 @value grid "sourcegraph/components/styles/grid.css";
 @value tooltips "sourcegraph/components/styles/tooltips.css";
+@value breadcrumb "sourcegraph/components/styles/breadcrumb.css";
 
 .tree-container {
 	composes: cf from base;
@@ -48,47 +49,21 @@
 	color: c_mid-gray;
 }
 
+@value c_dark-blue from colors;
 .list-item-selected {
 	composes: list-item;
-	composes: dark-blue bg-blue-1 from colors;
+	composes: bg-blue-1 from colors;
+	color: c_dark-blue !important;
 }
 
 .link {
-	composes: pa2 link from base;
+	composes: pa2 from base;
+	composes: link from "sourcegraph/components/styles/link.css";
 }
 
-/* TODO: this wrapper only needed until we can pull compose our icon fonts from CSS sheet in a single component. */
-.icon {
-	composes: pr3 from base;
-}
-
-.filetype-icon {
-	composes: pl2 pr3 from base;
-}
-
-.path-common {
-	composes: ph2 from base;
-	cursor: pointer;
-}
-.path-part {
-	composes: path-common;
-	composes: mid-gray from colors;
-}
-.repo-part {
-	composes: path-common;
-	composes: blue-8 from colors;
-}
-.path-sep {
-	composes: path-common;
-	composes: light-silver from colors;
-}
-.path-selected {
-	composes: mid-gray from colors;
-	opacity: .3;
-}
 .file-path {
-	composes: pl2 pv2 from base;
-	composes: f4 sans-serif from typography;
+	composes: pl3 pv2 from base;
+	composes: normal-text b from typography;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -96,6 +71,18 @@
 	font-weight: bold;
 	letter-spacing: initial;
 	text-transform: none;
+}
+
+.path-sep {
+	composes: sep from breadcrumb;
+}
+
+.path-active {
+	composes: active from breadcrumb;
+}
+
+.path-inactive {
+	composes: inactive from breadcrumb;
 }
 
 .hidden {
