@@ -47,7 +47,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 		isCloning = true
 	}
-	// TODO(rothfels): trigger cloning/updating this repo from its remote mirror (if it has one).
 
 	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
