@@ -62,6 +62,7 @@ function renderIter(i, props, callback) {
 
 // handle is called from Go to render the page's contents.
 const handle = (arg, callback) => {
+	context.reset(arg.jsContext);
 	resetStores();
 	match({location: arg.location, routes: rootRoute}, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
@@ -90,7 +91,6 @@ const handle = (arg, callback) => {
 			return;
 		}
 
-		context.reset(arg.jsContext);
 		const props = {...renderProps, ...arg.extraProps};
 
 		renderIter(1, props, callback);
