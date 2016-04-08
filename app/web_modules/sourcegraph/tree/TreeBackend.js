@@ -15,10 +15,7 @@ const TreeBackend = {
 					TreeBackend.fetch(`/.api/repos/${action.repo}/-/commits?Head=${encodeURIComponent(action.rev)}&Path=${encodeURIComponent(action.path)}&PerPage=1`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
+							.catch((err) => ({Error: true}))
 							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.CommitFetched(action.repo, action.rev, action.path, data.Commits[0])));
 				}
 				break;
@@ -31,10 +28,7 @@ const TreeBackend = {
 					TreeBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/tree-list`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
+							.catch((err) => ({Error: true}))
 							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, data)));
 				}
 				break;
@@ -54,10 +48,7 @@ const TreeBackend = {
 								return checkStatus(resp);
 							})
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
+							.catch((err) => ({Error: true}))
 							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, data)));
 				}
 				break;

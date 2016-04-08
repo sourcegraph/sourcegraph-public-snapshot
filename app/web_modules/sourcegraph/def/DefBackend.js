@@ -17,10 +17,7 @@ const DefBackend = {
 					DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
+							.catch((err) => ({Error: true}))
 							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)));
 				}
 				break;
@@ -33,10 +30,7 @@ const DefBackend = {
 					DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
+							.catch((err) => ({Error: true}))
 							.then((data) => {
 								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, data));
 							});
@@ -53,10 +47,7 @@ const DefBackend = {
 					DefBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return null;
-							})
+							.catch((err) => ({Error: true}))
 							.then((data) => {
 								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.file, data));
 							});

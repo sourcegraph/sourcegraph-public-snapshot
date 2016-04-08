@@ -18,11 +18,7 @@ const RepoBackend = {
 					RepoBackend.fetch(`/.api/repos/${action.repo}`)
 						.then(checkStatus)
 						.then((resp) => resp.json())
-						.catch((err) => {
-							console.error(err);
-							// TODO Better httpapi error responses.
-							return {Error: {Body: err.body, Status: err.response.status}};
-						})
+						.catch((err) => ({Error: {Body: err.body, Status: err.response.status}}))
 						.then((data) => {
 							Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
 						});
@@ -35,10 +31,10 @@ const RepoBackend = {
 				let branches = RepoStore.branches.list(action.repo);
 				if (branches === null) {
 					RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches`)
+							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, [], true));
-								console.error(err);
 							})
 							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, data.Branches || [])));
 				}
@@ -50,10 +46,10 @@ const RepoBackend = {
 				let tags = RepoStore.tags.list(action.repo);
 				if (tags === null) {
 					RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags`)
+							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, [], true));
-								console.error(err);
 							})
 							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, data.Tags || [])));
 				}
@@ -63,8 +59,7 @@ const RepoBackend = {
 		case RepoActions.RefreshVCS:
 			{
 				RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
-					.then(checkStatus)
-					.catch((err) => console.error(err));
+					.then(checkStatus);
 				break;
 			}
 		}

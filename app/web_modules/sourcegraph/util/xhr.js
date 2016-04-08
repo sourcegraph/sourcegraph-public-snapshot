@@ -58,6 +58,7 @@ export function checkStatus(resp) {
 		let err = new Error(body || resp.statusText);
 		err.body = body;
 		err.response = resp;
+		console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
 		throw err;
 	});
 }
