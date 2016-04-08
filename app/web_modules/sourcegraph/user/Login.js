@@ -1,9 +1,8 @@
 import React from "react";
-import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Input} from "sourcegraph/components";
+import {Button, Input, Link} from "sourcegraph/components";
 
 import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
@@ -67,9 +66,7 @@ class Login extends Container {
 				<div styleName="subtext">Oh no, <a href="/forgot">I forgot my password</a></div>
 				<div styleName="alt-action">
 					<span>Don't have an account yet?</span>
-					<span styleName="alt-button">
-						<Button color="default" outline={true} small={true}><Link styleName="alt-link" to="/join">Sign up</Link></Button>
-					</span>
+					<span styleName="alt-button"><Link styl="button" to="/join">Sign up</Link></span>
 				</div>
 			</div>
 		);

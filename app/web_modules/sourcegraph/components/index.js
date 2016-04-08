@@ -6,3 +6,4 @@ export {default as Loader} from "./Loader";
 export {default as Popover} from "./Popover";
 export {default as Collapsible} from "./Collapsible";
 export {default as Icon} from "./Icon";
+export {default as Link} from "./Link";

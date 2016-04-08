@@ -4,7 +4,7 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 
-import {Link} from "react-router";
+import {Link} from "sourcegraph/components";
 import urlTo from "sourcegraph/util/urlTo";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 

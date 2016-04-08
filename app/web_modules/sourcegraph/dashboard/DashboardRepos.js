@@ -1,12 +1,11 @@
 import React from "react";
 
 import debounce from "lodash/function/debounce";
-import {Link} from "react-router";
 
 import Component from "sourcegraph/Component";
 import context from "sourcegraph/context";
 
-import {Input, Button} from "sourcegraph/components";
+import {Input, Link} from "sourcegraph/components";
 
 import NotificationWell from "sourcegraph/dashboard/NotificationWell";
 import RepoList from "sourcegraph/dashboard/RepoList";
@@ -96,20 +95,19 @@ class DashboardRepos extends Component {
 				<NotificationWell visible={this._showCreateUserWell() || this._showGitHubLinkWell()}>
 					{this._showCreateUserWell() &&
 						[<span key="copy">Want Sourcegraph for your own code?</span>,
-						<span key="cta" styleName="onboarding-cta"><Button outline={true} small={true}>
-							<Link styleName="cta-link" to="/join">
+						<span key="cta" styleName="onboarding-cta">
+							<Link styl="button" to="/join">
 							Sign up
 							</Link>
-						</Button></span>]
+						</span>]
 					}
 					{this._showGitHubLinkWell() &&
 						[<span key="copy">Almost there! Link your GitHub account so Sourcegraph can analyze your repositories.</span>,
-						<span key="cta" styleName="onboarding-cta"><Button outline={true} small={true}
-							onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
-							<a styleName="cta-link" href={urlToGitHubOAuth}>
+						<span key="cta" styleName="onboarding-cta">
+							<Link styl="button" href={urlToGitHubOAuth} onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
 							Import GitHub repos
-							</a>
-						</Button></span>]
+							</Link>
+						</span>]
 					}
 				</NotificationWell>
 				<div styleName="header">

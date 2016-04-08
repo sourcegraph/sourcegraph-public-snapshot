@@ -46,7 +46,3 @@
 .alt-button {
 	composes: ma3 from base;
 }
-
-.alt-link {
-	color: inherit;
-}

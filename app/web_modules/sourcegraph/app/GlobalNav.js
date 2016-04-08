@@ -1,14 +1,13 @@
 // @flow
 
 import React from "react";
-import {Link} from "react-router";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 
 import "sourcegraph/user/UserBackend"; // for side effects
 import * as UserActions from "sourcegraph/user/UserActions";
 
-import {Avatar, Popover, Button} from "sourcegraph/components";
+import {Avatar, Popover, Button, Link} from "sourcegraph/components";
 import context from "sourcegraph/context";
 
 import CSSModules from "react-css-modules";

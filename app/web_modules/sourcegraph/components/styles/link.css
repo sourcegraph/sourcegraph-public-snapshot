@@ -1,0 +1,71 @@
+@value colors "./colors.css";
+@c_blue from colors;
+@c_light-blue from colors;
+
+@value base "./base.css";
+@value button "./button.css";
+
+.link {
+	text-decoration: none;
+	composes: blue from colors;
+}
+.link:hover {
+	text-decoration: none !important;
+	color: c_light-blue !important;   /* TODO: can't use compose on pseudoelements. */
+}
+
+/* can't compose on base elements; these styles are copied from .link */
+a {
+	text-decoration: none;
+	color: c-blue;
+}
+a:hover {
+	text-decoration: none !important;
+	color: c_light-blue !important;   /* TODO: can't use compose on pseudoelements. */
+}
+
+/* use for "button" styled link */
+.button {
+	composes: outline small from button;
+}
+
+/* button primary color */
+@value c_blue-5 from colors;
+@value c_blue from colors;
+.primary {
+	composes: b--blue-8 blue-8 from colors;
+}
+.primary:hover,
+.primary:focus {
+    border-color: c_blue;
+    color: c_blue;
+}
+
+/* button default color */
+@value c_mid-gray from colors;
+@value c_dark-gray from colors;
+@value c_black-50 from colors;
+.default {
+    composes: b--black-50 mid-gray from colors;
+}
+.default:hover,
+.default:focus {
+    border-color: c_dark-gray;
+    color: c_dark-gray;
+}
+
+.large {
+	padding: 1.35rem !important;
+}
+
+/* for button links; assumes non-active is "default" color */
+@value c_purple from colors;
+.active {
+	color: c_purple !important;
+	border-color: c_purple !important;
+}
+
+.padded {
+	padding-left: 1rem !important;
+	padding-right: 1rem !important;
+}

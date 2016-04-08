@@ -1,10 +1,9 @@
 import React from "react";
-import {Link} from "react-router";
 
 import Component from "sourcegraph/Component";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 
-import {Avatar} from "sourcegraph/components";
+import {Avatar, Link} from "sourcegraph/components";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Commit.css";
