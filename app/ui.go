@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
@@ -21,6 +24,9 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 	if v := os.Getenv("SG_DISABLE_REACTBRIDGE"); v != "" {
 		ctx = ui.DisabledReactPrerendering(ctx)
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
+	defer cancel()
 
 	res, err := ui.RenderRouter(ctx, r, nil)
 	if err != nil {

@@ -3,7 +3,6 @@ package ui
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -20,11 +19,14 @@ type RenderResult struct {
 	StatusCode       int             // HTTP status code for response
 	ContentType      string          // HTTP Content-Type response header
 	RedirectLocation string          // HTTP Location header
+
+	Incomplete bool // whether the jsserver returned early to meet the deadline
 }
 
 type renderState struct {
 	JSContext  jscontext.JSContext    `json:"jsContext"`
 	Location   string                 `json:"location"`
+	Deadline   int64                  `json:"deadline"` // milliseconds since epoch, like Date.now()
 	ExtraProps map[string]interface{} `json:"extraProps"`
 }
 
@@ -36,9 +38,12 @@ var RenderRouter = func(ctx context.Context, req *http.Request, extraProps map[s
 		return nil, err
 	}
 
+	deadline, _ := ctx.Deadline()
+
 	return renderRouterState(ctx, &renderState{
 		JSContext:  jsctx,
 		Location:   req.URL.String(),
+		Deadline:   deadline.UnixNano() / (1000 * 1000),
 		ExtraProps: extraProps,
 	})
 }
@@ -52,9 +57,6 @@ func renderRouterState(ctx context.Context, state *renderState) (*RenderResult, 
 	if err != nil {
 		return nil, err
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
-	defer cancel()
 
 	data, err := renderReactComponent(ctx, arg)
 	if err != nil {

@@ -23,7 +23,7 @@ since they would not do any actual rendering, only component initialization.
 
 // renderIter iteratively renders the HTML so that fetches are triggered. Do this
 // until we reach the fixed point where no additional fetches are triggered.
-function renderIter(i, props, callback) {
+function renderIter(i, props, deadline, callback) {
 	if (i > 10) {
 		throw new Error(`Maximum React server-side rendering iterations reached (${i}).`);
 	}
@@ -35,8 +35,9 @@ function renderIter(i, props, callback) {
 	let htmlStr = ReactDOMServer.renderToString(<RouterContext {...props} />);
 	console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
 
+	const nearDeadline = (deadline - Date.now()) < 200;
 	const newAsyncFetches = allFetchesCount() - asyncFetchesBefore;
-	if (newAsyncFetches === 0) {
+	if (newAsyncFetches === 0 || nearDeadline) {
 		if (i > 1) {
 			console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
 		}
@@ -53,6 +54,7 @@ function renderIter(i, props, callback) {
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
 			stores: dumpStores(),
+			incomplete: newAsyncFetches > 0 && nearDeadline,
 		});
 		return;
 	}
@@ -60,7 +62,7 @@ function renderIter(i, props, callback) {
 	let tFetch0 = Date.now();
 	allFetchesResolved().then(() => {
 		console.log(`RENDER#${i}: ${newAsyncFetches} fetches took ${Date.now() - tFetch0} msec`);
-		renderIter(i + 1, props, callback);
+		renderIter(i + 1, props, deadline, callback);
 	}).catch((e) => callback({
 		statusCode: 500,
 		error: `Unhandled error not caught by ReactDOMServer.renderToString:\n${e.stack}`,
@@ -100,7 +102,7 @@ const handle = (arg, callback) => {
 
 		const props = {...renderProps, ...arg.extraProps};
 
-		renderIter(1, props, callback);
+		renderIter(1, props, arg.deadline, callback);
 	});
 };
 
