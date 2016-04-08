@@ -85,7 +85,7 @@ func TestRepoFlow(t *T) error {
 
 	muxLink.Click()
 
-	t.WaitForRedirect(want, "wait for mux.go codefile to load")
+	t.WaitForRedirect(want, "wait for mux.go code file to load")
 
 	// Wait for the "Router" ref span to appear.
 	var routerSpan selenium.WebElement
