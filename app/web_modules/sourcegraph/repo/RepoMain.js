@@ -2,15 +2,15 @@
 
 import React from "react";
 import TreeSearch from "sourcegraph/tree/TreeSearch";
+import Modal from "sourcegraph/components/Modal";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Repo.css";
-import Component from "sourcegraph/Component";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 
 import Header from "sourcegraph/components/Header";
 
-class RepoMain extends Component {
+class RepoMain extends React.Component {
 	static propTypes = {
 		location: React.PropTypes.object,
 		repo: React.PropTypes.string,
@@ -21,28 +21,79 @@ class RepoMain extends Component {
 		route: React.PropTypes.object,
 	};
 
+	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
+	};
+
 	constructor(props) {
 		super(props);
-		this._hasMounted = false;
+		this.state = {
+			treeSearchActive: false,
+			treeSearchPath: "/",
+			treeSearchQuery: "",
+		};
+		this._handleKeyDown = this._handleKeyDown.bind(this);
+		this._showTreeSearchModal = this._showTreeSearchModal.bind(this);
+		this._dismissTreeSearchModal = this._dismissTreeSearchModal.bind(this);
 	}
+
+	state: {
+		treeSearchActive: boolean,
+		treeSearchPath: string,
+		treeSearchQuery: string,
+	};
 
 	componentDidMount() {
-		this._hasMounted = true;
-		Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.state.repo));
+		if (global.document) {
+			document.addEventListener("keydown", this._handleKeyDown);
+		}
+		// Whenever the user navigates to different RepoMain views, e.g.
+		// navigating directories in the directory tree, viewing code
+		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
+		// that new changes on the remote are pulled.
+		this.context.router.listenBefore(() => Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo)));
+		this.context.router.listenBefore(this._dismissTreeSearchModal);
 	}
 
-	reconcileState(state, props) {
-		super.reconcileState();
-		Object.assign(state, props);
+	componentWillUnmount() {
+		if (global.document) {
+			document.removeEventListener("keydown", this._handleKeyDown);
+		}
 	}
 
-	onStateTransition(prevState, nextState) {
-		if (this._hasMounted && prevState.location.pathname !== nextState.location.pathname) {
-			// Whenever the user navigates to different RepoMain views, e.g.
-			// navigating directories in the directory tree, viewing code
-			// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
-			// that new changes on the remote are pulled.
-			Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.state.repo));
+	_handleKeyDown: () => void;
+	_showTreeSearchModal:	() => void;
+	_dismissTreeSearchModal:	() => void;
+
+	_onSelectPath(path: string) {
+		this.setState({treeSearchPath: path});
+	}
+
+	_onChangeQuery(query: string) {
+		this.setState({treeSearchQuery: query});
+	}
+
+	_showTreeSearchModal() {
+		this.setState({treeSearchActive: true, treeSearchPath: "/", treeSearchQuery: ""});
+	}
+
+	_dismissTreeSearchModal() {
+		this.setState({treeSearchActive: false});
+	}
+
+	_handleKeyDown(e: KeyboardEvent) {
+		const tag = e.target instanceof HTMLElement ? e.target.tagName : "";
+		switch (e.keyCode) {
+		case 84: // "t"
+			if (this.props.route.disableTreeSearchOverlay) break;
+			if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+			e.preventDefault();
+			this._showTreeSearchModal();
+			break;
+
+		case 27: // ESC
+			if (this.props.route.disableTreeSearchOverlay) break;
+			this._dismissTreeSearchModal();
 		}
 	}
 
@@ -68,7 +119,24 @@ class RepoMain extends Component {
 		return (
 			<div>
 				{this.props.main}
-				{this.props.route.disableTreeSearchOverlay ? null : <TreeSearch repo={this.props.repo} rev={this.props.rev} path="/" overlay={true} location={this.props.location} route={this.props.route} />}
+				{!this.props.route.disableTreeSearchOverlay && this.state.treeSearchActive &&
+					<Modal
+						shown={true}
+						onDismiss={this._dismissTreeSearchModal}>
+						<div styleName="tree-search-modal">
+							<TreeSearch
+								repo={this.props.repo}
+								rev={this.props.rev}
+								overlay={true}
+								path={this.state.treeSearchPath}
+								query={this.state.treeSearchQuery}
+								location={this.props.location}
+								route={this.props.route}
+								onChangeQuery={this._onChangeQuery.bind(this)}
+								onSelectPath={this._onSelectPath.bind(this)} />
+						</div>
+					</Modal>
+				}
 			</div>
 		);
 	}

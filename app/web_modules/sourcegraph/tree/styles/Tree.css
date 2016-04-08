@@ -6,25 +6,14 @@
 
 .tree-container {
 	composes: cf from base;
-	display: flex;
-	justify-content: center;
+	composes: col-9 from grid;
+	margin: 0 auto;
 }
 
 .tree-common {
 	composes: f4 from typography;
 	composes: bg-white from colors;
-	composes: col-9 from grid;
-}
-
-.tree {
-	composes: tree-common;
-	composes: pt5 from base;
-}
-
-.tree-modal {
-	composes: tree-common;
-	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: center from base;
+	width: 100%;
 }
 
 .input-container {
