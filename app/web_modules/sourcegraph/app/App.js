@@ -55,7 +55,7 @@ export class App extends Component {
 
 	componentDidMount() {
 		this._hasMounted = true;
-		this._logView(this.state.routes);
+		this._logView(this.state.routes, this.state.location.query);
 	}
 
 	reconcileState(state: State, props: Props) {
@@ -71,16 +71,22 @@ export class App extends Component {
 			// page events). We will log any change in pathname as a separate event.
 			// NOTE: this will not log separate page views when query string / hash
 			// values are updated.
-			this._logView(nextState.routes);
+			this._logView(nextState.routes, nextState.location.query);
 		}
 	}
 
-	_logView(routes: Array<Route>) {
+	_logView(routes: Array<Route>, query: Object) {
+		let eventProps = {referred_by_chrome_ext: false};
+		if (query && query["utm_source"] === "chromeext") {
+			eventProps.referred_by_chrome_ext = true;
+		}
+
 		const viewName = getViewName(routes);
 		if (viewName) {
-			EventLogger.logEvent(viewName);
+			EventLogger.logEvent(viewName, eventProps);
 		} else {
 			EventLogger.logEvent("UnmatchedRoute", {
+				...eventProps,
 				pattern: getRoutePattern(this.state.routes),
 			});
 		}
