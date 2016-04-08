@@ -34,7 +34,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	// attacks. By requiring users use HTTP Basic authentication,
 	// we mitigate the risk of CSRF.
 	var mw []handlerutil.Middleware
-	mw = append(mw, httpapiauth.PasswordMiddleware, httpapiauth.OAuth2AccessTokenMiddleware, handlerutil.UserMiddleware)
+	mw = append(mw, httpapiauth.PasswordMiddleware, httpapiauth.OAuth2AccessTokenMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
 	}

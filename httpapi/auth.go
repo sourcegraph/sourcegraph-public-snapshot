@@ -53,11 +53,6 @@ func serveLogin(w http.ResponseWriter, r *http.Request) error {
 
 func serveSignup(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
-	u := handlerutil.UserFromContext(ctx)
-
-	if u != nil && u.UID != 0 {
-		return fmt.Errorf("Cannot signup while logged in.")
-	}
 
 	signupForm := struct {
 		sourcegraph.NewAccount
@@ -95,18 +90,6 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	u := handlerutil.UserFromContext(ctx)
-
-	if u == nil || u.UID == 0 {
-		// SECURITY: If there is no authenticated user in the context, serve an
-		// error.
-		//
-		// This prevents CSRF attacks which allow external sites to log the
-		// user out by having them submit a form etc. Not a huge threat in the
-		// usual case, but it would still log users out and annoy them. Do not
-		// allow it.
-		return fmt.Errorf("cannot log out (no logged in user in context)")
-	}
 
 	// Delete their session.
 	appauth.DeleteSessionCookie(w)
@@ -121,11 +104,6 @@ func serveLogout(w http.ResponseWriter, r *http.Request) error {
 
 func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
-	u := handlerutil.UserFromContext(ctx)
-
-	if u != nil && u.UID != 0 {
-		return fmt.Errorf("Cannot reset password while logged in.")
-	}
 
 	form := struct {
 		Email string
@@ -145,11 +123,6 @@ func serveForgotPassword(w http.ResponseWriter, r *http.Request) error {
 
 func servePasswordReset(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
-	u := handlerutil.UserFromContext(ctx)
-
-	if u != nil && u.UID != 0 {
-		return fmt.Errorf("Cannot reset password while logged in.")
-	}
 
 	form := struct {
 		Password        string
