@@ -45,17 +45,9 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-
-		// Trigger mirror repo refresh (which kicks off the initial build).
-		_, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
-			Repo: repoSpec,
-		})
-		if err != nil {
-			return err
-		}
-
 		isCloning = true
 	}
+	// TODO(rothfels): trigger cloning/updating this repo from its remote mirror (if it has one).
 
 	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
