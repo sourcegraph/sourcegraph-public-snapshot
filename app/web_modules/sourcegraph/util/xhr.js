@@ -23,7 +23,7 @@ function defaultOptions() {
 	if (context.cacheControl) {
 		options.headers["Cache-Control"] = context.cacheControl;
 	}
-	if (context.parentSpanID) options.headers["Parent-Span-ID"] = context.parentSpanID;
+	if (context.currentSpanID) options.headers["Parent-Span-ID"] = context.currentSpanID;
 	return options;
 }
 

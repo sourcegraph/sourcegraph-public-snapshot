@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
@@ -24,7 +23,7 @@ type JSContext struct {
 	Authorization string            `json:"authorization"`
 	CacheControl  string            `json:"cacheControl"`
 	CurrentUser   *sourcegraph.User `json:"currentUser"`
-	CurrentSpanID appdash.SpanID    `json:"currentSpanID"`
+	CurrentSpanID string            `json:"currentSpanID"`
 	UserAgent     string            `json:"userAgent"`
 	AssetsRoot    string            `json:"assetsRoot"`
 	BuildVars     buildvar.Vars     `json:"buildVars"`
@@ -51,7 +50,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		AppURL:        conf.AppURL(httpctx.FromRequest(req)).String(),
 		CacheControl:  cacheControl,
 		CurrentUser:   handlerutil.FullUserFromRequest(req),
-		CurrentSpanID: traceutil.SpanID(req),
+		CurrentSpanID: traceutil.SpanID(req).String(),
 		UserAgent:     eventsutil.UserAgentFromContext(httpctx.FromRequest(req)),
 		AssetsRoot:    assets.URL("/").String(),
 		BuildVars:     buildvar.All,

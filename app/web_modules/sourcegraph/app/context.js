@@ -5,7 +5,7 @@ const context: {
 	authorization?: string;
 	cacheControl?: string;
 	currentUser?: Object;
-	currentSpanID?: Object;
+	currentSpanID?: string;
 	userAgent?: string;
 	assetsRoot?: string;
 	buildVars?: Object;
