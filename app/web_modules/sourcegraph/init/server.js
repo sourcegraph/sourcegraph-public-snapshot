@@ -41,7 +41,12 @@ function renderIter(i, props, callback) {
 		}
 
 		// No additional async fetches were triggered, so we are done!
-		finish(htmlStr, callback);
+		callback({
+			statusCode: 200,
+			body: htmlStr,
+			contentType: "text/html; charset=utf-8",
+			stores: dumpStores(),
+		});
 		return;
 	}
 
@@ -49,17 +54,10 @@ function renderIter(i, props, callback) {
 	allFetchesResolved().then(() => {
 		console.log(`RENDER#${i}: ${newAsyncFetches} fetches took ${Date.now() - tFetch0} msec`);
 		renderIter(i + 1, props, callback);
-	}).catch((e) => console.log("Error occured during fetch:", e.stack));
-	// TODO(pure-react) return info about errors to Go runtime here ^
-}
-
-// finish fixes up the HTML and sends it back to the server.
-function finish(htmlStr, callback) {
-	let tSerialize0 = Date.now();
-	let data = JSON.stringify({html: htmlStr, stores: dumpStores()});
-	console.log("## Serializing data took", Date.now() - tSerialize0, "msec");
-
-	callback(data);
+	}).catch((e) => callback({
+		statusCode: 500,
+		error: `Unhandled error not caught by ReactDOMServer.renderToString:\n${e.stack}`,
+	}));
 }
 
 // handle is called from Go to render the page's contents.
@@ -67,7 +65,28 @@ const handle = (arg, callback) => {
 	resetStores();
 	match({location: arg.location, routes: rootRoute}, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
-			callback("404 not found (no route)");
+			callback({
+				statusCode: 404,
+				contentType: "text/plain",
+				error: "no route",
+			});
+			return;
+		}
+		if (err) {
+			callback({
+				statusCode: 500,
+				error: `Routing error: ${err}`,
+			});
+			return;
+		}
+		if (redirectLocation) {
+			// Assumes that all redirects are 301s (Moved Permanently).
+			callback({
+				statusCode: 301,
+				redirectLocation,
+				contentType: "text/html",
+				body: "Redirecting...",
+			});
 			return;
 		}
 
@@ -87,7 +106,7 @@ if (typeof global !== "undefined" && global.process && global.process.env.JSSERV
 		.on("data", (line) => {
 			if (line === "") return;
 			handle(JSON.parse(line), (data) => {
-				global.process.stdout.write(data);
+				global.process.stdout.write(JSON.stringify(data));
 				global.process.stdout.write("\n");
 			});
 		})

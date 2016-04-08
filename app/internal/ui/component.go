@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"html/template"
 	"net/http"
 	"time"
 
@@ -12,9 +11,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 )
 
+// RenderResult is the "HTTP response"-like data returned by the
+// JavaScript server-side rendering operation.
 type RenderResult struct {
-	HTML   template.HTML    `json:"html"`
-	Stores *json.RawMessage `json:"stores"`
+	Body             string          // HTTP response body
+	Error            string          // internal error message (should only be shown to admins, may contain secret info)
+	Stores           json.RawMessage // contents of stores after prerendering (for client bootstrapping)
+	StatusCode       int             // HTTP status code for response
+	ContentType      string          // HTTP Content-Type response header
+	RedirectLocation string          // HTTP Location header
 }
 
 type renderState struct {
@@ -23,32 +28,22 @@ type renderState struct {
 	ExtraProps map[string]interface{} `json:"extraProps"`
 }
 
-func RenderRouter(ctx context.Context, req *http.Request, extraProps map[string]interface{}) (*RenderResult, error) {
+// RenderRouter calls into JavaScript (using jsserver) to render the
+// page for the given HTTP request.
+var RenderRouter = func(ctx context.Context, req *http.Request, extraProps map[string]interface{}) (*RenderResult, error) {
 	jsctx, err := jscontext.NewJSContextFromRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := renderRouterState(ctx, &renderState{
+	return renderRouterState(ctx, &renderState{
 		JSContext:  jsctx,
 		Location:   req.URL.String(),
 		ExtraProps: extraProps,
 	})
-	if err != nil {
-		return nil, err
-	}
-	if data == nil {
-		return nil, nil
-	}
-
-	var res *RenderResult
-	if err := json.Unmarshal(data, &res); err != nil {
-		return nil, err
-	}
-	return res, nil
 }
 
-func renderRouterState(ctx context.Context, state *renderState) (json.RawMessage, error) {
+func renderRouterState(ctx context.Context, state *renderState) (*RenderResult, error) {
 	if ctx == nil || !shouldPrerenderReact(ctx) {
 		return nil, nil
 	}
@@ -65,7 +60,12 @@ func renderRouterState(ctx context.Context, state *renderState) (json.RawMessage
 	if err != nil {
 		log15.Warn("Error rendering React component on the server (falling back to client-side rendering)", "err", err, "arg", truncateArg(arg))
 	}
-	return data, nil
+
+	var res *RenderResult
+	if err := json.Unmarshal(data, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func truncateArg(arg []byte) string {

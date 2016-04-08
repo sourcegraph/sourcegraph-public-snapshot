@@ -4,11 +4,11 @@
 {{define "Nav"}}{{end}}
 
 {{define "Footer"}}
-{{if .RenderResult}}
+{{if .Stores}}
 	<script ignore-csp>
-		window.__StoreData = {{rawJSON .RenderResult.Stores}};
+		window.__StoreData = {{rawJSON .Stores}};
 	</script>
 {{end}}
 {{end}}
 
-{{define "Body"}}{{if .RenderResult}}{{.RenderResult.HTML}}{{end}}{{end}}
+{{define "Body"}}{{.Body}}{{end}}

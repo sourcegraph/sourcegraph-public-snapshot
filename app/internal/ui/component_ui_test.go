@@ -57,7 +57,7 @@ func TestRenderRouterState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want := `<div data-reactroot=`; !strings.Contains(string(resp), want) {
+	if want := `<div data-reactroot=`; !strings.Contains(string(resp.Body), want) {
 		t.Errorf("got %q, want it to contain %q", resp, want)
 	}
 }
