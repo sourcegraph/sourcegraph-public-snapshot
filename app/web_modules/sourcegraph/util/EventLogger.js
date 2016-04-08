@@ -56,6 +56,9 @@ export class EventLogger {
 					apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
 					break;
 				case "https://staging.sourcegraph.com":
+				case "https://staging2.sourcegraph.com":
+				case "https://staging3.sourcegraph.com":
+				case "https://staging4.sourcegraph.com":
 					apiKey = "903f9390c3eefd5651853cf8dbd9d363";
 					break;
 				default:
