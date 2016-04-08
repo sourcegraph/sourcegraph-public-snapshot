@@ -23,7 +23,7 @@ import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
 
-import {Modal, Input, Loader, Icon} from "sourcegraph/components";
+import {Input, Loader, Icon} from "sourcegraph/components";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tree.css";
