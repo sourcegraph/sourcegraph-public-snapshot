@@ -1948,8 +1948,10 @@ func (m *DefListOptions) Reset()         { *m = DefListOptions{} }
 func (m *DefListOptions) String() string { return proto.CompactTextString(m) }
 func (*DefListOptions) ProtoMessage()    {}
 
+// DefListRefsOptions configures the scope of ref search for a def.
 type DefListRefsOptions struct {
 	Repo        string   `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty" url:",omitempty"`
+	CommitID    string   `protobuf:"bytes,4,opt,name=CommitID,proto3" json:"CommitID,omitempty" url:",omitempty"`
 	Files       []string `protobuf:"bytes,2,rep,name=Files" json:"Files,omitempty" url:",omitempty"`
 	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
@@ -9780,6 +9782,12 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 		return 0, err
 	}
 	i += n93
+	if len(m.CommitID) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.CommitID)))
+		i += copy(data[i:], m.CommitID)
+	}
 	return i, nil
 }
 
@@ -13825,6 +13833,10 @@ func (m *DefListRefsOptions) Size() (n int) {
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
+	l = len(m.CommitID)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
 	return n
 }
 
@@ -28447,6 +28459,35 @@ func (m *DefListRefsOptions) Unmarshal(data []byte) error {
 			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommitID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommitID = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

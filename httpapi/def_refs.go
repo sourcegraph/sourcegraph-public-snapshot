@@ -26,6 +26,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	def := dc.Def
 	defSpec := sourcegraph.DefSpec{
 		Repo:     def.Repo,
+		CommitID: def.CommitID,
 		Unit:     def.Unit,
 		UnitType: def.UnitType,
 		Path:     def.Path,
@@ -36,6 +37,24 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 	if opt.Repo == "" {
 		opt.Repo = defSpec.Repo
+	}
+	// Restrict search for external repo refs to the last built commit on the default branch
+	// of the external repo.
+	if opt.Repo != defSpec.Repo {
+		var path string
+		// If the ref search is restricted to one file of the repo, make sure we have build
+		// data for that file. Otherwise, use the most recent commit that is built.
+		if len(opt.Files) == 1 {
+			path = opt.Files[0]
+		}
+		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+			RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: opt.Repo}},
+			Path:    path,
+		})
+		if err != nil {
+			return err
+		}
+		opt.CommitID = dataVersion.CommitID
 	}
 
 	refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{

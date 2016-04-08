@@ -1426,8 +1426,10 @@ message DefListOptions {
 	ListOptions ListOptions = 20 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
+// DefListRefsOptions configures the scope of ref search for a def.
 message DefListRefsOptions {
 	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	string CommitID = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	repeated string Files = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
