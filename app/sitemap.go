@@ -39,7 +39,6 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 				PerPage: 1000,
 			},
 		})
-
 		if err != nil {
 			return err
 		}

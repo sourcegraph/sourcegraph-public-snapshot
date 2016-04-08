@@ -197,12 +197,9 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	mustRemovePrivateRepos := opt.SlowlyIncludePublicGitHubRepos
-	defer func() {
-		if mustRemovePrivateRepos {
-			panic("Failed to remove private repos during repos.List!")
-		}
-	}()
+	if opt.SlowlyIncludePublicGitHubRepos {
+		return s.listAllGitHubPublic(ctx, opt)
+	}
 
 	sql, args, err := s.listSQL(opt)
 	if err != nil {
@@ -226,44 +223,11 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		return nil, err
 	}
 
-	if mustRemovePrivateRepos {
-		// Record that we attempted to remove private repos.
-		mustRemovePrivateRepos = false
-		repos, err = removePrivateGitHubRepos(ctx, repos)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	for _, repo := range repos {
 		setCloneURLField(ctx, repo)
 	}
 
 	return repos, nil
-}
-
-func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) ([]*sourcegraph.Repo, error) {
-	var publicRepos []*sourcegraph.Repo
-	for _, repo := range repos {
-		if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
-			r, err := repoGetter.Get(ctx, repo.URI)
-			if err != nil {
-				if grpc.Code(err) == codes.Unauthenticated {
-					continue
-				} else {
-					return nil, err
-				}
-			}
-
-			if !r.Private {
-				publicRepos = append(publicRepos, repo)
-			}
-		} else {
-			publicRepos = append(publicRepos, repo)
-		}
-	}
-
-	return publicRepos, nil
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
