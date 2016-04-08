@@ -15,22 +15,6 @@ export default function withResolvedRepoRev(Component) {
 			params: React.PropTypes.object.isRequired,
 		};
 
-		constructor(props) {
-			super(props);
-			this._interval = null;
-		}
-
-		componentDidMount() {
-			super.componentDidMount();
-			this._interval = setInterval(() => {
-				Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.state.repo));
-			}, 30*1000);
-		}
-
-		componentWillUnmount() {
-			clearInterval(this._interval);
-		}
-
 		stores() {
 			return [RepoStore];
 		}
