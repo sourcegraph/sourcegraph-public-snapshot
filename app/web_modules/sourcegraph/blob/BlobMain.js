@@ -97,7 +97,7 @@ export default class BlobMain extends Container {
 		} else {
 			state.highlightedDefObj = null;
 		}
-		state.activeDef = props.defObj && !props.defObj.Error ? urlToDef(props.defObj) : null;
+		state.activeDef = props.defObj && !props.defObj.Error ? urlToDef(props.defObj, state.rev) : null;
 		state.startByte = props.defObj && !props.defObj.Error ? props.defObj.DefStart : null;
 		state.endByte = props.defObj && !props.defObj.Error ? props.defObj.DefEnd : null;
 

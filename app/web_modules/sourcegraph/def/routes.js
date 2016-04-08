@@ -40,11 +40,12 @@ export const routes: Array<Route> =[
 	},
 ];
 
-function defParams(def: Def): Object {
-	return {splat: [`${def.Repo}@${def.CommitID}`, defPath(def)]};
+function defParams(def: Def, rev: ?string): Object {
+	return {splat: [`${def.Repo}@${rev || def.CommitID}`, defPath(def)]};
 }
 
-export function urlToDef(def: Def): string {
+export function urlToDef(def: Def, rev: ?string): string {
+	rev = rev || def.CommitID;
 	if ((def.File === null || def.Kind === "package")) {
 		// The def's File field refers to a directory (e.g., in the
 		// case of a Go package). We can't show a dir in this view,
@@ -52,9 +53,9 @@ export function urlToDef(def: Def): string {
 		//
 		// TODO(sqs): Improve handling of this case.
 		let file = def.File === "." ? "" : def.File;
-		return urlToTree(def.Repo, def.CommitID, file);
+		return urlToTree(def.Repo, rev, file);
 	}
-	return urlTo("def", defParams(def));
+	return urlTo("def", defParams(def, rev));
 }
 
 export function urlToDefRefs(def: Def, file?: string): string {
