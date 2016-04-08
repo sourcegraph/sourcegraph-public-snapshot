@@ -58,7 +58,11 @@ export function checkStatus(resp) {
 		let err = new Error(body || resp.statusText);
 		err.body = body;
 		err.response = resp;
-		console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
+		if (typeof document === "undefined") {
+			// Don't log in the browser because the devtools network inspector
+			// makes it easy enough to see failed HTTP requests.
+			console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
+		}
 		throw err;
 	});
 }
