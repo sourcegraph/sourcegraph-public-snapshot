@@ -1,13 +1,14 @@
 // @flow
 
 import React from "react";
+import {Link} from "react-router";
 
 import Dispatcher from "sourcegraph/Dispatcher";
 
 import "sourcegraph/user/UserBackend"; // for side effects
 import * as UserActions from "sourcegraph/user/UserActions";
 
-import {Avatar, Popover, Button, Link} from "sourcegraph/components";
+import {Avatar, Popover, Button} from "sourcegraph/components";
 import context from "sourcegraph/app/context";
 
 import CSSModules from "react-css-modules";
@@ -41,7 +42,7 @@ class GlobalNav extends React.Component {
 								<Popover left={true}>
 									{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
 									<Button outline={true}
-										small={true}
+										size="small"
 										block={true}
 										onClick={() => Dispatcher.Backends.dispatch(new UserActions.SubmitLogout())}>Sign Out</Button>
 								</Popover>

@@ -1,4 +1,5 @@
 import React from "react";
+import {Link} from "react-router";
 
 import Commit from "sourcegraph/vcs/Commit";
 import Container from "sourcegraph/Container";
@@ -11,7 +12,7 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import {urlToBuilds} from "sourcegraph/build/routes";
 
-import {Link} from "sourcegraph/components";
+import {Button} from "sourcegraph/components";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Build.css";
@@ -85,7 +86,7 @@ class BuildContainer extends Container {
 		return (
 			<div styleName="build-container">
 				<div styleName="actions">
-					<Link styl="button large" to={urlToBuilds(this.state.repo)}>View All Builds</Link>
+					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
 				</div>
 				<BuildHeader build={this.state.build} commit={this.state.commit} />
 				{this.state.commit && <Commit commit={this.state.commit} />}

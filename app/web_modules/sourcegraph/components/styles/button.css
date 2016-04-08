@@ -11,67 +11,8 @@
     user-select: none;
     box-sizing: border-box;
 }
-.normal {
-    composes: pa3 from base;
-}
-.small {
-    composes: pa2 from base;
-}
 .btn:focus {
     outline: 0;
-}
-
-.active-shadow:active {
-    box-shadow: 0 0 0 1px rgba(0,0,0, 0.1) inset, 0 0 6px rgba(0,0,0, 0.1) inset;
-    border-color: #000\9;
-}
-
-.block {
-    composes: btn;
-    display: flex;
-    flex: 1 1 auto;
-    justify-content: center;
-}
-
-.outline {
-    composes: btn active-shadow;
-    composes: ba from base;
-    composes: bg-white from colors;
-    background-image: none;
-}
-.outline:hover,
-.outline:focus {
-}
-
-@value c_blue-5 from colors;
-@value c_blue from colors;
-.outline-primary {
-    composes: outline;
-    composes: b--blue-8 blue-8 from colors;
-}
-.outline-primary:hover,
-.outline-primary:focus {
-    border-color: c_blue;
-    color: c_blue;
-}
-@value c_mid-gray from colors;
-@value c_dark-gray from colors;
-@value c_black-50 from colors;
-.outline-default {
-    composes: outline;
-    composes: b--black-50 from colors;
-    composes: mid-gray from colors;
-}
-.outline-default:hover,
-.outline-default:focus {
-    border-color: c_dark-gray;
-    color: c_dark-gray;
-}
-
-/* Firefox: Get rid of the inner focus border */
-.btn::-moz-focus-inner {
-    padding: 0;
-    border: 0;
 }
 
 .btn[disabled],
@@ -93,20 +34,87 @@
     border: 0;
 }
 
-.btn-solid {
-    border: none;
+.large {
+    composes: pa4 from base
 }
-.btn-solid:hover,
-.btn-solid:focus {
+.normal {
+    composes: pa3 from base;
+}
+.small {
+    composes: pa2 from base;
+}
+
+/* buttons have an active shadow */
+@value c_black-10 from colors;
+@value c_black-90 from colors;
+.active-shadow:active {
+    box-shadow: 0 0 0 1px c_black-10 inset, 0 0 6px c_black-10 inset;
+    border-color: c_black-90;
+}
+
+/* block button fits to width of container */
+.block {
+    composes: btn;
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: center;
+}
+
+/* outline buttons */
+.outline {
+    composes: btn active-shadow;
+    composes: ba from base;
+    composes: bg-white from colors;
+    background-image: none;
+}
+@value c_blue-5 from colors;
+@value c_blue from colors;
+.outline-primary {
+    composes: outline;
+    composes: b--blue-8 blue-8 from colors;
+}
+.outline-primary:hover,
+.outline-primary:focus {
+    border-color: c_blue;
+    color: c_blue;
+}
+
+@value c_mid-gray from colors;
+@value c_dark-gray from colors;
+@value c_black-50 from colors;
+.outline-default {
+    composes: outline;
+    composes: b--black-50 mid-gray from colors;
+}
+.outline-default:hover,
+.outline-default:focus {
+    border-color: c_dark-gray;
+    color: c_dark-gray;
+}
+
+@value c_purple from colors;
+.outline-active {
+    compose: outline;
+    color: c_purple !important;
+    border-color: c_purple !important;
+}
+
+/* solid buttons */
+.solid {
+    border: none;
+    composes: btn active-shadow;
+}
+.solid:hover,
+.solid:focus {
     background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
 }
 
-.default {
-	composes: btn active-shadow btn-solid;
-	composes: mid-gray bg-moon-gray from colors;
+.solid-default {
+    composes: solid;
+    composes: mid-gray bg-moon-gray from colors;
 }
 
-.primary {
-	composes: btn active-shadow btn-solid;
-	composes: white bg-blue from colors;
+.solid-primary {
+    composes: solid;
+    composes: white bg-blue from colors;
 }

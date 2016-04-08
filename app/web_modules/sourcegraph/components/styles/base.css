@@ -1,8 +1,3 @@
-@value colors "./colors.css";
-@value c_light-blue from colors;
-@value c_moon-gray from colors;
-
-
 /*! normalize.css v4.0.0 | MIT License | github.com/necolas/normalize.css */
 
 /**
@@ -353,7 +348,7 @@ input:-moz-focusring {
  */
 
 fieldset {
-	border: 1px solid c_moon-gray;
+	border: 1px solid #ccc;
 	margin: 0 2px;
 	padding: 0.35em 0.625em 0.75em;
 }
@@ -469,23 +464,6 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 .fl { float: left; display: inline; }
 .fr { float: right; display: inline; }
 .fn { float: none; }
-
-/*
-	 LINKS
-*/
-
-a {
-	text-decoration: none;
-}
-
-.link {
-	text-decoration: none;
-	composes: blue from colors;
-}
-.link:hover {
-	text-decoration: none;
-	color: c_light-blue;   /* TODO: can't use compose on pseudoelements. */
-}
 
 /*
 	 BORDERS

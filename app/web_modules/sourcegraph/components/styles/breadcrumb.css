@@ -7,13 +7,16 @@
 }
 
 .link {
-	composes: link from base;
+	composes: link from "./link.css";
 }
 
 .active {
-	composes: link from base;
+	composes: link from "./link.css";
 }
 
 .inactive {
 	composes: dark-gray from colors;
+}
+.inactive:hover {
+	color: inherit !important; /* don't show hover effect for inactive components */
 }

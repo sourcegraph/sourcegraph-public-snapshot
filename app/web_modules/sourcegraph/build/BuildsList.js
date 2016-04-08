@@ -1,4 +1,5 @@
 import React from "react";
+import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -7,7 +8,7 @@ import BuildStore from "sourcegraph/build/BuildStore";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import {urlToBuild} from "sourcegraph/build/routes";
 
-import {Link} from "sourcegraph/components";
+import {Button} from "sourcegraph/components";
 
 import TimeAgo from "sourcegraph/util/TimeAgo";
 
@@ -81,12 +82,12 @@ class BuildsList extends Container {
 		return (
 			<div styleName="list-container">
 				<div styleName="list-filters">
-					<div styleName="filter-button"><Link styl="button" to={`${this.state.location.pathname}?Direction=desc&Sort=updated_at`}>All</Link></div>
-					<div styleName="filter-button"><Link styl="button" to={`${this.state.location.pathname}?Direction=desc&Queued=true&Sort=priority`}>Priority Queue</Link></div>
-					<div styleName="filter-button"><Link styl="button" to={`${this.state.location.pathname}?Direction=desc&Active=true&Sort=updated_at`}>Active</Link></div>
-					<div styleName="filter-button"><Link styl="button" to={`${this.state.location.pathname}?Direction=desc&Ended=true&Sort=updated_at`}>Ended</Link></div>
-					<div styleName="filter-button"><Link styl="button" to={`${this.state.location.pathname}?Direction=desc&Sort=updated_at&Succeeded=true`}>Succeeded</Link></div>
-					<div styleName="filter-button"><Link styl="button" to={`${this.state.location.pathname}?Direction=desc&Failed=true&Sort=updated_at`}>Failed</Link></div>
+					<div styleName="filter-button"><Link to={`${this.state.location.pathname}?Direction=desc&Sort=updated_at`}><Button size="small" outline={true}>All</Button></Link></div>
+					<div styleName="filter-button"><Link to={`${this.state.location.pathname}?Direction=desc&Queued=true&Sort=priority`}><Button size="small" outline={true}>Priority Queue</Button></Link></div>
+					<div styleName="filter-button"><Link to={`${this.state.location.pathname}?Direction=desc&Active=true&Sort=updated_at`}><Button size="small" outline={true}>Active</Button></Link></div>
+					<div styleName="filter-button"><Link to={`${this.state.location.pathname}?Direction=desc&Ended=true&Sort=updated_at`}><Button size="small" outline={true}>Ended</Button></Link></div>
+					<div styleName="filter-button"><Link to={`${this.state.location.pathname}?Direction=desc&Sort=updated_at&Succeeded=true`}><Button size="small" outline={true}>Succeeded</Button></Link></div>
+					<div styleName="filter-button"><Link to={`${this.state.location.pathname}?Direction=desc&Failed=true&Sort=updated_at`}><Button size="small" outline={true}>Failed</Button></Link></div>
 				</div>
 				{this.state.builds && [
 					<div key="header" styleName="list-item">
@@ -97,10 +98,10 @@ class BuildsList extends Container {
 					</div>,
 					...this.state.builds.map((build, i) =>
 						<div key={i} styleName={`list-item ${buildClass(build)}`}>
-							<span styleName="list-id"><Link styl="button padded" to={urlToBuild(build.Repo, build.ID)}>{`${build.ID}`}</Link></span>
+							<span styleName="list-id"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" outline={true}>{`${build.ID}`}</Button></Link></span>
 							<span styleName="list-status">{this._rowStatus(build)}</span>
 							<span styleName="list-elapsed">{elapsed(build)}</span>
-							<span styleName="list-link"><Link styl="button" to={urlToBuild(build.Repo, build.ID)}>View</Link></span>
+							<span styleName="list-link"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" outline={true}>View</Button></Link></span>
 						</div>
 				)]}
 				{!this.state.builds && <div styleName="list-empty-state">Sorry, we didn't find any builds.</div>}

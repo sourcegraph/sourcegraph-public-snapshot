@@ -25,13 +25,24 @@
 									"styleName": "onboarding-cta",
 									"children": [
 										{
-											"type": "WrappedComponent",
+											"type": "",
 											"props": {
-												"styl": "button",
 												"to": "/join",
 												"children": [
-													"Sign up"
-												]
+													{
+														"type": "WrappedComponent",
+														"props": {
+															"outline": true,
+															"size": "small",
+															"children": [
+																"Sign up"
+															]
+														}
+													}
+												],
+												"onlyActiveOnIndex": false,
+												"className": "",
+												"style": {}
 											}
 										}
 									]

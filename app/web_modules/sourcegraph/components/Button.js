@@ -16,10 +16,10 @@ class Button extends Component {
 	}
 
 	render() {
-		let style = `${this.state.outline ? "outline-" : ""}${this.state.color === "primary" ? "primary" : "default"}`;
+		let style = `${this.state.outline ? "outline-" : "solid-"}${this.state.color === "primary" ? "primary" : "default"}`;
 		if (this.state.disabled || this.state.loading) style = `${style} disabled`;
 		if (this.state.block) style = `${style} block`;
-		style = `${style} ${this.state.small ? "small" : "normal"}`;
+		style = `${style} ${this.state.size ? this.state.size : "normal"}`;
 
 		return (
 			<button styleName={style}
@@ -32,9 +32,9 @@ class Button extends Component {
 }
 
 Button.propTypes = {
-	block: React.PropTypes.bool, // display:inline-block by default
-	outline: React.PropTypes.bool, // display:inline-block by default
-	small: React.PropTypes.bool, // display:inline-block by default
+	block: React.PropTypes.bool, // display:inline-block by default; use block for full-width buttons
+	outline: React.PropTypes.bool, // solid by default
+	size: React.PropTypes.string, // "small", "normal", "large"
 	disabled: React.PropTypes.bool,
 	loading: React.PropTypes.bool,
 	color: React.PropTypes.string, // "primary", "default"

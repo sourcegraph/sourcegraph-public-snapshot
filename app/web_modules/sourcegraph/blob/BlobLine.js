@@ -1,6 +1,7 @@
 // @flow weak
 
 import React from "react";
+import {Link} from "react-router";
 
 import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
@@ -8,7 +9,6 @@ import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {Link} from "sourcegraph/components";
 import s from "sourcegraph/blob/styles/Blob.css";
 import "sourcegraph/components/styles/code.css";
 
