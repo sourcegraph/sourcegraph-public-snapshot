@@ -137,7 +137,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test app server.
-	resp3, err := http.Get(conf.AppURL(ctx).String())
+	resp3, err := http.Get(conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/login"}).String())
 	if err != nil {
 		t.Fatal(err)
 	}
