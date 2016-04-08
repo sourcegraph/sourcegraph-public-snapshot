@@ -45,6 +45,8 @@ const (
 	SrclibImport     = "srclib.import"
 	SrclibCoverage   = "srclib.coverage"
 	SrclibDataVer    = "srclib.data-version"
+
+	InternalAppdashUploadPageLoad = "internal.appdash.upload-page-load"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -68,6 +70,8 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
+
+	base.Path("/internal/appdash/upload-page-load").Methods("POST").Name(InternalAppdashUploadPageLoad)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo

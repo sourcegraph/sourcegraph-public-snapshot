@@ -50,8 +50,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui"
-	ui_router "sourcegraph.com/sourcegraph/sourcegraph/ui/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	httputil2 "sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
@@ -351,7 +349,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		return router
 	}
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/"))))))
-	sm.Handle("/.ui/", gziphandler.GzipHandler(app.NewHandlerWithCSRFProtection(ui.NewHandler(ui_router.New(subRouter(newRouter().PathPrefix("/.ui/")))))))
 	sm.Handle("/", gziphandler.GzipHandler(app.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter())))))
 	sm.Handle(assets.URLPathPrefix+"/", http.StripPrefix(assets.URLPathPrefix, assets.NewHandler(newRouter())))
 

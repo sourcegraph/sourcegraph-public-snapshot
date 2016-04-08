@@ -1,13 +1,11 @@
-package ui
+package httpapi
 
 import (
-	"net/http"
-
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
@@ -44,12 +42,13 @@ func init() {
 	prometheus.MustRegister(pageLoadDuration)
 }
 
-// serveAppdashUploadPageLoad is an endpoint that simply generates a 'fake'
-// PageLoadEvent Appdash timespan event to represent how long exactly
-// the frontend took to load everything. The client is responsible for
-// determining the start and end times (we just generate the event because
-// JavaScript can't record Appdash events yet).
-func serveAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) error {
+// serveInternalAppdashUploadPageLoad is an endpoint that simply
+// generates a 'fake' PageLoadEvent Appdash timespan event to
+// represent how long exactly the frontend took to load
+// everything. The client is responsible for determining the start and
+// end times (we just generate the event because JavaScript can't
+// record Appdash events yet).
+func serveInternalAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
 	// Decode query parameters into an event.
@@ -78,12 +77,13 @@ func serveAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("no Appdash trace ID set in context")
 	}
 
-	// Note: If we were to record directly to spanID we would end up with
-	// "PageLoad" being shown as a subspan to this request
-	// ("appdash.upload-page-load") which is always extremely quick, making it's
-	// display in the Appdash UI very small and unnoticeable. To mitigate this
-	// and give it a prominent display position in the UI, we simply record to a
-	// subspan of the root (the trace).
+	// Note: If we were to record directly to spanID we would end up
+	// with "PageLoad" being shown as a subspan to this request
+	// ("internal.appdash.upload-page-load") which is always extremely
+	// quick, making it's display in the Appdash UI very small and
+	// unnoticeable. To mitigate this and give it a prominent display
+	// position in the UI, we simply record to a subspan of the root
+	// (the trace).
 	newSpan := appdash.NewSpanID(appdash.SpanID{
 		Trace: spanID.Trace,
 		Span:  spanID.Trace,

@@ -2,7 +2,6 @@ const context = {
 	appURL: "",
 	authorization: "",
 	currentUser: null,
-	csrfToken: "",
 	cacheControl: null,
 	parentSpanID: null,
 	assetsRoot: "",
@@ -17,7 +16,6 @@ export function reset(ctx) {
 	context.appURL = ctx.AppURL;
 	context.authorization = ctx.Authorization;
 	context.currentUser = ctx.CurrentUser;
-	context.csrfToken = ctx.CSRFToken;
 	context.cacheControl = ctx.CacheControl || null;
 	context.currentSpan = ctx.CurrentSpanID;
 	context.assetsRoot = ctx.AssetsRoot;

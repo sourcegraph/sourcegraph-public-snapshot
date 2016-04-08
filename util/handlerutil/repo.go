@@ -16,7 +16,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/ui/payloads"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/router_util"
@@ -38,7 +37,6 @@ type RepoCommon struct {
 // rendered are also provided with repoCommon template data.
 type RepoRevCommon struct {
 	RepoRevSpec sourcegraph.RepoRevSpec
-	RepoCommit  *payloads.AugmentedCommit
 }
 
 // GetRepoAndRevCommon returns the repository and RepoRevSpec based on
@@ -54,8 +52,7 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 	vc = &RepoRevCommon{}
 	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
 
-	var commit0 *vcs.Commit
-	vc.RepoRevSpec, commit0, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
+	vc.RepoRevSpec, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
 	if err != nil {
 		if noVCSData := grpc.Code(err) == codes.NotFound || strings.Contains(err.Error(), "has no default branch"); noVCSData {
 			if rev := vars["Rev"]; rev != "" && rev != "@" {
@@ -65,15 +62,6 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 			}
 		}
 		return
-	}
-
-	if commit0 != nil {
-		var augCommits []*payloads.AugmentedCommit
-		augCommits, err = AugmentCommits(ctx, rc.Repo.URI, []*vcs.Commit{commit0})
-		if err != nil {
-			return
-		}
-		vc.RepoCommit = augCommits[0]
 	}
 
 	return
@@ -131,20 +119,20 @@ func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Rep
 // getRepoRev resolves the RepoRevSpec and commit specified in the
 // route vars. The provided defaultBranch is used if no rev is
 // specified in the URL.
-func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) (sourcegraph.RepoRevSpec, *vcs.Commit, error) {
+func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) (sourcegraph.RepoRevSpec, error) {
 	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
 	if err != nil {
-		return sourcegraph.RepoRevSpec{}, nil, err
+		return sourcegraph.RepoRevSpec{}, err
 	}
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		return sourcegraph.RepoRevSpec{}, nil, err
+		return sourcegraph.RepoRevSpec{}, err
 	}
 
 	commit, err := cl.Repos.GetCommit(ctx, &repoRev)
 	if err != nil {
-		return repoRev, nil, err
+		return repoRev, err
 	}
 	repoRev.CommitID = string(commit.ID)
 
@@ -163,20 +151,20 @@ func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) 
 		panic("empty CommitID on repo " + repoRev.URI + " rev " + repoRev.Rev)
 	}
 
-	return repoRev, commit, nil
+	return repoRev, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
-func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, commit *vcs.Commit, err error) {
+func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, err error) {
 	repo, repoRevSpec.RepoSpec, err = GetRepo(ctx, vars)
 	if err != nil {
-		return repo, repoRevSpec, nil, err
+		return repo, repoRevSpec, err
 	}
 
-	repoRevSpec, commit, err = getRepoRev(ctx, vars, repo.DefaultBranch)
-	return repo, repoRevSpec, commit, err
+	repoRevSpec, err = getRepoRev(ctx, vars, repo.DefaultBranch)
+	return repo, repoRevSpec, err
 }
 
 // ResolveRepoRev fills in the Rev and CommitID if they are missing.

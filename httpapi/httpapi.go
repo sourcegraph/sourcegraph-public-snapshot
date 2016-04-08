@@ -3,6 +3,9 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"reflect"
+	"strconv"
+	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -81,6 +84,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SrclibImport).Handler(handler(serveSrclibImport))
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
+	m.Get(apirouter.InternalAppdashUploadPageLoad).Handler(handler(serveInternalAppdashUploadPageLoad))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -106,6 +110,20 @@ var cspConfig = csp.Config{
 }
 
 var schemaDecoder = schema.NewDecoder()
+
+func init() {
+	schemaDecoder.IgnoreUnknownKeys(true)
+
+	// Register a converter for unix timestamp strings -> time.Time values
+	// (needed for Appdash PageLoadEvent type).
+	schemaDecoder.RegisterConverter(time.Time{}, func(s string) reflect.Value {
+		ms, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return reflect.ValueOf(err)
+		}
+		return reflect.ValueOf(time.Unix(0, ms*int64(time.Millisecond)))
+	})
+}
 
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors

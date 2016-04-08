@@ -32,7 +32,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 
 	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

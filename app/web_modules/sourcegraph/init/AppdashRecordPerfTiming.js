@@ -20,7 +20,7 @@ function record() {
 	const loadTimeSeconds = (endTime-startTime) / 1000;
 	const currentRoute = document.head.dataset.currentRoute;
 	const templateName = document.head.dataset.templateName;
-	defaultFetch(`/.ui/.appdash/upload-page-load?S=${startTime}&E=${endTime}&Route=${currentRoute}&Template=${templateName}`, {
+	defaultFetch(`/.api/internal/appdash/upload-page-load?S=${startTime}&E=${endTime}&Route=${currentRoute}&Template=${templateName}`, {
 		method: "POST",
 	})
 			.then(checkStatus)

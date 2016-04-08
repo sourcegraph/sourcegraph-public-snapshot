@@ -12,7 +12,6 @@ import context from "sourcegraph/context";
 function defaultOptions() {
 	let options = {
 		headers: {
-			"X-Csrf-Token": context.csrfToken,
 			"X-Device-Id": context.deviceID,
 		},
 		credentials: "same-origin",
