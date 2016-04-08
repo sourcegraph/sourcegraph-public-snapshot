@@ -7,7 +7,7 @@ export function qualifiedNameAndType(def) {
 	return [
 		f.DefKeyword,
 		" ",
-		<span className="name" key="name">{f.Name.ScopeQualified}</span>,
+		<span style={{fontWeight: "bold"}} key="name">{f.Name.ScopeQualified}</span>,
 		f.NameAndTypeSeparator,
 		f.Type.ScopeQualified,
 	];

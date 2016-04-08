@@ -10,14 +10,19 @@
 	justify-content: center;
 }
 
-.tree {
+.tree-common {
 	composes: f4 from typography;
 	composes: bg-white from colors;
 	composes: col-9 from grid;
 }
 
+.tree {
+	composes: tree-common;
+	composes: pt5 from base;
+}
+
 .tree-modal {
-	composes: tree;
+	composes: tree-common;
 	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: center from base;
 }

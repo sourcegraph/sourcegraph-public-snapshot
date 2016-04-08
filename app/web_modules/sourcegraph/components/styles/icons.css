@@ -41,20 +41,6 @@
 	-moz-osx-font-smoothing: grayscale;
 }
 
-.spin {
-	animation: anim 1s linear infinite;
-}
-/*@keyframes spin {
-    from { transform:rotate(0deg); }
-    to { transform:rotate(360deg); }
-}
-*/
-@keyframes anim { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
-
-
-.icon-loader:before {
-	content: "\61";
-}
 .icon-clipboard:before {
 	content: "\6e";
 }
@@ -64,7 +50,7 @@
 .icon-caret-right:before {
 	content: "\69";
 }
-.icon-caret-right-1:before {
+.icon-caret-left:before {
 	content: "\72";
 }
 .icon-caret-up:before {
@@ -90,9 +76,6 @@
 }
 .icon-bitbucket:before {
 	content: "\79";
-}
-.icon-magnify:before {
-	content: "\7a";
 }
 .icon-checkbox-blank:before {
 	content: "\41";
@@ -123,4 +106,16 @@
 }
 .icon-search:before {
 	content: "\66";
+}
+.icon-link:before {
+	content: "\67";
+}
+.icon-arrow-down:before {
+	content: "\6d";
+}
+.icon-arrow-up:before {
+	content: "\6f";
+}
+.icon-folder:before {
+	content: "\70";
 }
