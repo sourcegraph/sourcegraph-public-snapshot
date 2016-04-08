@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/justinas/nosurf"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
@@ -22,6 +24,7 @@ type JSContext struct {
 	AppURL        string            `json:"appURL"`
 	Authorization string            `json:"authorization"`
 	CacheControl  string            `json:"cacheControl"`
+	CSRFToken     string            `json:"csrfToken"`
 	CurrentUser   *sourcegraph.User `json:"currentUser"`
 	CurrentSpanID string            `json:"currentSpanID"`
 	UserAgent     string            `json:"userAgent"`
@@ -49,6 +52,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 	ctx := JSContext{
 		AppURL:        conf.AppURL(httpctx.FromRequest(req)).String(),
 		CacheControl:  cacheControl,
+		CSRFToken:     nosurf.Token(req),
 		CurrentUser:   handlerutil.FullUserFromRequest(req),
 		CurrentSpanID: traceutil.SpanID(req).String(),
 		UserAgent:     eventsutil.UserAgentFromContext(httpctx.FromRequest(req)),
