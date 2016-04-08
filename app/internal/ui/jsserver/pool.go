@@ -85,6 +85,9 @@ func (p *pool) Close() error {
 	// to Call with close their servers before returning.
 	var anyErr error
 	for s := range servers {
+		if s == nil {
+			continue
+		}
 		if err := s.Close(); err != nil {
 			anyErr = err
 		}
