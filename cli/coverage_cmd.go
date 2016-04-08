@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
@@ -114,7 +115,7 @@ func (c *coverageCmd) Execute(args []string) error {
 			p.Do(func() error {
 				cov, err := getCoverage(cl, client.Ctx, repo, lang)
 				if err != nil {
-					return err
+					return fmt.Errorf("error getting coverage for %s: %s", repo, err)
 				}
 				{
 					dlMu.Lock()
@@ -126,6 +127,13 @@ func (c *coverageCmd) Execute(args []string) error {
 		}
 	}
 	if err := p.Wait(); err != nil {
+		if errs, ok := err.(parallel.Errors); ok {
+			var errMsgs []string
+			for _, e := range errs {
+				errMsgs = append(errMsgs, e.Error())
+			}
+			err = fmt.Errorf("\n%s", strings.Join(errMsgs, "\n"))
+		}
 		return fmt.Errorf("coverage errors: %s", err)
 	}
 
