@@ -85,7 +85,7 @@ export class BuildStore extends Store {
 
 		case BuildActions.BuildsFetched:
 			this.buildLists = deepFreeze(Object.assign({}, this.buildLists, {
-				content: Object.assign({}, this.builds.content, {
+				content: Object.assign({}, this.buildLists.content, {
 					[keyForList(action.repo, action.search)]: action.builds.Builds,
 				}),
 			}));

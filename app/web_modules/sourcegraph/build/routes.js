@@ -5,6 +5,11 @@ import {rel} from "sourcegraph/app/routePatterns";
 import urlTo from "sourcegraph/util/urlTo";
 
 const builds = {
+	onEnter: (nextState, replace) => {
+		if (nextState.location.search === "") {
+			replace(`${nextState.location.pathname}?filter=all`);
+		}
+	},
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
