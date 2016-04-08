@@ -27,22 +27,10 @@
 										{
 											"type": "WrappedComponent",
 											"props": {
-												"outline": true,
-												"small": true,
+												"styl": "button",
+												"to": "/join",
 												"children": [
-													{
-														"type": "",
-														"props": {
-															"styleName": "cta-link",
-															"to": "/join",
-															"children": [
-																"Sign up"
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													}
+													"Sign up"
 												]
 											}
 										}

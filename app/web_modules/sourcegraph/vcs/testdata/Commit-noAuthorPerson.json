@@ -33,7 +33,7 @@
 									"styleName": "title",
 									"children": [
 										{
-											"type": "",
+											"type": "WrappedComponent",
 											"props": {
 												"to": "/undefined@abc/-/commit",
 												"children": [
@@ -48,10 +48,7 @@
 														}
 													},
 													"msg"
-												],
-												"onlyActiveOnIndex": false,
-												"className": "",
-												"style": {}
+												]
 											}
 										}
 									]
