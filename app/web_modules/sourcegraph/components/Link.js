@@ -39,13 +39,14 @@ class Link extends Component {
 
 		return (
 			this.state.to ?
-				<RouterLink styleName={style ? style : "link"}
+				<RouterLink {...this.state}
+					styleName={style ? style : "link"}
 					activeClassName={style ? styles.active : null}
-					to={this.state.to}
-					onClick={this.state.onClick}>
+					to={this.state.to}>
 					{this.state.children}
 				</RouterLink> :
-				<a styleName={style ? style : "link"}
+				<a {...this.state}
+					styleName={style ? style : "link"}
 					href={this.state.href}
 					onClick={this.state.onClick}>
 					{this.state.children}
