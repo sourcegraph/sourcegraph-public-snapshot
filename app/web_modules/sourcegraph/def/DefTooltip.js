@@ -2,7 +2,8 @@ import React from "react";
 import Component from "sourcegraph/Component";
 import s from "sourcegraph/def/styles/Def.css";
 
-// function created to update cursor position in constructor()
+// These variables are needed to intialize the tooltips position to the current
+// position of the mouse without a mousemove event.
 let cursorX;
 let cursorY;
 if (typeof document !== "undefined") {
@@ -17,22 +18,11 @@ class DefTooltip extends Component {
 	constructor(props) {
 		super(props);
 		this._updatePosition = this._updatePosition.bind(this);
-		// TODO(autotest) support document object.
-		if (typeof window !== "undefined") {
-			this.state = {
-				top: cursorY + 15,
-				left: Math.min(cursorX + 15, window.innerWidth - 380),
-			};
-		} else {
-			this.state = {
-				top: cursorY + 15,
-				left: Math.min(cursorX + 15, 0),
-			};
-		}
 	}
 
 	componentDidMount() {
 		document.addEventListener("mousemove", this._updatePosition);
+		this._updatePosition({clientY: cursorY, clientX: cursorX}); // Initialize position
 	}
 
 	componentWillUnmount() {
