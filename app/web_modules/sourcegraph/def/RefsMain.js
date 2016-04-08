@@ -22,6 +22,10 @@ import styles from "./styles/Refs.css";
 const FILES_PER_PAGE = 5;
 
 class RefsMain extends Container {
+	static contextTypes = {
+		httpResponse: React.PropTypes.object,
+	};
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -39,12 +43,12 @@ class RefsMain extends Container {
 	}
 
 	reconcileState(state, props) {
-		state.repo = props.repo;
-		state.rev = props.rev;
-		state.def = props.def;
-		state.defObj = props.defObj;
+		state.repo = props.repo || null;
+		state.rev = props.rev || null;
+		state.def = props.def || null;
+		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
-		state.path = props.location.query.file || null;
+		state.path = props.location && props.location.query.file ? props.location.query.file : null;
 		state.refs = DefStore.refs.get(state.repo, state.rev, state.def, state.path);
 		state.files = null;
 		state.entrySpecs = null;
@@ -103,6 +107,10 @@ class RefsMain extends Container {
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
+		}
+
+		if (nextState.defObj && prevState.defObj !== nextState.defObj) {
+			this.context.httpResponse.setStatusCode(nextState.defObj.Error ? 404 : 200);
 		}
 
 		if (nextState.refs && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {

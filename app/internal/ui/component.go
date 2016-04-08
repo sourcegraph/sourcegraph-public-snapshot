@@ -59,6 +59,7 @@ func renderRouterState(ctx context.Context, state *renderState) (*RenderResult, 
 	data, err := renderReactComponent(ctx, arg)
 	if err != nil {
 		log15.Warn("Error rendering React component on the server (falling back to client-side rendering)", "err", err, "arg", truncateArg(arg))
+		return nil, nil
 	}
 
 	var res *RenderResult

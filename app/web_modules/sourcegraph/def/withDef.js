@@ -12,6 +12,10 @@ import {routeParams as defRouteParams} from "sourcegraph/def";
 // the def stored in DefStore.highlightedDef.
 export default function withDef(Component) {
 	class WithDef extends Container {
+		static contextTypes = {
+			httpResponse: React.PropTypes.object,
+		};
+
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
@@ -23,7 +27,7 @@ export default function withDef(Component) {
 		reconcileState(state, props) {
 			Object.assign(state, props);
 
-			state.def = props.params ? props.params.splat[1] : null;
+			if (!props.def) state.def = props.params ? props.params.splat[1] : null;
 			state.defObj = state.def ? DefStore.defs.get(state.repo, state.rev, state.def) : null;
 
 			state.highlightedDef = DefStore.highlightedDef || null;
@@ -38,6 +42,10 @@ export default function withDef(Component) {
 		onStateTransition(prevState, nextState) {
 			if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
+			}
+
+			if (nextState.defObj && prevState.defObj !== nextState.defObj) {
+				this.context.httpResponse.setStatusCode(nextState.defObj.Error ? 404 : 200);
 			}
 
 			if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {

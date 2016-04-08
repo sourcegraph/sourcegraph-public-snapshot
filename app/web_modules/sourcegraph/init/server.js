@@ -1,13 +1,14 @@
 import "babel-polyfill";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
-import {RouterContext, match} from "react-router";
+import {RouterContext, match, createMemoryHistory} from "react-router";
 import {rootRoute} from "sourcegraph/app/App";
 import dumpStores from "sourcegraph/init/dumpStores";
 import resetStores from "sourcegraph/init/resetStores";
 import {allFetchesResolved, allFetchesCount} from "sourcegraph/util/xhr";
 import * as context from "sourcegraph/context";
 import split from "split";
+import {statusCode as httpResponseStatusCode} from "sourcegraph/app/httpResponse";
 
 /*
 TODO: We can optimize this iterative rendering scheme to avoid wasted effort
@@ -40,9 +41,15 @@ function renderIter(i, props, callback) {
 			console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
 		}
 
+		let statusCode = httpResponseStatusCode();
+		if (!statusCode) {
+			console.log("WARNING: No HTTP status code was set by any React components. Defaulting to 200 OK, but in the future all components will be required to set a status code.");
+			statusCode = 200;
+		}
+
 		// No additional async fetches were triggered, so we are done!
 		callback({
-			statusCode: 200,
+			statusCode: statusCode,
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
 			stores: dumpStores(),
@@ -64,7 +71,7 @@ function renderIter(i, props, callback) {
 const handle = (arg, callback) => {
 	context.reset(arg.jsContext);
 	resetStores();
-	match({location: arg.location, routes: rootRoute}, (err, redirectLocation, renderProps) => {
+	match({history: createMemoryHistory(arg.location), location: arg.location, routes: rootRoute}, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
 			callback({
 				statusCode: 404,

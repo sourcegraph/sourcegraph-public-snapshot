@@ -60,18 +60,20 @@ export class TreeStore extends Store {
 		case TreeActions.FileListFetched:
 			{
 				let fileTree = {Dirs: {}, Files: []};
-				action.fileList.Files.forEach(file => {
-					const parts = file.split("/");
-					let node = fileTree;
-					parts.forEach((part, i) => {
-						if (i === parts.length - 1) {
-							node.Files.push(part);
-						} else if (!node.Dirs[part]) {
-							node.Dirs[part] = {Dirs: {}, Files: []};
-						}
-						node = node.Dirs[part];
+				if (action.fileList && action.fileList.Files) {
+					action.fileList.Files.forEach(file => {
+						const parts = file.split("/");
+						let node = fileTree;
+						parts.forEach((part, i) => {
+							if (i === parts.length - 1) {
+								node.Files.push(part);
+							} else if (!node.Dirs[part]) {
+								node.Dirs[part] = {Dirs: {}, Files: []};
+							}
+							node = node.Dirs[part];
+						});
 					});
-				});
+				}
 				this.fileLists = deepFreeze(Object.assign({}, this.fileLists, {
 					content: Object.assign({}, this.fileLists.content, {
 						[keyFor(action.repo, action.rev)]: action.fileList,

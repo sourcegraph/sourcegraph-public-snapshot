@@ -11,6 +11,7 @@ import BlobMain from "sourcegraph/blob/BlobMain";
 
 export type Helper = {
 	reconcileState: (state: Object, props: Object) => void;
+	statusCode?: (state: Object) => ?number;
 	onStateTransition?: (prevState: Object, nextState: Object) => void;
 	renderProps?: (state: Object) => Object;
 };
@@ -70,9 +71,15 @@ function blobLoader(Component) {
 
 			Object.assign(state, props);
 
+			let setStatusCode = false;
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
 					if (h.reconcileState) h.reconcileState(state, props);
+					if (h.statusCode) {
+						if (setStatusCode) throw new Error("Only 1 BlobLoader helper may set the status code.");
+						setStatusCode = true;
+						state.statusCode = h.statusCode(state);
+					}
 				});
 			}
 		}

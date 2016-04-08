@@ -19,9 +19,9 @@ const BlobBackend = {
 					BlobBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
+							.catch((err) => ({Error: true}))
 							.then((data) => Dispatcher.Stores.dispatch(
-								new BlobActions.FileFetched(action.repo, action.rev, action.path, data)))
-							.catch((err) => console.error(err));
+								new BlobActions.FileFetched(action.repo, action.rev, action.path, data)));
 				}
 				break;
 			}

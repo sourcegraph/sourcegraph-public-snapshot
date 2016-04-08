@@ -8,10 +8,15 @@ import type {Helper} from "sourcegraph/blob/BlobLoader";
 // passes a DefPopup child to be displayed in the blob margin.
 export default ({
 	reconcileState(state, props) {
-		state.path = state.defObj ? state.defObj.File : null;
+		state.path = state.defObj && !state.defObj.Error ? state.defObj.File : null;
+	},
+
+	statusCode(state) {
+		if (!state.defObj) return null;
+		return state.defObj.Error ? 404 : 200;
 	},
 
 	renderProps(state) {
-		return state.defObj ? {children: <DefPopup def={state.defObj} refs={state.refs} path={state.defObj.File} byte={state.defObj.DefStart} />} : null;
+		return state.defObj && !state.defObj.Error ? {children: <DefPopup def={state.defObj} refs={state.refs} path={state.defObj.File} byte={state.defObj.DefStart} />} : null;
 	},
 }: Helper);

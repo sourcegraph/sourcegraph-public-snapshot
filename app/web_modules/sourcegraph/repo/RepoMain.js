@@ -7,6 +7,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
+import isMainRoute from "sourcegraph/util/isMainRoute";
 
 import Header from "sourcegraph/components/Header";
 
@@ -19,9 +20,11 @@ class RepoMain extends React.Component {
 		main: React.PropTypes.element,
 		isCloning: React.PropTypes.bool,
 		route: React.PropTypes.object,
+		routes: React.PropTypes.array,
 	};
 
 	static contextTypes = {
+		httpResponse: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -43,6 +46,10 @@ class RepoMain extends React.Component {
 		treeSearchQuery: string,
 	};
 
+	componentWillMount() {
+		this._setStatusCode(this.props.repoObj, this.props.rev);
+	}
+
 	componentDidMount() {
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
@@ -53,6 +60,10 @@ class RepoMain extends React.Component {
 		// that new changes on the remote are pulled.
 		this.context.router.listenBefore(() => Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo)));
 		this.context.router.listenBefore(this._dismissTreeSearchModal);
+	}
+
+	componentWillReceiveProps(nextProps) {
+		if (this.props.repoObj !== nextProps.repoObj || this.props.rev !== nextProps.rev) this._setStatusCode(nextProps.repoObj, nextProps.rev);
 	}
 
 	componentWillUnmount() {
@@ -97,6 +108,19 @@ class RepoMain extends React.Component {
 		}
 	}
 
+	_setStatusCode(repoObj, rev) {
+		let statusCode = null;
+		if (repoObj) {
+			if (repoObj.Error) statusCode = 404;
+			else if (rev) statusCode = 200;
+		}
+		if (isMainRoute(this.props.route, this.props.routes) || statusCode === 404) {
+			// Don't clobber a subroute's error; for example, if the repo is found but
+			// the def is not, we need to report 404 for the def, not 200 for the repo.
+			this.context.httpResponse.setStatusCode(statusCode);
+		}
+	}
+
 	render() {
 		if (this.props.repoObj && this.props.repoObj.Error) {
 			return (
@@ -119,7 +143,7 @@ class RepoMain extends React.Component {
 		return (
 			<div>
 				{this.props.main}
-				{!this.props.route.disableTreeSearchOverlay && this.state.treeSearchActive &&
+				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.state.treeSearchActive &&
 					<Modal
 						shown={true}
 						onDismiss={this._dismissTreeSearchModal}>

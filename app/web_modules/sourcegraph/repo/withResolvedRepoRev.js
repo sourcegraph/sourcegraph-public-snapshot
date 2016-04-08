@@ -11,6 +11,10 @@ import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 
 export default function withResolvedRepoRev(Component) {
 	class WithResolvedRepoRev extends Container {
+		static contextTypes = {
+			router: React.PropTypes.object.isRequired,
+		};
+
 		static propTypes = {
 			params: React.PropTypes.object.isRequired,
 		};

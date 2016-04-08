@@ -10,6 +10,7 @@ import GlobalNav from "sourcegraph/app/GlobalNav";
 import Footer from "sourcegraph/app/Footer";
 
 import EventLogger from "sourcegraph/util/EventLogger";
+import {withHTTPResponseContext} from "sourcegraph/app/httpResponse";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -100,7 +101,7 @@ export class App extends Component {
 
 export const rootRoute: Route = {
 	path: "/",
-	component: App,
+	component: withHTTPResponseContext(App),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, require("sourcegraph/dashboard").route);

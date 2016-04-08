@@ -45,6 +45,7 @@ export default class BlobMain extends Container {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		httpResponse: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -86,15 +87,24 @@ export default class BlobMain extends Container {
 		} else {
 			state.highlightedDefObj = null;
 		}
-		state.activeDef = props.defObj ? urlToDef(props.defObj) : null;
-		state.startByte = props.defObj ? props.defObj.DefStart : null;
-		state.endByte = props.defObj ? props.defObj.DefEnd : null;
+		state.activeDef = props.defObj && !props.defObj.Error ? urlToDef(props.defObj) : null;
+		state.startByte = props.defObj && !props.defObj.Error ? props.defObj.DefStart : null;
+		state.endByte = props.defObj && !props.defObj.Error ? props.defObj.DefEnd : null;
+
+		state.statusCode = props.statusCode || null;
+		if (!state.statusCode && state.blob) {
+			state.statusCode = state.blob.Error ? 404 : 200;
+		}
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
+		}
+
+		if (prevState.statusCode !== nextState.statusCode) {
+			this.context.httpResponse.setStatusCode(nextState.statusCode);
 		}
 	}
 
