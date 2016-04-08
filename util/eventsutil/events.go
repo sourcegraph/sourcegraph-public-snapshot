@@ -62,7 +62,7 @@ func LogEvent(ctx context.Context, event string, eventProperties map[string]stri
 	}
 
 	Log(&sourcegraph.Event{
-		Type:            fmt.Sprintf("Server$s", event),
+		Type:            fmt.Sprintf("Server%s", event),
 		UserID:          login,
 		DeviceID:        deviceID,
 		EventProperties: eventProperties,
