@@ -33,7 +33,7 @@
 
 .repos {
 	composes: col-8 from grid;
-	composes: mt5 from base;
+	composes: mt4 from base;
 }
 
 .onboarding-cta {
@@ -82,7 +82,7 @@
 }
 
 .updated {
-	composes: fw7 f4 tracked from typography;
+	composes: fw7 f5 tracked from typography;
 	composes: mb3 from base;
 	composes: moon-gray from colors;
 	text-transform: uppercase;
