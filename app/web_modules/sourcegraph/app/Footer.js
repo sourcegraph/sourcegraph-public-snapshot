@@ -1,7 +1,7 @@
 import React from "react";
 import Component from "sourcegraph/Component";
 
-import context from "sourcegraph/context";
+import context from "sourcegraph/app/context";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Footer.css";

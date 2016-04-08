@@ -6,7 +6,7 @@ import {rootRoute} from "sourcegraph/app/App";
 import dumpStores from "sourcegraph/init/dumpStores";
 import resetStores from "sourcegraph/init/resetStores";
 import {allFetchesResolved, allFetchesCount} from "sourcegraph/util/xhr";
-import * as context from "sourcegraph/context";
+import * as context from "sourcegraph/app/context";
 import split from "split";
 import {statusCode as httpResponseStatusCode} from "sourcegraph/app/httpResponse";
 

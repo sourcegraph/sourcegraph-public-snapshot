@@ -3,7 +3,7 @@ import React from "react";
 import debounce from "lodash/function/debounce";
 
 import Component from "sourcegraph/Component";
-import context from "sourcegraph/context";
+import context from "sourcegraph/app/context";
 
 import {Input, Link} from "sourcegraph/components";
 

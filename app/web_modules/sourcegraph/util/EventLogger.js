@@ -1,6 +1,6 @@
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
-import context from "sourcegraph/context";
+import context from "sourcegraph/app/context";
 
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";

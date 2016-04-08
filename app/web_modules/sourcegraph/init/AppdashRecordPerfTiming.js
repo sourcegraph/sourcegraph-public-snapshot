@@ -1,5 +1,5 @@
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
-import context from "sourcegraph/context";
+import context from "sourcegraph/app/context";
 
 // TODO(slimsag): for finer-grained access consider sending all of the info in
 // performance.timing to Appdash for display (when available). This would narrow

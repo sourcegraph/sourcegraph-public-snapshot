@@ -17,18 +17,22 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
+// JSContext is made available to JavaScript code via the
+// "sourcegraph/app/context" module.
 type JSContext struct {
-	AppURL        string
-	Authorization string
-	CacheControl  string
-	CurrentUser   *sourcegraph.User
-	CurrentSpanID appdash.SpanID
-	UserAgent     string
-	AssetsRoot    string
-	BuildVars     buildvar.Vars
+	AppURL        string            `json:"appURL"`
+	Authorization string            `json:"authorization"`
+	CacheControl  string            `json:"cacheControl"`
+	CurrentUser   *sourcegraph.User `json:"currentUser"`
+	CurrentSpanID appdash.SpanID    `json:"currentSpanID"`
+	UserAgent     string            `json:"userAgent"`
+	AssetsRoot    string            `json:"assetsRoot"`
+	BuildVars     buildvar.Vars     `json:"buildVars"`
 	Features      struct{}
 }
 
+// NewJSContextFromRequest populates a JSContext struct from the HTTP
+// request.
 func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 	sess, err := auth.ReadSessionCookie(req)
 	if err != nil && err != auth.ErrNoSession {

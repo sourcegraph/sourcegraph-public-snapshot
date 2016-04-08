@@ -7,7 +7,7 @@ import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import EventLogger from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import context from "sourcegraph/context";
+import context from "sourcegraph/app/context";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
@@ -48,7 +48,7 @@ class DashboardContainer extends Container {
 		return (<div styleName="container">
 			{!context.currentUser &&
 				<div styleName="anon-section">
-					<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-logo.svg`}/>
+					<img styleName="logo" src={`${context.assetsRoot || ""}/img/sourcegraph-logo.svg`}/>
 					<div styleName="anon-title">Understand and use code better</div>
 					<div styleName="anon-header-sub">
 						Use Sourcegraph to search, browse, and cross-reference code.

@@ -6,7 +6,7 @@ import "sourcegraph/init/AppdashRecordPerfTiming";
 import {Router, browserHistory as history, match} from "react-router";
 import {rootRoute} from "sourcegraph/app/App";
 import resetStores from "sourcegraph/init/resetStores";
-import * as context from "sourcegraph/context";
+import * as context from "sourcegraph/app/context";
 
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";

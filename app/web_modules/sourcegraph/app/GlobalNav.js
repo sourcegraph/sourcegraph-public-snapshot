@@ -8,7 +8,7 @@ import "sourcegraph/user/UserBackend"; // for side effects
 import * as UserActions from "sourcegraph/user/UserActions";
 
 import {Avatar, Popover, Button, Link} from "sourcegraph/components";
-import context from "sourcegraph/context";
+import context from "sourcegraph/app/context";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
