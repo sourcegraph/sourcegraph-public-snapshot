@@ -53,8 +53,10 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	// TODO(slimsag): find the best way to communicate potential mirror repo
+	// update failures to the user / frontend.
 	repoupdater.Enqueue(repoSpec, handlerutil.UserFromContext(ctx))
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
