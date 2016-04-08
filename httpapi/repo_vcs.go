@@ -6,7 +6,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
@@ -38,7 +40,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx := httpctx.FromRequest(r)
 
 	var opt sourcegraph.MirrorReposRefreshVCSOp
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -51,13 +53,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{
-		Repo: repoSpec,
-	})
-	if err != nil {
-		return err
-	}
-
+	repoupdater.Enqueue(repoSpec, nil)
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
