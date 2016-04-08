@@ -75,6 +75,7 @@ class RepoMain extends React.Component {
 		}
 	}
 
+	_isMounted: boolean;
 	_handleKeyDown: () => void;
 	_showTreeSearchModal:	() => void;
 	_dismissTreeSearchModal:	() => void;
