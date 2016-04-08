@@ -1,6 +1,7 @@
 // @flow
 
 import urlTo from "sourcegraph/util/urlTo";
+import {urlToTree} from "sourcegraph/tree/routes";
 import {rel} from "sourcegraph/app/routePatterns";
 import {defPath} from "sourcegraph/def";
 import type {Route} from "react-router";
@@ -44,6 +45,14 @@ function defParams(def: Def): Object {
 }
 
 export function urlToDef(def: Def): string {
+	if ((def.File === null || def.Kind === "package")) {
+		// The def's File field refers to a directory (e.g., in the
+		// case of a Go package). We can't show a dir in this view,
+		// so just redirect to the dir listing.
+		//
+		// TODO(sqs): Improve handling of this case.
+		return urlToTree(def.Repo, def.CommitID, def.File);
+	}
 	return urlTo("def", defParams(def));
 }
 

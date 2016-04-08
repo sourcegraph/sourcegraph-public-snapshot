@@ -15,7 +15,7 @@ describe("RefsMain", () => {
 
 		it("should be 200 if the def exists", () => {
 			expect(renderedHTTPStatusCode(
-				<RefsMain defObj={{}} />
+				<RefsMain defObj={{File: "foo.go"}} />
 			)).to.be(200);
 		});
 
