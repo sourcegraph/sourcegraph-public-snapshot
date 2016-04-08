@@ -4,7 +4,7 @@ package plan
 // developing to make it easier to test out changes to a given toolchain. E.g.,
 // `droneSrclibGoImage = "sourcegraph/srclib-go"`.
 var (
-	droneSrclibGoImage         = "sourcegraph/srclib-go@sha256:c6505284e9a4b409369222c0e5ad994de64c82681b4204a4bbc7259819d29213"
+	droneSrclibGoImage         = "sourcegraph/srclib-go@sha256:9c1a7f6d3223d55c424731753beeffe6a931337445eb36295a491ae873b2d512"
 	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript@sha256:09621a45720701482a6cc5c113a58e167a9c5b8e265ba82b07af44c84a61846f"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java@sha256:efa96fad580a1dafc006ec2c5d444d44e96c5ef06d5577683c580075064e9aa5"
 	droneSrclibBasicImage      = "sourcegraph/srclib-basic@sha256:4157bcbec38ed83dde449ebad68f753ff55908956f684e0f1645bf4afa785792"
