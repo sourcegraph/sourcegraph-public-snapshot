@@ -92,11 +92,23 @@
     color: c_dark-gray;
 }
 
+/* "active" state for button links */
+/* Set this as <Link activeClassName={buttonStyles["outline-active"]} /> */
+/* Overrides child button's styles. */
 @value c_purple from colors;
 .outline-active {
-    compose: outline;
+    composes: outline;
     color: c_purple !important;
     border-color: c_purple !important;
+}
+.outline-active:hover,
+.outline-active:focus {
+    color: c_purple !important;
+    border-color: c_purple !important;
+}
+.outline-active > button {
+    border: none;
+    color: c_purple !important;;
 }
 
 /* solid buttons */
