@@ -56,13 +56,13 @@ func TestRepoFlow(t *T) error {
 	// If the link is displayed and enabled, click it.
 	want := "/github.com/gorilla/mux@master/-/blob/mux.go"
 
-	have, err := muxLink.GetAttribute("href")
+	got, err := muxLink.GetAttribute("href")
 	if err != nil {
 		return err
 	}
 
-	if !strings.Contains(have, want) {
-		return fmt.Errorf("wanted: %s, got %s", want, have)
+	if !strings.Contains(got, want) {
+		return fmt.Errorf("wanted: %s, got %s", want, got)
 	}
 
 	isDisplayed, err := muxLink.IsDisplayed()
