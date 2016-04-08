@@ -62,7 +62,7 @@ func TestRepoFlow(t *T) error {
 	}
 
 	if !strings.Contains(got, want) {
-		return fmt.Errorf("wanted: %s, got %s", want, got)
+		return fmt.Errorf("got %s, want %s", got, want)
 	}
 
 	isDisplayed, err := muxLink.IsDisplayed()
