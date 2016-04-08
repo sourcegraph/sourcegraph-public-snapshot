@@ -11,8 +11,8 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbRepoStatus{}, "repo_status").SetKeys(false, "Repo", "Rev", "Context")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(dbRepoStatus{}, "repo_status").SetKeys(false, "Repo", "Rev", "Context")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE repo_status ALTER COLUMN repo TYPE citext;`,
 		`ALTER TABLE repo_status ALTER COLUMN description TYPE text;`,
 		`ALTER TABLE repo_status ALTER COLUMN created_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
@@ -90,7 +90,7 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.Repo
 	}
 
 	var dbRepoStatuses []*dbRepoStatus
-	if _, err := dbh(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 ORDER BY created_at ASC;`, repoRev.URI, rev); err != nil {
+	if _, err := appDBH(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 ORDER BY created_at ASC;`, repoRev.URI, rev); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.CombinedStatus{
@@ -115,9 +115,9 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 	// statuses cannot be deleted. It is more robust to write it this
 	// way than with inline SQL (which would have to be manually
 	// updated if the fields of RepoStatus changed).
-	err := dbh(ctx).Insert(&dbRepoStatus)
+	err := appDBH(ctx).Insert(&dbRepoStatus)
 	if err != nil {
-		_, err := dbh(ctx).Update(&dbRepoStatus)
+		_, err := appDBH(ctx).Update(&dbRepoStatus)
 		return err
 	}
 	return err

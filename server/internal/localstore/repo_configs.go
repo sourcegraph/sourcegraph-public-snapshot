@@ -11,8 +11,8 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbRepoConfig{}, "repo_config").SetKeys(false, "Repo")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(dbRepoConfig{}, "repo_config").SetKeys(false, "Repo")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE repo_config ALTER COLUMN apps TYPE text[] USING array[apps]::text[];",
 	)
 }
@@ -50,7 +50,7 @@ func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 		return nil, err
 	}
 	var config dbRepoConfig
-	if err := dbh(ctx).SelectOne(&config, `SELECT * FROM repo_config WHERE repo=$1;`, repo); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&config, `SELECT * FROM repo_config WHERE repo=$1;`, repo); err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -64,13 +64,13 @@ func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.
 	}
 	var dbConf dbRepoConfig
 	dbConf.fromRepoConfig(repo, &conf)
-	n, err := dbh(ctx).Update(&dbConf)
+	n, err := appDBH(ctx).Update(&dbConf)
 	if err != nil {
 		return err
 	}
 	if n == 0 {
 		// No config row yet exists, so we must insert it.
-		return dbh(ctx).Insert(&dbConf)
+		return appDBH(ctx).Insert(&dbConf)
 	}
 	return nil
 }

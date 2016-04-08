@@ -71,7 +71,7 @@
 			"url": "someDef"
 		},
 		{
-			"$constructor": "WantRefs",
+			"$constructor": "WantRefLocations",
 			"defURL": "someDef"
 		}
 	]

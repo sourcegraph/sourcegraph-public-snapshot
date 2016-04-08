@@ -44,7 +44,7 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 	var u dbUser
 	u.fromUser(newUser)
 
-	err := dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
+	err := dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		if err := tx.Insert(&u); err != nil {
 			if strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_login"`) {
 				return &store.AccountAlreadyExistsError{Login: newUser.Login, UID: newUser.UID}
@@ -83,7 +83,7 @@ func (s *accounts) Update(ctx context.Context, modUser *sourcegraph.User) error 
 
 	var u dbUser
 	u.fromUser(modUser)
-	if _, err := dbh(ctx).Update(&u); err != nil {
+	if _, err := appDBH(ctx).Update(&u); err != nil {
 		return err
 	}
 	return nil
@@ -98,7 +98,7 @@ func (s *accounts) Delete(ctx context.Context, uid int32) error {
 		return &store.UserNotFoundError{UID: 0}
 	}
 
-	return dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
+	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		dbUID := int(uid)
 
 		if _, err := tx.Exec(`DELETE FROM users where uid=$1`, dbUID); err != nil {
@@ -114,7 +114,7 @@ func (s *accounts) Delete(ctx context.Context, uid int32) error {
 }
 
 func init() {
-	Schema.Map.AddTableWithName(passwordResetRequest{}, "password_reset_requests").SetKeys(false, "Token")
+	AppSchema.Map.AddTableWithName(passwordResetRequest{}, "password_reset_requests").SetKeys(false, "Token")
 }
 
 type passwordResetRequest struct {
@@ -138,7 +138,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 		Token: token,
 		UID:   user.UID,
 	}
-	if err := dbh(ctx).Insert(&req); err != nil {
+	if err := appDBH(ctx).Insert(&req); err != nil {
 		return nil, fmt.Errorf("Error saving password reset token: %s", err)
 	}
 	return &sourcegraph.PasswordResetToken{Token: token}, nil
@@ -147,7 +147,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
 	genericErr := errors.New("error reseting password") // don't need to reveal everything
 	var req passwordResetRequest
-	if err := dbh(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err == sql.ErrNoRows {
 		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)
 		return genericErr
 	} else if err != nil {
@@ -158,7 +158,7 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 		return fmt.Errorf("Error changing password: %s", err)
 	}
 
-	if _, err := dbh(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err != nil {
+	if _, err := appDBH(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err != nil {
 		log15.Warn("Error deleting token", "store", "Accounts", "error", err)
 		return nil
 	}

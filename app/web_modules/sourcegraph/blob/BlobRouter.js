@@ -125,6 +125,8 @@ class BlobRouter extends Component {
 		state.startLine = null;
 		state.endLine = null;
 		state.viewRefs = false;
+		state.refRepo = null;
+		state.refFile = null;
 		if (pathParts[1].startsWith("tree/")) {
 			state.path = pathParts[1].slice("tree/".length);
 
@@ -154,7 +156,8 @@ class BlobRouter extends Component {
 			}
 			state.viewRefs = pathParts[pathParts.length - 1].match(/refs[^\/]*$/);
 			if (state.viewRefs) {
-				state.path = state.url.query.Files ? state.url.query.Files : null;
+				state.refRepo = state.url.query.Repo ? state.url.query.Repo : null;
+				state.refFile = state.url.query.Files ? state.url.query.Files : null;
 			}
 		}
 	}
@@ -240,7 +243,9 @@ class BlobRouter extends Component {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path}
-						def={this.state.def} />
+						def={this.state.def}
+						refRepo={this.state.refRepo}
+						refFile={this.state.refFile} />
 				}
 				{!this.state.viewRefs &&
 					<BlobContainer

@@ -48,16 +48,31 @@ export class HighlightDef {
 	}
 }
 
-export class WantRefs {
-	constructor(defURL, file) {
+export class WantRefLocations {
+	constructor(defURL) {
 		this.defURL = defURL;
+	}
+}
+
+export class WantRefs {
+	constructor(defURL, repo, file) {
+		this.defURL = defURL;
+		this.repo = repo || null;
 		this.file = file || null;
 	}
 }
 
-export class RefsFetched {
-	constructor(defURL, file, refs) {
+export class RefLocationsFetched {
+	constructor(defURL, locations) {
 		this.defURL = defURL;
+		this.locations = locations || null;
+	}
+}
+
+export class RefsFetched {
+	constructor(defURL, repo, file, refs) {
+		this.defURL = defURL;
+		this.repo = repo || null;
 		this.file = file || null;
 		this.refs = refs;
 	}

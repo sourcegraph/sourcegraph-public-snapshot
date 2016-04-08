@@ -17,7 +17,7 @@ export class DashboardStore extends Store {
 		if (typeof window !== "undefined") { // TODO(autotest) support document object.
 			this.repos = deepFreeze((window.repos || []).concat(window.remoteRepos || []));
 			this.onboarding = deepFreeze(window.onboarding);
-			if (this.onboarding.linkGitHub) {
+			if (this.onboarding && this.onboarding.linkGitHub) {
 				this.repos = deepFreeze(exampleRepos);
 			}
 		} else {

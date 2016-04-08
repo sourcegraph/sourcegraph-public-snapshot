@@ -1,4 +1,5 @@
 import Store from "sourcegraph/Store";
+import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -7,8 +8,8 @@ function defsListKeyFor(repo, rev, query) {
 	return `${repo}#${rev}#${query}`;
 }
 
-function refsKeyFor(defURL, file) {
-	return `${defURL}:${file || ""}`;
+function refsKeyFor(defURL, repo, file) {
+	return `${defURL}:${repo}:${file || ""}`;
 }
 
 export class DefStore extends Store {
@@ -26,8 +27,14 @@ export class DefStore extends Store {
 		this.highlightedDef = null;
 		this.refs = deepFreeze({
 			content: {},
-			get(defURL, file) {
-				return this.content[refsKeyFor(defURL, file)] || null;
+			get(defURL, repo, file) {
+				return this.content[refsKeyFor(defURL, repo, file)] || null;
+			},
+		});
+		this.refLocations = deepFreeze({
+			content: {},
+			get(defURL) {
+				return this.content[defURL] || null;
 			},
 		});
 
@@ -58,10 +65,18 @@ export class DefStore extends Store {
 			this.highlightedDef = action.url;
 			break;
 
+		case DefActions.RefLocationsFetched:
+			this.refLocations = deepFreeze(Object.assign({}, this.refLocations, {
+				content: Object.assign({}, this.refLocations.content, {
+					[action.defURL]: getRankedRefLocations(action.locations),
+				}),
+			}));
+			break;
+
 		case DefActions.RefsFetched:
 			this.refs = deepFreeze(Object.assign({}, this.refs, {
 				content: Object.assign({}, this.refs.content, {
-					[refsKeyFor(action.defURL, action.file)]: action.refs,
+					[refsKeyFor(action.defURL, action.repo, action.file)]: action.refs,
 				}),
 			}));
 			break;
@@ -78,6 +93,29 @@ export class DefStore extends Store {
 
 		this.__emitChange();
 	}
+}
+
+function getRankedRefLocations(locations) {
+	if (locations.length <= 2) {
+		return locations;
+	}
+	let dashboardRepos = DashboardStore.repos;
+	let repos = [];
+
+	// The first repo of locations is the current repo.
+	repos.push(locations[0]);
+
+	let otherRepos = [];
+	let i = 1;
+	for (; i < locations.length; i++) {
+		if (locations[i].Repo in dashboardRepos) {
+			repos.push(locations[i]);
+		} else {
+			otherRepos.push(locations[i]);
+		}
+	}
+	Array.prototype.push.apply(repos, otherRepos);
+	return repos;
 }
 
 export default new DefStore(Dispatcher.Stores);

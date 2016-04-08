@@ -15,9 +15,9 @@ import (
 )
 
 func init() {
-	tbl := Schema.Map.AddTableWithName(auth.ExternalAuthToken{}, "ext_auth_token").SetKeys(false, "User", "Host", "client_id")
+	tbl := AppSchema.Map.AddTableWithName(auth.ExternalAuthToken{}, "ext_auth_token").SetKeys(false, "User", "Host", "client_id")
 	tbl.ColMap("FirstAuthFailureMessage").SetMaxSize(1000)
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE ext_auth_token ALTER COLUMN first_auth_failure_at TYPE timestamp with time zone USING first_auth_failure_at::timestamp with time zone;`,
 	)
 }
@@ -35,7 +35,7 @@ func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 		return nil, err
 	}
 	var tok auth.ExternalAuthToken
-	err := dbh(ctx).SelectOne(&tok, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
+	err := appDBH(ctx).SelectOne(&tok, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
 	if err == sql.ErrNoRows {
 		return nil, auth.ErrNoExternalAuthToken
 	} else if err != nil {
@@ -51,8 +51,8 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.SetExternalToken", int32(tok.User)); err != nil {
 		return err
 	}
-	return dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
-		ctx = NewContext(ctx, tx)
+	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
+		ctx = WithAppDBH(ctx, tx)
 
 		if _, err := s.GetUserToken(ctx, tok.User, tok.Host, tok.ClientID); err == auth.ErrNoExternalAuthToken {
 			return tx.Insert(tok)
@@ -89,7 +89,7 @@ func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []in
 	sql := fmt.Sprintf(`SELECT * FROM ext_auth_token WHERE %s`, whereSQL)
 
 	var toks []*auth.ExternalAuthToken
-	if _, err := dbh(ctx).Select(&toks, sql, args...); err != nil {
+	if _, err := appDBH(ctx).Select(&toks, sql, args...); err != nil {
 		return nil, err
 	}
 	return toks, nil

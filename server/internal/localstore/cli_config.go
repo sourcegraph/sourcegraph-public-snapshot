@@ -15,6 +15,7 @@ func init() {
 			BuildLogs:          &buildLogs{},
 			Directory:          &directory{},
 			ExternalAuthTokens: &externalAuthTokens{},
+			GlobalRefs:         &globalRefs{},
 			RepoConfigs:        &repoConfigs{},
 			Password:           &password{},
 			RegisteredClients:  &registeredClients{},
