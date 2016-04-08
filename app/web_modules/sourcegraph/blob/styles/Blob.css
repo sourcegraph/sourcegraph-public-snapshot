@@ -62,8 +62,8 @@ by a lot of other modules (e.g., for def boxes)? */
 /* Make these classes global because we need to be able to generate
    identical markup in Go (where we can't as easily obtain the class mapping). */
 .lines {
-	composes: f6 from base;
 	composes: code from typography;
+	font-size: 1.05rem;
 	table-layout: fixed;
 	border-spacing: 0;
 }
@@ -74,8 +74,9 @@ by a lot of other modules (e.g., for def boxes)? */
 	text-align: right;
 	white-space: nowrap;
 	vertical-align: top;
-	composes: pr1 from base;
 	composes: light-silver from colors;
+	padding-right: 8px;
+	background-color: #fafafc;
 	user-select: none;
 	cursor: pointer;
 }
@@ -101,20 +102,21 @@ by a lot of other modules (e.g., for def boxes)? */
 }
 .highlightedAnn {
 	color: black;
-	outline: solid 2px #fff6ad;
+	outline: solid 1px #fff6ad;
 	background-color: #fff9b8;
 }
 .activeAnn {
 	color: black;
-	outline: solid 2.5px #ffe68d;
+	outline: solid 1px #ffe68d;
 	background-color: #ffe998;
 }
 .line-expander {
-	composes: bg-blue-1 from colors;
-	height: 26px;
+	composes: faded-blue bg-pale-blue from colors;
+	line-height: 0.8;
+	cursor: pointer;
+	min-height: 26px;
 	text-align: center;
 }
 .line-expander-icon {
-	composes: blue-1 from colors;
-	display: block;
+	composes: mt1 mb1 from base;
 }

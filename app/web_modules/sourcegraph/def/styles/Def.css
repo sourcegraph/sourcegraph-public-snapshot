@@ -22,19 +22,20 @@
 	composes: title;
 }
 .sectionTitle {
-	composes: pt2 from base;
+	composes: pt2 pb1 from base;
 	composes: b f6 from typography;
 }
 .allRefs {
 	line-height: 1.7;
 	white-space: nowrap;
+	font-size: 1.08rem;
 }
 .refsGroup {
 	white-space: nowrap;
 	composes: pl4 from base;
 }
 .refsCount {
-	composes: br3 from base;
+	composes: br-100 from base;
 	composes: bg-blue-1 blue-8 from colors;
 	composes: b from typography;
 	font-size: 10px;

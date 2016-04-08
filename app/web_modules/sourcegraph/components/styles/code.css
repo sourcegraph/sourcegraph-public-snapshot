@@ -6,19 +6,19 @@
 		color: #1f1f1f;
 	}
 	:global .str {
-		color: #DD1144;
+		color: #ea4702;
 	}
 	:global .kwd {
-		color: #334499;
+		color: #0287bd;
 	}
 	:global .com {
-		color: #555;
+		color: #9b9b9b;
 	}
 	:global .typ {
-		color: #008080;
+		color: #8804c3;
 	}
 	:global .lit {
-		color: #DD1144;
+		color: #ea4702;
 	}
 	:global .pun,
 	:global .opn,
@@ -26,10 +26,10 @@
 		color: #414f5c;
 	}
 	:global .tag {
-		color: #017c9d;
+		color: #0287bd;
 	}
 	:global .atn {
-		color: #008080;
+		color: #8804c3;
 	}
 	:global .atv {
 		color: #15b8ae;
@@ -39,7 +39,7 @@
 		color: #15b8ae;
 	}
 	:global .fun {
-		color: #017c9d;
+		color: #0287bd;
 	}
 }
 
