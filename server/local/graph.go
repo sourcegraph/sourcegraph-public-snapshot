@@ -2,6 +2,7 @@ package local
 
 import (
 	"golang.org/x/net/context"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -43,7 +44,9 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		// is the default behavior on our app for empty repoRevSpecs).
 		op.CommitID = ""
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
-			return nil, err
+			// Temporarily log and ignore error in updating the global ref store.
+			// TODO: fail with error here once the rollout of global ref store is complete.
+			log15.Error("error updating global ref store", "repo", op.Repo, "error", err)
 		}
 	}
 	return &pbtypes.Void{}, nil
