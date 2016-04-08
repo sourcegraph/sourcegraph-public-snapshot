@@ -12,3 +12,8 @@ declare module "lodash/string/trimLeft" {
 	declare function trimLeft(string: string, chars: ?string): string
 	declare var exports: typeof trimLeft;
 }
+
+declare module "lodash/array/last" {
+	declare function last(array: Array<any>): any;
+	declare var exports: typeof last;
+}
