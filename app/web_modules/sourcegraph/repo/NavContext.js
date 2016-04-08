@@ -1,8 +1,6 @@
 // @flow
 
 import React from "react";
-import {Link} from "react-router";
-import urlTo from "sourcegraph/util/urlTo";
 
 import RepoLink from "sourcegraph/components/RepoLink";
 
@@ -23,13 +21,6 @@ class NavContext extends React.Component {
 				{this.props.repoNavContext}
 			</div>
 		);
-
-		// return (
-		// 	<div styleName="navContext">
-		// 		<Link to={urlTo("repo", {splat: this.props.repo})} styleName="repoName">{this.props.repo}</Link>
-		// 		{this.props.repoNavContext}
-		// 	</div>
-		// );
 	}
 }
 
