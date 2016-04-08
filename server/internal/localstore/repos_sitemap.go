@@ -7,12 +7,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 const gitHubPublicRepoQuery = `SELECT repo.* FROM repo
 				WHERE ((NOT blocked)) AND ((NOT fork)) AND (NOT private)
 				ORDER BY repo.updated_at desc NULLS LAST
 				LIMIT $1 OFFSET $2`
+
+// GitHubRepoGetter is useful for mocking the GitHub API functionality.
+type GitHubRepoGetter interface {
+	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
+}
+
+var repoGetter GitHubRepoGetter = &github.Repos{}
 
 // listAllPublicGitHubPublic is a special case repos.List specifically for use by the sitemap.
 //

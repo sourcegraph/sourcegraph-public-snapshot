@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -98,13 +97,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 
 	return r2
 }
-
-// GitHubRepoGetter is useful for mocking the GitHub API functionality.
-type GitHubRepoGetter interface {
-	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
-}
-
-var repoGetter GitHubRepoGetter = &github.Repos{}
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
@@ -192,12 +184,12 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
 		return nil, err
 	}
-
 	if opt == nil {
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
 	if opt.SlowlyIncludePublicGitHubRepos {
+		// special case for generating sitemap
 		return s.listAllGitHubPublic(ctx, opt)
 	}
 
@@ -302,9 +294,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 		}
 
 		// Don't ever allow List to return any GitHub mirrors. Our DB doesn't cache the GitHub metadata, so we have no way of filtering appropriately on any columns (including even just returning public repos--what if they aren't public anymore?).
-		if !opt.SlowlyIncludePublicGitHubRepos {
-			conds = append(conds, "uri NOT LIKE 'github.com/%'")
-		}
+		conds = append(conds, "uri NOT LIKE 'github.com/%'")
 
 		if conds != nil {
 			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
