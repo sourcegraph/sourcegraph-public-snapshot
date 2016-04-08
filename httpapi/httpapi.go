@@ -69,7 +69,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.DefRefs).Handler(handler(serveDefRefs))
 	m.Get(apirouter.Defs).Handler(handler(serveDefs))
 	m.Get(apirouter.Repo).Handler(handler(serveRepo))
-	m.Get(apirouter.RepoRefresh).Handler(handler(serveRepoRefresh))
 	m.Get(apirouter.RepoBranches).Handler(handler(serveRepoBranches))
 	m.Get(apirouter.RepoCommits).Handler(handler(serveRepoCommits))
 	m.Get(apirouter.RepoTree).Handler(handler(serveRepoTree))
@@ -86,6 +85,17 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
 	m.Get(apirouter.InternalAppdashUploadPageLoad).Handler(handler(serveInternalAppdashUploadPageLoad))
+
+	// RepoRefresh handler requires the user, so install a middleware just for
+	// it (so other HTTP API requests do not incur the 2-3 DB requests made by
+	// UserMiddleware).
+	//
+	// TODO(slimsag): figure out the UID from the Authorization header directly
+	// which is simpler.
+	wrappedServeRepoRefresh := handler(serveRepoRefresh)
+	m.Get(apirouter.RepoRefresh).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerutil.UserMiddleware(w, r, wrappedServeRepoRefresh.ServeHTTP)
+	}))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

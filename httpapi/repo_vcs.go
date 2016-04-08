@@ -53,10 +53,11 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoupdater.Enqueue(repoSpec, nil)
+	repoupdater.Enqueue(repoSpec, handlerutil.UserFromContext(ctx))
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
+
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
