@@ -51,7 +51,8 @@ export function urlToDef(def: Def): string {
 		// so just redirect to the dir listing.
 		//
 		// TODO(sqs): Improve handling of this case.
-		return urlToTree(def.Repo, def.CommitID, def.File);
+		let file = def.File === "." ? "" : def.File;
+		return urlToTree(def.Repo, def.CommitID, file);
 	}
 	return urlTo("def", defParams(def));
 }
