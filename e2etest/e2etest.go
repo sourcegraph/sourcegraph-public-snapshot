@@ -160,7 +160,12 @@ type testRunner struct {
 	slackSkipAtChannel                bool
 }
 
-func (t *testRunner) slackMessage(warning bool, msg, quoted string) {
+const(
+	typeWarning = iota
+	typeNormal
+)
+
+func (t *testRunner) slackMessage(messageType int, msg, quoted string) {
 	if t.slack == nil {
 		return
 	}
@@ -176,7 +181,7 @@ func (t *testRunner) slackMessage(warning bool, msg, quoted string) {
 		},
 	}
 	id := t.slackChannel.ID
-	if warning {
+	if messageType == typeWarning {
 		id = t.slackWarningChannel.ID
 	}
 	_, _, err := t.slack.PostMessage(id, msg, params)
@@ -194,7 +199,7 @@ func (t *testRunner) run() {
 		if t.runTests(shouldLogSuccess < 5) {
 			shouldLogSuccess++
 			if shouldLogSuccess == 5 {
-				t.slackMessage(false, ":star: *Five consecutive successes!* (silencing output until next failure)", "")
+				t.slackMessage(typeNormal, ":star: *Five consecutive successes!* (silencing output until next failure)", "")
 			}
 		} else {
 			shouldLogSuccess = 0
@@ -236,7 +241,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 				err, screenshot := t.runTest(test)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
-					t.slackMessage(true, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
+					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
 					return nil
 				}
 
@@ -246,7 +251,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					if attempt+1 < *retriesFlag {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
-						t.slackMessage(true, msg, "")
+						t.slackMessage(typeWarning, msg, "")
 
 						// When running without Slack support, write the screenshot to a file
 						// instead.
@@ -286,7 +291,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	if failures == 0 {
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
-			t.slackMessage(false, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
+			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
 		}
 	} else {
 		// Only send @channel on the first failure, not all consecutive ones (that
@@ -297,7 +302,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			atChannel = " @channel"
 		}
 		t.slackMessage(
-			false,
+			typeNormal,
 			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target),
 			t.slackLogBuffer.String(),
 		)
