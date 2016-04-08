@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/justinas/nosurf"
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
@@ -54,11 +55,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.Signup).Handler(handler(serveSignup))
-	m.Get(apirouter.Login).Handler(handler(serveLogin))
-	m.Get(apirouter.Logout).Handler(handler(serveLogout))
-	m.Get(apirouter.ForgotPassword).Handler(handler(serveForgotPassword))
-	m.Get(apirouter.ResetPassword).Handler(handler(servePasswordReset))
+	m.Get(apirouter.Signup).Handler(nosurf.New(handler(serveSignup)))
+	m.Get(apirouter.Login).Handler(nosurf.New(handler(serveLogin)))
+	m.Get(apirouter.Logout).Handler(nosurf.New(handler(serveLogout)))
+	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(handler(serveForgotPassword)))
+	m.Get(apirouter.ResetPassword).Handler(nosurf.New(handler(servePasswordReset)))
 
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
