@@ -9,6 +9,7 @@ import * as UserActions from "sourcegraph/user/UserActions";
 export class EventLogger {
 	constructor() {
 		this._amplitude = null;
+		this._intercomSettings = null;
 
 		// Listen for all Stores dispatches.
 		// You must separately log "frontend" actions of interest,
@@ -23,11 +24,15 @@ export class EventLogger {
 	reset(data) {
 		this.events = deepFreeze(data && data.events ? data.events : []);
 		this.userProperties = deepFreeze(data && data.userProperties ? data.userProperties : []);
+		this.intercomProperties = deepFreeze(data && data.intercomProperties ? data.intercomProperties : []);
+		this.intercomEvents = deepFreeze(data && data.intercomEvents ? data.intercomEvents : []);
 	}
 	toJSON() {
 		return {
 			events: this.events,
 			userProperties: this.userProperties,
+			intercomProperties: this.intercomProperties,
+			intercomEvents: this.intercomEvents,
 		};
 	}
 
@@ -74,6 +79,9 @@ export class EventLogger {
 				this.setUserProperty("registered_at", new Date(context.currentUser.RegisteredAt).toDateString());
 			}
 		}
+		if (global.window) {
+			this._intercomSettings = window.intercomSettings;
+		}
 
 		this.isUserAgentBot = false;
 		if (context.userAgent) {
@@ -83,20 +91,21 @@ export class EventLogger {
 			}
 		}
 
-		if (this._shouldFlush()) {
-			this._flush();
-		}
+		this._flush();
 	}
 
 	// Only flush events on the client, after a call to init().
 	// Filter out bot / test user agents.
-	_shouldFlush() {
+	_shouldFlushAmplitude() {
 		return Boolean(this._amplitude) && !this.isUserAgentBot;
+	}
+	_shouldFlushIntercom() {
+		return Boolean(this._intercomSettings) && !this.isUserAgentBot;
 	}
 
 	// sets current context's user properties
 	setUserProperty(property, value) {
-		if (!this._shouldFlush()) {
+		if (!this._shouldFlushAmplitude()) {
 			this.userProperties = deepFreeze(this.userProperties.concat([[property, value]]));
 		} else {
 			this._amplitude.identify(new this._amplitude.Identify().set(property, value));
@@ -105,15 +114,33 @@ export class EventLogger {
 
 	// records events for the current context's user
 	logEvent(eventName, eventProperties) {
-		if (!this._shouldFlush()) {
+		if (!this._shouldFlushAmplitude()) {
 			this.events = deepFreeze(this.events.concat([[eventName, eventProperties]]));
 		} else {
 			this._amplitude.logEvent(eventName, eventProperties);
 		}
 	}
 
+	// sets current context's users property value
+	setIntercomProperty(property, value) {
+		if (!this._shouldFlushIntercom()) {
+			this.intercomProperties = deepFreeze(this.intercomProperties.concat([[property, value]]));
+		} else {
+			this._intercomSettings[property] = value;
+		}
+	}
+
+	// records intercom events for the current context's user
+	logIntercomEvent(eventName, eventProperties) {
+		if (!this._shouldFlushIntercom()) {
+			this.intercomEvents = deepFreeze(this.intercomEvents.concat([[eventName, eventProperties]]));
+		} else {
+			window.Intercom("trackEvent", eventName, eventProperties);
+		}
+	}
+
 	_flush() {
-		if (this._shouldFlush()) { // sanity check
+		if (this._shouldFlushAmplitude()) { // sanity check
 			if (this.events) {
 				for (let tuple of this.events) {
 					this.logEvent(tuple[0], tuple[1]);
@@ -127,11 +154,25 @@ export class EventLogger {
 				this.userProperties = deepFreeze([]);
 			}
 		}
+		if (this._shouldFlushIntercom()) {
+			if (this.intercomEvents) {
+				for (let tuple of this.intercomEvents) {
+					this.logIntercomEvent(tuple[0], tuple[1]);
+				}
+				this.intercomEvents = deepFreeze([]);
+			}
+			if (this.intercomProperties) {
+				for (let tuple of this.intercomProperties) {
+					this.setIntercomProperty(tuple[0], tuple[1]);
+				}
+				this.intercomProperties = deepFreeze([]);
+			}
+		}
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case DashboardActions.HomeFetched:
+		case DashboardActions.RemoteReposFetched:
 			if (action.data.HasLinkedGitHub && action.data.RemoteRepos) {
 				let orgs = {};
 				for (let repo of action.data.RemoteRepos) {
@@ -139,15 +180,18 @@ export class EventLogger {
 				}
 				this.setUserProperty("orgs", Object.keys(orgs));
 				this.setUserProperty("num_github_repos", action.data.RemoteRepos.length);
+				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
 			}
 			break;
 
 		case RepoActions.FetchedRepo:
 			if (action.repoObj.IsCloning) {
-				this.logEvent("AddRepo", {
+				let eventProps = {
 					private: Boolean(action.repoObj.Private),
 					language: action.repoObj.Language,
-				});
+				};
+				this.logEvent("AddRepo", eventProps);
+				this.logIntercomEvent("add-repo", eventProps);
 			}
 			break;
 
