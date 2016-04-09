@@ -178,7 +178,7 @@ type testRunner struct {
 	slackSkipAtChannel                bool
 }
 
-const(
+const (
 	typeWarning = iota
 	typeNormal
 )
