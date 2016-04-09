@@ -107,6 +107,8 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 	//
 	// TODO(pararth): remove this kludge after migration is complete for all existing repos.
 	if len(refLocations.RepoRefs) == 0 || refLocations.RepoRefs[0].Repo != def.Repo {
+		// Scope the local repo ref search to the def's commit ID.
+		defSpec.CommitID = def.CommitID
 		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefsOptions{
