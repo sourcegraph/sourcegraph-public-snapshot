@@ -5,9 +5,10 @@ import RepoStore from "sourcegraph/repo/RepoStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
+import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 
 const RepoBackend = {
-	fetch: defaultFetch,
+	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
 		switch (action.constructor) {

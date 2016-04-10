@@ -28,6 +28,9 @@ function defaultOptions() {
 	return options;
 }
 
+// defaultFetch wraps the fetch API.
+//
+// Note: the caller might wrap this with singleflightFetch.
 export function defaultFetch(url, options) {
 	if (typeof global !== "undefined" && global.process && global.process.env.JSSERVER) {
 		url = `${context.appURL}${url}`;
