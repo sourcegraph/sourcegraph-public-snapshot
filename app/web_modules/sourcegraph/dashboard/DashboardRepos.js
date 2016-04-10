@@ -52,7 +52,7 @@ class DashboardRepos extends Component {
 	}
 
 	_showRepo(repo) {
-		if (this._filterInput && this._filterInput.getValue() && this._qualifiedName(repo).indexOf(this._filterInput.getValue()) === -1) {
+		if (this._filterInput && this._filterInput.value && this._qualifiedName(repo).indexOf(this._filterInput.value) === -1) {
 			return false;
 		}
 		return true; // no filter; return all
@@ -115,7 +115,7 @@ class DashboardRepos extends Component {
 					<span styleName="repos-label">{" "}</span>
 					<Input type="text"
 						placeholder="Filter repositories..."
-						ref={(c) => this._filterInput = c}
+						domRef={(e) => this._filterInput = e}
 						onChange={this._handleSearch} />
 				</div>
 				<div styleName="list">

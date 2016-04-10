@@ -30,44 +30,43 @@ class Signup extends Container {
 
 	stores() { return [UserStore]; }
 
-	_handleSubmit() {
+	_handleSubmit(ev) {
+		ev.preventDefault();
 		Dispatcher.Stores.dispatch(new UserActions.SubmitSignup());
 		Dispatcher.Backends.dispatch(new UserActions.SubmitSignup(
-			this._loginInput.getValue(),
-			this._passwordInput.getValue(),
-			this._emailInput.getValue()
+			this._loginInput.value,
+			this._passwordInput.value,
+			this._emailInput.value,
 		));
 	}
 
 	render() {
 		return (
-			<div styleName="container">
+			<form styleName="container" onSubmit={this._handleSubmit}>
 				<div styleName="title">Get started with Sourcegraph</div>
 				<div styleName="action">
 					<Input type="text"
 						placeholder="Username"
-						ref={(c) => this._loginInput = c}
+						domRef={(e) => this._loginInput = e}
 						autoFocus={true}
 						block={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						placeholder="Password"
-						ref={(c) => this._passwordInput = c}
+						domRef={(e) => this._passwordInput = e}
 						block={true} />
 				</div>
 				<div styleName="action">
 					<Input type="email"
 						placeholder="Email"
-						ref={(c) => this._emailInput = c}
-						onSubmit={this._handleSubmit}
+						domRef={(e) => this._emailInput = e}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}
-						onClick={this._handleSubmit}>Create Account</Button>
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.err.message}</div>
@@ -77,7 +76,7 @@ class Signup extends Container {
 					<span>Already have an account?</span>
 					<span styleName="alt-button"><Link to="/login"><Button size="small" outline={true}>Sign in</Button></Link></span>
 				</div>
-			</div>
+			</form>
 		);
 	}
 }

@@ -30,18 +30,19 @@ class ResetPassword extends Container {
 
 	stores() { return [UserStore]; }
 
-	_handleSubmit() {
+	_handleSubmit(ev) {
+		ev.preventDefault();
 		Dispatcher.Stores.dispatch(new UserActions.SubmitResetPassword());
 		Dispatcher.Backends.dispatch(new UserActions.SubmitResetPassword(
-			this._passwordInput.getValue(),
-			this._confirmInput.getValue(),
+			this._passwordInput.value,
+			this._confirmInput.value,
 			this.state.token
 		));
 	}
 
 	render() {
 		return (
-			<div styleName="container">
+			<form styleName="container" onSubmit={this._handleSubmit}>
 				<div styleName="title">Reset your password</div>
 				<div styleName="subtext">
 					Make sure to pick a good one!!
@@ -49,27 +50,25 @@ class ResetPassword extends Container {
 				<div styleName="action">
 					<Input type="password"
 						placeholder="New password"
-						ref={(c) => this._passwordInput = c}
+						ref={(e) => this._passwordInput = e}
 						autoFocus={true}
 						block={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						placeholder="Confirm password"
-						ref={(c) => this._confirmInput = c}
-						onSubmit={this._handleSubmit}
+						ref={(e) => this._confirmInput = e}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}
-						onClick={this._handleSubmit}>Reset Password</Button>
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Reset Password</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.err.message}</div>
 				}
-			</div>
+			</form>
 		);
 	}
 }

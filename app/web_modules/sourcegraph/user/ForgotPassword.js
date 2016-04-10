@@ -30,12 +30,12 @@ class ForgotPassword extends Container {
 
 	_handleSubmit() {
 		Dispatcher.Stores.dispatch(new UserActions.SubmitForgotPassword());
-		Dispatcher.Backends.dispatch(new UserActions.SubmitForgotPassword(this._emailInput.getValue()));
+		Dispatcher.Backends.dispatch(new UserActions.SubmitForgotPassword(this._emailInput.value));
 	}
 
 	render() {
 		return (
-			<div styleName="container">
+			<form styleName="container" onSubmit={this._handleSubmit}>
 				<div styleName="title">Forgot your password?</div>
 				<div styleName="subtext">
 					It happens to the best of us.
@@ -45,21 +45,19 @@ class ForgotPassword extends Container {
 				<div styleName="action">
 					<Input type="email"
 						placeholder="Email"
-						ref={(c) => this._emailInput = c}
-						onSubmit={this._handleSubmit}
+						domRef={(e) => this._emailInput = e}
 						autoFocus={true}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}
-						onClick={this._handleSubmit}>Reset Password</Button>
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Reset Password</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.err.message}</div>
 				}
-			</div>
+			</form>
 		);
 	}
 }

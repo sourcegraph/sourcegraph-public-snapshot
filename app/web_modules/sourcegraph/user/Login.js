@@ -29,37 +29,36 @@ class Login extends Container {
 
 	stores() { return [UserStore]; }
 
-	_handleSubmit() {
+	_handleSubmit(ev) {
+		ev.preventDefault();
 		Dispatcher.Stores.dispatch(new UserActions.SubmitLogin());
 		Dispatcher.Backends.dispatch(new UserActions.SubmitLogin(
-				this._loginInput.getValue(),
-				this._passwordInput.getValue()
+				this._loginInput.value,
+				this._passwordInput.value,
 		));
 	}
 
 	render() {
 		return (
-			<div styleName="container">
+			<form styleName="container" onSubmit={this._handleSubmit}>
 				<div styleName="title">Hey there, welcome back!</div>
 				<div styleName="action">
 					<Input type="text"
 						autoFocus={true}
 						placeholder="Username"
-						ref={(c) => this._loginInput = c}
+						domRef={(e) => this._loginInput = e}
 						block={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						placeholder="Password"
-						ref={(c) => this._passwordInput = c}
-						onSubmit={this._handleSubmit}
+						domRef={(e) => this._passwordInput = e}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}
-						onClick={this._handleSubmit}>Sign in</Button>
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Sign in</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.err.message}</div>
@@ -69,7 +68,7 @@ class Login extends Container {
 					<span>Don't have an account yet?</span>
 					<span styleName="alt-button"><Link to="/join"><Button size="small" outline={true}>Sign up</Button></Link></span>
 				</div>
-			</div>
+			</form>
 		);
 	}
 }

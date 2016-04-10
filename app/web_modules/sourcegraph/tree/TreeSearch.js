@@ -261,7 +261,7 @@ class TreeSearch extends Container {
 
 		default:
 			if (this.state.focused) {
-				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.getValue() : ""), 0);
+				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.value : ""), 0);
 			}
 			break;
 		}
@@ -462,7 +462,7 @@ class TreeSearch extends Container {
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Jump to symbols or files..."
-						ref={(c) => this._queryInput = c} />
+						domRef={(e) => this._queryInput = e} />
 				</div>
 				<div styleName="list-header">
 					Symbols
