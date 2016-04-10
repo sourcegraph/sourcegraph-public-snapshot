@@ -28,8 +28,8 @@ import (
 var skipFS = false // used by tests
 
 func init() {
-	Schema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(false, "URI")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(false, "URI")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
 		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
@@ -172,7 +172,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 // executed.
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
 	var repo dbRepo
-	if err := dbh(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
 		return nil, &store.RepoNotFoundError{Repo: "(unknown)"} // can't nicely serialize args
 	} else if err != nil {
 		return nil, err
@@ -335,7 +335,7 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 
 func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*sourcegraph.Repo, error) {
 	var repos []*dbRepo
-	if _, err := dbh(ctx).Select(&repos, sql, args...); err != nil {
+	if _, err := appDBH(ctx).Select(&repos, sql, args...); err != nil {
 		return nil, err
 	}
 	return toRepos(repos), nil
@@ -366,7 +366,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 
 	var r dbRepo
 	r.fromRepo(newRepo)
-	return dbh(ctx).Insert(&r)
+	return appDBH(ctx).Insert(&r)
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
@@ -374,32 +374,32 @@ func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
 		return err
 	}
 	if op.Description != "" {
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
 		if err != nil {
 			return err
 		}
 	}
 	if op.Language != "" {
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
 		if err != nil {
 			return err
 		}
 	}
 	if op.DefaultBranch != "" {
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
 		if err != nil {
 			return err
 		}
 	}
 
 	if op.UpdatedAt != nil {
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo.URI)
 		if err != nil {
 			return err
 		}
 	}
 	if op.PushedAt != nil {
-		_, err := dbh(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo.URI)
 		if err != nil {
 			return err
 		}
@@ -411,7 +411,7 @@ func (s *repos) Delete(ctx context.Context, repo string) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
 		return err
 	}
-	_, err := dbh(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
+	_, err := appDBH(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
 	if err != nil {
 		return err
 	}

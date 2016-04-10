@@ -18,9 +18,9 @@ import (
 )
 
 func init() {
-	t := Schema.Map.AddTableWithName(dbBuild{}, "repo_build").SetKeys(false, "Repo", "ID")
+	t := AppSchema.Map.AddTableWithName(dbBuild{}, "repo_build").SetKeys(false, "Repo", "ID")
 	t.ColMap("commit_id").SetMaxSize(40)
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE repo_build ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build ALTER COLUMN heartbeat_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
@@ -43,8 +43,8 @@ func init() {
 		`CREATE TRIGGER repo_build_next_id BEFORE INSERT ON repo_build FOR EACH ROW EXECUTE PROCEDURE increment_build_id();`,
 	)
 
-	Schema.Map.AddTableWithName(dbBuildTask{}, "repo_build_task").SetKeys(false, "Repo", "BuildID", "ID")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(dbBuildTask{}, "repo_build_task").SetKeys(false, "Repo", "BuildID", "ID")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE repo_build_task ALTER COLUMN started_at TYPE timestamp with time zone USING started_at::timestamp with time zone;`,
 		`ALTER TABLE repo_build_task ALTER COLUMN ended_at TYPE timestamp with time zone USING ended_at::timestamp with time zone;`,
 
@@ -202,7 +202,7 @@ func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sou
 	}
 
 	var build dbBuild
-	err := dbh(ctx).SelectOne(&build, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
+	err := appDBH(ctx).SelectOne(&build, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
 	if err == sql.ErrNoRows {
 		return nil, grpc.Errorf(codes.NotFound, "build %s not found", buildSpec.IDString())
 	} else if err != nil {
@@ -307,7 +307,7 @@ SELECT b.* FROM builds b
 ` + orderSQL
 
 	var builds []*dbBuild
-	if _, err := dbh(ctx).Select(&builds, sql, args...); err != nil {
+	if _, err := appDBH(ctx).Select(&builds, sql, args...); err != nil {
 		return nil, err
 	}
 
@@ -336,7 +336,7 @@ func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 		arg(b.EndedAt) + `,` + arg(b.HeartbeatAt) + `, ` + arg(b.Success) + `, ` + arg(b.Failure) + `, ` + arg(b.Killed) + `, ` +
 		arg(b.Host) + `, ` + arg(b.Purged) + `, ` + arg(b.Queue) + `, ` + arg(b.Priority) + `, ` + arg(b.BuilderConfig) + `)
             RETURNING id;`
-	id, err := dbh(ctx).SelectInt(sql, args...)
+	id, err := appDBH(ctx).SelectInt(sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +381,7 @@ func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 	if len(updates) != 0 {
 		sql := fmt.Sprintf(`UPDATE repo_build SET %s WHERE id=%s AND repo=%s`, strings.Join(updates, ", "), arg(build.ID), arg(build.Repo.URI))
 
-		if _, err := dbh(ctx).Exec(sql, args...); err != nil {
+		if _, err := appDBH(ctx).Exec(sql, args...); err != nil {
 			return err
 		}
 	}
@@ -417,7 +417,7 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 		sql := `INSERT INTO repo_build_task(id, repo, build_id, parent_id, label, created_at, started_at, ended_at, success, failure, skipped, warnings)
             VALUES(` + arg(t.ID) + `, ` + arg(t.Repo) + `, ` + arg(t.BuildID) + `, ` + arg(t.ParentID) + `, ` + arg(t.Label) + `, ` + arg(t.CreatedAt) + `, ` + arg(t.StartedAt) + `,` + arg(t.EndedAt) + `,` + arg(t.Success) + `, ` + arg(t.Failure) + `, ` + arg(t.Skipped) + `, ` + arg(t.Warnings) + `)
             RETURNING id;`
-		id, err := dbh(ctx).SelectInt(sql, args...)
+		id, err := appDBH(ctx).SelectInt(sql, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +460,7 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID) + ` AND repo=` + arg(task.Build.Repo.URI) + ` AND build_id=` + arg(task.Build.ID)
 		log15.Debug("Update task operation BEFORE", "sql", sql, "args", args)
 		startTime := time.Now()
-		_, err := dbh(ctx).Exec(sql, args...)
+		_, err := appDBH(ctx).Exec(sql, args...)
 		log15.Debug("Update task operation AFTER", "sql", sql, "args", args, "err", err, "duration", time.Now().Sub(startTime).String())
 		if err != nil {
 			return err
@@ -493,7 +493,7 @@ WHERE ` + condsSQL + `
 ORDER BY id ASC
 LIMIT ` + arg(opt.Limit()) + ` OFFSET ` + arg(opt.Offset()) + `;`
 	var tasks []*dbBuildTask
-	if _, err := dbh(ctx).Select(&tasks, sql, args...); err != nil {
+	if _, err := appDBH(ctx).Select(&tasks, sql, args...); err != nil {
 		return nil, err
 	}
 	return toBuildTasks(tasks), nil
@@ -519,7 +519,7 @@ WHERE repo_build.repo = to_dequeue.repo AND repo_build.id = to_dequeue.id
 RETURNING repo_build.*;
 `
 	var nextBuild dbBuild
-	if err := dbh(ctx).SelectOne(&nextBuild, query); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&nextBuild, query); err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -534,7 +534,7 @@ func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*s
 
 	var task dbBuildTask
 	query := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
-	if err := dbh(ctx).SelectOne(&task, query, taskSpec.Build.Repo.URI, taskSpec.Build.ID, taskSpec.ID); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&task, query, taskSpec.Build.Repo.URI, taskSpec.Build.ID, taskSpec.ID); err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err

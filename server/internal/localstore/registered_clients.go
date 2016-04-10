@@ -17,9 +17,9 @@ import (
 )
 
 func init() {
-	tbl := Schema.Map.AddTableWithName(dbRegisteredClient{}, "reg_clients").SetKeys(false, "ID")
+	tbl := AppSchema.Map.AddTableWithName(dbRegisteredClient{}, "reg_clients").SetKeys(false, "ID")
 	tbl.ColMap("JWKS").SetMaxSize(5000)
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE reg_clients ALTER COLUMN created_at TYPE timestamp with time zone USING created_at::timestamp with time zone;`,
 		`ALTER TABLE reg_clients ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		"ALTER TABLE reg_clients ALTER COLUMN redirect_uris TYPE text[] USING array[redirect_uris]::text[];",
@@ -114,7 +114,7 @@ func (s *registeredClients) GetByCredentials(ctx context.Context, cred sourcegra
 // "LIMIT 1" clause is appended to the query before it is executed.
 func (s *registeredClients) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.RegisteredClient, error) {
 	var client dbRegisteredClient
-	if err := dbh(ctx).SelectOne(&client, "SELECT * FROM reg_clients WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&client, "SELECT * FROM reg_clients WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
 		return nil, &store.RegisteredClientNotFoundError{}
 	} else if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (s *registeredClients) Create(ctx context.Context, client sourcegraph.Regis
 
 	var dbClient dbRegisteredClient
 	dbClient.fromRegisteredClient(&client)
-	if err := dbh(ctx).Insert(&dbClient); err != nil {
+	if err := appDBH(ctx).Insert(&dbClient); err != nil {
 		if strings.Contains(err.Error(), `duplicate key value violates unique constraint "reg_clients_pkey"`) {
 			return store.ErrRegisteredClientIDExists
 		}
@@ -171,7 +171,7 @@ client_name=` + arg(dbClient.ClientName) + `, description=` + arg(dbClient.Descr
 "type"=` + arg(dbClient.Type) + `, meta=` + arg(dbClient.Meta) + `
 WHERE id=` + arg(dbClient.ID)
 
-	res, err := dbh(ctx).Exec(sql, args...)
+	res, err := appDBH(ctx).Exec(sql, args...)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (s *registeredClients) Delete(ctx context.Context, client sourcegraph.Regis
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RegisteredClients.Delete"); err != nil {
 		return err
 	}
-	res, err := dbh(ctx).Exec(`DELETE FROM reg_clients WHERE id=$1;`, client.ID)
+	res, err := appDBH(ctx).Exec(`DELETE FROM reg_clients WHERE id=$1;`, client.ID)
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (s *registeredClients) List(ctx context.Context, opt sourcegraph.Registered
 	sql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(limit+1), arg(opt.Offset()))
 
 	var clients []*dbRegisteredClient
-	if _, err := dbh(ctx).Select(&clients, sql, args...); err != nil {
+	if _, err := appDBH(ctx).Select(&clients, sql, args...); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RegisteredClientList{

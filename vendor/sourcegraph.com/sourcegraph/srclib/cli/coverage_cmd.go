@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 
 	"strings"
+	"unicode"
+
+	"text/scanner"
 
 	"sourcegraph.com/sourcegraph/go-flags"
 
@@ -18,7 +22,10 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/grapher"
 	"sourcegraph.com/sourcegraph/srclib/plan"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 )
+
+const fileTokThresh float64 = 0.7
 
 func init() {
 	cliInit = append(cliInit, func(cli *flags.Command) {
@@ -38,6 +45,7 @@ type codeFileDatum struct {
 	NumRefs      int
 	NumDefs      int
 	NumRefsValid int
+	Language     string
 }
 
 type CoverageCmd struct {
@@ -65,19 +73,32 @@ func (c *CoverageCmd) Execute(args []string) error {
 	return nil
 }
 
-var codeExts = []string{".go", ".java", ".py", ".rb", ".cpp", ".ts", ".cs"} // codeExt lists all file extensions that indicate a code file we want to cover
-var codeExts_ = make(map[string]struct{})
+var langToExts = map[string][]string{
+	"Go":          []string{".go"},
+	"Java":        []string{".java"},
+	"Python":      []string{".py"},
+	"Ruby":        []string{".rb"},
+	"C++":         []string{".cpp", ".cc", ".cxx", ".c++"},
+	"TypeScript":  []string{".ts"},
+	"C#":          []string{".cs"},
+	"JavaScript":  []string{".js"},
+	"PHP":         []string{".php"},
+	"Objective-C": []string{".m", ".mm"},
+}
+var extToLang map[string]string
 
 func init() {
-	for _, ext := range codeExts {
-		codeExts_[ext] = struct{}{}
+	extToLang = make(map[string]string)
+	for lang, exts := range langToExts {
+		for _, ext := range exts {
+			extToLang[ext] = lang
+		}
 	}
 }
 
-func coverage(repo *Repo) (*cvg.Coverage, error) {
-	lineSep := []byte{'\n'}
-	codeFileData := make(map[string]*codeFileDatum)
-	log.Printf(repo.RootDir)
+func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
+	// Gather file data
+	codeFileData := make(map[string]*codeFileDatum) // data for each file needed to compute coverage
 	filepath.Walk(repo.RootDir, func(path string, info os.FileInfo, err error) error {
 		if filepath.IsAbs(path) {
 			var err error
@@ -93,22 +114,26 @@ func coverage(repo *Repo) (*cvg.Coverage, error) {
 			}
 			return nil
 		}
-		if _, isCodeFile := codeExts_[filepath.Ext(path)]; isCodeFile {
+
+		path = filepath.ToSlash(path)
+
+		ext := strings.ToLower(filepath.Ext(path))
+		if lang, isCodeFile := extToLang[ext]; isCodeFile {
 			b, err := ioutil.ReadFile(path)
 			if err != nil {
 				return err
 			}
-			loc := bytes.Count(b, lineSep)
-			codeFileData[path] = &codeFileDatum{LoC: loc}
+			loc := numLines(b)
+			codeFileData[path] = &codeFileDatum{LoC: loc, Language: lang}
 		}
 		return nil
 	})
 
+	// Gather ref/def data for each file
 	bdfs, err := GetBuildDataFS(repo.CommitID)
 	if err != nil {
 		return nil, err
 	}
-
 	treeConfig, err := config.ReadCached(bdfs)
 	if err != nil {
 		return nil, fmt.Errorf("error calling config.ReadCached: %s", err)
@@ -118,31 +143,52 @@ func coverage(repo *Repo) (*cvg.Coverage, error) {
 		return nil, fmt.Errorf("error calling plan.Makefile: %s", err)
 	}
 
-	for _, rule_ := range mf.Rules {
-		rule, ok := rule_.(*grapher.GraphUnitRule)
-		if !ok {
-			continue
-		}
+	defKeys := make(map[graph.DefKey]struct{})
+	data := make([]graph.Output, 0, len(mf.Rules))
 
-		var data graph.Output
-		if err := readJSONFileFS(bdfs, rule.Target(), &data); err != nil {
+	parseGraphData := func(graphFile string, sourceUnit *unit.SourceUnit) error {
+		var item graph.Output
+		if err := readJSONFileFS(bdfs, graphFile, &item); err != nil {
 			if err == errEmptyJSONFile {
-				log.Printf("Warning: the JSON file is empty for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
-				continue
+				log.Printf("Warning: the JSON file is empty for unit %s %s.", sourceUnit.Type, sourceUnit.Name)
+				return nil
 			}
 			if os.IsNotExist(err) {
-				log.Printf("Warning: no build data for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
-				continue
+				log.Printf("Warning: no build data for unit %s %s.", sourceUnit.Type, sourceUnit.Name)
+				return nil
 			}
-			return nil, fmt.Errorf("error reading JSON file %s for unit %s %s: %s", rule.Target(), rule.Unit.Type, rule.Unit.Name, err)
+			return fmt.Errorf("error reading JSON file %s for unit %s %s: %s", graphFile, sourceUnit.Type, sourceUnit.Name, err)
 		}
+		data = append(data, item)
 
-		defKeys := make(map[graph.DefKey]struct{})
-		for _, def := range data.Defs {
+		for _, def := range item.Defs {
 			defKeys[def.DefKey] = struct{}{}
 		}
+
+		for _, ref := range item.Refs {
+			ref.SetFromDefKey(ref.DefKey())
+		}
+		return nil
+	}
+
+	for _, rule_ := range mf.Rules {
+		switch rule := rule_.(type) {
+		case *grapher.GraphUnitRule:
+			if err := parseGraphData(rule.Target(), rule.Unit); err != nil {
+				return nil, err
+			}
+		case *grapher.GraphMultiUnitsRule:
+			for target, sourceUnit := range rule.Targets() {
+				if err := parseGraphData(target, sourceUnit); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	for _, item := range data {
 		var validRefs []*graph.Ref
-		for _, ref := range data.Refs {
+		for _, ref := range item.Refs {
 			if datum, exists := codeFileData[ref.File]; exists {
 				datum.NumRefs++
 
@@ -156,34 +202,132 @@ func coverage(repo *Repo) (*cvg.Coverage, error) {
 			}
 		}
 
-		for _, def := range data.Defs {
+		for _, def := range item.Defs {
 			if datum, exists := codeFileData[def.File]; exists {
 				datum.NumDefs++
 			}
 		}
 	}
 
-	var fileTokThresh float32 = 0.7
-	numIndexedFiles := 0
-	numDefs, numRefs, numRefsValid := 0, 0, 0
-	loc := 0
-	var uncoveredFiles []string
+	// Compute coverage from per-file data
+	type langStats struct {
+		numFiles        int
+		numIndexedFiles int
+		numDefs         int
+		numRefs         int
+		numRefsValid    int
+		uncoveredFiles  []string
+		loc             int
+	}
+	stats := make(map[string]*langStats)
 	for file, datum := range codeFileData {
-		loc += datum.LoC
-		numDefs += datum.NumDefs
-		numRefs += datum.NumRefs
-		numRefsValid += datum.NumRefsValid
-		if float32(datum.NumDefs+datum.NumRefsValid)/float32(datum.LoC) > fileTokThresh {
-			numIndexedFiles++
+		if _, exist := stats[datum.Language]; !exist {
+			stats[datum.Language] = &langStats{}
+		}
+		if shouldIgnoreFile(file) {
+			continue
+		}
+
+		s := stats[datum.Language]
+		s.numFiles++
+		s.loc += datum.LoC
+		s.numDefs += datum.NumDefs
+		s.numRefs += datum.NumRefs
+		s.numRefsValid += datum.NumRefsValid
+		if float64(datum.NumDefs+datum.NumRefsValid)/float64(datum.LoC) > fileTokThresh {
+			s.numIndexedFiles++
 		} else {
-			uncoveredFiles = append(uncoveredFiles, file)
+			s.uncoveredFiles = append(s.uncoveredFiles, file)
 		}
 	}
 
-	return &cvg.Coverage{
-		FileScore:      float32(numIndexedFiles) / float32(len(codeFileData)),
-		RefScore:       float32(numRefsValid) / float32(numRefs),
-		TokDensity:     float32(numDefs+numRefs) / float32(loc),
-		UncoveredFiles: uncoveredFiles,
-	}, nil
+	cov := make(map[string]*cvg.Coverage)
+	for lang, s := range stats {
+		cov[lang] = &cvg.Coverage{
+			FileScore:      divideSentinel(float64(s.numIndexedFiles), float64(s.numFiles), -1),
+			RefScore:       divideSentinel(float64(s.numRefsValid), float64(s.numRefs), -1),
+			TokDensity:     divideSentinel(float64(s.numDefs+s.numRefs), float64(s.loc), -1),
+			UncoveredFiles: s.uncoveredFiles,
+		}
+	}
+	return cov, nil
+}
+
+func shouldIgnoreFile(filename string) bool {
+	if filepath.Base(filename) == "doc.go" {
+		return true
+	}
+	return false
+}
+
+func divideSentinel(x, y, sentinel float64) float64 {
+	q := x / y
+	if math.IsNaN(q) {
+		return sentinel
+	}
+	return q
+}
+
+// numLines counts the number of lines that
+// - are not blank
+// - do not look like comments
+func numLines(data []byte) int {
+
+	data = stripComments(data)
+
+	len := len(data)
+	if len == 0 {
+		return 0
+	}
+
+	count := 1
+	start := 0
+
+	pos := bytes.IndexByte(data[start:], '\n')
+	for pos != -1 && start < len {
+		l := data[start : start+pos+1]
+		if isNotBlank(l) {
+			count++
+		}
+		start += pos + 1
+		pos = bytes.IndexByte(data[start:], '\n')
+	}
+
+	return count
+}
+
+// stripComments strips single line (//) and multi line (/* */) comments from the data
+func stripComments(data []byte) []byte {
+
+	ret := make([]byte, 0, len(data))
+	s := &scanner.Scanner{}
+	s.Init(bytes.NewReader(data))
+	s.Error = func(_ *scanner.Scanner, _ string) {}
+	s.Mode = s.Mode ^ scanner.SkipComments
+
+	offset := 0
+
+	tok := s.Scan()
+	for tok != scanner.EOF {
+		pos := s.Pos()
+		if tok == scanner.Comment {
+			ret = append(ret, data[offset:pos.Offset-len(s.TokenText())]...)
+		} else {
+			ret = append(ret, data[offset:pos.Offset]...)
+		}
+		offset = pos.Offset
+		tok = s.Scan()
+	}
+
+	return append(ret, data[offset:]...)
+}
+
+// isNotBlank returns true if data contains at least one not-whitespace character
+func isNotBlank(data []byte) bool {
+	for _, r := range data {
+		if !unicode.IsSpace(rune(r)) {
+			return true
+		}
+	}
+	return false
 }

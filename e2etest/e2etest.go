@@ -121,6 +121,24 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
+// WaitForRedirect waits up to 20s for a redirect to the given endpoint (e.g.,
+// "/login").
+func (t *T) WaitForRedirect(endpoint, description string) {
+	endpointURL := t.Endpoint(endpoint)
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			currentURL, err := t.WebDriver.CurrentURL()
+			if err != nil {
+				return false
+			}
+			return currentURL == endpointURL
+		},
+		fmt.Sprintf("%s (%s)", description, endpointURL),
+	)
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,
@@ -153,14 +171,19 @@ type testRunner struct {
 	executor string
 	idKey    *idkey.IDKey
 
-	slack              *slack.Client
-	slackToken         string
-	slackChannel       slack.Channel
-	slackLogBuffer     *bytes.Buffer
-	slackSkipAtChannel bool
+	slack                             *slack.Client
+	slackToken                        string
+	slackChannel, slackWarningChannel *slack.Channel
+	slackLogBuffer                    *bytes.Buffer
+	slackSkipAtChannel                bool
 }
 
-func (t *testRunner) slackMessage(msg, quoted string) {
+const (
+	typeWarning = iota
+	typeNormal
+)
+
+func (t *testRunner) slackMessage(messageType int, msg, quoted string) {
 	if t.slack == nil {
 		return
 	}
@@ -175,7 +198,11 @@ func (t *testRunner) slackMessage(msg, quoted string) {
 			},
 		},
 	}
-	_, _, err := t.slack.PostMessage(t.slackChannel.ID, msg, params)
+	id := t.slackChannel.ID
+	if messageType == typeWarning {
+		id = t.slackWarningChannel.ID
+	}
+	_, _, err := t.slack.PostMessage(id, msg, params)
 	if err != nil {
 		log.Println(err)
 		return
@@ -190,7 +217,7 @@ func (t *testRunner) run() {
 		if t.runTests(shouldLogSuccess < 5) {
 			shouldLogSuccess++
 			if shouldLogSuccess == 5 {
-				t.slackMessage(":star: *Five consecutive successes!* (silencing output until next failure)", "")
+				t.slackMessage(typeNormal, ":star: *Five consecutive successes!* (silencing output until next failure)", "")
 			}
 		} else {
 			shouldLogSuccess = 0
@@ -232,7 +259,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 				err, screenshot := t.runTest(test)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
-					t.slackMessage(fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
+					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
 					return nil
 				}
 
@@ -242,7 +269,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					if attempt+1 < *retriesFlag {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
-						t.slackMessage(msg, "")
+						t.slackMessage(typeWarning, msg, "")
 
 						// When running without Slack support, write the screenshot to a file
 						// instead.
@@ -282,7 +309,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	if failures == 0 {
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
-			t.slackMessage(fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
+			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
 		}
 	} else {
 		// Only send @channel on the first failure, not all consecutive ones (that
@@ -293,6 +320,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			atChannel = " @channel"
 		}
 		t.slackMessage(
+			typeNormal,
 			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target),
 			t.slackLogBuffer.String(),
 		)
@@ -361,6 +389,11 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 
 		// If there was an error, capture a screenshot of the problem.
 		if err != nil {
+			// Wrap the error with the current URL.
+			currentURL, _ := wd.CurrentURL()
+			err = fmt.Errorf("%s (on page %s)", err, currentURL)
+
+			// Capture a screenshot of the problem.
 			var err2 error
 			screenshot, err2 = wd.Screenshot()
 			if err2 != nil {
@@ -456,6 +489,29 @@ var (
 )
 
 func Main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, `
+Environment:
+  SELENIUM_SERVER_IP (required)
+      IP address of the Selenium server (run 'docker-machine ls' on OS X and Windows; use 'localhost' on Linux)
+  TARGET (required)
+      target Sourcegraph server to test against (e.g. 'http://192.168.1.1:3080', use LAN IP due to Docker!)
+  SELENIUM_SERVER_PORT = "4444"
+      port of the Selenium server
+  ID_KEY_DATA (optional)
+      If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
+  SLACK_API_TOKEN (optional)
+      If specified, send information about tests to Slack.
+  SLACK_CHANNEL = "e2etest"
+      Slack channel to which test result output and test failure screenshots will be sent to.
+  SLACK_WARNING_CHANNEL (optional)
+      If specified, send warning (verbose) log messages to this channel instead of SLACK_CHANNEL.
+
+Flags:
+`)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	// Prepare logging.
@@ -526,32 +582,48 @@ func Main() {
 		tr.slack = slack.New(token)
 		tr.slackToken = token
 
-		// Find the channel ID.
+		// Determine which slack channel and warning channel we should use.
+		// Find the channel IDs.
 		channelName := os.Getenv("SLACK_CHANNEL")
+		warningChannelName := os.Getenv("SLACK_WARNING_CHANNEL")
 		if channelName == "" {
 			channelName = "e2etest"
 		}
+		if warningChannelName == "" {
+			warningChannelName = channelName
+		}
+
+		// Find the channel IDs.
 		channels, err := tr.slack.GetChannels(true)
 		if err != nil {
 			log.Fatal(err)
 		}
-		found := false
-		for _, c := range channels {
-			if c.Name == channelName {
-				found = true
-				tr.slackChannel = c
+		findChannel := func(name string) *slack.Channel {
+			for _, c := range channels {
+				if c.Name == name {
+					return &c
+				}
 			}
+			return nil
 		}
-		if !found {
+		tr.slackChannel = findChannel(channelName)
+		if tr.slackChannel == nil {
 			log.Println("could not find slack channel", channelName)
 			log.Println("disabling slack notifications")
 			tr.slack = nil
-		} else {
+		}
+		tr.slackWarningChannel = findChannel(warningChannelName)
+		if tr.slackWarningChannel == nil {
+			log.Println("could not find slack warning channel", warningChannelName)
+			log.Println("defaulting to SLACK_CHANNEL instead")
+			tr.slackWarningChannel = tr.slackChannel
+		}
+		if tr.slackChannel != nil {
 			registeredTests := &bytes.Buffer{}
 			for _, t := range tr.tests {
 				fmt.Fprintf(registeredTests, "[%v]: %v\n", t.Name, t.Description)
 			}
-			tr.slackMessage(":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
+			tr.slackMessage(typeNormal, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
 		}
 	}
 

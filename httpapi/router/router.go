@@ -27,6 +27,7 @@ const (
 	BuildTaskLog     = "build.task.log"
 	Def              = "def"
 	DefRefs          = "def.refs"
+	DefRefLocations  = "def.ref.locations"
 	Defs             = "defs"
 	Repo             = "repo"
 	RepoRefresh      = "repo.refresh"
@@ -107,6 +108,7 @@ func New(base *mux.Router) *mux.Router {
 	defPath := "/def/" + routevar.Def
 	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()
 	def.Path("/refs").Methods("GET").Name(DefRefs)
+	def.Path("/ref-locations").Methods("GET").Name(DefRefLocations)
 	repoRev.Path(defPath).Methods("GET").Name(Def) // match subroutes first
 
 	return base

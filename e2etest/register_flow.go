@@ -102,18 +102,6 @@ func TestRegisterFlow(t *T) error {
 	submit := t.FindElement(selenium.ByCSSSelector, ".sign-up > button.btn")
 	submit.Click()
 
-	// Wait for redirect.
-	timeout := time.After(10 * time.Second)
-	for {
-		if t.CurrentURL() == t.Endpoint("/") {
-			break
-		}
-		select {
-		case <-timeout:
-			t.Fatalf("expected redirect to homepage after register; CurrentURL=%q\n", t.CurrentURL())
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
+	t.WaitForRedirect("/", "wait for redirect to homepage after register")
 	return nil
 }

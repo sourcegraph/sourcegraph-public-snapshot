@@ -38,33 +38,43 @@ describe("DefBackend", () => {
 		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
 	});
 
+	it("should handle WantRefLocations", () => {
+		DefBackend.fetch = function(url, options) {
+			expect(url).to.be("/.api/repos/r@v/-/def/d/-/ref-locations");
+			return immediateSyncPromise({status: 200, json: () => "someRefData"});
+		};
+		expect(Dispatcher.Stores.catchDispatched(() => {
+			DefBackend.__onDispatch(new DefActions.WantRefLocations("r", "v", "d"));
+		})).to.eql([new DefActions.RefLocationsFetched("r", "v", "d", "someRefData")]);
+	});
+
 	describe("should handle WantRefs", () => {
 		it("for all files", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs");
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d"));
-			})).to.eql([new DefActions.RefsFetched("r", "v", "d", null, "someRefData")]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, "someRefData")]);
 		});
 		it("for a specific file", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Files=f");
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr&Files=rf");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "f"));
-			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "f", "someRefData")]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr", "rf"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", "rf", "someRefData")]);
 		});
 		it("with no result available", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs");
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({status: 200, json: () => null});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d"));
-			})).to.eql([new DefActions.RefsFetched("r", "v", "d", null, null)]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, null)]);
 		});
 	});
 });

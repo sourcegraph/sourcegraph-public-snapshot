@@ -6,7 +6,11 @@
 FROM microsoft/aspnet:1.0.0-rc1-update1-coreclr
 
 RUN apt-get update -y
-RUN apt-get install -qq git make
+RUN apt-get install -qq git make wget tar
+
+# Add global assembly cache
+RUN mkdir /gac
+RUN cd /gac && wget https://www.dropbox.com/s/s02lvl8s140f0sc/v4.5.tar.gz && tar -xvf v4.5.tar.gz
 
 # Install srclib-csharp executable
 ENV SRCLIBPATH /srclib/toolchains

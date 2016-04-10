@@ -26,10 +26,11 @@ func TestLoginFlow(t *T) error {
 	ctx, c := t.GRPCClient()
 
 	// Create the test user account.
+	testPassword := "e2etest"
 	_, err := c.Accounts.Create(ctx, &sourcegraph.NewAccount{
 		Login:    t.TestLogin,
 		Email:    t.TestEmail,
-		Password: "e2etest",
+		Password: testPassword,
 	})
 	if err != nil && grpc.Code(err) != codes.AlreadyExists {
 		return err
@@ -76,26 +77,14 @@ func TestLoginFlow(t *T) error {
 
 	// Enter username and password for test account.
 	username.Click()
-	username.SendKeys("e2eloginflow")
+	username.SendKeys(t.TestLogin)
 	password.Click()
-	password.SendKeys("e2eloginflow")
+	password.SendKeys(testPassword)
 
 	// Click the submit button.
 	submit := t.FindElement(selenium.ByCSSSelector, ".log-in > button.btn")
 	submit.Click()
 
-	// Wait for redirect.
-	timeout := time.After(1 * time.Second)
-	for {
-		if t.CurrentURL() == t.Endpoint("/") {
-			break
-		}
-		select {
-		case <-timeout:
-			t.Fatalf("expected redirect to homepage after sign-in; CurrentURL=%q\n", t.CurrentURL())
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
+	t.WaitForRedirect("/", "wait for redirect to homepage after sign-in")
 	return nil
 }

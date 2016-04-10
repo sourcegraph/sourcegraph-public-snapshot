@@ -61,14 +61,19 @@ var (
 // NOTE ABOUT DATA LOSS: If you run this func and your env vars are
 // set up to access an existing database, its data will be deleted.
 func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle, done func()) {
+	var b *backgroundDBPool
 	backgroundDBPoolsLock.Lock()
 	if _, ok := backgroundDBPoolsByName[poolName]; !ok {
 		backgroundDBPoolsByName[poolName] = &backgroundDBPool{}
 		backgroundDBPoolsByName[poolName].start(poolName, schema)
 	}
+	b = backgroundDBPoolsByName[poolName]
 	backgroundDBPoolsLock.Unlock()
 
-	b := backgroundDBPoolsByName[poolName]
+	if b == nil {
+		log.Fatal("db pool not available: %q", poolName)
+	}
+
 	if schema != nil && b.schema != schema {
 		log.Fatal("schema mismatch for db pool: %q", poolName)
 	}

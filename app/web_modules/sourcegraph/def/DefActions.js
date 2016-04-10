@@ -82,17 +82,45 @@ export class HighlightDef {
 	}
 }
 
+export class WantRefLocations {
+	repo: string;
+	rev: ?string;
+	def: string;
+
+	constructor(repo: string, rev: ?string, def: string) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
+	}
+}
+
+export class RefLocationsFetched {
+	repo: string;
+	rev: ?string;
+	def: string;
+	locations: Array<Object>;
+
+	constructor(repo: string, rev: ?string, def: string, locations: Array<Object>) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
+		this.locations = locations;
+	}
+}
+
 export class WantRefs {
 	repo: string;
 	rev: ?string;
 	def: string;
-	file: ?string; // only return refs in this file
+	refRepo: string; // return refs from files in this repo
+	refFile: ?string; // only return refs in this file
 
-	constructor(repo: string, rev: ?string, def: string, file: ?string) {
+	constructor(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string) {
 		this.repo = repo;
 		this.rev = rev;
 		this.def = def;
-		this.file = file || null;
+		this.refRepo = refRepo;
+		this.refFile = refFile || null;
 	}
 }
 
@@ -100,15 +128,17 @@ export class RefsFetched {
 	repo: string;
 	rev: ?string;
 	def: string;
-	file: ?string;
+	refRepo: string;
+	refFile: ?string;
 	refs: Array<Ref>;
 	eventName: string;
 
-	constructor(repo: string, rev: ?string, def: string, file: ?string, refs: Array<Ref>) {
+	constructor(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string, refs: Array<Ref>) {
 		this.repo = repo;
 		this.rev = rev;
 		this.def = def;
-		this.file = file || null;
+		this.refRepo = refRepo;
+		this.refFile = refFile || null;
 		this.refs = refs;
 		this.eventName = "RefsFetched";
 	}

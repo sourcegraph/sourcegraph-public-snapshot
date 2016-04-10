@@ -71,7 +71,7 @@ deployment:
       - echo $LONG_VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
 
   staging-branch:
-    branch: [staging, staging2, staging3]
+    branch: [staging, staging2, staging3, staging4]
     commands:
       - ./dev/circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO

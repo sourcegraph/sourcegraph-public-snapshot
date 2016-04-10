@@ -69,8 +69,6 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	return nil
 }
 
-var droneSrclibGoImage = "sourcegraph/srclib-go:latest"
-
 // Note: If you push new Docker images for the srclib build steps, you
 // MUST update the SHA256 digest, or else users will continue using
 // the old Docker image. Also ensure you `docker push` the new Docker
@@ -91,7 +89,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "JavaScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-javascript:latest",
+				Image: droneSrclibJavaScriptImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -101,7 +99,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-java:latest",
+				Image: droneSrclibJavaImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -111,7 +109,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "PHP (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-basic:latest",
+				Image: droneSrclibBasicImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -121,7 +119,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Objective-C (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-basic:latest",
+				Image: droneSrclibBasicImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -131,7 +129,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "Python (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-python:latest",
+				Image: droneSrclibPythonImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -141,7 +139,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-typescript:latest",
+				Image: droneSrclibTypeScriptImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -151,7 +149,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 		Key: "C# (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: "sourcegraph/srclib-csharp:latest",
+				Image: droneSrclibCSharpImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
@@ -191,7 +189,7 @@ func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
 		Key: "Graph metrics",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
-				Image: droneSrclibGoImage,
+				Image: droneSrclibGoImage, // just use the version of srclib in the srclib-go image
 				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_COVERAGE_URL=" + coverageURL.String(),
 				}),

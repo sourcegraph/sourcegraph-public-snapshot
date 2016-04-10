@@ -22,7 +22,7 @@ type dbPassword struct {
 var tableName = "passwords"
 
 func init() {
-	Schema.Map.AddTableWithName(dbPassword{}, tableName).SetKeys(false, "UID")
+	AppSchema.Map.AddTableWithName(dbPassword{}, tableName).SetKeys(false, "UID")
 }
 
 // CheckUIDPassword returns an error if the password argument is not correct for
@@ -31,7 +31,7 @@ func (p password) CheckUIDPassword(ctx context.Context, UID int32, password stri
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Password.CheckUIDPassword"); err != nil {
 		return err
 	}
-	hashed, err := dbh(ctx).SelectStr("SELECT hashedpassword FROM passwords WHERE uid=$1;", UID)
+	hashed, err := appDBH(ctx).SelectStr("SELECT hashedpassword FROM passwords WHERE uid=$1;", UID)
 	if err != nil {
 		return err
 	}
@@ -59,6 +59,6 @@ WITH upsert AS (
   UPDATE passwords SET hashedpassword=$2 WHERE uid=$1 RETURNING *
 )
 INSERT INTO passwords(uid, hashedpassword) SELECT $1, $2 WHERE NOT EXISTS (SELECT * FROM upsert);`
-	_, err = dbh(ctx).Exec(query, uid, hashed)
+	_, err = appDBH(ctx).Exec(query, uid, hashed)
 	return err
 }

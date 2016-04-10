@@ -48,8 +48,9 @@ class RefsMain extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
-		state.path = props.location && props.location.query.file ? props.location.query.file : null;
-		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.path);
+		state.refRepo = props.location && props.location.query.repo ? props.location.query.repo : null;
+		state.refFile = props.location && props.location.query.file ? props.location.query.file : null;
+		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, state.refFile);
 		state.files = null;
 		state.entrySpecs = null;
 		state.ranges = null;
@@ -61,7 +62,7 @@ class RefsMain extends Container {
 			let ranges = {};
 			let anns = {};
 			let fileIndex = new Map();
-			for (let ref of state.refs.Refs || []) {
+			for (let ref of state.refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
 				if (!fileIndex.has(ref.File)) {
@@ -100,8 +101,8 @@ class RefsMain extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.path !== nextState.path) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.path));
+		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo || prevState.refFile !== nextState.refFile) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo, nextState.refFile));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
@@ -119,7 +120,7 @@ class RefsMain extends Container {
 
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
 			let wantedFiles = new Set();
-			for (let ref of nextState.refs.Refs) {
+			for (let ref of nextState.refs) {
 				if (wantedFiles.size === (nextState.page * FILES_PER_PAGE)) break;
 				if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
 				// TODO Only fetch a portion of the file/annotations at a time for perf.
@@ -142,7 +143,7 @@ class RefsMain extends Container {
 
 		return (
 			<div styleName="refs-container">
-				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)} dangerouslySetInnerHTML={this.state.defObj.QualifiedName}/>} {this.state.path ? `in ${this.state.path}` : `in ${this.state.repo}`}</h1>
+				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)} dangerouslySetInnerHTML={this.state.defObj.QualifiedName}/>} {this.state.refFile && `in ${this.state.refFile}`} {this.state.refRepo && `in ${this.state.refRepo}`}</h1>
 				<hr/>
 				{this.state.files && this.state.files.map((file, i) => {
 					if (!file) return null;

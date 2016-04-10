@@ -7,12 +7,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
-
-	"sourcegraph.com/sourcegraph/srclib/toolchain"
 )
 
 func runCmdLogError(cmd *exec.Cmd) {
+	log.Printf("Running %v", cmd.Args)
 	err := runCmdStderr(cmd)
 	if err != nil {
 		log.Printf("Error running `%s`: %s", strings.Join(cmd.Args, " "), err)
@@ -25,17 +25,28 @@ func runCmdStderr(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-// getVENVBinPath returns toolchains Python virtualenv path. If toolchain is ran in
-// `docker` mode, it will return empty string because there is no virtualenv.
+// getProgramPath returns path to toolchain (assuming that exe file is located in .bin, path is <path-to-.bin>/..
+func getProgramPath() (string, error) {
+	path := filepath.Join(filepath.Dir(os.Args[0]), "..")
+	return filepath.Abs(path)
+}
+
+// getVENVBinPath returns toolchains Python virtualenv path.
 func getVENVBinPath() (string, error) {
-	if os.Getenv("IN_DOCKER_CONTAINER") == "" {
-		tc, err := toolchain.Lookup("sourcegraph.com/sourcegraph/srclib-python")
-		if err != nil {
-			return "", err
-		}
-		return filepath.Join(tc.Dir, ".env", "bin"), nil
+	path, err := getProgramPath()
+	if err != nil {
+		return "", err
 	}
-	return "", nil
+	return filepath.Abs(filepath.Join(path, ".env", getEnvBinDir()))
+}
+
+// Returns binaries directory of virtualenv which may be different on Windows and Unix
+func getEnvBinDir() string {
+	if runtime.GOOS == "windows" {
+		return "Scripts"
+	} else {
+		return "bin"
+	}
 }
 
 func getHash(text string) string {

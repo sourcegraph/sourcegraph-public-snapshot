@@ -239,83 +239,94 @@ func Import(buildDataFS vfs.FileSystem, stor interface{}, opt ImportOpt) error {
 		return fmt.Errorf("error calling plan.Makefile: %s", err)
 	}
 
+	// hasIndexableData is set if at least one source unit's graph data is
+	// successfully imported to the graph store.
+	//
+	// This flag is set concurrently in calls to importGraphData, but it doesn't
+	// need to be protected by a mutex since its value is only modified in one
+	// direction (false to true), and it is only read in the sequential section
+	// after parallel.NewRun completes.
+	//
+	// However, we still protect it with a mutex to avoid data race errors from the
+	// Go race detector.
 	var (
 		mu               sync.Mutex
 		hasIndexableData bool
 	)
 
-	par := parallel.NewRun(10)
-	for _, rule_ := range mf.Rules {
-		rule := rule_
-
-		if opt.Unit != "" || opt.UnitType != "" {
-			type ruleForSourceUnit interface {
-				SourceUnit() *unit.SourceUnit
+	importGraphData := func(graphFile string, sourceUnit *unit.SourceUnit) error {
+		var data graph.Output
+		if err := readJSONFileFS(buildDataFS, graphFile, &data); err != nil {
+			if err == errEmptyJSONFile {
+				log.Printf("Warning: the JSON file is empty for unit %s %s.", sourceUnit.Type, sourceUnit.Name)
+				return nil
 			}
-			if rule, ok := rule.(ruleForSourceUnit); ok {
-				u := rule.SourceUnit()
-				if (opt.Unit != "" && u.Name != opt.Unit) || (opt.UnitType != "" && u.Type != opt.UnitType) {
-					continue
-				}
-			} else {
-				// Skip all non-source-unit rules if --unit or
-				// --unit-type are specified.
-				continue
+			if os.IsNotExist(err) {
+				log.Printf("Warning: no build data for unit %s %s.", sourceUnit.Type, sourceUnit.Name)
+				return nil
+			}
+			return fmt.Errorf("error reading JSON file %s for unit %s %s: %s", graphFile, sourceUnit.Type, sourceUnit.Name, err)
+		}
+		if opt.DryRun || GlobalOpt.Verbose {
+			log.Printf("# Importing graph data (%d defs, %d refs, %d docs, %d anns) for unit %s %s", len(data.Defs), len(data.Refs), len(data.Docs), len(data.Anns), sourceUnit.Type, sourceUnit.Name)
+			if opt.DryRun {
+				return nil
 			}
 		}
 
-		par.Do(func() error {
-			switch rule := rule.(type) {
-			case *grapher.GraphUnitRule:
-				var data graph.Output
-				if err := readJSONFileFS(buildDataFS, rule.Target(), &data); err != nil {
-					if err == errEmptyJSONFile {
-						log.Printf("Warning: the JSON file is empty for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
-						return nil
-					}
-					if os.IsNotExist(err) {
-						log.Printf("Warning: no build data for unit %s %s.", rule.Unit.Type, rule.Unit.Name)
-						return nil
-					}
-					return fmt.Errorf("error reading JSON file %s for unit %s %s: %s", rule.Target(), rule.Unit.Type, rule.Unit.Name, err)
-				}
-				if opt.DryRun || GlobalOpt.Verbose {
-					log.Printf("# Importing graph data (%d defs, %d refs, %d docs, %d anns) for unit %s %s", len(data.Defs), len(data.Refs), len(data.Docs), len(data.Anns), rule.Unit.Type, rule.Unit.Name)
-					if opt.DryRun {
-						return nil
-					}
-				}
-
-				// HACK: Transfer docs to [def].Docs.
-				docsByPath := make(map[string]*graph.Doc, len(data.Docs))
-				for _, doc := range data.Docs {
-					docsByPath[doc.Path] = doc
-				}
-				for _, def := range data.Defs {
-					if doc, present := docsByPath[def.Path]; present {
-						def.Docs = append(def.Docs, &graph.DefDoc{Format: doc.Format, Data: doc.Data})
-					}
-				}
-
-				switch imp := stor.(type) {
-				case store.RepoImporter:
-					if err := imp.Import(opt.CommitID, rule.Unit, data); err != nil {
-						return fmt.Errorf("error running store.RepoImporter.Import: %s", err)
-					}
-				case store.MultiRepoImporter:
-					if err := imp.Import(opt.Repo, opt.CommitID, rule.Unit, data); err != nil {
-						return fmt.Errorf("error running store.MultiRepoImporter.Import: %s", err)
-					}
-				default:
-					return fmt.Errorf("store (type %T) does not implement importing", stor)
-				}
-
-				mu.Lock()
-				hasIndexableData = true
-				mu.Unlock()
+		// HACK: Transfer docs to [def].Docs.
+		docsByPath := make(map[string]*graph.Doc, len(data.Docs))
+		for _, doc := range data.Docs {
+			docsByPath[doc.Path] = doc
+		}
+		for _, def := range data.Defs {
+			if doc, present := docsByPath[def.Path]; present {
+				def.Docs = append(def.Docs, &graph.DefDoc{Format: doc.Format, Data: doc.Data})
 			}
-			return nil
-		})
+		}
+
+		switch imp := stor.(type) {
+		case store.RepoImporter:
+			if err := imp.Import(opt.CommitID, sourceUnit, data); err != nil {
+				return fmt.Errorf("error running store.RepoImporter.Import: %s", err)
+			}
+		case store.MultiRepoImporter:
+			if err := imp.Import(opt.Repo, opt.CommitID, sourceUnit, data); err != nil {
+				return fmt.Errorf("error running store.MultiRepoImporter.Import: %s", err)
+			}
+		default:
+			return fmt.Errorf("store (type %T) does not implement importing", stor)
+		}
+
+		mu.Lock()
+		hasIndexableData = true
+		mu.Unlock()
+
+		return nil
+	}
+
+	par := parallel.NewRun(10)
+	for _, rule_ := range mf.Rules {
+		rule := rule_
+		switch rule := rule.(type) {
+		case *grapher.GraphUnitRule:
+			if (opt.Unit != "" && rule.Unit.Name != opt.Unit) || (opt.UnitType != "" && rule.Unit.Type != opt.UnitType) {
+				continue
+			}
+			par.Do(func() error {
+				return importGraphData(rule.Target(), rule.Unit)
+			})
+		case *grapher.GraphMultiUnitsRule:
+			for target_, sourceUnit_ := range rule.Targets() {
+				target, sourceUnit := target_, sourceUnit_
+				if (opt.Unit != "" && sourceUnit.Name != opt.Unit) || (opt.UnitType != "" && sourceUnit.Type != opt.UnitType) {
+					continue
+				}
+				par.Do(func() error {
+					return importGraphData(target, sourceUnit)
+				})
+			}
+		}
 	}
 	if err := par.Wait(); err != nil {
 		return err

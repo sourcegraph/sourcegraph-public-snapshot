@@ -33,6 +33,8 @@ type Doc struct {
 	Start uint32 `protobuf:"varint,5,opt,name=Start,proto3" json:"Start,omitempty"`
 	// End is the byte offset of this Doc's last byte in File.
 	End uint32 `protobuf:"varint,6,opt,name=End,proto3" json:"End,omitempty"`
+	// DocUnit is the source unit containing this Doc.
+	DocUnit string `protobuf:"bytes,7,opt,name=DocUnit,proto3" json:"DocUnit,omitempty"`
 }
 
 func (m *Doc) Reset()         { *m = Doc{} }
@@ -90,6 +92,12 @@ func (m *Doc) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintDoc(data, i, uint64(m.End))
 	}
+	if len(m.DocUnit) > 0 {
+		data[i] = 0x3a
+		i++
+		i = encodeVarintDoc(data, i, uint64(len(m.DocUnit)))
+		i += copy(data[i:], m.DocUnit)
+	}
 	return i, nil
 }
 
@@ -142,6 +150,10 @@ func (m *Doc) Size() (n int) {
 	}
 	if m.End != 0 {
 		n += 1 + sovDoc(uint64(m.End))
+	}
+	l = len(m.DocUnit)
+	if l > 0 {
+		n += 1 + l + sovDoc(uint64(l))
 	}
 	return n
 }
@@ -343,6 +355,35 @@ func (m *Doc) Unmarshal(data []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DocUnit", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDoc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDoc
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DocUnit = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDoc(data[iNdEx:])

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 	"sourcegraph.com/sourcegraph/srclib/cvg"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -24,12 +25,14 @@ const (
 
 var errCoverageIsBad = errcode.HTTPErr{Status: http.StatusNotAcceptable, Err: fmt.Errorf("coverage did not meet minimum thresholds")}
 
+// serveCoverage imports coverage data for a given repository and
+// revision. If it detects a regression in coverage, it triggers an
+// alert.
 func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	if strings.ToLower(r.Header.Get("content-type")) != "application/json" {
 		w.WriteHeader(http.StatusBadRequest)
 		return errors.New("requires Content-Type: application/json")
 	}
-
 	ctx, cl := handlerutil.Client(r)
 
 	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
@@ -37,12 +40,34 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	var cov cvg.Coverage
+	var cov map[string]*cvg.Coverage
 	if err := json.NewDecoder(r.Body).Decode(&cov); err != nil {
 		return err
 	}
 
-	if cov.FileScore < FileScoreThresh || cov.RefScore < RefScoreThresh {
+	// If previous coverage exists alert on failure
+	if prevCov, dataVer, err := handlerutil.GetCoverage(cl, ctx, repoRev.URI); err == nil {
+		if cvg.HasRegressed(prevCov, cov) {
+			prevCovJSON, _ := json.Marshal(prevCov)
+			covJSON, _ := json.Marshal(cov)
+			slack.PostMessage(slack.PostOpts{
+				Msg: fmt.Sprintf(`Coverage for %s has regressed.
+Bfore, commit %s had %s.
+After, commit %s has %s.`, repoRev.URI, dataVer.CommitID, string(prevCovJSON), repoRev.CommitID, string(covJSON)),
+				IconEmoji: ":warning:",
+				Channel:   "srclib",
+			})
+		}
+	}
+
+	foundGoodLang := false
+	for _, langcov := range cov {
+		if langcov.FileScore >= FileScoreThresh && langcov.RefScore >= RefScoreThresh {
+			foundGoodLang = true
+			break
+		}
+	}
+	if !foundGoodLang {
 		return &errCoverageIsBad
 	}
 

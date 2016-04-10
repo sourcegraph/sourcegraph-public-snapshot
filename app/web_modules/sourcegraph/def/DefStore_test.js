@@ -22,8 +22,13 @@ describe("DefStore", () => {
 		expect(DefStore.highlightedDef).to.be(null);
 	});
 
+	it("should handle RefLocationsFetched", () => {
+		DefStore.directDispatch(new DefActions.RefLocationsFetched("r", "v", "d", ["someData"]));
+		expect(DefStore.refLocations.get("r", "v", "d")).to.eql(["someData"]);
+	});
+
 	it("should handle RefsFetched", () => {
-		DefStore.directDispatch(new DefActions.RefsFetched("r", "v", "d", "f", ["someData"]));
-		expect(DefStore.refs.get("r", "v", "d", "f")).to.eql(["someData"]);
+		DefStore.directDispatch(new DefActions.RefsFetched("r", "v", "d", "rr", "rf", ["someData"]));
+		expect(DefStore.refs.get("r", "v", "d", "rr", "rf")).to.eql(["someData"]);
 	});
 });

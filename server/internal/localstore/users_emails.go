@@ -17,8 +17,8 @@ type userEmailAddrRow struct {
 }
 
 func init() {
-	Schema.Map.AddTableWithName(userEmailAddrRow{}, "user_email").SetKeys(false, "UID", "Email")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(userEmailAddrRow{}, "user_email").SetKeys(false, "UID", "Email")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE user_email ALTER COLUMN email TYPE citext;`,
 		`CREATE INDEX user_email_email ON user_email(email) WHERE (NOT blacklisted);`,
 		`CREATE UNIQUE INDEX user_email_email_primary ON user_email(email, "primary") WHERE (NOT blacklisted);`,
@@ -31,7 +31,7 @@ func (s *users) GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAdd
 	}
 	var emailAddrRow userEmailAddrRow
 	query := `SELECT * FROM user_email WHERE email=$1 AND "primary"=true`
-	if err := dbh(ctx).SelectOne(&emailAddrRow, query, emailAddr.Email); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&emailAddrRow, query, emailAddr.Email); err == sql.ErrNoRows {
 		return nil, &store.UserNotFoundError{Email: emailAddr.Email}
 	} else if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (s *users) ListEmails(ctx context.Context, user sourcegraph.UserSpec) ([]*s
 
 	var emailAddrRows []*userEmailAddrRow
 	sql := `SELECT * FROM user_email WHERE uid=$1 ORDER BY "primary" DESC, verified DESC`
-	if _, err := dbh(ctx).Select(&emailAddrRows, sql, user.UID); err != nil {
+	if _, err := appDBH(ctx).Select(&emailAddrRows, sql, user.UID); err != nil {
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func (s *accounts) UpdateEmails(ctx context.Context, user sourcegraph.UserSpec, 
 		return &store.UserNotFoundError{UID: 0}
 	}
 
-	return dbutil.Transact(dbh(ctx), func(tx gorp.SqlExecutor) error {
+	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		// Clear out all existing from DB, and add in the merged (final) list.
 		if _, err := tx.Exec(`DELETE FROM user_email WHERE uid=$1;`, user.UID); err != nil {
 			return err

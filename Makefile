@@ -108,7 +108,8 @@ serve-dep:
 smoke: src
 	dropdb --if-exists src-smoke
 	createdb src-smoke
-	PGDATABASE=src-smoke $(GOBIN)/src pgsql create
+	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=app create
+	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=graph create
 	PGDATABASE=src-smoke go run ./smoke/basicgit/basicgit.go
 
 libvfsgen:

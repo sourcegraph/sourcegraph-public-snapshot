@@ -141,7 +141,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		return nil, err
 	}
 
-	repo, err = store.ReposFromContext(ctx).Get(ctx, repo.URI)
+	repo, err = s.Get(ctx, &sourcegraph.RepoSpec{URI: repo.URI})
 	if err != nil {
 		return
 	}
@@ -199,8 +199,12 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
 		HTTPCloneURL: ghrepo.HTTPCloneURL,
 		Mirror:       true,
-		Private:      ghrepo.Private,
 		CreatedAt:    &ts,
+
+		// KLUDGE: set this to be true to avoid accidentally treating
+		// a private GitHub repo as public (the real value should be
+		// populated from GitHub on the fly).
+		Private: true,
 	}, nil
 }
 
@@ -283,6 +287,7 @@ func defaultBranch(ctx context.Context, repoURI string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if repo.DefaultBranch == "" {
 		return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repoURI)
 	}

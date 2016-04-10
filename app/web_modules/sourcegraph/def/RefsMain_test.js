@@ -27,7 +27,7 @@ describe("RefsMain", () => {
 
 		it("should have no error if the def and refs loaded", () => {
 			expect(renderedStatus(
-				<RefsMain defObj={{}} refs={{Refs: []}} />
+				<RefsMain defObj={{}} refs={[]} />
 			)).to.eql({error: null});
 		});
 	});

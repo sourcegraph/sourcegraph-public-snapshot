@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/justinas/nosurf"
+
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"

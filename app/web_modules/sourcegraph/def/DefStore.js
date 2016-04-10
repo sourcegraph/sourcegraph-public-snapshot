@@ -1,6 +1,7 @@
 // @flow weak
 
 import Store from "sourcegraph/Store";
+import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -15,8 +16,8 @@ function defsListKeyFor(repo, rev, query) {
 	return `${repo}#${rev}#${query}`;
 }
 
-function refsKeyFor(repo: string, rev: ?string, def: string, file: ?string): string {
-	return `${defKey(repo, rev, def)}#${file || ""}`;
+function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string): string {
+	return `${defKey(repo, rev, def)}#${refRepo}#${refFile || ""}`;
 }
 
 export class DefStore extends Store {
@@ -33,14 +34,20 @@ export class DefStore extends Store {
 		this.highlightedDef = null;
 		this.refs = deepFreeze({
 			content: data && data.refs ? data.refs.content : {},
-			get(repo: string, rev: ?string, def: string, file: ?string) {
-				return this.content[refsKeyFor(repo, rev, def, file)] || null;
+			get(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string) {
+				return this.content[refsKeyFor(repo, rev, def, refRepo, refFile)] || null;
+			},
+		});
+		this.refLocations = deepFreeze({
+			content: data && data.refLocations ? data.refLocations.content : {},
+			get(repo: string, rev: ?string, def: string) {
+				return this.content[defKey(repo, rev, def)] || null;
 			},
 		});
 	}
 
 	toJSON() {
-		return {defs: this.defs, refs: this.refs};
+		return {defs: this.defs, refs: this.refs, refLocations: this.refLocations};
 	}
 
 	__onDispatch(action) {
@@ -75,10 +82,18 @@ export class DefStore extends Store {
 			this.highlightedDef = action.url;
 			break;
 
+		case DefActions.RefLocationsFetched:
+			this.refLocations = deepFreeze(Object.assign({}, this.refLocations, {
+				content: Object.assign({}, this.refLocations.content, {
+					[defKey(action.repo, action.rev, action.def)]: getRankedRefLocations(action.locations),
+				}),
+			}));
+			break;
+
 		case DefActions.RefsFetched:
 			this.refs = deepFreeze(Object.assign({}, this.refs, {
 				content: Object.assign({}, this.refs.content, {
-					[refsKeyFor(action.repo, action.rev, action.def, action.file)]: action.refs,
+					[refsKeyFor(action.repo, action.rev, action.def, action.refRepo, action.refFile)]: action.refs,
 				}),
 			}));
 			break;
@@ -89,6 +104,29 @@ export class DefStore extends Store {
 
 		this.__emitChange();
 	}
+}
+
+function getRankedRefLocations(locations) {
+	if (locations.length <= 2) {
+		return locations;
+	}
+	let dashboardRepos = DashboardStore.repos;
+	let repos = [];
+
+	// The first repo of locations is the current repo.
+	repos.push(locations[0]);
+
+	let otherRepos = [];
+	let i = 1;
+	for (; i < locations.length; i++) {
+		if (locations[i].Repo in dashboardRepos) {
+			repos.push(locations[i]);
+		} else {
+			otherRepos.push(locations[i]);
+		}
+	}
+	Array.prototype.push.apply(repos, otherRepos);
+	return repos;
 }
 
 export default new DefStore(Dispatcher.Stores);

@@ -16,8 +16,8 @@ import (
 )
 
 func init() {
-	Schema.Map.AddTableWithName(dbUser{}, "users").SetKeys(true, "UID")
-	Schema.CreateSQL = append(Schema.CreateSQL,
+	AppSchema.Map.AddTableWithName(dbUser{}, "users").SetKeys(true, "UID")
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE users ALTER COLUMN login TYPE citext",
 		"CREATE UNIQUE INDEX users_login ON users(login)",
 		`ALTER TABLE users ALTER COLUMN registered_at TYPE timestamp with time zone USING registered_at::timestamp with time zone;`,
@@ -131,7 +131,7 @@ func (s *users) getByLogin(ctx context.Context, login string) (*sourcegraph.User
 // "LIMIT 1" clause is appended to the query before it is executed.
 func (s *users) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
 	var user dbUser
-	if err := dbh(ctx).SelectOne(&user, "SELECT * FROM users WHERE ("+query+") LIMIT 1", args...); err != nil {
+	if err := appDBH(ctx).SelectOne(&user, "SELECT * FROM users WHERE ("+query+") LIMIT 1", args...); err != nil {
 		return nil, err
 	}
 	return user.toUser(), nil
@@ -191,7 +191,7 @@ func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]
 
 	sql = "SELECT * " + sql
 	var users []*dbUser
-	if _, err := dbh(ctx).Select(&users, sql, args...); err != nil {
+	if _, err := appDBH(ctx).Select(&users, sql, args...); err != nil {
 		return nil, err
 	}
 	return toUsers(users), nil
@@ -201,6 +201,6 @@ func (s *users) Count(ctx context.Context) (int32, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Users.Count"); err != nil {
 		return 0, err
 	}
-	count, err := dbh(ctx).SelectInt("SELECT count(*) FROM users WHERE NOT disabled;")
+	count, err := appDBH(ctx).SelectInt("SELECT count(*) FROM users WHERE NOT disabled;")
 	return int32(count), err
 }

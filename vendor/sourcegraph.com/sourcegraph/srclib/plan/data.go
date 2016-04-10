@@ -12,5 +12,8 @@ func RepositoryCommitDataFilename(emptyData interface{}) string {
 }
 
 func SourceUnitDataFilename(emptyData interface{}, u *unit.SourceUnit) string {
+	if u.Name == "" {
+		return u.Type + "." + buildstore.DataTypeSuffix(emptyData)
+	}
 	return filepath.Join(u.Name, u.Type+"."+buildstore.DataTypeSuffix(emptyData))
 }

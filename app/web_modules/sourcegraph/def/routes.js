@@ -32,7 +32,7 @@ export const routes: Array<Route> =[
 				callback(null, {
 					main: require("sourcegraph/blob/BlobLoader").default,
 				}, [
-					require("sourcegraph/def/withDefAndRefs").default,
+					require("sourcegraph/def/withDefAndRefLocations").default,
 					require("sourcegraph/def/blobWithDefBox").default,
 				]);
 			});
@@ -58,9 +58,10 @@ export function urlToDef(def: Def, rev: ?string): string {
 	return urlTo("def", defParams(def, rev));
 }
 
-export function urlToDefRefs(def: Def, file?: string): string {
+export function urlToDefRefs(def: Def, refRepo: string, refFile?: string): string {
 	let u = urlTo("defRefs", defParams(def));
-	if (file) return `${u}?file=${encodeURIComponent(file)}`;
+	u = `${u}?repo=${refRepo}`;
+	if (refFile) u = `${u}&file=${encodeURIComponent(refFile)}`;
 	return u;
 }
 

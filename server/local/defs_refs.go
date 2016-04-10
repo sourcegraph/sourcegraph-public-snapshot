@@ -3,6 +3,8 @@ package local
 import (
 	"path"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -21,29 +23,31 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		opt = &sourcegraph.DefListRefsOptions{}
 	}
 
-	var repoFilters []srcstore.RefFilter
-	if opt.Repo != "" {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", opt.Repo); err != nil {
-			return nil, err
-		}
-		repoFilters = []srcstore.RefFilter{
-			srcstore.ByRepos(opt.Repo),
-		}
-	} else {
-		if defSpec.CommitID == "" {
-			return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID is empty")
-		}
-		if defSpec.Repo == "" {
-			return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: Repo is empty")
-		}
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", defSpec.Repo); err != nil {
-			return nil, err
-		}
-		repoFilters = []srcstore.RefFilter{
-			// TODO(sqs): don't restrict to same-commit
-			srcstore.ByRepos(defSpec.Repo),
-			srcstore.ByCommitIDs(defSpec.CommitID),
-		}
+	// Restrict the ref search to a single repo and commit for performance.
+	var repo, commitID string
+	switch {
+	case opt.Repo != "":
+		repo = opt.Repo
+	case defSpec.Repo != "":
+		repo = defSpec.Repo
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: Repo must be specified")
+	}
+	switch {
+	case opt.CommitID != "":
+		commitID = opt.CommitID
+	case defSpec.CommitID != "":
+		commitID = defSpec.CommitID
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID must be specified")
+	}
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", repo); err != nil {
+		return nil, err
+	}
+
+	repoFilters := []srcstore.RefFilter{
+		srcstore.ByRepos(repo),
+		srcstore.ByCommitIDs(commitID),
 	}
 
 	refFilters := []srcstore.RefFilter{
@@ -53,6 +57,7 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 			DefUnit:     defSpec.Unit,
 			DefPath:     defSpec.Path,
 		}),
+		srcstore.ByCommitIDs(commitID),
 		srcstore.RefFilterFunc(func(ref *graph.Ref) bool { return !ref.Def }),
 		srcstore.Limit(opt.Offset()+opt.Limit()+1, 0),
 	}
@@ -63,9 +68,6 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 			opt.Files[i] = path.Clean(f)
 		}
 		refFilters = append(refFilters, srcstore.ByFiles(false, opt.Files...))
-	}
-	if defSpec.CommitID != "" {
-		refFilters = append(refFilters, srcstore.ByCommitIDs(defSpec.CommitID))
 	}
 
 	filters := append(repoFilters, refFilters...)
@@ -87,4 +89,15 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 		Refs:           refs,
 		StreamResponse: sourcegraph.StreamResponse{HasMore: hasMore},
 	}, nil
+}
+
+func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	refLocations, err := store.GlobalRefsFromContext(ctx).Get(ctx, op)
+	if err != nil {
+		// Temporarily log and ignore error in querying the global ref store.
+		// TODO: fail with error here once the rollout of global ref store is complete.
+		log15.Error("error fetching ref locations", "def", op.Def, "error", err)
+		return &sourcegraph.RefLocationsList{}, nil
+	}
+	return refLocations, nil
 }

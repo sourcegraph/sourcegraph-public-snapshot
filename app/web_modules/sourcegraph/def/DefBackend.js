@@ -43,19 +43,37 @@ const DefBackend = {
 				break;
 			}
 
-		case DefActions.WantRefs:
+		case DefActions.WantRefLocations:
 			{
-				let refs = DefStore.refs.get(action.repo, action.rev, action.def, action.file);
-				if (refs === null) {
-					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/refs`;
-					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
+				let refLocations = DefStore.refLocations.get(action.repo, action.rev, action.def);
+				if (refLocations === null) {
+					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/ref-locations`;
 					trackPromise(
 						DefBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.file, data));
+								Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action.repo, action.rev, action.def, data));
+							})
+					);
+				}
+				break;
+			}
+
+		case DefActions.WantRefs:
+			{
+				let refs = DefStore.refs.get(action.repo, action.rev, action.def, action.refRepo, action.refFile);
+				if (refs === null) {
+					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/refs?Repo=${encodeURIComponent(action.refRepo)}`;
+					if (action.refFile) url += `&Files=${encodeURIComponent(action.refFile)}`;
+					trackPromise(
+						DefBackend.fetch(url)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => {
+								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.refRepo, action.refFile, data));
 							})
 					);
 				}
