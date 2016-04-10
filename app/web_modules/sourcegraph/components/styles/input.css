@@ -15,7 +15,7 @@
 	composes: b--blue-8 from colors;
 }
 
-.normal:focus {
+.common:focus {
 	outline: none;
 	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
 }
