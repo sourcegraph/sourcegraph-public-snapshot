@@ -16,6 +16,7 @@ class DefPopup extends React.Component {
 	render() {
 		let def = this.props.def;
 		let refLocs = this.props.refLocations;
+		console.log("QQ", refLocs);
 		return (
 			<div className={s.marginBox}>
 				<header className={s.boxTitle}>{qualifiedNameAndType(def)}</header>
@@ -24,7 +25,7 @@ class DefPopup extends React.Component {
 					<i>No usages found</i>
 				}
 				{refLocs && refLocs.length > 0 &&
-					refLocs.map((repoRef, i) => (
+					refLocs.filter((r) => r.Files).map((repoRef, i) => (
 						<div key={i} className={s.allRefs}>
 							<header><span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefRefs(def, repoRef.Repo)}>{repoRef.Repo}</Link></header>
 							<div className={s.refsGroup}>
