@@ -88,3 +88,67 @@ The `Component` base class
 * Implement `onStateTransition(prevState, nextState)` to create `Want*` actions.
 * Do not access `this.props` at all.
 * The component gets rendered if the state changes (shallow comparison).
+
+
+## Setting statuses and loading state
+
+Each "page" in the application must report whether any errors occurred
+while loading, and when loading is complete. This is necessary for
+server-side rendering, which requires that we wait until a page is
+done loading and then send back an HTTP status code for the page.
+
+You need to do 2 things to properly track the status and loading
+state: record errors, and record async operations. The following
+sections describe how to do each one of these things. See the
+`sourcegraph/app/status` module for more information.
+
+### Recording errors
+
+In any React component that fetches data and that you wish to
+participate in setting the success/failure state, call
+`this.context.status.error(err: Error)` with any errors. As described
+in the `error` method's documentation, a subsequent null error will
+not overwrite a non-null error, so you needn't worry about clobbering
+errors. For example:
+
+``` javascript
+class MyComponent extends React.Component {
+	contextTypes = {
+		status: React.PropTypes.object,
+	};
+
+	onStateTransition(prevState, nextState) {
+		if (nextState.foo && prevState.foo !== nextState.foo) {
+			// NOTE: Assumes that the backend stores an error in the Error field.
+			this.context.status.error(nextState.foo.Error);
+		}
+	}
+}
+```
+
+### Recording promises
+
+Finally, every async operation should be wrapped in `trackPromise`, so
+the server knows when all of them are completed (and the page can be
+rendered):
+
+``` javascript
+import {trackPromise} from "sourcegraph/app/status";
+
+const MyBackend = {
+	// ...
+
+	__onDispatch(action) {
+		switch (action.constructor) {
+
+		case MyActions.WantFoo:
+			{
+				let foo = FooStore.foos.get(action.foo);
+				if (foo === null) {
+					trackPromise(FooBackend.fetch(`/.api/foo/${action.foo}`)
+						.then(...));
+		// ...
+	}
+}
+```
+

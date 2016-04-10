@@ -3,26 +3,32 @@
 import React from "react";
 import expect from "expect.js";
 import RefsMain from "sourcegraph/def/RefsMain";
-import {renderedHTTPStatusCode} from "sourcegraph/app/httpResponseTestUtils";
+import {renderedStatus} from "sourcegraph/app/statusTestUtils";
 
 describe("RefsMain", () => {
-	describe("HTTP response", () => {
-		it("should be null until the def is loaded", () => {
-			expect(renderedHTTPStatusCode(
+	describe("status", () => {
+		it("should have no error initially", () => {
+			expect(renderedStatus(
 				<RefsMain />
-			)).to.be(null);
+			)).to.eql({error: null});
 		});
 
-		it("should be 200 if the def exists", () => {
-			expect(renderedHTTPStatusCode(
-				<RefsMain defObj={{File: "foo.go"}} />
-			)).to.be(200);
+		it("should have error if the refs failed ", () => {
+			expect(renderedStatus(
+				<RefsMain defObj={{File: "foo.go"}} refs={{Error: true}} />
+			)).to.eql({error: true});
 		});
 
-		it("should be 404 if the def does not exist", () => {
-			expect(renderedHTTPStatusCode(
+		it("should have error if the def failed", () => {
+			expect(renderedStatus(
 				<RefsMain defObj={{Error: true}} />
-			)).to.be(404);
+			)).to.eql({error: true});
+		});
+
+		it("should have no error if the def and refs loaded", () => {
+			expect(renderedStatus(
+				<RefsMain defObj={{}} refs={{Refs: []}} />
+			)).to.eql({error: null});
 		});
 	});
 });

@@ -1,0 +1,40 @@
+// @flow weak
+
+import React from "react";
+import expect from "expect.js";
+import withFileBlob from "sourcegraph/blob/withFileBlob";
+import {renderedStatus} from "sourcegraph/app/statusTestUtils";
+import BlobStore from "sourcegraph/blob/BlobStore";
+import * as BlobActions from "sourcegraph/blob/BlobActions";
+import {rel as relPath} from "sourcegraph/app/routePatterns";
+
+const C = withFileBlob((props) => null);
+
+const props = {
+	params: {splat: [null, "f"]},
+	route: {path: relPath.blob},
+};
+
+describe("withFileBlob", () => {
+	describe("status", () => {
+		it("should have no error initially", () => {
+			expect(renderedStatus(
+				<C repo="r" rev="v" {...props} />
+			)).to.eql({error: null});
+		});
+
+		it("should have no error if the blob and rev exist", () => {
+			BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {}));
+			expect(renderedStatus(
+				<C repo="r" rev="v" {...props} />
+			)).to.eql({error: null});
+		});
+
+		it("should have error if the blob does not exist", () => {
+			BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Error: true}));
+			expect(renderedStatus(
+				<C repo="r" rev="v" {...props} />
+			)).to.eql({error: true});
+		});
+	});
+});

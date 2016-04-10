@@ -16,6 +16,10 @@ import {rel} from "sourcegraph/app/routePatterns";
 // If the path refers to a tree, a redirect occurs. (TODO: not yet implemented.)
 export default function withFileBlob(Component) {
 	class WithFileBlob extends Container {
+		static contextTypes = {
+			status: React.PropTypes.object.isRequired,
+		};
+
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
@@ -36,6 +40,10 @@ export default function withFileBlob(Component) {
 		onStateTransition(prevState, nextState) {
 			if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path)) {
 				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.path));
+			}
+
+			if (nextState.blob && prevState.blob !== nextState.blob) {
+				this.context.status.error(nextState.blob.Error);
 			}
 		}
 

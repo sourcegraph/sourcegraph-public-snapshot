@@ -4,6 +4,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {trackPromise} from "sourcegraph/app/status";
 
 const DefBackend = {
 	fetch: defaultFetch,
@@ -14,11 +15,13 @@ const DefBackend = {
 			{
 				let def = DefStore.defs.get(action.repo, action.rev, action.def);
 				if (def === null) {
-					DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
+					trackPromise(
+						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => ({Error: true}))
-							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)));
+							.catch((err) => ({Error: err}))
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)))
+					);
 				}
 				break;
 			}
@@ -27,13 +30,15 @@ const DefBackend = {
 			{
 				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
 				if (defs === null) {
-					DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
+					trackPromise(
+						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => ({Error: true}))
+							.catch((err) => ({Error: err}))
 							.then((data) => {
 								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, data));
-							});
+							})
+					);
 				}
 				break;
 			}
@@ -44,13 +49,15 @@ const DefBackend = {
 				if (refs === null) {
 					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/refs`;
 					if (action.file) url += `?Files=${encodeURIComponent(action.file)}`;
-					DefBackend.fetch(url)
+					trackPromise(
+						DefBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => ({Error: true}))
+							.catch((err) => ({Error: err}))
 							.then((data) => {
 								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.file, data));
-							});
+							})
+					);
 				}
 				break;
 			}

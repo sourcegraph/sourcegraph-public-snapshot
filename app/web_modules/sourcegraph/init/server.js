@@ -5,10 +5,10 @@ import {RouterContext, match, createMemoryHistory} from "react-router";
 import {rootRoute} from "sourcegraph/app/App";
 import dumpStores from "sourcegraph/init/dumpStores";
 import resetStores from "sourcegraph/init/resetStores";
-import {allFetchesResolved, allFetchesCount} from "sourcegraph/util/xhr";
+import {trackedPromisesCount, allTrackedPromisesResolved} from "sourcegraph/app/status";
 import * as context from "sourcegraph/app/context";
 import split from "split";
-import {statusCode as httpResponseStatusCode} from "sourcegraph/app/httpResponse";
+import {httpStatusCode} from "sourcegraph/app/status";
 
 /*
 TODO: We can optimize this iterative rendering scheme to avoid wasted effort
@@ -23,46 +23,44 @@ since they would not do any actual rendering, only component initialization.
 
 // renderIter iteratively renders the HTML so that fetches are triggered. Do this
 // until we reach the fixed point where no additional fetches are triggered.
-function renderIter(i, props, deadline, callback) {
+function renderIter(i, props, location, deadline, callback) {
 	if (i > 10) {
 		throw new Error(`Maximum React server-side rendering iterations reached (${i}).`);
 	}
 
 	let t0 = Date.now();
-	let asyncFetchesBefore = allFetchesCount();
 
 	// Trigger a render so that we start the async data fetches.
 	let htmlStr = ReactDOMServer.renderToString(<RouterContext {...props} />);
 	console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
 
 	const nearDeadline = (deadline - Date.now()) < 200;
-	const newAsyncFetches = allFetchesCount() - asyncFetchesBefore;
-	if (newAsyncFetches === 0 || nearDeadline) {
+	if (trackedPromisesCount() === 0 || nearDeadline) {
 		if (i > 1) {
 			console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
 		}
 
-		let statusCode = httpResponseStatusCode();
-		if (!statusCode) {
-			console.log("WARNING: No HTTP status code was set by any React components. Defaulting to 200 OK, but in the future all components will be required to set a status code.");
-			statusCode = 200;
-		}
+		// 202 Accepted to indicate processing isn't complete.
+		const incomplete = trackedPromisesCount() > 0;
+		let code = location.state ? httpStatusCode(location.state.error) : 202;
+		if (incomplete && code === 200) code = 202;
 
 		// No additional async fetches were triggered, so we are done!
 		callback({
-			statusCode: statusCode,
+			statusCode: code,
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
 			stores: dumpStores(),
-			incomplete: newAsyncFetches > 0 && nearDeadline,
+			incomplete: incomplete,
 		});
 		return;
 	}
 
 	let tFetch0 = Date.now();
-	allFetchesResolved().then(() => {
-		console.log(`RENDER#${i}: ${newAsyncFetches} fetches took ${Date.now() - tFetch0} msec`);
-		renderIter(i + 1, props, deadline, callback);
+	const promisesCount = trackedPromisesCount();
+	allTrackedPromisesResolved().then(() => {
+		console.log(`RENDER#${i}: ${promisesCount} fetches took ${Date.now() - tFetch0} msec`);
+		renderIter(i + 1, props, location, deadline, callback);
 	}).catch((e) => callback({
 		statusCode: 500,
 		error: `Unhandled error not caught by ReactDOMServer.renderToString:\n${e.stack}`,
@@ -73,7 +71,15 @@ function renderIter(i, props, deadline, callback) {
 const handle = (arg, callback) => {
 	context.reset(arg.jsContext);
 	resetStores();
-	match({history: createMemoryHistory(arg.location), location: arg.location, routes: rootRoute}, (err, redirectLocation, renderProps) => {
+
+	// Track the current location.
+	let hist = createMemoryHistory(arg.location);
+	let location = {};
+	hist.listen((loc) => {
+		Object.assign(location, loc);
+	});
+
+	match({history: hist, location: arg.location, routes: rootRoute}, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
 			callback({
 				statusCode: 404,
@@ -102,7 +108,7 @@ const handle = (arg, callback) => {
 
 		const props = {...renderProps, ...arg.extraProps};
 
-		renderIter(1, props, arg.deadline, callback);
+		renderIter(1, props, location, arg.deadline, callback);
 	});
 };
 

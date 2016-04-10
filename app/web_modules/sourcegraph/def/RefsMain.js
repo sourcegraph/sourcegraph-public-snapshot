@@ -23,7 +23,7 @@ const FILES_PER_PAGE = 5;
 
 class RefsMain extends Container {
 	static contextTypes = {
-		httpResponse: React.PropTypes.object,
+		status: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -49,13 +49,13 @@ class RefsMain extends Container {
 		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
 		state.path = props.location && props.location.query.file ? props.location.query.file : null;
-		state.refs = DefStore.refs.get(state.repo, state.rev, state.def, state.path);
+		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.path);
 		state.files = null;
 		state.entrySpecs = null;
 		state.ranges = null;
 		state.anns = null;
 
-		if (state.refs) {
+		if (state.refs && !state.refs.Error) {
 			let files = [];
 			let entrySpecs = [];
 			let ranges = {};
@@ -110,10 +110,14 @@ class RefsMain extends Container {
 		}
 
 		if (nextState.defObj && prevState.defObj !== nextState.defObj) {
-			this.context.httpResponse.setStatusCode(nextState.defObj.Error ? 404 : 200);
+			this.context.status.error(nextState.defObj.Error);
 		}
 
-		if (nextState.refs && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
+		if (nextState.refs && prevState.refs !== nextState.refs) {
+			this.context.status.error(nextState.refs.Error);
+		}
+
+		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
 			let wantedFiles = new Set();
 			for (let ref of nextState.refs.Refs) {
 				if (wantedFiles.size === (nextState.page * FILES_PER_PAGE)) break;

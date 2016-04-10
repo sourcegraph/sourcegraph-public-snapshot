@@ -28,7 +28,6 @@ function defaultOptions() {
 	return options;
 }
 
-const allFetches = [];
 export function defaultFetch(url, options) {
 	if (typeof global !== "undefined" && global.process && global.process.env.JSSERVER) {
 		url = `${context.appURL}${url}`;
@@ -39,16 +38,8 @@ export function defaultFetch(url, options) {
 	// Combine headers.
 	const headers = Object.assign({}, defaults.headers, options ? options.headers : null);
 
-	const f = fetch(url, Object.assign(defaults, options, {headers: headers}));
-	allFetches.push(f);
-	return f;
+	return fetch(url, Object.assign(defaults, options, {headers: headers}));
 }
-
-// allFetchesCount returns the total number of fetches initiated.
-//
-// Only this count, not the allFetches list itself, is exported, for
-// better encapsulation.
-export function allFetchesCount(): number { return allFetches.length; }
 
 // checkStatus is intended to be chained in a fetch call. For example:
 //   fetch(...).then(checkStatus) ...
@@ -57,7 +48,7 @@ export function checkStatus(resp) {
 	return resp.text().then((body) => {
 		let err = new Error(body || resp.statusText);
 		err.body = body;
-		err.response = resp;
+		err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		if (typeof document === "undefined") {
 			// Don't log in the browser because the devtools network inspector
 			// makes it easy enough to see failed HTTP requests.
@@ -66,8 +57,3 @@ export function checkStatus(resp) {
 		throw err;
 	});
 }
-
-// allFetchesResolved returns a promise that is resolved when all fetch calls
-// so far are resolved. It lets server.js determine when the initial data
-// loading is complete.
-export function allFetchesResolved() { return Promise.all(allFetches); }

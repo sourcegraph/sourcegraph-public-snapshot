@@ -13,6 +13,7 @@ export default function withResolvedRepoRev(Component) {
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
+			status: React.PropTypes.object.isRequired,
 		};
 
 		static propTypes = {
@@ -39,6 +40,9 @@ export default function withResolvedRepoRev(Component) {
 		onStateTransition(prevState, nextState) {
 			if (prevState.repo !== nextState.repo) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
+			}
+			if (nextState.repoObj && prevState.repoObj !== nextState.repoObj) {
+				this.context.status.error(nextState.repoObj.Error);
 			}
 		}
 

@@ -2,6 +2,7 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {trackPromise} from "sourcegraph/app/status";
 
 const DashboardBackend = {
 	fetch: defaultFetch,
@@ -12,14 +13,13 @@ const DashboardBackend = {
 			{
 				let repos = DashboardStore.repos;
 				if (repos === null) {
-					DashboardBackend.fetch("/.api/repos")
-						.then(checkStatus)
-						.then((resp) => resp.json())
-						.catch((err) => {
-							console.error(err);
-							return {Error: true};
-						})
-						.then((data) => Dispatcher.Stores.dispatch(new DashboardActions.ReposFetched(data)));
+					trackPromise(
+						DashboardBackend.fetch("/.api/repos")
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => Dispatcher.Stores.dispatch(new DashboardActions.ReposFetched(data)))
+					);
 				}
 				break;
 			}
@@ -28,14 +28,13 @@ const DashboardBackend = {
 			{
 				let remoteRepos = DashboardStore.remoteRepos;
 				if (remoteRepos === null) {
-					DashboardBackend.fetch("/.api/remote-repos")
-						.then(checkStatus)
-						.then((resp) => resp.json())
-						.catch((err) => {
-							console.error(err);
-							return {Error: true};
-						})
-						.then((data) => Dispatcher.Stores.dispatch(new DashboardActions.RemoteReposFetched(data)));
+					trackPromise(
+						DashboardBackend.fetch("/.api/remote-repos")
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => Dispatcher.Stores.dispatch(new DashboardActions.RemoteReposFetched(data)))
+						);
 				}
 				break;
 			}

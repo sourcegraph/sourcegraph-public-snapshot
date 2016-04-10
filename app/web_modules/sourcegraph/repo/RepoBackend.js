@@ -4,6 +4,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {trackPromise} from "sourcegraph/app/status";
 
 const RepoBackend = {
 	fetch: defaultFetch,
@@ -15,13 +16,15 @@ const RepoBackend = {
 			{
 				let repo = RepoStore.repos.get(action.repo);
 				if (repo === null) {
-					RepoBackend.fetch(`/.api/repos/${action.repo}`)
-						.then(checkStatus)
-						.then((resp) => resp.json())
-						.catch((err) => ({Error: {Body: err.body, Status: err.response.status}}))
-						.then((data) => {
-							Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
-						});
+					trackPromise(
+						RepoBackend.fetch(`/.api/repos/${action.repo}`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => {
+								Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
+							})
+					);
 				}
 				break;
 			}
@@ -30,13 +33,15 @@ const RepoBackend = {
 			{
 				let branches = RepoStore.branches.list(action.repo);
 				if (branches === null) {
-					RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches`)
+					trackPromise(
+						RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, [], true));
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, data.Branches || [])));
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, data.Branches || [])))
+					);
 				}
 				break;
 			}
@@ -45,21 +50,25 @@ const RepoBackend = {
 			{
 				let tags = RepoStore.tags.list(action.repo);
 				if (tags === null) {
-					RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags`)
+					trackPromise(
+						RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, [], true));
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, data.Tags || [])));
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, data.Tags || [])))
+					);
 				}
 				break;
 			}
 
 		case RepoActions.RefreshVCS:
 			{
-				RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
-					.then(checkStatus);
+				trackPromise(
+					RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, {method: "POST"})
+						.then(checkStatus)
+				);
 				break;
 			}
 		}

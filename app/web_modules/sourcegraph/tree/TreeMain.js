@@ -18,6 +18,7 @@ class TreeMain extends React.Component {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		status: React.PropTypes.object.isRequired,
 	};
 
 	_onSelectPath(path: string) {

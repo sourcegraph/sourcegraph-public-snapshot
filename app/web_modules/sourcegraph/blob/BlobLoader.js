@@ -1,6 +1,7 @@
 // @flow
 
 import React from "react";
+import type {Element} from "react";
 import Container from "sourcegraph/Container";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import DefStore from "sourcegraph/def/DefStore";
@@ -8,12 +9,13 @@ import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import withFileBlob from "sourcegraph/blob/withFileBlob";
 import withAnnotations from "sourcegraph/blob/withAnnotations";
 import BlobMain from "sourcegraph/blob/BlobMain";
+import type {Status} from "sourcegraph/app/status";
 
 export type Helper = {
 	reconcileState: (state: Object, props: Object) => void;
-	statusCode?: (state: Object) => ?number;
-	onStateTransition?: (prevState: Object, nextState: Object) => void;
+	onStateTransition?: (prevState: Object, nextState: Object, context: {status: Status}) => void;
 	renderProps?: (state: Object) => Object;
+	render?: (state: Object) => ?Element;
 };
 
 // blobLoader performs the portion of the work of loading a blob that differs based
@@ -43,6 +45,10 @@ export type Helper = {
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
 	class BlobLoader extends Container {
+		static contextTypes = {
+			status: React.PropTypes.object.isRequired,
+		};
+
 		_helpers: ?Array<Helper>;
 		_stores: ?Array<Object>;
 
@@ -57,7 +63,7 @@ function blobLoader(Component) {
 				// Clear state properties that were set by previous helpers.
 				if (this._helpers) {
 					this._helpers.forEach((h) => {
-						if (h.reconcileState) h.reconcileState(state, {});
+						if (h.reconcileState) h.reconcileState(state, {}, this.context);
 					});
 				}
 
@@ -71,15 +77,9 @@ function blobLoader(Component) {
 
 			Object.assign(state, props);
 
-			let setStatusCode = false;
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
 					if (h.reconcileState) h.reconcileState(state, props);
-					if (h.statusCode) {
-						if (setStatusCode) throw new Error("Only 1 BlobLoader helper may set the status code.");
-						setStatusCode = true;
-						state.statusCode = h.statusCode(state);
-					}
 				});
 			}
 		}
@@ -87,7 +87,7 @@ function blobLoader(Component) {
 		onStateTransition(prevState, nextState) {
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
-					if (h.onStateTransition) h.onStateTransition(prevState, nextState);
+					if (h.onStateTransition) h.onStateTransition(prevState, nextState, this.context);
 				});
 			}
 		}
@@ -99,6 +99,16 @@ function blobLoader(Component) {
 		stores() { return [DefStore, BlobStore]; }
 
 		render() {
+			if (this._helpers) {
+				for (let i = 0; i < this._helpers.length; i++) {
+					const h = this._helpers[i];
+					if (h.render) {
+						const out = h.render(this.state);
+						if (out) return out;
+					}
+				}
+			}
+
 			let renderProps = {};
 			if (this._helpers) {
 				this._helpers.forEach((h) => {

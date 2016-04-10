@@ -7,13 +7,15 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import Container from "sourcegraph/Container";
 import {routeParams as defRouteParams} from "sourcegraph/def";
+import Header from "sourcegraph/components/Header";
+import {httpStatusCode} from "sourcegraph/app/status";
 
 // withDef fetches the def specified in the params. It also fetches
 // the def stored in DefStore.highlightedDef.
 export default function withDef(Component) {
 	class WithDef extends Container {
 		static contextTypes = {
-			httpResponse: React.PropTypes.object,
+			status: React.PropTypes.object,
 		};
 
 		static propTypes = {
@@ -45,7 +47,7 @@ export default function withDef(Component) {
 			}
 
 			if (nextState.defObj && prevState.defObj !== nextState.defObj) {
-				this.context.httpResponse.setStatusCode(nextState.defObj.Error ? 404 : 200);
+				this.context.status.error(nextState.defObj.Error);
 			}
 
 			if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
@@ -55,6 +57,14 @@ export default function withDef(Component) {
 		}
 
 		render() {
+			if (this.state.defObj && this.state.defObj.Error) {
+				return (
+					<Header
+						title={`${httpStatusCode(this.state.defObj.Error)}`}
+						subtitle={`Definition is not available.`} />
+				);
+			}
+
 			return <Component {...this.props} {...this.state} />;
 		}
 	}
