@@ -42,7 +42,7 @@ function renderIter(i, props, location, deadline, callback) {
 
 		// 202 Accepted to indicate processing isn't complete.
 		const incomplete = trackedPromisesCount() > 0;
-		let code = location.state ? httpStatusCode(location.state.error) : 202;
+		let code = location.state ? httpStatusCode(location.state.error) : 200;
 		if (incomplete && code === 200) code = 202;
 
 		// No additional async fetches were triggered, so we are done!
