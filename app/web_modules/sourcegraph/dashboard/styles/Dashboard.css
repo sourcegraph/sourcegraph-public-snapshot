@@ -11,6 +11,7 @@
 	composes: center from base;
 }
 
+
 .anon-section {
 	composes: mt5 ph3 from base;
 }
@@ -37,24 +38,20 @@
 	composes: mt4 from base;
 }
 
-.onboarding-cta {
-	composes: pv2 ph3 from base;
-}
-
-.cta-link {
-	color: inherit;
-	font-weight: normal;
-}
-
 .header {
 	display: flex;
 	flex-wrap: wrap;
 	composes: mt4 from base;
 }
-
-.repos-label {
+.cta {
 	flex: 1 1 auto;
-	composes: section-header from typography;
+	composes: pl3 from base;
+	composes: b from typography;
+}
+
+.github-icon {
+	composes: pr2 from base;
+	composes: f3 from typography;
 }
 
 .list {

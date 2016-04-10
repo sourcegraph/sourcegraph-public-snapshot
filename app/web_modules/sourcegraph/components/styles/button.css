@@ -15,6 +15,11 @@
     outline: 0;
 }
 
+.content {
+    display: flex;
+    align-items: center;
+}
+
 .btn[disabled],
 .disabled,
 .disabled:hover,

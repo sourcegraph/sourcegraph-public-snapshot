@@ -6,9 +6,8 @@ import debounce from "lodash/function/debounce";
 import Component from "sourcegraph/Component";
 import context from "sourcegraph/app/context";
 
-import {Input, Button} from "sourcegraph/components";
+import {Input, Button, Icon} from "sourcegraph/components";
 
-import NotificationWell from "sourcegraph/dashboard/NotificationWell";
 import RepoList from "sourcegraph/dashboard/RepoList";
 
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
@@ -93,26 +92,21 @@ class DashboardRepos extends Component {
 
 		return (
 			<div>
-				<NotificationWell visible={this._showCreateUserWell() || this._showGitHubLinkWell()}>
-					{this._showCreateUserWell() &&
-						[<span key="copy">Want Sourcegraph for your own code?</span>,
-						<span key="cta" styleName="onboarding-cta">
-							<Link to="/join">
-							<Button outline={true} size="small">Sign up</Button>
-							</Link>
-						</span>]
-					}
-					{this._showGitHubLinkWell() &&
-						[<span key="copy">Almost there! Link your GitHub account so Sourcegraph can analyze your repositories.</span>,
-						<span key="cta" styleName="onboarding-cta">
-							<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
-								<Button outline={true} size="small">Import GitHub repos</Button>
-							</a>
-						</span>]
-					}
-				</NotificationWell>
 				<div styleName="header">
-					<span styleName="repos-label">{" "}</span>
+					<span styleName="cta">{[
+						this._showCreateUserWell() &&
+							<span key="cta">
+								<Link to="/join">
+								<Button outline={true} color="warning">Add Sourcegraph To My Code</Button>
+								</Link>
+							</span>,
+						this._showGitHubLinkWell() &&
+							<span key="cta">
+								<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
+								<Button outline={true} color="warning"><Icon styleName="github-icon" name="github" />Add My GitHub Repositories</Button>
+								</a>
+							</span>,
+					]}</span>
 					<Input type="text"
 						placeholder="Filter repositories..."
 						domRef={(e) => this._filterInput = e}

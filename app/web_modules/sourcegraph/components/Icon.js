@@ -16,7 +16,7 @@ class Icon extends Component {
 
 	render() {
 		return (
-			<i styleName={`icon icon-${this.state.name}`} />
+			<span className={this.state.className}><i styleName={`icon icon-${this.state.name}`} /></span>
 		);
 	}
 }

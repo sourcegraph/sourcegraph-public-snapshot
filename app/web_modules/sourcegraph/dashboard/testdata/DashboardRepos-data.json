@@ -4,56 +4,8 @@
 		"props": {
 			"children": [
 				{
-					"type": "WrappedComponent",
-					"key": ".0",
-					"props": {
-						"visible": true,
-						"children": [
-							{
-								"type": "span",
-								"key": ".0:$copy",
-								"props": {
-									"children": [
-										"Want Sourcegraph for your own code?"
-									]
-								}
-							},
-							{
-								"type": "span",
-								"key": ".0:$cta",
-								"props": {
-									"styleName": "onboarding-cta",
-									"children": [
-										{
-											"type": "",
-											"props": {
-												"to": "/join",
-												"children": [
-													{
-														"type": "WrappedComponent",
-														"props": {
-															"outline": true,
-															"size": "small",
-															"children": [
-																"Sign up"
-															]
-														}
-													}
-												],
-												"onlyActiveOnIndex": false,
-												"className": "",
-												"style": {}
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
 					"type": "div",
-					"key": ".1",
+					"key": ".0",
 					"props": {
 						"styleName": "header",
 						"children": [
@@ -61,9 +13,37 @@
 								"type": "span",
 								"key": ".0",
 								"props": {
-									"styleName": "repos-label",
+									"styleName": "cta",
 									"children": [
-										" "
+										{
+											"type": "span",
+											"key": ".$cta",
+											"props": {
+												"children": [
+													{
+														"type": "",
+														"props": {
+															"to": "/join",
+															"children": [
+																{
+																	"type": "WrappedComponent",
+																	"props": {
+																		"outline": true,
+																		"color": "warning",
+																		"children": [
+																			"Add Sourcegraph To My Code"
+																		]
+																	}
+																}
+															],
+															"onlyActiveOnIndex": false,
+															"className": "",
+															"style": {}
+														}
+													}
+												]
+											}
+										}
 									]
 								}
 							},
@@ -80,7 +60,7 @@
 				},
 				{
 					"type": "div",
-					"key": ".2",
+					"key": ".1",
 					"props": {
 						"styleName": "list",
 						"children": [
