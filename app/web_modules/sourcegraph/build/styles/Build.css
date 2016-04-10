@@ -128,12 +128,12 @@
 
 .list-status {
 	composes: list-cell;
-	flex: 6;
+	flex: 8;
 }
 
 .list-elapsed {
 	composes: list-cell;
-	flex: 6;
+	flex: 8;
 }
 
 .list-link {

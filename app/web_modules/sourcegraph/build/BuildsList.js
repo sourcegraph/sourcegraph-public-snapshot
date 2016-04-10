@@ -123,10 +123,10 @@ class BuildsList extends Container {
 					</div>,
 					...this.state.builds.map((build, i) =>
 						<div key={i} styleName={`list-item ${buildClass(build)}`}>
-							<span styleName="list-id"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" outline={true}>{`${build.ID}`}</Button></Link></span>
+							<span styleName="list-id"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link></span>
 							<span styleName="list-status">{this._rowStatus(build)}</span>
 							<span styleName="list-elapsed">{elapsed(build)}</span>
-							<span styleName="list-link"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" outline={true}>View</Button></Link></span>
+							<span styleName="list-link"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" block={true} outline={true}>View</Button></Link></span>
 						</div>
 				)]}
 				{!this.state.builds && <div styleName="list-empty-state">Sorry, we didn't find any builds.</div>}
