@@ -6,9 +6,22 @@
 				{
 					"type": "header",
 					"props": {
-						"dangerouslySetInnerHTML": {
-							"__html": "someName"
-						}
+						"children": [
+							"a ",
+							{
+								"type": "span",
+								"key": "name",
+								"props": {
+									"style": {
+										"fontWeight": "bold"
+									},
+									"children": [
+										"n"
+									]
+								}
+							},
+							"st"
+						]
 					}
 				},
 				{

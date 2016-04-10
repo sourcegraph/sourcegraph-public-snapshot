@@ -7,11 +7,13 @@ import DefPopup from "sourcegraph/def/DefPopup";
 import testdataData from "sourcegraph/def/testdata/DefPopup-data.json";
 import testdataNotAvailable from "sourcegraph/def/testdata/DefPopup-notAvailable.json";
 
+const fmtStrings = {DefKeyword: "a", NameAndTypeSeparator: "s", Name: {ScopeQualified: "n"}, Type: {ScopeQualified: "t"}};
+
 describe("DefPopup", () => {
 	it("should render definition data", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
-				def={{URL: "someURL", QualifiedName: {__html: "someName"}, DocHTML: "someDoc"}}
+				def={{URL: "someURL", FmtStrings: fmtStrings, DocHTML: "someDoc"}}
 				examples={{test: "examples"}}
 				highlightedDef="otherURL" />
 		);
@@ -20,7 +22,7 @@ describe("DefPopup", () => {
 	it("should render 'not available'", () => {
 		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
 			<DefPopup
-				def={{URL: "someURL", QualifiedName: {__html: "someName"}}}
+				def={{URL: "someURL", FmtStrings: fmtStrings}}
 				examples={{test: "examples"}}
 				highlightedDef={null} />
 		);

@@ -18,6 +18,7 @@ import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Refs.css";
+import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 
 const FILES_PER_PAGE = 5;
 
@@ -143,7 +144,7 @@ class RefsMain extends Container {
 
 		return (
 			<div styleName="refs-container">
-				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)} dangerouslySetInnerHTML={this.state.defObj.QualifiedName}/>} {this.state.refFile && `in ${this.state.refFile}`} {this.state.refRepo && `in ${this.state.refRepo}`}</h1>
+				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)}>{qualifiedNameAndType(this.state.defObj)}</Link>} {this.state.refFile && `in ${this.state.refFile}`} {this.state.refRepo && `in ${this.state.refRepo}`}</h1>
 				<hr/>
 				{this.state.files && this.state.files.map((file, i) => {
 					if (!file) return null;

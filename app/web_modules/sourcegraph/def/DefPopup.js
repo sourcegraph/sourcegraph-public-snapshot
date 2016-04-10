@@ -4,6 +4,7 @@ import React from "react";
 import {Link} from "react-router";
 import {urlToDefRefs} from "sourcegraph/def/routes";
 import s from "sourcegraph/def/styles/Def.css";
+import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 
 class DefPopup extends React.Component {
 	static propTypes = {
@@ -17,7 +18,7 @@ class DefPopup extends React.Component {
 		let refLocs = this.props.refLocations;
 		return (
 			<div className={s.marginBox}>
-				<header className={s.boxTitle} dangerouslySetInnerHTML={def.QualifiedName} />
+				<header className={s.boxTitle}>{qualifiedNameAndType(def)}</header>
 				<header className={s.sectionTitle}>Used in {!refLocs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
 				{refLocs && refLocs.length === 0 &&
 					<i>No usages found</i>

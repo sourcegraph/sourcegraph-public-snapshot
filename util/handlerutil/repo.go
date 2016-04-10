@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/router_util"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/sourcecode"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -420,9 +419,5 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		}
 		dc.DocHTML = htmlutil.SanitizeForPB(docHTML)
 	}
-
-	qualifiedName := sourcecode.DefQualifiedNameAndType(dc, "scope")
-	qualifiedName = sourcecode.OverrideStyleViaRegexpFlags(qualifiedName)
-	dc.QualifiedName = htmlutil.SanitizeForPB(string(qualifiedName))
 	return dc, rc, vc, nil
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import Component from "sourcegraph/Component";
 import s from "sourcegraph/def/styles/Def.css";
+import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 
 // These variables are needed to intialize the tooltips position to the current
 // position of the mouse without a mousemove event.
@@ -53,7 +54,7 @@ class DefTooltip extends Component {
 			inner = <span className={s.error}>Definition not available</span>;
 		} else {
 			inner = [
-				<div key="title" className={s.tooltipTitle} dangerouslySetInnerHTML={def.QualifiedName}></div>,
+				<div key="title" className={s.tooltipTitle}>{qualifiedNameAndType(def)}</div>,
 				<div key="content" className={s.content}>
 					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
 					{def && def.Repo !== this.state.currentRepo && <span className={s.repo}>{def.Repo}</span>}
