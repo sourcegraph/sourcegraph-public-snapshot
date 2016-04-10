@@ -138,6 +138,12 @@ class TreeSearch extends Container {
 
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query) : null;
+		if (state.matchingDefs !== null) {
+			state.lastDefinedMatchingDefs = state.matchingDefs;
+		} else {
+			// Prevent flashing "No Matches" while a query is in progress.
+			state.matchingDefs = state.lastDefinedMatchingDefs || null;
+		}
 	}
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
