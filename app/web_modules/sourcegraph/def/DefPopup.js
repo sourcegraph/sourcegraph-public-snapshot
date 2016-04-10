@@ -8,7 +8,7 @@ import s from "sourcegraph/def/styles/Def.css";
 class DefPopup extends React.Component {
 	static propTypes = {
 		def: React.PropTypes.object.isRequired,
-		refLocations: React.PropTypes.array.isRequired,
+		refLocations: React.PropTypes.array,
 		path: React.PropTypes.string.isRequired,
 	};
 
