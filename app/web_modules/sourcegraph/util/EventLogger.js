@@ -11,6 +11,11 @@ export class EventLogger {
 		this._amplitude = null;
 		this._intercomSettings = null;
 
+		this.events = deepFreeze([]);
+		this.userProperties = deepFreeze([]);
+		this.intercomProperties = deepFreeze([]);
+		this.intercomEvents = deepFreeze([]);
+
 		// Listen for all Stores dispatches.
 		// You must separately log "frontend" actions of interest,
 		// with the relevant event properties.
@@ -19,13 +24,13 @@ export class EventLogger {
 
 	// reset() receives any event data which is buffered
 	// during server-side rendering; this data will
-	// be flushed to Amplitude after the first call to
+	// be flushed after the first call to
 	// init() in the browser.
 	reset(data) {
-		this.events = deepFreeze(data && data.events ? data.events : []);
-		this.userProperties = deepFreeze(data && data.userProperties ? data.userProperties : []);
-		this.intercomProperties = deepFreeze(data && data.intercomProperties ? data.intercomProperties : []);
-		this.intercomEvents = deepFreeze(data && data.intercomEvents ? data.intercomEvents : []);
+		this.events = deepFreeze(data && data.events ? data.events : this.events);
+		this.userProperties = deepFreeze(data && data.userProperties ? data.userProperties : this.userProperties);
+		this.intercomProperties = deepFreeze(data && data.intercomProperties ? data.intercomProperties : this.intercomProperties);
+		this.intercomEvents = deepFreeze(data && data.intercomEvents ? data.intercomEvents : this.intercomEvents);
 	}
 	toJSON() {
 		return {
