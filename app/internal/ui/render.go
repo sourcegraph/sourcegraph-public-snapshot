@@ -112,15 +112,13 @@ func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) (json.R
 
 	// Log in Appdash.
 	start := time.Now()
-	ctx = traceutil.NewContext(ctx, appdash.NewSpanID(traceutil.SpanIDFromContext(ctx)))
+	rec := traceutil.Recorder(ctx)
+	rec.Name("prerender React component")
 	defer func() {
 		truncatedArg := arg
 		if max := 300; len(truncatedArg) > max {
 			truncatedArg = truncatedArg[:max]
 		}
-
-		rec := traceutil.Recorder(ctx)
-		rec.Name("prerender React component")
 		rec.Event(&prerenderEvent{
 			Arg:      string(truncatedArg),
 			CacheHit: cacheHit,

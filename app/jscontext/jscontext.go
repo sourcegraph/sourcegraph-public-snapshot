@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/justinas/nosurf"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
@@ -14,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
@@ -35,7 +36,7 @@ type JSContext struct {
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
+func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext, error) {
 	sess, err := auth.ReadSessionCookie(req)
 	if err != nil && err != auth.ErrNoSession {
 		return JSContext{}, err
@@ -49,20 +50,20 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		cacheControl = "no-cache"
 	}
 
-	ctx := JSContext{
-		AppURL:        conf.AppURL(httpctx.FromRequest(req)).String(),
+	jsctx := JSContext{
+		AppURL:        conf.AppURL(ctx).String(),
 		CacheControl:  cacheControl,
 		CSRFToken:     nosurf.Token(req),
 		CurrentUser:   handlerutil.FullUserFromRequest(req),
-		CurrentSpanID: traceutil.SpanID(req).String(),
-		UserAgent:     eventsutil.UserAgentFromContext(httpctx.FromRequest(req)),
+		CurrentSpanID: traceutil.SpanIDFromContext(ctx).String(),
+		UserAgent:     eventsutil.UserAgentFromContext(ctx),
 		AssetsRoot:    assets.URL("/").String(),
 		BuildVars:     buildvar.All,
 		Features:      feature.Features,
 	}
 	if sess != nil {
-		ctx.Authorization = sess.AccessToken
+		jsctx.Authorization = sess.AccessToken
 	}
 
-	return ctx, nil
+	return jsctx, nil
 }

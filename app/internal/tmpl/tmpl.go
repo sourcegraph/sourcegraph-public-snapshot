@@ -201,7 +201,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			cacheControl = "no-cache"
 		}
 
-		jsctx, err := jscontext.NewJSContextFromRequest(req)
+		jsctx, err := jscontext.NewJSContextFromRequest(ctx, req)
 		if err != nil {
 			return err
 		}

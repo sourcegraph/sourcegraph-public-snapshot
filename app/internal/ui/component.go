@@ -7,7 +7,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 // RenderResult is the "HTTP response"-like data returned by the
@@ -33,7 +35,10 @@ type renderState struct {
 // RenderRouter calls into JavaScript (using jsserver) to render the
 // page for the given HTTP request.
 var RenderRouter = func(ctx context.Context, req *http.Request, extraProps map[string]interface{}) (*RenderResult, error) {
-	jsctx, err := jscontext.NewJSContextFromRequest(req)
+	// Trace operations.
+	ctx = traceutil.NewContext(ctx, appdash.NewSpanID(traceutil.SpanIDFromContext(ctx)))
+
+	jsctx, err := jscontext.NewJSContextFromRequest(ctx, req)
 	if err != nil {
 		return nil, err
 	}
