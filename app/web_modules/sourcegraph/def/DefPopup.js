@@ -16,7 +16,6 @@ class DefPopup extends React.Component {
 	render() {
 		let def = this.props.def;
 		let refLocs = this.props.refLocations;
-		console.log("QQ", refLocs);
 		return (
 			<div className={s.marginBox}>
 				<header className={s.boxTitle}>{qualifiedNameAndType(def)}</header>
