@@ -90,17 +90,20 @@ class RepoMain extends React.Component {
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
+		// Consult deepest-matched route (e.g., the "tree" subroute).
+		const disableTreeSearchOverlay = this.props.routes[this.props.routes.length - 1].disableTreeSearchOverlay;
+
 		const tag = e.target instanceof HTMLElement ? e.target.tagName : "";
 		switch (e.keyCode) {
 		case 84: // "t"
-			if (this.props.route.disableTreeSearchOverlay) break;
+			if (disableTreeSearchOverlay) break;
 			if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
 			e.preventDefault();
 			this._showTreeSearchModal();
 			break;
 
 		case 27: // ESC
-			if (this.props.route.disableTreeSearchOverlay) break;
+			if (disableTreeSearchOverlay) break;
 			this._dismissTreeSearchModal();
 		}
 	}
