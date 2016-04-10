@@ -136,6 +136,7 @@ func (c *Config) applyAppdash(t http.RoundTripper) http.RoundTripper {
 	return &httptrace.Transport{
 		Recorder:  appdash.NewRecorder(c.AppdashSpanID, traceutil.DefaultCollector),
 		Transport: t,
+		SetName:   true,
 	}
 }
 
