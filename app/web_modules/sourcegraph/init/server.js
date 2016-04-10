@@ -99,7 +99,7 @@ const handle = (arg, callback) => {
 			// Assumes that all redirects are 301s (Moved Permanently).
 			callback({
 				statusCode: 301,
-				redirectLocation,
+				redirectLocation: redirectLocation.href,
 				contentType: "text/html",
 				body: "Redirecting...",
 			});
