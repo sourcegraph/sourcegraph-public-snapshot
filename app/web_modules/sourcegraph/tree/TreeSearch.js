@@ -223,6 +223,7 @@ class TreeSearch extends Container {
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
 			}, this._scrollToVisibleSelection);
 
+			this._temporarilyIgnoreMouseSelection();
 			e.preventDefault();
 			break;
 
@@ -234,6 +235,7 @@ class TreeSearch extends Container {
 				selectionIndex: idx < 1 ? max-1 : idx-1,
 			}, this._scrollToVisibleSelection);
 
+			this._temporarilyIgnoreMouseSelection();
 			e.preventDefault();
 			break;
 
@@ -244,18 +246,21 @@ class TreeSearch extends Container {
 				const parentPath = pathJoin(parts.splice(0, parts.length - 1));
 				this.state.onSelectPath(parentPath);
 			}
+			this._temporarilyIgnoreMouseSelection();
 
 			// Allow default (cursor movement in <input>)
 			break;
 
 		case 39: // ArrowRight
 			this._onSelection();
+			this._temporarilyIgnoreMouseSelection();
 
 			// Allow default (cursor movement in <input>)
 			break;
 
 		case 13: // Enter
 			this._onSelection();
+			this._temporarilyIgnoreMouseSelection();
 			e.preventDefault();
 			break;
 
@@ -373,7 +378,7 @@ class TreeSearch extends Container {
 
 			list.push(
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
-					onMouseOver={() => this._selectItem(i + this._numSymbolResults())}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={itemURL}>
@@ -390,6 +395,28 @@ class TreeSearch extends Container {
 		this.setState({
 			selectionIndex: i,
 		});
+	}
+
+	// _mouseSelectItem causes i to be selected ONLY IF the user is using the
+	// mouse to select. It ignores the case where the user is using the up/down
+	// keys to change the selection and the window scrolls, causing the mouse cursor
+	// to incidentally hover a different element. We ignore mouse selections except
+	// those where the mouse was actually moved.
+	_mouseSelectItem(ev: MouseEvent, i: number): void {
+		if (this._ignoreMouseSelection) return;
+		this._selectItem(i);
+	}
+
+	// _temporarilyIgnoreMouseSelection is used to ignore mouse selections. See
+	// _mouseSelectItem.
+	_temporarilyIgnoreMouseSelection() {
+		if (!this._debouncedUnignoreMouseSelection) {
+			this._debouncedUnignoreMouseSelection = debounce(() => {
+				this._ignoreMouseSelection = false;
+			}, 200, {leading: false, trailing: true});
+		}
+		this._debouncedUnignoreMouseSelection();
+		this._ignoreMouseSelection = true;
 	}
 
 	_symbolItems(): Array<any> {
@@ -409,7 +436,7 @@ class TreeSearch extends Container {
 
 			list.push(
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
-					onMouseOver={() => this._selectItem(i)}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}>
