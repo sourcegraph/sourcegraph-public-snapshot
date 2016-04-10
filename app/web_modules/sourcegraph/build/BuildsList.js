@@ -87,7 +87,7 @@ class BuildsList extends Container {
 		if (build.Success) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
 		if (build.Failure) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
 		if (build.Killed) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
-		if (build.Queued) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.Started} />];
+		if (build.Queue) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.StartedAt} />];
 	}
 
 	render() {
