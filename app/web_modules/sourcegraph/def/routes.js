@@ -19,6 +19,7 @@ export const routes: Array<Route> =[
 					const withDef = require("sourcegraph/def/withDef").default;
 					_components = {
 						main: withResolvedRepoRev(withDef(require("sourcegraph/def/RefsMain").default)),
+						repoNavContext: require("sourcegraph/def/DefNavContext").default,
 					};
 				}
 				callback(null, _components);
@@ -31,6 +32,7 @@ export const routes: Array<Route> =[
 			require.ensure([], (require) => {
 				callback(null, {
 					main: require("sourcegraph/blob/BlobLoader").default,
+					repoNavContext: require("sourcegraph/def/DefNavContext").default,
 				}, [
 					require("sourcegraph/def/withDefAndRefLocations").default,
 					require("sourcegraph/def/blobWithDefBox").default,
