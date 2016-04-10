@@ -8,7 +8,18 @@
 					"type": "div",
 					"key": ".0",
 					"props": {
-						"styleName": "step-title info"
+						"styleName": "step-title info",
+						"children": [
+							{
+								"type": "span",
+								"key": ".1",
+								"props": {
+									"style": {
+										"float": "right"
+									}
+								}
+							}
+						]
 					}
 				},
 				{

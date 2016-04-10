@@ -16,24 +16,25 @@
 }
 
 .success {
-	composes: bg-green white from colors;
+	composes: bg-green-2 from colors;
 }
 .warning {
-	composes: bg-light-orange dark-gray from colors;
+	composes: bg-orange-2 from colors;
 }
 .danger {
-	composes: bg-red white from colors;
+	composes: bg-red-2 from colors;
 }
 .info {
-	composes: bg-aqua dark-gray from colors;
+	composes: bg-teal-5 from colors;
 }
 .default {
-	composes: bg-moon-gray dark-gray from colors;
+	composes: bg-black-20 from colors;
 }
 
 .header {
 	composes: col-6 col-3-ns from grid;
-	composes: pa3 mh3 from base;
+	composes: pa3 mh3 ba from base;
+	composes: b--black-20 from base;
 	text-align: center;
 }
 .number {
@@ -52,7 +53,7 @@
 }
 
 .commit {
-	composes: col-8 from grid;
+	composes: pa4 from base;
 }
 
 .tasks {
@@ -93,11 +94,17 @@
 	composes: pt4 from base;
 }
 
+.list-header {
+	composes: header from typography;
+	composes: mh5 from base;
+}
+
 .list-filters {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	composes: mv4 mh5 from base;
+	composes: f4 from typography;
 }
 
 .filter-button {
@@ -106,15 +113,15 @@
 
 .list-empty-state {
 	composes: ph6 from base;
-	composes: header from typography;
+	composes: empty-state-text from typography;
 }
 
 .list-item {
 	display: flex;
 	align-items: center;
-	composes: pa1 bb center from base;
+	composes: pv1 ph4 bb center from base;
 	composes: b--black-20 from colors;
-	composes: normal-text b tc from typography;
+	composes: sans-serif f4 b tc from typography;
 }
 
 .list-cell {
@@ -128,15 +135,11 @@
 
 .list-status {
 	composes: list-cell;
-	flex: 8;
+	composes: pl4 from base;
+	flex: 6;
 }
 
 .list-elapsed {
 	composes: list-cell;
-	flex: 8;
-}
-
-.list-link {
-	composes: list-cell;
-	flex: 1;
+	flex: 4;
 }

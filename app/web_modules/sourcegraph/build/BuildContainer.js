@@ -89,7 +89,7 @@ class BuildContainer extends Container {
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
 				</div>
 				<BuildHeader build={this.state.build} commit={this.state.commit} />
-				{this.state.commit && <Commit commit={this.state.commit} />}
+				{this.state.commit && <span styleName="commit"><Commit commit={this.state.commit} /></span>}
 				{this.state.tasks ? <BuildTasks tasks={this.state.tasks.BuildTasks} logs={this.state.logs} /> : null}
 			</div>
 		);

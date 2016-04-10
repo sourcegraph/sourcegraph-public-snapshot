@@ -1,6 +1,6 @@
 import React from "react";
 
-import {elapsed, taskClass} from "sourcegraph/build/Build";
+import {elapsed} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";
 import Step from "sourcegraph/build/Step";
 
@@ -27,7 +27,7 @@ class TopLevelTask extends Component {
 
 		return (
 			<div>
-				<div styleName={`top-level-task-header ${taskClass(task)}`}>
+				<div styleName={`top-level-task-header`}>
 					<span styleName="header-label">{task.Label}</span>
 					<span styleName="elapsed-label">{elapsed(task)}</span>
 				</div>

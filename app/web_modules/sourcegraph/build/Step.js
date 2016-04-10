@@ -1,7 +1,7 @@
 import React from "react";
 
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import {taskClass} from "sourcegraph/build/Build";
+import {taskClass, elapsed} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 
@@ -81,6 +81,7 @@ class Step extends Component {
 			<Collapsible collapsed={true}>
 				<div styleName={`step-title ${taskClass(this.state.task)}`}>
 					{this.state.task.Label}
+					<span style={{float: "right"}}>{elapsed(this.state.task)}</span>
 				</div>
 				<div styleName="step-body">
 					{this.state.log && <pre>{this.state.log.log}</pre>}

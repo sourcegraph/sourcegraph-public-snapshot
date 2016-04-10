@@ -276,6 +276,12 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 	composes: mid-gray from colors;
 }
 
+.empty-state-text {
+	composes: f4 sans-serif;
+	composes: mid-gray from colors;
+	font-style: italic;
+}
+
 .button-text {
 	composes: circular tc tracked-mega f5;
 }

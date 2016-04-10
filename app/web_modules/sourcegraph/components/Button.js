@@ -16,7 +16,7 @@ class Button extends Component {
 	}
 
 	render() {
-		let style = `${this.state.outline ? "outline-" : "solid-"}${this.state.color === "primary" ? "primary" : "default"}`;
+		let style = `${this.state.outline ? "outline-" : "solid-"}${this.state.color ? this.state.color : "default"}`;
 		if (this.state.disabled || this.state.loading) style = `${style} disabled`;
 		if (this.state.block) style = `${style} block`;
 		style = `${style} ${this.state.size ? this.state.size : "normal"}`;

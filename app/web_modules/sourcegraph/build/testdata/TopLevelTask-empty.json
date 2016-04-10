@@ -7,7 +7,7 @@
 					"type": "div",
 					"key": ".0",
 					"props": {
-						"styleName": "top-level-task-header info",
+						"styleName": "top-level-task-header",
 						"children": [
 							{
 								"type": "span",

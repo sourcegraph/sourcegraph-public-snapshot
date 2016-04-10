@@ -10,6 +10,7 @@
     cursor: pointer;
     user-select: none;
     box-sizing: border-box;
+    font-size: inherit;
 }
 .btn:focus {
     outline: 0;
@@ -68,7 +69,6 @@
     composes: bg-white from colors;
     background-image: none;
 }
-@value c_blue-5 from colors;
 @value c_blue from colors;
 .outline-primary {
     composes: outline;
@@ -80,7 +80,50 @@
     color: c_blue;
 }
 
-@value c_mid-gray from colors;
+@value c_green from colors;
+.outline-success {
+    composes: outline;
+    composes: b--green-8 green-8 from colors;
+}
+.outline-success:hover,
+.outline-success:focus {
+    border-color: c_green;
+    color: c_green;
+}
+
+@value c_red from colors;
+.outline-danger {
+    composes: outline;
+    composes: b--red-8 red-8 from colors;
+}
+.outline-danger:hover,
+.outline-danger:focus {
+    border-color: c_red;
+    color: c_red;
+}
+
+@value c_teal from colors;
+.outline-info {
+    composes: outline;
+    composes: b--teal-8 teal-8 from colors;
+}
+.outline-info:hover,
+.outline-info:focus {
+    border-color: c_teal;
+    color: c_teal;
+}
+
+@value c_orange from colors;
+.outline-warning {
+    composes: outline;
+    composes: b--orange-8 orange-8 from colors;
+}
+.outline-warning:hover,
+.outline-warning:focus {
+    border-color: c_orange;
+    color: c_orange;
+}
+
 @value c_dark-gray from colors;
 @value c_black-50 from colors;
 .outline-default {
@@ -130,4 +173,24 @@
 .solid-primary {
     composes: solid;
     composes: white bg-blue from colors;
+}
+
+.solid-success {
+    composes: solid;
+    composes: white bg-green from colors;
+}
+
+.solid-danger {
+    composes: solid;
+    composes: white bg-red from colors;
+}
+
+.solid-info {
+    composes: solid;
+    composes: white bg-teal from colors;
+}
+
+.solid-warning {
+    composes: solid;
+    composes: white bg-orange from colors;
 }

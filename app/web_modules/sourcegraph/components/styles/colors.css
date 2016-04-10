@@ -10,7 +10,10 @@
 @value c_dark-blue rgba(0, 40, 141, 1); /* 30% darkened */
 @value c_brand-blue #0074d9;
 @value c_aqua #7FDBFF;
-@value c_teal #39CCCC;
+@value c_teal rgba(57, 204, 204, 1);
+@value c_teal-8 rgba(57, 204, 204, .8);
+@value c_teal-5 rgba(57, 204, 204, .5);
+@value c_teal-2 rgba(57, 204, 204, .2);
 @value c_olive #3D9970;
 @value c_green rgba(46, 204, 64, 1);
 @value c_green-8 rgba(46, 204, 64, .8);
@@ -91,6 +94,9 @@
 .brand-blue { color: c_brand-blue; }
 .aqua { color: c_aqua; }
 .teal { color: c_teal; }
+.teal-8 { color: c_teal-8; }
+.teal-5 { color: c_teal-5; }
+.teal-2 { color: c_teal-2; }
 .olive { color: c_olive; }
 .green { color: c_green; }
 .green-8 { color: c_green-8; }
@@ -172,6 +178,9 @@
 .bg-brand-blue { background-color: c_brand-blue; }
 .bg-aqua { background-color: c_aqua; }
 .bg-teal { background-color: c_teal; }
+.bg-teal-8 { background-color: c_teal-8; }
+.bg-teal-5 { background-color: c_teal-5; }
+.bg-teal-2 { background-color: c_teal-2; }
 .bg-olive { background-color: c_olive; }
 .bg-green { background-color: c_green; }
 .bg-green-8 { background-color: c_green-8; }
@@ -253,6 +262,9 @@
 .b--brand-blue { border-color: c_brand-blue; }
 .b--aqua { border-color: c_aqua; }
 .b--teal { border-color: c_teal; }
+.b--teal-8 { border-color: c_teal-8; }
+.b--teal-5 { border-color: c_teal-5; }
+.b--teal-2 { border-color: c_teal-2; }
 .b--olive { border-color: c_olive; }
 .b--green { border-color: c_green; }
 .b--green-8 { border-color: c_green-8; }

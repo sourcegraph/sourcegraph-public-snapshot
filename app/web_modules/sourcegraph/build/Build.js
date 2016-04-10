@@ -1,4 +1,5 @@
 import React from "react";
+import {formatDuration} from "sourcegraph/util/TimeAgo";
 
 export function updatedAt(b) {
 	return b.EndedAt || b.StartedAt || b.CreatedAt || null;
@@ -43,36 +44,7 @@ export function elapsed(buildOrTask) {
 	if (!buildOrTask.StartedAt) return null;
 	return (
 		<div>
-			{formatDurationHHMMSS(new Date(buildOrTask.EndedAt).getTime() - new Date(buildOrTask.StartedAt).getTime())}
+			{formatDuration((buildOrTask.EndedAt ? new Date(buildOrTask.EndedAt).getTime() : Date.now()) - new Date(buildOrTask.StartedAt).getTime())}
 		</div>
 	);
 }
-
-// formatDurationHHMMSS returns a string like "9:03" (meaning 9
-// minutes, 3 seconds) given a number of milliseconds.
-export function formatDurationHHMMSS(ms) {
-	let s = Math.floor(ms / 1000);
-	let m = Math.floor(s / 60);
-	let h = Math.floor(m / 60);
-
-	let str = "";
-
-	if (h > 0) {
-		str += `${h}:`;
-	}
-
-	if (h > 0) {
-		str += `0${m}:`;
-	} else {
-		str += `${m}:`;
-	}
-
-	if (s >= 10) {
-		str += s;
-	} else {
-		str += `0${s}`;
-	}
-
-	return str;
-}
-
