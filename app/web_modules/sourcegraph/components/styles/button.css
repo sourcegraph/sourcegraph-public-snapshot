@@ -10,7 +10,6 @@
     cursor: pointer;
     user-select: none;
     box-sizing: border-box;
-    font-size: inherit;
 }
 .btn:focus {
     outline: 0;
