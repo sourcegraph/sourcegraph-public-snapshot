@@ -18,6 +18,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
+var ciFactor = func() int {
+	if os.Getenv("CI") != "" {
+		return 4
+	}
+	return 1
+}()
+
 func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
 
@@ -25,7 +32,7 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 		ctx = ui.DisabledReactPrerendering(ctx)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond*time.Duration(ciFactor))
 	defer cancel()
 
 	res, err := ui.RenderRouter(ctx, r, nil)
