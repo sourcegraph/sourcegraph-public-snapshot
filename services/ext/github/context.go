@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 func init() {
@@ -41,6 +42,9 @@ func NewContextWithClient(ctx context.Context, client *github.Client, isAuthedUs
 // context's actor, or unauthenticated if there is no actor (or if the
 // actor has no stored GitHub credentials).
 func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
+	ghConf := *githubutil.Default
+	ghConf.AppdashSpanID = traceutil.SpanIDFromContext(ctx)
+
 	a := auth.ActorFromContext(ctx)
 	var c *github.Client
 
@@ -49,7 +53,7 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 		host := strings.TrimPrefix(githubutil.Default.BaseURL.Host, "api.") // api.github.com -> github.com
 		tok, err := store.ExternalAuthTokensFromContext(ctx).GetUserToken(ctx, a.UID, host, githubutil.Default.OAuth.ClientID)
 		if err == nil {
-			c = githubutil.Default.AuthedClient(tok.Token)
+			c = ghConf.AuthedClient(tok.Token)
 			isAuthedUser = true
 		}
 		if err != nil && err != auth.ErrNoExternalAuthToken && err != auth.ErrExternalAuthTokenDisabled {
@@ -57,7 +61,7 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 		}
 	}
 	if c == nil {
-		c = githubutil.Default.UnauthedClient()
+		c = ghConf.UnauthedClient()
 	}
 	return NewContextWithClient(ctx, c, isAuthedUser), nil
 }
