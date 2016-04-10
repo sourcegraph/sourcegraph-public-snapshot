@@ -58,3 +58,8 @@
 	composes: mb2 from base;
 	display: block;
 }
+
+.logo {
+	width: 171px;
+	height: 36px;
+}

@@ -20,7 +20,7 @@ class Footer extends Component {
 			<div styleName="footer">
 				<div styleName="left-container">
 					<div styleName="left-content">
-						<img src={`${context.assetsRoot}/img/sourcegraph-logo-tagline.svg`} />
+						<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-logo-tagline.svg`} />
 						<div styleName="address">
 							<a styleName="address-line" href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>
 							<span styleName="address-line">121 2nd St, Ste 200</span>
