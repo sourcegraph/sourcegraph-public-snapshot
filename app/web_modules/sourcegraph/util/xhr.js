@@ -53,7 +53,7 @@ export function allFetchesCount(): number { return allFetches.length; }
 // checkStatus is intended to be chained in a fetch call. For example:
 //   fetch(...).then(checkStatus) ...
 export function checkStatus(resp) {
-	if (resp.status === 200 || resp.status === 201) return resp;
+	if (resp.status >= 200 && resp.status <= 299) return resp;
 	return resp.text().then((body) => {
 		let err = new Error(body || resp.statusText);
 		err.body = body;
