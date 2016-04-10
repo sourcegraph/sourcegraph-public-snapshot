@@ -29,7 +29,7 @@ class RepoLink extends Component {
 			trimmedPath,
 			(i) => <span key={i} styleName="sep">/</span>,
 			(path, component, i, isLast) => (
-				!this.state.disabledLink ?
+				isLast && !this.state.disabledLink ?
 					<Link to={urlToRepo(this.state.repo)}
 						title={trimmedPath}
 						key={i}
