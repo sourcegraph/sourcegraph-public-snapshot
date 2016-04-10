@@ -119,7 +119,7 @@ function getRankedRefLocations(locations) {
 	let otherRepos = [];
 	let i = 1;
 	for (; i < locations.length; i++) {
-		if (locations[i].Repo in dashboardRepos) {
+		if (dashboardRepos && locations[i].Repo in dashboardRepos) {
 			repos.push(locations[i]);
 		} else {
 			otherRepos.push(locations[i]);
