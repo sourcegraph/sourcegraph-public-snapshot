@@ -223,7 +223,7 @@ class TreeSearch extends Container {
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
 			}, this._scrollToVisibleSelection);
 
-			e.preventDefault(); // TODO: make keyboard actions scroll automatically with selection
+			e.preventDefault();
 			break;
 
 		case 38: // ArrowUp
@@ -234,7 +234,7 @@ class TreeSearch extends Container {
 				selectionIndex: idx < 1 ? max-1 : idx-1,
 			}, this._scrollToVisibleSelection);
 
-			e.preventDefault(); // TODO: make keyboard actions scroll automatically with selection
+			e.preventDefault();
 			break;
 
 		case 37: // ArrowLeft
