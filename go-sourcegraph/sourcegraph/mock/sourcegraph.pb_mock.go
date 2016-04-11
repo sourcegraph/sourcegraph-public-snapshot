@@ -741,36 +741,6 @@ func (s *MetaServer) Config(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 
 var _ sourcegraph.MetaServer = (*MetaServer)(nil)
 
-type GraphUplinkClient struct {
-	Push_       func(ctx context.Context, in *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error)
-	PushEvents_ func(ctx context.Context, in *sourcegraph.UserEventList) (*pbtypes.Void, error)
-}
-
-func (s *GraphUplinkClient) Push(ctx context.Context, in *sourcegraph.MetricsSnapshot, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.Push_(ctx, in)
-}
-
-func (s *GraphUplinkClient) PushEvents(ctx context.Context, in *sourcegraph.UserEventList, opts ...grpc.CallOption) (*pbtypes.Void, error) {
-	return s.PushEvents_(ctx, in)
-}
-
-var _ sourcegraph.GraphUplinkClient = (*GraphUplinkClient)(nil)
-
-type GraphUplinkServer struct {
-	Push_       func(v0 context.Context, v1 *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error)
-	PushEvents_ func(v0 context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error)
-}
-
-func (s *GraphUplinkServer) Push(v0 context.Context, v1 *sourcegraph.MetricsSnapshot) (*pbtypes.Void, error) {
-	return s.Push_(v0, v1)
-}
-
-func (s *GraphUplinkServer) PushEvents(v0 context.Context, v1 *sourcegraph.UserEventList) (*pbtypes.Void, error) {
-	return s.PushEvents_(v0, v1)
-}
-
-var _ sourcegraph.GraphUplinkServer = (*GraphUplinkServer)(nil)
-
 type NotifyClient struct {
 	GenericEvent_ func(ctx context.Context, in *sourcegraph.NotifyGenericEvent) (*pbtypes.Void, error)
 }

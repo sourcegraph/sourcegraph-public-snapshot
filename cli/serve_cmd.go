@@ -316,8 +316,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	clientCtx := clientCtxFunc(context.Background())
 
-	// Periodically forward and/or save metrics.
-	metricutil.Start(clientCtx, 10*4096, 256, 5*time.Minute)
 	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
 		Type:     "notif",
 		ClientID: idKey.ID,
@@ -325,7 +323,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		Method:   "start",
 		Result:   "success",
 	})
-	metricutil.LogConfig(clientCtx, idKey.ID, c.safeConfigFlags())
 
 	// Listen for events and periodically push them to analytics gateway.
 	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)

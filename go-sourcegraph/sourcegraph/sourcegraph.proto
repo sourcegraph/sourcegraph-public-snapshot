@@ -1736,22 +1736,6 @@ message ServerConfig {
 	string IDKey = 7;
 }
 
-// TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in
-enum TelemetryType {
-	// PrometheusDelimited0dot0dot4 indicates the metrics can be decoded using
-	// Prometheus 0.0.4 delimited protobuf format
-	PrometheusDelimited0dot0dot4 = 0;
-}
-
-// MetricsSnapshots encodes
-message MetricsSnapshot {
-	// Type is the encoding of TelemetryData
-	TelemetryType Type = 1;
-
-	// TelemetryData is the encoded metrics
-	bytes TelemetryData = 2;
-}
-
 // UserEvent encodes any user initiated event on the local instance.
 message UserEvent {
 	string Type = 1;
@@ -1776,21 +1760,6 @@ message UserEvent {
 
 	// URL holds the http request url.
 	string URL = 10;
-}
-
-// UserEventList is a list of user events logged on this instance.
-message UserEventList {
-	repeated UserEvent Events = 1;
-}
-
-// GraphUplink interfaces with the metric collectors.
-service GraphUplink {
-	// Push sends the latest metrics to the upstream instance
-	rpc Push(MetricsSnapshot) returns (pbtypes.Void);
-
-	// PushEvents flushes the local event logs to the upstream
-	// instance
-	rpc PushEvents(UserEventList) returns (pbtypes.Void);
 }
 
 // Event is any action logged on a Sourcegraph instance.

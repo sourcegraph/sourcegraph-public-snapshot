@@ -18,7 +18,6 @@ import (
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 )
 
 // NewHandler returns a new API handler that uses the provided API
@@ -36,9 +35,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	// we mitigate the risk of CSRF.
 	var mw []handlerutil.Middleware
 	mw = append(mw, httpapiauth.PasswordMiddleware, httpapiauth.OAuth2AccessTokenMiddleware)
-	if !metricutil.DisableMetricsCollection() {
-		mw = append(mw, eventsutil.AgentMiddleware)
-	}
+	mw = append(mw, eventsutil.AgentMiddleware)
 
 	if conf.GetenvBool("SG_USE_CSP") {
 		// Set the CSP handler. Determine the report URI by seeing what

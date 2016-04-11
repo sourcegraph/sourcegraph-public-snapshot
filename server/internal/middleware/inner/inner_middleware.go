@@ -46,8 +46,6 @@ func Services() svc.Services {
 
 		Deltas: wrappedDeltas{},
 
-		GraphUplink: wrappedGraphUplink{},
-
 		Meta: wrappedMeta{},
 
 		MirrorRepos: wrappedMirrorRepos{},
@@ -442,34 +440,6 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	res, err = local.Services.Deltas.ListFiles(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
-	}
-	return
-}
-
-type wrappedGraphUplink struct{}
-
-func (s wrappedGraphUplink) Push(ctx context.Context, param *sourcegraph.MetricsSnapshot) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "GraphUplink", "Push", param)
-	defer func() {
-		trace.After(ctx, "GraphUplink", "Push", param, err, time.Since(start))
-	}()
-	res, err = local.Services.GraphUplink.Push(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "GraphUplink.Push returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedGraphUplink) PushEvents(ctx context.Context, param *sourcegraph.UserEventList) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "GraphUplink", "PushEvents", param)
-	defer func() {
-		trace.After(ctx, "GraphUplink", "PushEvents", param, err, time.Since(start))
-	}()
-	res, err = local.Services.GraphUplink.PushEvents(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "GraphUplink.PushEvents returned nil, nil")
 	}
 	return
 }

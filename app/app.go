@@ -21,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 )
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
@@ -56,9 +55,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	var mw []handlerutil.Middleware
 	mw = append(mw, httpapiauth.OAuth2AccessTokenMiddleware, appauth.CookieMiddleware, handlerutil.UserMiddleware)
-	if !metricutil.DisableMetricsCollection() {
-		mw = append(mw, eventsutil.AgentMiddleware)
-	}
+	mw = append(mw, eventsutil.AgentMiddleware)
 	mw = append(mw, internal.Middleware...)
 
 	m := http.NewServeMux()

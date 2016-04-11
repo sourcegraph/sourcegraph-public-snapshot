@@ -133,9 +133,7 @@
 		FileToken
 		ServerStatus
 		ServerConfig
-		MetricsSnapshot
 		UserEvent
-		UserEventList
 		Event
 		EventList
 		NotifyGenericEvent
@@ -197,26 +195,6 @@ var TreeEntryType_value = map[string]int32{
 
 func (x TreeEntryType) String() string {
 	return proto.EnumName(TreeEntryType_name, int32(x))
-}
-
-// TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in
-type TelemetryType int32
-
-const (
-	// PrometheusDelimited0dot0dot4 indicates the metrics can be decoded using
-	// Prometheus 0.0.4 delimited protobuf format
-	TelemetryType_PrometheusDelimited0dot0dot4 TelemetryType = 0
-)
-
-var TelemetryType_name = map[int32]string{
-	0: "PrometheusDelimited0dot0dot4",
-}
-var TelemetryType_value = map[string]int32{
-	"PrometheusDelimited0dot0dot4": 0,
-}
-
-func (x TelemetryType) String() string {
-	return proto.EnumName(TelemetryType_name, int32(x))
 }
 
 // CombinedStatus is the combined status (i.e., incorporating statuses from all
@@ -2228,18 +2206,6 @@ func (m *ServerConfig) Reset()         { *m = ServerConfig{} }
 func (m *ServerConfig) String() string { return proto.CompactTextString(m) }
 func (*ServerConfig) ProtoMessage()    {}
 
-// MetricsSnapshots encodes
-type MetricsSnapshot struct {
-	// Type is the encoding of TelemetryData
-	Type TelemetryType `protobuf:"varint,1,opt,name=Type,proto3,enum=sourcegraph.TelemetryType" json:"Type,omitempty"`
-	// TelemetryData is the encoded metrics
-	TelemetryData []byte `protobuf:"bytes,2,opt,name=TelemetryData,proto3" json:"TelemetryData,omitempty"`
-}
-
-func (m *MetricsSnapshot) Reset()         { *m = MetricsSnapshot{} }
-func (m *MetricsSnapshot) String() string { return proto.CompactTextString(m) }
-func (*MetricsSnapshot) ProtoMessage()    {}
-
 // UserEvent encodes any user initiated event on the local instance.
 type UserEvent struct {
 	Type     string `protobuf:"bytes,1,opt,name=Type,proto3" json:"Type,omitempty"`
@@ -2260,15 +2226,6 @@ type UserEvent struct {
 func (m *UserEvent) Reset()         { *m = UserEvent{} }
 func (m *UserEvent) String() string { return proto.CompactTextString(m) }
 func (*UserEvent) ProtoMessage()    {}
-
-// UserEventList is a list of user events logged on this instance.
-type UserEventList struct {
-	Events []*UserEvent `protobuf:"bytes,1,rep,name=Events" json:"Events,omitempty"`
-}
-
-func (m *UserEventList) Reset()         { *m = UserEventList{} }
-func (m *UserEventList) String() string { return proto.CompactTextString(m) }
-func (*UserEventList) ProtoMessage()    {}
 
 // Event is any action logged on a Sourcegraph instance.
 type Event struct {
@@ -2401,7 +2358,6 @@ func (*AnnotationsListOptions) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("sourcegraph.TreeEntryType", TreeEntryType_name, TreeEntryType_value)
-	proto.RegisterEnum("sourcegraph.TelemetryType", TelemetryType_name, TelemetryType_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -4627,96 +4583,6 @@ var _Meta_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Config",
 			Handler:    _Meta_Config_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{},
-}
-
-// Client API for GraphUplink service
-
-type GraphUplinkClient interface {
-	// Push sends the latest metrics to the upstream instance
-	Push(ctx context.Context, in *MetricsSnapshot, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// PushEvents flushes the local event logs to the upstream
-	// instance
-	PushEvents(ctx context.Context, in *UserEventList, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-}
-
-type graphUplinkClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewGraphUplinkClient(cc *grpc.ClientConn) GraphUplinkClient {
-	return &graphUplinkClient{cc}
-}
-
-func (c *graphUplinkClient) Push(ctx context.Context, in *MetricsSnapshot, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.GraphUplink/Push", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *graphUplinkClient) PushEvents(ctx context.Context, in *UserEventList, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.GraphUplink/PushEvents", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for GraphUplink service
-
-type GraphUplinkServer interface {
-	// Push sends the latest metrics to the upstream instance
-	Push(context.Context, *MetricsSnapshot) (*pbtypes1.Void, error)
-	// PushEvents flushes the local event logs to the upstream
-	// instance
-	PushEvents(context.Context, *UserEventList) (*pbtypes1.Void, error)
-}
-
-func RegisterGraphUplinkServer(s *grpc.Server, srv GraphUplinkServer) {
-	s.RegisterService(&_GraphUplink_serviceDesc, srv)
-}
-
-func _GraphUplink_Push_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(MetricsSnapshot)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(GraphUplinkServer).Push(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _GraphUplink_PushEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(UserEventList)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(GraphUplinkServer).PushEvents(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-var _GraphUplink_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcegraph.GraphUplink",
-	HandlerType: (*GraphUplinkServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Push",
-			Handler:    _GraphUplink_Push_Handler,
-		},
-		{
-			MethodName: "PushEvents",
-			Handler:    _GraphUplink_PushEvents_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -10446,37 +10312,6 @@ func (m *ServerConfig) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *MetricsSnapshot) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *MetricsSnapshot) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Type != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Type))
-	}
-	if m.TelemetryData != nil {
-		if len(m.TelemetryData) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(m.TelemetryData)))
-			i += copy(data[i:], m.TelemetryData)
-		}
-	}
-	return i, nil
-}
-
 func (m *UserEvent) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -10554,36 +10389,6 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.URL)))
 		i += copy(data[i:], m.URL)
-	}
-	return i, nil
-}
-
-func (m *UserEventList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *UserEventList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Events) > 0 {
-		for _, msg := range m.Events {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
 	}
 	return i, nil
 }
@@ -13231,21 +13036,6 @@ func (m *ServerConfig) Size() (n int) {
 	return n
 }
 
-func (m *MetricsSnapshot) Size() (n int) {
-	var l int
-	_ = l
-	if m.Type != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Type))
-	}
-	if m.TelemetryData != nil {
-		l = len(m.TelemetryData)
-		if l > 0 {
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	return n
-}
-
 func (m *UserEvent) Size() (n int) {
 	var l int
 	_ = l
@@ -13287,18 +13077,6 @@ func (m *UserEvent) Size() (n int) {
 	l = len(m.URL)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *UserEventList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.Events) > 0 {
-		for _, e := range m.Events {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
 	}
 	return n
 }
@@ -30906,103 +30684,6 @@ func (m *ServerConfig) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *MetricsSnapshot) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MetricsSnapshot: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MetricsSnapshot: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.Type |= (TelemetryType(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TelemetryData", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TelemetryData = append([]byte{}, data[iNdEx:postIndex]...)
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *UserEvent) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -31315,87 +30996,6 @@ func (m *UserEvent) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.URL = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *UserEventList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UserEventList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UserEventList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Events", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Events = append(m.Events, &UserEvent{})
-			if err := m.Events[len(m.Events)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

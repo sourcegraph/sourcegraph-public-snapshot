@@ -12,7 +12,6 @@ type Client struct {
 	Builds       BuildsClient
 	Defs         DefsClient
 	Deltas       DeltasClient
-	GraphUplink  GraphUplinkClient
 	Meta         MetaClient
 	MirrorRepos  MirrorReposClient
 	Notify       NotifyClient
@@ -40,7 +39,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Builds = NewBuildsClient(conn)
 	c.Defs = NewDefsClient(conn)
 	c.Deltas = NewDeltasClient(conn)
-	c.GraphUplink = NewGraphUplinkClient(conn)
 	c.Meta = NewMetaClient(conn)
 	c.MirrorRepos = NewMirrorReposClient(conn)
 	c.Notify = NewNotifyClient(conn)

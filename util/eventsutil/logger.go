@@ -10,14 +10,14 @@ import (
 	"os"
 	"time"
 
-	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
+
+	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -167,10 +167,6 @@ var ActiveLogger *Logger
 // Each worker pulls events off the channel and pushes to it's buffer. workerBufferSize is the
 // maximum number of buffered events after which the worker will flush the buffer upstream.
 func StartEventLogger(ctx context.Context, clientID string, channelCapacity, workerBufferSize int, flushInterval time.Duration) {
-	if metricutil.DisableMetricsCollection() {
-		return
-	}
-
 	// Save this server's client ID for use in all Log calls.
 	sourcegraphClientID = clientID
 

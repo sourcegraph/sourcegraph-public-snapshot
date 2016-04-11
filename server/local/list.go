@@ -24,7 +24,6 @@ var Services = svc.Services{
 	Builds:            Builds,
 	Defs:              Defs,
 	Deltas:            Deltas,
-	GraphUplink:       GraphUplink,
 	Meta:              Meta,
 	MirrorRepos:       MirrorRepos,
 	MultiRepoImporter: Graph,

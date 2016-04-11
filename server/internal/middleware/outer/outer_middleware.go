@@ -36,7 +36,6 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Builds:            wrappedBuilds{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
 		Deltas:            wrappedDeltas{ctxFunc, services},
-		GraphUplink:       wrappedGraphUplink{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
 		Notify:            wrappedNotify{ctxFunc, services},
@@ -918,71 +917,6 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasList
 	}
 
 	rv, err := innerSvc.ListFiles(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-type wrappedGraphUplink struct {
-	ctxFunc  ContextFunc
-	services svc.Services
-}
-
-func (s wrappedGraphUplink) Push(ctx context.Context, v1 *sourcegraph.MetricsSnapshot) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in GraphUplink.Push: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.GraphUplinkOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "GraphUplink")
-	}
-
-	rv, err := innerSvc.Push(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
-func (s wrappedGraphUplink) PushEvents(ctx context.Context, v1 *sourcegraph.UserEventList) (returnedResult *pbtypes.Void, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in GraphUplink.PushEvents: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.GraphUplinkOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "GraphUplink")
-	}
-
-	rv, err := innerSvc.PushEvents(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

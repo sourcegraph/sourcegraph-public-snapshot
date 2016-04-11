@@ -29,7 +29,6 @@ const (
 	_BuildsKey            contextKey = iota
 	_DefsKey              contextKey = iota
 	_DeltasKey            contextKey = iota
-	_GraphUplinkKey       contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
 	_NotifyKey            contextKey = iota
@@ -50,7 +49,6 @@ type Services struct {
 	Builds            sourcegraph.BuildsServer
 	Defs              sourcegraph.DefsServer
 	Deltas            sourcegraph.DeltasServer
-	GraphUplink       sourcegraph.GraphUplinkServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
 	Notify            sourcegraph.NotifyServer
@@ -91,10 +89,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Deltas != nil {
 		sourcegraph.RegisterDeltasServer(s, svcs.Deltas)
-	}
-
-	if svcs.GraphUplink != nil {
-		sourcegraph.RegisterGraphUplinkServer(s, svcs.GraphUplink)
 	}
 
 	if svcs.Meta != nil {
@@ -164,10 +158,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Deltas != nil {
 		ctx = WithDeltas(ctx, s.Deltas)
-	}
-
-	if s.GraphUplink != nil {
-		ctx = WithGraphUplink(ctx, s.GraphUplink)
 	}
 
 	if s.Meta != nil {
@@ -364,29 +354,6 @@ func Deltas(ctx context.Context) sourcegraph.DeltasServer {
 // DeltasOrNil returns the context's Deltas service if present, or else nil.
 func DeltasOrNil(ctx context.Context) sourcegraph.DeltasServer {
 	s, ok := ctx.Value(_DeltasKey).(sourcegraph.DeltasServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithGraphUplink returns a copy of parent that uses the given GraphUplink service.
-func WithGraphUplink(ctx context.Context, s sourcegraph.GraphUplinkServer) context.Context {
-	return context.WithValue(ctx, _GraphUplinkKey, s)
-}
-
-// GraphUplink gets the context's GraphUplink service. If the service is not present, it panics.
-func GraphUplink(ctx context.Context) sourcegraph.GraphUplinkServer {
-	s, ok := ctx.Value(_GraphUplinkKey).(sourcegraph.GraphUplinkServer)
-	if !ok || s == nil {
-		panic("no GraphUplink set in context")
-	}
-	return s
-}
-
-// GraphUplinkOrNil returns the context's GraphUplink service if present, or else nil.
-func GraphUplinkOrNil(ctx context.Context) sourcegraph.GraphUplinkServer {
-	s, ok := ctx.Value(_GraphUplinkKey).(sourcegraph.GraphUplinkServer)
 	if ok {
 		return s
 	}
