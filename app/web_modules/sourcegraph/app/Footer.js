@@ -2,11 +2,15 @@ import React from "react";
 import Component from "sourcegraph/Component";
 
 import context from "sourcegraph/app/context";
-
+import {Link} from "react-router";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Footer.css";
 
 class Footer extends Component {
+	static propTypes = {
+		full: React.PropTypes.bool.isRequired,
+	};
+
 	constructor(props) {
 		super(props);
 	}
@@ -15,20 +19,42 @@ class Footer extends Component {
 		Object.assign(state, props);
 	}
 
-	render() {
+	// _renderMini renders the mini footer, for app pages.
+	_renderMini() {
 		return (
-			<div styleName="footer">
+			<div styleName="mini">
+				<ul styleName="left-mini-box">
+					<li>
+						<Link to="/" styleName="logo-mark-link">
+							<img styleName="logo-mark" title="Sourcegraph" alt="Sourcegraph logo" src={`${context.assetsRoot}/img/sourcegraph-mark.svg`} />
+						</Link>
+					</li>
+					<li><Link styleName="link" to="/">Home</Link></li>
+					<li><a styleName="link" href="/blog/">Blog</a></li>
+				</ul>
+				<ul styleName="right-mini-box">
+					<li><a styleName="link" href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a></li>
+					<li><a styleName="link" href="/security/">Security</a></li>
+					<li><a styleName="link" href="/privacy/">Privacy</a></li>
+					<li><a styleName="link" href="/legal/">Terms</a></li>
+				</ul>
+			</div>
+		);
+	}
+
+	// _renderFull renders the full footer, for the homepage and other
+	// informational pages.
+	_renderFull() {
+		return (
+			<div styleName="full">
 				<div styleName="left-container">
 					<div styleName="left-content">
 						<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-logo-tagline.svg`} />
 						<div styleName="address">
-							<a styleName="address-line" href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>
 							<span styleName="address-line">121 2nd St, Ste 200</span>
 							<span styleName="address-line">San Francisco, CA 94105</span>
+							<a styleName="address-line" href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>
 						</div>
-						<span styleName="version-number">
-							{`version ${context.buildVars.Version}`}
-						</span>
 					</div>
 				</div>
 				<div styleName="right-container">
@@ -60,6 +86,10 @@ class Footer extends Component {
 				</div>
 			</div>
 		);
+	}
+
+	render() {
+		return this.props.full ? this._renderFull() : this._renderMini();
 	}
 }
 export default CSSModules(Footer, styles);

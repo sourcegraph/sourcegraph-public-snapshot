@@ -39,6 +39,7 @@ type State = {
 export class App extends Component {
 	static propTypes = {
 		routes: React.PropTypes.arrayOf(React.PropTypes.object),
+		route: React.PropTypes.object.isRequired,
 		location: React.PropTypes.object,
 		children: reactElement,
 		main: reactElement,
@@ -99,7 +100,7 @@ export class App extends Component {
 			<div>
 				<GlobalNav navContext={this.props.navContext} />
 				{this.props.main}
-				<Footer />
+				<Footer full={Boolean(this.props.routes[this.props.routes.length - 1].fullFooter)} />
 			</div>
 		);
 	}
@@ -107,6 +108,7 @@ export class App extends Component {
 
 export const rootRoute: Route = {
 	path: "/",
+	fullFooter: true,
 	component: withStatusContext(App),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {

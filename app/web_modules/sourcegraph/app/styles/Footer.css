@@ -1,14 +1,52 @@
 @value base "sourcegraph/components/styles/base.css";
-@value grid "sourcegraph/components/styles/grid.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 
 .footer {
-	composes: bt mt6 pt5 ph5 center from base;
-	composes: col-11 from grid;
+	composes: bt mt4 ph2 from base;
 	composes: b--light-gray from colors;
 	display: flex;
 	flex-wrap: wrap;
+}
+
+.mini {
+	composes: footer;
+	composes: pv2 from base;
+	justify-content: center;
+	align-items: center;
+}
+.mini-box {
+	flex: 1 1;
+	list-style-type: none;
+	composes: ma0 pa0 from base;
+}
+.left-mini-box {
+	composes: mini-box;
+}
+.right-mini-box {
+	composes: mini-box;
+	composes: f6 from base;
+	text-align: right;
+}
+.link {
+	composes: mh2 from base;
+	composes: gray from colors;
+}
+.logo-mark-link {
+	composes: mr1 from base;
+	composes: link;
+}
+.logo-mark {
+	width: 2.2rem;
+}
+.mini-box li {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.full {
+	composes: footer;
+	composes: center pv4 from base;
 }
 
 .left-container {
@@ -28,12 +66,6 @@
 .address-line {
 	composes: f4 sans-serif from typography;
 	composes: pt1 from base;
-	display: block;
-}
-
-.version-number {
-	composes: small-text from typography;
-	composes: mt3 from base;
 	display: block;
 }
 
@@ -61,5 +93,4 @@
 
 .logo {
 	width: 171px;
-	height: 36px;
 }
