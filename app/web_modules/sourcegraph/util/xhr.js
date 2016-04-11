@@ -17,6 +17,9 @@ function defaultOptions() {
 		},
 		credentials: "same-origin",
 	};
+	if (typeof document === "undefined") {
+		options.compress = false;
+	}
 	if (context.authorization) {
 		let auth = `x-oauth-basic:${context.authorization}`;
 		options.headers["authorization"] = `Basic ${btoa(auth)}`;

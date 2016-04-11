@@ -11,6 +11,7 @@ import paths.)
 * github.com/drone/drone-exec: github.com/sourcegraph/drone-exec branch `dev`
 * github.com/drone/drone-plugin-go: github.com/sqs/drone-plugin-go branch `multiple-netrc-entries`
 * gopkg.in/olebedev/go-duktape.v2: github.com/sourcegraph/go-duktape branch `v2`
+* github.com/NYTimes/gziphandler: using gzip.BestSpeed for ~1.8x speedup in many HTTP API endpoints
 
 # Older versions
 

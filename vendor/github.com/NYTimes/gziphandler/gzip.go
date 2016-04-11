@@ -23,7 +23,7 @@ type codings map[string]float64
 const DEFAULT_QVALUE = 1.0
 
 var gzipWriterPool = sync.Pool{
-	New: func() interface{} { return gzip.NewWriter(nil) },
+	New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed); return w },
 }
 
 // GzipResponseWriter provides an http.ResponseWriter interface, which gzips

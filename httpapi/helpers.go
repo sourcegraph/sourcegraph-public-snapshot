@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"reflect"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
-
 	"github.com/google/go-querystring/query"
 
 	"strconv"
@@ -25,14 +23,9 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 		v = []interface{}{}
 	}
 
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return &errcode.HTTPErr{Status: http.StatusInternalServerError, Err: err}
-	}
-
+	// TODO(sqs): use json.MarshalIndent if the user-agent is curl, Chrome, etc.
 	w.Header().Set("content-type", "application/json; charset=utf-8")
-	_, err = w.Write(data)
-	return err
+	return json.NewEncoder(w).Encode(v)
 }
 
 // writePaginationHeader writes an HTTP Link header with links to the first,
