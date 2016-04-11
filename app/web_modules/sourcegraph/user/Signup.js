@@ -69,7 +69,7 @@ class Signup extends Container {
 						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.err.message}</div>
+					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
 				}
 				<div styleName="subtext">By creating an account you agree to our <a href="/privacy">privacy policy</a> and <a href="/legal">terms</a>.</div>
 				<div styleName="alt-action">
