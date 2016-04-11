@@ -1000,7 +1000,7 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 
 :global #debug {
 	position: fixed;
-	bottom: 15px;
+	bottom: 42px;
 	left: 0;
 	padding: 5px 8px;
 	font-family: monospace;

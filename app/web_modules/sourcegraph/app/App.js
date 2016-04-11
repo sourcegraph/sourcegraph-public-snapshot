@@ -8,6 +8,8 @@ import Component from "sourcegraph/Component";
 
 import GlobalNav from "sourcegraph/app/GlobalNav";
 import Footer from "sourcegraph/app/Footer";
+import CSSModules from "react-css-modules";
+import styles from "./styles/App.css";
 
 import EventLogger from "sourcegraph/util/EventLogger";
 import {withStatusContext} from "sourcegraph/app/status";
@@ -36,7 +38,7 @@ type State = {
 	routePattern: string;
 };
 
-export class App extends Component {
+class App extends Component {
 	static propTypes = {
 		routes: React.PropTypes.arrayOf(React.PropTypes.object),
 		route: React.PropTypes.object.isRequired,
@@ -97,9 +99,9 @@ export class App extends Component {
 
 	render() {
 		return (
-			<div>
+			<div styleName="main-container">
 				<GlobalNav navContext={this.props.navContext} />
-				{this.props.main}
+				<div styleName="main-content">{this.props.main}</div>
 				<Footer full={Boolean(this.props.routes[this.props.routes.length - 1].fullFooter)} />
 			</div>
 		);
@@ -109,7 +111,7 @@ export class App extends Component {
 export const rootRoute: Route = {
 	path: "/",
 	fullFooter: true,
-	component: withStatusContext(App),
+	component: withStatusContext(CSSModules(App, styles)),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, require("sourcegraph/dashboard").route);

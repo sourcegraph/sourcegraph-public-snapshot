@@ -1,0 +1,12 @@
+/*
+Stick footer at bottom even if the page content doesn't take up
+the entire viewport height.
+*/
+.main-container {
+	display: flex;
+	min-height: 100vh;
+	flex-direction: column;
+}
+.main-content {
+	flex: 1;
+}
