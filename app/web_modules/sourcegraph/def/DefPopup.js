@@ -24,7 +24,7 @@ class DefPopup extends React.Component {
 					<i>No usages found</i>
 				}
 				{refLocs && refLocs.length > 0 &&
-					refLocs.filter((r) => r.Files).map((repoRef, i) => (
+					refLocs.filter((r) => r && r.Files).map((repoRef, i) => (
 						<div key={i} className={s.allRefs}>
 							<header><span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefRefs(def, repoRef.Repo)}>{repoRef.Repo}</Link></header>
 							<div className={s.refsGroup}>
