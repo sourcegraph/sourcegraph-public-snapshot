@@ -11187,6 +11187,9 @@ func (m *RepoListOptions) Size() (n int) {
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
+	if m.SlowlyIncludePublicGitHubRepos {
+		n += 2
+	}
 	return n
 }
 
@@ -11850,9 +11853,6 @@ func (m *BuildListOptions) Size() (n int) {
 	}
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.SlowlyIncludePublicGitHubRepos {
-		n += 2
-	}
 	return n
 }
 
@@ -14818,6 +14818,26 @@ func (m *RepoListOptions) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SlowlyIncludePublicGitHubRepos", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SlowlyIncludePublicGitHubRepos = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
@@ -16169,26 +16189,6 @@ func (m *ReposListRemoteOptions) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SlowlyIncludePublicGitHubRepos", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.SlowlyIncludePublicGitHubRepos = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
