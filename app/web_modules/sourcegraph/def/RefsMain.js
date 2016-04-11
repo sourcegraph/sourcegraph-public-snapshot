@@ -25,6 +25,7 @@ const FILES_PER_PAGE = 5;
 class RefsMain extends Container {
 	static contextTypes = {
 		status: React.PropTypes.object,
+		router: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -41,6 +42,18 @@ class RefsMain extends Container {
 
 	stores() {
 		return [DefStore, BlobStore];
+	}
+
+	componentDidMount() {
+		if (super.componentDidMount) super.componentDidMount();
+		this.context.router.listenBefore((location) => {
+			// When the route changes, if we navigate to a different page clear the
+			// currently highlighted def if there is one, otherwise it will be stuck
+			// on the next page since no mouseout event can be triggered.
+			if (this.state.highlightedDefObj && !this.state.highlightedDefObj.Error) {
+				Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
+			}
+		});
 	}
 
 	reconcileState(state, props) {
