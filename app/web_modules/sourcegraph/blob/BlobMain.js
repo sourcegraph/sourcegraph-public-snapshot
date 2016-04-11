@@ -6,6 +6,7 @@ import last from "lodash/array/last";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import Blob from "sourcegraph/blob/Blob";
+import BlobContentPlaceholder from "sourcegraph/blob/BlobContentPlaceholder";
 import BlobToolbar from "sourcegraph/blob/BlobToolbar";
 import FileMargin from "sourcegraph/blob/FileMargin";
 import DefTooltip from "sourcegraph/def/DefTooltip";
@@ -162,7 +163,8 @@ export default class BlobMain extends Container {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path} />
-					{this.state.blob &&
+					{(!this.state.blob || !this.state.anns) && <BlobContentPlaceholder />}
+					{this.state.blob && this.state.anns &&
 					<Blob
 						repo={this.state.repo}
 						rev={this.state.rev}
