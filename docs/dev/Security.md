@@ -119,7 +119,7 @@ because it is an implementation detail of the server. The other
 systems may pass client and user tokens with all gRPC calls they
 invoke, but they should treat those tokens as opaque. If they need to
 identify the current client or user, they may call the gRPC methods
-`Auth.Identify` or `RegisteredClients.GetCurrent`, respectively, using
+`Auth.Identify`, respectively, using
 their tokens.
 
 ## Web app

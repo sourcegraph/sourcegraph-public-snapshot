@@ -19,7 +19,6 @@ import (
 // Stores has a field for each store interface with the concrete mock type (to obviate the need for tedious type assertions in test code).
 type Stores struct {
 	Accounts           Accounts
-	Authorizations     Authorizations
 	BuildLogs          BuildLogs
 	Builds             Builds
 	Directory          Directory
@@ -28,7 +27,6 @@ type Stores struct {
 	Graph              srcstore.MockMultiRepoStore
 	Orgs               Orgs
 	Password           Password
-	RegisteredClients  RegisteredClients
 	RepoConfigs        RepoConfigs
 	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
@@ -40,7 +38,6 @@ type Stores struct {
 func (s *Stores) Stores() store.Stores {
 	return store.Stores{
 		Accounts:           &s.Accounts,
-		Authorizations:     &s.Authorizations,
 		BuildLogs:          &s.BuildLogs,
 		Builds:             &s.Builds,
 		Directory:          &s.Directory,
@@ -49,7 +46,6 @@ func (s *Stores) Stores() store.Stores {
 		Graph:              &s.Graph,
 		Orgs:               &s.Orgs,
 		Password:           &s.Password,
-		RegisteredClients:  &s.RegisteredClients,
 		RepoConfigs:        &s.RepoConfigs,
 		RepoPerms:          &s.RepoPerms,
 		RepoStatuses:       &s.RepoStatuses,

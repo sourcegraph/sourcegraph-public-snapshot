@@ -494,13 +494,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		}()
 	}
 
-	// Register client.
-	go func() {
-		if err := c.registerClient(appURL, idKey); err != nil {
-			log15.Warn("Failed to register (or check registration) with server", "error", err, "registerURL", c.RegisterURL)
-		}
-	}()
-
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
 	go statsutil.ComputeUsageStats(client.Ctx, 10*time.Minute)
@@ -746,60 +739,6 @@ func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc
 		r.RemoteAddr = s
 	}
 	next(w, r)
-}
-
-// webpackDevServerHandler sets a CORS header if you are running with Webpack in local dev.
-
-// registerClient registers this Sourcegraph server as a client
-// of another server.
-func (c *ServeCmd) registerClient(appURL *url.URL, idKey *idkey.IDKey) error {
-	if c.RegisterURL == "" {
-		return nil
-	}
-
-	// Short-circuit if RegisterURL is set to this server's own app URL.
-	if c.RegisterURL == c.AppURL {
-		log15.Warn("RegisterURL is set to this server's own app URL, skipping client registration.")
-		return nil
-	}
-
-	registerURL, err := url.Parse(c.RegisterURL)
-	if err != nil {
-		return err
-	}
-
-	shortClientID := idKey.ID
-	if len(shortClientID) > 5 {
-		shortClientID = shortClientID[:5]
-	}
-
-	jwks, err := idKey.MarshalJWKSPublicKey()
-	if err != nil {
-		return err
-	}
-
-	rctx := sourcegraph.WithGRPCEndpoint(context.Background(), registerURL)
-
-	cl, err := sourcegraph.NewClientFromContext(rctx)
-	if err != nil {
-		return err
-	}
-
-	regClient, err := cl.RegisteredClients.Create(rctx, &sourcegraph.RegisteredClient{
-		ID:         idKey.ID,
-		ClientName: fmt.Sprintf("Client #%s", shortClientID),
-		ClientURI:  appURL.String(),
-		JWKS:       string(jwks),
-	})
-	if grpc.Code(err) == codes.AlreadyExists {
-		log15.Debug("Client is already registered", "registerURL", registerURL, "client", idKey.ID)
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("registering client with %s: %s", registerURL, err)
-	}
-	eventsutil.LogRegisterServer(regClient.ClientName)
-	log15.Debug("Registered as client", "registerURL", registerURL, "client", idKey.ID)
-	return nil
 }
 
 // safeConfigFlags returns the commandline flag data for the `src serve` command,

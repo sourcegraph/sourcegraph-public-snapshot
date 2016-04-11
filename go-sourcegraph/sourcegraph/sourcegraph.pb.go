@@ -89,10 +89,7 @@
 		PendingPasswordReset
 		NewPassword
 		NewAccount
-		AuthorizationCodeRequest
-		AuthorizationCode
 		LoginCredentials
-		BearerJWT
 		AccessTokenRequest
 		AccessTokenResponse
 		AuthInfo
@@ -136,11 +133,6 @@
 		FileToken
 		ServerStatus
 		ServerConfig
-		RegisteredClient
-		RegisteredClientSpec
-		RegisteredClientCredentials
-		RegisteredClientListOptions
-		RegisteredClientList
 		UserPermissions
 		UserPermissionsList
 		UserPermissionsOptions
@@ -208,36 +200,6 @@ var TreeEntryType_value = map[string]int32{
 
 func (x TreeEntryType) String() string {
 	return proto.EnumName(TreeEntryType_name, int32(x))
-}
-
-// RegisteredClientType is the set of kinds of clients.
-type RegisteredClientType int32
-
-const (
-	// Any is any type of API client. It should only be used when
-	// listing and not actually set on a RegisteredClient object.
-	RegisteredClientType_Any RegisteredClientType = 0
-	// Other is all other kinds of clients that are not
-	// SourcegraphServers.
-	RegisteredClientType_Other RegisteredClientType = 1
-	// SourcegraphServer indicates this client is a Sourcegraph server
-	// instance.
-	RegisteredClientType_SourcegraphServer RegisteredClientType = 2
-)
-
-var RegisteredClientType_name = map[int32]string{
-	0: "Any",
-	1: "Other",
-	2: "SourcegraphServer",
-}
-var RegisteredClientType_value = map[string]int32{
-	"Any":               0,
-	"Other":             1,
-	"SourcegraphServer": 2,
-}
-
-func (x RegisteredClientType) String() string {
-	return proto.EnumName(RegisteredClientType_name, int32(x))
 }
 
 // TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in
@@ -1604,37 +1566,6 @@ func (m *NewAccount) Reset()         { *m = NewAccount{} }
 func (m *NewAccount) String() string { return proto.CompactTextString(m) }
 func (*NewAccount) ProtoMessage()    {}
 
-// AuthorizationCodeRequest: see
-// https://tools.ietf.org/html/rfc6749#section-4.1.1.
-type AuthorizationCodeRequest struct {
-	ResponseType string   `protobuf:"bytes,1,opt,name=ResponseType,proto3" json:"ResponseType,omitempty"`
-	ClientID     string   `protobuf:"bytes,2,opt,name=ClientID,proto3" json:"ClientID,omitempty"`
-	RedirectURI  string   `protobuf:"bytes,3,opt,name=RedirectURI,proto3" json:"RedirectURI,omitempty"`
-	Scope        []string `protobuf:"bytes,4,rep,name=Scope" json:"Scope,omitempty"`
-	// UID is the UID of the user who will be presented with the code.
-	UID int32 `protobuf:"varint,5,opt,name=UID,proto3" json:"UID,omitempty"`
-}
-
-func (m *AuthorizationCodeRequest) Reset()         { *m = AuthorizationCodeRequest{} }
-func (m *AuthorizationCodeRequest) String() string { return proto.CompactTextString(m) }
-func (*AuthorizationCodeRequest) ProtoMessage()    {}
-
-// AuthorizationCode represents an access token request using the
-// authorization_code OAuth2 grant type. See
-// http://tools.ietf.org/html/rfc6749#section-4.1.3 for more
-// information.
-//
-// The client_id field is not set in this message; it is taken from
-// the authenticated client for the request (which must exist).
-type AuthorizationCode struct {
-	Code        string `protobuf:"bytes,1,opt,name=Code,proto3" json:"Code,omitempty"`
-	RedirectURI string `protobuf:"bytes,2,opt,name=RedirectURI,proto3" json:"RedirectURI,omitempty"`
-}
-
-func (m *AuthorizationCode) Reset()         { *m = AuthorizationCode{} }
-func (m *AuthorizationCode) String() string { return proto.CompactTextString(m) }
-func (*AuthorizationCode) ProtoMessage()    {}
-
 // LoginCredentials is the information a user submits to log in.
 type LoginCredentials struct {
 	// Login is the user's claimed login.
@@ -1647,19 +1578,6 @@ func (m *LoginCredentials) Reset()         { *m = LoginCredentials{} }
 func (m *LoginCredentials) String() string { return proto.CompactTextString(m) }
 func (*LoginCredentials) ProtoMessage()    {}
 
-// BearerJWT is a Bearer JSON Web Token, which is used for client
-// authentication during an authentication grant. See
-// https://tools.ietf.org/html/draft-ietf-oauth-jwt-bearer-12#section-2.1
-// for more information.
-type BearerJWT struct {
-	// Assertion is a JWT.
-	Assertion string `protobuf:"bytes,1,opt,name=Assertion,proto3" json:"Assertion,omitempty"`
-}
-
-func (m *BearerJWT) Reset()         { *m = BearerJWT{} }
-func (m *BearerJWT) String() string { return proto.CompactTextString(m) }
-func (*BearerJWT) ProtoMessage()    {}
-
 // AccessTokenRequest contains the information necessary to
 // request an OAuth2 access token. It supports a subset of
 // authorization grant types specified in
@@ -1669,9 +1587,7 @@ type AccessTokenRequest struct {
 	// information on OAuth2 authorization grant types.
 	//
 	// Types that are valid to be assigned to AuthorizationGrant:
-	//	*AccessTokenRequest_AuthorizationCode
 	//	*AccessTokenRequest_ResourceOwnerPassword
-	//	*AccessTokenRequest_BearerJWT
 	AuthorizationGrant isAccessTokenRequest_AuthorizationGrant `protobuf_oneof:"authorization_grant"`
 	Scope              []string                                `protobuf:"bytes,17,rep,name=Scope" json:"Scope,omitempty"`
 }
@@ -1686,30 +1602,15 @@ type isAccessTokenRequest_AuthorizationGrant interface {
 	Size() int
 }
 
-type AccessTokenRequest_AuthorizationCode struct {
-	AuthorizationCode *AuthorizationCode `protobuf:"bytes,1,opt,name=AuthorizationCode,oneof"`
-}
 type AccessTokenRequest_ResourceOwnerPassword struct {
 	ResourceOwnerPassword *LoginCredentials `protobuf:"bytes,2,opt,name=ResourceOwnerPassword,oneof"`
 }
-type AccessTokenRequest_BearerJWT struct {
-	BearerJWT *BearerJWT `protobuf:"bytes,3,opt,name=BearerJWT,oneof"`
-}
 
-func (*AccessTokenRequest_AuthorizationCode) isAccessTokenRequest_AuthorizationGrant()     {}
 func (*AccessTokenRequest_ResourceOwnerPassword) isAccessTokenRequest_AuthorizationGrant() {}
-func (*AccessTokenRequest_BearerJWT) isAccessTokenRequest_AuthorizationGrant()             {}
 
 func (m *AccessTokenRequest) GetAuthorizationGrant() isAccessTokenRequest_AuthorizationGrant {
 	if m != nil {
 		return m.AuthorizationGrant
-	}
-	return nil
-}
-
-func (m *AccessTokenRequest) GetAuthorizationCode() *AuthorizationCode {
-	if x, ok := m.GetAuthorizationGrant().(*AccessTokenRequest_AuthorizationCode); ok {
-		return x.AuthorizationCode
 	}
 	return nil
 }
@@ -1721,19 +1622,10 @@ func (m *AccessTokenRequest) GetResourceOwnerPassword() *LoginCredentials {
 	return nil
 }
 
-func (m *AccessTokenRequest) GetBearerJWT() *BearerJWT {
-	if x, ok := m.GetAuthorizationGrant().(*AccessTokenRequest_BearerJWT); ok {
-		return x.BearerJWT
-	}
-	return nil
-}
-
 // XXX_OneofFuncs is for the internal use of the proto package.
 func (*AccessTokenRequest) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
 	return _AccessTokenRequest_OneofMarshaler, _AccessTokenRequest_OneofUnmarshaler, []interface{}{
-		(*AccessTokenRequest_AuthorizationCode)(nil),
 		(*AccessTokenRequest_ResourceOwnerPassword)(nil),
-		(*AccessTokenRequest_BearerJWT)(nil),
 	}
 }
 
@@ -1741,19 +1633,9 @@ func _AccessTokenRequest_OneofMarshaler(msg proto.Message, b *proto.Buffer) erro
 	m := msg.(*AccessTokenRequest)
 	// authorization_grant
 	switch x := m.AuthorizationGrant.(type) {
-	case *AccessTokenRequest_AuthorizationCode:
-		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AuthorizationCode); err != nil {
-			return err
-		}
 	case *AccessTokenRequest_ResourceOwnerPassword:
 		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.ResourceOwnerPassword); err != nil {
-			return err
-		}
-	case *AccessTokenRequest_BearerJWT:
-		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.BearerJWT); err != nil {
 			return err
 		}
 	case nil:
@@ -1766,14 +1648,6 @@ func _AccessTokenRequest_OneofMarshaler(msg proto.Message, b *proto.Buffer) erro
 func _AccessTokenRequest_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
 	m := msg.(*AccessTokenRequest)
 	switch tag {
-	case 1: // authorization_grant.AuthorizationCode
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(AuthorizationCode)
-		err := b.DecodeMessage(msg)
-		m.AuthorizationGrant = &AccessTokenRequest_AuthorizationCode{msg}
-		return true, err
 	case 2: // authorization_grant.ResourceOwnerPassword
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
@@ -1781,14 +1655,6 @@ func _AccessTokenRequest_OneofUnmarshaler(msg proto.Message, tag, wire int, b *p
 		msg := new(LoginCredentials)
 		err := b.DecodeMessage(msg)
 		m.AuthorizationGrant = &AccessTokenRequest_ResourceOwnerPassword{msg}
-		return true, err
-	case 3: // authorization_grant.BearerJWT
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(BearerJWT)
-		err := b.DecodeMessage(msg)
-		m.AuthorizationGrant = &AccessTokenRequest_BearerJWT{msg}
 		return true, err
 	default:
 		return false, nil
@@ -2369,94 +2235,6 @@ func (m *ServerConfig) Reset()         { *m = ServerConfig{} }
 func (m *ServerConfig) String() string { return proto.CompactTextString(m) }
 func (*ServerConfig) ProtoMessage()    {}
 
-// A RegisteredClient is a registered API client.
-//
-// Many fields correspond to those listed at
-// http://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata.
-//
-// It's called RegisteredClient instead of Client to avoid a name
-// conflict with the existing Client (Go) type.
-type RegisteredClient struct {
-	// ID is a unique identifier for this client.
-	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	// RedirectURIs is a list of allowed redirect URIs.
-	RedirectURIs []string `protobuf:"bytes,2,rep,name=RedirectURIs" json:"RedirectURIs,omitempty"`
-	// ClientName is the name of the client to be presented to the
-	// end-user.
-	ClientName string `protobuf:"bytes,3,opt,name=ClientName,proto3" json:"ClientName,omitempty"`
-	// LogoURI is a URL to this client's logo.
-	LogoURI string `protobuf:"bytes,4,opt,name=LogoURI,proto3" json:"LogoURI,omitempty"`
-	// ClientURI is a URL to this client's homepage.
-	ClientURI string `protobuf:"bytes,5,opt,name=ClientURI,proto3" json:"ClientURI,omitempty"`
-	// JWKS is the client's JSON Web Key Set. It contains the client's
-	// public keys, if any.
-	JWKS string `protobuf:"bytes,6,opt,name=JWKS,proto3" json:"JWKS,omitempty"`
-	// ClientSecret is the secret value that authenticates the
-	// client. It may be empty (e.g., if JWKS keys are used for
-	// authentication instead).
-	ClientSecret string `protobuf:"bytes,7,opt,name=ClientSecret,proto3" json:"ClientSecret,omitempty"`
-	// Description is a human-readable description of this API client
-	// that's shown to the user during, e.g., OAuth2 authentication.
-	Description string `protobuf:"bytes,8,opt,name=Description,proto3" json:"Description,omitempty"`
-	// Meta holds arbitrary metadata about this API client. The
-	// structure is defined by the API client and is opaque to the
-	// server.
-	Meta map[string]string `protobuf:"bytes,9,rep,name=Meta" json:"Meta,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// RegisteredClientType describes this client's type.
-	Type RegisteredClientType `protobuf:"varint,10,opt,name=Type,proto3,enum=sourcegraph.RegisteredClientType" json:"Type,omitempty"`
-	// CreatedAt is when this API client's record was created.
-	CreatedAt pbtypes.Timestamp `protobuf:"bytes,11,opt,name=CreatedAt" json:"CreatedAt"`
-	// UpdatedAt is when this API client's record was last updated.
-	UpdatedAt pbtypes.Timestamp `protobuf:"bytes,12,opt,name=UpdatedAt" json:"UpdatedAt"`
-}
-
-func (m *RegisteredClient) Reset()         { *m = RegisteredClient{} }
-func (m *RegisteredClient) String() string { return proto.CompactTextString(m) }
-func (*RegisteredClient) ProtoMessage()    {}
-
-// A RegisteredClientSpec uniquely identifies a RegisteredClient.
-type RegisteredClientSpec struct {
-	// ID is the client's ID.
-	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-}
-
-func (m *RegisteredClientSpec) Reset()         { *m = RegisteredClientSpec{} }
-func (m *RegisteredClientSpec) String() string { return proto.CompactTextString(m) }
-func (*RegisteredClientSpec) ProtoMessage()    {}
-
-// A RegisteredClientCredentials authenticates a RegisteredClient.
-type RegisteredClientCredentials struct {
-	// ID is the client's ID.
-	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	// Secret is the client's secret.
-	Secret string `protobuf:"bytes,2,opt,name=Secret,proto3" json:"Secret,omitempty"`
-}
-
-func (m *RegisteredClientCredentials) Reset()         { *m = RegisteredClientCredentials{} }
-func (m *RegisteredClientCredentials) String() string { return proto.CompactTextString(m) }
-func (*RegisteredClientCredentials) ProtoMessage()    {}
-
-// RegisteredClientListOptions configures a call to
-// RegisteredClients.List.
-type RegisteredClientListOptions struct {
-	Type        RegisteredClientType `protobuf:"varint,1,opt,name=Type,proto3,enum=sourcegraph.RegisteredClientType" json:"Type,omitempty"`
-	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
-}
-
-func (m *RegisteredClientListOptions) Reset()         { *m = RegisteredClientListOptions{} }
-func (m *RegisteredClientListOptions) String() string { return proto.CompactTextString(m) }
-func (*RegisteredClientListOptions) ProtoMessage()    {}
-
-// RegisteredClientList holds a list of clients.
-type RegisteredClientList struct {
-	Clients        []*RegisteredClient `protobuf:"bytes,1,rep,name=Clients" json:"Clients,omitempty"`
-	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
-}
-
-func (m *RegisteredClientList) Reset()         { *m = RegisteredClientList{} }
-func (m *RegisteredClientList) String() string { return proto.CompactTextString(m) }
-func (*RegisteredClientList) ProtoMessage()    {}
-
 type UserPermissions struct {
 	// UID is a user's UID.
 	UID int32 `protobuf:"varint,1,opt,name=UID,proto3" json:"UID,omitempty"`
@@ -2485,8 +2263,7 @@ func (m *UserPermissionsList) String() string { return proto.CompactTextString(m
 func (*UserPermissionsList) ProtoMessage()    {}
 
 type UserPermissionsOptions struct {
-	ClientSpec *RegisteredClientSpec `protobuf:"bytes,1,opt,name=ClientSpec" json:"ClientSpec,omitempty"`
-	UID        int32                 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
+	UID int32 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
 }
 
 func (m *UserPermissionsOptions) Reset()         { *m = UserPermissionsOptions{} }
@@ -2666,7 +2443,6 @@ func (*AnnotationsListOptions) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("sourcegraph.TreeEntryType", TreeEntryType_name, TreeEntryType_value)
-	proto.RegisterEnum("sourcegraph.RegisteredClientType", RegisteredClientType_name, RegisteredClientType_value)
 	proto.RegisterEnum("sourcegraph.TelemetryType", TelemetryType_name, TelemetryType_value)
 }
 
@@ -4288,12 +4064,6 @@ var _Users_serviceDesc = grpc.ServiceDesc{
 // Client API for Auth service
 
 type AuthClient interface {
-	// GetAuthorizationCodeGrant gets an OAuth2 authorization code
-	// grant from the server that can be traded in for an access token
-	// by calling GetAccessToken. See
-	// https://tools.ietf.org/html/rfc6749#section-4.1 for more
-	// information.
-	GetAuthorizationCode(ctx context.Context, in *AuthorizationCodeRequest, opts ...grpc.CallOption) (*AuthorizationCode, error)
 	// GetAccessToken requests the server to issue an access token
 	// using the credentials provided in the AccessTokenRequest.
 	//
@@ -4324,15 +4094,6 @@ type authClient struct {
 
 func NewAuthClient(cc *grpc.ClientConn) AuthClient {
 	return &authClient{cc}
-}
-
-func (c *authClient) GetAuthorizationCode(ctx context.Context, in *AuthorizationCodeRequest, opts ...grpc.CallOption) (*AuthorizationCode, error) {
-	out := new(AuthorizationCode)
-	err := grpc.Invoke(ctx, "/sourcegraph.Auth/GetAuthorizationCode", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *authClient) GetAccessToken(ctx context.Context, in *AccessTokenRequest, opts ...grpc.CallOption) (*AccessTokenResponse, error) {
@@ -4374,12 +4135,6 @@ func (c *authClient) SetExternalToken(ctx context.Context, in *ExternalToken, op
 // Server API for Auth service
 
 type AuthServer interface {
-	// GetAuthorizationCodeGrant gets an OAuth2 authorization code
-	// grant from the server that can be traded in for an access token
-	// by calling GetAccessToken. See
-	// https://tools.ietf.org/html/rfc6749#section-4.1 for more
-	// information.
-	GetAuthorizationCode(context.Context, *AuthorizationCodeRequest) (*AuthorizationCode, error)
 	// GetAccessToken requests the server to issue an access token
 	// using the credentials provided in the AccessTokenRequest.
 	//
@@ -4406,18 +4161,6 @@ type AuthServer interface {
 
 func RegisterAuthServer(s *grpc.Server, srv AuthServer) {
 	s.RegisterService(&_Auth_serviceDesc, srv)
-}
-
-func _Auth_GetAuthorizationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(AuthorizationCodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(AuthServer).GetAuthorizationCode(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func _Auth_GetAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
@@ -4472,10 +4215,6 @@ var _Auth_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Auth",
 	HandlerType: (*AuthServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetAuthorizationCode",
-			Handler:    _Auth_GetAuthorizationCode_Handler,
-		},
 		{
 			MethodName: "GetAccessToken",
 			Handler:    _Auth_GetAccessToken_Handler,
@@ -4930,220 +4669,6 @@ var _Meta_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Config",
 			Handler:    _Meta_Config_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{},
-}
-
-// Client API for RegisteredClients service
-
-type RegisteredClientsClient interface {
-	// Get retrieves an API client's record given its client ID.
-	Get(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*RegisteredClient, error)
-	// GetCurrent is equivalent to a call to Get with the client ID of
-	// the currently authenticated client.
-	GetCurrent(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*RegisteredClient, error)
-	// Create registers an API client.
-	Create(ctx context.Context, in *RegisteredClient, opts ...grpc.CallOption) (*RegisteredClient, error)
-	// Update modifies an API client's record. The RegisteredClient
-	// arg's ID must be set (to specify which client to update). Its
-	// Secret field is ignored (the secret may not be updated after
-	// creation).
-	Update(ctx context.Context, in *RegisteredClient, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// Delete removes an API client. Immediately after deletion, it
-	// may no longer be used.
-	Delete(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error)
-	// List enumerates API clients according to the options.
-	List(ctx context.Context, in *RegisteredClientListOptions, opts ...grpc.CallOption) (*RegisteredClientList, error)
-}
-
-type registeredClientsClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewRegisteredClientsClient(cc *grpc.ClientConn) RegisteredClientsClient {
-	return &registeredClientsClient{cc}
-}
-
-func (c *registeredClientsClient) Get(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*RegisteredClient, error) {
-	out := new(RegisteredClient)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/Get", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) GetCurrent(ctx context.Context, in *pbtypes1.Void, opts ...grpc.CallOption) (*RegisteredClient, error) {
-	out := new(RegisteredClient)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/GetCurrent", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) Create(ctx context.Context, in *RegisteredClient, opts ...grpc.CallOption) (*RegisteredClient, error) {
-	out := new(RegisteredClient)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/Create", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) Update(ctx context.Context, in *RegisteredClient, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/Update", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) Delete(ctx context.Context, in *RegisteredClientSpec, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
-	out := new(pbtypes1.Void)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/Delete", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registeredClientsClient) List(ctx context.Context, in *RegisteredClientListOptions, opts ...grpc.CallOption) (*RegisteredClientList, error) {
-	out := new(RegisteredClientList)
-	err := grpc.Invoke(ctx, "/sourcegraph.RegisteredClients/List", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for RegisteredClients service
-
-type RegisteredClientsServer interface {
-	// Get retrieves an API client's record given its client ID.
-	Get(context.Context, *RegisteredClientSpec) (*RegisteredClient, error)
-	// GetCurrent is equivalent to a call to Get with the client ID of
-	// the currently authenticated client.
-	GetCurrent(context.Context, *pbtypes1.Void) (*RegisteredClient, error)
-	// Create registers an API client.
-	Create(context.Context, *RegisteredClient) (*RegisteredClient, error)
-	// Update modifies an API client's record. The RegisteredClient
-	// arg's ID must be set (to specify which client to update). Its
-	// Secret field is ignored (the secret may not be updated after
-	// creation).
-	Update(context.Context, *RegisteredClient) (*pbtypes1.Void, error)
-	// Delete removes an API client. Immediately after deletion, it
-	// may no longer be used.
-	Delete(context.Context, *RegisteredClientSpec) (*pbtypes1.Void, error)
-	// List enumerates API clients according to the options.
-	List(context.Context, *RegisteredClientListOptions) (*RegisteredClientList, error)
-}
-
-func RegisterRegisteredClientsServer(s *grpc.Server, srv RegisteredClientsServer) {
-	s.RegisterService(&_RegisteredClients_serviceDesc, srv)
-}
-
-func _RegisteredClients_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisteredClientSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_GetCurrent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(pbtypes1.Void)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).GetCurrent(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisteredClient)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).Create(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisteredClient)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).Update(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisteredClientSpec)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).Delete(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _RegisteredClients_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisteredClientListOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(RegisteredClientsServer).List(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-var _RegisteredClients_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcegraph.RegisteredClients",
-	HandlerType: (*RegisteredClientsServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Get",
-			Handler:    _RegisteredClients_Get_Handler,
-		},
-		{
-			MethodName: "GetCurrent",
-			Handler:    _RegisteredClients_GetCurrent_Handler,
-		},
-		{
-			MethodName: "Create",
-			Handler:    _RegisteredClients_Create_Handler,
-		},
-		{
-			MethodName: "Update",
-			Handler:    _RegisteredClients_Update_Handler,
-		},
-		{
-			MethodName: "Delete",
-			Handler:    _RegisteredClients_Delete_Handler,
-		},
-		{
-			MethodName: "List",
-			Handler:    _RegisteredClients_List_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -9007,92 +8532,6 @@ func (m *NewAccount) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *AuthorizationCodeRequest) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AuthorizationCodeRequest) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.ResponseType) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ResponseType)))
-		i += copy(data[i:], m.ResponseType)
-	}
-	if len(m.ClientID) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
-		i += copy(data[i:], m.ClientID)
-	}
-	if len(m.RedirectURI) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.RedirectURI)))
-		i += copy(data[i:], m.RedirectURI)
-	}
-	if len(m.Scope) > 0 {
-		for _, s := range m.Scope {
-			data[i] = 0x22
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				data[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			data[i] = uint8(l)
-			i++
-			i += copy(data[i:], s)
-		}
-	}
-	if m.UID != 0 {
-		data[i] = 0x28
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.UID))
-	}
-	return i, nil
-}
-
-func (m *AuthorizationCode) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *AuthorizationCode) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Code) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Code)))
-		i += copy(data[i:], m.Code)
-	}
-	if len(m.RedirectURI) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.RedirectURI)))
-		i += copy(data[i:], m.RedirectURI)
-	}
-	return i, nil
-}
-
 func (m *LoginCredentials) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -9119,30 +8558,6 @@ func (m *LoginCredentials) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.Password)))
 		i += copy(data[i:], m.Password)
-	}
-	return i, nil
-}
-
-func (m *BearerJWT) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *BearerJWT) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Assertion) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Assertion)))
-		i += copy(data[i:], m.Assertion)
 	}
 	return i, nil
 }
@@ -9189,45 +8604,17 @@ func (m *AccessTokenRequest) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *AccessTokenRequest_AuthorizationCode) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.AuthorizationCode != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.AuthorizationCode.Size()))
-		n85, err := m.AuthorizationCode.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n85
-	}
-	return i, nil
-}
 func (m *AccessTokenRequest_ResourceOwnerPassword) MarshalTo(data []byte) (int, error) {
 	i := 0
 	if m.ResourceOwnerPassword != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.ResourceOwnerPassword.Size()))
-		n86, err := m.ResourceOwnerPassword.MarshalTo(data[i:])
+		n85, err := m.ResourceOwnerPassword.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n86
-	}
-	return i, nil
-}
-func (m *AccessTokenRequest_BearerJWT) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.BearerJWT != nil {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.BearerJWT.Size()))
-		n87, err := m.BearerJWT.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n87
+		i += n85
 	}
 	return i, nil
 }
@@ -9447,40 +8834,40 @@ func (m *Def) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n88, err := m.Def.MarshalTo(data[i:])
+	n86, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n88
+	i += n86
 	if m.DocHTML != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.DocHTML.Size()))
-		n89, err := m.DocHTML.MarshalTo(data[i:])
+		n87, err := m.DocHTML.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n89
+		i += n87
 	}
 	if m.FmtStrings != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FmtStrings.Size()))
-		n90, err := m.FmtStrings.MarshalTo(data[i:])
+		n88, err := m.FmtStrings.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n90
+		i += n88
 	}
 	if m.QualifiedName != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.QualifiedName.Size()))
-		n91, err := m.QualifiedName.MarshalTo(data[i:])
+		n89, err := m.QualifiedName.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n91
+		i += n89
 	}
 	if len(m.URL) > 0 {
 		data[i] = 0x2a
@@ -9712,11 +9099,11 @@ func (m *DefListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n92, err := m.ListOptions.MarshalTo(data[i:])
+	n90, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n92
+	i += n90
 	return i, nil
 }
 
@@ -9759,11 +9146,11 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n93, err := m.ListOptions.MarshalTo(data[i:])
+	n91, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n93
+	i += n91
 	if len(m.CommitID) > 0 {
 		data[i] = 0x22
 		i++
@@ -9839,20 +9226,20 @@ func (m *DefsGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n94, err := m.Def.MarshalTo(data[i:])
+	n92, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n94
+	i += n92
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n95, err := m.Opt.MarshalTo(data[i:])
+		n93, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n95
+		i += n93
 	}
 	return i, nil
 }
@@ -9887,11 +9274,11 @@ func (m *DefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n96, err := m.ListResponse.MarshalTo(data[i:])
+	n94, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n96
+	i += n94
 	return i, nil
 }
 
@@ -9913,20 +9300,20 @@ func (m *DefsListRefsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n97, err := m.Def.MarshalTo(data[i:])
+	n95, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n97
+	i += n95
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n98, err := m.Opt.MarshalTo(data[i:])
+		n96, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n98
+		i += n96
 	}
 	return i, nil
 }
@@ -9961,11 +9348,11 @@ func (m *RefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n99, err := m.StreamResponse.MarshalTo(data[i:])
+	n97, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n99
+	i += n97
 	return i, nil
 }
 
@@ -10012,11 +9399,11 @@ func (m *DefListRefLocationsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n100, err := m.ListOptions.MarshalTo(data[i:])
+	n98, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n100
+	i += n98
 	return i, nil
 }
 
@@ -10038,20 +9425,20 @@ func (m *DefsListRefLocationsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n101, err := m.Def.MarshalTo(data[i:])
+	n99, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n101
+	i += n99
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n102, err := m.Opt.MarshalTo(data[i:])
+		n100, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n102
+		i += n100
 	}
 	return i, nil
 }
@@ -10086,11 +9473,11 @@ func (m *RefLocationsList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n103, err := m.StreamResponse.MarshalTo(data[i:])
+	n101, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n103
+	i += n101
 	return i, nil
 }
 
@@ -10192,38 +9579,38 @@ func (m *Delta) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n104, err := m.Base.MarshalTo(data[i:])
+	n102, err := m.Base.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n104
+	i += n102
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n105, err := m.Head.MarshalTo(data[i:])
+	n103, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n105
+	i += n103
 	if m.BaseCommit != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BaseCommit.Size()))
-		n106, err := m.BaseCommit.MarshalTo(data[i:])
+		n104, err := m.BaseCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n106
+		i += n104
 	}
 	if m.HeadCommit != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeadCommit.Size()))
-		n107, err := m.HeadCommit.MarshalTo(data[i:])
+		n105, err := m.HeadCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n107
+		i += n105
 	}
 	return i, nil
 }
@@ -10246,11 +9633,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileDiff.Size()))
-	n108, err := m.FileDiff.MarshalTo(data[i:])
+	n106, err := m.FileDiff.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n108
+	i += n106
 	if len(m.FileDiffHunks) > 0 {
 		for _, msg := range m.FileDiffHunks {
 			data[i] = 0x12
@@ -10278,11 +9665,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n109, err := m.Stats.MarshalTo(data[i:])
+	n107, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n109
+	i += n107
 	if m.Filtered {
 		data[i] = 0x30
 		i++
@@ -10327,20 +9714,20 @@ func (m *DeltaFiles) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Delta.Size()))
-		n110, err := m.Delta.MarshalTo(data[i:])
+		n108, err := m.Delta.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n110
+		i += n108
 	}
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n111, err := m.Stats.MarshalTo(data[i:])
+	n109, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n111
+	i += n109
 	return i, nil
 }
 
@@ -10398,11 +9785,11 @@ func (m *DeltaListFilesOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n112, err := m.DeltaFilter.MarshalTo(data[i:])
+	n110, err := m.DeltaFilter.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n112
+	i += n110
 	if len(m.Ignore) > 0 {
 		for _, s := range m.Ignore {
 			data[i] = 0x32
@@ -10439,19 +9826,19 @@ func (m *DeltaSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n113, err := m.Base.MarshalTo(data[i:])
+	n111, err := m.Base.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n113
+	i += n111
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n114, err := m.Head.MarshalTo(data[i:])
+	n112, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n114
+	i += n112
 	return i, nil
 }
 
@@ -10473,20 +9860,20 @@ func (m *DeltasListFilesOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n115, err := m.Ds.MarshalTo(data[i:])
+	n113, err := m.Ds.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n115
+	i += n113
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n116, err := m.Opt.MarshalTo(data[i:])
+		n114, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n116
+		i += n114
 	}
 	return i, nil
 }
@@ -10519,11 +9906,11 @@ func (m *RepoTreeGetOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.GetFileOptions.Size()))
-	n117, err := m.GetFileOptions.MarshalTo(data[i:])
+	n115, err := m.GetFileOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n117
+	i += n115
 	return i, nil
 }
 
@@ -10545,11 +9932,11 @@ func (m *GetFileOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-	n118, err := m.FileRange.MarshalTo(data[i:])
+	n116, err := m.FileRange.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n118
+	i += n116
 	if m.EntireFile {
 		data[i] = 0x10
 		i++
@@ -10611,11 +9998,11 @@ func (m *RepoTreeSearchOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchOptions.Size()))
-	n119, err := m.SearchOptions.MarshalTo(data[i:])
+	n117, err := m.SearchOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n119
+	i += n117
 	return i, nil
 }
 
@@ -10637,19 +10024,19 @@ func (m *RepoTreeSearchResult) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchResult.Size()))
-	n120, err := m.SearchResult.MarshalTo(data[i:])
+	n118, err := m.SearchResult.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n120
+	i += n118
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n121, err := m.RepoRev.MarshalTo(data[i:])
+	n119, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n121
+	i += n119
 	return i, nil
 }
 
@@ -10671,20 +10058,20 @@ func (m *RepoTreeGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n122, err := m.Entry.MarshalTo(data[i:])
+	n120, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n122
+	i += n120
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n123, err := m.Opt.MarshalTo(data[i:])
+		n121, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n123
+		i += n121
 	}
 	return i, nil
 }
@@ -10707,20 +10094,20 @@ func (m *RepoTreeSearchOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n124, err := m.Rev.MarshalTo(data[i:])
+	n122, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n124
+	i += n122
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n125, err := m.Opt.MarshalTo(data[i:])
+		n123, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n125
+		i += n123
 	}
 	return i, nil
 }
@@ -10743,11 +10130,11 @@ func (m *RepoTreeListOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n126, err := m.Rev.MarshalTo(data[i:])
+	n124, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n126
+	i += n124
 	return i, nil
 }
 
@@ -10814,11 +10201,11 @@ func (m *VCSSearchResultList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n127, err := m.ListResponse.MarshalTo(data[i:])
+	n125, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n127
+	i += n125
 	return i, nil
 }
 
@@ -10841,21 +10228,21 @@ func (m *TreeEntry) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BasicTreeEntry.Size()))
-		n128, err := m.BasicTreeEntry.MarshalTo(data[i:])
+		n126, err := m.BasicTreeEntry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n128
+		i += n126
 	}
 	if m.FileRange != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-		n129, err := m.FileRange.MarshalTo(data[i:])
+		n127, err := m.FileRange.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n129
+		i += n127
 	}
 	if len(m.ContentsString) > 0 {
 		data[i] = 0x1a
@@ -10933,11 +10320,11 @@ func (m *TreeEntrySpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n130, err := m.RepoRev.MarshalTo(data[i:])
+	n128, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n130
+	i += n128
 	if len(m.Path) > 0 {
 		data[i] = 0x12
 		i++
@@ -11038,11 +10425,11 @@ func (m *FileToken) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-		n131, err := m.Entry.MarshalTo(data[i:])
+		n129, err := m.Entry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n131
+		i += n129
 	}
 	return i, nil
 }
@@ -11104,247 +10491,6 @@ func (m *ServerConfig) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintSourcegraph(data, i, uint64(len(m.IDKey)))
 		i += copy(data[i:], m.IDKey)
 	}
-	return i, nil
-}
-
-func (m *RegisteredClient) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RegisteredClient) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.ID) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ID)))
-		i += copy(data[i:], m.ID)
-	}
-	if len(m.RedirectURIs) > 0 {
-		for _, s := range m.RedirectURIs {
-			data[i] = 0x12
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				data[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			data[i] = uint8(l)
-			i++
-			i += copy(data[i:], s)
-		}
-	}
-	if len(m.ClientName) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientName)))
-		i += copy(data[i:], m.ClientName)
-	}
-	if len(m.LogoURI) > 0 {
-		data[i] = 0x22
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.LogoURI)))
-		i += copy(data[i:], m.LogoURI)
-	}
-	if len(m.ClientURI) > 0 {
-		data[i] = 0x2a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientURI)))
-		i += copy(data[i:], m.ClientURI)
-	}
-	if len(m.JWKS) > 0 {
-		data[i] = 0x32
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.JWKS)))
-		i += copy(data[i:], m.JWKS)
-	}
-	if len(m.ClientSecret) > 0 {
-		data[i] = 0x3a
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientSecret)))
-		i += copy(data[i:], m.ClientSecret)
-	}
-	if len(m.Description) > 0 {
-		data[i] = 0x42
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Description)))
-		i += copy(data[i:], m.Description)
-	}
-	if len(m.Meta) > 0 {
-		keysForMeta := make([]string, 0, len(m.Meta))
-		for k, _ := range m.Meta {
-			keysForMeta = append(keysForMeta, k)
-		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForMeta)
-		for _, k := range keysForMeta {
-			data[i] = 0x4a
-			i++
-			v := m.Meta[k]
-			mapSize := 1 + len(k) + sovSourcegraph(uint64(len(k))) + 1 + len(v) + sovSourcegraph(uint64(len(v)))
-			i = encodeVarintSourcegraph(data, i, uint64(mapSize))
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(k)))
-			i += copy(data[i:], k)
-			data[i] = 0x12
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(v)))
-			i += copy(data[i:], v)
-		}
-	}
-	if m.Type != 0 {
-		data[i] = 0x50
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Type))
-	}
-	data[i] = 0x5a
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n132, err := m.CreatedAt.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n132
-	data[i] = 0x62
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
-	n133, err := m.UpdatedAt.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n133
-	return i, nil
-}
-
-func (m *RegisteredClientSpec) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RegisteredClientSpec) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.ID) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ID)))
-		i += copy(data[i:], m.ID)
-	}
-	return i, nil
-}
-
-func (m *RegisteredClientCredentials) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RegisteredClientCredentials) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.ID) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ID)))
-		i += copy(data[i:], m.ID)
-	}
-	if len(m.Secret) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.Secret)))
-		i += copy(data[i:], m.Secret)
-	}
-	return i, nil
-}
-
-func (m *RegisteredClientListOptions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RegisteredClientListOptions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Type != 0 {
-		data[i] = 0x8
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Type))
-	}
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n134, err := m.ListOptions.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n134
-	return i, nil
-}
-
-func (m *RegisteredClientList) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RegisteredClientList) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Clients) > 0 {
-		for _, msg := range m.Clients {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n135, err := m.StreamResponse.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n135
 	return i, nil
 }
 
@@ -11452,16 +10598,6 @@ func (m *UserPermissionsOptions) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ClientSpec != nil {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.ClientSpec.Size()))
-		n136, err := m.ClientSpec.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n136
-	}
 	if m.UID != 0 {
 		data[i] = 0x10
 		i++
@@ -11555,11 +10691,11 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-		n137, err := m.CreatedAt.MarshalTo(data[i:])
+		n130, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n137
+		i += n130
 	}
 	if len(m.Message) > 0 {
 		data[i] = 0x42
@@ -11655,11 +10791,11 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
-		n138, err := m.Timestamp.MarshalTo(data[i:])
+		n131, err := m.Timestamp.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n138
+		i += n131
 	}
 	if len(m.UserProperties) > 0 {
 		keysForUserProperties := make([]string, 0, len(m.UserProperties))
@@ -11769,11 +10905,11 @@ func (m *NotifyGenericEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Actor.Size()))
-		n139, err := m.Actor.MarshalTo(data[i:])
+		n132, err := m.Actor.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n139
+		i += n132
 	}
 	if len(m.Recipients) > 0 {
 		for _, msg := range m.Recipients {
@@ -11968,20 +11104,20 @@ func (m *AnnotationsListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n140, err := m.Entry.MarshalTo(data[i:])
+	n133, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n140
+	i += n133
 	if m.Range != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Range.Size()))
-		n141, err := m.Range.MarshalTo(data[i:])
+		n134, err := m.Range.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n141
+		i += n134
 	}
 	return i, nil
 }
@@ -13474,47 +12610,6 @@ func (m *NewAccount) Size() (n int) {
 	return n
 }
 
-func (m *AuthorizationCodeRequest) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.ResponseType)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.ClientID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.RedirectURI)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if len(m.Scope) > 0 {
-		for _, s := range m.Scope {
-			l = len(s)
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	if m.UID != 0 {
-		n += 1 + sovSourcegraph(uint64(m.UID))
-	}
-	return n
-}
-
-func (m *AuthorizationCode) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Code)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.RedirectURI)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
 func (m *LoginCredentials) Size() (n int) {
 	var l int
 	_ = l
@@ -13523,16 +12618,6 @@ func (m *LoginCredentials) Size() (n int) {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	l = len(m.Password)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *BearerJWT) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Assertion)
 	if l > 0 {
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
@@ -13554,29 +12639,11 @@ func (m *AccessTokenRequest) Size() (n int) {
 	return n
 }
 
-func (m *AccessTokenRequest_AuthorizationCode) Size() (n int) {
-	var l int
-	_ = l
-	if m.AuthorizationCode != nil {
-		l = m.AuthorizationCode.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
 func (m *AccessTokenRequest_ResourceOwnerPassword) Size() (n int) {
 	var l int
 	_ = l
 	if m.ResourceOwnerPassword != nil {
 		l = m.ResourceOwnerPassword.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-func (m *AccessTokenRequest_BearerJWT) Size() (n int) {
-	var l int
-	_ = l
-	if m.BearerJWT != nil {
-		l = m.BearerJWT.Size()
 		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	return n
@@ -14329,110 +13396,6 @@ func (m *ServerConfig) Size() (n int) {
 	return n
 }
 
-func (m *RegisteredClient) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.ID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if len(m.RedirectURIs) > 0 {
-		for _, s := range m.RedirectURIs {
-			l = len(s)
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	l = len(m.ClientName)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.LogoURI)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.ClientURI)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.JWKS)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.ClientSecret)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Description)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	if len(m.Meta) > 0 {
-		for k, v := range m.Meta {
-			_ = k
-			_ = v
-			mapEntrySize := 1 + len(k) + sovSourcegraph(uint64(len(k))) + 1 + len(v) + sovSourcegraph(uint64(len(v)))
-			n += mapEntrySize + 1 + sovSourcegraph(uint64(mapEntrySize))
-		}
-	}
-	if m.Type != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Type))
-	}
-	l = m.CreatedAt.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	l = m.UpdatedAt.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *RegisteredClientSpec) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.ID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *RegisteredClientCredentials) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.ID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	l = len(m.Secret)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
-	return n
-}
-
-func (m *RegisteredClientListOptions) Size() (n int) {
-	var l int
-	_ = l
-	if m.Type != 0 {
-		n += 1 + sovSourcegraph(uint64(m.Type))
-	}
-	l = m.ListOptions.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
-func (m *RegisteredClientList) Size() (n int) {
-	var l int
-	_ = l
-	if len(m.Clients) > 0 {
-		for _, e := range m.Clients {
-			l = e.Size()
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
-	}
-	l = m.StreamResponse.Size()
-	n += 1 + l + sovSourcegraph(uint64(l))
-	return n
-}
-
 func (m *UserPermissions) Size() (n int) {
 	var l int
 	_ = l
@@ -14470,10 +13433,6 @@ func (m *UserPermissionsList) Size() (n int) {
 func (m *UserPermissionsOptions) Size() (n int) {
 	var l int
 	_ = l
-	if m.ClientSpec != nil {
-		l = m.ClientSpec.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	if m.UID != 0 {
 		n += 1 + sovSourcegraph(uint64(m.UID))
 	}
@@ -26106,299 +25065,6 @@ func (m *NewAccount) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationCodeRequest) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AuthorizationCodeRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AuthorizationCodeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ResponseType", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ResponseType = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RedirectURI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RedirectURI = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Scope", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Scope = append(m.Scope, string(data[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
-			}
-			m.UID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.UID |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AuthorizationCode) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AuthorizationCode: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AuthorizationCode: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Code = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RedirectURI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RedirectURI = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *LoginCredentials) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -26507,85 +25173,6 @@ func (m *LoginCredentials) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *BearerJWT) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BearerJWT: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BearerJWT: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Assertion", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Assertion = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *AccessTokenRequest) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -26615,38 +25202,6 @@ func (m *AccessTokenRequest) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: AccessTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AuthorizationCode", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &AuthorizationCode{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.AuthorizationGrant = &AccessTokenRequest_AuthorizationCode{v}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResourceOwnerPassword", wireType)
@@ -26678,38 +25233,6 @@ func (m *AccessTokenRequest) Unmarshal(data []byte) error {
 				return err
 			}
 			m.AuthorizationGrant = &AccessTokenRequest_ResourceOwnerPassword{v}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BearerJWT", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &BearerJWT{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.AuthorizationGrant = &AccessTokenRequest_BearerJWT{v}
 			iNdEx = postIndex
 		case 17:
 			if wireType != 2 {
@@ -32633,875 +31156,6 @@ func (m *ServerConfig) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *RegisteredClient) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RegisteredClient: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisteredClient: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RedirectURIs", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RedirectURIs = append(m.RedirectURIs, string(data[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientName = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LogoURI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LogoURI = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientURI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientURI = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field JWKS", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.JWKS = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientSecret", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientSecret = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Description = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Meta", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var keykey uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				keykey |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			var stringLenmapkey uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLenmapkey |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLenmapkey := int(stringLenmapkey)
-			if intStringLenmapkey < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postStringIndexmapkey := iNdEx + intStringLenmapkey
-			if postStringIndexmapkey > l {
-				return io.ErrUnexpectedEOF
-			}
-			mapkey := string(data[iNdEx:postStringIndexmapkey])
-			iNdEx = postStringIndexmapkey
-			var valuekey uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				valuekey |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			var stringLenmapvalue uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLenmapvalue |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLenmapvalue := int(stringLenmapvalue)
-			if intStringLenmapvalue < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postStringIndexmapvalue := iNdEx + intStringLenmapvalue
-			if postStringIndexmapvalue > l {
-				return io.ErrUnexpectedEOF
-			}
-			mapvalue := string(data[iNdEx:postStringIndexmapvalue])
-			iNdEx = postStringIndexmapvalue
-			if m.Meta == nil {
-				m.Meta = make(map[string]string)
-			}
-			m.Meta[mapkey] = mapvalue
-			iNdEx = postIndex
-		case 10:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.Type |= (RegisteredClientType(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 11:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.CreatedAt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 12:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.UpdatedAt.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RegisteredClientSpec) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RegisteredClientSpec: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisteredClientSpec: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RegisteredClientCredentials) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RegisteredClientCredentials: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisteredClientCredentials: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Secret", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Secret = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RegisteredClientListOptions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RegisteredClientListOptions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisteredClientListOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
-			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.Type |= (RegisteredClientType(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RegisteredClientList) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RegisteredClientList: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisteredClientList: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Clients", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Clients = append(m.Clients, &RegisteredClient{})
-			if err := m.Clients[len(m.Clients)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StreamResponse", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.StreamResponse.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *UserPermissions) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -33770,39 +31424,6 @@ func (m *UserPermissionsOptions) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: UserPermissionsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientSpec", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ClientSpec == nil {
-				m.ClientSpec = &RegisteredClientSpec{}
-			}
-			if err := m.ClientSpec.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)

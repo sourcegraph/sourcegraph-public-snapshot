@@ -33,8 +33,6 @@ func HTTP(err error) int {
 		return http.StatusNotFound
 	case auth.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized
-	case store.ErrRegisteredClientIDExists:
-		return http.StatusConflict
 	}
 
 	if strings.Contains(err.Error(), vcs.ErrRepoNotExist.Error()) {
@@ -55,8 +53,6 @@ func HTTP(err error) int {
 	case *store.RepoNotFoundError:
 		return http.StatusNotFound
 	case *store.UserNotFoundError:
-		return http.StatusNotFound
-	case *store.RegisteredClientNotFoundError:
 		return http.StatusNotFound
 	case *store.AccountAlreadyExistsError:
 		return http.StatusConflict
