@@ -574,16 +574,6 @@
 			"revisionTime": "2014-06-01T20:15:51-07:00"
 		},
 		{
-			"path": "github.com/sourcegraph/gddo/doc",
-			"revision": "58a3e4672e955a289bcfc065570418736ecb73f5",
-			"revisionTime": "2015-06-05T01:40:54+02:00"
-		},
-		{
-			"path": "github.com/sourcegraph/gddo/gosrc",
-			"revision": "58a3e4672e955a289bcfc065570418736ecb73f5",
-			"revisionTime": "2015-06-05T01:40:54+02:00"
-		},
-		{
 			"checksumSHA1": "sdCabsgARy0Enk3R50HObBIprtI=",
 			"path": "github.com/sourcegraph/go-github/github",
 			"revision": "07096d106fdca8276164e63a14a4eb4856bd0726",
