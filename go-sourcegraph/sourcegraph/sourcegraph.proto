@@ -1742,33 +1742,6 @@ message ServerConfig {
 	string IDKey = 7;
 }
 
-message UserPermissions {
-	// UID is a user's UID.
-	int32 UID = 1;
-
-	// ClientID is the ID of the client whose whitelist is to
-	// be fetched and/or modified.
-	string ClientID = 2;
-
-	// Read is true if the user has read permissions on the client.
-	bool Read = 3;
-
-	// Write is true if the user has write permissions on the client.
-	bool Write = 4;
-
-	// Admin is true if the user should be considered an admin on
-	// the client.
-	bool Admin = 5;
-}
-
-message UserPermissionsList {
-	repeated UserPermissions UserPermissions = 1;
-}
-
-message UserPermissionsOptions {
-	int32 UID = 2;
-}
-
 // TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in
 enum TelemetryType {
 	// PrometheusDelimited0dot0dot4 indicates the metrics can be decoded using
