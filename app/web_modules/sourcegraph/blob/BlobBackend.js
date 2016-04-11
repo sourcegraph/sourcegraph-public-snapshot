@@ -40,7 +40,7 @@ const BlobBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								if (!data.Error) data.Annotations = prepareAnnotations(data.Annotations);
+								if (!data.Error && data.Annotations) data.Annotations = prepareAnnotations(data.Annotations);
 								Dispatcher.Stores.dispatch(
 									new BlobActions.AnnotationsFetched(
 										action.repo, action.rev, action.commitID, action.path,

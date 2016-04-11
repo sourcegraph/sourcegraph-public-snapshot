@@ -28,15 +28,15 @@ describe("prepareAnnotations", () => {
 	it("should set WantInner on syntax highlighting annotations", () => {
 		expect(
 			prepareAnnotations([
-				{StartByte: 1, Class: "x"},
-				{StartByte: 2, URL: "y"},
-				{StartByte: 3, Class: "z"},
+				{StartByte: 10, EndByte: 15, Class: "x"},
+				{StartByte: 20, EndByte: 25, URL: "y"},
+				{StartByte: 30, EndByte: 35, Class: "z"},
 			])
 		).to.eql(
 			[
-				{StartByte: 1, Class: "x", WantInner: 1},
-				{StartByte: 2, URL: "y"},
-				{StartByte: 3, Class: "z", WantInner: 1},
+				{StartByte: 10, EndByte: 15, Class: "x", WantInner: 1},
+				{StartByte: 20, EndByte: 25, URL: "y"},
+				{StartByte: 30, EndByte: 35, Class: "z", WantInner: 1},
 			]
 		);
 	});
