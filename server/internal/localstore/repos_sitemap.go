@@ -31,7 +31,7 @@ var repoGetter GitHubRepoGetter = &github.Repos{}
 // status, but should be regarded as a hack and a better solution must be sought.
 func (r *repos) listAllGitHubPublic(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 	var dbRepos []*dbRepo
-	_, err := dbh(ctx).Select(&dbRepos, gitHubPublicRepoQuery, opt.PerPageOrDefault(), opt.Offset())
+	_, err := appDBH(ctx).Select(&dbRepos, gitHubPublicRepoQuery, opt.PerPageOrDefault(), opt.Offset())
 	if err != nil {
 		return nil, err
 	}
