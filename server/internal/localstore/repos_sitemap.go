@@ -3,6 +3,8 @@ package localstore
 import (
 	"strings"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -47,11 +49,12 @@ func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) ([
 		if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 			r, err := repoGetter.Get(ctx, repo.URI)
 			if err != nil {
-				if grpc.Code(err) == codes.Unauthenticated {
-					continue
-				} else {
-					return nil, err
+				if grpc.Code(err) != codes.Unauthenticated && grpc.Code(err) != codes.PermissionDenied {
+					// Unexpected error, log it.
+					log15.Error("repoGetter.Get", "error", err)
 				}
+
+				continue
 			}
 
 			if !r.Private {
