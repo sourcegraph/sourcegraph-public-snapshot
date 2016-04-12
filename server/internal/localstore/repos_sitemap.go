@@ -49,9 +49,11 @@ func removePrivateGitHubRepos(ctx context.Context, repos []*sourcegraph.Repo) ([
 		if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 			r, err := repoGetter.Get(ctx, repo.URI)
 			if err != nil {
-				if grpc.Code(err) != codes.Unauthenticated && grpc.Code(err) != codes.PermissionDenied {
+				if grpc.Code(err) != codes.Unauthenticated &&
+					grpc.Code(err) != codes.PermissionDenied &&
+					grpc.Code(err) != codes.NotFound {
 					// Unexpected error, log it.
-					log15.Error("repoGetter.Get", "error", err)
+					log15.Error("Fetching GitHub repo failed (indicates that the GitHub repo in our DB has been renamed, deleted, or made private on GitHub)", "error", err)
 				}
 
 				continue
