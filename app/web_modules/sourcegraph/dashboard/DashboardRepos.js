@@ -51,7 +51,8 @@ class DashboardRepos extends Component {
 	}
 
 	_showRepo(repo) {
-		if (this._filterInput && this._filterInput.value && this._qualifiedName(repo).indexOf(this._filterInput.value) === -1) {
+		if (this._filterInput && this._filterInput.value &&
+			this._qualifiedName(repo).indexOf(this._filterInput.value.trim()) === -1) {
 			return false;
 		}
 		return true; // no filter; return all
