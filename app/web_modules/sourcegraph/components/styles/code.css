@@ -1,6 +1,7 @@
 @media screen {
 	:global .code a {
 		text-decoration: none;
+		color: #0287bd;
 	}
 	:global .pln {
 		color: #1f1f1f;
