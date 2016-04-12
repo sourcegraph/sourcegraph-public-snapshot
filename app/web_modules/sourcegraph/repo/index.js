@@ -23,3 +23,15 @@ export function makeRepoRev(repo: string, rev: string): string {
 export function repoParam(splat: string[] | string): string {
 	return splat instanceof Array ? splat[0] : splat;
 }
+
+export function trimRepo(repo: string): string {
+	let res = repo;
+	if (res.indexOf("github.com/") !== -1) {
+		res = res.substring("github.com/".length);
+	}
+	if (res.indexOf("sourcegraph.com/") !== -1) {
+		res = res.substring("sourcegraph.com/".length);
+	}
+
+	return res;
+}

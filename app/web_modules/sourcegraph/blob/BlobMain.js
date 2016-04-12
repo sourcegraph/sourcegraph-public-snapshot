@@ -1,6 +1,7 @@
 // @flow weak
 
 import React from "react";
+import Helmet from "react-helmet";
 import last from "lodash/array/last";
 
 import Container from "sourcegraph/Container";
@@ -21,7 +22,7 @@ import Style from "sourcegraph/blob/styles/Blob.css";
 import {lineCol, lineRange} from "sourcegraph/blob/lineCol";
 import urlTo from "sourcegraph/util/urlTo";
 import {urlToDef} from "sourcegraph/def/routes";
-import {makeRepoRev} from "sourcegraph/repo";
+import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import {httpStatusCode} from "sourcegraph/app/status";
 import Header from "sourcegraph/components/Header";
 
@@ -158,8 +159,10 @@ export default class BlobMain extends Container {
 			);
 		}
 
+		let pathParts = this.state.path.split("/");
 		return (
 			<div className={Style.container}>
+				<Helmet title={`${trimRepo(this.state.repo)} | ${pathParts[pathParts.length - 1]}`} />
 				<div className={Style.blobAndToolbar}>
 					<BlobToolbar
 						repo={this.state.repo}

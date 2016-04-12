@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -43,6 +44,7 @@ class ResetPassword extends Container {
 	render() {
 		return (
 			<form styleName="container" onSubmit={this._handleSubmit}>
+				<Helmet title="Reset Password" />
 				<div styleName="title">Reset your password</div>
 				<div styleName="subtext">
 					Make sure to pick a good one!!

@@ -5,8 +5,15 @@
 			"styleName": "container",
 			"children": [
 				{
-					"type": "div",
+					"type": "HelmetWrapper",
 					"key": ".0",
+					"props": {
+						"title": "Home"
+					}
+				},
+				{
+					"type": "div",
+					"key": ".1",
 					"props": {
 						"styleName": "anon-section",
 						"children": [
@@ -49,7 +56,7 @@
 				},
 				{
 					"type": "div",
-					"key": ".1",
+					"key": ".2",
 					"props": {
 						"styleName": "repos",
 						"children": [

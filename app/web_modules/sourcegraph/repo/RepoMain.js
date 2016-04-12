@@ -1,6 +1,7 @@
 // @flow weak
 
 import React from "react";
+import Helmet from "react-helmet";
 import TreeSearch from "sourcegraph/tree/TreeSearch";
 import Modal from "sourcegraph/components/Modal";
 import CSSModules from "react-css-modules";
@@ -8,6 +9,7 @@ import styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {httpStatusCode} from "sourcegraph/app/status";
+import {trimRepo} from "sourcegraph/repo";
 
 import Header from "sourcegraph/components/Header";
 
@@ -129,6 +131,7 @@ class RepoMain extends React.Component {
 
 		return (
 			<div>
+				<Helmet title={trimRepo(this.props.repo)} />
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.state.treeSearchActive &&
 					<Modal

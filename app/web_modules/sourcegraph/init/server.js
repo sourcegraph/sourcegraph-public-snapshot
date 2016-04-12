@@ -1,5 +1,6 @@
 import "babel-polyfill";
 import React from "react";
+import Helmet from "react-helmet";
 import ReactDOMServer from "react-dom/server";
 import {RouterContext, match, createMemoryHistory} from "react-router";
 import {rootRoute} from "sourcegraph/app/App";
@@ -46,11 +47,20 @@ function renderIter(i, props, location, deadline, callback) {
 		if (incomplete && code === 200) code = 202;
 
 		// No additional async fetches were triggered, so we are done!
+		const head = Helmet.rewind();
 		callback({
 			statusCode: code,
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
 			stores: dumpStores(),
+			head: {
+				htmlAttributes: head.htmlAttributes.toString(),
+				title: head.title.toString(),
+				base: head.base.toString(),
+				meta: head.meta.toString(),
+				link: head.link.toString(),
+				script: head.script.toString(),
+			},
 			incomplete: incomplete,
 		});
 		return;

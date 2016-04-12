@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 import {Link} from "react-router";
 
 import Commit from "sourcegraph/vcs/Commit";
@@ -11,6 +12,7 @@ import BuildTasks from "sourcegraph/build/BuildTasks";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import {urlToBuilds} from "sourcegraph/build/routes";
+import {trimRepo} from "sourcegraph/repo"
 
 import {Button} from "sourcegraph/components";
 
@@ -85,6 +87,7 @@ class BuildContainer extends Container {
 
 		return (
 			<div styleName="build-container">
+				<Helmet title={`${trimRepo(this.state.repo)} | Build #${this.state.id}`} />
 				<div styleName="actions">
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
 				</div>

@@ -18,6 +18,7 @@ type RenderResult struct {
 	Body             string          // HTTP response body
 	Error            string          // internal error message (should only be shown to admins, may contain secret info)
 	Stores           json.RawMessage // contents of stores after prerendering (for client bootstrapping)
+	Head             json.RawMessage // contents of Helmet after rewind (for server rendering <head>)
 	StatusCode       int             // HTTP status code for response
 	ContentType      string          // HTTP Content-Type response header
 	RedirectLocation string          // HTTP Location header

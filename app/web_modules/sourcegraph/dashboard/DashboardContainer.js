@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -46,6 +47,7 @@ class DashboardContainer extends Container {
 
 	render() {
 		return (<div styleName="container">
+			<Helmet title="Home" />
 			{!context.currentUser &&
 				<div styleName="anon-section">
 					<img styleName="logo" src={`${context.assetsRoot || ""}/img/sourcegraph-logo.svg`}/>

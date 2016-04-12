@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
@@ -41,6 +42,7 @@ class Login extends Container {
 	render() {
 		return (
 			<form styleName="container" onSubmit={this._handleSubmit}>
+				<Helmet title="Sign In" />
 				<div styleName="title">Hey there, welcome back!</div>
 				<div styleName="action">
 					<Input type="text"

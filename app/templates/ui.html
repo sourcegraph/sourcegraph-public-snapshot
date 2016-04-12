@@ -1,4 +1,11 @@
-{{define "Head"}}<title>Sourcegraph</title>
+{{define "Head"}}
+{{with .Head}}
+	{{with .Title}}{{.}}{{end}}
+	{{with .Base}}{{.}}{{end}}
+	{{with .Meta}}{{.}}{{end}}
+	{{with .Link}}{{.}}{{end}}
+	{{with .Script}}{{.}}{{end}}
+{{end}}
 {{end}}
 
 {{define "Nav"}}{{end}}

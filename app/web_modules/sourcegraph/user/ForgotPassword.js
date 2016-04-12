@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -36,6 +37,7 @@ class ForgotPassword extends Container {
 	render() {
 		return (
 			<form styleName="container" onSubmit={this._handleSubmit}>
+				<Helmet title="Forgot Password" />
 				<div styleName="title">Forgot your password?</div>
 				<div styleName="subtext">
 					It happens to the best of us.

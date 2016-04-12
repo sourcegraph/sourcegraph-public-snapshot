@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
@@ -6,6 +7,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import BuildStore from "sourcegraph/build/BuildStore";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
+import {trimRepo} from "sourcegraph/repo";
 import {urlToBuild} from "sourcegraph/build/routes";
 
 import {Button} from "sourcegraph/components";
@@ -93,6 +95,7 @@ class BuildsList extends Container {
 	render() {
 		return (
 			<div styleName="list-container">
+				<Helmet title={`${this.state.repo ? trimRepo(this.state.repo) : ""} | Builds`} />
 				<div styleName="list-header">Builds</div>
 				<div styleName="list-filters">
 					<div styleName="filter-button">
