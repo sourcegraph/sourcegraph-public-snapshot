@@ -107,10 +107,10 @@ class DashboardRepos extends Component {
 								</a>
 							</span>,
 					]}</span>
-					<Input type="text"
+					<span styleName="filter"><Input type="text"
 						placeholder="Filter repositories..."
 						domRef={(e) => this._filterInput = e}
-						onChange={this._handleSearch} />
+						onChange={this._handleSearch} /></span>
 				</div>
 				<div styleName="list">
 					{enabledRepos.length + disabledRepos.length === 0 &&

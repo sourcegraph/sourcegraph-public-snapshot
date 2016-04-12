@@ -45,8 +45,11 @@
 }
 .cta {
 	flex: 1 1 auto;
-	composes: pl3 from base;
+	composes: ma3 from base;
 	composes: b from typography;
+}
+.filter {
+	composes: ma3 from base;
 }
 
 .github-icon {

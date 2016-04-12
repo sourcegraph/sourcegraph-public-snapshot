@@ -48,11 +48,19 @@
 								}
 							},
 							{
-								"type": "WrappedComponent",
+								"type": "span",
 								"key": ".1",
 								"props": {
-									"type": "text",
-									"placeholder": "Filter repositories..."
+									"styleName": "filter",
+									"children": [
+										{
+											"type": "WrappedComponent",
+											"props": {
+												"type": "text",
+												"placeholder": "Filter repositories..."
+											}
+										}
+									]
 								}
 							}
 						]
