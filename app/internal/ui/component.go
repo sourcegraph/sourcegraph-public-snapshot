@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"html/template"
 	"net/http"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -18,10 +19,22 @@ type RenderResult struct {
 	Body             string          // HTTP response body
 	Error            string          // internal error message (should only be shown to admins, may contain secret info)
 	Stores           json.RawMessage // contents of stores after prerendering (for client bootstrapping)
-	Head             json.RawMessage // contents of Helmet after rewind (for server rendering <head>)
 	StatusCode       int             // HTTP status code for response
 	ContentType      string          // HTTP Content-Type response header
 	RedirectLocation string          // HTTP Location header
+
+	// Head is the contents of Helmet after rewind (for server rendering <head>).
+	Head Head
+}
+
+// Head is data for the HTML <head> element.
+type Head struct {
+	HTMLAttributes template.HTML
+	Title          template.HTML
+	Base           template.HTML
+	Meta           template.HTML
+	Link           template.HTML
+	Script         template.HTML
 }
 
 type renderState struct {

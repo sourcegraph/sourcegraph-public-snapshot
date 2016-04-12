@@ -25,16 +25,6 @@ var ciFactor = func() int {
 	return 1
 }()
 
-// helmet is the output of Helmet.rewind().map(_.toString())
-type helmet struct {
-	HTMLAttributes template.HTML `json:"htmlAttributes,omitempty"`
-	Title          template.HTML `json:"title,omitempty"`
-	Base           template.HTML `json:"base,omitempty"`
-	Meta           template.HTML `json:"meta,omitempty"`
-	Link           template.HTML `json:"link,omitempty"`
-	Script         template.HTML `json:"script,omitempty"`
-}
-
 func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
 
@@ -53,18 +43,12 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 	var statusCode int
 	var body template.HTML
 	var stores *json.RawMessage
-	var head = helmet{}
+	var head *ui.Head
 	var header http.Header
 	if res != nil {
 		statusCode = res.StatusCode
-
 		stores = &res.Stores
-
-		helmetData, err := res.Head.MarshalJSON()
-		if err != nil {
-			return err
-		}
-		json.Unmarshal(helmetData, &head)
+		head = &res.Head
 
 		if strings.HasPrefix(res.ContentType, "text/html") {
 			body = template.HTML(res.Body)
@@ -92,11 +76,11 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 
 	return tmpl.Exec(r, w, "ui.html", statusCode, header, &struct {
 		tmpl.Common
-		Head   *helmet
+		Head   *ui.Head
 		Body   interface{}
 		Stores *json.RawMessage
 	}{
-		Head:   &head,
+		Head:   head,
 		Body:   body,
 		Stores: stores,
 	})
