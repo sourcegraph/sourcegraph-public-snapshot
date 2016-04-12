@@ -46,7 +46,7 @@ class RefsMain extends Container {
 
 	componentDidMount() {
 		if (super.componentDidMount) super.componentDidMount();
-		this.context.router.listenBefore((location) => {
+		this._unlistenBefore = this.context.router.listenBefore((location) => {
 			// When the route changes, if we navigate to a different page clear the
 			// currently highlighted def if there is one, otherwise it will be stuck
 			// on the next page since no mouseout event can be triggered.
@@ -55,6 +55,13 @@ class RefsMain extends Container {
 			}
 		});
 	}
+
+	componentWillUnmount() {
+		if (super.componentWillUnmount) super.componentWillUnmount();
+		if (this._unlistenBefore) this._unlistenBefore();
+	}
+
+	_unlistenBefore: () => void;
 
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
