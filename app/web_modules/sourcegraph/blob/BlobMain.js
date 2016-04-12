@@ -180,6 +180,7 @@ export default class BlobMain extends Container {
 						lineNumbers={true}
 						highlightSelectedLines={true}
 						highlightedDef={this.state.highlightedDef}
+						highlightedDefObj={this.state.highlightedDefObj}
 						activeDef={this.state.activeDef}
 						startLine={this.state.startLine}
 						startCol={this.state.startCol}
@@ -189,7 +190,7 @@ export default class BlobMain extends Container {
 						endByte={this.state.endByte}
 						scrollToStartLine={true}
 						dispatchSelections={true} />}
-					{this.state.highlightedDefObj && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
+					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
 				<FileMargin getOffsetTopForByte={this.state._getOffsetTopForByte || null} className={Style.margin}>
 					{this.props.children}

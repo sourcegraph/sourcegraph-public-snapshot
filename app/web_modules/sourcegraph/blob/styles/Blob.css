@@ -104,6 +104,14 @@ by a lot of other modules (e.g., for def boxes)? */
 	color: black;
 	outline: solid 1px #fff6ad;
 	background-color: #fff9b8;
+	cursor: pointer;
+}
+.disabledAnn {
+	@value c_light-gray from colors;
+	outline: solid 1px c_light-gray;
+	background-color: c_light-gray;
+	transition: background-color 0.2;
+	cursor: default;
 }
 .activeAnn {
 	color: black;

@@ -50,22 +50,12 @@
 .tooltip {
 	position: fixed;
 	z-index: 1000;
-	max-width: 360px;
+	max-width: 460px;
 	min-width: 120px;
 	composes: br1 pa2 from base;
 	composes: f6 from typography;
 	color: white;
-}
-.tooltipFound {
-	composes: tooltip;
 	composes: bg-near-black from colors;
-}
-.tooltipError {
-	composes: tooltip;
-	background-color: #a00;
-}
-.error {
-	
 }
 .content {
 }

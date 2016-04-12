@@ -40,8 +40,9 @@ class BlobLine extends Component {
 			}
 		}
 
-		// Filter highlightedDef to improve perf.
+		// Filter to improve perf.
 		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
+		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
 		state.activeDef = state.ownAnnURLs && state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
 
 		state.lineNumber = props.lineNumber || null;
@@ -73,10 +74,15 @@ class BlobLine extends Component {
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
 			if ((ann.URL || ann.URLs) && !this._hasLink(content)) {
+				let isHighlighted = hasURL(ann, this.state.highlightedDef);
 				return (
 					<Link
 						className={classNames(ann.Class, {
-							[s.highlightedAnn]: hasURL(ann, this.state.highlightedDef),
+							[s.highlightedAnn]: isHighlighted && (!this.state.highlightedDefObj || !this.state.highlightedDefObj.Error),
+
+							// disabledAnn is an ann that you can't click on (possibly a broken ref).
+							[s.disabledAnn]: isHighlighted && (this.state.highlightedDefObj && this.state.highlightedDefObj.Error),
+
 							[s.activeAnn]: hasURL(ann, this.state.activeDef),
 						})}
 						to={ann.URL || ann.URLs[0]}
@@ -91,6 +97,11 @@ class BlobLine extends Component {
 								// Dispatch async and stop propagation so the menu is not
 								// immediately closed by click handler on Document.
 								throw new Error("TODO: reimplement multiple defs menu");
+							}
+
+							if (!this.state.highlightedDefObj || this.state.highlightedDefObj.Error) {
+								// Prevent navigating to a broken ref or not-yet-loaded def.
+								ev.preventDefault();
 							}
 						}}
 						key={i}>{simpleContentsString(content)}</Link>

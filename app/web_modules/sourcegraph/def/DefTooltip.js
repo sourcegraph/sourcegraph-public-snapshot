@@ -48,23 +48,13 @@ class DefTooltip extends Component {
 
 	render() {
 		let def = this.state.def;
-
-		let inner;
-		if (def.Error) {
-			inner = <span className={s.error}>Definition not available</span>;
-		} else {
-			inner = [
+		return (
+			<div ref={(e) => this._elem = e} className={s.tooltip}>
 				<div key="title" className={s.tooltipTitle}>{qualifiedNameAndType(def)}</div>,
 				<div key="content" className={s.content}>
 					{def && def.DocHTML && <div className={s.doc} dangerouslySetInnerHTML={def && def.DocHTML}></div>}
 					{def && def.Repo !== this.state.currentRepo && <span className={s.repo}>{def.Repo}</span>}
-				</div>,
-			];
-		}
-
-		return (
-			<div ref={(e) => this._elem = e} className={def.Error ? s.tooltipError : s.tooltipFound}>
-				{inner}
+				</div>
 			</div>
 		);
 	}

@@ -196,7 +196,7 @@ class RefsMain extends Container {
 					</div>
 				}
 
-				{this.state.highlightedDefObj && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
+				{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 			</div>
 		);
 	}

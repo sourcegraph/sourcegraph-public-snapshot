@@ -16,6 +16,7 @@ import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 import s from "sourcegraph/blob/styles/Blob.css";
+import type {Def} from "sourcegraph/def";
 
 class Blob extends Component {
 	static propTypes = {
@@ -33,6 +34,7 @@ class Blob extends Component {
 		endByte: React.PropTypes.number,
 		scrollToStartLine: React.PropTypes.bool,
 		highlightedDef: React.PropTypes.string,
+		highlightedDefObj: React.PropTypes.object,
 		activeDef: React.PropTypes.string,
 
 		// For linking line numbers to the file they came from (e.g., in
@@ -76,6 +78,7 @@ class Blob extends Component {
 		lines: string[];
 		highlightSelectedLines: boolean;
 		highlightedDef: ?string;
+		highlightedDefObj: ?Def;
 		startLine: ?number;
 		startCol: ?number;
 		startByte: ?number;
@@ -96,6 +99,7 @@ class Blob extends Component {
 		activeDef: null,
 		highlightSelectedLines: false,
 		highlightedDef: null,
+		highlightedDefObj: null,
 		contentsOffsetLine: 0,
 		lineAnns: [],
 		lineStartBytes: [],
@@ -148,6 +152,7 @@ class Blob extends Component {
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef || null;
+		state.highlightedDefObj = props.highlightedDefObj || null;
 		state.activeDef = props.activeDef || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
@@ -382,6 +387,7 @@ class Blob extends Component {
 					annotations={this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.highlightSelectedLines && this.state.startLine && this.state.endLine && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
 					highlightedDef={isVisible ? this.state.highlightedDef : null}
+					highlightedDefObj={isVisible ? this.state.highlightedDefObj : null}
 					activeDef={this.state.activeDef}
 					key={i} />
 			);
