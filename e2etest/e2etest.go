@@ -623,7 +623,7 @@ Flags:
 			for _, t := range tr.tests {
 				fmt.Fprintf(registeredTests, "[%v]: %v\n", t.Name, t.Description)
 			}
-			tr.slackMessage(false, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
+			tr.slackMessage(typeNormal, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
 		}
 	}
 
