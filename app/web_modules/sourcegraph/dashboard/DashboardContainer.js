@@ -36,8 +36,8 @@ class DashboardContainer extends Container {
 		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
 	}
 
-	onStateTransition(prevState, nextState) {repos
-		if (nextState.repos === null && nextState. !== prevState.repos) {
+	onStateTransition(prevState, nextState) {
+		if (nextState.repos === null && nextState.repos !== prevState.repos) {
 			Dispatcher.Backends.dispatch(new DashboardActions.WantRepos());
 		}
 		if (nextState.remoteRepos === null && nextState.remoteRepos !== prevState.remoteRepos) {
