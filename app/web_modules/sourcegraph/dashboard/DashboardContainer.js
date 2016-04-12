@@ -30,12 +30,14 @@ class DashboardContainer extends Container {
 		state.exampleRepos = DashboardStore.exampleRepos || null;
 		state.repos = DashboardStore.repos || null;
 		state.remoteRepos = DashboardStore.remoteRepos || null;
-		state.hasLinkedGitHub = DashboardStore.hasLinkedGitHub || null;
+		state.hasLinkedGitHub = null; // special condition to avoid flashing CTA
+		if (DashboardStore.hasLinkedGitHub === false) state.hasLinkedGitHub = false; // show CTA
+		if (DashboardStore.hasLinkedGitHub) state.hasLinkedGitHub = true; // don't show CTA
 		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
 	}
 
-	onStateTransition(prevState, nextState) {
-		if (nextState.repos === null && nextState.repos !== prevState.repos) {
+	onStateTransition(prevState, nextState) {repos
+		if (nextState.repos === null && nextState. !== prevState.repos) {
 			Dispatcher.Backends.dispatch(new DashboardActions.WantRepos());
 		}
 		if (nextState.remoteRepos === null && nextState.remoteRepos !== prevState.remoteRepos) {
