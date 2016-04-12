@@ -317,10 +317,15 @@ func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *source
 //
 // dc.Def.DefKey will be set to the def specification based on the
 // request when getting actual def fails.
-func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, rc *RepoCommon, vc *RepoRevCommon, err error) {
+func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, err error) {
+	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
+	if err != nil {
+		return nil, err
+	}
+
 	defSpec, err := sourcegraph.UnmarshalDefSpec(vars)
 	if err != nil {
-		return dc, rc, vc, err
+		return dc, err
 	}
 
 	// If we fail to get a def, return the best known information to the caller.
@@ -335,36 +340,20 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		},
 	}
 
-	rc, vc, err = GetRepoAndRevCommon(ctx, vars)
-	if err != nil {
-		return dc, rc, vc, err
-	}
-
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return
 	}
 
-	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: vc.RepoRevSpec})
+	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: repoRev})
 	if err != nil {
-		return dc, rc, vc, err
+		return dc, err
 	}
-	vc.RepoRevSpec.CommitID = resolvedRev.CommitID
 	defSpec.CommitID = resolvedRev.CommitID
-
-	if vc.RepoRevSpec.Rev == "" {
-		panic("empty Rev for repo " + vc.RepoRevSpec.URI)
-	}
-	if vc.RepoRevSpec.CommitID == "" {
-		panic("empty CommitID for repo " + vc.RepoRevSpec.URI + " rev " + vc.RepoRevSpec.Rev)
-	}
-
-	// Insert additional available information into the def.
-	dc.Def.DefKey.CommitID = defSpec.CommitID
 
 	dc, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
 	if err != nil {
-		return dc, rc, vc, err
+		return dc, err
 	}
 
 	// Now that we have the def, we can check if its file has been
@@ -384,20 +373,16 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	// unannotated file, so this is consistent with that behavior as
 	// well.
 	defResolvedRev, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{
-			RepoSpec: vc.RepoRevSpec.RepoSpec,
-			Rev:      vc.RepoRevSpec.Rev,
-			CommitID: vc.RepoRevSpec.Rev, // use originally requested rev, not already resolved last-srclib-version
-		},
-		Path: dc.File,
+		RepoRev: repoRev, // use originally requested rev, not already resolved last-srclib-version
+		Path:    dc.File,
 	})
 	if err != nil {
-		return dc, rc, vc, err
+		return dc, err
 	}
 	if defResolvedRev.CommitID != resolvedRev.CommitID {
-		return dc, rc, vc, &errcode.HTTPErr{
+		return dc, &errcode.HTTPErr{
 			Status: http.StatusNotFound,
-			Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, dc.File, resolvedRev.CommitID, vc.RepoRevSpec.Rev),
+			Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, dc.File, resolvedRev.CommitID, repoRev.Rev),
 		}
 	}
 
@@ -419,5 +404,5 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		}
 		dc.DocHTML = htmlutil.SanitizeForPB(docHTML)
 	}
-	return dc, rc, vc, nil
+	return dc, nil
 }
