@@ -995,7 +995,7 @@ var langRepos_ = map[string][]string{
 	},
 	"C#": []string{
 		"github.com/dotnet/corefx",
-		"github.com/dotnet/coreclr",
+		//"github.com/dotnet/coreclr",
 		"github.com/SignalR/SignalR",
 		"github.com/dotnet/roslyn",
 		"github.com/mono/mono",
