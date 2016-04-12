@@ -46,7 +46,6 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 .bodoni { font-family: "Bodoni MT", serif; }
 .calisto { font-family: "Calisto MT", serif; }
 .garamond { font-family: garamond, serif; }
-.circular { font-family: "Circular"; }
 
 /*
 	 FONT STYLE
@@ -152,72 +151,8 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 	.truncate-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 
-/* Circular-Book */
-@font-face {
-	font-family: "Circular";
-	font-style: normal;
-	font-weight: 400;
-	src: url("../fonts/circular/circular-book.ttf") format("truetype");
-}
-
-/* Circular-Book Italic */
-@font-face {
-	font-family: "Circular";
-	font-style: italic;
-	font-weight: 400;
-	src: url("../fonts/circular/circular-book-italic.ttf") format("truetype");
-}
-
-/* Circular-Medium */
-@font-face {
-	font-family: "Circular";
-	font-style: normal;
-	font-weight: 500;
-	src: url("../fonts/circular/circular-medium.ttf") format("truetype");
-}
-
-/* Circular-Medium Italic */
-@font-face {
-	font-family: "Circular";
-	font-style: italic;
-	font-weight: 500;
-	src: url("../fonts/circular/circular-medium-italic.ttf") format("truetype");
-}
-
-/* Circular-Bold */
-@font-face {
-	font-family: "Circular";
-	font-style: normal;
-	font-weight: 700;
-	src: url("../fonts/circular/circular-bold.ttf") format("truetype");
-}
-
-/* Circular-Bold Italic */
-@font-face {
-	font-family: "Circular";
-	font-style: italic;
-	font-weight: 700;
-	src: url("../fonts/circular/circular-bold-italic.ttf") format("truetype");
-}
-
-/* Circular-Black */
-@font-face {
-	font-family: "Circular";
-	font-style: normal;
-	font-weight: 800;
-	src: url("../fonts/circular/circular-black.ttf") format("truetype");
-}
-
-/* Circular-Black Italic */
-@font-face {
-	font-family: "Circular";
-	font-style: italic;
-	font-weight: 800;
-	src: url("../fonts/circular/circular-black-italic.ttf") format("truetype");
-}
-
 .header {
-	composes: circular f2 f1-ns;
+	composes: sans-serif f2 f1-ns;
 	composes: dark-gray from colors;
 }
 @value c_brand-orange from colors;
@@ -256,7 +191,7 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 }
 
 .subsection-header {
-	composes: b f4 tracked circular;
+	composes: b f4 tracked sans-serif;
 	composes: gray from colors;
 	text-transform: uppercase;
 }
@@ -283,7 +218,7 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 }
 
 .button-text {
-	composes: circular tc tracked-mega f5;
+	composes: sans-serif tc tracked-mega f5;
 }
 
 .input-text {
