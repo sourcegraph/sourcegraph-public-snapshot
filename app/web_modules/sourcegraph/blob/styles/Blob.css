@@ -147,11 +147,11 @@ by a lot of other modules (e.g., for def boxes)? */
 .linesContentPlaceholder {
 	composes: lines;
 	composes: ph0 from base;
-	animation-duration: 1s;
+	animation-duration: 900ms;
 	animation-fill-mode: forwards;
 	animation-iteration-count: infinite;
 	animation-name: shimmer;
 	animation-timing-function: linear;
 	background: #f6f7f8;
-	background: linear-gradient(to right, #eeeeee 8%, #dddddd 18%, #eeeeee 53%);
+	background: linear-gradient(to right, #f2f2f2 8%, #e9e9e9 18%, #f2f2f2 53%);
 }
