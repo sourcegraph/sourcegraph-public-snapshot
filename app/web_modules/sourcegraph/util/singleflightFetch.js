@@ -35,14 +35,20 @@ export function singleflightFetch(fetch: typeof fetch): typeof fetch {
 		const f = fetch(input, options);
 		inFlight[key] = true;
 		return f.then((resp) => {
-			done(key).forEach(({resolve}) => {
-				resolve(resp.clone());
-			});
+			const waitingList = done(key);
+			if (waitingList) {
+				waitingList.forEach(({resolve}) => {
+					resolve(resp.clone());
+				});
+			}
 			return resp;
 		}).catch((err) => {
-			done(key).forEach(({reject}) => {
-				reject(err);
-			});
+			const waitingList = done(key);
+			if (waitingList) {
+				waitingList.forEach(({reject}) => {
+					reject(err);
+				});
+			}
 			return err;
 		});
 	};
