@@ -186,7 +186,8 @@ class RefsMain extends Container {
 								activeDef={this.state.activeDef}
 								lineNumbers={true}
 								displayRanges={this.state.ranges[path] || null}
-								highlightedDef={this.state.highlightedDef} />
+								highlightedDef={this.state.highlightedDef}
+								highlightedDefObj={this.state.highlightedDefObj} />
 						</div>
 					);
 				})}
