@@ -423,7 +423,13 @@ func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueN
 	if nextBuild == nil {
 		return nil, grpc.Errorf(codes.NotFound, "build queue is empty")
 	}
+	observeDequeuedBuild(nextBuild)
 	return nextBuild, nil
+}
+
+func observeDequeuedBuild(b *sourcegraph.Build) {
+	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Repo)}
+	buildsDequeue.With(labels).Inc()
 }
 
 var metricLabels = []string{"state", "repo"}
@@ -440,8 +446,15 @@ var buildsHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name:      "last_timestamp_unixtime",
 	Help:      "Last time a build finished.",
 }, metricLabels)
+var buildsDequeue = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "dequeue_total",
+	Help:      "Number of builds dequeued.",
+}, []string{"repo"})
 
 func init() {
+	prometheus.MustRegister(buildsDequeue)
 	prometheus.MustRegister(buildsDuration)
 	prometheus.MustRegister(buildsHeartbeat)
 }
