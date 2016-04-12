@@ -210,7 +210,6 @@ func updateRepoStatusForBuild(ctx context.Context, b *sourcegraph.Build) error {
 			"state": state,
 			"repo":  util.GetTrackedRepo(b.Repo),
 		}
-		buildsCount.With(labels).Inc()
 		buildsDuration.With(labels).Observe(duration.Seconds())
 		buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 	}
@@ -428,12 +427,6 @@ func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueN
 }
 
 var metricLabels = []string{"state", "repo"}
-var buildsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "builds",
-	Name:      "total",
-	Help:      "Total number of builds made.",
-}, metricLabels)
 var buildsDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "builds",
@@ -449,7 +442,6 @@ var buildsHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, metricLabels)
 
 func init() {
-	prometheus.MustRegister(buildsCount)
 	prometheus.MustRegister(buildsDuration)
 	prometheus.MustRegister(buildsHeartbeat)
 }
