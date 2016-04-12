@@ -14,6 +14,7 @@ development environment. Here's what you need:
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
+- [protoc](https://github.com/google/protobuf/tree/v3.0.0-beta-1#c-installation---unix) (v3.0.0-beta-1)
 
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
@@ -33,6 +34,18 @@ Then, clone the `sourcegraph` repository into `$GOPATH/src/sourcegraph.com/sourc
 go get sourcegraph.com/sourcegraph/sourcegraph
 ```
 
+## PostgreSQL
+
+[Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
+steps to [initialize and configure your database](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/tree/docs/config/storage.md).
+
+Finally, issue the following commands to set up your database tables:
+
+```
+src pgsql --db=app create
+src pgsql --db=graph create
+```
+
 ## Build
 
 Make sure your `$GOPATH` is set and your `$PATH` includes `$GOPATH/bin`:
@@ -44,8 +57,19 @@ echo $PATH # should include $GOPATH/bin
 
 Then in your terminal run:
 
+`cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph`
+
+The Docker daemon should be running in the background, which you can test by
+running `docker ps`. If you're on OS X, you may have to run:
+
 ```
-cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
+docker-machine start default
+eval $(docker-machine env)
+```
+
+Then run:
+
+```
 make dep
 make serve-dev
 ```
@@ -62,17 +86,6 @@ permanent for every shell session by adding the following line to your
 ```bash
 # increase max number of file descriptors for running a sourcegraph instance.
 ulimit -n 10000
-```
-
-# PostgreSQL
-
-[Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
-steps to [initialize and configure your database](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/tree/docs/config/storage.md).
-
-Finally, issue the following command to set up your database tables:
-
-```
-src pgsql create
 ```
 
 ## Test
