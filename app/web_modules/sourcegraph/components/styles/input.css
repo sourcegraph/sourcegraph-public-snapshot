@@ -32,8 +32,16 @@
 	appearance: none;
 }
 
-/* TODO: can we do this without vendor prefixing? */
 .common::-webkit-input-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+.common:-moz-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+.common::-moz-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+.common:-ms-input-placeholder {
 	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
 }
 
