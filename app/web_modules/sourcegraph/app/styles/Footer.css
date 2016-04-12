@@ -60,7 +60,7 @@
 }
 
 .address {
-	composes: mt3 from base;
+	composes: mt1 from base;
 }
 
 .address-line {
