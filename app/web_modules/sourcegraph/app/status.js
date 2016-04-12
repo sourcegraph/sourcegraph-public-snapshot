@@ -20,17 +20,26 @@ export type State = {
 	error: ?Error;
 };
 
-let _statusComponent = null;
+// promises are tracked here, not in Location.state, to avoid needless component
+// updates when Location.state.promises would change.
+let _promises = [];
+function addPromise(p: Promise): void {
+	_promises.push(p);
+}
+function removePromise(p: Promise): void {
+	let i = _promises.indexOf(p);
+	if (i === -1) throw new Error(`promise is not in list`);
+	_promises.splice(i, 1);
+}
+
 export function trackPromise(p: Promise): void {
-	if (!_statusComponent && global.it) {
+	if (global.it) {
 		// We're in a backend unit test, so no-op.
 		return;
 	}
 
-	_statusComponent._addPromise(p);
-	p.then(() => {
-		_statusComponent._removePromise(p);
-	});
+	addPromise(p);
+	p.then(() => removePromise(p));
 }
 
 // trackedPromisesCount returns the total number of tracked promises initiated
@@ -38,14 +47,14 @@ export function trackPromise(p: Promise): void {
 //
 // Only this count, not the list itself, is exported, for better encapsulation.
 export function trackedPromisesCount(): number {
-	return _statusComponent._promises.length;
+	return _promises.length;
 }
 
 // allTrackedPromisesResolved returns a promise that is resolved when all promises
 // tracked so far are resolved. It lets server.js determine when the initial data
 // loading is complete.
 export function allTrackedPromisesResolved(): Promise {
-	return Promise.all(_statusComponent._promises);
+	return Promise.all(_promises);
 }
 
 // withStatusContext passes a "status" context item
@@ -68,14 +77,6 @@ export function withStatusContext(Component) {
 			status: React.PropTypes.object,
 		};
 
-		constructor(props) {
-			super(props);
-
-			// HACK: The Backends need to call recordStatus, but they are global
-			// and don't have any way of getting in the call graph of renderToString.
-			_statusComponent = this;
-		}
-
 		getChildContext(): {status: Status} {
 			return {
 				status: {
@@ -95,20 +96,6 @@ export function withStatusContext(Component) {
 		}
 
 		emptyState: State = {error: null};
-
-		// promises are tracked here, not in Location.state, to avoid needless component
-		// updates when Location.state.promises would change.
-		_promises: Array<Promise> = [];
-
-		_addPromise(p: Promise): void {
-			this._promises.push(p);
-		}
-
-		_removePromise(p: Promise): void {
-			let i = this._promises.indexOf(p);
-			if (i === -1) throw new Error(`promise is not in list`);
-			this._promises.splice(i, 1);
-		}
 
 		_getLocationState(): State {
 			return this.props.location.state ? this.props.location.state : {...this.emptyState};
