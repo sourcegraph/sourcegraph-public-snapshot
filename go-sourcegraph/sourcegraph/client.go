@@ -6,23 +6,22 @@ import "google.golang.org/grpc"
 // is done using gRPC over HTTP/2.
 type Client struct {
 	// Services used to communicate with different parts of the Sourcegraph API.
-	Accounts          AccountsClient
-	Annotations       AnnotationsClient
-	Auth              AuthClient
-	Builds            BuildsClient
-	Defs              DefsClient
-	Deltas            DeltasClient
-	GraphUplink       GraphUplinkClient
-	Meta              MetaClient
-	MirrorRepos       MirrorReposClient
-	Notify            NotifyClient
-	Orgs              OrgsClient
-	People            PeopleClient
-	RegisteredClients RegisteredClientsClient
-	RepoStatuses      RepoStatusesClient
-	RepoTree          RepoTreeClient
-	Repos             ReposClient
-	Users             UsersClient
+	Accounts     AccountsClient
+	Annotations  AnnotationsClient
+	Auth         AuthClient
+	Builds       BuildsClient
+	Defs         DefsClient
+	Deltas       DeltasClient
+	GraphUplink  GraphUplinkClient
+	Meta         MetaClient
+	MirrorRepos  MirrorReposClient
+	Notify       NotifyClient
+	Orgs         OrgsClient
+	People       PeopleClient
+	RepoStatuses RepoStatusesClient
+	RepoTree     RepoTreeClient
+	Repos        ReposClient
+	Users        UsersClient
 
 	// gRPC client connection used to communicate with the Sourcegraph
 	// API.
@@ -47,7 +46,6 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Notify = NewNotifyClient(conn)
 	c.Orgs = NewOrgsClient(conn)
 	c.People = NewPeopleClient(conn)
-	c.RegisteredClients = NewRegisteredClientsClient(conn)
 	c.RepoStatuses = NewRepoStatusesClient(conn)
 	c.RepoTree = NewRepoTreeClient(conn)
 	c.Repos = NewReposClient(conn)

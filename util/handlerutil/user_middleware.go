@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -36,7 +37,6 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 				UID:      int(authInfo.UID),
 				Login:    authInfo.Login,
 				ClientID: authInfo.ClientID,
-				Scope:    auth.UnmarshalScope(authInfo.Scopes),
 			})
 		}
 	}

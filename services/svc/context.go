@@ -35,7 +35,6 @@ const (
 	_NotifyKey            contextKey = iota
 	_OrgsKey              contextKey = iota
 	_PeopleKey            contextKey = iota
-	_RegisteredClientsKey contextKey = iota
 	_RepoStatusesKey      contextKey = iota
 	_RepoTreeKey          contextKey = iota
 	_ReposKey             contextKey = iota
@@ -57,7 +56,6 @@ type Services struct {
 	Notify            sourcegraph.NotifyServer
 	Orgs              sourcegraph.OrgsServer
 	People            sourcegraph.PeopleServer
-	RegisteredClients sourcegraph.RegisteredClientsServer
 	RepoStatuses      sourcegraph.RepoStatusesServer
 	RepoTree          sourcegraph.RepoTreeServer
 	Repos             sourcegraph.ReposServer
@@ -117,10 +115,6 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.People != nil {
 		sourcegraph.RegisterPeopleServer(s, svcs.People)
-	}
-
-	if svcs.RegisteredClients != nil {
-		sourcegraph.RegisterRegisteredClientsServer(s, svcs.RegisteredClients)
 	}
 
 	if svcs.RepoStatuses != nil {
@@ -194,10 +188,6 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.People != nil {
 		ctx = WithPeople(ctx, s.People)
-	}
-
-	if s.RegisteredClients != nil {
-		ctx = WithRegisteredClients(ctx, s.RegisteredClients)
 	}
 
 	if s.RepoStatuses != nil {
@@ -512,29 +502,6 @@ func People(ctx context.Context) sourcegraph.PeopleServer {
 // PeopleOrNil returns the context's People service if present, or else nil.
 func PeopleOrNil(ctx context.Context) sourcegraph.PeopleServer {
 	s, ok := ctx.Value(_PeopleKey).(sourcegraph.PeopleServer)
-	if ok {
-		return s
-	}
-	return nil
-}
-
-// WithRegisteredClients returns a copy of parent that uses the given RegisteredClients service.
-func WithRegisteredClients(ctx context.Context, s sourcegraph.RegisteredClientsServer) context.Context {
-	return context.WithValue(ctx, _RegisteredClientsKey, s)
-}
-
-// RegisteredClients gets the context's RegisteredClients service. If the service is not present, it panics.
-func RegisteredClients(ctx context.Context) sourcegraph.RegisteredClientsServer {
-	s, ok := ctx.Value(_RegisteredClientsKey).(sourcegraph.RegisteredClientsServer)
-	if !ok || s == nil {
-		panic("no RegisteredClients set in context")
-	}
-	return s
-}
-
-// RegisteredClientsOrNil returns the context's RegisteredClients service if present, or else nil.
-func RegisteredClientsOrNil(ctx context.Context) sourcegraph.RegisteredClientsServer {
-	s, ok := ctx.Value(_RegisteredClientsKey).(sourcegraph.RegisteredClientsServer)
 	if ok {
 		return s
 	}

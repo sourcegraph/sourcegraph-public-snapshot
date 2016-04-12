@@ -5,30 +5,29 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestVerifyAccess(t *testing.T) {
 	asUID := func(uid int) context.Context {
-		var user *sourcegraph.User
+		var actor auth.Actor
 		switch uid {
 		case 1:
-			user = &sourcegraph.User{
+			actor = auth.Actor{
 				UID:   1,
 				Write: true,
 				Admin: true,
 			}
 		case 2:
-			user = &sourcegraph.User{
+			actor = auth.Actor{
 				UID:   2,
 				Write: true,
 			}
 		default:
-			user = &sourcegraph.User{
-				UID: int32(uid),
+			actor = auth.Actor{
+				UID: uid,
 			}
 		}
-		return auth.WithActor(context.Background(), auth.GetActorFromUser(user))
+		return auth.WithActor(context.Background(), actor)
 	}
 
 	var uid int

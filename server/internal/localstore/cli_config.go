@@ -10,7 +10,6 @@ func init() {
 	serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) {
 		return store.WithStores(ctx, store.Stores{
 			Accounts:           &accounts{},
-			Authorizations:     &authorizations{},
 			Builds:             &builds{},
 			BuildLogs:          &buildLogs{},
 			Directory:          &directory{},
@@ -18,7 +17,6 @@ func init() {
 			GlobalRefs:         &globalRefs{},
 			RepoConfigs:        &repoConfigs{},
 			Password:           &password{},
-			RegisteredClients:  &registeredClients{},
 			RepoVCS:            &repoVCS{},
 			Repos:              &repos{},
 			RepoStatuses:       &repoStatuses{},

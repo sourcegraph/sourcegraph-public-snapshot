@@ -142,7 +142,7 @@ func TestRequestPasswordReset(t *testing.T) {
 	}
 
 	// Request as admin, expect reset link in response
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 2, Scope: map[string]bool{"user:admin": true}})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 2, Admin: true})
 	sendEmailCalled = false
 	verifyAdminCalled = false
 	p, err = s.RequestPasswordReset(ctx, &sourcegraph.PersonSpec{Email: "user@example.com"})

@@ -29,16 +29,16 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 	)
 	for page := 1; page < maxPages && time.Since(start) < time.Second*20 || len(si.Sitemaps) < maxRepos; page++ {
 		repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
-			NoFork:    true,
-			Sort:      "updated",
-			Type:      "public",
-			Direction: "desc",
+			NoFork:                         true,
+			Sort:                           "updated",
+			Type:                           "public",
+			Direction:                      "desc",
+			SlowlyIncludePublicGitHubRepos: true,
 			ListOptions: sourcegraph.ListOptions{
 				Page:    int32(page),
 				PerPage: 1000,
 			},
 		})
-
 		if err != nil {
 			return err
 		}

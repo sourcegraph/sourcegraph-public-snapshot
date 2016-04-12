@@ -23,7 +23,7 @@ func testContext() (ctx context.Context, done func()) {
 	ctx = context.Background()
 
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Scope: map[string]bool{"user:admin": true}})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
 
 	appDBH, appDBDone := testdb.NewHandle("app", &AppSchema)
 	graphDBH, graphDBDone := testdb.NewHandle("graph", &GraphSchema)

@@ -3,20 +3,19 @@
 package accesstoken
 
 import (
-	"crypto"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // New creates and signs a new OAuth2 access token that grants the
@@ -39,6 +38,9 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	if actor.ClientID != "" {
 		tok.Claims["ClientID"] = actor.ClientID
 	}
+	tok.Claims["Write"] = actor.Write
+	tok.Claims["Admin"] = actor.Admin
+
 	scopes := auth.MarshalScope(actor.Scope)
 	addScope(tok, scopes)
 	addExpiry(tok, expiry)
@@ -148,25 +150,6 @@ func UnsafeParseNoVerify(accessToken string) (*jwt.Token, error) {
 	})
 }
 
-// PublicKeyUnavailableError occurs when an access token (JWT) is
-// signed by an external server. The current server can't verify it,
-// but it can ignore the error and pass the access token along on
-// outgoing requests. It's important that the server verify its own
-// access tokens, but it can treat access tokens from other servers as
-// opaque values.
-type PublicKeyUnavailableError struct {
-	ID  string // ID of server that signed the token
-	Err error  // underlying error
-}
-
-func (e *PublicKeyUnavailableError) Error() string {
-	s := fmt.Sprintf("JWT was signed by unavailable public key %q", e.ID)
-	if e.Err != nil {
-		s += fmt.Sprintf(" (reason: %s)", e.Err)
-	}
-	return s
-}
-
 func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.Token, error) {
 	var innerErr error
 
@@ -185,16 +168,11 @@ func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.To
 		}
 
 		clientID, _ := tok.Claims["kid"].(string)
-		if clientID == idKey.ID {
-			return idKey.Public(), nil
+		if clientID != idKey.ID {
+			return nil, errors.New("wrong client ID")
 		}
 
-		pubKey, err := getClientPublicKey(ctx, clientID)
-		if pubKey == nil {
-			innerErr = &PublicKeyUnavailableError{ID: clientID, Err: err}
-			return nil, innerErr
-		}
-		return pubKey, err
+		return idKey.Public(), nil
 	})
 	if innerErr != nil {
 		err = innerErr
@@ -213,23 +191,6 @@ func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.To
 	return tok, err
 }
 
-func getClientPublicKey(ctx context.Context, clientID string) (crypto.PublicKey, error) {
-	regClient, err := svc.RegisteredClients(ctx).Get(ctx, &sourcegraph.RegisteredClientSpec{ID: clientID})
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the client's registered public key.
-	if regClient.JWKS == "" {
-		return nil, fmt.Errorf("client ID %s has no JWKS", clientID)
-	}
-	pubKey, err := idkey.UnmarshalJWKSPublicKey([]byte(regClient.JWKS))
-	if err != nil {
-		return nil, fmt.Errorf("parsing client ID %s JWKS public key: %s", clientID, err)
-	}
-	return pubKey, nil
-}
-
 func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor, error) {
 	// Retrieve claims.
 	var a auth.Actor
@@ -246,6 +207,8 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 
 	a.Login, _ = tok.Claims["Login"].(string)
 	a.ClientID, _ = tok.Claims["ClientID"].(string)
+	a.Write, _ = tok.Claims["Write"].(bool)
+	a.Admin, _ = tok.Claims["Admin"].(bool)
 
 	scopeStr, _ := tok.Claims["Scope"].(string)
 	scopes := strings.Fields(scopeStr)

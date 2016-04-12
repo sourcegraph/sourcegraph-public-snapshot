@@ -369,7 +369,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	caps := selenium.Capabilities(map[string]interface{}{
 		"browserName": "chrome",
 		"chromeOptions": map[string]interface{}{
-			"args": []string{"user-agent=Sourcegraph e2etest-bot"},
+			"args": []string{"user-agent=" + e2etestuser.UserAgent},
 		},
 	})
 	wd, err := selenium.NewRemote(caps, t.executor)

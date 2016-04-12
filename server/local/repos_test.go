@@ -41,7 +41,7 @@ func TestReposService_Get(t *testing.T) {
 func TestReposService_List_admin(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Scope: map[string]bool{"user:admin": true}})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{

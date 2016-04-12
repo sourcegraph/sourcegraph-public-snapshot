@@ -110,7 +110,7 @@ smoke: src
 	createdb src-smoke
 	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=app create
 	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=graph create
-	PGDATABASE=src-smoke go run ./smoke/basicgit/basicgit.go
+	PGDATABASE=src-smoke go run ./test/smoke/basicgit/basicgit.go
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen

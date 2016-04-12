@@ -19,9 +19,6 @@ const (
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 
-	OAuth2ServerAuthorize = "oauth-provider.authorize"
-	OAuth2ServerToken     = "oauth-provider.token"
-
 	GitHubOAuth2Initiate = "github-oauth2.initiate"
 	GitHubOAuth2Receive  = "github-oauth2.receive"
 
@@ -45,9 +42,6 @@ func New(base *mux.Router) *Router {
 	}
 
 	base.StrictSlash(true)
-
-	base.Path("/login/oauth/authorize").Methods("GET").Name(OAuth2ServerAuthorize)
-	base.Path("/login/oauth/token").Methods("POST").Name(OAuth2ServerToken)
 
 	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)

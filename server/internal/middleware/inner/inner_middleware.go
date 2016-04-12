@@ -58,8 +58,6 @@ func Services() svc.Services {
 
 		People: wrappedPeople{},
 
-		RegisteredClients: wrappedRegisteredClients{},
-
 		RepoStatuses: wrappedRepoStatuses{},
 
 		RepoTree: wrappedRepoTree{},
@@ -181,19 +179,6 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 }
 
 type wrappedAuth struct{}
-
-func (s wrappedAuth) GetAuthorizationCode(ctx context.Context, param *sourcegraph.AuthorizationCodeRequest) (res *sourcegraph.AuthorizationCode, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Auth", "GetAuthorizationCode", param)
-	defer func() {
-		trace.After(ctx, "Auth", "GetAuthorizationCode", param, err, time.Since(start))
-	}()
-	res, err = local.Services.Auth.GetAuthorizationCode(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Auth.GetAuthorizationCode returned nil, nil")
-	}
-	return
-}
 
 func (s wrappedAuth) GetAccessToken(ctx context.Context, param *sourcegraph.AccessTokenRequest) (res *sourcegraph.AccessTokenResponse, err error) {
 	start := time.Now()
@@ -586,86 +571,6 @@ func (s wrappedPeople) Get(ctx context.Context, param *sourcegraph.PersonSpec) (
 	res, err = local.Services.People.Get(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "People.Get returned nil, nil")
-	}
-	return
-}
-
-type wrappedRegisteredClients struct{}
-
-func (s wrappedRegisteredClients) Get(ctx context.Context, param *sourcegraph.RegisteredClientSpec) (res *sourcegraph.RegisteredClient, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RegisteredClients", "Get", param)
-	defer func() {
-		trace.After(ctx, "RegisteredClients", "Get", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RegisteredClients.Get(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RegisteredClients.Get returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRegisteredClients) GetCurrent(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.RegisteredClient, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RegisteredClients", "GetCurrent", param)
-	defer func() {
-		trace.After(ctx, "RegisteredClients", "GetCurrent", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RegisteredClients.GetCurrent(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RegisteredClients.GetCurrent returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRegisteredClients) Create(ctx context.Context, param *sourcegraph.RegisteredClient) (res *sourcegraph.RegisteredClient, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RegisteredClients", "Create", param)
-	defer func() {
-		trace.After(ctx, "RegisteredClients", "Create", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RegisteredClients.Create(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RegisteredClients.Create returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRegisteredClients) Update(ctx context.Context, param *sourcegraph.RegisteredClient) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RegisteredClients", "Update", param)
-	defer func() {
-		trace.After(ctx, "RegisteredClients", "Update", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RegisteredClients.Update(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RegisteredClients.Update returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRegisteredClients) Delete(ctx context.Context, param *sourcegraph.RegisteredClientSpec) (res *pbtypes.Void, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RegisteredClients", "Delete", param)
-	defer func() {
-		trace.After(ctx, "RegisteredClients", "Delete", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RegisteredClients.Delete(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RegisteredClients.Delete returned nil, nil")
-	}
-	return
-}
-
-func (s wrappedRegisteredClients) List(ctx context.Context, param *sourcegraph.RegisteredClientListOptions) (res *sourcegraph.RegisteredClientList, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "RegisteredClients", "List", param)
-	defer func() {
-		trace.After(ctx, "RegisteredClients", "List", param, err, time.Since(start))
-	}()
-	res, err = local.Services.RegisteredClients.List(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "RegisteredClients.List returned nil, nil")
 	}
 	return
 }

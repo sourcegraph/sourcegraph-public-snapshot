@@ -31,7 +31,6 @@ var Services = svc.Services{
 	Notify:            Notify,
 	Orgs:              Orgs,
 	People:            People,
-	RegisteredClients: RegisteredClients,
 	RepoStatuses:      RepoStatuses,
 	RepoTree:          RepoTree,
 	Repos:             Repos,

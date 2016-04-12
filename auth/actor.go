@@ -1,10 +1,6 @@
 package auth
 
-import (
-	"fmt"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-)
+import "fmt"
 
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
@@ -29,6 +25,12 @@ type Actor struct {
 	// Scope is a set of authorized scopes that the actor has
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
+
+	// Write indicates if the actor has global write access.
+	Write bool
+
+	// Admin indicates if the actor has global write access.
+	Admin bool
 }
 
 func (a Actor) String() string {
@@ -40,15 +42,6 @@ func (a Actor) IsAuthenticated() bool {
 	return a.UID != 0
 }
 
-// IsUser returns a boolean indicating whether this actor represents a
-// user. When does an actor not represent a user? In two cases: (1) an
-// unauthenticated actor; and (2) an actor that just has a ClientID
-// (and UID 0) represents an authenticated client but not an
-// authenticated user.
-func (a Actor) IsUser() bool {
-	return a.UID != 0
-}
-
 // HasScope returns a boolean indicating whether this actor has the
 // given scope.
 func (a Actor) HasScope(s string) bool {
@@ -56,14 +49,14 @@ func (a Actor) HasScope(s string) bool {
 	return ok && hasScope
 }
 
-// HasWriteAccess checks if the actor has "user:write" or "user:admin" scopes.
+// HasWriteAccess checks if the actor has write or admin access.
 func (a Actor) HasWriteAccess() bool {
-	return a.IsAuthenticated() && (a.HasScope("user:write") || a.HasScope("user:admin"))
+	return a.IsAuthenticated() && (a.Write || a.Admin)
 }
 
-// HasAdminAccess checks if the actor has "user:admin" scope.
+// HasAdminAccess checks if the actor has admin access.
 func (a Actor) HasAdminAccess() bool {
-	return a.IsAuthenticated() && (a.HasScope("user:admin"))
+	return a.IsAuthenticated() && (a.Admin)
 }
 
 func UnmarshalScope(scope []string) map[string]bool {
@@ -83,19 +76,4 @@ func MarshalScope(scopeMap map[string]bool) []string {
 		scope = append(scope, s)
 	}
 	return scope
-}
-
-func GetActorFromUser(user *sourcegraph.User) Actor {
-	scope := make(map[string]bool)
-	if user.Write {
-		scope["user:write"] = true
-	}
-	if user.Admin {
-		scope["user:admin"] = true
-	}
-	return Actor{
-		UID:   int(user.UID),
-		Login: user.Login,
-		Scope: scope,
-	}
 }

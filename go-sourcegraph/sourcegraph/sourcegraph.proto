@@ -142,6 +142,7 @@ message RepoListOptions {
 	bool NoFork = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Type = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
+	bool SlowlyIncludePublicGitHubRepos = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
@@ -1178,13 +1179,6 @@ service Users {
 
 // Auth manages authentication and authorization (via OAuth2).
 service Auth {
-	// GetAuthorizationCodeGrant gets an OAuth2 authorization code
-	// grant from the server that can be traded in for an access token
-	// by calling GetAccessToken. See
-	// https://tools.ietf.org/html/rfc6749#section-4.1 for more
-	// information.
-	rpc GetAuthorizationCode(AuthorizationCodeRequest) returns (AuthorizationCode);
-
 	// GetAccessToken requests the server to issue an access token
 	// using the credentials provided in the AccessTokenRequest.
 	//
@@ -1212,30 +1206,6 @@ service Auth {
 	rpc SetExternalToken(ExternalToken) returns (pbtypes.Void);
 }
 
-// AuthorizationCodeRequest: see
-// https://tools.ietf.org/html/rfc6749#section-4.1.1.
-message AuthorizationCodeRequest {
-	string ResponseType = 1;
-	string ClientID = 2;
-	string RedirectURI = 3;
-	repeated string Scope = 4;
-
-	// UID is the UID of the user who will be presented with the code.
-	int32 UID = 5;
-}
-
-// AuthorizationCode represents an access token request using the
-// authorization_code OAuth2 grant type. See
-// http://tools.ietf.org/html/rfc6749#section-4.1.3 for more
-// information.
-//
-// The client_id field is not set in this message; it is taken from
-// the authenticated client for the request (which must exist).
-message AuthorizationCode {
-	string Code = 1;
-	string RedirectURI = 2;
-}
-
 // LoginCredentials is the information a user submits to log in.
 message LoginCredentials {
 	// Login is the user's claimed login.
@@ -1243,17 +1213,6 @@ message LoginCredentials {
 
 	// Password is the password (possibly) corresponding to the login.
 	string Password = 2;
-
-	// In the future we can add 2FA tokens, etc., here.
-}
-
-// BearerJWT is a Bearer JSON Web Token, which is used for client
-// authentication during an authentication grant. See
-// https://tools.ietf.org/html/draft-ietf-oauth-jwt-bearer-12#section-2.1
-// for more information.
-message BearerJWT {
-	// Assertion is a JWT.
-	string Assertion = 1;
 }
 
 // AccessTokenRequest contains the information necessary to
@@ -1264,9 +1223,7 @@ message AccessTokenRequest {
 	// See http://tools.ietf.org/html/rfc6749#section-1.3 for more
 	// information on OAuth2 authorization grant types.
 	oneof authorization_grant {
-		AuthorizationCode AuthorizationCode = 1;
 		LoginCredentials ResourceOwnerPassword = 2;
-		BearerJWT BearerJWT = 3;
 	}
 
 	repeated string Scope = 17;
@@ -1303,10 +1260,6 @@ message AuthInfo {
 
 	// Admin is set if the user (if any) has admin access on this server.
 	bool Admin = 6;
-
-	// Scopes represent the permissions granted to the authenticated
-	// user (if any).
-	repeated string Scopes = 7;
 }
 
 // ExternalTokenRequest specifies a request for a stored auth token
@@ -1781,164 +1734,6 @@ message ServerConfig {
 
 	// IDKey is the server's identity key (ID key).
 	string IDKey = 7;
-}
-
-// A RegisteredClient is a registered API client.
-//
-// Many fields correspond to those listed at
-// http://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata.
-//
-// It's called RegisteredClient instead of Client to avoid a name
-// conflict with the existing Client (Go) type.
-message RegisteredClient {
-	// ID is a unique identifier for this client.
-	string ID = 1;
-
-	// RedirectURIs is a list of allowed redirect URIs.
-	repeated string RedirectURIs = 2;
-
-	// ClientName is the name of the client to be presented to the
-	// end-user.
-	string ClientName = 3;
-
-	// LogoURI is a URL to this client's logo.
-	string LogoURI = 4;
-
-	// ClientURI is a URL to this client's homepage.
-	string ClientURI = 5;
-
-	// JWKS is the client's JSON Web Key Set. It contains the client's
-	// public keys, if any.
-	string JWKS = 6;
-
-	// ClientSecret is the secret value that authenticates the
-	// client. It may be empty (e.g., if JWKS keys are used for
-	// authentication instead).
-	string ClientSecret = 7;
-
-	// Description is a human-readable description of this API client
-	// that's shown to the user during, e.g., OAuth2 authentication.
-	string Description = 8;
-
-	// Meta holds arbitrary metadata about this API client. The
-	// structure is defined by the API client and is opaque to the
-	// server.
-	map<string, string> Meta = 9;
-
-	// RegisteredClientType describes this client's type.
-	RegisteredClientType Type = 10;
-
-	// CreatedAt is when this API client's record was created.
-	pbtypes.Timestamp CreatedAt = 11 [(gogoproto.nullable) = false];
-
-	// UpdatedAt is when this API client's record was last updated.
-	pbtypes.Timestamp UpdatedAt = 12 [(gogoproto.nullable) = false];
-}
-
-// RegisteredClientType is the set of kinds of clients.
-enum RegisteredClientType {
-	// Any is any type of API client. It should only be used when
-	// listing and not actually set on a RegisteredClient object.
-	Any = 0;
-
-	// Other is all other kinds of clients that are not
-	// SourcegraphServers.
-	Other = 1;
-
-	// SourcegraphServer indicates this client is a Sourcegraph server
-	// instance.
-	SourcegraphServer = 2;
-}
-
-// A RegisteredClientSpec uniquely identifies a RegisteredClient.
-message RegisteredClientSpec {
-	// ID is the client's ID.
-	string ID = 1;
-}
-
-// A RegisteredClientCredentials authenticates a RegisteredClient.
-message RegisteredClientCredentials {
-	// ID is the client's ID.
-	string ID = 1;
-
-	// Secret is the client's secret.
-	string Secret = 2;
-}
-
-// RegisteredClientListOptions configures a call to
-// RegisteredClients.List.
-message RegisteredClientListOptions {
-	RegisteredClientType Type = 1;
-	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// RegisteredClientList holds a list of clients.
-message RegisteredClientList {
-	repeated RegisteredClient Clients = 1;
-	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-message UserPermissions {
-	// UID is a user's UID.
-	int32 UID = 1;
-
-	// ClientID is the ID of the client whose whitelist is to
-	// be fetched and/or modified.
-	string ClientID = 2;
-
-	// Read is true if the user has read permissions on the client.
-	bool Read = 3;
-
-	// Write is true if the user has write permissions on the client.
-	bool Write = 4;
-
-	// Admin is true if the user should be considered an admin on
-	// the client.
-	bool Admin = 5;
-}
-
-message UserPermissionsList {
-	repeated UserPermissions UserPermissions = 1;
-}
-
-message UserPermissionsOptions {
-	RegisteredClientSpec ClientSpec = 1;
-
-	int32 UID = 2;
-}
-
-// RegisteredClients manages registered API clients.
-//
-// The server may check authorization for methods that retrieve or
-// fetch API client records (e.g., only allowing authenticated calls
-// with a client's own credentials to get or modify it).
-//
-// Like the RegisteredClient message type, it's called
-// RegisteredClients instead of Clients to avoid a name conflict with
-// the existing Client (Go) type.
-service RegisteredClients {
-	// Get retrieves an API client's record given its client ID.
-	rpc Get(RegisteredClientSpec) returns (RegisteredClient);
-
-	// GetCurrent is equivalent to a call to Get with the client ID of
-	// the currently authenticated client.
-	rpc GetCurrent(pbtypes.Void) returns (RegisteredClient);
-
-	// Create registers an API client.
-	rpc Create(RegisteredClient) returns (RegisteredClient);
-
-	// Update modifies an API client's record. The RegisteredClient
-	// arg's ID must be set (to specify which client to update). Its
-	// Secret field is ignored (the secret may not be updated after
-	// creation).
-	rpc Update(RegisteredClient) returns (pbtypes.Void);
-
-	// Delete removes an API client. Immediately after deletion, it
-	// may no longer be used.
-	rpc Delete(RegisteredClientSpec) returns (pbtypes.Void);
-
-	// List enumerates API clients according to the options.
-	rpc List(RegisteredClientListOptions) returns (RegisteredClientList);
 }
 
 // TelemetryType is the format MetricsSnapshot.TelemetryData is encoded in

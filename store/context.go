@@ -20,7 +20,6 @@ import (
 // Stores has a field for each store interface.
 type Stores struct {
 	Accounts           Accounts
-	Authorizations     Authorizations
 	BuildLogs          BuildLogs
 	Builds             Builds
 	Directory          Directory
@@ -29,7 +28,6 @@ type Stores struct {
 	Graph              srcstore.MultiRepoStoreImporterIndexer
 	Orgs               Orgs
 	Password           Password
-	RegisteredClients  RegisteredClients
 	RepoConfigs        RepoConfigs
 	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
@@ -42,7 +40,6 @@ type contextKey int
 
 const (
 	_AccountsKey contextKey = iota
-	_AuthorizationsKey
 	_BuildLogsKey
 	_BuildsKey
 	_DirectoryKey
@@ -51,7 +48,6 @@ const (
 	_GraphKey
 	_OrgsKey
 	_PasswordKey
-	_RegisteredClientsKey
 	_RepoConfigsKey
 	_RepoPermsKey
 	_RepoStatusesKey
@@ -64,9 +60,6 @@ const (
 func WithStores(ctx context.Context, s Stores) context.Context {
 	if s.Accounts != nil {
 		ctx = WithAccounts(ctx, s.Accounts)
-	}
-	if s.Authorizations != nil {
-		ctx = WithAuthorizations(ctx, s.Authorizations)
 	}
 	if s.BuildLogs != nil {
 		ctx = WithBuildLogs(ctx, s.BuildLogs)
@@ -91,9 +84,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Password != nil {
 		ctx = WithPassword(ctx, s.Password)
-	}
-	if s.RegisteredClients != nil {
-		ctx = WithRegisteredClients(ctx, s.RegisteredClients)
 	}
 	if s.RepoConfigs != nil {
 		ctx = WithRepoConfigs(ctx, s.RepoConfigs)
@@ -126,20 +116,6 @@ func AccountsFromContext(ctx context.Context) Accounts {
 	s, ok := ctx.Value(_AccountsKey).(Accounts)
 	if !ok || s == nil {
 		panic("no Accounts set in context")
-	}
-	return s
-}
-
-// WithAuthorizations returns a copy of parent with the given Authorizations store.
-func WithAuthorizations(parent context.Context, s Authorizations) context.Context {
-	return context.WithValue(parent, _AuthorizationsKey, s)
-}
-
-// AuthorizationsFromContext gets the context's Authorizations store. If the store is not present, it panics.
-func AuthorizationsFromContext(ctx context.Context) Authorizations {
-	s, ok := ctx.Value(_AuthorizationsKey).(Authorizations)
-	if !ok || s == nil {
-		panic("no Authorizations set in context")
 	}
 	return s
 }
@@ -252,20 +228,6 @@ func PasswordFromContext(ctx context.Context) Password {
 	s, ok := ctx.Value(_PasswordKey).(Password)
 	if !ok || s == nil {
 		panic("no Password set in context")
-	}
-	return s
-}
-
-// WithRegisteredClients returns a copy of parent with the given RegisteredClients store.
-func WithRegisteredClients(parent context.Context, s RegisteredClients) context.Context {
-	return context.WithValue(parent, _RegisteredClientsKey, s)
-}
-
-// RegisteredClientsFromContext gets the context's RegisteredClients store. If the store is not present, it panics.
-func RegisteredClientsFromContext(ctx context.Context) RegisteredClients {
-	s, ok := ctx.Value(_RegisteredClientsKey).(RegisteredClients)
-	if !ok || s == nil {
-		panic("no RegisteredClients set in context")
 	}
 	return s
 }
