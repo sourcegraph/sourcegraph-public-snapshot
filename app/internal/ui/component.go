@@ -22,8 +22,6 @@ type RenderResult struct {
 	StatusCode       int             // HTTP status code for response
 	ContentType      string          // HTTP Content-Type response header
 	RedirectLocation string          // HTTP Location header
-
-	Incomplete bool // whether the jsserver returned early to meet the deadline
 }
 
 type renderState struct {

@@ -35,21 +35,15 @@ function renderIter(i, props, location, deadline, callback) {
 	let htmlStr = ReactDOMServer.renderToString(<RouterContext {...props} />);
 	console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
 
-	const nearDeadline = (deadline - Date.now()) < 200;
-	if (trackedPromisesCount() === 0 || nearDeadline) {
+	if (trackedPromisesCount() === 0) {
 		if (i > 1) {
 			console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
 		}
 
-		// 202 Accepted to indicate processing isn't complete.
-		const incomplete = trackedPromisesCount() > 0;
-		let code = location.state ? httpStatusCode(location.state.error) : 200;
-		if (incomplete && code === 200) code = 202;
-
 		// No additional async fetches were triggered, so we are done!
 		const head = Helmet.rewind();
 		callback({
-			statusCode: code,
+			statusCode: location.state ? httpStatusCode(location.state.error) : 200,
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
 			stores: dumpStores(),
@@ -61,7 +55,6 @@ function renderIter(i, props, location, deadline, callback) {
 				link: head.link.toString(),
 				script: head.script.toString(),
 			},
-			incomplete: incomplete,
 		});
 		return;
 	}
@@ -77,10 +70,18 @@ function renderIter(i, props, location, deadline, callback) {
 	}));
 }
 
-// handle is called from Go to render the page's contents.
-const handle = (arg, callback) => {
+function resetAll(arg) {
+	// SECURITY NOTE: You must clear out any state so that each time handle is
+	// called, no data or credentials from the previous request remain. Otherwise
+	// handle may return data that the current user is unauthorized to see (but
+	// that was processed during a previous request for a different user).
 	context.reset(arg.jsContext);
 	resetStores();
+}
+
+// handle is called from Go to render the page's contents.
+const handle = (arg, callback) => {
+	resetAll(arg);
 
 	// Track the current location.
 	let hist = createMemoryHistory(arg.location);
