@@ -27,10 +27,10 @@ class DashboardContainer extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.exampleRepos = DashboardStore.exampleRepos;
-		state.repos = DashboardStore.repos;
-		state.remoteRepos = DashboardStore.remoteRepos;
-		state.hasLinkedGitHub = DashboardStore.hasLinkedGitHub;
+		state.exampleRepos = DashboardStore.exampleRepos || null;
+		state.repos = DashboardStore.repos || null;
+		state.remoteRepos = DashboardStore.remoteRepos || null;
+		state.hasLinkedGitHub = DashboardStore.hasLinkedGitHub || null;
 		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
 	}
 
