@@ -30,6 +30,8 @@ const (
 	DefRefLocations  = "def.ref.locations"
 	Defs             = "defs"
 	Repo             = "repo"
+	RepoResolve      = "repo.resolve"
+	RepoCreate       = "repo.create"
 	RepoRefresh      = "repo.refresh"
 	RepoBranches     = "repo.branches"
 	RepoBuild        = "repo.build"
@@ -70,6 +72,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/builds").Methods("GET").Name(Builds)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
+	base.Path("/repos").Methods("POST").Name(RepoCreate)
 	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
 
 	base.Path("/internal/appdash/upload-page-load").Methods("POST").Name(InternalAppdashUploadPageLoad)
@@ -79,6 +82,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path(repoPath).Methods("GET").Name(Repo)
 	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repo.Path("/branches").Methods("GET").Name(RepoBranches)
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var

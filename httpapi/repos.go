@@ -1,54 +1,31 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx, _ := handlerutil.Client(r)
+	ctx, cl := handlerutil.Client(r)
 
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return err
-	}
 	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	isCloning := false
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
-	if err != nil && grpc.Code(err) != codes.NotFound {
-		return err
-	}
-	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
-		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repoSpec.URI {
-			return &handlerutil.URLMovedError{actualURI}
-		}
-		// Automatically create a local mirror.
-		log15.Info("Creating a local mirror of remote repo", "cloneURL", remoteRepo.HTTPCloneURL)
-		_, err := cl.Repos.Create(ctx, &sourcegraph.ReposCreateOp{
-			Op: &sourcegraph.ReposCreateOp_FromGitHubID{FromGitHubID: int32(remoteRepo.GitHubID)},
-		})
-		if err != nil {
-			return err
-		}
-		isCloning = true
-	}
-
-	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	repo, err := cl.Repos.Get(ctx, &repoSpec)
 	if err != nil {
 		return err
 	}
@@ -57,20 +34,26 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	if repo.UpdatedAt != nil {
 		lastMod = repo.UpdatedAt.Time()
 	}
-
 	if clientCached, err := writeCacheHeaders(w, r, lastMod, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
 
-	response := struct {
-		*sourcegraph.Repo
-		IsCloning bool
-	}{
-		Repo:      repo,
-		IsCloning: isCloning,
+	return writeJSON(w, repo)
+}
+
+func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	if err != nil {
+		return err
 	}
 
-	return writeJSON(w, &response)
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	if err != nil {
+		return err
+	}
+	return writeJSON(w, res)
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
@@ -93,6 +76,24 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, repos)
+}
+
+func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	var op sourcegraph.ReposCreateOp
+	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
+		if err == io.EOF {
+			return &errcode.HTTPErr{Status: http.StatusBadRequest}
+		}
+		return err
+	}
+
+	repo, err := cl.Repos.Create(ctx, &op)
+	if err != nil {
+		return err
+	}
+	return writeJSON(w, &repo)
 }
 
 func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {

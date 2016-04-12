@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -16,7 +18,6 @@ func TestRepo(t *testing.T) {
 	wantRepo := &sourcegraph.Repo{URI: "r/r"}
 
 	calledGet := mock.Repos.MockGet(t, "r/r")
-	calledResolve := mock.Repos.MockResolve_Local(t, "r/r")
 
 	var repo *sourcegraph.Repo
 	if err := c.GetJSON("/repos/r/r", &repo); err != nil {
@@ -27,6 +28,26 @@ func TestRepo(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
+	}
+}
+
+func TestRepoResolve(t *testing.T) {
+	c, mock := newTest()
+
+	want := &sourcegraph.RepoResolution{
+		Result: &sourcegraph.RepoResolution_Repo{
+			Repo: &sourcegraph.RepoSpec{URI: "r"},
+		},
+	}
+
+	calledResolve := mock.Repos.MockResolve_Local(t, "r")
+
+	var res *sourcegraph.RepoResolution
+	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("got %+v, want %+v", res, want)
 	}
 	if !*calledResolve {
 		t.Error("!calledResolve")
@@ -45,7 +66,6 @@ func TestRepo_caching_notModified(t *testing.T) {
 		URI:       "r/r",
 		UpdatedAt: &ts,
 	})
-	calledResolve := mock.Repos.MockResolve_Local(t, "r/r")
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)
 	req.Header.Set("if-modified-since", mtime.Add(2*time.Second).Format(http.TimeFormat))
@@ -59,9 +79,6 @@ func TestRepo_caching_notModified(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
-	}
-	if !*calledResolve {
-		t.Error("!calledResolve")
 	}
 }
 
@@ -77,7 +94,6 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 		URI:       "r/r",
 		UpdatedAt: &ts,
 	})
-	calledResolve := mock.Repos.MockResolve_Local(t, "r/r")
 
 	req, _ := http.NewRequest("GET", "/repos/r/r", nil)
 	req.Header.Set("if-modified-since", mtime.Add(-2*time.Second).Format(http.TimeFormat))
@@ -91,9 +107,6 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
-	}
-	if !*calledResolve {
-		t.Error("!calledResolve")
 	}
 }
 
@@ -115,5 +128,39 @@ func TestRepos(t *testing.T) {
 	}
 	if !*calledList {
 		t.Error("!calledList")
+	}
+}
+
+func TestRepoCreate(t *testing.T) {
+	c, mock := newTest()
+
+	want := &sourcegraph.Repo{URI: "r"}
+
+	var calledCreate bool
+	mock.Repos.Create_ = func(ctx context.Context, op *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error) {
+		if op.GetNew().URI != want.URI {
+			t.Errorf("got URI %q, want %q", op.GetNew().URI, want.URI)
+		}
+		calledCreate = true
+		return want, nil
+	}
+
+	op := sourcegraph.ReposCreateOp{
+		Op: &sourcegraph.ReposCreateOp_New{
+			New: &sourcegraph.ReposCreateOp_NewRepo{
+				URI: "r",
+			},
+		},
+	}
+
+	var repo *sourcegraph.Repo
+	if err := c.DoJSON("POST", "/repos", &op, &repo); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(repo, want) {
+		t.Errorf("got %+v, want %+v", repo, want)
+	}
+	if !calledCreate {
+		t.Error("!calledCreate")
 	}
 }
