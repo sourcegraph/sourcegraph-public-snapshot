@@ -289,7 +289,8 @@ func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueN
 }
 
 func observeNewBuild(b *sourcegraph.Build) {
-	// TODO(keegancsmith) implement
+	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Repo)}
+	buildsCreate.With(labels).Inc()
 }
 
 func observeFinishedBuild(b *sourcegraph.Build) {
@@ -334,6 +335,12 @@ var buildsHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name:      "last_timestamp_unixtime",
 	Help:      "Last time a build finished.",
 }, metricLabels)
+var buildsCreate = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "create_total",
+	Help:      "Number of builds created.",
+}, []string{"repo"})
 var buildsDequeue = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "builds",
@@ -343,6 +350,7 @@ var buildsDequeue = prometheus.NewCounterVec(prometheus.CounterOpts{
 
 func init() {
 	prometheus.MustRegister(buildsDequeue)
+	prometheus.MustRegister(buildsCreate)
 	prometheus.MustRegister(buildsDuration)
 	prometheus.MustRegister(buildsHeartbeat)
 }
