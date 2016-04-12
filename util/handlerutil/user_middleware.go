@@ -37,6 +37,8 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 				UID:      int(authInfo.UID),
 				Login:    authInfo.Login,
 				ClientID: authInfo.ClientID,
+				Write:    authInfo.Write,
+				Admin:    authInfo.Admin,
 			})
 		}
 	}
