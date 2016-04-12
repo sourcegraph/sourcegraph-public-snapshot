@@ -8,11 +8,7 @@
 			<div class="col-lg-6 col-lg-push-3 col-md-8 col-md-push-2">
 				{{if .Repo.Mirror}}
 					<p class="alert alert-interstitial">
-						{{if .CloneInProgress}}
-							<strong>Still cloning repository</strong>
-						{{else}}
-							<strong>Cloning repository</strong>
-						{{end}}
+						<strong>Cloning repository</strong>
 						from
 						<a href="{{.Repo.HTTPCloneURL}}">{{.Repo.HTTPCloneURL}}</a>&hellip;
 					</p>

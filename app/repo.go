@@ -29,7 +29,7 @@ func init() {
 	})
 
 	internal.RegisterErrorHandlerForType(&handlerutil.NoVCSDataError{}, func(w http.ResponseWriter, r *http.Request, err error) error {
-		return renderRepoNoVCSDataTemplate(w, r, err.(*handlerutil.NoVCSDataError))
+		return renderRepoNoVCSDataTemplate(w, r, err.(*handlerutil.NoVCSDataError).RepoCommon)
 	})
 }
 
@@ -65,7 +65,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 
 	rc, vc, err := handlerutil.GetRepoAndRevCommon(ctx, mux.Vars(r))
 	if err != nil {
-		if noVCSDataErr, ok := err.(*handlerutil.NoVCSDataError); ok && noVCSDataErr.RepoCommon.Repo.Mirror && !noVCSDataErr.CloneInProgress {
+		if noVCSDataErr, ok := err.(*handlerutil.NoVCSDataError); ok && noVCSDataErr.RepoCommon.Repo.Mirror {
 			// Trigger cloning/updating this repo from its remote
 			// mirror if it has one. Only wait a short time. That's
 			// usually enough to see if it failed immediately with an
@@ -143,14 +143,12 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func renderRepoNoVCSDataTemplate(w http.ResponseWriter, r *http.Request, noVCSData *handlerutil.NoVCSDataError) error {
+func renderRepoNoVCSDataTemplate(w http.ResponseWriter, r *http.Request, rc *handlerutil.RepoCommon) error {
 	return tmpl.Exec(r, w, "repo/no_vcs_data.html", http.StatusOK, nil, &struct {
 		handlerutil.RepoCommon
-		CloneInProgress bool
 		tmpl.Common
 	}{
-		RepoCommon:      *noVCSData.RepoCommon,
-		CloneInProgress: noVCSData.CloneInProgress,
+		RepoCommon: *rc,
 	})
 }
 

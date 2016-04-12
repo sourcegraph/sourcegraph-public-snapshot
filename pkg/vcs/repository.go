@@ -10,25 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// RepoNotExistError is an error that reports a repository doesn't exist.
-type RepoNotExistError struct {
-	// CloneInProgress reports whether the repository is in process of being cloned.
-	CloneInProgress bool
-}
-
-func (e RepoNotExistError) Error() string {
-	if e.CloneInProgress {
-		return "repository does not exist (clone in progress)"
-	}
-	return "repository does not exist"
-}
-
-// IsRepoNotExist reports if err is a RepoNotExistError.
-func IsRepoNotExist(err error) bool {
-	_, ok := err.(RepoNotExistError)
-	return ok
-}
-
+var ErrRepoNotExist = errors.New("repository does not exist")
 var ErrRepoExist = errors.New("repository already exists")
 
 // A Repository is a VCS repository.

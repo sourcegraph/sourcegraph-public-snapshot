@@ -72,11 +72,8 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		return nil, err
 	}
 	if err := s.updateRepo(ctx, repo, vcsRepo, remoteOpts); err != nil {
-		if !vcs.IsRepoNotExist(err) {
+		if err != vcs.ErrRepoNotExist {
 			return nil, err
-		}
-		if err.(vcs.RepoNotExistError).CloneInProgress {
-			return &pbtypes.Void{}, nil
 		}
 		if err := s.cloneRepo(ctx, repo, remoteOpts); err != nil {
 			return nil, err

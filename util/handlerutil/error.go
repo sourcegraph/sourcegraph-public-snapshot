@@ -3,8 +3,7 @@ package handlerutil
 // NoVCSDataError may be returned when VCS data is not available for a requested
 // resource.
 type NoVCSDataError struct {
-	RepoCommon      *RepoCommon
-	CloneInProgress bool // If true, we should wait, not do anything, and try again later. It will finish cloning soon.
+	RepoCommon *RepoCommon
 }
 
 func (e *NoVCSDataError) Error() string {
