@@ -71,6 +71,10 @@ func (s *memoryMultiRepoStore) Import(repo, commitID string, unit *unit.SourceUn
 	return s.repos[repo].Import(commitID, unit, data)
 }
 
+func (s *memoryMultiRepoStore) CreateVersion(repo, commitID string) error {
+	return s.repos[repo].CreateVersion(commitID)
+}
+
 func (s *memoryMultiRepoStore) String() string { return "memoryMultiRepoStore" }
 
 // A memoryRepoStore is a RepoStore that stores data in memory.
@@ -104,7 +108,6 @@ func (s *memoryRepoStore) Versions(f ...VersionFilter) ([]*Version, error) {
 }
 
 func (s *memoryRepoStore) Import(commitID string, unit *unit.SourceUnit, data graph.Output) error {
-	s.versions = append(s.versions, &Version{CommitID: commitID})
 	if s.trees == nil {
 		s.trees = map[string]*memoryTreeStore{}
 	}
@@ -115,6 +118,11 @@ func (s *memoryRepoStore) Import(commitID string, unit *unit.SourceUnit, data gr
 		cleanForImport(&data, "", unit.Type, unit.Name)
 	}
 	return s.trees[commitID].Import(unit, data)
+}
+
+func (s *memoryRepoStore) CreateVersion(commitID string) error {
+	s.versions = append(s.versions, &Version{CommitID: commitID})
+	return nil
 }
 
 func (s *memoryRepoStore) openTreeStore(commitID string) TreeStore {

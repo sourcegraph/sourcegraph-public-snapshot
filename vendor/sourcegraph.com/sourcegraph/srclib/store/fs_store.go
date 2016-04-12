@@ -178,6 +178,10 @@ func (s *fsMultiRepoStore) Import(repo, commitID string, unit *unit.SourceUnit, 
 	return s.openRepoStore(repo).(RepoImporter).Import(commitID, unit, data)
 }
 
+func (s *fsMultiRepoStore) CreateVersion(repo, commitID string) error {
+	return s.openRepoStore(repo).(RepoImporter).CreateVersion(commitID)
+}
+
 func (s *fsMultiRepoStore) Index(repo, commitID string) error {
 	switch rs := s.openRepoStore(repo).(type) {
 	case RepoIndexer:
@@ -306,15 +310,10 @@ func (s *fsRepoStore) Import(commitID string, unit *unit.SourceUnit, data graph.
 	if err := ts.Import(unit, data); err != nil {
 		return err
 	}
-
-	if err := s.createVersion(commitID); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func (s *fsRepoStore) createVersion(commitID string) error {
+func (s *fsRepoStore) CreateVersion(commitID string) error {
 	if err := s.fs.Mkdir(versionsDir); err != nil && !os.IsExist(err) {
 		return err
 	}

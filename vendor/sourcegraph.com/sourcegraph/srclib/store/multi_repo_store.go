@@ -27,6 +27,10 @@ type MultiRepoImporter interface {
 	// Import imports srclib build data for a source unit at a
 	// specific version into the store.
 	Import(repo, commitID string, unit *unit.SourceUnit, data graph.Output) error
+
+	// CreateVersion creates the version entry for the given commit. All other data (including
+	// indexes) needs to exist before this gets called.
+	CreateVersion(repo, commitID string) error
 }
 
 type MultiRepoIndexer interface {

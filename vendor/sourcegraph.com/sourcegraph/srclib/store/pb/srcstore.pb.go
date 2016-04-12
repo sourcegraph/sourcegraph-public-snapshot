@@ -10,6 +10,7 @@
 
 	It has these top-level messages:
 		ImportOp
+		CreateVersionOp
 		IndexOp
 */
 package pb
@@ -46,6 +47,15 @@ func (m *ImportOp) Reset()         { *m = ImportOp{} }
 func (m *ImportOp) String() string { return proto.CompactTextString(m) }
 func (*ImportOp) ProtoMessage()    {}
 
+type CreateVersionOp struct {
+	Repo     string `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
+	CommitID string `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
+}
+
+func (m *CreateVersionOp) Reset()         { *m = CreateVersionOp{} }
+func (m *CreateVersionOp) String() string { return proto.CompactTextString(m) }
+func (*CreateVersionOp) ProtoMessage()    {}
+
 type IndexOp struct {
 	Repo     string `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
 	CommitID string `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
@@ -65,6 +75,9 @@ type MultiRepoImporterClient interface {
 	// Import imports srclib build data for a source unit at a
 	// specific version into the store.
 	Import(ctx context.Context, in *ImportOp, opts ...grpc.CallOption) (*pbtypes.Void, error)
+	// CreateVersion creates the version entry for the given commit. All other data (including
+	// indexes) needs to exist before this gets called.
+	CreateVersion(ctx context.Context, in *CreateVersionOp, opts ...grpc.CallOption) (*pbtypes.Void, error)
 	// Index builds indexes for a specific repo at a specific version.
 	Index(ctx context.Context, in *IndexOp, opts ...grpc.CallOption) (*pbtypes.Void, error)
 }
@@ -86,6 +99,15 @@ func (c *multiRepoImporterClient) Import(ctx context.Context, in *ImportOp, opts
 	return out, nil
 }
 
+func (c *multiRepoImporterClient) CreateVersion(ctx context.Context, in *CreateVersionOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	out := new(pbtypes.Void)
+	err := grpc.Invoke(ctx, "/pb.MultiRepoImporter/CreateVersion", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *multiRepoImporterClient) Index(ctx context.Context, in *IndexOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
 	out := new(pbtypes.Void)
 	err := grpc.Invoke(ctx, "/pb.MultiRepoImporter/Index", in, out, c.cc, opts...)
@@ -101,6 +123,9 @@ type MultiRepoImporterServer interface {
 	// Import imports srclib build data for a source unit at a
 	// specific version into the store.
 	Import(context.Context, *ImportOp) (*pbtypes.Void, error)
+	// CreateVersion creates the version entry for the given commit. All other data (including
+	// indexes) needs to exist before this gets called.
+	CreateVersion(context.Context, *CreateVersionOp) (*pbtypes.Void, error)
 	// Index builds indexes for a specific repo at a specific version.
 	Index(context.Context, *IndexOp) (*pbtypes.Void, error)
 }
@@ -115,6 +140,18 @@ func _MultiRepoImporter_Import_Handler(srv interface{}, ctx context.Context, dec
 		return nil, err
 	}
 	out, err := srv.(MultiRepoImporterServer).Import(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _MultiRepoImporter_CreateVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(CreateVersionOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(MultiRepoImporterServer).CreateVersion(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +177,10 @@ var _MultiRepoImporter_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Import",
 			Handler:    _MultiRepoImporter_Import_Handler,
+		},
+		{
+			MethodName: "CreateVersion",
+			Handler:    _MultiRepoImporter_CreateVersion_Handler,
 		},
 		{
 			MethodName: "Index",
@@ -195,6 +236,36 @@ func (m *ImportOp) MarshalTo(data []byte) (int, error) {
 			return 0, err
 		}
 		i += n2
+	}
+	return i, nil
+}
+
+func (m *CreateVersionOp) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *CreateVersionOp) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Repo) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintSrcstore(data, i, uint64(len(m.Repo)))
+		i += copy(data[i:], m.Repo)
+	}
+	if len(m.CommitID) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSrcstore(data, i, uint64(len(m.CommitID)))
+		i += copy(data[i:], m.CommitID)
 	}
 	return i, nil
 }
@@ -273,6 +344,20 @@ func (m *ImportOp) Size() (n int) {
 	}
 	if m.Data != nil {
 		l = m.Data.Size()
+		n += 1 + l + sovSrcstore(uint64(l))
+	}
+	return n
+}
+
+func (m *CreateVersionOp) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Repo)
+	if l > 0 {
+		n += 1 + l + sovSrcstore(uint64(l))
+	}
+	l = len(m.CommitID)
+	if l > 0 {
 		n += 1 + l + sovSrcstore(uint64(l))
 	}
 	return n
@@ -457,6 +542,114 @@ func (m *ImportOp) Unmarshal(data []byte) error {
 			if err := m.Data.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSrcstore(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSrcstore
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CreateVersionOp) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSrcstore
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CreateVersionOp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CreateVersionOp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Repo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSrcstore
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSrcstore
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Repo = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommitID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSrcstore
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSrcstore
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommitID = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -1004,8 +1004,8 @@
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -1054,98 +1054,98 @@
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/ann",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/buildstore",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/cli",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/config",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/cvg",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/dep",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/flagutil",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/gendata",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/graph",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/grapher",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/plan",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/scan",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pb",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pbio",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store/phtable",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/toolchain",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/unit",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/util",
-			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
-			"revisionTime": "2016-04-11T22:52:28-07:00"
+			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
+			"revisionTime": "2016-04-12T11:36:41-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/surf",

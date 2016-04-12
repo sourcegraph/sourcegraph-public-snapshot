@@ -85,6 +85,36 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, v1 *pb.ImportOp) (
 	return rv, nil
 }
 
+func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, v1 *pb.CreateVersionOp) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in MultiRepoImporter.CreateVersion: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.MultiRepoImporterOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "MultiRepoImporter")
+	}
+
+	rv, err := innerSvc.CreateVersion(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, v1 *pb.IndexOp) (returnedResult *pbtypes.Void, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

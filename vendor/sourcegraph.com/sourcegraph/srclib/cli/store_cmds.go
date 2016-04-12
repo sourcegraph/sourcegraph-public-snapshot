@@ -15,9 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rogpeppe/rog-go/parallel"
-
 	"github.com/alexsaveliev/go-colorable-wrapper"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/tools/godoc/vfs"
 
@@ -348,6 +347,17 @@ func Import(buildDataFS vfs.FileSystem, stor interface{}, opt ImportOpt) error {
 		}
 	}
 
+	switch imp := stor.(type) {
+	case store.RepoImporter:
+		if err := imp.CreateVersion(opt.CommitID); err != nil {
+			return fmt.Errorf("error running store.RepoImporter.CreateVersion: %s", err)
+		}
+	case store.MultiRepoImporter:
+		if err := imp.CreateVersion(opt.Repo, opt.CommitID); err != nil {
+			return fmt.Errorf("error running store.MultiRepoImporter.CreateVersion: %s", err)
+		}
+	}
+
 	return nil
 }
 
@@ -500,6 +510,17 @@ func (c *StoreImportCmd) sample(s interface{}) error {
 		}
 	}
 	log.Printf("Index took %s (~%s per def/ref)", time.Since(start), time.Duration(int64(time.Since(start))/int64(len(data.Defs)+len(data.Refs))))
+
+	switch imp := s.(type) {
+	case store.RepoImporter:
+		if err := imp.CreateVersion(c.CommitID); err != nil {
+			return err
+		}
+	case store.MultiRepoImporter:
+		if err := imp.CreateVersion(c.Repo, c.CommitID); err != nil {
+			return err
+		}
+	}
 
 	if c.SampleImportOnly {
 		return nil

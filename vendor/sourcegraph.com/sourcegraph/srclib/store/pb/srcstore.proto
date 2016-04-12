@@ -18,6 +18,10 @@ service MultiRepoImporter {
 	// Import imports srclib build data for a source unit at a
 	// specific version into the store.
 	rpc Import(ImportOp) returns (pbtypes.Void);
+	
+	// CreateVersion creates the version entry for the given commit. All other data (including
+	// indexes) needs to exist before this gets called.
+	rpc CreateVersion(CreateVersionOp) returns (pbtypes.Void);
 
 	// Index builds indexes for a specific repo at a specific version.
 	rpc Index(IndexOp) returns (pbtypes.Void);
@@ -28,6 +32,11 @@ message ImportOp {
 	string CommitID = 2;
 	unit.RepoSourceUnit Unit = 3;
 	graph.Output Data = 4;
+}
+
+message CreateVersionOp {
+	string Repo = 1;
+	string CommitID = 2;
 }
 
 message IndexOp {
