@@ -95,7 +95,7 @@ class BuildsList extends Container {
 	render() {
 		return (
 			<div styleName="list-container">
-				<Helmet title={`${this.state.repo ? trimRepo(this.state.repo) : ""} | Builds`} />
+				<Helmet title={`Builds | ${this.state.repo ? trimRepo(this.state.repo) : ""}`} />
 				<div styleName="list-header">Builds</div>
 				<div styleName="list-filters">
 					<div styleName="filter-button">

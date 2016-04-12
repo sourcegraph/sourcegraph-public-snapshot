@@ -159,10 +159,10 @@ export default class BlobMain extends Container {
 			);
 		}
 
-		let pathParts = this.state.path.split("/");
+		let pathParts = this.state.path ? this.state.path.split("/") : null;
 		return (
 			<div className={Style.container}>
-				<Helmet title={`${trimRepo(this.state.repo)} | ${pathParts[pathParts.length - 1]}`} />
+				{pathParts && <Helmet title={`${pathParts[pathParts.length - 1]} | ${trimRepo(this.state.repo)}`} />}
 				<div className={Style.blobAndToolbar}>
 					<BlobToolbar
 						repo={this.state.repo}
