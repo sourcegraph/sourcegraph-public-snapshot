@@ -77,9 +77,11 @@ var browserConfig = {
 	target: "web",
 	cache: true,
 	entry: "./web_modules/sourcegraph/init/browser.js",
+	devtool: "source-map",
 	output: {
 		path: __dirname+"/assets",
 		filename: "[name].browser.js",
+		sourceMapFilename: "[name].browser.js.map",
 	},
 	plugins: commonPlugins.concat([
 		new FlowStatusWebpackPlugin({restartFlow: false}),
