@@ -30,6 +30,40 @@ const RepoBackend = {
 				break;
 			}
 
+		case RepoActions.WantResolveRepo:
+			{
+				let resolution = RepoStore.resolutions.get(action.repo);
+				if (resolution === null) {
+					trackPromise(
+						RepoBackend.fetch(`/.api/repos/${action.repo}/-/resolve`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => {
+								Dispatcher.Stores.dispatch(new RepoActions.RepoResolved(action.repo, data));
+							})
+					);
+				}
+				break;
+			}
+
+		case RepoActions.WantCreateRepo:
+			{
+				trackPromise(
+					RepoBackend.fetch(`/.api/repos`, {
+						method: "POST",
+						body: JSON.stringify(action.createOp),
+					})
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
+						})
+				);
+				break;
+			}
+
 		case RepoActions.WantBranches:
 			{
 				let branches = RepoStore.branches.list(action.repo);

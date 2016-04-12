@@ -4,6 +4,7 @@ import React from "react";
 import expect from "expect.js";
 import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import {renderedStatus} from "sourcegraph/app/statusTestUtils";
+import {render} from "sourcegraph/util/renderTestUtils";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 
@@ -29,6 +30,23 @@ describe("withResolvedRepoRev", () => {
 			expect(renderedStatus(
 				<C params={{splat: "r"}} />
 			)).to.eql({error: true});
+		});
+	});
+
+	describe("repo resolution", () => {
+		it("should NOT initially trigger WantResolveRepo (the route onEnter/onChange does it)", () => {
+			const res = render(<C params={{splat: "r"}} />);
+			expect(res.actions).to.eql([]);
+		});
+		it("should trigger WantRepo for resolved local repos", () => {
+			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {Repo: {}}}));
+			const res = render(<C params={{splat: "r"}} />);
+			expect(res.actions).to.eql([new RepoActions.WantRepo("r")]);
+		});
+		it("should NOT trigger WantRepo for resolved remote repos", () => {
+			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {RemoteRepo: {}}}));
+			const res = render(<C params={{splat: "r"}} />);
+			expect(res.actions).to.eql([]);
 		});
 	});
 });

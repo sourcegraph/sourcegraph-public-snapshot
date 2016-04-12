@@ -18,9 +18,9 @@ class RepoMain extends React.Component {
 		location: React.PropTypes.object,
 		repo: React.PropTypes.string,
 		rev: React.PropTypes.string,
+		repoResolution: React.PropTypes.object,
 		repoObj: React.PropTypes.object,
 		main: React.PropTypes.element,
-		isCloning: React.PropTypes.bool,
 		route: React.PropTypes.object,
 		routes: React.PropTypes.array,
 	};
@@ -41,6 +41,8 @@ class RepoMain extends React.Component {
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._showTreeSearchModal = this._showTreeSearchModal.bind(this);
 		this._dismissTreeSearchModal = this._dismissTreeSearchModal.bind(this);
+
+		this._repoResolutionUpdated(this.props.repo, null, this.props.repoResolution);
 	}
 
 	state: {
@@ -62,10 +64,26 @@ class RepoMain extends React.Component {
 		this.context.router.listenBefore(this._dismissTreeSearchModal);
 	}
 
+	componentWillReceiveProps(nextProps) {
+		if (this.props.repoResolution !== nextProps.repoResolution) {
+			this._repoResolutionUpdated(nextProps.repo, this.props.repoResolution, nextProps.repoResolution);
+		}
+	}
+
 	componentWillUnmount() {
 		this._isMounted = false;
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
+		}
+	}
+
+	_repoResolutionUpdated(repo: string, prevResolution: ?Object, nextResolution: Object) {
+		// Create the repo if this repo was just resolved to a remote repo (which
+		// must be explicitly created, as we do right here).
+		if (repo && prevResolution !== nextResolution && nextResolution && !nextResolution.Error && nextResolution.Result.RemoteRepo) {
+			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, {
+				Op: {FromGitHubID: nextResolution.Result.RemoteRepo.GitHubID},
+			}));
 		}
 	}
 
@@ -120,14 +138,6 @@ class RepoMain extends React.Component {
 		}
 
 		if (!this.props.repo || !this.props.rev) return null;
-
-		if (this.props.isCloning) {
-			return (
-				<Header
-					title="Sourcegraph is cloning this repository"
-					subtitle="Refresh this page in a minute." />
-			);
-		}
 
 		return (
 			<div>

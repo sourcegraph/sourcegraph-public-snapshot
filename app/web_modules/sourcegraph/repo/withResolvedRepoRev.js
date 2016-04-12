@@ -31,15 +31,22 @@ export default function withResolvedRepoRev(Component) {
 			state.repo = repoPath(repoSplat);
 			state.rev = repoRev(repoSplat);
 
+			state.repoResolution = RepoStore.resolutions.get(state.repo);
 			state.repoObj = RepoStore.repos.get(state.repo);
 			if (!state.rev) state.rev = state.repoObj && state.repoObj.DefaultBranch || null;
-
-			state.isCloning = state.repoObj && state.repoObj.IsCloning || false;
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (prevState.repo !== nextState.repo) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
+			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
+				// Record resolution error, if any.
+				this.context.status.error(nextState.repoResolution.Error);
+
+				if (nextState.repoResolution.Result.RemoteRepo) {
+					// If it's a remote repo, do nothing; RepoMain should clone the repository.
+				} else {
+					// Fetch it if it's a local repo.
+					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
+				}
 			}
 			if (nextState.repoObj && prevState.repoObj !== nextState.repoObj) {
 				this.context.status.error(nextState.repoObj.Error);
