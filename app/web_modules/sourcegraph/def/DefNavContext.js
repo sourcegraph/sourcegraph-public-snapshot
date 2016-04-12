@@ -21,7 +21,7 @@ class DefNavContext extends Component {
 	}
 
 	render() {
-		if (!this.state.def) return null;
+		if (!this.state.def || this.state.def.Error) return null;
 
 		let defFileParts = this.state.def.File.split("/");
 		let pathBreadcrumb = breadcrumb(
