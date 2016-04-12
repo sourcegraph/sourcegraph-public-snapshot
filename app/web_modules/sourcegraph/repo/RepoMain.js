@@ -130,10 +130,17 @@ class RepoMain extends React.Component {
 
 	render() {
 		if (this.props.repoObj && this.props.repoObj.Error) {
+			const err = this.props.repoObj.Error;
+			let msg;
+			if (err.response && err.response.status === 401) {
+				msg = `Sign in to add repositories.`;
+			} else {
+				msg = `Repository "${this.props.repo}" is not available.`;
+			}
 			return (
 				<Header
 					title={`${httpStatusCode(this.props.repoObj.Error)}`}
-					subtitle={`Repository "${this.props.repo}" is not available.`} />
+					subtitle={msg} />
 			);
 		}
 
