@@ -1004,8 +1004,8 @@
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -1014,13 +1014,13 @@
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
-			"revision": "1ac15de144baa9e10c3bebd51077426fd5418f1a",
-			"revisionTime": "2016-03-30T12:37:15-07:00"
+			"revision": "47493fb428ace4e5d76a12672f9135ad0b26ab05",
+			"revisionTime": "2016-04-07T16:43:50-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-go/golang_def",
-			"revision": "1ac15de144baa9e10c3bebd51077426fd5418f1a",
-			"revisionTime": "2016-03-30T12:37:15-07:00"
+			"revision": "47493fb428ace4e5d76a12672f9135ad0b26ab05",
+			"revisionTime": "2016-04-07T16:43:50-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-haskell/haskell",
@@ -1054,98 +1054,98 @@
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/ann",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/buildstore",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/cli",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/config",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/cvg",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/dep",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/flagutil",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/gendata",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/graph",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/grapher",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/plan",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/scan",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pb",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pbio",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/store/phtable",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/toolchain",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/unit",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib/util",
-			"revision": "2056e224cb630721e4ee459f7055d57a1fad272a",
-			"revisionTime": "2016-04-08T04:24:51Z"
+			"revision": "cc284e6b8d507c1869d9c8a822dc2ac83f2bac7c",
+			"revisionTime": "2016-04-11T22:52:28-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/surf",

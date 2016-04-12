@@ -74,16 +74,16 @@ func (c *CoverageCmd) Execute(args []string) error {
 }
 
 var langToExts = map[string][]string{
-	"Go":          []string{".go"},
-	"Java":        []string{".java"},
-	"Python":      []string{".py"},
-	"Ruby":        []string{".rb"},
-	"C++":         []string{".cpp", ".cc", ".cxx", ".c++"},
-	"TypeScript":  []string{".ts"},
-	"C#":          []string{".cs"},
-	"JavaScript":  []string{".js"},
-	"PHP":         []string{".php"},
-	"Objective-C": []string{".m", ".mm"},
+	"Go":          {".go"},
+	"Java":        {".java"},
+	"Python":      {".py"},
+	"Ruby":        {".rb"},
+	"C++":         {".cpp", ".cc", ".cxx", ".c++"},
+	"TypeScript":  {".ts"},
+	"C#":          {".cs"},
+	"JavaScript":  {".js"},
+	"PHP":         {".php"},
+	"Objective-C": {".m", ".mm"},
 }
 var extToLang map[string]string
 
@@ -186,6 +186,8 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 		}
 	}
 
+	missingKeys := make(map[graph.DefKey]struct{})
+
 	for _, item := range data {
 		var validRefs []*graph.Ref
 		for _, ref := range item.Refs {
@@ -198,6 +200,18 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 				} else if _, defExists := defKeys[ref.DefKey()]; defExists {
 					validRefs = append(validRefs, ref)
 					datum.NumRefsValid++
+				} else if GlobalOpt.Verbose {
+					if _, reported := missingKeys[ref.DefKey()]; !reported {
+						missingKeys[ref.DefKey()] = struct{}{}
+						sample := ref.DefKey().Path
+						candidates := make([]graph.DefKey, 0, 1)
+						for key := range defKeys {
+							if key.Path == sample {
+								candidates = append(candidates, key)
+							}
+						}
+						log.Printf("No matching def for %s, candidates are %v", ref.String(), candidates)
+					}
 				}
 			}
 		}
@@ -234,9 +248,14 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 		s.numDefs += datum.NumDefs
 		s.numRefs += datum.NumRefs
 		s.numRefsValid += datum.NumRefsValid
-		if float64(datum.NumDefs+datum.NumRefsValid)/float64(datum.LoC) > fileTokThresh {
+		density := float64(datum.NumDefs+datum.NumRefsValid) / float64(datum.LoC)
+		if density > fileTokThresh {
 			s.numIndexedFiles++
 		} else {
+			if GlobalOpt.Verbose {
+				log.Printf("Uncovered file %s - density: %f, defs: %d, refs: %d, lines of code: %d",
+					file, density, datum.NumDefs, datum.NumRefsValid, datum.LoC)
+			}
 			s.uncoveredFiles = append(s.uncoveredFiles, file)
 		}
 	}
