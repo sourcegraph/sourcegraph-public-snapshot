@@ -1306,13 +1306,6 @@ message Def {
 	graph.Def Def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	pbtypes.HTML DocHTML = 2;
 	graph.DefFormatStrings FmtStrings = 3;
-
-	// Qualified name is the user-friendly form of this definition
-	// containing its name and type, and can be used as the title of
-	// this definition.
-	pbtypes.HTML QualifiedName = 4;
-
-	string URL = 5;
 }
 
 // DefGetOptions specifies options for DefsService.Get.

@@ -1,10 +1,13 @@
+// @flow weak
+
+import type {Annotation} from "sourcegraph/blob/Annotations";
 import {sortAnns} from "sourcegraph/blob/Annotations";
 
 // prepareAnnotations should be called on annotations added on the client side
 // to prepare them in ways described below for presentation in the UI.
 //
 // NOTE: This logic must be kept in sync with annotations.Prepare in Go.
-export default function prepareAnnotations(anns) {
+export default function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
 	// Ensure that syntax highlighting is the innermost annotation so
 	// that the CSS colors are applied (otherwise ref links appear in
 	// the normal link color).
@@ -23,7 +26,9 @@ export default function prepareAnnotations(anns) {
 			const ann2 = anns[j];
 			if (ann.StartByte === ann2.StartByte && ann.EndByte === ann2.EndByte) {
 				if ((ann.URLs || ann.URL) && ann2.URL) {
-					ann.URLs = (ann.URLs || [ann.URL]).concat(ann2.URL);
+					if (ann.URLs) ann.URLs = ann.URLs.concat(ann2.URL);
+					else if (ann.URL) ann.URLs = [ann.URL].concat(ann2.URL);
+					else ann.URLs = [].concat(ann2.URL);
 
 					// Sort for determinism.
 					ann.URLs.sort((a, b) => {

@@ -3,6 +3,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {updatedAt} from "sourcegraph/build/Build";
+import "sourcegraph/build/BuildBackend";
 
 function keyFor(repo, build, task) {
 	let key = `${repo}#${build}`;
@@ -12,11 +13,28 @@ function keyFor(repo, build, task) {
 	return key;
 }
 
+function keyForList(repo, search) {
+	return `${repo}${search}`;
+}
+
 export class BuildStore extends Store {
-	reset() {
+	constructor(dispatcher) {
+		super(dispatcher);
+	}
+
+	toJSON() {
+		return {
+			builds: this.builds,
+			buildLists: this.buildLists,
+			logs: this.logs,
+			tasks: this.tasks,
+		};
+	}
+
+	reset(data) {
 		this.builds = deepFreeze({
-			content: {},
-			_fetchedForCommit: {}, // necessary to track whether falsey means "not fetched" or "empty"
+			content: data && data.builds ? data.builds.content : {},
+			_fetchedForCommit: data && data.builds ? data.builds._fetchedForCommit : {}, // necessary to track whether falsey means "not fetched" or "empty"
 			get(repo, build) {
 				return this.content[keyFor(repo, build)] || null;
 			},
@@ -35,14 +53,20 @@ export class BuildStore extends Store {
 				});
 			},
 		});
+		this.buildLists = deepFreeze({
+			content: data && data.buildLists ? data.buildLists.content : {},
+			get(repo, search) {
+				return this.content[keyForList(repo, search)] || null;
+			},
+		});
 		this.logs = deepFreeze({
-			content: {},
+			content: data && data.logs ? data.logs.content : {},
 			get(repo, build, task) {
 				return this.content[keyFor(repo, build, task)] || null;
 			},
 		});
 		this.tasks = deepFreeze({
-			content: {},
+			content: data && data.tasks ? data.tasks.content : {},
 			get(repo, build) {
 				return this.content[keyFor(repo, build)] || null;
 			},
@@ -55,6 +79,14 @@ export class BuildStore extends Store {
 			this.builds = deepFreeze(Object.assign({}, this.builds, {
 				content: Object.assign({}, this.builds.content, {
 					[keyFor(action.repo, action.buildID)]: action.build,
+				}),
+			}));
+			break;
+
+		case BuildActions.BuildsFetched:
+			this.buildLists = deepFreeze(Object.assign({}, this.buildLists, {
+				content: Object.assign({}, this.buildLists.content, {
+					[keyForList(action.repo, action.search)]: action.builds.Builds || [],
 				}),
 			}));
 			break;

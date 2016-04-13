@@ -178,7 +178,7 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 			Method:  "Update",
 			Result:  Result,
 		})
-		eventsutil.LogBuildRepo(ctx, Result, b)
+		eventsutil.LogBuildCompleted(ctx, b.Success)
 	}
 
 	return b, nil
@@ -239,11 +239,6 @@ func (s *builds) UpdateTask(ctx context.Context, op *sourcegraph.BuildsUpdateTas
 
 	if err := store.BuildsFromContext(ctx).UpdateTask(ctx, op.Task, info); err != nil {
 		return nil, err
-	}
-
-	// If the task has finished, log it's result.
-	if info.EndedAt != nil {
-		eventsutil.LogFinishBuildTask(ctx, t.Label, t.Success, t.Failure)
 	}
 
 	return t, nil

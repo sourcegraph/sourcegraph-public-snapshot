@@ -158,7 +158,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		repoupdater.Enqueue(repo.RepoSpec(), &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login})
 	}
 
-	eventsutil.LogAddRepo(ctx, repo.HTTPCloneURL, repo.Language, repo.Mirror, repo.Private)
+	eventsutil.LogAddRepoCompleted(ctx, repo.Language, repo.Mirror, repo.Private)
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
 	return

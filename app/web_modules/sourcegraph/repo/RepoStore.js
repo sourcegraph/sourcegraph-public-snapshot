@@ -1,3 +1,5 @@
+// @flow weak
+
 import Store from "sourcegraph/Store";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
@@ -9,9 +11,15 @@ function keyFor(repo) {
 }
 
 export class RepoStore extends Store {
-	reset(data) {
+	reset(data?: {resolutions: any, repos: any, branches: any, tags: any}) {
 		this.repos = deepFreeze({
-			content: data && data.repos ? data.repos : {},
+			content: data && data.repos ? data.repos.content : {},
+			get(repo) {
+				return this.content[keyFor(repo)] || null;
+			},
+		});
+		this.resolutions = deepFreeze({
+			content: data && data.resolutions ? data.resolutions.content : {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
 			},
@@ -34,6 +42,10 @@ export class RepoStore extends Store {
 		});
 	}
 
+	toJSON(): any {
+		return {repos: this.repos, resolutions: this.resolutions, branches: this.branches, tags: this.tags};
+	}
+
 	__onDispatch(action) {
 		switch (action.constructor) {
 
@@ -41,6 +53,29 @@ export class RepoStore extends Store {
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				content: Object.assign({}, this.repos.content, {
 					[keyFor(action.repo)]: action.repoObj,
+				}),
+			}));
+			break;
+
+		case RepoActions.RepoResolved:
+			this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
+				content: Object.assign({}, this.resolutions.content, {
+					[keyFor(action.repo)]: action.resolution,
+				}),
+			}));
+			break;
+
+		case RepoActions.RepoCreated:
+			this.repos = deepFreeze(Object.assign({}, this.repos, {
+				content: Object.assign({}, this.repos.content, {
+					[keyFor(action.repo)]: action.repoObj,
+				}),
+			}));
+
+			// Update resolution to reflect the newly created repo.
+			this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
+				content: Object.assign({}, this.resolutions.content, {
+					[keyFor(action.repo)]: {Result: {Repo: {URI: action.repoObj.URI}}},
 				}),
 			}));
 			break;

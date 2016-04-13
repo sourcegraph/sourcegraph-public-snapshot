@@ -2,19 +2,18 @@
 	"renderOutput": {
 		"type": "tr",
 		"props": {
-			"className": "line",
 			"data-line": 42,
 			"children": [
 				{
 					"type": "td",
 					"props": {
-						"className": "line-number",
 						"data-line": 42,
 						"onClick": {
 							"dispatchedToStores": [
 								{
 									"$constructor": "SelectLine",
-									"line": 42
+									"line": 42,
+									"eventName": "SelectLine"
 								}
 							],
 							"dispatchedToBackends": []
@@ -24,7 +23,7 @@
 				{
 					"type": "td",
 					"props": {
-						"className": "line-content",
+						"className": "code undefined",
 						"children": [
 							"hello\nworld"
 						]

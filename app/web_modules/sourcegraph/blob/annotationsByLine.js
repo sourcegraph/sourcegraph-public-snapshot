@@ -1,3 +1,5 @@
+// @flow weak
+
 // annotationsByLine returns an array with one entry per line. Each line's entry
 // is the array of annotations that intersect that line.
 //

@@ -8,28 +8,18 @@ import (
 	htmpl "html/template"
 	"net/url"
 	"os"
-	"strings"
-	"text/template"
-	"time"
 
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/appdash"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/sourcecode"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/textutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
 
@@ -43,22 +33,8 @@ func init() {
 }
 
 var tmplFuncs = htmpl.FuncMap{
-	"personLabel": personLabel,
-
-	"repoLink": repoLink,
-
-	"repoMetaDescription": repoMetaDescription,
-
-	"defQualifiedName":            sourcecode.DefQualifiedName,
-	"defQualifiedNameAndType":     sourcecode.DefQualifiedNameAndType,
-	"overrideStyleViaRegexpFlags": sourcecode.OverrideStyleViaRegexpFlags,
-
 	"appconf": func() interface{} { return &appconf.Flags },
 
-	"buildClass":  buildClass,
-	"buildStatus": buildStatus,
-
-	"add": func(a, b int) int { return a + b },
 	"json": func(v interface{}) (string, error) {
 		b, err := json.Marshal(v)
 		if err != nil {
@@ -66,70 +42,21 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return string(b), nil
 	},
-	"rawJSON": func(v interface{}) (htmpl.JS, error) {
-		b, err := json.Marshal(v)
-		if err != nil {
-			return "", err
+	"rawJSON": func(v *json.RawMessage) htmpl.JS {
+		if v == nil || *v == nil || len(*v) == 0 {
+			return "null"
 		}
-		return htmpl.JS(b), nil
+		return htmpl.JS(string(*v))
 	},
 
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
-	"uiBuild":            func() bool { return !appconf.Flags.NoUIBuild },
 
-	"urlTo":              router.Rel.URLTo,
-	"urlToUserSubroute":  router.Rel.URLToUserSubroute,
-	"urlToRepo":          router.Rel.URLToRepo,
-	"urlToRepoRev":       router.Rel.URLToRepoRev,
-	"urlToRepoBuild":     router.Rel.URLToRepoBuild,
-	"urlToRepoSubroute":  router.Rel.URLToRepoSubroute,
-	"urlToRepoTreeEntry": router.Rel.URLToRepoTreeEntry,
-	"urlToRepoCommit":    router.Rel.URLToRepoCommit,
-	"urlWithSchema":      schemautil.URLWithSchema,
-	"urlToDef":           router.Rel.URLToDef,
-	"urlToWithReturnTo":  urlToWithReturnTo,
-
-	"fileToBreadcrumb": fileToBreadcrumb,
-	"router":           func() *router.Router { return router.Rel },
-
-	"schemaMatchesExceptListAndSortOptions": schemautil.SchemaMatchesExceptListAndSortOptions,
-
-	"classForRoute": func(route string) string {
-		parts := strings.Split(route, ".")
-		classes := make([]string, len(parts))
-		for i := range parts {
-			classes[i] = "route-" + strings.Join(parts[:i+1], "-")
+	"maxLen": func(maxLen int, s string) string {
+		if len(s) <= maxLen {
+			return s
 		}
-		return strings.Join(classes, " ")
+		return s[:maxLen]
 	},
-
-	// coalesce returns the first item in vals that is truthy (using
-	// template.IsTrue), or nil if all items are nil.
-	"coalesce": func(vals ...interface{}) interface{} {
-		for _, v := range vals {
-			truth, ok := template.IsTrue(v)
-			if truth && ok {
-				return v
-			}
-		}
-		return nil
-	},
-
-	"commitSummary":       commitSummary,
-	"commitRestOfMessage": commitRestOfMessage,
-
-	"sanitizeHTML": sanitizeHTML,
-	"textFromHTML": textutil.TextFromHTML,
-	"timeOrNil":    timeutil.TimeOrNil,
-	"timeAgo":      timeutil.TimeAgo,
-	"now":          time.Now,
-	"duration":     duration,
-	"isNil":        isNil,
-	"minTime":      minTime,
-
-	"truncate":         textutil.Truncate,
-	"truncateCommitID": truncateCommitID,
-	"maxLen":           maxLen,
 
 	"assetURL": assets.URL,
 
@@ -149,18 +76,10 @@ var tmplFuncs = htmpl.FuncMap{
 		return appURL.Host
 	},
 
-	"hasField": hasStructField,
-
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 
 	"deployedGitCommitID": func() string { return envutil.GitCommitID },
-	"hostname":            func() string { return hostname },
-
-	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
-
-	"isAdmin": func(ctx context.Context, method string) bool {
-		return accesscontrol.VerifyUserHasAdminAccess(ctx, method) == nil
-	},
+	"fileSearchDisabled":  func() bool { return appconf.Flags.DisableSearch },
 
 	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
 
@@ -171,8 +90,6 @@ var tmplFuncs = htmpl.FuncMap{
 	},
 
 	"buildvar": func() buildvar.Vars { return buildvar.All },
-
-	"showDataCollectionMessage": func() bool { return !metricutil.DisableMetricsCollection() },
 
 	"intercomHMAC": func(email string) string {
 		mac := hmac.New(sha256.New, []byte(os.Getenv("SG_INTERCOM_SECRET_KEY")))

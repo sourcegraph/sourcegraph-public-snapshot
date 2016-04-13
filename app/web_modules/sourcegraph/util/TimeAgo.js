@@ -3,7 +3,9 @@ import React from "react";
 import Component from "sourcegraph/Component";
 
 export function formatDuration(ms) {
-	let s = Math.floor(ms / 1000);
+	if (ms === 0) return "0s";
+
+	let s = Math.floor(ms / 1000) % 60;
 	let m = Math.floor(ms / 1000 / 60) % 60;
 	let h = Math.floor(ms / 1000 / 60 / 60) % 24;
 	let d = Math.floor(ms / 1000 / 60 / 60 / 24) % 30;
@@ -15,9 +17,9 @@ export function formatDuration(ms) {
 	if (yr > 0) parts.push(`${yr}yr`);
 	// Only show smaller time intervals if they are significant.
 	if (yr < 2 && mth > 0) parts.push(`${mth}mth`);
-	if (yr === 0 && d > 0) parts.push(`${d}d`);
-	if (mth === 0 && h > 0) parts.push(`${h}h`);
-	if (d === 0 && m > 0) parts.push(`${m}m`);
+	if (yr === 0 && mth < 3 && d > 0) parts.push(`${d}d`);
+	if (mth === 0 && d < 3 && h > 0) parts.push(`${h}h`);
+	if (d === 0 && h < 12 && m > 0) parts.push(`${m}m`);
 	if (h === 0 && m < 5 && s > 0) parts.push(`${s}s`);
 
 	return parts.join(" ");

@@ -36,7 +36,7 @@ func getBundleJS() (js []byte, cacheKey string, err error) {
 		if err != nil {
 			log.Fatalf("Error parsing Webpack dev server URL %q: %s.", urlStr, err)
 		}
-		url.Path = "/assets/bundle.js"
+		url.Path = "/main.server.js"
 
 		resp, err := http.Get(url.String())
 		if err != nil {

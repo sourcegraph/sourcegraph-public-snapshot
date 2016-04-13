@@ -1,17 +1,31 @@
 import React from "react";
+import Helmet from "react-helmet";
+import {Link} from "react-router";
 
 import Commit from "sourcegraph/vcs/Commit";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as BuildActions from "sourcegraph/build/BuildActions";
-import "./BuildBackend"; // for side effects
 import BuildHeader from "sourcegraph/build/BuildHeader";
 import BuildStore from "sourcegraph/build/BuildStore";
 import BuildTasks from "sourcegraph/build/BuildTasks";
+import * as TreeActions from "sourcegraph/tree/TreeActions";
+import TreeStore from "sourcegraph/tree/TreeStore";
+import {urlToBuilds} from "sourcegraph/build/routes";
+import {trimRepo} from "sourcegraph/repo";
+
+import {Button} from "sourcegraph/components";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Build.css";
 
 const updateIntervalMsec = 1500;
 
 class BuildContainer extends Container {
+	static propTypes = {
+		params: React.PropTypes.object.isRequired,
+	};
+
 	constructor(props) {
 		super(props);
 		this._updateIntervalID = null;
@@ -41,60 +55,48 @@ class BuildContainer extends Container {
 	}
 
 	_update() {
-		Dispatcher.Backends.dispatch(new BuildActions.WantBuild(this.state.build.Repo, this.state.build.ID, true));
-		Dispatcher.Backends.dispatch(new BuildActions.WantTasks(this.state.build.Repo, this.state.build.ID, true));
+		Dispatcher.Backends.dispatch(new BuildActions.WantBuild(this.state.repo, this.state.id, true));
+		Dispatcher.Backends.dispatch(new BuildActions.WantTasks(this.state.repo, this.state.id, true));
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.builds = BuildStore.builds;
+		state.repo = props.params.splat;
+		state.id = props.params.id;
+
+		state.build = BuildStore.builds.get(state.repo, state.id);
+		state.tasks = BuildStore.tasks.get(state.repo, state.id);
+		state.commit = state.build ? TreeStore.commits.get(state.repo, state.build.CommitID, "") : null;
 		state.logs = BuildStore.logs;
-		state.tasks = BuildStore.tasks;
 	}
 
-	stores() { return [BuildStore]; }
+	stores() { return [BuildStore, TreeStore]; }
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.build !== nextState.build) {
-			Dispatcher.Backends.dispatch(new BuildActions.WantBuild(nextState.build.Repo, nextState.build.ID));
-			Dispatcher.Backends.dispatch(new BuildActions.WantTasks(nextState.build.Repo, nextState.build.ID));
+		if (prevState.repo !== nextState.repo || prevState.id !== nextState.id) {
+			Dispatcher.Backends.dispatch(new BuildActions.WantBuild(nextState.repo, nextState.id));
+			Dispatcher.Backends.dispatch(new BuildActions.WantTasks(nextState.repo, nextState.id));
+		}
+		if (nextState.build && prevState.build !== nextState.build) {
+			Dispatcher.Backends.dispatch(new TreeActions.WantCommit(nextState.repo, nextState.build.CommitID, ""));
 		}
 	}
 
 	render() {
-		let tasks = this.state.tasks.get(this.state.build.Repo, this.state.build.ID);
-		if (tasks !== null) {
-			tasks = tasks.BuildTasks;
-		}
-
-		let build = this.state.builds.get(this.state.build.Repo, this.state.build.ID);
-		if (build === null) {
-			build = this.state.build;
-		}
+		if (!this.state.build) return null;
 
 		return (
-			<div className="build-container">
-				<div className="row">
-					<div className="col-md-3 col-lg-2">
-						<BuildHeader build={build} commit={this.state.commit} />
-					</div>
-					<div className="col-md-9 col-lg-10">
-						<Commit commit={this.state.commit} />
-					</div>
+			<div styleName="build-container">
+				<Helmet title={`Build #${this.state.id} | ${trimRepo(this.state.repo)}`} />
+				<div styleName="actions">
+					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
 				</div>
-				<div className="row">
-					<div className="col-md-12">
-						{tasks ? <BuildTasks tasks={tasks} logs={this.state.logs} /> : null}
-					</div>
-				</div>
+				<BuildHeader build={this.state.build} commit={this.state.commit} />
+				{this.state.commit && <span styleName="commit"><Commit commit={this.state.commit} /></span>}
+				{this.state.tasks ? <BuildTasks tasks={this.state.tasks.BuildTasks} logs={this.state.logs} /> : null}
 			</div>
 		);
 	}
 }
 
-BuildContainer.propTypes = {
-	build: React.PropTypes.object.isRequired,
-	commit: React.PropTypes.object.isRequired,
-};
-
-export default BuildContainer;
+export default CSSModules(BuildContainer, styles);

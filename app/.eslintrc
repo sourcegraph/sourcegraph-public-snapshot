@@ -1,4 +1,5 @@
 {
+	"parser": "babel-eslint",
 	"ecmaFeatures": {
 		"arrowFunctions": true,
 		"blockBindings": true,

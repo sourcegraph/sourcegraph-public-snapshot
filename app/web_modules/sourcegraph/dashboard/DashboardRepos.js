@@ -1,44 +1,40 @@
 import React from "react";
-import update from "react/lib/update";
+import {Link} from "react-router";
+
+import debounce from "lodash/function/debounce";
 
 import Component from "sourcegraph/Component";
-import Styles from "./styles/Dashboard.css";
-import context from "sourcegraph/context";
-import NotificationWell from "sourcegraph/dashboard/NotificationWell";
+import context from "sourcegraph/app/context";
+
+import {Input, Button, Icon} from "sourcegraph/components";
+
 import RepoList from "sourcegraph/dashboard/RepoList";
+
+import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
+
+import EventLogger from "sourcegraph/util/EventLogger";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Dashboard.css";
 
 class DashboardRepos extends Component {
 	constructor(props) {
 		super(props);
-		this.state = {
-			searchQuery: "",
-			filter: null,
-		};
+		this._filterInput = null;
 		this._handleSearch = this._handleSearch.bind(this);
-		this._selectFilter = this._selectFilter.bind(this);
-		this._qualifiedName = this._qualifiedName.bind(this);
+		this._handleSearch = debounce(this._handleSearch, 25);
 		this._showRepo = this._showRepo.bind(this);
 		this._canMirror = this._canMirror.bind(this);
 		this._repoSort = this._repoSort.bind(this);
-		this._showCreateUserWell = this._showCreateUserWell.bind(this);
 		this._showGitHubLinkWell = this._showGitHubLinkWell.bind(this);
-		this._showNoGoRepoWell = this._showNoGoRepoWell.bind(this);
 	}
+
 	reconcileState(state, props) {
 		Object.assign(state, props);
 	}
 
-	_handleSearch(e) {
-		if (typeof e.target === "undefined") return; // TODO(autotest): support DOM events
-		this.setState(update(this.state, {
-			searchQuery: {$set: e.target.value},
-		}));
-	}
-
-	_selectFilter(filterValue) {
-		this.setState(update(this.state, {
-			filter: {$set: filterValue},
-		}));
+	_handleSearch() {
+		this.forceUpdate();
 	}
 
 	_qualifiedName(repo) {
@@ -55,23 +51,15 @@ class DashboardRepos extends Component {
 	}
 
 	_showRepo(repo) {
-		const isPrivate = Boolean(repo.Private);
-		if (this.state.searchQuery && this._qualifiedName(repo).indexOf(this.state.searchQuery) === -1) {
+		if (this._filterInput && this._filterInput.value &&
+			this._qualifiedName(repo).indexOf(this._filterInput.value.trim()) === -1) {
 			return false;
-		}
-		if (this.state.filter) {
-			if (this.state.filter === "private" && !isPrivate) {
-				return false;
-			}
-			if (this.state.filter === "public" && isPrivate) {
-				return false;
-			}
 		}
 		return true; // no filter; return all
 	}
 
 	_canMirror(repo) {
-		return !repo.GitHubID || repo.Language === "Go";
+		return !Boolean(repo.GitHubID) || repo.Language === "Go";
 	}
 
 	_repoTime(repo) {
@@ -89,68 +77,48 @@ class DashboardRepos extends Component {
 	}
 
 	_showCreateUserWell() {
-		return !context.currentUser || !context.currentUser.Login;
+		return !context.currentUser;
 	}
 
 	_showGitHubLinkWell() {
-		return Boolean(context.currentUser) && Boolean(context.currentUser.Login) && this.state.linkGitHub;
-	}
-
-	_showNoGoRepoWell() {
-		return this.state.repos.filter(this._canMirror).length === 0;
+		return context.currentUser && this.state.hasLinkedGitHub !== null && !this.state.hasLinkedGitHub;
 	}
 
 	render() {
 		const filteredRepos = this.state.repos.filter(this._showRepo).sort(this._repoSort);
+		const filteredExampleRepos = this.state.exampleRepos.filter(this._showRepo);
+		const showExampleRepos = this._showCreateUserWell() || this._showGitHubLinkWell() || this.state.repos.length === 0;
+		const enabledRepos = filteredRepos.filter(this._canMirror).concat(showExampleRepos ? filteredExampleRepos : []);
+		const disabledRepos = filteredRepos.filter(repo => !this._canMirror(repo));
 
 		return (
-			<div className={Styles.repos_list}>
-				<nav>
-					<NotificationWell initVisible={this._showCreateUserWell() || this._showGitHubLinkWell() || this._showNoGoRepoWell()}>
-						{this._showCreateUserWell() &&
-							<span>
-								We've set up Sourcegraph on some of the top Go repositories for you to check out.
-								When you are ready, you can
-								<a className={Styles.onboarding_cta_link} href={this.state.signup}>
-									set up Sourcegraph for your own repositories!
+			<div>
+				<div styleName="header">
+					<span styleName="cta">{[
+						this._showCreateUserWell() &&
+							<span key="cta">
+								<Link to="/join">
+								<Button outline={true} color="warning">Add Sourcegraph To My Code</Button>
+								</Link>
+							</span>,
+						this._showGitHubLinkWell() &&
+							<span key="cta">
+								<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
+								<Button outline={true} color="warning"><Icon styleName="github-icon" name="github" />Add My GitHub Repositories</Button>
 								</a>
-							</span>
-						}
-						{this._showGitHubLinkWell() &&
-							<span>
-								Almost there! You'll need to
-								<a className={Styles.onboarding_cta_link} href={this.state.linkGitHubURL}>
-									link your GitHub account
-								</a>
-								to use Sourcegraph on your personal repositories.
-							</span>
-						}
-						{this._showNoGoRepoWell() &&
-							<span>
-								It looks like you do not have any Go repositories. Support for other languages is coming soon!
-							</span>
-						}
-					</NotificationWell>
-					<div className={Styles.repos_header}>
-						<span className={Styles.repos_label}>Repositories</span>
-						{!this.state.linkGitHub &&
-							<input
-								className={Styles.search_input}
-								placeholder="Filter repositories..."
-								value={this.state.searchQuery}
-								onChange={this._handleSearch}
-								type="text" />
-						}
-					</div>
-				</nav>
-				<div className={Styles.list_item_group}>
-					{filteredRepos.length === 0 &&
-						<div className={Styles.repo_section_header}>No Matching Repositories</div>
+							</span>,
+					]}</span>
+					<span styleName="filter"><Input type="text"
+						placeholder="Filter repositories..."
+						domRef={(e) => this._filterInput = e}
+						onChange={this._handleSearch} /></span>
+				</div>
+				<div styleName="list">
+					{enabledRepos.length + disabledRepos.length === 0 &&
+						<div styleName="list-section-header">No Matching Repositories</div>
 					}
-					<RepoList repos={filteredRepos.filter(this._canMirror)}
-						reposDisabled={false} />
-					<RepoList repos={filteredRepos.filter(repo => !this._canMirror(repo))}
-						reposDisabled={true} />
+					<RepoList repos={enabledRepos} reposDisabled={false} />
+					<RepoList repos={disabledRepos} reposDisabled={true} />
 				</div>
 			</div>
 		);
@@ -159,9 +127,8 @@ class DashboardRepos extends Component {
 
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	linkGitHub: React.PropTypes.bool.isRequired,
-	linkGitHubURL: React.PropTypes.string.isRequired,
-	signup: React.PropTypes.string.isRequired,
+	exampleRepos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+	hasLinkedGitHub: React.PropTypes.bool,
 };
 
-export default DashboardRepos;
+export default CSSModules(DashboardRepos, styles);

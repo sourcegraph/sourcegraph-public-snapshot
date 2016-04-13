@@ -34,5 +34,5 @@ if (process.stdin.isTTY) {
 
 	init(cli.input[0]);
 } else {
-	getStdin().then(init);
+	getStdin(init);
 }

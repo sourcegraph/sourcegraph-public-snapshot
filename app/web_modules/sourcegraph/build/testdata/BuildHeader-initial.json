@@ -2,46 +2,48 @@
 	"renderOutput": {
 		"type": "header",
 		"props": {
-			"className": "repo-build",
+			"styleName": "header default",
 			"children": [
 				{
-					"type": "h1",
+					"type": "div",
+					"key": ".0",
 					"props": {
-						"className": "label label-default",
+						"styleName": "number",
+						"children": [
+							"#123"
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".1",
+					"props": {
+						"styleName": "status",
+						"children": [
+							"Queued"
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".2",
+					"props": {
+						"styleName": "date",
 						"children": [
 							{
-								"type": "div",
+								"type": "TimeAgo",
 								"props": {
-									"className": "number",
-									"children": [
-										"#123"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"className": "status",
-									"children": [
-										"Queued"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"props": {
-									"className": "date",
-									"children": [
-										{
-											"type": "TimeAgo",
-											"props": {
-												"time": ""
-											}
-										}
-									]
+									"time": ""
 								}
 							}
 						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".3",
+					"props": {
+						"styleName": "elapsed"
 					}
 				}
 			]

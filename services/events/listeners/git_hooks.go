@@ -66,7 +66,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 	}
 
 	event := payload.Event
-	branchURL, err := router.Rel.URLToRepoRev(repo.URI, event.Branch)
+	branchURL := router.Rel.URLToRepoRev(repo.URI, event.Branch)
 	if err != nil {
 		log15.Warn("postPushHook: error resolving branch URL", "repo", repo.URI, "branch", event.Branch, "error", err)
 		return

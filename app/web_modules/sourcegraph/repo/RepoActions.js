@@ -11,6 +11,33 @@ export class FetchedRepo {
 	}
 }
 
+export class WantResolveRepo {
+	constructor(repo) {
+		this.repo = repo;
+	}
+}
+
+export class RepoResolved {
+	constructor(repo, resolution) {
+		this.repo = repo;
+		this.resolution = resolution;
+	}
+}
+
+export class WantCreateRepo {
+	constructor(repo, createOp) {
+		this.repo = repo;
+		this.createOp = createOp;
+	}
+}
+
+export class RepoCreated {
+	constructor(repo, repoObj) {
+		this.repo = repo;
+		this.repoObj = repoObj;
+	}
+}
+
 export class WantBranches {
 	constructor(repo) {
 		this.repo = repo;
@@ -18,10 +45,9 @@ export class WantBranches {
 }
 
 export class FetchedBranches {
-	constructor(repo, branches, err) {
+	constructor(repo, branches) {
 		this.repo = repo;
 		this.branches = branches;
-		this.err = err;
 	}
 }
 
@@ -32,9 +58,14 @@ export class WantTags {
 }
 
 export class FetchedTags {
-	constructor(repo, tags, err) {
+	constructor(repo, tags) {
 		this.repo = repo;
 		this.tags = tags;
-		this.err = err;
+	}
+}
+
+export class RefreshVCS {
+	constructor(repo) {
+		this.repo = repo;
 	}
 }

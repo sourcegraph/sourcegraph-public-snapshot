@@ -1,8 +1,11 @@
+// @flow weak
+
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {trackPromise} from "sourcegraph/app/status";
 
 const BlobBackend = {
 	fetch: defaultFetch,
@@ -11,16 +14,17 @@ const BlobBackend = {
 		switch (action.constructor) {
 		case BlobActions.WantFile:
 			{
-				let file = BlobStore.files.get(action.repo, action.rev, action.tree);
+				let file = BlobStore.files.get(action.repo, action.rev, action.path);
 				if (file === null) {
-					let revPart = action.rev ? `@${action.rev}` : "";
-					let url = `/.api/repos/${action.repo}${revPart}/-/tree/${action.tree}?ContentsAsString=true`;
-					BlobBackend.fetch(url)
+					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/tree/${action.path}?ContentsAsString=true`;
+					trackPromise(
+						BlobBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
 							.then((data) => Dispatcher.Stores.dispatch(
-								new BlobActions.FileFetched(action.repo, action.rev, action.tree, data)))
-							.catch((err) => console.error(err));
+								new BlobActions.FileFetched(action.repo, action.rev, action.path, data)))
+					);
 				}
 				break;
 			}
@@ -30,17 +34,19 @@ const BlobBackend = {
 				let anns = BlobStore.annotations.get(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte);
 				if (anns === null) {
 					let url = `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.Rev=${action.rev}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
-					BlobBackend.fetch(url)
+					trackPromise(
+						BlobBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
 							.then((data) => {
-								data.Annotations = prepareAnnotations(data.Annotations);
+								if (!data.Error && data.Annotations) data.Annotations = prepareAnnotations(data.Annotations);
 								Dispatcher.Stores.dispatch(
 									new BlobActions.AnnotationsFetched(
 										action.repo, action.rev, action.commitID, action.path,
 										action.startByte, action.endByte, data));
 							})
-							.catch((err) => console.error(err));
+					);
 				}
 				break;
 			}

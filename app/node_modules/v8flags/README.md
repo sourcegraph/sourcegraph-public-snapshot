@@ -1,4 +1,4 @@
-# v8flags [![Build Status](https://secure.travis-ci.org/tkellen/js-v8flags.png)](http://travis-ci.org/tkellen/js-v8flags) [![Build status](https://ci.appveyor.com/api/projects/status/9psgmwayx9kpol1a?svg=true)](https://ci.appveyor.com/project/tkellen/js-v8flags)
+# v8flags [![Build Status](https://secure.travis-ci.org/js-cli/js-v8flags.png)](http://travis-ci.org/js-cli/js-v8flags) [![Build status](https://ci.appveyor.com/api/projects/status/9psgmwayx9kpol1a?svg=true)](https://ci.appveyor.com/project/js-cli/js-v8flags)
 > Get available v8 flags.
 
 [![NPM](https://nodei.co/npm/v8flags.png)](https://nodei.co/npm/v8flags/)
@@ -23,6 +23,7 @@ v8flags(function (err, results) {
 
 ## Release History
 
+* 2015-12-07 - v2.0.11 - cache to temp directory if home is present but unwritable
 * 2015-07-28 - v2.0.10 - don't throw for electron runtime, just call back with empty array
 * 2015-06-25 - v2.0.9 - call back with flags even if cache file can't be written
 * 2015-06-15 - v2.0.7 - revert to 2.0.5 behavior.

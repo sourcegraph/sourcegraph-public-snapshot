@@ -3,11 +3,15 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"reflect"
+	"strconv"
+	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/justinas/nosurf"
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
@@ -34,7 +38,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	mw = append(mw, httpapiauth.PasswordMiddleware, httpapiauth.OAuth2AccessTokenMiddleware)
 	if !metricutil.DisableMetricsCollection() {
 		mw = append(mw, eventsutil.AgentMiddleware)
-		mw = append(mw, eventsutil.DeviceIdMiddleware)
 	}
 
 	if conf.GetenvBool("SG_USE_CSP") {
@@ -52,27 +55,50 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
+	m.Get(apirouter.Signup).Handler(nosurf.New(handler(serveSignup)))
+	m.Get(apirouter.Login).Handler(nosurf.New(handler(serveLogin)))
+	m.Get(apirouter.Logout).Handler(nosurf.New(handler(serveLogout)))
+	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(handler(serveForgotPassword)))
+	m.Get(apirouter.ResetPassword).Handler(nosurf.New(handler(servePasswordReset)))
+
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
-	m.Get(apirouter.Build).Handler(handler(serveBuild))
 	m.Get(apirouter.Builds).Handler(handler(serveBuilds))
+	m.Get(apirouter.BuildTaskLog).Handler(handler(serveBuildTaskLog))
 	m.Get(apirouter.Def).Handler(handler(serveDef))
 	m.Get(apirouter.DefRefs).Handler(handler(serveDefRefs))
 	m.Get(apirouter.DefRefLocations).Handler(handler(serveDefRefLocations))
 	m.Get(apirouter.Defs).Handler(handler(serveDefs))
 	m.Get(apirouter.Repo).Handler(handler(serveRepo))
+	m.Get(apirouter.RepoResolve).Handler(handler(serveRepoResolve))
+	m.Get(apirouter.RepoCreate).Handler(handler(serveRepoCreate))
 	m.Get(apirouter.RepoBranches).Handler(handler(serveRepoBranches))
 	m.Get(apirouter.RepoCommits).Handler(handler(serveRepoCommits))
 	m.Get(apirouter.RepoTree).Handler(handler(serveRepoTree))
 	m.Get(apirouter.RepoTreeList).Handler(handler(serveRepoTreeList))
 	m.Get(apirouter.RepoTreeSearch).Handler(handler(serveRepoTreeSearch))
+	m.Get(apirouter.RepoBuild).Handler(handler(serveRepoBuild))
+	m.Get(apirouter.RepoBuilds).Handler(handler(serveRepoBuilds))
 	m.Get(apirouter.RepoBuildTasks).Handler(handler(serveBuildTasks))
 	m.Get(apirouter.RepoBuildsCreate).Handler(handler(serveRepoBuildsCreate))
 	m.Get(apirouter.RepoTags).Handler(handler(serveRepoTags))
 	m.Get(apirouter.Repos).Handler(handler(serveRepos))
+	m.Get(apirouter.RemoteRepos).Handler(handler(serveRemoteRepos))
 	m.Get(apirouter.SrclibImport).Handler(handler(serveSrclibImport))
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
+	m.Get(apirouter.InternalAppdashUploadPageLoad).Handler(handler(serveInternalAppdashUploadPageLoad))
+
+	// RepoRefresh handler requires the user, so install a middleware just for
+	// it (so other HTTP API requests do not incur the 2-3 DB requests made by
+	// UserMiddleware).
+	//
+	// TODO(slimsag): figure out the UID from the Authorization header directly
+	// which is simpler.
+	wrappedServeRepoRefresh := handler(serveRepoRefresh)
+	m.Get(apirouter.RepoRefresh).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerutil.UserMiddleware(w, r, wrappedServeRepoRefresh.ServeHTTP)
+	}))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -98,6 +124,20 @@ var cspConfig = csp.Config{
 }
 
 var schemaDecoder = schema.NewDecoder()
+
+func init() {
+	schemaDecoder.IgnoreUnknownKeys(true)
+
+	// Register a converter for unix timestamp strings -> time.Time values
+	// (needed for Appdash PageLoadEvent type).
+	schemaDecoder.RegisterConverter(time.Time{}, func(s string) reflect.Value {
+		ms, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return reflect.ValueOf(err)
+		}
+		return reflect.ValueOf(time.Unix(0, ms*int64(time.Millisecond)))
+	})
+}
 
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors

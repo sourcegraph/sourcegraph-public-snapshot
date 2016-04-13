@@ -2,8 +2,8 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 
-import BaseStyles from "./styles/base.css";
-import ModalStyles from "./styles/modals.css";
+import CSSModules from "react-css-modules";
+import styles from "./styles/modal.css";
 
 class Modal extends Component {
 	constructor(props) {
@@ -24,7 +24,7 @@ class Modal extends Component {
 	render() {
 		return (
 			<div ref="modal_container"
-				className={this.state.shown ? ModalStyles.modal_container : BaseStyles.hidden}
+				styleName={this.state.shown ? "container" : "hidden"}
 				onClick={this._onClick}>
 					{this.state.children}
 			</div>
@@ -37,4 +37,4 @@ Modal.propTypes = {
 	onDismiss: React.PropTypes.func,
 };
 
-export default Modal;
+export default CSSModules(Modal, styles);

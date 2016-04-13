@@ -36,7 +36,7 @@
 											"type": "a",
 											"props": {
 												"className": "button btn btn-default btn-xs",
-												"href": "/hr@hv/-/tree/b",
+												"href": "/hr@hv/-/blob/b",
 												"children": [
 													"New"
 												]

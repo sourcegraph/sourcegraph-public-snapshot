@@ -89,10 +89,10 @@ function sourcegraph_activateDefnPopovers(el) {
         if (response.Data) {
           console.log('data')
           if (response.DocHTML){
-            html = "<div><span class='title'>" + response.QualifiedName.__html +"</span>\n<span class='p'>"+ response.DocHTML.__html + "</span>\n<span class='repo'>" + response.Repo + "</span></div>";  
+            html = "<div><span class='title'>" + defQualifiedName(response) +"</span>\n<span class='p'>"+ response.DocHTML.__html + "</span>\n<span class='repo'>" + response.Repo + "</span></div>";  
           }
           else {
-            html = "<div><span class='title'>" + response.QualifiedName.__html + "</span></br><span class='repo'>" + response.Repo + "</span></div>";
+            html = "<div><span class='title'>" + defQualifiedName(response) + "</span></br><span class='repo'>" + response.Repo + "</span></div>";
           }
           ajaxCache[url] = html;
           cb(html);
@@ -108,4 +108,23 @@ function sourcegraph_activateDefnPopovers(el) {
   }
 }
 
+function defQualifiedName(def) {
+	if (!def || !def.FmtStrings) return "(unknown)";
+	var f = def.FmtStrings;
+	return escapeHTML(f.DefKeyword + " ") + "<span style='font-weight:bold'>" + escapeHTML(f.Name.ScopeQualified) + "</span>" + escapeHTML(f.NameAndTypeSeparator + f.Type.ScopeQualified);
+}
 
+var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+};
+
+function escapeHTML(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+		return entityMap[s];
+    });
+}

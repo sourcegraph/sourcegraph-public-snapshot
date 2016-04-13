@@ -1,0 +1,71 @@
+import React from "react";
+
+import Component from "sourcegraph/Component";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/popover.css";
+
+class Popover extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			visible: false,
+		};
+		this._onClick = this._onClick.bind(this);
+	}
+
+	componentDidMount() {
+		if (global.document) {
+			document.addEventListener("click", this._onClick);
+		}
+	}
+
+	componentWillUnmount() {
+		if (global.document) {
+			document.removeEventListener("click", this._onClick);
+		}
+	}
+
+	reconcileState(state, props) {
+		Object.assign(state, props);
+	}
+
+	_onClick(e) {
+		if (this.refs.container && (e.target === this.refs.container || e.target === this.refs.container.children[0])) {
+			// Toggle popover visibility when clicking on container or anywhere else
+			this.setState({
+				visible: !this.state.visible,
+			});
+		} else if (this.refs.content && (e.target !== this.refs.content && e.target !== this.refs.content.children[0])) {
+			// Dismiss popover when clicking on anything else but content.
+			this.setState({
+				visible: false,
+			});
+		}
+	}
+
+	render() {
+		return (
+			<div styleName="container" ref="container">
+				{this.state.children[0]}
+				{this.state.visible &&
+					<div ref="content" styleName={`popover-${this.state.left ? "left" : "right"}`}>
+						{this.state.children[1]}
+					</div>}
+			</div>
+		);
+	}
+}
+
+Popover.propTypes = {
+	children: (props, propName, componentName) => {
+		let v = React.PropTypes.arrayOf(React.PropTypes.element).isRequired(props, propName, componentName);
+		if (v) return v;
+		if (props.children.length !== 2) {
+			return new Error("Popover must be constructed with exactly two children.");
+		}
+	},
+	left: React.PropTypes.bool, // position popover content to the left (default: right)
+};
+
+export default CSSModules(Popover, styles);

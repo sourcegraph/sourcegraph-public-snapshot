@@ -2,185 +2,136 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"styleName": "tree-common",
 			"children": [
 				{
-					"type": "Modal",
+					"type": "div",
+					"key": ".0",
 					"props": {
-						"shown": false,
+						"styleName": "input-container",
 						"children": [
 							{
-								"type": "div",
+								"type": "WrappedComponent",
 								"props": {
+									"type": "text",
+									"block": true,
+									"autoFocus": true,
+									"defaultValue": "",
+									"placeholder": "Jump to symbols or files..."
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".1",
+					"props": {
+						"styleName": "list-header",
+						"children": [
+							"Symbols"
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".3",
+					"props": {
+						"styleName": "list-header",
+						"children": [
+							"Files",
+							{
+								"type": "span",
+								"key": ".1",
+								"props": {
+									"styleName": "file-path",
 									"children": [
 										{
-											"type": "div",
+											"type": "WrappedComponent",
+											"key": ".0",
 											"props": {
+												"repo": "repo/"
+											}
+										},
+										{
+											"type": "",
+											"key": ".1:$0",
+											"props": {
+												"to": "/repo@rev/-/tree/p1",
+												"styleName": "path-inactive",
 												"children": [
-													{
-														"type": "input",
-														"ref": "input",
-														"props": {
-															"type": "text",
-															"onFocus": {
-																"dispatchedToStores": [],
-																"dispatchedToBackends": [
-																	{
-																		"$constructor": "WantSrclibDataVersion",
-																		"repo": "repo",
-																		"rev": "rev"
-																	},
-																	{
-																		"$constructor": "WantFileList",
-																		"repo": "repo",
-																		"rev": "rev"
-																	}
-																]
-															},
-															"autoFocus": true,
-															"placeholder": "Jump to symbols or files..."
-														}
-													}
+													"p1"
+												],
+												"onlyActiveOnIndex": false,
+												"className": "",
+												"style": {}
+											}
+										},
+										{
+											"type": "span",
+											"key": ".1:$-1",
+											"props": {
+												"styleName": "path-sep",
+												"children": [
+													"/"
 												]
 											}
 										},
 										{
-											"type": "div",
+											"type": "",
+											"key": ".1:$1",
 											"props": {
+												"to": "/repo@rev/-/tree/p1/p2",
+												"styleName": "path-active",
 												"children": [
-													"Symbols"
-												]
-											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"children": [
-													"Files",
-													{
-														"type": "div",
-														"props": {
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"onClick": {
-																			"dispatchedToStores": [
-																				{
-																					"$constructor": "GoToDirectory",
-																					"path": []
-																				}
-																			],
-																			"dispatchedToBackends": []
-																		},
-																		"children": [
-																			"repo"
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"onClick": {
-																			"dispatchedToStores": [
-																				{
-																					"$constructor": "GoToDirectory",
-																					"path": []
-																				}
-																			],
-																			"dispatchedToBackends": []
-																		},
-																		"children": [
-																			"/"
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "span",
-																				"props": {
-																					"children": [
-																						"a"
-																					]
-																				}
-																			}
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "div",
-											"props": {
-												"children": [
-													{
-														"type": "div",
-														"key": "/repo@rev/-/tree/a",
-														"props": {
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "fa fa-file-text-o"
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			"a"
-																		]
-																	}
-																}
-															]
-														}
-													},
-													{
-														"type": "div",
-														"key": "/repo@rev/-/tree/b",
-														"props": {
-															"children": [
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			{
-																				"type": "i",
-																				"props": {
-																					"className": "fa fa-file-text-o"
-																				}
-																			}
-																		]
-																	}
-																},
-																{
-																	"type": "span",
-																	"props": {
-																		"children": [
-																			"b"
-																		]
-																	}
-																}
-															]
-														}
-													}
-												]
+													"p2"
+												],
+												"onlyActiveOnIndex": false,
+												"className": "",
+												"style": {}
 											}
 										}
 									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".4",
+					"props": {
+						"styleName": "list-item-group",
+						"children": [
+							{
+								"type": "",
+								"key": ".$/repo@rev/-/blob/p1/p2/f3",
+								"props": {
+									"styleName": "list-item-selected",
+									"to": "/repo@rev/-/blob/p1/p2/f3",
+									"children": [
+										{
+											"type": "span",
+											"key": ".0",
+											"props": {
+												"style": {
+													"paddingRight": "1rem"
+												},
+												"children": [
+													{
+														"type": "WrappedComponent",
+														"props": {
+															"name": "file"
+														}
+													}
+												]
+											}
+										},
+										"f3"
+									],
+									"onlyActiveOnIndex": false,
+									"className": "",
+									"style": {}
 								}
 							}
 						]

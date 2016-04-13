@@ -1,51 +1,110 @@
+// @flow
+
 import React from "react";
-import update from "react/lib/update";
-import URL from "url";
+import ReactDOM from "react-dom";
 import Fuze from "fuse.js";
-import classNames from "classnames";
+import {Link} from "react-router";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
-import * as router from "sourcegraph/util/router";
+import trimLeft from "lodash/string/trimLeft";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import DefStore from "sourcegraph/def/DefStore";
 import "sourcegraph/tree/TreeBackend";
 import "sourcegraph/def/DefBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import Header from "sourcegraph/components/Header";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
+import {urlToBlob} from "sourcegraph/blob/routes";
+import {urlToDef} from "sourcegraph/def/routes";
+import {urlToTree} from "sourcegraph/tree/routes";
+import {httpStatusCode} from "sourcegraph/app/status";
+import {urlToBuilds} from "sourcegraph/build/routes";
+import type {Def} from "sourcegraph/def";
+import type {Route} from "react-router";
 
-import Modal from "sourcegraph/components/Modal";
+import {Input, Loader, Icon, RepoLink} from "sourcegraph/components";
 
-import TreeStyles from "./styles/Tree.css";
-import BaseStyles from "sourcegraph/components/styles/base.css";
+import breadcrumb from "sourcegraph/util/breadcrumb";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Tree.css";
 
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 15;
+const EMPTY_PATH = [];
+
+function pathSplit(path: string): string[] {
+	if (path === "") throw new Error("invalid empty path");
+	if (path === "/") return EMPTY_PATH;
+	path = trimLeft(path, "/");
+	return path.split("/");
+}
+
+function pathJoin(pathComponents: string[]): string {
+	if (pathComponents.length === 0) return "/";
+	return pathComponents.join("/");
+}
 
 class TreeSearch extends Container {
-	constructor(props) {
+	static propTypes = {
+		repo: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string.isRequired,
+		path: React.PropTypes.string.isRequired,
+		onSelectPath: React.PropTypes.func.isRequired,
+		onChangeQuery: React.PropTypes.func.isRequired,
+		query: React.PropTypes.string,
+		overlay: React.PropTypes.bool,
+		prefetch: React.PropTypes.bool,
+		location: React.PropTypes.object,
+		route: React.PropTypes.object,
+	};
+
+	props: {
+		repo: string;
+		rev: string;
+		path: string;
+		overlay: boolean;
+		prefetch: ?boolean;
+		location: Location;
+		route: Route;
+		onChangeQuery: (query: string) => void;
+		onSelectPath: (path: string) => void;
+	};
+
+	state: TreeSearch.props & {
+		query: string;
+		focused: boolean;
+		matchingDefs: {Defs: Array<Def>};
+		selectionIndex: number;
+	};
+
+	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
+		status: React.PropTypes.object,
+	};
+
+	constructor(props: TreeSearch.props) {
 		super(props);
 		this.state = {
-			visible: !props.overlay,
+			query: "",
 			focused: !props.overlay,
 			matchingDefs: {Defs: []},
-			allFiles: [],
-			matchingFiles: [],
-			fileResults: [], // either the full directory tree (for empty query) or matching file paths
-			query: "",
 			selectionIndex: 0,
 		};
+		this._queryInput = null;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
+		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
+		this._setSelectedItem = this._setSelectedItem.bind(this);
 		this._focusInput = this._focusInput.bind(this);
+		this._handleFocus = this._handleFocus.bind(this);
 		this._blurInput = this._blurInput.bind(this);
-		this._dismissModal = this._dismissModal.bind(this);
-		this._getSelectionURL = this._getSelectionURL.bind(this);
+		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._debouncedSetQuery = debounce((query) => {
-			const matchingFiles = (query && this.state.fuzzyFinder) ?
-				this.state.fuzzyFinder.search(query).map(i => this.state.allFiles[i]) :
-				this.state.allFiles;
-			this.setState({query: query, matchingFiles: matchingFiles, selectionIndex: 0});
+			if (query !== this.state.query) {
+				this.props.onChangeQuery(query);
+			}
 		}, 75, {leading: false, trailing: true});
 	}
 
@@ -56,9 +115,7 @@ class TreeSearch extends Container {
 		}
 
 		if (global.window) {
-			window.addEventListener("focus", () => {
-				if (this.state.visible) this._focusInput();
-			});
+			window.addEventListener("focus", this._focusInput);
 		}
 	}
 
@@ -68,95 +125,38 @@ class TreeSearch extends Container {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
 		if (global.window) {
-			window.removeEventListener("focus");
+			window.removeEventListener("focus", this._focusInput);
 		}
 	}
 
-	stores() { return [TreeStore, DefStore]; }
+	stores(): Array<Object> { return [TreeStore, DefStore]; }
 
-	reconcileState(state, props) {
-		let navigatedDirectory = false;
-		if (state.currPath !== props.currPath) {
-			// Directory navigation should reset selectionIndex to the first result.
-			navigatedDirectory = true;
-		}
-		state.navigatedDirectory = navigatedDirectory;
-
+	reconcileState(state: TreeSearch.state, props: TreeSearch.props): void {
 		Object.assign(state, props);
 
-		const setFileList = () => {
-			if (state.query === "") {
-				// Show entire file tree as file results.
-				if (state.fileTree) {
-					let dirLevel = state.fileTree;
-					for (const part of state.currPath) {
-						if (dirLevel.Dirs[part]) {
-							dirLevel = dirLevel.Dirs[part];
-						} else {
-							break;
-						}
-					}
-					const dirs = Object.keys(dirLevel.Dirs).map(dir => ({
-						name: dir,
-						isDirectory: true,
-						url: router.tree(this.props.repo, this.props.rev,
-							`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${dir}`),
-					}));
-
-					state.fileResults = dirs.concat(dirLevel.Files.map(file => ({
-						name: file,
-						isDirectory: false,
-						url: router.tree(this.props.repo, this.props.rev,
-							`${state.currPath.join("/")}${state.currPath.length > 0 ? "/" : ""}${file}`),
-					})));
-				}
-
-			} else if (state.matchingFiles) {
-				state.fileResults = state.matchingFiles.map(file => ({
-					name: file,
-					isDirectory: false,
-					url: router.tree(this.props.repo, this.props.rev, file),
-				}));
-			}
-		};
+		state.query = props.query || "";
 
 		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
-
-		let sourceFileList = TreeStore.fileLists.get(state.repo, state.rev);
-		sourceFileList = sourceFileList ? sourceFileList.Files : null;
-		if (state.allFiles !== sourceFileList) {
-			state.allFiles = sourceFileList;
-			if (sourceFileList) {
-				state.fuzzyFinder = state.allFiles && new Fuze(state.allFiles, {
-					distance: 1000,
-					location: 0,
-					threshold: 0.1,
-				});
-			}
-			setFileList();
-		}
+		state.fileList = TreeStore.fileLists.get(state.repo, state.rev);
 
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query) : null;
-
-		if (state.processedQuery !== state.query) {
-			// Recompute file list when query changes.
-			state.processedQuery = state.query;
-			setFileList();
-		}
-		if (navigatedDirectory) {
-			setFileList();
+		if (state.matchingDefs !== null) {
+			state.lastDefinedMatchingDefs = state.matchingDefs;
+		} else {
+			// Prevent flashing "No Matches" while a query is in progress.
+			state.matchingDefs = state.lastDefinedMatchingDefs || null;
 		}
 	}
 
-	onStateTransition(prevState, nextState) {
-		const becameVisible = nextState.visible && nextState.visible !== prevState.visible;
+	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
-		if (becameVisible || prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
+		if (prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
 			Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev));
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
 		}
-		if (nextState.srclibDataVersion !== prevState.srclibDataVersion) {
+
+		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
 				Dispatcher.Backends.dispatch(
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query)
@@ -164,32 +164,70 @@ class TreeSearch extends Container {
 			}
 		}
 
-		if (nextState.query !== prevState.query) {
-			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
-				Dispatcher.Backends.dispatch(
-					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query)
-				);
+		if (prevState.fileList !== nextState.fileList) {
+			nextState.fuzzyFinder = nextState.fileList ? new Fuze(nextState.fileList.Files, {
+				distance: 1000,
+				location: 0,
+				threshold: 0.1,
+			}) : null;
+		}
+
+		if (prevState.path !== nextState.path || prevState.query !== nextState.query || prevState.fileList !== nextState.fileList || prevState.fileTree !== nextState.fileTree) {
+			nextState.fileResults = null;
+
+			// Show entire file tree as file results.
+			//
+			// TODO Find a better way to do this without updating state in onStateTransition.
+			if (!nextState.query) {
+				if (nextState.fileTree) {
+					let dirLevel = nextState.fileTree;
+					let err;
+					for (const part of pathSplit(nextState.path)) {
+						if (dirLevel.Dirs[part]) {
+							dirLevel = dirLevel.Dirs[part];
+						} else {
+							if (!dirLevel.Dirs[part] && !dirLevel.Files[part]) {
+								err = {response: {body: `invalid path: '${part}'`, status: 404}};
+								this.context.status.error(err);
+							}
+							break;
+						}
+					}
+
+					const pathPrefix = nextState.path.replace(/^\/$/, "");
+					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dir => ({
+						name: dir,
+						isDirectory: true,
+						path: `${pathPrefix}/${dir}`,
+						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dir}`),
+					})) : [];
+					const files = !err ? dirLevel.Files.map(file => ({
+						name: file,
+						isDirectory: false,
+						url: urlToBlob(nextState.repo, nextState.rev, `${pathPrefix}/${file}`),
+					})) : [];
+					// TODO Handle errors in a more standard way.
+					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
+				}
+			} else {
+				nextState.selectionIndex = 0;
+				if (nextState.fuzzyFinder) {
+					nextState.fileResults = nextState.fuzzyFinder.search(nextState.query).map(i => nextState.fileList.Files[i]).map(file => ({
+						name: file,
+						isDirectory: false,
+						url: urlToBlob(nextState.repo, nextState.rev, file),
+					}));
+				}
 			}
 		}
 	}
 
-	_handleKeyDown(e) {
-		const tag = e.target.tagName;
+	_navigateTo(url: string) {
+		this.context.router.push(url);
+	}
 
-		if (this.state.overlay) {
-			switch (e.keyCode) {
-			case 84: // "t"
-				if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
-				this._focusInput();
-				e.preventDefault();
-				break;
-
-			case 27: // ESC
-				this._dismissModal();
-			}
-		}
-
-		let idx, max, part;
+	_handleKeyDown(e: KeyboardEvent) {
+		let idx, max;
 		switch (e.keyCode) {
 		case 40: // ArrowDown
 			idx = this._normalizedSelectionIndex();
@@ -197,9 +235,10 @@ class TreeSearch extends Container {
 
 			this.setState({
 				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
-			});
+			}, this._scrollToVisibleSelection);
 
-			e.preventDefault(); // TODO: make keyboard actions scroll automatically with selection
+			this._temporarilyIgnoreMouseSelection();
+			e.preventDefault();
 			break;
 
 		case 38: // ArrowUp
@@ -208,55 +247,60 @@ class TreeSearch extends Container {
 
 			this.setState({
 				selectionIndex: idx < 1 ? max-1 : idx-1,
-			});
+			}, this._scrollToVisibleSelection);
 
-			e.preventDefault(); // TODO: make keyboard actions scroll automatically with selection
+			this._temporarilyIgnoreMouseSelection();
+			e.preventDefault();
 			break;
 
 		case 37: // ArrowLeft
-			if (this.state.currPath.length !== 0) {
-				Dispatcher.Stores.dispatch(new TreeActions.UpDirectory());
+			if (this.state.path.length !== 0) {
+				// Remove last item from path.
+				const parts = pathSplit(this.state.path);
+				const parentPath = pathJoin(parts.splice(0, parts.length - 1));
+				this.state.onSelectPath(parentPath);
 			}
+			this._temporarilyIgnoreMouseSelection();
 
 			// Allow default (cursor movement in <input>)
 			break;
 
 		case 39: // ArrowRight
-			part = this._getSelectedPathPart();
-			if (part) {
-				Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(part));
-			}
+			this._onSelection();
+			this._temporarilyIgnoreMouseSelection();
 
 			// Allow default (cursor movement in <input>)
 			break;
 
 		case 13: // Enter
-			part = this._getSelectedPathPart();
-			if (part) {
-				Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(part));
-			} else {
-				window.location = this._getSelectionURL();
-			}
+			this._onSelection();
+			this._temporarilyIgnoreMouseSelection();
 			e.preventDefault();
 			break;
 
 		default:
 			if (this.state.focused) {
-				setTimeout(() => this._debouncedSetQuery(this.refs.input ? this.refs.input.value : ""), 0);
+				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.value : ""), 0);
 			}
 			break;
 		}
 	}
 
-	_focusInput() {
-		if (global.document && document.body.dataset.fileSearchDisabled) {
-			return null;
-		}
+	_scrollToVisibleSelection() {
+		if (this._selectedItem) ReactDOM.findDOMNode(this._selectedItem).scrollIntoView(false);
+	}
 
-		this.setState({
-			visible: true,
-			focused: true,
-		}, () => this.refs.input && this.refs.input.focus());
+	_setSelectedItem(e: any) {
+		this._selectedItem = e;
+	}
+
+	_focusInput() {
+		this.setState({focused: true});
+		if (this.refs.input) this.refs.input.focus();
+	}
+
+	_handleFocus() {
+		this._focusInput();
 	}
 
 	_blurInput() {
@@ -266,50 +310,47 @@ class TreeSearch extends Container {
 		});
 	}
 
-	_dismissModal() {
-		if (this.state.overlay) {
-			this.setState({
-				visible: false,
-			});
-		}
-	}
-
-	_numSymbolResults() {
+	_numSymbolResults(): number {
 		if (!this.state.matchingDefs || !this.state.matchingDefs.Defs) return 0;
-		return this.state.matchingDefs.Defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingDefs.Defs.length;
+		return Math.min(this.state.matchingDefs.Defs.length, SYMBOL_LIMIT);
 	}
 
-	_numFileResults() {
-		let numFileResults = this.state.fileResults.length > FILE_LIMIT ? FILE_LIMIT : this.state.fileResults.length;
+	_numFileResults(): number {
+		if (!this.state.fileResults) return 0;
+		let numFileResults = Math.min(this.state.fileResults.length, FILE_LIMIT);
 		// Override file results to show full directory tree on empty query, or when
 		// query is 3+ chars.
-		if (this.state.query === "" || this.state.query.length >= 3) numFileResults = this.state.fileResults.length;
+		if (!this.state.query || this.state.query.length >= 3) numFileResults = this.state.fileResults.length;
 		return numFileResults;
 	}
 
-	_numResults() {
+	_numResults(): number {
 		return this._numFileResults() + this._numSymbolResults();
 	}
 
-	_normalizedSelectionIndex() {
-		const numResults = this._numResults();
-		if (this.state.navigatedDirectory) {
-			return Math.min(this.state.selectionIndex, this._numSymbolResults(), numResults - 1);
-		}
-		return Math.min(this.state.selectionIndex, numResults - 1);
+	_normalizedSelectionIndex(): number {
+		return Math.min(this.state.selectionIndex, this._numResults() - 1);
 	}
 
-	_getSelectionURL() {
+	_onSelection() {
 		const i = this._normalizedSelectionIndex();
 		if (i < this._numSymbolResults()) {
+			// Def result
 			const def = this.state.matchingDefs.Defs[i];
-			return router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
+			this._navigateTo(urlToDef(def));
+		} else {
+			// File or dir result
+			let result = this.state.fileResults[i - this._numSymbolResults()];
+			if (result.isDirectory) {
+				this.state.onSelectPath(result.path);
+			} else {
+				this._navigateTo(result.url);
+			}
 		}
-		return this.state.fileResults[i - this._numSymbolResults()].url;
 	}
 
 	// returns the selected directory name, or null
-	_getSelectedPathPart() {
+	_getSelectedPathPart(): ?string {
 		const i = this._normalizedSelectionIndex();
 		if (i < this._numSymbolResults()) {
 			return null;
@@ -321,7 +362,7 @@ class TreeSearch extends Container {
 	}
 
 	// returns the selected file name, or null
-	_getSelectedFile() {
+	_getSelectedFile(): ?string {
 		const i = this._normalizedSelectionIndex();
 		if (i < this._numSymbolResults()) {
 			return null;
@@ -332,23 +373,16 @@ class TreeSearch extends Container {
 		return null;
 	}
 
-	_listItems() {
+	_listItems(): Array<any> {
 		const items = this.state.fileResults;
-		const emptyItem = <div className={TreeStyles.list_item} key="_nofiles"><i>No matches.</i></div>;
+		const emptyItem = <div styleName="list-item list-item-empty" key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
 
 		let list = [],
 			limit = items.length > FILE_LIMIT ? FILE_LIMIT : items.length;
 
 		// Override limit if query is empty to show the full directory tree.
-		if (this.state.query === "") limit = items.length;
-		const onClick = (item) => {
-			if (item.isDirectory) return () => Dispatcher.Stores.dispatch(new TreeActions.DownDirectory(item.name));
-			if (global.window) {
-				return () => window.location.href = item.url;
-			}
-			return null;
-		};
+		if (!this.state.query) limit = items.length;
 
 		for (let i = 0; i < limit; i++) {
 			let item = items[i],
@@ -357,152 +391,152 @@ class TreeSearch extends Container {
 			const selected = this._normalizedSelectionIndex() - this._numSymbolResults() === i;
 
 			list.push(
-				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item}
-					onMouseOver={() => this._selectItem(i + this._numSymbolResults())}
-					onClick={onClick(item)}
+				<Link styleName={selected ? "list-item-selected" : "list-item"}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
+					ref={selected ? this._setSelectedItem : null}
+					to={itemURL}
 					key={itemURL}>
-					<span className={TreeStyles.filetype_icon}><i className={classNames("fa", {
-						"fa-file-text-o": !item.isDirectory,
-						"fa-folder": item.isDirectory,
-					})}></i>
-					</span>
-					{false && <a className={TreeStyles.link} href={itemURL}>{item.name}</a>}
-					{<span>{item.name}</span>}
-				</div>
+					<span style={{paddingRight: "1rem"}}><Icon name={item.isDirectory ? "folder" : "file"} /></span>
+					{item.name}
+				</Link>
 			);
 		}
 
 		return list;
 	}
 
-	_selectItem(i) {
+	_selectItem(i: number): void {
 		this.setState({
 			selectionIndex: i,
 		});
 	}
 
-	_symbolItems() {
-		const loadingItem = <div className={TreeStyles.list_item} key="_loadingsymbol"><i>Loading...</i></div>;
-		if (!this.state.matchingDefs) return [loadingItem];
+	// _mouseSelectItem causes i to be selected ONLY IF the user is using the
+	// mouse to select. It ignores the case where the user is using the up/down
+	// keys to change the selection and the window scrolls, causing the mouse cursor
+	// to incidentally hover a different element. We ignore mouse selections except
+	// those where the mouse was actually moved.
+	_mouseSelectItem(ev: MouseEvent, i: number): void {
+		if (this._ignoreMouseSelection) return;
+		this._selectItem(i);
+	}
 
-		const emptyItem = <div className={TreeStyles.list_item} key="_nosymbol"><i>No matches.</i></div>;
+	// _temporarilyIgnoreMouseSelection is used to ignore mouse selections. See
+	// _mouseSelectItem.
+	_temporarilyIgnoreMouseSelection() {
+		if (!this._debouncedUnignoreMouseSelection) {
+			this._debouncedUnignoreMouseSelection = debounce(() => {
+				this._ignoreMouseSelection = false;
+			}, 200, {leading: false, trailing: true});
+		}
+		this._debouncedUnignoreMouseSelection();
+		this._ignoreMouseSelection = true;
+	}
+
+	_symbolItems(): Array<any> {
+		const emptyItem = <div styleName="list-item list-item-empty" key="_nosymbol"><i>No matches.</i></div>;
+		if (!this.state.matchingDefs) return [emptyItem];
+
 		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
 
 		let list = [],
 			limit = this.state.matchingDefs.Defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingDefs.Defs.length;
 
-		const onClick = (url) => {
-			if (global.window) {
-				return () => window.location.href = url;
-			}
-			return null;
-		};
-
 		for (let i = 0; i < limit; i++) {
 			let def = this.state.matchingDefs.Defs[i];
-			let defURL = router.def(def.Repo, def.CommitID, def.UnitType, def.Unit, def.Path);
+			let defURL = urlToDef(def);
 
 			const selected = this._normalizedSelectionIndex() === i;
 
 			list.push(
-				<div className={selected ? TreeStyles.list_item_selected : TreeStyles.list_item}
-					onMouseOver={() => this._selectItem(i)}
-					onClick={onClick(defURL)}
+				<Link styleName={selected ? "list-item-selected" : "list-item"}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
+					ref={selected ? this._setSelectedItem : null}
+					to={defURL}
 					key={defURL}>
-					<div key={defURL}>
-						<code>{qualifiedNameAndType(def)}</code>
-					</div>
-				</div>
+					<code>{qualifiedNameAndType(def)}</code>
+				</Link>
 			);
 		}
 
 		return list;
 	}
 
-	_buildsURL() {
-		if (global.location && global.location.href) {
-			let url = URL.parse(global.location.href);
-			url.pathname = `${this.state.repo}/-/builds`;
-			return URL.format(url);
-		}
+	_overlayBreadcrumb() {
+		const urlToPathPrefix = (i) => {
+			const parts = pathSplit(this.state.path);
+			const pathPrefix = pathJoin(parts.splice(0, i + 1));
+			return urlToTree(this.state.repo, this.state.rev, pathPrefix);
+		};
 
-		return "";
-	}
+		let filepath = this.state.path;
+		if (filepath.indexOf("/") === 0) filepath = filepath.substring(1);
 
-	_wrapModalContainer(elem) {
-		if (this.state.overlay) return <Modal shown={this.state.visible} onDismiss={this._dismissModal}>{elem}</Modal>;
-		return elem;
+		let fileBreadcrumb = breadcrumb(
+			filepath,
+			(i) => <span key={i} styleName="path-sep">/</span>,
+			(path, component, i, isLast) => (
+				<Link to={urlToPathPrefix(i)}
+					key={i}
+					styleName={isLast ? "path-active" : "path-inactive"}>
+					{component}
+				</Link>
+			),
+		);
+
+		return (
+			<span styleName="file-path">
+				<RepoLink repo={`${this.state.repo}/`} />
+				{fileBreadcrumb}
+			</span>
+		);
 	}
 
 	render() {
-
-		const pathNav = (i) => () => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory(
-			update(this.state.currPath, {$splice: [[i + 1, this.state.currPath.length - 1 - i]]})
-		));
-		const repoParts = this.state.repo.split("/");
-		const path = (<div className={TreeStyles.file_path}>
-			<span className={TreeStyles.repo_part}
-				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>{repoParts[repoParts.length - 1]}</span>
-			<span className={TreeStyles.path_sep}
-				onClick={() => Dispatcher.Stores.dispatch(new TreeActions.GoToDirectory([]))}>/</span>
-			{this.state.currPath.map((part, i) => <span key={i}>
-				<span className={TreeStyles.path_part} onClick={pathNav(i)}>{part}</span>
-				<span className={TreeStyles.path_sep} onClick={pathNav(i)}>/</span>
-				</span>)}
-			{this._getSelectedPathPart() &&
-				<span className={TreeStyles.path_selected}>
-				<span className={TreeStyles.path_part}>{this._getSelectedPathPart()}</span>
-				<span className={TreeStyles.path_sep}>/</span></span>}
-			{this._getSelectedFile() &&
-				<span className={TreeStyles.path_selected}>
-				<span className={TreeStyles.path_part}>{this._getSelectedFile()}</span></span>}
-		</div>);
-
+		if (this.state.fileResults && this.state.fileResults.Error) {
+			let code = httpStatusCode(this.state.fileResults.Error);
+			return (
+				<Header
+					title={`${code}`}
+					subtitle={code === 404 ? `Directory "${this.state.path}" not found.` : "Directory is not available."} />
+			);
+		}
 		return (
-			<div className={this.state.visible ? TreeStyles.tree_container : BaseStyles.hidden}>
-				{this._wrapModalContainer(<div className={this.state.overlay ? TreeStyles.tree_modal : TreeStyles.tree}>
-					<div className={TreeStyles.input_container}>
-						<input className={TreeStyles.input}
-							type="text"
-							onFocus={this._focusInput}
-							onBlur={this._blurInput}
-							autoFocus={true}
-							placeholder="Jump to symbols or files..."
-							ref="input" />
-					</div>
-					<div className={TreeStyles.list_header}>
-						Symbols
-					</div>
-					<div>
-						{this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID && this._symbolItems()}
-						{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
-							<div className={TreeStyles.list_item}>
-								<span className={TreeStyles.icon}><i className="fa fa-spinner fa-spin"></i></span>
-								<i>Sourcegraph is analyzing your code &mdash;&nbsp;
-									<a className={TreeStyles.link} href={this._buildsURL()}>results will be available soon!</a>
-								</i>
-							</div>
-						}
-					</div>
-					<div className={TreeStyles.list_header}>
-						Files
-						{this.state.query === "" && path}
-					</div>
-					<div className={TreeStyles.list_item_group}>
-						{this._listItems()}
-					</div>
-				</div>)}
+			<div styleName="tree-common">
+				<div styleName="input-container">
+					<Input type="text"
+						block={true}
+						onFocus={this._focusInput}
+						onBlur={this._blurInput}
+						autoFocus={true}
+						defaultValue={this.state.query}
+						placeholder="Jump to symbols or files..."
+						domRef={(e) => this._queryInput = e} />
+				</div>
+				<div styleName="list-header">
+					Symbols
+				</div>
+				<div>
+					{this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID && this._symbolItems()}
+					{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
+						<div styleName="list-item list-item-empty">
+							<span style={{paddingRight: "1rem"}}><Loader /></span>
+							<i>Sourcegraph is analyzing your code &mdash;
+								<Link styleName="link" to={urlToBuilds(this.state.repo)}>results will be available soon!</Link>
+							</i>
+						</div>
+					}
+				</div>
+				<div styleName="list-header">
+					Files
+					{!this.state.query && this.state.overlay && this._overlayBreadcrumb()}
+				</div>
+				<div styleName="list-item-group">
+					{this._listItems()}
+				</div>
 			</div>
 		);
 	}
 }
 
-TreeSearch.propTypes = {
-	repo: React.PropTypes.string.isRequired,
-	rev: React.PropTypes.string.isRequired,
-	currPath: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-	overlay: React.PropTypes.bool.isRequired,
-	prefetch: React.PropTypes.bool,
-};
-
-export default TreeSearch;
+export default CSSModules(TreeSearch, styles, {allowMultiple: true});

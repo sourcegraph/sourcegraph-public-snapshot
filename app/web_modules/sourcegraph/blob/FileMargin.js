@@ -1,10 +1,12 @@
+// @flow weak
+
 import React from "react";
 import Component from "sourcegraph/Component";
 
 export default class FileMargin extends Component {
 	constructor(props) {
 		super(props);
-		this.state = {extraExtraPadding: 0};
+		this.state = {extraPadding: 0};
 	}
 
 	componentDidMount() {
@@ -40,12 +42,12 @@ export default class FileMargin extends Component {
 			}
 		}
 
-		this.setState({extraPadding: 0});
+		if (this.state.extraPadding !== 0) this.setState({extraPadding: 0});
 	}
 
 	render() {
 		return (
-			<div className="sidebar file-sidebar" ref="sidebar" style={{paddingBottom: this.state.extraPadding}}>
+			<div className={this.props.className} ref="sidebar" style={{paddingBottom: this.state.extraPadding}}>
 				{this.state.children && this.state.children.map((child, i) => (
 					<div key={i} style={{position: "absolute", top: `${child.top}px`}} data-offset={child.top}>
 						{child.component}
@@ -61,4 +63,5 @@ FileMargin.propTypes = {
 		React.PropTypes.element,
 	]),
 	getOffsetTopForByte: React.PropTypes.func,
+	className: React.PropTypes.string,
 };

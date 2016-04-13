@@ -1,7 +1,7 @@
 import React from "react";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
-import * as router from "sourcegraph/util/router";
+import {urlToBuild} from "sourcegraph/build/routes";
 import "sourcegraph/build/BuildBackend";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 
@@ -113,7 +113,7 @@ class BuildIndicator extends Component {
 		return (
 			<a key="indicator"
 				className={`build-indicator btn btn-xs text-${cls}`}
-				href={router.build(this.state.repo, this.state.build.ID)}
+				href={urlToBuild(this.state.repo, this.state.build.ID)}
 				title={`Build #${this.state.build.ID} ${status}`}>
 				<i className={`fa ${icon}`}></i>
 			</a>

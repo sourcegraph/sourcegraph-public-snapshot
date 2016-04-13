@@ -1,3 +1,6 @@
+@value colors "./colors.css";
+@value base "./base.css";
+
 /*
 	 TYPE SCALE
 */
@@ -34,7 +37,7 @@
 .system-serif { font-family: serif; }
 /* Monospaced Typefaces (for code) */
 /* From http://cssfontstack.com */
-code, .code { font-family: Consolas, monaco, monospace; }
+code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 /* Sans-Serif Typefaces */
 .helvetica { font-family: helvetica, 'helvetica neue', arial, sans-serif; }
 /* Serif Typefaces */
@@ -43,7 +46,6 @@ code, .code { font-family: Consolas, monaco, monospace; }
 .bodoni { font-family: "Bodoni MT", serif; }
 .calisto { font-family: "Calisto MT", serif; }
 .garamond { font-family: garamond, serif; }
-.brand-circular { font-family: "Circular"; }
 
 /*
 	 FONT STYLE
@@ -71,7 +73,7 @@ code, .code { font-family: Consolas, monaco, monospace; }
 */
 .tracked { letter-spacing: .09em; }
 .tracked-tight { letter-spacing: -.05em; }
-.tracked-mega { letter-spacing: .32em; }
+.tracked-mega { letter-spacing: .18em; }
 
 /*
 	 LINE HEIGHT / LEADING
@@ -147,4 +149,79 @@ code, .code { font-family: Consolas, monaco, monospace; }
 	.measure-narrow-l { max-width: 20em; }
 	.indent-l { text-indent: 1em; margin-top: 0; margin-bottom: 0; }
 	.truncate-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+.header {
+	composes: sans-serif f2 f1-ns;
+	composes: dark-gray from colors;
+}
+@value c_brand-orange from colors;
+.header::after {
+	content: '';
+	display: block;
+	margin-top: 10px;
+	margin-left: 10px;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+.header-center {
+	composes: header tc;
+}
+.header-center::after {
+	content: '';
+	display: block;
+	margin-right: auto;
+	margin-left: auto;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+
+.subheader {
+	composes: f3 lh-copy sans-serif;
+	composes: silver from colors;
+}
+
+.section-header {
+	composes: f2 b sans-serif;
+	composes: mid-gray from colors;
+}
+
+.subsection-header {
+	composes: b f4 tracked sans-serif;
+	composes: gray from colors;
+	text-transform: uppercase;
+}
+
+.small-text {
+	composes: sans-serif f6;
+	composes: silver from colors;
+}
+
+.error-text {
+	composes: sans-serif f5;
+	composes: red from colors;
+}
+
+.normal-text {
+	composes: f4;
+	composes: mid-gray from colors;
+}
+
+.empty-state-text {
+	composes: f4 sans-serif;
+	composes: mid-gray from colors;
+	font-style: italic;
+}
+
+.button-text {
+	composes: sans-serif tc tracked-mega f5;
+}
+
+.input-text {
+	composes: f4 sans-serif;
+	composes: blue from colors;
 }

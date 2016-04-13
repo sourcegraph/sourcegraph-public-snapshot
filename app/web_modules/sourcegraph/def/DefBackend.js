@@ -1,7 +1,10 @@
+// @flow weak
+
 import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {trackPromise} from "sourcegraph/app/status";
 
 const DefBackend = {
 	fetch: defaultFetch,
@@ -10,16 +13,15 @@ const DefBackend = {
 		switch (action.constructor) {
 		case DefActions.WantDef:
 			{
-				let def = DefStore.defs.get(action.url);
+				let def = DefStore.defs.get(action.repo, action.rev, action.def);
 				if (def === null) {
-					DefBackend.fetch(`/.api/repos${action.url}`)
+					trackPromise(
+						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
-							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.url, data)));
+							.catch((err) => ({Error: err}))
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)))
+					);
 				}
 				break;
 			}
@@ -28,55 +30,52 @@ const DefBackend = {
 			{
 				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
 				if (defs === null) {
-					DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
+					trackPromise(
+						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return {Error: true};
-							})
+							.catch((err) => ({Error: err}))
 							.then((data) => {
 								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, data));
-							});
+							})
+					);
 				}
 				break;
 			}
 
 		case DefActions.WantRefLocations:
 			{
-				let refLocations = DefStore.refLocations.get(action.defURL);
+				let refLocations = DefStore.refLocations.get(action.repo, action.rev, action.def);
 				if (refLocations === null) {
-					let url = `/.api/repos${action.defURL}/-/ref-locations`;
-					DefBackend.fetch(url)
+					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/ref-locations`;
+					trackPromise(
+						DefBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return null;
-							})
+							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action.defURL, data));
-							});
+								Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action.repo, action.rev, action.def, data));
+							})
+					);
 				}
 				break;
 			}
 
 		case DefActions.WantRefs:
 			{
-				let refs = DefStore.refs.get(action.defURL, action.repo, action.file);
+				let refs = DefStore.refs.get(action.repo, action.rev, action.def, action.refRepo, action.refFile);
 				if (refs === null) {
-					let url = `/.api/repos${action.defURL}/-/refs?Repo=${encodeURIComponent(action.repo)}`;
-					if (action.file) url += `&Files=${encodeURIComponent(action.file)}`;
-					DefBackend.fetch(url)
+					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/refs?Repo=${encodeURIComponent(action.refRepo)}`;
+					if (action.refFile) url += `&Files=${encodeURIComponent(action.refFile)}`;
+					trackPromise(
+						DefBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
-							.catch((err) => {
-								console.error(err);
-								return null;
-							})
+							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.defURL, action.repo, action.file, data));
-							});
+								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.refRepo, action.refFile, data));
+							})
+					);
 				}
 				break;
 			}

@@ -14,17 +14,29 @@ import (
 )
 
 const (
+	Signup = "signup"
+	Login  = "login"
+	Logout = "logout"
+
+	ForgotPassword = "forgot"
+	ResetPassword  = "reset"
+
 	Annotations      = "annotations"
 	BlackHole        = "blackhole"
-	Build            = "build"
 	Builds           = "builds"
+	BuildTaskLog     = "build.task.log"
 	Def              = "def"
 	DefRefs          = "def.refs"
 	DefRefLocations  = "def.ref.locations"
 	Defs             = "defs"
 	Repo             = "repo"
+	RepoResolve      = "repo.resolve"
+	RepoCreate       = "repo.create"
+	RepoRefresh      = "repo.refresh"
 	RepoBranches     = "repo.branches"
+	RepoBuild        = "repo.build"
 	RepoTree         = "repo.tree"
+	RepoBuilds       = "repo.builds"
 	RepoBuildTasks   = "build.tasks"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoCommits      = "repo.commits"
@@ -32,9 +44,12 @@ const (
 	RepoTreeList     = "repo.tree-list"
 	RepoTreeSearch   = "repo-tree.search"
 	Repos            = "repos"
+	RemoteRepos      = "repos.remote"
 	SrclibImport     = "srclib.import"
 	SrclibCoverage   = "srclib.coverage"
 	SrclibDataVer    = "srclib.data-version"
+
+	InternalAppdashUploadPageLoad = "internal.appdash.upload-page-load"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -46,17 +61,29 @@ func New(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 
+	base.Path("/join").Methods("POST").Name(Signup)
+	base.Path("/login").Methods("POST").Name(Login)
+	base.Path("/logout").Methods("POST").Name(Logout)
+	base.Path("/forgot").Methods("POST").Name(ForgotPassword)
+	base.Path("/reset").Methods("POST").Name(ResetPassword)
+
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
 	base.Path("/builds").Methods("GET").Name(Builds)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
+	base.Path("/repos").Methods("POST").Name(RepoCreate)
+	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
+
+	base.Path("/internal/appdash/upload-page-load").Methods("POST").Name(InternalAppdashUploadPageLoad)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
 	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
+	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repo.Path("/branches").Methods("GET").Name(RepoBranches)
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
@@ -64,11 +91,13 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
+	repo.Path("/builds").Methods("GET").Name(RepoBuilds)
 	repo.Path("/builds").Methods("POST").Name(RepoBuildsCreate)
 	buildPath := `/builds/{Build:\d+}`
-	repo.Path(buildPath).Methods("GET").Name(Build)
+	repo.Path(buildPath).Methods("GET").Name(RepoBuild)
 	build := repo.PathPrefix(buildPath).Subrouter()
 	build.Path("/tasks").Methods("GET").Name(RepoBuildTasks)
+	build.Path(`/tasks/{Task:\d+}/log`).Methods("GET").Name(BuildTaskLog)
 
 	base.Path("/defs").Methods("GET").Name(Defs)
 

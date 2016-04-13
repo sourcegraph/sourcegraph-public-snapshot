@@ -1,0 +1,42 @@
+@value base "sourcegraph/components/styles/base.css";
+
+.avatar {
+	composes: br2 from base;
+	display: inline-block;
+	transition: transform .2s ease-out;
+}
+
+.small {
+	composes: avatar;
+	width: 2rem;
+	height: 2rem;
+	max-width: 2rem;
+	max-height: 2rem;
+}
+.medium {
+	composes: avatar;
+	width: 3rem;
+	height: 3rem;
+	max-width: 3rem;
+	max-height: 3rem;
+}
+.large {
+	composes: avatar;
+	width: 4rem;
+	height: 4rem;
+	max-width: 4rem;
+	max-height: 4rem;
+}
+
+.small:hover {
+	transition: transform .2s ease-out;
+	transform: scale(1.2);
+}
+.medium:hover {
+	transition: transform .2s ease-out;
+	transform: scale(1.2);
+}
+.large:hover {
+	transition: transform .2s ease-out;
+	transform: scale(1.2);
+}

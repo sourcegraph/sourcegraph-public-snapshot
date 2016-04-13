@@ -1,0 +1,201 @@
+@value base "./base.css";
+@value colors "./colors.css";
+@value typography "./typography.css";
+
+.btn {
+    composes: br3 from base;
+    composes: button-text from typography;
+    display: inline-block;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+}
+.btn:focus {
+    outline: 0;
+}
+
+.content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn[disabled],
+.disabled,
+.disabled:hover,
+.disabled:focus,
+.disabled:active {
+    border: none;
+    background-image: none;
+    filter: alpha(opacity=70);
+    opacity: 0.70;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Get rid of the inner focus border. */
+.btn::-moz-focus-inner{
+    padding: 0;
+    border: 0;
+}
+
+.large {
+    composes: pa4 from base
+}
+.normal {
+    composes: pa3 from base;
+}
+.small {
+    composes: pa2 from base;
+}
+
+/* buttons have an active shadow */
+@value c_black-10 from colors;
+@value c_black-90 from colors;
+.active-shadow:active {
+    box-shadow: 0 0 0 1px c_black-10 inset, 0 0 6px c_black-10 inset;
+    border-color: c_black-90;
+}
+
+/* block button fits to width of container */
+.block {
+    composes: btn;
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: center;
+    width: 100%;
+}
+
+/* outline buttons */
+.outline {
+    composes: btn active-shadow;
+    composes: ba from base;
+    composes: bg-white from colors;
+    background-image: none;
+}
+@value c_blue from colors;
+.outline-primary {
+    composes: outline;
+    composes: b--blue-8 blue-8 from colors;
+}
+.outline-primary:hover,
+.outline-primary:focus {
+    border-color: c_blue;
+    color: c_blue;
+}
+
+@value c_green from colors;
+.outline-success {
+    composes: outline;
+    composes: b--green-8 green-8 from colors;
+}
+.outline-success:hover,
+.outline-success:focus {
+    border-color: c_green;
+    color: c_green;
+}
+
+@value c_red from colors;
+.outline-danger {
+    composes: outline;
+    composes: b--red-8 red-8 from colors;
+}
+.outline-danger:hover,
+.outline-danger:focus {
+    border-color: c_red;
+    color: c_red;
+}
+
+@value c_teal from colors;
+.outline-info {
+    composes: outline;
+    composes: b--teal-8 teal-8 from colors;
+}
+.outline-info:hover,
+.outline-info:focus {
+    border-color: c_teal;
+    color: c_teal;
+}
+
+@value c_orange from colors;
+.outline-warning {
+    composes: outline;
+    composes: b--orange-8 orange-8 from colors;
+}
+.outline-warning:hover,
+.outline-warning:focus {
+    border-color: c_orange;
+    color: c_orange;
+}
+
+@value c_dark-gray from colors;
+@value c_black-50 from colors;
+.outline-default {
+    composes: outline;
+    composes: b--black-50 mid-gray from colors;
+}
+.outline-default:hover,
+.outline-default:focus {
+    border-color: c_dark-gray;
+    color: c_dark-gray;
+}
+
+/* "active" state for button links */
+/* Set this as <Link activeClassName={buttonStyles["outline-active"]} /> */
+/* Overrides child button's styles. */
+@value c_purple from colors;
+.outline-active {
+    composes: outline;
+    color: c_purple !important;
+    border-color: c_purple !important;
+}
+.outline-active:hover,
+.outline-active:focus {
+    color: c_purple !important;
+    border-color: c_purple !important;
+}
+.outline-active > button {
+    border: none;
+    color: c_purple !important;;
+}
+
+/* solid buttons */
+.solid {
+    border: none;
+    composes: btn active-shadow;
+}
+.solid:hover,
+.solid:focus {
+    background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+}
+
+.solid-default {
+    composes: solid;
+    composes: mid-gray bg-moon-gray from colors;
+}
+
+.solid-primary {
+    composes: solid;
+    composes: white bg-blue from colors;
+}
+
+.solid-success {
+    composes: solid;
+    composes: white bg-green from colors;
+}
+
+.solid-danger {
+    composes: solid;
+    composes: white bg-red from colors;
+}
+
+.solid-info {
+    composes: solid;
+    composes: white bg-teal from colors;
+}
+
+.solid-warning {
+    composes: solid;
+    composes: white bg-orange from colors;
+}

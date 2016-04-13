@@ -22,8 +22,7 @@ class LocationAdaptor extends React.Component {
 	}
 
 	render() {
-		let other = Object.assign({}, this.props);
-		delete other.component;
+		let other = {...this.props, component: null};
 
 		// Don't use initially provided location prop in the browser, where it
 		// should always reflect the current URL.

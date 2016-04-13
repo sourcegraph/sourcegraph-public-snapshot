@@ -50,7 +50,11 @@ func NewHandler(m *mux.Router) http.Handler {
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		origDirector := proxy.Director
 		proxy.Director = func(r *http.Request) {
-			r.URL.Path = path.Join("/assets", r.URL.Path)
+			if strings.Contains(r.URL.Path, "img/") {
+				r.URL.Path = path.Join("/assets", r.URL.Path)
+			} else {
+				r.URL.Path = path.Join("/", r.URL.Path)
+			}
 			origDirector(r)
 		}
 		assetHandler = proxy

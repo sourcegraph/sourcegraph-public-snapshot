@@ -1,0 +1,157 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value icons "sourcegraph/components/styles/icons.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+
+.pathComponent {}
+.inactivePathComponent {
+	composes: pathComponent;
+}
+.activePathComponent {
+	composes: pathComponent;
+	composes: b from base;
+}
+
+/* Layout */
+@value contentWidth 690px;
+@value marginWidth 290px;
+.container {
+	display: flex;
+	align-items: start;
+}
+.content {
+	flex: 2 0 contentWidth;
+	width: contentWidth;
+	max-width: calc(contentWidth * 1.4);
+}
+.margin {
+	flex: 1 1 marginWidth;
+	width: marginWidth;
+}
+@media (max-width: calc(contentWidth + 10px)) {
+	.content {
+		max-width: 100%;
+	}
+}
+
+/* TODO(sqs): move these to a separate file bc they are going to be used
+by a lot of other modules (e.g., for def boxes)? */
+.marginBox {
+	@value borderWidth 4px;
+	@value c_brand-blue from colors;
+	border-left: solid borderWidth c_brand-blue;
+	margin-left: calc(-1 * borderWidth);
+
+	composes: pt1 pb2 ph2 from base;
+}
+
+/* Blob content */
+.blobAndToolbar {
+	composes: content;
+	composes: br bb from base;
+	composes: b--light-gray from colors;
+}
+.toolbar {
+	/* TODO(sqs!): not really used right now (only has the build indicator) */
+}
+.scroller {
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+/* Make these classes global because we need to be able to generate
+   identical markup in Go (where we can't as easily obtain the class mapping). */
+.lines {
+	composes: code from typography;
+	font-size: 1.05rem;
+	table-layout: fixed;
+	border-spacing: 0;
+}
+.line {}
+.lineNumber {
+	width: 1%;
+	min-width: 40px;
+	text-align: right;
+	white-space: nowrap;
+	vertical-align: top;
+	composes: light-silver from colors;
+	padding-right: 8px;
+	background-color: #fafafc;
+	user-select: none;
+	cursor: pointer;
+}
+.lineNumber:before {
+	content: attr(data-line);
+}
+.selectedLineNumber {
+	composes: lineNumber;
+	composes: bg-blue-2 from colors;
+}
+.line:first-child .lineNumber, .line:first-child .lineContent {
+	padding-top: 9px;
+}
+.lineContent {
+	composes: ph3 from base;
+	tab-size: 4;
+	overflow: visible;
+	white-space: pre;
+}
+.selectedLineContent {
+	composes: lineContent;
+	composes: bg-blue-1 from colors;
+}
+.highlightedAnn {
+	color: black;
+	outline: solid 1px #fff6ad;
+	background-color: #fff9b8;
+	cursor: pointer;
+}
+.disabledAnn {
+	@value c_light-gray from colors;
+	outline: solid 1px c_light-gray;
+	background-color: c_light-gray;
+	transition: background-color 0.2;
+	cursor: default;
+}
+.activeAnn {
+	color: black;
+	outline: solid 1px #ffe68d;
+	background-color: #ffe998;
+}
+.line-expander {
+	composes: faded-blue bg-pale-blue from colors;
+	line-height: 0.8;
+	cursor: pointer;
+	min-height: 26px;
+	text-align: center;
+}
+.line-expander-icon {
+	composes: mt1 mb1 from base;
+}
+
+.placeholderWhitespace {
+	float: right;
+	background-color: white;
+}
+.lineContentPlaceholder {
+	composes: pa0 from base;
+}
+@keyframes shimmer {
+	0%{
+		background-position: -468px 0
+	}
+	100%{
+		background-position: 468px 0
+	}
+}
+.linesContentPlaceholder {
+	composes: lines;
+	composes: ph0 from base;
+	animation-duration: 900ms;
+	animation-fill-mode: forwards;
+	animation-iteration-count: infinite;
+	animation-name: shimmer;
+	animation-timing-function: linear;
+	background: #f6f7f8;
+	background: linear-gradient(to right, #f2f2f2 8%, #e9e9e9 18%, #f2f2f2 53%);
+}

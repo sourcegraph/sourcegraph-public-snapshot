@@ -17,5 +17,3 @@ Known differences
 - Only support `res.text()` and `res.json()` at the moment, until there are good use-cases for blob.
 
 - There is currently no built-in caching, as server-side caching varies by use-cases.
-
-- Avoid using `Request` and `Response` constructors directly, as they are not spec-compliant yet (see open issues).

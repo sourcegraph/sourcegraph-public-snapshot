@@ -1,9 +1,11 @@
 import React from "react";
 
 import Component from "sourcegraph/Component";
-import repoLink from "sourcegraph/util/repoLink";
-import Styles from "./styles/Dashboard.css";
+import RepoLink from "sourcegraph/components/RepoLink";
 import TimeAgo from "sourcegraph/util/TimeAgo";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Dashboard.css";
 
 class RepoList extends Component {
 	constructor(props) {
@@ -34,21 +36,21 @@ class RepoList extends Component {
 			<div>
 				{this.state.repos.length > 0 &&
 					<div>
-						<div className={Styles.repo_section_header}>{this.state.reposDisabled ? `Coming soon` : `Go Repositories`}</div>
+						<div styleName="list-section-header">{this.state.reposDisabled ? `Coming soon` : `Go Repositories`}</div>
 						{this.state.repos.map((repo, i) =>
 							<div key={i}>
-								<div className={this.state.reposDisabled ? Styles.list_item_disabled : Styles.list_item} key={i}>
+								<div styleName={this.state.reposDisabled ? "list-item-disabled" : "list-item"} key={i}>
 									<div>
-										<span className={Styles.repo_title}>
-											{repoLink(repo.URI || `github.com/${repo.Owner}/${repo.Name}`, this._repoDisabled(repo))}
+										<span styleName="uri">
+											<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} disabledLink={this._repoDisabled(repo)} />
 										</span>
 										{this.state.reposDisabled &&
-											<span className={Styles.repo_disable_reason}>{this._disabledReason(repo)}</span>
+											<span styleName="disable-reason">{this._disabledReason(repo)}</span>
 										}
 									</div>
 									<div>
-										<p className={Styles.repo_description}>{repo.Description}</p>
-										{this._repoTime(repo) && <p className={Styles.repo_updated}>Updated <TimeAgo time={this._repoTime(repo)} /></p>}
+										<p styleName="description">{repo.Description}</p>
+										{this._repoTime(repo) && <p styleName="updated">Updated <TimeAgo time={this._repoTime(repo)} /></p>}
 									</div>
 								</div>
 							</div>
@@ -66,4 +68,4 @@ RepoList.propTypes = {
 };
 
 
-export default RepoList;
+export default CSSModules(RepoList, styles);

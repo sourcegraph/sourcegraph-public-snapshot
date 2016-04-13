@@ -1,0 +1,54 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.footer {
+	composes: bt mt4 ph2 pv2 from base;
+	composes: b--light-gray from colors;
+	composes: sans-serif from typography;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+}
+
+.box {
+	flex: 1 1;
+	display: flex;
+	flex-wrap: wrap;
+	list-style-type: none;
+	align-items: center;
+	composes: ma0 pa0 from base;
+}
+
+.left-box {
+	composes: box;
+	justify-content: flex-start;
+}
+
+.right-box {
+	composes: box;
+	justify-content: flex-end;
+}
+
+.link {
+	composes: gray from colors;
+}
+
+.logo-mark {
+	width: 2.2rem;
+}
+
+.item {
+	composes: ph3 pv2 from base;
+	display: inline-block;
+}
+
+@media screen and (max-width: 48em) {
+	.item {
+		flex-basis: 100%;
+	}
+	.right-box .item {
+		text-align: right;
+	}
+}

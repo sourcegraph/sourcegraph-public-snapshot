@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
@@ -58,8 +57,8 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		URL:     newAcct.Email,
 		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
 	})
-	eventsutil.LogCreateAccount(ctx, newAcct, admin, write, numUsers == 0)
 	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email)
+	eventsutil.LogCreateAccountCompleted(ctx)
 
 	return user, err
 }
@@ -166,7 +165,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 		return nil, err
 	}
 
-	u := conf.AppURL(ctx).ResolveReference(app_router.Rel.URLTo(app_router.ResetPassword))
+	u := conf.AppURL(ctx).ResolveReference(&url.URL{Path: "/reset"})
 	v := url.Values{}
 	v.Set("token", token.Token)
 	u.RawQuery = v.Encode()

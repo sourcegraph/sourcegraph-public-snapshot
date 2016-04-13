@@ -1,6 +1,7 @@
+// @flow
+
 import React from "react";
 import ReactDOM from "react-dom";
-import last from "lodash/array/last";
 import utf8 from "utf8";
 
 import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
@@ -8,46 +9,113 @@ import Component from "sourcegraph/Component";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobLine from "sourcegraph/blob/BlobLine";
 import BlobLineExpander from "sourcegraph/blob/BlobLineExpander";
+import type {Range} from "sourcegraph/blob/BlobLineExpander";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
-
-const tilingFactor = 100;
-
-// The smaller the visibleLinesCount, the faster the initial load.
-const initialVisibleLinesCount = 80;
-
-function initialFirstVisibleLine(props) {
-	if (props.scrollToStartLine && props.startLine) {
-		return Math.max(0, props.startLine - (initialVisibleLinesCount / 2));
-	}
-	return 0;
-}
+import s from "sourcegraph/blob/styles/Blob.css";
+import type {Def} from "sourcegraph/def";
 
 class Blob extends Component {
-	constructor(props) {
+	static propTypes = {
+		contents: React.PropTypes.string,
+		annotations: React.PropTypes.shape({
+			Annotations: React.PropTypes.array,
+			LineStartBytes: React.PropTypes.array,
+		}),
+		lineNumbers: React.PropTypes.bool,
+		startLine: React.PropTypes.number,
+		startCol: React.PropTypes.number,
+		startByte: React.PropTypes.number,
+		endLine: React.PropTypes.number,
+		endCol: React.PropTypes.number,
+		endByte: React.PropTypes.number,
+		scrollToStartLine: React.PropTypes.bool,
+		highlightedDef: React.PropTypes.string,
+		highlightedDefObj: React.PropTypes.object,
+		activeDef: React.PropTypes.string,
+
+		// For linking line numbers to the file they came from (e.g., in
+		// ref snippets).
+		repo: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string.isRequired,
+		path: React.PropTypes.string.isRequired,
+
+		// contentsOffsetLine indicates that the contents string does not
+		// start at line 1 within the file, but rather some other line number.
+		// It must be specified when startLine > 1 but the contents don't begin at
+		// the first line of the file.
+		contentsOffsetLine: React.PropTypes.number,
+
+		highlightSelectedLines: React.PropTypes.bool,
+
+		// dispatchSelections is whether this Blob should emit BlobActions.SelectCharRange
+		// actions when the text selection changes. It should be true for the main file view but
+		// not for secondary file views (e.g., usage examples).
+		dispatchSelections: React.PropTypes.bool,
+	};
+
+	constructor(props: Blob.props) {
 		super(props);
-		this.state = {
-			firstVisibleLine: initialFirstVisibleLine(props),
-			visibleLinesCount: initialVisibleLinesCount,
-			lineAnns: [],
-			expandedRanges: [],
-		};
-		this._updateVisibleLines = this._updateVisibleLines.bind(this);
 		this._expandRange = this._expandRange.bind(this);
 		this._handleSelectionChange = debounce(this._handleSelectionChange.bind(this), 200, {
+			leading: false,
+			trailing: true,
+		});
+		this._updateVisibleLines = debounce(this._updateVisibleLines.bind(this), 200, {
 			leading: false,
 			trailing: true,
 		});
 		this._isMounted = false;
 	}
 
-	componentDidMount() {
-		setTimeout(() => this._updateVisibleLines(), 0);
-		window.addEventListener("scroll", this._updateVisibleLines);
+	state: {
+		repo: string;
+		rev: string;
+		path: string;
+		lines: string[];
+		highlightSelectedLines: boolean;
+		highlightedDef: ?string;
+		highlightedDefObj: ?Def;
+		startLine: ?number;
+		startCol: ?number;
+		startByte: ?number;
+		endLine: ?number;
+		endCol: ?number;
+		endByte: ?number;
+		lineStartBytes: number[];
+		activeDef: ?string;
+		highlightedDef: ?string;
+		contentsOffsetLine: number;
+		expandedRanges: Range[];
+		visStartLine: number;
+		visEndLine: number;
+	} = {
+		repo: "",
+		rev: "",
+		path: "",
+		activeDef: null,
+		highlightSelectedLines: false,
+		highlightedDef: null,
+		highlightedDefObj: null,
+		contentsOffsetLine: 0,
+		lineAnns: [],
+		lineStartBytes: [],
+		lines: [],
+		expandedRanges: [],
+		startLine: null,
+		startCol: null,
+		startByte: null,
+		endLine: null,
+		endCol: null,
+		endByte: null,
+		visStartLine: 0,
+		visEndLine: 0,
+	};
 
+	componentDidMount() {
 		// TODO: This is hacky, but the alternative was too costly (time and code volume)
 		//       and unreliable to implement. Revisit this later if it's neccessary.
 		//
@@ -59,25 +127,32 @@ class Blob extends Component {
 		}, 0);
 
 		document.addEventListener("selectionchange", this._handleSelectionChange);
+		document.addEventListener("scroll", this._updateVisibleLines);
 		this._isMounted = true;
+		this._updateVisibleLines();
 	}
 
 	componentWillUnmount() {
-		window.removeEventListener("scroll", this._updateVisibleLines);
 		document.removeEventListener("selectionchange", this._handleSelectionChange);
+		document.removeEventListener("scroll", this._updateVisibleLines);
 		this._isMounted = false;
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state: Blob.state, props: Blob.props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
 		state.path = props.path || null;
 		state.startLine = props.startLine || null;
+		state.startCol = props.startCol || null;
+		state.startByte = props.startByte || null;
 		state.endLine = props.endLine || null;
+		state.endCol = props.endCol || null;
+		state.endByte = props.endByte || null;
 		state.scrollToStartLine = Boolean(props.scrollToStartLine);
 		state.contentsOffsetLine = props.contentsOffsetLine || 0;
 		state.lineNumbers = Boolean(props.lineNumbers);
 		state.highlightedDef = props.highlightedDef || null;
+		state.highlightedDefObj = props.highlightedDefObj || null;
 		state.activeDef = props.activeDef || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
@@ -91,19 +166,29 @@ class Blob extends Component {
 		}
 
 		if (state.contents !== props.contents) {
-			state.contents = props.contents;
-			state.lines = fileLines(props.contents);
-			state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : this._computeLineStartBytes(state.lines);
+			state.contents = null;
+			state.lines = null;
+			state.lineStartBytes = null;
 			updateAnns = true;
+			if (props.contents) {
+				state.contents = props.contents;
+				state.lines = fileLines(props.contents);
+				state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : this._computeLineStartBytes(state.lines);
+			}
 		}
 
 		if (updateAnns) {
 			state.lineAnns = state.lineStartBytes && state.annotations && state.annotations.Annotations ? annotationsByLine(state.lineStartBytes, state.annotations.Annotations, state.lines) : null;
 		}
+
+		if (state.contents && state.startByte && state.endByte && state.startLine === null && state.endLine === null) {
+			state.startLine = lineFromByte(state.lines, state.startByte);
+			state.endLine = lineFromByte(state.lines, state.endByte);
+		}
 	}
 
-	_computeLineStartBytes(lines) {
-		let pos = 0;
+	_computeLineStartBytes(lines: string[]): number[] {
+		let pos: number = 0;
 		return lines.map((line) => {
 			let start = pos;
 			// Encode the line using utf8 to account for multi-byte unicode characters.
@@ -112,7 +197,7 @@ class Blob extends Component {
 		});
 	}
 
-	_consolidateRanges(ranges) {
+	_consolidateRanges(ranges: Range[]): ?Range[] {
 		if (ranges.length === 0) return null;
 
 		ranges = ranges.sort((a, b) => {
@@ -123,7 +208,7 @@ class Blob extends Component {
 
 		let newRanges = [ranges[0]];
 		for (let range of ranges) {
-			let lastRange = last(newRanges);
+			let lastRange = newRanges[newRanges.length - 1];
 			if (lastRange[1] < range[0]) {
 				newRanges.push(range);
 			} else if (lastRange[1] < range[1]) {
@@ -135,7 +220,7 @@ class Blob extends Component {
 		return newRanges;
 	}
 
-	_withinDisplayedRange(lineNumber) {
+	_withinDisplayedRange(lineNumber: number): bool {
 		if (!this.state.displayRanges) return false;
 		for (let range of this.state.displayRanges) {
 			if (range[0] <= lineNumber && lineNumber <= range[1]) return true;
@@ -143,33 +228,13 @@ class Blob extends Component {
 		return false;
 	}
 
-	_expandRange(range) {
+	_expandRange(range: Range): void {
 		this.setState({
 			expandedRanges: this.state.expandedRanges.concat([range]),
 		});
 	}
 
-	_updateVisibleLines() {
-		let rect = this.refs.table.getBoundingClientRect();
-		let lineCount = this.state.lines.length;
-		if (this.state.displayRanges) {
-			// If specifically display ranges are set, we only want to count the lines that will be rendered.
-			lineCount = this.state.displayRanges.reduce((prev, curr) => prev + curr[1] - curr[0], 0); // Sum of all displayed lines
-		}
-		let firstVisibleLine = Math.max(0, Math.floor(lineCount / rect.height * -rect.top / tilingFactor - 1) * tilingFactor);
-		let visibleLinesCount = Math.ceil(this.state.lines.length / rect.height * window.innerHeight / tilingFactor + 2) * tilingFactor;
-
-		if (this.state.firstVisibleLine !== firstVisibleLine || this.state.visibleLinesCount !== visibleLinesCount) {
-			setTimeout(() => {
-				this.setState({
-					firstVisibleLine: firstVisibleLine,
-					visibleLinesCount: visibleLinesCount,
-				});
-			}, 0);
-		}
-	}
-
-	_handleSelectionChange(ev) {
+	_handleSelectionChange(ev: Event) {
 		if (!this.state.dispatchSelections) return;
 
 		const sel = document.getSelection();
@@ -178,16 +243,16 @@ class Blob extends Component {
 		}
 		const rng = sel.getRangeAt(0);
 
-		const getLineElem = (node) => {
+		const getLineElem = (node: Node): ?HTMLElement => {
 			if (!node) return null;
-			if (node.nodeName === "TR" && node.classList.contains("line")) {
+			if (node instanceof HTMLElement && node.nodeName === "TR" && node.dataset.line) {
 				return node;
 			}
 			return getLineElem(node.parentNode);
 		};
 
-		const getColInLine = (lineElem, containerElem, offsetInContainer) => {
-			let lineContentElem = lineElem.querySelector(".line-content");
+		const getColInLine = (lineElem, containerElem, offsetInContainer: number) => {
+			let lineContentElem = lineElem.lastChild;
 			let col = 0;
 			let q = [lineContentElem];
 			while (q.length > 0) {
@@ -239,9 +304,9 @@ class Blob extends Component {
 		Dispatcher.Stores.dispatch(new BlobActions.SelectCharRange(this.state.repo, this.state.rev, this.state.path, startLine, startCol, startByte, endLine, endCol, endByte));
 	}
 
-	onStateTransition(prevState, nextState) {
-		if (nextState.startLine && nextState.highlightedDef && prevState.startLine !== nextState.startLine) {
-			if (Math.abs(prevState.startLine - nextState.startLine) > 5 || !this._lineIsVisible(nextState.startLine)) {
+	onStateTransition(prevState: Blob.state, nextState: Blob.state) {
+		if (nextState.startLine && prevState.startLine !== nextState.startLine) {
+			if (!this._lineIsVisible(nextState.startLine)) {
 				if (this.state.scrollToStartLine) {
 					this._scrollTo(nextState.startLine);
 				}
@@ -249,7 +314,21 @@ class Blob extends Component {
 		}
 	}
 
-	_scrollTo(line) {
+	_updateVisibleLines() {
+		let rect = this.refs.table.getBoundingClientRect();
+		let lineCount = this.state.lines.length;
+		if (this.state.displayRanges) {
+			// Sum all elided lines. We don't incur rendering overhead for elided lines.
+			lineCount += this.state.displayRanges.reduce((prev, cur) => prev + cur[1] - cur[0], 0);
+		}
+		let lineHeight = rect.height / lineCount;
+		let firstLine = this.state.displayRanges && this.state.displayRanges[0] ? this.state.displayRanges[0][0] : this.state.contentsOffsetLine;
+		let startLine = Math.max(0, (-1 * rect.top) / lineHeight) + firstLine;
+		let numLines = window.innerHeight / lineHeight;
+		this.setState({visStartLine: Math.ceil(startLine), visEndLine: Math.ceil(startLine + numLines)});
+	}
+
+	_scrollTo(line: number): void {
 		if (!this.refs.table) { return; }
 		let rect = this.refs.table.getBoundingClientRect();
 		const y = rect.height / this.state.lines.length * (line - 1) - 100;
@@ -257,7 +336,7 @@ class Blob extends Component {
 	}
 
 	// _lineIsVisible returns true iff the line is scrolled into view.
-	_lineIsVisible(line) {
+	_lineIsVisible(line: number): boolean {
 		if (!this._isMounted) return false;
 		if (typeof document === "undefined" || typeof window === "undefined") return false;
 		let top = document.body.scrollTop;
@@ -268,27 +347,25 @@ class Blob extends Component {
 		return elemBottom <= bottom && elemTop >= top;
 	}
 
-	getOffsetTopForByte(byte) {
+	getOffsetTopForByte(byte: number): number {
 		if (!this._isMounted) return 0;
+		if (typeof byte === "undefined") throw new Error("getOffsetTopForByte byte is undefined");
 		let $el = ReactDOM.findDOMNode(this);
 		let line = lineFromByte(this.state.lines, byte);
 		let $line = $el.querySelector(`[data-line="${line}"]`);
-		let $toolbar = $el.parentNode.querySelector(".code-file-toolbar");
+		let $toolbar = $el.parentNode.childNodes[0];
 		if ($line) return $line.offsetTop + $toolbar.clientHeight + $toolbar.offsetTop;
 		throw new Error(`No element found for line ${line}`);
 	}
 
 	render() {
-		let visibleLinesStart = this.state.firstVisibleLine;
-		let visibleLinesEnd = visibleLinesStart + this.state.visibleLinesCount;
-
 		let lastDisplayedLine = 0;
 		let lastRangeEnd = 0;
 		let lines = [];
-		let renderedLines = 0;
-		this.state.lines.forEach((line, i) => {
-			const visible = renderedLines >= visibleLinesStart && renderedLines < visibleLinesEnd;
+		let renderedLines: number = 0;
+		this.state.lines.forEach((line, i: number) => {
 			const lineNumber = 1 + i + this.state.contentsOffsetLine;
+			const isVisible = lineNumber >= this.state.visStartLine && lineNumber < this.state.visEndLine;
 			if (this.state.displayRanges && !this._withinDisplayedRange(lineNumber)) {
 				return;
 			}
@@ -312,10 +389,11 @@ class Blob extends Component {
 					lineNumber={this.state.lineNumbers ? lineNumber : null}
 					startByte={this.state.lineStartBytes[i]}
 					contents={line}
-					annotations={visible && this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
-					selected={this.state.highlightSelectedLines && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
-					highlightedDef={visible ? this.state.highlightedDef : null}
-					activeDef={visible ? this.state.activeDef : null}
+					annotations={this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
+					selected={this.state.highlightSelectedLines && this.state.startLine && this.state.endLine && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
+					highlightedDef={isVisible ? this.state.highlightedDef : null}
+					highlightedDefObj={isVisible ? this.state.highlightedDefObj : null}
+					activeDef={this.state.activeDef}
 					key={i} />
 			);
 			renderedLines += 1;
@@ -330,8 +408,8 @@ class Blob extends Component {
 		}
 
 		return (
-			<div className="blob-scroller">
-				<table className="line-numbered-code" ref="table">
+			<div className={s.scroller}>
+				<table className={s.lines} ref="table">
 					<tbody>
 						{lines}
 					</tbody>
@@ -340,40 +418,5 @@ class Blob extends Component {
 		);
 	}
 }
-
-Blob.propTypes = {
-	contents: React.PropTypes.string,
-	annotations: React.PropTypes.shape({
-		Annotations: React.PropTypes.array,
-		LineStartBytes: React.PropTypes.array,
-	}),
-	lineNumbers: React.PropTypes.bool,
-	startLine: React.PropTypes.number,
-	startCol: React.PropTypes.number,
-	endLine: React.PropTypes.number,
-	endCol: React.PropTypes.number,
-	scrollToStartLine: React.PropTypes.bool,
-	highlightedDef: React.PropTypes.string,
-	activeDef: React.PropTypes.string,
-
-	// Optional: for linking line numbers to the file they came from (e.g., in
-	// ref snippets).
-	repo: React.PropTypes.string,
-	rev: React.PropTypes.string,
-	path: React.PropTypes.string,
-
-	// contentsOffsetLine indicates that the contents string does not
-	// start at line 1 within the file, but rather some other line number.
-	// It must be specified when startLine > 1 but the contents don't begin at
-	// the first line of the file.
-	contentsOffsetLine: React.PropTypes.number,
-
-	highlightSelectedLines: React.PropTypes.bool,
-
-	// dispatchSelections is whether this Blob should emit BlobActions.SelectCharRange
-	// actions when the text selection changes. It should be true for the main file view but
-	// not for secondary file views (e.g., usage examples).
-	dispatchSelections: React.PropTypes.bool,
-};
 
 export default Blob;

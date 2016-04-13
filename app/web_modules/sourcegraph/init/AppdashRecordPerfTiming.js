@@ -1,4 +1,5 @@
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import context from "sourcegraph/app/context";
 
 // TODO(slimsag): for finer-grained access consider sending all of the info in
 // performance.timing to Appdash for display (when available). This would narrow
@@ -19,7 +20,7 @@ function record() {
 	const loadTimeSeconds = (endTime-startTime) / 1000;
 	const currentRoute = document.head.dataset.currentRoute;
 	const templateName = document.head.dataset.templateName;
-	defaultFetch(`/.ui/.appdash/upload-page-load?S=${startTime}&E=${endTime}&Route=${currentRoute}&Template=${templateName}`, {
+	defaultFetch(`/.api/internal/appdash/upload-page-load?S=${startTime}&E=${endTime}&Route=${currentRoute}&Template=${templateName}`, {
 		method: "POST",
 	})
 			.then(checkStatus)
@@ -32,7 +33,7 @@ function record() {
 	if (debug) debug.text = `${loadTimeSeconds}s`;
 }
 
-if (typeof document !== "undefined" && document.head.dataset.appdashCurrentSpanId) {
+if (typeof context.currentSpan) {
 	document.addEventListener("readystatechange", () => {
 		if (document.readyState === "complete") record();
 	});

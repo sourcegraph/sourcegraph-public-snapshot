@@ -7,7 +7,7 @@ require("sourcegraph/init/AppdashRecordPerfTiming");
 require("sourcegraph/init/browser");
 require("sourcegraph/init/server");
 
-require("../style/web.scss");
+// require("../style/web.scss");
 
 require("sourcegraph/util/actionLogger");
 

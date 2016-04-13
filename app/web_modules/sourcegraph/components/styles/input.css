@@ -1,0 +1,57 @@
+@value base "./base.css";
+@value colors "./colors.css";
+@value typography "./typography.css";
+
+@value c_blue-8 from colors;
+@value c_light-silver from colors;
+@value c_red from colors;
+
+.border {
+	composes: br2 ba from base;
+	composes: b--light-silver from colors;
+}
+
+.focus-border {
+	composes: b--blue-8 from colors;
+}
+
+.common:focus {
+	outline: none;
+	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
+}
+
+.common:invalid, .common:focus:invalid {
+	outline: none;
+	border-color: c_red;
+}
+
+.common {
+	composes: border;
+	composes: pa3 from base;
+	composes: input-text from typography;
+	appearance: none;
+}
+
+.common::-webkit-input-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+.common:-moz-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+.common::-moz-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+.common:-ms-input-placeholder {
+	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
+}
+
+.input {
+	composes: common;
+	display: inline-block;
+}
+
+.block {
+	composes: common;
+	display: flex;
+	flex: 1 1 auto;
+}

@@ -9,22 +9,22 @@ describe("DefBackend", () => {
 	describe("should handle WantDef", () => {
 		it("with def available", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL");
+				expect(url).to.be("/.api/repos/r@v/-/def/d");
 				return immediateSyncPromise({status: 200, json: () => "someDefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantDef("/someURL"));
-			})).to.eql([new DefActions.DefFetched("/someURL", "someDefData")]);
+				DefBackend.__onDispatch(new DefActions.WantDef("r", "v", "d"));
+			})).to.eql([new DefActions.DefFetched("r", "v", "d", "someDefData")]);
 		});
 
 		it("with def not available", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL");
+				expect(url).to.be("/.api/repos/r@v/-/def/d");
 				return immediateSyncPromise({status: 404, json: () => null});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantDef("/someURL"));
-			})).to.eql([new DefActions.DefFetched("/someURL", {Error: true})]);
+				DefBackend.__onDispatch(new DefActions.WantDef("r", "v", "d"));
+			})).to.eql([new DefActions.DefFetched("r", "v", "d", {Error: true})]);
 		});
 	});
 
@@ -40,41 +40,41 @@ describe("DefBackend", () => {
 
 	it("should handle WantRefLocations", () => {
 		DefBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/repos/someURL/-/ref-locations");
+			expect(url).to.be("/.api/repos/r@v/-/def/d/-/ref-locations");
 			return immediateSyncPromise({status: 200, json: () => "someRefData"});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			DefBackend.__onDispatch(new DefActions.WantRefLocations("/someURL"));
-		})).to.eql([new DefActions.RefLocationsFetched("/someURL", "someRefData")]);
+			DefBackend.__onDispatch(new DefActions.WantRefLocations("r", "v", "d"));
+		})).to.eql([new DefActions.RefLocationsFetched("r", "v", "d", "someRefData")]);
 	});
 
 	describe("should handle WantRefs", () => {
 		it("for all files", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL/-/refs?Repo=someRepo");
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "someRepo"));
-			})).to.eql([new DefActions.RefsFetched("/someURL", "someRepo", null, "someRefData")]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, "someRefData")]);
 		});
 		it("for a specific file", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL/-/refs?Repo=someRepo&Files=f");
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr&Files=rf");
 				return immediateSyncPromise({status: 200, json: () => "someRefData"});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "someRepo", "f"));
-			})).to.eql([new DefActions.RefsFetched("/someURL", "someRepo", "f", "someRefData")]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr", "rf"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", "rf", "someRefData")]);
 		});
 		it("with no result available", () => {
 			DefBackend.fetch = function(url, options) {
-				expect(url).to.be("/.api/repos/someURL/-/refs?Repo=someRepo");
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
 				return immediateSyncPromise({status: 200, json: () => null});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
-				DefBackend.__onDispatch(new DefActions.WantRefs("/someURL", "someRepo"));
-			})).to.eql([new DefActions.RefsFetched("/someURL", "someRepo", null, null)]);
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, null)]);
 		});
 	});
 });

@@ -6,7 +6,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
@@ -35,6 +37,27 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.Header().Set("cache-control", cacheControl)
 	return writeJSON(w, commits)
+}
+
+func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
+	ctx := httpctx.FromRequest(r)
+
+	var opt sourcegraph.MirrorReposRefreshVCSOp
+	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	if err != nil {
+		return err
+	}
+
+	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	// TODO(slimsag): find the best way to communicate potential mirror repo
+	// update failures to the user / frontend.
+	repoupdater.Enqueue(repoSpec, handlerutil.UserFromContext(ctx))
+	w.WriteHeader(http.StatusAccepted)
+	return nil
 }
 
 func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {

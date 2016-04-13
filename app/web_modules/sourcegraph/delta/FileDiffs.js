@@ -12,7 +12,7 @@ import FileDiff from "sourcegraph/delta/FileDiff";
 // TODO(sqs): FileDiffs does not yet support multiple-defs (when a single
 // ref links to multiple defs, like Go embedded fields linking to both the
 // type and the field). We could copy over the implementation from
-// BlobContainer, but that is going to be factored out soon, and let's
+// BlobMain, but that is going to be factored out soon, and let's
 // keep it clean.
 
 class FileDiffs extends Container {
@@ -52,7 +52,7 @@ class FileDiffs extends Container {
 						annotations={this.state.annotations}
 						defs={this.state.defs} />
 				))}
-				{highlightedDefData && !this.state.defOptionsURLs && <DefTooltip def={highlightedDefData} />}
+				{highlightedDefData && !highlightedDefData.Error && <DefTooltip def={highlightedDefData} />}
 			</div>
 		);
 	}

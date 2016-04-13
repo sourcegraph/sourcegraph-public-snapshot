@@ -54,7 +54,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 					lastMod = &tmp
 				}
 				si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
-					Loc:     conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepoSubroute(router.RepoSitemap, repo.URI)).String(),
+					Loc:     conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepoSitemap(repo.URI)).String(),
 					LastMod: lastMod,
 				})
 			}
@@ -138,7 +138,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 			}
 			seenDefs[def.DefKey] = true
 
-			if !defRobotsIndex(rc.Repo, def) {
+			if !def.Exported {
 				continue
 			}
 

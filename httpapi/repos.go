@@ -1,20 +1,31 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx, _ := handlerutil.Client(r)
+	ctx, cl := handlerutil.Client(r)
 
-	repo, _, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	repo, err := cl.Repos.Get(ctx, &repoSpec)
 	if err != nil {
 		return err
 	}
@@ -23,12 +34,26 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	if repo.UpdatedAt != nil {
 		lastMod = repo.UpdatedAt.Time()
 	}
-
 	if clientCached, err := writeCacheHeaders(w, r, lastMod, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
 
 	return writeJSON(w, repo)
+}
+
+func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	if err != nil {
+		return err
+	}
+	return writeJSON(w, res)
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {
@@ -51,6 +76,63 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, repos)
+}
+
+func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	var op sourcegraph.ReposCreateOp
+	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
+		if err == io.EOF {
+			return &errcode.HTTPErr{Status: http.StatusBadRequest}
+		}
+		return err
+	}
+
+	repo, err := cl.Repos.Create(ctx, &op)
+	if err != nil {
+		return err
+	}
+	return writeJSON(w, &repo)
+}
+
+func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	var err error
+	var reposOnPage *sourcegraph.RemoteRepoList
+	var remoteRepos = &sourcegraph.RemoteRepoList{}
+	for page := 1; ; page++ {
+		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
+			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
+		})
+		if err != nil {
+			break
+		}
+
+		if len(reposOnPage.RemoteRepos) == 0 {
+			break
+		}
+		remoteRepos.RemoteRepos = append(remoteRepos.RemoteRepos, reposOnPage.RemoteRepos...)
+	}
+
+	// true if the user has not yet linked GitHub
+	isAuthError := func(err error) bool {
+		return grpc.Code(err) == codes.Unauthenticated || grpc.Code(err) == codes.PermissionDenied
+	}
+	if err != nil && !isAuthError(err) {
+		return err
+	}
+
+	response := struct {
+		*sourcegraph.RemoteRepoList
+		HasLinkedGitHub bool
+	}{
+		RemoteRepoList:  remoteRepos,
+		HasLinkedGitHub: err == nil,
+	}
+
+	return writeJSON(w, &response)
 }
 
 // getRepoLastBuildTime returns the time of the newest build for the

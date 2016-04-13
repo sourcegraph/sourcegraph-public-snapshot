@@ -46,19 +46,3 @@ export class FetchedSrclibDataVersion {
 		this.version = versionOrNull || null;
 	}
 }
-
-export class UpDirectory {
-	constructor() {}
-}
-
-export class DownDirectory {
-	constructor(part) {
-		this.part = part;
-	}
-}
-
-export class GoToDirectory {
-	constructor(path) {
-		this.path = path;
-	}
-}

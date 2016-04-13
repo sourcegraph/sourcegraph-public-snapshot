@@ -27,8 +27,17 @@ function fail (err) {
 
 function openConfig (cb) {
   var userHome = require('user-home');
-  var configpath = path.join(userHome || os.tmpdir(), configfile);
-  var content;
+  if (!userHome) {
+    return tryOpenConfig(path.join(os.tmpdir(), configfile), cb);
+  }
+
+  tryOpenConfig(path.join(userHome, configfile), function (err, fd) {
+    if (err) return tryOpenConfig(path.join(os.tmpdir(), configfile), cb);
+    return cb(null, fd);
+  });
+}
+
+function tryOpenConfig (configpath, cb) {
   try {
     // if the config file is valid, it should be json and therefore
     // node should be able to require it directly. if this doesn't

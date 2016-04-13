@@ -6,12 +6,16 @@
 @value c_black-20 from colors;
 @value c_white from colors;
 
-.refs_container {
+.refs-container {
 	composes: ml3 mr3 pv3 ph3 from base;
-	composes: col-12 col-9-ns col-6-m from grid;
 }
 
-.search_hotkey {
+.refs-footer {
+	width: 100%;
+	text-align: center;
+}
+
+.search-hotkey {
 	composes: bg-black-10 from colors;
 	composes: tooltip-bottom from tooltips;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;

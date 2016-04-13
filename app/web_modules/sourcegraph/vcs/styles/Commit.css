@@ -1,0 +1,27 @@
+@value base "sourcegraph/components/styles/base.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.container {
+	display: flex;
+	align-items: center;
+}
+
+.avatar {
+	composes: ma3 from base;
+}
+
+.body {
+	flex: 1 1 auto;
+}
+
+.title {
+	composes: f3 b from typography;
+}
+
+.sha {
+	composes: pr3 from base;
+}
+
+.text {
+	composes: normal-text from typography;
+}

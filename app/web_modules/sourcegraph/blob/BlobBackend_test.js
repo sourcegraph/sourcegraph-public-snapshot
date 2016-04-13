@@ -1,3 +1,5 @@
+// @flow weak
+
 import expect from "expect.js";
 
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -10,15 +12,15 @@ import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {
 		BlobBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/repos/aRepo@aRev/-/tree/aTree?ContentsAsString=true");
+			expect(url).to.be("/.api/repos/aRepo@aRev/-/tree/aPath?ContentsAsString=true");
 			return immediateSyncPromise({
 				status: 200,
 				json: () => "someFile",
 			});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aTree"));
-		})).to.eql([new BlobActions.FileFetched("aRepo", "aRev", "aTree", "someFile")]);
+			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aPath"));
+		})).to.eql([new BlobActions.FileFetched("aRepo", "aRev", "aPath", "someFile")]);
 	});
 });
 
@@ -26,15 +28,15 @@ describe("prepareAnnotations", () => {
 	it("should set WantInner on syntax highlighting annotations", () => {
 		expect(
 			prepareAnnotations([
-				{StartByte: 1, Class: "x"},
-				{StartByte: 2, URL: "y"},
-				{StartByte: 3, Class: "z"},
+				{StartByte: 10, EndByte: 15, Class: "x"},
+				{StartByte: 20, EndByte: 25, URL: "y"},
+				{StartByte: 30, EndByte: 35, Class: "z"},
 			])
 		).to.eql(
 			[
-				{StartByte: 1, Class: "x", WantInner: 1},
-				{StartByte: 2, URL: "y"},
-				{StartByte: 3, Class: "z", WantInner: 1},
+				{StartByte: 10, EndByte: 15, Class: "x", WantInner: 1},
+				{StartByte: 20, EndByte: 25, URL: "y"},
+				{StartByte: 30, EndByte: 35, Class: "z", WantInner: 1},
 			]
 		);
 	});

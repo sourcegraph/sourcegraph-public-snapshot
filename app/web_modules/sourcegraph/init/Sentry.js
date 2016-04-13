@@ -1,12 +1,13 @@
 // Sentry error monitoring code
 
-if (typeof document !== "undefined" && document.head.dataset.publicRavenDsn) {
+if (typeof window !== "undefined" && window._sentryRavenDSN) {
 	require("raven-js/dist/raven.js");
 	require("raven-js/plugins/native.js");
 	require("raven-js/plugins/console.js");
 
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
 	let opt = {
+		tags: window._sentryTags,
 		// Will cause a deprecation warning, but the demise of `ignoreErrors` is still under discussion.
 		// See: https://github.com/getsentry/raven-js/issues/73
 		ignoreErrors: [
@@ -51,25 +52,5 @@ if (typeof document !== "undefined" && document.head.dataset.publicRavenDsn) {
 			/metrics\.itunes\.apple\.com\.edgesuite\.net\//i,
 		],
 	};
-	opt.tags = {};
-
-	if (document.head.dataset.deployedGitCommitId) {
-		opt.tags["Deployed commit"] = document.head.dataset.deployedGitCommitId;
-	}
-	opt.tags["Authed"] = document.head.dataset.currentUserLogin ? "yes" : "no";
-	if (document.head.dataset.currentUserUid && document.head.dataset.currentUserLogin) {
-		opt.tags["Authed UID"] = document.head.dataset.currentUserUid;
-		opt.tags["Authed user"] = document.head.dataset.currentUserLogin;
-	}
-	if (document.head.dataset.appdashCurrentSpanIdTrace) {
-		opt.tags["Appdash trace"] = document.head.dataset.appdashCurrentSpanIdTrace;
-	}
-	if (document.head.dataset.appdashCurrentSpanIdSpan) {
-		opt.tags["Appdash span"] = document.head.dataset.appdashCurrentSpanIdSpan;
-	}
-	if (document.head.dataset.appdashCurrentSpanIdParent) {
-		opt.tags["Appdash parent"] = document.head.dataset.appdashCurrentSpanIdParent;
-	}
-
-	window.Raven.config(document.head.dataset.publicRavenDsn, opt).install();
+	window.Raven.config(window._sentryRavenDSN, opt).install();
 }

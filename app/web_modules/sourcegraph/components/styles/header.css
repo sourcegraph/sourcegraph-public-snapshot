@@ -1,0 +1,16 @@
+@value base "sourcegraph/components/styles/base.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.container {
+	composes: pt6 from base;
+	composes: pb6 from base;
+}
+
+.cloning-title {
+	composes: header-center from typography;
+}
+
+.cloning-subtext {
+	composes: pt4 from base;
+	composes: subheader tc from typography;
+}

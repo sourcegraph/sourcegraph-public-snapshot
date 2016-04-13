@@ -1,0 +1,22 @@
+@value colors "./colors.css";
+@value c_blue from colors;
+@value c_dark-blue from colors;
+
+/* Can't use "composes" on tag names */
+a {
+	text-decoration: none;
+	color: c_blue;
+}
+a:hover {
+	text-decoration: none;
+	color: c_dark-blue;
+}
+
+.link {
+	text-decoration: none;
+	color: c_blue;
+}
+.link:hover {
+	text-decoration: none;
+	color: c_dark-blue;   /* TODO: can't use compose on pseudoelements. */
+}

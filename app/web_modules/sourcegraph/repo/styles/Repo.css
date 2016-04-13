@@ -1,0 +1,35 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+
+/* GlobalNav */
+.navContext {
+	composes: context from GlobalNav;
+}
+.repoName {
+	composes: b db mr3 from base;
+}
+
+.container {
+	composes: pt6 from base;
+}
+
+.cloning-title {
+	composes: header-center from typography;
+}
+
+.cloning-subtext {
+	composes: pt4 from base;
+	composes: subheader tc from typography;
+}
+
+/* Repo Main */
+.tree-search-modal {
+	composes: f4 from typography;
+	composes: bg-white from colors;
+	composes: col-9 from grid;
+	composes: modal from "sourcegraph/components/styles/modal.css";
+	composes: center from base;
+}

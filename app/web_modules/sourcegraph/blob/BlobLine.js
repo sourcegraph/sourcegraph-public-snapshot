@@ -1,4 +1,7 @@
+// @flow weak
+
 import React from "react";
+import {Link} from "react-router";
 
 import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
@@ -6,6 +9,8 @@ import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import s from "sourcegraph/blob/styles/Blob.css";
+import "sourcegraph/components/styles/code.css";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
 // a string by joining the elements (to produce "abc", for example).
@@ -35,8 +40,9 @@ class BlobLine extends Component {
 			}
 		}
 
-		// Filter highlightedDef to improve perf.
+		// Filter to improve perf.
 		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
+		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
 		state.activeDef = state.ownAnnURLs && state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
 
 		state.lineNumber = props.lineNumber || null;
@@ -68,35 +74,37 @@ class BlobLine extends Component {
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
 			if ((ann.URL || ann.URLs) && !this._hasLink(content)) {
+				let isHighlighted = hasURL(ann, this.state.highlightedDef);
 				return (
-					<a
+					<Link
 						className={classNames(ann.Class, {
-							"ref": true,
-							"highlight-primary": hasURL(ann, this.state.highlightedDef),
-							"active-def": hasURL(ann, this.state.activeDef),
+							[s.highlightedAnn]: isHighlighted && (!this.state.highlightedDefObj || !this.state.highlightedDefObj.Error),
+
+							// disabledAnn is an ann that you can't click on (possibly a broken ref).
+							[s.disabledAnn]: isHighlighted && (this.state.highlightedDefObj && this.state.highlightedDefObj.Error),
+
+							[s.activeAnn]: hasURL(ann, this.state.activeDef),
 						})}
-						href={ann.URL || ann.URLs[0]}
+						to={ann.URL || ann.URLs[0]}
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
-							ev.preventDefault();
 							if (ann.URLs) {
+								ev.preventDefault();
 								// Multiple refs coincident on the same token to different defs.
 								//
 								// Dispatch async and stop propagation so the menu is not
 								// immediately closed by click handler on Document.
-								setTimeout(() => {
-									Dispatcher.Stores.dispatch(new DefActions.SelectMultipleDefs(
-										ann.URLs,
-										ev.view.scrollX + ev.clientX, ev.view.scrollY + ev.clientY
-									));
-								}, 0);
-							} else {
-								Dispatcher.Stores.dispatch(new DefActions.SelectDef(ann.URL));
+								throw new Error("TODO: reimplement multiple defs menu");
+							}
+
+							if (!this.state.highlightedDefObj || this.state.highlightedDefObj.Error) {
+								// Prevent navigating to a broken ref or not-yet-loaded def.
+								ev.preventDefault();
 							}
 						}}
-						key={i}>{simpleContentsString(content)}</a>
+						key={i}>{simpleContentsString(content)}</Link>
 				);
 			}
 			return <span key={i} className={ann.Class}>{simpleContentsString(content)}</span>;
@@ -107,15 +115,11 @@ class BlobLine extends Component {
 		let contents = this.state.annotations ? this._annotate() : this.state.contents;
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
-		let cls = classNames("line", this.state.className, {
-			"main-byte-range": this.state.selected,
-		});
-
 		return (
-			<tr className={cls}
+			<tr className={s.line}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
-					<td className="line-number"
+					<td className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
 						data-line={this.state.lineNumber}
 						onClick={(event) => {
 							if (event.shiftKey) {
@@ -128,7 +132,7 @@ class BlobLine extends Component {
 				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
 				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
 
-				<td className="line-content">
+				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
 					{simpleContentsString(contents)}
 				</td>
 			</tr>

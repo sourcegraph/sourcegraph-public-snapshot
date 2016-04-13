@@ -1,9 +1,11 @@
 import React from "react";
-import classNames from "classnames";
 
-import {elapsed, panelClass, taskClass} from "sourcegraph/build/Build";
+import {elapsed} from "sourcegraph/build/Build";
 import Component from "sourcegraph/Component";
 import Step from "sourcegraph/build/Step";
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/Build.css";
 
 class TopLevelTask extends Component {
 	reconcileState(state, props) {
@@ -23,22 +25,13 @@ class TopLevelTask extends Component {
 	render() {
 		let task = this.state.task;
 
-		let panelCls = classNames(panelClass(task), "top-level-task");
-
 		return (
-			<div className={panelCls}>
-				<div className="panel-heading" role="tab">
-					<div className="pull-right">{elapsed(task)}</div>
-					<h4 className="panel-title" id={`T${task.ID}`}>
-						<i className={taskClass(task).icon}></i> {task.Label}
-					</h4>
+			<div>
+				<div styleName={`top-level-task-header`}>
+					<span styleName="header-label">{task.Label}</span>
+					<span styleName="elapsed-label">{elapsed(task)}</span>
 				</div>
-				<div className="panel-body">
-					<div className="panel-group steps"
-						role="tablist" aria-multiselectable="true">
-						{this.state.subtasks.map((subtask) => <Step key={subtask.ID} task={subtask} logs={this.state.logs} />)}
-					</div>
-				</div>
+				{this.state.subtasks.map((subtask) => <Step key={subtask.ID} task={subtask} logs={this.state.logs} />)}
 			</div>
 		);
 	}
@@ -50,4 +43,4 @@ TopLevelTask.propTypes = {
 	logs: React.PropTypes.object.isRequired,
 };
 
-export default TopLevelTask;
+export default CSSModules(TopLevelTask, styles, {allowMultiple: true});

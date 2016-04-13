@@ -3,7 +3,7 @@ import classNames from "classnames";
 import Fuze from "fuse.js";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
-import * as router from "sourcegraph/util/router";
+import {urlToTree} from "sourcegraph/tree/routes";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Component from "sourcegraph/Component";
@@ -87,10 +87,12 @@ class RevSwitcher extends Component {
 	_revSwitcherURL(rev) {
 		switch (this.state.route) {
 		case "tree":
-			return router.tree(this.state.repo, rev, this.state.path);
+			// TODO(sqs): use urlToBlob if this is a file
+			return urlToTree(this.state.repo, rev, this.state.path);
 
 		case "commits":
-			return router.repoCommits(this.state.repo, rev);
+			// TODO(sqs): add back repo commits route and impl in react
+			throw new Error("TODO");
 
 		default:
 			throw new Error(`can't generate URL for ${this.state.route}`);
@@ -140,7 +142,7 @@ class RevSwitcher extends Component {
 					onClick={this._onToggleDropdown}>
 					<label>{this.props.rev.length === 40 ? "Commit: " : "Branch: "}</label> {abbrevRev(this.props.rev)} <span className="caret"></span>
 				</button>
-				<div className={this.props.alignRight ? "dropdown-menu dropdown-menu-right" : "dropdown-menu"} role="menu">
+				<div className="dropdown-menu" role="menu">
 					<div className="search-section">
 						<input ref="input" type="text" className="form-control" placeholder="Find branch or tag" onChange={this._onChangeQuery}/>
 					</div>
@@ -175,9 +177,6 @@ RevSwitcher.propTypes = {
 
 	// tags is RepoStore.tags.
 	tags: React.PropTypes.object.isRequired,
-
-	// alignRight optionally allows the dropdown to be aligned right instead of the default alignment.
-	alignRight: React.PropTypes.bool,
 };
 
 export default RevSwitcher;

@@ -5,8 +5,8 @@ import * as DefActions from "sourcegraph/def/DefActions";
 
 describe("DefStore", () => {
 	it("should handle DefFetched", () => {
-		DefStore.directDispatch(new DefActions.DefFetched("/someURL", "someData"));
-		expect(DefStore.defs.get("/someURL")).to.be("someData");
+		DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", "someData"));
+		expect(DefStore.defs.get("r", "v", "d")).to.be("someData");
 	});
 
 	it("should handle DefsFetched", () => {
@@ -23,12 +23,12 @@ describe("DefStore", () => {
 	});
 
 	it("should handle RefLocationsFetched", () => {
-		DefStore.directDispatch(new DefActions.RefLocationsFetched("/someURL", ["someData"]));
-		expect(DefStore.refLocations.get("/someURL")).to.eql(["someData"]);
+		DefStore.directDispatch(new DefActions.RefLocationsFetched("r", "v", "d", ["someData"]));
+		expect(DefStore.refLocations.get("r", "v", "d")).to.eql(["someData"]);
 	});
 
 	it("should handle RefsFetched", () => {
-		DefStore.directDispatch(new DefActions.RefsFetched("/someURL", "someRepo", "f", ["someData"]));
-		expect(DefStore.refs.get("/someURL", "someRepo", "f")).to.eql(["someData"]);
+		DefStore.directDispatch(new DefActions.RefsFetched("r", "v", "d", "rr", "rf", ["someData"]));
+		expect(DefStore.refs.get("r", "v", "d", "rr", "rf")).to.eql(["someData"]);
 	});
 });

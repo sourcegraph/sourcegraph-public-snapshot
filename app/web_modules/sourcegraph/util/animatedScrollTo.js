@@ -34,7 +34,9 @@ export default function(element, to, duration, callback) {
 			element.scrollTop = val;
 		}
 		if (now > animationStart + duration) {
-			element.scrollTop = to;
+			if (Math.abs(element.scrollTop - to) > 1) {
+				element.scrollTop = to;
+			}
 			animating = false;
 			if (callback) { callback(); }
 		}

@@ -17,7 +17,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	def, _, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &opt)
+	def, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &opt)
 	if err != nil {
 		return err
 	}

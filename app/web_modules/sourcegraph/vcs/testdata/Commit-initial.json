@@ -2,18 +2,19 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "commit single media repo-build",
+			"styleName": "container",
 			"children": [
 				{
-					"type": "a",
+					"type": "div",
+					"key": ".0",
 					"props": {
-						"className": "pull-left",
+						"styleName": "avatar",
 						"children": [
 							{
-								"type": "img",
+								"type": "WrappedComponent",
 								"props": {
-									"className": "media-object avatar img-rounded",
-									"src": "http://example.com/avatar.png"
+									"img": "http://example.com/avatar.png",
+									"size": "large"
 								}
 							}
 						]
@@ -21,58 +22,58 @@
 				},
 				{
 					"type": "div",
+					"key": ".1",
 					"props": {
-						"className": "media-body",
+						"styleName": "body",
 						"children": [
 							{
-								"type": "h4",
+								"type": "div",
+								"key": ".0",
 								"props": {
-									"className": "media-heading commit-title",
+									"styleName": "title",
 									"children": [
 										{
-											"type": "a",
+											"type": "",
 											"props": {
-												"href": "/undefined@abc/-/commit",
+												"to": "/undefined@abc/-/commit",
 												"children": [
+													{
+														"type": "code",
+														"key": ".0",
+														"props": {
+															"styleName": "sha",
+															"children": [
+																"abc"
+															]
+														}
+													},
 													"msg"
-												]
+												],
+												"onlyActiveOnIndex": false,
+												"className": "",
+												"style": {}
 											}
 										}
 									]
 								}
 							},
 							{
-								"type": "p",
+								"type": "div",
+								"key": ".1",
 								"props": {
-									"className": "author committer",
+									"styleName": "text",
 									"children": [
 										{
 											"type": "span",
+											"key": ".0",
 											"props": {
-												"className": "date",
 												"children": [
 													"authored ",
 													{
 														"type": "TimeAgo",
+														"key": ".1",
 														"props": {
 															"time": ""
-														}
-													}
-												]
-											}
-										},
-										{
-											"type": "a",
-											"props": {
-												"href": "/undefined@abc/-/commit",
-												"children": [
-													{
-														"type": "code",
-														"props": {
-															"className": "commit-id pull-right",
-															"children": [
-																"abc"
-															]
 														}
 													}
 												]
