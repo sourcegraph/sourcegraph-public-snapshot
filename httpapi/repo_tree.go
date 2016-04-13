@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -21,6 +22,9 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
+		return err
+	}
 	return writeJSON(w, tc.Entry)
 }
 
@@ -33,6 +37,9 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 	treeList, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRev})
 	if err != nil {
+		return err
+	}
+	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
 	return writeJSON(w, treeList)

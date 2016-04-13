@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
@@ -23,6 +24,8 @@ func serveAnnotations(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
+	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
+		return err
+	}
 	return writeJSON(w, anns)
 }
