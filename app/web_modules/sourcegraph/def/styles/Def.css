@@ -74,6 +74,6 @@
 .repo {
 	display: block;
 	composes: mt2 from base;
-	composes: mid-gray from colors;
+	composes: light-gray from colors;
 	composes: f6 from typography;
 }
