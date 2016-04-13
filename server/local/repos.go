@@ -79,6 +79,17 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
+	// HACK: Only allow users with write access (which, on
+	// Sourcegraph.com, are Sourcegraph staff) to list locally hosted
+	// repos (sourcegraph/sourcegraph, other of our internal
+	// repos). This means that only we will see these repos on our
+	// dashboard, which is the purpose of this if-statement. When we
+	// have a fuller security model or user-selectable repo lists, we
+	// can remove this.
+	if !authpkg.ActorFromContext(ctx).HasWriteAccess() {
+		return &sourcegraph.RepoList{}, nil
+	}
+
 	repos, err := store.ReposFromContext(ctx).List(ctx, opt)
 	if err != nil {
 		return nil, err
