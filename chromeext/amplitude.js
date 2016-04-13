@@ -11,7 +11,6 @@
   /**
    * Global
    */
-
   var global = (function(){ return this; })();
 
   /**
@@ -959,9 +958,9 @@ cookieStorage.prototype._cookiesEnabled = function() {
   var uid = String(new Date());
   var result;
   try {
-    Cookie.set(uid, uid);
-    result = Cookie.get(uid) === uid;
-    Cookie.remove(uid);
+    //may not work for other browsers (IE)
+    result = navigator.cookieEnabled;
+    //console.log(navigator.cookieEnabled)
     return result;
   } catch (e) {
     // cookies are not enabled
@@ -999,6 +998,7 @@ cookieStorage.prototype.getStorage = function() {
         this._options.expirationDays = opts.expirationDays || this._options.expirationDays;
         // localStorage is specific to subdomains
         this._options.domain = opts.domain || this._options.domain || window.location.hostname;
+        //console.log('domain is' + this._options.domain)
         return this._options;
       },
       get: function(name) {
@@ -1066,6 +1066,7 @@ var options = function(opts) {
   _options.expirationDays = opts.expirationDays;
 
   var domain = (opts.domain !== undefined) ? opts.domain : '.' + topDomain(window.location.href);
+  //console.log('domain is' + domain)
   var token = Math.random();
   _options.domain = domain;
   set('amplitude_test', token);
@@ -1138,6 +1139,7 @@ var _set = function(name, value, opts) {
   if (opts.domain) {
     str += '; domain=' + opts.domain;
   }
+  //console.log(str)
   document.cookie = str;
 };
 

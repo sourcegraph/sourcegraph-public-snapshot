@@ -18,9 +18,8 @@ function sourcegraph_activateDefnPopovers(el) {
     var t = __sg_getTarget(ev.target);
     if (!t) return;
     // if (activeA != t) console.log('ACTIVE:', t.href);
-    if (activeA != t) {
+    if (activeA !== t) {
       activeA = t;
-      //console.log(activeA.href)
       var URLend = activeA.href.split('https://sourcegraph.com')[1]
       var URLendNoChrome = URLend.split('?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext')[0]
       var URLtoUse = 'https://sourcegraph.com/.api/repos' + URLendNoChrome;
@@ -35,8 +34,8 @@ function sourcegraph_activateDefnPopovers(el) {
   });
 
   function __sg_getTarget(t) {
-    while (t && t.tagName == "SPAN") { t = t.parentNode; }
-    if (t && t.tagName == "A" && t.classList.contains("sgdef")) return t;
+    while (t && t.tagName === "SPAN") {t = t.parentNode;}
+    if (t && t.tagName === "A" && t.classList.contains("sgdef")) return t;
   }
 
   var popover;
@@ -64,8 +63,6 @@ function sourcegraph_activateDefnPopovers(el) {
     }, 100);
     popover.classList.remove("visible");
   }
-
-
 
   function positionPopover(x, y) {
     if (!popover || !showingPopover) return;
