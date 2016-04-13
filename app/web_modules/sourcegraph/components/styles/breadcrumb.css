@@ -20,3 +20,7 @@
 .inactive:hover {
 	color: inherit !important; /* don't show hover effect for inactive components */
 }
+
+.link:hover, .active:hover, .inactive:hover {
+	text-decoration: underline;
+}
