@@ -21,7 +21,7 @@ import (
 // http.ResponseWriter.
 func writeJSON(w http.ResponseWriter, v interface{}) error {
 	// Return "[]" instead of "null" if v is a nil slice.
-	if reflect.ValueOf(v).IsNil() && reflect.TypeOf(v).Kind() == reflect.Slice {
+	if reflect.TypeOf(v).Kind() == reflect.Slice && reflect.ValueOf(v).IsNil() {
 		v = []interface{}{}
 	}
 
