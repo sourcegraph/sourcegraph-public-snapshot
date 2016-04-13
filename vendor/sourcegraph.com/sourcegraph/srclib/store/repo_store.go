@@ -27,6 +27,10 @@ type RepoImporter interface {
 	// Import imports srclib build data for a source unit at a
 	// specific version into the store.
 	Import(commitID string, unit *unit.SourceUnit, data graph.Output) error
+
+	// CreateVersion creates the version entry for the given commit. This signals that the commit data is
+	// ready to be queried. All other data (including indexes) needs to exist before this gets called.
+	CreateVersion(commitID string) error
 }
 
 type RepoIndexer interface {

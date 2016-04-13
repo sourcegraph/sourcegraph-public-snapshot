@@ -41,6 +41,14 @@ func (c *client) Import(repo, commitID string, u *unit.SourceUnit, data graph.Ou
 	return err
 }
 
+func (c *client) CreateVersion(repo, commitID string) error {
+	_, err := c.u.CreateVersion(c.ctx, &CreateVersionOp{
+		Repo:     repo,
+		CommitID: commitID,
+	})
+	return err
+}
+
 func (c *client) Index(repo, commitID string) error {
 	_, err := c.u.Index(c.ctx, &IndexOp{Repo: repo, CommitID: commitID})
 	return err
@@ -61,6 +69,13 @@ func (s *server) Import(ctx context.Context, op *ImportOp) (*pbtypes.Void, error
 		op.Data = &graph.Output{}
 	}
 	if err := s.u.Import(op.Repo, op.CommitID, unit, *op.Data); err != nil {
+		return nil, err
+	}
+	return &pbtypes.Void{}, nil
+}
+
+func (s *server) CreateVersion(ctx context.Context, op *CreateVersionOp) (*pbtypes.Void, error) {
+	if err := s.u.CreateVersion(op.Repo, op.CommitID); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil

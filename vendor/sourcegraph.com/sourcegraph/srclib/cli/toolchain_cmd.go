@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 
 	"strings"
 
@@ -267,7 +268,7 @@ var stdToolchains = toolchainMap{
 
 func (m toolchainMap) listKeys() string {
 	var langs string
-	for i, _ := range m {
+	for i := range m {
 		langs += i + ", "
 	}
 	// Remove the last comma from langs before returning it.
@@ -331,11 +332,6 @@ run this command again.`)
 	if os.Getenv("GOPATH") == "" {
 		os.Setenv("GOPATH", path.Join(util.CurrentUserHomeDir(), ".srclib-gopath"))
 	}
-	// Add symlink to GOPATH so install succeeds (necessary as long as there's a Go dependency in this toolchain)
-	err, gopathDir := symlinkToGopath(toolchain)
-	if err != nil {
-		return err
-	}
 
 	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
@@ -344,6 +340,12 @@ run this command again.`)
 
 	log.Println("Downloading Go toolchain")
 	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+		return err
+	}
+
+	// Add symlink to GOPATH so install succeeds (necessary as long as there's a Go dependency in this toolchain)
+	err, gopathDir := symlinkToGopath(toolchain)
+	if err != nil {
 		return err
 	}
 
@@ -612,9 +614,18 @@ func symlinkToGopath(toolchain string) (err error, gopathDir string) {
 		if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
 			return err, ""
 		}
-		log.Printf("ln -s %s %s", srclibpathDir, gopathDir)
-		if err := os.Symlink(srclibpathDir, gopathDir); err != nil {
-			return err, ""
+		if runtime.GOOS != "windows" {
+			log.Printf("ln -s %s %s", srclibpathDir, gopathDir)
+			if err := os.Symlink(srclibpathDir, gopathDir); err != nil {
+				return err, ""
+			}
+		} else {
+			// os.Symlink makes "file symbolic link" on Windows making impossible to install Go toolchain
+			// because `cd foo && make` requires "foo" to be either a directory or so-called "directory symbolic link".
+			// That's why we had to use `mklink /D bar foo`
+			if err := execCmdInDir(srclibpathDir, "cmd", "/c", "mklink", "/D", gopathDir, srclibpathDir); err != nil {
+				return err, ""
+			}
 		}
 	} else if err != nil {
 		return err, ""

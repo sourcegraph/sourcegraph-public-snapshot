@@ -35,7 +35,7 @@ func TestSrclibImport(t *testing.T) {
 
 	// Mock the srclib store interface (and replace the old
 	// newSrclibStoreClient value when done).
-	var calledSrclibStoreImport, calledSrclibStoreIndex bool
+	var calledSrclibStoreImport, calledSrclibStoreIndex, calledSrclibStoreCreateVersion bool
 	orig := newSrclibStoreClient
 	newSrclibStoreClient = func(context.Context, pb.MultiRepoImporterClient) pb.MultiRepoImporterIndexer {
 		return srclibstore.MockMultiRepoStore{
@@ -57,6 +57,16 @@ func TestSrclibImport(t *testing.T) {
 			},
 			Index_: func(repo, commitID string) error {
 				calledSrclibStoreIndex = true
+				if repo != wantRepo {
+					t.Errorf("got repo %q, want %q", repo, wantRepo)
+				}
+				if commitID != wantCommitID {
+					t.Errorf("got commitID %q, want %q", commitID, wantCommitID)
+				}
+				return nil
+			},
+			CreateVersion_: func(repo, commitID string) error {
+				calledSrclibStoreCreateVersion = true
 				if repo != wantRepo {
 					t.Errorf("got repo %q, want %q", repo, wantRepo)
 				}
@@ -96,6 +106,9 @@ func TestSrclibImport(t *testing.T) {
 	}
 	if !calledSrclibStoreIndex {
 		t.Error("!calledSrclibStoreIndex")
+	}
+	if !calledSrclibStoreCreateVersion {
+		t.Error("!calledSrclibStoreCreateVersion")
 	}
 	if !*calledReposGet {
 		t.Error("!calledReposGet")

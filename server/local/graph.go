@@ -58,3 +58,10 @@ func (s *graph_) Index(ctx context.Context, op *pb.IndexOp) (*pbtypes.Void, erro
 	}
 	return pb.Server(store.GraphFromContext(ctx)).Index(ctx, op)
 }
+
+func (s *graph_) CreateVersion(ctx context.Context, op *pb.CreateVersionOp) (*pbtypes.Void, error) {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.CreateVersion", op.Repo); err != nil {
+		return nil, err
+	}
+	return pb.Server(store.GraphFromContext(ctx)).CreateVersion(ctx, op)
+}

@@ -2,7 +2,6 @@ package local
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -105,9 +104,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, err
 	}
 
-	if err := updateRepoStatusForBuild(ctx, b); err != nil {
-		log.Printf("WARNING: failed to update repo status for new build #%s (repo %s): %s.", b.Spec().IDString(), b.Repo, err)
-	}
+	observeNewBuild(b)
 
 	return b, nil
 }
@@ -119,14 +116,11 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 	}
 
 	info := op.Info
-	var updateRepoStatus bool
 	if info.StartedAt != nil {
 		b.StartedAt = info.StartedAt
-		updateRepoStatus = true
 	}
 	if info.EndedAt != nil {
 		b.EndedAt = info.EndedAt
-		updateRepoStatus = true
 	}
 	if info.HeartbeatAt != nil {
 		b.HeartbeatAt = info.HeartbeatAt
@@ -139,18 +133,15 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 	}
 	if info.Success {
 		b.Success = info.Success
-		updateRepoStatus = true
 	}
 	if info.Failure {
 		b.Failure = info.Failure
-		updateRepoStatus = true
 	}
 	if info.Priority != 0 {
 		b.Priority = info.Priority
 	}
 	if info.Killed {
 		b.Killed = info.Killed
-		updateRepoStatus = true
 	}
 	if info.BuilderConfig != "" {
 		b.BuilderConfig = info.BuilderConfig
@@ -160,10 +151,8 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 		return nil, err
 	}
 
-	if updateRepoStatus {
-		if err := updateRepoStatusForBuild(ctx, b); err != nil {
-			log.Printf("WARNING: failed to update repo status for modified build #%s (repo %s): %s.", b.Spec().IDString(), b.Repo, err)
-		}
+	if info.EndedAt != nil {
+		observeFinishedBuild(b)
 	}
 
 	var Result string
@@ -183,135 +172,6 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 	}
 
 	return b, nil
-}
-
-// updateRepoStatusForBuild updates the repo commit status for b's
-// commit based on the status of b (and for the base repo of the
-// cross-repo pull request that b was built for, if applicable). If b
-// is not a build on a GitHub or Sourcegraph repo, no update is
-// performed.
-func updateRepoStatusForBuild(ctx context.Context, b *sourcegraph.Build) error {
-	if b.EndedAt != nil {
-		// increment a counter labeled with status
-		// "beat" a heartbeat
-		var state string
-		switch {
-		case b.Success:
-			state = "success"
-		case b.Failure:
-			state = "failure"
-		case b.Killed:
-			state = "killed"
-		default:
-			state = "unknown"
-		}
-		duration := b.EndedAt.Time().Sub(b.StartedAt.Time())
-		labels := prometheus.Labels{
-			"state": state,
-			"repo":  util.GetTrackedRepo(b.Repo),
-		}
-		buildsCount.With(labels).Inc()
-		buildsDuration.With(labels).Observe(duration.Seconds())
-		buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
-	}
-
-	// TODO(nodb-deploy): implement this -- not sure what this originally did, but leaving in for future
-	return nil
-	// updateRepoStatus := func(repoRevSpec sourcegraph.RepoRevSpec, st sourcegraph.RepoStatus) error {
-	// 	// Check if the repo is a GitHub-backed repo.
-	// 	repo, err := svc.Repos(ctx).Get(ctx, &repoRevSpec.RepoSpec)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if !repo.IsGitHubRepo() {
-	// 		return nil
-	// 	}
-
-	// 	// Check if the external statuses are enabled.
-	// 	settings, err := svc.Repos(ctx).GetSettings(repoRevSpec.RepoSpec)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if settings.ExternalCommitStatuses == nil || *settings.ExternalCommitStatuses == false {
-	// 		// Disabled.
-	// 		return nil
-	// 	}
-	// 	if *st.State != "success" && (settings.UnsuccessfulExternalCommitStatuses == nil || *settings.UnsuccessfulExternalCommitStatuses == false) {
-	// 		// Don't publish non-successful statuses.
-	// 		return nil
-	// 	}
-
-	// 	// Assume the identity of a repo admin (with permission to
-	// 	// create a repo status) because usually this func is called
-	// 	// by an asynchronous build worker that is authenticated as
-	// 	// superuser, not as any particular user. If we didn't do
-	// 	// this, GitHub would forbid the create status request because
-	// 	// it'd be coming from an anonymous user (from GitHub's POV).
-	// 	if settings.LastAdminUID == nil {
-	// 		log.Printf("Unable to update repo %s commit %s status for build #%d: no admin UID could be determined.", b.Repo, b.CommitID, b.BID)
-	// 		return nil
-	// 	}
-
-	// 	// TODO(nodb-deploy): use a context to act as UID=*settings.LastAdminUID
-	// 	if _, err := svc.Repos(ctx).CreateStatus(repoRevSpec, st); err == nil {
-	// 		log.Printf("Updated repo %s commit %s status for build #%d (%s)", b.Repo, b.CommitID, b.BID, *st.State)
-	// 	}
-	// 	return err
-	// }
-
-	// repoRevSpec := sourcegraph.RepoRevSpec{
-	// 	RepoSpec: sourcegraph.RepoSpec{URI: b.Repo},
-	// 	Rev:      b.CommitID,
-	// 	CommitID: b.CommitID,
-	// }
-
-	// // Reserve the "failure" state for if Sourcegraph ever runs actual
-	// // tests. In general, users don't yet consider a Sourcegraph graph
-	// // failure to be akin to a test failure. More like it should be
-	// // pending until all open items on the code review are resolved.
-	// var state, description string
-	// if b.Failure {
-	// 	state = "error"
-	// 	description = "Sourcegraph build failed."
-	// } else if b.Success {
-	// 	state = "success"
-	// 	description = "Sourcegraph build completed successfully."
-	// } else {
-	// 	if b.StartedAt.Valid {
-	// 		description = "Sourcegraph build in progress..."
-	// 	} else {
-	// 		description = "Sourcegraph build queued..."
-	// 	}
-	// 	state = "pending"
-	// }
-
-	// st := sourcegraph.RepoStatus{RepoStatus: github.RepoStatus{
-	// 	State:       github.String(state),
-	// 	Description: github.String(description),
-
-	// 	// The "/build" distinguishes it from a status on the merge
-	// 	// commit that we will implement later. Here are all of the
-	// 	// different kinds of planned statuses:
-	// 	//
-	// 	//  - sourcegraph/build: a build of a specific commit
-	// 	//  - sourcegraph/review: the status of a code review (have all checklist items been resolved?)
-	// 	Context: github.String("sourcegraph/build"),
-	// }}
-	// if state == "success" {
-	// 	// Link directly to the repo if successful because that is
-	// 	// more likely what people want. Only if it's a failure or in
-	// 	// progress are they more likely to care about the build logs
-	// 	// and details.
-	// 	st.TargetURL = github.String(conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepoCommit(b.Repo, b.CommitID)).String())
-	// } else {
-	// 	st.TargetURL = github.String(conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepoBuild(b.Repo, b.BID)).String())
-	// }
-
-	// if err := updateRepoStatus(ctx, repoRevSpec, st); err != nil {
-	// 	return err
-	// }
-
-	// return nil
 }
 
 func (s *builds) ListBuildTasks(ctx context.Context, op *sourcegraph.BuildsListBuildTasksOp) (*sourcegraph.BuildTaskList, error) {
@@ -419,16 +279,44 @@ func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueN
 	if nextBuild == nil {
 		return nil, grpc.Errorf(codes.NotFound, "build queue is empty")
 	}
+	observeDequeuedBuild(nextBuild)
 	return nextBuild, nil
 }
 
+func observeNewBuild(b *sourcegraph.Build) {
+	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Repo)}
+	buildsCreate.With(labels).Inc()
+}
+
+func observeFinishedBuild(b *sourcegraph.Build) {
+	// increment a counter labeled with status
+	// "beat" a heartbeat
+	var state string
+	switch {
+	case b.Success:
+		state = "success"
+	case b.Failure:
+		state = "failure"
+	case b.Killed:
+		state = "killed"
+	default:
+		state = "unknown"
+	}
+	duration := b.EndedAt.Time().Sub(b.StartedAt.Time())
+	labels := prometheus.Labels{
+		"state": state,
+		"repo":  util.GetTrackedRepo(b.Repo),
+	}
+	buildsDuration.With(labels).Observe(duration.Seconds())
+	buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
+}
+
+func observeDequeuedBuild(b *sourcegraph.Build) {
+	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Repo)}
+	buildsDequeue.With(labels).Inc()
+}
+
 var metricLabels = []string{"state", "repo"}
-var buildsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "builds",
-	Name:      "total",
-	Help:      "Total number of builds made.",
-}, metricLabels)
 var buildsDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "builds",
@@ -442,9 +330,22 @@ var buildsHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name:      "last_timestamp_unixtime",
 	Help:      "Last time a build finished.",
 }, metricLabels)
+var buildsCreate = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "create_total",
+	Help:      "Number of builds created.",
+}, []string{"repo"})
+var buildsDequeue = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "builds",
+	Name:      "dequeue_total",
+	Help:      "Number of builds dequeued.",
+}, []string{"repo"})
 
 func init() {
-	prometheus.MustRegister(buildsCount)
+	prometheus.MustRegister(buildsDequeue)
+	prometheus.MustRegister(buildsCreate)
 	prometheus.MustRegister(buildsDuration)
 	prometheus.MustRegister(buildsHeartbeat)
 }

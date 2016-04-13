@@ -83,6 +83,19 @@ func (s wrappedMultiRepoImporter) Import(ctx context.Context, param *pb.ImportOp
 	return
 }
 
+func (s wrappedMultiRepoImporter) CreateVersion(ctx context.Context, param *pb.CreateVersionOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "MultiRepoImporter", "CreateVersion", param)
+	defer func() {
+		trace.After(ctx, "MultiRepoImporter", "CreateVersion", param, err, time.Since(start))
+	}()
+	res, err = local.Services.MultiRepoImporter.CreateVersion(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "MultiRepoImporter.CreateVersion returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) (res *pbtypes.Void, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "MultiRepoImporter", "Index", param)

@@ -48,12 +48,10 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 	// If previous coverage exists alert on failure
 	if prevCov, dataVer, err := handlerutil.GetCoverage(cl, ctx, repoRev.URI); err == nil {
 		if cvg.HasRegressed(prevCov, cov) {
-			prevCovJSON, _ := json.Marshal(prevCov)
-			covJSON, _ := json.Marshal(cov)
 			slack.PostMessage(slack.PostOpts{
 				Msg: fmt.Sprintf(`Coverage for %s has regressed.
 Bfore, commit %s had %s.
-After, commit %s has %s.`, repoRev.URI, dataVer.CommitID, string(prevCovJSON), repoRev.CommitID, string(covJSON)),
+After, commit %s has %s.`, repoRev.URI, dataVer.CommitID, summary(prevCov), repoRev.CommitID, summary(cov)),
 				IconEmoji: ":warning:",
 				Channel:   "srclib",
 			})
@@ -87,4 +85,17 @@ After, commit %s has %s.`, repoRev.URI, dataVer.CommitID, string(prevCovJSON), r
 	}
 
 	return nil
+}
+
+func summary(c map[string]*cvg.Coverage) string {
+	s := make(map[string]*cvg.Coverage)
+
+	for lang, cov := range c {
+		covCopy := *cov
+		covCopy.UncoveredFiles = nil
+		s[lang] = &covCopy
+	}
+
+	b, _ := json.Marshal(s)
+	return string(b)
 }
