@@ -70,7 +70,7 @@
     "utf8": "2.1.1"
   },
   "scripts": {
-    "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server --devtool cheap-module-source-map",
+    "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "check": "./node_modules/.bin/flow check",
     "build": "npm run check && env NODE_ENV=production node ./node_modules/.bin/webpack",
     "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules",
