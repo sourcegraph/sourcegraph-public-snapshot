@@ -27,10 +27,10 @@ srclib:
 	@if [ -z "$$DEV" ]; then \
 		docker build --build-arg URL=https://github.com/sourcegraph/srclib/tarball/${COMMIT} -t sourcegraph/srclib . ; \
 	else \
-		rm -rf cache/srclib; \
-		mkdir -p cache; \
-		git clone $$GOPATH/src/sourcegraph.com/sourcegraph/srclib cache/srclib; \
-		docker build --build-arg URL=cache/srclib -t sourcegraph/srclib . ; \
+		rm -rf .cache/srclib; \
+		mkdir -p .cache; \
+		git clone $$GOPATH/src/sourcegraph.com/sourcegraph/srclib .cache/srclib; \
+		docker build --build-arg URL=.cache/srclib -t sourcegraph/srclib . ; \
 	fi;
 	docker run -v ${PWD}:/out sourcegraph/srclib
 
