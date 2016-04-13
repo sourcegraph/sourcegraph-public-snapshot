@@ -308,6 +308,8 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 	return strings.HasPrefix(output, "fatal: Invalid revision range "+obj)
 }
 
+var commitLogCache = synclru.New(lru.New(500))
+
 // commitLog returns a list of commits, and total number of commits
 // starting from Head until Base or beginning of branch (unless NoTotal is true).
 //
@@ -334,6 +336,16 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
+	}
+
+	// Only cache when we're fetching immutable data.
+	var cacheKey string
+	if len(opt.Head) == 40 && (len(opt.Base) == 0 || len(opt.Base) == 40) && opt.NoTotal {
+		cacheKey = r.URL + "|" + fmt.Sprintf("%q", args)
+
+		if commits, found := commitLogCache.Get(cacheKey); found {
+			return commits.([]*vcs.Commit), 0, nil
+		}
 	}
 
 	cmd := gitserver.Command("git", args...)
@@ -403,6 +415,10 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 		if err != nil {
 			return nil, 0, err
 		}
+	}
+
+	if cacheKey != "" {
+		commitLogCache.Add(cacheKey, commits)
 	}
 
 	return commits, total, nil
