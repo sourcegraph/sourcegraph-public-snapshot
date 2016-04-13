@@ -2,6 +2,7 @@ package plan
 
 import (
 	"fmt"
+	"strings"
 
 	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
@@ -16,14 +17,15 @@ import (
 func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, error) {
 	// Merge the default configs for all of the languages we detect.
 	var config droneyaml.Config
+	unsupported := []string{}
 	matrix := matrix.Matrix{}
 	for _, lang := range inv.Languages {
 		c, ok := langConfigs[lang.Name]
 		if !ok {
-			c.build = buildLogMsg(fmt.Sprintf("Can't automatically generate CI build config for %s; please create a .drone.yml file", lang.Name), fmt.Sprintf("automatic CI config does not yet support %s", lang.Name))
+			unsupported = append(unsupported, lang.Name)
+		} else {
+			config.Build = append(config.Build, c.build)
 		}
-
-		config.Build = append(config.Build, c.build)
 		for key, vals := range c.matrix {
 			matrix[key] = append(matrix[key], vals...)
 		}
@@ -31,6 +33,13 @@ func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, er
 
 	if len(config.Build) == 0 {
 		config.Build = append(config.Build, buildLogMsg("Couldn't infer CI build config; please create a .drone.yml file", "no supported programming languages were auto-detected"))
+	}
+
+	if len(unsupported) > 0 {
+		config.Build = append(config.Build, buildLogMsg(
+			fmt.Sprintf("Can't automatically generate CI build config for %s; please create a .drone.yml file", strings.Join(unsupported, ", ")),
+			fmt.Sprintf("automatic CI config does not yet support:\n%s\n", strings.Join(unsupported, "\n")),
+		))
 	}
 
 	return &config, calcMatrix(matrix), nil

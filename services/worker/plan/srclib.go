@@ -27,6 +27,7 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	}
 
 	usingSrclib := srclibExplicitlyConfigured // track if we've found any srclib languages
+	unsupported := []string{}
 
 	// Add the srclib build steps for all of the languages we
 	// detect. But if we've explicitly configured srclib at all, then
@@ -34,15 +35,24 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	if !srclibExplicitlyConfigured {
 		for _, lang := range inv.Languages {
 			b, ok := langSrclibConfigs[lang.Name]
-			if ok {
-				usingSrclib = true
-			} else {
-				b = buildLogMsg(fmt.Sprintf("Code Intelligence does not yet support %s", lang.Name), fmt.Sprintf("Sourcegraph Code Intelligence does not yet support %s (which was detected in this repository)", lang.Name))
+			if !ok {
+				unsupported = append(unsupported, lang.Name)
+				continue
 			}
-
+			usingSrclib = true
 			if err := insertSrclibBuild(config, axes, b); err != nil {
 				return err
 			}
+		}
+	}
+
+	if len(unsupported) > 0 {
+		b := buildLogMsg(
+			fmt.Sprintf("Code Intelligence does not yet support %s", strings.Join(unsupported, ", ")),
+			fmt.Sprintf("Sourcegraph Code Intelligence does not yet support the following languages detected in this repository:\n%s\n", strings.Join(unsupported, "\n")),
+		)
+		if err := insertSrclibBuild(config, axes, b); err != nil {
+			return err
 		}
 	}
 
