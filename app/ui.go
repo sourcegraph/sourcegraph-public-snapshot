@@ -35,12 +35,17 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond*time.Duration(ciFactor))
 	defer cancel()
 
+	var statusCode int
 	res, err := ui.RenderRouter(ctx, r, nil)
 	if err != nil {
-		return err
+		switch err {
+		case context.DeadlineExceeded:
+			statusCode = 202
+		default:
+			return err
+		}
 	}
 
-	var statusCode int
 	var body template.HTML
 	var stores *json.RawMessage
 	var head *ui.Head
