@@ -41,8 +41,6 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 	spanID := traceutil.SpanIDFromContext(ctx)
 	if spanID == (appdash.SpanID{}) {
 		spanID = appdash.NewRootSpanID()
-	} else {
-		spanID = appdash.NewSpanID(spanID)
 	}
 	ctx = traceutil.NewContext(ctx, spanID)
 

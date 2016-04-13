@@ -172,18 +172,18 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 
 	anns := make([]*sourcegraph.Annotation, len(refs))
 	for i, ref := range refs {
-		var rev string
-		if ref.DefRepo == opt.Entry.RepoRev.URI {
-			rev = opt.Entry.RepoRev.Rev
-		} else if d, ok := defaultBranchNames[ref.DefRepo]; ok {
-			rev = d
+		def := ref.DefKey()
+		if def.Repo == opt.Entry.RepoRev.URI {
+			def.CommitID = opt.Entry.RepoRev.Rev
+		} else if d, ok := defaultBranchNames[def.Repo]; ok {
+			def.CommitID = d
 		} else {
-			rev, _ = defaultBranch(ctx, ref.DefRepo)
-			defaultBranchNames[ref.DefRepo] = rev
+			def.CommitID, _ = defaultBranch(ctx, def.Repo)
+			defaultBranchNames[def.Repo] = def.CommitID
 		}
 
 		anns[i] = &sourcegraph.Annotation{
-			URL:       approuter.Rel.URLToDefAtRev(ref.DefKey(), rev).String(),
+			URL:       approuter.Rel.URLToDef(def).String(),
 			StartByte: ref.Start,
 			EndByte:   ref.End,
 		}

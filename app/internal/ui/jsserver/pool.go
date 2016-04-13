@@ -5,19 +5,41 @@ import (
 	"fmt"
 	"sync"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 )
 
 // NewPool creates a pool of servers.
 func NewPool(js []byte, size int) Server {
-	servers := make(chan Server, size)
-	for i := 0; i < size; i++ {
-		servers <- nil
-	}
-	return &pool{
+	p := &pool{
 		js:      js,
-		servers: servers,
+		servers: make(chan Server, size),
 	}
+
+	// Fill pool initially.
+	go func() {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		if p.servers == nil {
+			return
+		}
+		for i := 0; i < size; i++ {
+			s, err := New(js)
+			if err != nil {
+				log15.Error("Failed to preinitialize server in jsserver pool.", "err", err)
+
+				// Call will try to reinitialize this server later,
+				// and it'll return an error synchronously if
+				// initialization fails then.
+				p.servers <- nil
+			} else {
+				p.servers <- s
+			}
+		}
+	}()
+
+	return p
 }
 
 type pool struct {

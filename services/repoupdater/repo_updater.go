@@ -16,8 +16,8 @@ const (
 
 // Enqueue queues a mirror repo for refresh. If asUser is not nil, that user's
 // auth token will be used for performing the fetch from the remote host.
-func Enqueue(repo *sourcegraph.Repo, asUser *sourcegraph.UserSpec) {
-	RepoUpdater.enqueue(&repoUpdateOp{Repo: repo, AsUser: asUser})
+func Enqueue(repoSpec sourcegraph.RepoSpec, asUser *sourcegraph.UserSpec) {
+	RepoUpdater.enqueue(&repoUpdateOp{RepoSpec: repoSpec, AsUser: asUser})
 }
 
 // RepoUpdater is the app repo updater worker. Repo update requests can be enqueued, with debouncing taken care of.
@@ -27,8 +27,8 @@ var RepoUpdater = &repoUpdater{
 }
 
 type repoUpdateOp struct {
-	Repo   *sourcegraph.Repo
-	AsUser *sourcegraph.UserSpec
+	RepoSpec sourcegraph.RepoSpec
+	AsUser   *sourcegraph.UserSpec
 }
 
 type repoUpdater struct {
@@ -61,13 +61,13 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 	}
 
 	// Skip if recently updated.
-	if _, recent := ru.recent[op.Repo.RepoSpec()]; recent {
+	if _, recent := ru.recent[op.RepoSpec]; recent {
 		return
 	}
 
 	select {
 	case ru.queue <- op:
-		ru.recent[op.Repo.RepoSpec()] = now
+		ru.recent[op.RepoSpec] = now
 	default:
 		// Skip since queue is full.
 	}
@@ -82,14 +82,14 @@ func (ru *repoUpdater) run(ctx context.Context) {
 
 	for updateOp := range ru.queue {
 		op := &sourcegraph.MirrorReposRefreshVCSOp{
-			Repo:   updateOp.Repo.RepoSpec(),
+			Repo:   updateOp.RepoSpec,
 			AsUser: updateOp.AsUser,
 		}
 
 		if updateOp.AsUser != nil {
-			log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo.URI, "asUser", updateOp.AsUser.Login)
+			log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.RepoSpec.URI, "asUser", updateOp.AsUser.Login)
 		} else {
-			log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.Repo.URI)
+			log15.Debug("repoUpdater: RefreshVCS:", "repo", updateOp.RepoSpec.URI)
 		}
 		if _, err := cl.MirrorRepos.RefreshVCS(ctx, op); err != nil {
 			log15.Warn("repoUpdater: RefreshVCS:", "error", err)

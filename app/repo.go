@@ -112,7 +112,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if rc.Repo.Mirror {
-		repoupdater.Enqueue(rc.Repo, handlerutil.UserFromContext(ctx))
+		repoupdater.Enqueue(rc.Repo.RepoSpec(), handlerutil.UserFromContext(ctx))
 	}
 
 	return tmpl.Exec(r, w, "repo/main.html", http.StatusOK, nil, &struct {
