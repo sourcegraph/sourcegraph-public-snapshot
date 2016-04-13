@@ -108,6 +108,12 @@ func (c *Client) GetOK(url string) (*http.Response, error) {
 	return c.DoOK(req)
 }
 
+// PostOK checks that the response is HTTP 200.
+func (c *Client) PostOK(url string, body io.Reader) (*http.Response, error) {
+	req, _ := http.NewRequest("POST", url, body)
+	return c.DoOK(req)
+}
+
 func (c Client) DoNoFollowRedirects(req *http.Request) (*http.Response, error) {
 	noRedir := errors.New("x")
 	c.CheckRedirect = func(r *http.Request, via []*http.Request) error { return noRedir }
