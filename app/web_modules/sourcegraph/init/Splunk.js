@@ -39,6 +39,7 @@ function globalErrorHandler(ev) {
 			appIsHandlingError = false;
 		}).catch((err) => {
 			console.log("Splunk: error", err);
+			appIsHandlingError = false;
 		});
 }
 
