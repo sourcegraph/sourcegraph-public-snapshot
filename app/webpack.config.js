@@ -81,7 +81,7 @@ var browserConfig = {
 	output: {
 		path: __dirname+"/assets",
 		filename: "[name].browser.js",
-		sourceMapFilename: "[name].browser.js.map",
+		sourceMapFilename: "[file].map",
 	},
 	plugins: commonPlugins.concat([
 		new FlowStatusWebpackPlugin({restartFlow: false}),
