@@ -89,7 +89,7 @@ class BuildsList extends Container {
 		if (build.Success) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
 		if (build.Failure) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
 		if (build.Killed) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.EndedAt} />];
-		if (build.Queue) return [`${buildStatus(build)} `, <TimeAgo key="time" time={build.StartedAt} />];
+		if (build.Queue) return [`${buildStatus(build)} `, (build.StartedAt && <TimeAgo key="time" time={build.StartedAt} />)];
 	}
 
 	render() {
@@ -125,7 +125,14 @@ class BuildsList extends Container {
 					</div>,
 					...this.state.builds.map((build, i) =>
 						<div key={i} styleName={`list-item ${buildClass(build)}`}>
-							<span styleName="list-id"><Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link></span>
+							<span styleName="list-id">
+								{!build.StartedAt &&
+									<span>{build.ID}</span>
+								}
+								{build.StartedAt &&
+									<Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link>
+								}
+							</span>
 							<span styleName="list-status">{this._rowStatus(build)}</span>
 							<span styleName="list-elapsed">{elapsed(build)}</span>
 						</div>
