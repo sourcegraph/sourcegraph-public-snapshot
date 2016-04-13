@@ -64,6 +64,7 @@
     "react-helmet": "^3.0.1",
     "react-icons": "^1.0.6",
     "react-router": "^2.0.1",
+    "sourcemapped-stacktrace": "^1.1.0",
     "split": "^1.0.0",
     "url": "^0.11.0",
     "utf8": "2.1.1"
