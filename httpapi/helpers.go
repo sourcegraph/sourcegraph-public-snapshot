@@ -19,11 +19,13 @@ import (
 // http.ResponseWriter.
 func writeJSON(w http.ResponseWriter, v interface{}) error {
 	// Return "[]" instead of "null" if v is a nil slice.
-	if reflect.ValueOf(v).IsNil() && reflect.TypeOf(v).Kind() == reflect.Slice {
+	if reflect.TypeOf(v).Kind() == reflect.Slice && reflect.ValueOf(v).IsNil() {
 		v = []interface{}{}
 	}
 
-	// TODO(sqs): use json.MarshalIndent if the user-agent is curl, Chrome, etc.
+	// MarshalIndent takes about 30-50% longer, which
+	// significantly increases the time it takes to handle and return
+	// large HTTP API responses.
 	w.Header().Set("content-type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(v)
 }

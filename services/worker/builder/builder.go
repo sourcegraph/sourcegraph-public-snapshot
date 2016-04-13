@@ -423,6 +423,8 @@ var skipLangs = map[string]struct{}{
 	"Batchfile": struct{}{},
 	"fish":      struct{}{},
 	"Tcsh":      struct{}{},
+	"SaltStack": struct{}{},
+	"PLpgSQL":   struct{}{},
 }
 
 func filterToRealProgrammingLangs(langs []*inventory.Lang) []*inventory.Lang {

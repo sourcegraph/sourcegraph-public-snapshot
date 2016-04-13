@@ -625,6 +625,18 @@
 			"revisionTime": "2015-05-20T08:14:43-07:00"
 		},
 		{
+			"checksumSHA1": "78S6SvW7AQCb4Eihmm6mPGqtkmE=",
+			"path": "github.com/streadway/quantile",
+			"revision": "b0c588724d25ae13f5afb3d90efec0edc636432b",
+			"revisionTime": "2015-09-17T12:39:42+02:00"
+		},
+		{
+			"checksumSHA1": "B/fgM+aJcQX6XX9Zz7VFs41vBLE=",
+			"path": "github.com/tsenart/vegeta/lib",
+			"revision": "166e3050f5a8b2f6d3d2cb03e7baa430f019395d",
+			"revisionTime": "2016-02-13T00:06:32+01:00"
+		},
+		{
 			"path": "github.com/whilp/git-urls",
 			"revision": "e4bd4b1ee3861df27451acebbe81d7a5d67991fe",
 			"revisionTime": "2016-01-12T21:55:23Z"

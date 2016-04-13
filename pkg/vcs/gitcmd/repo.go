@@ -338,6 +338,7 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 		args = append(args, "--", opt.Path)
 	}
 
+	// Only cache when we're fetching immutable data.
 	var cacheKey string
 	if len(opt.Head) == 40 && (len(opt.Base) == 0 || len(opt.Base) == 40) && opt.NoTotal {
 		cacheKey = r.URL + "|" + fmt.Sprintf("%q", args)

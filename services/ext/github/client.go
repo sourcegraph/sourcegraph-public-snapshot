@@ -3,12 +3,26 @@ package github
 import (
 	"net/http"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
+
+var rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "github",
+	Name:      "rate_limit_remaining",
+	Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
+})
+
+func init() {
+	rateLimitRemainingGauge.Set(5000)
+	prometheus.MustRegister(rateLimitRemainingGauge)
+}
 
 // minimalClient contains the minimal set of GitHub API methods needed
 // by this package.
@@ -47,6 +61,9 @@ func checkResponse(resp *github.Response, err error, op string) error {
 		log15.Debug("no response from github", "error", err)
 		return err
 	}
+
+	rateLimitRemainingGauge.Set(float64(resp.Remaining))
+
 	if _, ok := err.(*github.RateLimitError); ok {
 		log15.Debug("exceeded github rate limit", "error", err, "op", op)
 		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
