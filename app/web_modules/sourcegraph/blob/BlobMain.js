@@ -169,7 +169,7 @@ export default class BlobMain extends Container {
 						rev={this.state.rev}
 						path={this.state.path} />
 					{(!this.state.blob || !this.state.anns) && <BlobContentPlaceholder />}
-					{this.state.blob && this.state.anns &&
+					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && this.state.anns && !this.state.anns.Error &&
 					<Blob
 						repo={this.state.repo}
 						rev={this.state.rev}

@@ -7,6 +7,7 @@ import {renderedStatus} from "sourcegraph/app/statusTestUtils";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {rel as relPath} from "sourcegraph/app/routePatterns";
+import {render} from "sourcegraph/util/renderTestUtils";
 
 const C = withFileBlob((props) => null);
 
@@ -35,6 +36,17 @@ describe("withFileBlob", () => {
 			expect(renderedStatus(
 				<C repo="r" rev="v" {...props} />
 			)).to.eql({error: true});
+		});
+	});
+	it("should redirect to the tree URL when the blob is a tree", (done) => {
+		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Entries: []}));
+		let calledReplace = false;
+		render(<C repo="r" rev="v" path="f" {...props} />, {
+			router: {replace: () => calledReplace = true},
+		});
+		setTimeout(() => {
+			expect(calledReplace).to.be(true);
+			done();
 		});
 	});
 });

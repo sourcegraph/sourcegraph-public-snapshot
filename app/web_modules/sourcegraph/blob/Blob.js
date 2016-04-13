@@ -166,10 +166,15 @@ class Blob extends Component {
 		}
 
 		if (state.contents !== props.contents) {
-			state.contents = props.contents;
-			state.lines = fileLines(props.contents);
-			state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : this._computeLineStartBytes(state.lines);
+			state.contents = null;
+			state.lines = null;
+			state.lineStartBytes = null;
 			updateAnns = true;
+			if (props.contents) {
+				state.contents = props.contents;
+				state.lines = fileLines(props.contents);
+				state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : this._computeLineStartBytes(state.lines);
+			}
 		}
 
 		if (updateAnns) {

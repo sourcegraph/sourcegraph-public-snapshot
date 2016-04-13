@@ -12,7 +12,7 @@ export type RenderResult = {
 	element: ?Element;
 };
 
-export function render(component: any): RenderResult {
+export function render(component: any, context: ?Object): RenderResult {
 	testOnly();
 	let result: RenderResult = {
 		actions: [],
@@ -20,7 +20,7 @@ export function render(component: any): RenderResult {
 	};
 	let renderer = TestUtils.createRenderer();
 	result.actions = Dispatcher.Backends.catchDispatched(() => {
-		renderer.render(component, {status: {error: () => null}});
+		renderer.render(component, {...context, status: {error: () => null}});
 	});
 	result.element = renderer.getRenderOutput();
 	return result;

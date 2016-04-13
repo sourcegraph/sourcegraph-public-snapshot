@@ -13,7 +13,7 @@ func defURLPathToKeyPath(s string) string {
 	return s
 }
 
-func defKeyPathToURLPath(s string) string {
+func DefKeyPathToURLPath(s string) string {
 	if s == "." {
 		return "_._"
 	}
@@ -29,8 +29,8 @@ func (s DefSpec) RouteVars() map[string]string {
 		"Repo":     s.Repo,
 		"Rev":      rev,
 		"UnitType": s.UnitType,
-		"Unit":     defKeyPathToURLPath(s.Unit),
-		"Path":     defKeyPathToURLPath(pathEscape(s.Path)),
+		"Unit":     DefKeyPathToURLPath(s.Unit),
+		"Path":     DefKeyPathToURLPath(pathEscape(s.Path)),
 	}
 }
 
