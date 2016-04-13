@@ -38,10 +38,9 @@ export default function withResolvedRepoRev(Component) {
 
 		onStateTransition(prevState, nextState) {
 			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
-				// Record resolution error, if any.
-				this.context.status.error(nextState.repoResolution.Error);
-
-				if (nextState.repoResolution.Result.RemoteRepo) {
+				if (nextState.repoResolution.Error) {
+					this.context.status.error(nextState.repoResolution.Error);
+				} else if (nextState.repoResolution.Result.RemoteRepo) {
 					// If it's a remote repo, do nothing; RepoMain should clone the repository.
 				} else {
 					// Fetch it if it's a local repo.

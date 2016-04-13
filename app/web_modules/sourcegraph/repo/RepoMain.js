@@ -129,8 +129,8 @@ class RepoMain extends React.Component {
 	}
 
 	render() {
-		if (this.props.repoObj && this.props.repoObj.Error) {
-			const err = this.props.repoObj.Error;
+		const err = (this.props.repoResolution && this.props.repoResolution.Error) || (this.props.repoObj && this.props.repoObj.Error);
+		if (err) {
 			let msg;
 			if (err.response && err.response.status === 401) {
 				msg = `Sign in to add repositories.`;
@@ -139,7 +139,7 @@ class RepoMain extends React.Component {
 			}
 			return (
 				<Header
-					title={`${httpStatusCode(this.props.repoObj.Error)}`}
+					title={`${httpStatusCode(err)}`}
 					subtitle={msg} />
 			);
 		}
