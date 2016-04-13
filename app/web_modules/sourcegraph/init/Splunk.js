@@ -1,5 +1,6 @@
 // Splunk error monitoring code
 
+import "whatwg-fetch";
 import context from "sourcegraph/app/context";
 import mapStackTrace from "sourcemapped-stacktrace";
 
