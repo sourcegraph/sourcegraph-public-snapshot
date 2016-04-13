@@ -46,3 +46,9 @@
 .alt-button {
 	composes: ma3 from base;
 }
+
+.success-text {
+	composes: pb3 pt2 from base;
+	composes: sans-serif f5 tc from typography;
+	composes: green from colors;
+}

@@ -161,7 +161,6 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, person *sourcegraph
 	}
 
 	token, err := accountsStore.RequestPasswordReset(elevatedActor(ctx), user)
-	fmt.Println("token: ", token)
 	if err != nil {
 		return nil, err
 	}

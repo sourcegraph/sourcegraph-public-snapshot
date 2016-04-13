@@ -1,4 +1,5 @@
 import React from "react";
+import {Link} from "react-router";
 import Helmet from "react-helmet";
 
 import Container from "sourcegraph/Container";
@@ -25,8 +26,8 @@ class ResetPassword extends Container {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 		state.token = state.location.query && state.location.query.token; // TODO: error handling (missing token)
-		state.pendingAuthAction = UserStore.pendingAuthAction;
-		state.authResponse = UserStore.authResponse;
+		state.pendingAuthAction = UserStore.pendingAuthActions.get("reset");
+		state.authResponse = UserStore.authResponses.get("reset");
 	}
 
 	stores() { return [UserStore]; }
@@ -52,23 +53,26 @@ class ResetPassword extends Container {
 				<div styleName="action">
 					<Input type="password"
 						placeholder="New password"
-						ref={(e) => this._passwordInput = e}
+						domRef={(e) => this._passwordInput = e}
 						autoFocus={true}
 						block={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						placeholder="Confirm password"
-						ref={(e) => this._confirmInput = e}
+						domRef={(e) => this._confirmInput = e}
 						block={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Reset Password</Button>
+						loading={this.state.pendingAuthAction}>Reset Password</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
+				}
+				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
+					<div styleName="success-text">Your password has been reset!<span styleName="alt-button"><Link to="/login"><Button size="small" outline={true}>Sign in</Button></Link></span></div>
 				}
 			</form>
 		);

@@ -25,8 +25,8 @@ class Signup extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		state.pendingAuthAction = UserStore.pendingAuthAction;
-		state.authResponse = UserStore.authResponse;
+		state.pendingAuthAction = UserStore.pendingAuthActions.get("signup");
+		state.authResponse = UserStore.authResponses.get("signup");
 	}
 
 	stores() { return [UserStore]; }

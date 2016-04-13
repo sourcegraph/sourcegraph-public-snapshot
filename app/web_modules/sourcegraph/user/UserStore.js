@@ -5,27 +5,157 @@ import * as UserActions from "sourcegraph/user/UserActions";
 
 export class UserStore extends Store {
 	reset() {
-		this.pendingAuthAction = false;
-		this.authResponse = null;
+		this.pendingAuthActions = deepFreeze({
+			content: {},
+			get(state) {
+				return this.content[state] || null;
+			},
+		});
+		this.authResponses = deepFreeze({
+			content: {},
+			get(state) {
+				return this.content[state] || null;
+			},
+		});
 	}
 
 	__onDispatch(action) {
 		switch (action.constructor) {
-		case UserActions.SubmitSignup:
-		case UserActions.SubmitLogin:
-		case UserActions.SubmitLogout:
-		case UserActions.SubmitForgotPassword:
-		case UserActions.SubmitResetPassword:
-			this.pendingAuthAction = true;
+		case UserActions.SubmitSignup: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					signup: true,
+				},
+			});
 			break;
-		case UserActions.SignupCompleted:
-		case UserActions.LoginCompleted:
-		case UserActions.LogoutCompleted:
-		case UserActions.ForgotPasswordCompleted:
-		case UserActions.ResetPasswordCompleted:
-			this.pendingAuthAction = false;
-			this.authResponse = deepFreeze(action.resp);
+		}
+		case UserActions.SubmitLogin: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					login: true,
+				},
+			});
 			break;
+		}
+		case UserActions.SubmitLogout: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					logout: true,
+				},
+			});
+			break;
+		}
+		case UserActions.SubmitForgotPassword: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					forgot: true,
+				},
+			});
+			break;
+		}
+		case UserActions.SubmitResetPassword: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					reset: true,
+				},
+			});
+			break;
+		}
+		case UserActions.SignupCompleted: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					signup: false,
+				},
+			});
+			this.authResponses = deepFreeze({
+				...this.authResponses,
+				content: {
+					...this.authResponses.content,
+					signup: action.resp,
+				},
+			});
+			break;
+		}
+		case UserActions.LoginCompleted: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					login: false,
+				},
+			});
+			this.authResponses = deepFreeze({
+				...this.authResponses,
+				content: {
+					...this.authResponses.content,
+					login: action.resp,
+				},
+			});
+			break;
+		}
+		case UserActions.LogoutCompleted: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					logout: false,
+				},
+			});
+			this.authResponses = deepFreeze({
+				...this.authResponses,
+				content: {
+					...this.authResponses.content,
+					logout: action.resp,
+				},
+			});
+			break;
+		}
+		case UserActions.ForgotPasswordCompleted: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					forgot: false,
+				},
+			});
+			this.authResponses = deepFreeze({
+				...this.authResponses,
+				content: {
+					...this.authResponses.content,
+					forgot: action.resp,
+				},
+			});
+			break;
+		}
+		case UserActions.ResetPasswordCompleted: {
+			this.pendingAuthActions = deepFreeze({
+				...this.pendingAuthActions,
+				content: {
+					...this.pendingAuthActions.content,
+					reset: false,
+				},
+			});
+			this.authResponses = deepFreeze({
+				...this.authResponses,
+				content: {
+					...this.authResponses.content,
+					reset: action.resp,
+				},
+			});
+			break;
+		}
 		default:
 			return; // don't emit change
 		}

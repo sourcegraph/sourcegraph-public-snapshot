@@ -79,9 +79,6 @@ const UserBackend = {
 					.catch((err) => ({Error: err}))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new UserActions.ForgotPasswordCompleted(data));
-						if (!data.Error) {
-							window.location.href = "/";
-						}
 					})
 				);
 			break;
@@ -100,9 +97,6 @@ const UserBackend = {
 					.catch((err) => ({Error: err}))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new UserActions.ResetPasswordCompleted(data));
-						if (!data.Error) {
-							window.location.href = "/";
-						}
 					})
 			);
 			break;
