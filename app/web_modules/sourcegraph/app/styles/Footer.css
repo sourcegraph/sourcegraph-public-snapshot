@@ -3,94 +3,52 @@
 @value typography "sourcegraph/components/styles/typography.css";
 
 .footer {
-	composes: bt mt4 ph2 from base;
+	composes: bt mt4 ph2 pv2 from base;
 	composes: b--light-gray from colors;
+	composes: sans-serif from typography;
 	display: flex;
 	flex-wrap: wrap;
-}
-
-.mini {
-	composes: footer;
-	composes: pv2 from base;
 	justify-content: center;
 	align-items: center;
 }
-.mini-box {
+
+.box {
 	flex: 1 1;
+	display: flex;
+	flex-wrap: wrap;
 	list-style-type: none;
+	align-items: center;
 	composes: ma0 pa0 from base;
 }
-.left-mini-box {
-	composes: mini-box;
+
+.left-box {
+	composes: box;
+	justify-content: flex-start;
 }
-.right-mini-box {
-	composes: mini-box;
-	composes: f6 from base;
-	text-align: right;
+
+.right-box {
+	composes: box;
+	justify-content: flex-end;
 }
+
 .link {
-	composes: mh2 from base;
 	composes: gray from colors;
 }
-.logo-mark-link {
-	composes: mr1 from base;
-	composes: link;
-}
+
 .logo-mark {
 	width: 2.2rem;
 }
-.mini-box li {
+
+.item {
+	composes: ph3 pv2 from base;
 	display: inline-block;
-	vertical-align: middle;
 }
 
-.full {
-	composes: footer;
-	composes: center pv4 from base;
-}
-
-.left-container {
-	flex: 1 1 auto;
-	composes: mh4 from base;
-}
-
-.left-content {
-	display: inline-block;
-	composes: mb4 from base;
-}
-
-.address {
-	composes: mt1 from base;
-}
-
-.address-line {
-	composes: f4 sans-serif from typography;
-	composes: pt1 from base;
-	display: block;
-}
-
-.right-container {
-	display: flex;
-	flex-wrap: wrap;
-	composes: mh4 from base;
-}
-
-.list {
-	composes: pr6 mb4 from base;
-	flex: 1;
-}
-
-.list-header {
-	composes: subsection-header from typography;
-	composes: mb3 from base;
-}
-
-.list-element {
-	composes: f4 sans-serif from typography;
-	composes: mb2 from base;
-	display: block;
-}
-
-.logo {
-	width: 171px;
+@media screen and (max-width: 48em) {
+	.item {
+		flex-basis: 100%;
+	}
+	.right-box .item {
+		text-align: right;
+	}
 }

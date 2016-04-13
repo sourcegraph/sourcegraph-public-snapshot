@@ -104,7 +104,7 @@ class App extends Component {
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav navContext={this.props.navContext} />
 				<div styleName="main-content">{this.props.main}</div>
-				<Footer full={Boolean(this.props.routes[this.props.routes.length - 1].fullFooter)} />
+				<Footer />
 			</div>
 		);
 	}
