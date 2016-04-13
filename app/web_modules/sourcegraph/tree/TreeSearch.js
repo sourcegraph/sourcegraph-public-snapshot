@@ -14,10 +14,12 @@ import "sourcegraph/tree/TreeBackend";
 import "sourcegraph/def/DefBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import Header from "sourcegraph/components/Header";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToDef} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
+import {httpStatusCode} from "sourcegraph/app/status";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
@@ -80,6 +82,7 @@ class TreeSearch extends Container {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		status: React.PropTypes.object,
 	};
 
 	constructor(props: TreeSearch.props) {
@@ -173,33 +176,38 @@ class TreeSearch extends Container {
 			nextState.fileResults = null;
 
 			// Show entire file tree as file results.
+			//
+			// TODO Find a better way to do this without updating state in onStateTransition.
 			if (!nextState.query) {
 				if (nextState.fileTree) {
 					let dirLevel = nextState.fileTree;
+					let err;
 					for (const part of pathSplit(nextState.path)) {
 						if (dirLevel.Dirs[part]) {
 							dirLevel = dirLevel.Dirs[part];
 						} else {
 							if (!dirLevel.Dirs[part] && !dirLevel.Files[part]) {
-								throw new Error(`invalid path: '${part}'`);
+								err = {response: {body: `invalid path: '${part}'`, status: 404}};
+								this.context.status.error(err);
 							}
 							break;
 						}
 					}
 
 					const pathPrefix = nextState.path.replace(/^\/$/, "");
-					const dirs = Object.keys(dirLevel.Dirs).map(dir => ({
+					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dir => ({
 						name: dir,
 						isDirectory: true,
 						path: `${pathPrefix}/${dir}`,
 						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dir}`),
-					}));
-					const files = dirLevel.Files.map(file => ({
+					})) : [];
+					const files = !err ? dirLevel.Files.map(file => ({
 						name: file,
 						isDirectory: false,
 						url: urlToBlob(nextState.repo, nextState.rev, `${pathPrefix}/${file}`),
-					}));
-					nextState.fileResults = dirs.concat(files);
+					})) : [];
+					// TODO Handle errors in a more standard way.
+					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
 				}
 			} else {
 				nextState.selectionIndex = 0;
@@ -485,6 +493,14 @@ class TreeSearch extends Container {
 	}
 
 	render() {
+		if (this.state.fileResults && this.state.fileResults.Error) {
+			let code = httpStatusCode(this.state.fileResults.Error);
+			return (
+				<Header
+					title={`${code}`}
+					subtitle={code === 404 ? `Directory "${this.state.path}" not found.` : "Directory is not available."} />
+			);
+		}
 		return (
 			<div styleName="tree-common">
 				<div styleName="input-container">
