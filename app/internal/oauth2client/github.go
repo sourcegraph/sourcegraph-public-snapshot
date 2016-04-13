@@ -128,7 +128,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	ctx, cl := handlerutil.Client(r)
 	currentUser := handlerutil.UserFromRequest(r)
 	if currentUser == nil {
-		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("user must be logged in")}
+		return &errcode.HTTPErr{Status: http.StatusUnauthorized, Err: errors.New("user must be logged in")}
 	}
 
 	var opt oauth2util.ReceiveParams
