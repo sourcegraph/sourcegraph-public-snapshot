@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
@@ -115,11 +117,19 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 		return nil, err
 	}
 
+	var finished bool
 	info := op.Info
 	if info.StartedAt != nil {
 		b.StartedAt = info.StartedAt
 	}
 	if info.EndedAt != nil {
+		// TODO(keegancsmith) This is some temporary logging to see if
+		// we are double updating finished builds.
+		if b.EndedAt == nil {
+			finished = true
+		} else {
+			log15.Debug("Builds.Update called on a finished build", "build", b, "op", op)
+		}
 		b.EndedAt = info.EndedAt
 	}
 	if info.HeartbeatAt != nil {
@@ -151,7 +161,7 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 		return nil, err
 	}
 
-	if info.EndedAt != nil {
+	if finished {
 		observeFinishedBuild(b)
 	}
 
