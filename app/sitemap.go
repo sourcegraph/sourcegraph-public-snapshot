@@ -33,7 +33,6 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 			Sort:      "updated",
 			Type:      "public",
 			Direction: "desc",
-			// SlowlyIncludePublicGitHubRepos: true,
 			ListOptions: sourcegraph.ListOptions{
 				Page:    int32(page),
 				PerPage: 1000,
