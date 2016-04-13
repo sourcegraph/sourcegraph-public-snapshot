@@ -1,0 +1,48 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var React = require('react');
+var IconBase = require('react-icon-base');
+
+var FaTags = function (_React$Component) {
+    _inherits(FaTags, _React$Component);
+
+    function FaTags() {
+        _classCallCheck(this, FaTags);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(FaTags).apply(this, arguments));
+    }
+
+    _createClass(FaTags, [{
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                IconBase,
+                _extends({ viewBox: '0 0 40 40' }, this.props),
+                React.createElement(
+                    'g',
+                    null,
+                    React.createElement('path', { d: 'm9.333333333333332 10.666666666666666q0-1.1039999999999992-0.7813333333333325-1.8853333333333335t-1.8853333333333335-0.7813333333333325-1.8853333333333335 0.7813333333333325-0.7813333333333325 1.8853333333333335 0.7813333333333334 1.8853333333333335 1.8853333333333326 0.7813333333333325 1.8853333333333335-0.7813333333333325 0.7813333333333325-1.8853333333333335z m22.229333333333333 11.999999999999998q0 1.1039999999999992-0.770666666666667 1.8746666666666663l-10.229333333333333 10.250666666666664q-0.8133333333333326 0.7706666666666635-1.8960000000000008 0.7706666666666635-1.1039999999999992 0-1.8746666666666663-0.7706666666666635l-14.895999999999997-14.917333333333328q-0.7920000000000007-0.770666666666667-1.3440000000000007-2.103999999999999t-0.552-2.437333333333335v-8.666666666666666q0-1.0826666666666664 0.7919999999999999-1.8746666666666663t1.8746666666666667-0.7919999999999998h8.666666666666666q1.1039999999999992 0 2.437333333333333 0.5519999999999996t2.1253333333333337 1.3439999999999994l14.896000000000003 14.874666666666664q0.770666666666667 0.8133333333333326 0.770666666666667 1.8960000000000008z m8 0q0 1.1039999999999992-0.7706666666666635 1.8746666666666663l-10.229333333333333 10.250666666666664q-0.8133333333333326 0.7706666666666635-1.8960000000000008 0.7706666666666635-0.7493333333333325 0-1.229333333333333-0.29333333333333655t-1.1039999999999992-0.9359999999999999l9.792000000000002-9.792000000000002q0.7706666666666635-0.770666666666667 0.7706666666666635-1.8746666666666663 0-1.0826666666666682-0.7706666666666635-1.8960000000000008l-14.896000000000004-14.874666666666652q-0.7920000000000016-0.7919999999999998-2.1253333333333337-1.3439999999999994t-2.437333333333333-0.5520000000000014h4.666666666666666q1.1039999999999992 0 2.4373333333333314 0.5519999999999996t2.1253333333333337 1.3439999999999994l14.896000000000004 14.874666666666664q0.7706666666666635 0.8133333333333326 0.7706666666666635 1.8960000000000008z' })
+                )
+            );
+        }
+    }]);
+
+    return FaTags;
+}(React.Component);
+
+exports.default = FaTags;
+module.exports = exports['default'];

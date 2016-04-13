@@ -1,0 +1,48 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var React = require('react');
+var IconBase = require('react-icon-base');
+
+var FaTrademark = function (_React$Component) {
+    _inherits(FaTrademark, _React$Component);
+
+    function FaTrademark() {
+        _classCallCheck(this, FaTrademark);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(FaTrademark).apply(this, arguments));
+    }
+
+    _createClass(FaTrademark, [{
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                IconBase,
+                _extends({ viewBox: '0 0 40 40' }, this.props),
+                React.createElement(
+                    'g',
+                    null,
+                    React.createElement('path', { d: 'm17.27741935483871 12.903225806451612v2.3587096774193554q0 0.26193548387096754-0.18967741935484028 0.443870967741935t-0.4541935483870958 0.18064516129032349h-6.006451612903225v16.374193548387094q0 0.26064516129032-0.18064516129032349 0.4516129032258078t-0.4451612903225808 0.1935483870967758h-2.7238709677419353q-0.26064516129032267 0-0.45161290322580605-0.18322580645160969t-0.19354838709677402-0.4645161290322548v-16.36903225806452h-5.987096774193548q-0.2619354838709681-1.7763568394002505e-15-0.4541935483870971-0.18064516129032526t-0.19096774193548388-0.44774193548387053v-2.3574193548387097q0-0.2838709677419349 0.1806451612903226-0.46451612903225836t0.46451612903225803-0.1806451612903217h15.98709677419355q0.26322580645161153 0 0.45548387096774334 0.19096774193548427t0.19096774193548427 0.4541935483870976z m20.929032258064513-0.06064516129032249l1.5483870967741922 19.376774193548385q0.02064516129032512 0.26064516129032-0.16129032258064768 0.48258064516129195-0.20129032258064683 0.20129032258064683-0.4645161290322548 0.20129032258064683h-2.700645161290325q-0.24129032258064598 0-0.4232258064516117-0.1716129032258067t-0.20129032258064683-0.41290322580645267l-0.9290322580645167-11.855483870967742-3.8038709677419327 8.569032258064514q-0.16129032258064413 0.3832258064516125-0.5845161290322594 0.3832258064516125h-2.421935483870964q-0.4038709677419341 0-0.5845161290322594-0.3832258064516125l-3.790967741935482-8.609032258064516-0.9083870967741952 11.896774193548389q-0.020645161290321568 0.240000000000002-0.20129032258064683 0.41290322580645267t-0.4232258064516117 0.1703225806451627h-2.7225806451612904q-0.26064516129032356 0-0.46193548387096683-0.20129032258064683-0.1806451612903217-0.20129032258064683-0.1806451612903217-0.48387096774193594l1.5703225806451613-19.376774193548385q0.020645161290321568-0.24129032258064775 0.20129032258064683-0.41290322580645267t0.42580645161289965-0.1703225806451627h2.864516129032257q0.4025806451612901 0 0.5832258064516118 0.3832258064516125l4.434838709677418 10.483870967741936q0.20129032258064683 0.48387096774193594 0.4038709677419341 1.0283870967741926 0.06064516129032427-0.14193548387096655 0.19096774193548427-0.4954838709677425t0.21161290322580584-0.5341935483870976l4.455483870967743-10.483870967741936q0.1806451612903217-0.3832258064516125 0.5845161290322594-0.3832258064516125h2.8425806451612914q0.26064516129032 0 0.4425806451612928 0.1716129032258067t0.20129032258064683 0.4129032258064509z' })
+                )
+            );
+        }
+    }]);
+
+    return FaTrademark;
+}(React.Component);
+
+exports.default = FaTrademark;
+module.exports = exports['default'];

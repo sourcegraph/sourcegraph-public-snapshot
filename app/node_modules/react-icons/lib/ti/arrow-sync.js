@@ -1,0 +1,48 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var React = require('react');
+var IconBase = require('react-icon-base');
+
+var TiArrowSync = function (_React$Component) {
+    _inherits(TiArrowSync, _React$Component);
+
+    function TiArrowSync() {
+        _classCallCheck(this, TiArrowSync);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(TiArrowSync).apply(this, arguments));
+    }
+
+    _createClass(TiArrowSync, [{
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                IconBase,
+                _extends({ viewBox: '0 0 40 40' }, this.props),
+                React.createElement(
+                    'g',
+                    null,
+                    React.createElement('path', { d: 'm32.5 20.788333333333334c0-3.246666666666666-1.0300000000000011-5.661666666666665-3.443333333333335-8.073333333333334-0.6499999999999986-0.6500000000000004-1.7049999999999983-0.6500000000000004-2.3566666666666656 0-0.6499999999999986 0.6500000000000004-0.6499999999999986 1.705 0 2.3566666666666656 1.8000000000000007 1.7966666666666669 2.466666666666665 3.344999999999999 2.466666666666665 5.716666666666669 0 2.4466666666666654-0.9533333333333331 4.75-2.6833333333333336 6.478333333333332-1.6750000000000007 1.673333333333332-3.466666666666665 2.504999999999999-5.716666666666665 2.6566666666666663l2.078333333333333-2.078333333333333c0.6499999999999986-0.6499999999999986 0.6499999999999986-1.7049999999999983 0-2.3566666666666656s-1.7049999999999983-0.6499999999999986-2.3566666666666656 0l-6.178333333333333 6.178333333333335 6.178333333333333 6.178333333333331c0.3249999999999993 0.32500000000000284 0.75 0.48833333333333684 1.1783333333333346 0.48833333333333684s0.8533333333333317-0.163333333333334 1.1783333333333346-0.48833333333333684c0.6499999999999986-0.6499999999999986 0.6499999999999986-1.7049999999999983 0-2.356666666666669l-2.2283333333333353-2.2266666666666666c3.2049999999999983-0.13666666666666316 5.903333333333332-1.3200000000000003 8.221666666666668-3.633333333333333 2.361666666666668-2.361666666666668 3.6616666666666653-5.5 3.6616666666666653-8.840000000000003z m-21.666666666666664 0.045000000000001705c-1.7763568394002505e-15-2.4499999999999993 0.9533333333333314-4.75 2.683333333333332-6.483333333333334 1.6833333333333336-1.6799999999999997 3.488333333333335-2.5116666666666667 5.763333333333334-2.655000000000001l-2.125 2.125c-0.6499999999999986 0.6500000000000004-0.6499999999999986 1.705 0 2.3566666666666656 0.3249999999999993 0.326666666666668 0.75 0.48999999999999844 1.1783333333333346 0.48999999999999844s0.8533333333333317-0.163333333333334 1.1783333333333346-0.4883333333333333l6.178333333333331-6.178333333333331-6.178333333333335-6.178333333333334c-0.6499999999999986-0.6499999999999999-1.7049999999999983-0.6499999999999999-2.3566666666666656 0s-0.6499999999999986 1.705 0 2.3566666666666665l2.1833333333333336 2.1833333333333336c-3.1883333333333326 0.14499999999999957-5.873333333333335 1.3283333333333331-8.176666666666666 3.6333333333333346-2.361666666666668 2.3599999999999994-3.661666666666669 5.5-3.661666666666669 8.838333333333335 0 3.246666666666666 1.0299999999999994 5.661666666666665 3.4433333333333334 8.073333333333334 0.3249999999999993 0.3249999999999993 0.75 0.48666666666666814 1.1783333333333328 0.48666666666666814s0.8533333333333335-0.163333333333334 1.1783333333333328-0.4883333333333333c0.6500000000000004-0.6499999999999986 0.6500000000000004-1.706666666666667 0-2.3583333333333343-1.7999999999999972-1.7966666666666704-2.466666666666665-3.3433333333333337-2.466666666666665-5.713333333333335z' })
+                )
+            );
+        }
+    }]);
+
+    return TiArrowSync;
+}(React.Component);
+
+exports.default = TiArrowSync;
+module.exports = exports['default'];

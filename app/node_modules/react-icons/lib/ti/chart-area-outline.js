@@ -1,0 +1,48 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var React = require('react');
+var IconBase = require('react-icon-base');
+
+var TiChartAreaOutline = function (_React$Component) {
+    _inherits(TiChartAreaOutline, _React$Component);
+
+    function TiChartAreaOutline() {
+        _classCallCheck(this, TiChartAreaOutline);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(TiChartAreaOutline).apply(this, arguments));
+    }
+
+    _createClass(TiChartAreaOutline, [{
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                IconBase,
+                _extends({ viewBox: '0 0 40 40' }, this.props),
+                React.createElement(
+                    'g',
+                    null,
+                    React.createElement('path', { d: 'm33.333333333333336 28.333333333333336h-26.666666666666668c-0.9200000000000008 0-1.6666666666666679-0.745000000000001-1.6666666666666679-1.6666666666666679v-5c0-1.1333333333333329 0.3899999999999997-2.2433333333333323 1.0966666666666667-3.123333333333335l6.666666666666667-8.333333333333334c1.6333333333333329-2.043333333333333 4.808333333333332-2.45 6.904999999999999-0.8733333333333331l2.791666666666668 2.09 3.6416666666666657-4.55c0.9483333333333341-1.1933333333333325 2.371666666666666-1.876666666666666 3.8983333333333334-1.876666666666666 1.1333333333333329 0 2.240000000000002 0.3866666666666667 3.123333333333335 1.0950000000000006 1.1933333333333351 0.9550000000000001 1.8766666666666652 2.376666666666667 1.8766666666666652 3.9049999999999994v16.666666666666668c0 0.9216666666666669-0.7466666666666697 1.6666666666666679-1.6666666666666643 1.6666666666666679z m-25-3.3333333333333357h23.333333333333336v-15c0-0.5116666666666667-0.22833333333333172-0.9833333333333325-0.625-1.3000000000000007-0.3783333333333374-0.29999999999999893-0.7750000000000021-0.36666666666666536-1.0416666666666714-0.36666666666666536-0.5083333333333329 0-0.9833333333333343 0.2283333333333335-1.3000000000000007 0.6266666666666669l-4.649999999999999 5.806666666666665c-0.5616666666666674 0.706666666666667-1.5833333333333321 0.8333333333333339-2.3000000000000007 0.29499999999999993l-4.083333333333332-3.0616666666666656c-0.7033333333333331-0.5266666666666673-1.7583333333333329-0.38833333333333364-2.3000000000000007 0.293333333333333l-6.666666666666668 8.333333333333332c-0.3033333333333328 0.379999999999999-0.36666666666666714 0.7733333333333334-0.36666666666666714 1.0399999999999991v3.333333333333332z m25 10h-26.666666666666668c-0.9200000000000008 0-1.6666666666666679-0.7449999999999974-1.6666666666666679-1.6666666666666643s0.746666666666667-1.6666666666666679 1.666666666666667-1.6666666666666679h26.666666666666668c0.9200000000000017 0 1.6666666666666643 0.745000000000001 1.6666666666666643 1.6666666666666679s-0.7466666666666697 1.6666666666666643-1.6666666666666643 1.6666666666666643z' })
+                )
+            );
+        }
+    }]);
+
+    return TiChartAreaOutline;
+}(React.Component);
+
+exports.default = TiChartAreaOutline;
+module.exports = exports['default'];
