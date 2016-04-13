@@ -54,8 +54,8 @@
 	min-width: 120px;
 	composes: br1 pa2 from base;
 	composes: f6 from typography;
-	color: white;
-	composes: bg-near-black from colors;
+	color: #eee;
+	composes: bg-dark-gray from colors;
 }
 .content {
 }
