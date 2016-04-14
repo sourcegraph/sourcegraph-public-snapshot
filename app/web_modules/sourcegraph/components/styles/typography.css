@@ -31,23 +31,9 @@
 /*
 	 FONT FAMILY GROUPS
 */
-.sans-serif { font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'helvetica neue', 'helvetica', Ubuntu, 'segoe ui', arial, sans-serif; }
-.serif { font-family: georgia, times, serif; }
-.system-sans-serif { font-family: sans-serif; }
-.system-serif { font-family: serif; }
-/* Monospaced Typefaces (for code) */
-/* From http://cssfontstack.com */
 code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
-/* Sans-Serif Typefaces */
-.helvetica { font-family: helvetica, 'helvetica neue', arial, sans-serif; }
-/* Serif Typefaces */
-.georgia { font-family: georgia, serif; }
-.times { font-family: Times, serif; }
-.bodoni { font-family: "Bodoni MT", serif; }
-.calisto { font-family: "Calisto MT", serif; }
-.garamond { font-family: garamond, serif; }
 
-body {
+html {
 	font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'helvetica neue', 'helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
 }
 
