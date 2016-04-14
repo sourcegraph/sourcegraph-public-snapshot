@@ -1,6 +1,5 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
-@value icons "sourcegraph/components/styles/icons.css";
 @value typography "sourcegraph/components/styles/typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
