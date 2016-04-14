@@ -49,7 +49,7 @@ by a lot of other modules (e.g., for def boxes)? */
 /* Blob content */
 .blobAndToolbar {
 	composes: content;
-	composes: br bb from base;
+	composes: br from base;
 	composes: b--light-gray from colors;
 }
 .toolbar {
