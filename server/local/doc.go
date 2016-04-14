@@ -6,6 +6,5 @@
 // Local methods should contain the "business logic" for each
 // method. They should be independent of where or how the data is
 // stored or retrieved. The storage logic belongs in the stores (e.g.,
-// server/internal/store/fs, server/internal/store/pgsql, ext/github,
-// etc.).
+// server/internal/localstore, services/ext/github, etc.).
 package local

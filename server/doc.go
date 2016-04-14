@@ -2,7 +2,7 @@
 
 Package server contains subpackages which implement the high-level
 logic of the Sourcegraph API. The main implementation is in
-"server/internal/local", which relies on "stores" (which may be backed
+"server/local", which relies on "stores" (which may be backed
 by PostgreSQL, the filesystem, GitHub, Papertrail, etc.)  for
 persistence. The local server implementations are wrapped with
 middleware and context initialization functions in this package's
@@ -14,12 +14,12 @@ SERVERS VS. STORES
 The public API service interfaces are defined in go-sourcegraph's
 package sourcegraph (in the file sourcegraph.proto). The server
 package contains multiple implementations of these services
-interfaces. The primary implementations are in server/internal/local;
+interfaces. The primary implementations are in server/local;
 there is also middleware in svc/middleware and
 server/internal/middleware that wraps them.
 
 The stores (defined in the store package and implemented in
-ext/... and server/internal/store/...) implement the minimal set of
+services/ext/... and server/internal/localstore/...) implement the minimal set of
 operations needed by the higher-level servers in server.
 
 This separation has benefits and drawbacks:
