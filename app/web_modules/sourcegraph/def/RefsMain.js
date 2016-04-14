@@ -57,6 +57,10 @@ class RefsMain extends Container {
 				Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
 			}
 		});
+
+		// Fix a bug where navigating from a blob page here does not cause the
+		// browser to scroll to the top of this page.
+		if (typeof window !== "undefined") window.scrollTo(0, 0);
 	}
 
 	componentWillUnmount() {
