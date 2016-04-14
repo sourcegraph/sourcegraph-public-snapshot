@@ -266,7 +266,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 				unitTime := time.Since(unitStart)
 				if err != nil {
 					// If we would attempt this test again, then just log warnings and retry.
-					if attempt+1 < *retriesFlag {
+					if !*runOnce && attempt+1 < *retriesFlag {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
 						t.slackMessage(typeWarning, msg, "")
