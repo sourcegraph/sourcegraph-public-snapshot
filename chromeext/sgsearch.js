@@ -1,7 +1,7 @@
 //This file adds code and text search into GitHub 
 (function() {
 
-	amplitude.init('f7491eae081c8c94baf15838b0166c63', null, {domain:'sourcegraph.com'})
+	//amplitude.init('f7491eae081c8c94baf15838b0166c63', null, {domain:'sourcegraph.com'})
 
 	var user, repo, branch, path, query, 
 	searchPage, nomatch, countScrolls,
@@ -171,7 +171,7 @@
 	function clickSearchButton(){
 		countScrolls=1;
 
-		amplitude.logEvent('ClickSearchCodeButton')
+		//amplitude.logEvent('ClickSearchCodeButton')
 
 		//Store value of current page
 		if ($('.container.new-discussion-timeline').not(':has(#toRemove)')) {
@@ -210,7 +210,7 @@
 	//Handler for clicking submit button
 	function clickSubmitButton(){
 		var treefinderarray = document.getElementsByClassName('tree-finder');
-		amplitude.logEvent('Search');
+		//amplitude.logEvent('Search');
 
 		//Table that replaces existing one during a search (does not include search bar)
 		var newSearchPage = "<table id='tree-finder-results2' class='tree-browser css-truncate' cellpadding='0' cellspacing='0' style='border-bottom:1px solid #;cacaca'> <tbody class='tree-browser-result-template js-tree-browser-result-template' aria-hidden='true'> <tr class='js-navigation-item tree-browser-result'><td> <a class='css-truncate-target js-navigation-open js-tree-finder-path'></a> </td> </tr> </tbody> </table>";
@@ -258,7 +258,7 @@
 		//Shift+T
 		if (e.which===84 && e.shiftKey && (e.target.tagName.toLowerCase()) !=='input' && (e.target.tagName.toLowerCase())!=='textarea') {
 			if (repoIsGo || document.getElementsByClassName('vis-private').length !==0){
-				amplitude.logEvent('KbdShortcut')
+				//amplitude.logEvent('KbdShortcut')
 
 				countScrolls=1;
 
@@ -300,7 +300,7 @@
 
 		//Enter
 		else if (e.which===13 && (e.target.tagName.toLowerCase())==='input' && e.target.id.toLowerCase() === 'tree-finder-field2') {
-			amplitude.logEvent('Search');
+			//amplitude.logEvent('Search');
 			
 			//To prevent GitHub event where pressing enter while hovering over file takes you to that file
 			e.stopImmediatePropagation();
@@ -445,9 +445,9 @@
 	//Generate def results table
 	function showDefResults(dataArray) {
 		document.addEventListener('click', function(e){
-			if (e.target.className === 'res sg-res' || e.target.parentNode.className === 'res sg-res') {
+			/*if (e.target.className === 'res sg-res' || e.target.parentNode.className === 'res sg-res') {
 				debounce(amplitude.logEvent('ViewCodeSearchResult'), 250)
-			}
+			}*/
 		})
 		if ($('#seeText').hasClass('selected')){
 			$('#tree-finder-results2').attr("style", "display:none");
@@ -500,7 +500,7 @@
 	function showTextResults(dataArray){
 		document.addEventListener('click', function(e){
 			if(e.target.className === 'sgtextres') {
-				amplitude.logEvent('ViewTextSearchResult')
+				//amplitude.logEvent('ViewTextSearchResult')
 			}
 		})
 
@@ -542,14 +542,14 @@
 				if (filename!==prevFile){
 					$('.code-list').append("<div class='code-list-item code-list-item-public repo-specific'><span class='language'>"+filetype+"</span> <p class='title'><a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/.tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' title='"+filename+"' target='blank'>"+filename+"</a><br><span class='text-small text-muted match-count'> Results in "+filename+"</span></p><div class='file-box blob-wrapper'><table><tbody class='textres'></tbody>"); 
 					for(var j = 0; j < contentArray.length; j++){
-						try{$('.textres:last').append(" <tr> <td class='blob-num'> <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank' class='sgtextres'>"+lineNumber+"</a> </td> <td class='blob-code blob-code-inner'> "+contentArray[j]+" </td> </tr>")}catch(err){}
+						try{$('.textres:last').append(" <tr> <td class='blob-num'> <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/blob/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank' class='sgtextres'>"+lineNumber+"</a> </td> <td class='blob-code blob-code-inner'> "+contentArray[j]+" </td> </tr>")}catch(err){}
 						lineNumber++;
 					}
 				}
 				else {
 					$('tr:last').after("<tr class='divider'><td class='blob-num'>…</td> <td class='blob-code'></td></tr>");
 					for(var k = 0; k < contentArray.length; k++) {
-						$('tr:last').after("<tr><td class='blob-num'><a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank' class='sgtextres'>"+lineNumber+"</a></td><td class='blob-code blob-code-inner'>"+contentArray[k]+"</td> </tr>");
+						$('tr:last').after("<tr><td class='blob-num'><a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/blob/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank' class='sgtextres'>"+lineNumber+"</a></td><td class='blob-code blob-code-inner'>"+contentArray[k]+"</td> </tr>");
 						lineNumber++;
 					}
 				}
@@ -659,14 +659,14 @@
 			var contentArray = toEnter.split("\n");
 
 			if (filename!==prevFile){
-				$('.code-list').append("<div class='code-list-item code-list-item-public repo-specific'> <span class='language'>" +filetype+ "</span> <p class='title'><a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' title='"+filename+"' target='blank'>"+filename+"</a><br><span class='text-small text-muted match-count'> Results in "+filename+"</span></p><div class='file-box blob-wrapper'><table><tbody class='textres'></tbody>"); for(var j = 0; j < contentArray.length; j++) {$('.textres:last').append(" <tr> <td class='blob-num'> <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/.tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank'>"+lineNumber+"</a> </td> <td class='blob-code blob-code-inner'> "+contentArray[j]+" </td> </tr>")
+				$('.code-list').append("<div class='code-list-item code-list-item-public repo-specific'> <span class='language'>" +filetype+ "</span> <p class='title'><a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/blob/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' title='"+filename+"' target='blank'>"+filename+"</a><br><span class='text-small text-muted match-count'> Results in "+filename+"</span></p><div class='file-box blob-wrapper'><table><tbody class='textres'></tbody>"); for(var j = 0; j < contentArray.length; j++) {$('.textres:last').append(" <tr> <td class='blob-num'> <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/.tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank'>"+lineNumber+"</a> </td> <td class='blob-code blob-code-inner'> "+contentArray[j]+" </td> </tr>")
 				lineNumber++;
 			}
 		}
 		else {
 			$('tr:last').after("<tr class='divider'> <td class='blob-num'>…</td> <td class='blob-code'></td> </tr>");
 			for(var k = 0; k < contentArray.length; k++) {
-				$('tr:last').after(" <tr> <td class='blob-num'> <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/tree/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank'>"+lineNumber+"</a> </td> <td class='blob-code blob-code-inner'> "+contentArray[k]+" </td> </tr>")
+				$('tr:last').after(" <tr> <td class='blob-num'> <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"@"+branch+"/-/blob/"+filename+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext#L"+lineNumber+"' target='blank'>"+lineNumber+"</a> </td> <td class='blob-code blob-code-inner'> "+contentArray[k]+" </td> </tr>")
 				lineNumber++;
 			}
 		}

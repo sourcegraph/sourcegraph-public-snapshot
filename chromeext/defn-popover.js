@@ -83,21 +83,22 @@ function sourcegraph_activateDefnPopovers(el) {
       if (request.status >= 200 && 400 > request.status) {
         var html;
         if (response.Data) {
+          console.log(response)
           if (response.DocHTML){
-            html = "<div><span class='title'>" + defQualifiedName(response) +"</span>\n<span class='p'>"+ response.DocHTML.__html + "</span>\n<span class='repo'>" + response.Repo + "</span></div>";  
+            html = "<div><span class='title'>" + response.Kind + " <b style='color:#4078C0'>" + response.Name + "</b>" + response.FmtStrings.Type.ScopeQualified +"</span>\n<span class='p'>"+ response.DocHTML.__html + "</span>\n<span class='repo'>" + response.Repo + "</span></div>";
           }
           else {
-            html = "<div><span class='title'>" + defQualifiedName(response) + "</span></br><span class='repo'>" + response.Repo + "</span></div>";
+            html = "<div><span class='title'>" + response.Kind + " <b style='color:#4078C0'>" + response.Name + "</b>" + response.FmtStrings.Type.ScopeQualified + "</span></br><span class='repo'>" + response.Repo + "</span></div>";
           }
           ajaxCache[url] = html;
           cb(html);
         }
-      } 
+      }
       else if (request.readyState > 1) {
         console.error("Sourcegraph error getting definition info.", JSON.stringify(request));
       }
     }
-    
+
     request.onerror = function() { console.error("Sourcegraph error getting definition info."); };
     request.send();
   }
