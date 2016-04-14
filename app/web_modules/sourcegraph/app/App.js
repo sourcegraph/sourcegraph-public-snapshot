@@ -112,7 +112,6 @@ class App extends Component {
 
 export const rootRoute: Route = {
 	path: "/",
-	fullFooter: true,
 	component: withStatusContext(CSSModules(App, styles)),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
