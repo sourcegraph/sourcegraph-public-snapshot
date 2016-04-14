@@ -65,12 +65,13 @@ export class TreeStore extends Store {
 						const parts = file.split("/");
 						let node = fileTree;
 						parts.forEach((part, i) => {
+							let dirKey = `!${part}`; // dirKey is prefixed to avoid clash with predefined fields like "constructor"
 							if (i === parts.length - 1) {
 								node.Files.push(part);
-							} else if (!node.Dirs[part]) {
-								node.Dirs[part] = {Dirs: {}, Files: []};
+							} else if (!node.Dirs[dirKey]) {
+								node.Dirs[dirKey] = {Dirs: {}, Files: []};
 							}
-							node = node.Dirs[part];
+							node = node.Dirs[dirKey];
 						});
 					});
 				}

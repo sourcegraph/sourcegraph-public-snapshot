@@ -189,10 +189,11 @@ class TreeSearch extends Container {
 					let dirLevel = nextState.fileTree;
 					let err;
 					for (const part of pathSplit(nextState.path)) {
-						if (dirLevel.Dirs[part]) {
-							dirLevel = dirLevel.Dirs[part];
+						let dirKey = `!${part}`; // dirKey is prefixed to avoid clash with predefined fields like "constructor"
+						if (dirLevel.Dirs[dirKey]) {
+							dirLevel = dirLevel.Dirs[dirKey];
 						} else {
-							if (!dirLevel.Dirs[part] && !dirLevel.Files[part]) {
+							if (!dirLevel.Dirs[dirKey] && !dirLevel.Files[part]) {
 								err = {response: {body: `invalid path: '${part}'`, status: 404}};
 								this.context.status.error(err);
 							}
@@ -201,11 +202,11 @@ class TreeSearch extends Container {
 					}
 
 					const pathPrefix = nextState.path.replace(/^\/$/, "");
-					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dir => ({
-						name: dir,
+					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dirKey => ({
+						name: dirKey.substr(1), // dirKey is prefixed to avoid clash with predefined fields like "constructor"
 						isDirectory: true,
-						path: `${pathPrefix}/${dir}`,
-						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dir}`),
+						path: `${pathPrefix}/${dirKey.substr(1)}`,
+						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dirKey.substr(1)}`),
 					})) : [];
 					const files = !err ? dirLevel.Files.map(file => ({
 						name: file,
