@@ -5,6 +5,7 @@ const context: {
 	authorization?: string;
 	cacheControl?: string;
 	currentUser?: Object;
+	userEmail?: string;
 	currentSpanID?: string;
 	userAgent?: string;
 	assetsRoot?: string;

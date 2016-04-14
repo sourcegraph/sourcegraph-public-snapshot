@@ -27,6 +27,7 @@ type JSContext struct {
 	CacheControl  string            `json:"cacheControl"`
 	CSRFToken     string            `json:"csrfToken"`
 	CurrentUser   *sourcegraph.User `json:"currentUser"`
+	UserEmail     string            `json:"userEmail"`
 	CurrentSpanID string            `json:"currentSpanID"`
 	UserAgent     string            `json:"userAgent"`
 	AssetsRoot    string            `json:"assetsRoot"`
@@ -55,6 +56,7 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		CacheControl:  cacheControl,
 		CSRFToken:     nosurf.Token(req),
 		CurrentUser:   handlerutil.FullUserFromRequest(req),
+		UserEmail:     handlerutil.EmailFromRequest(req),
 		CurrentSpanID: traceutil.SpanIDFromContext(ctx).String(),
 		UserAgent:     eventsutil.UserAgentFromContext(ctx),
 		AssetsRoot:    assets.URL("/").String(),

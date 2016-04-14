@@ -83,6 +83,9 @@ export class EventLogger {
 			if (context.currentUser && context.currentUser.RegisteredAt) {
 				this.setUserProperty("registered_at", new Date(context.currentUser.RegisteredAt).toDateString());
 			}
+			if (context.userEmail) {
+				this.setUserProperty("email", context.userEmail);
+			}
 		}
 		if (global.window) {
 			this._intercomSettings = window.intercomSettings;
@@ -201,12 +204,6 @@ export class EventLogger {
 			break;
 
 		case UserActions.SignupCompleted:
-			this.logEvent("SignupCompleted", {error: Boolean(action.resp.Error)});
-			if (!action.resp.Error) {
-				this.setUserProperty("email", action.email);
-			}
-			break;
-
 		case UserActions.LoginCompleted:
 		case UserActions.LogoutCompleted:
 		case UserActions.ForgotPasswordCompleted:
