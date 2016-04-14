@@ -119,10 +119,8 @@
 												},
 												"children": [
 													{
-														"type": "WrappedComponent",
-														"props": {
-															"name": "file"
-														}
+														"type": "GoFileText",
+														"props": {}
 													}
 												]
 											}

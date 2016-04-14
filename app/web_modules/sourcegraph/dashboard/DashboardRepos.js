@@ -6,7 +6,8 @@ import debounce from "lodash/function/debounce";
 import Component from "sourcegraph/Component";
 import context from "sourcegraph/app/context";
 
-import {Input, Button, Icon} from "sourcegraph/components";
+import {Input, Button} from "sourcegraph/components";
+import {GitHubIcon} from "sourcegraph/components/Icons";
 
 import RepoList from "sourcegraph/dashboard/RepoList";
 
@@ -104,7 +105,7 @@ class DashboardRepos extends Component {
 						this._showGitHubLinkWell() &&
 							<span key="cta">
 								<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
-								<Button outline={true} color="warning"><Icon styleName="github-icon" name="github" />Add My GitHub Repositories</Button>
+								<Button outline={true} color="warning"><GitHubIcon styleName="github-icon" />Add My GitHub Repositories</Button>
 								</a>
 							</span>,
 					]}</span>

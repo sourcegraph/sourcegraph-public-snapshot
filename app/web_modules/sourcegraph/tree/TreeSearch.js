@@ -24,7 +24,8 @@ import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
 
-import {Input, Loader, Icon, RepoLink} from "sourcegraph/components";
+import {Input, Loader, RepoLink} from "sourcegraph/components";
+import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
@@ -396,7 +397,7 @@ class TreeSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={itemURL}>
-					<span style={{paddingRight: "1rem"}}><Icon name={item.isDirectory ? "folder" : "file"} /></span>
+					<span style={{paddingRight: "1rem"}}>{item.isDirectory ? <FolderIcon /> : <FileIcon />}</span>
 					{item.name}
 				</Link>
 			);
