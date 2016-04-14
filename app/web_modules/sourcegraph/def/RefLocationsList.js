@@ -25,7 +25,7 @@ export default class RefLocationsList extends React.Component {
 			<div>
 				{refLocs.filter((r) => r && r.Files).map((repoRef, i) => (
 					<div key={i} className={s.allRefs}>
-						<header>
+						<header className={this.props.repo === repoRef.Repo ? s.activeGroupHeader : ""}>
 							<span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefRefs(def, repoRef.Repo)}>{repoRef.Repo}</Link>
 						</header>
 						<div className={s.refsGroup}>

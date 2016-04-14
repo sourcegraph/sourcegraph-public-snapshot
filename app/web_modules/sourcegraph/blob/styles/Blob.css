@@ -37,13 +37,19 @@
 
 /* TODO(sqs): move these to a separate file bc they are going to be used
 by a lot of other modules (e.g., for def boxes)? */
+@value marginBoxBorderWidth 4px;
+@value c_brand-blue from colors;
 .marginBox {
-	@value borderWidth 4px;
-	@value c_brand-blue from colors;
-	border-left: solid borderWidth c_brand-blue;
-	margin-left: calc(-1 * borderWidth);
-
 	composes: pt1 pb2 ph2 from base;
+}
+.marginBoxRight {
+	composes: marginBox;
+	border-left: solid marginBoxBorderWidth c_brand-blue;
+	margin-left: calc(-1 * marginBoxBorderWidth);
+}
+.marginBoxLeft {
+	composes: marginBox;
+	border-right: solid marginBoxBorderWidth c_brand-blue;
 }
 
 /* Blob content */

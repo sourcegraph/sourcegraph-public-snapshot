@@ -25,6 +25,8 @@ const (
 	OldDefRedirect = "old-def-redirect"
 
 	OldTreeRedirect = "old-tree-redirect"
+
+	GDDORefs = "gddo.refs"
 )
 
 // Router is an app URL router.
@@ -50,6 +52,8 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
 	base.Path("/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
+
+	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 
 	addOldDefRedirectRoute(&Router{*base}, base)
 	addOldTreeRedirectRoute(&Router{*base}, base)
