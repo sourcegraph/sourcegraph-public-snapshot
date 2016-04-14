@@ -12,7 +12,6 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {routeParams as defRouteParams} from "sourcegraph/def";
 import {urlToDef, urlToDef2} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
@@ -76,6 +75,8 @@ class RefsMain extends Container {
 		state.entrySpecs = null;
 		state.ranges = null;
 		state.anns = null;
+		state.highlightedDef = props.highlightedDef || null;
+		state.highlightedDefObj = props.highlightedDefObj || null;
 
 		if (state.refs && !state.refs.Error) {
 			let files = [];
@@ -110,25 +111,11 @@ class RefsMain extends Container {
 			state.ranges = ranges;
 			state.anns = anns;
 		}
-
-		state.highlightedDef = DefStore.highlightedDef || null;
-		if (state.highlightedDef) {
-			let {repo, rev, def} = defRouteParams(state.highlightedDef);
-			state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
-		} else {
-			state.highlightedDefObj = null;
-		}
-
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo || prevState.refFile !== nextState.refFile) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo, nextState.refFile));
-		}
-
-		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
-			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
 		}
 
 		if (nextState.defObj && prevState.defObj !== nextState.defObj) {
