@@ -19,7 +19,7 @@ import "sourcegraph/blob/BlobBackend";
 import "sourcegraph/def/DefBackend";
 import "sourcegraph/build/BuildBackend";
 import Style from "sourcegraph/blob/styles/Blob.css";
-import {lineCol, lineRange} from "sourcegraph/blob/lineCol";
+import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
 import urlTo from "sourcegraph/util/urlTo";
 import {urlToDef} from "sourcegraph/def/routes";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo";
@@ -121,7 +121,7 @@ export default class BlobMain extends Container {
 		if (action instanceof BlobActions.SelectLine) {
 			this._navigate(action.repo, action.rev, action.path, action.line ? `L${action.line}` : null);
 		} else if (action instanceof BlobActions.SelectLineRange) {
-			let pos = this._parseHash();
+			let pos = this.props.location.hash ? parseLineRange(this.props.location.hash.replace(/^#L/, "")) : null;
 			const startLine = Math.min(pos ? pos.startLine : action.line, action.line);
 			const endLine = Math.max(pos ? (pos.endLine || pos.startLine) : action.line, action.line);
 			this._navigate(action.repo, action.rev, action.path, startLine && endLine ? `L${lineRange(startLine, endLine)}` : null);
