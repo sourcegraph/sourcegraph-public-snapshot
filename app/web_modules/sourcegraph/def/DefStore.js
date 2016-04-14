@@ -7,6 +7,7 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {defPath} from "sourcegraph/def";
 import type {Def} from "sourcegraph/def";
+import "sourcegraph/def/DefBackend";
 
 function defKey(repo: string, rev: ?string, def: string): string {
 	return `${repo}#${rev || ""}#${def}`;
