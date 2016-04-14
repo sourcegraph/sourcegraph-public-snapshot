@@ -10,7 +10,7 @@ const context: {
 	userAgent?: string;
 	assetsRoot?: string;
 	buildVars?: Object;
-	features?: Object;
+	features?: {[key: string]: any};
 } = {};
 
 // Sets the values of the context given a JSContext object from the server.
