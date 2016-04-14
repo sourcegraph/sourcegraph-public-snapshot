@@ -31,7 +31,7 @@
 /*
 	 FONT FAMILY GROUPS
 */
-.sans-serif { font-family: -apple-system, BlinkMacSystemFont, 'avenir next', avenir, helvetica, 'helvetica neue', Ubuntu, 'segoe ui', arial, sans-serif; }
+.sans-serif { font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'helvetica neue', 'helvetica', Ubuntu, 'segoe ui', arial, sans-serif; }
 .serif { font-family: georgia, times, serif; }
 .system-sans-serif { font-family: sans-serif; }
 .system-serif { font-family: serif; }
@@ -46,6 +46,10 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 .bodoni { font-family: "Bodoni MT", serif; }
 .calisto { font-family: "Calisto MT", serif; }
 .garamond { font-family: garamond, serif; }
+
+body {
+	font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'helvetica neue', 'helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+}
 
 /*
 	 FONT STYLE
@@ -152,7 +156,7 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 }
 
 .header {
-	composes: sans-serif f2 f1-ns;
+	composes: f2 f1-ns;
 	composes: dark-gray from colors;
 }
 @value c_brand-orange from colors;
@@ -181,28 +185,28 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 }
 
 .subheader {
-	composes: f3 lh-copy sans-serif;
+	composes: f3 lh-copy;
 	composes: silver from colors;
 }
 
 .section-header {
-	composes: f2 b sans-serif;
+	composes: f2 b;
 	composes: mid-gray from colors;
 }
 
 .subsection-header {
-	composes: b f4 tracked sans-serif;
+	composes: b f4 tracked;
 	composes: gray from colors;
 	text-transform: uppercase;
 }
 
 .small-text {
-	composes: sans-serif f6;
+	composes: f6;
 	composes: silver from colors;
 }
 
 .error-text {
-	composes: sans-serif f5;
+	composes: f5;
 	composes: red from colors;
 }
 
@@ -212,16 +216,16 @@ code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 }
 
 .empty-state-text {
-	composes: f4 sans-serif;
+	composes: f4;
 	composes: mid-gray from colors;
 	font-style: italic;
 }
 
 .button-text {
-	composes: sans-serif tc tracked-mega f5;
+	composes: tc tracked-mega f5;
 }
 
 .input-text {
-	composes: f4 sans-serif;
+	composes: f4;
 	composes: blue from colors;
 }

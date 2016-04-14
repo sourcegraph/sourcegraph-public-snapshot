@@ -40,7 +40,6 @@
 	display: block;
 	composes: pa3 mh3 bt from base;
 	composes: blue b--black-20 from colors;
-	composes: sans-serif from typography;
 	word-wrap: break-word;
 	overflow: hidden;
 	text-overflow: ellipsis;

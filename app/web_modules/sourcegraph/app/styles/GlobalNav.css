@@ -24,7 +24,7 @@
 	flex: 1 1 auto;
 	align-items: center;
 	composes: pa2 from base;
-	composes: sans-serif f3 from typography;
+	composes: f3 from typography;
 }
 
 .actions {

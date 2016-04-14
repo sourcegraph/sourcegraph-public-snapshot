@@ -1,11 +1,9 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
-@value typography "sourcegraph/components/styles/typography.css";
 
 .footer {
 	composes: bt mt4 ph2 pv2 from base;
 	composes: b--light-gray from colors;
-	composes: sans-serif from typography;
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;

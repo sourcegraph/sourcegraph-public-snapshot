@@ -68,7 +68,6 @@
 
 .list-item {
 	composes: pa3 mh3 bt from base;
-	composes: sans-serif from typography;
 	composes: b--black-20 from colors;
 }
 
@@ -91,7 +90,7 @@
 
 .uri {
 	composes: pv2 from base;
-	composes: fw5 f2 sans-serif from typography;
+	composes: fw5 f2 from typography;
 	composes: dark-gray from colors;
 	display: block;
 }

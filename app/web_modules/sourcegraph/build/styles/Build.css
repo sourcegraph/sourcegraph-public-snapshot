@@ -84,7 +84,7 @@
 
 .step-body {
 	composes: white bg-black-90 from colors;
-	composes: f5 sans-serif from typography;
+	composes: f5 from typography;
 	composes: pa3 from base;
 	margin-top: 0;
 	margin-bottom: 0;
@@ -121,7 +121,7 @@
 	align-items: center;
 	composes: pv1 ph4 bb center from base;
 	composes: b--black-20 from colors;
-	composes: sans-serif f4 b tc from typography;
+	composes: f4 b tc from typography;
 }
 
 .list-cell {
