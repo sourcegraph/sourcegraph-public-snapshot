@@ -28,18 +28,18 @@ func TestRepoFlow(t *T) error {
 	// Check that the "mux.go" codefile link appears.
 	var muxLink selenium.WebElement
 	getMuxLink := func() bool {
-		spans, err := wd.FindElements(selenium.ByTagName, "span")
+		links, err := wd.FindElements(selenium.ByTagName, "a")
 		if err != nil {
 			return false
 		}
 
-		for _, span := range spans {
-			text, err := span.Text()
+		for _, link := range links {
+			text, err := link.Text()
 			if err != nil {
 				return false
 			}
 			if strings.Contains(text, "mux.go") {
-				muxLink = span
+				muxLink = link
 				return true
 			}
 		}
@@ -119,7 +119,8 @@ func TestRepoFlow(t *T) error {
 
 	// Perform a 2s sleep because the span needs time to be linkified.
 	time.Sleep(2 * time.Second)
-	routerSpan.Click()
+	routerSpan.Click() // Trigger hover
+	routerSpan.Click() // Actual click
 
 	t.WaitForRedirect(
 		"/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router",
