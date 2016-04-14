@@ -28,7 +28,7 @@ var ciFactor = func() int {
 func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
 
-	if v := os.Getenv("SG_DISABLE_REACTBRIDGE"); v != "" {
+	if v := os.Getenv("SG_DISABLE_JSSERVER"); v != "" {
 		ctx = ui.DisabledReactPrerendering(ctx)
 	}
 
