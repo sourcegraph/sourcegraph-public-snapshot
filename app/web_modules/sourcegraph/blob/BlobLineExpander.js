@@ -37,8 +37,8 @@ class BlobLineExpander extends Component {
 				</td>
 				<td>
 					{/* TODO support doing the up/down arrow logic automatically */}
-					{this.state.direction !== "up" && <p styleName="line-expander-icon"><TriangleUpIcon /></p>}
-					{this.state.direction !== "down" && <p styleName="line-expander-icon"><TriangleDownIcon /></p>}
+					{this.state.direction !== "up" && <p styleName="line-expander-icon"><TriangleDownIcon /></p>}
+					{this.state.direction !== "down" && <p styleName="line-expander-icon"><TriangleUpIcon /></p>}
 				</td>
 			</tr>
 		);
