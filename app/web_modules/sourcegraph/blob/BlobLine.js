@@ -99,7 +99,7 @@ class BlobLine extends Component {
 								throw new Error("TODO: reimplement multiple defs menu");
 							}
 
-							if (!this.state.highlightedDefObj || this.state.highlightedDefObj.Error) {
+							if (this.state.highlightedDefObj && this.state.highlightedDefObj.Error) {
 								// Prevent navigating to a broken ref or not-yet-loaded def.
 								ev.preventDefault();
 							}
