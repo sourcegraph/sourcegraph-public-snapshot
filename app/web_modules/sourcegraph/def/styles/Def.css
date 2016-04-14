@@ -15,7 +15,7 @@
 /* Def box (in blob margin) */
 .marginBox {
 	composes: w-100 from base;
-	composes: marginBox from blob;
+	composes: marginBoxRight from blob;
 }
 .boxTitle {
 	composes: black from colors;
@@ -33,6 +33,9 @@
 	composes: br2 from base;
 	composes: bg-blue-1 blue-8 from colors;
 }
+.activeGroupHeader {
+	font-weight: bold;
+}
 .allRefs {
 	line-height: 1.7;
 	white-space: nowrap;
@@ -47,7 +50,7 @@
 	composes: badge;
 }
 .currentFileRefs {
-	composes: b from base;
+	font-weight: bold;
 }
 
 /* Def box authors */

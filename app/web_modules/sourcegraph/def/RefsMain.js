@@ -18,6 +18,10 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Refs.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
+import RefLocationsList from "sourcegraph/def/RefLocationsList";
+import {FileIcon} from "sourcegraph/components/Icons";
+import Header from "sourcegraph/components/Header";
+import {httpStatusCode} from "sourcegraph/app/status";
 
 const FILES_PER_PAGE = 5;
 
@@ -68,8 +72,15 @@ class RefsMain extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
+
+		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
+
 		state.refRepo = props.location && props.location.query.repo ? props.location.query.repo : null;
 		state.refFile = props.location && props.location.query.file ? props.location.query.file : null;
+		if (!state.refRepo && state.refLocations && !state.refLocations.Error && state.refLocations.length > 0) {
+			state.refRepo = state.refLocations[0].Repo;
+		}
+
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, state.refFile);
 		state.files = null;
 		state.entrySpecs = null;
@@ -114,12 +125,22 @@ class RefsMain extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
+		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
+		}
+
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo || prevState.refFile !== nextState.refFile) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo, nextState.refFile));
+			if (nextState.refRepo) {
+				Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo, nextState.refFile));
+			}
 		}
 
 		if (nextState.refs && prevState.refs !== nextState.refs) {
 			this.context.status.error(nextState.refs.Error);
+		}
+
+		if (nextState.refLocations && prevState.refLocations !== nextState.refLocations) {
+			this.context.status.error(nextState.refLocations.Error);
 		}
 
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {
@@ -143,43 +164,60 @@ class RefsMain extends Container {
 	}
 
 	render() {
+		let def = this.state.defObj;
+		let refLocs = this.state.refLocations;
+
+		if (refLocs && refLocs.Error) {
+			return (
+				<Header
+					title={`${httpStatusCode(refLocs.Error)}`}
+					subtitle={`References are not available.`} />
+			);
+		}
+
 		let maxFilesShown = this.state.page * FILES_PER_PAGE;
 
 		return (
 			<div styleName="refs-container">
-				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>} {this.state.refFile && `in ${this.state.refFile}`} {this.state.refRepo && `in ${this.state.refRepo}`}</h1>
-				<hr/>
-				{this.state.files && this.state.files.map((file, i) => {
-					if (!file) return null;
-					let entrySpec = this.state.entrySpecs[i];
-					let path = entrySpec.Path;
-					let repoRev = entrySpec.RepoRev;
-					return (
-						<div key={path}>
-							<h3>
-								<i className="fa fa-file"/>
-								<Link to={urlToBlob(repoRev.URI, repoRev.Rev, path)}>{path}</Link>
-							</h3>
-							<Blob
-								repo={repoRev.URI}
-								rev={repoRev.Rev}
-								path={path}
-								contents={file.ContentsString}
-								annotations={this.state.anns[path] || null}
-								activeDef={this.state.activeDef}
-								lineNumbers={true}
-								displayRanges={this.state.ranges[path] || null}
-								highlightedDef={this.state.highlightedDef}
-								highlightedDefObj={this.state.highlightedDefObj} />
-						</div>
-					);
-				})}
-				{this.state.files && this.state.files.length > maxFilesShown &&
-					<div styleName="refs-footer">
-						<span styleName="search-hotkey" data-hint={`Refs from ${maxFilesShown} out of ${this.state.files.length} files currently shown`}><button onClick={this._nextPage}>View more</button></span>
+				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>}</h1>
+				<div styleName="inner">
+					<div styleName="ref-locations">
+						{def && !def.Error && refLocs && !refLocs.Error && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.refRepo} path={this.state.refFile} />}
 					</div>
-				}
-
+					<div styleName="refs">
+						{this.state.files && this.state.files.map((file, i) => {
+							if (!file) return null;
+							let entrySpec = this.state.entrySpecs[i];
+							let path = entrySpec.Path;
+							let repoRev = entrySpec.RepoRev;
+							return (
+								<div key={path}>
+									<h3 styleName="file-name">
+										<Link to={urlToBlob(repoRev.URI, repoRev.Rev, path)}>
+											<FileIcon /> {path}
+										</Link>
+									</h3>
+									<Blob
+										repo={repoRev.URI}
+										rev={repoRev.Rev}
+										path={path}
+										contents={file.ContentsString}
+										annotations={this.state.anns[path] || null}
+										activeDef={this.state.activeDef}
+										lineNumbers={true}
+										displayRanges={this.state.ranges[path] || null}
+										highlightedDef={this.state.highlightedDef}
+										highlightedDefObj={this.state.highlightedDefObj} />
+								</div>
+							);
+						})}
+						{this.state.files && this.state.files.length > maxFilesShown &&
+							<div styleName="refs-footer">
+								<span styleName="search-hotkey" data-hint={`Refs from ${maxFilesShown} out of ${this.state.files.length} files currently shown`}><button onClick={this._nextPage}>View more</button></span>
+							</div>
+						}
+					</div>
+				</div>
 				{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 			</div>
 		);
