@@ -5,6 +5,7 @@
  * Uses cookie if available, otherwise fallback to localstorage.
  */
 
+var Constants = require('./constants');
 var Cookie = require('./cookie');
 var JSON = require('json'); // jshint ignore:line
 var localStorage = require('./localstorage'); // jshint ignore:line
@@ -18,9 +19,9 @@ cookieStorage.prototype._cookiesEnabled = function() {
   var uid = String(new Date());
   var result;
   try {
-    Cookie.set(uid, uid);
-    result = Cookie.get(uid) === uid;
-    Cookie.remove(uid);
+    Cookie.set(Constants.COOKIE_TEST, uid);
+    result = Cookie.get(Constants.COOKIE_TEST) === uid;
+    Cookie.remove(Constants.COOKIE_TEST);
     return result;
   } catch (e) {
     // cookies are not enabled

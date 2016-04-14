@@ -1,14 +1,13 @@
-/* Taken from: https://github.com/component/type */
-
 /**
  * toString ref.
+ * @private
  */
 
 var toString = Object.prototype.toString;
 
 /**
  * Return the type of `val`.
- *
+ * @private
  * @param {Mixed} val
  * @return {String}
  * @api public

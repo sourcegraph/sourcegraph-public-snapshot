@@ -4,6 +4,7 @@ TESTS = $(wildcard test/*.js)
 BINS = node_modules/.bin
 DUO = $(BINS)/duo
 MINIFY = $(BINS)/uglifyjs
+JSDOC = $(BINS)/jsdoc
 JSHINT = $(BINS)/jshint
 BUILD_DIR = build
 PROJECT = amplitude
@@ -85,6 +86,9 @@ build: $(TESTS) $(OUT) $(SNIPPET_OUT) $(SEGMENT_SNIPPET_OUT) README.md
 	@-mkdir -p build
 	@$(DUO) --development test/tests.js > build/tests.js
 	@$(DUO) --development test/snippet-tests.js > build/snippet-tests.js
+
+docs:
+	@$(JSDOC) -d ./documentation/ src/*.js
 
 #
 # Target for release.

@@ -45,9 +45,50 @@ describe('Amplitude', function() {
       reset();
     });
 
+    it('fails on invalid apiKeys', function() {
+      amplitude.init(null);
+      assert.equal(amplitude.options.apiKey, undefined);
+      assert.equal(amplitude.options.deviceId, undefined);
+
+      amplitude.init('');
+      assert.equal(amplitude.options.apiKey, undefined);
+      assert.equal(amplitude.options.deviceId, undefined);
+
+      amplitude.init(apiKey);
+      assert.equal(amplitude.options.apiKey, apiKey);
+      assert.lengthOf(amplitude.options.deviceId, 37);
+    });
+
     it('should accept userId', function() {
       amplitude.init(apiKey, userId);
       assert.equal(amplitude.options.userId, userId);
+    });
+
+    it('should generate a random deviceId', function() {
+      amplitude.init(apiKey, userId);
+      assert.lengthOf(amplitude.options.deviceId, 37); // UUID is length 36, but we append 'R' at end
+      assert.equal(amplitude.options.deviceId[36], 'R');
+    });
+
+    it('should validate config values', function() {
+      var config = {
+          apiEndpoint: 100,  // invalid type
+          batchEvents: 'True',  // invalid type
+          cookieExpiration: -1,   // negative number
+          cookieName: '',  // empty string
+          eventUploadPeriodMillis: '30', // 30s
+          eventUploadThreshold: 0,   // zero value
+          bogusKey: false
+      };
+
+      amplitude.init(apiKey, userId, config);
+      assert.equal(amplitude.options.apiEndpoint, 'api.amplitude.com');
+      assert.equal(amplitude.options.batchEvents, false);
+      assert.equal(amplitude.options.cookieExpiration, 3650);
+      assert.equal(amplitude.options.cookieName, 'amplitude_id');
+      assert.equal(amplitude.options.eventUploadPeriodMillis, 30000);
+      assert.equal(amplitude.options.eventUploadThreshold, 30);
+      assert.equal(amplitude.options.bogusKey, undefined);
     });
 
     it('should set cookie', function() {
@@ -55,7 +96,7 @@ describe('Amplitude', function() {
       var stored = cookie.get(amplitude.options.cookieName);
       assert.property(stored, 'deviceId');
       assert.propertyVal(stored, 'userId', userId);
-      assert.lengthOf(stored.deviceId, 36);
+      assert.lengthOf(stored.deviceId, 37); // increase deviceId length by 1 for 'R' character
     });
 
     it('should set language', function() {
@@ -359,6 +400,34 @@ describe('Amplitude', function() {
       assert.deepEqual(amplitude2._unsentEvents[1].event_properties, expected);
     });
 
+    it('should validate user properties when loading saved identifys from localStorage', function() {
+      var existingEvents = '[{"device_id":"15a82a' +
+        'aa-0d9e-4083-a32d-2352191877e6","user_id":"15a82aaa-0d9e-4083-a32d-2352191877e6","timestamp":1455744746295,' +
+        '"event_id":3,"session_id":1455744733865,"event_type":"$identify","version_name":"Web","platform":"Web",' +
+        '"os_name":"Chrome","os_version":"48","device_model":"Mac","language":"en-US","api_properties":{},' +
+        '"user_properties":{"$set":{"10":"false","bool":true,"null":null,"string":"test","array":' +
+        '[0,1,2,"3"],"nested_array":["a",{"key":"value"},["b"]],"object":{"key":"value"},"nested_object":' +
+        '{"k":"v","l":[0,1],"o":{"k2":"v2","l2":["e2",{"k3":"v3"}]}}}},"event_properties":{},"uuid":"650407a1-d705-' +
+        '47a0-8918-b4530ce51f89","library":{"name":"amplitude-js","version":"2.9.0"},"sequence_number":5}]'
+      localStorage.setItem('amplitude_unsent_identify', existingEvents);
+
+      var amplitude2 = new Amplitude();
+      amplitude2.init(apiKey, null, {batchEvents: true});
+
+      var expected = {
+        '10': 'false',
+        'bool': true,
+        'string': 'test',
+        'array': [0, 1, 2, '3'],
+        'nested_array': ['a'],
+        'object': {'key':'value'},
+        'nested_object': {'k':'v', 'l':[0,1], 'o':{'k2':'v2', 'l2': ['e2']}}
+      }
+
+      // check that event loaded into memory
+      assert.deepEqual(amplitude2._unsentIdentifys[0].user_properties, {'$set': expected});
+    });
+
     it ('should load saved events from localStorage new keys and send events', function() {
       var existingEvent = '[{"device_id":"test_device_id","user_id":"test_user_id","timestamp":1453769146589,' +
         '"event_id":49,"session_id":1453763315544,"event_type":"clicked","version_name":"Web","platform":"Web"' +
@@ -531,6 +600,28 @@ describe('Amplitude', function() {
         '$clearAll': '-'
       };
       assert.deepEqual(events[0].user_properties, expected);
+    });
+  });
+
+  describe('setVersionName', function() {
+    beforeEach(function() {
+      reset();
+    });
+
+    afterEach(function() {
+      reset();
+    });
+
+    it('should set version name', function() {
+      amplitude.init(apiKey, null, {batchEvents: true});
+      amplitude.setVersionName('testVersionName1');
+      amplitude.logEvent('testEvent1');
+      assert.equal(amplitude._unsentEvents[0].version_name, 'testVersionName1');
+
+      // should ignore non-string values
+      amplitude.setVersionName(15000);
+      amplitude.logEvent('testEvent2');
+      assert.equal(amplitude._unsentEvents[1].version_name, 'testVersionName1');
     });
   });
 
@@ -1528,21 +1619,21 @@ describe('Amplitude', function() {
     });
 
     it('should truncate long event property strings', function() {
-      var longString = new Array(2000).join('a');
+      var longString = new Array(5000).join('a');
       amplitude.logEvent('test', {'key': longString});
       var event = JSON.parse(querystring.parse(server.requests[0].requestBody).e)[0];
 
       assert.isTrue('key' in event.event_properties);
-      assert.lengthOf(event.event_properties['key'], 1024);
+      assert.lengthOf(event.event_properties['key'], 4096);
     });
 
     it('should truncate long user property strings', function() {
-      var longString = new Array(2000).join('a');
+      var longString = new Array(5000).join('a');
       amplitude.identify(new Identify().set('key', longString));
       var event = JSON.parse(querystring.parse(server.requests[0].requestBody).e)[0];
 
       assert.isTrue('$set' in event.user_properties);
-      assert.lengthOf(event.user_properties['$set']['key'], 1024);
+      assert.lengthOf(event.user_properties['$set']['key'], 4096);
     });
 
     it('should increment the counters in local storage if cookies disabled', function() {
@@ -1620,6 +1711,14 @@ describe('Amplitude', function() {
         'object': {'key':'value', '15':'Error: oops'},
         'nested_object': {'k':'v', 'l':[0,1], 'o':{'k2':'v2', 'l2': ['e2']}}
       });
+    });
+
+    it('should validate user propeorties', function() {
+      var identify = new Identify().set(10, 10);
+      amplitude.init(apiKey, null, {batchEvents: true});
+      amplitude.identify(identify);
+
+      assert.deepEqual(amplitude._unsentIdentifys[0].user_properties, {'$set': {'10': 10}});
     });
 
     it('should synchronize event data across multiple amplitude instances that share the same cookie', function() {
@@ -1740,35 +1839,57 @@ describe('Amplitude', function() {
       assert.equal(events[0].user_properties.utm_term, undefined);
     });
 
-    it('should send utm data when the includeUtm flag is true', function() {
+    it('should send utm data via identify when the includeUtm flag is true', function() {
       cookie.set('__utmz', '133232535.1424926227.1.1.utmcct=top&utmccn=new');
       reset();
-      amplitude.init(apiKey, undefined, {includeUtm: true});
+      amplitude.init(apiKey, undefined, {includeUtm: true, batchEvents: true, eventUploadThreshold: 2});
 
       amplitude.logEvent('UTM Test Event', {});
 
       assert.lengthOf(server.requests, 1);
       var events = JSON.parse(querystring.parse(server.requests[0].requestBody).e);
+      assert.equal(events[0].event_type, '$identify');
       assert.deepEqual(events[0].user_properties, {
-        utm_campaign: 'new',
-        utm_content: 'top'
+        '$setOnce': {
+          initial_utm_campaign: 'new',
+          initial_utm_content: 'top'
+        },
+        '$set': {
+          utm_campaign: 'new',
+          utm_content: 'top'
+        }
       });
+
+      assert.equal(events[1].event_type, 'UTM Test Event');
+      assert.deepEqual(events[1].user_properties, {});
     });
 
-    it('should add utm params to the user properties', function() {
+    it('should parse utm params', function() {
       cookie.set('__utmz', '133232535.1424926227.1.1.utmcct=top&utmccn=new');
 
       var utmParams = '?utm_source=amplitude&utm_medium=email&utm_term=terms';
       amplitude._initUtmData(utmParams);
 
-      amplitude.setUserProperties({user_prop: true});
+      var expectedProperties = {
+          utm_campaign: 'new',
+          utm_content: 'top',
+          utm_medium: 'email',
+          utm_source: 'amplitude',
+          utm_term: 'terms'
+        }
+
       assert.lengthOf(server.requests, 1);
       var events = JSON.parse(querystring.parse(server.requests[0].requestBody).e);
-      // identify event should not have utm properties
+      assert.equal(events[0].event_type, '$identify');
       assert.deepEqual(events[0].user_properties, {
-        '$set': {
-          'user_prop': true
-        }
+        '$setOnce': {
+          initial_utm_campaign: 'new',
+          initial_utm_content: 'top',
+          initial_utm_medium: 'email',
+          initial_utm_source: 'amplitude',
+          initial_utm_term: 'terms'
+        },
+        '$set': expectedProperties
       });
       server.respondWith('success');
       server.respond();
@@ -1776,13 +1897,45 @@ describe('Amplitude', function() {
       amplitude.logEvent('UTM Test Event', {});
       assert.lengthOf(server.requests, 2);
       var events = JSON.parse(querystring.parse(server.requests[1].requestBody).e);
+      assert.deepEqual(events[0].user_properties, {});
+
+      // verify session storage set
+      assert.deepEqual(JSON.parse(sessionStorage.getItem('amplitude_utm_properties')), expectedProperties);
+    });
+
+    it('should not set utmProperties if utmProperties data already in session storage', function() {
+      reset();
+      var existingProperties = {
+        utm_campaign: 'old',
+        utm_content: 'bottom',
+        utm_medium: 'texts',
+        utm_source: 'datamonster',
+        utm_term: 'conditions'
+      };
+      sessionStorage.setItem('amplitude_utm_properties', JSON.stringify(existingProperties));
+
+      cookie.set('__utmz', '133232535.1424926227.1.1.utmcct=top&utmccn=new');
+      var utmParams = '?utm_source=amplitude&utm_medium=email&utm_term=terms';
+      amplitude._initUtmData(utmParams);
+
+      assert.lengthOf(server.requests, 1);
+      var events = JSON.parse(querystring.parse(server.requests[0].requestBody).e);
+      assert.lengthOf(events, 1);
+
+      // first event should be identify with initial_utm properties and NO existing utm properties
+      assert.equal(events[0].event_type, '$identify');
       assert.deepEqual(events[0].user_properties, {
-        utm_campaign: 'new',
-        utm_content: 'top',
-        utm_medium: 'email',
-        utm_source: 'amplitude',
-        utm_term: 'terms'
+        '$setOnce': {
+          initial_utm_campaign: 'new',
+          initial_utm_content: 'top',
+          initial_utm_medium: 'email',
+          initial_utm_source: 'amplitude',
+          initial_utm_term: 'terms'
+        }
       });
+
+      // should not override any existing utm properties values in session storage
+      assert.equal(sessionStorage.getItem('amplitude_utm_properties'), JSON.stringify(existingProperties));
     });
   });
 
@@ -1815,13 +1968,15 @@ describe('Amplitude', function() {
       var events = JSON.parse(querystring.parse(server.requests[0].requestBody).e);
       assert.lengthOf(events, 2);
 
+      var expected = {
+        'referrer': 'https://amplitude.com/contact',
+        'referring_domain': 'amplitude.com'
+      };
+
       // first event should be identify with initial_referrer and referrer
       assert.equal(events[0].event_type, '$identify');
       assert.deepEqual(events[0].user_properties, {
-        '$set': {
-          'referrer': 'https://amplitude.com/contact',
-          'referring_domain': 'amplitude.com'
-        },
+        '$set': expected,
         '$setOnce': {
           'initial_referrer': 'https://amplitude.com/contact',
           'initial_referring_domain': 'amplitude.com'
@@ -1833,7 +1988,7 @@ describe('Amplitude', function() {
       assert.deepEqual(events[1].user_properties, {});
 
       // referrer should be propagated to session storage
-      assert.equal(sessionStorage.getItem('amplitude_referrer'), 'https://amplitude.com/contact');
+      assert.equal(sessionStorage.getItem('amplitude_referrer'), JSON.stringify(expected));
     });
 
     it('should not set referrer if referrer data already in session storage', function() {

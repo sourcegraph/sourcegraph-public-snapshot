@@ -5,7 +5,7 @@
  * Detect.js: User-Agent Parser
  * https://github.com/darcyclarke/Detect.js
  * Dual licensed under the MIT and GPL licenses.
- *
+ * @private
  * @version 2.2.1
  * @author Darcy Clarke
  * @url http://darcyclarke.me

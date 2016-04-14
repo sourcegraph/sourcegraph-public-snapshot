@@ -5,6 +5,7 @@
 var Base64 = require('./base64');
 var JSON = require('json'); // jshint ignore:line
 var topDomain = require('top-domain');
+var utils = require('./utils');
 
 
 var _options = {
@@ -30,7 +31,7 @@ var options = function(opts) {
 
   _options.expirationDays = opts.expirationDays;
 
-  var domain = (opts.domain !== undefined) ? opts.domain : '.' + topDomain(window.location.href);
+  var domain = (!utils.isEmptyString(opts.domain)) ? opts.domain : '.' + topDomain(window.location.href);
   var token = Math.random();
   _options.domain = domain;
   set('amplitude_test', token);
