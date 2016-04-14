@@ -28,7 +28,7 @@ export function formatDuration(ms) {
 
 class TimeAgo extends Component {
 	render() {
-		return <time title={this.props.time}>{formatDuration(Date.now() - new Date(this.props.time).getTime())} ago</time>;
+		return <time title={this.props.time} {...this.props}>{formatDuration(Date.now() - new Date(this.props.time).getTime())} ago</time>;
 	}
 }
 TimeAgo.propTypes = {
