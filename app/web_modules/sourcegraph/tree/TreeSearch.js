@@ -79,6 +79,7 @@ class TreeSearch extends Container {
 		focused: boolean;
 		matchingDefs: ?{Defs: Array<Def>};
 		selectionIndex: number;
+		defListFilePathPrefix: ?string;
 	};
 
 	static contextTypes = {
@@ -93,6 +94,7 @@ class TreeSearch extends Container {
 			focused: !props.overlay,
 			matchingDefs: null,
 			selectionIndex: 0,
+			defListFilePathPrefix: null,
 		};
 		this._queryInput = null;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -140,8 +142,13 @@ class TreeSearch extends Container {
 		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
 		state.fileList = TreeStore.fileLists.get(state.repo, state.rev);
 
+		// Limit defs to the current directory unless we're querying. That
+		// should be global to be consistent with file list behavior (for which
+		// searches are global).
+		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
+
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
-		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query) : null;
+		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
 	}
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
@@ -151,10 +158,10 @@ class TreeSearch extends Container {
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
 		}
 
-		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query) {
+		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
 				Dispatcher.Backends.dispatch(
-					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query)
+					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix)
 				);
 			}
 		}

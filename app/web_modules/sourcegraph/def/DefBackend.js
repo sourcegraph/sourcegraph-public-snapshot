@@ -28,15 +28,15 @@ const DefBackend = {
 
 		case DefActions.WantDefs:
 			{
-				let defs = DefStore.defs.list(action.repo, action.rev, action.query);
+				let defs = DefStore.defs.list(action.repo, action.rev, action.query, action.filePathPrefix);
 				if (defs === null) {
 					trackPromise(
-						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}`)
+						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}&FilePathPrefix=${action.filePathPrefix ? encodeURIComponent(action.filePathPrefix) : ""}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, data));
+								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, action.filePathPrefix, data));
 							})
 					);
 				}

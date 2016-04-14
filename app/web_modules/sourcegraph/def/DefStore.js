@@ -12,8 +12,8 @@ function defKey(repo: string, rev: ?string, def: string): string {
 	return `${repo}#${rev || ""}#${def}`;
 }
 
-function defsListKeyFor(repo, rev, query) {
-	return `${repo}#${rev}#${query}`;
+function defsListKeyFor(repo: string, rev: string, query: string, filePathPrefix: ?string): string {
+	return `${repo}#${rev}#${query}#${filePathPrefix || ""}`;
 }
 
 function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string): string {
@@ -27,8 +27,8 @@ export class DefStore extends Store {
 			get(repo: string, rev: ?string, def: string): ?Def {
 				return this.content[defKey(repo, rev, def)] || null;
 			},
-			list(repo, rev, query) {
-				return this.content[defsListKeyFor(repo, rev, query)] || null;
+			list(repo: string, rev: string, query: string, filePathPrefix: ?string) {
+				return this.content[defsListKeyFor(repo, rev, query, filePathPrefix)] || null;
 			},
 		});
 		this.highlightedDef = null;
@@ -65,7 +65,7 @@ export class DefStore extends Store {
 				// Store the list of defs AND each def individually so we can
 				// perform more operations quickly.
 				let data = {
-					[defsListKeyFor(action.repo, action.rev, action.query)]: action.defs,
+					[defsListKeyFor(action.repo, action.rev, action.query, action.filePathPrefix)]: action.defs,
 				};
 				if (action.defs && action.defs.Defs) {
 					action.defs.Defs.forEach((d) => {

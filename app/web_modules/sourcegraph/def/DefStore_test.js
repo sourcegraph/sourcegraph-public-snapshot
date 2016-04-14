@@ -10,8 +10,8 @@ describe("DefStore", () => {
 	});
 
 	it("should handle DefsFetched", () => {
-		DefStore.directDispatch(new DefActions.DefsFetched("r", "v", "q", ["someData"]));
-		expect(DefStore.defs.list("r", "v", "q")).to.eql(["someData"]);
+		DefStore.directDispatch(new DefActions.DefsFetched("r", "v", "q", "fpp", ["someData"]));
+		expect(DefStore.defs.list("r", "v", "q", "fpp")).to.eql(["someData"]);
 	});
 
 	it("should handle HighlightDef", () => {

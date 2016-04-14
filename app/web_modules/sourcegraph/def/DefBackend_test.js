@@ -30,12 +30,12 @@ describe("DefBackend", () => {
 
 	it("should handle WantDefs", () => {
 		DefBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery");
+			expect(url).to.be("/.api/defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery&FilePathPrefix=foo%2F");
 			return immediateSyncPromise({status: 200, json: () => ({Defs: ["someDefData"]})});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			DefBackend.__onDispatch(new DefActions.WantDefs("myrepo", "myrev", "myquery"));
-		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", {Defs: ["someDefData"]})]);
+			DefBackend.__onDispatch(new DefActions.WantDefs("myrepo", "myrev", "myquery", "foo/"));
+		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", "foo/", {Defs: ["someDefData"]})]);
 	});
 
 	it("should handle WantRefLocations", () => {

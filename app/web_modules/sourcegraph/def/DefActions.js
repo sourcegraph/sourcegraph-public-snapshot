@@ -34,11 +34,13 @@ export class WantDefs {
 	repo: string;
 	rev: ?string;
 	query: string;
+	filePathPrefix: ?string;
 
-	constructor(repo: string, rev: ?string, query: string) {
+	constructor(repo: string, rev: ?string, query: string, filePathPrefix?: string) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
+		this.filePathPrefix = filePathPrefix || null;
 	}
 }
 
@@ -47,12 +49,14 @@ export class DefsFetched {
 	rev: ?string;
 	query: string;
 	defs: Array<Def>;
+	filePathPrefix: ?string;
 	eventName: string;
 
-	constructor(repo: string, rev: ?string, query: string, defs: Array<Def>) {
+	constructor(repo: string, rev: ?string, query: string, filePathPrefix: ?string, defs: Array<Def>) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
+		this.filePathPrefix = filePathPrefix;
 		this.defs = defs;
 		this.eventName = "DefsFetched";
 	}
