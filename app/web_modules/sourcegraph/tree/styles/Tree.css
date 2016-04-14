@@ -4,6 +4,7 @@
 @value grid "sourcegraph/components/styles/grid.css";
 @value tooltips "sourcegraph/components/styles/tooltips.css";
 @value breadcrumb "sourcegraph/components/styles/breadcrumb.css";
+@value animation "sourcegraph/components/styles/animation.css";
 
 .tree-container {
 	composes: cf from base;
@@ -50,6 +51,14 @@
 @value c_mid-gray from colors;
 .list-item-empty {
 	color: c_mid-gray;
+}
+
+.content-placeholder {
+	composes2: bg-blue-1 from colors;
+	composes: shimmer-animation from animation;
+
+	/* HACK: Using c_blue-5 and c_blue-8 doesn't work (vars aren't interpreted), so hardcode them. */
+	background: linear-gradient(to right, #E1F0FC 8%, #CFE8FF 18%, #E1F0FC 83%);
 }
 
 @value c_dark-blue from colors;

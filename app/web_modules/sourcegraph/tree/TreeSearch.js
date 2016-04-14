@@ -77,7 +77,7 @@ class TreeSearch extends Container {
 	state: TreeSearch.props & {
 		query: string;
 		focused: boolean;
-		matchingDefs: {Defs: Array<Def>};
+		matchingDefs: ?{Defs: Array<Def>};
 		selectionIndex: number;
 	};
 
@@ -91,7 +91,7 @@ class TreeSearch extends Container {
 		this.state = {
 			query: "",
 			focused: !props.overlay,
-			matchingDefs: {Defs: []},
+			matchingDefs: null,
 			selectionIndex: 0,
 		};
 		this._queryInput = null;
@@ -142,12 +142,6 @@ class TreeSearch extends Container {
 
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query) : null;
-		if (state.matchingDefs !== null) {
-			state.lastDefinedMatchingDefs = state.matchingDefs;
-		} else {
-			// Prevent flashing "No Matches" while a query is in progress.
-			state.matchingDefs = state.lastDefinedMatchingDefs || null;
-		}
 	}
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
@@ -163,6 +157,10 @@ class TreeSearch extends Container {
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query)
 				);
 			}
+		}
+
+		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
+			nextState.lastDefinedMatchingDefs = prevState.matchingDefs;
 		}
 
 		if (prevState.fileList !== nextState.fileList) {
@@ -434,11 +432,31 @@ class TreeSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_symbolItems(): Array<any> {
-		const emptyItem = <div styleName="list-item list-item-empty" key="_nosymbol"><i>No matches.</i></div>;
-		if (!this.state.matchingDefs) return [emptyItem];
+	_symbolItems(): ?Array<any> {
+		if (this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID) return null;
 
-		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
+		const contentPlaceholderItem = (i) => (
+			<div styleName="list-item" key={`_nosymbol${i}`}>
+				<div styleName="content-placeholder" style={{width: `${20 + ((i+1)*39)%60}%`}}><code>&nbsp;</code></div>
+			</div>
+		);
+		if (!this.state.matchingDefs) {
+			let numPlaceholders = 1;
+			if (!this.state.query) {
+				numPlaceholders = SYMBOL_LIMIT;
+			} else if (this.state.lastDefinedMatchingDefs && this.state.lastDefinedMatchingDefs.Defs) {
+				numPlaceholders = Math.min(Math.max(1, this.state.lastDefinedMatchingDefs.Defs.length), SYMBOL_LIMIT);
+			}
+			const placeholders = [];
+			for (let i = 0; i < numPlaceholders; i++) {
+				placeholders.push(contentPlaceholderItem(i));
+			}
+			return placeholders;
+		}
+
+		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) {
+			return [<div styleName="list-item list-item-empty" key="_nosymbol"><i>No matches.</i></div>];
+		}
 
 		let list = [],
 			limit = this.state.matchingDefs.Defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingDefs.Defs.length;
@@ -518,7 +536,7 @@ class TreeSearch extends Container {
 					Symbols
 				</div>
 				<div>
-					{this.state.srclibDataVersion && this.state.srclibDataVersion.CommitID && this._symbolItems()}
+					{this._symbolItems()}
 					{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
 						<div styleName="list-item list-item-empty">
 							<span style={{paddingRight: "1rem"}}><Loader /></span>

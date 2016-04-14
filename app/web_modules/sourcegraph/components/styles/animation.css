@@ -17,3 +17,21 @@ sparingly!
 .dim:active { opacity: .8; transition: opacity visual_animation_duration ease-out; }
 .hide-child .child { opacity: 0; transition: opacity visual_animation_duration ease-in; }
 .hide-child:hover  .child, .hide-child:focus  .child, .hide-child:active .child { opacity: 1; transition: opacity visual_animation_duration ease-in; }
+
+/* Shimmer effects */
+@keyframes shimmer {
+	0%{
+		background-position: -468px 0
+	}
+	100%{
+		background-position: 468px 0
+	}
+}
+.shimmer-animation {
+	animation-duration: 900ms;
+	animation-fill-mode: forwards;
+	animation-iteration-count: infinite;
+	animation-name: shimmer;
+	animation-timing-function: linear;
+
+}

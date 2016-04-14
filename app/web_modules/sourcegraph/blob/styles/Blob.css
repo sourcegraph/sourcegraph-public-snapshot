@@ -1,6 +1,7 @@
 @value base "sourcegraph/components/styles/base.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
+@value animation "sourcegraph/components/styles/animation.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
 .pathComponent {}
@@ -135,22 +136,10 @@ by a lot of other modules (e.g., for def boxes)? */
 .lineContentPlaceholder {
 	composes: pa0 from base;
 }
-@keyframes shimmer {
-	0%{
-		background-position: -468px 0
-	}
-	100%{
-		background-position: 468px 0
-	}
-}
 .linesContentPlaceholder {
 	composes: lines;
 	composes: ph0 from base;
-	animation-duration: 900ms;
-	animation-fill-mode: forwards;
-	animation-iteration-count: infinite;
-	animation-name: shimmer;
-	animation-timing-function: linear;
+	composes: shimmer-animation from animation;
 	background: #f6f7f8;
 	background: linear-gradient(to right, #f2f2f2 8%, #e9e9e9 18%, #f2f2f2 53%);
 }
