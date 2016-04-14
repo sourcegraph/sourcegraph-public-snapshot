@@ -3,8 +3,6 @@
 import React from "react";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
-import {Link} from "react-router";
-import {urlToDefRefs} from "sourcegraph/def/routes";
 import s from "sourcegraph/def/styles/Def.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {defPath} from "sourcegraph/def";
@@ -13,6 +11,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
 import context from "sourcegraph/app/context";
+import RefLocationsList from "sourcegraph/def/RefLocationsList";
 
 class DefPopup extends Container {
 	static propTypes = {
@@ -50,23 +49,8 @@ class DefPopup extends Container {
 			<div className={s.marginBox}>
 				<header className={s.boxTitle}>{qualifiedNameAndType(def)}</header>
 				<header className={s.sectionTitle}>Used in {!refLocs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
-				{refLocs && refLocs.length === 0 &&
-					<i>No usages found</i>
-				}
-				{refLocs && refLocs.length > 0 &&
-					refLocs.filter((r) => r && r.Files).map((repoRef, i) => (
-						<div key={i} className={s.allRefs}>
-							<header><span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefRefs(def, repoRef.Repo)}>{repoRef.Repo}</Link></header>
-							<div className={s.refsGroup}>
-								{repoRef.Files.map((file, j) => (
-									<div key={j} className={this.props.path === file.Path ? s.currentFileRefs : ""}>
-										<span className={s.refsCount}>{file.Count}</span> <Link to={urlToDefRefs(def, repoRef.Repo, file.Path)}>{file.Path}</Link>
-									</div>
-								))}
-							</div>
-						</div>
-					))
-				}
+				{refLocs && refLocs.length === 0 &&	<i>No usages found</i>}
+				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.props.repo} path={this.props.path} />}
 
 				{authors && <header className={s.sectionTitle}>Authors {!authors && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>}
 				{authors && authors.length === 0 &&
