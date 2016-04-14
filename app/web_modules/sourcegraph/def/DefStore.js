@@ -31,6 +31,12 @@ export class DefStore extends Store {
 				return this.content[defsListKeyFor(repo, rev, query, filePathPrefix)] || null;
 			},
 		});
+		this.authors = deepFreeze({
+			content: data && data.authors ? data.authors.content : {},
+			get(repo: string, rev: ?string, def: string): ?Object {
+				return this.content[defKey(repo, rev, def)] || null;
+			},
+		});
 		this.highlightedDef = null;
 		this.refs = deepFreeze({
 			content: data && data.refs ? data.refs.content : {},
@@ -47,7 +53,12 @@ export class DefStore extends Store {
 	}
 
 	toJSON() {
-		return {defs: this.defs, refs: this.refs, refLocations: this.refLocations};
+		return {
+			defs: this.defs,
+			authors: this.authors,
+			refs: this.refs,
+			refLocations: this.refLocations,
+		};
 	}
 
 	__onDispatch(action) {
@@ -56,6 +67,14 @@ export class DefStore extends Store {
 			this.defs = deepFreeze(Object.assign({}, this.defs, {
 				content: Object.assign({}, this.defs.content, {
 					[defKey(action.repo, action.rev, action.def)]: action.defObj,
+				}),
+			}));
+			break;
+
+		case DefActions.DefAuthorsFetched:
+			this.authors = deepFreeze(Object.assign({}, this.authors, {
+				content: Object.assign({}, this.authors.content, {
+					[defKey(action.repo, action.rev, action.def)]: action.authors,
 				}),
 			}));
 			break;

@@ -30,6 +30,32 @@ export class DefFetched {
 	}
 }
 
+export class WantDefAuthors {
+	repo: string;
+	rev: ?string;
+	def: string;
+
+	constructor(repo: string, rev: ?string, def: string) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
+	}
+}
+
+export class DefAuthorsFetched {
+	repo: string;
+	rev: ?string;
+	def: string;
+	authors: Object;
+
+	constructor(repo: string, rev: ?string, def: string, authors: Object) {
+		this.repo = repo;
+		this.rev = rev;
+		this.def = def;
+		this.authors = authors;
+	}
+}
+
 export class WantDefs {
 	repo: string;
 	rev: ?string;

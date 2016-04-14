@@ -6,6 +6,13 @@
 	transition: transform .2s ease-out;
 }
 
+.tiny {
+	composes: avatar;
+	width: 1.58rem;
+	height: 1.58rem;
+	max-width: 1.58rem;
+	max-height: 1.58rem;
+}
 .small {
 	composes: avatar;
 	width: 2rem;

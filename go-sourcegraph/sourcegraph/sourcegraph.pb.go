@@ -129,6 +129,12 @@
 		BasicTreeEntry
 		TreeEntrySpec
 		FileRange
+		AuthorshipInfo
+		DefAuthor
+		DefAuthorship
+		DefListAuthorsOptions
+		DefsListAuthorsOp
+		DefAuthorList
 		Checklist
 		FileToken
 		ServerStatus
@@ -2156,6 +2162,68 @@ func (m *FileRange) Reset()         { *m = FileRange{} }
 func (m *FileRange) String() string { return proto.CompactTextString(m) }
 func (*FileRange) ProtoMessage()    {}
 
+type AuthorshipInfo struct {
+	LastCommitDate pbtypes.Timestamp `protobuf:"bytes,1,opt,name=LastCommitDate" json:"LastCommitDate"`
+	// LastCommitID is the commit ID of the last commit that this author made to the
+	// thing that this info describes.
+	LastCommitID string `protobuf:"bytes,2,opt,name=LastCommitID,proto3" json:"LastCommitID,omitempty"`
+}
+
+func (m *AuthorshipInfo) Reset()         { *m = AuthorshipInfo{} }
+func (m *AuthorshipInfo) String() string { return proto.CompactTextString(m) }
+func (*AuthorshipInfo) ProtoMessage()    {}
+
+type DefAuthor struct {
+	// Email is the author's email. It may be obfuscated or truncated
+	// to prevent spam.
+	Email string `protobuf:"bytes,1,opt,name=Email,proto3" json:"Email,omitempty"`
+	// AvatarURL is the URL to the author's avatar image, if any.
+	AvatarURL string `protobuf:"bytes,2,opt,name=AvatarURL,proto3" json:"AvatarURL,omitempty"`
+	// DefAuthorship contains statistics about the author's contributions
+	// to the def.
+	DefAuthorship `protobuf:"bytes,3,opt,name=DefAuthorship,embedded=DefAuthorship" json:""`
+}
+
+func (m *DefAuthor) Reset()         { *m = DefAuthor{} }
+func (m *DefAuthor) String() string { return proto.CompactTextString(m) }
+func (*DefAuthor) ProtoMessage()    {}
+
+type DefAuthorship struct {
+	AuthorshipInfo  `protobuf:"bytes,1,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:""`
+	Bytes           int32   `protobuf:"varint,3,opt,name=Bytes,proto3" json:"Bytes,omitempty"`
+	BytesProportion float64 `protobuf:"fixed64,4,opt,name=BytesProportion,proto3" json:"BytesProportion,omitempty"`
+}
+
+func (m *DefAuthorship) Reset()         { *m = DefAuthorship{} }
+func (m *DefAuthorship) String() string { return proto.CompactTextString(m) }
+func (*DefAuthorship) ProtoMessage()    {}
+
+// DefListAuthorsOptions specifies options for DefsService.ListAuthors.
+type DefListAuthorsOptions struct {
+	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
+}
+
+func (m *DefListAuthorsOptions) Reset()         { *m = DefListAuthorsOptions{} }
+func (m *DefListAuthorsOptions) String() string { return proto.CompactTextString(m) }
+func (*DefListAuthorsOptions) ProtoMessage()    {}
+
+type DefsListAuthorsOp struct {
+	Def DefSpec                `protobuf:"bytes,1,opt,name=Def" json:"Def"`
+	Opt *DefListAuthorsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
+}
+
+func (m *DefsListAuthorsOp) Reset()         { *m = DefsListAuthorsOp{} }
+func (m *DefsListAuthorsOp) String() string { return proto.CompactTextString(m) }
+func (*DefsListAuthorsOp) ProtoMessage()    {}
+
+type DefAuthorList struct {
+	DefAuthors []*DefAuthor `protobuf:"bytes,1,rep,name=DefAuthors" json:"DefAuthors,omitempty"`
+}
+
+func (m *DefAuthorList) Reset()         { *m = DefAuthorList{} }
+func (m *DefAuthorList) String() string { return proto.CompactTextString(m) }
+func (*DefAuthorList) ProtoMessage()    {}
+
 type Checklist struct {
 	// number of tasks to be done (unchecked)
 	Todo int32 `protobuf:"varint,1,opt,name=Todo,proto3" json:"Todo,omitempty"`
@@ -4160,6 +4228,8 @@ type DefsClient interface {
 	ListRefs(ctx context.Context, in *DefsListRefsOp, opts ...grpc.CallOption) (*RefList, error)
 	// ListRefLocations lists repos and files that refer to def.
 	ListRefLocations(ctx context.Context, in *DefsListRefLocationsOp, opts ...grpc.CallOption) (*RefLocationsList, error)
+	// ListAuthors lists people who committed parts of def's definition.
+	ListAuthors(ctx context.Context, in *DefsListAuthorsOp, opts ...grpc.CallOption) (*DefAuthorList, error)
 }
 
 type defsClient struct {
@@ -4206,6 +4276,15 @@ func (c *defsClient) ListRefLocations(ctx context.Context, in *DefsListRefLocati
 	return out, nil
 }
 
+func (c *defsClient) ListAuthors(ctx context.Context, in *DefsListAuthorsOp, opts ...grpc.CallOption) (*DefAuthorList, error) {
+	out := new(DefAuthorList)
+	err := grpc.Invoke(ctx, "/sourcegraph.Defs/ListAuthors", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Defs service
 
 type DefsServer interface {
@@ -4217,6 +4296,8 @@ type DefsServer interface {
 	ListRefs(context.Context, *DefsListRefsOp) (*RefList, error)
 	// ListRefLocations lists repos and files that refer to def.
 	ListRefLocations(context.Context, *DefsListRefLocationsOp) (*RefLocationsList, error)
+	// ListAuthors lists people who committed parts of def's definition.
+	ListAuthors(context.Context, *DefsListAuthorsOp) (*DefAuthorList, error)
 }
 
 func RegisterDefsServer(s *grpc.Server, srv DefsServer) {
@@ -4271,6 +4352,18 @@ func _Defs_ListRefLocations_Handler(srv interface{}, ctx context.Context, dec fu
 	return out, nil
 }
 
+func _Defs_ListAuthors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DefsListAuthorsOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(DefsServer).ListAuthors(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Defs_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "sourcegraph.Defs",
 	HandlerType: (*DefsServer)(nil),
@@ -4290,6 +4383,10 @@ var _Defs_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRefLocations",
 			Handler:    _Defs_ListRefLocations_Handler,
+		},
+		{
+			MethodName: "ListAuthors",
+			Handler:    _Defs_ListAuthors_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -10190,6 +10287,204 @@ func (m *FileRange) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *AuthorshipInfo) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *AuthorshipInfo) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.LastCommitDate.Size()))
+	n128, err := m.LastCommitDate.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n128
+	if len(m.LastCommitID) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.LastCommitID)))
+		i += copy(data[i:], m.LastCommitID)
+	}
+	return i, nil
+}
+
+func (m *DefAuthor) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DefAuthor) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Email) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Email)))
+		i += copy(data[i:], m.Email)
+	}
+	if len(m.AvatarURL) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.AvatarURL)))
+		i += copy(data[i:], m.AvatarURL)
+	}
+	data[i] = 0x1a
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.DefAuthorship.Size()))
+	n129, err := m.DefAuthorship.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n129
+	return i, nil
+}
+
+func (m *DefAuthorship) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DefAuthorship) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.AuthorshipInfo.Size()))
+	n130, err := m.AuthorshipInfo.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n130
+	if m.Bytes != 0 {
+		data[i] = 0x18
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.Bytes))
+	}
+	if m.BytesProportion != 0 {
+		data[i] = 0x21
+		i++
+		i = encodeFixed64Sourcegraph(data, i, uint64(math.Float64bits(m.BytesProportion)))
+	}
+	return i, nil
+}
+
+func (m *DefListAuthorsOptions) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DefListAuthorsOptions) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
+	n131, err := m.ListOptions.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n131
+	return i, nil
+}
+
+func (m *DefsListAuthorsOp) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DefsListAuthorsOp) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
+	n132, err := m.Def.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n132
+	if m.Opt != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
+		n133, err := m.Opt.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n133
+	}
+	return i, nil
+}
+
+func (m *DefAuthorList) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DefAuthorList) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.DefAuthors) > 0 {
+		for _, msg := range m.DefAuthors {
+			data[i] = 0xa
+			i++
+			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
 func (m *Checklist) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -10243,11 +10538,11 @@ func (m *FileToken) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-		n128, err := m.Entry.MarshalTo(data[i:])
+		n134, err := m.Entry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n128
+		i += n134
 	}
 	return i, nil
 }
@@ -10366,11 +10661,11 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-		n129, err := m.CreatedAt.MarshalTo(data[i:])
+		n135, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n129
+		i += n135
 	}
 	if len(m.Message) > 0 {
 		data[i] = 0x42
@@ -10436,11 +10731,11 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
-		n130, err := m.Timestamp.MarshalTo(data[i:])
+		n136, err := m.Timestamp.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n130
+		i += n136
 	}
 	if len(m.UserProperties) > 0 {
 		keysForUserProperties := make([]string, 0, len(m.UserProperties))
@@ -10550,11 +10845,11 @@ func (m *NotifyGenericEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Actor.Size()))
-		n131, err := m.Actor.MarshalTo(data[i:])
+		n137, err := m.Actor.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n131
+		i += n137
 	}
 	if len(m.Recipients) > 0 {
 		for _, msg := range m.Recipients {
@@ -10749,20 +11044,20 @@ func (m *AnnotationsListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n132, err := m.Entry.MarshalTo(data[i:])
+	n138, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n132
+	i += n138
 	if m.Range != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Range.Size()))
-		n133, err := m.Range.MarshalTo(data[i:])
+		n139, err := m.Range.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n133
+		i += n139
 	}
 	return i, nil
 }
@@ -12978,6 +13273,80 @@ func (m *FileRange) Size() (n int) {
 	}
 	if m.EndByte != 0 {
 		n += 1 + sovSourcegraph(uint64(m.EndByte))
+	}
+	return n
+}
+
+func (m *AuthorshipInfo) Size() (n int) {
+	var l int
+	_ = l
+	l = m.LastCommitDate.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	l = len(m.LastCommitID)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	return n
+}
+
+func (m *DefAuthor) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Email)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.AvatarURL)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = m.DefAuthorship.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	return n
+}
+
+func (m *DefAuthorship) Size() (n int) {
+	var l int
+	_ = l
+	l = m.AuthorshipInfo.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	if m.Bytes != 0 {
+		n += 1 + sovSourcegraph(uint64(m.Bytes))
+	}
+	if m.BytesProportion != 0 {
+		n += 9
+	}
+	return n
+}
+
+func (m *DefListAuthorsOptions) Size() (n int) {
+	var l int
+	_ = l
+	l = m.ListOptions.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	return n
+}
+
+func (m *DefsListAuthorsOp) Size() (n int) {
+	var l int
+	_ = l
+	l = m.Def.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	if m.Opt != nil {
+		l = m.Opt.Size()
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	return n
+}
+
+func (m *DefAuthorList) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.DefAuthors) > 0 {
+		for _, e := range m.DefAuthors {
+			l = e.Size()
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
 	}
 	return n
 }
@@ -30247,6 +30616,644 @@ func (m *FileRange) Unmarshal(data []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorshipInfo) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AuthorshipInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AuthorshipInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastCommitDate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LastCommitDate.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastCommitID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LastCommitID = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DefAuthor) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DefAuthor: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DefAuthor: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Email", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Email = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AvatarURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AvatarURL = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefAuthorship", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DefAuthorship.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DefAuthorship) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DefAuthorship: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DefAuthorship: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuthorshipInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AuthorshipInfo.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Bytes", wireType)
+			}
+			m.Bytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Bytes |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BytesProportion", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 8
+			v = uint64(data[iNdEx-8])
+			v |= uint64(data[iNdEx-7]) << 8
+			v |= uint64(data[iNdEx-6]) << 16
+			v |= uint64(data[iNdEx-5]) << 24
+			v |= uint64(data[iNdEx-4]) << 32
+			v |= uint64(data[iNdEx-3]) << 40
+			v |= uint64(data[iNdEx-2]) << 48
+			v |= uint64(data[iNdEx-1]) << 56
+			m.BytesProportion = float64(math.Float64frombits(v))
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DefListAuthorsOptions) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DefListAuthorsOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DefListAuthorsOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DefsListAuthorsOp) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DefsListAuthorsOp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DefsListAuthorsOp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Def", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Def.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Opt == nil {
+				m.Opt = &DefListAuthorsOptions{}
+			}
+			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DefAuthorList) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DefAuthorList: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DefAuthorList: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefAuthors", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DefAuthors = append(m.DefAuthors, &DefAuthor{})
+			if err := m.DefAuthors[len(m.DefAuthors)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

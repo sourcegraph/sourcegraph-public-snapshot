@@ -12,6 +12,7 @@ import (
 // Features is the source of truth for feature toggles. Use Features for
 // querying whether a feature is toggled or not
 var Features = struct {
+	Authors bool // use git blame to show the authors of a def
 }{}
 
 func init() {

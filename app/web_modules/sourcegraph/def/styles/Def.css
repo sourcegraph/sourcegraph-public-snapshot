@@ -22,28 +22,60 @@
 	composes: title;
 }
 .sectionTitle {
-	composes: pt2 pb1 from base;
-	composes: b f6 from typography;
+	composes: pt3 from base;
+	composes: f5 from typography;
+	font-weight: bold;
+}
+.badge {
+	font-size: 10px;
+	vertical-align: 1px;
+	padding: 3px 5px;
+	composes: br2 from base;
+	composes: bg-blue-1 blue-8 from colors;
 }
 .allRefs {
 	line-height: 1.7;
 	white-space: nowrap;
 	font-size: 1.08rem;
+	composes: pt1 from base;
 }
 .refsGroup {
 	white-space: nowrap;
 	composes: pl4 from base;
 }
 .refsCount {
-	composes: br-100 from base;
-	composes: bg-blue-1 blue-8 from colors;
-	composes: b from typography;
-	font-size: 10px;
-	vertical-align: 1px;
-	padding: 3px 5px;
+	composes: badge;
 }
 .currentFileRefs {
 	composes: b from base;
+}
+
+/* Def box authors */
+.personList {
+	composes: mt1 mb2 from base;
+	list-style-type: none;
+	padding-left: 0;
+}
+.person {
+	composes: pt1 pb2 from base;
+	composes: mid-gray from colors;
+}
+.person :global img {
+	vertical-align: -5px;
+}
+.badgeMinWidthWrapper {
+	min-width: 2.5rem;
+	text-align: right;
+	display: inline-block;
+}
+.bytesProportion {
+	composes: badge;
+}
+.author { composes: person; }
+.timestamp {
+	composes: ml1 from base;
+	composes: light-silver from colors;
+	composes: f6 from typography;
 }
 
 /* Def tooltip */

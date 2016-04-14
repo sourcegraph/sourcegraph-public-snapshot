@@ -596,6 +596,7 @@ type DefsClient struct {
 	List_             func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_         func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(ctx context.Context, in *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	ListAuthors_      func(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 }
 
 func (s *DefsClient) Get(ctx context.Context, in *sourcegraph.DefsGetOp, opts ...grpc.CallOption) (*sourcegraph.Def, error) {
@@ -614,6 +615,10 @@ func (s *DefsClient) ListRefLocations(ctx context.Context, in *sourcegraph.DefsL
 	return s.ListRefLocations_(ctx, in)
 }
 
+func (s *DefsClient) ListAuthors(ctx context.Context, in *sourcegraph.DefsListAuthorsOp, opts ...grpc.CallOption) (*sourcegraph.DefAuthorList, error) {
+	return s.ListAuthors_(ctx, in)
+}
+
 var _ sourcegraph.DefsClient = (*DefsClient)(nil)
 
 type DefsServer struct {
@@ -621,6 +626,7 @@ type DefsServer struct {
 	List_             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
+	ListAuthors_      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 }
 
 func (s *DefsServer) Get(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
@@ -637,6 +643,10 @@ func (s *DefsServer) ListRefs(v0 context.Context, v1 *sourcegraph.DefsListRefsOp
 
 func (s *DefsServer) ListRefLocations(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	return s.ListRefLocations_(v0, v1)
+}
+
+func (s *DefsServer) ListAuthors(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
+	return s.ListAuthors_(v0, v1)
 }
 
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)

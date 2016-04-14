@@ -26,6 +26,22 @@ const DefBackend = {
 				break;
 			}
 
+		case DefActions.WantDefAuthors:
+			{
+				let authors = DefStore.authors.get(action.repo, action.rev, action.def);
+				if (authors === null) {
+					DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/authors`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => {
+								console.error(err);
+								return {Error: true};
+							})
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefAuthorsFetched(action.repo, action.rev, action.def, data)));
+				}
+				break;
+			}
+
 		case DefActions.WantDefs:
 			{
 				let defs = DefStore.defs.list(action.repo, action.rev, action.query, action.filePathPrefix);

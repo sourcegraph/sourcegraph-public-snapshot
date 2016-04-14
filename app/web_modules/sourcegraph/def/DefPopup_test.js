@@ -13,7 +13,7 @@ describe("DefPopup", () => {
 	it("should render definition data", () => {
 		autotest(testdataData, `${__dirname}/testdata/DefPopup-data.json`,
 			<DefPopup
-				def={{URL: "someURL", FmtStrings: fmtStrings, DocHTML: "someDoc"}}
+				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings, DocHTML: "someDoc"}}
 				examples={{test: "examples"}}
 				highlightedDef="otherURL" />
 		);
@@ -22,7 +22,7 @@ describe("DefPopup", () => {
 	it("should render 'not available'", () => {
 		autotest(testdataNotAvailable, `${__dirname}/testdata/DefPopup-notAvailable.json`,
 			<DefPopup
-				def={{URL: "someURL", FmtStrings: fmtStrings}}
+				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings}}
 				examples={{test: "examples"}}
 				highlightedDef={null} />
 		);

@@ -514,6 +514,8 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	return &result, nil
 }
 
+var blameCache = synclru.New(lru.New(500))
+
 func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	defer r.trace(time.Now(), "BlameFile", path, opt)
 
@@ -538,6 +540,20 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+
+	// Only cache when we're fetching immutable data (head is an
+	// absolute commit ID, base is empty or an absolute commit
+	// ID). Also, it's probably not worth caching blames of mere
+	// regions of a file.
+	var cacheKey string
+	if len(opt.NewestCommit) == 40 && (len(opt.OldestCommit) == 0 || len(opt.OldestCommit) == 40) && opt.StartLine == 0 && opt.EndLine == 0 {
+		cacheKey = r.URL + "|" + fmt.Sprintf("%q", args)
+
+		if hunks, found := blameCache.Get(cacheKey); found {
+			return hunks.([]*vcs.Hunk), nil
+		}
+	}
+
 	cmd := gitserver.Command("git", args...)
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput()
@@ -630,6 +646,10 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 
 		hunk.EndByte = byteOffset
 		hunks = append(hunks, hunk)
+	}
+
+	if cacheKey != "" {
+		blameCache.Add(cacheKey, hunks)
 	}
 
 	return hunks, nil

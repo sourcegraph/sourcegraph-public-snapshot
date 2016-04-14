@@ -32,7 +32,7 @@ type JSContext struct {
 	UserAgent     string            `json:"userAgent"`
 	AssetsRoot    string            `json:"assetsRoot"`
 	BuildVars     buildvar.Vars     `json:"buildVars"`
-	Features      struct{}
+	Features      interface{}       `json:"features"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP

@@ -1666,6 +1666,51 @@ service Defs {
 
 	// ListRefLocations lists repos and files that refer to def.
 	rpc ListRefLocations(DefsListRefLocationsOp) returns (RefLocationsList);
+
+	// ListAuthors lists people who committed parts of def's definition.
+	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);
+}
+
+message AuthorshipInfo {
+	pbtypes.Timestamp LastCommitDate = 1 [(gogoproto.nullable) = false];
+
+	// LastCommitID is the commit ID of the last commit that this author made to the
+	// thing that this info describes.
+	string LastCommitID = 2;
+}
+
+message DefAuthor {
+	// Email is the author's email. It may be obfuscated or truncated
+	// to prevent spam.
+	string Email = 1;
+
+	// AvatarURL is the URL to the author's avatar image, if any.
+	string AvatarURL = 2;
+
+	// DefAuthorship contains statistics about the author's contributions
+	// to the def.
+	DefAuthorship DefAuthorship = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+message DefAuthorship {
+	AuthorshipInfo AuthorshipInfo = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	int32 Bytes = 3;
+	double BytesProportion = 4;
+}
+
+// DefListAuthorsOptions specifies options for DefsService.ListAuthors.
+message DefListAuthorsOptions {
+	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+message DefsListAuthorsOp {
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+	DefListAuthorsOptions Opt = 2;
+}
+
+message DefAuthorList {
+	repeated DefAuthor DefAuthors = 1;
 }
 
 // DeltasService interacts with the delta-related endpoints of the Sourcegraph API.
