@@ -164,7 +164,7 @@ class RefsMain extends Container {
 
 		return (
 			<div styleName="refs-container">
-				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)}>{qualifiedNameAndType(this.state.defObj)}</Link>} {this.state.refFile && `in ${this.state.refFile}`} {this.state.refRepo && `in ${this.state.refRepo}`}</h1>
+				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>} {this.state.refFile && `in ${this.state.refFile}`} {this.state.refRepo && `in ${this.state.refRepo}`}</h1>
 				<hr/>
 				{this.state.files && this.state.files.map((file, i) => {
 					if (!file) return null;
