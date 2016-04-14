@@ -19,12 +19,6 @@ describe("RefsMain", () => {
 			)).to.eql({error: true});
 		});
 
-		it("should have error if the def failed", () => {
-			expect(renderedStatus(
-				<RefsMain defObj={{Error: true}} />
-			)).to.eql({error: true});
-		});
-
 		it("should have no error if the def and refs loaded", () => {
 			expect(renderedStatus(
 				<RefsMain defObj={{}} refs={[]} />

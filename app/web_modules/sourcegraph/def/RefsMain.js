@@ -118,10 +118,6 @@ class RefsMain extends Container {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo, nextState.refFile));
 		}
 
-		if (nextState.defObj && prevState.defObj !== nextState.defObj) {
-			this.context.status.error(nextState.defObj.Error);
-		}
-
 		if (nextState.refs && prevState.refs !== nextState.refs) {
 			this.context.status.error(nextState.refs.Error);
 		}
