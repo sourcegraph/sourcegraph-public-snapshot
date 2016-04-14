@@ -5,6 +5,7 @@ import context from "sourcegraph/app/context";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
+import * as DefActions from "sourcegraph/def/DefActions";
 
 export class EventLogger {
 	constructor() {
@@ -213,6 +214,15 @@ export class EventLogger {
 			}
 			break;
 
+		case DefActions.DefsFetched:
+			if (action.eventName) {
+				let eventProps = {
+					query: action.query,
+					overlay: action.overlay,
+				};
+				this.logEvent(action.eventName, eventProps);
+			}
+			break;
 		default:
 			// All dispatched actions to stores will automatically be tracked by the eventName
 			// of the action (if set). Override this behavior by including another case above.

@@ -161,7 +161,7 @@ class TreeSearch extends Container {
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
 			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
 				Dispatcher.Backends.dispatch(
-					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix)
+					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false)
 				);
 			}
 		}

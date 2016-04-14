@@ -61,12 +61,14 @@ export class WantDefs {
 	rev: ?string;
 	query: string;
 	filePathPrefix: ?string;
+	overlay: boolean;
 
-	constructor(repo: string, rev: ?string, query: string, filePathPrefix?: string) {
+	constructor(repo: string, rev: ?string, query: string, filePathPrefix?: string, overlay: boolean) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
 		this.filePathPrefix = filePathPrefix || null;
+		this.overlay = overlay; // For metrics purposes
 	}
 }
 
@@ -77,14 +79,17 @@ export class DefsFetched {
 	defs: Array<Def>;
 	filePathPrefix: ?string;
 	eventName: string;
+	overlay: boolean;
 
-	constructor(repo: string, rev: ?string, query: string, filePathPrefix: ?string, defs: Array<Def>) {
+	constructor(repo: string, rev: ?string, query: string, filePathPrefix: ?string, defs: Array<Def>, overlay: boolean) {
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
 		this.filePathPrefix = filePathPrefix;
 		this.defs = defs;
 		this.eventName = "DefsFetched";
+		this.overlay = overlay;
+
 	}
 }
 

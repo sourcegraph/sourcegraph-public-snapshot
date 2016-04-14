@@ -52,7 +52,7 @@ const DefBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, action.filePathPrefix, data));
+								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, action.filePathPrefix, data, action.overlay));
 							})
 					);
 				}
