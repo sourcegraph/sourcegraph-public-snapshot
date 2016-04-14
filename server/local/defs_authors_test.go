@@ -34,8 +34,8 @@ func TestDefsService_ListAuthors(t *testing.T) {
 					LastCommitDate: t1,
 					LastCommitID:   "c",
 				},
-				Bytes:           5,
-				BytesProportion: 0.5,
+				Bytes:           6,
+				BytesProportion: 0.6,
 			},
 		},
 		{
@@ -45,8 +45,8 @@ func TestDefsService_ListAuthors(t *testing.T) {
 					LastCommitDate: t1,
 					LastCommitID:   "c2",
 				},
-				Bytes:           5,
-				BytesProportion: 0.5,
+				Bytes:           4,
+				BytesProportion: 0.4,
 			},
 		},
 	}
@@ -69,8 +69,8 @@ func TestDefsService_ListAuthors(t *testing.T) {
 		BlameFile_: func(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 			calledVCSRepoBlameFile = true
 			return []*vcs.Hunk{
-				{StartByte: 5, EndByte: 15, CommitID: "c", Author: vcs.Signature{Email: "u@u.com", Date: t1}},
-				{StartByte: 15, EndByte: 25, CommitID: "c2", Author: vcs.Signature{Email: "a@a.com", Date: t1}},
+				{StartByte: 5, EndByte: 16, CommitID: "c", Author: vcs.Signature{Email: "u@u.com", Date: t1}},
+				{StartByte: 16, EndByte: 25, CommitID: "c2", Author: vcs.Signature{Email: "a@a.com", Date: t1}},
 			}, nil
 		},
 	})
