@@ -12,7 +12,7 @@ export default class RefLocationsList extends React.Component {
 
 		// Current repo and path, so that they can be highlighted.
 		repo: React.PropTypes.string.isRequired,
-		path: React.PropTypes.string.isRequired,
+		path: React.PropTypes.string,
 	};
 
 	render() {
