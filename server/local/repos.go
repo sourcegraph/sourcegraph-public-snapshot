@@ -118,16 +118,20 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 		if err != nil {
 			return err
 		}
-		repo.Description = ghrepo.Description
-		repo.Language = ghrepo.Language
-		repo.DefaultBranch = ghrepo.DefaultBranch
-		repo.Fork = ghrepo.Fork
-		repo.Private = ghrepo.Private
-		repo.Permissions = ghrepo.Permissions
-		repo.UpdatedAt = ghrepo.UpdatedAt
+		repoSetFromRemote(repo, ghrepo)
 	}
 
 	return nil
+}
+
+func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) {
+	repo.Description = ghrepo.Description
+	repo.Language = ghrepo.Language
+	repo.DefaultBranch = ghrepo.DefaultBranch
+	repo.Fork = ghrepo.Fork
+	repo.Private = ghrepo.Private
+	repo.Permissions = ghrepo.Permissions
+	repo.UpdatedAt = ghrepo.UpdatedAt
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo *sourcegraph.Repo, err error) {
