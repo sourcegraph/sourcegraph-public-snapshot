@@ -8,7 +8,6 @@ import (
 
 	"strings"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
@@ -38,10 +37,9 @@ func TestReposService_Get(t *testing.T) {
 	}
 }
 
-func TestReposService_List_admin(t *testing.T) {
+func TestReposService_List(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
 
 	wantRepos := &sourcegraph.RepoList{
 		Repos: []*sourcegraph.Repo{
@@ -58,26 +56,6 @@ func TestReposService_List_admin(t *testing.T) {
 	}
 	if !*calledList {
 		t.Error("!calledList")
-	}
-	if !reflect.DeepEqual(repos, wantRepos) {
-		t.Errorf("got %+v, want %+v", repos, wantRepos)
-	}
-}
-
-func TestReposService_List_nonadmin(t *testing.T) {
-	var s repos
-	ctx, mock := testContext()
-
-	wantRepos := &sourcegraph.RepoList{}
-
-	calledList := mock.stores.Repos.MockList(t)
-
-	repos, err := s.List(ctx, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if *calledList {
-		t.Error("calledList")
 	}
 	if !reflect.DeepEqual(repos, wantRepos) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)
