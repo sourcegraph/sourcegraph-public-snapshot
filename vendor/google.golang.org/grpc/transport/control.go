@@ -56,43 +56,33 @@ type windowUpdate struct {
 	increment uint32
 }
 
-func (windowUpdate) isItem() bool {
-	return true
-}
+func (*windowUpdate) item() {}
 
 type settings struct {
 	ack bool
 	ss  []http2.Setting
 }
 
-func (settings) isItem() bool {
-	return true
-}
+func (*settings) item() {}
 
 type resetStream struct {
 	streamID uint32
 	code     http2.ErrCode
 }
 
-func (resetStream) isItem() bool {
-	return true
-}
+func (*resetStream) item() {}
 
 type flushIO struct {
 }
 
-func (flushIO) isItem() bool {
-	return true
-}
+func (*flushIO) item() {}
 
 type ping struct {
 	ack  bool
 	data [8]byte
 }
 
-func (ping) isItem() bool {
-	return true
-}
+func (*ping) item() {}
 
 // quotaPool is a pool which accumulates the quota and sends it to acquire()
 // when it is available.
@@ -195,7 +185,7 @@ func (f *inFlow) onData(n uint32) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.pendingData+f.pendingUpdate+n > f.limit {
-		return fmt.Errorf("recieved %d-bytes data exceeding the limit %d bytes", f.pendingData+f.pendingUpdate+n, f.limit)
+		return fmt.Errorf("received %d-bytes data exceeding the limit %d bytes", f.pendingData+f.pendingUpdate+n, f.limit)
 	}
 	if f.conn != nil {
 		if err := f.conn.onData(n); err != nil {
@@ -204,6 +194,28 @@ func (f *inFlow) onData(n uint32) error {
 	}
 	f.pendingData += n
 	return nil
+}
+
+// adjustConnPendingUpdate increments the connection level pending updates by n.
+// This is called to make the proper connection level window updates when
+// receiving data frame targeting the canceled RPCs.
+func (f *inFlow) adjustConnPendingUpdate(n uint32) (uint32, error) {
+	if n == 0 || f.conn != nil {
+		return 0, nil
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.pendingData+f.pendingUpdate+n > f.limit {
+		return 0, ConnectionErrorf("received %d-bytes data exceeding the limit %d bytes", f.pendingData+f.pendingUpdate+n, f.limit)
+	}
+	f.pendingUpdate += n
+	if f.pendingUpdate >= f.limit/4 {
+		ret := f.pendingUpdate
+		f.pendingUpdate = 0
+		return ret, nil
+	}
+	return 0, nil
+
 }
 
 // connOnRead updates the connection level states when the application consumes data.

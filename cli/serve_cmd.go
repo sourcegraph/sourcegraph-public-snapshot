@@ -398,24 +398,38 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Start event listeners.
 	c.initializeEventListeners(client.Ctx, idKey, appURL)
 
-	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
+	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
+		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+
+		// Handler that sends traffic to either Web or gRPC depending
+		// on content-type
+		srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+				grpcSrv.ServeHTTP(w, r)
+			} else {
+				h.ServeHTTP(w, r)
+			}
+		})
+
+		log15.Debug("HTTPS running", "on", addr)
+		srv.Addr = addr
+		go func() { log.Fatal(srv.Serve(l)) }()
+	}
+
+	serveHTTP := func(l net.Listener, srv *http.Server, addr string) {
+		// We need to use cmux since go's built in http server won't
+		// allow http/2 on non TLS connections.
 		lmux := cmux.New(l)
 		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
 		anyListener := lmux.Match(cmux.Any())
 
 		// Web
-		log15.Debug("HTTP running", "on", addr, "TLS", tls)
+		log15.Debug("HTTP running", "on", addr)
 		srv.Addr = addr
 		srv.Handler = h
-		if tls {
-			srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				setTLSMiddleware(w, r, h.ServeHTTP)
-			})
-		}
 		go func() { log.Fatal(srv.Serve(anyListener)) }()
 
 		// gRPC
-		log15.Debug("gRPC API running", "on", addr, "TLS", tls)
 		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
 		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
 
@@ -433,7 +447,7 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 		l = tcpKeepAliveListener{l.(*net.TCPListener)}
-		serveHTTP(l, &http.Server{}, c.HTTPAddr, false)
+		serveHTTP(l, &http.Server{}, c.HTTPAddr)
 	}
 
 	// Start HTTPS server.
@@ -455,14 +469,11 @@ func (c *ServeCmd) Execute(args []string) error {
 			config = &tls.Config{}
 		}
 
-		if config.NextProtos == nil {
-			config.NextProtos = []string{"http/1.1"}
-		}
 		config.Certificates = []tls.Certificate{cert}
 		srv.TLSConfig = config
 		l = tls.NewListener(l, srv.TLSConfig)
 
-		serveHTTP(l, &srv, c.HTTPSAddr, true)
+		serveHTTPS(l, &srv, c.HTTPSAddr)
 	}
 
 	// Connection test

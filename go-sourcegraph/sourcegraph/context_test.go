@@ -28,12 +28,19 @@ func TestPerRPCCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := grpc.NewServer()
+	stopped := false
+	cleanupBarrier := make(chan struct{})
 	go func() {
-		if err := s.Serve(l); err != nil {
+		if err := s.Serve(l); err != nil && !stopped {
 			t.Fatal(err)
 		}
+		cleanupBarrier <- struct{}{}
 	}()
-	defer s.TestingCloseConns()
+	defer func() {
+		stopped = true
+		s.Stop()
+		<-cleanupBarrier
+	}()
 
 	var ms testMetaServer
 	RegisterMetaServer(s, &ms)
