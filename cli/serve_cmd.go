@@ -455,9 +455,6 @@ func (c *ServeCmd) Execute(args []string) error {
 			config = &tls.Config{}
 		}
 
-		if config.NextProtos == nil {
-			config.NextProtos = []string{"http/1.1"}
-		}
 		config.Certificates = []tls.Certificate{cert}
 		srv.TLSConfig = config
 		l = tls.NewListener(l, srv.TLSConfig)
