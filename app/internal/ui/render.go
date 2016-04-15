@@ -84,7 +84,7 @@ func newCachingRenderer(js []byte) *cachingRenderer {
 
 type cachingRenderer struct {
 	s     jsserver.Server
-	cache *synclru.Cache
+	cache synclru.Cache
 }
 
 type prerenderEvent struct {

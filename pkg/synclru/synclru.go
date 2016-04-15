@@ -7,34 +7,30 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
-// New returns a wrapper around lru that synchronizes access to it.
-func New(lru *lru.Cache) *Cache {
-	return &Cache{lru: lru}
+type Cache interface {
+	Get(key lru.Key) (value interface{}, ok bool)
+	Add(key lru.Key, value interface{})
 }
 
-type Cache struct {
-	mu  sync.Mutex
-	lru *lru.Cache
+// New returns a wrapper around cache that synchronizes access to it.
+func New(c Cache) Cache {
+	return &cache{cache: c}
 }
 
-func (c *Cache) Get(key lru.Key) (value interface{}, ok bool) {
+type cache struct {
+	mu    sync.Mutex
+	cache Cache
+}
+
+func (c *cache) Get(key lru.Key) (value interface{}, ok bool) {
 	c.mu.Lock()
-	value, ok = c.lru.Get(key)
+	value, ok = c.cache.Get(key)
 	c.mu.Unlock()
 	return
 }
 
-func (c *Cache) Add(key lru.Key, value interface{}) {
+func (c *cache) Add(key lru.Key, value interface{}) {
 	c.mu.Lock()
-	c.lru.Add(key, value)
-	c.mu.Unlock()
-}
-
-// Clear removes all elements.
-func (c *Cache) Clear() {
-	c.mu.Lock()
-	for c.lru.Len() > 0 {
-		c.lru.RemoveOldest()
-	}
+	c.cache.Add(key, value)
 	c.mu.Unlock()
 }

@@ -122,7 +122,7 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 }
 
 type deltasCache struct {
-	*synclru.Cache
+	synclru.Cache
 }
 
 func newDeltasCache(maxEntries int) *deltasCache {

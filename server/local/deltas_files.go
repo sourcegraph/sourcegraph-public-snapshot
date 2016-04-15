@@ -244,7 +244,7 @@ func getPrePostImage(headers []string) (pre, post string) {
 }
 
 type deltasListFileCache struct {
-	*synclru.Cache
+	synclru.Cache
 
 	// maxEntrySize is the maximum size of an entry after gob encoding in
 	// bytes that could be added to the cache.
