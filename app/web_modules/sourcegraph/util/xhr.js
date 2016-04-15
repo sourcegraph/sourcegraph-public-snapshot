@@ -52,14 +52,19 @@ export function defaultFetch(url, options) {
 export function checkStatus(resp) {
 	if (resp.status >= 200 && resp.status <= 299) return resp;
 	return resp.text().then((body) => {
-		let err = new Error(body || resp.statusText);
-		err.body = body;
-		err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		if (typeof document === "undefined") {
 			// Don't log in the browser because the devtools network inspector
 			// makes it easy enough to see failed HTTP requests.
 			console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
 		}
+		if (resp.headers.get("Content-Type") === "application/json; charset=utf-8") {
+			let err = new Error(resp.status);
+			err.body = JSON.parse(body);
+			throw err;
+		}
+		let err = new Error(resp.statusText);
+		err.body = body;
+		err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		throw err;
 	});
 }

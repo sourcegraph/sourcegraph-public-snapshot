@@ -58,7 +58,7 @@ class ForgotPassword extends Container {
 						loading={this.state.pendingAuthAction}>Reset Password</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
+					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
 					<div styleName="success-text">Email sent - check your inbox!</div>

@@ -66,7 +66,7 @@ class Login extends Container {
 						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Sign in</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
+					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
 				<div styleName="subtext">Oh no, <a href="/forgot">I forgot my password</a>.</div>
 				<div styleName="alt-action">

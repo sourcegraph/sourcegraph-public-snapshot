@@ -69,7 +69,7 @@ class ResetPassword extends Container {
 						loading={this.state.pendingAuthAction}>Reset Password</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
+					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
 					<div styleName="success-text">Your password has been reset!<span styleName="alt-button"><Link to="/login"><Button size="small" outline={true}>Sign in</Button></Link></span></div>

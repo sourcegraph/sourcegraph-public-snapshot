@@ -43,13 +43,21 @@ func (s *auth) GetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRe
 func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCredentials) (*sourcegraph.AccessTokenResponse, error) {
 	usersStore := store.UsersFromContext(ctx)
 
+	if cred.Login == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "login cannot be empty")
+	}
+
+	if cred.Password == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "password cannot be empty")
+	}
+
 	user, err := usersStore.Get(elevatedActor(ctx), sourcegraph.UserSpec{Login: cred.Login})
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.PermissionDenied, "user not found")
 	}
 
 	if store.PasswordFromContext(ctx).CheckUIDPassword(elevatedActor(ctx), user.UID, cred.Password) != nil {
-		return nil, grpc.Errorf(codes.PermissionDenied, "bad password for user %q", cred.Login)
+		return nil, grpc.Errorf(codes.PermissionDenied, "incorrect password for %q", cred.Login)
 	}
 
 	a := authpkg.ActorFromContext(ctx)

@@ -1,21 +1,24 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/justinas/nosurf"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
@@ -52,11 +55,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.Signup).Handler(nosurf.New(handler(serveSignup)))
-	m.Get(apirouter.Login).Handler(nosurf.New(handler(serveLogin)))
+	m.Get(apirouter.Signup).Handler(nosurf.New(gRPCErrorHandler(serveSignup)))
+	m.Get(apirouter.Login).Handler(nosurf.New(gRPCErrorHandler(serveLogin)))
 	m.Get(apirouter.Logout).Handler(nosurf.New(handler(serveLogout)))
-	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(handler(serveForgotPassword)))
-	m.Get(apirouter.ResetPassword).Handler(nosurf.New(handler(servePasswordReset)))
+	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(gRPCErrorHandler(serveForgotPassword)))
+	m.Get(apirouter.ResetPassword).Handler(nosurf.New(gRPCErrorHandler(servePasswordReset)))
 
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
@@ -117,6 +120,13 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	}
 }
 
+func gRPCErrorHandler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+	return handlerutil.HandlerWithErrorReturn{
+		Handler: h,
+		Error:   handleErrorWithGRPC,
+	}
+}
+
 // cspConfig is the Content Security Policy config for API handlers.
 var cspConfig = csp.Config{
 	// Strict because API responses should never be treated as page
@@ -145,13 +155,53 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
 		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
 		if err != nil {
-			log.Printf("error redirecting to new URI (%s)", err)
+			log15.Error("error redirecting to new URI", "error", err, "new_url", ee.NewURL)
 		}
 		return
 	}
 
 	// Never cache error responses.
 	w.Header().Set("cache-control", "no-cache, max-age=0")
+
+	errBody := err.Error()
+
+	var displayErrBody string
+	if handlerutil.DebugMode(r) {
+		// Only display error message to admins or locally, since it
+		// can contain sensitive info (like API keys in net/http error
+		// messages).
+		displayErrBody = string(errBody)
+	}
+	http.Error(w, displayErrBody, status)
+	if status < 200 || status >= 500 {
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err)
+	}
+}
+
+type errorMessage struct {
+	Code    codes.Code `json:"code"`
+	Message string     `json:"message"`
+}
+
+func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err error) {
+	// Handle custom errors
+	if ee, ok := err.(*handlerutil.URLMovedError); ok {
+		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
+		if err != nil {
+			log15.Error("error redirecting to new URI", "error", err, "new_url", ee.NewURL)
+		}
+		return
+	}
+
+	// Never cache error responses.
+	w.Header().Set("cache-control", "no-cache, max-age=0")
+
+	if code := grpc.Code(err); code != codes.Unknown {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(errcode.HTTP(err))
+		json.NewEncoder(w).Encode(errorMessage{Code: code, Message: grpc.ErrorDesc(err)})
+		return
+	}
 
 	errBody := err.Error()
 

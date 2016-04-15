@@ -58,7 +58,7 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 		}
 
 		if err := tx.Insert(&userEmailAddrRow{UID: int(insertedUser.UID), EmailAddr: *email}); err != nil {
-			return grpc.Errorf(codes.AlreadyExists, "primary email already associated with a user: %v", email.Email)
+			return grpc.Errorf(codes.AlreadyExists, "%s has already been registered with another account", email.Email)
 		}
 		return nil
 	})
@@ -145,7 +145,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 }
 
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
-	genericErr := errors.New("error reseting password") // don't need to reveal everything
+	genericErr := grpc.Errorf(codes.InvalidArgument, "Error reseting password") // don't need to reveal everything
 	var req passwordResetRequest
 	if err := appDBH(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err == sql.ErrNoRows {
 		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)
