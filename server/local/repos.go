@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/golang/groupcache/lru"
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"strings"
@@ -24,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -108,8 +110,20 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
+var reposGithubPublicCache = cache.TTL(cache.Sync(lru.New(500)), time.Minute)
+
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
+
+	// This function is called a lot, especially on popular public
+	// repos. For public repos we have the same result for everyone, so it
+	// is cacheable. This is not exactly true, Permissions can change. But
+	// for the purpose of avoiding rate limits, we set all public repos to
+	// read-only permissions.
+	if ghrepo, found := reposGithubPublicCache.Get(repo.URI); found {
+		repoSetFromRemote(repo, ghrepo.(*sourcegraph.RemoteRepo))
+		return nil
+	}
 
 	// Fetch latest metadata from GitHub (we don't even try to keep
 	// our cache up to date).
@@ -117,6 +131,11 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
 		if err != nil {
 			return err
+		}
+		if !ghrepo.Private {
+			// See above comment for why we change permissions
+			ghrepo.Permissions = nil
+			reposGithubPublicCache.Add(repo.URI, ghrepo)
 		}
 		repoSetFromRemote(repo, ghrepo)
 	}
