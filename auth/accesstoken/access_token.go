@@ -11,7 +11,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
@@ -117,59 +116,28 @@ func addExtraClaims(tok *jwt.Token, claims map[string]string) {
 	}
 }
 
-// ParseAndVerify parses tok's access token and verifies that it is
-// signed correctly (and has the correct client ID). An unverified
-// (potentially spoofed) actor is returned even if verification
-// failed. Callers must check that the error is nil before assuming
-// that the actor is verified.
-func ParseAndVerify(ctx context.Context, accessToken string) (a *auth.Actor, allClaims map[string]interface{}, err error) {
-	var err2 error
-	idKey := idkey.FromContext(ctx)
-	tok, err := parseToken(ctx, idKey, accessToken)
-	if tok != nil {
-		a, err2 = newActorWithVerifiedClaims(idKey, tok)
-		allClaims = tok.Claims
-	}
-	if err == nil {
-		err = err2
-	}
-	return a, allClaims, err
-}
-
-func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.Token, error) {
-	var innerErr error
-
-	isSelfSigned := false
-
-	// Unwrap and verify JWT.
-	tok, err := jwt.Parse(tokStr, func(tok *jwt.Token) (interface{}, error) {
-		if _, ok := tok.Method.(*jwt.SigningMethodHMAC); ok {
-			// Assume token is self signed.
-			isSelfSigned = true
-			return getSelfSigningKey(idKey)
-		}
-
-		if _, ok := tok.Method.(*jwt.SigningMethodRSA); !ok {
+// ParseAndVerify parses the access token and verifies that it is signed correctly.
+func ParseAndVerify(k *idkey.IDKey, accessToken string) (*auth.Actor, error) {
+	// parse and verify JWT
+	tok, err := jwt.Parse(accessToken, func(tok *jwt.Token) (interface{}, error) {
+		switch tok.Method.(type) {
+		case *jwt.SigningMethodRSA:
+			return k.Public(), nil
+		case *jwt.SigningMethodHMAC:
+			return getSelfSigningKey(k)
+		default:
 			return nil, fmt.Errorf("unexpected signing method: %v", tok.Header["alg"])
 		}
-
-		return idKey.Public(), nil
 	})
-	if innerErr != nil {
-		err = innerErr
+	if err != nil {
+		return nil, err
 	}
 
-	return tok, err
-}
-
-func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor, error) {
-	// Retrieve claims.
+	// unmarshal actor
 	var a auth.Actor
-	var err error
 
-	uidStr, _ := tok.Claims["UID"].(string)
-
-	if uidStr != "" {
+	if uidStr, _ := tok.Claims["UID"].(string); uidStr != "" {
+		var err error
 		a.UID, err = strconv.Atoi(uidStr)
 		if err != nil {
 			return nil, fmt.Errorf("bad UID %q in access token: %s", uidStr, err)

@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -45,9 +46,7 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 
 	tokStr := parts[1]
 
-	// Elevate authorization level (using elevatedActor) to allow
-	// looking up registered clients' public keys.
-	actor, _, err := accesstoken.ParseAndVerify(elevatedActor(ctx), tokStr)
+	actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tokStr)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Unauthenticated, "access token middleware failed to parse/verify token: %s", err)
 	}
@@ -61,8 +60,4 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	}
 
 	return ctx, nil
-}
-
-func elevatedActor(ctx context.Context) context.Context {
-	return auth.WithActor(ctx, auth.Actor{Scope: map[string]bool{"internal:tmp": true}})
 }

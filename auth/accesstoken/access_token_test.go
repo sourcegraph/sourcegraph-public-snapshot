@@ -3,8 +3,6 @@ package accesstoken
 import (
 	"testing"
 
-	"golang.org/x/net/context"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 )
 
@@ -20,9 +18,7 @@ func TestParseSelfSignedToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := idkey.NewContext(context.Background(), k)
-
-	if _, _, err := ParseAndVerify(ctx, tok.AccessToken); err != nil {
+	if _, err := ParseAndVerify(k, tok.AccessToken); err != nil {
 		t.Fatal(err)
 	}
 }
