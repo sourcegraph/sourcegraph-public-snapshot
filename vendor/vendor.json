@@ -43,11 +43,6 @@
 			"revisionTime": "2015-07-30T10:44:59-07:00"
 		},
 		{
-			"path": "github.com/araddon/gou",
-			"revision": "0c2ab7394d785afff14c983fedce4be70ccc431f",
-			"revisionTime": "2015-09-22T17:26:35-07:00"
-		},
-		{
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "3ac7bf7a47d159a033b107610db8a1b6575507a4",
 			"revisionTime": "2016-02-29T22:34:45+01:00"
@@ -56,11 +51,6 @@
 			"path": "github.com/bgentry/go-netrc/netrc",
 			"revision": "9fd32a8b3d3d3f9d43c341bfe098430e07609480",
 			"revisionTime": "2014-04-22T10:41:19-07:00"
-		},
-		{
-			"path": "github.com/bitly/go-hostpool",
-			"revision": "d0e59c22a56e8dadfed24f74f452cea5a52722d2",
-			"revisionTime": "2015-03-31T09:04:00-04:00"
 		},
 		{
 			"path": "github.com/cznic/mathutil",
@@ -389,11 +379,6 @@
 			"revisionTime": "2014-12-27T13:56:34+01:00"
 		},
 		{
-			"path": "github.com/mattbaird/elastigo/lib",
-			"revision": "53bd637ad02af3043244da16c1b9f13633e8e912",
-			"revisionTime": "2015-09-18T13:22:03-06:00"
-		},
-		{
 			"path": "github.com/mattbaird/gochimp",
 			"revision": "b61cabb037b3948f0a87fe544b0a9c656fa37128",
 			"revisionTime": "2015-07-15T10:31:50-07:00"
@@ -484,11 +469,6 @@
 			"path": "github.com/samalba/dockerclient",
 			"revision": "ccb0d5a7b8a7278f3f57de0135d4c5cc6921fcac",
 			"revisionTime": "2016-02-03T07:44:56-05:00"
-		},
-		{
-			"path": "github.com/satori/go.uuid",
-			"revision": "08f0718b61e95ddba0ade3346725fe0e4bf28ca6",
-			"revisionTime": "2015-08-29T05:49:07+03:00"
 		},
 		{
 			"checksumSHA1": "kIbo93q6KJ10XGajiHU6DvZYt1Q=",
@@ -1158,36 +1138,6 @@
 			"path": "sourcegraph.com/sourcegraph/srclib/util",
 			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
 			"revisionTime": "2016-04-12T11:36:41-07:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/surf",
-			"revision": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94",
-			"revisionTime": "2015-08-16T15:47:22-07:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/surf/agent",
-			"revision": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94",
-			"revisionTime": "2015-08-16T15:47:22-07:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/surf/browser",
-			"revision": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94",
-			"revisionTime": "2015-08-16T15:47:22-07:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/surf/errors",
-			"revision": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94",
-			"revisionTime": "2015-08-16T15:47:22-07:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/surf/jar",
-			"revision": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94",
-			"revisionTime": "2015-08-16T15:47:22-07:00"
-		},
-		{
-			"path": "sourcegraph.com/sourcegraph/surf/util",
-			"revision": "9d81f9803c5e97ccfda0dd91fec1fa2b9fa01f94",
-			"revisionTime": "2015-08-16T15:47:22-07:00"
 		},
 		{
 			"path": "sourcegraph.com/sqs/pbtypes",
