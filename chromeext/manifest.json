@@ -1,7 +1,7 @@
 { 
 	"manifest_version": 2,
 	"name": "Sourcegraph Chrome extension for GitHub",
-	"version": "1.0.29",
+	"version": "1.0.30",
 	"description": "Enhance code browsing on GitHub: semantic code search, instant documentaton tooltips, and jump-to-definition links for GitHub code.",
 	"icons": {"128": "/assets/sg-sourcegraph-mark.png"},
 
