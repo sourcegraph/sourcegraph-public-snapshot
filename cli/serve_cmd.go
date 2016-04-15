@@ -25,6 +25,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/soheilhy/cmux"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -397,7 +398,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Start event listeners.
 	c.initializeEventListeners(client.Ctx, idKey, appURL)
 
-	serveHTTP := func(l net.Listener, srv *http.Server, addr string, tls bool) {
+	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
 		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
 
 		// Handler that sends traffic to either Web or gRPC depending
@@ -410,9 +411,33 @@ func (c *ServeCmd) Execute(args []string) error {
 			}
 		})
 
-		log15.Debug("HTTP running", "on", addr, "TLS", tls)
+		log15.Debug("HTTPS running", "on", addr)
 		srv.Addr = addr
 		go func() { log.Fatal(srv.Serve(l)) }()
+	}
+
+	serveHTTP := func(l net.Listener, srv *http.Server, addr string) {
+		// We need to use cmux since go's built in http server won't
+		// allow http/2 on non TLS connections.
+		lmux := cmux.New(l)
+		grpcListener := lmux.Match(cmux.HTTP2HeaderField("content-type", "application/grpc"))
+		anyListener := lmux.Match(cmux.Any())
+
+		// Web
+		log15.Debug("HTTP running", "on", addr)
+		srv.Addr = addr
+		srv.Handler = h
+		go func() { log.Fatal(srv.Serve(anyListener)) }()
+
+		// gRPC
+		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
+
+		go func() {
+			if err := lmux.Serve(); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
+				log.Fatalf("Error serving: %s.", err)
+			}
+		}()
 	}
 
 	// Start HTTP server.
@@ -422,7 +447,7 @@ func (c *ServeCmd) Execute(args []string) error {
 			return err
 		}
 		l = tcpKeepAliveListener{l.(*net.TCPListener)}
-		serveHTTP(l, &http.Server{}, c.HTTPAddr, false)
+		serveHTTP(l, &http.Server{}, c.HTTPAddr)
 	}
 
 	// Start HTTPS server.
@@ -448,7 +473,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		srv.TLSConfig = config
 		l = tls.NewListener(l, srv.TLSConfig)
 
-		serveHTTP(l, &srv, c.HTTPSAddr, true)
+		serveHTTPS(l, &srv, c.HTTPSAddr)
 	}
 
 	// Connection test
