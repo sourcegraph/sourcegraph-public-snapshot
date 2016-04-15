@@ -2,7 +2,6 @@
 
 import "whatwg-fetch";
 import context from "sourcegraph/app/context";
-import mapStackTrace from "sourcemapped-stacktrace";
 
 let appIsHandlingError = false;
 
@@ -53,34 +52,29 @@ if (typeof window !== "undefined") {
 		if (!appIsHandlingError) {
 			appIsHandlingError = true;
 
-			// Map the stack trace against the sourcemaps so that it is human
-			// readable.
-			mapStackTrace.mapStackTrace(new Error().stack, function(mappedStack) {
-				console.log("Splunk stack trace:\n", mappedStack.join("\n"));
-				// Define the event.
-				let ev = {
-					message: message,
-					error: jserr,
+			// Define the event.
+			let ev = {
+				message: message,
+				error: jserr,
 
-					// Include a plaintext stacktrace.
-					stackTrace: mappedStack.join("\n"),
+				// Include a plaintext stacktrace.
+				stackTrace: new Error().stack,
 
-					// Add in general runtime/browser info.
-					browser: {
-						location: window.location.href,
-						userAgent: navigator.userAgent,
-					},
-				};
+				// Add in general runtime/browser info.
+				browser: {
+					location: window.location.href,
+					userAgent: navigator.userAgent,
+				},
+			};
 
-				// Add in various tags from template data (deployed commit, user info, etc).
-				for (let k in window._splunkTags) {
-					if (window._splunkTags.hasOwnProperty(k)) {
-						ev[k] = window._splunkTags[k];
-					}
+			// Add in various tags from template data (deployed commit, user info, etc).
+			for (let k in window._splunkTags) {
+				if (window._splunkTags.hasOwnProperty(k)) {
+					ev[k] = window._splunkTags[k];
 				}
+			}
 
-				globalErrorHandler(ev);
-			});
+			globalErrorHandler(ev);
 		}
 	};
 }
