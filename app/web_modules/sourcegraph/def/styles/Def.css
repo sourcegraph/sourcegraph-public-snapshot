@@ -47,6 +47,12 @@
 	white-space: nowrap;
 	composes: pl4 from base;
 }
+.refFilename {
+	word-wrap: break-word;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
 .refsCount {
 	composes: badge;
 }
