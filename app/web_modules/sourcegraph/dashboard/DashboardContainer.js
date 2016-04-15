@@ -7,7 +7,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-import EventLogger from "sourcegraph/util/EventLogger";
+import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import context from "sourcegraph/app/context";
 
@@ -149,7 +149,7 @@ class DashboardContainer extends Container {
 			{!context.hasLinkedGitHub && context.currentUser &&
 				<div styleName="header">
 					<span styleName="cta">
-						<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEvent("SubmitLinkGitHub")}>
+						<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
 						<Button outline={true} color="warning"><GitHubIcon styleName="github-icon" />Add My GitHub Repositories</Button>
 						</a>
 					</span>
@@ -164,7 +164,7 @@ class DashboardContainer extends Container {
 			{!context.currentUser &&
 				<div styleName="cta-box">
 					<span styleName="cta">
-						<a href="join">
+						<a href="join" onClick={() => EventLogger.logEventForPage("JoinCTAClicked", EventLocation.Dashboard)}>
 							<Button color="info" size="large">Add Sourcegraph to my code</Button>
 						</a>
 					</span>

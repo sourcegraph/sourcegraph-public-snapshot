@@ -16,7 +16,7 @@ class LinkGitHubCTA extends React.Component {
 
 		return (
 			<div styleName="cta">
-				<a href={!context.currentUser ? "/join" : urlToGitHubOAuth} onClick={() => context.currentUser && EventLogger.logEvent("SubmitLinkGitHub")}>
+				<a href={!context.currentUser ? "/join" : urlToGitHubOAuth} onClick={() => context.currentUser ? EventLogger.logEventForPage("SubmitLinkGitHub", this.props.location) : EventLogger.logEventForPage("JoinCTAClicked", this.props.location)}>
 					<Button size="normal" outline={true} color="warning">{context.currentUser && <GitHubIcon styleName="github-icon" />}
 						{context.currentUser ? "Add my GitHub repositories" : "Add Sourcegraph to my code"}
 					</Button>
@@ -25,5 +25,10 @@ class LinkGitHubCTA extends React.Component {
 		);
 	}
 }
+
+
+LinkGitHubCTA.propTypes = {
+	location: React.PropTypes.string.isRequired,
+};
 
 export default CSSModules(LinkGitHubCTA, styles);

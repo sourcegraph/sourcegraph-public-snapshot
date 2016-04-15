@@ -6,6 +6,13 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 
+export const EventLocation = {
+	Login: "Login",
+	Signup: "Signup",
+	Dashboard: "Dashboard",
+	DefPopup: "DepPopup",
+};
+
 export class EventLogger {
 	constructor() {
 		this._amplitude = null;
@@ -129,6 +136,14 @@ export class EventLogger {
 		}
 	}
 
+	logEventForPage(eventName, pageName, eventProperties) {
+		if (!pageName) throw new Error("PageName must be defined");
+
+		let props = eventProperties ? eventProperties : {};
+		props["page_name"] = pageName;
+		this.logEvent(eventName, props);
+	}
+
 	// sets current context's users property value
 	setIntercomProperty(property, value) {
 		if (!this._shouldFlushIntercom()) {
@@ -197,6 +212,9 @@ export class EventLogger {
 		case UserActions.LogoutCompleted:
 		case UserActions.ForgotPasswordCompleted:
 		case UserActions.ResetPasswordCompleted:
+			if (action.email) {
+				this.setUserProperty("email", action.email);
+			}
 			if (action.eventName) {
 				this.logEvent(action.eventName, {error: Boolean(action.resp.Error)});
 			}
