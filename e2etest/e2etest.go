@@ -136,6 +136,24 @@ func (t *T) WaitForRedirect(url, description string) {
 	)
 }
 
+// WaitForRedirectPrefix waits up to 20s for a redirect to a page with the
+// given prefix (e.g., "https://github.com/login" matches if the URL is really
+// "https://github.com/login?foo").
+func (t *T) WaitForRedirectPrefix(prefix, description string) {
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			currentURL, err := t.WebDriver.CurrentURL()
+			if err != nil {
+				return false
+			}
+			return strings.HasPrefix(currentURL, prefix)
+		},
+		fmt.Sprintf("%s (%s)", description, prefix),
+	)
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,
