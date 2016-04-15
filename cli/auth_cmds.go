@@ -66,10 +66,6 @@ func (c *authIdentifyCmd) Execute(args []string) error {
 		return err
 	}
 
-	if clientID := authInfo.ClientID; clientID != "" {
-		fmt.Printf("client ID %s\n", clientID)
-	}
-
 	if authInfo.UID != 0 {
 		fmt.Printf("%s (%d)\n", authInfo.Login, authInfo.UID)
 	}

@@ -59,7 +59,6 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 
 	a.UID = int(user.UID)
 	a.Login = user.Login
-	a.ClientID = idkey.FromContext(ctx).ID
 	a.Write = user.Write
 	a.Admin = user.Admin
 
@@ -101,9 +100,8 @@ func accessTokenToTokenResponse(t *oauth2.Token) *sourcegraph.AccessTokenRespons
 func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 	a := authpkg.ActorFromContext(ctx)
 	return &sourcegraph.AuthInfo{
-		ClientID: a.ClientID,
-		UID:      int32(a.UID),
-		Login:    a.Login,
+		UID:   int32(a.UID),
+		Login: a.Login,
 
 		Write: a.HasWriteAccess(),
 		Admin: a.HasAdminAccess(),

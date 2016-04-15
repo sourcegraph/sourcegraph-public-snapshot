@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -48,26 +47,9 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 
 	// Elevate authorization level (using elevatedActor) to allow
 	// looking up registered clients' public keys.
-	actor, claims, err := accesstoken.ParseAndVerify(elevatedActor(ctx), tokStr)
+	actor, _, err := accesstoken.ParseAndVerify(elevatedActor(ctx), tokStr)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Unauthenticated, "access token middleware failed to parse/verify token: %s", err)
-	}
-
-	// Only trust the UIDs in tokens signed by us. And only trust
-	// tokens signed by clients to have their ClientID field set to
-	// that client's own ID (not impersonate another client).
-	if actor != nil {
-		sigClientID, _ := claims["kid"].(string)
-		signedBySelf := idkey.FromContext(ctx).ID == sigClientID
-
-		if !signedBySelf {
-			if actor.ClientID != sigClientID {
-				return nil, grpc.Errorf(codes.Unauthenticated, "access token signed by external client %q may only contain ClientID claim of same client ID (got %q)", sigClientID, actor.ClientID)
-			}
-			// Don't copy over UID, Scope, etc.
-			tmp := auth.Actor{ClientID: sigClientID}
-			actor = &tmp
-		}
 	}
 
 	// Make future calls use this access token.

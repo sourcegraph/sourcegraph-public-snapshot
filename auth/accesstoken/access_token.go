@@ -4,7 +4,6 @@ package accesstoken
 
 import (
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -35,9 +34,6 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	if actor.Login != "" {
 		tok.Claims["Login"] = actor.Login
 	}
-	if actor.ClientID != "" {
-		tok.Claims["ClientID"] = actor.ClientID
-	}
 	tok.Claims["Write"] = actor.Write
 	tok.Claims["Admin"] = actor.Admin
 
@@ -46,7 +42,6 @@ func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expire
 	addExpiry(tok, expiry)
 	addExtraClaims(tok, extraClaims)
 
-	tok.Claims["kid"] = k.ID
 	s, err := tok.SignedString(k.Private())
 	if err != nil {
 		return nil, err
@@ -167,25 +162,10 @@ func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.To
 			return nil, fmt.Errorf("unexpected signing method: %v", tok.Header["alg"])
 		}
 
-		clientID, _ := tok.Claims["kid"].(string)
-		if clientID != idKey.ID {
-			return nil, errors.New("wrong client ID")
-		}
-
 		return idKey.Public(), nil
 	})
 	if innerErr != nil {
 		err = innerErr
-	}
-
-	// By convention, self-signed tokens do not include a "kid" or
-	// "ClientID" claim because they are redundant (their only
-	// possible values are the signer's/parser's own kid/ClientID
-	// values). But set these explicitly if parsing succeeded so that
-	// callers of this function can use those values.
-	if err == nil && isSelfSigned {
-		tok.Claims["ClientID"] = idKey.ID
-		tok.Claims["kid"] = idKey.ID
 	}
 
 	return tok, err
@@ -206,7 +186,6 @@ func newActorWithVerifiedClaims(idKey *idkey.IDKey, tok *jwt.Token) (*auth.Actor
 	}
 
 	a.Login, _ = tok.Claims["Login"].(string)
-	a.ClientID, _ = tok.Claims["ClientID"].(string)
 	a.Write, _ = tok.Claims["Write"].(bool)
 	a.Admin, _ = tok.Claims["Admin"].(bool)
 

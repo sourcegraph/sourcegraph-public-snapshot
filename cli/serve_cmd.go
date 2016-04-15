@@ -594,7 +594,7 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 // event listeners.
 func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
 	ctx := conf.WithURL(parent, appURL)
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{ClientID: k.ID})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{})
 	// Mask out the server's private key from the context passed to the listener
 	ctx = idkey.NewContext(ctx, nil)
 

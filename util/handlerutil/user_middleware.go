@@ -35,11 +35,10 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 			ctx = withEmail(ctx, email)
 			ctx = withHasLinkedGitHub(ctx, hasGitHub)
 			ctx = auth.WithActor(ctx, auth.Actor{
-				UID:      int(authInfo.UID),
-				Login:    authInfo.Login,
-				ClientID: authInfo.ClientID,
-				Write:    authInfo.Write,
-				Admin:    authInfo.Admin,
+				UID:   int(authInfo.UID),
+				Login: authInfo.Login,
+				Write: authInfo.Write,
+				Admin: authInfo.Admin,
 			})
 		}
 	}

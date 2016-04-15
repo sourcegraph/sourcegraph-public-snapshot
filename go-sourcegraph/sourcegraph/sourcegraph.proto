@@ -1227,12 +1227,6 @@ message AccessTokenResponse {
 // AuthInfo describes the currently authenticated client and/or user
 // (if any).
 message AuthInfo {
-	// ClientID is the client ID of the currently authenticated
-	// client. If a user is authenticated using an access token,
-	// ClientID is the client ID of the registered client that the
-	// access token was granted to.
-	string ClientID = 1;
-
 	// UID is the UID of the currently authenticated user (if any).
 	int32 UID = 2;
 

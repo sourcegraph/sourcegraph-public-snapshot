@@ -1642,11 +1642,6 @@ func (*AccessTokenResponse) ProtoMessage()    {}
 // AuthInfo describes the currently authenticated client and/or user
 // (if any).
 type AuthInfo struct {
-	// ClientID is the client ID of the currently authenticated
-	// client. If a user is authenticated using an access token,
-	// ClientID is the client ID of the registered client that the
-	// access token was granted to.
-	ClientID string `protobuf:"bytes,1,opt,name=ClientID,proto3" json:"ClientID,omitempty"`
 	// UID is the UID of the currently authenticated user (if any).
 	UID int32 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
 	// Login is the login of the currently authenticated user (if any).
@@ -8531,12 +8526,6 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ClientID) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
-		i += copy(data[i:], m.ClientID)
-	}
 	if m.UID != 0 {
 		data[i] = 0x10
 		i++
@@ -12509,10 +12498,6 @@ func (m *AccessTokenResponse) Size() (n int) {
 func (m *AuthInfo) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.ClientID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	if m.UID != 0 {
 		n += 1 + sovSourcegraph(uint64(m.UID))
 	}
@@ -25169,35 +25154,6 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: AuthInfo: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
