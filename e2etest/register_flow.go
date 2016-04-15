@@ -20,9 +20,6 @@ func init() {
 }
 
 func TestRegisterFlow(t *T) error {
-	// TODO(slimsag): make this test work with the new GitHub onboarding flow!
-	return nil
-
 	// Create gRPC client connection so we can talk to the server. e2etest uses
 	// the server's ID key for authentication, which means it can do ANYTHING with
 	// no restrictions. Be careful!
@@ -105,6 +102,7 @@ func TestRegisterFlow(t *T) error {
 	submit := t.FindElement(selenium.ById, "e2etest-register-button")
 	submit.Click()
 
-	t.WaitForRedirect("/", "wait for redirect to homepage after register")
+	// TODO(slimsag): make this test work with the new GitHub onboarding flow!
+	//t.WaitForRedirect("/", "wait for redirect to homepage after register")
 	return nil
 }
