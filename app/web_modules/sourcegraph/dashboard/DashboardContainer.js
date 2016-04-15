@@ -140,7 +140,7 @@ class DashboardContainer extends Container {
 			{!context.currentUser &&
 				<div styleName="anon-section">
 					<img styleName="logo" src={`${context.assetsRoot || ""}/img/sourcegraph-logo.svg`}/>
-					<div styleName="anon-title">The Global Code Graph</div>
+					<div styleName="anon-title">Code Intelligence for Teams</div>
 					<div styleName="anon-header-sub">Search, browse, and cross-reference code</div>
 					<div styleName="anon-header-counts">{this.state.numRepos.toLocaleString()} repositories &middot; {this.state.numFunctions.toLocaleString()} functions</div>
 				</div>
