@@ -380,13 +380,12 @@
 		}).done(removeDefLoadingDiv, showDefResults);
 		getDefs.fail(function(jqXHR, textStatus, errorThrown) {
 			//console.log (textStatus);
-			console.log (errorThrown);
 			if (textStatus!=='abort'){
 				removeDefLoadingDiv();
-				if (errorThrown === "Unauthorized"){
+				if (getDefs.status === 401){
 					nomatch ="<div class='nomatch'><p style='text-align:center;font-size:16px'><b> 401 (Unauthorized)</b></br></p><p style='text-align:center;font-size:12px'> You must be signed in on <a href='https://sourcegraph.com/login?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext'>sourcegraph.com</a> to search private code.</p></div>";
 				}
-				else if (errorThrown === "Not Found" || errorThrown === "Internal Server Error"){
+				else if (getDefs.status === 404 || getText.status === 500){
 					nomatch ="<div class='nomatch' id='404nomatch'><p style='text-align:center;font-size:16px'><b> This repository has not been analyzed by Sourcegraph yet.</br> Click the link below and refresh to activate search on this repository: <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext' target='blank'>sourcegraph.com/github.com/"+user+"/"+repo+"</a> </b></p></div>"
 				}
 				document.getElementById('codeCounter').style.display='block';
@@ -403,14 +402,12 @@
 			}
 		}).done(removeTextLoadingDiv, showTextResults);
 		getText.fail(function(jqXHR, textStatus, errorThrown) {
-			//console.log (textStatus);
-			console.log (errorThrown);
 			if (textStatus!=='abort'){
 				removeTextLoadingDiv();
-				if (errorThrown === "Unauthorized"){
+				if (getText.status === 401){
 					nomatch ="<div class='nomatch'><p style='text-align:center;font-size:16px'><b> 401 (Unauthorized)</b></br></p><p style='text-align:center;font-size:12px'> You must be signed in on <a href='https://sourcegraph.com/login?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext'>sourcegraph.com</a> to search private code.</p></div>";		
 				}
-				else if (errorThrown === "Not Found" || errorThrown === "Internal Server Error"){
+				else if (getText.status === 404 || getText.status === 500){
 					nomatch ="<div class='nomatch' id='404nomatch'><p style='text-align:center;font-size:16px'><b> This repository has not been analyzed by Sourcegraph yet.</br> Click the link below and refresh to activate search on this repository: <a href='https://sourcegraph.com/github.com/"+user+"/"+repo+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext' target='blank'>sourcegraph.com/github.com/"+user+"/"+repo+"</a> </b></p></div>";
 				}
 				try{$('#nodefmatch').remove()}catch(err){}

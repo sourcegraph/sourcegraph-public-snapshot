@@ -83,7 +83,6 @@ function sourcegraph_activateDefnPopovers(el) {
       if (request.status >= 200 && 400 > request.status) {
         var html;
         if (response.Data) {
-          console.log(response)
           if (response.DocHTML){
             html = "<div><span class='title'>" + response.Kind + " <b style='color:#4078C0'>" + response.Name + "</b>" + response.FmtStrings.Type.ScopeQualified +"</span>\n<span class='p'>"+ response.DocHTML.__html + "</span>\n<span class='repo'>" + response.Repo + "</span></div>";
           }
