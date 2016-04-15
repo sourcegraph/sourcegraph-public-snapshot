@@ -82,9 +82,7 @@ class RepoMain extends React.Component {
 		// Create the repo if this repo was just resolved to a remote repo (which
 		// must be explicitly created, as we do right here).
 		if (repo && prevResolution !== nextResolution && nextResolution && !nextResolution.Error && nextResolution.Result.RemoteRepo) {
-			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, {
-				Op: {FromGitHubID: nextResolution.Result.RemoteRepo.GitHubID},
-			}));
+			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, nextResolution.Result.RemoteRepo));
 		}
 	}
 

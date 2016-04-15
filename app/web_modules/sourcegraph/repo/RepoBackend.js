@@ -6,6 +6,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
+import EventLogger from "sourcegraph/util/EventLogger";
 
 const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -52,13 +53,18 @@ const RepoBackend = {
 				trackPromise(
 					RepoBackend.fetch(`/.api/repos`, {
 						method: "POST",
-						body: JSON.stringify(action.createOp),
+						body: JSON.stringify({Op: {FromGitHubID: action.remoteRepo.GitHubID}}),
 					})
 						.then(checkStatus)
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
 						.then((data) => {
 							Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
+							if (!data.Error) {
+								const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
+								EventLogger.logEvent("AddRepo", eventProps);
+								EventLogger.logIntercomEvent("add-repo", eventProps);
+							}
 						})
 				);
 				break;

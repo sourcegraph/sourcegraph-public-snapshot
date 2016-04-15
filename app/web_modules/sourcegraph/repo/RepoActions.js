@@ -32,9 +32,9 @@ export class RepoResolved {
 }
 
 export class WantCreateRepo {
-	constructor(repo, createOp) {
+	constructor(repo, remoteRepo) {
 		this.repo = repo;
-		this.createOp = createOp;
+		this.remoteRepo = remoteRepo;
 	}
 }
 

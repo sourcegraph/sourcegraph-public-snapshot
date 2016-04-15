@@ -3,7 +3,6 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
 
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 
@@ -190,17 +189,6 @@ export class EventLogger {
 				this.setUserProperty("orgs", Object.keys(orgs));
 				this.setUserProperty("num_github_repos", action.data.RemoteRepos.length);
 				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
-			}
-			break;
-
-		case RepoActions.FetchedRepo:
-			if (action.repoObj.IsCloning) {
-				let eventProps = {
-					private: Boolean(action.repoObj.Private),
-					language: action.repoObj.Language,
-				};
-				this.logEvent("AddRepo", eventProps);
-				this.logIntercomEvent("add-repo", eventProps);
 			}
 			break;
 
