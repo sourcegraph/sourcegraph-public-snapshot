@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
@@ -40,9 +42,11 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		switch err {
 		case context.DeadlineExceeded:
-			statusCode = 202
+			log15.Warn("Context deadline exceeded for rendering React component, returning early", "URL", r.URL)
+			statusCode = http.StatusAccepted
 		default:
-			return err
+			// TODO Return err so it appropriately triggers a response with a 500 status.
+			log15.Warn("Error rendering React component on the server", "err", err, "URL", r.URL)
 		}
 	}
 
@@ -75,8 +79,9 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	if statusCode == 0 {
-		statusCode = http.StatusInternalServerError
+	if statusCode == 0 || statusCode == 500 {
+		// TODO Return a http.StatusInternalServerError response instead of pretending everything went ok.
+		statusCode = http.StatusAccepted
 	}
 
 	return tmpl.Exec(r, w, "ui.html", statusCode, header, &struct {
