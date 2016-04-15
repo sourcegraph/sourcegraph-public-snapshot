@@ -154,6 +154,36 @@ func (t *T) WaitForRedirectPrefix(prefix, description string) {
 	)
 }
 
+// FindElementWithPartialText finds an element of the given tagName, whose Text
+// contains the specified partial text. After 20s of waiting for the element to
+// appear, it fails with the given reason.
+func (t *T) FindElementWithPartialText(tagName, partialText, reason string) selenium.WebElement {
+	// Check that the "mux.go" codefile link appears.
+	var elem selenium.WebElement
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			elems, err := t.WebDriver.FindElements(selenium.ByTagName, tagName)
+			if err != nil {
+				return false
+			}
+			for _, elem = range elems {
+				text, err := elem.Text()
+				if err != nil {
+					return false
+				}
+				if strings.Contains(text, partialText) {
+					return true
+				}
+			}
+			return false
+		},
+		reason,
+	)
+	return elem
+}
+
 // Test represents a single E2E test.
 type Test struct {
 	// Name is the name of your test, which should be short and readable, e.g.,
