@@ -18,6 +18,7 @@
 	}
 
 	document.addEventListener("DOMContentLoaded", function() {
+		amplitude.init('f7491eae081c8c94baf15838b0166c63')
 		var pageScript = document.createElement("script");
 		pageScript.innerHTML = "$(document).on('pjax:success', function () { var evt = new Event('PJAX_PUSH_STATE_0923'); document.dispatchEvent(evt); });";
 		document.querySelector("body").appendChild(pageScript);
@@ -35,9 +36,9 @@
 		var lang;
 		if (fileElem){
 			document.addEventListener("click", function(e){
-				/*if (e.target.className === "sgdef") {
+				if (e.target.className === "sgdef") {
 					amplitude.logEvent("JumpToDefinition");
-				}*/
+				}
 			})
 			var finalPath = document.getElementsByClassName("final-path")[0].innerText.split(".");
 			lang = finalPath[finalPath.length-1];
@@ -102,9 +103,6 @@
 	}
 
 	function getAnnotations(token, commitID, user, repo, branch, path) {
-		//encode URI components on user, repo on line 78
-		//repository properties
-
 		$.ajax ({
 			dataType: "json",
 			method: "GET",
@@ -131,20 +129,18 @@
 
 
 	function traverseDOM(annsByStartByte, annsByEndByte){
-		//console.time("traverseDOM"); 
 		var table = document.querySelector("table");
 		var count = 0;
 		
 		//get output HTML for each line and replace the original <td>
 		for (var i = 0; i < table.rows.length; i++){
 			var output = "";
-			// Keep track of which row we"re at.
 			var row = table.rows[i];
 
 			
 			// Code is always the second <td> element.  We want to replace code.innerhtml.
 			var code = row.cells[1]
-			var children = code.childNodes; // We want the children of the <td>
+			var children = code.childNodes; 
 			var startByte = count;
 			count += utf8.encode(code.textContent).length;
 			if (code.textContent !== "\n") {
@@ -153,8 +149,6 @@
 			//Go through each childNode
 			for (var j = 0; j < children.length; j++) {
 
-				//console.log(startByte)
-				//console.log(children[j])
 				var childNodeChars;
 
 				if (children[j].nodeType === Node.TEXT_NODE){
@@ -190,15 +184,12 @@
 				}
 			}
 
-			//replace each line
 			replace(code,output)
 			
 		}
 		if (document.getElementsByClassName("sourcegraph-popover visible").length !== 0){
 			document.getElementsByClassName("sourcegraph-popover visible")[0].classList.remove("visible")
 		}
-		//console.timeEnd("traverseDOM")
-		//console.profileEnd("traverseDOMstart")
 	}
 
 	function replace(code, output){
@@ -216,10 +207,7 @@
 		}
 	}
 	function next(c, byteCount, annsByStartByte, annsByEndByte) {
-		/*if (byteCount < 2500) {
-			console.log("byteCount", byteCount, c);
-			//console.log(annsByStartByte !== undefined, byteCount); 
-		}*/
+		//console.log("byteCount", byteCount, c);
 
 		var matchDetails = annsByStartByte[byteCount];
 		
@@ -230,7 +218,6 @@
 			}
 			
 			annotating = true;
-			//console.log(byteCount) 
 			return "<a href='https://sourcegraph.com"+matchDetails.URL+"?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext' target='tab' class='sgdef'>"+c
 		}
 

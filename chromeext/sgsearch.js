@@ -1,14 +1,12 @@
-//This file adds code and text search into GitHub 
+//This file adds code and text search into GitHub  
 (function() {
-
-	//amplitude.init('f7491eae081c8c94baf15838b0166c63', null, {domain:'sourcegraph.com'})
 
 	var user, repo, branch, path, query, 
 	searchPage, nomatch, countScrolls,
 	getDefs, getText, prevFile, commitID,
 	repoIsGo = false, token, current = '';
 
-	//get images
+	//Branding and icons
 	var logo2 = document.createElement('img');
 	logo2.src = chrome.extension.getURL("assets/src4.png");
 	var search = document.createElement('img');
@@ -171,7 +169,7 @@
 	function clickSearchButton(){
 		countScrolls=1;
 
-		//amplitude.logEvent('ClickSearchCodeButton')
+		amplitude.logEvent('ClickSearchCodeButton')
 
 		//Store value of current page
 		if ($('.container.new-discussion-timeline').not(':has(#toRemove)')) {
@@ -210,7 +208,7 @@
 	//Handler for clicking submit button
 	function clickSubmitButton(){
 		var treefinderarray = document.getElementsByClassName('tree-finder');
-		//amplitude.logEvent('Search');
+		amplitude.logEvent('Search');
 
 		//Table that replaces existing one during a search (does not include search bar)
 		var newSearchPage = "<table id='tree-finder-results2' class='tree-browser css-truncate' cellpadding='0' cellspacing='0' style='border-bottom:1px solid #;cacaca'> <tbody class='tree-browser-result-template js-tree-browser-result-template' aria-hidden='true'> <tr class='js-navigation-item tree-browser-result'><td> <a class='css-truncate-target js-navigation-open js-tree-finder-path'></a> </td> </tr> </tbody> </table>";
@@ -258,7 +256,7 @@
 		//Shift+T
 		if (e.which===84 && e.shiftKey && (e.target.tagName.toLowerCase()) !=='input' && (e.target.tagName.toLowerCase())!=='textarea') {
 			if (repoIsGo || document.getElementsByClassName('vis-private').length !==0){
-				//amplitude.logEvent('KbdShortcut')
+				amplitude.logEvent('KbdShortcut')
 
 				countScrolls=1;
 
@@ -300,7 +298,7 @@
 
 		//Enter
 		else if (e.which===13 && (e.target.tagName.toLowerCase())==='input' && e.target.id.toLowerCase() === 'tree-finder-field2') {
-			//amplitude.logEvent('Search');
+			amplitude.logEvent('Search');
 			
 			//To prevent GitHub event where pressing enter while hovering over file takes you to that file
 			e.stopImmediatePropagation();
@@ -445,9 +443,9 @@
 	//Generate def results table
 	function showDefResults(dataArray) {
 		document.addEventListener('click', function(e){
-			/*if (e.target.className === 'res sg-res' || e.target.parentNode.className === 'res sg-res') {
+			if (e.target.className === 'res sg-res' || e.target.parentNode.className === 'res sg-res') {
 				debounce(amplitude.logEvent('ViewCodeSearchResult'), 250)
-			}*/
+			}
 		})
 		if ($('#seeText').hasClass('selected')){
 			$('#tree-finder-results2').attr("style", "display:none");
@@ -500,7 +498,7 @@
 	function showTextResults(dataArray){
 		document.addEventListener('click', function(e){
 			if(e.target.className === 'sgtextres') {
-				//amplitude.logEvent('ViewTextSearchResult')
+				amplitude.logEvent('ViewTextSearchResult')
 			}
 		})
 
