@@ -62,12 +62,7 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	a.Write = user.Write
 	a.Admin = user.Admin
 
-	tok, err := accesstoken.New(
-		idkey.FromContext(ctx),
-		a,
-		map[string]string{"GrantType": "ResourceOwnerPassword"},
-		7*24*time.Hour,
-	)
+	tok, err := accesstoken.New(idkey.FromContext(ctx), &a, nil, 7*24*time.Hour, true)
 
 	if err != nil {
 		return nil, err

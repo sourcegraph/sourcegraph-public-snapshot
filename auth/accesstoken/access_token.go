@@ -17,103 +17,54 @@ import (
 )
 
 // New creates and signs a new OAuth2 access token that grants the
-// actor's access to the holder of the token.
-//
-// If expires is 0, then the token never expires.
-func New(k *idkey.IDKey, actor auth.Actor, extraClaims map[string]string, expires time.Duration) (*oauth2.Token, error) {
-	var expiry time.Time
-	if expires != 0 {
-		expiry = time.Now().Add(expires)
+// actor's access to the holder of the token. The given scopes are
+// applied as well. If expires is 0, then the token never expires.
+// If useAsymmetricEnc is set, then the token can be verified
+// externally via the public key, but the token length increases.
+// The shorter length of the symmetric version is useful for
+// situations with a restricted token length, e.g. authentication
+// for git via basic auth. The retuned token is assumed to be
+// public and must not include any secret data.
+func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expires time.Duration, useAsymmetricEnc bool) (*oauth2.Token, error) {
+	method := jwt.SigningMethod(jwt.SigningMethodHS256)
+	key := interface{}(getSymmetricKey(k))
+	if useAsymmetricEnc {
+		method = jwt.SigningMethodRS256
+		key = k.Private()
+	}
+	tok := jwt.New(method)
+
+	if actor != nil {
+		if actor.UID != 0 {
+			tok.Claims["UID"] = strconv.Itoa(actor.UID)
+		}
+		if actor.Login != "" {
+			tok.Claims["Login"] = actor.Login
+		}
+		tok.Claims["Write"] = actor.Write
+		tok.Claims["Admin"] = actor.Admin
+		scopes = append(scopes, auth.MarshalScope(actor.Scope)...)
 	}
 
-	tok := jwt.New(jwt.SigningMethodRS256)
-	if actor.UID != 0 {
-		tok.Claims["UID"] = strconv.Itoa(actor.UID)
-	}
-	if actor.Login != "" {
-		tok.Claims["Login"] = actor.Login
-	}
-	tok.Claims["Write"] = actor.Write
-	tok.Claims["Admin"] = actor.Admin
-
-	scopes := auth.MarshalScope(actor.Scope)
-	addScope(tok, scopes)
-	addExpiry(tok, expiry)
-	addExtraClaims(tok, extraClaims)
-
-	s, err := tok.SignedString(k.Private())
-	if err != nil {
-		return nil, err
-	}
-
-	return &oauth2.Token{
-		AccessToken: s,
-		TokenType:   "Bearer",
-		Expiry:      expiry,
-	}, nil
-}
-
-// NewSelfSigned creates and signs a new OAuth2 access token that
-// authenticates the holder as a client (with the given scope). The
-// JWT is constructed using HMAC-SHA256 instead of RSA-SHA256, which
-// results in shorter tokens.
-func NewSelfSigned(k *idkey.IDKey, scope []string, extraClaims map[string]string, expires time.Duration) (*oauth2.Token, error) {
-	var expiry time.Time
-	if expires != 0 {
-		expiry = time.Now().Add(expires)
-	}
-
-	tok := jwt.New(jwt.SigningMethodHS256)
-	addScope(tok, scope)
-	addExpiry(tok, expiry)
-	addExtraClaims(tok, extraClaims)
-
-	sk, err := getSelfSigningKey(k)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err := tok.SignedString(sk)
-	if err != nil {
-		return nil, err
-	}
-
-	return &oauth2.Token{
-		AccessToken: s,
-		TokenType:   "Bearer",
-		Expiry:      expiry,
-	}, nil
-}
-
-// getSelfSigningKey derives a symmetric key from the private ID key
-// for generating self-signed tokens.
-func getSelfSigningKey(k *idkey.IDKey) ([]byte, error) {
-	kb, err := k.MarshalText()
-	if err != nil {
-		return nil, err
-	}
-	sk := sha256.Sum256(kb)
-	return sk[:], nil
-}
-
-func addScope(tok *jwt.Token, scopes []string) {
 	tok.Claims["Scope"] = strings.Join(scopes, " ")
-}
 
-func addExpiry(tok *jwt.Token, expiry time.Time) {
-	if !expiry.IsZero() {
+	var expiry time.Time
+	if expires != 0 {
+		expiry = time.Now().Add(expires)
 		tok.Claims["exp"] = expiry.Add(time.Minute).Unix()
 		tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
 	}
-}
 
-func addExtraClaims(tok *jwt.Token, claims map[string]string) {
-	for k, v := range claims {
-		if _, present := tok.Claims[k]; present {
-			panic(fmt.Sprintf("claim %q is already present", k))
-		}
-		tok.Claims[k] = v
+	s, err := tok.SignedString(key)
+	if err != nil {
+		return nil, err
 	}
+
+	return &oauth2.Token{
+		AccessToken: s,
+		TokenType:   "Bearer",
+		Expiry:      expiry,
+	}, nil
 }
 
 // ParseAndVerify parses the access token and verifies that it is signed correctly.
@@ -124,7 +75,7 @@ func ParseAndVerify(k *idkey.IDKey, accessToken string) (*auth.Actor, error) {
 		case *jwt.SigningMethodRSA:
 			return k.Public(), nil
 		case *jwt.SigningMethodHMAC:
-			return getSelfSigningKey(k)
+			return getSymmetricKey(k), nil
 		default:
 			return nil, fmt.Errorf("unexpected signing method: %v", tok.Header["alg"])
 		}
@@ -153,4 +104,14 @@ func ParseAndVerify(k *idkey.IDKey, accessToken string) (*auth.Actor, error) {
 	a.Scope = auth.UnmarshalScope(scopes)
 
 	return &a, nil
+}
+
+// getSymmetricKey derives a symmetric key from the private ID key.
+func getSymmetricKey(k *idkey.IDKey) []byte {
+	kb, err := k.MarshalText()
+	if err != nil {
+		panic("unreachable")
+	}
+	sk := sha256.Sum256(kb)
+	return sk[:]
 }
