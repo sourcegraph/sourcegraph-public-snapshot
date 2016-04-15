@@ -136,15 +136,6 @@ func ParseAndVerify(ctx context.Context, accessToken string) (a *auth.Actor, all
 	return a, allClaims, err
 }
 
-// UnsafeParseNoVerify parses tok's access token but DOES NOT verify
-// its signature. This is unsafe! Someone could spoof the access
-// token.
-func UnsafeParseNoVerify(accessToken string) (*jwt.Token, error) {
-	return jwt.Parse(accessToken, func(*jwt.Token) (interface{}, error) {
-		return nil, nil
-	})
-}
-
 func parseToken(ctx context.Context, idKey *idkey.IDKey, tokStr string) (*jwt.Token, error) {
 	var innerErr error
 
