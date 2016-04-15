@@ -62,7 +62,7 @@ func TestServeUI(t *testing.T) {
 				StatusCode: http.StatusInternalServerError,
 				Error:      "abc",
 			},
-			wantStatusCode: http.StatusInternalServerError,
+			wantStatusCode: http.StatusAccepted,
 			want: func(t *testing.T, label, body string) {
 				if dontWant := "abc"; strings.Contains(body, dontWant) {
 					t.Errorf("%s: body contains error string %q in non-debug mode", label, dontWant)
@@ -75,7 +75,7 @@ func TestServeUI(t *testing.T) {
 				StatusCode: http.StatusInternalServerError,
 				Error:      "abc",
 			},
-			wantStatusCode: http.StatusInternalServerError,
+			wantStatusCode: http.StatusAccepted,
 			want: func(t *testing.T, label, body string) {
 				if want := "abc"; !strings.Contains(body, want) {
 					t.Errorf("%s: body does not contain error string %q in debug mode\n\n%s", label, want, body)
