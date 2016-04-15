@@ -34,6 +34,8 @@ export default function withResolvedRepoRev(Component) {
 			state.repoResolution = RepoStore.resolutions.get(state.repo);
 			state.repoObj = RepoStore.repos.get(state.repo);
 			if (!state.rev) state.rev = state.repoObj && state.repoObj.DefaultBranch || null;
+
+			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
 		onStateTransition(prevState, nextState) {

@@ -6,6 +6,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import BlobBackend from "sourcegraph/blob/BlobBackend";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 
 
@@ -20,7 +21,10 @@ describe("BlobBackend", () => {
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aPath"));
-		})).to.eql([new BlobActions.FileFetched("aRepo", "aRev", "aPath", "someFile")]);
+		})).to.eql([
+			new RepoActions.RepoCloning("aRepo", false),
+			new BlobActions.FileFetched("aRepo", "aRev", "aPath", "someFile"),
+		]);
 	});
 });
 

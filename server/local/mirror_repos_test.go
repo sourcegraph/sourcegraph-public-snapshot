@@ -45,7 +45,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
-			return nil, vcs.ErrRepoNotExist
+			return nil, vcs.RepoNotExistError{}
 		},
 	})
 	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ string, _ *store.CloneInfo) error {
@@ -79,7 +79,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
-			return nil, vcs.ErrRepoNotExist
+			return nil, vcs.RepoNotExistError{}
 		},
 	})
 	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ string, _ *store.CloneInfo) error {

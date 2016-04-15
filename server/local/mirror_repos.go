@@ -26,8 +26,8 @@ type mirrorRepos struct{}
 var _ sourcegraph.MirrorReposServer = (*mirrorRepos)(nil)
 
 // TODO(sqs): What if multiple goroutines or processes
-// simultaneously clone or update the same repo? Race conditions
-// probably, esp. on NFS.
+// simultaneously update the same repo? Race conditions
+// probably.
 func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorReposRefreshVCSOp) (*pbtypes.Void, error) {
 	actor := authpkg.ActorFromContext(ctx)
 	asUserUID := int32(actor.UID)
@@ -72,8 +72,11 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		return nil, err
 	}
 	if err := s.updateRepo(ctx, repo, vcsRepo, remoteOpts); err != nil {
-		if err != vcs.ErrRepoNotExist {
+		if !vcs.IsRepoNotExist(err) {
 			return nil, err
+		}
+		if err.(vcs.RepoNotExistError).CloneInProgress {
+			return &pbtypes.Void{}, nil
 		}
 		if err := s.cloneRepo(ctx, repo, remoteOpts); err != nil {
 			return nil, err

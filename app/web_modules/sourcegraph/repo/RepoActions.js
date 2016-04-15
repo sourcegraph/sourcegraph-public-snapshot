@@ -11,6 +11,13 @@ export class FetchedRepo {
 	}
 }
 
+export class RepoCloning {
+	constructor(repo, isCloning) {
+		this.repo = repo;
+		this.isCloning = isCloning;
+	}
+}
+
 export class WantResolveRepo {
 	constructor(repo) {
 		this.repo = repo;

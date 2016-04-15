@@ -11,11 +11,15 @@ function keyFor(repo) {
 }
 
 export class RepoStore extends Store {
-	reset(data?: {resolutions: any, repos: any, branches: any, tags: any}) {
+	reset(data?: {repos: any, resolutions: any, branches: any, tags: any}) {
 		this.repos = deepFreeze({
 			content: data && data.repos ? data.repos.content : {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
+			},
+			cloning: data && data.repos ? data.repos.cloning : {},
+			isCloning(repo) {
+				return this.cloning[keyFor(repo)] || false;
 			},
 		});
 		this.resolutions = deepFreeze({
@@ -53,6 +57,14 @@ export class RepoStore extends Store {
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				content: Object.assign({}, this.repos.content, {
 					[keyFor(action.repo)]: action.repoObj,
+				}),
+			}));
+			break;
+
+		case RepoActions.RepoCloning:
+			this.repos = deepFreeze(Object.assign({}, this.repos, {
+				cloning: Object.assign({}, this.repos.cloning, {
+					[keyFor(action.repo)]: action.isCloning,
 				}),
 			}));
 			break;
