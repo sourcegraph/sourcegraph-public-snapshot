@@ -59,7 +59,7 @@ func Connect(addr string) {
 }
 
 type genericReply interface {
-	repoNotExist() bool
+	repoFound() bool
 }
 
 var errRPCFailed = errors.New("gitserver: rpc failed")
@@ -86,12 +86,12 @@ func broadcastCall(newRequest func() (*request, func() (genericReply, bool))) (i
 			rpcError = true
 			continue
 		}
-		if !reply.repoNotExist() {
+		if reply.repoFound() {
 			return reply, nil
 		}
 	}
 	if rpcError {
 		return nil, errRPCFailed
 	}
-	return nil, vcs.ErrRepoNotExist
+	return nil, vcs.RepoNotExistError{}
 }

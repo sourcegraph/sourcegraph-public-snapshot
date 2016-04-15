@@ -4,8 +4,9 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/internal/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -56,6 +57,7 @@ func initContext(ctx context.Context, ctxFunc ContextFunc, services svc.Services
 	return ctx, nil
 }
 
+// wrapErr returns non-nil error iff err is non-nil.
 func wrapErr(err error) error {
 	if err == nil {
 		return nil
@@ -66,5 +68,11 @@ func wrapErr(err error) error {
 		return err
 	}
 
-	return grpc.Errorf(errcode.GRPC(err), "%s", err.Error())
+	code := errcode.GRPC(err)
+	if code == codes.OK {
+		// grpc.Errorf returns nil error if code is OK, so replace it with unknown if we get here.
+		log15.Warn("wrapErr: err resulted in errcode.GRPC(err) returning codes.OK; using codes.Unknown", "err", err)
+		code = codes.Unknown
+	}
+	return grpc.Errorf(code, "%s", err.Error())
 }

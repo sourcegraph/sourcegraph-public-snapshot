@@ -35,7 +35,9 @@ func HTTP(err error) int {
 		return http.StatusUnauthorized
 	}
 
-	if strings.Contains(err.Error(), vcs.ErrRepoNotExist.Error()) {
+	if (vcs.IsRepoNotExist(err) && err.(vcs.RepoNotExistError).CloneInProgress) || strings.Contains(err.Error(), vcs.RepoNotExistError{CloneInProgress: true}.Error()) {
+		return http.StatusAccepted
+	} else if (vcs.IsRepoNotExist(err) && !err.(vcs.RepoNotExistError).CloneInProgress) || strings.Contains(err.Error(), vcs.RepoNotExistError{}.Error()) {
 		return http.StatusNotFound
 	}
 

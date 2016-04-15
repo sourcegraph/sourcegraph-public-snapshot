@@ -3,6 +3,7 @@ import expect from "expect.js";
 import Dispatcher from "sourcegraph/Dispatcher";
 import TreeBackend from "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 
 describe("TreeBackend", () => {
@@ -34,6 +35,9 @@ describe("TreeBackend", () => {
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, rev));
-		})).to.eql([new TreeActions.FileListFetched(repo, rev, {Files: ["a", "b"]})]);
+		})).to.eql([
+			new RepoActions.RepoCloning(repo, false),
+			new TreeActions.FileListFetched(repo, rev, {Files: ["a", "b"]}),
+		]);
 	});
 });

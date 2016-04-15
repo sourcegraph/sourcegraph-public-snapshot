@@ -21,6 +21,7 @@ class RepoMain extends React.Component {
 		repoResolution: React.PropTypes.object,
 		repoObj: React.PropTypes.object,
 		main: React.PropTypes.element,
+		isCloning: React.PropTypes.bool,
 		route: React.PropTypes.object,
 		routes: React.PropTypes.array,
 	};
@@ -145,6 +146,14 @@ class RepoMain extends React.Component {
 		}
 
 		if (!this.props.repo || !this.props.rev) return null;
+
+		if (this.props.isCloning) {
+			return (
+				<Header
+					title="Cloning this repository"
+					subtitle="Refresh this page in a minute." />
+			);
+		}
 
 		return (
 			<div>
