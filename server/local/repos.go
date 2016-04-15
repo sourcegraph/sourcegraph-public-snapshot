@@ -116,7 +116,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
-	// is cacheable. This is not exactly true, Permissions can change. But
+	// is cacheable. (Permissions can change, but we no longer store that.) But
 	// for the purpose of avoiding rate limits, we set all public repos to
 	// read-only permissions.
 	if ghrepo, found := reposGithubPublicCache.Get(repo.URI); found {
@@ -133,8 +133,6 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 			return err
 		}
 		if !ghrepo.Private {
-			// See above comment for why we change permissions
-			ghrepo.Permissions = nil
 			reposGithubPublicCache.Add(repo.URI, ghrepo)
 			reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 		} else {
@@ -152,7 +150,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) {
 	repo.DefaultBranch = ghrepo.DefaultBranch
 	repo.Fork = ghrepo.Fork
 	repo.Private = ghrepo.Private
-	repo.Permissions = ghrepo.Permissions
 	repo.UpdatedAt = ghrepo.UpdatedAt
 }
 

@@ -59,7 +59,6 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 		Private:       boolv(ghrepo.Private),
 		Fork:          boolv(ghrepo.Fork),
 		Mirror:        ghrepo.MirrorURL != nil,
-		Permissions:   convertGitHubRepoPerms(ghrepo),
 	}
 	if ghrepo.Owner != nil {
 		repo.Owner = strv(ghrepo.Owner.Login)
@@ -73,18 +72,6 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 		repo.Stars = int32(*ghrepo.WatchersCount)
 	}
 	return &repo
-}
-
-func convertGitHubRepoPerms(ghrepo *github.Repository) *sourcegraph.RepoPermissions {
-	if ghrepo.Permissions == nil {
-		return nil
-	}
-	gp := *ghrepo.Permissions
-	rp := &sourcegraph.RepoPermissions{}
-	rp.Read = gp["pull"]
-	rp.Write = gp["push"]
-	rp.Admin = gp["admin"]
-	return rp
 }
 
 // ListAccessible lists repos that are accessible to the authenticated
