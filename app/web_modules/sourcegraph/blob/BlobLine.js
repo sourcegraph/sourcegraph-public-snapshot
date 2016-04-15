@@ -90,15 +90,7 @@ class BlobLine extends Component {
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
-							if (ann.URLs) {
-								ev.preventDefault();
-								// Multiple refs coincident on the same token to different defs.
-								//
-								// Dispatch async and stop propagation so the menu is not
-								// immediately closed by click handler on Document.
-								throw new Error("TODO: reimplement multiple defs menu");
-							}
-
+							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
 							if (this.state.highlightedDefObj && this.state.highlightedDefObj.Error) {
 								// Prevent navigating to a broken ref or not-yet-loaded def.
 								ev.preventDefault();
