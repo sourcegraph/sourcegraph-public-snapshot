@@ -15,7 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/jsserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
@@ -78,13 +78,13 @@ func getRenderer(ctx context.Context) (*cachingRenderer, error) {
 func newCachingRenderer(js []byte) *cachingRenderer {
 	return &cachingRenderer{
 		s:     jsserver.NewPool(js, renderPoolSize),
-		cache: synclru.New(lru.New(maxEntries)),
+		cache: cache.New(lru.New(maxEntries)),
 	}
 }
 
 type cachingRenderer struct {
 	s     jsserver.Server
-	cache synclru.Cache
+	cache cache.Cache
 }
 
 type prerenderEvent struct {

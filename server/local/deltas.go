@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -122,11 +122,11 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 }
 
 type deltasCache struct {
-	synclru.Cache
+	cache.Cache
 }
 
 func newDeltasCache(maxEntries int) *deltasCache {
-	return &deltasCache{synclru.New(lru.New(maxEntries))}
+	return &deltasCache{cache.New(lru.New(maxEntries))}
 }
 
 func deltasCacheKey(spec *sourcegraph.DeltaSpec) string {

@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/synclru"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -244,7 +244,7 @@ func getPrePostImage(headers []string) (pre, post string) {
 }
 
 type deltasListFileCache struct {
-	synclru.Cache
+	cache.Cache
 
 	// maxEntrySize is the maximum size of an entry after gob encoding in
 	// bytes that could be added to the cache.
@@ -252,7 +252,7 @@ type deltasListFileCache struct {
 }
 
 func newDeltasListFilesCache(maxEntries, maxEntrySize int) *deltasListFileCache {
-	return &deltasListFileCache{synclru.New(lru.New(maxEntries)), maxEntrySize}
+	return &deltasListFileCache{cache.New(lru.New(maxEntries)), maxEntrySize}
 }
 
 func deltasListFileCacheKey(op *sourcegraph.DeltasListFilesOp) (string, error) {

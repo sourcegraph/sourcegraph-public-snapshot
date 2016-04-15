@@ -1,5 +1,5 @@
 // Package synclru provides a synchronized LRU cache.
-package synclru
+package cache
 
 import (
 	"sync"
