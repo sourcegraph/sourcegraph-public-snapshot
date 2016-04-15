@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/groupcache/lru"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"strings"
@@ -111,6 +112,16 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 }
 
 var reposGithubPublicCache = cache.TTL(cache.Sync(lru.New(500)), time.Minute)
+var reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_cache_hit",
+	Help:      "Counts cache hits and misses for public github repo metadata.",
+}, []string{"type"})
+
+func init() {
+	prometheus.MustRegister(reposGithubPublicCacheCounter)
+}
 
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
@@ -121,6 +132,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 	// for the purpose of avoiding rate limits, we set all public repos to
 	// read-only permissions.
 	if ghrepo, found := reposGithubPublicCache.Get(repo.URI); found {
+		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		repoSetFromRemote(repo, ghrepo.(*sourcegraph.RemoteRepo))
 		return nil
 	}
@@ -136,6 +148,9 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 			// See above comment for why we change permissions
 			ghrepo.Permissions = nil
 			reposGithubPublicCache.Add(repo.URI, ghrepo)
+			reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
+		} else {
+			reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
 		}
 		repoSetFromRemote(repo, ghrepo)
 	}
