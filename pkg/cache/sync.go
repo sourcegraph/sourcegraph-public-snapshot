@@ -1,4 +1,3 @@
-// Package synclru provides a synchronized LRU cache.
 package cache
 
 import (
@@ -7,29 +6,24 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
-type Cache interface {
-	Get(key lru.Key) (value interface{}, ok bool)
-	Add(key lru.Key, value interface{})
+// Sync returns a wrapper around cache that synchronizes access to it.
+func Sync(c Cache) Cache {
+	return &syncedCache{cache: c}
 }
 
-// New returns a wrapper around cache that synchronizes access to it.
-func New(c Cache) Cache {
-	return &cache{cache: c}
-}
-
-type cache struct {
+type syncedCache struct {
 	mu    sync.Mutex
 	cache Cache
 }
 
-func (c *cache) Get(key lru.Key) (value interface{}, ok bool) {
+func (c *syncedCache) Get(key lru.Key) (value interface{}, ok bool) {
 	c.mu.Lock()
 	value, ok = c.cache.Get(key)
 	c.mu.Unlock()
 	return
 }
 
-func (c *cache) Add(key lru.Key, value interface{}) {
+func (c *syncedCache) Add(key lru.Key, value interface{}) {
 	c.mu.Lock()
 	c.cache.Add(key, value)
 	c.mu.Unlock()

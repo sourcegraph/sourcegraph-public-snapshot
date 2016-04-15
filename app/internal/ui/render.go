@@ -78,7 +78,7 @@ func getRenderer(ctx context.Context) (*cachingRenderer, error) {
 func newCachingRenderer(js []byte) *cachingRenderer {
 	return &cachingRenderer{
 		s:     jsserver.NewPool(js, renderPoolSize),
-		cache: cache.New(lru.New(maxEntries)),
+		cache: cache.Sync(lru.New(maxEntries)),
 	}
 }
 

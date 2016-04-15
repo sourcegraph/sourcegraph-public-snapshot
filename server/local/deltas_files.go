@@ -252,7 +252,7 @@ type deltasListFileCache struct {
 }
 
 func newDeltasListFilesCache(maxEntries, maxEntrySize int) *deltasListFileCache {
-	return &deltasListFileCache{cache.New(lru.New(maxEntries)), maxEntrySize}
+	return &deltasListFileCache{cache.Sync(lru.New(maxEntries)), maxEntrySize}
 }
 
 func deltasListFileCacheKey(op *sourcegraph.DeltasListFilesOp) (string, error) {

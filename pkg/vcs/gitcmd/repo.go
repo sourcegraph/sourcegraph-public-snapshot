@@ -308,7 +308,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 	return strings.HasPrefix(output, "fatal: Invalid revision range "+obj)
 }
 
-var commitLogCache = cache.New(lru.New(500))
+var commitLogCache = cache.Sync(lru.New(500))
 
 // commitLog returns a list of commits, and total number of commits
 // starting from Head until Base or beginning of branch (unless NoTotal is true).
@@ -429,7 +429,7 @@ func parseUint(s string) (uint, error) {
 	return uint(n), err
 }
 
-var diffCache = cache.New(lru.New(100))
+var diffCache = cache.Sync(lru.New(100))
 
 func (r *Repository) Diff(base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
 	ensureAbsCommit(base)
@@ -514,7 +514,7 @@ func (r *Repository) UpdateEverything(opt vcs.RemoteOpts) (*vcs.UpdateResult, er
 	return &result, nil
 }
 
-var blameCache = cache.New(lru.New(500))
+var blameCache = cache.Sync(lru.New(500))
 
 func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	defer r.trace(time.Now(), "BlameFile", path, opt)
@@ -734,7 +734,7 @@ func (r *Repository) ReadFile(commit vcs.CommitID, name string) ([]byte, error) 
 	return b, nil
 }
 
-var readFileBytesCache = cache.New(lru.New(1000))
+var readFileBytesCache = cache.Sync(lru.New(1000))
 
 func (r *Repository) readFileBytes(commit vcs.CommitID, name string) ([]byte, error) {
 	ensureAbsCommit(commit)
@@ -844,7 +844,7 @@ func (r *Repository) ReadDir(commit vcs.CommitID, path string, recurse bool) ([]
 	return r.lsTree(commit, filepath.Clean(util.Rel(path))+"/", recurse)
 }
 
-var lsTreeCache = cache.New(lru.New(10000))
+var lsTreeCache = cache.Sync(lru.New(10000))
 
 // lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
 func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {

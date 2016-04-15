@@ -126,7 +126,7 @@ type deltasCache struct {
 }
 
 func newDeltasCache(maxEntries int) *deltasCache {
-	return &deltasCache{cache.New(lru.New(maxEntries))}
+	return &deltasCache{cache.Sync(lru.New(maxEntries))}
 }
 
 func deltasCacheKey(spec *sourcegraph.DeltaSpec) string {
