@@ -6,4 +6,5 @@ const (
 	userKey contextKey = iota
 	fullUserKey
 	emailAddrKey
+	hasLinkedGitHubKey
 )

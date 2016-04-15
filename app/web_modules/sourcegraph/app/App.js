@@ -14,6 +14,7 @@ import styles from "./styles/App.css";
 
 import EventLogger from "sourcegraph/util/EventLogger";
 import {withStatusContext} from "sourcegraph/app/status";
+import context from "sourcegraph/app/context";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -105,7 +106,7 @@ class App extends Component {
 		return (
 			<div styleName="main-container">
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-				<GlobalNav navContext={this.props.navContext} />
+				{(context.currentUser || this.state.location.pathname !== "/") && <GlobalNav navContext={this.props.navContext} />}
 				<div styleName="main-content">{this.props.main}</div>
 				<Footer />
 			</div>

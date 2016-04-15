@@ -17,6 +17,7 @@
 	composes: w-100 from base;
 	composes: marginBoxRight from blob;
 }
+
 .boxTitle {
 	composes: black from colors;
 	composes: title;

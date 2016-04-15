@@ -68,7 +68,7 @@ class Signup extends Container {
 				<div styleName="button">
 					<Button color="primary"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account</Button>
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account & Add GitHub Repositories</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>

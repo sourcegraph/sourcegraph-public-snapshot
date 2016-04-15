@@ -22,17 +22,18 @@ import (
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
-	AppURL        string            `json:"appURL"`
-	Authorization string            `json:"authorization"`
-	CacheControl  string            `json:"cacheControl"`
-	CSRFToken     string            `json:"csrfToken"`
-	CurrentUser   *sourcegraph.User `json:"currentUser"`
-	UserEmail     string            `json:"userEmail"`
-	CurrentSpanID string            `json:"currentSpanID"`
-	UserAgent     string            `json:"userAgent"`
-	AssetsRoot    string            `json:"assetsRoot"`
-	BuildVars     buildvar.Vars     `json:"buildVars"`
-	Features      interface{}       `json:"features"`
+	AppURL          string            `json:"appURL"`
+	Authorization   string            `json:"authorization"`
+	CacheControl    string            `json:"cacheControl"`
+	CSRFToken       string            `json:"csrfToken"`
+	CurrentUser     *sourcegraph.User `json:"currentUser"`
+	UserEmail       string            `json:"userEmail"`
+	HasLinkedGitHub bool              `json:"hasLinkedGitHub"`
+	CurrentSpanID   string            `json:"currentSpanID"`
+	UserAgent       string            `json:"userAgent"`
+	AssetsRoot      string            `json:"assetsRoot"`
+	BuildVars       buildvar.Vars     `json:"buildVars"`
+	Features        interface{}       `json:"features"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -52,16 +53,17 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 	}
 
 	jsctx := JSContext{
-		AppURL:        conf.AppURL(ctx).String(),
-		CacheControl:  cacheControl,
-		CSRFToken:     nosurf.Token(req),
-		CurrentUser:   handlerutil.FullUserFromRequest(req),
-		UserEmail:     handlerutil.EmailFromRequest(req),
-		CurrentSpanID: traceutil.SpanIDFromContext(ctx).String(),
-		UserAgent:     eventsutil.UserAgentFromContext(ctx),
-		AssetsRoot:    assets.URL("/").String(),
-		BuildVars:     buildvar.All,
-		Features:      feature.Features,
+		AppURL:          conf.AppURL(ctx).String(),
+		CacheControl:    cacheControl,
+		CSRFToken:       nosurf.Token(req),
+		CurrentUser:     handlerutil.FullUserFromRequest(req),
+		UserEmail:       handlerutil.EmailFromRequest(req),
+		HasLinkedGitHub: handlerutil.HasLinkedGitHubFromRequest(req),
+		CurrentSpanID:   traceutil.SpanIDFromContext(ctx).String(),
+		UserAgent:       eventsutil.UserAgentFromContext(ctx),
+		AssetsRoot:      assets.URL("/").String(),
+		BuildVars:       buildvar.All,
+		Features:        feature.Features,
 	}
 	if sess != nil {
 		jsctx.Authorization = sess.AccessToken

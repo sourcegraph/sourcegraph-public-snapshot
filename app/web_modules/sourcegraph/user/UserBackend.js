@@ -1,7 +1,9 @@
 import * as UserActions from "sourcegraph/user/UserActions";
 import Dispatcher from "sourcegraph/Dispatcher";
+import EventLogger from "sourcegraph/util/EventLogger";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
+import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
 const UserBackend = {
 	fetch: defaultFetch,
@@ -24,7 +26,8 @@ const UserBackend = {
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 						if (!data.Error) {
-							window.location.href = "/";
+							EventLogger.logEvent("SubmitLinkGitHub");
+							window.location.href = urlToGitHubOAuth;
 						}
 					})
 				);

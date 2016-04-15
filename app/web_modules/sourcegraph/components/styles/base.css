@@ -997,6 +997,19 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 	.mh7-l { margin-left: 16rem; margin-right: 16rem; }
 }
 
+@media screen and (max-width: 48em) {
+	.hidden-s { display: none; }
+}
+@media screen and (min-width: 48em) {
+	.hidden-ns { display: none; }
+}
+@media screen and (min-width: 48em) and (max-width: 64em) {
+	.hidden-m { display: none; }
+}
+@media screen and (min-width: 64em) {
+	.hidden-l { display: none; }
+}
+
 :global #debug {
 	position: fixed;
 	bottom: 42px;

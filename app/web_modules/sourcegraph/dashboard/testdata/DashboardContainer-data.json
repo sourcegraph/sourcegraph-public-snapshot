@@ -15,6 +15,27 @@
 					"type": "div",
 					"key": ".1",
 					"props": {
+						"styleName": "action",
+						"children": [
+							{
+								"type": "",
+								"props": {
+									"to": "/login",
+									"children": [
+										" Sign in "
+									],
+									"onlyActiveOnIndex": false,
+									"className": "",
+									"style": {}
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".2",
+					"props": {
 						"styleName": "anon-section",
 						"children": [
 							{
@@ -31,7 +52,7 @@
 								"props": {
 									"styleName": "anon-title",
 									"children": [
-										"Understand and use code better"
+										"The Global Code Graph"
 									]
 								}
 							},
@@ -41,13 +62,17 @@
 								"props": {
 									"styleName": "anon-header-sub",
 									"children": [
-										"Use Sourcegraph to search, browse, and cross-reference code.",
-										{
-											"type": "br",
-											"key": ".1",
-											"props": {}
-										},
-										"Works with both public and private GitHub repositories written in Go."
+										"Search, browse, and cross-reference code"
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": ".3",
+								"props": {
+									"styleName": "anon-header-counts",
+									"children": [
+										"79,272 repositories · 143,203,753 functions"
 									]
 								}
 							}
@@ -56,7 +81,7 @@
 				},
 				{
 					"type": "div",
-					"key": ".2",
+					"key": ".4",
 					"props": {
 						"styleName": "repos",
 						"children": [
@@ -66,39 +91,119 @@
 									"repos": [],
 									"exampleRepos": [
 										{
-											"URI": "github.com/docker/docker",
-											"Owner": "docker",
-											"Name": "docker",
-											"Language": "Go",
-											"Description": "Docker - the open-source application container engine http://www.docker.com"
-										},
-										{
-											"URI": "github.com/drone/drone",
-											"Owner": "drone",
-											"Name": "drone",
-											"Language": "Go",
-											"Description": "Drone is a Continuous Delivery platform built on Docker, written in Go"
-										},
-										{
 											"URI": "github.com/golang/go",
 											"Owner": "golang",
 											"Name": "go",
 											"Language": "Go",
-											"Description": "The Go programming language https://golang.org"
-										},
-										{
-											"URI": "github.com/influxdata/influxdb",
-											"Owner": "influxdata",
-											"Name": "influxdb",
-											"Language": "Go",
-											"Description": "Scalable datastore for metrics, events, and real-time analytics https://influxdata.com"
+											"Examples": [
+												{
+													"Functions": {
+														"Path": "github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
+														"FunctionCallCount": "2313",
+														"FmtStrings": {
+															"Name": {
+																"ScopeQualified": "http.Get"
+															},
+															"Type": {
+																"ScopeQualified": "(url string) (resp *Response, err error)"
+															},
+															"NameAndTypeSeparator": "",
+															"DefKeyword": "func"
+														}
+													}
+												},
+												{
+													"Functions": {
+														"Path": "github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
+														"FunctionCallCount": "1313",
+														"FmtStrings": {
+															"Name": {
+																"ScopeQualified": "fmt.Sprintf"
+															},
+															"Type": {
+																"ScopeQualified": "(format string, a ...interface{}) string"
+															},
+															"NameAndTypeSeparator": "",
+															"DefKeyword": "func"
+														}
+													}
+												}
+											]
 										},
 										{
 											"URI": "github.com/gorilla/mux",
 											"Owner": "gorilla",
 											"Name": "mux",
 											"Language": "Go",
-											"Description": "A powerful URL router and dispatcher for golang. http://www.gorillatoolkit.org/pkg/mux"
+											"Examples": [
+												{
+													"Functions": {
+														"Path": "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
+														"FunctionCallCount": "40",
+														"FmtStrings": {
+															"Name": {
+																"ScopeQualified": "NewRouter"
+															},
+															"Type": {
+																"ScopeQualified": "()*Router"
+															},
+															"NameAndTypeSeparator": "",
+															"DefKeyword": "func"
+														}
+													}
+												},
+												{
+													"Functions": {
+														"Path": "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
+														"FunctionCallCount": "14",
+														"FmtStrings": {
+															"Name": {
+																"ScopeQualified": "(r *Route) PathPrefix"
+															},
+															"Type": {
+																"ScopeQualified": "(tpl string) *Route"
+															},
+															"NameAndTypeSeparator": "",
+															"DefKeyword": "func"
+														}
+													}
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".5",
+					"props": {
+						"styleName": "cta-box",
+						"children": [
+							{
+								"type": "span",
+								"props": {
+									"styleName": "cta",
+									"children": [
+										{
+											"type": "a",
+											"props": {
+												"href": "join",
+												"children": [
+													{
+														"type": "WrappedComponent",
+														"props": {
+															"color": "info",
+															"size": "large",
+															"children": [
+																"Add Sourcegraph to my code"
+															]
+														}
+													}
+												]
+											}
 										}
 									]
 								}

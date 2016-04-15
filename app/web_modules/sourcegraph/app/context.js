@@ -11,6 +11,7 @@ const context: {
 	assetsRoot?: string;
 	buildVars?: Object;
 	features?: {[key: string]: any};
+	hasLinkedGitHub?: boolean;
 } = {};
 
 // Sets the values of the context given a JSContext object from the server.

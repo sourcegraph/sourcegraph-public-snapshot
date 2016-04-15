@@ -209,7 +209,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	q := u.Query()
 	q.Set("github-onboarding", "true")
 	u.RawQuery = q.Encode()
-	http.Redirect(w, r, u.String(), http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
 }
 

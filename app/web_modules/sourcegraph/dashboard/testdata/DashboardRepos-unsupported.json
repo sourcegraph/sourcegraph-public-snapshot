@@ -5,70 +5,6 @@
 			"children": [
 				{
 					"type": "div",
-					"key": ".0",
-					"props": {
-						"styleName": "header",
-						"children": [
-							{
-								"type": "span",
-								"key": ".0",
-								"props": {
-									"styleName": "cta",
-									"children": [
-										{
-											"type": "span",
-											"key": ".$cta",
-											"props": {
-												"children": [
-													{
-														"type": "",
-														"props": {
-															"to": "/join",
-															"children": [
-																{
-																	"type": "WrappedComponent",
-																	"props": {
-																		"outline": true,
-																		"color": "warning",
-																		"children": [
-																			"Add Sourcegraph To My Code"
-																		]
-																	}
-																}
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													}
-												]
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "span",
-								"key": ".1",
-								"props": {
-									"styleName": "filter",
-									"children": [
-										{
-											"type": "WrappedComponent",
-											"props": {
-												"type": "text",
-												"placeholder": "Filter repositories..."
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".1",
 					"props": {
 						"styleName": "list",
 						"children": [
@@ -77,13 +13,6 @@
 								"key": ".1",
 								"props": {
 									"repos": [
-										{
-											"Private": false,
-											"URI": "someURL",
-											"Description": "someDescription",
-											"UpdatedAt": "1970-01-01T00:00:00.001Z",
-											"Language": "Scala"
-										},
 										{
 											"GitHubID": 1,
 											"Private": false,
@@ -107,6 +36,13 @@
 											"Description": "someDescription",
 											"UpdatedAt": "1970-01-01T00:00:00.002Z",
 											"Language": "Python"
+										},
+										{
+											"Private": false,
+											"URI": "someURL",
+											"Description": "someDescription",
+											"UpdatedAt": "1970-01-01T00:00:00.001Z",
+											"Language": "Scala"
 										},
 										{
 											"Private": false,

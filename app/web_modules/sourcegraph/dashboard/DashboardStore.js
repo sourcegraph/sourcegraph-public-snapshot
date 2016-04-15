@@ -13,49 +13,12 @@ export class DashboardStore extends Store {
 		return {
 			repos: this.repos,
 			remoteRepos: this.remoteRepos,
-			hasLinkedGitHub: this.hasLinkedGitHub,
 		};
 	}
 
 	reset(data) {
-		this.exampleRepos = deepFreeze([{
-			URI: "github.com/docker/docker",
-			Owner: "docker", Name: "docker",
-			Language: "Go",
-			Description: "Docker - the open-source application container engine http://www.docker.com",
-		},
-		{
-			URI: "github.com/drone/drone",
-			Owner: "drone",
-			Name: "drone",
-			Language: "Go",
-			Description: "Drone is a Continuous Delivery platform built on Docker, written in Go",
-		},
-		{
-			URI: "github.com/golang/go",
-			Owner: "golang",
-			Name: "go",
-			Language: "Go",
-			Description: "The Go programming language https://golang.org",
-		},
-		{
-			URI: "github.com/influxdata/influxdb",
-			Owner: "influxdata",
-			Name: "influxdb",
-			Language: "Go",
-			Description: "Scalable datastore for metrics, events, and real-time analytics https://influxdata.com",
-		},
-		{
-			URI: "github.com/gorilla/mux",
-			Owner: "gorilla",
-			Name: "mux",
-			Language: "Go",
-			Description: "A powerful URL router and dispatcher for golang. http://www.gorillatoolkit.org/pkg/mux",
-		}]);
-
 		this.repos = data && data.repos ? data.repos : null;
 		this.remoteRepos = data && data.remoteRepos ? data.remoteRepos : null;
-		this.hasLinkedGitHub = data ? data.hasLinkedGitHub : null;
 	}
 
 	__onDispatch(action) {
@@ -66,7 +29,6 @@ export class DashboardStore extends Store {
 
 		case DashboardActions.RemoteReposFetched:
 			this.remoteRepos = deepFreeze((action.data && action.data.RemoteRepos) || []);
-			this.hasLinkedGitHub = action.data && action.data.HasLinkedGitHub;
 			break;
 
 		default:

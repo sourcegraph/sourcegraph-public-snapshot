@@ -18,6 +18,7 @@ class DefPopup extends Container {
 		def: React.PropTypes.object.isRequired,
 		refLocations: React.PropTypes.array,
 		path: React.PropTypes.string.isRequired,
+		onboardingCTA: React.PropTypes.element,
 	};
 
 	reconcileState(state, props) {
@@ -47,10 +48,11 @@ class DefPopup extends Container {
 
 		return (
 			<div className={s.marginBox}>
+				{this.props.onboardingCTA}
 				<header className={s.boxTitle}>{qualifiedNameAndType(def)}</header>
 				<header className={s.sectionTitle}>Used in {!refLocs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
 				{refLocs && refLocs.length === 0 &&	<i>No usages found</i>}
-				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.props.repo} path={this.props.path} />}
+				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
 				{authors && <header className={s.sectionTitle}>Authors {!authors && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>}
 				{authors && authors.length === 0 &&
