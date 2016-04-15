@@ -34,11 +34,10 @@ function globalErrorHandler(ev) {
 			let error = new Error(response.statusText);
 			error.response = response;
 			throw error;
-		}).then(function(data) {
-			// Request succeeded.
-			appIsHandlingError = false;
 		}).catch((err) => {
 			console.log("Splunk: error", err);
+		}).then(function(data) {
+			// Request succeeded.
 			appIsHandlingError = false;
 		});
 }
