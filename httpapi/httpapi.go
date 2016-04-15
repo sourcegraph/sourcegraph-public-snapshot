@@ -109,8 +109,11 @@ func NewHandler(m *mux.Router) http.Handler {
 // handler is a wrapper func for API handlers.
 func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	return handlerutil.HandlerWithErrorReturn{
-		Handler: h,
-		Error:   handleError,
+		Handler: func(w http.ResponseWriter, r *http.Request) error {
+			w.Header().Set("Content-Type", "application/json")
+			return h(w, r)
+		},
+		Error: handleError,
 	}
 }
 
