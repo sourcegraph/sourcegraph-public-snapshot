@@ -36,7 +36,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -158,7 +157,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		repoupdater.Enqueue(repo.RepoSpec(), &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login})
 	}
 
-	eventsutil.LogAddRepoCompleted(ctx, repo.Language, repo.Mirror, repo.Private)
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
 	return

@@ -20,8 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -47,19 +45,6 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 	if err != nil {
 		return nil, err
 	}
-
-	metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
-		Type:    "notif",
-		UID:     user.UID,
-		Service: "new_user",
-		Method:  "Accounts.Create",
-		Result:  user.Login,
-		URL:     newAcct.Email,
-		Message: fmt.Sprintf("write:%v admin:%v", write, admin),
-	})
-	sendAccountCreateSlackMsg(ctx, user.Login, newAcct.Email)
-	eventsutil.LogCreateAccountCompleted(ctx)
-
 	return user, err
 }
 
@@ -95,10 +80,12 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 	}
 
 	userSpec := created.Spec()
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID)})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID), Login: userSpec.Login})
 	if err := store.PasswordFromContext(ctx).SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
 		return nil, err
 	}
+
+	sendAccountCreateSlackMsg(ctx, newAcct.Login, newAcct.Email)
 	return &userSpec, nil
 }
 

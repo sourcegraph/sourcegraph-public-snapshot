@@ -10,19 +10,8 @@ import (
 
 type contextKey int
 
-// Session is the information stored in a session cookie.
-type Session struct {
-	UID int
-	// DeviceID is a unique identifier assigner per user (per device).
-	DeviceID string
-}
-
-// sessionCookieName is the name of the session cookie.
-const sessionCookieName = "session-device-id"
-
 const (
 	userAgentKey contextKey = iota
-	deviceIdKey
 )
 
 // AgentMiddleware fetches the user's user agent and stores it
