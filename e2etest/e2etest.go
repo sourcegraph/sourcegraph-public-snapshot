@@ -117,10 +117,11 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
-// WaitForRedirect waits up to 20s for a redirect to the given endpoint (e.g.,
-// "/login").
-func (t *T) WaitForRedirect(endpoint, description string) {
-	endpointURL := t.Endpoint(endpoint)
+// WaitForRedirect waits up to 20s for a redirect to the given URL (e.g.,
+// "https://sourcegraph.com/login").
+//
+// Use t.Endpoint("/foo") to get an endpoint relative to $TARGET easily.
+func (t *T) WaitForRedirect(url, description string) {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
@@ -129,9 +130,9 @@ func (t *T) WaitForRedirect(endpoint, description string) {
 			if err != nil {
 				return false
 			}
-			return currentURL == endpointURL
+			return currentURL == url
 		},
-		fmt.Sprintf("%s (%s)", description, endpointURL),
+		fmt.Sprintf("%s (%s)", description, url),
 	)
 }
 

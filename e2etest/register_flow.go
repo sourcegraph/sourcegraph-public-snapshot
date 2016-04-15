@@ -103,6 +103,6 @@ func testRegisterFlow(t *T) error {
 	submit.Click()
 
 	// TODO(slimsag): make this test work with the new GitHub onboarding flow!
-	//t.WaitForRedirect("/", "wait for redirect to homepage after register")
+	//t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to homepage after register")
 	return nil
 }

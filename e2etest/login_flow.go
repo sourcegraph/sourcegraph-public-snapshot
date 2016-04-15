@@ -85,6 +85,6 @@ func testLoginFlow(t *T) error {
 	submit := t.FindElement(selenium.ById, "e2etest-login-button")
 	submit.Click()
 
-	t.WaitForRedirect("/", "wait for redirect to homepage after sign-in")
+	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to homepage after sign-in")
 	return nil
 }
