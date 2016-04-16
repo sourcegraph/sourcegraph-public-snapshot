@@ -1,8 +1,11 @@
+import {browserHistory} from "react-router";
+
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import BuildStore from "sourcegraph/build/BuildStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
+import {urlToBuild} from "sourcegraph/build/routes";
 
 const BuildBackend = {
 	fetch: defaultFetch,
@@ -70,7 +73,12 @@ const BuildBackend = {
 						.then(checkStatus)
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
-						.then((data) => Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, data.ID, data)))
+						.then((data) => {
+							Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, data.ID, data));
+							if (!data.Error) {
+								browserHistory.push(urlToBuild(action.repo, data.ID));
+							}
+						})
 				);
 				break;
 			}
