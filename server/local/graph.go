@@ -38,11 +38,16 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		return nil, err
 	}
 	if string(commitID) == op.CommitID {
-		// Currently the xref store holds data for only the HEAD commit of the default
+		// Currently the global graph stores hold data for only the HEAD commit of the default
 		// branch of the repo. We keep the commitID field empty to signify that
-		// the refs are always pointing to the HEAD commit of the default branch (which
+		// the data is always pointing to the HEAD commit of the default branch (which
 		// is the default behavior on our app for empty repoRevSpecs).
 		op.CommitID = ""
+		if err := store.GlobalDefsFromContext(ctx).Update(ctx, op); err != nil {
+			// Temporarily log and ignore error in updating the global def store.
+			// TODO: fail with error here once the rollout of global def store is complete.
+			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
+		}
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
 			// Temporarily log and ignore error in updating the global ref store.
 			// TODO: fail with error here once the rollout of global ref store is complete.
