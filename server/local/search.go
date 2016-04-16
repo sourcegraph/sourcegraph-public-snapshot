@@ -3,6 +3,10 @@ package local
 import (
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
 	srch "sourcegraph.com/sourcegraph/sourcegraph/search"
 	"sourcegraph.com/sqs/pbtypes"
 
@@ -18,6 +22,9 @@ type search struct{}
 var _ sourcegraph.SearchServer = (*search)(nil)
 
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
+	if !feature.Features.GlobalSearch {
+		return nil, grpc.Errorf(codes.Unavailable, "global search is not available on this server")
+	}
 	var repo, unit, unitType, def string
 	var descToks []string // "descriptor" tokens that don't have a special filter meaning.
 	for _, token := range strings.Fields(op.Query) {
