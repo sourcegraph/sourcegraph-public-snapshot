@@ -116,6 +116,37 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	}
 }
 
+func TestExternalAuthTokens_SetUserToken_delete(t *testing.T) {
+	t.Parallel()
+
+	var s externalAuthTokens
+	ctx, done := testContext()
+	defer done()
+
+	tok0 := &auth.ExternalAuthToken{
+		User:     1,
+		Host:     "example.com",
+		ClientID: "c",
+		Token:    "t0",
+	}
+	s.mustSetUserToken(ctx, t, tok0)
+
+	tok1 := &auth.ExternalAuthToken{
+		User:     1,
+		Host:     "example.com",
+		ClientID: "c",
+		Token:    "",
+	}
+	if err := s.SetUserToken(ctx, tok1); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := s.GetUserToken(ctx, 1, "example.com", "c")
+	if wantErr := auth.ErrNoExternalAuthToken; err != wantErr {
+		t.Errorf("got err = %q, want %q", err, wantErr)
+	}
+}
+
 func TestExternalAuthTokens_ListExternalUsers_empty(t *testing.T) {
 	t.Parallel()
 

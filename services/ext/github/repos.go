@@ -21,7 +21,7 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
 	if err != nil {
-		return nil, checkResponse(resp, err, fmt.Sprintf("github.Repos.Get %q", repo))
+		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", repo))
 	}
 
 	return toRemoteRepo(ghrepo), nil
@@ -30,7 +30,7 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 func (s *Repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
 	ghrepo, resp, err := client(ctx).repos.GetByID(id)
 	if err != nil {
-		return nil, checkResponse(resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
+		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
 	}
 	return toRemoteRepo(ghrepo), nil
 }
@@ -95,7 +95,7 @@ func convertGitHubRepoPerms(ghrepo *github.Repository) *sourcegraph.RepoPermissi
 func (s *Repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error) {
 	ghRepos, resp, err := client(ctx).repos.List("", opt)
 	if err != nil {
-		return nil, checkResponse(resp, err, "github.Repos.ListAccessible")
+		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
 	}
 
 	var repos []*sourcegraph.RemoteRepo

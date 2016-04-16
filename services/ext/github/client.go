@@ -5,10 +5,15 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"golang.org/x/net/context"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
@@ -53,7 +58,7 @@ type githubOrgs interface {
 	List(member string, opt *github.ListOptions) ([]github.Organization, *github.Response, error)
 }
 
-func checkResponse(resp *github.Response, err error, op string) error {
+func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
 	if err == nil {
 		return nil
 	}
@@ -68,7 +73,17 @@ func checkResponse(resp *github.Response, err error, op string) error {
 		log15.Debug("exceeded github rate limit", "error", err, "op", op)
 		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
 	}
-	if resp.StatusCode != http.StatusUnauthorized {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		// token revoked, delete token from DB
+		_, err = svc.Auth(ctx).SetExternalToken(ctx, &sourcegraph.ExternalToken{
+			UID:   int32(auth.ActorFromContext(ctx).UID),
+			Token: "",
+		})
+		if err != nil {
+			log15.Error("could not delete external token", "error", err)
+		}
+	default:
 		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
 	}
 

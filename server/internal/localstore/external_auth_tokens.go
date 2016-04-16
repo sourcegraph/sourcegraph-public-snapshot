@@ -54,6 +54,11 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		ctx = WithAppDBH(ctx, tx)
 
+		if tok.Token == "" {
+			_, err := tx.Delete(tok)
+			return err
+		}
+
 		if _, err := s.GetUserToken(ctx, tok.User, tok.Host, tok.ClientID); err == auth.ErrNoExternalAuthToken {
 			return tx.Insert(tok)
 		} else if err != nil && err != auth.ErrExternalAuthTokenDisabled {
