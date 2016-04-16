@@ -146,6 +146,11 @@
 		Annotation
 		AnnotationList
 		AnnotationsListOptions
+		SearchOptions
+		SearchOp
+		SearchResult
+		SearchResultsList
+		SearchRefreshIndexOp
 */
 package sourcegraph
 
@@ -2423,6 +2428,66 @@ type AnnotationsListOptions struct {
 func (m *AnnotationsListOptions) Reset()         { *m = AnnotationsListOptions{} }
 func (m *AnnotationsListOptions) String() string { return proto.CompactTextString(m) }
 func (*AnnotationsListOptions) ProtoMessage()    {}
+
+// SearchOptions configures the scope of a global search.
+type SearchOptions struct {
+	// Repos is the list of repos to restrict the results to.
+	// If empty, all repos are searched.
+	Repos []string `protobuf:"bytes,1,rep,name=Repos" json:"Repos,omitempty" url:",omitempty"`
+	// ListOptions specifies options for paginating
+	// the result.
+	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
+}
+
+func (m *SearchOptions) Reset()         { *m = SearchOptions{} }
+func (m *SearchOptions) String() string { return proto.CompactTextString(m) }
+func (*SearchOptions) ProtoMessage()    {}
+
+// SearchOp holds the options for global search for a given query.
+type SearchOp struct {
+	// Query is the text string being searched for.
+	Query string `protobuf:"bytes,1,opt,name=Query,proto3" json:"Query,omitempty"`
+	// Opt controls the scope of the search.
+	Opt *SearchOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
+}
+
+func (m *SearchOp) Reset()         { *m = SearchOp{} }
+func (m *SearchOp) String() string { return proto.CompactTextString(m) }
+func (*SearchOp) ProtoMessage()    {}
+
+// SearchResult holds a result of a global def search.
+type SearchResult struct {
+	// Def is the def matching the search query.
+	Def `protobuf:"bytes,1,opt,name=Def,embedded=Def" json:""`
+	// Score is the computed relevance of this result to the search query.
+	Score float32 `protobuf:"fixed32,2,opt,name=Score,proto3" json:"Score,omitempty"`
+	// RefCount is global ref count for this def.
+	RefCount int32 `protobuf:"varint,3,opt,name=RefCount,proto3" json:"RefCount,omitempty"`
+}
+
+func (m *SearchResult) Reset()         { *m = SearchResult{} }
+func (m *SearchResult) String() string { return proto.CompactTextString(m) }
+func (*SearchResult) ProtoMessage()    {}
+
+// SearchResultsList is a list of results to a global search.
+type SearchResultsList struct {
+	// Results is the list of search results
+	Results []*SearchResult `protobuf:"bytes,1,rep,name=Results" json:"Results,omitempty"`
+}
+
+func (m *SearchResultsList) Reset()         { *m = SearchResultsList{} }
+func (m *SearchResultsList) String() string { return proto.CompactTextString(m) }
+func (*SearchResultsList) ProtoMessage()    {}
+
+type SearchRefreshIndexOp struct {
+	// Repos is the list of repos whose graph data is to be re-indexed
+	// for global search.
+	Repos []*RepoSpec `protobuf:"bytes,1,rep,name=Repos" json:"Repos,omitempty"`
+}
+
+func (m *SearchRefreshIndexOp) Reset()         { *m = SearchRefreshIndexOp{} }
+func (m *SearchRefreshIndexOp) String() string { return proto.CompactTextString(m) }
+func (*SearchRefreshIndexOp) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterEnum("sourcegraph.TreeEntryType", TreeEntryType_name, TreeEntryType_value)
@@ -4798,6 +4863,100 @@ var _Annotations_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _Annotations_List_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for Search service
+
+type SearchClient interface {
+	// Search returns a list of defs matching the given query string.
+	Search(ctx context.Context, in *SearchOp, opts ...grpc.CallOption) (*SearchResultsList, error)
+	// RefreshIndex updates the precomputed indexes used for efficiently
+	// answering search queries. The indexes are built from the current
+	// snapshot of the code graph. This operation is idempotent, and
+	// should be executed regularly to keep the indexes up-to-date.
+	RefreshIndex(ctx context.Context, in *SearchRefreshIndexOp, opts ...grpc.CallOption) (*pbtypes1.Void, error)
+}
+
+type searchClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewSearchClient(cc *grpc.ClientConn) SearchClient {
+	return &searchClient{cc}
+}
+
+func (c *searchClient) Search(ctx context.Context, in *SearchOp, opts ...grpc.CallOption) (*SearchResultsList, error) {
+	out := new(SearchResultsList)
+	err := grpc.Invoke(ctx, "/sourcegraph.Search/Search", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *searchClient) RefreshIndex(ctx context.Context, in *SearchRefreshIndexOp, opts ...grpc.CallOption) (*pbtypes1.Void, error) {
+	out := new(pbtypes1.Void)
+	err := grpc.Invoke(ctx, "/sourcegraph.Search/RefreshIndex", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for Search service
+
+type SearchServer interface {
+	// Search returns a list of defs matching the given query string.
+	Search(context.Context, *SearchOp) (*SearchResultsList, error)
+	// RefreshIndex updates the precomputed indexes used for efficiently
+	// answering search queries. The indexes are built from the current
+	// snapshot of the code graph. This operation is idempotent, and
+	// should be executed regularly to keep the indexes up-to-date.
+	RefreshIndex(context.Context, *SearchRefreshIndexOp) (*pbtypes1.Void, error)
+}
+
+func RegisterSearchServer(s *grpc.Server, srv SearchServer) {
+	s.RegisterService(&_Search_serviceDesc, srv)
+}
+
+func _Search_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SearchOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SearchServer).Search(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Search_RefreshIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SearchRefreshIndexOp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(SearchServer).RefreshIndex(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _Search_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "sourcegraph.Search",
+	HandlerType: (*SearchServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Search",
+			Handler:    _Search_Search_Handler,
+		},
+		{
+			MethodName: "RefreshIndex",
+			Handler:    _Search_RefreshIndex_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -11062,6 +11221,177 @@ func (m *AnnotationsListOptions) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *SearchOptions) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SearchOptions) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Repos) > 0 {
+		for _, s := range m.Repos {
+			data[i] = 0xa
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			data[i] = uint8(l)
+			i++
+			i += copy(data[i:], s)
+		}
+	}
+	data[i] = 0x12
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
+	n140, err := m.ListOptions.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n140
+	return i, nil
+}
+
+func (m *SearchOp) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SearchOp) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Query) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Query)))
+		i += copy(data[i:], m.Query)
+	}
+	if m.Opt != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
+		n141, err := m.Opt.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n141
+	}
+	return i, nil
+}
+
+func (m *SearchResult) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SearchResult) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
+	n142, err := m.Def.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n142
+	if m.Score != 0 {
+		data[i] = 0x15
+		i++
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.Score)))
+	}
+	if m.RefCount != 0 {
+		data[i] = 0x18
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(m.RefCount))
+	}
+	return i, nil
+}
+
+func (m *SearchResultsList) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SearchResultsList) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Results) > 0 {
+		for _, msg := range m.Results {
+			data[i] = 0xa
+			i++
+			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *SearchRefreshIndexOp) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SearchRefreshIndexOp) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Repos) > 0 {
+		for _, msg := range m.Repos {
+			data[i] = 0xa
+			i++
+			i = encodeVarintSourcegraph(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
 func encodeFixed64Sourcegraph(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -13620,6 +13950,72 @@ func (m *AnnotationsListOptions) Size() (n int) {
 	if m.Range != nil {
 		l = m.Range.Size()
 		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	return n
+}
+
+func (m *SearchOptions) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.Repos) > 0 {
+		for _, s := range m.Repos {
+			l = len(s)
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
+	}
+	l = m.ListOptions.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	return n
+}
+
+func (m *SearchOp) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Query)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	if m.Opt != nil {
+		l = m.Opt.Size()
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	return n
+}
+
+func (m *SearchResult) Size() (n int) {
+	var l int
+	_ = l
+	l = m.Def.Size()
+	n += 1 + l + sovSourcegraph(uint64(l))
+	if m.Score != 0 {
+		n += 5
+	}
+	if m.RefCount != 0 {
+		n += 1 + sovSourcegraph(uint64(m.RefCount))
+	}
+	return n
+}
+
+func (m *SearchResultsList) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.Results) > 0 {
+		for _, e := range m.Results {
+			l = e.Size()
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *SearchRefreshIndexOp) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.Repos) > 0 {
+		for _, e := range m.Repos {
+			l = e.Size()
+			n += 1 + l + sovSourcegraph(uint64(l))
+		}
 	}
 	return n
 }
@@ -33354,6 +33750,502 @@ func (m *AnnotationsListOptions) Unmarshal(data []byte) error {
 				m.Range = &FileRange{}
 			}
 			if err := m.Range.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SearchOptions) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SearchOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SearchOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Repos", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Repos = append(m.Repos, string(data[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ListOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ListOptions.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SearchOp) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SearchOp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SearchOp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Query = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Opt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Opt == nil {
+				m.Opt = &SearchOptions{}
+			}
+			if err := m.Opt.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SearchResult) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SearchResult: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SearchResult: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Def", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Def.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Score", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 4
+			v = uint32(data[iNdEx-4])
+			v |= uint32(data[iNdEx-3]) << 8
+			v |= uint32(data[iNdEx-2]) << 16
+			v |= uint32(data[iNdEx-1]) << 24
+			m.Score = float32(math.Float32frombits(v))
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RefCount", wireType)
+			}
+			m.RefCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.RefCount |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SearchResultsList) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SearchResultsList: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SearchResultsList: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Results", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Results = append(m.Results, &SearchResult{})
+			if err := m.Results[len(m.Results)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSourcegraph(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SearchRefreshIndexOp) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSourcegraph
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SearchRefreshIndexOp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SearchRefreshIndexOp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Repos", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Repos = append(m.Repos, &RepoSpec{})
+			if err := m.Repos[len(m.Repos)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

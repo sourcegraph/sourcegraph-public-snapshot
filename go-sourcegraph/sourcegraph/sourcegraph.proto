@@ -1948,3 +1948,59 @@ message AnnotationsListOptions {
 	// annotations are returned.
 	FileRange Range = 2;
 }
+
+// SearchOptions configures the scope of a global search.
+message SearchOptions {
+	// Repos is the list of repos to restrict the results to.
+	// If empty, all repos are searched.
+	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ListOptions specifies options for paginating
+	// the result.
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+}
+
+// SearchOp holds the options for global search for a given query.
+message SearchOp {
+	// Query is the text string being searched for.
+	string Query = 1;
+
+	// Opt controls the scope of the search.
+	SearchOptions Opt = 2;
+}
+
+// SearchResult holds a result of a global def search.
+message SearchResult {
+	// Def is the def matching the search query.
+	Def Def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	// Score is the computed relevance of this result to the search query.
+	float Score = 2;
+
+	// RefCount is global ref count for this def.
+	int32 RefCount = 3;
+}
+
+// SearchResultsList is a list of results to a global search.
+message SearchResultsList {
+	// Results is the list of search results
+	repeated SearchResult Results = 1;
+}
+
+message SearchRefreshIndexOp {
+	// Repos is the list of repos whose graph data is to be re-indexed
+	// for global search.
+	repeated RepoSpec Repos = 1;
+}
+
+// Search provides global search over all code indexed by Sourcegraph.
+service Search {
+	// Search returns a list of defs matching the given query string.
+	rpc Search(SearchOp) returns (SearchResultsList);
+
+	// RefreshIndex updates the precomputed indexes used for efficiently
+	// answering search queries. The indexes are built from the current
+	// snapshot of the code graph. This operation is idempotent, and
+	// should be executed regularly to keep the indexes up-to-date.
+	rpc RefreshIndex(SearchRefreshIndexOp) returns (pbtypes.Void);
+}
