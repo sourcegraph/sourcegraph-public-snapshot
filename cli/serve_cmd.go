@@ -46,6 +46,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
+	"sourcegraph.com/sourcegraph/sourcegraph/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
@@ -486,6 +487,13 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
+
+	// Start background search index updater worker.
+	searchIndexUpdaterCtx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:searchupdater"})
+	if err != nil {
+		return err
+	}
+	search.BackgroundUpdateIndex(searchIndexUpdaterCtx)
 
 	idKeyText, _ := idKey.MarshalText()
 	if c.NoWorker {
