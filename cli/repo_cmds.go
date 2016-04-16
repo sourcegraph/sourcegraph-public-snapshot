@@ -27,6 +27,15 @@ func init() {
 	}
 	reposGroup.Aliases = []string{"repos", "r"}
 
+	_, err = reposGroup.AddCommand("graph-data-version",
+		"get graph data version",
+		"get the commit used to generate the graph data displayed for a repository",
+		&repoGetSrclibDataVersionForPathCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	_, err = reposGroup.AddCommand("get",
 		"get a repo",
 		"The `sgx repo get` command gets a repo.",
@@ -169,6 +178,25 @@ func (c *repoGetCmd) Execute(args []string) error {
 		fmt.Println(string(b))
 	}
 
+	return nil
+}
+
+type repoGetSrclibDataVersionForPathCmd struct {
+	Args struct {
+		URI string `name:"REPO-URI" description:"repository URI (e.g., host.com/myrepo)"`
+	} `positional-args:"yes" required:"yes" count:"1"`
+}
+
+func (c *repoGetSrclibDataVersionForPathCmd) Execute(args []string) error {
+	cl := client.Client()
+	ver, err := cl.Repos.GetSrclibDataVersionForPath(client.Ctx, &sourcegraph.TreeEntrySpec{
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: c.Args.URI}},
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(ver.CommitID)
 	return nil
 }
 
