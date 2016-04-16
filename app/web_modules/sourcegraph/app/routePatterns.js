@@ -3,7 +3,7 @@
 import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
-export type RouteName = "dashboard" | "def" | "defRefs" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds";
+export type RouteName = "dashboard" | "def" | "defRefs" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds" | "globalSearch";
 
 export const rel: {[key: RouteName]: string} = {
 	dashboard: "",
@@ -19,6 +19,7 @@ export const rel: {[key: RouteName]: string} = {
 	blob: "blob/*",
 	build: "builds/:id",
 	builds: "builds",
+	globalSearch: "search",
 };
 
 export const abs: {[key: RouteName]: string} = {
@@ -36,6 +37,7 @@ export const abs: {[key: RouteName]: string} = {
 	blob: `${rel.repo}/-/${rel.blob}`,
 	build: `${rel.repo}/-/${rel.build}`,
 	builds: `${rel.repo}/-/${rel.builds}`,
+	globalSearch: rel.globalSearch,
 };
 
 const routeNamesByPattern: {[key: string]: RouteName} = {};

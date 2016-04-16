@@ -1,0 +1,76 @@
+@value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value grid "sourcegraph/components/styles/grid.css";
+
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	composes: center from base;
+}
+
+.search-section {
+	composes: mt5 ph3 from base;
+}
+
+.logo {
+	composes: ma4 from base;
+}
+
+.search-title {
+	composes: header-center from typography;
+	composes: pt3 pb4 from base;
+}
+
+.search-results {
+	composes: col-6 from grid;
+	composes: mt4 from base;
+}
+
+.header {
+	display: flex;
+	flex-wrap: wrap;
+	composes: mt4 from base;
+}
+
+.list-item {
+	composes: pa3 mh3 bt from base;
+	composes: sans-serif from typography;
+	composes: b--black-20 from colors;
+}
+
+.input-container {
+	composes: ma3 from base;
+	composes: sans-serif f3 from typography;
+	display: flex;
+}
+
+.list-item {
+	display: block;
+	composes: col-12 from grid;
+	composes: mt4 bt from base;
+	composes: blue b--black-20 from colors;
+	composes: sans-serif f3 from typography;
+	word-wrap: break-word;
+	cursor: pointer;
+}
+
+.search-result-info {
+	display: block;
+	text-align: right;
+	composes: sans-serif f4 from typography;
+}
+
+@value c_mid-gray from colors;
+.list-item-empty {
+	color: c_mid-gray;
+}
+
+@value c_dark-blue from colors;
+.list-item-selected {
+	composes: list-item;
+	composes: bg-blue-1 from colors;
+	color: c_dark-blue !important;
+}
