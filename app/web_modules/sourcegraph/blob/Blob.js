@@ -36,6 +36,7 @@ class Blob extends Component {
 		highlightedDef: React.PropTypes.string,
 		highlightedDefObj: React.PropTypes.object,
 		activeDef: React.PropTypes.string,
+		activeDefNoRev: React.PropTypes.string,
 
 		// For linking line numbers to the file they came from (e.g., in
 		// ref snippets).
@@ -87,6 +88,7 @@ class Blob extends Component {
 		endByte: ?number;
 		lineStartBytes: number[];
 		activeDef: ?string;
+		activeDefNoRev: ?string;
 		highlightedDef: ?string;
 		contentsOffsetLine: number;
 		expandedRanges: Range[];
@@ -97,6 +99,7 @@ class Blob extends Component {
 		rev: "",
 		path: "",
 		activeDef: null,
+		activeDefNoRev: null,
 		highlightSelectedLines: false,
 		highlightedDef: null,
 		highlightedDefObj: null,
@@ -154,6 +157,7 @@ class Blob extends Component {
 		state.highlightedDef = props.highlightedDef || null;
 		state.highlightedDefObj = props.highlightedDefObj || null;
 		state.activeDef = props.activeDef || null;
+		state.activeDefNoRev = props.activeDefNoRev || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
 		state.displayRanges = props.displayRanges ? this._consolidateRanges(props.displayRanges.concat(state.expandedRanges)) : null;
@@ -394,6 +398,7 @@ class Blob extends Component {
 					highlightedDef={isVisible ? this.state.highlightedDef : null}
 					highlightedDefObj={isVisible ? this.state.highlightedDefObj : null}
 					activeDef={this.state.activeDef}
+					activeDefNoRev={this.state.activeDefNoRev}
 					key={i} />
 			);
 			renderedLines += 1;

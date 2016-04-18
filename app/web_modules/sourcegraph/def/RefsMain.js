@@ -208,6 +208,7 @@ class RefsMain extends Container {
 										contents={file.ContentsString}
 										annotations={this.state.anns[path] || null}
 										activeDef={this.state.activeDef}
+										activeDefNoRev={this.state.activeDef ? urlToDef(def, "") : null}
 										lineNumbers={true}
 										displayRanges={this.state.ranges[path] || null}
 										highlightedDef={this.state.highlightedDef}
