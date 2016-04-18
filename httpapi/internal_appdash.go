@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
 
 type PageLoadEvent struct {
@@ -65,34 +63,8 @@ func serveInternalAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) 
 	elapsed := ev.E.Sub(ev.S)
 	pageLoadDuration.With(labels).Observe(elapsed.Seconds())
 
-	// Grab the collector from the context.
-	collector := appdashctx.Collector(ctx)
-	if collector == nil {
-		return fmt.Errorf("no Appdash collector set in context")
-	}
-
-	// Grab the SpanID from the context.
-	spanID := traceutil.SpanIDFromContext(ctx)
-	if spanID.Trace == 0 {
-		return fmt.Errorf("no Appdash trace ID set in context")
-	}
-
-	// Note: If we were to record directly to spanID we would end up
-	// with "PageLoad" being shown as a subspan to this request
-	// ("internal.appdash.upload-page-load") which is always extremely
-	// quick, making it's display in the Appdash UI very small and
-	// unnoticeable. To mitigate this and give it a prominent display
-	// position in the UI, we simply record to a subspan of the root
-	// (the trace).
-	newSpan := appdash.NewSpanID(appdash.SpanID{
-		Trace: spanID.Trace,
-		Span:  spanID.Trace,
-	})
-	rec := appdash.NewRecorder(newSpan, collector)
+	rec := traceutil.Recorder(ctx).Child()
 	rec.Name(ev.Schema())
 	rec.Event(ev)
-	if errs := rec.Errors(); len(errs) > 0 {
-		return errs[0]
-	}
 	return nil
 }
