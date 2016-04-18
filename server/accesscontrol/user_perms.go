@@ -72,7 +72,7 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 	// when dealing with multiple configurations, actor types, resource types and actions.
 	//
 	// Delegate permissions check to GitHub for GitHub mirrored repos.
-	if strings.HasPrefix(repo, "github.com/") {
+	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
@@ -121,7 +121,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	// when dealing with multiple configurations, actor types, resource types and actions.
 	//
 	// Delegate permissions check to GitHub for GitHub mirrored repos.
-	if strings.HasPrefix(repo, "github.com/") {
+	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
