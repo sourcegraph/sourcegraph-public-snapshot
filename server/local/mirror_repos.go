@@ -3,9 +3,8 @@ package local
 import (
 	"strings"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/AaronO/go-git-http"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
@@ -186,7 +185,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Publish the event.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(eventType, events.GitPayload{
-				Actor:       authpkg.UserSpecFromContext(ctx),
+				Actor:       authpkg.ActorFromContext(ctx).UserSpec(),
 				Repo:        repo.RepoSpec(),
 				IgnoreBuild: change.Branch != repo.DefaultBranch,
 				Event: githttp.Event{
@@ -213,7 +212,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Branch was deleted.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{
-				Actor: authpkg.UserSpecFromContext(ctx),
+				Actor: authpkg.ActorFromContext(ctx).UserSpec(),
 				Repo:  repo.RepoSpec(),
 				Event: githttp.Event{
 					Type:   githttp.PUSH,
@@ -233,7 +232,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		// Publish an event for the new commits pushed.
 		// TODO: what about GitPayload.ContentEncoding field?
 		events.Publish(events.GitPushEvent, events.GitPayload{
-			Actor: authpkg.UserSpecFromContext(ctx),
+			Actor: authpkg.ActorFromContext(ctx).UserSpec(),
 			Repo:  repo.RepoSpec(),
 			Event: githttp.Event{
 				Type:   githttp.PUSH,

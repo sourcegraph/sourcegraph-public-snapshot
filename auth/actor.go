@@ -1,6 +1,10 @@
 package auth
 
-import "fmt"
+import (
+	"fmt"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+)
 
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
@@ -51,6 +55,13 @@ func (a Actor) HasWriteAccess() bool {
 // HasAdminAccess checks if the actor has admin access.
 func (a Actor) HasAdminAccess() bool {
 	return a.IsAuthenticated() && (a.Admin)
+}
+
+func (a Actor) UserSpec() sourcegraph.UserSpec {
+	return sourcegraph.UserSpec{
+		UID:   int32(a.UID),
+		Login: a.Login,
+	}
 }
 
 func UnmarshalScope(scope []string) map[string]bool {
