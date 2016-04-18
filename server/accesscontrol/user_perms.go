@@ -76,7 +76,10 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
-				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
+				// so that git clients will try again, providing authentication information.
+				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
+				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated/authorized by GitHub API", method)
 			}
 		}
 	}
@@ -122,7 +125,10 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
-				return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated", method)
+				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
+				// so that git clients will try again, providing authentication information.
+				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
+				return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated/authorized by GitHub API", method)
 			}
 		}
 	}
