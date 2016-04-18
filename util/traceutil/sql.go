@@ -3,6 +3,7 @@ package traceutil
 import (
 	"database/sql"
 	"fmt"
+	"hash/crc32"
 	"time"
 
 	"gopkg.in/gorp.v1"
@@ -21,12 +22,20 @@ type SQLExecutor struct {
 
 func (x SQLExecutor) record(start time.Time, query string, args []interface{}) {
 	rec := x.Recorder.Child()
-	rec.Name("SQL")
+	// For the name do not use the unbound query, as that would mean similiar
+	// SQL queries would not be grouped together on the dashboard (name should
+	// uniquely identify the operation, but not it's exact contents).
+	//
+	// Because SQL queries can often be quite long, we instead take append a
+	// CRC32 hash of the query string to represent the unique "type" of SQL
+	// query that it is.
+	rec.Name(fmt.Sprintf("SQL %d", crc32.ChecksumIEEE([]byte(query))))
 	rec.Event(sqltrace.SQLEvent{
 		SQL:        dbutil.UnbindQuery(query, args...),
 		ClientSend: start,
 		ClientRecv: time.Now(),
 	})
+	rec.Finish()
 }
 
 func (x SQLExecutor) Get(i interface{}, keys ...interface{}) (interface{}, error) {
