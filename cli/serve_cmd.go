@@ -39,6 +39,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -354,7 +355,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
 	}
 
-	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
+	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, realIPHandler}
 	if c.RedirectToHTTPS {
 		mw = append(mw, redirectToHTTPSMiddleware)
 	}
@@ -715,7 +716,7 @@ func ensureHostnameHandler(w http.ResponseWriter, r *http.Request, next http.Han
 		return
 	}
 
-	if r.Host == wantHost || r.Host == "" || r.URL.Path == statusEndpoint {
+	if r.Host == wantHost || r.Host == "" || r.URL.Path == middleware.StatusEndpoint {
 		next(w, r)
 		return
 	}
