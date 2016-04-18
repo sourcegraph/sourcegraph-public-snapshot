@@ -122,7 +122,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
-				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+				return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated", method)
 			}
 		}
 	}
