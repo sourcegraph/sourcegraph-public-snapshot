@@ -21,6 +21,7 @@ func TestRepoTree(t *testing.T) {
 
 	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
 	calledGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
+	calledAnnotationsList := mock.Annotations.MockList(t, nil)
 
 	var entry *sourcegraph.TreeEntry
 	if err := c.GetJSON("/repos/r/-/tree/f", &entry); err != nil {
@@ -34,6 +35,9 @@ func TestRepoTree(t *testing.T) {
 	}
 	if !*calledGetSrclibDataVersionForPath {
 		t.Error("!calledGetSrclibDataVersionForPath")
+	}
+	if !*calledAnnotationsList {
+		t.Error("!calledAnnotationsList")
 	}
 }
 

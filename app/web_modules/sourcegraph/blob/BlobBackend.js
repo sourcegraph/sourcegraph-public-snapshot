@@ -31,8 +31,15 @@ const BlobBackend = {
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(
-								new BlobActions.FileFetched(action.repo, action.rev, action.path, data)))
+							.then((data) => {
+								if (data.IncludedAnnotations) {
+									const anns = data.IncludedAnnotations;
+									delete data.IncludedAnnotations;
+									anns.Annotations = prepareAnnotations(anns.Annotations);
+									Dispatcher.Stores.dispatch(new BlobActions.AnnotationsFetched(action.repo, action.rev, data.CommitID, action.path, 0, 0, anns));
+								}
+								Dispatcher.Stores.dispatch(new BlobActions.FileFetched(action.repo, action.rev, action.path, data));
+							})
 					);
 				}
 				break;

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -14,6 +16,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
+
+type treeEntry struct {
+	sourcegraph.TreeEntry
+	IncludedAnnotations *sourcegraph.AnnotationList
+}
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
@@ -47,10 +54,27 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	res := treeEntry{TreeEntry: *entry}
+
+	// As an optimization, optimistically include the file's
+	// annotations (if this entry is a file), to save a round-trip in
+	// most cases.
+	if entry.Type == sourcegraph.FileEntry {
+		anns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
+			Entry: entrySpec,
+			Range: &opt.FileRange,
+		})
+		if err == nil {
+			res.IncludedAnnotations = anns
+		} else {
+			log15.Warn("Error optimistically including annotations in serveRepoTree", "entry", entrySpec, "err", err)
+		}
+	}
+
 	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
-	return writeJSON(w, entry)
+	return writeJSON(w, res)
 }
 
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
