@@ -471,7 +471,7 @@ class TreeSearch extends Container {
 
 		for (let i = 0; i < limit; i++) {
 			let def = this.state.matchingDefs.Defs[i];
-			let defURL = urlToDef(def);
+			let defURL = urlToDef(def, this.state.rev);
 
 			const selected = this._normalizedSelectionIndex() === i;
 
