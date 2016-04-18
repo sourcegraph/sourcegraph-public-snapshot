@@ -7,6 +7,7 @@ import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
+import {urlToBlob} from "sourcegraph/blob/routes";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import s from "sourcegraph/blob/styles/Blob.css";
@@ -111,15 +112,15 @@ class BlobLine extends Component {
 			<tr className={s.line}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
-					<td className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
-						data-line={this.state.lineNumber}
-						onClick={(event) => {
-							if (event.shiftKey) {
-								Dispatcher.Stores.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
-								return;
-							}
-							Dispatcher.Stores.dispatch(new BlobActions.SelectLine(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
-						}}>
+					<td className={s.lineNumberCell} onClick={(event) => {
+						if (event.shiftKey) {
+							event.preventDefault();
+							Dispatcher.Stores.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
+							return;
+						}
+					}}>
+						<Link className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
+							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
 				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
 				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}

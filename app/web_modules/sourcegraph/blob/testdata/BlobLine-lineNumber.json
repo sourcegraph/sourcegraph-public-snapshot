@@ -7,17 +7,18 @@
 				{
 					"type": "td",
 					"props": {
-						"data-line": 42,
-						"onClick": {
-							"dispatchedToStores": [
-								{
-									"$constructor": "SelectLine",
-									"line": 42,
-									"eventName": "SelectLine"
+						"children": [
+							{
+								"type": "",
+								"props": {
+									"className": "",
+									"to": "/r@v/-/blob/p#L42",
+									"data-line": 42,
+									"onlyActiveOnIndex": false,
+									"style": {}
 								}
-							],
-							"dispatchedToBackends": []
-						}
+							}
+						]
 					}
 				},
 				{

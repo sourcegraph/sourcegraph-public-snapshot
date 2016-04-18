@@ -26,7 +26,7 @@ describe("BlobLine", () => {
 
 	it("should render line number", () => {
 		autotest(testdataLineNumber, `${__dirname}/testdata/BlobLine-lineNumber.json`,
-			<BlobLine lineNumber={42} contents={"hello\nworld"} startByte={0} />
+			<BlobLine lineNumber={42} repo="r" rev="v" path="p" contents={"hello\nworld"} startByte={0} />
 		);
 	});
 

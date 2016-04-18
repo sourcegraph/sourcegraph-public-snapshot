@@ -73,16 +73,25 @@ by a lot of other modules (e.g., for def boxes)? */
 	table-layout: fixed;
 	border-spacing: 0;
 }
-.line {}
-.lineNumber {
+.lineNumberCell {
+	padding: 0;
 	width: 1%;
 	min-width: 40px;
+	background-color: #fafafc;
+}
+.lineCell {
+	padding-top: 1px;
+	padding-bottom: 1px;
+}
+.line {}
+.lineNumber {
+	composes: lineCell;
+	display: block;
 	text-align: right;
 	white-space: nowrap;
 	vertical-align: top;
 	composes: light-silver from colors;
 	padding-right: 8px;
-	background-color: #fafafc;
 	user-select: none;
 	cursor: pointer;
 }
@@ -91,12 +100,16 @@ by a lot of other modules (e.g., for def boxes)? */
 }
 .selectedLineNumber {
 	composes: lineNumber;
-	composes: bg-blue-2 from colors;
+	@value c_blue-2 from colors;
+	background-color: c_blue-2;
+	@value c_gray from colors;
+	color: c_gray;
 }
 .line:first-child .lineNumber, .line:first-child .lineContent {
 	padding-top: 9px;
 }
 .lineContent {
+	composes: lineCell;
 	composes: ph3 from base;
 	tab-size: 4;
 	overflow: visible;

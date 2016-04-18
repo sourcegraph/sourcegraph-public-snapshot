@@ -27,7 +27,7 @@ function BlobContentPlaceholder(props) {
 		const line = i + 1;
 		lines.push(
 			<tr className={s.line} data-line={line} key={i}>
-				<td className={s.lineNumber}></td>
+				<td className={s.lineNumberCell}></td>
 				<td className={`code ${s.lineContentPlaceholder}`} data-line={line}>
 					<div className={s.placeholderWhitespace} style={{width: `${100 - dummyLineLengths[i % dummyLineLengths.length]}%`}}>&nbsp;</div>
 				</td>
