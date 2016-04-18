@@ -2,6 +2,13 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 
+@value navbar-height 40px;
+
+.navbar + * {
+	/* Account for navbar's position: fixed. */
+	padding-top: navbar-height;
+}
+
 .navbar {
 	display: flex;
 	align-items: center;
@@ -9,6 +16,11 @@
 	composes: bb from base;
 	border-color: #efefef;
 	background-color: #fafafa;
+
+	height: navbar-height;
+	position: fixed;
+	top: 0;
+	width: 100%;
 }
 
 .logo {
