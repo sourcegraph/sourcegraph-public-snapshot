@@ -163,6 +163,13 @@
 			"revisionTime": "2015-09-08T20:16:57-07:00"
 		},
 		{
+			"checksumSHA1": "6k/gMuK0WPQssFIMHlRHm1eIv7Y=",
+			"path": "github.com/gogo/protobuf",
+			"revision": "4f262e4b0f3a6cea646e15798109335551e21756",
+			"revisionTime": "2016-04-13T13:07:56Z",
+			"tree": true
+		},
+		{
 			"path": "github.com/golang/groupcache/lru",
 			"revision": "4eab30f13db9d8b25c752e99d1583628ac2fa422",
 			"revisionTime": "2016-02-11T14:59:07-08:00"
