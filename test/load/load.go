@@ -99,11 +99,9 @@ func (t *LoadTest) getCookie() (*authedCookie, error) {
 func (t *LoadTest) targeter(hdr http.Header) vegeta.Targeter {
 	targets := make([]vegeta.Target, len(t.TargetPaths))
 	for i, p := range t.TargetPaths {
-		url := *t.Endpoint
-		url.Path = p
 		targets[i] = vegeta.Target{
 			Method: "GET",
-			URL:    url.String(),
+			URL:    t.Endpoint.String() + p,
 			Header: hdr,
 		}
 		log.Println("Target:", targets[i].URL)
