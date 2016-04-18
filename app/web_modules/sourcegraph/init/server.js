@@ -35,14 +35,14 @@ function renderIter(i, props, location, deadline, callback) {
 	let htmlStr;
 	try {
 		htmlStr = ReactDOMServer.renderToString(<RouterContext {...props} />);
-		console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
+		if (global.process.env.DEBUG) console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
 	} catch (e) {
 		return Promise.reject(e);
 	}
 
 	if (trackedPromisesCount() === 0) {
 		if (i > 1) {
-			console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
+			if (global.process.env.DEBUG) console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
 		}
 
 		// No additional async fetches were triggered, so we are done!
@@ -66,7 +66,7 @@ function renderIter(i, props, location, deadline, callback) {
 	let tFetch0 = Date.now();
 	const promisesCount = trackedPromisesCount();
 	return allTrackedPromisesResolved().then(() => {
-		console.log(`RENDER#${i}: ${promisesCount} fetches took ${Date.now() - tFetch0} msec`);
+		if (global.process.env.DEBUG) console.log(`RENDER#${i}: ${promisesCount} fetches took ${Date.now() - tFetch0} msec`);
 		return renderIter(i + 1, props, location, deadline, callback);
 	});
 }
