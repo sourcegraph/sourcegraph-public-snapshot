@@ -10,7 +10,7 @@ export const EventLocation = {
 	Login: "Login",
 	Signup: "Signup",
 	Dashboard: "Dashboard",
-	DefPopup: "DepPopup",
+	DefPopup: "DefPopup",
 };
 
 export class EventLogger {
