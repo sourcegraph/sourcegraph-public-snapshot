@@ -27,11 +27,15 @@ func (r *Repository) trace(start time.Time, name string, args ...interface{}) {
 		for i, arg := range args {
 			argStrs[i] = fmt.Sprintf("%#v", arg)
 		}
-		r.AppdashRec.Child().Event(GitEvent{
-			Name:      "git." + name,
+		rec := r.AppdashRec.Child()
+		spanName := "git." + name
+		rec.Event(GitEvent{
+			Name:      spanName,
 			Args:      strings.Join(argStrs, ", "),
 			StartTime: start,
 			EndTime:   time.Now(),
 		})
+		rec.Name(spanName)
+		rec.Finish()
 	}
 }
