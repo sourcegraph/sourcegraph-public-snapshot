@@ -61,6 +61,8 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		return nil, err
 	}
 
+	// Set the fields from the repository remote (if it exists)
+	//
 	// If the actor doesn't have a special grant to access this repo,
 	// query the remote server for the remote repo, to ensure the
 	// actor can access this repo.
@@ -68,10 +70,8 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 	// Special grants are given to drone workers to fetch repo metadata
 	// when configuring a build.
 	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repoSpec.URI)
-	if !hasGrant {
-		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-			return nil, err
-		}
+	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil && !hasGrant {
+		return nil, err
 	}
 
 	if repo.Blocked {
