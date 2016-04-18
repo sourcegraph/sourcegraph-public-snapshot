@@ -1,7 +1,7 @@
 import React from "react";
 import {Link} from "react-router";
 
-import Component from "sourcegraph/Component";
+import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 
 import {repoPath, repoRev} from "sourcegraph/repo";
@@ -11,7 +11,7 @@ import breadcrumb from "sourcegraph/util/breadcrumb";
 import CSSModules from "react-css-modules";
 import styles from "sourcegraph/components/styles/breadcrumb.css";
 
-class DefNavContext extends Component {
+class DefNavContext extends Container {
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
@@ -19,6 +19,8 @@ class DefNavContext extends Component {
 		state.rev = repoRev(props.params.splat[0]);
 		state.def = DefStore.defs.get(state.repo, state.rev, props.params.splat[1]);
 	}
+
+	stores() { return [DefStore]; }
 
 	render() {
 		if (!this.state.def || this.state.def.Error) return null;
