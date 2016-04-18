@@ -2,6 +2,7 @@
 
 import React from "react";
 import Component from "sourcegraph/Component";
+// $FlowHack
 import {navbarHeight} from "sourcegraph/app/styles/GlobalNav.css";
 
 const navbarHeightPx = parseInt(navbarHeight, 10);
