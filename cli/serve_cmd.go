@@ -53,7 +53,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	httputil2 "sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
@@ -355,14 +354,14 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
 	}
 
-	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, realIPHandler}
+	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP}
 	if c.RedirectToHTTPS {
-		mw = append(mw, redirectToHTTPSMiddleware)
+		mw = append(mw, middleware.RedirectToHTTPS)
 	}
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
-		mw = append(mw, strictTransportSecurityMiddleware)
+		mw = append(mw, middleware.StrictTransportSecurity)
 	}
-	mw = append(mw, secureHeaderMiddleware)
+	mw = append(mw, middleware.SecureHeader)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
 		mw = append(mw, ensureHostnameHandler)
 	}
@@ -649,43 +648,6 @@ func (c *ServeCmd) checkReachability() {
 	}
 }
 
-// setTLSMiddleware causes downstream handlers to treat this HTTP
-// request as having come via TLS. It is necessary because connection
-// muxing (which enables a single port to serve both Web and gRPC)
-// does not set the http.Request TLS field (since TLS occurs before
-// muxing).
-func setTLSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if r.Header.Get("x-forwarded-proto") == "" {
-		r.Header.Set("x-forwarded-proto", "https")
-	}
-	next(w, r)
-}
-
-func redirectToHTTPSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	isHTTPS := r.TLS != nil || r.Header.Get("x-forwarded-proto") == "https"
-	if !isHTTPS {
-		url := *r.URL
-		url.Scheme = "https"
-		url.Host = r.Host
-		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
-		return
-	}
-	next(w, r)
-}
-
-func strictTransportSecurityMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	// Omit subdomains for blogs like gophercon.sourcegraph.com, which need to be HTTP.
-	w.Header().Set("strict-transport-security", "max-age=8640000")
-	next(w, r)
-}
-
-func secureHeaderMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	w.Header().Set("x-content-type-options", "nosniff")
-	w.Header().Set("x-xss-protection", "1; mode=block")
-	w.Header().Set("x-frame-options", "DENY")
-	next(w, r)
-}
-
 func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if ua := r.UserAgent(); !strings.HasPrefix(ua, "git/") && !strings.HasPrefix(ua, "JGit/") {
 		next(w, r)
@@ -728,14 +690,6 @@ func ensureHostnameHandler(w http.ResponseWriter, r *http.Request, next http.Han
 	newURL.Scheme = conf.AppURL(ctx).Scheme
 	log.Printf("ensureHostnameHandler: Permanently redirecting from requested host %q to %q.", r.Host, newURL.String())
 	http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
-}
-
-// realIPHandler sets req.RemoteAddr from the X-Real-Ip header if it exists.
-func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if s := r.Header.Get("X-Real-Ip"); s != "" && httputil2.StripPort(r.RemoteAddr) == "127.0.0.1" {
-		r.RemoteAddr = s
-	}
-	next(w, r)
 }
 
 // safeConfigFlags returns the commandline flag data for the `src serve` command,
