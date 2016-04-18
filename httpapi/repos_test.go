@@ -56,6 +56,23 @@ func TestRepoResolve(t *testing.T) {
 	}
 }
 
+func TestRepoResolve_notFound(t *testing.T) {
+	c, mock := newTest()
+
+	calledResolve := mock.Repos.MockResolve_NotFound(t, "r")
+
+	resp, err := c.Get("/repos/r/-/resolve")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := http.StatusNotFound; resp.StatusCode != want {
+		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
+	}
+}
+
 // Test that if the repo hasn't been modified since the client's
 // If-Modified-Since, HTTP 304 Not Modified is returned.
 func TestRepo_caching_notModified(t *testing.T) {
