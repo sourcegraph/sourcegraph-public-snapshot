@@ -62,8 +62,7 @@ class Hunk extends React.Component {
 								newLineNumber={prefix === "-" ? null : newLine}
 								contents={line}
 								startByte={thisLineStartByte}
-								annotations={anns}
-								directLinks={true} />
+								annotations={anns} />
 						);
 					})}
 				</tbody>

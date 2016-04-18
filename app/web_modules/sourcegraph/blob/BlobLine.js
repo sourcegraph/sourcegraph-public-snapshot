@@ -53,7 +53,6 @@ class BlobLine extends Component {
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
-		state.directLinks = Boolean(props.directLinks);
 	}
 
 	_hasLink(content) {
@@ -90,7 +89,7 @@ class BlobLine extends Component {
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
-							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
+							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
 							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
 							if (this.state.highlightedDefObj && this.state.highlightedDefObj.Error) {
 								// Prevent navigating to a broken ref or not-yet-loaded def.
@@ -166,10 +165,6 @@ BlobLine.propTypes = {
 	selected: React.PropTypes.bool,
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
-
-	// directLinks, if true, makes clicks on annotation links go directly to the
-	// destination instead of using pushState.
-	directLinks: React.PropTypes.bool,
 };
 
 export default BlobLine;
