@@ -16,6 +16,7 @@
 	composes: bb from base;
 	border-color: #efefef;
 	background-color: #fafafa;
+	z-index: 100;
 
 	height: navbarHeight;
 	position: fixed;
