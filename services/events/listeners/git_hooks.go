@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/AaronO/go-git-http"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	appconf "sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -24,7 +24,7 @@ func init() {
 type gitHookListener struct{}
 
 func (g *gitHookListener) Scopes() []string {
-	return []string{"app:githooks"}
+	return []string{"internal:githooks"}
 }
 
 func (g *gitHookListener) Start(ctx context.Context) {

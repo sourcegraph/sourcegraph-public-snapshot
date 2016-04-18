@@ -187,11 +187,6 @@ func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method, r
 			if repo == repoURI {
 				return true
 			}
-
-		case strings.HasPrefix(scope, "app:"):
-			// all apps have default write access.
-			// TODO: configure app-specific permissions.
-			return true
 		}
 	}
 	return false

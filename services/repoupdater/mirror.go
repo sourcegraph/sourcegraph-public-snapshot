@@ -3,10 +3,11 @@ package repoupdater
 import (
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/jpillora/backoff"
 
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -25,7 +26,7 @@ func init() {
 type mirrorRepoUpdater struct{}
 
 func (r *mirrorRepoUpdater) Scopes() []string {
-	return []string{"app:repo-auto-cloner"}
+	return []string{"internal:repo-auto-cloner"}
 }
 
 func (r *mirrorRepoUpdater) Start(ctx context.Context) {
