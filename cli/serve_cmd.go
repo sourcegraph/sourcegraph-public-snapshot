@@ -53,7 +53,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 	"sourcegraph.com/sqs/pbtypes"
@@ -364,7 +363,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
 		mw = append(mw, middleware.EnsureHostname)
 	}
-	mw = append(mw, metricutil.HTTPMiddleware)
+	mw = append(mw, middleware.Metrics)
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
 	}

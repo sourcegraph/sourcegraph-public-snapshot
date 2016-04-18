@@ -1,4 +1,4 @@
-package metricutil
+package middleware
 
 import (
 	"net/http"
@@ -33,7 +33,8 @@ func init() {
 	prometheus.MustRegister(requestHeartbeat)
 }
 
-func HTTPMiddleware(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+// Metrics captures and exports metrics to prometheus for our HTTP handlers
+func Metrics(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String(), "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent())
 
 	start := time.Now()
