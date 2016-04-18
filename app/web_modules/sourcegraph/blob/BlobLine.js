@@ -106,6 +106,12 @@ class BlobLine extends Component {
 
 	render() {
 		let contents = this.state.annotations ? this._annotate() : this.state.contents;
+		contents = simpleContentsString(contents);
+
+		// A single newline makes this line show up (correctly) as an empty line
+		// when copied and pasted, instead of being omitted entirely.
+		if (!contents) contents = "\n";
+
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (
@@ -126,7 +132,7 @@ class BlobLine extends Component {
 				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
 
 				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
-					{simpleContentsString(contents)}
+					{contents}
 				</td>
 			</tr>
 		);
