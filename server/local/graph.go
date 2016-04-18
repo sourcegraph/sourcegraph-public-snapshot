@@ -3,7 +3,6 @@ package local
 import (
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -44,12 +43,10 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		// the data is always pointing to the HEAD commit of the default branch (which
 		// is the default behavior on our app for empty repoRevSpecs).
 		op.CommitID = ""
-		if feature.Features.GlobalSearch {
-			if err := store.GlobalDefsFromContext(ctx).Update(ctx, op); err != nil {
-				// Temporarily log and ignore error in updating the global def store.
-				// TODO: fail with error here once the rollout of global def store is complete.
-				log15.Error("error updating global def store", "repo", op.Repo, "error", err)
-			}
+		if err := store.GlobalDefsFromContext(ctx).Update(ctx, op); err != nil {
+			// Temporarily log and ignore error in updating the global def store.
+			// TODO: fail with error here once the rollout of global def store is complete.
+			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
 		}
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
 			// Temporarily log and ignore error in updating the global ref store.

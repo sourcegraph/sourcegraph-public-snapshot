@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -17,9 +16,6 @@ const (
 )
 
 func BackgroundUpdateIndex(ctx context.Context) {
-	if !feature.Features.GlobalSearch {
-		return
-	}
 	// Sleep for a random interval before starting to avoid
 	// "thundering herds" in case this app is deployed with replication.
 	time.Sleep(time.Duration(rand.Intn(updateIntervalMinutes/2)) * time.Minute)
