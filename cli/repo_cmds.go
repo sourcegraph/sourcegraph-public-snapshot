@@ -27,9 +27,9 @@ func init() {
 	}
 	reposGroup.Aliases = []string{"repos", "r"}
 
-	_, err = reposGroup.AddCommand("graph-data-version",
-		"get graph data version",
-		"get the commit used to generate the graph data displayed for a repository",
+	_, err = reposGroup.AddCommand("srclib-data-version",
+		"get srclib data version",
+		"get the commit used to generate the srclib data displayed for a repository",
 		&repoGetSrclibDataVersionForPathCmd{},
 	)
 	if err != nil {
