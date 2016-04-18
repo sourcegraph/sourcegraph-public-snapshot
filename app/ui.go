@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	htmlpkg "html"
 	"html/template"
 	"net/http"
 	"os"
@@ -50,23 +49,30 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	var body template.HTML
-	var stores *json.RawMessage
-	var head *ui.Head
 	var header http.Header
+	var data struct {
+		tmpl.Common
+		Head   *ui.Head
+		Body   template.HTML
+		Stores *json.RawMessage
+
+		ErrorTitle     string
+		ErrorDebugInfo string
+	}
+
 	if res != nil {
 		statusCode = res.StatusCode
-		stores = &res.Stores
-		head = &res.Head
+		data.Stores = &res.Stores
+		data.Head = &res.Head
 
 		if strings.HasPrefix(res.ContentType, "text/html") {
-			body = template.HTML(res.Body)
+			data.Body = template.HTML(res.Body)
 		} else if res.StatusCode >= 300 && res.StatusCode <= 399 {
 			// Nothing to do; we set the Location header below.
 		} else if res.Body == "" && res.StatusCode >= 400 {
-			body = template.HTML(fmt.Sprintf("<h1>Error</h1><p>HTTP %d %s</p>", res.StatusCode, http.StatusText(res.StatusCode)))
+			data.ErrorTitle = fmt.Sprintf("HTTP %d %s", res.StatusCode, http.StatusText(res.StatusCode))
 			if handlerutil.DebugMode(r) {
-				body += template.HTML(fmt.Sprintf("<p><pre>%s</pre></p>", htmlpkg.EscapeString(res.Error)))
+				data.ErrorDebugInfo = res.Error
 			}
 		} else {
 			return errors.New("ui render router response is neither text/html nor an error")
@@ -84,14 +90,5 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 		statusCode = http.StatusAccepted
 	}
 
-	return tmpl.Exec(r, w, "ui.html", statusCode, header, &struct {
-		tmpl.Common
-		Head   *ui.Head
-		Body   interface{}
-		Stores *json.RawMessage
-	}{
-		Head:   head,
-		Body:   body,
-		Stores: stores,
-	})
+	return tmpl.Exec(r, w, "ui.html", statusCode, header, &data)
 }
