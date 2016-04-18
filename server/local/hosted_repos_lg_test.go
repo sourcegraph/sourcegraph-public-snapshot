@@ -24,11 +24,4 @@ func TestHostedRepo_CreateCloneAndView(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer done()
-
-	// TODO(sqs): also test when there are no commits that we show a
-	// "no commits yet" page, and same for when there are no files.
-
-	if _, err := httpClient.GetOK(a.AbsURL("/r/r")); err != nil {
-		t.Fatal(err)
-	}
 }
