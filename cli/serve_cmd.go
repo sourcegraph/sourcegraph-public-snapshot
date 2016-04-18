@@ -363,7 +363,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	mw = append(mw, middleware.SecureHeader)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
-		mw = append(mw, ensureHostnameHandler)
+		mw = append(mw, middleware.EnsureHostname)
 	}
 	mw = append(mw, metricutil.HTTPMiddleware)
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
@@ -665,31 +665,6 @@ func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFu
 		}
 	}
 	h.ServeHTTP(w, r)
-}
-
-// ensureHostnameHandler ensures that the URL hostname is whatever is in SG_URL.
-func ensureHostnameHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ctx := httpctx.FromRequest(r)
-
-	wantHost := conf.AppURL(ctx).Host
-	if strings.Split(wantHost, ":")[0] == "localhost" {
-		// if localhost, don't enforce redirect, so the site is easier to share with others
-		next(w, r)
-		return
-	}
-
-	if r.Host == wantHost || r.Host == "" || r.URL.Path == middleware.StatusEndpoint {
-		next(w, r)
-		return
-	}
-
-	// redirect to desired host
-	newURL := *r.URL
-	newURL.User = nil
-	newURL.Host = wantHost
-	newURL.Scheme = conf.AppURL(ctx).Scheme
-	log.Printf("ensureHostnameHandler: Permanently redirecting from requested host %q to %q.", r.Host, newURL.String())
-	http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
 }
 
 // safeConfigFlags returns the commandline flag data for the `src serve` command,

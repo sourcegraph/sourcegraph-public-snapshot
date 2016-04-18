@@ -1,8 +1,13 @@
 package middleware
 
 import (
+	"log"
 	"net"
 	"net/http"
+	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
 // RealIP sets req.RemoteAddr from the X-Real-Ip header if it exists.
@@ -55,4 +60,29 @@ func SecureHeader(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 	w.Header().Set("x-xss-protection", "1; mode=block")
 	w.Header().Set("x-frame-options", "DENY")
 	next(w, r)
+}
+
+// EnsureHostname ensures that the URL hostname is whatever is in SG_URL.
+func EnsureHostname(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	ctx := httpctx.FromRequest(r)
+
+	wantHost := conf.AppURL(ctx).Host
+	if strings.Split(wantHost, ":")[0] == "localhost" {
+		// if localhost, don't enforce redirect, so the site is easier to share with others
+		next(w, r)
+		return
+	}
+
+	if r.Host == wantHost || r.Host == "" || r.URL.Path == statusEndpoint {
+		next(w, r)
+		return
+	}
+
+	// redirect to desired host
+	newURL := *r.URL
+	newURL.User = nil
+	newURL.Host = wantHost
+	newURL.Scheme = conf.AppURL(ctx).Scheme
+	log.Printf("ensureHostnameHandler: Permanently redirecting from requested host %q to %q.", r.Host, newURL.String())
+	http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
 }
