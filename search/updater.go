@@ -1,7 +1,6 @@
 package search
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/jpillora/backoff"
@@ -16,9 +15,6 @@ const (
 )
 
 func BackgroundUpdateIndex(ctx context.Context) {
-	// Sleep for a random interval before starting to avoid
-	// "thundering herds" in case this app is deployed with replication.
-	time.Sleep(time.Duration(rand.Intn(updateIntervalMinutes/2)) * time.Minute)
 	go func() {
 		b := &backoff.Backoff{
 			Max:    time.Minute,
