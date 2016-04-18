@@ -2,6 +2,7 @@ package jscontext
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -30,7 +31,7 @@ type JSContext struct {
 	UserEmail       string            `json:"userEmail"`
 	HasLinkedGitHub bool              `json:"hasLinkedGitHub"`
 	CurrentSpanID   string            `json:"currentSpanID"`
-	UserAgent       string            `json:"userAgent"`
+	UserAgentIsBot  bool              `json:"userAgentIsBot"`
 	AssetsRoot      string            `json:"assetsRoot"`
 	BuildVars       buildvar.Vars     `json:"buildVars"`
 	Features        interface{}       `json:"features"`
@@ -60,7 +61,7 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		UserEmail:       handlerutil.EmailFromRequest(req),
 		HasLinkedGitHub: handlerutil.HasLinkedGitHubFromRequest(req),
 		CurrentSpanID:   traceutil.SpanIDFromContext(ctx).String(),
-		UserAgent:       eventsutil.UserAgentFromContext(ctx),
+		UserAgentIsBot:  isBot(eventsutil.UserAgentFromContext(ctx)),
 		AssetsRoot:      assets.URL("/").String(),
 		BuildVars:       buildvar.All,
 		Features:        feature.Features,
@@ -70,4 +71,10 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 	}
 
 	return jsctx, nil
+}
+
+var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
+
+func isBot(userAgent string) bool {
+	return isBotPat.MatchString(userAgent)
 }

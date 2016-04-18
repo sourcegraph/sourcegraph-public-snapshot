@@ -7,7 +7,7 @@ const context: {
 	currentUser?: Object;
 	userEmail?: string;
 	currentSpanID?: string;
-	userAgent?: string;
+	userAgentIsBot?: boolean;
 	assetsRoot?: string;
 	buildVars?: Object;
 	features?: {[key: string]: any};

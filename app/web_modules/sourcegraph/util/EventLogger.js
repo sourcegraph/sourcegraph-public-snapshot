@@ -98,14 +98,7 @@ export class EventLogger {
 			this._intercomSettings = window.intercomSettings;
 		}
 
-		this.isUserAgentBot = false;
-		if (context.userAgent) {
-			if (decodeURIComponent(context.userAgent)
-				.match(/googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client/)) {
-				this.isUserAgentBot = true;
-			}
-		}
-
+		this.isUserAgentBot = context.userAgentIsBot;
 		this._flush();
 	}
 
