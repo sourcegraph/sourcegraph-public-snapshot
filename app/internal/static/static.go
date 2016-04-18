@@ -122,7 +122,7 @@ func (mw *staticMiddleware) Middleware(w http.ResponseWriter, r *http.Request, n
 		return
 	}
 
-	httpctx.SetRouteName(r, "static "+p)
+	httpctx.SetRouteName(r, "static")
 
 	// Modify the URL that we're requesting to account for changes to the path
 	// by chooseFile.
