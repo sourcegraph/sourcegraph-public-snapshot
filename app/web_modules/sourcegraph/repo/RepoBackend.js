@@ -41,7 +41,11 @@ const RepoBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new RepoActions.RepoResolved(action.repo, data));
+								Dispatcher.Stores.dispatch(new RepoActions.RepoResolved(action.repo, data.Error ? data : data.Data));
+								if (data.IncludedRepo) {
+									// Optimistically included by httpapi.serveRepoResolve.
+									Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data.IncludedRepo));
+								}
 							})
 					);
 				}

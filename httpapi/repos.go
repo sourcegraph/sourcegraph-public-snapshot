@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 
 	"google.golang.org/grpc"
@@ -43,6 +45,11 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, repo)
 }
 
+type repoResolution struct {
+	Data         sourcegraph.RepoResolution
+	IncludedRepo *sourcegraph.Repo // optimistically included repo; see serveRepoResolve
+}
+
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
@@ -51,10 +58,26 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	res0, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
 	if err != nil {
 		return err
 	}
+
+	res := repoResolution{Data: *res0}
+
+	// As an optimization, optimistically include the full local repo
+	// if the operation resolved to a local repo. Clients will almost
+	// always need the local repo in this case, so including it saves
+	// a round-trip.
+	if repoSpec := res0.GetRepo(); repoSpec != nil {
+		repo, err := cl.Repos.Get(ctx, repoSpec)
+		if err == nil {
+			res.IncludedRepo = repo
+		} else {
+			log15.Warn("Error optimistically including repo in serveRepoResolve", "repo", repoSpec, "err", err)
+		}
+	}
+
 	return writeJSON(w, res)
 }
 
