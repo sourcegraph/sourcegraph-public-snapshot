@@ -1,17 +1,24 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 )
 
 // RealIP sets req.RemoteAddr from the X-Real-Ip header if it exists.
 func RealIP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if s := r.Header.Get("X-Real-Ip"); s != "" && httputil.StripPort(r.RemoteAddr) == "127.0.0.1" {
+	if s := r.Header.Get("X-Real-Ip"); s != "" && stripPort(r.RemoteAddr) == "127.0.0.1" {
 		r.RemoteAddr = s
 	}
 	next(w, r)
+}
+
+// stripPort removes the port specification from an address.
+func stripPort(s string) string {
+	if h, _, err := net.SplitHostPort(s); err == nil {
+		s = h
+	}
+	return s
 }
 
 // SetTLS causes downstream handlers to treat this HTTP
