@@ -50,7 +50,7 @@ export function defaultFetch(url, options) {
 // checkStatus is intended to be chained in a fetch call. For example:
 //   fetch(...).then(checkStatus) ...
 export function checkStatus(resp) {
-	if (resp.status >= 200 && resp.status <= 299 && resp.status !== 202) return resp;
+	if (resp.status >= 200 && resp.status <= 299) return resp;
 	return resp.text().then((body) => {
 		let err = new Error(body || resp.statusText);
 		err.body = body;
