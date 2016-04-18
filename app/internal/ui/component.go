@@ -90,8 +90,8 @@ func renderRouterState(ctx context.Context, state *renderState) (*RenderResult, 
 	{
 		key := *state
 		key.JSContext.CurrentSpanID = ""
-		key.JSContext.CacheControl ""
-		key.JSContext.CSRFToken = ""    // CSRFToken never used for auth, and this returns data, doesn't perform actions
+		key.JSContext.CacheControl = ""
+		key.JSContext.CSRFToken = "" // CSRFToken never used for auth, and this returns data, doesn't perform actions
 		key.Deadline = 0
 		keyJSON, err := json.Marshal(key)
 		if err != nil {
