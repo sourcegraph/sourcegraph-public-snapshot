@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestAnnotations(t *testing.T) {
@@ -15,8 +14,6 @@ func TestAnnotations(t *testing.T) {
 		Annotations: []*sourcegraph.Annotation{{URL: "u"}},
 	}
 
-	calledReposGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{URI: ""})
-	calledReposGetCommit := mock.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: "c"})
 	calledList := mock.Annotations.MockList(t, wantAnns.Annotations...)
 
 	var anns *sourcegraph.AnnotationList
@@ -28,11 +25,5 @@ func TestAnnotations(t *testing.T) {
 	}
 	if !*calledList {
 		t.Error("!calledList")
-	}
-	if !*calledReposGet {
-		t.Error("!calledReposGet")
-	}
-	if !*calledReposGetCommit {
-		t.Error("!calledReposGetCommit")
 	}
 }

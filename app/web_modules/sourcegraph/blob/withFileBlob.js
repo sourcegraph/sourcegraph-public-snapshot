@@ -25,6 +25,7 @@ export default function withFileBlob(Component) {
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
+			commitID: React.PropTypes.string,
 			params: React.PropTypes.object.isRequired,
 		};
 
@@ -36,7 +37,12 @@ export default function withFileBlob(Component) {
 			Object.assign(state, props);
 			state.path = props.route.path.startsWith(rel.blob) ? props.params.splat[1] : props.path;
 			if (!state.path) state.path = null;
-			state.blob = state.path ? BlobStore.files.get(state.repo, state.rev, state.path) : null;
+
+			// For defs, props.commitID is set to the resolved commit ID (if any);
+			// for files, it is null, and the rev from the URL is all we can fetch by.
+			const fileRev = props.commitID || state.rev;
+			state.blob = state.path ? BlobStore.files.get(state.repo, fileRev, state.path) : null;
+			if (!props.commitID) state.commitID = state.blob && !state.blob.Error ? state.blob.CommitID : null;
 		}
 
 		onStateTransition(prevState, nextState) {

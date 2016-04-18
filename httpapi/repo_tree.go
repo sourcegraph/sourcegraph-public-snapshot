@@ -2,7 +2,12 @@ package httpapi
 
 import (
 	"net/http"
+	"path"
+	"strings"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/gorilla/mux"
 
@@ -11,21 +16,41 @@ import (
 )
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
-	var opt sourcegraph.RepoTreeGetOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	ctx, cl := handlerutil.Client(r)
+
+	vars := mux.Vars(r)
+	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
 	if err != nil {
 		return err
 	}
 
-	ctx, _ := handlerutil.Client(r)
-	tc, _, _, err := handlerutil.GetTreeEntryCommon(ctx, mux.Vars(r), &opt)
+	entrySpec := sourcegraph.TreeEntrySpec{
+		RepoRev: repoRev,
+		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
+	}
+
+	resolvedRev, _, err := handlerutil.ResolveSrclibDataVersion(ctx, entrySpec)
+	if err != nil && grpc.Code(err) != codes.NotFound {
+		return err
+	}
+	if resolvedRev.CommitID != "" {
+		entrySpec.RepoRev.CommitID = resolvedRev.CommitID
+	}
+
+	var opt sourcegraph.RepoTreeGetOptions
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+		return err
+	}
+
+	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
+
 	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
 		return err
 	}
-	return writeJSON(w, tc.Entry)
+	return writeJSON(w, entry)
 }
 
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {

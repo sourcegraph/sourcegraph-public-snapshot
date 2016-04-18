@@ -1598,6 +1598,7 @@ message TreeEntry {
 message BasicTreeEntry {
 	string Name = 1;
 	TreeEntryType Type = 2;
+	string CommitID = 3; // the absolute commit ID of this file
 	bytes Contents = 5;
 	repeated BasicTreeEntry Entries = 6;
 }

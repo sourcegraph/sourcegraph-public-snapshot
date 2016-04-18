@@ -32,6 +32,7 @@ export default function withDef(Component) {
 
 			if (!props.def) state.def = props.params ? props.params.splat[1] : null;
 			state.defObj = state.def ? DefStore.defs.get(state.repo, state.rev, state.def) : null;
+			state.commitID = state.defObj && !state.defObj.Error ? state.defObj.CommitID : null;
 
 			state.highlightedDef = DefStore.highlightedDef || null;
 			if (state.highlightedDef) {
