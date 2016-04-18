@@ -316,14 +316,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	clientCtx := clientCtxFunc(context.Background())
 
-	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
-		Type:     "notif",
-		ClientID: idKey.ID,
-		Service:  "serve_cmd",
-		Method:   "start",
-		Result:   "success",
-	})
-
 	// Listen for events and periodically push them to analytics gateway.
 	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
 

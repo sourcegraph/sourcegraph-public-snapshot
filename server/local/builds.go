@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -172,12 +171,6 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 		Result = "failed"
 	}
 	if Result != "" {
-		metricutil.LogEvent(ctx, &sourcegraph.UserEvent{
-			Type:    "notif",
-			Service: "Builds",
-			Method:  "Update",
-			Result:  Result,
-		})
 		eventsutil.LogBuildCompleted(ctx, b.Success)
 	}
 

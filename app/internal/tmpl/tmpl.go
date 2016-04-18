@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -28,7 +27,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
@@ -163,18 +161,6 @@ func executeTemplateBase(w http.ResponseWriter, templateName string, data interf
 // Exec executes the template (named by `name`) using the template data.
 func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, header http.Header, data interface{}) error {
 	ctx := httpctx.FromRequest(req)
-	currentUser := handlerutil.UserFromRequest(req)
-
-	appEvent := &sourcegraph.UserEvent{
-		Type:    "app",
-		Service: conf.AppURL(ctx).String(),
-		Method:  name,
-		Result:  strconv.Itoa(status),
-		URL:     req.URL.String(),
-	}
-	if currentUser != nil {
-		appEvent.UID = currentUser.UID
-	}
 
 	if data != nil {
 		sess, err := appauth.ReadSessionCookie(req)
@@ -186,12 +172,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		existingCommon := field.Interface().(Common)
 
 		currentURL := conf.AppURL(ctx).ResolveReference(req.URL)
-
-		errField := reflect.ValueOf(data).Elem().FieldByName("Err")
-		if errField.IsValid() {
-			appError := errField.Interface().(error)
-			appEvent.Message = fmt.Sprintf("ErrorID:%s Msg:%s", existingCommon.ErrorID, appError.Error())
-		}
 
 		// Propagate Cache-Control no-cache and max-age=0 directives
 		// to the requests made by our client-side JavaScript. This is
@@ -240,8 +220,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			JSCtx: jsctx,
 		}))
 	}
-
-	metricutil.LogEvent(ctx, appEvent)
 
 	// Buffer HTTP response so that if the template execution returns
 	// an error (e.g., a template calls a template func that panics or
