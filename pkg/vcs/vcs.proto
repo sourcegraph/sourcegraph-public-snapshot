@@ -10,13 +10,13 @@ option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
 message Commit {
-	string ID = 1 [(gogoproto.customtype) = "CommitID"];
+	string ID = 1 [(gogoproto.customtype) = "CommitID", (gogoproto.nullable) = false, (gogoproto.jsontag) = "ID,omitempty"];
 	Signature Author = 2 [(gogoproto.nullable) = false];
 	Signature Committer = 3;
 	string Message = 4;
 
 	// Parents are the commit IDs of this commit's parent commits.
-	repeated string Parents = 5 [(gogoproto.customtype) = "CommitID"];
+	repeated string Parents = 5 [(gogoproto.customtype) = "CommitID", (gogoproto.nullable) = false, (gogoproto.jsontag) = "Parents,omitempty"];
 }
 
 message Signature {
@@ -31,7 +31,7 @@ message Branch {
 	string Name = 1;
 
 	// Head is the commit ID of this branch's head commit.
-	string Head = 2 [(gogoproto.customtype) = "CommitID"];
+	string Head = 2 [(gogoproto.customtype) = "CommitID", (gogoproto.nullable) = false, (gogoproto.jsontag) = "Head,omitempty"];
 
 	// Commit optionally contains commit information for this branch's head commit.
 	// It is populated if IncludeCommit option is set.
@@ -71,7 +71,7 @@ message BranchesOptions {
 // A Tag is a VCS tag.
 message Tag {
 	string Name = 1;
-	string CommitID = 2 [(gogoproto.customtype) = "CommitID"];
+	string CommitID = 2 [(gogoproto.customtype) = "CommitID", (gogoproto.nullable) = false, (gogoproto.jsontag) = "CommitID,omitempty"];
 
 	// TODO(sqs): A git tag can point to other tags, or really any
 	// other object. How should we handle this case? For now, we're
