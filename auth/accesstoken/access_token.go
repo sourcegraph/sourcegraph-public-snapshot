@@ -18,14 +18,14 @@ import (
 
 // New creates and signs a new OAuth2 access token that grants the
 // actor's access to the holder of the token. The given scopes are
-// applied as well. If expires is 0, then the token never expires.
+// applied as well.
 // If useAsymmetricEnc is set, then the token can be verified
 // externally via the public key, but the token length increases.
 // The shorter length of the symmetric version is useful for
 // situations with a restricted token length, e.g. authentication
 // for git via basic auth. The retuned token is assumed to be
 // public and must not include any secret data.
-func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expires time.Duration, useAsymmetricEnc bool) (*oauth2.Token, error) {
+func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expiryDuration time.Duration, useAsymmetricEnc bool) (*oauth2.Token, error) {
 	method := jwt.SigningMethod(jwt.SigningMethodHS256)
 	key := interface{}(getSymmetricKey(k))
 	if useAsymmetricEnc {
@@ -48,12 +48,9 @@ func New(k *idkey.IDKey, actor *auth.Actor, scopes []string, expires time.Durati
 
 	tok.Claims["Scope"] = strings.Join(scopes, " ")
 
-	var expiry time.Time
-	if expires != 0 {
-		expiry = time.Now().Add(expires)
-		tok.Claims["exp"] = expiry.Add(time.Minute).Unix()
-		tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
-	}
+	expiry := time.Now().Add(expiryDuration)
+	tok.Claims["exp"] = expiry.Add(time.Minute).Unix()
+	tok.Claims["nbf"] = time.Now().Add(-5 * time.Minute).Unix()
 
 	s, err := tok.SignedString(key)
 	if err != nil {
