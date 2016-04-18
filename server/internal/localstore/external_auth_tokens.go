@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -16,7 +15,7 @@ import (
 )
 
 func init() {
-	tbl := AppSchema.Map.AddTableWithName(auth.ExternalAuthToken{}, "ext_auth_token").SetKeys(false, "User", "Host", "client_id")
+	tbl := AppSchema.Map.AddTableWithName(store.ExternalAuthToken{}, "ext_auth_token").SetKeys(false, "User", "Host", "client_id")
 	tbl.ColMap("FirstAuthFailureMessage").SetMaxSize(1000)
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		`ALTER TABLE ext_auth_token ALTER COLUMN first_auth_failure_at TYPE timestamp with time zone USING first_auth_failure_at::timestamp with time zone;`,
@@ -28,24 +27,24 @@ type externalAuthTokens struct{}
 
 var _ store.ExternalAuthTokens = (*externalAuthTokens)(nil)
 
-func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
+func (s *externalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*store.ExternalAuthToken, error) {
 	if user == 0 {
 		return nil, errors.New("no uid specified")
 	}
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.GetExternalToken", int32(user)); err != nil {
 		return nil, err
 	}
-	var tok auth.ExternalAuthToken
+	var tok store.ExternalAuthToken
 	err := appDBH(ctx).SelectOne(&tok, `SELECT * FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3`, user, host, clientID)
 	if err == sql.ErrNoRows {
-		return nil, auth.ErrNoExternalAuthToken
+		return nil, store.ErrNoExternalAuthToken
 	} else if err != nil {
 		return nil, err
 	}
 	return &tok, nil
 }
 
-func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
+func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *store.ExternalAuthToken) error {
 	if tok.User == 0 {
 		return errors.New("no uid specified")
 	}
@@ -55,9 +54,9 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		ctx = WithAppDBH(ctx, tx)
 
-		if _, err := s.GetUserToken(ctx, tok.User, tok.Host, tok.ClientID); err == auth.ErrNoExternalAuthToken {
+		if _, err := s.GetUserToken(ctx, tok.User, tok.Host, tok.ClientID); err == store.ErrNoExternalAuthToken {
 			return tx.Insert(tok)
-		} else if err != nil && err != auth.ErrExternalAuthTokenDisabled {
+		} else if err != nil && err != store.ErrExternalAuthTokenDisabled {
 			return err
 		}
 		_, err := tx.Update(tok)
@@ -65,12 +64,12 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	})
 }
 
-func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {
+func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*store.ExternalAuthToken, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "ExternalAuthTokens.ListExternalUsers"); err != nil {
 		return nil, err
 	}
 	if extUIDs == nil || len(extUIDs) == 0 {
-		return []*auth.ExternalAuthToken{}, nil
+		return []*store.ExternalAuthToken{}, nil
 	}
 	var args []interface{}
 	arg := func(a interface{}) string {
@@ -89,7 +88,7 @@ func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []in
 	whereSQL := "(" + strings.Join(conds, ") AND (") + ")"
 	sql := fmt.Sprintf(`SELECT * FROM ext_auth_token WHERE %s`, whereSQL)
 
-	var toks []*auth.ExternalAuthToken
+	var toks []*store.ExternalAuthToken
 	if _, err := appDBH(ctx).Select(&toks, sql, args...); err != nil {
 		return nil, err
 	}

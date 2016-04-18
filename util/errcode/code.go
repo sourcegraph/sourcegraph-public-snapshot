@@ -7,7 +7,6 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 
@@ -31,7 +30,7 @@ func HTTP(err error) int {
 	switch err {
 	case vcs.ErrRevisionNotFound:
 		return http.StatusNotFound
-	case auth.ErrNoExternalAuthToken:
+	case store.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized
 	}
 

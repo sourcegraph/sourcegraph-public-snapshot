@@ -6,8 +6,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func (s *Users) MockGet(t *testing.T, wantUser string) (called *bool) {
@@ -51,16 +51,16 @@ func (s *Users) MockList(t *testing.T, wantUsers ...string) (called *bool) {
 
 func (s *ExternalAuthTokens) MockGetUserToken(t *testing.T) (called *bool) {
 	called = new(bool)
-	s.GetUserToken_ = func(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
+	s.GetUserToken_ = func(ctx context.Context, user int, host, clientID string) (*store.ExternalAuthToken, error) {
 		*called = true
-		return &auth.ExternalAuthToken{}, nil
+		return &store.ExternalAuthToken{}, nil
 	}
 	return
 }
 
 func (s *ExternalAuthTokens) MockSetUserToken(t *testing.T) (called *bool) {
 	called = new(bool)
-	s.SetUserToken_ = func(ctx context.Context, tok *auth.ExternalAuthToken) error {
+	s.SetUserToken_ = func(ctx context.Context, tok *store.ExternalAuthToken) error {
 		*called = true
 		return nil
 	}

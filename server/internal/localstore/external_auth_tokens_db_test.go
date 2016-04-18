@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
@@ -18,7 +18,7 @@ func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	wantToken := &auth.ExternalAuthToken{
+	wantToken := &store.ExternalAuthToken{
 		User:     1,
 		Host:     "example.com",
 		ClientID: "c",
@@ -44,7 +44,7 @@ func TestExternalAuthTokens_GetUserToken_notFound(t *testing.T) {
 	defer done()
 
 	tok, err := s.GetUserToken(ctx, 1, "example.com", "c")
-	if wantErr := auth.ErrNoExternalAuthToken; err != wantErr {
+	if wantErr := store.ErrNoExternalAuthToken; err != wantErr {
 		t.Errorf("got err = %q, want %q", err, wantErr)
 	}
 	if tok != nil {
@@ -59,7 +59,7 @@ func TestExternalAuthTokens_SetUserToken_create(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	tok := &auth.ExternalAuthToken{
+	tok := &store.ExternalAuthToken{
 		User:     1,
 		Host:     "example.com",
 		ClientID: "c",
@@ -87,7 +87,7 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	tok0 := &auth.ExternalAuthToken{
+	tok0 := &store.ExternalAuthToken{
 		User:     1,
 		Host:     "example.com",
 		ClientID: "c",
@@ -95,7 +95,7 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	}
 	s.mustSetUserToken(ctx, t, tok0)
 
-	tok1 := &auth.ExternalAuthToken{
+	tok1 := &store.ExternalAuthToken{
 		User:     1,
 		Host:     "example.com",
 		ClientID: "c",
@@ -124,7 +124,7 @@ func TestExternalAuthTokens_DeleteToken(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	tok0 := &auth.ExternalAuthToken{
+	tok0 := &store.ExternalAuthToken{
 		User:     1,
 		Host:     "example.com",
 		ClientID: "c",
@@ -143,7 +143,7 @@ func TestExternalAuthTokens_DeleteToken(t *testing.T) {
 	}
 
 	_, err := s.GetUserToken(ctx, 1, "example.com", "c")
-	if wantErr := auth.ErrNoExternalAuthToken; err != wantErr {
+	if wantErr := store.ErrNoExternalAuthToken; err != wantErr {
 		t.Errorf("got err = %q, want %q", err, wantErr)
 	}
 }
@@ -155,7 +155,7 @@ func TestExternalAuthTokens_ListExternalUsers_empty(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	dbToks := []*auth.ExternalAuthToken{
+	dbToks := []*store.ExternalAuthToken{
 		{
 			User:     1,
 			Host:     "example.com",
@@ -199,7 +199,7 @@ func TestExternalAuthTokens_ListExternalUsers_nonempty(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
-	dbToks := []*auth.ExternalAuthToken{
+	dbToks := []*store.ExternalAuthToken{
 		{
 			User:     1,
 			Host:     "example.com",
@@ -245,7 +245,7 @@ func TestExternalAuthTokens_ListExternalUsers_nonempty(t *testing.T) {
 	}
 }
 
-func normalizeExternalAuthToken(tok *auth.ExternalAuthToken) {
+func normalizeExternalAuthToken(tok *store.ExternalAuthToken) {
 	tok.RefreshedAt = tok.RefreshedAt.In(time.UTC).Round(time.Second)
 	if tok.FirstAuthFailureAt != nil {
 		rounded := tok.FirstAuthFailureAt.In(time.UTC).Round(time.Second)

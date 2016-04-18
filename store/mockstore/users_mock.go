@@ -4,7 +4,6 @@ package mockstore
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
@@ -84,17 +83,17 @@ func (s *Directory) GetUserByEmail(ctx context.Context, email string) (*sourcegr
 var _ store.Directory = (*Directory)(nil)
 
 type ExternalAuthTokens struct {
-	GetUserToken_      func(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error)
-	SetUserToken_      func(ctx context.Context, tok *auth.ExternalAuthToken) error
+	GetUserToken_      func(ctx context.Context, user int, host, clientID string) (*store.ExternalAuthToken, error)
+	SetUserToken_      func(ctx context.Context, tok *store.ExternalAuthToken) error
 	DeleteToken_       func(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error
-	ListExternalUsers_ func(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error)
+	ListExternalUsers_ func(ctx context.Context, extUIDs []int, host, clientID string) ([]*store.ExternalAuthToken, error)
 }
 
-func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error) {
+func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, clientID string) (*store.ExternalAuthToken, error) {
 	return s.GetUserToken_(ctx, user, host, clientID)
 }
 
-func (s *ExternalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
+func (s *ExternalAuthTokens) SetUserToken(ctx context.Context, tok *store.ExternalAuthToken) error {
 	return s.SetUserToken_(ctx, tok)
 }
 
@@ -102,7 +101,7 @@ func (s *ExternalAuthTokens) DeleteToken(ctx context.Context, tok *sourcegraph.E
 	return s.DeleteToken_(ctx, tok)
 }
 
-func (s *ExternalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {
+func (s *ExternalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*store.ExternalAuthToken, error) {
 	return s.ListExternalUsers_(ctx, extUIDs, host, clientID)
 }
 

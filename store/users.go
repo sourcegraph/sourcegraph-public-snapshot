@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -42,7 +41,7 @@ type ExternalAuthTokens interface {
 	// GetUserToken returns the user's auth token for a host (e.g.,
 	// "github.com"). If none exists, ErrNoExternalAuthToken is
 	// returned.
-	GetUserToken(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error)
+	GetUserToken(ctx context.Context, user int, host, clientID string) (*ExternalAuthToken, error)
 
 	// SetUserToken sets the user's auth token for a host (e.g.,
 	// "github.com").
@@ -51,14 +50,14 @@ type ExternalAuthTokens interface {
 	// overwritten by the new tok. If user, host, and clientID do not
 	// match tok.User, tok.Host, and tok.ClientID, an error is
 	// returned.
-	SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error
+	SetUserToken(ctx context.Context, tok *ExternalAuthToken) error
 
 	// DeleteToken deletes the token from the database.
 	DeleteToken(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error
 
 	// ListExternalUsers returns the list of external tokens corresponding to
 	// the given external user ids.
-	ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error)
+	ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*ExternalAuthToken, error)
 }
 
 // UserNotFoundError occurs when a user is not found.

@@ -59,7 +59,7 @@ func NewContextWithAuthedClient(ctx context.Context) (context.Context, error) {
 			userClient = ghConf.AuthedClient(tok.Token)
 			isAuthedUser = true
 		}
-		if err != nil && err != auth.ErrNoExternalAuthToken && err != auth.ErrExternalAuthTokenDisabled {
+		if err != nil && err != store.ErrNoExternalAuthToken && err != store.ErrExternalAuthTokenDisabled {
 			return nil, err
 		}
 	}

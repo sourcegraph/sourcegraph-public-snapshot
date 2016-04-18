@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func TestAuthService_DeleteAndRevokeExternalToken(t *testing.T) {
@@ -13,9 +13,9 @@ func TestAuthService_DeleteAndRevokeExternalToken(t *testing.T) {
 	ctx, mock := testContext()
 
 	var calledGetUserToken, calledDeleteToken bool
-	mock.stores.ExternalAuthTokens.GetUserToken_ = func(ctx context.Context, user int, host, clientID string) (*authpkg.ExternalAuthToken, error) {
+	mock.stores.ExternalAuthTokens.GetUserToken_ = func(ctx context.Context, user int, host, clientID string) (*store.ExternalAuthToken, error) {
 		calledGetUserToken = true
-		return &authpkg.ExternalAuthToken{Host: "h", ClientID: "c", Token: "t"}, nil
+		return &store.ExternalAuthToken{Host: "h", ClientID: "c", Token: "t"}, nil
 	}
 	mock.stores.ExternalAuthTokens.DeleteToken_ = func(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error {
 		calledDeleteToken = true

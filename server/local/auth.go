@@ -127,7 +127,7 @@ func (s *auth) GetExternalToken(ctx context.Context, tok *sourcegraph.ExternalTo
 	setExternalTokenSpecDefaults(ctx, tok, nil)
 
 	dbToken, err := extTokensStore.GetUserToken(ctx, int(tok.UID), tok.Host, tok.ClientID)
-	if err == authpkg.ErrNoExternalAuthToken {
+	if err == store.ErrNoExternalAuthToken {
 		return nil, grpc.Errorf(codes.NotFound, "no external auth token found")
 	} else if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 
 	setExternalTokenSpecDefaults(ctx, nil, extToken)
 
-	dbToken := &authpkg.ExternalAuthToken{
+	dbToken := &store.ExternalAuthToken{
 		User:     int(extToken.UID),
 		Host:     extToken.Host,
 		Token:    extToken.Token,
