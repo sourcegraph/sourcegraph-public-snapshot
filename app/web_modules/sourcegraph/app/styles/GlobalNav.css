@@ -2,11 +2,11 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 
-@value navbar-height 40px;
+@value navbarHeight 40px;
 
 .navbar + * {
 	/* Account for navbar's position: fixed. */
-	padding-top: navbar-height;
+	padding-top: navbarHeight;
 }
 
 .navbar {
@@ -17,7 +17,7 @@
 	border-color: #efefef;
 	background-color: #fafafa;
 
-	height: navbar-height;
+	height: navbarHeight;
 	position: fixed;
 	top: 0;
 	width: 100%;
