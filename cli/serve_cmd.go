@@ -11,7 +11,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -371,7 +370,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	mw = append(mw, sourcegraphComGoGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {
-		mw = append(mw, gitCloneHandler)
+		mw = append(mw, middleware.GitHubCloneProxy)
 	}
 
 	h := handlerutil.WithMiddleware(sm, mw...)
@@ -646,25 +645,6 @@ func (c *ServeCmd) checkReachability() {
 	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(client.Ctx).String() {
 		doCheck(sourcegraph.WithGRPCEndpoint(client.Ctx, extEndpoint), false)
 	}
-}
-
-func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if ua := r.UserAgent(); !strings.HasPrefix(ua, "git/") && !strings.HasPrefix(ua, "JGit/") {
-		next(w, r)
-		return
-	}
-
-	// handle `git clone`
-	h := httputil.NewSingleHostReverseProxy(&url.URL{Scheme: "https", Host: "github.com", Path: "/"})
-	origDirector := h.Director
-	h.Director = func(r *http.Request) {
-		origDirector(r)
-		r.Host = "github.com"
-		if strings.HasPrefix(r.URL.Path, "/github.com/") {
-			r.URL.Path = r.URL.Path[len("/github.com"):]
-		}
-	}
-	h.ServeHTTP(w, r)
 }
 
 // safeConfigFlags returns the commandline flag data for the `src serve` command,
