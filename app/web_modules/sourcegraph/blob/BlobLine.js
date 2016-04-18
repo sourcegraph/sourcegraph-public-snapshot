@@ -44,6 +44,7 @@ class BlobLine extends Component {
 		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
 		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
 		state.activeDef = state.ownAnnURLs && state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
+		state.activeDefNoRev = state.ownAnnURLs && state.ownAnnURLs[props.activeDefNoRev] ? props.activeDefNoRev : null;
 
 		state.lineNumber = props.lineNumber || null;
 		state.oldLineNumber = props.oldLineNumber || null;
@@ -83,7 +84,7 @@ class BlobLine extends Component {
 							// disabledAnn is an ann that you can't click on (possibly a broken ref).
 							[s.disabledAnn]: isHighlighted && (this.state.highlightedDefObj && this.state.highlightedDefObj.Error),
 
-							[s.activeAnn]: hasURL(ann, this.state.activeDef),
+							[s.activeAnn]: hasURL(ann, this.state.activeDef) || hasURL(ann, this.state.activeDefNoRev),
 						})}
 						to={ann.URL || ann.URLs[0]}
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
@@ -150,6 +151,9 @@ BlobLine.propTypes = {
 	// For diff hunks.
 	oldLineNumber: React.PropTypes.number,
 	newLineNumber: React.PropTypes.number,
+
+	activeDef: React.PropTypes.string, // the def that the page is about
+	activeDefNoRev: React.PropTypes.string, // activeDef without an "@rev" (if any)
 
 	// startByte is the byte position of the first byte of contents. It is
 	// required if annotations are specified, so that the annotations can
