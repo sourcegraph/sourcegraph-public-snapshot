@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"html/template"
 	"net/http"
@@ -75,7 +76,32 @@ func renderRouterState(ctx context.Context, state *renderState) (*RenderResult, 
 		return nil, err
 	}
 
-	data, err := renderReactComponent(ctx, arg)
+	r, err := getRenderer(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct cache key.
+	//
+	// To increase cache hit rate, omit items from the cache key that
+	// do not alter the behavior or privileges of the request, such as
+	// the Appdash span ID.
+	var cacheKey string
+	{
+		key := *state
+		key.JSContext.CurrentSpanID = ""
+		key.JSContext.CacheControl ""
+		key.JSContext.CSRFToken = ""    // CSRFToken never used for auth, and this returns data, doesn't perform actions
+		key.Deadline = 0
+		keyJSON, err := json.Marshal(key)
+		if err != nil {
+			return nil, err
+		}
+		keyArray := sha256.Sum256(keyJSON)
+		cacheKey = string(keyArray[:])
+	}
+
+	data, err := r.Call(ctx, cacheKey, arg)
 	if err != nil {
 		log15.Warn("Error rendering React component on the server (falling back to client-side rendering)", "err", err, "arg", truncateArg(arg))
 		return nil, err

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"io/ioutil"
 	"runtime"
@@ -101,14 +100,11 @@ func (prerenderEvent) Schema() string     { return "prerenderReactComponent" }
 func (e prerenderEvent) Start() time.Time { return e.S }
 func (e prerenderEvent) End() time.Time   { return e.E }
 
-// call calls r.s.Call with caching.
-func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) (json.RawMessage, error) {
-	// Construct cache key.
-	keyArray := sha256.Sum256(arg)
-	key := string(keyArray[:])
-
+// call calls r.s.Call with caching (using the given key as the cache
+// key).
+func (r *cachingRenderer) Call(ctx context.Context, cacheKey string, arg json.RawMessage) (json.RawMessage, error) {
 	// Get from cache.
-	cachedRes, cacheHit := r.cache.Get(key)
+	cachedRes, cacheHit := r.cache.Get(cacheKey)
 
 	// Log in Appdash.
 	start := time.Now()
@@ -134,7 +130,7 @@ func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) (json.R
 
 	res, err := r.s.Call(ctx, arg)
 	if err == nil {
-		r.cache.Add(key, res)
+		r.cache.Add(cacheKey, res)
 	}
 	return res, err
 
@@ -142,14 +138,6 @@ func (r *cachingRenderer) Call(ctx context.Context, arg json.RawMessage) (json.R
 
 func (r *cachingRenderer) Close() error {
 	return r.s.Close()
-}
-
-func renderReactComponent(ctx context.Context, arg json.RawMessage) (json.RawMessage, error) {
-	r, err := getRenderer(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return r.Call(ctx, arg)
 }
 
 type contextKey int
