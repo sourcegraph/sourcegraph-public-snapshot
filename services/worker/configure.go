@@ -21,7 +21,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Builder, error) {
+func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.Builder, error) {
 	var b builder.Builder
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)
@@ -29,9 +29,8 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 		return nil, err
 	}
 
-	repoSpec := sourcegraph.RepoSpec{URI: build.Repo}
 	repoRev := sourcegraph.RepoRevSpec{
-		RepoSpec: repoSpec,
+		RepoSpec: build.Spec.Repo,
 		Rev:      build.CommitID,
 		CommitID: build.CommitID,
 	}
@@ -93,7 +92,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	}
 
 	b.Payload.Repo = &plugin.Repo{
-		FullName:  build.Repo,
+		FullName:  build.Spec.Repo.URI,
 		Clone:     containerCloneURL.String(),
 		Link:      repoLink,
 		IsPrivate: true,
@@ -105,7 +104,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 	// may be the same credentials as the clone netrc credentials, but
 	// that's not true in all cases (e.g., clone credentials could be
 	// for GitHub).
-	hostNetrc, err := getHostNetrcEntry(ctx, hostname, build.Repo)
+	hostNetrc, err := getHostNetrcEntry(ctx, hostname, build.Spec.Repo.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +168,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 			return nil, err
 		}
 		createdTasks, err := c.Builds.CreateTasks(ctx, &sourcegraph.BuildsCreateTasksOp{
-			Build: build.Spec(),
+			Build: build.Spec,
 			Tasks: tasks,
 		})
 		if err != nil {
@@ -193,7 +192,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.Build) (*builder.Bui
 			return err
 		}
 		_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
-			Build: build.Spec(),
+			Build: build.Spec,
 			Info:  sourcegraph.BuildUpdate{BuilderConfig: string(configYAML)},
 		})
 		return err

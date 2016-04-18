@@ -649,6 +649,23 @@ message BuildConfig {
 	string BuilderConfig = 16;
 }
 
+message BuildJob {
+	// Spec is the BuildSpec of the referenced build.
+	BuildSpec Spec = 1 [(gogoproto.nullable) = false];
+	
+	// CommitID is the full resolved commit ID to build.
+	string CommitID = 3;
+
+	// Branch, if set, is the name of the VCS branch on which this
+	// commit was built. See Build.Branch.
+	string Branch = 14;
+
+	// Tag, if set, is the name of the VCS tag associated with this
+	// commit. See Branch for more information. A single commit can
+	// have any number of tags.
+	string Tag = 15;
+}
+
 // BuildGetLogOptions specifies options for build log API methods.
 message BuildGetLogOptions {
 	// MinID indicates that only log entries whose monotonically increasing ID is
@@ -1041,7 +1058,7 @@ service Builds {
 	// DequeueNext returns the next queued build and marks it as
 	// having started (atomically). If there are no builds in the
 	// queue, a NotFound error is returned.
-	rpc DequeueNext(BuildsDequeueNextOp) returns (Build);
+	rpc DequeueNext(BuildsDequeueNextOp) returns (BuildJob);
 }
 
 // OrgsService communicates with the organizations-related endpoints in the

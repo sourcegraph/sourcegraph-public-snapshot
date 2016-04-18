@@ -364,7 +364,7 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, param *sourcegraph.Builds
 	return
 }
 
-func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.BuildsDequeueNextOp) (res *sourcegraph.Build, err error) {
+func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.BuildsDequeueNextOp) (res *sourcegraph.BuildJob, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Builds", "DequeueNext", param)
 	defer func() {

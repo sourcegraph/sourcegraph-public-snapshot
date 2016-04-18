@@ -3,10 +3,11 @@ package worker
 import (
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func buildCleanup(ctx context.Context, activeBuilds *activeBuilds) {
@@ -26,13 +27,13 @@ func buildCleanup(ctx context.Context, activeBuilds *activeBuilds) {
 		// Log if it's taking a noticeable amount of time.
 		builds := make([]string, 0, len(activeBuilds.Builds))
 		for b := range activeBuilds.Builds {
-			builds = append(builds, b.Spec().IDString())
+			builds = append(builds, b.Spec.IDString())
 		}
 		log15.Info("Marking active builds as killed before terminating...", "builds", builds)
 	})
 	for b := range activeBuilds.Builds {
-		if err := markBuildAsKilled(ctx, b.Spec()); err != nil {
-			log15.Error("Error marking build as killed upon process termination", "build", b.Spec(), "err", err)
+		if err := markBuildAsKilled(ctx, b.Spec); err != nil {
+			log15.Error("Error marking build as killed upon process termination", "build", b.Spec, "err", err)
 		}
 	}
 }

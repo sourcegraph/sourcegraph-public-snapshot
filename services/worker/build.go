@@ -5,61 +5,62 @@ import (
 	"io"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/builder"
 )
 
 // startBuild starts and monitors a single build. It manages the
 // build's state on the Sourcegraph server.
-func startBuild(ctx context.Context, build *sourcegraph.Build) {
-	done, err := startHeartbeat(ctx, build.Spec())
+func startBuild(ctx context.Context, build *sourcegraph.BuildJob) {
+	done, err := startHeartbeat(ctx, build.Spec)
 	if err != nil {
-		log15.Error("Updating build starting state failed", "build", build.Spec(), "err", err)
+		log15.Error("Updating build starting state failed", "build", build.Spec, "err", err)
 		return
 	}
 	defer done()
 
 	start := time.Now()
 
-	log15.Info("Starting build", "build", build.Spec().IDString())
+	log15.Info("Starting build", "build", build.Spec.IDString())
 	c, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		log15.Error("Updating build starting state failed", "build", build.Spec(), "err", err)
+		log15.Error("Updating build starting state failed", "build", build.Spec, "err", err)
 		return
 	}
 	_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
-		Build: build.Spec(),
+		Build: build.Spec,
 		Info:  sourcegraph.BuildUpdate{StartedAt: now()},
 	})
 	if err != nil {
-		log15.Error("Updating build starting state failed", "build", build.Spec(), "err", err)
+		log15.Error("Updating build starting state failed", "build", build.Spec, "err", err)
 		return
 	}
 
 	// Configure build.
 	builder, err := configureBuild(ctx, build)
 	if err != nil {
-		log15.Error("Configuring build failed", "build", build.Spec(), "err", err)
+		log15.Error("Configuring build failed", "build", build.Spec, "err", err)
 		return
 	}
 
 	// Run build.
 	execErr := builder.Exec(ctx)
 	if execErr == nil {
-		log15.Info("Build succeeded", "build", build.Spec().IDString(), "time", time.Since(start))
+		log15.Info("Build succeeded", "build", build.Spec.IDString(), "time", time.Since(start))
 	} else if ctx.Err() != nil {
-		log15.Info("Build killed", "build", build.Spec().IDString(), "time", time.Since(start))
+		log15.Info("Build killed", "build", build.Spec.IDString(), "time", time.Since(start))
 		return
 	} else {
-		log15.Info("Build failed", "build", build.Spec().IDString(), "time", time.Since(start), "err", execErr)
+		log15.Info("Build failed", "build", build.Spec.IDString(), "time", time.Since(start), "err", execErr)
 	}
 
 	_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
-		Build: build.Spec(),
+		Build: build.Spec,
 		Info: sourcegraph.BuildUpdate{
 			Success: execErr == nil,
 			Failure: execErr != nil,
@@ -67,7 +68,7 @@ func startBuild(ctx context.Context, build *sourcegraph.Build) {
 		},
 	})
 	if err != nil {
-		log15.Error("Updating build final state failed", "build", build.Spec(), "err", err)
+		log15.Error("Updating build final state failed", "build", build.Spec, "err", err)
 	}
 }
 

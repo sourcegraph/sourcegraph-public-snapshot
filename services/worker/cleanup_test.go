@@ -28,14 +28,21 @@ func TestBuildCleanup(t *testing.T) {
 		},
 	})
 
-	build := &sourcegraph.Build{Repo: "test", ID: 1}
+	build := &sourcegraph.BuildJob{
+		Spec: sourcegraph.BuildSpec{
+			Repo: sourcegraph.RepoSpec{
+				URI: "test",
+			},
+			ID: 1,
+		},
+	}
 	activeBuilds := newActiveBuilds()
 	activeBuilds.Add(build)
 	buildCleanup(ctx, activeBuilds)
 	activeBuilds.Remove(build)
 
 	expectedUpdate := &sourcegraph.BuildsUpdateOp{
-		Build: build.Spec(),
+		Build: build.Spec,
 		Info: sourcegraph.BuildUpdate{
 			EndedAt: updateOp.Info.EndedAt,
 			Killed:  true,
@@ -44,7 +51,7 @@ func TestBuildCleanup(t *testing.T) {
 	if !reflect.DeepEqual(updateOp, expectedUpdate) {
 		t.Errorf("Unexpected updateOp %#v", updateOp)
 	}
-	if listBuildTasksOp == nil || !reflect.DeepEqual(listBuildTasksOp.Build, build.Spec()) {
+	if listBuildTasksOp == nil || !reflect.DeepEqual(listBuildTasksOp.Build, build.Spec) {
 		t.Errorf("Unexpected updateOp %#v", listBuildTasksOp)
 	}
 }

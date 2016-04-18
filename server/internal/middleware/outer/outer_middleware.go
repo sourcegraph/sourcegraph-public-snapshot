@@ -735,7 +735,7 @@ func (s wrappedBuilds) GetTaskLog(ctx context.Context, v1 *sourcegraph.BuildsGet
 	return rv, nil
 }
 
-func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (returnedResult *sourcegraph.Build, returnedError error) {
+func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDequeueNextOp) (returnedResult *sourcegraph.BuildJob, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10

@@ -11,12 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
@@ -157,22 +158,22 @@ func getScopedToken(scope string) (*oauth2.Token, error) {
 
 type activeBuilds struct {
 	sync.RWMutex
-	Builds map[*sourcegraph.Build]struct{}
+	Builds map[*sourcegraph.BuildJob]struct{}
 }
 
 func newActiveBuilds() *activeBuilds {
 	return &activeBuilds{
-		Builds: map[*sourcegraph.Build]struct{}{},
+		Builds: map[*sourcegraph.BuildJob]struct{}{},
 	}
 }
 
-func (a *activeBuilds) Add(build *sourcegraph.Build) {
+func (a *activeBuilds) Add(build *sourcegraph.BuildJob) {
 	a.Lock()
 	a.Builds[build] = struct{}{}
 	a.Unlock()
 }
 
-func (a *activeBuilds) Remove(build *sourcegraph.Build) {
+func (a *activeBuilds) Remove(build *sourcegraph.BuildJob) {
 	a.Lock()
 	delete(a.Builds, build)
 	a.Unlock()

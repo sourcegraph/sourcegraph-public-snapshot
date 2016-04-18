@@ -499,7 +499,7 @@ LIMIT ` + arg(opt.Limit()) + ` OFFSET ` + arg(opt.Offset()) + `;`
 	return toBuildTasks(tasks), nil
 }
 
-func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.Build, error) {
+func (s *builds) DequeueNext(ctx context.Context) (*sourcegraph.BuildJob, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.DequeueNext"); err != nil {
 		return nil, err
 	}
@@ -524,7 +524,7 @@ RETURNING repo_build.*;
 	} else if err != nil {
 		return nil, err
 	}
-	return nextBuild.toBuild(), nil
+	return nextBuild.toBuild().ToBuildJob(), nil
 }
 
 func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {

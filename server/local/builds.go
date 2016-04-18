@@ -274,7 +274,7 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 	return store.BuildLogsFromContext(ctx).Get(ctx, task, minID, minTime, maxTime)
 }
 
-func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.Build, error) {
+func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.BuildJob, error) {
 	nextBuild, err := store.BuildsFromContext(ctx).DequeueNext(ctx)
 	if err != nil {
 		return nil, err
@@ -314,8 +314,8 @@ func observeFinishedBuild(b *sourcegraph.Build) {
 	buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 }
 
-func observeDequeuedBuild(b *sourcegraph.Build) {
-	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Repo)}
+func observeDequeuedBuild(b *sourcegraph.BuildJob) {
+	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Spec.Repo.URI)}
 	buildsDequeue.With(labels).Inc()
 }
 

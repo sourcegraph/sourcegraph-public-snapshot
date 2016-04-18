@@ -352,12 +352,8 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
-	if build.StartedAt == nil {
-		t.Errorf("got dequeued build StartedAt null, want it to be set to appx. now")
-	}
-	build.StartedAt = nil // don't compare since StartedAt is set from the current time
-	if !reflect.DeepEqual(build, want) {
-		t.Errorf("expected %#v, got %#v", want, build)
+	if !reflect.DeepEqual(build, want.ToBuildJob()) {
+		t.Errorf("expected %#v, got %#v", want.ToBuildJob(), build)
 	}
 }
 
@@ -379,20 +375,14 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{b1, b2, b3, bNo1, bNo2})
 
-	wantBuilds := []*sourcegraph.Build{
-		b1, b2, b3, nil, // in order
+	wantBuilds := []*sourcegraph.BuildJob{
+		b1.ToBuildJob(), b2.ToBuildJob(), b3.ToBuildJob(), nil, // in order
 	}
 
 	for i, wantBuild := range wantBuilds {
 		build, err := s.DequeueNext(ctx)
 		if err != nil {
 			t.Fatal(err)
-		}
-		if build != nil {
-			if build.StartedAt == nil {
-				t.Errorf("got dequeued build #%d StartedAt null, want it to be set to appx. now", i+1)
-			}
-			build.StartedAt = nil // don't compare since StartedAt is set from the current time
 		}
 		if !jsonutil.JSONEqual(t, build, wantBuild) {
 			t.Errorf("dequeued build #%d\n\nGOT\n%+v\n\nWANT\n%+v", i+1, build, wantBuild)
@@ -447,14 +437,14 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 				}
 
 				dqMu.Lock()
-				if dq[b.ID] {
+				if dq[b.Spec.ID] {
 					dqMu.Unlock()
-					t.Errorf("build %d was already dequeued (race condition)", b.ID)
+					t.Errorf("build %d was already dequeued (race condition)", b.Spec.ID)
 					return
 				}
-				dq[b.ID] = true
+				dq[b.Spec.ID] = true
 				dqMu.Unlock()
-				t.Logf("worker %d got build %d (priority %d)", i, b.ID, b.Priority)
+				t.Logf("worker %d got build %d", i, b.Spec.ID)
 			}
 		}(i)
 	}
