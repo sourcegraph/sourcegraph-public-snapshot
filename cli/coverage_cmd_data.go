@@ -173,7 +173,6 @@ var langRepos_ = map[string][]string{
 		"github.com/go-sql-driver/mysql",
 		"github.com/facebookgo/grace",
 		"github.com/coreos/fleet",
-		"github.com/rancher/os",
 	},
 	"Java": []string{
 		"github.com/apache/cassandra",
