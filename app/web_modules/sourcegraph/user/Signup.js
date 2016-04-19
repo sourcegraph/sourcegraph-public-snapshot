@@ -52,21 +52,24 @@ class Signup extends Container {
 						placeholder="Username"
 						domRef={(e) => this._loginInput = e}
 						autoFocus={true}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						id="e2etest-password-field"
 						placeholder="Password"
 						domRef={(e) => this._passwordInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="email"
 						id="e2etest-email-field"
 						placeholder="Email"
 						domRef={(e) => this._emailInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"

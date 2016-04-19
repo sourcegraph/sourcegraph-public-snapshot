@@ -55,11 +55,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.Signup).Handler(nosurf.New(gRPCErrorHandler(serveSignup)))
-	m.Get(apirouter.Login).Handler(nosurf.New(gRPCErrorHandler(serveLogin)))
+	m.Get(apirouter.Signup).Handler(nosurf.New(grpcErrorHandler(serveSignup)))
+	m.Get(apirouter.Login).Handler(nosurf.New(grpcErrorHandler(serveLogin)))
 	m.Get(apirouter.Logout).Handler(nosurf.New(handler(serveLogout)))
-	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(gRPCErrorHandler(serveForgotPassword)))
-	m.Get(apirouter.ResetPassword).Handler(nosurf.New(gRPCErrorHandler(servePasswordReset)))
+	m.Get(apirouter.ForgotPassword).Handler(nosurf.New(grpcErrorHandler(serveForgotPassword)))
+	m.Get(apirouter.ResetPassword).Handler(nosurf.New(grpcErrorHandler(servePasswordReset)))
 
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
@@ -120,7 +120,9 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	}
 }
 
-func gRPCErrorHandler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+// grpcErrorHandler is a wrapper func for API handlers that gives special
+// treatment to gRPC errors using handleErrorWithGRPC
+func grpcErrorHandler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	return handlerutil.HandlerWithErrorReturn{
 		Handler: h,
 		Error:   handleErrorWithGRPC,
@@ -155,7 +157,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
 		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
 		if err != nil {
-			log15.Error("error redirecting to new URI", "error", err, "new_url", ee.NewURL)
+			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewURL)
 		}
 		return
 	}
@@ -178,17 +180,14 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 }
 
-type errorMessage struct {
-	Code    codes.Code `json:"code"`
-	Message string     `json:"message"`
-}
-
+// handleErrorWithGRPC is the error handler put on user-form APIs like login and signup. It
+// packages gRPC errors so the errors can be parsed in the frontend and displayed to users.
 func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
 		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
 		if err != nil {
-			log15.Error("error redirecting to new URI", "error", err, "new_url", ee.NewURL)
+			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewURL)
 		}
 		return
 	}
@@ -197,6 +196,12 @@ func handleErrorWithGRPC(w http.ResponseWriter, r *http.Request, status int, err
 	w.Header().Set("cache-control", "no-cache, max-age=0")
 
 	if code := grpc.Code(err); code != codes.Unknown {
+
+		type errorMessage struct {
+			Code    codes.Code `json:"code"`
+			Message string     `json:"message"`
+		}
+
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(errcode.HTTP(err))
 		json.NewEncoder(w).Encode(errorMessage{Code: code, Message: grpc.ErrorDesc(err)})

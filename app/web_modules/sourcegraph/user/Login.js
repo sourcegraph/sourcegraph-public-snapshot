@@ -50,14 +50,16 @@ class Login extends Container {
 						autoFocus={true}
 						placeholder="Username"
 						domRef={(e) => this._loginInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						id="e2etest-password-field"
 						placeholder="Password"
 						domRef={(e) => this._passwordInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"

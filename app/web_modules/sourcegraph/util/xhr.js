@@ -57,14 +57,15 @@ export function checkStatus(resp) {
 			// makes it easy enough to see failed HTTP requests.
 			console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
 		}
-		if (resp.headers.get("Content-Type") === "application/json; charset=utf-8") {
-			let err = new Error(resp.status);
+		let err;
+		try {
+			err = new Error(resp.status);
 			err.body = JSON.parse(body);
-			throw err;
+		} catch (error) {
+			err = new Error(resp.statusText);
+			err.body = body;
+			err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		}
-		let err = new Error(resp.statusText);
-		err.body = body;
-		err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		throw err;
 	});
 }

@@ -55,13 +55,15 @@ class ResetPassword extends Container {
 						placeholder="New password"
 						domRef={(e) => this._passwordInput = e}
 						autoFocus={true}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						placeholder="Confirm password"
 						domRef={(e) => this._confirmInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"

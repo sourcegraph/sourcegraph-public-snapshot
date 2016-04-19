@@ -145,7 +145,7 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 }
 
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
-	genericErr := grpc.Errorf(codes.InvalidArgument, "Error reseting password") // don't need to reveal everything
+	genericErr := grpc.Errorf(codes.InvalidArgument, "error reseting password") // don't need to reveal everything
 	var req passwordResetRequest
 	if err := appDBH(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err == sql.ErrNoRows {
 		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)

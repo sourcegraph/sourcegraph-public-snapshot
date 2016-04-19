@@ -50,7 +50,8 @@ class ForgotPassword extends Container {
 						placeholder="Email"
 						domRef={(e) => this._emailInput = e}
 						autoFocus={true}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
