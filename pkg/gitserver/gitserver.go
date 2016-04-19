@@ -4,9 +4,13 @@ import (
 	"errors"
 	"log"
 	"net"
+	"syscall"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/neelance/chanrpc"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -22,6 +26,7 @@ var ReposDir string
 var servers [](chan<- *request)
 
 func Serve(l net.Listener) error {
+	registerMetrics()
 	requests := make(chan *request, 100)
 	go processRequests(requests)
 	srv := &chanrpc.Server{RequestChan: requests}
@@ -94,4 +99,26 @@ func broadcastCall(newRequest func() (*request, func() (genericReply, bool))) (i
 		return nil, errRPCFailed
 	}
 	return nil, vcs.RepoNotExistError{}
+}
+
+func registerMetrics() {
+	c := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "disk_space_available",
+		Help:      "Amount of free space disk space on the repos mount.",
+	}, func() float64 {
+		if ReposDir == "" {
+			log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
+			return float64(0)
+		}
+
+		var stat syscall.Statfs_t
+		syscall.Statfs(ReposDir, &stat)
+
+		return float64(stat.Bavail * uint64(stat.Bsize))
+
+	})
+
+	prometheus.MustRegister(c)
 }
