@@ -1,21 +1,107 @@
 // @flow
 
+import React from "react";
+import type {Route} from "react-router";
+import Component from "sourcegraph/Component";
+
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {getRouteName} from "./routePatterns";
 import context from "sourcegraph/app/context";
 
-// recordSpan records a single span (operation) as starting and ending at the
-// given unix timestamps (time in milliseconds since the unix epoch) to
-// Appdash.
-//
-// It is important that the name uniquely identify the type of operation, but
-// not include the exact contents/details of the operation. For example, use
-// the name "/search" but not "/search?q=<some user query>". This is so that
-// spans can be aggregated based on their name.
-//
-// Any potential error that would occur is sent to console.error instead of
-// being thrown.
-export function recordSpan(name: string, start: number, end: number) {
-	defaultFetch(`/.api/internal/appdash/record-span?S=${start}&E=${end}&Name=${name}`, {
+export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
+	type Props = {
+		routes: Array<Route>;
+		route: React.PropTypes.object.isRequired,
+	};
+
+	type State = {
+		routes: Array<Route>;
+		route: Object,
+	};
+
+	class WithAppdashRouteStateRecording extends Component {
+		constructor(props: Props) {
+			super(props);
+			this._recordRenderView = null;
+			this._hasMounted = false;
+		}
+
+		componentDidMount() {
+			this._hasMounted = true;
+			this._recordRenderView = null;
+		}
+
+		componentDidUpdate() {
+			// componentDidUpdate is called only once, and immediately after
+			// the initial rendering occurs. At this point the DOM has been
+			// fully prepared by React, i.e., the component has been rendered.
+			if (this._recordRenderView) {
+				let end = new Date().getTime();
+				let r = this._recordRenderView;
+				recordSpan({
+					name: `load view ${r.route}`,
+					start: r.start,
+					end: end,
+					metadata: {
+						location: window.location.href,
+					},
+				});
+				this._recordRenderView = null;
+			}
+		}
+
+		reconcileState(state: State, props: Props) {
+			Object.assign(state, props);
+		}
+
+		onStateTransition(prevState: State, nextState: State) {
+			// Begin recording the render time directly after the route changes
+			// as this signals loading a new "page" or "view" of sorts.
+			let nextRoute = getRouteName(nextState.routes);
+			if (this._hasMounted && getRouteName(prevState.routes) !== nextRoute) {
+				this._recordRenderView = {
+					route: nextRoute,
+					start: new Date().getTime(),
+				};
+			}
+		}
+
+		render() {
+			return <ChildComponent {...this.props} />;
+		}
+	}
+	return WithAppdashRouteStateRecording;
+}
+
+// RecordSpanOptions represents properties for an Appdash span ("operation").
+type RecordSpanOptions = {
+	// name is the unique name that identifies the type of operation, but does
+	// not include the exact contents/details of the operation.
+	//
+	// For example, a good name is "/search" because it uniquely identifies the
+	// operation (searching), whereas "/search?q=foobar" is a bad name because
+	// every recorded operation would be considered unique and could not be
+	// aggregated together by Appdash at all within the Dashboard.
+	name: string;
+
+	// start is the start time of the span ("operation") in milliseconds, since
+	// the unix epoch.
+	start: number;
+
+	// end is the end time of the span ("operation") in milliseconds, since the
+	// unix epoch.
+	end: number;
+
+	// metadata is optional metadata that can be sent with the span. It should
+	// be only string keys and values.
+	metadata: ?Object;
+};
+
+// recordSpan records a single span (operation) to Appdash. Any potential error
+// that would occur is sent to console.error instead of being thrown.
+export function recordSpan(opts: RecordSpanOptions) {
+	// TODO(slimsag): use opts.metadata
+	defaultFetch(`/.api/internal/appdash/record-span?S=${opts.start}&E=${opts.end}&Name=${opts.name}`, {
 		method: "POST",
 	})
 	.then(checkStatus)
@@ -39,7 +125,15 @@ function recordInitialPageLoad() {
 	// i.e., the time it took to load the page.
 	const startTime = window.performance.timing.fetchStart;
 	const endTime = window.performance.timing.domComplete;
-	recordSpan(`load ${window.location.pathname}`, startTime, endTime);
+	recordSpan({
+		// TODO(slimsag): use the route as the name!
+		name: `page load`,
+		start: startTime,
+		end: endTime,
+		metadata: {
+			location: window.location.href,
+		},
+	});
 
 	// Update the debug display on the page with the time.
 	let debug = document.querySelector("body>#debug>a");
