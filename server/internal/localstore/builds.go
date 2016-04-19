@@ -11,6 +11,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -524,7 +526,22 @@ RETURNING repo_build.*;
 	} else if err != nil {
 		return nil, err
 	}
-	return nextBuild.toBuild().ToBuildJob(), nil
+
+	return newBuildJob(ctx, nextBuild.toBuild())
+}
+
+func newBuildJob(ctx context.Context, b *sourcegraph.Build) (*sourcegraph.BuildJob, error) {
+	tok, err := sharedsecret.ShortTokenSource(idkey.FromContext(ctx), "repo:"+b.Repo).Token()
+	if err != nil {
+		return nil, err
+	}
+	return &sourcegraph.BuildJob{
+		Spec:        b.Spec(),
+		CommitID:    b.CommitID,
+		Branch:      b.Branch,
+		Tag:         b.Tag,
+		AccessToken: tok.AccessToken,
+	}, nil
 }
 
 func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {

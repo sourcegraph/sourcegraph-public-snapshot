@@ -664,6 +664,9 @@ message BuildJob {
 	// commit. See Branch for more information. A single commit can
 	// have any number of tags.
 	string Tag = 15;
+	
+	// AccessToken is a token that has write access to the repository being built.
+	string AccessToken = 16;
 }
 
 // BuildGetLogOptions specifies options for build log API methods.

@@ -28,15 +28,6 @@ func (b *Build) BranchOrTag() string {
 	return b.Tag
 }
 
-func (b *Build) ToBuildJob() *BuildJob {
-	return &BuildJob{
-		Spec:     b.Spec(),
-		CommitID: b.CommitID,
-		Branch:   b.Branch,
-		Tag:      b.Tag,
-	}
-}
-
 // IDString returns a succinct string that uniquely identifies this build.
 func (b BuildSpec) IDString() string {
 	return fmt.Sprintf("%s#%d", b.Repo.URI, b.ID)

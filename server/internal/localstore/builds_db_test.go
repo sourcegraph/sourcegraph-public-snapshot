@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/jsonutil"
@@ -345,6 +346,8 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
+	ctx = withTestIDKey(t, ctx)
+
 	s := &builds{}
 	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{want})
@@ -352,8 +355,9 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
-	if !reflect.DeepEqual(build, want.ToBuildJob()) {
-		t.Errorf("expected %#v, got %#v", want.ToBuildJob(), build)
+	build.AccessToken = "" // do not compare access token
+	if !reflect.DeepEqual(build, newBuildJobForTest(t, ctx, want)) {
+		t.Errorf("expected %#v, got %#v", newBuildJobForTest(t, ctx, want), build)
 	}
 }
 
@@ -362,6 +366,8 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 
 	ctx, _, done := testContext()
 	defer done()
+
+	ctx = withTestIDKey(t, ctx)
 
 	s := &builds{}
 	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
@@ -376,7 +382,7 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{b1, b2, b3, bNo1, bNo2})
 
 	wantBuilds := []*sourcegraph.BuildJob{
-		b1.ToBuildJob(), b2.ToBuildJob(), b3.ToBuildJob(), nil, // in order
+		newBuildJobForTest(t, ctx, b1), newBuildJobForTest(t, ctx, b2), newBuildJobForTest(t, ctx, b3), nil, // in order
 	}
 
 	for i, wantBuild := range wantBuilds {
@@ -384,10 +390,22 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if build != nil {
+			build.AccessToken = "" // do not compare access token
+		}
 		if !jsonutil.JSONEqual(t, build, wantBuild) {
 			t.Errorf("dequeued build #%d\n\nGOT\n%+v\n\nWANT\n%+v", i+1, build, wantBuild)
 		}
 	}
+}
+
+func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build) *sourcegraph.BuildJob {
+	j, err := newBuildJob(ctx, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	j.AccessToken = "" // do not compare access token
+	return j
 }
 
 // TestBuilds_DequeueNext_noRaceCondition ensures that DequeueNext will dequeue
@@ -399,6 +417,8 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 
 	ctx, _, done := testContext()
 	defer done()
+
+	ctx = withTestIDKey(t, ctx)
 
 	s := &builds{}
 	const (
@@ -455,4 +475,13 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 			t.Errorf("build %d was never dequeued", b.ID)
 		}
 	}
+}
+
+func withTestIDKey(t *testing.T, ctx context.Context) context.Context {
+	idkey.SetTestEnvironment(512)
+	k, err := idkey.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return idkey.NewContext(ctx, k)
 }

@@ -14,7 +14,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -149,11 +148,6 @@ func authenticateWorkerCtx() error {
 	// Authenticate future requests.
 	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
 	return nil
-}
-
-func getScopedToken(scope string) (*oauth2.Token, error) {
-	src := sharedsecret.ShortTokenSource(srcIDKey, scope)
-	return src.Token()
 }
 
 type activeBuilds struct {

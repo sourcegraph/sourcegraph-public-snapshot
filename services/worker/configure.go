@@ -104,11 +104,11 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 	// may be the same credentials as the clone netrc credentials, but
 	// that's not true in all cases (e.g., clone credentials could be
 	// for GitHub).
-	hostNetrc, err := getHostNetrcEntry(ctx, hostname, build.Spec.Repo.URI)
-	if err != nil {
-		return nil, err
-	}
-	b.Payload.Netrc = append(b.Payload.Netrc, hostNetrc)
+	b.Payload.Netrc = append(b.Payload.Netrc, &plugin.NetrcEntry{
+		Machine:  hostname,
+		Login:    "x-oauth-basic",
+		Password: build.AccessToken,
+	})
 
 	// Drone other payload settings
 	b.Payload.Workspace = &plugin.Workspace{}
@@ -238,24 +238,6 @@ func getSrclibCoverageURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, 
 	srclibCoverageURL.Path = "/.api" + srclibCoverageURL.Path
 
 	return containerAppURL.ResolveReference(srclibCoverageURL), nil
-}
-
-// getHostNetrcEntry creates a netrc entry that authorizes access to
-// the Sourcegraph server.
-func getHostNetrcEntry(ctx context.Context, host, repoURI string) (*plugin.NetrcEntry, error) {
-	// Get an access token scoped to this repo.
-	tok, err := getScopedToken("repo:" + repoURI)
-	if err != nil {
-		return nil, err
-	}
-	if tok.AccessToken == "" {
-		return nil, errors.New("can't generate local netrc entry: token is empty")
-	}
-	return &plugin.NetrcEntry{
-		Machine:  host,
-		Login:    "x-oauth-basic",
-		Password: tok.AccessToken,
-	}, nil
 }
 
 // parseCloneURL parses any valid HTTP or SSH git repo URL and normalizes it
