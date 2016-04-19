@@ -170,96 +170,100 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	return &sourcegraph.SearchResultsList{Results: results}, nil
 }
 
-func (g *globalDefs) Update(ctx context.Context, repo string) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repo); err != nil {
-		return err
-	}
-
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
-	if err != nil {
-		return err
-	}
-	commitID, err := vcsrepo.ResolveRevision("HEAD")
-	if err != nil {
-		return err
-	}
-
-	gstore := store.GraphFromContext(ctx)
-	defs, err := gstore.Defs(sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: string(commitID)}))
-	if err != nil {
-		return err
-	}
-
-	for _, d := range defs {
-		// Ignore broken defs
-		if d.Path == "" {
-			continue
+func (g *globalDefs) Update(ctx context.Context, repos []string) error {
+	for _, repo := range repos {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repo); err != nil {
+			return err
 		}
-		// Ignore local defs
-		if d.Local || strings.Contains(d.Path, "$") {
-			continue
+	}
+
+	for _, repo := range repos {
+		vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
+		if err != nil {
+			return err
 		}
-		if d.Repo == "" {
-			d.Repo = repo
+		commitID, err := vcsrepo.ResolveRevision("HEAD")
+		if err != nil {
+			return err
 		}
 
-		var docstring string
-		if len(d.Docs) == 1 {
-			docstring = d.Docs[0].Data
-		} else {
-			for _, candidate := range d.Docs {
-				if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
-					docstring = candidate.Data
+		gstore := store.GraphFromContext(ctx)
+		defs, err := gstore.Defs(sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: string(commitID)}))
+		if err != nil {
+			return err
+		}
+
+		for _, d := range defs {
+			// Ignore broken defs
+			if d.Path == "" {
+				continue
+			}
+			// Ignore local defs
+			if d.Local || strings.Contains(d.Path, "$") {
+				continue
+			}
+			if d.Repo == "" {
+				d.Repo = repo
+			}
+
+			var docstring string
+			if len(d.Docs) == 1 {
+				docstring = d.Docs[0].Data
+			} else {
+				for _, candidate := range d.Docs {
+					if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
+						docstring = candidate.Data
+					}
 				}
 			}
-		}
 
-		data, err := d.Data.Marshal()
-		if err != nil {
-			data = []byte{}
-		}
-		bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
+			data, err := d.Data.Marshal()
+			if err != nil {
+				data = []byte{}
+			}
+			bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
 
-		var args []interface{}
-		arg := func(v interface{}) string {
-			args = append(args, v)
-			return fmt.Sprintf("$%d", len(args))
-		}
+			var args []interface{}
+			arg := func(v interface{}) string {
+				args = append(args, v)
+				return fmt.Sprintf("$%d", len(args))
+			}
 
-		// TODO(beyang): this should be a delete and update
-		upsertSQL := `
+			// TODO(beyang): this should be a delete and update
+			upsertSQL := `
 WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
-			`, kind=` + arg(d.Kind) +
-			`, file=` + arg(d.File) +
-			`, updated_at=now()` +
-			`, data=` + arg(data) +
-			`, bow=` + arg(bow) +
-			`, doc=` + arg(docstring) +
-			` WHERE repo=` + arg(d.Repo) +
-			` AND commit_id=` + arg(d.CommitID) +
-			` AND unit_type=` + arg(d.UnitType) +
-			` AND unit=` + arg(d.Unit) +
-			` AND path=` + arg(d.Path) +
-			` RETURNING *
+				`, kind=` + arg(d.Kind) +
+				`, file=` + arg(d.File) +
+				`, updated_at=now()` +
+				`, data=` + arg(data) +
+				`, bow=` + arg(bow) +
+				`, doc=` + arg(docstring) +
+				` WHERE repo=` + arg(d.Repo) +
+				` AND commit_id=` + arg(d.CommitID) +
+				` AND unit_type=` + arg(d.UnitType) +
+				` AND unit=` + arg(d.Unit) +
+				` AND path=` + arg(d.Path) +
+				` RETURNING *
 )
 INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
-			arg(d.Repo) + `, ` +
-			arg(d.CommitID) + `, ` +
-			arg(d.UnitType) + `, ` +
-			arg(d.Unit) + `, ` +
-			arg(d.Path) + `, ` +
-			arg(d.Name) + `, ` +
-			arg(d.Kind) + `, ` +
-			arg(d.File) + `, ` +
-			`now(), ` +
-			arg(data) + `, ` +
-			arg(bow) + `, ` +
-			arg(docstring) + `
+				arg(d.Repo) + `, ` +
+				arg(d.CommitID) + `, ` +
+				arg(d.UnitType) + `, ` +
+				arg(d.Unit) + `, ` +
+				arg(d.Path) + `, ` +
+				arg(d.Name) + `, ` +
+				arg(d.Kind) + `, ` +
+				arg(d.File) + `, ` +
+				`now(), ` +
+				arg(data) + `, ` +
+				arg(bow) + `, ` +
+				arg(docstring) + `
  WHERE NOT EXISTS (SELECT * FROM upsert);`
 
-		if _, err := graphDBH(ctx).Exec(upsertSQL, args...); err != nil {
-			return err
+			if _, err := graphDBH(ctx).Exec(upsertSQL, args...); err != nil {
+				return err
+			}
 		}
 	}
 

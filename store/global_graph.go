@@ -14,7 +14,7 @@ type GlobalDefs interface {
 
 	// Update takes the graph output of a source unit and updates the set of defs in
 	// the global def store that originate from this source unit.
-	Update(ctx context.Context, repo string) error
+	Update(ctx context.Context, repos []string) error
 
 	// RefreshRefCounts computes and sets the global ref counts of all defs in the
 	// specified repos.

@@ -2483,6 +2483,12 @@ type SearchRefreshIndexOp struct {
 	// Repos is the list of repos whose graph data is to be re-indexed
 	// for global search.
 	Repos []*RepoSpec `protobuf:"bytes,1,rep,name=Repos" json:"Repos,omitempty"`
+	// RefreshCounts refreshes the global xref counts for the specified
+	// repositories.
+	RefreshCounts bool `protobuf:"varint,2,opt,name=RefreshCounts,proto3" json:"RefreshCounts,omitempty"`
+	// RefreshSearch refreshes the global search index for the specified
+	// repositories.
+	RefreshSearch bool `protobuf:"varint,3,opt,name=RefreshSearch,proto3" json:"RefreshSearch,omitempty"`
 }
 
 func (m *SearchRefreshIndexOp) Reset()         { *m = SearchRefreshIndexOp{} }
@@ -11389,6 +11395,26 @@ func (m *SearchRefreshIndexOp) MarshalTo(data []byte) (int, error) {
 			i += n
 		}
 	}
+	if m.RefreshCounts {
+		data[i] = 0x10
+		i++
+		if m.RefreshCounts {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.RefreshSearch {
+		data[i] = 0x18
+		i++
+		if m.RefreshSearch {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
 	return i, nil
 }
 
@@ -14016,6 +14042,12 @@ func (m *SearchRefreshIndexOp) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovSourcegraph(uint64(l))
 		}
+	}
+	if m.RefreshCounts {
+		n += 2
+	}
+	if m.RefreshSearch {
+		n += 2
 	}
 	return n
 }
@@ -34249,6 +34281,46 @@ func (m *SearchRefreshIndexOp) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RefreshCounts", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RefreshCounts = bool(v != 0)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RefreshSearch", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RefreshSearch = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])

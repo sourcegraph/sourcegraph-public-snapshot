@@ -21,19 +21,32 @@ func init() {
 }
 
 type searchCmd struct {
-	Limit int32 `long:"limit" description:"limit # of search results" default:"10"`
-	Args  struct {
+	Refresh string `long:"refresh" description:"repository URI for which to update the search index and scores"`
+	Limit   int32  `long:"limit" description:"limit # of search results" default:"10"`
+	Args    struct {
 		Query []string `name:"QUERY" description:"search query"`
 	} `positional-args:"yes" required:"yes"`
 }
 
 func (c *searchCmd) Execute(args []string) error {
+	cl := client.Client()
+	if c.Refresh != "" {
+		_, err := cl.Search.RefreshIndex(client.Ctx, &sourcegraph.SearchRefreshIndexOp{
+			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.Refresh}},
+			RefreshCounts: true,
+			RefreshSearch: true,
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	query := strings.Join(c.Args.Query, " ")
 	if query == "" {
 		log.Fatal("src search: empty query")
 	}
 
-	cl := client.Client()
 	results, err := cl.Search.Search(client.Ctx, &sourcegraph.SearchOp{
 		Query: query,
 		Opt: &sourcegraph.SearchOptions{

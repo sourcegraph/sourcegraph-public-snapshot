@@ -44,7 +44,8 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		// the data is always pointing to the HEAD commit of the default branch (which
 		// is the default behavior on our app for empty repoRevSpecs).
 
-		if err := store.GlobalDefsFromContext(ctx).Update(ctx, op.Repo); err != nil {
+		// TODO(beyang): move this out of here. Call at the gRPC level.
+		if err := store.GlobalDefsFromContext(ctx).Update(ctx, []string{op.Repo}); err != nil {
 			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
 		}
 

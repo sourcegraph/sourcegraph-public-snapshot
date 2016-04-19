@@ -72,8 +72,17 @@ func (s *search) RefreshIndex(ctx context.Context, op *sourcegraph.SearchRefresh
 	for _, r := range op.Repos {
 		repoURIs = append(repoURIs, r.URI)
 	}
-	if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, repoURIs); err != nil {
-		return nil, err
+
+	if op.RefreshSearch {
+		if err := store.GlobalDefsFromContext(ctx).Update(ctx, repoURIs); err != nil {
+			return nil, err
+		}
+	}
+
+	if op.RefreshCounts {
+		if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, repoURIs); err != nil {
+			return nil, err
+		}
 	}
 	return &pbtypes.Void{}, nil
 }
