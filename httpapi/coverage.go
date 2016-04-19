@@ -102,6 +102,6 @@ func summary(c map[string]*cvg.Coverage) string {
 		s[lang] = &covCopy
 	}
 
-	b, _ := json.Marshal(s)
+	b, _ := json.MarshalIndent(s, "", "  ")
 	return string(b)
 }
