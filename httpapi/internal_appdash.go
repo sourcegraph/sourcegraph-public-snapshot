@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
 
 type PageLoadEvent struct {
@@ -62,7 +63,31 @@ func serveInternalAppdashRecordSpan(w http.ResponseWriter, r *http.Request) erro
 	elapsed := ev.E.Sub(ev.S)
 	pageLoadDuration.With(labels).Observe(elapsed.Seconds())
 
-	rec := traceutil.Recorder(ctx).Child()
+	// The `internal.appdash.record-span` span for this POST request is tiny
+	// and thus not easily accessible within the UI. We use a workaround by
+	// attaching the span we will generate to the parent of this POST request
+	// span. I.e. they are sublings.
+
+	// Grab the collector from the context.
+	collector := appdashctx.Collector(ctx)
+	if collector == nil {
+		return fmt.Errorf("no Appdash collector set in context")
+	}
+
+	// Grab the SpanID from the context.
+	spanID := traceutil.SpanIDFromContext(ctx)
+	if spanID.Trace == 0 {
+		return fmt.Errorf("no Appdash trace ID set in context")
+	}
+
+	newSpan := appdash.NewSpanID(appdash.SpanID{
+		Trace: spanID.Trace,
+
+		// newSpan.Parent will be this span, so set it to this POST request
+		// span's parent span ID so we become a sibling.
+		Span: spanID.Parent,
+	})
+	rec := appdash.NewRecorder(newSpan, collector)
 	rec.Name(fmt.Sprintf("Browser %s", ev.Name))
 	rec.Event(ev)
 	return nil
