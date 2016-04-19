@@ -59,8 +59,6 @@ func UserQueryToksToTSQuery(toks []string) string {
 	}
 	tokMatch := strings.Join(toks, " | ")
 	return tokMatch
-	// prefixMatch := toks[len(toks)-1] + ":*"
-	// return tokMatch + " | " + prefixMatch
 }
 
 // strippedQuery is the user query after it has been stripped of special filter terms
