@@ -48,6 +48,9 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 					},
 				});
 				this._recordRenderView = null;
+
+				// Update the debug display on the page with the time.
+				this.__updateDebugTimer(r.start, end);
 			}
 		}
 
@@ -99,6 +102,13 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			});
 
 			// Update the debug display on the page with the time.
+			this.__updateDebugTimer(startTime, endTime);
+		}
+
+		// __updateDebugTimer updates the Appdash debug timer in the lower
+		// left-hand corner of the page to represent the given duration (unix
+		// timestamps).
+		__updateDebugTimer(startTime: number, endTime: number) {
 			let debug = document.querySelector("body>#debug>a");
 			const loadTimeSeconds = (endTime-startTime) / 1000;
 
