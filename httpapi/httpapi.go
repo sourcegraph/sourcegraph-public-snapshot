@@ -85,7 +85,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SrclibImport).Handler(handler(serveSrclibImport))
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
-	m.Get(apirouter.InternalAppdashUploadPageLoad).Handler(handler(serveInternalAppdashUploadPageLoad))
+	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))
 
 	// RepoRefresh handler requires the user, so install a middleware just for
 	// it (so other HTTP API requests do not incur the 2-3 DB requests made by

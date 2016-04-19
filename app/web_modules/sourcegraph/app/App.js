@@ -15,6 +15,7 @@ import styles from "./styles/App.css";
 import EventLogger from "sourcegraph/util/EventLogger";
 import {withStatusContext} from "sourcegraph/app/status";
 import context from "sourcegraph/app/context";
+import {recordSpan} from "sourcegraph/app/appdash";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -55,12 +56,23 @@ class App extends Component {
 	constructor(props: Props) {
 		super(props);
 		this._hasMounted = false;
+		this._recordRenderView = null;
 		EventLogger.init();
 	}
 
 	componentDidMount() {
 		this._hasMounted = true;
+		this._recordRenderView = null;
 		this._logView(this.state.routes, this.state.location);
+	}
+
+	componentDidUpdate() {
+		if (this._recordRenderView) {
+			let end = new Date().getTime();
+			let r = this._recordRenderView;
+			recordSpan(`load view ${r.location.pathname}`, this._recordRenderView.start, end);
+			this._recordRenderView = null;
+		}
 	}
 
 	reconcileState(state: State, props: Props) {
@@ -77,6 +89,10 @@ class App extends Component {
 			// NOTE: this will not log separate page views when query string / hash
 			// values are updated.
 			this._logView(nextState.routes, nextState.location);
+			this._recordRenderView = {
+				location: nextState.location,
+				start: new Date().getTime(),
+			};
 		}
 	}
 
