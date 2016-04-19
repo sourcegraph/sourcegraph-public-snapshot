@@ -276,7 +276,16 @@ func resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error
 		}
 		commitID, err := vcsrepo.ResolveRevision(repoRev.Rev)
 		if err != nil {
-			return err
+			// attempt to reclone repo if its VCS repository doesn't exist
+			if _, notExist := err.(vcs.RepoNotExistError); notExist {
+				if _, innerErr := svc.MirrorRepos(ctx).RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: repoRev.URI}}); innerErr != nil {
+					return err
+				}
+			}
+			commitID, err = vcsrepo.ResolveRevision(repoRev.Rev)
+			if err != nil {
+				return err
+			}
 		}
 		repoRev.CommitID = string(commitID)
 	}
