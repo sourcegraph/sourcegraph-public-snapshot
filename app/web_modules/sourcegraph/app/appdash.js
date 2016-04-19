@@ -29,7 +29,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 		componentDidMount() {
 			this._hasMounted = true;
 			this._recordRenderView = null;
-			this.__recordInitialPageLoad();
+			this._recordInitialPageLoad();
 		}
 
 		componentDidUpdate() {
@@ -50,7 +50,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 				this._recordRenderView = null;
 
 				// Update the debug display on the page with the time.
-				this.__updateDebugTimer(r.start, end);
+				this._updateDebugTimer(r.start, end);
 			}
 		}
 
@@ -70,7 +70,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			}
 		}
 
-		// __recordInitialPageLoad records the initial page load, as observed
+		// _recordInitialPageLoad records the initial page load, as observed
 		// by the most accurate browser metrics 'window.performance.timing', as
 		// a separate span.
 		//
@@ -82,7 +82,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 		// This would narrow down DNS lookup time, DOM load time, redirection
 		// time, etc. (right now we just have page load time, inclusive of
 		// everything).
-		__recordInitialPageLoad() {
+		_recordInitialPageLoad() {
 			// Not all browsers (e.g., mobile) support this, but most do.
 			if (typeof window.performance === "undefined") return;
 
@@ -102,13 +102,13 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			});
 
 			// Update the debug display on the page with the time.
-			this.__updateDebugTimer(startTime, endTime);
+			this._updateDebugTimer(startTime, endTime);
 		}
 
-		// __updateDebugTimer updates the Appdash debug timer in the lower
+		// _updateDebugTimer updates the Appdash debug timer in the lower
 		// left-hand corner of the page to represent the given duration (unix
 		// timestamps).
-		__updateDebugTimer(startTime: number, endTime: number) {
+		_updateDebugTimer(startTime: number, endTime: number) {
 			let debug = document.querySelector("body>#debug>a");
 			const loadTimeSeconds = (endTime-startTime) / 1000;
 
