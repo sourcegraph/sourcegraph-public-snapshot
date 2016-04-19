@@ -23,6 +23,7 @@ func init() {
 		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
 		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
+		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', doc));`,
 	)
 }
 
@@ -44,6 +45,7 @@ type dbGlobalDef struct {
 	Data []byte `db:"data"`
 
 	BoW string `db:"bow"`
+	Doc string `db:"doc"`
 }
 
 func fromDBDef(d *dbGlobalDef) *sourcegraph.Def {
@@ -178,9 +180,12 @@ func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
 		return nil
 	}
 
-	insertSQL := `INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow) SELECT $1, $2, $3, $4, $5, $6, $7, $8, now(), $9, $10`
-	updateSQL := `UPDATE global_defs SET name=$6, kind=$7, file=$8, updated_at=now(), data=$9, bow=$10 WHERE repo=$1 AND commit_id=$2 AND unit_type=$3 AND unit=$4 AND path=$5 RETURNING *`
-	upsertSQL := `WITH upsert AS (` + updateSQL + `) ` + insertSQL + ` WHERE NOT EXISTS (SELECT * FROM upsert);`
+	defDocs := make(map[graph.DefKey]string)
+	for _, doc := range op.Data.Docs {
+		if doc.Format == "" || doc.Format == "text" {
+			defDocs[doc.DefKey] = doc.Data
+		}
+	}
 
 	for _, d := range op.Data.Defs {
 		// Ignore broken defs
@@ -207,8 +212,45 @@ func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
 			data = []byte{}
 		}
 		bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
+		docstring := defDocs[d.DefKey]
 
-		if _, err := graphDBH(ctx).Exec(upsertSQL, d.Repo, d.CommitID, d.UnitType, d.Unit, d.Path, d.Name, d.Kind, d.File, data, bow); err != nil {
+		var args []interface{}
+		arg := func(v interface{}) string {
+			args = append(args, v)
+			return fmt.Sprintf("$%d", len(args))
+		}
+
+		upsertSQL := `
+WITH upsert AS (
+UPDATE global_defs SET name=` + arg(d.Name) +
+			`, kind=` + arg(d.Kind) +
+			`, file=` + arg(d.File) +
+			`, updated_at=now(), data=` + arg(data) +
+			`, bow=` + arg(bow) +
+			`, doc=` + arg(docstring) +
+			` WHERE repo=` + arg(d.Repo) +
+			` AND commit_id=` + arg(d.CommitID) +
+			` AND unit_type=` + arg(d.UnitType) +
+			` AND unit=` + d.Unit +
+			` AND path=` + arg(d.Path) +
+			` RETURNING *
+)
+INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT (` +
+			arg(d.Repo) + `, ` +
+			arg(d.CommitID) + `, ` +
+			arg(d.UnitType) + `, ` +
+			arg(d.Unit) + `, ` +
+			arg(d.Path) + `, ` +
+			arg(d.Name) + `, ` +
+			arg(d.Kind) + `, ` +
+			arg(d.File) + `, ` +
+			`now(), ` +
+			arg(data) + `, ` +
+			arg(bow) + `, ` +
+			arg(docstring) + `
+) WHERE NOT EXISTS (SELECT * FROM upsert);`
+
+		if _, err := graphDBH(ctx).Exec(upsertSQL, args...); err != nil {
 			return err
 		}
 	}
