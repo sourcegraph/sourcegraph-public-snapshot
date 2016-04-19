@@ -3,6 +3,8 @@ package httputil
 import (
 	"net/http"
 	"time"
+
+	"github.com/jpillora/backoff"
 )
 
 type requestCanceler interface {
@@ -28,6 +30,11 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		transport = http.DefaultTransport
 	}
 
+	b := &backoff.Backoff{
+		Min:    t.Delay,
+		Jitter: true,
+	}
+
 	var err error
 	for try := 0; try < t.Retries; try++ {
 		req2 := CloneRequest(req)
@@ -36,7 +43,7 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err == nil {
 			return resp, nil
 		}
-		time.Sleep(t.Delay)
+		time.Sleep(b.Duration())
 	}
 	return nil, err
 }
