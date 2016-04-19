@@ -180,13 +180,6 @@ func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
 		return nil
 	}
 
-	defDocs := make(map[graph.DefKey]string)
-	for _, doc := range op.Data.Docs {
-		if doc.Format == "" || doc.Format == "text" {
-			defDocs[doc.DefKey] = doc.Data
-		}
-	}
-
 	for _, d := range op.Data.Defs {
 		// Ignore broken defs
 		if d.Path == "" {
@@ -207,12 +200,22 @@ func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
 			d.UnitType = op.Unit.UnitType
 		}
 
+		var docstring string
+		if len(d.Docs) == 1 {
+			docstring = d.Docs[0].Data
+		} else {
+			for _, candidate := range d.Docs {
+				if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
+					docstring = candidate.Data
+				}
+			}
+		}
+
 		data, err := d.Data.Marshal()
 		if err != nil {
 			data = []byte{}
 		}
 		bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
-		docstring := defDocs[d.DefKey]
 
 		var args []interface{}
 		arg := func(v interface{}) string {
@@ -225,17 +228,18 @@ WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
 			`, kind=` + arg(d.Kind) +
 			`, file=` + arg(d.File) +
-			`, updated_at=now(), data=` + arg(data) +
+			`, updated_at=now()` +
+			`, data=` + arg(data) +
 			`, bow=` + arg(bow) +
 			`, doc=` + arg(docstring) +
 			` WHERE repo=` + arg(d.Repo) +
 			` AND commit_id=` + arg(d.CommitID) +
 			` AND unit_type=` + arg(d.UnitType) +
-			` AND unit=` + d.Unit +
+			` AND unit=` + arg(d.Unit) +
 			` AND path=` + arg(d.Path) +
 			` RETURNING *
 )
-INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT (` +
+INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
 			arg(d.Repo) + `, ` +
 			arg(d.CommitID) + `, ` +
 			arg(d.UnitType) + `, ` +
@@ -248,7 +252,7 @@ INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, fil
 			arg(data) + `, ` +
 			arg(bow) + `, ` +
 			arg(docstring) + `
-) WHERE NOT EXISTS (SELECT * FROM upsert);`
+ WHERE NOT EXISTS (SELECT * FROM upsert);`
 
 		if _, err := graphDBH(ctx).Exec(upsertSQL, args...); err != nil {
 			return err
