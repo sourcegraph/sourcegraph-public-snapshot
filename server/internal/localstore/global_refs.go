@@ -164,7 +164,6 @@ ON COMMIT DROP;`
 		}
 
 		// Insert refs into temporary table
-		// TODO(beyang): maybe more efficient to do GROUP BY in memory
 		for _, r := range op.Data.Refs {
 			// Ignore broken refs
 			if r.DefPath == "" {

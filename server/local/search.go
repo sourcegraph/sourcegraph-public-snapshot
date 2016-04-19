@@ -50,7 +50,6 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	results, err := store.GlobalDefsFromContext(ctx).Search(ctx, &store.GlobalDefSearchOp{
 		RepoQuery:     repo,
 		UnitQuery:     unit,
-		DefQuery:      def, // TODO(beyang): remove this if BoW is good enough
 		UnitTypeQuery: unitType,
 
 		BoWQuery: bowQuery,
