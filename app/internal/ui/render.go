@@ -129,7 +129,7 @@ func (r *cachingRenderer) Call(ctx context.Context, cacheKey string, arg json.Ra
 	}
 
 	res, err := r.s.Call(ctx, arg)
-	if err == nil {
+	if err == nil && isCacheable(res) {
 		r.cache.Add(cacheKey, res)
 	}
 	return res, err
