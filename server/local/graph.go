@@ -23,7 +23,8 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Import", op.Repo); err != nil {
 		return nil, err
 	}
-	if _, err := pb.Server(store.GraphFromContext(ctx)).Import(ctx, op); err != nil {
+	gstore := store.GraphFromContext(ctx)
+	if _, err := pb.Server(gstore).Import(ctx, op); err != nil {
 		return nil, err
 	}
 
@@ -42,18 +43,19 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		// branch of the repo. We keep the commitID field empty to signify that
 		// the data is always pointing to the HEAD commit of the default branch (which
 		// is the default behavior on our app for empty repoRevSpecs).
-		op.CommitID = ""
-		if err := store.GlobalDefsFromContext(ctx).Update(ctx, op); err != nil {
-			// Temporarily log and ignore error in updating the global def store.
-			// TODO: fail with error here once the rollout of global def store is complete.
+
+		if err := store.GlobalDefsFromContext(ctx).Update(ctx, op.Repo); err != nil {
 			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
 		}
+
+		op.CommitID = ""
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
 			// Temporarily log and ignore error in updating the global ref store.
 			// TODO: fail with error here once the rollout of global ref store is complete.
 			log15.Error("error updating global ref store", "repo", op.Repo, "error", err)
 		}
 	}
+
 	return &pbtypes.Void{}, nil
 }
 

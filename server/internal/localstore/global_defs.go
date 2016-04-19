@@ -13,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	sstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -141,7 +141,6 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 			wheres = append(wheres, "bow != ''")
 			wheres = append(wheres, `to_tsquery('english', `+arg(op.BoWQuery)+`) @@ to_tsvector('english', bow)`)
 		}
-		wheres = append(wheres, `commit_id=''`) // HACK
 
 		whereSQL = fmt.Sprint(`WHERE (` + strings.Join(wheres, ") AND (") + `)`)
 	}
@@ -171,16 +170,27 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	return &sourcegraph.SearchResultsList{Results: results}, nil
 }
 
-func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", op.Repo); err != nil {
+func (g *globalDefs) Update(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repo); err != nil {
 		return err
 	}
 
-	if op.Data == nil {
-		return nil
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
+	if err != nil {
+		return err
+	}
+	commitID, err := vcsrepo.ResolveRevision("HEAD")
+	if err != nil {
+		return err
 	}
 
-	for _, d := range op.Data.Defs {
+	gstore := store.GraphFromContext(ctx)
+	defs, err := gstore.Defs(sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: string(commitID)}))
+	if err != nil {
+		return err
+	}
+
+	for _, d := range defs {
 		// Ignore broken defs
 		if d.Path == "" {
 			continue
@@ -190,14 +200,7 @@ func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
 			continue
 		}
 		if d.Repo == "" {
-			d.Repo = op.Repo
-		}
-		d.CommitID = op.CommitID
-		if d.Unit == "" {
-			d.Unit = op.Unit.Unit
-		}
-		if d.UnitType == "" {
-			d.UnitType = op.Unit.UnitType
+			d.Repo = repo
 		}
 
 		var docstring string
@@ -223,6 +226,7 @@ func (g *globalDefs) Update(ctx context.Context, op *pb.ImportOp) error {
 			return fmt.Sprintf("$%d", len(args))
 		}
 
+		// TODO(beyang): this should be a delete and update
 		upsertSQL := `
 WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
