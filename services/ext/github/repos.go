@@ -14,7 +14,7 @@ import (
 type Repos struct{}
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
-	owner, repoName, err := githubutil.SplitGitHubRepoURI(repo)
+	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
 		return nil, &store.RepoNotFoundError{Repo: repo}
 	}
