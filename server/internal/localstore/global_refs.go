@@ -165,12 +165,8 @@ ON COMMIT DROP;`
 
 		// Insert refs into temporary table
 		for _, r := range op.Data.Refs {
-			// Ignore broken refs.
+			// Ignore broken refs
 			if r.DefPath == "" {
-				continue
-			}
-			// Ignore def refs.
-			if r.Def {
 				continue
 			}
 			if r.DefRepo == "" {

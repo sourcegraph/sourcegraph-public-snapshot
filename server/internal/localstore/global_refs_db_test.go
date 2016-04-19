@@ -18,13 +18,12 @@ func TestGlobalRefs(t *testing.T) {
 	defer done()
 
 	testRefs1 := []*graph.Ref{
-		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},              // package ref
-		{DefPath: "A/R", DefRepo: "", DefUnit: "", File: "a/b/u/s.go", Def: true}, // def ref
-		{DefPath: "A/R", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},            // same unit
-		{DefPath: "A/R", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},            // same unit, repeated
-		{DefPath: "A/S", DefRepo: "", DefUnit: "a/b/p", File: "a/b/u/s.go"},       // same repo, different unit
-		{DefPath: "X/Y", DefRepo: "x/y", DefUnit: "x/y/c", File: "a/b/u/s.go"},    // different repo
-		{DefPath: "A/R", DefRepo: "x/y", DefUnit: "x/y/c", File: "a/b/u/s.go"},    // different repo
+		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},           // package ref
+		{DefPath: "A/R", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},         // same unit
+		{DefPath: "A/R", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},         // same unit, repeated
+		{DefPath: "A/S", DefRepo: "", DefUnit: "a/b/p", File: "a/b/u/s.go"},    // same repo, different unit
+		{DefPath: "X/Y", DefRepo: "x/y", DefUnit: "x/y/c", File: "a/b/u/s.go"}, // different repo
+		{DefPath: "A/R", DefRepo: "x/y", DefUnit: "x/y/c", File: "a/b/u/s.go"}, // different repo
 	}
 	testRefs2 := []*graph.Ref{
 		{DefPath: "P/Q", DefRepo: "", DefUnit: "", File: "a/b/p/t.go"},         // same unit
