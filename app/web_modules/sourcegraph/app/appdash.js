@@ -29,6 +29,7 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 		componentDidMount() {
 			this._hasMounted = true;
 			this._recordRenderView = null;
+			this.__recordInitialPageLoad();
 		}
 
 		componentDidUpdate() {
@@ -66,6 +67,45 @@ export function withAppdashRouteStateRecording(ChildComponent: Object): Object {
 			}
 		}
 
+		// __recordInitialPageLoad records the initial page load, as observed
+		// by the most accurate browser metrics 'window.performance.timing', as
+		// a separate span.
+		//
+		// Unlike the view-related rendering below, this gives us insight into
+		// e.g. JS bundle download times, DNS lookup times, etc.
+		//
+		// TODO(slimsag): for finer-grained access consider sending all of the
+		// info in performance.timing to Appdash for display (when available).
+		// This would narrow down DNS lookup time, DOM load time, redirection
+		// time, etc. (right now we just have page load time, inclusive of
+		// everything).
+		__recordInitialPageLoad() {
+			// Not all browsers (e.g., mobile) support this, but most do.
+			if (typeof window.performance === "undefined") return;
+
+			// Record the time between when the browser was ready to fetch the
+			// document, and when the document.readyState was changed to "complete".
+			// i.e., the time it took to load the page.
+			const startTime = window.performance.timing.fetchStart;
+			const endTime = window.performance.timing.domComplete;
+			const routeName = getRouteName(this.state.routes);
+			recordSpan({
+				name: `load page ${routeName}`,
+				start: startTime,
+				end: endTime,
+				metadata: {
+					location: window.location.href,
+				},
+			});
+
+			// Update the debug display on the page with the time.
+			let debug = document.querySelector("body>#debug>a");
+			const loadTimeSeconds = (endTime-startTime) / 1000;
+
+			// $FlowHack
+			if (debug) debug.text = `${loadTimeSeconds}s`;
+		}
+
 		render() {
 			return <ChildComponent {...this.props} />;
 		}
@@ -98,8 +138,12 @@ type RecordSpanOptions = {
 };
 
 // recordSpan records a single span (operation) to Appdash. Any potential error
-// that would occur is sent to console.error instead of being thrown.
+// that would occur is sent to console.error instead of being thrown. It is
+// no-op if Appdash is not enabled (i.e. context.currentSpanID is not present).
 export function recordSpan(opts: RecordSpanOptions) {
+	if (!context.currentSpanID) {
+		return;
+	}
 	// TODO(slimsag): use opts.metadata
 	defaultFetch(`/.api/internal/appdash/record-span?S=${opts.start}&E=${opts.end}&Name=${opts.name}`, {
 		method: "POST",
@@ -107,45 +151,5 @@ export function recordSpan(opts: RecordSpanOptions) {
 	.then(checkStatus)
 	.catch((err) => {
 		console.error("appdash:", err);
-	});
-}
-
-// recordInitialPageLoad record the initial load time of the page.
-//
-// TODO(slimsag): for finer-grained access consider sending all of the info in
-// performance.timing to Appdash for display (when available). This would
-// narrow down DNS lookup time, DOM load time, redirection time, etc. (right
-// now we just have page load time, inclusive of everything).
-function recordInitialPageLoad() {
-	// Not all browsers (e.g., mobile) support this, but most do.
-	if (typeof window.performance === "undefined") return;
-
-	// Record the time between when the browser was ready to fetch the
-	// document, and when the document.readyState was changed to "complete".
-	// i.e., the time it took to load the page.
-	const startTime = window.performance.timing.fetchStart;
-	const endTime = window.performance.timing.domComplete;
-	recordSpan({
-		// TODO(slimsag): use the route as the name!
-		name: `page load`,
-		start: startTime,
-		end: endTime,
-		metadata: {
-			location: window.location.href,
-		},
-	});
-
-	// Update the debug display on the page with the time.
-	let debug = document.querySelector("body>#debug>a");
-	const loadTimeSeconds = (endTime-startTime) / 1000;
-
-	// $FlowHack
-	if (debug) debug.text = `${loadTimeSeconds}s`;
-}
-
-
-if (typeof document !== "undefined" && context.currentSpanID) { // eslint-disable-line no-undefined
-	document.addEventListener("readystatechange", () => {
-		if (document.readyState === "complete") recordInitialPageLoad();
 	});
 }
