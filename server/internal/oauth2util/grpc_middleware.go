@@ -45,6 +45,9 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 	}
 
 	tokStr := parts[1]
+	if tokStr == "" {
+		return ctx, nil
+	}
 
 	actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tokStr)
 	if err != nil {

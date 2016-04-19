@@ -49,7 +49,7 @@ func (c *EndpointOpts) URLOrDefault() *url.URL {
 	if e == "" {
 		// The user did not explicitly specify a endpoint URL, so use the default
 		// found in the auth file.
-		userAuth, err := userauth.Read(Credentials.AuthFile)
+		userAuth, err := userauth.Read(credentials.AuthFile)
 		if err != nil {
 			log.Fatal(err, "failed to read user auth file (in EndpointOpts.URLOrDefault)")
 		}

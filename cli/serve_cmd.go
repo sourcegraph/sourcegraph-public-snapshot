@@ -192,9 +192,6 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	// Endpoint defaults to the AppURL.
 	if client.Endpoint.URL == "" {
 		client.Endpoint.URL = appURL.String()
-
-		// Reset client.Ctx to use new endpoint.
-		client.Ctx = WithClientContext(context.Background())
 	}
 
 	return appURL, nil
@@ -231,16 +228,9 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
-	if err := checkSysReqs(client.Ctx, os.Stderr); err != nil {
+	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
 		return err
 	}
-
-	// Clear auth specified on the CLI. If we didn't do this, then the
-	// app, git, and HTTP API would all inherit the process's owner's
-	// current auth. This is undesirable, unexpected, and could lead
-	// to unintentionally leaking private info.
-	client.Credentials.SetAccessToken("")
-	client.Credentials.AuthFile = ""
 
 	c.GraphStoreOpts.expandEnv()
 	log15.Debug("GraphStore", "at", c.GraphStoreOpts.Root)
@@ -374,10 +364,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	h := handlerutil.WithMiddleware(sm, mw...)
 
-	if err := c.authenticateCLIContext(idKey); err != nil {
-		return err
-	}
-
 	// Start background workers that receive input from main app.
 	//
 	// It's safe (and better) to start this before starting the
@@ -386,7 +372,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners(client.Ctx, idKey, appURL)
+	c.initializeEventListeners(clientCtx, idKey, appURL)
 
 	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
 		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
@@ -467,22 +453,21 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Connection test
-	c.checkReachability()
+	c.checkReachability(clientCtx)
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
 
 	// Start background repo updater worker.
-	repoUpdaterCtx, err := c.authenticateScopedContext(client.Ctx, idKey, []string{"internal:repoupdater"})
+	repoUpdaterCtx, err := c.authenticateScopedContext(clientCtx, idKey, []string{"internal:repoupdater"})
 	if err != nil {
 		return err
 	}
 	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
 
-	idKeyText, _ := idKey.MarshalText()
 	if c.NoWorker {
 		log15.Info("Skip starting worker process.")
 	} else {
 		go func() {
-			if err := c.WorkCmd.Execute([]string{string(idKeyText)}); err != nil {
+			if err := worker.RunWorker(idKey, c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()
@@ -490,17 +475,16 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
-	go statsutil.ComputeUsageStats(client.Ctx, 10*time.Minute)
+	go statsutil.ComputeUsageStats(clientCtx, 10*time.Minute)
 
 	// Prepare for initial onboarding.
 	if createdIDKey && !c.NoInitialOnboarding {
-		if err := c.prepareInitialOnboarding(client.Ctx); err != nil {
+		if err := c.prepareInitialOnboarding(clientCtx); err != nil {
 			log15.Warn("Error preparing initial onboarding", "err", err)
 		}
 	}
 
 	select {}
-	return nil
 }
 
 // generateOrReadIDKey reads the server's ID key (or creates one on-demand).
@@ -540,32 +524,6 @@ func (c *ServeCmd) generateOrReadIDKey() (k *idkey.IDKey, created bool, err erro
 	return
 }
 
-// authenticateCLIContext adds a "service account" access token to
-// client.Ctx and to the global CLI flags (which are effectively
-// inherited by subcommands run with cmdWithClientArgs). The server
-// uses this to run privileged in-process workers.
-//
-// In general, when running the worker or other CLI commands, if the
-// server requires auth, then the user needs to specify auth on the
-// command line (or have it stored previously using, e.g., `src
-// login`). This is because those operations don't necessarily know
-// the server's secrets, so they are treated as external, untrusted
-// clients. But for operations spawned IN the server process, we
-// obviously know the server's secrets, so we can use them to
-// authenticate the in-process worker and other CLI commands.
-func (c *ServeCmd) authenticateCLIContext(k *idkey.IDKey) error {
-	src := client.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(k, "internal:cli")}
-
-	// Call it once to set Credentials.AccessToken immediately.
-	tok, err := src.Token()
-	if err != nil {
-		return err
-	}
-
-	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
-	return nil
-}
-
 // authenticateScopedContext adds a token with the specified scope to the given
 // context. This context can only make gRPC calls that are permitted for the given
 // scope. See the accesscontrol package for information about different scopes.
@@ -602,7 +560,7 @@ func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDK
 // internally and externally published URL. It calls log.Fatal if the
 // server can't contact itself, which indicates a likely configuration
 // problem (wrong gRPC URL or bind address?).
-func (c *ServeCmd) checkReachability() {
+func (c *ServeCmd) checkReachability(ctx context.Context) {
 	var timeout time.Duration
 	if os.Getenv("CI") == "" {
 		timeout = 5 * time.Second
@@ -633,7 +591,7 @@ func (c *ServeCmd) checkReachability() {
 	}
 
 	// Check internal gRPC endpoint.
-	doCheck(client.Ctx, true)
+	doCheck(ctx, true)
 
 	// Check external gRPC endpoint if it differs from the internal
 	// endpoint.
@@ -641,8 +599,8 @@ func (c *ServeCmd) checkReachability() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(client.Ctx).String() {
-		doCheck(sourcegraph.WithGRPCEndpoint(client.Ctx, extEndpoint), false)
+	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(ctx).String() {
+		doCheck(sourcegraph.WithGRPCEndpoint(ctx, extEndpoint), false)
 	}
 }
 

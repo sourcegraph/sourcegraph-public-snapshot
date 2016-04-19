@@ -8,7 +8,6 @@ import (
 
 	"github.com/kr/text"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 
@@ -37,7 +36,7 @@ func checkSysReqs(ctx context.Context, w io.Writer) error {
 	}
 
 	var failed []string
-	for _, st := range sysreq.Check(client.Ctx, skippedSysReqs()) {
+	for _, st := range sysreq.Check(ctx, skippedSysReqs()) {
 		if st.Failed() {
 			failed = append(failed, st.Name)
 

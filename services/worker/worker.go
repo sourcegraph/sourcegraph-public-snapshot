@@ -2,7 +2,6 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -24,10 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-var (
-	srcIDKey *idkey.IDKey
-)
-
 func init() {
 	_, err := cli.CLI.AddCommand("work",
 		"worker",
@@ -42,9 +37,8 @@ builds.`,
 }
 
 type WorkCmd struct {
-	Parallel    int  `short:"p" long:"parallel" description:"number of parallel builds to run" default:"2" env:"SRC_WORK_PARALLEL"`
-	DequeueMsec int  `long:"dequeue-msec" description:"if no builds are dequeued, sleep up to this many msec before trying again" default:"1000" env:"SRC_WORK_DEQUEUE_MSEC"`
-	Remote      bool `long:"remote" description:"run worker remotely from server; worker is authenticated via a shared secret token derived from the server's id key (SRC_ID_KEY_DATA)" default:"false" env:"SRC_WORK_REMOTE"`
+	Parallel    int `short:"p" long:"parallel" description:"number of parallel builds to run" default:"2" env:"SRC_WORK_PARALLEL"`
+	DequeueMsec int `long:"dequeue-msec" description:"if no builds are dequeued, sleep up to this many msec before trying again" default:"1000" env:"SRC_WORK_DEQUEUE_MSEC"`
 }
 
 func (c *WorkCmd) Execute(args []string) error {
@@ -52,15 +46,21 @@ func (c *WorkCmd) Execute(args []string) error {
 		return errors.New("-p/--parallel must be > 0")
 	}
 
-	if err := initializeIDKey(args); err != nil {
+	idKeyData := os.Getenv("SRC_ID_KEY_DATA")
+	if idKeyData == "" {
+		return errors.New("SRC_ID_KEY_DATA is not available")
+	}
+	key, err := idkey.FromString(idKeyData)
+	if err != nil {
 		return err
 	}
 
-	if c.Remote {
-		if err := authenticateWorkerCtx(); err != nil {
-			return fmt.Errorf("authenticating remote worker failed: %s", err)
-		}
-	}
+	return RunWorker(key, c.Parallel, c.DequeueMsec)
+}
+
+// RunWorker starts the worker loop with the given parameters.
+func RunWorker(key *idkey.IDKey, parallel int, dequeueMsec int) error {
+	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(nil, sharedsecret.ShortTokenSource(key, "worker:build")))
 
 	cl := client.Client()
 	ctx, cancel := context.WithCancel(client.Ctx)
@@ -84,10 +84,10 @@ func (c *WorkCmd) Execute(args []string) error {
 		buildCleanup(client.Ctx, activeBuilds)
 	}()
 
-	throttle := time.Tick(time.Second / time.Duration(c.Parallel))
+	throttle := time.Tick(time.Second / time.Duration(parallel))
 
-	builders := make(chan struct{}, c.Parallel)
-	for i := 0; i < c.Parallel; i++ {
+	builders := make(chan struct{}, parallel)
+	for i := 0; i < parallel; i++ {
 		builders <- struct{}{}
 	}
 
@@ -99,7 +99,7 @@ func (c *WorkCmd) Execute(args []string) error {
 				break
 			}
 			if grpc.Code(err) == codes.NotFound {
-				time.Sleep(time.Millisecond * time.Duration(rand.Intn(c.DequeueMsec)))
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(dequeueMsec)))
 			} else {
 				log15.Error("Error dequeuing build", "err", err)
 				time.Sleep(5 * time.Second)
@@ -121,33 +121,6 @@ func (c *WorkCmd) Execute(args []string) error {
 	wg.Wait()
 	os.Exit(1)
 	panic("unreachable")
-}
-
-func initializeIDKey(args []string) error {
-	var err error
-	if len(args) > 0 {
-		srcIDKeyText := []byte(args[0])
-		srcIDKey, err = idkey.New(srcIDKeyText)
-	} else {
-		srcIDKeyData := os.Getenv("SRC_ID_KEY_DATA")
-		if srcIDKeyData == "" {
-			return errors.New("SRC_ID_KEY_DATA is not available")
-		}
-		srcIDKey, err = idkey.FromString(srcIDKeyData)
-	}
-	return err
-}
-
-func authenticateWorkerCtx() error {
-	src := client.UpdateGlobalTokenSource{TokenSource: sharedsecret.ShortTokenSource(srcIDKey, "worker:build")}
-	tok, err := src.Token()
-	if err != nil {
-		return err
-	}
-
-	// Authenticate future requests.
-	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(tok, src))
-	return nil
 }
 
 type activeBuilds struct {

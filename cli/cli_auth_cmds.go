@@ -53,7 +53,7 @@ type loginCmd struct {
 // getSavedToken checks if we already have a token for an endpoint, and
 // validates that it still works.
 func getSavedToken(endpointURL *url.URL) string {
-	a, err := userauth.Read(client.Credentials.AuthFile)
+	a, err := userauth.Read(client.AuthFile())
 	if err != nil || a == nil {
 		return ""
 	}
@@ -123,7 +123,7 @@ func (c *loginCmd) getAccessToken(endpointURL *url.URL) (string, error) {
 		return "", fmt.Errorf("authenticating to %s: %s", endpointURL, err)
 	}
 
-	if err := userauth.SaveCredentials(client.Credentials.AuthFile, endpointURL, tok.AccessToken, false); err != nil {
+	if err := userauth.SaveCredentials(client.AuthFile(), endpointURL, tok.AccessToken, false); err != nil {
 		log.Printf("warning: failed to save credentials: %s.", err)
 	}
 	return tok.AccessToken, nil
@@ -136,7 +136,7 @@ func (c *loginCmd) Execute(args []string) error {
 	}
 
 	// Check if parseable, before attempting authentication
-	_, err := userauth.Read(client.Credentials.AuthFile)
+	_, err := userauth.Read(client.AuthFile())
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (c *loginCmd) Execute(args []string) error {
 		return err
 	}
 
-	err = userauth.SaveCredentials(client.Credentials.AuthFile, endpointURL, accessTok, true)
+	err = userauth.SaveCredentials(client.AuthFile(), endpointURL, accessTok, true)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ type whoamiCmd struct {
 }
 
 func (c *whoamiCmd) Execute(args []string) error {
-	a, err := userauth.Read(client.Credentials.AuthFile)
+	a, err := userauth.Read(client.AuthFile())
 	if err != nil {
 		return err
 	}
