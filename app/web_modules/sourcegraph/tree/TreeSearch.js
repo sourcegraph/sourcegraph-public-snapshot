@@ -159,7 +159,9 @@ class TreeSearch extends Container {
 		}
 
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
-			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
+			// Only fetch on the client, not server, so that we don't
+			// cache stale def lists prior to the repo's first build.
+			if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
 				Dispatcher.Backends.dispatch(
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false)
 				);
