@@ -111,6 +111,10 @@ func (c *Config) baseTransport() http.RoundTripper {
 		transport = disabledTransport{}
 	}
 
+	// Instrument metrics before the RetryTransport to get a better
+	// understanding of our responses from GitHub
+	transport = &metricsTransport{Transport: transport}
+
 	// Retry GitHub API requests (sometimes the connection is dropped,
 	// and we don't want to fail the whole request tree because of 1
 	// ephemeral error out of possibly tens of GitHub API requests).
