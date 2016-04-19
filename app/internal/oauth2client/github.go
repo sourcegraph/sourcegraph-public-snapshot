@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	githubAuthorizeUrl = "https://github.com/login/oauth/authorize"
-	githubTokenUrl     = "https://github.com/login/oauth/access_token"
+	githubAuthorizeURL = "https://github.com/login/oauth/authorize"
+	githubTokenURL     = "https://github.com/login/oauth/access_token"
 )
 
 var (
@@ -215,8 +215,8 @@ func getOAuth2Conf(ctx context.Context) *oauth2.Config {
 		ClientID:     githubClientID,
 		ClientSecret: githubClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  githubAuthorizeUrl,
-			TokenURL: githubTokenUrl,
+			AuthURL:  githubAuthorizeURL,
+			TokenURL: githubTokenURL,
 		},
 		RedirectURL: conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
 		Scopes:      scopes,
