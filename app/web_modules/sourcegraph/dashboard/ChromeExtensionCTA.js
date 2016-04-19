@@ -28,7 +28,7 @@ class ChromeExtensionCTA extends Component {
 
 	_update() {
 		this.setState({
-			show: global.document && !document.getElementById("chrome-extension-installed"),
+			show: global.chrome && global.document && !document.getElementById("chrome-extension-installed"),
 		});
 	}
 
