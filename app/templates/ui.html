@@ -18,15 +18,15 @@
 {{end}}
 {{end}}
 
-{{define "Body"}}
-{{with .ErrorTitle}}
+{{define "Body" -}}
+{{- with .ErrorTitle -}}
 	<h1>{{.}}</h1>
-{{end}}
-{{with .ErrorDebugInfo}}
+{{- end -}}
+{{- with .ErrorDebugInfo -}}
 	<script ignore-csp>
 		console.error("%cError in server-side JavaScript rendering\n%c%s", "background-color:red;color:white", "color:red;background-color:inherit", {{.}});
 	</script>
-{{end}}
+{{- end -}}
 
-{{.Body}}
-{{end}}
+{{- .Body -}}
+{{- end}}
