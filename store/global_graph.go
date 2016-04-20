@@ -37,9 +37,9 @@ type GlobalDefSearchOp struct {
 	UnitQuery     string
 	UnitTypeQuery string
 
-	// BoWQuery is a query based on a TF/IDF comparison of the "bag of words" descriptor of
-	// the query string and the descriptor for the definition
-	BoWQuery string
+	// TokQuery is a list of tokens that describe the user's text
+	// query. Order matter, as the last token is given especial weight.
+	TokQuery []string
 
 	Opt *sourcegraph.SearchOptions
 }

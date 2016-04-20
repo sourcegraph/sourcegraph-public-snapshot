@@ -117,9 +117,19 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		op.Opt = &sourcegraph.SearchOptions{}
 	}
 
+	if len(op.TokQuery) == 0 {
+		return &sourcegraph.SearchResultsList{}, nil
+	}
+
+	bowQuery := search.UserQueryToksToTSQuery(op.TokQuery)
+	lastTok := op.TokQuery[len(op.TokQuery)-1]
+
 	var scoreSQL string
-	if op.BoWQuery != "" {
-		scoreSQL = `0.5*log(10 + ref_ct) + 100*ts_rank(to_tsvector('english', min(bow)), to_tsquery('english', ` + arg(op.BoWQuery) + `)) score`
+	if bowQuery != "" {
+		// The ranking critieron is the weighted sum of xref count,
+		// text similarity score, and whether the last term matches
+		// the name.
+		scoreSQL = `0.5*log(10 + ref_ct) + 100.0*ts_rank(to_tsvector('english', min(bow)), to_tsquery('english', ` + arg(bowQuery) + `)) + 100.0*((LOWER(name)=LOWER(` + arg(lastTok) + `))::int) score`
 	} else {
 		scoreSQL = `ref_ct score`
 	}
@@ -137,9 +147,9 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 			wheres = append(wheres, `lower(unit_type)=lower(`+arg(op.UnitTypeQuery)+`)`)
 		}
 		// TODO(beyang): make use of op.CaseSensitive?
-		if op.BoWQuery != "" {
+		if bowQuery != "" {
 			wheres = append(wheres, "bow != ''")
-			wheres = append(wheres, `to_tsquery('english', `+arg(op.BoWQuery)+`) @@ to_tsvector('english', bow)`)
+			wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ to_tsvector('english', bow)`)
 		}
 
 		whereSQL = fmt.Sprint(`WHERE (` + strings.Join(wheres, ") AND (") + `)`)

@@ -45,14 +45,12 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		}
 	}
 
-	bowQuery := srch.UserQueryToksToTSQuery(descToks)
-
 	results, err := store.GlobalDefsFromContext(ctx).Search(ctx, &store.GlobalDefSearchOp{
 		RepoQuery:     repo,
 		UnitQuery:     unit,
 		UnitTypeQuery: unitType,
 
-		BoWQuery: bowQuery,
+		TokQuery: descToks,
 		Opt:      op.Opt,
 	})
 	if err != nil {
