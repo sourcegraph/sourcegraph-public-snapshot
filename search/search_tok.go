@@ -63,7 +63,17 @@ func UserQueryToksToTSQuery(toks []string) string {
 
 // strippedQuery is the user query after it has been stripped of special filter terms
 func QueryTokens(strippedQuery string) []string {
-	return delims.Split(strippedQuery, -1)
+	prototoks := delims.Split(strippedQuery, -1)
+	if len(prototoks) == 0 {
+		return nil
+	}
+	toks := make([]string, 0, len(prototoks))
+	for _, tokmaybe := range prototoks {
+		if tokmaybe != "" {
+			toks = append(toks, tokmaybe)
+		}
+	}
+	return toks
 }
 
 func BagOfWordsToTokens(bag map[string]int) []string {
