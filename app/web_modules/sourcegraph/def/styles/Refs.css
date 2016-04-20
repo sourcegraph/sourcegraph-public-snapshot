@@ -1,11 +1,22 @@
 @value base "sourcegraph/components/styles/base.css";
+@value typography "sourcegraph/components/styles/typography.css";
 @value grid "sourcegraph/components/styles/grid.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value tooltips "sourcegraph/components/styles/tooltips.css";
-@value blob "sourcegraph/blob/styles/Blob.css";
 
 @value c_black-20 from colors;
 @value c_white from colors;
+
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	composes: center from base;
+}
+
+.refs-page {
+	composes: col-10 from grid;
+}
 
 .refs-container {
 	composes: pv2 ph4 from base;
@@ -15,16 +26,17 @@
 	display: flex;
 	min-height: 50vh;
 }
+
 .ref-locations {
-	flex: 0 0 auto;
-	min-width: 270px;
-	max-width: 30%;
-	composes: marginBoxLeft from blob;
+	width: 100%;
+	display: flex;
 }
+
 .refs {
 	flex: 1 1 auto;
 	overflow: hidden;
 }
+
 .file-name {
 	composes: pl3 mv1 from base;
 }

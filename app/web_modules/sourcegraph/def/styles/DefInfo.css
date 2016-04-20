@@ -1,0 +1,51 @@
+@value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value def "sourcegraph/def/styles/Def.css";
+
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	composes: center from base;
+}
+
+.badge {
+	composes: badge-padding from def;
+}
+
+.refs-page {
+	composes: col-8 from grid;
+}
+
+.subheader {
+	composes: f4 from typography;
+}
+
+.inner {
+	display: flex;
+	min-height: 50vh;
+}
+
+.def-info {
+	width: 100%;
+	display: flex;
+}
+
+.main {
+	display: inline-block;
+	composes: col-8 from grid;
+}
+
+.aside {
+	display: inline-block;
+	composes: pl4 from base;
+	composes: col-4 from grid;
+}
+
+.refs-link {
+	display: block;
+	composes: pt2 pb2 from base;
+	composes: f4 from typography;
+}

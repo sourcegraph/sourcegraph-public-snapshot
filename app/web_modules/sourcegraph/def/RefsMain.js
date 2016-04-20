@@ -183,7 +183,7 @@ class RefsMain extends Container {
 
 		return (
 			<div styleName="refs-container">
-				<h1>Refs to {this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>}</h1>
+				<h1>Refs to {this.state.defObj && <Link to={`${urlToDef(this.state.defObj)}/-/info`}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>}</h1>
 				<div styleName="inner">
 					<div styleName="ref-locations">
 						{def && !def.Error && refLocs && !refLocs.Error && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.refRepo} path={this.state.refFile} />}

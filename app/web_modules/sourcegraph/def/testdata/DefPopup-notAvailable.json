@@ -7,20 +7,31 @@
 					"type": "header",
 					"props": {
 						"children": [
-							"a ",
 							{
-								"type": "span",
-								"key": "name",
+								"type": "",
 								"props": {
-									"style": {
-										"fontWeight": "bold"
-									},
+									"to": "/r/-/def/undefined/undefined/-/undefined/-/info",
 									"children": [
-										"n"
-									]
+										"a ",
+										{
+											"type": "span",
+											"key": "name",
+											"props": {
+												"style": {
+													"fontWeight": "bold"
+												},
+												"children": [
+													"n"
+												]
+											}
+										},
+										"st"
+									],
+									"onlyActiveOnIndex": false,
+									"className": "",
+									"style": {}
 								}
-							},
-							"st"
+							}
 						]
 					}
 				},
