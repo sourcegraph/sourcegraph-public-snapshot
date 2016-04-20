@@ -31,7 +31,6 @@ class GlobalSearch extends Container {
 		super(props);
 
 		this.state = {
-			// query: this.props.location.query.q || "",
 			query: "",
 			matchingDefs: {Defs: []},
 			selectionIndex: 0,

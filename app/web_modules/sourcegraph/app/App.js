@@ -125,7 +125,6 @@ export const rootRoute: Route = {
 		require.ensure([], (require) => {
 			callback(null, [
 				...require("sourcegraph/admin/routes").routes,
-				...require("sourcegraph/search/routes").routes,
 				...require("sourcegraph/user").routes,
 				...require("sourcegraph/repo/routes").routes,
 			]);
