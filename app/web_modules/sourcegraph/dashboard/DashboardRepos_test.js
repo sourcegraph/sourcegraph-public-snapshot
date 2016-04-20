@@ -4,7 +4,6 @@ import React from "react";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 
 import testdataData from "sourcegraph/dashboard/testdata/DashboardRepos-data.json";
-import testdataUnsupported from "sourcegraph/dashboard/testdata/DashboardRepos-unsupported.json";
 
 describe("DashboardRepos", () => {
 	it("should render repos", () => {

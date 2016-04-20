@@ -5,22 +5,81 @@
 			"styleName": "list",
 			"children": [
 				{
-					"type": "WrappedComponent",
+					"type": "div",
 					"props": {
-						"repos": [
+						"styleName": "list-item",
+						"children": [
 							{
-								"Private": false,
-								"URI": "someURL",
-								"Description": "someDescription",
-								"UpdatedAt": "2016-02-24T10:18:55-08:00",
-								"Language": "Go"
+								"type": "div",
+								"key": ".0",
+								"props": {
+									"styleName": "uri-container",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"styleName": "uri",
+												"children": [
+													{
+														"type": "WrappedComponent",
+														"props": {
+															"repo": "someURL"
+														}
+													}
+												]
+											}
+										}
+									]
+								}
 							},
 							{
-								"Private": false,
-								"URI": "someURL",
-								"Description": "someDescription",
-								"UpdatedAt": "2016-02-24T10:18:55-08:00",
-								"Language": "Go"
+								"type": "p",
+								"props": {
+									"styleName": "description",
+									"children": [
+										"someDescription"
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"styleName": "list-item",
+						"children": [
+							{
+								"type": "div",
+								"key": ".0",
+								"props": {
+									"styleName": "uri-container",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"styleName": "uri",
+												"children": [
+													{
+														"type": "WrappedComponent",
+														"props": {
+															"repo": "someURL"
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "p",
+								"props": {
+									"styleName": "description",
+									"children": [
+										"someDescription"
+									]
+								}
 							}
 						]
 					}
