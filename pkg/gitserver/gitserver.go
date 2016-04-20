@@ -102,22 +102,20 @@ func broadcastCall(newRequest func() (*request, func() (genericReply, bool))) (i
 }
 
 func registerMetrics() {
+	if ReposDir == "" {
+		log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
+		return
+	}
+
 	c := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "gitserver",
 		Name:      "disk_space_available",
 		Help:      "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
-		if ReposDir == "" {
-			log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
-			return float64(0)
-		}
-
 		var stat syscall.Statfs_t
 		syscall.Statfs(ReposDir, &stat)
-
 		return float64(stat.Bavail * uint64(stat.Bsize))
-
 	})
 
 	prometheus.MustRegister(c)
