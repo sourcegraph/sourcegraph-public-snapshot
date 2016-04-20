@@ -8,7 +8,6 @@ package main
 import (
 	"flag"
 	"log"
-	"math"
 	"net"
 	"strconv"
 	"sync"
@@ -18,12 +17,6 @@ var (
 	loPort = flag.Int("lo", 10000, "beginning of port range to listen on (inclusive)")
 	hiPort = flag.Int("hi", 10010, "end of port range to listen on (inclusive)")
 )
-
-func checkPort(n int) {
-	if n <= 0 || n > math.MaxUint16 {
-		log.Fatalf("invalid port number %d", n)
-	}
-}
 
 func main() {
 	flag.Parse()
