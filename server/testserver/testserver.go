@@ -328,8 +328,30 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.SGPATH = sgpath
 
 	// Find unused ports
-	var httpPort, httpsPort, appdashHTTPPort int
-	s.selectUnusedPorts(&httpPort, &httpsPort, &appdashHTTPPort)
+	var (
+		httpPort,
+		httpsPort,
+		appdashHTTPPort,
+		appdashInfluxPort,
+		appdashInfluxAdminPort,
+		appdashInfluxCollectdPort,
+		appdashInfluxGraphitePort,
+		appdashInfluxHTTPDPort,
+		appdashInfluxOpenTSDBPort,
+		appdashInfluxUDPPort int
+	)
+	s.selectUnusedPorts(
+		&httpPort,
+		&httpsPort,
+		&appdashHTTPPort,
+		&appdashInfluxPort,
+		&appdashInfluxAdminPort,
+		&appdashInfluxCollectdPort,
+		&appdashInfluxGraphitePort,
+		&appdashInfluxHTTPDPort,
+		&appdashInfluxOpenTSDBPort,
+		&appdashInfluxUDPPort,
+	)
 
 	var mainHTTPPort int
 	switch scheme {
@@ -362,8 +384,16 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Config.Serve.ReposDir = reposDir
 
 	// Appdash
+	localAddr := func(p int) string { return fmt.Sprintf("localhost:%d", p) }
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{
-		HTTPAddr: fmt.Sprintf(":%d", appdashHTTPPort),
+		HTTPAddr:           localAddr(appdashHTTPPort),
+		InfluxAddr:         localAddr(appdashInfluxPort),
+		InfluxAdminAddr:    localAddr(appdashInfluxAdminPort),
+		InfluxCollectdAddr: localAddr(appdashInfluxCollectdPort),
+		InfluxGraphiteAddr: localAddr(appdashInfluxGraphitePort),
+		InfluxHTTPDAddr:    localAddr(appdashInfluxHTTPDPort),
+		InfluxOpenTSDBAddr: localAddr(appdashInfluxOpenTSDBPort),
+		InfluxUDPAddr:      localAddr(appdashInfluxUDPPort),
 	})
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ClientConfig{
 		URL: fmt.Sprintf("http://localhost:%d", appdashHTTPPort),
