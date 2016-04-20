@@ -2,6 +2,10 @@
 
 import React from "react";
 import Component from "sourcegraph/Component";
+// $FlowHack
+import {navbarHeight} from "sourcegraph/app/styles/GlobalNav.css";
+
+const navbarHeightPx = parseInt(navbarHeight, 10);
 
 export default class FileMargin extends Component {
 	constructor(props) {
@@ -33,7 +37,7 @@ export default class FileMargin extends Component {
 		if (!el) return;
 
 		for (let child of el.children) {
-			let offset = child.offsetHeight + parseInt(child.dataset.offset, 10);
+			let offset = child.offsetHeight + navbarHeightPx + parseInt(child.dataset.offset, 10);
 			if (offset > (el.offsetHeight - this.state.extraPadding)) {
 				// Only update when this changes to prevent stack overflow.
 				if (offset === this.state.extraPadding) return;

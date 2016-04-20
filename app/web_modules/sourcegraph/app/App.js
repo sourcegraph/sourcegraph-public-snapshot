@@ -15,6 +15,7 @@ import styles from "./styles/App.css";
 import EventLogger from "sourcegraph/util/EventLogger";
 import {withStatusContext} from "sourcegraph/app/status";
 import context from "sourcegraph/app/context";
+import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -37,7 +38,6 @@ type State = {
 	main: Array<any>;
 	navContext: Array<any>;
 	params: RouteParams;
-	routePattern: string;
 };
 
 class App extends Component {
@@ -65,7 +65,6 @@ class App extends Component {
 
 	reconcileState(state: State, props: Props) {
 		Object.assign(state, props);
-		state.routePattern = props.routes.map((route) => route.path).join("").slice(1); // remove leading '/'
 	}
 
 	onStateTransition(prevState: State, nextState: State) {
@@ -116,7 +115,7 @@ class App extends Component {
 
 export const rootRoute: Route = {
 	path: "/",
-	component: withStatusContext(CSSModules(App, styles)),
+	component: withAppdashRouteStateRecording(withStatusContext(CSSModules(App, styles))),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, require("sourcegraph/dashboard").route);

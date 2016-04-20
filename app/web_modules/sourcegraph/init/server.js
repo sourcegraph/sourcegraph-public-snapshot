@@ -32,17 +32,22 @@ function renderIter(i, props, location, deadline, callback) {
 	let t0 = Date.now();
 
 	// Trigger a render so that we start the async data fetches.
-	let htmlStr = ReactDOMServer.renderToString(<RouterContext {...props} />);
-	console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
+	let htmlStr;
+	try {
+		htmlStr = ReactDOMServer.renderToString(<RouterContext {...props} />);
+		if (global.process.env.DEBUG) console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
+	} catch (e) {
+		return Promise.reject(e);
+	}
 
 	if (trackedPromisesCount() === 0) {
 		if (i > 1) {
-			console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
+			if (global.process.env.DEBUG) console.warn(`PERF NOTE: Rendering path ${props.location.pathname} took ${i} iterations (of renderToString and server RTTs) due to new async fetches being triggered after each iteration (likely as more data became available). Pipeline data better to improve performance.`);
 		}
 
 		// No additional async fetches were triggered, so we are done!
 		const head = Helmet.rewind();
-		callback({
+		return Promise.resolve({
 			statusCode: location.state ? httpStatusCode(location.state.error) : 200,
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
@@ -56,18 +61,14 @@ function renderIter(i, props, location, deadline, callback) {
 				script: head.script.toString(),
 			},
 		});
-		return;
 	}
 
 	let tFetch0 = Date.now();
 	const promisesCount = trackedPromisesCount();
-	allTrackedPromisesResolved().then(() => {
-		console.log(`RENDER#${i}: ${promisesCount} fetches took ${Date.now() - tFetch0} msec`);
-		renderIter(i + 1, props, location, deadline, callback);
-	}).catch((e) => callback({
-		statusCode: 500,
-		error: `Unhandled error not caught by ReactDOMServer.renderToString:\n${e.stack}`,
-	}));
+	return allTrackedPromisesResolved().then(() => {
+		if (global.process.env.DEBUG) console.log(`RENDER#${i}: ${promisesCount} fetches took ${Date.now() - tFetch0} msec`);
+		return renderIter(i + 1, props, location, deadline, callback);
+	});
 }
 
 function resetAll(arg) {
@@ -75,6 +76,10 @@ function resetAll(arg) {
 	// called, no data or credentials from the previous request remain. Otherwise
 	// handle may return data that the current user is unauthorized to see (but
 	// that was processed during a previous request for a different user).
+	//
+	// It's also CRUCIAL that we exit the process (see the process.exit call below)
+	// if there is a failure, since there might be other in-flight async operations
+	// that could alter global state after the failure is reported.
 	context.reset(arg.jsContext);
 	resetStores();
 }
@@ -119,7 +124,12 @@ const handle = (arg, callback) => {
 
 		const props = {...renderProps, ...arg.extraProps};
 
-		renderIter(1, props, location, arg.deadline, callback);
+		renderIter(1, props, location, arg.deadline, callback)
+			.catch((e) => ({
+				statusCode: 500,
+				error: `Uncaught server-side rendering error:\n${e.stack}`,
+			}))
+			.then((resp) => callback(resp));
 	});
 };
 
@@ -134,6 +144,13 @@ if (typeof global !== "undefined" && global.process && global.process.env.JSSERV
 			handle(JSON.parse(line), (data) => {
 				global.process.stdout.write(JSON.stringify(data));
 				global.process.stdout.write("\n");
+				if (data.error) {
+					// Exit so that we don't reuse this process and its potentially
+					// corrupted state.
+					global.process.stderr.write("jsserver process exiting due to error:\n");
+					global.process.stderr.write(data.error);
+					global.process.exit(1);
+				}
 			});
 		})
 		.on("error", (err) => {

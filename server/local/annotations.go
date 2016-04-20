@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -141,6 +143,10 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		return nil, err
 	}
 
+	if dataVer.CommitID != opt.Entry.RepoRev.CommitID {
+		log15.Warn("Annotations.listRefs: commit ID in argument did not match the last srclib version; for best performance, avoid duplicate work by pre-resolving the last srclib version for the commit before calling Annotations.List.", "resolved", dataVer.CommitID, "requested", opt.Entry.RepoRev.CommitID)
+	}
+
 	filters := []srcstore.RefFilter{
 		srcstore.ByRepos(opt.Entry.RepoRev.URI),
 		srcstore.ByCommitIDs(dataVer.CommitID),
@@ -166,20 +172,11 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		return nil, err
 	}
 
-	// Cache the default branch name for external repos, which is set as the Rev
-	// for external refs.
-	defaultBranchNames := make(map[string]string)
-
 	anns := make([]*sourcegraph.Annotation, len(refs))
 	for i, ref := range refs {
 		def := ref.DefKey()
 		if def.Repo == opt.Entry.RepoRev.URI {
 			def.CommitID = opt.Entry.RepoRev.Rev
-		} else if d, ok := defaultBranchNames[def.Repo]; ok {
-			def.CommitID = d
-		} else {
-			def.CommitID, _ = defaultBranch(ctx, def.Repo)
-			defaultBranchNames[def.Repo] = def.CommitID
 		}
 
 		anns[i] = &sourcegraph.Annotation{

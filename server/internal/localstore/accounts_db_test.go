@@ -51,7 +51,7 @@ func TestAccounts_Create_ok(t *testing.T) {
 }
 
 // TestAccounts_Create_duplicate tests the behavior of Accounts.Create
-// when called with an existing (duplicate) client ID.
+// when called with an existing (duplicate) login.
 func TestAccounts_Create_duplicate(t *testing.T) {
 	t.Parallel()
 
@@ -137,7 +137,7 @@ func TestAccounts_Create_ExistingEmail(t *testing.T) {
 	}
 
 	if _, err := s.Create(ctx, &sourcegraph.User{Login: "u2"}, email); err != nil {
-		if !strings.Contains(err.Error(), "primary email already associated with a user") {
+		if !strings.Contains(err.Error(), "has already been registered with another account") {
 			t.Fatal("wrong error was produced, was expecing code == 6 and error about email already taken")
 		}
 	}

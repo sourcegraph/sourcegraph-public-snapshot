@@ -218,37 +218,50 @@ func (p *plugin) GenerateField(file *generator.FileDescriptor, message *generato
 	goTyp, _ := p.GoType(message, field)
 	fieldname := p.GetOneOfFieldName(message, field)
 	goTypName := generator.GoTypeToName(goTyp)
-	if generator.IsMap(file.FileDescriptorProto, field) {
-		mapmsg := generator.GetMap(file.FileDescriptorProto, field)
-		mapkey, mapvalue := mapmsg.GetMapFields()
-		keygoTyp, _ := p.GoType(nil, mapkey)
-		valuegoTyp, _ := p.GoType(nil, mapvalue)
+	if p.IsMap(field) {
+		m := p.GoMapType(nil, field)
+		keygoTyp, _ := p.GoType(nil, m.KeyField)
+		keygoTyp = strings.Replace(keygoTyp, "*", "", 1)
+		keygoAliasTyp, _ := p.GoType(nil, m.KeyAliasField)
+		keygoAliasTyp = strings.Replace(keygoAliasTyp, "*", "", 1)
+
+		valuegoTyp, _ := p.GoType(nil, m.ValueField)
+		valuegoAliasTyp, _ := p.GoType(nil, m.ValueAliasField)
 		keytypName := generator.GoTypeToName(keygoTyp)
-		valuetypName := generator.GoTypeToName(valuegoTyp)
-		mapvaluegoType := valuegoTyp
-		if !mapvalue.IsMessage() {
-			mapvaluegoType = strings.Replace(mapvaluegoType, "*", "", 1)
-		}
+		keygoAliasTyp = generator.GoTypeToName(keygoAliasTyp)
+		valuetypAliasName := generator.GoTypeToName(valuegoAliasTyp)
+
+		nullable, valuegoTyp, valuegoAliasTyp := generator.GoMapValueTypes(field, m.ValueField, valuegoTyp, valuegoAliasTyp)
+
 		p.P(p.varGen.Next(), ` := r.Intn(10)`)
-		p.P(`this.`, fieldname, ` = make(map[`, strings.Replace(keygoTyp, "*", "", 1), `]`, mapvaluegoType, `)`)
+		p.P(`this.`, fieldname, ` = make(`, m.GoType, `)`)
 		p.P(`for i := 0; i < `, p.varGen.Current(), `; i++ {`)
 		p.In()
 		keyval := ""
-		if mapkey.IsString() {
+		if m.KeyField.IsString() {
 			keyval = fmt.Sprintf("randString%v(r)", p.localName)
 		} else {
-			keyval = value(keytypName, mapkey.GetType())
+			keyval = value(keytypName, m.KeyField.GetType())
 		}
-		if mapvalue.IsMessage() || p.IsGroup(field) {
-			s := `this.` + fieldname + `[` + keyval + `]` + ` = `
-			goTypName := generator.GoTypeToName(valuegoTyp)
+		if keygoAliasTyp != keygoTyp {
+			keyval = keygoAliasTyp + `(` + keyval + `)`
+		}
+		if m.ValueField.IsMessage() || p.IsGroup(field) {
+			s := `this.` + fieldname + `[` + keyval + `] = `
+			goTypName = generator.GoTypeToName(valuegoTyp)
 			funcCall := getFuncCall(goTypName)
+			if !nullable {
+				funcCall = `*` + funcCall
+			}
+			if valuegoTyp != valuegoAliasTyp {
+				funcCall = `(` + valuegoAliasTyp + `)(` + funcCall + `)`
+			}
 			s += funcCall
 			p.P(s)
-		} else if mapvalue.IsEnum() {
-			s := `this.` + fieldname + `[` + keyval + `]` + ` = ` + p.getEnumVal(mapvalue, valuegoTyp)
+		} else if m.ValueField.IsEnum() {
+			s := `this.` + fieldname + `[` + keyval + `]` + ` = ` + p.getEnumVal(m.ValueField, valuegoTyp)
 			p.P(s)
-		} else if mapvalue.IsBytes() {
+		} else if m.ValueField.IsBytes() {
 			count := p.varGen.Next()
 			p.P(count, ` := r.Intn(100)`)
 			p.P(p.varGen.Next(), ` := `, keyval)
@@ -258,13 +271,13 @@ func (p *plugin) GenerateField(file *generator.FileDescriptor, message *generato
 			p.P(`this.`, fieldname, `[`, p.varGen.Current(), `][i] = byte(r.Intn(256))`)
 			p.Out()
 			p.P(`}`)
-		} else if mapvalue.IsString() {
+		} else if m.ValueField.IsString() {
 			s := `this.` + fieldname + `[` + keyval + `]` + ` = ` + fmt.Sprintf("randString%v(r)", p.localName)
 			p.P(s)
 		} else {
 			p.P(p.varGen.Next(), ` := `, keyval)
-			p.P(`this.`, fieldname, `[`, p.varGen.Current(), `] = `, value(valuetypName, mapvalue.GetType()))
-			if negative(mapvalue.GetType()) {
+			p.P(`this.`, fieldname, `[`, p.varGen.Current(), `] = `, value(valuetypAliasName, m.ValueField.GetType()))
+			if negative(m.ValueField.GetType()) {
 				p.P(`if r.Intn(2) == 0 {`)
 				p.In()
 				p.P(`this.`, fieldname, `[`, p.varGen.Current(), `] *= -1`)
@@ -277,7 +290,7 @@ func (p *plugin) GenerateField(file *generator.FileDescriptor, message *generato
 	} else if field.IsMessage() || p.IsGroup(field) {
 		funcCall := getFuncCall(goTypName)
 		if field.IsRepeated() {
-			p.P(p.varGen.Next(), ` := r.Intn(10)`)
+			p.P(p.varGen.Next(), ` := r.Intn(5)`)
 			p.P(`this.`, fieldname, ` = make(`, goTyp, `, `, p.varGen.Current(), `)`)
 			p.P(`for i := 0; i < `, p.varGen.Current(), `; i++ {`)
 			p.In()
@@ -333,7 +346,7 @@ func (p *plugin) GenerateField(file *generator.FileDescriptor, message *generato
 			}
 		} else if field.IsBytes() {
 			if field.IsRepeated() {
-				p.P(p.varGen.Next(), ` := r.Intn(100)`)
+				p.P(p.varGen.Next(), ` := r.Intn(10)`)
 				p.P(`this.`, fieldname, ` = make(`, goTyp, `, `, p.varGen.Current(), `)`)
 				p.P(`for i := 0; i < `, p.varGen.Current(), `; i++ {`)
 				p.In()
@@ -374,7 +387,7 @@ func (p *plugin) GenerateField(file *generator.FileDescriptor, message *generato
 		} else {
 			typName := generator.GoTypeToName(goTyp)
 			if field.IsRepeated() {
-				p.P(p.varGen.Next(), ` := r.Intn(100)`)
+				p.P(p.varGen.Next(), ` := r.Intn(10)`)
 				p.P(`this.`, fieldname, ` = make(`, goTyp, `, `, p.varGen.Current(), `)`)
 				p.P(`for i := 0; i < `, p.varGen.Current(), `; i++ {`)
 				p.In()
@@ -413,8 +426,17 @@ func (p *plugin) GenerateField(file *generator.FileDescriptor, message *generato
 }
 
 func (p *plugin) hasLoop(field *descriptor.FieldDescriptorProto, visited []*generator.Descriptor, excludes []*generator.Descriptor) *generator.Descriptor {
-	if field.IsMessage() || p.IsGroup(field) {
-		fieldMessage := p.ObjectNamed(field.GetTypeName()).(*generator.Descriptor)
+	if field.IsMessage() || p.IsGroup(field) || p.IsMap(field) {
+		var fieldMessage *generator.Descriptor
+		if p.IsMap(field) {
+			m := p.GoMapType(nil, field)
+			if !m.ValueField.IsMessage() {
+				return nil
+			}
+			fieldMessage = p.ObjectNamed(m.ValueField.GetTypeName()).(*generator.Descriptor)
+		} else {
+			fieldMessage = p.ObjectNamed(field.GetTypeName()).(*generator.Descriptor)
+		}
 		fieldTypeName := generator.CamelCaseSlice(fieldMessage.TypeName())
 		for _, message := range visited {
 			messageTypeName := generator.CamelCaseSlice(message.TypeName())
@@ -476,23 +498,23 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 		}
 		p.atleastOne = true
 		ccTypeName := generator.CamelCaseSlice(message.TypeName())
+		loopLevels := make([]int, len(message.Field))
+		maxLoopLevel := 0
+		for i, field := range message.Field {
+			loopLevels[i] = p.loops(field, message)
+			if loopLevels[i] > maxLoopLevel {
+				maxLoopLevel = loopLevels[i]
+			}
+		}
+		ranTotal := 0
+		for i := range loopLevels {
+			ranTotal += int(math.Pow10(maxLoopLevel - loopLevels[i]))
+		}
 		p.P(`func NewPopulated`, ccTypeName, `(r randy`, p.localName, `, easy bool) *`, ccTypeName, ` {`)
 		p.In()
 		p.P(`this := &`, ccTypeName, `{}`)
 		if gogoproto.IsUnion(message.File(), message.DescriptorProto) && len(message.Field) > 0 {
-			loopLevels := make([]int, len(message.Field))
-			maxLoopLevel := 0
-			for i, field := range message.Field {
-				loopLevels[i] = p.loops(field, message)
-				if loopLevels[i] > maxLoopLevel {
-					maxLoopLevel = loopLevels[i]
-				}
-			}
-			ran := 0
-			for i := range loopLevels {
-				ran += int(math.Pow10(maxLoopLevel - loopLevels[i]))
-			}
-			p.P(`fieldNum := r.Intn(`, fmt.Sprintf("%d", ran), `)`)
+			p.P(`fieldNum := r.Intn(`, fmt.Sprintf("%d", ranTotal), `)`)
 			p.P(`switch fieldNum {`)
 			k := 0
 			for i, field := range message.Field {
@@ -511,7 +533,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 		} else {
 			var maxFieldNumber int32
 			oneofs := make(map[string]struct{})
-			for _, field := range message.Field {
+			for fieldIndex, field := range message.Field {
 				if field.GetNumber() > maxFieldNumber {
 					maxFieldNumber = field.GetNumber()
 				}
@@ -520,7 +542,11 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 					if field.IsRequired() || (!gogoproto.IsNullable(field) && !field.IsRepeated()) || (proto3 && !field.IsMessage()) {
 						p.GenerateField(file, message, field)
 					} else {
-						p.P(`if r.Intn(10) != 0 {`)
+						if loopLevels[fieldIndex] > 0 {
+							p.P(`if r.Intn(10) == 0 {`)
+						} else {
+							p.P(`if r.Intn(10) != 0 {`)
+						}
 						p.In()
 						p.GenerateField(file, message, field)
 						p.Out()
@@ -540,6 +566,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 							fieldNumbers = append(fieldNumbers, f.GetNumber())
 						}
 					}
+
 					p.P(`oneofNumber_`, fieldname, ` := `, fmt.Sprintf("%#v", fieldNumbers), `[r.Intn(`, strconv.Itoa(len(fieldNumbers)), `)]`)
 					p.P(`switch oneofNumber_`, fieldname, ` {`)
 					for _, f := range message.Field {

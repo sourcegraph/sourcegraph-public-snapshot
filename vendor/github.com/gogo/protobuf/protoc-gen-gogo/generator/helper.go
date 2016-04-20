@@ -181,6 +181,11 @@ func (g *Generator) GetFieldName(message *Descriptor, field *descriptor.FieldDes
 			return fieldname + "_"
 		}
 	}
+	if !gogoproto.IsProtoSizer(message.file, message.DescriptorProto) {
+		if fieldname == "Size" {
+			return fieldname + "_"
+		}
+	}
 	return fieldname
 }
 
@@ -195,6 +200,11 @@ func (g *Generator) GetOneOfFieldName(message *Descriptor, field *descriptor.Fie
 	}
 	for _, f := range methodNames {
 		if f == fieldname {
+			return fieldname + "_"
+		}
+	}
+	if !gogoproto.IsProtoSizer(message.file, message.DescriptorProto) {
+		if fieldname == "Size" {
 			return fieldname + "_"
 		}
 	}
@@ -218,6 +228,73 @@ func IsMap(file *descriptor.FileDescriptorProto, field *descriptor.FieldDescript
 		return false
 	}
 	return msg.GetOptions().GetMapEntry()
+}
+
+func (g *Generator) IsMap(field *descriptor.FieldDescriptorProto) bool {
+	if !field.IsMessage() {
+		return false
+	}
+	byName := g.ObjectNamed(field.GetTypeName())
+	desc, ok := byName.(*Descriptor)
+	if byName == nil || !ok || !desc.GetOptions().GetMapEntry() {
+		return false
+	}
+	return true
+}
+
+func (g *Generator) GetMapKeyField(field, keyField *descriptor.FieldDescriptorProto) *descriptor.FieldDescriptorProto {
+	if !gogoproto.IsCastKey(field) {
+		return keyField
+	}
+	keyField = proto.Clone(keyField).(*descriptor.FieldDescriptorProto)
+	if keyField.Options == nil {
+		keyField.Options = &descriptor.FieldOptions{}
+	}
+	keyType := gogoproto.GetCastKey(field)
+	if err := proto.SetExtension(keyField.Options, gogoproto.E_Casttype, &keyType); err != nil {
+		g.Fail(err.Error())
+	}
+	return keyField
+}
+
+func (g *Generator) GetMapValueField(field, valField *descriptor.FieldDescriptorProto) *descriptor.FieldDescriptorProto {
+	if !gogoproto.IsCastValue(field) && gogoproto.IsNullable(field) {
+		return valField
+	}
+	valField = proto.Clone(valField).(*descriptor.FieldDescriptorProto)
+	if valField.Options == nil {
+		valField.Options = &descriptor.FieldOptions{}
+	}
+	if valType := gogoproto.GetCastValue(field); len(valType) > 0 {
+		if err := proto.SetExtension(valField.Options, gogoproto.E_Casttype, &valType); err != nil {
+			g.Fail(err.Error())
+		}
+	}
+
+	nullable := gogoproto.IsNullable(field)
+	if err := proto.SetExtension(valField.Options, gogoproto.E_Nullable, &nullable); err != nil {
+		g.Fail(err.Error())
+	}
+	return valField
+}
+
+// GoMapValueTypes returns the map value Go type and the alias map value Go type (for casting), taking into
+// account whether the map is nullable or the value is a message.
+func GoMapValueTypes(mapField, valueField *descriptor.FieldDescriptorProto, goValueType, goValueAliasType string) (nullable bool, outGoType string, outGoAliasType string) {
+	nullable = gogoproto.IsNullable(mapField) && valueField.IsMessage()
+	if nullable {
+		// ensure the non-aliased Go value type is a pointer for consistency
+		if strings.HasPrefix(goValueType, "*") {
+			outGoType = goValueType
+		} else {
+			outGoType = "*" + goValueType
+		}
+		outGoAliasType = goValueAliasType
+	} else {
+		outGoType = strings.Replace(goValueType, "*", "", 1)
+		outGoAliasType = strings.Replace(goValueAliasType, "*", "", 1)
+	}
+	return
 }
 
 func GoTypeToName(goTyp string) string {
@@ -248,8 +325,9 @@ func (g *Generator) GeneratePlugin(p Plugin) {
 	i := 0
 	for _, file := range g.allFiles {
 		g.Reset()
+		g.writeOutput = genFileMap[file]
 		g.generatePlugin(file, p)
-		if _, ok := genFileMap[file]; !ok {
+		if !g.writeOutput {
 			continue
 		}
 		g.Response.File[i] = new(plugin.CodeGeneratorResponse_File)
@@ -277,6 +355,9 @@ func (g *Generator) generatePlugin(file *FileDescriptor, p Plugin) {
 	g.generateHeader()
 	p.GenerateImports(g.file)
 	g.generateImports()
+	if !g.writeOutput {
+		return
+	}
 	g.Write(rem.Bytes())
 
 	// Reformat generated code.
@@ -336,10 +417,37 @@ func getCastType(field *descriptor.FieldDescriptorProto) (packageName string, ty
 	return "", "", err
 }
 
+func getCastKey(field *descriptor.FieldDescriptorProto) (packageName string, typ string, err error) {
+	if field.Options != nil {
+		var v interface{}
+		v, err = proto.GetExtension(field.Options, gogoproto.E_Castkey)
+		if err == nil && v.(*string) != nil {
+			ctype := *(v.(*string))
+			packageName, typ = splitCPackageType(ctype)
+			return packageName, typ, nil
+		}
+	}
+	return "", "", err
+}
+
+func getCastValue(field *descriptor.FieldDescriptorProto) (packageName string, typ string, err error) {
+	if field.Options != nil {
+		var v interface{}
+		v, err = proto.GetExtension(field.Options, gogoproto.E_Castvalue)
+		if err == nil && v.(*string) != nil {
+			ctype := *(v.(*string))
+			packageName, typ = splitCPackageType(ctype)
+			return packageName, typ, nil
+		}
+	}
+	return "", "", err
+}
+
 func FileName(file *FileDescriptor) string {
 	fname := path.Base(file.FileDescriptorProto.GetName())
 	fname = strings.Replace(fname, ".proto", "", -1)
 	fname = strings.Replace(fname, "-", "_", -1)
+	fname = strings.Replace(fname, ".", "_", -1)
 	return CamelCase(fname)
 }
 

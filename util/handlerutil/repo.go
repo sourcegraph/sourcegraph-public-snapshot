@@ -6,7 +6,6 @@ import (
 	"go/doc"
 	"html/template"
 	"net/http"
-	"path"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -172,40 +171,6 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 	return repo, repoRevSpec, err
 }
 
-// ResolveRepoRev fills in the Rev and CommitID if they are missing.
-func ResolveRepoRev(r *http.Request, repoRev *sourcegraph.RepoRevSpec) error {
-	if repoRev.Rev != "" && len(repoRev.CommitID) == 40 {
-		return nil
-	}
-	if repoRev.Rev == "" && len(repoRev.CommitID) == 40 {
-		repoRev.Rev = repoRev.CommitID
-		return nil
-	}
-	if len := len(repoRev.CommitID); len != 0 && len != 40 {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("invalid commit ID %q (must be absolute, 40-char)", repoRev.CommitID)}
-	}
-
-	ctx, cl := Client(r)
-
-	if repoRev.Rev == "" {
-		repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
-		if err != nil {
-			return err
-		}
-		repoRev.Rev = repo.DefaultBranch
-		if repo.DefaultBranch == "" {
-			log15.Warn("ResolveRepoRev: no rev specified and repo has no default branch", "repo", repoRev.URI)
-		}
-	}
-
-	commit, err := cl.Repos.GetCommit(ctx, repoRev)
-	if err != nil {
-		return err
-	}
-	repoRev.CommitID = string(commit.ID)
-	return nil
-}
-
 // RedirectToNewRepoURI writes an HTTP redirect response with a
 // Location that matches the request's location except with the
 // RepoSpec route var updated to refer to newRepoURI (instead of the
@@ -221,16 +186,6 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 
 	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
 	return nil
-}
-
-// TreeEntryCommon holds all of the tree entry-specific information necessary to
-// render a tree entry page template. It is returned by getTreeEntry. It is assumes
-// that pages rendered are also provided with repoCommon and
-// repoRevCommon template data.
-type TreeEntryCommon struct {
-	EntrySpec         sourcegraph.TreeEntrySpec
-	Entry             *sourcegraph.TreeEntry
-	SrclibDataVersion *sourcegraph.SrclibDataVersion
 }
 
 // FlattenName flattens a nested TreeEntry name, joining with slashes.
@@ -266,54 +221,6 @@ func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySp
 		entry.RepoRev.CommitID = dataVer.CommitID
 	}
 	return entry.RepoRev, dataVer, err
-}
-
-// GetTreeEntryCommon returns common data specific to the UI
-// requirements for displaying a tree entry. It additionally returns
-// information about the repository, the revision and build based on
-// the request and the passed options.  It may also return custom
-// errors URLMovedError, or NoVCSDataError.
-func GetTreeEntryCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.RepoTreeGetOptions) (tc *TreeEntryCommon, rc *RepoCommon, vc *RepoRevCommon, err error) {
-	if opt == nil {
-		opt = new(sourcegraph.RepoTreeGetOptions)
-	}
-	rc, vc, err = GetRepoAndRevCommon(ctx, vars)
-	if err != nil {
-		return tc, rc, vc, err
-	}
-
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return
-	}
-
-	tc = &TreeEntryCommon{}
-	tc.EntrySpec = sourcegraph.TreeEntrySpec{
-		RepoRev: vc.RepoRevSpec,
-		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
-	}
-
-	if resolvedRev, dataVer, err := ResolveSrclibDataVersion(ctx, tc.EntrySpec); err == nil {
-		tc.EntrySpec.RepoRev = resolvedRev
-		tc.SrclibDataVersion = dataVer
-	} else if err != nil && grpc.Code(err) != codes.NotFound {
-		// Continue with existing rev and commit ID even if there's no srclib data.
-		return tc, rc, vc, err
-	}
-
-	if tc.EntrySpec.RepoRev.Rev == "" {
-		panic("empty Rev for repo " + tc.EntrySpec.RepoRev.URI)
-	}
-	if tc.EntrySpec.RepoRev.CommitID == "" {
-		panic("empty CommitID for repo " + tc.EntrySpec.RepoRev.URI + " rev " + tc.EntrySpec.RepoRev.Rev)
-	}
-
-	tc.Entry, err = cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: tc.EntrySpec, Opt: opt})
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 // GetDefCommon returns common information about a definition, based

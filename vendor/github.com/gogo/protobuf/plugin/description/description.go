@@ -109,7 +109,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 		}
 		p.used = true
 		ccTypeName := generator.CamelCaseSlice(message.TypeName())
-		p.P(`func (this *`, ccTypeName, `) Description() (desc *google_protobuf.FileDescriptorSet) {`)
+		p.P(`func (this *`, ccTypeName, `) Description() (desc *descriptor.FileDescriptorSet) {`)
 		p.In()
 		p.P(`return `, localName, `Description()`)
 		p.Out()
@@ -118,7 +118,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 
 	if p.used {
 
-		p.P(`func `, localName, `Description() (desc *google_protobuf.FileDescriptorSet) {`)
+		p.P(`func `, localName, `Description() (desc *descriptor.FileDescriptorSet) {`)
 		p.In()
 		//Don't generate SourceCodeInfo, since it will create too much code.
 
@@ -139,7 +139,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 
 func (this *plugin) GenerateImports(file *generator.FileDescriptor) {
 	if this.used {
-		this.P(`import google_protobuf "github.com/gogo/protobuf/protoc-gen-gogo/descriptor"`)
+		this.P(`import "github.com/gogo/protobuf/protoc-gen-gogo/descriptor"`)
 	}
 }
 

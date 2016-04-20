@@ -137,3 +137,12 @@ func (s *ReposClient) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Com
 	}
 	return
 }
+
+func (s *ReposClient) MockGetSrclibDataVersionForPath_Current(t *testing.T) (called *bool) {
+	called = new(bool)
+	s.GetSrclibDataVersionForPath_ = func(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+		*called = true
+		return &sourcegraph.SrclibDataVersion{CommitID: entry.RepoRev.CommitID}, nil
+	}
+	return
+}

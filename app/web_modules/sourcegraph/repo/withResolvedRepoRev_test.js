@@ -25,6 +25,14 @@ describe("withResolvedRepoRev", () => {
 			)).to.eql({error: null});
 		});
 
+		it("should be HTTP 202 if the repo is cloning", () => {
+			RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
+			RepoStore.directDispatch(new RepoActions.RepoCloning("r", true));
+			expect(renderedStatus(
+				<C params={{splat: "r"}} />
+			)).to.eql({error: {status: 202}});
+		});
+
 		it("should have error if the repo does not exist", () => {
 			RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true}));
 			expect(renderedStatus(

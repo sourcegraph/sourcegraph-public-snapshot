@@ -88,6 +88,9 @@
 	composes: pa3 from base;
 	margin-top: 0;
 	margin-bottom: 0;
+	white-space: nowrap;
+	max-height: 70vh;
+	overflow: auto;
 }
 
 .list-container {

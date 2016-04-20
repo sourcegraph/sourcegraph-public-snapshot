@@ -55,10 +55,6 @@ func VerifyUserSelfOrAdmin(ctx context.Context, method string, uid int32) error 
 // This check should be used in cases where a request should succeed only
 // if the request is for the client's own information, or if the ctx actor is an admin.
 func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string) error {
-	if clientID != "" && auth.ActorFromContext(ctx).ClientID == clientID {
-		return nil
-	}
-
 	return VerifyUserHasAdminAccess(ctx, method)
 }
 
@@ -76,11 +72,14 @@ func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, rep
 	// when dealing with multiple configurations, actor types, resource types and actions.
 	//
 	// Delegate permissions check to GitHub for GitHub mirrored repos.
-	if strings.HasPrefix(repo, "github.com/") {
+	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
-				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
+				// so that git clients will try again, providing authentication information.
+				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
+				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated/authorized by GitHub API", method)
 			}
 		}
 	}
@@ -122,11 +121,14 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 	// when dealing with multiple configurations, actor types, resource types and actions.
 	//
 	// Delegate permissions check to GitHub for GitHub mirrored repos.
-	if strings.HasPrefix(repo, "github.com/") {
+	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
 		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 			_, err := (&github.Repos{}).Get(ctx, repo)
 			if err != nil {
-				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated", method)
+				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
+				// so that git clients will try again, providing authentication information.
+				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
+				return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated/authorized by GitHub API", method)
 			}
 		}
 	}

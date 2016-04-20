@@ -11,7 +11,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -39,6 +38,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -52,9 +52,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	httputil2 "sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/metricutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 	"sourcegraph.com/sqs/pbtypes"
@@ -316,14 +314,6 @@ func (c *ServeCmd) Execute(args []string) error {
 
 	clientCtx := clientCtxFunc(context.Background())
 
-	metricutil.LogEvent(clientCtx, &sourcegraph.UserEvent{
-		Type:     "notif",
-		ClientID: idKey.ID,
-		Service:  "serve_cmd",
-		Method:   "start",
-		Result:   "success",
-	})
-
 	// Listen for events and periodically push them to analytics gateway.
 	eventsutil.StartEventLogger(clientCtx, idKey.ID, 10*4096, 256, 10*time.Minute)
 
@@ -362,24 +352,24 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
 	}
 
-	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), healthCheckMiddleware, realIPHandler}
+	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP}
 	if c.RedirectToHTTPS {
-		mw = append(mw, redirectToHTTPSMiddleware)
+		mw = append(mw, middleware.RedirectToHTTPS)
 	}
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
-		mw = append(mw, strictTransportSecurityMiddleware)
+		mw = append(mw, middleware.StrictTransportSecurity)
 	}
-	mw = append(mw, secureHeaderMiddleware)
+	mw = append(mw, middleware.SecureHeader)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_STRICT_HOSTNAME")); v {
-		mw = append(mw, ensureHostnameHandler)
+		mw = append(mw, middleware.EnsureHostname)
 	}
-	mw = append(mw, metricutil.HTTPMiddleware)
+	mw = append(mw, middleware.Metrics)
 	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
 	}
 	mw = append(mw, sourcegraphComGoGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {
-		mw = append(mw, gitCloneHandler)
+		mw = append(mw, middleware.GitHubCloneProxy)
 	}
 
 	h := handlerutil.WithMiddleware(sm, mw...)
@@ -594,7 +584,7 @@ func (c *ServeCmd) authenticateScopedContext(ctx context.Context, k *idkey.IDKey
 // event listeners.
 func (c *ServeCmd) initializeEventListeners(parent context.Context, k *idkey.IDKey, appURL *url.URL) {
 	ctx := conf.WithURL(parent, appURL)
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{ClientID: k.ID})
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{})
 	// Mask out the server's private key from the context passed to the listener
 	ctx = idkey.NewContext(ctx, nil)
 
@@ -654,95 +644,6 @@ func (c *ServeCmd) checkReachability() {
 	if extEndpoint != nil && extEndpoint.String() != sourcegraph.GRPCEndpoint(client.Ctx).String() {
 		doCheck(sourcegraph.WithGRPCEndpoint(client.Ctx, extEndpoint), false)
 	}
-}
-
-// setTLSMiddleware causes downstream handlers to treat this HTTP
-// request as having come via TLS. It is necessary because connection
-// muxing (which enables a single port to serve both Web and gRPC)
-// does not set the http.Request TLS field (since TLS occurs before
-// muxing).
-func setTLSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if r.Header.Get("x-forwarded-proto") == "" {
-		r.Header.Set("x-forwarded-proto", "https")
-	}
-	next(w, r)
-}
-
-func redirectToHTTPSMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	isHTTPS := r.TLS != nil || r.Header.Get("x-forwarded-proto") == "https"
-	if !isHTTPS {
-		url := *r.URL
-		url.Scheme = "https"
-		url.Host = r.Host
-		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
-		return
-	}
-	next(w, r)
-}
-
-func strictTransportSecurityMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	// Omit subdomains for blogs like gophercon.sourcegraph.com, which need to be HTTP.
-	w.Header().Set("strict-transport-security", "max-age=8640000")
-	next(w, r)
-}
-
-func secureHeaderMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	w.Header().Set("x-content-type-options", "nosniff")
-	w.Header().Set("x-xss-protection", "1; mode=block")
-	w.Header().Set("x-frame-options", "DENY")
-	next(w, r)
-}
-
-func gitCloneHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if ua := r.UserAgent(); !strings.HasPrefix(ua, "git/") && !strings.HasPrefix(ua, "JGit/") {
-		next(w, r)
-		return
-	}
-
-	// handle `git clone`
-	h := httputil.NewSingleHostReverseProxy(&url.URL{Scheme: "https", Host: "github.com", Path: "/"})
-	origDirector := h.Director
-	h.Director = func(r *http.Request) {
-		origDirector(r)
-		r.Host = "github.com"
-		if strings.HasPrefix(r.URL.Path, "/github.com/") {
-			r.URL.Path = r.URL.Path[len("/github.com"):]
-		}
-	}
-	h.ServeHTTP(w, r)
-}
-
-// ensureHostnameHandler ensures that the URL hostname is whatever is in SG_URL.
-func ensureHostnameHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ctx := httpctx.FromRequest(r)
-
-	wantHost := conf.AppURL(ctx).Host
-	if strings.Split(wantHost, ":")[0] == "localhost" {
-		// if localhost, don't enforce redirect, so the site is easier to share with others
-		next(w, r)
-		return
-	}
-
-	if r.Host == wantHost || r.Host == "" || r.URL.Path == statusEndpoint {
-		next(w, r)
-		return
-	}
-
-	// redirect to desired host
-	newURL := *r.URL
-	newURL.User = nil
-	newURL.Host = wantHost
-	newURL.Scheme = conf.AppURL(ctx).Scheme
-	log.Printf("ensureHostnameHandler: Permanently redirecting from requested host %q to %q.", r.Host, newURL.String())
-	http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
-}
-
-// realIPHandler sets req.RemoteAddr from the X-Real-Ip header if it exists.
-func realIPHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if s := r.Header.Get("X-Real-Ip"); s != "" && httputil2.StripPort(r.RemoteAddr) == "127.0.0.1" {
-		r.RemoteAddr = s
-	}
-	next(w, r)
 }
 
 // safeConfigFlags returns the commandline flag data for the `src serve` command,

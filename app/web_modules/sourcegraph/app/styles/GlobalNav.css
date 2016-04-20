@@ -2,18 +2,32 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 
+@value navbarHeight 40px;
+
+.navbar + * {
+	/* Account for navbar's position: fixed. */
+	padding-top: navbarHeight;
+}
+
 .navbar {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	composes: bb from base;
-	composes: b--black-20 bg-near-white from colors;
+	border-color: #efefef;
+	background-color: #fafafa;
+	z-index: 100;
+
+	height: navbarHeight;
+	position: fixed;
+	top: 0;
+	width: 100%;
 }
 
 .logo {
-	composes: ma3 from base;
-	width: 3rem;
-	height: 3rem;
+	composes: mt1 mh2 from base;
+	width: 2.7rem;
+	height: 2.7rem;
 }
 .logo:hover {
 	animation: spin 0.5s ease-in-out 1;
@@ -23,15 +37,15 @@
 .context-container {
 	flex: 1 1 auto;
 	align-items: center;
-	composes: pa2 from base;
+	composes: pv1 ph2 from base;
 	composes: f3 from typography;
 }
 
 .actions {
-	composes: ph2 from base;
+	composes: ph3 from base;
 }
 .action {
-	composes: pa3 from base;
+	composes: pl4 pt1 from base;
 	composes: f4 from typography;
 	display: inline-block;
 }

@@ -58,7 +58,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	}
 
 	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM global_refs"
-	orderBySql := " ORDER BY repo_count, count DESC"
+	orderBySql := " ORDER BY repo_count DESC, count DESC"
 	var groupBySql string
 	if op.Opt.ReposOnly {
 		sql = "SELECT repo, SUM(count) AS repo_count FROM global_refs"
@@ -165,8 +165,12 @@ ON COMMIT DROP;`
 
 		// Insert refs into temporary table
 		for _, r := range op.Data.Refs {
-			// Ignore broken refs
+			// Ignore broken refs.
 			if r.DefPath == "" {
+				continue
+			}
+			// Ignore def refs.
+			if r.Def {
 				continue
 			}
 			if r.DefRepo == "" {

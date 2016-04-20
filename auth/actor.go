@@ -16,12 +16,6 @@ type Actor struct {
 	// it, as an optimization to avoid incurring the Users.Get call).
 	Login string `json:",omitempty"`
 
-	// ClientID is the client ID of the authenticated OAuth2 client
-	// that initiated the original operation. It is NOT the client ID
-	// of the server that owns the account for UID, or the current
-	// server executing the operation.
-	ClientID string `json:",omitempty"`
-
 	// Scope is a set of authorized scopes that the actor has
 	// access to on the given server.
 	Scope map[string]bool `json:",omitempty"`
@@ -34,7 +28,7 @@ type Actor struct {
 }
 
 func (a Actor) String() string {
-	return fmt.Sprintf("Actor UID %d (clientID=%v scope=%v)", a.UID, a.ClientID, a.Scope)
+	return fmt.Sprintf("Actor UID %d (clientID=%v scope=%v)", a.UID, a.Scope)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.

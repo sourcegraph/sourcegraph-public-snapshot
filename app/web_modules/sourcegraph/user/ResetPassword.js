@@ -55,13 +55,15 @@ class ResetPassword extends Container {
 						placeholder="New password"
 						domRef={(e) => this._passwordInput = e}
 						autoFocus={true}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						placeholder="Confirm password"
 						domRef={(e) => this._confirmInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
@@ -69,7 +71,7 @@ class ResetPassword extends Container {
 						loading={this.state.pendingAuthAction}>Reset Password</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
+					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
 					<div styleName="success-text">Your password has been reset!<span styleName="alt-button"><Link to="/login"><Button size="small" outline={true}>Sign in</Button></Link></span></div>

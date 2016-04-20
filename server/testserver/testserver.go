@@ -114,12 +114,7 @@ func (s *Server) CmdAs(login string, args []string) (*exec.Cmd, error) {
 		return nil, err
 	}
 	k := idkey.FromContext(s.Ctx)
-	token, err := accesstoken.New(
-		k,
-		auth.Actor{UID: int(u.UID), ClientID: k.ID, Write: true},
-		map[string]string{"GrantType": "CmdAs"},
-		0,
-	)
+	token, err := accesstoken.New(k, &auth.Actor{UID: int(u.UID), Write: true}, nil, 0, true)
 	if err != nil {
 		return nil, err
 	}
@@ -173,12 +168,7 @@ func (s *Server) AsUser(ctx context.Context, login string) (context.Context, err
 
 func (s *Server) AsUIDWithAccess(ctx context.Context, uid int, write, admin bool) context.Context {
 	k := idkey.FromContext(s.Ctx)
-	token, err := accesstoken.New(
-		k,
-		auth.Actor{UID: uid, ClientID: k.ID, Write: write, Admin: admin},
-		map[string]string{"GrantType": "AsUIDWithAccess"},
-		0,
-	)
+	token, err := accesstoken.New(k, &auth.Actor{UID: uid, Write: write, Admin: admin}, nil, 0, true)
 	if err != nil {
 		panic(err)
 	}

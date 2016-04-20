@@ -45,7 +45,9 @@ Gogoprotobuf tries to fix these problems with the nullable, embed, customtype an
   - embed, if true, the field is generated as an embedded field.
   - customtype, It works with the Marshal and Unmarshal methods, to allow you to have your own types in your struct, but marshal to bytes. For example, custom.Uuid or custom.Fixed128
   - customname (beta), Changes the generated fieldname. This is especially useful when generated methods conflict with fieldnames.
-  - casttype (beta), Changes the generated fieldtype.  All generated code assumes that this type is castable to the protocol buffer field type.  It does not work for maps, structs or enums.
+  - casttype (beta), Changes the generated fieldtype.  All generated code assumes that this type is castable to the protocol buffer field type.  It does not work for structs or enums.
+  - castkey (beta), Changes the generated fieldtype for a map key.  All generated code assumes that this type is castable to the protocol buffer field type.  Only supported on maps.
+  - castvalue (beta), Changes the generated fieldtype for a map value.  All generated code assumes that this type is castable to the protocol buffer field type.  Only supported on maps.
 
 Warning about nullable: According to the Protocol Buffer specification, you should be able to tell whether a field is set or unset. With the option nullable=false this feature is lost, since your non-nullable fields will always be set. It can be seen as a layer on top of Protocol Buffers, where before and after marshalling all non-nullable fields are set and they cannot be unset.
 

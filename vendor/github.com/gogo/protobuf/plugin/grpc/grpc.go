@@ -134,7 +134,10 @@ func (g *grpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	path := fmt.Sprintf("6,%d", index) // 6 means service.
 
 	origServName := service.GetName()
-	fullServName := file.GetPackage() + "." + origServName
+	fullServName := origServName
+	if pkg := file.GetPackage(); pkg != "" {
+		fullServName = pkg + "." + fullServName
+	}
 	servName := generator.CamelCase(origServName)
 
 	g.P()

@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 
 	"golang.org/x/net/context"
@@ -33,23 +36,105 @@ func TestRepo(t *testing.T) {
 	}
 }
 
-func TestRepoResolve(t *testing.T) {
+func TestRepoResolve_IncludedRepo(t *testing.T) {
 	c, mock := newTest()
 
-	want := &sourcegraph.RepoResolution{
-		Result: &sourcegraph.RepoResolution_Repo{
-			Repo: &sourcegraph.RepoSpec{URI: "r"},
+	want := &repoResolution{
+		Data: sourcegraph.RepoResolution{
+			Result: &sourcegraph.RepoResolution_Repo{
+				Repo: &sourcegraph.RepoSpec{URI: "r"},
+			},
 		},
+		IncludedRepo: &sourcegraph.Repo{URI: "r"},
 	}
 
 	calledResolve := mock.Repos.MockResolve_Local(t, "r")
+	calledGet := mock.Repos.MockGet(t, "r")
 
-	var res *sourcegraph.RepoResolution
+	var res *repoResolution
 	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(res, want) {
 		t.Errorf("got %+v, want %+v", res, want)
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+}
+
+func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
+	c, mock := newTest()
+
+	want := &repoResolution{
+		Data: sourcegraph.RepoResolution{
+			Result: &sourcegraph.RepoResolution_Repo{
+				Repo: &sourcegraph.RepoSpec{URI: "r"},
+			},
+		},
+	}
+
+	calledResolve := mock.Repos.MockResolve_Local(t, "r")
+	var calledReposGet bool
+	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+		calledReposGet = true
+		return nil, grpc.Errorf(codes.Unknown, "error")
+	}
+
+	var res *repoResolution
+	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("got %+v, want %+v", res, want)
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
+	}
+	if !calledReposGet {
+		t.Error("!calledReposGet")
+	}
+}
+
+func TestRepoResolve_Remote(t *testing.T) {
+	c, mock := newTest()
+
+	want := &repoResolution{
+		Data: sourcegraph.RepoResolution{
+			Result: &sourcegraph.RepoResolution_RemoteRepo{
+				RemoteRepo: &sourcegraph.RemoteRepo{Name: "r"},
+			},
+		},
+	}
+
+	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.RemoteRepo{Name: "r"})
+
+	var res *repoResolution
+	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("got %+v, want %+v", res, want)
+	}
+	if !*calledResolve {
+		t.Error("!calledResolve")
+	}
+}
+
+func TestRepoResolve_notFound(t *testing.T) {
+	c, mock := newTest()
+
+	calledResolve := mock.Repos.MockResolve_NotFound(t, "r")
+
+	resp, err := c.Get("/repos/r/-/resolve")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := http.StatusNotFound; resp.StatusCode != want {
+		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 	}
 	if !*calledResolve {
 		t.Error("!calledResolve")

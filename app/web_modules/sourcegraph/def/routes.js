@@ -43,11 +43,13 @@ export const routes: Array<Route> =[
 ];
 
 function defParams(def: Def, rev: ?string): Object {
-	return {splat: [`${def.Repo}@${rev || def.CommitID}`, defPath(def)]};
+	rev = rev === null ? def.CommitID : rev;
+	const revPart = rev ? `@${rev || def.CommitID}` : "";
+	return {splat: [`${def.Repo}${revPart}`, defPath(def)]};
 }
 
 export function urlToDef(def: Def, rev: ?string): string {
-	rev = rev || def.CommitID;
+	rev = rev === null ? def.CommitID : rev;
 	if ((def.File === null || def.Kind === "package")) {
 		// The def's File field refers to a directory (e.g., in the
 		// case of a Go package). We can't show a dir in this view,

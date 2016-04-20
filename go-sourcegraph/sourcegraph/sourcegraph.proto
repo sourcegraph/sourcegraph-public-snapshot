@@ -123,10 +123,6 @@ message Repo {
 
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	pbtypes.Timestamp PushedAt = 17;
-
-	// Permissions describes the permissions that the current user (or anonymous users,
-	// if there is no current user) is granted to this repository.
-	RepoPermissions Permissions = 18;
 }
 
 message RepoListOptions {
@@ -144,14 +140,6 @@ message RepoListOptions {
 	string Owner = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool SlowlyIncludePublicGitHubRepos = 12 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-}
-
-// RepoPermissions describes the possible permissions that a user (or an anonymous
-// user) can be granted to a repository.
-message RepoPermissions {
-	bool Read = 1;
-	bool Write = 2;
-	bool Admin = 3;
 }
 
 // RepoRevSpec specifies a repository at a specific commit (or revision specifier,
@@ -553,10 +541,6 @@ message RemoteRepo {
 
 	// Stars is the number of stargazers of the GitHub repo.
 	int32 Stars = 13;
-
-	// Permissions are the current actor's GitHub permissions for the
-	// repo.
- 	RepoPermissions Permissions = 14;
 }
 
 // MirrorRepos handles operations related to maintaining mirrors on
@@ -1243,12 +1227,6 @@ message AccessTokenResponse {
 // AuthInfo describes the currently authenticated client and/or user
 // (if any).
 message AuthInfo {
-	// ClientID is the client ID of the currently authenticated
-	// client. If a user is authenticated using an access token,
-	// ClientID is the client ID of the registered client that the
-	// access token was granted to.
-	string ClientID = 1;
-
 	// UID is the UID of the currently authenticated user (if any).
 	int32 UID = 2;
 
@@ -1620,6 +1598,7 @@ message TreeEntry {
 message BasicTreeEntry {
 	string Name = 1;
 	TreeEntryType Type = 2;
+	string CommitID = 3; // the absolute commit ID of this file
 	bytes Contents = 5;
 	repeated BasicTreeEntry Entries = 6;
 }

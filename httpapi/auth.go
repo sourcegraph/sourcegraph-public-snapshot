@@ -2,10 +2,11 @@ package httpapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -135,12 +136,12 @@ func servePasswordReset(w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 
 	if form.ConfirmPassword != form.Password {
-		return fmt.Errorf("Your password must be the same as the confirmation")
+		return grpc.Errorf(codes.InvalidArgument, "passwords do not match")
 	}
 
 	_, err := cl.Accounts.ResetPassword(ctx, &sourcegraph.NewPassword{Password: form.Password, Token: &sourcegraph.PasswordResetToken{Token: form.Token}})
 	if err != nil {
-		return fmt.Errorf("error reseting password: %s", err)
+		return err
 	}
 
 	return writeJSON(w, &authResponse{Success: true})

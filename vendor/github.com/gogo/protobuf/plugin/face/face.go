@@ -130,9 +130,7 @@ package face
 
 import (
 	"github.com/gogo/protobuf/gogoproto"
-	descriptor "github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
-	"strings"
 )
 
 type plugin struct {
@@ -150,19 +148,6 @@ func (p *plugin) Name() string {
 
 func (p *plugin) Init(g *generator.Generator) {
 	p.Generator = g
-}
-
-func (p *plugin) GetMapGoType(file *descriptor.FileDescriptorProto, field *descriptor.FieldDescriptorProto) string {
-	mapMsg := generator.GetMap(file, field)
-	keyField, valueField := mapMsg.GetMapFields()
-	keygoTyp, _ := p.GoType(nil, keyField)
-	keygoTyp = strings.Replace(keygoTyp, "*", "", 1)
-	valuegoTyp, _ := p.GoType(nil, valueField)
-	if !valueField.IsMessage() {
-		valuegoTyp = strings.Replace(valuegoTyp, "*", "", 1)
-	}
-	goTyp := "map[" + keygoTyp + "]" + valuegoTyp
-	return goTyp
 }
 
 func (p *plugin) Generate(file *generator.FileDescriptor) {
@@ -191,8 +176,9 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 		for _, field := range message.Field {
 			fieldname := p.GetFieldName(message, field)
 			goTyp, _ := p.GoType(message, field)
-			if generator.IsMap(file.FileDescriptorProto, field) {
-				goTyp = p.GetMapGoType(file.FileDescriptorProto, field)
+			if p.IsMap(field) {
+				m := p.GoMapType(nil, field)
+				goTyp = m.GoType
 			}
 			p.P(`Get`, fieldname, `() `, goTyp)
 		}
@@ -215,7 +201,8 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 			fieldname := p.GetFieldName(message, field)
 			goTyp, _ := p.GoType(message, field)
 			if generator.IsMap(file.FileDescriptorProto, field) {
-				goTyp = p.GetMapGoType(file.FileDescriptorProto, field)
+				m := p.GoMapType(nil, field)
+				goTyp = m.GoType
 			}
 			p.P(`func (this *`, ccTypeName, `) Get`, fieldname, `() `, goTyp, `{`)
 			p.In()

@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/dgrijalva/jwt-go"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -66,10 +67,6 @@ func (c *authIdentifyCmd) Execute(args []string) error {
 		return err
 	}
 
-	if clientID := authInfo.ClientID; clientID != "" {
-		fmt.Printf("client ID %s\n", clientID)
-	}
-
 	if authInfo.UID != 0 {
 		fmt.Printf("%s (%d)\n", authInfo.Login, authInfo.UID)
 	}
@@ -107,10 +104,9 @@ func (c *authJWTCmd) Execute(args []string) error {
 	}
 	log.Println()
 
-	tok, err := accesstoken.UnsafeParseNoVerify(string(data))
-	if tok == nil {
-		return err
-	}
+	tok, err := jwt.Parse(string(data), func(*jwt.Token) (interface{}, error) {
+		return nil, nil
+	})
 	fmt.Println("(NO VERIFICATION PERFORMED; COULD BE FORGED)")
 	fmt.Println()
 	fmt.Println("## Header")

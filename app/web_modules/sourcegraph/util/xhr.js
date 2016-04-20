@@ -50,15 +50,21 @@ export function defaultFetch(url, options) {
 // checkStatus is intended to be chained in a fetch call. For example:
 //   fetch(...).then(checkStatus) ...
 export function checkStatus(resp) {
-	if (resp.status >= 200 && resp.status <= 299 && resp.status !== 202) return resp;
+	if (resp.status >= 200 && resp.status <= 299) return resp;
 	return resp.text().then((body) => {
-		let err = new Error(body || resp.statusText);
-		err.body = body;
-		err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		if (typeof document === "undefined") {
 			// Don't log in the browser because the devtools network inspector
 			// makes it easy enough to see failed HTTP requests.
 			console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
+		}
+		let err;
+		try {
+			err = new Error(resp.status);
+			err.body = JSON.parse(body);
+		} catch (error) {
+			err = new Error(resp.statusText);
+			err.body = body;
+			err.response = {status: resp.status, statusText: resp.statusText, url: resp.url};
 		}
 		throw err;
 	});

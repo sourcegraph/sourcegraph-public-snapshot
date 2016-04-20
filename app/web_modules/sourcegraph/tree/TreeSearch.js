@@ -159,7 +159,9 @@ class TreeSearch extends Container {
 		}
 
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
-			if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
+			// Only fetch on the client, not server, so that we don't
+			// cache stale def lists prior to the repo's first build.
+			if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
 				Dispatcher.Backends.dispatch(
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false)
 				);
@@ -471,7 +473,7 @@ class TreeSearch extends Container {
 
 		for (let i = 0; i < limit; i++) {
 			let def = this.state.matchingDefs.Defs[i];
-			let defURL = urlToDef(def);
+			let defURL = urlToDef(def, this.state.rev);
 
 			const selected = this._normalizedSelectionIndex() === i;
 

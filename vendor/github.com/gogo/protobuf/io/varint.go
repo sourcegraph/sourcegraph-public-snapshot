@@ -54,7 +54,13 @@ type varintWriter struct {
 func (this *varintWriter) WriteMsg(msg proto.Message) (err error) {
 	var data []byte
 	if m, ok := msg.(marshaler); ok {
-		n := m.Size()
+		n, ok := getSize(m)
+		if !ok {
+			data, err = proto.Marshal(msg)
+			if err != nil {
+				return err
+			}
+		}
 		if n >= len(this.buffer) {
 			this.buffer = make([]byte, n)
 		}

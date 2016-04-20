@@ -52,6 +52,9 @@ export default function withResolvedRepoRev(Component) {
 			if (nextState.repoObj && prevState.repoObj !== nextState.repoObj) {
 				this.context.status.error(nextState.repoObj.Error);
 			}
+			if (nextState.isCloning && prevState.isCloning !== nextState.isCloning) {
+				this.context.status.error({status: 202});
+			}
 		}
 
 		render() {

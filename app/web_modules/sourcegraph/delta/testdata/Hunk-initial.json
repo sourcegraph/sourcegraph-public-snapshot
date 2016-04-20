@@ -50,8 +50,7 @@
 									"className": "new-line",
 									"newLineNumber": 5,
 									"contents": "+ a",
-									"startByte": 0,
-									"directLinks": true
+									"startByte": 0
 								}
 							},
 							{
@@ -61,8 +60,7 @@
 									"className": "old-line",
 									"oldLineNumber": 6,
 									"contents": "- b",
-									"startByte": 4,
-									"directLinks": true
+									"startByte": 4
 								}
 							},
 							{
@@ -73,8 +71,7 @@
 									"oldLineNumber": 7,
 									"newLineNumber": 6,
 									"contents": " c",
-									"startByte": 8,
-									"directLinks": true
+									"startByte": 8
 								}
 							},
 							{
@@ -84,8 +81,7 @@
 									"className": "old-line",
 									"oldLineNumber": 8,
 									"contents": "- d",
-									"startByte": 11,
-									"directLinks": true
+									"startByte": 11
 								}
 							},
 							{
@@ -95,8 +91,7 @@
 									"className": "old-line",
 									"oldLineNumber": 9,
 									"contents": "- e",
-									"startByte": 15,
-									"directLinks": true
+									"startByte": 15
 								}
 							}
 						]

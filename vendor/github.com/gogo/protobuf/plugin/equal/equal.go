@@ -84,7 +84,7 @@ given to the equal plugin, will generate the following code:
 			}
 			return fmt2.Errorf("that is type *B but is nil && this != nil")
 		} else if this == nil {
-			return fmt2.Errorf("that is type *Bbut is not nil && this == nil")
+			return fmt2.Errorf("that is type *B but is not nil && this == nil")
 		}
 		if !this.A.Equal(&that1.A) {
 			return fmt2.Errorf("A this(%v) Not Equal that(%v)", this.A, that1.A)
@@ -252,11 +252,20 @@ func (p *plugin) generateMsgNullAndTypeCheck(ccTypeName string, verbose bool) {
 	p.P(`that1, ok := that.(*`, ccTypeName, `)`)
 	p.P(`if !ok {`)
 	p.In()
+	p.P(`that2, ok := that.(`, ccTypeName, `)`)
+	p.P(`if ok {`)
+	p.In()
+	p.P(`that1 = &that2`)
+	p.Out()
+	p.P(`} else {`)
+	p.In()
 	if verbose {
 		p.P(`return `, p.fmtPkg.Use(), `.Errorf("that is not of type *`, ccTypeName, `")`)
 	} else {
 		p.P(`return false`)
 	}
+	p.Out()
+	p.P(`}`)
 	p.Out()
 	p.P(`}`)
 	p.P(`if that1 == nil {`)
@@ -279,7 +288,7 @@ func (p *plugin) generateMsgNullAndTypeCheck(ccTypeName string, verbose bool) {
 	p.P(`} else if this == nil {`)
 	p.In()
 	if verbose {
-		p.P(`return `, p.fmtPkg.Use(), `.Errorf("that is type *`, ccTypeName, `but is not nil && this == nil")`)
+		p.P(`return `, p.fmtPkg.Use(), `.Errorf("that is type *`, ccTypeName, ` but is not nil && this == nil")`)
 	} else {
 		p.P(`return false`)
 	}
@@ -367,11 +376,33 @@ func (p *plugin) generateField(file *generator.FileDescriptor, message *generato
 		if ctype {
 			p.P(`if !this.`, fieldname, `[i].Equal(that1.`, fieldname, `[i]) {`)
 		} else {
-			if generator.IsMap(file.FileDescriptorProto, field) {
-				mapMsg := generator.GetMap(file.FileDescriptorProto, field)
-				_, mapValue := mapMsg.GetMapFields()
+			if p.IsMap(field) {
+				m := p.GoMapType(nil, field)
+				valuegoTyp, _ := p.GoType(nil, m.ValueField)
+				valuegoAliasTyp, _ := p.GoType(nil, m.ValueAliasField)
+				nullable, valuegoTyp, valuegoAliasTyp = generator.GoMapValueTypes(field, m.ValueField, valuegoTyp, valuegoAliasTyp)
+
+				mapValue := m.ValueAliasField
 				if mapValue.IsMessage() || p.IsGroup(mapValue) {
-					p.P(`if !this.`, fieldname, `[i].Equal(that1.`, fieldname, `[i]) {`)
+					if nullable && valuegoTyp == valuegoAliasTyp {
+						p.P(`if !this.`, fieldname, `[i].Equal(that1.`, fieldname, `[i]) {`)
+					} else {
+						// Equal() has a pointer receiver, but map value is a value type
+						a := `this.` + fieldname + `[i]`
+						b := `that1.` + fieldname + `[i]`
+						if valuegoTyp != valuegoAliasTyp {
+							// cast back to the type that has the generated methods on it
+							a = `(` + valuegoTyp + `)(` + a + `)`
+							b = `(` + valuegoTyp + `)(` + b + `)`
+						}
+						p.P(`a := `, a)
+						p.P(`b := `, b)
+						if nullable {
+							p.P(`if !a.Equal(b) {`)
+						} else {
+							p.P(`if !(&a).Equal(&b) {`)
+						}
+					}
 				} else if mapValue.IsBytes() {
 					p.P(`if !`, p.bytesPkg.Use(), `.Equal(this.`, fieldname, `[i], that1.`, fieldname, `[i]) {`)
 				} else if mapValue.IsString() {

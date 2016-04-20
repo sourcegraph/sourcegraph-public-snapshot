@@ -16,7 +16,6 @@
 		RepoConfig
 		Repo
 		RepoListOptions
-		RepoPermissions
 		RepoRevSpec
 		RepoSpec
 		RepoStatus
@@ -157,8 +156,7 @@ package sourcegraph
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
+import _ "github.com/gogo/protobuf/gogoproto"
 import diff "sourcegraph.com/sourcegraph/go-diff/diff"
 import vcs "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 import graph "sourcegraph.com/sourcegraph/srclib/graph"
@@ -173,14 +171,16 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-import github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
-
 import io "io"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.GoGoProtoPackageIsVersion1
 
 type TreeEntryType int32
 
@@ -207,6 +207,7 @@ var TreeEntryType_value = map[string]int32{
 func (x TreeEntryType) String() string {
 	return proto.EnumName(TreeEntryType_name, int32(x))
 }
+func (TreeEntryType) EnumDescriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{0} }
 
 // CombinedStatus is the combined status (i.e., incorporating statuses from all
 // contexts) of the repository at a specific rev.
@@ -222,9 +223,10 @@ type CombinedStatus struct {
 	Statuses []*RepoStatus `protobuf:"bytes,3,rep,name=Statuses" json:"Statuses,omitempty"`
 }
 
-func (m *CombinedStatus) Reset()         { *m = CombinedStatus{} }
-func (m *CombinedStatus) String() string { return proto.CompactTextString(m) }
-func (*CombinedStatus) ProtoMessage()    {}
+func (m *CombinedStatus) Reset()                    { *m = CombinedStatus{} }
+func (m *CombinedStatus) String() string            { return proto.CompactTextString(m) }
+func (*CombinedStatus) ProtoMessage()               {}
+func (*CombinedStatus) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{0} }
 
 // ListOptions specifies general pagination options for fetching a list of results.
 type ListOptions struct {
@@ -232,9 +234,10 @@ type ListOptions struct {
 	Page    int32 `protobuf:"varint,2,opt,name=Page,proto3" json:"Page,omitempty" url:",omitempty"`
 }
 
-func (m *ListOptions) Reset()         { *m = ListOptions{} }
-func (m *ListOptions) String() string { return proto.CompactTextString(m) }
-func (*ListOptions) ProtoMessage()    {}
+func (m *ListOptions) Reset()                    { *m = ListOptions{} }
+func (m *ListOptions) String() string            { return proto.CompactTextString(m) }
+func (*ListOptions) ProtoMessage()               {}
+func (*ListOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{1} }
 
 // ListResponse specifies a general paginated response when fetching a list of results.
 type ListResponse struct {
@@ -242,9 +245,10 @@ type ListResponse struct {
 	Total int32 `protobuf:"varint,1,opt,name=Total,proto3" json:"Total,omitempty" url:",omitempty"`
 }
 
-func (m *ListResponse) Reset()         { *m = ListResponse{} }
-func (m *ListResponse) String() string { return proto.CompactTextString(m) }
-func (*ListResponse) ProtoMessage()    {}
+func (m *ListResponse) Reset()                    { *m = ListResponse{} }
+func (m *ListResponse) String() string            { return proto.CompactTextString(m) }
+func (*ListResponse) ProtoMessage()               {}
+func (*ListResponse) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{2} }
 
 // StreamResponse specifies a paginated response where the total number of results
 // that can be returned is too expensive to compute, unbounded, or unknown.
@@ -253,9 +257,10 @@ type StreamResponse struct {
 	HasMore bool `protobuf:"varint,1,opt,name=HasMore,proto3" json:"HasMore,omitempty" url:",omitempty"`
 }
 
-func (m *StreamResponse) Reset()         { *m = StreamResponse{} }
-func (m *StreamResponse) String() string { return proto.CompactTextString(m) }
-func (*StreamResponse) ProtoMessage()    {}
+func (m *StreamResponse) Reset()                    { *m = StreamResponse{} }
+func (m *StreamResponse) String() string            { return proto.CompactTextString(m) }
+func (*StreamResponse) ProtoMessage()               {}
+func (*StreamResponse) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{3} }
 
 // RepoConfig describes a repository's config. This config is
 // Sourcegraph-specific and is persisted locally.
@@ -265,9 +270,10 @@ type RepoConfig struct {
 	Apps []string `protobuf:"bytes,1,rep,name=Apps" json:"Apps,omitempty"`
 }
 
-func (m *RepoConfig) Reset()         { *m = RepoConfig{} }
-func (m *RepoConfig) String() string { return proto.CompactTextString(m) }
-func (*RepoConfig) ProtoMessage()    {}
+func (m *RepoConfig) Reset()                    { *m = RepoConfig{} }
+func (m *RepoConfig) String() string            { return proto.CompactTextString(m) }
+func (*RepoConfig) ProtoMessage()               {}
+func (*RepoConfig) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{4} }
 
 // Repo represents a source code repository.
 type Repo struct {
@@ -316,14 +322,12 @@ type Repo struct {
 	UpdatedAt *pbtypes.Timestamp `protobuf:"bytes,16,opt,name=UpdatedAt" json:"UpdatedAt,omitempty"`
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	PushedAt *pbtypes.Timestamp `protobuf:"bytes,17,opt,name=PushedAt" json:"PushedAt,omitempty"`
-	// Permissions describes the permissions that the current user (or anonymous users,
-	// if there is no current user) is granted to this repository.
-	Permissions *RepoPermissions `protobuf:"bytes,18,opt,name=Permissions" json:"Permissions,omitempty"`
 }
 
-func (m *Repo) Reset()         { *m = Repo{} }
-func (m *Repo) String() string { return proto.CompactTextString(m) }
-func (*Repo) ProtoMessage()    {}
+func (m *Repo) Reset()                    { *m = Repo{} }
+func (m *Repo) String() string            { return proto.CompactTextString(m) }
+func (*Repo) ProtoMessage()               {}
+func (*Repo) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{5} }
 
 type RepoListOptions struct {
 	Name string `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty" url:",omitempty"`
@@ -340,21 +344,10 @@ type RepoListOptions struct {
 	ListOptions                    `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *RepoListOptions) Reset()         { *m = RepoListOptions{} }
-func (m *RepoListOptions) String() string { return proto.CompactTextString(m) }
-func (*RepoListOptions) ProtoMessage()    {}
-
-// RepoPermissions describes the possible permissions that a user (or an anonymous
-// user) can be granted to a repository.
-type RepoPermissions struct {
-	Read  bool `protobuf:"varint,1,opt,name=Read,proto3" json:"Read,omitempty"`
-	Write bool `protobuf:"varint,2,opt,name=Write,proto3" json:"Write,omitempty"`
-	Admin bool `protobuf:"varint,3,opt,name=Admin,proto3" json:"Admin,omitempty"`
-}
-
-func (m *RepoPermissions) Reset()         { *m = RepoPermissions{} }
-func (m *RepoPermissions) String() string { return proto.CompactTextString(m) }
-func (*RepoPermissions) ProtoMessage()    {}
+func (m *RepoListOptions) Reset()                    { *m = RepoListOptions{} }
+func (m *RepoListOptions) String() string            { return proto.CompactTextString(m) }
+func (*RepoListOptions) ProtoMessage()               {}
+func (*RepoListOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{6} }
 
 // RepoRevSpec specifies a repository at a specific commit (or revision specifier,
 // such as a branch, which is resolved on the server side to a specific commit).
@@ -391,18 +384,20 @@ type RepoRevSpec struct {
 	CommitID string `protobuf:"bytes,3,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
 }
 
-func (m *RepoRevSpec) Reset()         { *m = RepoRevSpec{} }
-func (m *RepoRevSpec) String() string { return proto.CompactTextString(m) }
-func (*RepoRevSpec) ProtoMessage()    {}
+func (m *RepoRevSpec) Reset()                    { *m = RepoRevSpec{} }
+func (m *RepoRevSpec) String() string            { return proto.CompactTextString(m) }
+func (*RepoRevSpec) ProtoMessage()               {}
+func (*RepoRevSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{7} }
 
 // RepoSpec specifies a repository.
 type RepoSpec struct {
 	URI string `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
 }
 
-func (m *RepoSpec) Reset()         { *m = RepoSpec{} }
-func (m *RepoSpec) String() string { return proto.CompactTextString(m) }
-func (*RepoSpec) ProtoMessage()    {}
+func (m *RepoSpec) Reset()                    { *m = RepoSpec{} }
+func (m *RepoSpec) String() string            { return proto.CompactTextString(m) }
+func (*RepoSpec) ProtoMessage()               {}
+func (*RepoSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{8} }
 
 // RepoStatus is the status of the repository at a specific rev (in a single
 // context).
@@ -421,26 +416,29 @@ type RepoStatus struct {
 	UpdatedAt pbtypes.Timestamp `protobuf:"bytes,7,opt,name=UpdatedAt" json:"UpdatedAt"`
 }
 
-func (m *RepoStatus) Reset()         { *m = RepoStatus{} }
-func (m *RepoStatus) String() string { return proto.CompactTextString(m) }
-func (*RepoStatus) ProtoMessage()    {}
+func (m *RepoStatus) Reset()                    { *m = RepoStatus{} }
+func (m *RepoStatus) String() string            { return proto.CompactTextString(m) }
+func (*RepoStatus) ProtoMessage()               {}
+func (*RepoStatus) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{9} }
 
 type RepoStatusesCreateOp struct {
 	Repo   RepoRevSpec `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
 	Status RepoStatus  `protobuf:"bytes,2,opt,name=Status" json:"Status"`
 }
 
-func (m *RepoStatusesCreateOp) Reset()         { *m = RepoStatusesCreateOp{} }
-func (m *RepoStatusesCreateOp) String() string { return proto.CompactTextString(m) }
-func (*RepoStatusesCreateOp) ProtoMessage()    {}
+func (m *RepoStatusesCreateOp) Reset()                    { *m = RepoStatusesCreateOp{} }
+func (m *RepoStatusesCreateOp) String() string            { return proto.CompactTextString(m) }
+func (*RepoStatusesCreateOp) ProtoMessage()               {}
+func (*RepoStatusesCreateOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{10} }
 
 type RepoList struct {
 	Repos []*Repo `protobuf:"bytes,1,rep,name=Repos" json:"Repos,omitempty"`
 }
 
-func (m *RepoList) Reset()         { *m = RepoList{} }
-func (m *RepoList) String() string { return proto.CompactTextString(m) }
-func (*RepoList) ProtoMessage()    {}
+func (m *RepoList) Reset()                    { *m = RepoList{} }
+func (m *RepoList) String() string            { return proto.CompactTextString(m) }
+func (*RepoList) ProtoMessage()               {}
+func (*RepoList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{11} }
 
 type ReceivePackOp struct {
 	Repo          RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
@@ -448,9 +446,10 @@ type ReceivePackOp struct {
 	AdvertiseRefs bool     `protobuf:"varint,4,opt,name=advertiseRefs,proto3" json:"advertiseRefs,omitempty"`
 }
 
-func (m *ReceivePackOp) Reset()         { *m = ReceivePackOp{} }
-func (m *ReceivePackOp) String() string { return proto.CompactTextString(m) }
-func (*ReceivePackOp) ProtoMessage()    {}
+func (m *ReceivePackOp) Reset()                    { *m = ReceivePackOp{} }
+func (m *ReceivePackOp) String() string            { return proto.CompactTextString(m) }
+func (*ReceivePackOp) ProtoMessage()               {}
+func (*ReceivePackOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{12} }
 
 type UploadPackOp struct {
 	Repo          RepoSpec `protobuf:"bytes,1,opt,name=repo" json:"repo"`
@@ -458,26 +457,29 @@ type UploadPackOp struct {
 	AdvertiseRefs bool     `protobuf:"varint,4,opt,name=advertiseRefs,proto3" json:"advertiseRefs,omitempty"`
 }
 
-func (m *UploadPackOp) Reset()         { *m = UploadPackOp{} }
-func (m *UploadPackOp) String() string { return proto.CompactTextString(m) }
-func (*UploadPackOp) ProtoMessage()    {}
+func (m *UploadPackOp) Reset()                    { *m = UploadPackOp{} }
+func (m *UploadPackOp) String() string            { return proto.CompactTextString(m) }
+func (*UploadPackOp) ProtoMessage()               {}
+func (*UploadPackOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{13} }
 
 type Packet struct {
 	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 }
 
-func (m *Packet) Reset()         { *m = Packet{} }
-func (m *Packet) String() string { return proto.CompactTextString(m) }
-func (*Packet) ProtoMessage()    {}
+func (m *Packet) Reset()                    { *m = Packet{} }
+func (m *Packet) String() string            { return proto.CompactTextString(m) }
+func (*Packet) ProtoMessage()               {}
+func (*Packet) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{14} }
 
 type RepoResolveOp struct {
 	// Path is some repo path, such as "github.com/user/repo".
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 }
 
-func (m *RepoResolveOp) Reset()         { *m = RepoResolveOp{} }
-func (m *RepoResolveOp) String() string { return proto.CompactTextString(m) }
-func (*RepoResolveOp) ProtoMessage()    {}
+func (m *RepoResolveOp) Reset()                    { *m = RepoResolveOp{} }
+func (m *RepoResolveOp) String() string            { return proto.CompactTextString(m) }
+func (*RepoResolveOp) ProtoMessage()               {}
+func (*RepoResolveOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{15} }
 
 // RepoResolution is the result of resolving a repo using
 // Repos.Resolve.
@@ -488,9 +490,10 @@ type RepoResolution struct {
 	Result isRepoResolution_Result `protobuf_oneof:"result"`
 }
 
-func (m *RepoResolution) Reset()         { *m = RepoResolution{} }
-func (m *RepoResolution) String() string { return proto.CompactTextString(m) }
-func (*RepoResolution) ProtoMessage()    {}
+func (m *RepoResolution) Reset()                    { *m = RepoResolution{} }
+func (m *RepoResolution) String() string            { return proto.CompactTextString(m) }
+func (*RepoResolution) ProtoMessage()               {}
+func (*RepoResolution) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{16} }
 
 type isRepoResolution_Result interface {
 	isRepoResolution_Result()
@@ -530,8 +533,8 @@ func (m *RepoResolution) GetRemoteRepo() *RemoteRepo {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*RepoResolution) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _RepoResolution_OneofMarshaler, _RepoResolution_OneofUnmarshaler, []interface{}{
+func (*RepoResolution) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _RepoResolution_OneofMarshaler, _RepoResolution_OneofUnmarshaler, _RepoResolution_OneofSizer, []interface{}{
 		(*RepoResolution_Repo)(nil),
 		(*RepoResolution_RemoteRepo)(nil),
 	}
@@ -582,6 +585,27 @@ func _RepoResolution_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto
 	}
 }
 
+func _RepoResolution_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*RepoResolution)
+	// result
+	switch x := m.Result.(type) {
+	case *RepoResolution_Repo:
+		s := proto.Size(x.Repo)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *RepoResolution_RemoteRepo:
+		s := proto.Size(x.RemoteRepo)
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 // ReposListRemoteOptions specifies options for Repos.ListRemote.
 type ReposListRemoteOptions struct {
 	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
@@ -590,15 +614,19 @@ type ReposListRemoteOptions struct {
 func (m *ReposListRemoteOptions) Reset()         { *m = ReposListRemoteOptions{} }
 func (m *ReposListRemoteOptions) String() string { return proto.CompactTextString(m) }
 func (*ReposListRemoteOptions) ProtoMessage()    {}
+func (*ReposListRemoteOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{17}
+}
 
 // RemoteRepoList is a list of remote repos.
 type RemoteRepoList struct {
 	RemoteRepos []*RemoteRepo `protobuf:"bytes,1,rep,name=RemoteRepos" json:"RemoteRepos,omitempty"`
 }
 
-func (m *RemoteRepoList) Reset()         { *m = RemoteRepoList{} }
-func (m *RemoteRepoList) String() string { return proto.CompactTextString(m) }
-func (*RemoteRepoList) ProtoMessage()    {}
+func (m *RemoteRepoList) Reset()                    { *m = RemoteRepoList{} }
+func (m *RemoteRepoList) String() string            { return proto.CompactTextString(m) }
+func (*RemoteRepoList) ProtoMessage()               {}
+func (*RemoteRepoList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{18} }
 
 // SrclibDataVersion specifies a srclib store version.
 type SrclibDataVersion struct {
@@ -606,9 +634,10 @@ type SrclibDataVersion struct {
 	CommitsBehind int32  `protobuf:"varint,2,opt,name=CommitsBehind,proto3" json:"CommitsBehind,omitempty"`
 }
 
-func (m *SrclibDataVersion) Reset()         { *m = SrclibDataVersion{} }
-func (m *SrclibDataVersion) String() string { return proto.CompactTextString(m) }
-func (*SrclibDataVersion) ProtoMessage()    {}
+func (m *SrclibDataVersion) Reset()                    { *m = SrclibDataVersion{} }
+func (m *SrclibDataVersion) String() string            { return proto.CompactTextString(m) }
+func (*SrclibDataVersion) ProtoMessage()               {}
+func (*SrclibDataVersion) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{19} }
 
 type RepoConfigureAppOp struct {
 	// Repo is the repository whose applications are being configured.
@@ -620,9 +649,10 @@ type RepoConfigureAppOp struct {
 	Enable bool `protobuf:"varint,3,opt,name=Enable,proto3" json:"Enable,omitempty"`
 }
 
-func (m *RepoConfigureAppOp) Reset()         { *m = RepoConfigureAppOp{} }
-func (m *RepoConfigureAppOp) String() string { return proto.CompactTextString(m) }
-func (*RepoConfigureAppOp) ProtoMessage()    {}
+func (m *RepoConfigureAppOp) Reset()                    { *m = RepoConfigureAppOp{} }
+func (m *RepoConfigureAppOp) String() string            { return proto.CompactTextString(m) }
+func (*RepoConfigureAppOp) ProtoMessage()               {}
+func (*RepoConfigureAppOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{20} }
 
 type ReposCreateOp struct {
 	// Types that are valid to be assigned to Op:
@@ -631,9 +661,10 @@ type ReposCreateOp struct {
 	Op isReposCreateOp_Op `protobuf_oneof:"Op"`
 }
 
-func (m *ReposCreateOp) Reset()         { *m = ReposCreateOp{} }
-func (m *ReposCreateOp) String() string { return proto.CompactTextString(m) }
-func (*ReposCreateOp) ProtoMessage()    {}
+func (m *ReposCreateOp) Reset()                    { *m = ReposCreateOp{} }
+func (m *ReposCreateOp) String() string            { return proto.CompactTextString(m) }
+func (*ReposCreateOp) ProtoMessage()               {}
+func (*ReposCreateOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{21} }
 
 type isReposCreateOp_Op interface {
 	isReposCreateOp_Op()
@@ -673,8 +704,8 @@ func (m *ReposCreateOp) GetFromGitHubID() int32 {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*ReposCreateOp) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _ReposCreateOp_OneofMarshaler, _ReposCreateOp_OneofUnmarshaler, []interface{}{
+func (*ReposCreateOp) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _ReposCreateOp_OneofMarshaler, _ReposCreateOp_OneofUnmarshaler, _ReposCreateOp_OneofSizer, []interface{}{
 		(*ReposCreateOp_New)(nil),
 		(*ReposCreateOp_FromGitHubID)(nil),
 	}
@@ -722,6 +753,25 @@ func _ReposCreateOp_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 	}
 }
 
+func _ReposCreateOp_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*ReposCreateOp)
+	// Op
+	switch x := m.Op.(type) {
+	case *ReposCreateOp_New:
+		s := proto.Size(x.New)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *ReposCreateOp_FromGitHubID:
+		n += proto.SizeVarint(2<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.FromGitHubID))
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 type ReposCreateOp_NewRepo struct {
 	// URI is the desired URI of the new repository.
 	URI string `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
@@ -746,6 +796,9 @@ type ReposCreateOp_NewRepo struct {
 func (m *ReposCreateOp_NewRepo) Reset()         { *m = ReposCreateOp_NewRepo{} }
 func (m *ReposCreateOp_NewRepo) String() string { return proto.CompactTextString(m) }
 func (*ReposCreateOp_NewRepo) ProtoMessage()    {}
+func (*ReposCreateOp_NewRepo) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{21, 0}
+}
 
 // ReposUpdateOp is an operation to update a repository's metadata.
 type ReposUpdateOp struct {
@@ -761,18 +814,20 @@ type ReposUpdateOp struct {
 	DefaultBranch string `protobuf:"bytes,6,opt,name=DefaultBranch,proto3" json:"DefaultBranch,omitempty"`
 }
 
-func (m *ReposUpdateOp) Reset()         { *m = ReposUpdateOp{} }
-func (m *ReposUpdateOp) String() string { return proto.CompactTextString(m) }
-func (*ReposUpdateOp) ProtoMessage()    {}
+func (m *ReposUpdateOp) Reset()                    { *m = ReposUpdateOp{} }
+func (m *ReposUpdateOp) String() string            { return proto.CompactTextString(m) }
+func (*ReposUpdateOp) ProtoMessage()               {}
+func (*ReposUpdateOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{22} }
 
 type ReposListCommitsOp struct {
 	Repo RepoSpec                `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
 	Opt  *RepoListCommitsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *ReposListCommitsOp) Reset()         { *m = ReposListCommitsOp{} }
-func (m *ReposListCommitsOp) String() string { return proto.CompactTextString(m) }
-func (*ReposListCommitsOp) ProtoMessage()    {}
+func (m *ReposListCommitsOp) Reset()                    { *m = ReposListCommitsOp{} }
+func (m *ReposListCommitsOp) String() string            { return proto.CompactTextString(m) }
+func (*ReposListCommitsOp) ProtoMessage()               {}
+func (*ReposListCommitsOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{23} }
 
 type RepoListCommitsOptions struct {
 	Head        string `protobuf:"bytes,1,opt,name=Head,proto3" json:"Head,omitempty" url:",omitempty"`
@@ -784,24 +839,29 @@ type RepoListCommitsOptions struct {
 func (m *RepoListCommitsOptions) Reset()         { *m = RepoListCommitsOptions{} }
 func (m *RepoListCommitsOptions) String() string { return proto.CompactTextString(m) }
 func (*RepoListCommitsOptions) ProtoMessage()    {}
+func (*RepoListCommitsOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{24}
+}
 
 type CommitList struct {
 	Commits        []*vcs.Commit `protobuf:"bytes,1,rep,name=Commits" json:"Commits,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *CommitList) Reset()         { *m = CommitList{} }
-func (m *CommitList) String() string { return proto.CompactTextString(m) }
-func (*CommitList) ProtoMessage()    {}
+func (m *CommitList) Reset()                    { *m = CommitList{} }
+func (m *CommitList) String() string            { return proto.CompactTextString(m) }
+func (*CommitList) ProtoMessage()               {}
+func (*CommitList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{25} }
 
 type ReposListBranchesOp struct {
 	Repo RepoSpec                 `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
 	Opt  *RepoListBranchesOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *ReposListBranchesOp) Reset()         { *m = ReposListBranchesOp{} }
-func (m *ReposListBranchesOp) String() string { return proto.CompactTextString(m) }
-func (*ReposListBranchesOp) ProtoMessage()    {}
+func (m *ReposListBranchesOp) Reset()                    { *m = ReposListBranchesOp{} }
+func (m *ReposListBranchesOp) String() string            { return proto.CompactTextString(m) }
+func (*ReposListBranchesOp) ProtoMessage()               {}
+func (*ReposListBranchesOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{26} }
 
 type RepoListBranchesOptions struct {
 	IncludeCommit     bool   `protobuf:"varint,4,opt,name=IncludeCommit,proto3" json:"IncludeCommit,omitempty"`
@@ -813,24 +873,29 @@ type RepoListBranchesOptions struct {
 func (m *RepoListBranchesOptions) Reset()         { *m = RepoListBranchesOptions{} }
 func (m *RepoListBranchesOptions) String() string { return proto.CompactTextString(m) }
 func (*RepoListBranchesOptions) ProtoMessage()    {}
+func (*RepoListBranchesOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{27}
+}
 
 type BranchList struct {
 	Branches       []*vcs.Branch `protobuf:"bytes,1,rep,name=Branches" json:"Branches,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *BranchList) Reset()         { *m = BranchList{} }
-func (m *BranchList) String() string { return proto.CompactTextString(m) }
-func (*BranchList) ProtoMessage()    {}
+func (m *BranchList) Reset()                    { *m = BranchList{} }
+func (m *BranchList) String() string            { return proto.CompactTextString(m) }
+func (*BranchList) ProtoMessage()               {}
+func (*BranchList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{28} }
 
 type ReposListTagsOp struct {
 	Repo RepoSpec             `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
 	Opt  *RepoListTagsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *ReposListTagsOp) Reset()         { *m = ReposListTagsOp{} }
-func (m *ReposListTagsOp) String() string { return proto.CompactTextString(m) }
-func (*ReposListTagsOp) ProtoMessage()    {}
+func (m *ReposListTagsOp) Reset()                    { *m = ReposListTagsOp{} }
+func (m *ReposListTagsOp) String() string            { return proto.CompactTextString(m) }
+func (*ReposListTagsOp) ProtoMessage()               {}
+func (*ReposListTagsOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{29} }
 
 type ReposListCommittersOp struct {
 	Repo RepoSpec                   `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
@@ -840,6 +905,9 @@ type ReposListCommittersOp struct {
 func (m *ReposListCommittersOp) Reset()         { *m = ReposListCommittersOp{} }
 func (m *ReposListCommittersOp) String() string { return proto.CompactTextString(m) }
 func (*ReposListCommittersOp) ProtoMessage()    {}
+func (*ReposListCommittersOp) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{30}
+}
 
 type RepoListCommittersOptions struct {
 	Rev         string `protobuf:"bytes,1,opt,name=Rev,proto3" json:"Rev,omitempty"`
@@ -849,32 +917,38 @@ type RepoListCommittersOptions struct {
 func (m *RepoListCommittersOptions) Reset()         { *m = RepoListCommittersOptions{} }
 func (m *RepoListCommittersOptions) String() string { return proto.CompactTextString(m) }
 func (*RepoListCommittersOptions) ProtoMessage()    {}
+func (*RepoListCommittersOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{31}
+}
 
 type CommitterList struct {
 	Committers     []*vcs.Committer `protobuf:"bytes,1,rep,name=Committers" json:"Committers,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *CommitterList) Reset()         { *m = CommitterList{} }
-func (m *CommitterList) String() string { return proto.CompactTextString(m) }
-func (*CommitterList) ProtoMessage()    {}
+func (m *CommitterList) Reset()                    { *m = CommitterList{} }
+func (m *CommitterList) String() string            { return proto.CompactTextString(m) }
+func (*CommitterList) ProtoMessage()               {}
+func (*CommitterList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{32} }
 
 type RepoListTagsOptions struct {
 	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *RepoListTagsOptions) Reset()         { *m = RepoListTagsOptions{} }
-func (m *RepoListTagsOptions) String() string { return proto.CompactTextString(m) }
-func (*RepoListTagsOptions) ProtoMessage()    {}
+func (m *RepoListTagsOptions) Reset()                    { *m = RepoListTagsOptions{} }
+func (m *RepoListTagsOptions) String() string            { return proto.CompactTextString(m) }
+func (*RepoListTagsOptions) ProtoMessage()               {}
+func (*RepoListTagsOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{33} }
 
 type TagList struct {
 	Tags           []*vcs.Tag `protobuf:"bytes,1,rep,name=Tags" json:"Tags,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *TagList) Reset()         { *m = TagList{} }
-func (m *TagList) String() string { return proto.CompactTextString(m) }
-func (*TagList) ProtoMessage()    {}
+func (m *TagList) Reset()                    { *m = TagList{} }
+func (m *TagList) String() string            { return proto.CompactTextString(m) }
+func (*TagList) ProtoMessage()               {}
+func (*TagList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{34} }
 
 type MirrorReposRefreshVCSOp struct {
 	Repo RepoSpec `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
@@ -886,6 +960,9 @@ type MirrorReposRefreshVCSOp struct {
 func (m *MirrorReposRefreshVCSOp) Reset()         { *m = MirrorReposRefreshVCSOp{} }
 func (m *MirrorReposRefreshVCSOp) String() string { return proto.CompactTextString(m) }
 func (*MirrorReposRefreshVCSOp) ProtoMessage()    {}
+func (*MirrorReposRefreshVCSOp) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{35}
+}
 
 // VCSCredentials for authentication during communication with VCS remotes.
 type VCSCredentials struct {
@@ -893,9 +970,10 @@ type VCSCredentials struct {
 	Pass string `protobuf:"bytes,1,opt,name=Pass,proto3" json:"Pass,omitempty"`
 }
 
-func (m *VCSCredentials) Reset()         { *m = VCSCredentials{} }
-func (m *VCSCredentials) String() string { return proto.CompactTextString(m) }
-func (*VCSCredentials) ProtoMessage()    {}
+func (m *VCSCredentials) Reset()                    { *m = VCSCredentials{} }
+func (m *VCSCredentials) String() string            { return proto.CompactTextString(m) }
+func (*VCSCredentials) ProtoMessage()               {}
+func (*VCSCredentials) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{36} }
 
 // RemoteRepo is a repo canonically stored on an external host, and
 // possibly mirrored on the local instance. Currently it's assumed
@@ -934,14 +1012,12 @@ type RemoteRepo struct {
 	Mirror bool `protobuf:"varint,12,opt,name=Mirror,proto3" json:"Mirror,omitempty"`
 	// Stars is the number of stargazers of the GitHub repo.
 	Stars int32 `protobuf:"varint,13,opt,name=Stars,proto3" json:"Stars,omitempty"`
-	// Permissions are the current actor's GitHub permissions for the
-	// repo.
-	Permissions *RepoPermissions `protobuf:"bytes,14,opt,name=Permissions" json:"Permissions,omitempty"`
 }
 
-func (m *RemoteRepo) Reset()         { *m = RemoteRepo{} }
-func (m *RemoteRepo) String() string { return proto.CompactTextString(m) }
-func (*RemoteRepo) ProtoMessage()    {}
+func (m *RemoteRepo) Reset()                    { *m = RemoteRepo{} }
+func (m *RemoteRepo) String() string            { return proto.CompactTextString(m) }
+func (*RemoteRepo) ProtoMessage()               {}
+func (*RemoteRepo) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{37} }
 
 // A Build represents a scheduled, completed, or failed repository analysis and
 // import job.
@@ -1015,9 +1091,10 @@ type Build struct {
 	BuildConfig `protobuf:"bytes,13,opt,name=BuildConfig,embedded=BuildConfig" json:""`
 }
 
-func (m *Build) Reset()         { *m = Build{} }
-func (m *Build) String() string { return proto.CompactTextString(m) }
-func (*Build) ProtoMessage()    {}
+func (m *Build) Reset()                    { *m = Build{} }
+func (m *Build) String() string            { return proto.CompactTextString(m) }
+func (*Build) ProtoMessage()               {}
+func (*Build) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{38} }
 
 // BuildConfig configures a repository build.
 type BuildConfig struct {
@@ -1036,9 +1113,10 @@ type BuildConfig struct {
 	BuilderConfig string `protobuf:"bytes,16,opt,name=BuilderConfig,proto3" json:"BuilderConfig,omitempty"`
 }
 
-func (m *BuildConfig) Reset()         { *m = BuildConfig{} }
-func (m *BuildConfig) String() string { return proto.CompactTextString(m) }
-func (*BuildConfig) ProtoMessage()    {}
+func (m *BuildConfig) Reset()                    { *m = BuildConfig{} }
+func (m *BuildConfig) String() string            { return proto.CompactTextString(m) }
+func (*BuildConfig) ProtoMessage()               {}
+func (*BuildConfig) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{39} }
 
 // BuildGetLogOptions specifies options for build log API methods.
 type BuildGetLogOptions struct {
@@ -1050,9 +1128,10 @@ type BuildGetLogOptions struct {
 	MinID string `protobuf:"bytes,1,opt,name=MinID,proto3" json:"MinID,omitempty"`
 }
 
-func (m *BuildGetLogOptions) Reset()         { *m = BuildGetLogOptions{} }
-func (m *BuildGetLogOptions) String() string { return proto.CompactTextString(m) }
-func (*BuildGetLogOptions) ProtoMessage()    {}
+func (m *BuildGetLogOptions) Reset()                    { *m = BuildGetLogOptions{} }
+func (m *BuildGetLogOptions) String() string            { return proto.CompactTextString(m) }
+func (*BuildGetLogOptions) ProtoMessage()               {}
+func (*BuildGetLogOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{40} }
 
 type BuildListOptions struct {
 	Queued      bool   `protobuf:"varint,1,opt,name=Queued,proto3" json:"Queued,omitempty" url:",omitempty"`
@@ -1068,9 +1147,10 @@ type BuildListOptions struct {
 	ListOptions `protobuf:"bytes,11,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *BuildListOptions) Reset()         { *m = BuildListOptions{} }
-func (m *BuildListOptions) String() string { return proto.CompactTextString(m) }
-func (*BuildListOptions) ProtoMessage()    {}
+func (m *BuildListOptions) Reset()                    { *m = BuildListOptions{} }
+func (m *BuildListOptions) String() string            { return proto.CompactTextString(m) }
+func (*BuildListOptions) ProtoMessage()               {}
+func (*BuildListOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{41} }
 
 // A BuildSpec uniquely identifies a build.
 type BuildSpec struct {
@@ -1082,9 +1162,10 @@ type BuildSpec struct {
 	ID uint64 `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
 }
 
-func (m *BuildSpec) Reset()         { *m = BuildSpec{} }
-func (m *BuildSpec) String() string { return proto.CompactTextString(m) }
-func (*BuildSpec) ProtoMessage()    {}
+func (m *BuildSpec) Reset()                    { *m = BuildSpec{} }
+func (m *BuildSpec) String() string            { return proto.CompactTextString(m) }
+func (*BuildSpec) ProtoMessage()               {}
+func (*BuildSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{42} }
 
 // A BuildTask represents an individual step of a build.
 //
@@ -1122,17 +1203,19 @@ type BuildTask struct {
 	Warnings bool `protobuf:"varint,11,opt,name=Warnings,proto3" json:"Warnings,omitempty"`
 }
 
-func (m *BuildTask) Reset()         { *m = BuildTask{} }
-func (m *BuildTask) String() string { return proto.CompactTextString(m) }
-func (*BuildTask) ProtoMessage()    {}
+func (m *BuildTask) Reset()                    { *m = BuildTask{} }
+func (m *BuildTask) String() string            { return proto.CompactTextString(m) }
+func (*BuildTask) ProtoMessage()               {}
+func (*BuildTask) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{43} }
 
 type BuildTaskListOptions struct {
 	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *BuildTaskListOptions) Reset()         { *m = BuildTaskListOptions{} }
-func (m *BuildTaskListOptions) String() string { return proto.CompactTextString(m) }
-func (*BuildTaskListOptions) ProtoMessage()    {}
+func (m *BuildTaskListOptions) Reset()                    { *m = BuildTaskListOptions{} }
+func (m *BuildTaskListOptions) String() string            { return proto.CompactTextString(m) }
+func (*BuildTaskListOptions) ProtoMessage()               {}
+func (*BuildTaskListOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{44} }
 
 // A BuildUpdate contains updated information to update on an existing build.
 type BuildUpdate struct {
@@ -1151,18 +1234,20 @@ type BuildUpdate struct {
 	TokDensity    float32            `protobuf:"fixed32,13,opt,name=TokDensity,proto3" json:"TokDensity,omitempty"`
 }
 
-func (m *BuildUpdate) Reset()         { *m = BuildUpdate{} }
-func (m *BuildUpdate) String() string { return proto.CompactTextString(m) }
-func (*BuildUpdate) ProtoMessage()    {}
+func (m *BuildUpdate) Reset()                    { *m = BuildUpdate{} }
+func (m *BuildUpdate) String() string            { return proto.CompactTextString(m) }
+func (*BuildUpdate) ProtoMessage()               {}
+func (*BuildUpdate) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{45} }
 
 type BuildList struct {
 	Builds         []*Build `protobuf:"bytes,1,rep,name=Builds" json:"Builds,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *BuildList) Reset()         { *m = BuildList{} }
-func (m *BuildList) String() string { return proto.CompactTextString(m) }
-func (*BuildList) ProtoMessage()    {}
+func (m *BuildList) Reset()                    { *m = BuildList{} }
+func (m *BuildList) String() string            { return proto.CompactTextString(m) }
+func (*BuildList) ProtoMessage()               {}
+func (*BuildList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{46} }
 
 type BuildsCreateOp struct {
 	Repo RepoSpec `protobuf:"bytes,1,opt,name=Repo" json:"Repo"`
@@ -1178,18 +1263,20 @@ type BuildsCreateOp struct {
 	Config BuildConfig `protobuf:"bytes,5,opt,name=Config" json:"Config"`
 }
 
-func (m *BuildsCreateOp) Reset()         { *m = BuildsCreateOp{} }
-func (m *BuildsCreateOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsCreateOp) ProtoMessage()    {}
+func (m *BuildsCreateOp) Reset()                    { *m = BuildsCreateOp{} }
+func (m *BuildsCreateOp) String() string            { return proto.CompactTextString(m) }
+func (*BuildsCreateOp) ProtoMessage()               {}
+func (*BuildsCreateOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{47} }
 
 type BuildsUpdateOp struct {
 	Build BuildSpec   `protobuf:"bytes,1,opt,name=Build" json:"Build"`
 	Info  BuildUpdate `protobuf:"bytes,2,opt,name=Info" json:"Info"`
 }
 
-func (m *BuildsUpdateOp) Reset()         { *m = BuildsUpdateOp{} }
-func (m *BuildsUpdateOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsUpdateOp) ProtoMessage()    {}
+func (m *BuildsUpdateOp) Reset()                    { *m = BuildsUpdateOp{} }
+func (m *BuildsUpdateOp) String() string            { return proto.CompactTextString(m) }
+func (*BuildsUpdateOp) ProtoMessage()               {}
+func (*BuildsUpdateOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{48} }
 
 type BuildsListBuildTasksOp struct {
 	Build BuildSpec             `protobuf:"bytes,1,opt,name=Build" json:"Build"`
@@ -1199,48 +1286,56 @@ type BuildsListBuildTasksOp struct {
 func (m *BuildsListBuildTasksOp) Reset()         { *m = BuildsListBuildTasksOp{} }
 func (m *BuildsListBuildTasksOp) String() string { return proto.CompactTextString(m) }
 func (*BuildsListBuildTasksOp) ProtoMessage()    {}
+func (*BuildsListBuildTasksOp) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{49}
+}
 
 type BuildTaskList struct {
 	BuildTasks []*BuildTask `protobuf:"bytes,1,rep,name=BuildTasks" json:"BuildTasks,omitempty"`
 }
 
-func (m *BuildTaskList) Reset()         { *m = BuildTaskList{} }
-func (m *BuildTaskList) String() string { return proto.CompactTextString(m) }
-func (*BuildTaskList) ProtoMessage()    {}
+func (m *BuildTaskList) Reset()                    { *m = BuildTaskList{} }
+func (m *BuildTaskList) String() string            { return proto.CompactTextString(m) }
+func (*BuildTaskList) ProtoMessage()               {}
+func (*BuildTaskList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{50} }
 
 type BuildsCreateTasksOp struct {
 	Build BuildSpec    `protobuf:"bytes,1,opt,name=Build" json:"Build"`
 	Tasks []*BuildTask `protobuf:"bytes,2,rep,name=Tasks" json:"Tasks,omitempty"`
 }
 
-func (m *BuildsCreateTasksOp) Reset()         { *m = BuildsCreateTasksOp{} }
-func (m *BuildsCreateTasksOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsCreateTasksOp) ProtoMessage()    {}
+func (m *BuildsCreateTasksOp) Reset()                    { *m = BuildsCreateTasksOp{} }
+func (m *BuildsCreateTasksOp) String() string            { return proto.CompactTextString(m) }
+func (*BuildsCreateTasksOp) ProtoMessage()               {}
+func (*BuildsCreateTasksOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{51} }
 
 type BuildsUpdateTaskOp struct {
 	Task TaskSpec   `protobuf:"bytes,1,opt,name=Task" json:"Task"`
 	Info TaskUpdate `protobuf:"bytes,2,opt,name=Info" json:"Info"`
 }
 
-func (m *BuildsUpdateTaskOp) Reset()         { *m = BuildsUpdateTaskOp{} }
-func (m *BuildsUpdateTaskOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsUpdateTaskOp) ProtoMessage()    {}
+func (m *BuildsUpdateTaskOp) Reset()                    { *m = BuildsUpdateTaskOp{} }
+func (m *BuildsUpdateTaskOp) String() string            { return proto.CompactTextString(m) }
+func (*BuildsUpdateTaskOp) ProtoMessage()               {}
+func (*BuildsUpdateTaskOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{52} }
 
 type BuildsGetTaskLogOp struct {
 	Task TaskSpec            `protobuf:"bytes,1,opt,name=Task" json:"Task"`
 	Opt  *BuildGetLogOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *BuildsGetTaskLogOp) Reset()         { *m = BuildsGetTaskLogOp{} }
-func (m *BuildsGetTaskLogOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsGetTaskLogOp) ProtoMessage()    {}
+func (m *BuildsGetTaskLogOp) Reset()                    { *m = BuildsGetTaskLogOp{} }
+func (m *BuildsGetTaskLogOp) String() string            { return proto.CompactTextString(m) }
+func (*BuildsGetTaskLogOp) ProtoMessage()               {}
+func (*BuildsGetTaskLogOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{53} }
 
 type BuildsDequeueNextOp struct {
 }
 
-func (m *BuildsDequeueNextOp) Reset()         { *m = BuildsDequeueNextOp{} }
-func (m *BuildsDequeueNextOp) String() string { return proto.CompactTextString(m) }
-func (*BuildsDequeueNextOp) ProtoMessage()    {}
+func (m *BuildsDequeueNextOp) Reset()                    { *m = BuildsDequeueNextOp{} }
+func (m *BuildsDequeueNextOp) String() string            { return proto.CompactTextString(m) }
+func (*BuildsDequeueNextOp) ProtoMessage()               {}
+func (*BuildsDequeueNextOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{54} }
 
 // EmailAddr is an email address associated with a user.
 type EmailAddr struct {
@@ -1256,26 +1351,29 @@ type EmailAddr struct {
 	Blacklisted bool `protobuf:"varint,5,opt,name=Blacklisted,proto3" json:"Blacklisted,omitempty"`
 }
 
-func (m *EmailAddr) Reset()         { *m = EmailAddr{} }
-func (m *EmailAddr) String() string { return proto.CompactTextString(m) }
-func (*EmailAddr) ProtoMessage()    {}
+func (m *EmailAddr) Reset()                    { *m = EmailAddr{} }
+func (m *EmailAddr) String() string            { return proto.CompactTextString(m) }
+func (*EmailAddr) ProtoMessage()               {}
+func (*EmailAddr) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{55} }
 
 type LogEntries struct {
 	MaxID   string   `protobuf:"bytes,1,opt,name=MaxID,proto3" json:"MaxID,omitempty"`
 	Entries []string `protobuf:"bytes,2,rep,name=Entries" json:"Entries,omitempty"`
 }
 
-func (m *LogEntries) Reset()         { *m = LogEntries{} }
-func (m *LogEntries) String() string { return proto.CompactTextString(m) }
-func (*LogEntries) ProtoMessage()    {}
+func (m *LogEntries) Reset()                    { *m = LogEntries{} }
+func (m *LogEntries) String() string            { return proto.CompactTextString(m) }
+func (*LogEntries) ProtoMessage()               {}
+func (*LogEntries) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{56} }
 
 type Org struct {
 	User `protobuf:"bytes,1,opt,name=User,embedded=User" json:""`
 }
 
-func (m *Org) Reset()         { *m = Org{} }
-func (m *Org) String() string { return proto.CompactTextString(m) }
-func (*Org) ProtoMessage()    {}
+func (m *Org) Reset()                    { *m = Org{} }
+func (m *Org) String() string            { return proto.CompactTextString(m) }
+func (*Org) ProtoMessage()               {}
+func (*Org) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{57} }
 
 type OrgListMembersOptions struct {
 	ListOptions `protobuf:"bytes,1,opt,name=ListOptions,embedded=ListOptions" json:""`
@@ -1284,6 +1382,9 @@ type OrgListMembersOptions struct {
 func (m *OrgListMembersOptions) Reset()         { *m = OrgListMembersOptions{} }
 func (m *OrgListMembersOptions) String() string { return proto.CompactTextString(m) }
 func (*OrgListMembersOptions) ProtoMessage()    {}
+func (*OrgListMembersOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{58}
+}
 
 // OrgSpec specifies an organization. At least one of Email, Login, and UID must be
 // nonempty.
@@ -1292,34 +1393,38 @@ type OrgSpec struct {
 	UID int32  `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
 }
 
-func (m *OrgSpec) Reset()         { *m = OrgSpec{} }
-func (m *OrgSpec) String() string { return proto.CompactTextString(m) }
-func (*OrgSpec) ProtoMessage()    {}
+func (m *OrgSpec) Reset()                    { *m = OrgSpec{} }
+func (m *OrgSpec) String() string            { return proto.CompactTextString(m) }
+func (*OrgSpec) ProtoMessage()               {}
+func (*OrgSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{59} }
 
 type OrgsListMembersOp struct {
 	Org OrgSpec                `protobuf:"bytes,1,opt,name=Org" json:"Org"`
 	Opt *OrgListMembersOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *OrgsListMembersOp) Reset()         { *m = OrgsListMembersOp{} }
-func (m *OrgsListMembersOp) String() string { return proto.CompactTextString(m) }
-func (*OrgsListMembersOp) ProtoMessage()    {}
+func (m *OrgsListMembersOp) Reset()                    { *m = OrgsListMembersOp{} }
+func (m *OrgsListMembersOp) String() string            { return proto.CompactTextString(m) }
+func (*OrgsListMembersOp) ProtoMessage()               {}
+func (*OrgsListMembersOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{60} }
 
 type UserList struct {
 	Users []*User `protobuf:"bytes,1,rep,name=Users" json:"Users,omitempty"`
 }
 
-func (m *UserList) Reset()         { *m = UserList{} }
-func (m *UserList) String() string { return proto.CompactTextString(m) }
-func (*UserList) ProtoMessage()    {}
+func (m *UserList) Reset()                    { *m = UserList{} }
+func (m *UserList) String() string            { return proto.CompactTextString(m) }
+func (*UserList) ProtoMessage()               {}
+func (*UserList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{61} }
 
 type UserCount struct {
 	Count int32 `protobuf:"varint,1,opt,name=Count,proto3" json:"Count,omitempty"`
 }
 
-func (m *UserCount) Reset()         { *m = UserCount{} }
-func (m *UserCount) String() string { return proto.CompactTextString(m) }
-func (*UserCount) ProtoMessage()    {}
+func (m *UserCount) Reset()                    { *m = UserCount{} }
+func (m *UserCount) String() string            { return proto.CompactTextString(m) }
+func (*UserCount) ProtoMessage()               {}
+func (*UserCount) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{62} }
 
 // A Person represents either a registered user or a committer to a repository
 // (typically when their commit email can't be resolved to a user).
@@ -1334,9 +1439,10 @@ type Person struct {
 	AvatarURL string `protobuf:"bytes,3,opt,name=AvatarURL,proto3" json:"AvatarURL,omitempty"`
 }
 
-func (m *Person) Reset()         { *m = Person{} }
-func (m *Person) String() string { return proto.CompactTextString(m) }
-func (*Person) ProtoMessage()    {}
+func (m *Person) Reset()                    { *m = Person{} }
+func (m *Person) String() string            { return proto.CompactTextString(m) }
+func (*Person) ProtoMessage()               {}
+func (*Person) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{63} }
 
 // PersonSpec specifies a person. At least one of Email, Login, and UID must be
 // nonempty.
@@ -1349,9 +1455,10 @@ type PersonSpec struct {
 	UID int32 `protobuf:"varint,3,opt,name=UID,proto3" json:"UID,omitempty"`
 }
 
-func (m *PersonSpec) Reset()         { *m = PersonSpec{} }
-func (m *PersonSpec) String() string { return proto.CompactTextString(m) }
-func (*PersonSpec) ProtoMessage()    {}
+func (m *PersonSpec) Reset()                    { *m = PersonSpec{} }
+func (m *PersonSpec) String() string            { return proto.CompactTextString(m) }
+func (*PersonSpec) ProtoMessage()               {}
+func (*PersonSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{64} }
 
 // RemoteUser specifies a GitHub user that may have linked a Sourcegraph
 // user account.
@@ -1368,9 +1475,10 @@ type RemoteUser struct {
 	Organization string `protobuf:"bytes,5,opt,name=Organization,proto3" json:"Organization,omitempty"`
 }
 
-func (m *RemoteUser) Reset()         { *m = RemoteUser{} }
-func (m *RemoteUser) String() string { return proto.CompactTextString(m) }
-func (*RemoteUser) ProtoMessage()    {}
+func (m *RemoteUser) Reset()                    { *m = RemoteUser{} }
+func (m *RemoteUser) String() string            { return proto.CompactTextString(m) }
+func (*RemoteUser) ProtoMessage()               {}
+func (*RemoteUser) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{65} }
 
 // Teammates lists all members of all GitHub organizations that a user is
 // part of. A teammate may or may not have a linked Sourcegraph account.
@@ -1381,18 +1489,20 @@ type Teammates struct {
 	Organizations []string `protobuf:"bytes,2,rep,name=Organizations" json:"Organizations,omitempty"`
 }
 
-func (m *Teammates) Reset()         { *m = Teammates{} }
-func (m *Teammates) String() string { return proto.CompactTextString(m) }
-func (*Teammates) ProtoMessage()    {}
+func (m *Teammates) Reset()                    { *m = Teammates{} }
+func (m *Teammates) String() string            { return proto.CompactTextString(m) }
+func (*Teammates) ProtoMessage()               {}
+func (*Teammates) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{66} }
 
 type TaskSpec struct {
 	Build BuildSpec `protobuf:"bytes,1,opt,name=Build" json:"Build"`
 	ID    uint64    `protobuf:"varint,2,opt,name=ID,proto3" json:"ID,omitempty"`
 }
 
-func (m *TaskSpec) Reset()         { *m = TaskSpec{} }
-func (m *TaskSpec) String() string { return proto.CompactTextString(m) }
-func (*TaskSpec) ProtoMessage()    {}
+func (m *TaskSpec) Reset()                    { *m = TaskSpec{} }
+func (m *TaskSpec) String() string            { return proto.CompactTextString(m) }
+func (*TaskSpec) ProtoMessage()               {}
+func (*TaskSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{67} }
 
 // A TaskUpdate contains updated information to update on an existing task.
 type TaskUpdate struct {
@@ -1404,9 +1514,10 @@ type TaskUpdate struct {
 	Warnings  bool               `protobuf:"varint,6,opt,name=Warnings,proto3" json:"Warnings,omitempty"`
 }
 
-func (m *TaskUpdate) Reset()         { *m = TaskUpdate{} }
-func (m *TaskUpdate) String() string { return proto.CompactTextString(m) }
-func (*TaskUpdate) ProtoMessage()    {}
+func (m *TaskUpdate) Reset()                    { *m = TaskUpdate{} }
+func (m *TaskUpdate) String() string            { return proto.CompactTextString(m) }
+func (*TaskUpdate) ProtoMessage()               {}
+func (*TaskUpdate) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{68} }
 
 // User represents a registered user.
 type User struct {
@@ -1438,9 +1549,10 @@ type User struct {
 	RegisteredAt *pbtypes.Timestamp `protobuf:"bytes,11,opt,name=RegisteredAt" json:"RegisteredAt,omitempty"`
 }
 
-func (m *User) Reset()         { *m = User{} }
-func (m *User) String() string { return proto.CompactTextString(m) }
-func (*User) ProtoMessage()    {}
+func (m *User) Reset()                    { *m = User{} }
+func (m *User) String() string            { return proto.CompactTextString(m) }
+func (*User) ProtoMessage()               {}
+func (*User) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{69} }
 
 // UserSpec specifies a user. At least one of Login and UID must be
 // nonempty.
@@ -1451,9 +1563,10 @@ type UserSpec struct {
 	UID int32 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
 }
 
-func (m *UserSpec) Reset()         { *m = UserSpec{} }
-func (m *UserSpec) String() string { return proto.CompactTextString(m) }
-func (*UserSpec) ProtoMessage()    {}
+func (m *UserSpec) Reset()                    { *m = UserSpec{} }
+func (m *UserSpec) String() string            { return proto.CompactTextString(m) }
+func (*UserSpec) ProtoMessage()               {}
+func (*UserSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{70} }
 
 // UsersListOptions specifies options for the UsersService.List method.
 type UsersListOptions struct {
@@ -1468,43 +1581,48 @@ type UsersListOptions struct {
 	UIDs []int32 `protobuf:"varint,5,rep,name=UIDs" json:"UIDs,omitempty" url:",omitempty"`
 }
 
-func (m *UsersListOptions) Reset()         { *m = UsersListOptions{} }
-func (m *UsersListOptions) String() string { return proto.CompactTextString(m) }
-func (*UsersListOptions) ProtoMessage()    {}
+func (m *UsersListOptions) Reset()                    { *m = UsersListOptions{} }
+func (m *UsersListOptions) String() string            { return proto.CompactTextString(m) }
+func (*UsersListOptions) ProtoMessage()               {}
+func (*UsersListOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{71} }
 
 type OrgsListOp struct {
 	Member      UserSpec `protobuf:"bytes,1,opt,name=Member" json:"Member"`
 	ListOptions `protobuf:"bytes,2,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *OrgsListOp) Reset()         { *m = OrgsListOp{} }
-func (m *OrgsListOp) String() string { return proto.CompactTextString(m) }
-func (*OrgsListOp) ProtoMessage()    {}
+func (m *OrgsListOp) Reset()                    { *m = OrgsListOp{} }
+func (m *OrgsListOp) String() string            { return proto.CompactTextString(m) }
+func (*OrgsListOp) ProtoMessage()               {}
+func (*OrgsListOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{72} }
 
 type EmailAddrList struct {
 	EmailAddrs []*EmailAddr `protobuf:"bytes,1,rep,name=EmailAddrs" json:"EmailAddrs,omitempty"`
 }
 
-func (m *EmailAddrList) Reset()         { *m = EmailAddrList{} }
-func (m *EmailAddrList) String() string { return proto.CompactTextString(m) }
-func (*EmailAddrList) ProtoMessage()    {}
+func (m *EmailAddrList) Reset()                    { *m = EmailAddrList{} }
+func (m *EmailAddrList) String() string            { return proto.CompactTextString(m) }
+func (*EmailAddrList) ProtoMessage()               {}
+func (*EmailAddrList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{73} }
 
 type OrgList struct {
 	Orgs []*Org `protobuf:"bytes,1,rep,name=Orgs" json:"Orgs,omitempty"`
 }
 
-func (m *OrgList) Reset()         { *m = OrgList{} }
-func (m *OrgList) String() string { return proto.CompactTextString(m) }
-func (*OrgList) ProtoMessage()    {}
+func (m *OrgList) Reset()                    { *m = OrgList{} }
+func (m *OrgList) String() string            { return proto.CompactTextString(m) }
+func (*OrgList) ProtoMessage()               {}
+func (*OrgList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{74} }
 
 type PasswordResetToken struct {
 	// token is the hard to guess token that allows a user to set a new password.
 	Token string `protobuf:"bytes,1,opt,name=Token,proto3" json:"Token,omitempty"`
 }
 
-func (m *PasswordResetToken) Reset()         { *m = PasswordResetToken{} }
-func (m *PasswordResetToken) String() string { return proto.CompactTextString(m) }
-func (*PasswordResetToken) ProtoMessage()    {}
+func (m *PasswordResetToken) Reset()                    { *m = PasswordResetToken{} }
+func (m *PasswordResetToken) String() string            { return proto.CompactTextString(m) }
+func (*PasswordResetToken) ProtoMessage()               {}
+func (*PasswordResetToken) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{75} }
 
 type PendingPasswordReset struct {
 	// Link is the URL for resetting password using this token.
@@ -1523,9 +1641,10 @@ type PendingPasswordReset struct {
 	Login string `protobuf:"bytes,4,opt,name=Login,proto3" json:"Login,omitempty"`
 }
 
-func (m *PendingPasswordReset) Reset()         { *m = PendingPasswordReset{} }
-func (m *PendingPasswordReset) String() string { return proto.CompactTextString(m) }
-func (*PendingPasswordReset) ProtoMessage()    {}
+func (m *PendingPasswordReset) Reset()                    { *m = PendingPasswordReset{} }
+func (m *PendingPasswordReset) String() string            { return proto.CompactTextString(m) }
+func (*PendingPasswordReset) ProtoMessage()               {}
+func (*PendingPasswordReset) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{76} }
 
 type NewPassword struct {
 	// password is the new password for the user who requested the password reset
@@ -1534,9 +1653,10 @@ type NewPassword struct {
 	Token    *PasswordResetToken `protobuf:"bytes,2,opt,name=Token" json:"Token,omitempty"`
 }
 
-func (m *NewPassword) Reset()         { *m = NewPassword{} }
-func (m *NewPassword) String() string { return proto.CompactTextString(m) }
-func (*NewPassword) ProtoMessage()    {}
+func (m *NewPassword) Reset()                    { *m = NewPassword{} }
+func (m *NewPassword) String() string            { return proto.CompactTextString(m) }
+func (*NewPassword) ProtoMessage()               {}
+func (*NewPassword) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{77} }
 
 type NewAccount struct {
 	// Login is the desired login for the new user account.
@@ -1549,9 +1669,10 @@ type NewAccount struct {
 	UID int32 `protobuf:"varint,4,opt,name=UID,proto3" json:"UID,omitempty"`
 }
 
-func (m *NewAccount) Reset()         { *m = NewAccount{} }
-func (m *NewAccount) String() string { return proto.CompactTextString(m) }
-func (*NewAccount) ProtoMessage()    {}
+func (m *NewAccount) Reset()                    { *m = NewAccount{} }
+func (m *NewAccount) String() string            { return proto.CompactTextString(m) }
+func (*NewAccount) ProtoMessage()               {}
+func (*NewAccount) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{78} }
 
 // LoginCredentials is the information a user submits to log in.
 type LoginCredentials struct {
@@ -1561,9 +1682,10 @@ type LoginCredentials struct {
 	Password string `protobuf:"bytes,2,opt,name=Password,proto3" json:"Password,omitempty"`
 }
 
-func (m *LoginCredentials) Reset()         { *m = LoginCredentials{} }
-func (m *LoginCredentials) String() string { return proto.CompactTextString(m) }
-func (*LoginCredentials) ProtoMessage()    {}
+func (m *LoginCredentials) Reset()                    { *m = LoginCredentials{} }
+func (m *LoginCredentials) String() string            { return proto.CompactTextString(m) }
+func (*LoginCredentials) ProtoMessage()               {}
+func (*LoginCredentials) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{79} }
 
 // AccessTokenRequest contains the information necessary to
 // request an OAuth2 access token. It supports a subset of
@@ -1579,9 +1701,10 @@ type AccessTokenRequest struct {
 	Scope              []string                                `protobuf:"bytes,17,rep,name=Scope" json:"Scope,omitempty"`
 }
 
-func (m *AccessTokenRequest) Reset()         { *m = AccessTokenRequest{} }
-func (m *AccessTokenRequest) String() string { return proto.CompactTextString(m) }
-func (*AccessTokenRequest) ProtoMessage()    {}
+func (m *AccessTokenRequest) Reset()                    { *m = AccessTokenRequest{} }
+func (m *AccessTokenRequest) String() string            { return proto.CompactTextString(m) }
+func (*AccessTokenRequest) ProtoMessage()               {}
+func (*AccessTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{80} }
 
 type isAccessTokenRequest_AuthorizationGrant interface {
 	isAccessTokenRequest_AuthorizationGrant()
@@ -1610,8 +1733,8 @@ func (m *AccessTokenRequest) GetResourceOwnerPassword() *LoginCredentials {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*AccessTokenRequest) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _AccessTokenRequest_OneofMarshaler, _AccessTokenRequest_OneofUnmarshaler, []interface{}{
+func (*AccessTokenRequest) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _AccessTokenRequest_OneofMarshaler, _AccessTokenRequest_OneofUnmarshaler, _AccessTokenRequest_OneofSizer, []interface{}{
 		(*AccessTokenRequest_ResourceOwnerPassword)(nil),
 	}
 }
@@ -1648,6 +1771,22 @@ func _AccessTokenRequest_OneofUnmarshaler(msg proto.Message, tag, wire int, b *p
 	}
 }
 
+func _AccessTokenRequest_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*AccessTokenRequest)
+	// authorization_grant
+	switch x := m.AuthorizationGrant.(type) {
+	case *AccessTokenRequest_ResourceOwnerPassword:
+		s := proto.Size(x.ResourceOwnerPassword)
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 // AccessTokenResponse is a successful access token response. See
 // http://tools.ietf.org/html/rfc6749#section-5.1 for more
 // information.
@@ -1659,18 +1798,14 @@ type AccessTokenResponse struct {
 	Scope        []string `protobuf:"bytes,5,rep,name=Scope" json:"Scope,omitempty"`
 }
 
-func (m *AccessTokenResponse) Reset()         { *m = AccessTokenResponse{} }
-func (m *AccessTokenResponse) String() string { return proto.CompactTextString(m) }
-func (*AccessTokenResponse) ProtoMessage()    {}
+func (m *AccessTokenResponse) Reset()                    { *m = AccessTokenResponse{} }
+func (m *AccessTokenResponse) String() string            { return proto.CompactTextString(m) }
+func (*AccessTokenResponse) ProtoMessage()               {}
+func (*AccessTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{81} }
 
 // AuthInfo describes the currently authenticated client and/or user
 // (if any).
 type AuthInfo struct {
-	// ClientID is the client ID of the currently authenticated
-	// client. If a user is authenticated using an access token,
-	// ClientID is the client ID of the registered client that the
-	// access token was granted to.
-	ClientID string `protobuf:"bytes,1,opt,name=ClientID,proto3" json:"ClientID,omitempty"`
 	// UID is the UID of the currently authenticated user (if any).
 	UID int32 `protobuf:"varint,2,opt,name=UID,proto3" json:"UID,omitempty"`
 	// Login is the login of the currently authenticated user (if any).
@@ -1681,9 +1816,10 @@ type AuthInfo struct {
 	Admin bool `protobuf:"varint,6,opt,name=Admin,proto3" json:"Admin,omitempty"`
 }
 
-func (m *AuthInfo) Reset()         { *m = AuthInfo{} }
-func (m *AuthInfo) String() string { return proto.CompactTextString(m) }
-func (*AuthInfo) ProtoMessage()    {}
+func (m *AuthInfo) Reset()                    { *m = AuthInfo{} }
+func (m *AuthInfo) String() string            { return proto.CompactTextString(m) }
+func (*AuthInfo) ProtoMessage()               {}
+func (*AuthInfo) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{82} }
 
 // ExternalTokenRequest specifies a request for a stored auth token
 // of a user for an external host.
@@ -1698,9 +1834,10 @@ type ExternalTokenRequest struct {
 	ClientID string `protobuf:"bytes,3,opt,name=client_id,proto3" json:"client_id,omitempty"`
 }
 
-func (m *ExternalTokenRequest) Reset()         { *m = ExternalTokenRequest{} }
-func (m *ExternalTokenRequest) String() string { return proto.CompactTextString(m) }
-func (*ExternalTokenRequest) ProtoMessage()    {}
+func (m *ExternalTokenRequest) Reset()                    { *m = ExternalTokenRequest{} }
+func (m *ExternalTokenRequest) String() string            { return proto.CompactTextString(m) }
+func (*ExternalTokenRequest) ProtoMessage()               {}
+func (*ExternalTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{83} }
 
 // ExternalToken specifies an auth token of a user for an external host.
 type ExternalToken struct {
@@ -1721,9 +1858,10 @@ type ExternalToken struct {
 	ExtUID int32 `protobuf:"varint,6,opt,name=ext_uid,proto3" json:"ext_uid,omitempty"`
 }
 
-func (m *ExternalToken) Reset()         { *m = ExternalToken{} }
-func (m *ExternalToken) String() string { return proto.CompactTextString(m) }
-func (*ExternalToken) ProtoMessage()    {}
+func (m *ExternalToken) Reset()                    { *m = ExternalToken{} }
+func (m *ExternalToken) String() string            { return proto.CompactTextString(m) }
+func (*ExternalToken) ProtoMessage()               {}
+func (*ExternalToken) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{84} }
 
 // Def is a code def returned by the Sourcegraph API.
 type Def struct {
@@ -1732,18 +1870,20 @@ type Def struct {
 	FmtStrings *graph.DefFormatStrings `protobuf:"bytes,3,opt,name=FmtStrings" json:"FmtStrings,omitempty"`
 }
 
-func (m *Def) Reset()         { *m = Def{} }
-func (m *Def) String() string { return proto.CompactTextString(m) }
-func (*Def) ProtoMessage()    {}
+func (m *Def) Reset()                    { *m = Def{} }
+func (m *Def) String() string            { return proto.CompactTextString(m) }
+func (*Def) ProtoMessage()               {}
+func (*Def) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{85} }
 
 // DefGetOptions specifies options for DefsService.Get.
 type DefGetOptions struct {
 	Doc bool `protobuf:"varint,1,opt,name=Doc,proto3" json:"Doc,omitempty" url:",omitempty"`
 }
 
-func (m *DefGetOptions) Reset()         { *m = DefGetOptions{} }
-func (m *DefGetOptions) String() string { return proto.CompactTextString(m) }
-func (*DefGetOptions) ProtoMessage()    {}
+func (m *DefGetOptions) Reset()                    { *m = DefGetOptions{} }
+func (m *DefGetOptions) String() string            { return proto.CompactTextString(m) }
+func (*DefGetOptions) ProtoMessage()               {}
+func (*DefGetOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{86} }
 
 // DefListOptions specifies options for DefsService.List.
 type DefListOptions struct {
@@ -1789,9 +1929,10 @@ type DefListOptions struct {
 	ListOptions `protobuf:"bytes,20,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *DefListOptions) Reset()         { *m = DefListOptions{} }
-func (m *DefListOptions) String() string { return proto.CompactTextString(m) }
-func (*DefListOptions) ProtoMessage()    {}
+func (m *DefListOptions) Reset()                    { *m = DefListOptions{} }
+func (m *DefListOptions) String() string            { return proto.CompactTextString(m) }
+func (*DefListOptions) ProtoMessage()               {}
+func (*DefListOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{87} }
 
 // DefListRefsOptions configures the scope of ref search for a def.
 type DefListRefsOptions struct {
@@ -1801,9 +1942,10 @@ type DefListRefsOptions struct {
 	ListOptions `protobuf:"bytes,3,opt,name=ListOptions,embedded=ListOptions" json:""`
 }
 
-func (m *DefListRefsOptions) Reset()         { *m = DefListRefsOptions{} }
-func (m *DefListRefsOptions) String() string { return proto.CompactTextString(m) }
-func (*DefListRefsOptions) ProtoMessage()    {}
+func (m *DefListRefsOptions) Reset()                    { *m = DefListRefsOptions{} }
+func (m *DefListRefsOptions) String() string            { return proto.CompactTextString(m) }
+func (*DefListRefsOptions) ProtoMessage()               {}
+func (*DefListRefsOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{88} }
 
 // DefSpec specifies a def.
 type DefSpec struct {
@@ -1814,45 +1956,50 @@ type DefSpec struct {
 	Path     string `protobuf:"bytes,5,opt,name=Path,proto3" json:"Path,omitempty"`
 }
 
-func (m *DefSpec) Reset()         { *m = DefSpec{} }
-func (m *DefSpec) String() string { return proto.CompactTextString(m) }
-func (*DefSpec) ProtoMessage()    {}
+func (m *DefSpec) Reset()                    { *m = DefSpec{} }
+func (m *DefSpec) String() string            { return proto.CompactTextString(m) }
+func (*DefSpec) ProtoMessage()               {}
+func (*DefSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{89} }
 
 type DefsGetOp struct {
 	Def DefSpec        `protobuf:"bytes,1,opt,name=Def" json:"Def"`
 	Opt *DefGetOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *DefsGetOp) Reset()         { *m = DefsGetOp{} }
-func (m *DefsGetOp) String() string { return proto.CompactTextString(m) }
-func (*DefsGetOp) ProtoMessage()    {}
+func (m *DefsGetOp) Reset()                    { *m = DefsGetOp{} }
+func (m *DefsGetOp) String() string            { return proto.CompactTextString(m) }
+func (*DefsGetOp) ProtoMessage()               {}
+func (*DefsGetOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{90} }
 
 type DefList struct {
 	Defs         []*Def `protobuf:"bytes,1,rep,name=Defs" json:"Defs,omitempty"`
 	ListResponse `protobuf:"bytes,2,opt,name=ListResponse,embedded=ListResponse" json:""`
 }
 
-func (m *DefList) Reset()         { *m = DefList{} }
-func (m *DefList) String() string { return proto.CompactTextString(m) }
-func (*DefList) ProtoMessage()    {}
+func (m *DefList) Reset()                    { *m = DefList{} }
+func (m *DefList) String() string            { return proto.CompactTextString(m) }
+func (*DefList) ProtoMessage()               {}
+func (*DefList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{91} }
 
 type DefsListRefsOp struct {
 	Def DefSpec             `protobuf:"bytes,1,opt,name=Def" json:"Def"`
 	Opt *DefListRefsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *DefsListRefsOp) Reset()         { *m = DefsListRefsOp{} }
-func (m *DefsListRefsOp) String() string { return proto.CompactTextString(m) }
-func (*DefsListRefsOp) ProtoMessage()    {}
+func (m *DefsListRefsOp) Reset()                    { *m = DefsListRefsOp{} }
+func (m *DefsListRefsOp) String() string            { return proto.CompactTextString(m) }
+func (*DefsListRefsOp) ProtoMessage()               {}
+func (*DefsListRefsOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{92} }
 
 type RefList struct {
 	Refs           []*graph1.Ref `protobuf:"bytes,1,rep,name=Refs" json:"Refs,omitempty"`
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *RefList) Reset()         { *m = RefList{} }
-func (m *RefList) String() string { return proto.CompactTextString(m) }
-func (*RefList) ProtoMessage()    {}
+func (m *RefList) Reset()                    { *m = RefList{} }
+func (m *RefList) String() string            { return proto.CompactTextString(m) }
+func (*RefList) ProtoMessage()               {}
+func (*RefList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{93} }
 
 // DefListRefLocationsOptions holds the options for fetching
 // all locations referencing a def.
@@ -1871,6 +2018,9 @@ type DefListRefLocationsOptions struct {
 func (m *DefListRefLocationsOptions) Reset()         { *m = DefListRefLocationsOptions{} }
 func (m *DefListRefLocationsOptions) String() string { return proto.CompactTextString(m) }
 func (*DefListRefLocationsOptions) ProtoMessage()    {}
+func (*DefListRefLocationsOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{94}
+}
 
 // DefListRefLocationsOptions holds the options for fetching
 // all locations referencing the specified def.
@@ -1884,6 +2034,9 @@ type DefsListRefLocationsOp struct {
 func (m *DefsListRefLocationsOp) Reset()         { *m = DefsListRefLocationsOp{} }
 func (m *DefsListRefLocationsOp) String() string { return proto.CompactTextString(m) }
 func (*DefsListRefLocationsOp) ProtoMessage()    {}
+func (*DefsListRefLocationsOp) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{95}
+}
 
 // RefLocationsList lists the repos and files that reference a def.
 type RefLocationsList struct {
@@ -1893,9 +2046,10 @@ type RefLocationsList struct {
 	StreamResponse `protobuf:"bytes,2,opt,name=StreamResponse,embedded=StreamResponse" json:""`
 }
 
-func (m *RefLocationsList) Reset()         { *m = RefLocationsList{} }
-func (m *RefLocationsList) String() string { return proto.CompactTextString(m) }
-func (*RefLocationsList) ProtoMessage()    {}
+func (m *RefLocationsList) Reset()                    { *m = RefLocationsList{} }
+func (m *RefLocationsList) String() string            { return proto.CompactTextString(m) }
+func (*RefLocationsList) ProtoMessage()               {}
+func (*RefLocationsList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{96} }
 
 // DefRepoRef identifies a repo and its files that reference a def.
 type DefRepoRef struct {
@@ -1909,9 +2063,10 @@ type DefRepoRef struct {
 	Files []*DefFileRef `protobuf:"bytes,4,rep,name=Files" json:"Files,omitempty"`
 }
 
-func (m *DefRepoRef) Reset()         { *m = DefRepoRef{} }
-func (m *DefRepoRef) String() string { return proto.CompactTextString(m) }
-func (*DefRepoRef) ProtoMessage()    {}
+func (m *DefRepoRef) Reset()                    { *m = DefRepoRef{} }
+func (m *DefRepoRef) String() string            { return proto.CompactTextString(m) }
+func (*DefRepoRef) ProtoMessage()               {}
+func (*DefRepoRef) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{97} }
 
 // DefFileRef identifies a file that references a def.
 type DefFileRef struct {
@@ -1923,9 +2078,10 @@ type DefFileRef struct {
 	Score float32 `protobuf:"fixed32,3,opt,name=Score,proto3" json:"Score,omitempty"`
 }
 
-func (m *DefFileRef) Reset()         { *m = DefFileRef{} }
-func (m *DefFileRef) String() string { return proto.CompactTextString(m) }
-func (*DefFileRef) ProtoMessage()    {}
+func (m *DefFileRef) Reset()                    { *m = DefFileRef{} }
+func (m *DefFileRef) String() string            { return proto.CompactTextString(m) }
+func (*DefFileRef) ProtoMessage()               {}
+func (*DefFileRef) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{98} }
 
 // Delta represents the difference between two commits (possibly in 2 separate
 // repositories).
@@ -1936,9 +2092,10 @@ type Delta struct {
 	HeadCommit *vcs.Commit `protobuf:"bytes,4,opt,name=HeadCommit" json:"HeadCommit,omitempty"`
 }
 
-func (m *Delta) Reset()         { *m = Delta{} }
-func (m *Delta) String() string { return proto.CompactTextString(m) }
-func (*Delta) ProtoMessage()    {}
+func (m *Delta) Reset()                    { *m = Delta{} }
+func (m *Delta) String() string            { return proto.CompactTextString(m) }
+func (*Delta) ProtoMessage()               {}
+func (*Delta) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{99} }
 
 // FileDiff holds data about a diff, and additionally stores extended
 // information about its hunks.
@@ -1956,9 +2113,10 @@ type FileDiff struct {
 	Filtered bool `protobuf:"varint,6,opt,name=Filtered,proto3" json:",omitempty"`
 }
 
-func (m *FileDiff) Reset()         { *m = FileDiff{} }
-func (m *FileDiff) String() string { return proto.CompactTextString(m) }
-func (*FileDiff) ProtoMessage()    {}
+func (m *FileDiff) Reset()                    { *m = FileDiff{} }
+func (m *FileDiff) String() string            { return proto.CompactTextString(m) }
+func (*FileDiff) ProtoMessage()               {}
+func (*FileDiff) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{100} }
 
 // DeltaFiles describes files added/changed/deleted in a delta.
 type DeltaFiles struct {
@@ -1967,9 +2125,10 @@ type DeltaFiles struct {
 	Stats     diff.Stat   `protobuf:"bytes,3,opt,name=Stats" json:"Stats"`
 }
 
-func (m *DeltaFiles) Reset()         { *m = DeltaFiles{} }
-func (m *DeltaFiles) String() string { return proto.CompactTextString(m) }
-func (*DeltaFiles) ProtoMessage()    {}
+func (m *DeltaFiles) Reset()                    { *m = DeltaFiles{} }
+func (m *DeltaFiles) String() string            { return proto.CompactTextString(m) }
+func (*DeltaFiles) ProtoMessage()               {}
+func (*DeltaFiles) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{101} }
 
 // DeltaFilter specifies criteria by which to filter results from DeltaListXxx
 // methods.
@@ -1978,9 +2137,10 @@ type DeltaFilter struct {
 	UnitType string `protobuf:"bytes,2,opt,name=UnitType,proto3" json:"UnitType,omitempty" url:",omitempty"`
 }
 
-func (m *DeltaFilter) Reset()         { *m = DeltaFilter{} }
-func (m *DeltaFilter) String() string { return proto.CompactTextString(m) }
-func (*DeltaFilter) ProtoMessage()    {}
+func (m *DeltaFilter) Reset()                    { *m = DeltaFilter{} }
+func (m *DeltaFilter) String() string            { return proto.CompactTextString(m) }
+func (*DeltaFilter) ProtoMessage()               {}
+func (*DeltaFilter) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{102} }
 
 // DeltaListFilesOptions specifies options for ListFiles.
 type DeltaListFilesOptions struct {
@@ -1998,6 +2158,9 @@ type DeltaListFilesOptions struct {
 func (m *DeltaListFilesOptions) Reset()         { *m = DeltaListFilesOptions{} }
 func (m *DeltaListFilesOptions) String() string { return proto.CompactTextString(m) }
 func (*DeltaListFilesOptions) ProtoMessage()    {}
+func (*DeltaListFilesOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{103}
+}
 
 // A DeltaSpec specifies a delta.
 type DeltaSpec struct {
@@ -2005,18 +2168,20 @@ type DeltaSpec struct {
 	Head RepoRevSpec `protobuf:"bytes,2,opt,name=Head" json:"Head"`
 }
 
-func (m *DeltaSpec) Reset()         { *m = DeltaSpec{} }
-func (m *DeltaSpec) String() string { return proto.CompactTextString(m) }
-func (*DeltaSpec) ProtoMessage()    {}
+func (m *DeltaSpec) Reset()                    { *m = DeltaSpec{} }
+func (m *DeltaSpec) String() string            { return proto.CompactTextString(m) }
+func (*DeltaSpec) ProtoMessage()               {}
+func (*DeltaSpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{104} }
 
 type DeltasListFilesOp struct {
 	Ds  DeltaSpec              `protobuf:"bytes,1,opt,name=Ds" json:"Ds"`
 	Opt *DeltaListFilesOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *DeltasListFilesOp) Reset()         { *m = DeltasListFilesOp{} }
-func (m *DeltasListFilesOp) String() string { return proto.CompactTextString(m) }
-func (*DeltasListFilesOp) ProtoMessage()    {}
+func (m *DeltasListFilesOp) Reset()                    { *m = DeltasListFilesOp{} }
+func (m *DeltasListFilesOp) String() string            { return proto.CompactTextString(m) }
+func (*DeltasListFilesOp) ProtoMessage()               {}
+func (*DeltasListFilesOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{105} }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 type RepoTreeGetOptions struct {
@@ -2024,9 +2189,10 @@ type RepoTreeGetOptions struct {
 	GetFileOptions   `protobuf:"bytes,5,opt,name=GetFileOptions,embedded=GetFileOptions" json:""`
 }
 
-func (m *RepoTreeGetOptions) Reset()         { *m = RepoTreeGetOptions{} }
-func (m *RepoTreeGetOptions) String() string { return proto.CompactTextString(m) }
-func (*RepoTreeGetOptions) ProtoMessage()    {}
+func (m *RepoTreeGetOptions) Reset()                    { *m = RepoTreeGetOptions{} }
+func (m *RepoTreeGetOptions) String() string            { return proto.CompactTextString(m) }
+func (*RepoTreeGetOptions) ProtoMessage()               {}
+func (*RepoTreeGetOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{106} }
 
 // GetFileOptions specifies options for GetFileWithOptions.
 type GetFileOptions struct {
@@ -2054,9 +2220,10 @@ type GetFileOptions struct {
 	RecurseSingleSubfolderLimit int32 `protobuf:"varint,6,opt,name=RecurseSingleSubfolderLimit,proto3" json:"RecurseSingleSubfolderLimit,omitempty" url:",omitempty"`
 }
 
-func (m *GetFileOptions) Reset()         { *m = GetFileOptions{} }
-func (m *GetFileOptions) String() string { return proto.CompactTextString(m) }
-func (*GetFileOptions) ProtoMessage()    {}
+func (m *GetFileOptions) Reset()                    { *m = GetFileOptions{} }
+func (m *GetFileOptions) String() string            { return proto.CompactTextString(m) }
+func (*GetFileOptions) ProtoMessage()               {}
+func (*GetFileOptions) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{107} }
 
 type RepoTreeSearchOptions struct {
 	vcs.SearchOptions `protobuf:"bytes,1,opt,name=SearchOptions,embedded=SearchOptions" json:""`
@@ -2065,6 +2232,9 @@ type RepoTreeSearchOptions struct {
 func (m *RepoTreeSearchOptions) Reset()         { *m = RepoTreeSearchOptions{} }
 func (m *RepoTreeSearchOptions) String() string { return proto.CompactTextString(m) }
 func (*RepoTreeSearchOptions) ProtoMessage()    {}
+func (*RepoTreeSearchOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{108}
+}
 
 // A RepoTreeSearchResult is a tree search result that includes the repo and rev it
 // came from.
@@ -2076,49 +2246,57 @@ type RepoTreeSearchResult struct {
 func (m *RepoTreeSearchResult) Reset()         { *m = RepoTreeSearchResult{} }
 func (m *RepoTreeSearchResult) String() string { return proto.CompactTextString(m) }
 func (*RepoTreeSearchResult) ProtoMessage()    {}
+func (*RepoTreeSearchResult) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{109}
+}
 
 type RepoTreeGetOp struct {
 	Entry TreeEntrySpec       `protobuf:"bytes,1,opt,name=Entry" json:"Entry"`
 	Opt   *RepoTreeGetOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *RepoTreeGetOp) Reset()         { *m = RepoTreeGetOp{} }
-func (m *RepoTreeGetOp) String() string { return proto.CompactTextString(m) }
-func (*RepoTreeGetOp) ProtoMessage()    {}
+func (m *RepoTreeGetOp) Reset()                    { *m = RepoTreeGetOp{} }
+func (m *RepoTreeGetOp) String() string            { return proto.CompactTextString(m) }
+func (*RepoTreeGetOp) ProtoMessage()               {}
+func (*RepoTreeGetOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{110} }
 
 type RepoTreeSearchOp struct {
 	Rev RepoRevSpec            `protobuf:"bytes,1,opt,name=Rev" json:"Rev"`
 	Opt *RepoTreeSearchOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *RepoTreeSearchOp) Reset()         { *m = RepoTreeSearchOp{} }
-func (m *RepoTreeSearchOp) String() string { return proto.CompactTextString(m) }
-func (*RepoTreeSearchOp) ProtoMessage()    {}
+func (m *RepoTreeSearchOp) Reset()                    { *m = RepoTreeSearchOp{} }
+func (m *RepoTreeSearchOp) String() string            { return proto.CompactTextString(m) }
+func (*RepoTreeSearchOp) ProtoMessage()               {}
+func (*RepoTreeSearchOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{111} }
 
 type RepoTreeListOp struct {
 	Rev RepoRevSpec `protobuf:"bytes,1,opt,name=Rev" json:"Rev"`
 }
 
-func (m *RepoTreeListOp) Reset()         { *m = RepoTreeListOp{} }
-func (m *RepoTreeListOp) String() string { return proto.CompactTextString(m) }
-func (*RepoTreeListOp) ProtoMessage()    {}
+func (m *RepoTreeListOp) Reset()                    { *m = RepoTreeListOp{} }
+func (m *RepoTreeListOp) String() string            { return proto.CompactTextString(m) }
+func (*RepoTreeListOp) ProtoMessage()               {}
+func (*RepoTreeListOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{112} }
 
 type RepoTreeListResult struct {
 	Files []string `protobuf:"bytes,1,rep,name=Files" json:"Files,omitempty"`
 }
 
-func (m *RepoTreeListResult) Reset()         { *m = RepoTreeListResult{} }
-func (m *RepoTreeListResult) String() string { return proto.CompactTextString(m) }
-func (*RepoTreeListResult) ProtoMessage()    {}
+func (m *RepoTreeListResult) Reset()                    { *m = RepoTreeListResult{} }
+func (m *RepoTreeListResult) String() string            { return proto.CompactTextString(m) }
+func (*RepoTreeListResult) ProtoMessage()               {}
+func (*RepoTreeListResult) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{113} }
 
 type VCSSearchResultList struct {
 	SearchResults []*vcs.SearchResult `protobuf:"bytes,1,rep,name=SearchResults" json:"SearchResults,omitempty"`
 	ListResponse  `protobuf:"bytes,2,opt,name=ListResponse,embedded=ListResponse" json:""`
 }
 
-func (m *VCSSearchResultList) Reset()         { *m = VCSSearchResultList{} }
-func (m *VCSSearchResultList) String() string { return proto.CompactTextString(m) }
-func (*VCSSearchResultList) ProtoMessage()    {}
+func (m *VCSSearchResultList) Reset()                    { *m = VCSSearchResultList{} }
+func (m *VCSSearchResultList) String() string            { return proto.CompactTextString(m) }
+func (*VCSSearchResultList) ProtoMessage()               {}
+func (*VCSSearchResultList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{114} }
 
 // TreeEntry is a file or directory in a repository.
 type TreeEntry struct {
@@ -2127,29 +2305,33 @@ type TreeEntry struct {
 	ContentsString  string `protobuf:"bytes,3,opt,name=ContentsString,proto3" json:"ContentsString,omitempty"`
 }
 
-func (m *TreeEntry) Reset()         { *m = TreeEntry{} }
-func (m *TreeEntry) String() string { return proto.CompactTextString(m) }
-func (*TreeEntry) ProtoMessage()    {}
+func (m *TreeEntry) Reset()                    { *m = TreeEntry{} }
+func (m *TreeEntry) String() string            { return proto.CompactTextString(m) }
+func (*TreeEntry) ProtoMessage()               {}
+func (*TreeEntry) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{115} }
 
 type BasicTreeEntry struct {
 	Name     string            `protobuf:"bytes,1,opt,name=Name,proto3" json:"Name,omitempty"`
 	Type     TreeEntryType     `protobuf:"varint,2,opt,name=Type,proto3,enum=sourcegraph.TreeEntryType" json:"Type,omitempty"`
+	CommitID string            `protobuf:"bytes,3,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
 	Contents []byte            `protobuf:"bytes,5,opt,name=Contents,proto3" json:"Contents,omitempty"`
 	Entries  []*BasicTreeEntry `protobuf:"bytes,6,rep,name=Entries" json:"Entries,omitempty"`
 }
 
-func (m *BasicTreeEntry) Reset()         { *m = BasicTreeEntry{} }
-func (m *BasicTreeEntry) String() string { return proto.CompactTextString(m) }
-func (*BasicTreeEntry) ProtoMessage()    {}
+func (m *BasicTreeEntry) Reset()                    { *m = BasicTreeEntry{} }
+func (m *BasicTreeEntry) String() string            { return proto.CompactTextString(m) }
+func (*BasicTreeEntry) ProtoMessage()               {}
+func (*BasicTreeEntry) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{116} }
 
 type TreeEntrySpec struct {
 	RepoRev RepoRevSpec `protobuf:"bytes,1,opt,name=RepoRev" json:"RepoRev"`
 	Path    string      `protobuf:"bytes,2,opt,name=Path,proto3" json:"Path,omitempty"`
 }
 
-func (m *TreeEntrySpec) Reset()         { *m = TreeEntrySpec{} }
-func (m *TreeEntrySpec) String() string { return proto.CompactTextString(m) }
-func (*TreeEntrySpec) ProtoMessage()    {}
+func (m *TreeEntrySpec) Reset()                    { *m = TreeEntrySpec{} }
+func (m *TreeEntrySpec) String() string            { return proto.CompactTextString(m) }
+func (*TreeEntrySpec) ProtoMessage()               {}
+func (*TreeEntrySpec) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{117} }
 
 // FileRange is a line and byte range in a file.
 type FileRange struct {
@@ -2163,9 +2345,10 @@ type FileRange struct {
 	EndByte int64 `protobuf:"varint,4,opt,name=EndByte,proto3" json:"EndByte,omitempty" url:",omitempty"`
 }
 
-func (m *FileRange) Reset()         { *m = FileRange{} }
-func (m *FileRange) String() string { return proto.CompactTextString(m) }
-func (*FileRange) ProtoMessage()    {}
+func (m *FileRange) Reset()                    { *m = FileRange{} }
+func (m *FileRange) String() string            { return proto.CompactTextString(m) }
+func (*FileRange) ProtoMessage()               {}
+func (*FileRange) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{118} }
 
 type AuthorshipInfo struct {
 	LastCommitDate pbtypes.Timestamp `protobuf:"bytes,1,opt,name=LastCommitDate" json:"LastCommitDate"`
@@ -2174,9 +2357,10 @@ type AuthorshipInfo struct {
 	LastCommitID string `protobuf:"bytes,2,opt,name=LastCommitID,proto3" json:"LastCommitID,omitempty"`
 }
 
-func (m *AuthorshipInfo) Reset()         { *m = AuthorshipInfo{} }
-func (m *AuthorshipInfo) String() string { return proto.CompactTextString(m) }
-func (*AuthorshipInfo) ProtoMessage()    {}
+func (m *AuthorshipInfo) Reset()                    { *m = AuthorshipInfo{} }
+func (m *AuthorshipInfo) String() string            { return proto.CompactTextString(m) }
+func (*AuthorshipInfo) ProtoMessage()               {}
+func (*AuthorshipInfo) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{119} }
 
 type DefAuthor struct {
 	// Email is the author's email. It may be obfuscated or truncated
@@ -2189,9 +2373,10 @@ type DefAuthor struct {
 	DefAuthorship `protobuf:"bytes,3,opt,name=DefAuthorship,embedded=DefAuthorship" json:""`
 }
 
-func (m *DefAuthor) Reset()         { *m = DefAuthor{} }
-func (m *DefAuthor) String() string { return proto.CompactTextString(m) }
-func (*DefAuthor) ProtoMessage()    {}
+func (m *DefAuthor) Reset()                    { *m = DefAuthor{} }
+func (m *DefAuthor) String() string            { return proto.CompactTextString(m) }
+func (*DefAuthor) ProtoMessage()               {}
+func (*DefAuthor) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{120} }
 
 type DefAuthorship struct {
 	AuthorshipInfo  `protobuf:"bytes,1,opt,name=AuthorshipInfo,embedded=AuthorshipInfo" json:""`
@@ -2199,9 +2384,10 @@ type DefAuthorship struct {
 	BytesProportion float64 `protobuf:"fixed64,4,opt,name=BytesProportion,proto3" json:"BytesProportion,omitempty"`
 }
 
-func (m *DefAuthorship) Reset()         { *m = DefAuthorship{} }
-func (m *DefAuthorship) String() string { return proto.CompactTextString(m) }
-func (*DefAuthorship) ProtoMessage()    {}
+func (m *DefAuthorship) Reset()                    { *m = DefAuthorship{} }
+func (m *DefAuthorship) String() string            { return proto.CompactTextString(m) }
+func (*DefAuthorship) ProtoMessage()               {}
+func (*DefAuthorship) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{121} }
 
 // DefListAuthorsOptions specifies options for DefsService.ListAuthors.
 type DefListAuthorsOptions struct {
@@ -2211,23 +2397,28 @@ type DefListAuthorsOptions struct {
 func (m *DefListAuthorsOptions) Reset()         { *m = DefListAuthorsOptions{} }
 func (m *DefListAuthorsOptions) String() string { return proto.CompactTextString(m) }
 func (*DefListAuthorsOptions) ProtoMessage()    {}
+func (*DefListAuthorsOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{122}
+}
 
 type DefsListAuthorsOp struct {
 	Def DefSpec                `protobuf:"bytes,1,opt,name=Def" json:"Def"`
 	Opt *DefListAuthorsOptions `protobuf:"bytes,2,opt,name=Opt" json:"Opt,omitempty"`
 }
 
-func (m *DefsListAuthorsOp) Reset()         { *m = DefsListAuthorsOp{} }
-func (m *DefsListAuthorsOp) String() string { return proto.CompactTextString(m) }
-func (*DefsListAuthorsOp) ProtoMessage()    {}
+func (m *DefsListAuthorsOp) Reset()                    { *m = DefsListAuthorsOp{} }
+func (m *DefsListAuthorsOp) String() string            { return proto.CompactTextString(m) }
+func (*DefsListAuthorsOp) ProtoMessage()               {}
+func (*DefsListAuthorsOp) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{123} }
 
 type DefAuthorList struct {
 	DefAuthors []*DefAuthor `protobuf:"bytes,1,rep,name=DefAuthors" json:"DefAuthors,omitempty"`
 }
 
-func (m *DefAuthorList) Reset()         { *m = DefAuthorList{} }
-func (m *DefAuthorList) String() string { return proto.CompactTextString(m) }
-func (*DefAuthorList) ProtoMessage()    {}
+func (m *DefAuthorList) Reset()                    { *m = DefAuthorList{} }
+func (m *DefAuthorList) String() string            { return proto.CompactTextString(m) }
+func (*DefAuthorList) ProtoMessage()               {}
+func (*DefAuthorList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{124} }
 
 type Checklist struct {
 	// number of tasks to be done (unchecked)
@@ -2236,18 +2427,20 @@ type Checklist struct {
 	Done int32 `protobuf:"varint,2,opt,name=Done,proto3" json:"Done,omitempty"`
 }
 
-func (m *Checklist) Reset()         { *m = Checklist{} }
-func (m *Checklist) String() string { return proto.CompactTextString(m) }
-func (*Checklist) ProtoMessage()    {}
+func (m *Checklist) Reset()                    { *m = Checklist{} }
+func (m *Checklist) String() string            { return proto.CompactTextString(m) }
+func (*Checklist) ProtoMessage()               {}
+func (*Checklist) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{125} }
 
 type FileToken struct {
 	Path  string          `protobuf:"bytes,1,opt,name=Path,proto3" json:"Path,omitempty"`
 	Entry *BasicTreeEntry `protobuf:"bytes,2,opt,name=Entry" json:"Entry,omitempty"`
 }
 
-func (m *FileToken) Reset()         { *m = FileToken{} }
-func (m *FileToken) String() string { return proto.CompactTextString(m) }
-func (*FileToken) ProtoMessage()    {}
+func (m *FileToken) Reset()                    { *m = FileToken{} }
+func (m *FileToken) String() string            { return proto.CompactTextString(m) }
+func (*FileToken) ProtoMessage()               {}
+func (*FileToken) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{126} }
 
 // ServerStatus describes the server's status.
 type ServerStatus struct {
@@ -2256,9 +2449,10 @@ type ServerStatus struct {
 	Info string `protobuf:"bytes,1,opt,name=Info,proto3" json:"Info,omitempty"`
 }
 
-func (m *ServerStatus) Reset()         { *m = ServerStatus{} }
-func (m *ServerStatus) String() string { return proto.CompactTextString(m) }
-func (*ServerStatus) ProtoMessage()    {}
+func (m *ServerStatus) Reset()                    { *m = ServerStatus{} }
+func (m *ServerStatus) String() string            { return proto.CompactTextString(m) }
+func (*ServerStatus) ProtoMessage()               {}
+func (*ServerStatus) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{127} }
 
 // ServerConfig describes the server's configuration.
 //
@@ -2275,9 +2469,10 @@ type ServerConfig struct {
 	IDKey string `protobuf:"bytes,7,opt,name=IDKey,proto3" json:"IDKey,omitempty"`
 }
 
-func (m *ServerConfig) Reset()         { *m = ServerConfig{} }
-func (m *ServerConfig) String() string { return proto.CompactTextString(m) }
-func (*ServerConfig) ProtoMessage()    {}
+func (m *ServerConfig) Reset()                    { *m = ServerConfig{} }
+func (m *ServerConfig) String() string            { return proto.CompactTextString(m) }
+func (*ServerConfig) ProtoMessage()               {}
+func (*ServerConfig) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{128} }
 
 // UserEvent encodes any user initiated event on the local instance.
 type UserEvent struct {
@@ -2296,9 +2491,10 @@ type UserEvent struct {
 	URL string `protobuf:"bytes,10,opt,name=URL,proto3" json:"URL,omitempty"`
 }
 
-func (m *UserEvent) Reset()         { *m = UserEvent{} }
-func (m *UserEvent) String() string { return proto.CompactTextString(m) }
-func (*UserEvent) ProtoMessage()    {}
+func (m *UserEvent) Reset()                    { *m = UserEvent{} }
+func (m *UserEvent) String() string            { return proto.CompactTextString(m) }
+func (*UserEvent) ProtoMessage()               {}
+func (*UserEvent) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{129} }
 
 // Event is any action logged on a Sourcegraph instance.
 type Event struct {
@@ -2325,9 +2521,10 @@ type Event struct {
 	EventProperties map[string]string `protobuf:"bytes,7,rep,name=EventProperties" json:"EventProperties,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-func (m *Event) Reset()         { *m = Event{} }
-func (m *Event) String() string { return proto.CompactTextString(m) }
-func (*Event) ProtoMessage()    {}
+func (m *Event) Reset()                    { *m = Event{} }
+func (m *Event) String() string            { return proto.CompactTextString(m) }
+func (*Event) ProtoMessage()               {}
+func (*Event) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{130} }
 
 // EventList is a list of logged Sourcegraph events.
 type EventList struct {
@@ -2339,9 +2536,10 @@ type EventList struct {
 	AppURL string `protobuf:"bytes,3,opt,name=AppURL,proto3" json:"AppURL,omitempty"`
 }
 
-func (m *EventList) Reset()         { *m = EventList{} }
-func (m *EventList) String() string { return proto.CompactTextString(m) }
-func (*EventList) ProtoMessage()    {}
+func (m *EventList) Reset()                    { *m = EventList{} }
+func (m *EventList) String() string            { return proto.CompactTextString(m) }
+func (*EventList) ProtoMessage()               {}
+func (*EventList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{131} }
 
 // NotifyGenericEvent describes an action being done against an object. For
 // example, pushing a branch.
@@ -2372,9 +2570,10 @@ type NotifyGenericEvent struct {
 	NoEmail bool `protobuf:"varint,13,opt,name=NoEmail,proto3" json:"NoEmail,omitempty"`
 }
 
-func (m *NotifyGenericEvent) Reset()         { *m = NotifyGenericEvent{} }
-func (m *NotifyGenericEvent) String() string { return proto.CompactTextString(m) }
-func (*NotifyGenericEvent) ProtoMessage()    {}
+func (m *NotifyGenericEvent) Reset()                    { *m = NotifyGenericEvent{} }
+func (m *NotifyGenericEvent) String() string            { return proto.CompactTextString(m) }
+func (*NotifyGenericEvent) ProtoMessage()               {}
+func (*NotifyGenericEvent) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{132} }
 
 // An Annotation is metadata (such as a srclib ref) attached to a
 // portion of a file.
@@ -2400,9 +2599,10 @@ type Annotation struct {
 	URLs []string `protobuf:"bytes,6,rep,name=URLs" json:"URLs,omitempty"`
 }
 
-func (m *Annotation) Reset()         { *m = Annotation{} }
-func (m *Annotation) String() string { return proto.CompactTextString(m) }
-func (*Annotation) ProtoMessage()    {}
+func (m *Annotation) Reset()                    { *m = Annotation{} }
+func (m *Annotation) String() string            { return proto.CompactTextString(m) }
+func (*Annotation) ProtoMessage()               {}
+func (*Annotation) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{133} }
 
 // AnnotationList is a list of annotations.
 type AnnotationList struct {
@@ -2410,9 +2610,10 @@ type AnnotationList struct {
 	LineStartBytes []uint32      `protobuf:"varint,2,rep,name=LineStartBytes" json:"LineStartBytes,omitempty"`
 }
 
-func (m *AnnotationList) Reset()         { *m = AnnotationList{} }
-func (m *AnnotationList) String() string { return proto.CompactTextString(m) }
-func (*AnnotationList) ProtoMessage()    {}
+func (m *AnnotationList) Reset()                    { *m = AnnotationList{} }
+func (m *AnnotationList) String() string            { return proto.CompactTextString(m) }
+func (*AnnotationList) ProtoMessage()               {}
+func (*AnnotationList) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{134} }
 
 // AnnotationsListOptions specifies options for Annotations.List.
 type AnnotationsListOptions struct {
@@ -2428,6 +2629,9 @@ type AnnotationsListOptions struct {
 func (m *AnnotationsListOptions) Reset()         { *m = AnnotationsListOptions{} }
 func (m *AnnotationsListOptions) String() string { return proto.CompactTextString(m) }
 func (*AnnotationsListOptions) ProtoMessage()    {}
+func (*AnnotationsListOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorSourcegraph, []int{135}
+}
 
 // SearchOptions configures the scope of a global search.
 type SearchOptions struct {
@@ -2496,6 +2700,143 @@ func (m *SearchRefreshIndexOp) String() string { return proto.CompactTextString(
 func (*SearchRefreshIndexOp) ProtoMessage()    {}
 
 func init() {
+	proto.RegisterType((*CombinedStatus)(nil), "sourcegraph.CombinedStatus")
+	proto.RegisterType((*ListOptions)(nil), "sourcegraph.ListOptions")
+	proto.RegisterType((*ListResponse)(nil), "sourcegraph.ListResponse")
+	proto.RegisterType((*StreamResponse)(nil), "sourcegraph.StreamResponse")
+	proto.RegisterType((*RepoConfig)(nil), "sourcegraph.RepoConfig")
+	proto.RegisterType((*Repo)(nil), "sourcegraph.Repo")
+	proto.RegisterType((*RepoListOptions)(nil), "sourcegraph.RepoListOptions")
+	proto.RegisterType((*RepoRevSpec)(nil), "sourcegraph.RepoRevSpec")
+	proto.RegisterType((*RepoSpec)(nil), "sourcegraph.RepoSpec")
+	proto.RegisterType((*RepoStatus)(nil), "sourcegraph.RepoStatus")
+	proto.RegisterType((*RepoStatusesCreateOp)(nil), "sourcegraph.RepoStatusesCreateOp")
+	proto.RegisterType((*RepoList)(nil), "sourcegraph.RepoList")
+	proto.RegisterType((*ReceivePackOp)(nil), "sourcegraph.ReceivePackOp")
+	proto.RegisterType((*UploadPackOp)(nil), "sourcegraph.UploadPackOp")
+	proto.RegisterType((*Packet)(nil), "sourcegraph.Packet")
+	proto.RegisterType((*RepoResolveOp)(nil), "sourcegraph.RepoResolveOp")
+	proto.RegisterType((*RepoResolution)(nil), "sourcegraph.RepoResolution")
+	proto.RegisterType((*ReposListRemoteOptions)(nil), "sourcegraph.ReposListRemoteOptions")
+	proto.RegisterType((*RemoteRepoList)(nil), "sourcegraph.RemoteRepoList")
+	proto.RegisterType((*SrclibDataVersion)(nil), "sourcegraph.SrclibDataVersion")
+	proto.RegisterType((*RepoConfigureAppOp)(nil), "sourcegraph.RepoConfigureAppOp")
+	proto.RegisterType((*ReposCreateOp)(nil), "sourcegraph.ReposCreateOp")
+	proto.RegisterType((*ReposCreateOp_NewRepo)(nil), "sourcegraph.ReposCreateOp.NewRepo")
+	proto.RegisterType((*ReposUpdateOp)(nil), "sourcegraph.ReposUpdateOp")
+	proto.RegisterType((*ReposListCommitsOp)(nil), "sourcegraph.ReposListCommitsOp")
+	proto.RegisterType((*RepoListCommitsOptions)(nil), "sourcegraph.RepoListCommitsOptions")
+	proto.RegisterType((*CommitList)(nil), "sourcegraph.CommitList")
+	proto.RegisterType((*ReposListBranchesOp)(nil), "sourcegraph.ReposListBranchesOp")
+	proto.RegisterType((*RepoListBranchesOptions)(nil), "sourcegraph.RepoListBranchesOptions")
+	proto.RegisterType((*BranchList)(nil), "sourcegraph.BranchList")
+	proto.RegisterType((*ReposListTagsOp)(nil), "sourcegraph.ReposListTagsOp")
+	proto.RegisterType((*ReposListCommittersOp)(nil), "sourcegraph.ReposListCommittersOp")
+	proto.RegisterType((*RepoListCommittersOptions)(nil), "sourcegraph.RepoListCommittersOptions")
+	proto.RegisterType((*CommitterList)(nil), "sourcegraph.CommitterList")
+	proto.RegisterType((*RepoListTagsOptions)(nil), "sourcegraph.RepoListTagsOptions")
+	proto.RegisterType((*TagList)(nil), "sourcegraph.TagList")
+	proto.RegisterType((*MirrorReposRefreshVCSOp)(nil), "sourcegraph.MirrorReposRefreshVCSOp")
+	proto.RegisterType((*VCSCredentials)(nil), "sourcegraph.VCSCredentials")
+	proto.RegisterType((*RemoteRepo)(nil), "sourcegraph.RemoteRepo")
+	proto.RegisterType((*Build)(nil), "sourcegraph.Build")
+	proto.RegisterType((*BuildConfig)(nil), "sourcegraph.BuildConfig")
+	proto.RegisterType((*BuildGetLogOptions)(nil), "sourcegraph.BuildGetLogOptions")
+	proto.RegisterType((*BuildListOptions)(nil), "sourcegraph.BuildListOptions")
+	proto.RegisterType((*BuildSpec)(nil), "sourcegraph.BuildSpec")
+	proto.RegisterType((*BuildTask)(nil), "sourcegraph.BuildTask")
+	proto.RegisterType((*BuildTaskListOptions)(nil), "sourcegraph.BuildTaskListOptions")
+	proto.RegisterType((*BuildUpdate)(nil), "sourcegraph.BuildUpdate")
+	proto.RegisterType((*BuildList)(nil), "sourcegraph.BuildList")
+	proto.RegisterType((*BuildsCreateOp)(nil), "sourcegraph.BuildsCreateOp")
+	proto.RegisterType((*BuildsUpdateOp)(nil), "sourcegraph.BuildsUpdateOp")
+	proto.RegisterType((*BuildsListBuildTasksOp)(nil), "sourcegraph.BuildsListBuildTasksOp")
+	proto.RegisterType((*BuildTaskList)(nil), "sourcegraph.BuildTaskList")
+	proto.RegisterType((*BuildsCreateTasksOp)(nil), "sourcegraph.BuildsCreateTasksOp")
+	proto.RegisterType((*BuildsUpdateTaskOp)(nil), "sourcegraph.BuildsUpdateTaskOp")
+	proto.RegisterType((*BuildsGetTaskLogOp)(nil), "sourcegraph.BuildsGetTaskLogOp")
+	proto.RegisterType((*BuildsDequeueNextOp)(nil), "sourcegraph.BuildsDequeueNextOp")
+	proto.RegisterType((*EmailAddr)(nil), "sourcegraph.EmailAddr")
+	proto.RegisterType((*LogEntries)(nil), "sourcegraph.LogEntries")
+	proto.RegisterType((*Org)(nil), "sourcegraph.Org")
+	proto.RegisterType((*OrgListMembersOptions)(nil), "sourcegraph.OrgListMembersOptions")
+	proto.RegisterType((*OrgSpec)(nil), "sourcegraph.OrgSpec")
+	proto.RegisterType((*OrgsListMembersOp)(nil), "sourcegraph.OrgsListMembersOp")
+	proto.RegisterType((*UserList)(nil), "sourcegraph.UserList")
+	proto.RegisterType((*UserCount)(nil), "sourcegraph.UserCount")
+	proto.RegisterType((*Person)(nil), "sourcegraph.Person")
+	proto.RegisterType((*PersonSpec)(nil), "sourcegraph.PersonSpec")
+	proto.RegisterType((*RemoteUser)(nil), "sourcegraph.RemoteUser")
+	proto.RegisterType((*Teammates)(nil), "sourcegraph.Teammates")
+	proto.RegisterType((*TaskSpec)(nil), "sourcegraph.TaskSpec")
+	proto.RegisterType((*TaskUpdate)(nil), "sourcegraph.TaskUpdate")
+	proto.RegisterType((*User)(nil), "sourcegraph.User")
+	proto.RegisterType((*UserSpec)(nil), "sourcegraph.UserSpec")
+	proto.RegisterType((*UsersListOptions)(nil), "sourcegraph.UsersListOptions")
+	proto.RegisterType((*OrgsListOp)(nil), "sourcegraph.OrgsListOp")
+	proto.RegisterType((*EmailAddrList)(nil), "sourcegraph.EmailAddrList")
+	proto.RegisterType((*OrgList)(nil), "sourcegraph.OrgList")
+	proto.RegisterType((*PasswordResetToken)(nil), "sourcegraph.PasswordResetToken")
+	proto.RegisterType((*PendingPasswordReset)(nil), "sourcegraph.PendingPasswordReset")
+	proto.RegisterType((*NewPassword)(nil), "sourcegraph.NewPassword")
+	proto.RegisterType((*NewAccount)(nil), "sourcegraph.NewAccount")
+	proto.RegisterType((*LoginCredentials)(nil), "sourcegraph.LoginCredentials")
+	proto.RegisterType((*AccessTokenRequest)(nil), "sourcegraph.AccessTokenRequest")
+	proto.RegisterType((*AccessTokenResponse)(nil), "sourcegraph.AccessTokenResponse")
+	proto.RegisterType((*AuthInfo)(nil), "sourcegraph.AuthInfo")
+	proto.RegisterType((*ExternalTokenRequest)(nil), "sourcegraph.ExternalTokenRequest")
+	proto.RegisterType((*ExternalToken)(nil), "sourcegraph.ExternalToken")
+	proto.RegisterType((*Def)(nil), "sourcegraph.Def")
+	proto.RegisterType((*DefGetOptions)(nil), "sourcegraph.DefGetOptions")
+	proto.RegisterType((*DefListOptions)(nil), "sourcegraph.DefListOptions")
+	proto.RegisterType((*DefListRefsOptions)(nil), "sourcegraph.DefListRefsOptions")
+	proto.RegisterType((*DefSpec)(nil), "sourcegraph.DefSpec")
+	proto.RegisterType((*DefsGetOp)(nil), "sourcegraph.DefsGetOp")
+	proto.RegisterType((*DefList)(nil), "sourcegraph.DefList")
+	proto.RegisterType((*DefsListRefsOp)(nil), "sourcegraph.DefsListRefsOp")
+	proto.RegisterType((*RefList)(nil), "sourcegraph.RefList")
+	proto.RegisterType((*DefListRefLocationsOptions)(nil), "sourcegraph.DefListRefLocationsOptions")
+	proto.RegisterType((*DefsListRefLocationsOp)(nil), "sourcegraph.DefsListRefLocationsOp")
+	proto.RegisterType((*RefLocationsList)(nil), "sourcegraph.RefLocationsList")
+	proto.RegisterType((*DefRepoRef)(nil), "sourcegraph.DefRepoRef")
+	proto.RegisterType((*DefFileRef)(nil), "sourcegraph.DefFileRef")
+	proto.RegisterType((*Delta)(nil), "sourcegraph.Delta")
+	proto.RegisterType((*FileDiff)(nil), "sourcegraph.FileDiff")
+	proto.RegisterType((*DeltaFiles)(nil), "sourcegraph.DeltaFiles")
+	proto.RegisterType((*DeltaFilter)(nil), "sourcegraph.DeltaFilter")
+	proto.RegisterType((*DeltaListFilesOptions)(nil), "sourcegraph.DeltaListFilesOptions")
+	proto.RegisterType((*DeltaSpec)(nil), "sourcegraph.DeltaSpec")
+	proto.RegisterType((*DeltasListFilesOp)(nil), "sourcegraph.DeltasListFilesOp")
+	proto.RegisterType((*RepoTreeGetOptions)(nil), "sourcegraph.RepoTreeGetOptions")
+	proto.RegisterType((*GetFileOptions)(nil), "sourcegraph.GetFileOptions")
+	proto.RegisterType((*RepoTreeSearchOptions)(nil), "sourcegraph.RepoTreeSearchOptions")
+	proto.RegisterType((*RepoTreeSearchResult)(nil), "sourcegraph.RepoTreeSearchResult")
+	proto.RegisterType((*RepoTreeGetOp)(nil), "sourcegraph.RepoTreeGetOp")
+	proto.RegisterType((*RepoTreeSearchOp)(nil), "sourcegraph.RepoTreeSearchOp")
+	proto.RegisterType((*RepoTreeListOp)(nil), "sourcegraph.RepoTreeListOp")
+	proto.RegisterType((*RepoTreeListResult)(nil), "sourcegraph.RepoTreeListResult")
+	proto.RegisterType((*VCSSearchResultList)(nil), "sourcegraph.VCSSearchResultList")
+	proto.RegisterType((*TreeEntry)(nil), "sourcegraph.TreeEntry")
+	proto.RegisterType((*BasicTreeEntry)(nil), "sourcegraph.BasicTreeEntry")
+	proto.RegisterType((*TreeEntrySpec)(nil), "sourcegraph.TreeEntrySpec")
+	proto.RegisterType((*FileRange)(nil), "sourcegraph.FileRange")
+	proto.RegisterType((*AuthorshipInfo)(nil), "sourcegraph.AuthorshipInfo")
+	proto.RegisterType((*DefAuthor)(nil), "sourcegraph.DefAuthor")
+	proto.RegisterType((*DefAuthorship)(nil), "sourcegraph.DefAuthorship")
+	proto.RegisterType((*DefListAuthorsOptions)(nil), "sourcegraph.DefListAuthorsOptions")
+	proto.RegisterType((*DefsListAuthorsOp)(nil), "sourcegraph.DefsListAuthorsOp")
+	proto.RegisterType((*DefAuthorList)(nil), "sourcegraph.DefAuthorList")
+	proto.RegisterType((*Checklist)(nil), "sourcegraph.Checklist")
+	proto.RegisterType((*FileToken)(nil), "sourcegraph.FileToken")
+	proto.RegisterType((*ServerStatus)(nil), "sourcegraph.ServerStatus")
+	proto.RegisterType((*ServerConfig)(nil), "sourcegraph.ServerConfig")
+	proto.RegisterType((*UserEvent)(nil), "sourcegraph.UserEvent")
+	proto.RegisterType((*Event)(nil), "sourcegraph.Event")
+	proto.RegisterType((*EventList)(nil), "sourcegraph.EventList")
+	proto.RegisterType((*NotifyGenericEvent)(nil), "sourcegraph.NotifyGenericEvent")
+	proto.RegisterType((*Annotation)(nil), "sourcegraph.Annotation")
+	proto.RegisterType((*AnnotationList)(nil), "sourcegraph.AnnotationList")
+	proto.RegisterType((*AnnotationsListOptions)(nil), "sourcegraph.AnnotationsListOptions")
 	proto.RegisterEnum("sourcegraph.TreeEntryType", TreeEntryType_name, TreeEntryType_value)
 }
 
@@ -5275,18 +5616,6 @@ func (m *Repo) MarshalTo(data []byte) (int, error) {
 		}
 		i += n3
 	}
-	if m.Permissions != nil {
-		data[i] = 0x92
-		i++
-		data[i] = 0x1
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Permissions.Size()))
-		n4, err := m.Permissions.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n4
-	}
 	if len(m.HTMLURL) > 0 {
 		data[i] = 0xb2
 		i++
@@ -5377,63 +5706,15 @@ func (m *RepoListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x5a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n5, err := m.ListOptions.MarshalTo(data[i:])
+	n4, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n5
+	i += n4
 	if m.SlowlyIncludePublicGitHubRepos {
 		data[i] = 0x60
 		i++
 		if m.SlowlyIncludePublicGitHubRepos {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	return i, nil
-}
-
-func (m *RepoPermissions) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *RepoPermissions) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.Read {
-		data[i] = 0x8
-		i++
-		if m.Read {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	if m.Write {
-		data[i] = 0x10
-		i++
-		if m.Write {
-			data[i] = 1
-		} else {
-			data[i] = 0
-		}
-		i++
-	}
-	if m.Admin {
-		data[i] = 0x18
-		i++
-		if m.Admin {
 			data[i] = 1
 		} else {
 			data[i] = 0
@@ -5461,11 +5742,11 @@ func (m *RepoRevSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoSpec.Size()))
-	n6, err := m.RepoSpec.MarshalTo(data[i:])
+	n5, err := m.RepoSpec.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n6
+	i += n5
 	if len(m.Rev) > 0 {
 		data[i] = 0x12
 		i++
@@ -5547,19 +5828,19 @@ func (m *RepoStatus) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x32
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n7, err := m.CreatedAt.MarshalTo(data[i:])
+	n6, err := m.CreatedAt.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n6
+	data[i] = 0x3a
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
+	n7, err := m.UpdatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n7
-	data[i] = 0x3a
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
-	n8, err := m.UpdatedAt.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n8
 	return i, nil
 }
 
@@ -5581,19 +5862,19 @@ func (m *RepoStatusesCreateOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n9, err := m.Repo.MarshalTo(data[i:])
+	n8, err := m.Repo.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n8
+	data[i] = 0x12
+	i++
+	i = encodeVarintSourcegraph(data, i, uint64(m.Status.Size()))
+	n9, err := m.Status.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
 	i += n9
-	data[i] = 0x12
-	i++
-	i = encodeVarintSourcegraph(data, i, uint64(m.Status.Size()))
-	n10, err := m.Status.MarshalTo(data[i:])
-	if err != nil {
-		return 0, err
-	}
-	i += n10
 	return i, nil
 }
 
@@ -5645,18 +5926,16 @@ func (m *ReceivePackOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n11, err := m.Repo.MarshalTo(data[i:])
+	n10, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n11
-	if m.Data != nil {
-		if len(m.Data) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(m.Data)))
-			i += copy(data[i:], m.Data)
-		}
+	i += n10
+	if len(m.Data) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Data)))
+		i += copy(data[i:], m.Data)
 	}
 	if m.AdvertiseRefs {
 		data[i] = 0x20
@@ -5689,18 +5968,16 @@ func (m *UploadPackOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n12, err := m.Repo.MarshalTo(data[i:])
+	n11, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n12
-	if m.Data != nil {
-		if len(m.Data) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(m.Data)))
-			i += copy(data[i:], m.Data)
-		}
+	i += n11
+	if len(m.Data) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Data)))
+		i += copy(data[i:], m.Data)
 	}
 	if m.AdvertiseRefs {
 		data[i] = 0x20
@@ -5730,13 +6007,11 @@ func (m *Packet) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Data != nil {
-		if len(m.Data) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(m.Data)))
-			i += copy(data[i:], m.Data)
-		}
+	if len(m.Data) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Data)))
+		i += copy(data[i:], m.Data)
 	}
 	return i, nil
 }
@@ -5781,11 +6056,11 @@ func (m *RepoResolution) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.Result != nil {
-		nn13, err := m.Result.MarshalTo(data[i:])
+		nn12, err := m.Result.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn13
+		i += nn12
 	}
 	return i, nil
 }
@@ -5796,11 +6071,11 @@ func (m *RepoResolution_Repo) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-		n14, err := m.Repo.MarshalTo(data[i:])
+		n13, err := m.Repo.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n14
+		i += n13
 	}
 	return i, nil
 }
@@ -5810,11 +6085,11 @@ func (m *RepoResolution_RemoteRepo) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.RemoteRepo.Size()))
-		n15, err := m.RemoteRepo.MarshalTo(data[i:])
+		n14, err := m.RemoteRepo.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n15
+		i += n14
 	}
 	return i, nil
 }
@@ -5836,11 +6111,11 @@ func (m *ReposListRemoteOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n16, err := m.ListOptions.MarshalTo(data[i:])
+	n15, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n16
+	i += n15
 	return i, nil
 }
 
@@ -5921,11 +6196,11 @@ func (m *RepoConfigureAppOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n17, err := m.Repo.MarshalTo(data[i:])
+	n16, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n17
+	i += n16
 	if len(m.App) > 0 {
 		data[i] = 0x12
 		i++
@@ -5961,11 +6236,11 @@ func (m *ReposCreateOp) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.Op != nil {
-		nn18, err := m.Op.MarshalTo(data[i:])
+		nn17, err := m.Op.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn18
+		i += nn17
 	}
 	return i, nil
 }
@@ -5976,11 +6251,11 @@ func (m *ReposCreateOp_New) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.New.Size()))
-		n19, err := m.New.MarshalTo(data[i:])
+		n18, err := m.New.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n19
+		i += n18
 	}
 	return i, nil
 }
@@ -6067,11 +6342,11 @@ func (m *ReposUpdateOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n20, err := m.Repo.MarshalTo(data[i:])
+	n19, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n20
+	i += n19
 	if len(m.Description) > 0 {
 		data[i] = 0x12
 		i++
@@ -6111,20 +6386,20 @@ func (m *ReposListCommitsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n21, err := m.Repo.MarshalTo(data[i:])
+	n20, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n21
+	i += n20
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n22, err := m.Opt.MarshalTo(data[i:])
+		n21, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n22
+		i += n21
 	}
 	return i, nil
 }
@@ -6159,11 +6434,11 @@ func (m *RepoListCommitsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n23, err := m.ListOptions.MarshalTo(data[i:])
+	n22, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n23
+	i += n22
 	if len(m.Path) > 0 {
 		data[i] = 0x22
 		i++
@@ -6203,11 +6478,11 @@ func (m *CommitList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n24, err := m.StreamResponse.MarshalTo(data[i:])
+	n23, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n24
+	i += n23
 	return i, nil
 }
 
@@ -6229,20 +6504,20 @@ func (m *ReposListBranchesOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n25, err := m.Repo.MarshalTo(data[i:])
+	n24, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n25
+	i += n24
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n26, err := m.Opt.MarshalTo(data[i:])
+		n25, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n26
+		i += n25
 	}
 	return i, nil
 }
@@ -6265,11 +6540,11 @@ func (m *RepoListBranchesOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n27, err := m.ListOptions.MarshalTo(data[i:])
+	n26, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n27
+	i += n26
 	if m.IncludeCommit {
 		data[i] = 0x20
 		i++
@@ -6325,11 +6600,11 @@ func (m *BranchList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n28, err := m.StreamResponse.MarshalTo(data[i:])
+	n27, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n28
+	i += n27
 	return i, nil
 }
 
@@ -6351,20 +6626,20 @@ func (m *ReposListTagsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n29, err := m.Repo.MarshalTo(data[i:])
+	n28, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n29
+	i += n28
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n30, err := m.Opt.MarshalTo(data[i:])
+		n29, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n30
+		i += n29
 	}
 	return i, nil
 }
@@ -6387,20 +6662,20 @@ func (m *ReposListCommittersOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n31, err := m.Repo.MarshalTo(data[i:])
+	n30, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n31
+	i += n30
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n32, err := m.Opt.MarshalTo(data[i:])
+		n31, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n32
+		i += n31
 	}
 	return i, nil
 }
@@ -6429,11 +6704,11 @@ func (m *RepoListCommittersOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n33, err := m.ListOptions.MarshalTo(data[i:])
+	n32, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n33
+	i += n32
 	return i, nil
 }
 
@@ -6467,11 +6742,11 @@ func (m *CommitterList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n34, err := m.StreamResponse.MarshalTo(data[i:])
+	n33, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n34
+	i += n33
 	return i, nil
 }
 
@@ -6493,11 +6768,11 @@ func (m *RepoListTagsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n35, err := m.ListOptions.MarshalTo(data[i:])
+	n34, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n35
+	i += n34
 	return i, nil
 }
 
@@ -6531,11 +6806,11 @@ func (m *TagList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n36, err := m.StreamResponse.MarshalTo(data[i:])
+	n35, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n36
+	i += n35
 	return i, nil
 }
 
@@ -6557,20 +6832,20 @@ func (m *MirrorReposRefreshVCSOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n37, err := m.Repo.MarshalTo(data[i:])
+	n36, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n37
+	i += n36
 	if m.AsUser != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.AsUser.Size()))
-		n38, err := m.AsUser.MarshalTo(data[i:])
+		n37, err := m.AsUser.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n38
+		i += n37
 	}
 	return i, nil
 }
@@ -6665,11 +6940,11 @@ func (m *RemoteRepo) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x4a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.UpdatedAt.Size()))
-		n39, err := m.UpdatedAt.MarshalTo(data[i:])
+		n38, err := m.UpdatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n39
+		i += n38
 	}
 	if m.Private {
 		data[i] = 0x50
@@ -6705,16 +6980,6 @@ func (m *RemoteRepo) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x68
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Stars))
-	}
-	if m.Permissions != nil {
-		data[i] = 0x72
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(m.Permissions.Size()))
-		n40, err := m.Permissions.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n40
 	}
 	if m.OwnerIsOrg {
 		data[i] = 0x78
@@ -6764,40 +7029,40 @@ func (m *Build) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x22
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n41, err := m.CreatedAt.MarshalTo(data[i:])
+	n39, err := m.CreatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n41
+	i += n39
 	if m.StartedAt != nil {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.StartedAt.Size()))
-		n42, err := m.StartedAt.MarshalTo(data[i:])
+		n40, err := m.StartedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n42
+		i += n40
 	}
 	if m.EndedAt != nil {
 		data[i] = 0x32
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.EndedAt.Size()))
-		n43, err := m.EndedAt.MarshalTo(data[i:])
+		n41, err := m.EndedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n43
+		i += n41
 	}
 	if m.HeartbeatAt != nil {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeartbeatAt.Size()))
-		n44, err := m.HeartbeatAt.MarshalTo(data[i:])
+		n42, err := m.HeartbeatAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n44
+		i += n42
 	}
 	if m.Success {
 		data[i] = 0x40
@@ -6848,11 +7113,11 @@ func (m *Build) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x6a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.BuildConfig.Size()))
-	n45, err := m.BuildConfig.MarshalTo(data[i:])
+	n43, err := m.BuildConfig.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n45
+	i += n43
 	if len(m.Branch) > 0 {
 		data[i] = 0x72
 		i++
@@ -7035,11 +7300,11 @@ func (m *BuildListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x5a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n46, err := m.ListOptions.MarshalTo(data[i:])
+	n44, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n46
+	i += n44
 	return i, nil
 }
 
@@ -7061,11 +7326,11 @@ func (m *BuildSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n47, err := m.Repo.MarshalTo(data[i:])
+	n45, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n47
+	i += n45
 	if m.ID != 0 {
 		data[i] = 0x10
 		i++
@@ -7097,11 +7362,11 @@ func (m *BuildTask) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Build.Size()))
-	n48, err := m.Build.MarshalTo(data[i:])
+	n46, err := m.Build.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n48
+	i += n46
 	if m.ParentID != 0 {
 		data[i] = 0x18
 		i++
@@ -7116,30 +7381,30 @@ func (m *BuildTask) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-	n49, err := m.CreatedAt.MarshalTo(data[i:])
+	n47, err := m.CreatedAt.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n49
+	i += n47
 	if m.StartedAt != nil {
 		data[i] = 0x32
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.StartedAt.Size()))
-		n50, err := m.StartedAt.MarshalTo(data[i:])
+		n48, err := m.StartedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n50
+		i += n48
 	}
 	if m.EndedAt != nil {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.EndedAt.Size()))
-		n51, err := m.EndedAt.MarshalTo(data[i:])
+		n49, err := m.EndedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n51
+		i += n49
 	}
 	if m.Success {
 		data[i] = 0x40
@@ -7202,11 +7467,11 @@ func (m *BuildTaskListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n52, err := m.ListOptions.MarshalTo(data[i:])
+	n50, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n52
+	i += n50
 	return i, nil
 }
 
@@ -7229,31 +7494,31 @@ func (m *BuildUpdate) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.StartedAt.Size()))
-		n53, err := m.StartedAt.MarshalTo(data[i:])
+		n51, err := m.StartedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n53
+		i += n51
 	}
 	if m.EndedAt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.EndedAt.Size()))
-		n54, err := m.EndedAt.MarshalTo(data[i:])
+		n52, err := m.EndedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n54
+		i += n52
 	}
 	if m.HeartbeatAt != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeartbeatAt.Size()))
-		n55, err := m.HeartbeatAt.MarshalTo(data[i:])
+		n53, err := m.HeartbeatAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n55
+		i += n53
 	}
 	if len(m.Host) > 0 {
 		data[i] = 0x22
@@ -7315,17 +7580,17 @@ func (m *BuildUpdate) MarshalTo(data []byte) (int, error) {
 	if m.FileScore != 0 {
 		data[i] = 0x5d
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.FileScore)))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.FileScore))))
 	}
 	if m.RefScore != 0 {
 		data[i] = 0x65
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.RefScore)))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.RefScore))))
 	}
 	if m.TokDensity != 0 {
 		data[i] = 0x6d
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.TokDensity)))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.TokDensity))))
 	}
 	return i, nil
 }
@@ -7360,11 +7625,11 @@ func (m *BuildList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n56, err := m.StreamResponse.MarshalTo(data[i:])
+	n54, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n56
+	i += n54
 	return i, nil
 }
 
@@ -7386,11 +7651,11 @@ func (m *BuildsCreateOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Repo.Size()))
-	n57, err := m.Repo.MarshalTo(data[i:])
+	n55, err := m.Repo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n57
+	i += n55
 	if len(m.CommitID) > 0 {
 		data[i] = 0x12
 		i++
@@ -7412,11 +7677,11 @@ func (m *BuildsCreateOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Config.Size()))
-	n58, err := m.Config.MarshalTo(data[i:])
+	n56, err := m.Config.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n58
+	i += n56
 	return i, nil
 }
 
@@ -7438,19 +7703,19 @@ func (m *BuildsUpdateOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Build.Size()))
-	n59, err := m.Build.MarshalTo(data[i:])
+	n57, err := m.Build.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n59
+	i += n57
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Info.Size()))
-	n60, err := m.Info.MarshalTo(data[i:])
+	n58, err := m.Info.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n60
+	i += n58
 	return i, nil
 }
 
@@ -7472,20 +7737,20 @@ func (m *BuildsListBuildTasksOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Build.Size()))
-	n61, err := m.Build.MarshalTo(data[i:])
+	n59, err := m.Build.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n61
+	i += n59
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n62, err := m.Opt.MarshalTo(data[i:])
+		n60, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n62
+		i += n60
 	}
 	return i, nil
 }
@@ -7538,11 +7803,11 @@ func (m *BuildsCreateTasksOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Build.Size()))
-	n63, err := m.Build.MarshalTo(data[i:])
+	n61, err := m.Build.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n63
+	i += n61
 	if len(m.Tasks) > 0 {
 		for _, msg := range m.Tasks {
 			data[i] = 0x12
@@ -7576,19 +7841,19 @@ func (m *BuildsUpdateTaskOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Task.Size()))
-	n64, err := m.Task.MarshalTo(data[i:])
+	n62, err := m.Task.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n64
+	i += n62
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Info.Size()))
-	n65, err := m.Info.MarshalTo(data[i:])
+	n63, err := m.Info.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n65
+	i += n63
 	return i, nil
 }
 
@@ -7610,20 +7875,20 @@ func (m *BuildsGetTaskLogOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Task.Size()))
-	n66, err := m.Task.MarshalTo(data[i:])
+	n64, err := m.Task.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n66
+	i += n64
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n67, err := m.Opt.MarshalTo(data[i:])
+		n65, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n67
+		i += n65
 	}
 	return i, nil
 }
@@ -7767,11 +8032,11 @@ func (m *Org) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.User.Size()))
-	n68, err := m.User.MarshalTo(data[i:])
+	n66, err := m.User.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n68
+	i += n66
 	return i, nil
 }
 
@@ -7793,11 +8058,11 @@ func (m *OrgListMembersOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n69, err := m.ListOptions.MarshalTo(data[i:])
+	n67, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n69
+	i += n67
 	return i, nil
 }
 
@@ -7848,20 +8113,20 @@ func (m *OrgsListMembersOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Org.Size()))
-	n70, err := m.Org.MarshalTo(data[i:])
+	n68, err := m.Org.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n70
+	i += n68
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n71, err := m.Opt.MarshalTo(data[i:])
+		n69, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n71
+		i += n69
 	}
 	return i, nil
 }
@@ -7937,11 +8202,11 @@ func (m *Person) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.PersonSpec.Size()))
-	n72, err := m.PersonSpec.MarshalTo(data[i:])
+	n70, err := m.PersonSpec.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n72
+	i += n70
 	if len(m.FullName) > 0 {
 		data[i] = 0x12
 		i++
@@ -8011,21 +8276,21 @@ func (m *RemoteUser) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.RemoteAccount.Size()))
-		n73, err := m.RemoteAccount.MarshalTo(data[i:])
+		n71, err := m.RemoteAccount.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n73
+		i += n71
 	}
 	if m.LocalAccount != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.LocalAccount.Size()))
-		n74, err := m.LocalAccount.MarshalTo(data[i:])
+		n72, err := m.LocalAccount.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n74
+		i += n72
 	}
 	if len(m.Email) > 0 {
 		data[i] = 0x1a
@@ -8105,11 +8370,11 @@ func (m *TaskSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Build.Size()))
-	n75, err := m.Build.MarshalTo(data[i:])
+	n73, err := m.Build.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n75
+	i += n73
 	if m.ID != 0 {
 		data[i] = 0x10
 		i++
@@ -8137,21 +8402,21 @@ func (m *TaskUpdate) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.StartedAt.Size()))
-		n76, err := m.StartedAt.MarshalTo(data[i:])
+		n74, err := m.StartedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n76
+		i += n74
 	}
 	if m.EndedAt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.EndedAt.Size()))
-		n77, err := m.EndedAt.MarshalTo(data[i:])
+		n75, err := m.EndedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n77
+		i += n75
 	}
 	if m.Success {
 		data[i] = 0x18
@@ -8276,11 +8541,11 @@ func (m *User) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x5a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.RegisteredAt.Size()))
-		n78, err := m.RegisteredAt.MarshalTo(data[i:])
+		n76, err := m.RegisteredAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n78
+		i += n76
 	}
 	if m.Admin {
 		data[i] = 0x60
@@ -8370,11 +8635,11 @@ func (m *UsersListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x22
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n79, err := m.ListOptions.MarshalTo(data[i:])
+	n77, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n79
+	i += n77
 	if len(m.UIDs) > 0 {
 		for _, num := range m.UIDs {
 			data[i] = 0x28
@@ -8403,19 +8668,19 @@ func (m *OrgsListOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Member.Size()))
-	n80, err := m.Member.MarshalTo(data[i:])
+	n78, err := m.Member.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n80
+	i += n78
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n81, err := m.ListOptions.MarshalTo(data[i:])
+	n79, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n81
+	i += n79
 	return i, nil
 }
 
@@ -8528,11 +8793,11 @@ func (m *PendingPasswordReset) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Token.Size()))
-		n82, err := m.Token.MarshalTo(data[i:])
+		n80, err := m.Token.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n82
+		i += n80
 	}
 	if m.EmailSent {
 		data[i] = 0x18
@@ -8578,11 +8843,11 @@ func (m *NewPassword) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Token.Size()))
-		n83, err := m.Token.MarshalTo(data[i:])
+		n81, err := m.Token.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n83
+		i += n81
 	}
 	return i, nil
 }
@@ -8674,11 +8939,11 @@ func (m *AccessTokenRequest) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.AuthorizationGrant != nil {
-		nn84, err := m.AuthorizationGrant.MarshalTo(data[i:])
+		nn82, err := m.AuthorizationGrant.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn84
+		i += nn82
 	}
 	if len(m.Scope) > 0 {
 		for _, s := range m.Scope {
@@ -8706,11 +8971,11 @@ func (m *AccessTokenRequest_ResourceOwnerPassword) MarshalTo(data []byte) (int, 
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.ResourceOwnerPassword.Size()))
-		n85, err := m.ResourceOwnerPassword.MarshalTo(data[i:])
+		n83, err := m.ResourceOwnerPassword.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n85
+		i += n83
 	}
 	return i, nil
 }
@@ -8785,12 +9050,6 @@ func (m *AuthInfo) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ClientID) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintSourcegraph(data, i, uint64(len(m.ClientID)))
-		i += copy(data[i:], m.ClientID)
-	}
 	if m.UID != 0 {
 		data[i] = 0x10
 		i++
@@ -8930,30 +9189,30 @@ func (m *Def) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n86, err := m.Def.MarshalTo(data[i:])
+	n84, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n86
+	i += n84
 	if m.DocHTML != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.DocHTML.Size()))
-		n87, err := m.DocHTML.MarshalTo(data[i:])
+		n85, err := m.DocHTML.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n87
+		i += n85
 	}
 	if m.FmtStrings != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FmtStrings.Size()))
-		n88, err := m.FmtStrings.MarshalTo(data[i:])
+		n86, err := m.FmtStrings.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n88
+		i += n86
 	}
 	return i, nil
 }
@@ -9179,11 +9438,11 @@ func (m *DefListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n89, err := m.ListOptions.MarshalTo(data[i:])
+	n87, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n89
+	i += n87
 	return i, nil
 }
 
@@ -9226,11 +9485,11 @@ func (m *DefListRefsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n90, err := m.ListOptions.MarshalTo(data[i:])
+	n88, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n90
+	i += n88
 	if len(m.CommitID) > 0 {
 		data[i] = 0x22
 		i++
@@ -9306,20 +9565,20 @@ func (m *DefsGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n91, err := m.Def.MarshalTo(data[i:])
+	n89, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n91
+	i += n89
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n92, err := m.Opt.MarshalTo(data[i:])
+		n90, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n92
+		i += n90
 	}
 	return i, nil
 }
@@ -9354,11 +9613,11 @@ func (m *DefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n93, err := m.ListResponse.MarshalTo(data[i:])
+	n91, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n93
+	i += n91
 	return i, nil
 }
 
@@ -9380,20 +9639,20 @@ func (m *DefsListRefsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n94, err := m.Def.MarshalTo(data[i:])
+	n92, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n94
+	i += n92
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n95, err := m.Opt.MarshalTo(data[i:])
+		n93, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n95
+		i += n93
 	}
 	return i, nil
 }
@@ -9428,11 +9687,11 @@ func (m *RefList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n96, err := m.StreamResponse.MarshalTo(data[i:])
+	n94, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n96
+	i += n94
 	return i, nil
 }
 
@@ -9479,11 +9738,11 @@ func (m *DefListRefLocationsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n97, err := m.ListOptions.MarshalTo(data[i:])
+	n95, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n97
+	i += n95
 	return i, nil
 }
 
@@ -9505,20 +9764,20 @@ func (m *DefsListRefLocationsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n98, err := m.Def.MarshalTo(data[i:])
+	n96, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n98
+	i += n96
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n99, err := m.Opt.MarshalTo(data[i:])
+		n97, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n99
+		i += n97
 	}
 	return i, nil
 }
@@ -9553,11 +9812,11 @@ func (m *RefLocationsList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.StreamResponse.Size()))
-	n100, err := m.StreamResponse.MarshalTo(data[i:])
+	n98, err := m.StreamResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n100
+	i += n98
 	return i, nil
 }
 
@@ -9590,7 +9849,7 @@ func (m *DefRepoRef) MarshalTo(data []byte) (int, error) {
 	if m.Score != 0 {
 		data[i] = 0x1d
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.Score)))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.Score))))
 	}
 	if len(m.Files) > 0 {
 		for _, msg := range m.Files {
@@ -9636,7 +9895,7 @@ func (m *DefFileRef) MarshalTo(data []byte) (int, error) {
 	if m.Score != 0 {
 		data[i] = 0x1d
 		i++
-		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(m.Score)))
+		i = encodeFixed32Sourcegraph(data, i, uint32(math.Float32bits(float32(m.Score))))
 	}
 	return i, nil
 }
@@ -9659,38 +9918,38 @@ func (m *Delta) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n101, err := m.Base.MarshalTo(data[i:])
+	n99, err := m.Base.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n101
+	i += n99
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n102, err := m.Head.MarshalTo(data[i:])
+	n100, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n102
+	i += n100
 	if m.BaseCommit != nil {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BaseCommit.Size()))
-		n103, err := m.BaseCommit.MarshalTo(data[i:])
+		n101, err := m.BaseCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n103
+		i += n101
 	}
 	if m.HeadCommit != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.HeadCommit.Size()))
-		n104, err := m.HeadCommit.MarshalTo(data[i:])
+		n102, err := m.HeadCommit.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n104
+		i += n102
 	}
 	return i, nil
 }
@@ -9713,11 +9972,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileDiff.Size()))
-	n105, err := m.FileDiff.MarshalTo(data[i:])
+	n103, err := m.FileDiff.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n105
+	i += n103
 	if len(m.FileDiffHunks) > 0 {
 		for _, msg := range m.FileDiffHunks {
 			data[i] = 0x12
@@ -9745,11 +10004,11 @@ func (m *FileDiff) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n106, err := m.Stats.MarshalTo(data[i:])
+	n104, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n106
+	i += n104
 	if m.Filtered {
 		data[i] = 0x30
 		i++
@@ -9794,20 +10053,20 @@ func (m *DeltaFiles) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Delta.Size()))
-		n107, err := m.Delta.MarshalTo(data[i:])
+		n105, err := m.Delta.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n107
+		i += n105
 	}
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Stats.Size()))
-	n108, err := m.Stats.MarshalTo(data[i:])
+	n106, err := m.Stats.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n108
+	i += n106
 	return i, nil
 }
 
@@ -9865,11 +10124,11 @@ func (m *DeltaListFilesOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.DeltaFilter.Size()))
-	n109, err := m.DeltaFilter.MarshalTo(data[i:])
+	n107, err := m.DeltaFilter.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n109
+	i += n107
 	if len(m.Ignore) > 0 {
 		for _, s := range m.Ignore {
 			data[i] = 0x32
@@ -9906,19 +10165,19 @@ func (m *DeltaSpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Base.Size()))
-	n110, err := m.Base.MarshalTo(data[i:])
+	n108, err := m.Base.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n110
+	i += n108
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Head.Size()))
-	n111, err := m.Head.MarshalTo(data[i:])
+	n109, err := m.Head.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n111
+	i += n109
 	return i, nil
 }
 
@@ -9940,20 +10199,20 @@ func (m *DeltasListFilesOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Ds.Size()))
-	n112, err := m.Ds.MarshalTo(data[i:])
+	n110, err := m.Ds.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n112
+	i += n110
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n113, err := m.Opt.MarshalTo(data[i:])
+		n111, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n113
+		i += n111
 	}
 	return i, nil
 }
@@ -9986,11 +10245,11 @@ func (m *RepoTreeGetOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x2a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.GetFileOptions.Size()))
-	n114, err := m.GetFileOptions.MarshalTo(data[i:])
+	n112, err := m.GetFileOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n114
+	i += n112
 	return i, nil
 }
 
@@ -10012,11 +10271,11 @@ func (m *GetFileOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-	n115, err := m.FileRange.MarshalTo(data[i:])
+	n113, err := m.FileRange.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n115
+	i += n113
 	if m.EntireFile {
 		data[i] = 0x10
 		i++
@@ -10078,11 +10337,11 @@ func (m *RepoTreeSearchOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchOptions.Size()))
-	n116, err := m.SearchOptions.MarshalTo(data[i:])
+	n114, err := m.SearchOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n116
+	i += n114
 	return i, nil
 }
 
@@ -10104,19 +10363,19 @@ func (m *RepoTreeSearchResult) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.SearchResult.Size()))
-	n117, err := m.SearchResult.MarshalTo(data[i:])
+	n115, err := m.SearchResult.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n117
+	i += n115
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n118, err := m.RepoRev.MarshalTo(data[i:])
+	n116, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n118
+	i += n116
 	return i, nil
 }
 
@@ -10138,20 +10397,20 @@ func (m *RepoTreeGetOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n119, err := m.Entry.MarshalTo(data[i:])
+	n117, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n119
+	i += n117
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n120, err := m.Opt.MarshalTo(data[i:])
+		n118, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n120
+		i += n118
 	}
 	return i, nil
 }
@@ -10174,20 +10433,20 @@ func (m *RepoTreeSearchOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n121, err := m.Rev.MarshalTo(data[i:])
+	n119, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n121
+	i += n119
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n122, err := m.Opt.MarshalTo(data[i:])
+		n120, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n122
+		i += n120
 	}
 	return i, nil
 }
@@ -10210,11 +10469,11 @@ func (m *RepoTreeListOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Rev.Size()))
-	n123, err := m.Rev.MarshalTo(data[i:])
+	n121, err := m.Rev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n123
+	i += n121
 	return i, nil
 }
 
@@ -10281,11 +10540,11 @@ func (m *VCSSearchResultList) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x12
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListResponse.Size()))
-	n124, err := m.ListResponse.MarshalTo(data[i:])
+	n122, err := m.ListResponse.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n124
+	i += n122
 	return i, nil
 }
 
@@ -10308,21 +10567,21 @@ func (m *TreeEntry) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.BasicTreeEntry.Size()))
-		n125, err := m.BasicTreeEntry.MarshalTo(data[i:])
+		n123, err := m.BasicTreeEntry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n125
+		i += n123
 	}
 	if m.FileRange != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.FileRange.Size()))
-		n126, err := m.FileRange.MarshalTo(data[i:])
+		n124, err := m.FileRange.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n126
+		i += n124
 	}
 	if len(m.ContentsString) > 0 {
 		data[i] = 0x1a
@@ -10359,13 +10618,17 @@ func (m *BasicTreeEntry) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Type))
 	}
-	if m.Contents != nil {
-		if len(m.Contents) > 0 {
-			data[i] = 0x2a
-			i++
-			i = encodeVarintSourcegraph(data, i, uint64(len(m.Contents)))
-			i += copy(data[i:], m.Contents)
-		}
+	if len(m.CommitID) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.CommitID)))
+		i += copy(data[i:], m.CommitID)
+	}
+	if len(m.Contents) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintSourcegraph(data, i, uint64(len(m.Contents)))
+		i += copy(data[i:], m.Contents)
 	}
 	if len(m.Entries) > 0 {
 		for _, msg := range m.Entries {
@@ -10400,11 +10663,11 @@ func (m *TreeEntrySpec) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.RepoRev.Size()))
-	n127, err := m.RepoRev.MarshalTo(data[i:])
+	n125, err := m.RepoRev.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n127
+	i += n125
 	if len(m.Path) > 0 {
 		data[i] = 0x12
 		i++
@@ -10470,11 +10733,11 @@ func (m *AuthorshipInfo) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.LastCommitDate.Size()))
-	n128, err := m.LastCommitDate.MarshalTo(data[i:])
+	n126, err := m.LastCommitDate.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n128
+	i += n126
 	if len(m.LastCommitID) > 0 {
 		data[i] = 0x12
 		i++
@@ -10514,11 +10777,11 @@ func (m *DefAuthor) MarshalTo(data []byte) (int, error) {
 	data[i] = 0x1a
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.DefAuthorship.Size()))
-	n129, err := m.DefAuthorship.MarshalTo(data[i:])
+	n127, err := m.DefAuthorship.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n129
+	i += n127
 	return i, nil
 }
 
@@ -10540,11 +10803,11 @@ func (m *DefAuthorship) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.AuthorshipInfo.Size()))
-	n130, err := m.AuthorshipInfo.MarshalTo(data[i:])
+	n128, err := m.AuthorshipInfo.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n130
+	i += n128
 	if m.Bytes != 0 {
 		data[i] = 0x18
 		i++
@@ -10553,7 +10816,7 @@ func (m *DefAuthorship) MarshalTo(data []byte) (int, error) {
 	if m.BytesProportion != 0 {
 		data[i] = 0x21
 		i++
-		i = encodeFixed64Sourcegraph(data, i, uint64(math.Float64bits(m.BytesProportion)))
+		i = encodeFixed64Sourcegraph(data, i, uint64(math.Float64bits(float64(m.BytesProportion))))
 	}
 	return i, nil
 }
@@ -10576,11 +10839,11 @@ func (m *DefListAuthorsOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.ListOptions.Size()))
-	n131, err := m.ListOptions.MarshalTo(data[i:])
+	n129, err := m.ListOptions.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n131
+	i += n129
 	return i, nil
 }
 
@@ -10602,20 +10865,20 @@ func (m *DefsListAuthorsOp) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Def.Size()))
-	n132, err := m.Def.MarshalTo(data[i:])
+	n130, err := m.Def.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n132
+	i += n130
 	if m.Opt != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Opt.Size()))
-		n133, err := m.Opt.MarshalTo(data[i:])
+		n131, err := m.Opt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n133
+		i += n131
 	}
 	return i, nil
 }
@@ -10703,11 +10966,11 @@ func (m *FileToken) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-		n134, err := m.Entry.MarshalTo(data[i:])
+		n132, err := m.Entry.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n134
+		i += n132
 	}
 	return i, nil
 }
@@ -10826,11 +11089,11 @@ func (m *UserEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x3a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.CreatedAt.Size()))
-		n135, err := m.CreatedAt.MarshalTo(data[i:])
+		n133, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n135
+		i += n133
 	}
 	if len(m.Message) > 0 {
 		data[i] = 0x42
@@ -10896,19 +11159,14 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Timestamp.Size()))
-		n136, err := m.Timestamp.MarshalTo(data[i:])
+		n134, err := m.Timestamp.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n136
+		i += n134
 	}
 	if len(m.UserProperties) > 0 {
-		keysForUserProperties := make([]string, 0, len(m.UserProperties))
 		for k, _ := range m.UserProperties {
-			keysForUserProperties = append(keysForUserProperties, k)
-		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForUserProperties)
-		for _, k := range keysForUserProperties {
 			data[i] = 0x32
 			i++
 			v := m.UserProperties[k]
@@ -10925,12 +11183,7 @@ func (m *Event) MarshalTo(data []byte) (int, error) {
 		}
 	}
 	if len(m.EventProperties) > 0 {
-		keysForEventProperties := make([]string, 0, len(m.EventProperties))
 		for k, _ := range m.EventProperties {
-			keysForEventProperties = append(keysForEventProperties, k)
-		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForEventProperties)
-		for _, k := range keysForEventProperties {
 			data[i] = 0x3a
 			i++
 			v := m.EventProperties[k]
@@ -11010,11 +11263,11 @@ func (m *NotifyGenericEvent) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Actor.Size()))
-		n137, err := m.Actor.MarshalTo(data[i:])
+		n135, err := m.Actor.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n137
+		i += n135
 	}
 	if len(m.Recipients) > 0 {
 		for _, msg := range m.Recipients {
@@ -11209,20 +11462,20 @@ func (m *AnnotationsListOptions) MarshalTo(data []byte) (int, error) {
 	data[i] = 0xa
 	i++
 	i = encodeVarintSourcegraph(data, i, uint64(m.Entry.Size()))
-	n138, err := m.Entry.MarshalTo(data[i:])
+	n136, err := m.Entry.MarshalTo(data[i:])
 	if err != nil {
 		return 0, err
 	}
-	i += n138
+	i += n136
 	if m.Range != nil {
 		data[i] = 0x12
 		i++
 		i = encodeVarintSourcegraph(data, i, uint64(m.Range.Size()))
-		n139, err := m.Range.MarshalTo(data[i:])
+		n137, err := m.Range.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n139
+		i += n137
 	}
 	return i, nil
 }
@@ -11573,10 +11826,6 @@ func (m *Repo) Size() (n int) {
 		l = m.PushedAt.Size()
 		n += 2 + l + sovSourcegraph(uint64(l))
 	}
-	if m.Permissions != nil {
-		l = m.Permissions.Size()
-		n += 2 + l + sovSourcegraph(uint64(l))
-	}
 	l = len(m.HTMLURL)
 	if l > 0 {
 		n += 2 + l + sovSourcegraph(uint64(l))
@@ -11623,21 +11872,6 @@ func (m *RepoListOptions) Size() (n int) {
 	l = m.ListOptions.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
 	if m.SlowlyIncludePublicGitHubRepos {
-		n += 2
-	}
-	return n
-}
-
-func (m *RepoPermissions) Size() (n int) {
-	var l int
-	_ = l
-	if m.Read {
-		n += 2
-	}
-	if m.Write {
-		n += 2
-	}
-	if m.Admin {
 		n += 2
 	}
 	return n
@@ -11722,11 +11956,9 @@ func (m *ReceivePackOp) Size() (n int) {
 	_ = l
 	l = m.Repo.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Data != nil {
-		l = len(m.Data)
-		if l > 0 {
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
+	l = len(m.Data)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	if m.AdvertiseRefs {
 		n += 2
@@ -11739,11 +11971,9 @@ func (m *UploadPackOp) Size() (n int) {
 	_ = l
 	l = m.Repo.Size()
 	n += 1 + l + sovSourcegraph(uint64(l))
-	if m.Data != nil {
-		l = len(m.Data)
-		if l > 0 {
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
+	l = len(m.Data)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	if m.AdvertiseRefs {
 		n += 2
@@ -11754,11 +11984,9 @@ func (m *UploadPackOp) Size() (n int) {
 func (m *Packet) Size() (n int) {
 	var l int
 	_ = l
-	if m.Data != nil {
-		l = len(m.Data)
-		if l > 0 {
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
+	l = len(m.Data)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	return n
 }
@@ -12155,10 +12383,6 @@ func (m *RemoteRepo) Size() (n int) {
 	}
 	if m.Stars != 0 {
 		n += 1 + sovSourcegraph(uint64(m.Stars))
-	}
-	if m.Permissions != nil {
-		l = m.Permissions.Size()
-		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	if m.OwnerIsOrg {
 		n += 2
@@ -12977,10 +13201,6 @@ func (m *AccessTokenResponse) Size() (n int) {
 func (m *AuthInfo) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.ClientID)
-	if l > 0 {
-		n += 1 + l + sovSourcegraph(uint64(l))
-	}
 	if m.UID != 0 {
 		n += 1 + sovSourcegraph(uint64(m.UID))
 	}
@@ -13588,11 +13808,13 @@ func (m *BasicTreeEntry) Size() (n int) {
 	if m.Type != 0 {
 		n += 1 + sovSourcegraph(uint64(m.Type))
 	}
-	if m.Contents != nil {
-		l = len(m.Contents)
-		if l > 0 {
-			n += 1 + l + sovSourcegraph(uint64(l))
-		}
+	l = len(m.CommitID)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
+	}
+	l = len(m.Contents)
+	if l > 0 {
+		n += 1 + l + sovSourcegraph(uint64(l))
 	}
 	if len(m.Entries) > 0 {
 		for _, e := range m.Entries {
@@ -14999,39 +15221,6 @@ func (m *Repo) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 18:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Permissions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Permissions == nil {
-				m.Permissions = &RepoPermissions{}
-			}
-			if err := m.Permissions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 22:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field HTMLURL", wireType)
@@ -15384,116 +15573,6 @@ func (m *RepoListOptions) Unmarshal(data []byte) error {
 				}
 			}
 			m.SlowlyIncludePublicGitHubRepos = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSourcegraph(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RepoPermissions) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSourcegraph
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RepoPermissions: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RepoPermissions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Read", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Read = bool(v != 0)
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Write", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Write = bool(v != 0)
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Admin", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				v |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Admin = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSourcegraph(data[iNdEx:])
@@ -16234,7 +16313,10 @@ func (m *ReceivePackOp) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append([]byte{}, data[iNdEx:postIndex]...)
+			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
+			if m.Data == nil {
+				m.Data = []byte{}
+			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
@@ -16362,7 +16444,10 @@ func (m *UploadPackOp) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append([]byte{}, data[iNdEx:postIndex]...)
+			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
+			if m.Data == nil {
+				m.Data = []byte{}
+			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
@@ -16460,7 +16545,10 @@ func (m *Packet) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append([]byte{}, data[iNdEx:postIndex]...)
+			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
+			if m.Data == nil {
+				m.Data = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -19513,39 +19601,6 @@ func (m *RemoteRepo) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 14:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Permissions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Permissions == nil {
-				m.Permissions = &RepoPermissions{}
-			}
-			if err := m.Permissions.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 15:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OwnerIsOrg", wireType)
@@ -25885,35 +25940,6 @@ func (m *AuthInfo) Unmarshal(data []byte) error {
 			return fmt.Errorf("proto: AuthInfo: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientID", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSourcegraph
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSourcegraph
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientID = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UID", wireType)
@@ -30750,6 +30776,35 @@ func (m *BasicTreeEntry) Unmarshal(data []byte) error {
 					break
 				}
 			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommitID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSourcegraph
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSourcegraph
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CommitID = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Contents", wireType)
@@ -30776,7 +30831,10 @@ func (m *BasicTreeEntry) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Contents = append([]byte{}, data[iNdEx:postIndex]...)
+			m.Contents = append(m.Contents[:0], data[iNdEx:postIndex]...)
+			if m.Contents == nil {
+				m.Contents = []byte{}
+			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
@@ -34446,3 +34504,386 @@ var (
 	ErrInvalidLengthSourcegraph = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowSourcegraph   = fmt.Errorf("proto: integer overflow")
 )
+
+var fileDescriptorSourcegraph = []byte{
+	// 6064 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xb4, 0x7c, 0x4d, 0x6c, 0x1c, 0x47,
+	0x76, 0xb0, 0xe6, 0x97, 0x33, 0x35, 0x24, 0x45, 0xb5, 0x28, 0x8a, 0x1e, 0xad, 0xfe, 0xda, 0x96,
+	0x2d, 0xd9, 0x32, 0xe5, 0xa5, 0xd6, 0x9f, 0xad, 0xb5, 0xad, 0xfd, 0x48, 0x0d, 0x65, 0x72, 0xad,
+	0x1f, 0x9a, 0x43, 0x49, 0x5e, 0xe4, 0xc7, 0x69, 0xce, 0x14, 0xc9, 0x0e, 0x67, 0xba, 0xc7, 0xdd,
+	0x3d, 0x94, 0xe8, 0xc3, 0x22, 0x01, 0x82, 0xfc, 0x9c, 0x72, 0x0a, 0x02, 0x24, 0x08, 0x12, 0x60,
+	0x11, 0x24, 0x40, 0x80, 0x20, 0x58, 0xe4, 0x96, 0x43, 0x90, 0x9c, 0x7c, 0x0a, 0xf6, 0x10, 0x04,
+	0x39, 0x19, 0x59, 0x23, 0xb9, 0x04, 0xc8, 0x25, 0xa7, 0xdc, 0x92, 0xf7, 0x5e, 0x55, 0x75, 0x57,
+	0xff, 0x6a, 0xb8, 0x92, 0x0f, 0xb2, 0xd9, 0x55, 0xaf, 0x5e, 0x55, 0xbd, 0xf7, 0xea, 0xfd, 0xd5,
+	0xab, 0x61, 0xa7, 0x7c, 0x77, 0xec, 0xf5, 0xf8, 0x9e, 0x67, 0x8d, 0xf6, 0x97, 0x46, 0x9e, 0x1b,
+	0xb8, 0x46, 0x4b, 0x6b, 0x6a, 0xbf, 0xbd, 0x67, 0x07, 0xfb, 0xe3, 0x9d, 0xa5, 0x9e, 0x3b, 0xbc,
+	0xb1, 0xe7, 0xee, 0xb9, 0x37, 0x08, 0x66, 0x67, 0xbc, 0x4b, 0x5f, 0xf4, 0x41, 0x7f, 0x89, 0xb1,
+	0xed, 0x9b, 0x3a, 0x3a, 0x1c, 0xa3, 0x7d, 0x03, 0xdc, 0xdb, 0x7d, 0x7b, 0x77, 0xf7, 0x46, 0xf8,
+	0x1f, 0x39, 0xe8, 0x56, 0xd1, 0x20, 0xfd, 0xef, 0xd1, 0xc1, 0xde, 0x8d, 0xc3, 0x9e, 0x8f, 0xff,
+	0xe4, 0xd0, 0xe5, 0xc2, 0xa1, 0x5e, 0x6f, 0x60, 0xef, 0xdc, 0x10, 0x1f, 0x7d, 0xbe, 0x7b, 0xec,
+	0x31, 0x5e, 0x38, 0xe6, 0xad, 0xd4, 0x98, 0x2f, 0xfc, 0x1b, 0xa3, 0x9d, 0xe0, 0x68, 0xc4, 0xfd,
+	0x1b, 0x81, 0x3d, 0xe4, 0x7e, 0x60, 0x0d, 0x47, 0x12, 0xf8, 0xf5, 0x22, 0xe0, 0x43, 0xd7, 0xee,
+	0x4f, 0x02, 0xb7, 0x1f, 0x0c, 0x07, 0x12, 0x6e, 0xed, 0x38, 0xf4, 0xb1, 0x9d, 0x43, 0xee, 0x04,
+	0xae, 0x77, 0x14, 0xfd, 0x25, 0xd0, 0x98, 0x36, 0x9b, 0xbd, 0xe3, 0x0e, 0x77, 0x6c, 0x87, 0xf7,
+	0xbb, 0x81, 0x15, 0x8c, 0x7d, 0x63, 0x8e, 0x35, 0xa0, 0x65, 0x68, 0x07, 0x1b, 0x9d, 0xc5, 0xd2,
+	0xa5, 0xd2, 0xd5, 0xa6, 0x31, 0xc3, 0x6a, 0xd8, 0xc7, 0x17, 0xcb, 0xf4, 0x79, 0x8d, 0x35, 0x04,
+	0x28, 0xf7, 0x17, 0x2b, 0x97, 0x2a, 0x57, 0x5b, 0xcb, 0x67, 0x97, 0xf4, 0xc5, 0x6c, 0xf1, 0x91,
+	0x2b, 0x71, 0xb5, 0x58, 0x65, 0x8b, 0x1f, 0x2e, 0x56, 0x71, 0x9c, 0xf9, 0x19, 0x6b, 0xdd, 0xb3,
+	0xfd, 0xe0, 0xe1, 0x28, 0xb0, 0x5d, 0xc7, 0x37, 0xae, 0xb0, 0xa9, 0x4d, 0xee, 0x6d, 0x5a, 0x7b,
+	0x9c, 0xa6, 0xa9, 0xad, 0xce, 0xff, 0xf7, 0xd7, 0x17, 0xe7, 0xc6, 0xde, 0xe0, 0xfb, 0xe6, 0x75,
+	0x17, 0xa6, 0xe7, 0xc3, 0x51, 0x70, 0x64, 0x1a, 0x26, 0xab, 0x12, 0x4c, 0x39, 0x1f, 0xc6, 0xbc,
+	0xc9, 0xa6, 0x11, 0xf3, 0x16, 0xf7, 0x47, 0x80, 0x99, 0x1b, 0xaf, 0xb2, 0xda, 0xb6, 0x1b, 0x58,
+	0x83, 0x22, 0xc4, 0xe6, 0x7b, 0x6c, 0xb6, 0x1b, 0x78, 0xdc, 0x1a, 0x86, 0xc3, 0x60, 0x45, 0xeb,
+	0x96, 0x7f, 0xdf, 0xf5, 0xc4, 0x8a, 0x1a, 0x39, 0x03, 0xdb, 0x8c, 0xe1, 0x16, 0xef, 0xb8, 0xce,
+	0xae, 0xbd, 0x67, 0x4c, 0xb3, 0xea, 0xca, 0x68, 0xe4, 0xc3, 0x88, 0x0a, 0xec, 0xf1, 0x7f, 0xca,
+	0xac, 0x8a, 0x9d, 0xb8, 0xf3, 0x47, 0x5b, 0x1b, 0x92, 0x80, 0x00, 0xf3, 0xc0, 0x1a, 0x2a, 0xfa,
+	0x9d, 0x66, 0xad, 0x0e, 0xf7, 0x7b, 0x9e, 0x4d, 0x84, 0x00, 0x12, 0x62, 0xe3, 0x3c, 0x9b, 0x5e,
+	0xdf, 0xde, 0xde, 0xbc, 0x33, 0x70, 0x1d, 0xfe, 0x68, 0xeb, 0xde, 0x62, 0x4d, 0x81, 0x76, 0xbb,
+	0xeb, 0x61, 0x63, 0x5d, 0x35, 0xae, 0xbb, 0x43, 0x3e, 0x02, 0xaa, 0x60, 0xe3, 0x14, 0x35, 0x9e,
+	0x61, 0x33, 0x1d, 0xbe, 0x6b, 0x8d, 0x07, 0xc1, 0xaa, 0x67, 0x39, 0xbd, 0xfd, 0xc5, 0x06, 0x35,
+	0x03, 0x33, 0xef, 0x59, 0xce, 0xde, 0x18, 0x29, 0xd8, 0xa4, 0x96, 0x93, 0x6c, 0x6a, 0x75, 0xe0,
+	0xf6, 0x0e, 0x78, 0x7f, 0x91, 0xe1, 0x26, 0x0d, 0x83, 0xb1, 0x0e, 0x1f, 0x79, 0xbc, 0x07, 0x1c,
+	0xee, 0x2f, 0xb6, 0xa8, 0x0d, 0x16, 0x7c, 0xd7, 0xf5, 0x0e, 0x16, 0xa7, 0xe9, 0x6b, 0x96, 0xd5,
+	0xef, 0xdb, 0x9e, 0xe7, 0x7a, 0x8b, 0x33, 0xf4, 0x0d, 0x28, 0x36, 0x3d, 0xfb, 0x10, 0x25, 0x62,
+	0x96, 0x1a, 0xae, 0xb0, 0xe6, 0x1d, 0xa0, 0x24, 0x8c, 0x5f, 0x09, 0x16, 0x4f, 0x42, 0x53, 0x6b,
+	0xd9, 0x58, 0x92, 0x32, 0xbb, 0xb4, 0xad, 0x0e, 0x02, 0x82, 0x3d, 0x1a, 0xf5, 0x25, 0xd8, 0x5c,
+	0x2e, 0xd8, 0x6b, 0xac, 0xb1, 0x39, 0xf6, 0xf7, 0x09, 0xea, 0x54, 0x2e, 0x14, 0x2c, 0x62, 0x7d,
+	0xfb, 0xfe, 0x3d, 0xa4, 0xc0, 0x02, 0x89, 0xd7, 0xdf, 0x55, 0xd8, 0x49, 0x24, 0xbd, 0x2e, 0x63,
+	0xa6, 0x24, 0x3c, 0xb1, 0x21, 0x47, 0xc0, 0x40, 0x58, 0x3e, 0x1d, 0x73, 0xef, 0x48, 0x70, 0x27,
+	0x07, 0xe8, 0x2a, 0xab, 0x02, 0x3b, 0x85, 0xbc, 0x37, 0x57, 0xdb, 0x00, 0xb3, 0x20, 0x60, 0xe0,
+	0xe4, 0x0d, 0xad, 0x84, 0xbc, 0x76, 0x5d, 0x2f, 0x10, 0x0c, 0xcc, 0xc1, 0xf6, 0x06, 0x6b, 0x76,
+	0x6c, 0xa0, 0x38, 0xf1, 0xbf, 0x5e, 0x00, 0xf8, 0x1a, 0xab, 0x3f, 0x70, 0x89, 0x13, 0x53, 0xf9,
+	0x02, 0x89, 0x53, 0x6e, 0x03, 0x75, 0x04, 0xcb, 0xf3, 0x77, 0xf9, 0xf0, 0xa9, 0xc3, 0x3d, 0x62,
+	0x7a, 0x1e, 0xd0, 0x07, 0xb1, 0x13, 0x4a, 0xb2, 0xd0, 0x5a, 0x5e, 0x8c, 0x1d, 0x6e, 0xad, 0x7f,
+	0x75, 0xfa, 0xab, 0xaf, 0x2f, 0x9e, 0xf8, 0xd9, 0xd7, 0x17, 0x4b, 0xff, 0x09, 0xff, 0x37, 0x3e,
+	0x64, 0x17, 0xba, 0x03, 0xf7, 0xe9, 0xe0, 0x68, 0xc3, 0xe9, 0x0d, 0xc6, 0x7d, 0xbe, 0x39, 0xde,
+	0x19, 0xd8, 0xbd, 0x8f, 0xed, 0x60, 0x7d, 0xbc, 0x83, 0x7c, 0xf1, 0x85, 0x34, 0xe5, 0x1c, 0xaa,
+	0x1e, 0x6b, 0x21, 0x10, 0x68, 0x8b, 0xee, 0x88, 0xf7, 0x8c, 0x77, 0x59, 0x83, 0xd4, 0x08, 0xfc,
+	0x4d, 0xcc, 0x6b, 0x2d, 0x9f, 0x49, 0xeb, 0x18, 0xe8, 0x4c, 0xac, 0x41, 0xea, 0x9b, 0xb2, 0x92,
+	0xfd, 0x50, 0x91, 0xd1, 0x21, 0x33, 0xcf, 0x46, 0x58, 0x63, 0x07, 0xd4, 0xfc, 0xeb, 0x92, 0x38,
+	0xd3, 0x52, 0x6d, 0x25, 0x14, 0xde, 0x29, 0xd6, 0xdc, 0xb6, 0xbc, 0x3d, 0x1e, 0xa0, 0xb0, 0x55,
+	0xb2, 0xce, 0x70, 0x55, 0x1d, 0x2d, 0x50, 0x0a, 0x01, 0x7f, 0x26, 0xb9, 0x6f, 0xbc, 0xa5, 0x9f,
+	0x8b, 0x7a, 0x9e, 0x28, 0xaf, 0x56, 0x71, 0x0f, 0x08, 0x1c, 0x9d, 0x8e, 0xa9, 0x62, 0x60, 0xd3,
+	0x67, 0xf3, 0xd1, 0x7a, 0xb9, 0x2f, 0x66, 0x79, 0x38, 0x32, 0xae, 0x0b, 0xf5, 0x23, 0x69, 0xb6,
+	0x98, 0xa2, 0x99, 0xa4, 0xaf, 0x9c, 0xf2, 0x6d, 0x56, 0x17, 0x18, 0x68, 0xa3, 0xf9, 0x7a, 0x5c,
+	0x4e, 0x7a, 0x5d, 0x90, 0x0f, 0x45, 0xc0, 0xb8, 0xc4, 0x6a, 0x82, 0xa9, 0x25, 0xb2, 0x00, 0xa7,
+	0x52, 0x23, 0xcd, 0xcf, 0xd9, 0xcc, 0x16, 0xef, 0x71, 0xfb, 0x90, 0x6f, 0x5a, 0xbd, 0x03, 0x58,
+	0xdb, 0x35, 0x56, 0xf5, 0xa2, 0xb5, 0xe5, 0xf0, 0x53, 0x2c, 0x0c, 0xf4, 0x0f, 0x50, 0xc2, 0x22,
+	0x62, 0x4f, 0xa3, 0x6e, 0xb3, 0xfa, 0x87, 0xdc, 0x0b, 0x6c, 0x9f, 0x6f, 0xf1, 0x5d, 0x9f, 0xc8,
+	0xdd, 0x30, 0x7f, 0x95, 0x4d, 0x3f, 0x1a, 0x0d, 0x5c, 0xab, 0xff, 0x2d, 0xe1, 0x5f, 0x60, 0x75,
+	0xc4, 0xcc, 0x83, 0x10, 0x1c, 0x31, 0x4f, 0x9b, 0xe7, 0x71, 0x63, 0x48, 0x4a, 0xdf, 0x1d, 0x1c,
+	0x22, 0xd1, 0xa1, 0x7b, 0x64, 0x05, 0xfb, 0x52, 0x96, 0x46, 0x6c, 0x36, 0xec, 0x1e, 0xa3, 0x74,
+	0x80, 0xde, 0xd3, 0x99, 0x92, 0xbd, 0xb0, 0x75, 0xe4, 0x06, 0xc8, 0xe0, 0xd0, 0x0d, 0x38, 0x01,
+	0x67, 0x73, 0x44, 0x75, 0xaf, 0x9f, 0x58, 0x6d, 0xb0, 0xba, 0xc7, 0x7d, 0x50, 0xf8, 0xe6, 0x23,
+	0xb6, 0x40, 0xbc, 0x10, 0x36, 0x10, 0x41, 0x94, 0xfe, 0x4b, 0x1c, 0xe8, 0xd2, 0x71, 0x0e, 0xb4,
+	0x79, 0x1b, 0x37, 0xa2, 0x26, 0x24, 0xa6, 0x5f, 0xc7, 0x43, 0xaa, 0x5a, 0x14, 0xeb, 0xf3, 0x96,
+	0x68, 0x7e, 0xc8, 0x4e, 0x75, 0xc9, 0x71, 0xea, 0x00, 0xed, 0x1e, 0x73, 0xcf, 0x47, 0x5a, 0xa4,
+	0xbd, 0x0b, 0xa0, 0xbe, 0x68, 0xf1, 0x57, 0xf9, 0xbe, 0xed, 0xf4, 0x85, 0xa5, 0x37, 0x7f, 0x99,
+	0x19, 0x91, 0x95, 0x1d, 0x7b, 0x1c, 0x8c, 0xac, 0xe0, 0xf1, 0xd6, 0x84, 0x3c, 0x86, 0x03, 0x0e,
+	0x63, 0xe4, 0x11, 0x06, 0x13, 0xb6, 0xe6, 0x58, 0x3b, 0x03, 0x4e, 0x2c, 0x6f, 0x98, 0xff, 0x5a,
+	0x12, 0x4c, 0x8c, 0x4e, 0xce, 0x77, 0x59, 0xe5, 0x01, 0x7f, 0x2a, 0x11, 0x9b, 0x29, 0xc4, 0x21,
+	0xe0, 0x12, 0x40, 0x09, 0x0e, 0x18, 0x0b, 0x6c, 0xfa, 0xae, 0xe7, 0x0e, 0x85, 0x8a, 0x83, 0xfd,
+	0xd0, 0xc2, 0xd7, 0x4f, 0xb4, 0x0f, 0xd9, 0x94, 0x04, 0x8a, 0xbb, 0x01, 0xb8, 0x77, 0x65, 0xca,
+	0x2b, 0xd9, 0x56, 0xbb, 0xaa, 0x56, 0x2b, 0x0d, 0x6e, 0x8d, 0xec, 0x6b, 0x42, 0xdb, 0xd4, 0x53,
+	0xa6, 0x9d, 0x7c, 0x80, 0xd5, 0x2a, 0x2b, 0x3f, 0x1c, 0x99, 0xcf, 0xe4, 0xce, 0x84, 0x32, 0x39,
+	0x1e, 0xcd, 0x12, 0x13, 0x95, 0x53, 0x13, 0xe5, 0x2c, 0x9b, 0x56, 0x64, 0x7e, 0x21, 0x58, 0x46,
+	0x72, 0x28, 0x59, 0x7a, 0xbc, 0xe9, 0xdf, 0x61, 0x15, 0x10, 0x45, 0x29, 0xfa, 0xaf, 0xa6, 0x20,
+	0x63, 0x78, 0x49, 0x62, 0xcd, 0x7f, 0x28, 0x09, 0xd9, 0x4f, 0x77, 0xa1, 0x55, 0x5c, 0xe7, 0x56,
+	0xbf, 0xd0, 0xf6, 0x03, 0xcc, 0xaa, 0xe5, 0xf3, 0x42, 0xd3, 0x9f, 0x38, 0x43, 0x95, 0x63, 0x19,
+	0x45, 0xf2, 0x5e, 0x03, 0xc9, 0xd7, 0x1c, 0xd3, 0x37, 0x64, 0x4c, 0x2c, 0x9d, 0xce, 0xd8, 0x77,
+	0xd0, 0x88, 0xd0, 0x46, 0xe4, 0xf9, 0x6a, 0x2d, 0x61, 0x64, 0x23, 0xda, 0x8c, 0x95, 0xa4, 0xd3,
+	0x2a, 0x89, 0x75, 0x2e, 0xb6, 0x9e, 0x38, 0x48, 0xe2, 0x58, 0xfb, 0xec, 0x74, 0xc8, 0x25, 0xc1,
+	0x3e, 0x7e, 0x4c, 0x36, 0x7d, 0x57, 0x67, 0xd3, 0x6b, 0x99, 0x6c, 0x8a, 0x10, 0x0b, 0x3e, 0xfd,
+	0x59, 0x89, 0x9d, 0xcd, 0xe9, 0x7b, 0x31, 0x02, 0x83, 0x28, 0x4a, 0x7f, 0x43, 0x50, 0x48, 0xe8,
+	0x6e, 0xe3, 0x15, 0x76, 0x4a, 0x68, 0x93, 0x95, 0x7d, 0x90, 0x01, 0x29, 0xa5, 0xc2, 0x28, 0x2f,
+	0x60, 0xc4, 0xe3, 0x04, 0x96, 0xed, 0xf8, 0x72, 0x88, 0x90, 0x5e, 0x87, 0x31, 0x01, 0x47, 0x6c,
+	0x38, 0xcf, 0x1a, 0x6a, 0x9d, 0x31, 0x3e, 0x88, 0xc6, 0x97, 0xc1, 0x87, 0x03, 0xe1, 0xae, 0x12,
+	0x1f, 0xb6, 0xad, 0xbd, 0x63, 0xf2, 0xe0, 0x6d, 0x9d, 0x07, 0x97, 0x32, 0x79, 0x20, 0x90, 0x0a,
+	0xfa, 0x3f, 0x65, 0x67, 0x12, 0x47, 0x33, 0x00, 0x85, 0x7c, 0xbc, 0x29, 0x6f, 0xea, 0x53, 0xbe,
+	0x5e, 0x70, 0x3a, 0x05, 0x6a, 0x31, 0x31, 0x67, 0xaf, 0xe4, 0x76, 0x2a, 0x77, 0x4d, 0x68, 0xc7,
+	0x84, 0x18, 0x94, 0x8f, 0x65, 0xab, 0x0e, 0x95, 0x11, 0x01, 0xf4, 0xc4, 0x3f, 0x53, 0x1d, 0x2a,
+	0x9c, 0x4f, 0x72, 0x70, 0x56, 0x3b, 0x49, 0xd0, 0xfc, 0x32, 0x98, 0xb8, 0x25, 0x0e, 0x53, 0x82,
+	0xdc, 0x2f, 0x24, 0xd2, 0x66, 0x9f, 0x4d, 0x01, 0x2e, 0xda, 0xc5, 0x02, 0x78, 0xf6, 0x80, 0x56,
+	0xae, 0xbf, 0x41, 0xeb, 0x87, 0x86, 0x97, 0xb1, 0xf2, 0x2f, 0xd8, 0x59, 0x61, 0x63, 0x48, 0x2e,
+	0xc0, 0xed, 0x01, 0x67, 0x62, 0xff, 0xf1, 0x9d, 0xee, 0xf1, 0x64, 0xe2, 0x0a, 0xab, 0xaf, 0xf8,
+	0x8f, 0x7c, 0x88, 0x2b, 0x2a, 0x19, 0xc0, 0xd8, 0x81, 0xc0, 0x3f, 0xac, 0x36, 0xca, 0x73, 0x15,
+	0xf3, 0x02, 0x9b, 0x85, 0x09, 0xc0, 0x90, 0xf6, 0xb9, 0x13, 0xd8, 0xd6, 0xc0, 0x47, 0xcf, 0x69,
+	0xd3, 0xf2, 0x7d, 0xe9, 0x39, 0xfd, 0x41, 0x59, 0xf7, 0x80, 0xd0, 0xee, 0x84, 0xa6, 0x95, 0x02,
+	0x79, 0xf4, 0xcb, 0x45, 0x10, 0x53, 0x8e, 0x85, 0xd5, 0xc2, 0x28, 0x81, 0x30, 0x01, 0x76, 0x69,
+	0x41, 0xb3, 0xc3, 0xe9, 0x6c, 0xbb, 0x95, 0xb4, 0x7a, 0x53, 0x29, 0xab, 0x27, 0x62, 0xe9, 0x58,
+	0xf8, 0xda, 0x2c, 0x0a, 0x4c, 0x55, 0x74, 0xcc, 0x62, 0xc1, 0x74, 0x2b, 0x11, 0x4c, 0x8b, 0xe0,
+	0x5a, 0xc4, 0x1a, 0x20, 0xa3, 0x33, 0xb4, 0x45, 0x88, 0xc6, 0x69, 0x8b, 0x1b, 0xfe, 0x43, 0x6f,
+	0x8f, 0x62, 0xe9, 0x86, 0xf9, 0xbf, 0x65, 0x56, 0x5b, 0x1d, 0xdb, 0x83, 0x3e, 0xa2, 0x0a, 0x39,
+	0xd3, 0x04, 0xd0, 0xb2, 0xf4, 0x3a, 0xaa, 0xe9, 0x60, 0x27, 0x1e, 0x7c, 0x54, 0x9f, 0x13, 0x7c,
+	0xc0, 0xde, 0x70, 0x15, 0x02, 0xb8, 0x96, 0xbb, 0xb7, 0x57, 0xd9, 0xd4, 0x9a, 0xd3, 0x2f, 0x0e,
+	0x67, 0x20, 0xba, 0x6d, 0x81, 0xe1, 0xf5, 0x82, 0x1d, 0x98, 0xbc, 0x28, 0x94, 0x41, 0x4a, 0x75,
+	0xc7, 0xbd, 0x1e, 0x07, 0x01, 0x68, 0xa8, 0xc4, 0xc2, 0x5d, 0xcb, 0x1e, 0x80, 0xb7, 0x47, 0xf4,
+	0x25, 0x62, 0x7d, 0x62, 0x0f, 0x06, 0x61, 0xae, 0x02, 0xf6, 0xbf, 0xee, 0xfa, 0x01, 0x91, 0x92,
+	0xdc, 0xa4, 0xcd, 0x31, 0xc4, 0x65, 0x7d, 0x49, 0x4a, 0x38, 0x75, 0x44, 0x26, 0xe1, 0x33, 0x12,
+	0x41, 0x93, 0xa7, 0x4e, 0xeb, 0x4f, 0x18, 0x12, 0x40, 0x26, 0x85, 0x62, 0x56, 0x89, 0x13, 0x9c,
+	0x34, 0xe2, 0x40, 0xd3, 0x5c, 0x8b, 0x61, 0x46, 0x9e, 0x7d, 0x3a, 0xe6, 0x63, 0x71, 0xea, 0x1a,
+	0x48, 0x7b, 0xe0, 0xb8, 0xeb, 0xd9, 0xc1, 0x11, 0x11, 0xba, 0x86, 0x82, 0x46, 0xf0, 0xdc, 0x93,
+	0x6b, 0x99, 0x23, 0x34, 0xaf, 0x32, 0x83, 0x9a, 0x3f, 0xe6, 0xc1, 0x3d, 0x77, 0x4f, 0x29, 0x0b,
+	0xc0, 0x76, 0xdf, 0x76, 0x94, 0x3f, 0x6c, 0xfe, 0x53, 0x85, 0xcd, 0x11, 0x94, 0x9e, 0xc8, 0x78,
+	0x8d, 0xd5, 0x69, 0xc6, 0x7e, 0x51, 0x66, 0x0a, 0xa1, 0x56, 0x7a, 0x01, 0x44, 0x5c, 0x62, 0x61,
+	0xf9, 0xa9, 0x00, 0x62, 0xa2, 0x70, 0x85, 0xf3, 0x53, 0x14, 0xc4, 0x1b, 0x8e, 0x80, 0xd5, 0xe2,
+	0x39, 0x91, 0x67, 0x00, 0x55, 0x2b, 0x86, 0x92, 0xac, 0xaa, 0x17, 0x27, 0x32, 0x48, 0xbc, 0xa7,
+	0x0a, 0xdc, 0xb1, 0xd7, 0x35, 0x41, 0x6f, 0x14, 0xbb, 0x76, 0x94, 0x87, 0x69, 0x4e, 0x9a, 0x87,
+	0xf9, 0xb6, 0x12, 0x23, 0xe6, 0x2a, 0x6b, 0x12, 0x3f, 0x29, 0xed, 0x70, 0x0c, 0xdd, 0xaa, 0x1d,
+	0x6f, 0xf3, 0x27, 0x65, 0x89, 0x64, 0xdb, 0xf2, 0x0f, 0x64, 0x4f, 0x89, 0x0e, 0xfe, 0x5b, 0x52,
+	0x37, 0x48, 0x0b, 0xb0, 0x90, 0x16, 0x77, 0x0d, 0x25, 0x4a, 0xaa, 0xe5, 0x81, 0xf6, 0x95, 0x5a,
+	0xa2, 0x8a, 0xc2, 0x77, 0xcf, 0xda, 0xe1, 0x03, 0xa9, 0x37, 0x63, 0x4a, 0xa3, 0x76, 0x1c, 0xa5,
+	0x51, 0x9f, 0x44, 0x69, 0xbc, 0x88, 0x2e, 0x40, 0x88, 0x03, 0x7b, 0x34, 0x0a, 0x95, 0x01, 0x6c,
+	0xe6, 0x89, 0xe5, 0x39, 0xb6, 0xb3, 0x27, 0x38, 0xd2, 0x30, 0xbb, 0x6c, 0x3e, 0x24, 0x92, 0x7e,
+	0x7a, 0x5e, 0x28, 0x0c, 0xfe, 0xdb, 0xb2, 0x3c, 0xfc, 0x42, 0xf9, 0xc7, 0x77, 0x5d, 0x9a, 0x64,
+	0xd7, 0xe5, 0x49, 0x55, 0x65, 0x25, 0x17, 0x50, 0x29, 0xbe, 0x30, 0xd1, 0xa4, 0x88, 0x55, 0x53,
+	0x7a, 0x52, 0x3f, 0x5e, 0x3a, 0xf1, 0xa6, 0x12, 0x8a, 0xb4, 0x91, 0x52, 0x59, 0xcd, 0x6c, 0x95,
+	0xc5, 0x54, 0xee, 0xeb, 0x2e, 0x9c, 0xee, 0x6e, 0x0f, 0xb3, 0xe2, 0x48, 0xe5, 0x32, 0x8e, 0x05,
+	0x77, 0x41, 0xb4, 0x4c, 0x53, 0x0b, 0x08, 0xe4, 0xb6, 0x7b, 0xd0, 0xe1, 0x8e, 0x8f, 0xf8, 0x50,
+	0xef, 0x96, 0x4d, 0x4f, 0x0a, 0xac, 0xf4, 0xc6, 0xea, 0xf4, 0xa1, 0x3c, 0x19, 0x23, 0x2d, 0xa5,
+	0x2f, 0xc3, 0xa7, 0xf9, 0xa3, 0x12, 0x9b, 0x15, 0xf3, 0x84, 0x61, 0xfd, 0x31, 0xce, 0x9b, 0x6e,
+	0x42, 0xc3, 0xac, 0x81, 0xb4, 0x09, 0x15, 0xdd, 0x26, 0x08, 0x26, 0x2c, 0xb1, 0xba, 0xa4, 0x54,
+	0xed, 0x39, 0x86, 0x46, 0x64, 0xcf, 0x0e, 0xd4, 0xda, 0xc2, 0xc0, 0x3c, 0x3c, 0xba, 0xa5, 0x09,
+	0x8e, 0xee, 0x75, 0x56, 0xdd, 0x70, 0x76, 0xdd, 0x4c, 0xbf, 0x58, 0x13, 0x4f, 0x39, 0xd9, 0x98,
+	0x2d, 0x88, 0xc9, 0x28, 0xe0, 0x52, 0x67, 0xc2, 0x3f, 0xee, 0xa4, 0x4b, 0xba, 0xcb, 0x7f, 0x39,
+	0x0d, 0x9a, 0x38, 0x68, 0xe6, 0x07, 0x52, 0x88, 0x54, 0xbb, 0xf1, 0x26, 0x04, 0x55, 0xe1, 0xec,
+	0x92, 0xf9, 0x0b, 0xd9, 0x78, 0x4c, 0x9b, 0x9d, 0xd6, 0x99, 0xf7, 0x0b, 0x2d, 0xf8, 0x0a, 0xab,
+	0x89, 0xa9, 0xca, 0x85, 0x53, 0x0d, 0xa4, 0x21, 0x96, 0xbc, 0xc0, 0x36, 0x21, 0x2b, 0xf8, 0x57,
+	0xa6, 0xac, 0x60, 0x87, 0x36, 0xcf, 0x5b, 0x31, 0x6e, 0x9c, 0x4d, 0x81, 0xc6, 0x98, 0x31, 0x54,
+	0xb3, 0x81, 0xdd, 0x27, 0xca, 0xa0, 0xed, 0x3f, 0xce, 0x6c, 0xd7, 0x75, 0x36, 0x5c, 0x4c, 0xef,
+	0x29, 0xe6, 0x4f, 0x98, 0x67, 0x14, 0x1d, 0x3b, 0xfc, 0x0b, 0xf4, 0x19, 0x1e, 0xf0, 0x67, 0xc0,
+	0x20, 0xb3, 0xc7, 0x9a, 0x6b, 0x43, 0x50, 0x0a, 0x2b, 0xfd, 0xbe, 0x87, 0x6a, 0x9f, 0x3e, 0xa2,
+	0xcc, 0xd4, 0x63, 0xee, 0xd9, 0xbb, 0x36, 0xef, 0x4b, 0x9f, 0x46, 0x78, 0xb1, 0x43, 0xcb, 0x3b,
+	0x12, 0x6e, 0x02, 0x36, 0x7c, 0x3c, 0x06, 0x8d, 0xa3, 0xdc, 0x01, 0xf4, 0x9a, 0x57, 0x07, 0x56,
+	0xef, 0x60, 0x00, 0x7c, 0x56, 0xd6, 0xdf, 0xbc, 0xce, 0x18, 0xac, 0x64, 0xcd, 0x09, 0x3c, 0x9b,
+	0x0b, 0xcf, 0xc6, 0x7a, 0x16, 0x66, 0xfa, 0x4e, 0xa2, 0x4a, 0xa4, 0x1e, 0x62, 0x4f, 0xd3, 0xfc,
+	0x1e, 0xec, 0xcb, 0xdb, 0x83, 0x58, 0xb6, 0x4a, 0x21, 0x84, 0xa0, 0xc4, 0xa9, 0x54, 0x08, 0x91,
+	0x38, 0xe5, 0xdb, 0xec, 0x0c, 0x8c, 0x42, 0xf1, 0xba, 0xcf, 0x87, 0x3b, 0x5a, 0x38, 0xf9, 0x42,
+	0x6a, 0x1e, 0xf4, 0x35, 0x60, 0x55, 0x57, 0x03, 0xe8, 0x7c, 0x97, 0xd4, 0x99, 0x7f, 0xa4, 0x72,
+	0x7b, 0xc0, 0xc9, 0x53, 0xd0, 0xe3, 0xc7, 0xe6, 0x06, 0x25, 0x1e, 0x82, 0xb7, 0x96, 0xe7, 0x63,
+	0xd3, 0x49, 0x8c, 0x92, 0x8d, 0x37, 0x74, 0x36, 0x9a, 0x49, 0xc0, 0xf4, 0x86, 0x30, 0xe1, 0x8e,
+	0xfb, 0x57, 0x09, 0x77, 0xfc, 0x3b, 0x3b, 0xe1, 0x8e, 0x3d, 0x66, 0x1b, 0xe2, 0x13, 0x1f, 0xd5,
+	0xf7, 0xd8, 0x09, 0x90, 0xf4, 0xf4, 0x87, 0x88, 0x9c, 0xcc, 0x7d, 0x30, 0x10, 0x30, 0xd8, 0x75,
+	0x8c, 0x5b, 0x8c, 0x89, 0xbf, 0xb4, 0xbb, 0x95, 0xb8, 0xfc, 0x46, 0xdd, 0x09, 0x17, 0x19, 0xa4,
+	0xe4, 0xee, 0x78, 0x30, 0xd0, 0xae, 0x32, 0xc1, 0x3a, 0xac, 0x40, 0xa4, 0x63, 0x79, 0x61, 0x4a,
+	0xd3, 0x7c, 0x4f, 0xc7, 0x9f, 0x94, 0x33, 0xf4, 0x36, 0xdc, 0x3d, 0x5b, 0x65, 0x16, 0x25, 0x6d,
+	0x2b, 0xb4, 0xc4, 0xdf, 0x2a, 0xa9, 0xe8, 0x0f, 0x77, 0x61, 0x5c, 0xc5, 0x34, 0x26, 0x7e, 0xad,
+	0xf4, 0x7a, 0xe1, 0x46, 0xb2, 0xf6, 0x0d, 0xf4, 0x9f, 0xbe, 0xe7, 0xf6, 0xac, 0x81, 0x02, 0x2c,
+	0xe7, 0x01, 0x86, 0x8b, 0x09, 0xaf, 0x5c, 0x81, 0xec, 0x96, 0x63, 0x7f, 0x69, 0x91, 0x03, 0x48,
+	0x31, 0xa2, 0xf9, 0x43, 0xd6, 0xdc, 0x06, 0x0b, 0x33, 0x84, 0xe3, 0xeb, 0x83, 0xb3, 0x19, 0x23,
+	0x7a, 0x56, 0xaa, 0x9b, 0x30, 0x83, 0xf1, 0xd4, 0x51, 0x29, 0xf9, 0xbe, 0xc3, 0x1a, 0xea, 0x24,
+	0x1f, 0x4f, 0x8d, 0xe9, 0xae, 0xdf, 0x9f, 0x00, 0x5d, 0x22, 0x95, 0xf2, 0x52, 0xdd, 0x0f, 0xcd,
+	0x8f, 0xa8, 0x24, 0xfd, 0x86, 0x6a, 0xd2, 0xe9, 0xaa, 0xa5, 0x9c, 0x2e, 0xf2, 0x35, 0xcc, 0xff,
+	0x2a, 0x89, 0xe3, 0xab, 0xb8, 0x19, 0x86, 0xea, 0x3a, 0xa7, 0x55, 0xa8, 0x5e, 0x55, 0x29, 0x38,
+	0x8a, 0x6f, 0xe3, 0xb4, 0x6f, 0xc4, 0xc5, 0x29, 0xca, 0x72, 0x03, 0x73, 0xb5, 0xc0, 0x9c, 0x6e,
+	0xd9, 0x86, 0x23, 0xcb, 0x39, 0x92, 0x71, 0x79, 0xe2, 0x3e, 0xbc, 0xa9, 0xc6, 0x75, 0x6c, 0x1f,
+	0x33, 0xfe, 0xca, 0x5d, 0xbc, 0xca, 0xa6, 0xb7, 0xf8, 0x1e, 0x2a, 0x2b, 0x8f, 0xc8, 0xd2, 0xca,
+	0x25, 0x0b, 0xac, 0x7d, 0xa5, 0x3f, 0x84, 0xb5, 0x87, 0x11, 0xfa, 0x13, 0x70, 0x94, 0xb8, 0xb8,
+	0xfd, 0x36, 0x5f, 0x17, 0x87, 0x52, 0x89, 0xb7, 0xd8, 0x65, 0x86, 0xae, 0xf8, 0x8f, 0x12, 0x9b,
+	0x23, 0xe1, 0xd1, 0x3d, 0xd1, 0xf0, 0xb2, 0xb9, 0x34, 0x41, 0xe8, 0x52, 0x9e, 0x34, 0x74, 0xa9,
+	0x4c, 0x1e, 0xba, 0x54, 0x8f, 0x9b, 0xbe, 0x86, 0x0d, 0xa1, 0x97, 0x59, 0xc9, 0xad, 0xa3, 0x38,
+	0x64, 0x4c, 0xe9, 0x44, 0xb2, 0xd6, 0x75, 0xa1, 0xc4, 0x32, 0xed, 0x9a, 0x22, 0x9c, 0x14, 0xf3,
+	0x17, 0x4a, 0xf9, 0x81, 0xaf, 0x11, 0xda, 0x33, 0xe5, 0x6b, 0x84, 0x0d, 0xd9, 0xbe, 0x46, 0xd8,
+	0x6d, 0x5e, 0x23, 0x6d, 0x4f, 0xc3, 0x2e, 0xb0, 0x2a, 0xae, 0x5f, 0x0e, 0x98, 0x4b, 0xaa, 0x65,
+	0x0c, 0xda, 0x31, 0x47, 0xf5, 0xd4, 0xf5, 0xfa, 0xe0, 0x76, 0x82, 0x05, 0x77, 0x0f, 0xb8, 0x83,
+	0x9c, 0xa7, 0x3f, 0x64, 0xd0, 0x7e, 0xc8, 0xe6, 0x37, 0xb9, 0xd3, 0x87, 0x63, 0x11, 0x83, 0x45,
+	0xb9, 0xbf, 0x67, 0x3b, 0x07, 0x52, 0x3e, 0x96, 0xd4, 0xa0, 0x2c, 0x4b, 0x9e, 0x31, 0xc9, 0x29,
+	0x69, 0xb2, 0xbb, 0x10, 0xb1, 0xc9, 0x13, 0x1a, 0x4a, 0x9c, 0xa8, 0xa9, 0x79, 0xc8, 0x5a, 0x0f,
+	0xf8, 0x53, 0x35, 0x54, 0xc4, 0x77, 0xe2, 0xef, 0x5f, 0x6c, 0x4a, 0x73, 0x83, 0x31, 0x40, 0x28,
+	0x55, 0x69, 0x52, 0xbe, 0x43, 0x05, 0x1a, 0x5e, 0x0c, 0x85, 0xb3, 0x55, 0xf4, 0x03, 0x40, 0x49,
+	0x10, 0xf3, 0x26, 0x9b, 0xa3, 0xc1, 0x7a, 0xc2, 0x2f, 0x81, 0x50, 0xc7, 0x40, 0x38, 0xcd, 0x2f,
+	0x99, 0xb1, 0x42, 0x1a, 0x89, 0x96, 0xb3, 0x85, 0x1e, 0x0c, 0xf0, 0xe8, 0x36, 0xa6, 0xaf, 0xc5,
+	0xca, 0x29, 0x3b, 0x16, 0x1b, 0xd4, 0x5a, 0x3e, 0x1f, 0x17, 0x99, 0xc4, 0xa4, 0xeb, 0x27, 0x28,
+	0xc9, 0xd6, 0x73, 0x47, 0x7c, 0xf1, 0x14, 0xd5, 0x6f, 0x80, 0x87, 0x64, 0x8d, 0x83, 0x7d, 0x08,
+	0x7f, 0x84, 0xfa, 0xf9, 0x1c, 0x06, 0x3a, 0x81, 0xf9, 0x8c, 0x9d, 0x8e, 0xcd, 0x2d, 0xcb, 0x82,
+	0x40, 0xbf, 0x68, 0xcd, 0x72, 0xe5, 0x58, 0x13, 0x80, 0x9f, 0x54, 0x78, 0x51, 0x56, 0xf6, 0x64,
+	0xed, 0xd9, 0x08, 0x0e, 0xa5, 0xbf, 0xe1, 0x74, 0xc1, 0xb6, 0x92, 0x59, 0xc3, 0x56, 0x99, 0x5c,
+	0x15, 0xc3, 0xab, 0x61, 0x49, 0x15, 0x2d, 0xa8, 0x46, 0x86, 0xa2, 0xc3, 0x1a, 0x2b, 0xb0, 0x20,
+	0x74, 0x29, 0x63, 0x4a, 0x24, 0xc1, 0xee, 0x48, 0x15, 0xd5, 0x94, 0x30, 0x08, 0x45, 0x25, 0x34,
+	0xf1, 0x2f, 0xb1, 0xf9, 0xb5, 0x67, 0xa0, 0xde, 0x1c, 0x6b, 0x10, 0xa3, 0xde, 0x3c, 0xab, 0x8c,
+	0xed, 0xbe, 0x2c, 0x86, 0x9a, 0xfa, 0xe6, 0xeb, 0x8b, 0x38, 0x01, 0x8a, 0xe6, 0x3e, 0x86, 0x94,
+	0x62, 0xf1, 0x17, 0x59, 0xb3, 0x37, 0xb0, 0x81, 0x62, 0x9f, 0xdb, 0x92, 0x99, 0xab, 0xd3, 0x00,
+	0xd9, 0xb8, 0x43, 0x8d, 0x1b, 0x1d, 0xf3, 0xf7, 0x4b, 0x70, 0xde, 0x74, 0xec, 0x13, 0xa1, 0x85,
+	0x15, 0x06, 0xb4, 0xed, 0x8a, 0xfa, 0xf4, 0x69, 0xdb, 0xd5, 0xf4, 0xa4, 0xb5, 0xf4, 0xa4, 0xc6,
+	0x39, 0x36, 0x05, 0xce, 0xeb, 0xe7, 0x38, 0x4d, 0x9d, 0xa6, 0x61, 0xd0, 0x5d, 0x87, 0x65, 0xc0,
+	0x4c, 0xe6, 0x11, 0xab, 0x74, 0xf8, 0x2e, 0x18, 0x44, 0xfc, 0x9f, 0x54, 0x37, 0x6c, 0x49, 0xc8,
+	0x00, 0xb4, 0x24, 0x54, 0xd9, 0x05, 0x36, 0xd5, 0x71, 0x7b, 0x58, 0x32, 0x24, 0x85, 0x66, 0x26,
+	0xd4, 0xfc, 0xd8, 0x08, 0x8a, 0x8b, 0xdd, 0x1d, 0x06, 0x10, 0x5e, 0x92, 0x69, 0xab, 0x48, 0xbf,
+	0x28, 0xc4, 0x76, 0xd7, 0xf5, 0xc0, 0x25, 0x90, 0xdd, 0xe6, 0x32, 0x25, 0x92, 0xc1, 0xed, 0x56,
+	0x7a, 0xfd, 0x32, 0x2c, 0xc2, 0xed, 0x15, 0x96, 0x8d, 0xfd, 0x76, 0x9d, 0xcd, 0xc2, 0xa0, 0x6f,
+	0xa5, 0x3c, 0x09, 0xa4, 0x71, 0xf5, 0x28, 0xe0, 0xe4, 0x18, 0xd0, 0xda, 0x67, 0xa8, 0xce, 0x0b,
+	0x9a, 0xc0, 0x09, 0x20, 0x62, 0xcf, 0x10, 0x01, 0xf8, 0xee, 0x27, 0xfc, 0x48, 0xa8, 0x73, 0x24,
+	0x40, 0xb8, 0x3b, 0x68, 0x35, 0x64, 0x75, 0xc7, 0x16, 0x3f, 0x44, 0xcb, 0x9e, 0x28, 0x73, 0x0a,
+	0xe7, 0x12, 0x05, 0x4f, 0x94, 0x86, 0x7b, 0xe4, 0xd8, 0x01, 0x89, 0xff, 0x54, 0xb1, 0x2d, 0x43,
+	0xb8, 0xe7, 0xa5, 0xea, 0xe8, 0x92, 0xb4, 0x59, 0x4c, 0x06, 0xcc, 0x43, 0xf8, 0x60, 0xcc, 0x2b,
+	0xb9, 0x40, 0xd7, 0xd9, 0x2c, 0x02, 0x21, 0xb2, 0x4d, 0x8f, 0xef, 0xda, 0xcf, 0x44, 0xa2, 0x38,
+	0x07, 0xfa, 0x1a, 0xab, 0x7d, 0x62, 0x3b, 0x7d, 0xac, 0x4b, 0x9a, 0x60, 0xb7, 0x70, 0xb4, 0x5d,
+	0xf4, 0xba, 0x84, 0x17, 0x90, 0x9f, 0x9c, 0x7c, 0xe0, 0x3a, 0x03, 0xf4, 0x46, 0x45, 0x69, 0x5c,
+	0xee, 0xd4, 0x2d, 0x79, 0x6b, 0xb9, 0x0d, 0x07, 0x54, 0xa4, 0xf9, 0x73, 0x40, 0xa5, 0x64, 0xcd,
+	0x15, 0x27, 0x74, 0xef, 0x8e, 0xbf, 0xfc, 0xf2, 0x88, 0xaa, 0xe5, 0x1a, 0xcf, 0x71, 0x2a, 0x8c,
+	0x49, 0x9d, 0x8a, 0xd3, 0x93, 0x3b, 0x15, 0xf3, 0xc7, 0x32, 0xdc, 0xff, 0x58, 0x62, 0x86, 0x3c,
+	0x08, 0x58, 0x6d, 0xa3, 0x1d, 0x86, 0xe8, 0x6e, 0xe3, 0x79, 0x52, 0x50, 0x2e, 0x90, 0x82, 0x17,
+	0xba, 0x4f, 0xd6, 0xd3, 0xcb, 0x45, 0x97, 0xf6, 0x4f, 0xe8, 0x34, 0x91, 0x13, 0x18, 0xbf, 0x94,
+	0x49, 0x67, 0x91, 0xe6, 0xb4, 0xa3, 0x52, 0x51, 0xde, 0x30, 0x1d, 0x8a, 0xaa, 0xfa, 0x22, 0xf1,
+	0x17, 0xf1, 0xc7, 0xaf, 0x00, 0x0f, 0x80, 0x2a, 0xa4, 0x5b, 0x30, 0xb4, 0x8c, 0x74, 0x5b, 0x3c,
+	0xb4, 0x94, 0xb3, 0x4b, 0x4f, 0xea, 0x0d, 0x3d, 0xb4, 0x6c, 0x27, 0x01, 0x23, 0x45, 0x05, 0x81,
+	0xe0, 0x94, 0xa4, 0x3d, 0x3a, 0x3e, 0x38, 0x53, 0xa6, 0xe3, 0x83, 0x8a, 0xf5, 0xa3, 0x78, 0x55,
+	0xad, 0x44, 0xfe, 0x4a, 0x8a, 0x90, 0x39, 0xc9, 0xb8, 0x3d, 0x52, 0x77, 0x7e, 0xc4, 0xe6, 0xc9,
+	0x77, 0x53, 0x90, 0xef, 0x48, 0x0b, 0x8e, 0xb9, 0xcb, 0xa6, 0xb6, 0xe4, 0x96, 0x16, 0x91, 0x15,
+	0xe1, 0x96, 0x94, 0x31, 0x80, 0xa6, 0x97, 0x91, 0x5d, 0xfc, 0x8b, 0x12, 0x6b, 0x47, 0xd3, 0xab,
+	0xa8, 0xc4, 0xd7, 0x5c, 0xfb, 0xa8, 0x2c, 0xaa, 0xe0, 0x84, 0x11, 0xd0, 0x43, 0x67, 0x70, 0x54,
+	0x78, 0x49, 0xf3, 0x42, 0x37, 0xc8, 0x4f, 0xd9, 0x82, 0x46, 0x7a, 0x6d, 0xa5, 0x93, 0xb3, 0xe0,
+	0x7b, 0x3a, 0x0b, 0xde, 0xc8, 0x61, 0x41, 0x92, 0x06, 0xe6, 0x6f, 0x40, 0xcc, 0xa3, 0xb7, 0x13,
+	0x53, 0xae, 0x29, 0xc3, 0xb2, 0x9b, 0x1d, 0x47, 0x03, 0x3e, 0xd9, 0xff, 0x32, 0xb8, 0xf4, 0x6b,
+	0x58, 0xce, 0x1c, 0x22, 0x8c, 0x9f, 0xcd, 0x30, 0x29, 0x12, 0x3a, 0x57, 0x22, 0x8b, 0x5d, 0xa1,
+	0x2c, 0xf6, 0xeb, 0x4a, 0xb9, 0x54, 0xb3, 0x17, 0x89, 0x9d, 0x80, 0xd3, 0x7c, 0x9f, 0x66, 0x90,
+	0x5f, 0xe1, 0xe9, 0x9d, 0x60, 0x06, 0xf3, 0xcf, 0x4b, 0xac, 0xd6, 0xe1, 0x83, 0xc0, 0xc2, 0x6c,
+	0x2e, 0x15, 0x1e, 0x4d, 0x56, 0xa7, 0x79, 0x5d, 0x96, 0x32, 0x95, 0x27, 0x82, 0xbe, 0xc8, 0x18,
+	0xe2, 0x96, 0xc5, 0x2d, 0x42, 0x72, 0x62, 0x45, 0x44, 0x00, 0x80, 0xe8, 0xb4, 0x82, 0x99, 0x38,
+	0x00, 0x86, 0xae, 0x0d, 0xdc, 0x5f, 0xc7, 0xde, 0xdd, 0x85, 0x08, 0x22, 0xfc, 0x5b, 0x2e, 0x77,
+	0x76, 0x89, 0xde, 0x69, 0xa8, 0xd6, 0x84, 0x06, 0xbd, 0xcc, 0x66, 0x54, 0xcf, 0xfa, 0xd8, 0x09,
+	0x53, 0xb1, 0x4c, 0x0c, 0xc2, 0x26, 0xe3, 0x12, 0xde, 0x3e, 0xf0, 0x8d, 0x61, 0x58, 0x51, 0xb6,
+	0x3a, 0x0b, 0x43, 0x59, 0x24, 0xff, 0x80, 0xa4, 0xb9, 0x09, 0x5e, 0xa4, 0x00, 0xa9, 0x66, 0x82,
+	0x5c, 0x14, 0x45, 0xba, 0xbe, 0x4c, 0xbf, 0x4b, 0xfc, 0xd8, 0x24, 0xe9, 0x70, 0x89, 0x16, 0x4e,
+	0xe1, 0xbe, 0xbc, 0x75, 0x4c, 0xa0, 0x80, 0x60, 0x83, 0x11, 0x3b, 0x88, 0xed, 0xc6, 0x55, 0x71,
+	0xd5, 0x81, 0x0b, 0x57, 0x82, 0x1a, 0x8f, 0x5e, 0x43, 0x92, 0x5c, 0x96, 0x6c, 0x0c, 0x53, 0x2b,
+	0x71, 0x49, 0x41, 0x06, 0x87, 0xab, 0xab, 0x64, 0xaf, 0xce, 0xfc, 0x11, 0x16, 0x1d, 0x88, 0xb9,
+	0xb1, 0x16, 0x45, 0xf9, 0x49, 0xa5, 0xe2, 0xab, 0xcf, 0xd0, 0x90, 0x14, 0x78, 0x83, 0x58, 0x6c,
+	0x75, 0x86, 0x70, 0xe3, 0xf1, 0xa3, 0xbd, 0x69, 0xd7, 0xc8, 0x62, 0xbe, 0xe7, 0x55, 0xbc, 0x69,
+	0x4b, 0xcb, 0xbc, 0xde, 0xd0, 0xfa, 0x13, 0xec, 0x87, 0x29, 0x36, 0xf6, 0x1c, 0x94, 0xf9, 0x7a,
+	0xbe, 0x1e, 0x04, 0xe3, 0xd0, 0x24, 0x14, 0x64, 0x40, 0xbf, 0xc5, 0xc3, 0x60, 0x3a, 0xec, 0x14,
+	0x4d, 0xe4, 0x6b, 0xb4, 0x00, 0x4e, 0x97, 0x3b, 0x7e, 0x66, 0x22, 0x2e, 0x5c, 0xd4, 0xf3, 0x53,
+	0xb6, 0x99, 0x14, 0x36, 0x7f, 0xa7, 0x24, 0x8a, 0x20, 0xb7, 0x3d, 0xce, 0xb5, 0xf8, 0x60, 0x89,
+	0xcd, 0x51, 0x69, 0xb8, 0x13, 0xf8, 0x2b, 0xbe, 0x88, 0x22, 0x0a, 0x6f, 0xd5, 0x41, 0x11, 0xc2,
+	0x68, 0xc4, 0xac, 0x2c, 0x40, 0x2d, 0x43, 0x11, 0xc6, 0x41, 0x12, 0x8a, 0xf0, 0xa7, 0xe5, 0x24,
+	0x0e, 0xe3, 0x3d, 0x21, 0xe1, 0x5b, 0x96, 0xb3, 0xc7, 0x33, 0xb7, 0x1f, 0xf6, 0x26, 0x98, 0x7a,
+	0x95, 0xb1, 0x35, 0x08, 0xa6, 0x3d, 0x8e, 0x00, 0x85, 0x76, 0xeb, 0x1d, 0x66, 0x80, 0xa7, 0x6c,
+	0x39, 0x7d, 0x59, 0x09, 0x7f, 0xcf, 0x76, 0xb8, 0x38, 0x04, 0xb5, 0x7c, 0x93, 0x88, 0x59, 0x65,
+	0x01, 0x58, 0x2d, 0x2e, 0x49, 0xd8, 0xe2, 0xbd, 0xb1, 0xe7, 0x63, 0x81, 0x43, 0x51, 0xb1, 0xc1,
+	0x2d, 0x76, 0x4e, 0x00, 0xf2, 0x2e, 0xd0, 0x79, 0xc0, 0xbb, 0xe3, 0x9d, 0x5d, 0x17, 0x6f, 0x36,
+	0xef, 0xd9, 0xaa, 0xdc, 0x2f, 0x2f, 0x99, 0xb5, 0x29, 0xea, 0xe4, 0x90, 0x7b, 0x5d, 0x6e, 0x79,
+	0xbd, 0xfd, 0x88, 0x74, 0x33, 0xb1, 0x86, 0x30, 0xf5, 0x8a, 0x6a, 0x33, 0xd6, 0x93, 0x60, 0xc3,
+	0x8f, 0x45, 0xa5, 0x7e, 0x84, 0x71, 0x8b, 0x8a, 0xb6, 0x8d, 0x77, 0xd9, 0xb4, 0xfe, 0x1d, 0xa6,
+	0xb7, 0x23, 0x7c, 0xa2, 0x23, 0xc1, 0x89, 0x1b, 0xe8, 0xec, 0x90, 0x90, 0x4f, 0x7c, 0x00, 0x66,
+	0x62, 0xf2, 0x08, 0x18, 0x6a, 0x78, 0x0b, 0x73, 0x24, 0x67, 0x8c, 0x3b, 0x8b, 0x08, 0x46, 0xbd,
+	0x93, 0x79, 0x63, 0x69, 0x49, 0x37, 0x47, 0xe8, 0x01, 0xc4, 0x29, 0x08, 0xb1, 0x75, 0x58, 0xe7,
+	0xf7, 0xfc, 0xf3, 0x5d, 0x70, 0xe4, 0x32, 0x59, 0x63, 0x7e, 0x24, 0x0a, 0xee, 0xb1, 0x23, 0x4c,
+	0x42, 0x4e, 0x3e, 0x1f, 0xe6, 0xf7, 0xf4, 0xe1, 0x92, 0x3d, 0x33, 0xca, 0x19, 0x10, 0xef, 0xba,
+	0x7e, 0xcc, 0x4e, 0x3f, 0xbe, 0xd3, 0xd5, 0xf9, 0x42, 0xae, 0xcd, 0x55, 0x25, 0x15, 0xa2, 0x2d,
+	0xba, 0x9c, 0x49, 0x72, 0xf1, 0x45, 0x9d, 0xe9, 0x3f, 0x2c, 0xb1, 0x66, 0xc8, 0x1b, 0x40, 0x36,
+	0x0b, 0x0a, 0xd3, 0xee, 0x85, 0x2d, 0x72, 0xab, 0x71, 0xed, 0x10, 0x07, 0x59, 0x6d, 0x84, 0x32,
+	0x74, 0x53, 0x57, 0x03, 0xe5, 0x42, 0x35, 0x10, 0x0d, 0x92, 0x65, 0xb3, 0xa8, 0xc1, 0xa4, 0xfe,
+	0x12, 0xf7, 0x3d, 0x74, 0xe7, 0x1e, 0x9b, 0x29, 0x4c, 0xf6, 0x0b, 0x97, 0xe8, 0xaa, 0x7c, 0x9d,
+	0x84, 0x13, 0xcd, 0xe6, 0x89, 0x1b, 0x42, 0x64, 0xd4, 0xb0, 0x51, 0x8b, 0x98, 0x94, 0x4e, 0xfc,
+	0x34, 0x08, 0x63, 0x78, 0x87, 0x58, 0x27, 0x5a, 0x17, 0xed, 0xd9, 0x7c, 0xc0, 0x66, 0x62, 0x12,
+	0xad, 0x1f, 0x9f, 0xc9, 0xa4, 0x51, 0xb9, 0x77, 0x22, 0x3b, 0xf9, 0x57, 0x25, 0x8d, 0x74, 0x54,
+	0x23, 0x85, 0x19, 0x17, 0x54, 0x5d, 0x84, 0xae, 0x92, 0xa3, 0x90, 0xae, 0xd0, 0x65, 0x0c, 0x81,
+	0x95, 0x0b, 0xc0, 0x14, 0x3e, 0xcc, 0xdb, 0x10, 0x01, 0x8a, 0xf1, 0x11, 0x58, 0x35, 0x1f, 0xcc,
+	0xfc, 0x8c, 0xcd, 0xae, 0x50, 0x9a, 0xd3, 0xdf, 0xb7, 0x47, 0x94, 0x5b, 0x7c, 0x87, 0xcd, 0xde,
+	0xb3, 0x54, 0x25, 0x6e, 0x07, 0x4b, 0x14, 0x4b, 0xcf, 0xa9, 0xf1, 0x99, 0x07, 0xb9, 0x0d, 0x47,
+	0xa8, 0x90, 0x16, 0x94, 0x0a, 0x06, 0xa9, 0x02, 0x79, 0xf2, 0x8e, 0x2f, 0x76, 0x89, 0x23, 0x22,
+	0xe0, 0x1f, 0x50, 0xba, 0x2c, 0x5a, 0x8b, 0x74, 0x8a, 0x52, 0x71, 0x6a, 0x04, 0x91, 0x10, 0xff,
+	0x2f, 0x13, 0x08, 0xd0, 0x3e, 0xc6, 0xb7, 0x96, 0x79, 0x02, 0xe2, 0x20, 0x09, 0x4d, 0x0a, 0xcb,
+	0x46, 0x0a, 0x4a, 0xe3, 0x64, 0x9c, 0x65, 0x27, 0xe9, 0x73, 0xd3, 0x73, 0x31, 0xd1, 0xa3, 0x5e,
+	0x75, 0x95, 0xf0, 0xba, 0x59, 0x46, 0x3c, 0x12, 0xdd, 0x4b, 0xb9, 0x6e, 0x1e, 0xa2, 0x5f, 0x22,
+	0x42, 0xb4, 0x10, 0xed, 0xe4, 0xd1, 0x59, 0xa1, 0x5b, 0x92, 0xb1, 0x56, 0xbc, 0x2c, 0x09, 0x09,
+	0xa8, 0x2e, 0x4b, 0x22, 0x8a, 0x66, 0x5e, 0x96, 0x84, 0xdd, 0x26, 0xc8, 0xe5, 0x9d, 0x7d, 0x2e,
+	0x6e, 0xfa, 0xf1, 0x40, 0x6c, 0xbb, 0x7d, 0x57, 0x5e, 0xf3, 0xc1, 0x57, 0xc7, 0x95, 0x62, 0x5d,
+	0x33, 0xd7, 0xc4, 0xe9, 0x10, 0xe9, 0xe1, 0x78, 0x60, 0xf4, 0xa6, 0xb2, 0x3a, 0xe5, 0xe7, 0x6a,
+	0x2a, 0xf3, 0x3b, 0x68, 0x1a, 0xbd, 0x43, 0xee, 0xc9, 0xe7, 0x78, 0xd3, 0xb2, 0xd8, 0x42, 0x5c,
+	0xb5, 0xdc, 0x56, 0xbd, 0xb2, 0x18, 0xf3, 0x24, 0x9b, 0x92, 0x8f, 0x8b, 0xe4, 0x54, 0xb3, 0xac,
+	0xbe, 0x32, 0x1a, 0x45, 0xd2, 0x07, 0x8c, 0xde, 0xe8, 0x7c, 0xc2, 0x8f, 0x44, 0x9e, 0xd2, 0xfc,
+	0xfb, 0x92, 0xb8, 0x27, 0x5f, 0xc3, 0x87, 0xd0, 0xb4, 0x1d, 0xd4, 0x4e, 0xe9, 0x0b, 0x3c, 0xf1,
+	0x5c, 0xc7, 0x8e, 0x8a, 0xe5, 0x44, 0xdd, 0x15, 0x4c, 0x6d, 0xf7, 0xb8, 0xf6, 0x50, 0x87, 0x03,
+	0x8d, 0x64, 0xf6, 0x1a, 0xbf, 0xa5, 0x39, 0xaf, 0xab, 0x92, 0xe1, 0xa8, 0x9c, 0xae, 0xb0, 0xf8,
+	0xed, 0x3e, 0xf7, 0xfd, 0xa8, 0xd4, 0x58, 0xdb, 0x53, 0x33, 0x5c, 0x18, 0x6c, 0x88, 0x6a, 0xb2,
+	0xcc, 0x9f, 0x97, 0x81, 0x98, 0x19, 0xab, 0x87, 0xd9, 0x71, 0x63, 0x7a, 0xe2, 0xa9, 0xc3, 0x71,
+	0xb5, 0x31, 0x7d, 0xaa, 0xb6, 0x54, 0x55, 0x2b, 0x0c, 0xd7, 0x51, 0x50, 0xf8, 0x7b, 0x9b, 0xcd,
+	0x22, 0x6a, 0x3c, 0x1c, 0xf8, 0x4e, 0x2e, 0xd4, 0xbe, 0xf1, 0x67, 0x00, 0xb4, 0xa8, 0xa5, 0x38,
+	0xa0, 0x30, 0x09, 0xff, 0x9f, 0x9d, 0xa4, 0x4e, 0x0d, 0xc1, 0x14, 0x21, 0x78, 0x23, 0x03, 0x41,
+	0x02, 0x92, 0x30, 0xb4, 0xdf, 0x65, 0xa7, 0xb3, 0x10, 0x03, 0x61, 0x0e, 0xf8, 0x51, 0x14, 0x7d,
+	0x1f, 0x5a, 0x03, 0x59, 0x97, 0xdb, 0xfc, 0x7e, 0xf9, 0xfd, 0x52, 0xfb, 0xff, 0xb1, 0xf9, 0x2c,
+	0x74, 0xcf, 0x1b, 0x07, 0x8e, 0x60, 0x93, 0xc6, 0xa9, 0xf2, 0x35, 0xfa, 0xc8, 0x2e, 0x5f, 0x13,
+	0xac, 0xd0, 0x58, 0x56, 0x4e, 0x88, 0xa1, 0x30, 0x94, 0x7f, 0x59, 0x66, 0xc6, 0x03, 0x37, 0xb0,
+	0x77, 0x8f, 0x3e, 0xe6, 0x0e, 0xf7, 0xec, 0x9e, 0x18, 0xf7, 0x1a, 0xab, 0xad, 0xf4, 0x02, 0xb7,
+	0xf8, 0xbe, 0xd4, 0xb8, 0x86, 0xb5, 0x11, 0x3d, 0x7b, 0x64, 0xd3, 0x2a, 0xca, 0x19, 0xc1, 0x69,
+	0x08, 0x6a, 0x30, 0xb6, 0x42, 0x19, 0x5c, 0x2d, 0xe1, 0x78, 0x86, 0xcd, 0x88, 0x36, 0x69, 0x4d,
+	0x25, 0xf3, 0x41, 0x1c, 0x1e, 0xee, 0xfc, 0x3a, 0xef, 0xa1, 0x38, 0x20, 0xef, 0x2b, 0x54, 0x7e,
+	0x4e, 0x2d, 0x94, 0x35, 0x11, 0x42, 0x1c, 0xb6, 0x45, 0xc9, 0x7e, 0xbc, 0x13, 0x93, 0x6d, 0x76,
+	0x30, 0x50, 0x52, 0x0b, 0x9a, 0x5f, 0x34, 0xc6, 0xae, 0xe1, 0xbb, 0x58, 0x24, 0x74, 0xdf, 0xd7,
+	0x0a, 0x0a, 0xc9, 0x5a, 0xd0, 0x4d, 0x4c, 0x4b, 0x49, 0xfb, 0x03, 0x57, 0x98, 0x10, 0x71, 0xc5,
+	0xfe, 0x7b, 0x25, 0xd8, 0x83, 0xe3, 0xb8, 0x01, 0x65, 0x91, 0x94, 0xf0, 0x0b, 0x5e, 0x5d, 0xd2,
+	0x8d, 0x24, 0x52, 0x7a, 0x66, 0x75, 0x06, 0x34, 0x6a, 0xd4, 0x88, 0x2f, 0xa8, 0x94, 0x75, 0xa4,
+	0xab, 0x90, 0xd5, 0x16, 0xf4, 0xab, 0x26, 0xca, 0xd0, 0x0c, 0xf0, 0xcd, 0x41, 0x55, 0x2d, 0xe7,
+	0x89, 0x05, 0xe7, 0xc1, 0x71, 0x64, 0xa4, 0x4b, 0x3a, 0x0d, 0xa6, 0x93, 0x97, 0x20, 0xe6, 0x63,
+	0xb0, 0x34, 0xe1, 0x52, 0xd4, 0x2b, 0xc8, 0xa8, 0x25, 0x3b, 0xa5, 0xa5, 0x2d, 0x1e, 0xfc, 0x26,
+	0x34, 0xfc, 0xe1, 0xf2, 0x04, 0xf7, 0x66, 0xc0, 0x4f, 0x5e, 0xd0, 0xb0, 0xe8, 0xb7, 0x42, 0xc7,
+	0x76, 0xd0, 0xaf, 0xb0, 0xda, 0x04, 0xbe, 0xdc, 0x9b, 0x9f, 0x69, 0xce, 0x10, 0xf9, 0x5b, 0x33,
+	0x42, 0x5d, 0x53, 0xc3, 0x1c, 0xba, 0x3a, 0x8d, 0x8e, 0xed, 0x89, 0xaf, 0x12, 0x70, 0x6e, 0xba,
+	0x7b, 0x34, 0x1c, 0xd8, 0xce, 0x81, 0x68, 0xc1, 0x2a, 0xcf, 0x59, 0x88, 0xa4, 0x86, 0x6e, 0x7f,
+	0xac, 0xc6, 0x54, 0xda, 0xd5, 0xdf, 0xfd, 0xc9, 0x85, 0x13, 0xcb, 0xe0, 0x03, 0x4e, 0xeb, 0xcf,
+	0x91, 0x8d, 0x0e, 0x6b, 0x41, 0x48, 0xa0, 0x7e, 0x58, 0xc2, 0xc8, 0x75, 0xb2, 0xda, 0x71, 0x3b,
+	0x90, 0xf8, 0x25, 0x8a, 0x0e, 0xab, 0x0b, 0xed, 0x69, 0x5c, 0xce, 0x79, 0x98, 0x1c, 0xbd, 0x7c,
+	0x6e, 0xe7, 0xbd, 0x5d, 0x5e, 0xfe, 0xe3, 0xa6, 0x4c, 0xcc, 0xa2, 0xd5, 0x84, 0x55, 0x19, 0xd9,
+	0x45, 0xa0, 0xed, 0xf4, 0x13, 0x66, 0x63, 0x15, 0xbd, 0x45, 0x7a, 0xe5, 0x6b, 0xb4, 0x33, 0xb6,
+	0x20, 0xdf, 0xff, 0x26, 0x36, 0x91, 0x78, 0xfc, 0xfb, 0x01, 0x56, 0x00, 0xe0, 0xbb, 0xbe, 0xcc,
+	0x07, 0x53, 0x92, 0xe7, 0xed, 0x33, 0x99, 0xbd, 0xc6, 0x03, 0xc6, 0xa2, 0x47, 0xbd, 0x46, 0xfa,
+	0x45, 0x64, 0xfa, 0xc9, 0x6f, 0x6a, 0x31, 0xb1, 0x07, 0xbc, 0xef, 0x85, 0x14, 0x6d, 0xe7, 0xbf,
+	0x70, 0xcd, 0xa2, 0x04, 0x0c, 0x94, 0xf5, 0x47, 0x19, 0x03, 0x55, 0x41, 0x6b, 0xd6, 0xc0, 0x25,
+	0x56, 0xef, 0xf0, 0x01, 0x87, 0x81, 0x39, 0x64, 0x8f, 0xae, 0x61, 0x1f, 0xbb, 0x76, 0x1f, 0xc8,
+	0xd5, 0x24, 0xc9, 0x21, 0xd3, 0x9e, 0x33, 0x24, 0xcd, 0x6a, 0x09, 0xbf, 0x2c, 0x07, 0x53, 0x96,
+	0x33, 0x5f, 0xe8, 0x62, 0xc9, 0xd0, 0x8f, 0x85, 0x17, 0x27, 0xdf, 0x5c, 0x1a, 0x17, 0xb3, 0x69,
+	0x1c, 0xbe, 0x2d, 0x4d, 0x4c, 0xae, 0x3d, 0xdc, 0xdc, 0x10, 0x11, 0x9e, 0x7a, 0x35, 0x68, 0x5c,
+	0xca, 0xc6, 0x14, 0xbd, 0x7e, 0x4c, 0xa0, 0xd2, 0x1e, 0x1f, 0xde, 0x66, 0x0d, 0xf5, 0xa2, 0x2c,
+	0x43, 0x6e, 0xb4, 0x17, 0x83, 0xed, 0xf9, 0x44, 0xd9, 0xa8, 0x28, 0x69, 0xd9, 0x44, 0x9d, 0xa3,
+	0x3f, 0xb8, 0x33, 0xcc, 0xa2, 0x6d, 0x89, 0x27, 0x79, 0xed, 0x76, 0xc6, 0xce, 0xd4, 0x73, 0xba,
+	0x1f, 0xb1, 0x73, 0x40, 0xd9, 0xd4, 0x73, 0xee, 0xbb, 0xae, 0x87, 0x3e, 0x9e, 0x51, 0xa0, 0xa3,
+	0xda, 0x17, 0xe2, 0xb9, 0xfb, 0xd4, 0x8b, 0x70, 0xf0, 0xe7, 0xf4, 0x47, 0xde, 0x19, 0x1c, 0x88,
+	0xbf, 0x01, 0x4f, 0x4a, 0x0c, 0x8c, 0x87, 0xa5, 0x6d, 0xa8, 0xdf, 0xb5, 0x29, 0xe0, 0xfb, 0xfc,
+	0x52, 0xf4, 0xeb, 0x37, 0x11, 0xfc, 0x6d, 0x7c, 0xd4, 0x1e, 0xfe, 0x4e, 0x41, 0x4a, 0xbe, 0xb5,
+	0x5f, 0x30, 0x68, 0x9f, 0x4e, 0x54, 0xcf, 0xd0, 0x8f, 0x03, 0x7c, 0xc8, 0x58, 0xf4, 0x33, 0x04,
+	0x46, 0x3c, 0xa2, 0xd7, 0x7f, 0x9f, 0x20, 0x73, 0xf4, 0xf2, 0x26, 0x6b, 0x69, 0xcf, 0xf0, 0x20,
+	0xae, 0x61, 0xd1, 0x53, 0x3c, 0x23, 0xfe, 0xb6, 0x36, 0xe7, 0xb9, 0x5e, 0x82, 0x1e, 0xcb, 0xff,
+	0x5e, 0x55, 0xc5, 0xf6, 0xf8, 0x50, 0x17, 0x15, 0x5e, 0x4e, 0xad, 0x61, 0x3b, 0xab, 0x0a, 0xff,
+	0x23, 0xa9, 0xae, 0xce, 0xa7, 0xfb, 0x74, 0x7d, 0xb5, 0x90, 0xdd, 0x6d, 0xdc, 0x0a, 0x15, 0xcc,
+	0xb9, 0x34, 0x44, 0xa4, 0x61, 0xb2, 0x66, 0xbe, 0x15, 0xaa, 0x98, 0xac, 0xa1, 0xa1, 0x8e, 0xc9,
+	0x1a, 0xfa, 0xa9, 0x90, 0xf7, 0xa8, 0xd2, 0x3c, 0xa1, 0x2a, 0xb3, 0x4b, 0xe1, 0x13, 0x02, 0x1f,
+	0x2f, 0x5c, 0xff, 0x84, 0xb5, 0xb4, 0x32, 0xf4, 0xc4, 0x61, 0xce, 0x28, 0x53, 0x2f, 0x44, 0xb6,
+	0x86, 0x22, 0xa2, 0x0a, 0xcd, 0x8d, 0x8b, 0xb9, 0xdb, 0x13, 0x75, 0xe8, 0xed, 0x9c, 0xaa, 0x75,
+	0xe3, 0x2e, 0x63, 0x51, 0x05, 0x79, 0x26, 0x1a, 0xbd, 0xc0, 0x3c, 0xa1, 0x5e, 0xb4, 0xb2, 0xec,
+	0x3b, 0x98, 0xdf, 0x0f, 0x4b, 0xc3, 0x33, 0xf7, 0x16, 0x2b, 0x1d, 0xcf, 0xa2, 0xf9, 0xf2, 0x4f,
+	0x4b, 0xa2, 0x6e, 0x0e, 0x5f, 0x22, 0xa3, 0x90, 0x65, 0x16, 0x3e, 0xb7, 0x53, 0xe5, 0x74, 0xc6,
+	0xbb, 0x52, 0xc0, 0xce, 0x26, 0x7b, 0xa4, 0x0f, 0xd4, 0x9e, 0xcf, 0x2a, 0x8c, 0x46, 0x8f, 0x42,
+	0x2b, 0x90, 0x36, 0x2e, 0x64, 0x8e, 0x0e, 0xcb, 0xa7, 0xdb, 0x69, 0xdf, 0x18, 0xfb, 0x97, 0x3f,
+	0xc2, 0x32, 0x68, 0x77, 0x34, 0xe0, 0xf8, 0x98, 0x19, 0x57, 0x9d, 0x57, 0xf9, 0x9c, 0x3c, 0xac,
+	0xd4, 0xb1, 0xfc, 0x37, 0x65, 0xd6, 0x90, 0xa5, 0x71, 0xbe, 0xf1, 0x7e, 0x28, 0xea, 0x71, 0x24,
+	0x51, 0xf9, 0x5c, 0x3b, 0xc7, 0x43, 0xdf, 0xc2, 0x94, 0x30, 0x95, 0x66, 0xc5, 0x8b, 0x05, 0x73,
+	0x17, 0x73, 0x39, 0xd1, 0x91, 0x51, 0x68, 0xf8, 0x3e, 0xa6, 0x79, 0xe1, 0x8f, 0xb0, 0x14, 0x70,
+	0x31, 0xb9, 0x28, 0xd5, 0x93, 0xd4, 0x9f, 0x6f, 0x86, 0xe7, 0x2e, 0x5d, 0x32, 0x9d, 0x84, 0x7d,
+	0x27, 0xb4, 0xe6, 0xb9, 0x6b, 0x4d, 0x68, 0xa3, 0x6f, 0xca, 0xb2, 0x84, 0x3a, 0xdb, 0xfb, 0x52,
+	0x34, 0x69, 0x67, 0x94, 0x6b, 0xdf, 0x22, 0xc5, 0xfe, 0xc4, 0x0e, 0xf6, 0x29, 0x36, 0x30, 0x72,
+	0x6a, 0x39, 0xb3, 0x86, 0xfe, 0x40, 0xf8, 0x4d, 0x04, 0xe3, 0xe7, 0x4d, 0xd9, 0xce, 0xc6, 0x47,
+	0xe2, 0xf6, 0x61, 0xa6, 0x1a, 0x4c, 0x96, 0xf3, 0xe6, 0x88, 0x19, 0x98, 0x94, 0x19, 0xb2, 0xd1,
+	0x61, 0x1d, 0x79, 0xce, 0x0a, 0xe2, 0x3b, 0x8a, 0xc0, 0x97, 0xe4, 0x2d, 0xb2, 0x11, 0x27, 0x66,
+	0x02, 0x3e, 0x2c, 0xf6, 0x5f, 0xfe, 0xd3, 0x32, 0xab, 0x62, 0xae, 0xc6, 0xe8, 0xd2, 0x95, 0x8f,
+	0x56, 0xad, 0x98, 0xd0, 0x12, 0xe9, 0xd2, 0xca, 0xf6, 0xa5, 0x7c, 0x00, 0x59, 0xff, 0xf8, 0x0e,
+	0x6b, 0x6c, 0x50, 0x2d, 0xe5, 0xee, 0x51, 0x72, 0x41, 0x67, 0x52, 0xe9, 0x36, 0x4a, 0x33, 0x7e,
+	0xca, 0xe6, 0x60, 0x19, 0xf1, 0x6a, 0xc1, 0xb8, 0x0c, 0x67, 0xd5, 0x29, 0x26, 0x19, 0x12, 0x1b,
+	0xfe, 0x11, 0x9b, 0xeb, 0x26, 0x51, 0x16, 0xc0, 0x27, 0xc5, 0xf0, 0x9f, 0xcb, 0xa2, 0xd8, 0x45,
+	0x49, 0x61, 0x2a, 0xd5, 0x25, 0x0a, 0x6e, 0xda, 0xe9, 0x2a, 0x98, 0x5b, 0x52, 0x12, 0xce, 0x65,
+	0x65, 0xd9, 0x94, 0x1c, 0xcc, 0x67, 0x75, 0xc2, 0x9a, 0x1b, 0xaa, 0x56, 0x25, 0x3d, 0x5c, 0x2b,
+	0x8c, 0x49, 0x0c, 0x57, 0xc5, 0x2c, 0x8f, 0xd9, 0x5c, 0xb2, 0xce, 0x22, 0x61, 0xd7, 0xb2, 0x8b,
+	0x3c, 0xda, 0xe7, 0x53, 0xe8, 0x62, 0xf5, 0x18, 0x1b, 0x42, 0x95, 0xca, 0xdc, 0x5f, 0x42, 0x95,
+	0xa6, 0x92, 0x92, 0xed, 0x9c, 0x2c, 0x2d, 0xe9, 0xd3, 0xdf, 0x2c, 0x91, 0x42, 0x08, 0xac, 0x1c,
+	0x5f, 0x23, 0xbc, 0x4e, 0x6d, 0x67, 0xdd, 0x91, 0x77, 0x58, 0x33, 0xbc, 0x3f, 0x4d, 0x2d, 0x23,
+	0x71, 0x67, 0xdb, 0x3e, 0x9b, 0x79, 0xff, 0xcc, 0xfd, 0xe5, 0x7f, 0x29, 0x89, 0xfa, 0x12, 0xf4,
+	0x3a, 0x81, 0x5b, 0xb4, 0x8a, 0x76, 0xfe, 0x2d, 0x55, 0xf2, 0xd0, 0x85, 0xb7, 0x16, 0x1b, 0xac,
+	0x2e, 0x6e, 0x6c, 0x8c, 0xf3, 0x85, 0x97, 0x4e, 0x89, 0x13, 0x93, 0x75, 0x2d, 0xd4, 0xc9, 0x94,
+	0x99, 0xf8, 0x25, 0x55, 0xfb, 0x62, 0x6e, 0xa7, 0xc0, 0xb4, 0xec, 0xb0, 0xea, 0x7d, 0x0e, 0x64,
+	0x5a, 0x56, 0xbf, 0xd2, 0x95, 0x3c, 0x7d, 0x71, 0x5f, 0x33, 0x96, 0x32, 0x5d, 0x56, 0x8f, 0x13,
+	0x27, 0x19, 0x23, 0x20, 0x97, 0xd7, 0xf1, 0xc7, 0xe6, 0xe8, 0x94, 0x93, 0x4b, 0xad, 0xe5, 0xa8,
+	0xe2, 0x4b, 0x4d, 0x27, 0xb1, 0x92, 0xa7, 0xed, 0x49, 0x2c, 0x43, 0x62, 0xac, 0x4b, 0x72, 0xbc,
+	0x9a, 0x93, 0x23, 0x89, 0xa9, 0xd4, 0x73, 0x39, 0x40, 0xe4, 0xbd, 0xcd, 0x7d, 0xf5, 0xf3, 0x0b,
+	0x27, 0xbe, 0xfa, 0xe6, 0x42, 0xe9, 0x67, 0xf0, 0xef, 0xdf, 0xe0, 0xdf, 0x4e, 0x9d, 0x7e, 0xc6,
+	0xf2, 0xe6, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0xe4, 0x1a, 0x6c, 0x03, 0xb3, 0x54, 0x00, 0x00,
+}

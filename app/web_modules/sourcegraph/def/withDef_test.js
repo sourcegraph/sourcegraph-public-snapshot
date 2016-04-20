@@ -24,7 +24,7 @@ describe("withDef", () => {
 		});
 
 		it("should have no error if the def and rev exist", () => {
-			DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", {}));
+			DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", {CommitID: "c"}));
 			expect(renderedStatus(
 				<C repo="r" rev="v" {...props} />
 			)).to.eql({error: null});

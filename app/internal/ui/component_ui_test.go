@@ -22,7 +22,7 @@ var (
 
 func buildBundleJS() {
 	log.Println("Building bundle.js for React component rendering tests. This could take a while.")
-	cmd := exec.Command("npm", "run", "build")
+	cmd := exec.Command("sh", "-c", "npm run dep && npm run build")
 	cmd.Dir = "../../" // app/ dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -57,8 +57,8 @@ func TestRenderRouterState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want := `<div data-reactroot=`; !strings.Contains(string(resp.Body), want) {
-		t.Errorf("got %q, want it to contain %q", resp, want)
+	if want := `data-reactroot="" data-reactid="1"`; !strings.Contains(string(resp.Body), want) {
+		t.Errorf("got %q, want it to contain %q", resp.Body, want)
 	}
 }
 

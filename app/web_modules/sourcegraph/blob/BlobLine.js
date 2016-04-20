@@ -7,6 +7,7 @@ import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
+import {urlToBlob} from "sourcegraph/blob/routes";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import s from "sourcegraph/blob/styles/Blob.css";
@@ -44,6 +45,7 @@ class BlobLine extends Component {
 		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
 		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
 		state.activeDef = state.ownAnnURLs && state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
+		state.activeDefNoRev = state.ownAnnURLs && state.ownAnnURLs[props.activeDefNoRev] ? props.activeDefNoRev : null;
 
 		state.lineNumber = props.lineNumber || null;
 		state.oldLineNumber = props.oldLineNumber || null;
@@ -52,7 +54,6 @@ class BlobLine extends Component {
 		state.contents = props.contents;
 		state.selected = Boolean(props.selected);
 		state.className = props.className || "";
-		state.directLinks = Boolean(props.directLinks);
 	}
 
 	_hasLink(content) {
@@ -83,13 +84,13 @@ class BlobLine extends Component {
 							// disabledAnn is an ann that you can't click on (possibly a broken ref).
 							[s.disabledAnn]: isHighlighted && (this.state.highlightedDefObj && this.state.highlightedDefObj.Error),
 
-							[s.activeAnn]: hasURL(ann, this.state.activeDef),
+							[s.activeAnn]: hasURL(ann, this.state.activeDef) || hasURL(ann, this.state.activeDefNoRev),
 						})}
 						to={ann.URL || ann.URLs[0]}
 						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
-							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey || this.state.directLinks) return;
+							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
 							// TODO: implement multiple defs menu if ann.URLs.length > 0 (more important for languages other than Go)
 							if (this.state.highlightedDefObj && this.state.highlightedDefObj.Error) {
 								// Prevent navigating to a broken ref or not-yet-loaded def.
@@ -105,27 +106,33 @@ class BlobLine extends Component {
 
 	render() {
 		let contents = this.state.annotations ? this._annotate() : this.state.contents;
+		contents = simpleContentsString(contents);
+
+		// A single newline makes this line show up (correctly) as an empty line
+		// when copied and pasted, instead of being omitted entirely.
+		if (!contents) contents = "\n";
+
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (
 			<tr className={s.line}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
-					<td className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
-						data-line={this.state.lineNumber}
-						onClick={(event) => {
-							if (event.shiftKey) {
-								Dispatcher.Stores.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
-								return;
-							}
-							Dispatcher.Stores.dispatch(new BlobActions.SelectLine(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
-						}}>
+					<td className={s.lineNumberCell} onClick={(event) => {
+						if (event.shiftKey) {
+							event.preventDefault();
+							Dispatcher.Stores.dispatch(new BlobActions.SelectLineRange(this.state.repo, this.state.rev, this.state.path, this.state.lineNumber));
+							return;
+						}
+					}}>
+						<Link className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
+							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
 				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
 				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
 
 				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
-					{simpleContentsString(contents)}
+					{contents}
 				</td>
 			</tr>
 		);
@@ -151,6 +158,9 @@ BlobLine.propTypes = {
 	oldLineNumber: React.PropTypes.number,
 	newLineNumber: React.PropTypes.number,
 
+	activeDef: React.PropTypes.string, // the def that the page is about
+	activeDefNoRev: React.PropTypes.string, // activeDef without an "@rev" (if any)
+
 	// startByte is the byte position of the first byte of contents. It is
 	// required if annotations are specified, so that the annotations can
 	// be aligned to the contents.
@@ -162,10 +172,6 @@ BlobLine.propTypes = {
 	selected: React.PropTypes.bool,
 	highlightedDef: React.PropTypes.string,
 	className: React.PropTypes.string,
-
-	// directLinks, if true, makes clicks on annotation links go directly to the
-	// destination instead of using pushState.
-	directLinks: React.PropTypes.bool,
 };
 
 export default BlobLine;

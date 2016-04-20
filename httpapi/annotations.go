@@ -16,10 +16,6 @@ func serveAnnotations(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if err := handlerutil.ResolveRepoRev(r, &opt.Entry.RepoRev); err != nil {
-		return err
-	}
-
 	anns, err := cl.Annotations.List(ctx, &opt)
 	if err != nil {
 		return err

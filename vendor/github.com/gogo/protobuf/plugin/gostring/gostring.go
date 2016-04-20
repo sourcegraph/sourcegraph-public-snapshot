@@ -178,28 +178,34 @@ func (p *gostring) Generate(file *generator.FileDescriptor) {
 				p.Out()
 				p.P(`}`)
 			} else if generator.IsMap(file.FileDescriptorProto, field) {
-				mapMsg := generator.GetMap(file.FileDescriptorProto, field)
-				keyField, valueField := mapMsg.GetMapFields()
+				m := p.GoMapType(nil, field)
+				mapgoTyp, keyField, keyAliasField := m.GoType, m.KeyField, m.KeyAliasField
 				keysName := `keysFor` + fieldname
 				keygoTyp, _ := p.GoType(nil, keyField)
 				keygoTyp = strings.Replace(keygoTyp, "*", "", 1)
+				keygoAliasTyp, _ := p.GoType(nil, keyAliasField)
+				keygoAliasTyp = strings.Replace(keygoAliasTyp, "*", "", 1)
 				keyCapTyp := generator.CamelCase(keygoTyp)
-				valuegoTyp, _ := p.GoType(nil, valueField)
-				if !valueField.IsMessage() {
-					valuegoTyp = strings.Replace(valuegoTyp, "*", "", 1)
-				}
 				p.P(keysName, ` := make([]`, keygoTyp, `, 0, len(this.`, fieldname, `))`)
 				p.P(`for k, _ := range this.`, fieldname, ` {`)
 				p.In()
-				p.P(keysName, ` = append(`, keysName, `, k)`)
+				if keygoAliasTyp == keygoTyp {
+					p.P(keysName, ` = append(`, keysName, `, k)`)
+				} else {
+					p.P(keysName, ` = append(`, keysName, `, `, keygoTyp, `(k))`)
+				}
 				p.Out()
 				p.P(`}`)
 				p.P(sortKeysPkg.Use(), `.`, keyCapTyp, `s(`, keysName, `)`)
 				mapName := `mapStringFor` + fieldname
-				p.P(mapName, ` := "map[`, keygoTyp, `]`, valuegoTyp, `{"`)
+				p.P(mapName, ` := "`, mapgoTyp, `{"`)
 				p.P(`for _, k := range `, keysName, ` {`)
 				p.In()
-				p.P(mapName, ` += fmt.Sprintf("%#v: %#v,", k, this.`, fieldname, `[k])`)
+				if keygoAliasTyp == keygoTyp {
+					p.P(mapName, ` += fmt.Sprintf("%#v: %#v,", k, this.`, fieldname, `[k])`)
+				} else {
+					p.P(mapName, ` += fmt.Sprintf("%#v: %#v,", k, this.`, fieldname, `[`, keygoAliasTyp, `(k)])`)
+				}
 				p.Out()
 				p.P(`}`)
 				p.P(mapName, ` += "}"`)
@@ -213,10 +219,8 @@ func (p *gostring) Generate(file *generator.FileDescriptor) {
 					p.P(`if this.`, fieldname, ` != nil {`)
 					p.In()
 				}
-				if nullable {
+				if nullable || repeated {
 					p.P(`s = append(s, "`, fieldname, `: " + `, fmtPkg.Use(), `.Sprintf("%#v", this.`, fieldname, `) + ",\n")`)
-				} else if repeated {
-					p.P(`s = append(s, "`, fieldname, `: " + `, stringsPkg.Use(), `.Replace(`, fmtPkg.Use(), `.Sprintf("%#v", this.`, fieldname, `)`, ",`&`,``,1)", ` + ",\n")`)
 				} else {
 					p.P(`s = append(s, "`, fieldname, `: " + `, stringsPkg.Use(), `.Replace(this.`, fieldname, `.GoString()`, ",`&`,``,1)", ` + ",\n")`)
 				}

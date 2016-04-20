@@ -150,25 +150,35 @@ func (p *stringer) Generate(file *generator.FileDescriptor) {
 				continue
 			}
 			fieldname := p.GetFieldName(message, field)
-			mapMsg := generator.GetMap(file.FileDescriptorProto, field)
-			keyField, valueField := mapMsg.GetMapFields()
+
+			m := p.GoMapType(nil, field)
+			mapgoTyp, keyField, keyAliasField := m.GoType, m.KeyField, m.KeyAliasField
 			keysName := `keysFor` + fieldname
 			keygoTyp, _ := p.GoType(nil, keyField)
 			keygoTyp = strings.Replace(keygoTyp, "*", "", 1)
+			keygoAliasTyp, _ := p.GoType(nil, keyAliasField)
+			keygoAliasTyp = strings.Replace(keygoAliasTyp, "*", "", 1)
 			keyCapTyp := generator.CamelCase(keygoTyp)
-			valuegoTyp, _ := p.GoType(nil, valueField)
 			p.P(keysName, ` := make([]`, keygoTyp, `, 0, len(this.`, fieldname, `))`)
 			p.P(`for k, _ := range this.`, fieldname, ` {`)
 			p.In()
-			p.P(keysName, ` = append(`, keysName, `, k)`)
+			if keygoAliasTyp == keygoTyp {
+				p.P(keysName, ` = append(`, keysName, `, k)`)
+			} else {
+				p.P(keysName, ` = append(`, keysName, `, `, keygoTyp, `(k))`)
+			}
 			p.Out()
 			p.P(`}`)
 			p.P(sortKeysPkg.Use(), `.`, keyCapTyp, `s(`, keysName, `)`)
 			mapName := `mapStringFor` + fieldname
-			p.P(mapName, ` := "map[`, keygoTyp, `]`, valuegoTyp, `{"`)
+			p.P(mapName, ` := "`, mapgoTyp, `{"`)
 			p.P(`for _, k := range `, keysName, ` {`)
 			p.In()
-			p.P(mapName, ` += fmt.Sprintf("%v: %v,", k, this.`, fieldname, `[k])`)
+			if keygoAliasTyp == keygoTyp {
+				p.P(mapName, ` += fmt.Sprintf("%v: %v,", k, this.`, fieldname, `[k])`)
+			} else {
+				p.P(mapName, ` += fmt.Sprintf("%v: %v,", k, this.`, fieldname, `[`, keygoAliasTyp, `(k)])`)
+			}
 			p.Out()
 			p.P(`}`)
 			p.P(mapName, ` += "}"`)

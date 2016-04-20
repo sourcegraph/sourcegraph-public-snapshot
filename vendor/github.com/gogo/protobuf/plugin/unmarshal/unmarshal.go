@@ -332,7 +332,9 @@ func (p *unmarshal) mapField(varName string, field *descriptor.FieldDescriptorPr
 		p.P(`return `, p.ioPkg.Use(), `.ErrUnexpectedEOF`)
 		p.Out()
 		p.P(`}`)
-		p.P(varName, ` := string(data[iNdEx:postStringIndex`, varName, `])`)
+		cast, _ := p.GoType(nil, field)
+		cast = strings.Replace(cast, "*", "", 1)
+		p.P(varName, ` := `, cast, `(data[iNdEx:postStringIndex`, varName, `])`)
 		p.P(`iNdEx = postStringIndex`, varName)
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 		p.P(`var mapmsglen int`)
@@ -417,7 +419,7 @@ func (p *unmarshal) noStarOrSliceType(msg *generator.Descriptor, field *descript
 	return typ
 }
 
-func (p *unmarshal) field(file *descriptor.FileDescriptorProto, msg *generator.Descriptor, field *descriptor.FieldDescriptorProto, fieldname string, proto3 bool) {
+func (p *unmarshal) field(file *generator.FileDescriptor, msg *generator.Descriptor, field *descriptor.FieldDescriptorProto, fieldname string, proto3 bool) {
 	repeated := field.IsRepeated()
 	nullable := gogoproto.IsNullable(field)
 	typ := p.noStarOrSliceType(msg, field)
@@ -674,27 +676,50 @@ func (p *unmarshal) field(file *descriptor.FileDescriptorProto, msg *generator.D
 			p.Out()
 			p.P(`}`)
 			p.P(`m.`, fieldname, ` = &`, p.OneOfTypeName(msg, field), `{v}`)
-		} else if generator.IsMap(file, field) {
-			mapMsg := generator.GetMap(file, field)
-			keyField, valueField := mapMsg.GetMapFields()
-			keygoTyp, _ := p.GoType(nil, keyField)
+		} else if generator.IsMap(file.FileDescriptorProto, field) {
+			m := p.GoMapType(nil, field)
+
+			keygoTyp, _ := p.GoType(nil, m.KeyField)
+			keygoAliasTyp, _ := p.GoType(nil, m.KeyAliasField)
+			// keys may not be pointers
 			keygoTyp = strings.Replace(keygoTyp, "*", "", 1)
-			valuegoTyp, _ := p.GoType(nil, valueField)
-			if !valueField.IsMessage() {
-				valuegoTyp = strings.Replace(valuegoTyp, "*", "", 1)
-			}
+			keygoAliasTyp = strings.Replace(keygoAliasTyp, "*", "", 1)
+
+			valuegoTyp, _ := p.GoType(nil, m.ValueField)
+			valuegoAliasTyp, _ := p.GoType(nil, m.ValueAliasField)
+
+			// if the map type is an alias and key or values are aliases (type Foo map[Bar]Baz),
+			// we need to explicitly record their use here.
+			p.RecordTypeUse(m.KeyAliasField.GetTypeName())
+			p.RecordTypeUse(m.ValueAliasField.GetTypeName())
+
+			nullable, valuegoTyp, valuegoAliasTyp = generator.GoMapValueTypes(field, m.ValueField, valuegoTyp, valuegoAliasTyp)
+
 			p.P(`var keykey uint64`)
 			p.decodeVarint("keykey", "uint64")
-			p.mapField("mapkey", keyField)
+			p.mapField("mapkey", m.KeyAliasField)
 			p.P(`var valuekey uint64`)
 			p.decodeVarint("valuekey", "uint64")
-			p.mapField("mapvalue", valueField)
+			p.mapField("mapvalue", m.ValueAliasField)
 			p.P(`if m.`, fieldname, ` == nil {`)
 			p.In()
-			p.P(`m.`, fieldname, ` = make(map[`, keygoTyp, `]`, valuegoTyp, `)`)
+			p.P(`m.`, fieldname, ` = make(`, m.GoType, `)`)
 			p.Out()
 			p.P(`}`)
-			p.P(`m.`, fieldname, `[mapkey] = mapvalue`)
+			s := `m.` + fieldname
+			if keygoTyp == keygoAliasTyp {
+				s += `[mapkey]`
+			} else {
+				s += `[` + keygoAliasTyp + `(mapkey)]`
+			}
+			v := `mapvalue`
+			if m.ValueField.IsMessage() && !nullable {
+				v = `*` + v
+			}
+			if valuegoTyp != valuegoAliasTyp {
+				v = `((` + valuegoAliasTyp + `)(` + v + `))`
+			}
+			p.P(s, ` = `, v)
 		} else if repeated {
 			if nullable {
 				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, &`, msgname, `{})`)
@@ -748,7 +773,12 @@ func (p *unmarshal) field(file *descriptor.FileDescriptorProto, msg *generator.D
 				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, make([]byte, postIndex-iNdEx))`)
 				p.P(`copy(m.`, fieldname, `[len(m.`, fieldname, `)-1], data[iNdEx:postIndex])`)
 			} else {
-				p.P(`m.`, fieldname, ` = append([]byte{}`, `, data[iNdEx:postIndex]...)`)
+				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `[:0] , data[iNdEx:postIndex]...)`)
+				p.P(`if m.`, fieldname, ` == nil {`)
+				p.In()
+				p.P(`m.`, fieldname, ` = []byte{}`)
+				p.Out()
+				p.P(`}`)
 			}
 		} else {
 			_, ctyp, err := generator.GetCustomType(field)
@@ -1036,13 +1066,13 @@ func (p *unmarshal) Generate(file *generator.FileDescriptor) {
 				p.P(`}`)
 				p.P(`for iNdEx < postIndex {`)
 				p.In()
-				p.field(file.FileDescriptorProto, message, field, fieldname, false)
+				p.field(file, message, field, fieldname, false)
 				p.Out()
 				p.P(`}`)
 				p.Out()
 				p.P(`} else if wireType == `, strconv.Itoa(wireType), `{`)
 				p.In()
-				p.field(file.FileDescriptorProto, message, field, fieldname, false)
+				p.field(file, message, field, fieldname, false)
 				p.Out()
 				p.P(`} else {`)
 				p.In()
@@ -1055,7 +1085,7 @@ func (p *unmarshal) Generate(file *generator.FileDescriptor) {
 				p.P(`return ` + fmtPkg.Use() + `.Errorf("proto: wrong wireType = %d for field ` + errFieldname + `", wireType)`)
 				p.Out()
 				p.P(`}`)
-				p.field(file.FileDescriptorProto, message, field, fieldname, proto3)
+				p.field(file, message, field, fieldname, proto3)
 			}
 
 			if field.IsRequired() {
@@ -1105,16 +1135,7 @@ func (p *unmarshal) Generate(file *generator.FileDescriptor) {
 			p.P(`return `, p.ioPkg.Use(), `.ErrUnexpectedEOF`)
 			p.Out()
 			p.P(`}`)
-			if gogoproto.HasExtensionsMap(file.FileDescriptorProto, message.DescriptorProto) {
-				p.P(`if m.XXX_extensions == nil {`)
-				p.In()
-				p.P(`m.XXX_extensions = make(map[int32]`, protoPkg.Use(), `.Extension)`)
-				p.Out()
-				p.P(`}`)
-				p.P(`m.XXX_extensions[int32(fieldNum)] = `, protoPkg.Use(), `.NewExtension(data[iNdEx:iNdEx+skippy])`)
-			} else {
-				p.P(`m.XXX_extensions = append(m.XXX_extensions, data[iNdEx:iNdEx+skippy]...)`)
-			}
+			p.P(protoPkg.Use(), `.AppendExtension(m, int32(fieldNum), data[iNdEx:iNdEx+skippy])`)
 			p.P(`iNdEx += skippy`)
 			p.Out()
 			p.P(`} else {`)

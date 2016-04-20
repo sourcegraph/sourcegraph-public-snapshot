@@ -1,6 +1,7 @@
-package google_protobuf
+package descriptor
 
 import fmt "fmt"
+
 import strings "strings"
 import github_com_gogo_protobuf_proto "github.com/gogo/protobuf/proto"
 import sort "sort"
@@ -12,7 +13,7 @@ func (this *FileDescriptorSet) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 5)
-	s = append(s, "&google_protobuf.FileDescriptorSet{")
+	s = append(s, "&descriptor.FileDescriptorSet{")
 	if this.File != nil {
 		s = append(s, "File: "+fmt.Sprintf("%#v", this.File)+",\n")
 	}
@@ -27,7 +28,7 @@ func (this *FileDescriptorProto) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 16)
-	s = append(s, "&google_protobuf.FileDescriptorProto{")
+	s = append(s, "&descriptor.FileDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -74,8 +75,8 @@ func (this *DescriptorProto) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 12)
-	s = append(s, "&google_protobuf.DescriptorProto{")
+	s := make([]string, 0, 14)
+	s = append(s, "&descriptor.DescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -100,6 +101,12 @@ func (this *DescriptorProto) GoString() string {
 	if this.Options != nil {
 		s = append(s, "Options: "+fmt.Sprintf("%#v", this.Options)+",\n")
 	}
+	if this.ReservedRange != nil {
+		s = append(s, "ReservedRange: "+fmt.Sprintf("%#v", this.ReservedRange)+",\n")
+	}
+	if this.ReservedName != nil {
+		s = append(s, "ReservedName: "+fmt.Sprintf("%#v", this.ReservedName)+",\n")
+	}
 	if this.XXX_unrecognized != nil {
 		s = append(s, "XXX_unrecognized:"+fmt.Sprintf("%#v", this.XXX_unrecognized)+",\n")
 	}
@@ -111,7 +118,25 @@ func (this *DescriptorProto_ExtensionRange) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 6)
-	s = append(s, "&google_protobuf.DescriptorProto_ExtensionRange{")
+	s = append(s, "&descriptor.DescriptorProto_ExtensionRange{")
+	if this.Start != nil {
+		s = append(s, "Start: "+valueToGoStringDescriptor(this.Start, "int32")+",\n")
+	}
+	if this.End != nil {
+		s = append(s, "End: "+valueToGoStringDescriptor(this.End, "int32")+",\n")
+	}
+	if this.XXX_unrecognized != nil {
+		s = append(s, "XXX_unrecognized:"+fmt.Sprintf("%#v", this.XXX_unrecognized)+",\n")
+	}
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *DescriptorProto_ReservedRange) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&descriptor.DescriptorProto_ReservedRange{")
 	if this.Start != nil {
 		s = append(s, "Start: "+valueToGoStringDescriptor(this.Start, "int32")+",\n")
 	}
@@ -128,8 +153,8 @@ func (this *FieldDescriptorProto) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 13)
-	s = append(s, "&google_protobuf.FieldDescriptorProto{")
+	s := make([]string, 0, 14)
+	s = append(s, "&descriptor.FieldDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -137,10 +162,10 @@ func (this *FieldDescriptorProto) GoString() string {
 		s = append(s, "Number: "+valueToGoStringDescriptor(this.Number, "int32")+",\n")
 	}
 	if this.Label != nil {
-		s = append(s, "Label: "+valueToGoStringDescriptor(this.Label, "google_protobuf.FieldDescriptorProto_Label")+",\n")
+		s = append(s, "Label: "+valueToGoStringDescriptor(this.Label, "descriptor.FieldDescriptorProto_Label")+",\n")
 	}
 	if this.Type != nil {
-		s = append(s, "Type: "+valueToGoStringDescriptor(this.Type, "google_protobuf.FieldDescriptorProto_Type")+",\n")
+		s = append(s, "Type: "+valueToGoStringDescriptor(this.Type, "descriptor.FieldDescriptorProto_Type")+",\n")
 	}
 	if this.TypeName != nil {
 		s = append(s, "TypeName: "+valueToGoStringDescriptor(this.TypeName, "string")+",\n")
@@ -153,6 +178,9 @@ func (this *FieldDescriptorProto) GoString() string {
 	}
 	if this.OneofIndex != nil {
 		s = append(s, "OneofIndex: "+valueToGoStringDescriptor(this.OneofIndex, "int32")+",\n")
+	}
+	if this.JsonName != nil {
+		s = append(s, "JsonName: "+valueToGoStringDescriptor(this.JsonName, "string")+",\n")
 	}
 	if this.Options != nil {
 		s = append(s, "Options: "+fmt.Sprintf("%#v", this.Options)+",\n")
@@ -168,7 +196,7 @@ func (this *OneofDescriptorProto) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 5)
-	s = append(s, "&google_protobuf.OneofDescriptorProto{")
+	s = append(s, "&descriptor.OneofDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -183,7 +211,7 @@ func (this *EnumDescriptorProto) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 7)
-	s = append(s, "&google_protobuf.EnumDescriptorProto{")
+	s = append(s, "&descriptor.EnumDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -204,7 +232,7 @@ func (this *EnumValueDescriptorProto) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 7)
-	s = append(s, "&google_protobuf.EnumValueDescriptorProto{")
+	s = append(s, "&descriptor.EnumValueDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -225,7 +253,7 @@ func (this *ServiceDescriptorProto) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 7)
-	s = append(s, "&google_protobuf.ServiceDescriptorProto{")
+	s = append(s, "&descriptor.ServiceDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -246,7 +274,7 @@ func (this *MethodDescriptorProto) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 10)
-	s = append(s, "&google_protobuf.MethodDescriptorProto{")
+	s = append(s, "&descriptor.MethodDescriptorProto{")
 	if this.Name != nil {
 		s = append(s, "Name: "+valueToGoStringDescriptor(this.Name, "string")+",\n")
 	}
@@ -275,8 +303,8 @@ func (this *FileOptions) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 17)
-	s = append(s, "&google_protobuf.FileOptions{")
+	s := make([]string, 0, 20)
+	s = append(s, "&descriptor.FileOptions{")
 	if this.JavaPackage != nil {
 		s = append(s, "JavaPackage: "+valueToGoStringDescriptor(this.JavaPackage, "string")+",\n")
 	}
@@ -293,7 +321,7 @@ func (this *FileOptions) GoString() string {
 		s = append(s, "JavaStringCheckUtf8: "+valueToGoStringDescriptor(this.JavaStringCheckUtf8, "bool")+",\n")
 	}
 	if this.OptimizeFor != nil {
-		s = append(s, "OptimizeFor: "+valueToGoStringDescriptor(this.OptimizeFor, "google_protobuf.FileOptions_OptimizeMode")+",\n")
+		s = append(s, "OptimizeFor: "+valueToGoStringDescriptor(this.OptimizeFor, "descriptor.FileOptions_OptimizeMode")+",\n")
 	}
 	if this.GoPackage != nil {
 		s = append(s, "GoPackage: "+valueToGoStringDescriptor(this.GoPackage, "string")+",\n")
@@ -313,6 +341,15 @@ func (this *FileOptions) GoString() string {
 	if this.CcEnableArenas != nil {
 		s = append(s, "CcEnableArenas: "+valueToGoStringDescriptor(this.CcEnableArenas, "bool")+",\n")
 	}
+	if this.ObjcClassPrefix != nil {
+		s = append(s, "ObjcClassPrefix: "+valueToGoStringDescriptor(this.ObjcClassPrefix, "string")+",\n")
+	}
+	if this.CsharpNamespace != nil {
+		s = append(s, "CsharpNamespace: "+valueToGoStringDescriptor(this.CsharpNamespace, "string")+",\n")
+	}
+	if this.JavananoUseDeprecatedPackage != nil {
+		s = append(s, "JavananoUseDeprecatedPackage: "+valueToGoStringDescriptor(this.JavananoUseDeprecatedPackage, "bool")+",\n")
+	}
 	if this.UninterpretedOption != nil {
 		s = append(s, "UninterpretedOption: "+fmt.Sprintf("%#v", this.UninterpretedOption)+",\n")
 	}
@@ -330,7 +367,7 @@ func (this *MessageOptions) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 9)
-	s = append(s, "&google_protobuf.MessageOptions{")
+	s = append(s, "&descriptor.MessageOptions{")
 	if this.MessageSetWireFormat != nil {
 		s = append(s, "MessageSetWireFormat: "+valueToGoStringDescriptor(this.MessageSetWireFormat, "bool")+",\n")
 	}
@@ -359,13 +396,16 @@ func (this *FieldOptions) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 10)
-	s = append(s, "&google_protobuf.FieldOptions{")
+	s := make([]string, 0, 11)
+	s = append(s, "&descriptor.FieldOptions{")
 	if this.Ctype != nil {
-		s = append(s, "Ctype: "+valueToGoStringDescriptor(this.Ctype, "google_protobuf.FieldOptions_CType")+",\n")
+		s = append(s, "Ctype: "+valueToGoStringDescriptor(this.Ctype, "descriptor.FieldOptions_CType")+",\n")
 	}
 	if this.Packed != nil {
 		s = append(s, "Packed: "+valueToGoStringDescriptor(this.Packed, "bool")+",\n")
+	}
+	if this.Jstype != nil {
+		s = append(s, "Jstype: "+valueToGoStringDescriptor(this.Jstype, "descriptor.FieldOptions_JSType")+",\n")
 	}
 	if this.Lazy != nil {
 		s = append(s, "Lazy: "+valueToGoStringDescriptor(this.Lazy, "bool")+",\n")
@@ -393,7 +433,7 @@ func (this *EnumOptions) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 7)
-	s = append(s, "&google_protobuf.EnumOptions{")
+	s = append(s, "&descriptor.EnumOptions{")
 	if this.AllowAlias != nil {
 		s = append(s, "AllowAlias: "+valueToGoStringDescriptor(this.AllowAlias, "bool")+",\n")
 	}
@@ -417,7 +457,7 @@ func (this *EnumValueOptions) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 6)
-	s = append(s, "&google_protobuf.EnumValueOptions{")
+	s = append(s, "&descriptor.EnumValueOptions{")
 	if this.Deprecated != nil {
 		s = append(s, "Deprecated: "+valueToGoStringDescriptor(this.Deprecated, "bool")+",\n")
 	}
@@ -438,7 +478,7 @@ func (this *ServiceOptions) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 6)
-	s = append(s, "&google_protobuf.ServiceOptions{")
+	s = append(s, "&descriptor.ServiceOptions{")
 	if this.Deprecated != nil {
 		s = append(s, "Deprecated: "+valueToGoStringDescriptor(this.Deprecated, "bool")+",\n")
 	}
@@ -459,7 +499,7 @@ func (this *MethodOptions) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 6)
-	s = append(s, "&google_protobuf.MethodOptions{")
+	s = append(s, "&descriptor.MethodOptions{")
 	if this.Deprecated != nil {
 		s = append(s, "Deprecated: "+valueToGoStringDescriptor(this.Deprecated, "bool")+",\n")
 	}
@@ -480,7 +520,7 @@ func (this *UninterpretedOption) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 11)
-	s = append(s, "&google_protobuf.UninterpretedOption{")
+	s = append(s, "&descriptor.UninterpretedOption{")
 	if this.Name != nil {
 		s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
 	}
@@ -513,7 +553,7 @@ func (this *UninterpretedOption_NamePart) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 6)
-	s = append(s, "&google_protobuf.UninterpretedOption_NamePart{")
+	s = append(s, "&descriptor.UninterpretedOption_NamePart{")
 	if this.NamePart != nil {
 		s = append(s, "NamePart: "+valueToGoStringDescriptor(this.NamePart, "string")+",\n")
 	}
@@ -531,7 +571,7 @@ func (this *SourceCodeInfo) GoString() string {
 		return "nil"
 	}
 	s := make([]string, 0, 5)
-	s = append(s, "&google_protobuf.SourceCodeInfo{")
+	s = append(s, "&descriptor.SourceCodeInfo{")
 	if this.Location != nil {
 		s = append(s, "Location: "+fmt.Sprintf("%#v", this.Location)+",\n")
 	}
@@ -545,8 +585,8 @@ func (this *SourceCodeInfo_Location) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 8)
-	s = append(s, "&google_protobuf.SourceCodeInfo_Location{")
+	s := make([]string, 0, 9)
+	s = append(s, "&descriptor.SourceCodeInfo_Location{")
 	if this.Path != nil {
 		s = append(s, "Path: "+fmt.Sprintf("%#v", this.Path)+",\n")
 	}
@@ -558,6 +598,9 @@ func (this *SourceCodeInfo_Location) GoString() string {
 	}
 	if this.TrailingComments != nil {
 		s = append(s, "TrailingComments: "+valueToGoStringDescriptor(this.TrailingComments, "string")+",\n")
+	}
+	if this.LeadingDetachedComments != nil {
+		s = append(s, "LeadingDetachedComments: "+fmt.Sprintf("%#v", this.LeadingDetachedComments)+",\n")
 	}
 	if this.XXX_unrecognized != nil {
 		s = append(s, "XXX_unrecognized:"+fmt.Sprintf("%#v", this.XXX_unrecognized)+",\n")

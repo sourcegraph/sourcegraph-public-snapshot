@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	githubAuthorizeUrl = "https://github.com/login/oauth/authorize"
-	githubTokenUrl     = "https://github.com/login/oauth/access_token"
+	githubAuthorizeURL = "https://github.com/login/oauth/authorize"
+	githubTokenURL     = "https://github.com/login/oauth/access_token"
 )
 
 var (
@@ -200,14 +200,13 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	if err := returnto.CheckSafe(returnTo); err != nil {
 		return err
 	}
-	u, err := url.Parse(returnTo)
+
+	_, err = url.Parse(returnTo)
 	if err != nil {
 		return err
 	}
-	q := u.Query()
-	q.Set("github-onboarding", "true")
-	u.RawQuery = q.Encode()
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	http.Redirect(w, r, "/?github-onboarding=true", http.StatusSeeOther)
 	return nil
 }
 
@@ -216,8 +215,8 @@ func getOAuth2Conf(ctx context.Context) *oauth2.Config {
 		ClientID:     githubClientID,
 		ClientSecret: githubClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  githubAuthorizeUrl,
-			TokenURL: githubTokenUrl,
+			AuthURL:  githubAuthorizeURL,
+			TokenURL: githubTokenURL,
 		},
 		RedirectURL: conf.AppURL(ctx).ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String(),
 		Scopes:      scopes,

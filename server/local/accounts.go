@@ -51,6 +51,10 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.UserSpec, error) {
 	accountsStore := store.AccountsFromContext(ctx)
 
+	if newAcct.Login == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "empty login")
+	}
+
 	if !isValidLogin(newAcct.Login) {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
 	}

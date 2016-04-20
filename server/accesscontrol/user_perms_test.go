@@ -120,7 +120,6 @@ func TestVerifyAccess(t *testing.T) {
 
 func asUID(uid int) context.Context {
 	return auth.WithActor(context.Background(), auth.Actor{
-		UID:      uid,
-		ClientID: "xyz",
+		UID: uid,
 	})
 }

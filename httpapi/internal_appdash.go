@@ -15,8 +15,8 @@ import (
 type PageLoadEvent struct {
 	S, E time.Time
 
-	// route and template name of the rendered page
-	Route, Template string
+	// Name of the event.
+	Name string
 }
 
 // Schema implements the appdash.Event interface.
@@ -28,12 +28,12 @@ func (e PageLoadEvent) Start() time.Time { return e.S }
 // End implements the appdash.TimespanEvent interface.
 func (e PageLoadEvent) End() time.Time { return e.E }
 
-var pageLoadLabels = []string{"route", "template"}
+var pageLoadLabels = []string{"name"}
 var pageLoadDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "trace",
-	Name:      "page_load_duration_seconds",
-	Help:      "Total time taken to load the entire page.",
+	Name:      "browser_span_duration_seconds",
+	Help:      "Total time taken to perform a given browser operation.",
 	Buckets:   []float64{1, 5, 10, 60, 300},
 }, pageLoadLabels)
 
@@ -42,13 +42,12 @@ func init() {
 	prometheus.MustRegister(pageLoadDuration)
 }
 
-// serveInternalAppdashUploadPageLoad is an endpoint that simply
-// generates a 'fake' PageLoadEvent Appdash timespan event to
-// represent how long exactly the frontend took to load
-// everything. The client is responsible for determining the start and
-// end times (we just generate the event because JavaScript can't
-// record Appdash events yet).
-func serveInternalAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) error {
+// serveInternalAppdashRecordSpan is an endpoint that records a very simple
+// span with a name and duration as a child of the trace root.
+//
+// This mostly works around the fact that Appdash does not support JavaScript
+// tracing yet.
+func serveInternalAppdashRecordSpan(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
 	// Decode query parameters into an event.
@@ -59,11 +58,15 @@ func serveInternalAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) 
 
 	// Record page load duration in Prometheus histogram.
 	labels := prometheus.Labels{
-		"route":    ev.Route,
-		"template": ev.Template,
+		"name": ev.Name,
 	}
 	elapsed := ev.E.Sub(ev.S)
 	pageLoadDuration.With(labels).Observe(elapsed.Seconds())
+
+	// The `internal.appdash.record-span` span for this POST request is tiny
+	// and thus not easily accessible within the UI. We use a workaround by
+	// attaching the span we will generate to the parent of this POST request
+	// span. I.e. they are sublings.
 
 	// Grab the collector from the context.
 	collector := appdashctx.Collector(ctx)
@@ -77,22 +80,15 @@ func serveInternalAppdashUploadPageLoad(w http.ResponseWriter, r *http.Request) 
 		return fmt.Errorf("no Appdash trace ID set in context")
 	}
 
-	// Note: If we were to record directly to spanID we would end up
-	// with "PageLoad" being shown as a subspan to this request
-	// ("internal.appdash.upload-page-load") which is always extremely
-	// quick, making it's display in the Appdash UI very small and
-	// unnoticeable. To mitigate this and give it a prominent display
-	// position in the UI, we simply record to a subspan of the root
-	// (the trace).
 	newSpan := appdash.NewSpanID(appdash.SpanID{
 		Trace: spanID.Trace,
-		Span:  spanID.Trace,
+
+		// newSpan.Parent will be this span, so set it to this POST request
+		// span's parent span ID so we become a sibling.
+		Span: spanID.Parent,
 	})
 	rec := appdash.NewRecorder(newSpan, collector)
-	rec.Name(ev.Schema())
+	rec.Name(fmt.Sprintf("Browser %s", ev.Name))
 	rec.Event(ev)
-	if errs := rec.Errors(); len(errs) > 0 {
-		return errs[0]
-	}
 	return nil
 }

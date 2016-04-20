@@ -75,6 +75,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 	}
 
 	e := newTreeEntry(fi)
+	e.CommitID = string(commit)
 	fwr := sourcegraph.FileWithRange{BasicTreeEntry: e}
 
 	if fi.Mode().IsDir() {

@@ -19,6 +19,7 @@ export default function withAnnotations(Component) {
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
+			commitID: React.PropTypes.string,
 			path: React.PropTypes.string,
 		};
 
@@ -29,12 +30,18 @@ export default function withAnnotations(Component) {
 		reconcileState(state, props) {
 			Object.assign(state, props);
 
-			state.anns = state.path ? BlobStore.annotations.get(state.repo, state.rev, "", state.path, 0, 0) : null;
+			state.anns = state.path && state.commitID ? BlobStore.annotations.get(state.repo, state.rev, state.commitID, state.path, 0, 0) : null;
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path)) {
-				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, "", nextState.path, 0, 0));
+			if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path)) {
+				if (nextState.commitID) {
+					// Require that the rev has been resolved to a commit ID to fetch,
+					// so that we reuse that resolution on the client (which ensures
+					// consistency and frees the server from performing repetitive
+					// resolutions).
+					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, nextState.commitID, nextState.path, 0, 0));
+				}
 			}
 
 			if (nextState.anns && prevState.anns !== nextState.anns) {

@@ -52,21 +52,24 @@ class Signup extends Container {
 						placeholder="Username"
 						domRef={(e) => this._loginInput = e}
 						autoFocus={true}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="password"
 						id="e2etest-password-field"
 						placeholder="Password"
 						domRef={(e) => this._passwordInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="action">
 					<Input type="email"
 						id="e2etest-email-field"
 						placeholder="Email"
 						domRef={(e) => this._emailInput = e}
-						block={true} />
+						block={true}
+						required={true} />
 				</div>
 				<div styleName="button">
 					<Button color="primary"
@@ -75,7 +78,7 @@ class Signup extends Container {
 						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account & Add GitHub Repositories</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">Sorry, there's been a problem.<br />{this.state.authResponse.Error.message}</div>
+					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
 				<div styleName="subtext">By creating an account you agree to our <a href="/privacy">privacy policy</a> and <a href="/legal">terms</a>.</div>
 				<div styleName="alt-action">

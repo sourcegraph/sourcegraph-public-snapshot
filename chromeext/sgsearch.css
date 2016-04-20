@@ -1,28 +1,28 @@
 #searchrow:hover td{
-	background-color:transparent;
-	
+    background-color:transparent;
+    
 }
 tr:hover .octicon-chevron-right{
-	color:#4078c0;
+    color:#4078c0;
 }
-table {
-	max-width:978px;
-	width: 100%;
-	word-wrap: break-word !important;
-	white-space: normal;
-	position:relative;
+#tree-finder-results2 {
+    max-width:978px;
+    width: 100%;
+    word-wrap: break-word !important;
+    white-space: normal;
+    position:relative;
 }
 
-td{
+#tree-finder-results2 td{
     white-space: normal;
     word-wrap: break-word !important;
     padding-right:5px;
     overflow:hidden;
-    max-width:931px;
+    max-width:668px;
 }
 
-tr{
-	max-width:978px;
+#tree-finder-results2 tr{
+    max-width:670px;
 }
 
 
@@ -46,12 +46,12 @@ input.tree-finder-input2, input.tree-finder-input2:focus {
     color:black;
 }
 #logo{
-	max-height:35px;
-	max-width:105px;
+    max-height:35px;
+    max-width:105px;
 }
 
 #logo:hover{
-	opacity: 1.0 !important;
+    opacity: 1.0 !important;
 
 }
 
@@ -62,6 +62,11 @@ input.tree-finder-input2, input.tree-finder-input2:focus {
 .name {
     color:#4078C0;
 }
+
+#tree-finder-results2 {
+    max-width:715px ;
+}
+
 
 #loadingDiv {
     font-size:16px;

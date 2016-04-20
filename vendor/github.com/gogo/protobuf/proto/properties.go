@@ -42,6 +42,7 @@ package proto
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"sort"
@@ -95,6 +96,9 @@ type oneofMarshaler func(Message, *Buffer) error
 // A oneofUnmarshaler does the unmarshaling for a oneof field in a message.
 type oneofUnmarshaler func(Message, int, int, *Buffer) (bool, error)
 
+// A oneofSizer does the sizing for all oneof fields in a message.
+type oneofSizer func(Message) int
+
 // tagMap is an optimization over map[int]int for typical protocol buffer
 // use-cases. Encoded protocol buffers are often in tag order with small tag
 // numbers.
@@ -146,6 +150,7 @@ type StructProperties struct {
 
 	oneofMarshaler   oneofMarshaler
 	oneofUnmarshaler oneofUnmarshaler
+	oneofSizer       oneofSizer
 	stype            reflect.Type
 
 	// OneofTypes contains information about the oneof fields in this message.
@@ -173,6 +178,7 @@ func (sp *StructProperties) Swap(i, j int) { sp.order[i], sp.order[j] = sp.order
 type Properties struct {
 	Name     string // name of the field, for error messages
 	OrigName string // original name before protocol compiler (always set)
+	JSONName string // name to use for JSON; determined by protoc
 	Wire     string
 	WireType int
 	Tag      int
@@ -232,8 +238,9 @@ func (p *Properties) String() string {
 	if p.Packed {
 		s += ",packed"
 	}
-	if p.OrigName != p.Name {
-		s += ",name=" + p.OrigName
+	s += ",name=" + p.OrigName
+	if p.JSONName != p.OrigName {
+		s += ",json=" + p.JSONName
 	}
 	if p.proto3 {
 		s += ",proto3"
@@ -313,6 +320,8 @@ func (p *Properties) Parse(s string) {
 			p.Packed = true
 		case strings.HasPrefix(f, "name="):
 			p.OrigName = f[5:]
+		case strings.HasPrefix(f, "json="):
+			p.JSONName = f[5:]
 		case strings.HasPrefix(f, "enum="):
 			p.Enum = f[5:]
 		case f == "proto3":
@@ -740,6 +749,7 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 	prop.Prop = make([]*Properties, t.NumField())
 	prop.order = make([]int, t.NumField())
 
+	isOneofMessage := false
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		p := new(Properties)
@@ -761,6 +771,9 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 			prop.unrecField = toField(&f)
 		}
 		oneof := f.Tag.Get("protobuf_oneof") != "" // special case
+		if oneof {
+			isOneofMessage = true
+		}
 		prop.Prop[i] = p
 		prop.order[i] = i
 		if debug {
@@ -779,11 +792,11 @@ func getPropertiesLocked(t reflect.Type) *StructProperties {
 	sort.Sort(prop)
 
 	type oneofMessage interface {
-		XXX_OneofFuncs() (func(Message, *Buffer) error, func(Message, int, int, *Buffer) (bool, error), []interface{})
+		XXX_OneofFuncs() (func(Message, *Buffer) error, func(Message, int, int, *Buffer) (bool, error), func(Message) int, []interface{})
 	}
-	if om, ok := reflect.Zero(reflect.PtrTo(t)).Interface().(oneofMessage); ok {
+	if om, ok := reflect.Zero(reflect.PtrTo(t)).Interface().(oneofMessage); isOneofMessage && ok {
 		var oots []interface{}
-		prop.oneofMarshaler, prop.oneofUnmarshaler, oots = om.XXX_OneofFuncs()
+		prop.oneofMarshaler, prop.oneofUnmarshaler, prop.oneofSizer, oots = om.XXX_OneofFuncs()
 		prop.stype = t
 
 		// Interpret oneof metadata.
@@ -876,3 +889,35 @@ func RegisterEnum(typeName string, unusedNameMap map[int32]string, valueMap map[
 	}
 	enumStringMaps[typeName] = unusedNameMap
 }
+
+// EnumValueMap returns the mapping from names to integers of the
+// enum type enumType, or a nil if not found.
+func EnumValueMap(enumType string) map[string]int32 {
+	return enumValueMaps[enumType]
+}
+
+// A registry of all linked message types.
+// The string is a fully-qualified proto name ("pkg.Message").
+var (
+	protoTypes    = make(map[string]reflect.Type)
+	revProtoTypes = make(map[reflect.Type]string)
+)
+
+// RegisterType is called from generated code and maps from the fully qualified
+// proto name to the type (pointer to struct) of the protocol buffer.
+func RegisterType(x Message, name string) {
+	if _, ok := protoTypes[name]; ok {
+		// TODO: Some day, make this a panic.
+		log.Printf("proto: duplicate proto type registered: %s", name)
+		return
+	}
+	t := reflect.TypeOf(x)
+	protoTypes[name] = t
+	revProtoTypes[t] = name
+}
+
+// MessageName returns the fully-qualified proto name for the given message type.
+func MessageName(x Message) string { return revProtoTypes[reflect.TypeOf(x)] }
+
+// MessageType returns the message type (pointer to struct) for a named message.
+func MessageType(name string) reflect.Type { return protoTypes[name] }
