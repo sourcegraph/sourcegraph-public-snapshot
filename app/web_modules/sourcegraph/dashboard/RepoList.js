@@ -12,20 +12,10 @@ import context from "sourcegraph/app/context";
 class RepoList extends Component {
 	constructor(props) {
 		super(props);
-		this._repoDisabled = this._repoDisabled.bind(this);
-		this._disabledReason = this._disabledReason.bind(this);
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-	}
-
-	_repoDisabled(repo) {
-		return !repo.URI && !(!repo.GitHubID || repo.Language === "Go");
-	}
-
-	_disabledReason(repo) {
-		return `${repo.Language || ""} coming soon`;
 	}
 
 	render() {
@@ -33,17 +23,14 @@ class RepoList extends Component {
 			<div>
 				{this.state.repos.length > 0 &&
 					<div>
-						{context.currentUser && <div styleName="list-section-header">{this.state.reposDisabled ? `Coming soon` : `Go Repositories`}</div>}
+						{context.currentUser && <div styleName="list-section-header">Repositories</div>}
 						{this.state.repos.map((repo, i) =>
 							<div key={i}>
-								<div styleName={this.state.reposDisabled ? "list-item-disabled" : "list-item"}>
+								<div styleName="list-item">
 									<div styleName="uri-container">
 										<div styleName="uri">
-											<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} disabledLink={this._repoDisabled(repo)} />
+											<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
 										</div>
-
-										{this.state.reposDisabled &&
-											<div styleName="disable-reason">{this._disabledReason(repo)}</div>}
 									</div>
 
 									{repo.Description && <div>
@@ -53,7 +40,9 @@ class RepoList extends Component {
 									{repo.Examples && repo.Examples.map((functions, j) =>
 										<div styleName="function-example-container" key={j}>
 											<span styleName="function" key={functions.Functions.Path}>
-												<a href={functions.Functions.Path}><code>{qualifiedNameAndType(functions.Functions)}</code></a>
+												<a href={functions.Functions.Path}>
+													<code>{qualifiedNameAndType(functions.Functions)}</code>
+												</a>
 											</span>
 											{functions.Functions.FunctionCallCount &&
 												<span styleName="function-call-count" key={functions.Functions.FunctionCallCount}>
@@ -73,7 +62,6 @@ class RepoList extends Component {
 
 RepoList.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	reposDisabled: React.PropTypes.bool.isRequired,
 };
 
 

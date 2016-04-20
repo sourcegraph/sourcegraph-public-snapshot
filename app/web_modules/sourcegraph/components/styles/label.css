@@ -1,0 +1,43 @@
+@value base "./base.css";
+@value colors "./colors.css";
+@value typography "./typography.css";
+
+.label {
+	composes: br4 ph2 pv1 from base;
+	composes: f6 b sans-serif from typography;
+	composes: white from colors;
+	text-transform: uppercase;
+	display: flex;
+	align-items: center;
+}
+
+.default {
+	composes: label;
+	composes: bg-gray from colors;
+}
+
+.primary {
+	composes: label;
+	composes: bg-blue from colors;
+}
+
+.success {
+	composes: label;
+	composes: bg-green from colors;
+}
+
+.info {
+	composes: label;
+	composes: bg-aqua from colors;
+}
+
+.warning {
+	composes: label;
+	composes: bg-orange from colors;
+}
+
+.danger {
+	composes: label;
+	composes: bg-red from colors;
+}
+

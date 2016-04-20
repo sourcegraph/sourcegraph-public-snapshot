@@ -24,21 +24,3 @@ describe("DashboardRepos", () => {
 		);
 	});
 });
-
-describe("DashboardRepos", () => {
-	it("should render unsupported repos", () => {
-		let repos = [
-			{GitHubID: 1, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(4).toISOString(), Language: "C++"},
-			{GitHubID: 2, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(3).toISOString(), Language: "C"},
-			{GitHubID: 3, Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(2).toISOString(), Language: "Python"},
-			{Private: false, URI: "someURL", Description: "someDescription", UpdatedAt: new Date(1).toISOString(), Language: "Scala"},
-		];
-		autotest(testdataUnsupported, `${__dirname}/testdata/DashboardRepos-unsupported.json`,
-			<DashboardRepos
-				repos={repos}
-				exampleRepos={repos}
-				hasLinkedGitHub={true}
-				linkGitHubURL={""} />
-		);
-	});
-});

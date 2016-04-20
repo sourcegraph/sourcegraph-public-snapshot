@@ -6,8 +6,8 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 
-function keyFor(repo) {
-	return repo;
+function keyFor(repo, rev) {
+	return `${repo}@${rev}`;
 }
 
 export class RepoStore extends Store {
@@ -26,6 +26,12 @@ export class RepoStore extends Store {
 			content: data && data.resolutions ? data.resolutions.content : {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
+			},
+		});
+		this.inventory = deepFreeze({
+			content: data && data.inventory ? data.inventory.content : {},
+			get(repo, rev) {
+				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
 		this.branches = deepFreeze({
@@ -47,7 +53,13 @@ export class RepoStore extends Store {
 	}
 
 	toJSON(): any {
-		return {repos: this.repos, resolutions: this.resolutions, branches: this.branches, tags: this.tags};
+		return {
+			repos: this.repos,
+			resolutions: this.resolutions,
+			branches: this.branches,
+			tags: this.tags,
+			inventory: this.inventory,
+		};
 	}
 
 	__onDispatch(action) {
@@ -57,6 +69,14 @@ export class RepoStore extends Store {
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				content: Object.assign({}, this.repos.content, {
 					[keyFor(action.repo)]: action.repoObj,
+				}),
+			}));
+			break;
+
+		case RepoActions.FetchedInventory:
+			this.inventory = deepFreeze(Object.assign({}, this.inventory, {
+				content: Object.assign({}, this.inventory.content, {
+					[keyFor(action.repo, action.rev)]: action.inventory,
 				}),
 			}));
 			break;

@@ -41,6 +41,11 @@
 	composes: f3 from typography;
 }
 
+.context {
+	display: flex;
+	align-content: center;
+}
+
 .actions {
 	composes: ph3 from base;
 }

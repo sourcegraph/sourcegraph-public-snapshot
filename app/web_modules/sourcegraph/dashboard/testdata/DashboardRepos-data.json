@@ -2,42 +2,25 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
+			"styleName": "list",
 			"children": [
 				{
-					"type": "div",
+					"type": "WrappedComponent",
 					"props": {
-						"styleName": "list",
-						"children": [
+						"repos": [
 							{
-								"type": "WrappedComponent",
-								"key": ".1",
-								"props": {
-									"repos": [
-										{
-											"Private": false,
-											"URI": "someURL",
-											"Description": "someDescription",
-											"UpdatedAt": "2016-02-24T10:18:55-08:00",
-											"Language": "Go"
-										},
-										{
-											"Private": false,
-											"URI": "someURL",
-											"Description": "someDescription",
-											"UpdatedAt": "2016-02-24T10:18:55-08:00",
-											"Language": "Go"
-										}
-									],
-									"reposDisabled": false
-								}
+								"Private": false,
+								"URI": "someURL",
+								"Description": "someDescription",
+								"UpdatedAt": "2016-02-24T10:18:55-08:00",
+								"Language": "Go"
 							},
 							{
-								"type": "WrappedComponent",
-								"key": ".2",
-								"props": {
-									"repos": [],
-									"reposDisabled": true
-								}
+								"Private": false,
+								"URI": "someURL",
+								"Description": "someDescription",
+								"UpdatedAt": "2016-02-24T10:18:55-08:00",
+								"Language": "Go"
 							}
 						]
 					}
