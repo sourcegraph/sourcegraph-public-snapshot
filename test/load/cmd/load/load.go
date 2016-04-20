@@ -1,4 +1,4 @@
-package load
+package main
 
 import (
 	"errors"
@@ -9,13 +9,22 @@ import (
 	"os/signal"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/test/load"
+
 	"golang.org/x/net/context"
 )
+
+func main() {
+	err := Main()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 // Main is the entry point for the cli
 func Main() error {
 	var (
-		lt       LoadTest
+		lt       load.LoadTest
 		endpoint string
 		err      error
 	)
