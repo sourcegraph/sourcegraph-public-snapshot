@@ -17,10 +17,23 @@ type search struct{}
 
 var _ sourcegraph.SearchServer = (*search)(nil)
 
+var tokenToKind = map[string]string{
+	"func":    "func",
+	"method":  "func",
+	"type":    "type",
+	"struct":  "type",
+	"class":   "type",
+	"var":     "var",
+	"field":   "field",
+	"package": "package",
+	"const":   "const",
+}
+
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
-	var repo, unit, unitType, def string
-	var descToks []string // "descriptor" tokens that don't have a special filter meaning.
-	for _, token := range strings.Fields(op.Query) {
+	var repo, unit, unitType string
+	var kinds []string
+	var descToks []string                            // "descriptor" tokens that don't have a special filter meaning.
+	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
 		if strings.HasPrefix(token, "r:") {
 			repo = strings.TrimPrefix(token, "r:")
 			continue
@@ -33,10 +46,15 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 			unit = strings.TrimPrefix(token, "t:")
 			continue
 		}
-		if def != "" {
-			def += " "
+		if kind, exist := tokenToKind[token]; exist {
+			kinds = append(kinds, kind)
+			continue
 		}
-		def += token
+
+		// function shorthand, still include token as a descriptor token
+		if strings.HasSuffix(token, "()") {
+			kinds = append(kinds, "func")
+		}
 
 		if strings.HasSuffix(token, ".com") || strings.HasSuffix(token, ".org") {
 			descToks = append(descToks, token)
