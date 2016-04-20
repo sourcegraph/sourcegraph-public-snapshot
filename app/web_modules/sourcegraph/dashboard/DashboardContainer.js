@@ -7,6 +7,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
+import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import context from "sourcegraph/app/context";
@@ -155,6 +156,8 @@ class DashboardContainer extends Container {
 					</span>
 				</div>
 			}
+
+			<GlobalSearch query={this.props.location.query.q || ""}/>
 
 			<div styleName="repos">
 				<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])}

@@ -8,6 +8,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
 import "sourcegraph/search/SearchBackend";
 import debounce from "lodash/function/debounce";
+import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef} from "sourcegraph/def/routes";
@@ -30,7 +31,8 @@ class GlobalSearch extends Container {
 		super(props);
 
 		this.state = {
-			query: this.props.location.query.q || "",
+			// query: this.props.location.query.q || "",
+			query: "",
 			matchingDefs: {Defs: []},
 			selectionIndex: 0,
 			focused: false,
@@ -246,15 +248,25 @@ class GlobalSearch extends Container {
 
 			const selected = this._normalizedSelectionIndex() === i;
 
+			let docstring = "";
+			def.Docs.forEach((doc) => {
+					if (doc.Format === "text/plain") {
+							docstring = doc.Data;
+					}
+			});
+
 			list.push(
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}>
-					<code>{qualifiedNameAndType(def)}</code>
-					<span styleName="search-result-info">{def.File} in {def.Unit} ({def.UnitType})</span>
-					<span styleName="search-result-info">{def.RefCount} global usages</span>
+					<div styleName="search-result-main"><code>{qualifiedNameAndType(def)}</code></div>
+					<div styleName="search-result-info">
+							<code><span styleName="search-result-repo">{def.Repo}</span>: <span styleName="search-result-file">{def.File}</span></code><br/>
+					    <span styleName="search-result-ref-count">{def.RefCount}</span> examples found
+					</div>
+					<div styleName="search-result-doc">{firstLine(docstring)}</div>
 				</Link>
 			);
 		}
@@ -286,3 +298,18 @@ class GlobalSearch extends Container {
 }
 
 export default CSSModules(GlobalSearch, styles, {allowMultiple: true});
+
+function firstLine(text: string): string {
+		text = trimLeft(text);
+		let i = text.indexOf("\n");
+		let condensed = false;
+		if (i >= 0) {
+				text = text.substr(0, i);
+				condensed = true;
+		}
+		if (text.length > 100) {
+				text = text.substr(0, 100);
+				condensed = true;
+		}
+		return text;
+}
