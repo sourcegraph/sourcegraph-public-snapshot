@@ -249,9 +249,9 @@ class GlobalSearch extends Container {
 
 			let docstring = "";
 			def.Docs.forEach((doc) => {
-					if (doc.Format === "text/plain") {
-							docstring = doc.Data;
-					}
+				if (doc.Format === "text/plain") {
+					docstring = doc.Data;
+				}
 			});
 
 			list.push(
@@ -263,7 +263,7 @@ class GlobalSearch extends Container {
 					<div styleName="search-result-main"><code>{qualifiedNameAndType(def)}</code></div>
 					<div styleName="search-result-info">
 							<code><span styleName="search-result-repo">{def.Repo}</span>: <span styleName="search-result-file">{def.File}</span></code><br/>
-					    <span styleName="search-result-ref-count">{def.RefCount}</span> examples found
+							<span styleName="search-result-ref-count">{def.RefCount}</span> examples found
 					</div>
 					<div styleName="search-result-doc">{firstLine(docstring)}</div>
 				</Link>
@@ -299,16 +299,13 @@ class GlobalSearch extends Container {
 export default CSSModules(GlobalSearch, styles, {allowMultiple: true});
 
 function firstLine(text: string): string {
-		text = trimLeft(text);
-		let i = text.indexOf("\n");
-		let condensed = false;
-		if (i >= 0) {
-				text = text.substr(0, i);
-				condensed = true;
-		}
-		if (text.length > 100) {
-				text = text.substr(0, 100);
-				condensed = true;
-		}
-		return text;
+	text = trimLeft(text);
+	let i = text.indexOf("\n");
+	if (i >= 0) {
+		text = text.substr(0, i);
+	}
+	if (text.length > 100) {
+		text = text.substr(0, 100);
+	}
+	return text;
 }
