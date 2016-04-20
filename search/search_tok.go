@@ -57,7 +57,7 @@ func UserQueryToksToTSQuery(toks []string) string {
 	if len(toks) == 0 {
 		return ""
 	}
-	tokMatch := strings.Join(toks, " | ")
+	tokMatch := strings.Join(toks, " & ")
 	return tokMatch
 }
 

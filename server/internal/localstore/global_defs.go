@@ -52,10 +52,9 @@ func fromDBDef(d *dbGlobalDef) *sourcegraph.Def {
 	if d == nil {
 		return nil
 	}
-	var data pbtypes.RawMessage
-	if err := data.Unmarshal(d.Data); err != nil {
 
-	}
+	var data pbtypes.RawMessage
+	data.Unmarshal(d.Data)
 	return &sourcegraph.Def{
 		Def: graph.Def{
 			DefKey: graph.DefKey{
@@ -70,6 +69,7 @@ func fromDBDef(d *dbGlobalDef) *sourcegraph.Def {
 			File: d.File,
 
 			Data: data,
+			Docs: []*graph.DefDoc{{Format: "text/plain", Data: d.Doc}},
 		},
 	}
 }
@@ -129,11 +129,11 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		// The ranking critieron is the weighted sum of xref count,
 		// text similarity score, and whether the last term matches
 		// the name.
-		scoreSQL = `0.5*log(10 + ref_ct) + 100.0*ts_rank(to_tsvector('english', min(bow)), to_tsquery('english', ` + arg(bowQuery) + `)) + 100.0*((LOWER(name)=LOWER(` + arg(lastTok) + `))::int) score`
+		scoreSQL = `0.5*log(10 + ref_ct) + 100.0*ts_rank(to_tsvector('english', bow), to_tsquery('english', ` + arg(bowQuery) + `)) + 100.0*((LOWER(name)=LOWER(` + arg(lastTok) + `))::int) score`
 	} else {
 		scoreSQL = `ref_ct score`
 	}
-	selectSQL := `SELECT repo, unit_type, unit, path, name, kind, file, data, ref_ct, ` + scoreSQL + ` FROM global_defs`
+	selectSQL := `SELECT repo, unit_type, unit, path, name, kind, file, data, doc, ref_ct, ` + scoreSQL + ` FROM global_defs`
 	var whereSQL string
 	{
 		var wheres []string
@@ -154,11 +154,10 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 
 		whereSQL = fmt.Sprint(`WHERE (` + strings.Join(wheres, ") AND (") + `)`)
 	}
-	groupSQL := `GROUP BY repo, unit_type, unit, path, name, kind, file, data, ref_ct`
 	orderSQL := `ORDER BY score DESC`
 	limitSQL := `LIMIT ` + arg(op.Opt.PerPageOrDefault())
 
-	sql := strings.Join([]string{selectSQL, whereSQL, groupSQL, orderSQL, limitSQL}, "\n")
+	sql := strings.Join([]string{selectSQL, whereSQL, orderSQL, limitSQL}, "\n")
 
 	var dbSearchResults []*dbGlobalSearchResult
 	if _, err := graphDBH(ctx).Select(&dbSearchResults, sql, args...); err != nil {
