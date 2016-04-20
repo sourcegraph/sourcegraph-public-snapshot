@@ -11,11 +11,10 @@ See: https://groups.google.com/a/chromium.org/forum/#!topic/chromium-extensions/
 */
 
 function detectExistence() {
+	console.log("we're in shte script");
 	var el = document.createElement("div");
 	el.id = "chrome-extension-installed";
-	if (document.getElementById("chrome-extension-install-button")) {
-		document.getElementById("chrome-extension-install-button").appendChild(el);
-	}
-}
+	document.getElementById("chrome-extension-install-button").appendChild(el);
+};
 
 document.addEventListener("DOMContentLoaded", detectExistence);

@@ -23,7 +23,6 @@ function sourcegraph_activateDefnPopovers(el) {
       var URLend = activeA.href.split('https://sourcegraph.com')[1]
       var URLendNoChrome = URLend.split('?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext')[0]
       var URLtoUse = 'https://sourcegraph.com/.api/repos' + URLendNoChrome;
-      //console.log(URLtoUse)
       ajaxGet(URLtoUse, function(html) {
         if (activeA) showPopover(html);
       });
