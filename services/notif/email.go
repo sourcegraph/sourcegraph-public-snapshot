@@ -10,9 +10,6 @@ import (
 	"github.com/mattbaird/gochimp"
 )
 
-const notifAdmin = "all@sourcegraph.com"
-const notifFrom = "notify@sourcegraph.com"
-
 var mandrillEnabled bool
 
 var mandrill *gochimp.MandrillAPI

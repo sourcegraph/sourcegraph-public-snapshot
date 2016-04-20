@@ -20,10 +20,6 @@ var (
 	password = flag.String("password", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "the password to use for src operations")
 	email    = flag.String("email", "email@email.email", "the email to use for src operations")
 
-	registeredClient            = "testserver"
-	registeredClientURL         = "http://localhost:3080"
-	registeredClientRedirectURL = "http://localhost:3080/login/oauth/receive"
-
 	verbose = true
 
 	asyncChildProcs   []*exec.Cmd
