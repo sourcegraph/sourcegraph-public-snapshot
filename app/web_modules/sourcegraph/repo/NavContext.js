@@ -26,7 +26,7 @@ class NavContext extends React.Component {
 			<div styleName="nav">
 				{!this._isLanguageSupported() &&
 					<Label style={{marginRight: "10px"}} color="warning">
-						{`${this.props.inventory.PrimaryProgrammingLanguage} is not supported`}
+						{`${this.props.inventory.PrimaryProgrammingLanguage} is not yet supported`}
 					</Label>
 				}
 				<RepoLink repo={this.props.repo} />
