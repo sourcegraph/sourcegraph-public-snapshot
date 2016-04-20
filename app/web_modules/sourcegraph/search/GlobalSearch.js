@@ -28,8 +28,9 @@ class GlobalSearch extends Container {
 
 	constructor(props) {
 		super(props);
+
 		this.state = {
-			query: "",
+			query: this.props.location.query.q || "",
 			matchingDefs: {Defs: []},
 			selectionIndex: 0,
 			focused: false,
@@ -66,6 +67,9 @@ class GlobalSearch extends Container {
 		if (global.window) {
 			window.addEventListener("focus", this._focusInput);
 		}
+
+		// TODO(beyang): hack?
+		Dispatcher.Backends.dispatch(new SearchActions.WantResults(this.state.query));
 	}
 
 	componentWillUnmount() {
@@ -99,6 +103,7 @@ class GlobalSearch extends Container {
 	}
 
 	_onChangeQuery(query: string) {
+		this.context.router.replace({...this.props.location, query: {q: query || undefined}}); // eslint-disable-line no-undefined
 		this.setState({query: query});
 	}
 
