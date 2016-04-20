@@ -1,4 +1,5 @@
 import React from "react";
+import {Link} from "react-router";
 import RepoLink from "sourcegraph/components/RepoLink";
 
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
@@ -38,15 +39,13 @@ class DashboardRepos extends React.Component {
 
 							{repo.Examples && repo.Examples.map((functions, j) =>
 								<div styleName="function-example-container" key={j}>
-									<span styleName="function" key={functions.Functions.Path}>
-										<a href={functions.Functions.Path}>
-											<code>{qualifiedNameAndType(functions.Functions)}</code>
-										</a>
-									</span>
+									<Link to={functions.Functions.Path} styleName="function">
+										<code>{qualifiedNameAndType(functions.Functions)}</code>
+									</Link>
 									{functions.Functions.FunctionCallCount &&
-										<span styleName="function-call-count" key={functions.Functions.FunctionCallCount}>
-											<a href={functions.Functions.Path}><code>{functions.Functions.FunctionCallCount} references</code></a>
-										</span>}
+										<Link to={functions.Functions.Path} styleName="function-call-count">
+											<code>{functions.Functions.FunctionCallCount} references</code>
+										</Link>}
 								</div>
 							)}
 						</div>
