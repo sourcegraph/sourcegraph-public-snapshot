@@ -86,6 +86,11 @@
 			"revision": "27cd5973303fde7d914860be1ea4b927a6be0c92",
 			"revisionTime": "2015-12-05T06:35:14Z"
 		},
+			"checksumSHA1": "MJk8bN15e/nKHGetO8GSfYIOKxE=",
+			"path": "github.com/dgryski/go-discreterand",
+			"revision": "57fa96b59f2a453d7341c5ba85cb02c1088beb89",
+			"revisionTime": "2015-04-23T09:39:09Z"
+		},
 		{
 			"path": "github.com/docker/go-units",
 			"revision": "954fed01cc617c55d838fa2230073f2cb17386c8",
