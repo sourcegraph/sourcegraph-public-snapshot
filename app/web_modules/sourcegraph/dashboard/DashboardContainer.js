@@ -1,6 +1,5 @@
 import React from "react";
 import Helmet from "react-helmet";
-import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -19,34 +18,16 @@ import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import deepFreeze from "sourcegraph/util/deepFreeze";
+import DashboardPromos from "./DashboardPromos";
+import ChromeExtensionCTA from "./ChromeExtensionCTA";
 
 class DashboardContainer extends Container {
-	constructor(props) {
-		super(props);
-		this.state = {
-			numRepos: 79272,
-			numFunctions: 143203753,
-		};
-	}
 
 	componentDidMount() {
 		super.componentDidMount();
 		if (this.state.githubRedirect) {
 			EventLogger.logEvent("LinkGitHubCompleted");
 		}
-
-		// Dummy counters for repos and functions.
-		this._counter = setInterval(() => {
-			this.setState({
-				numRepos: this.state.numRepos + Math.floor(Math.random() * 2),
-				numFunctions: this.state.numFunctions + Math.floor(Math.random() * 10),
-			});
-		}, 2500);
-	}
-
-	componentWillUnmount() {
-		super.componentWillUnmount();
-		clearInterval(this._counter);
 	}
 
 	reconcileState(state, props) {
@@ -95,36 +76,19 @@ class DashboardContainer extends Container {
 				},
 			],
 		},
-		{
-			URI: "github.com/gorilla/mux",
-			Owner: "gorilla",
-			Name: "mux",
-			Language: "Go",
-			Examples: [
-				{Functions: {
-					Path: "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
-					FunctionCallCount: "40",
-					FmtStrings: {
-						Name: {ScopeQualified: "NewRouter"},
-						Type: {ScopeQualified: "()*Router"},
-						NameAndTypeSeparator: "",
-						DefKeyword: "func",
-					},
-				},
-			},
-				{Functions: {
-					Path: "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
-					FunctionCallCount: "14",
-					FmtStrings: {
-						Name: {ScopeQualified: "(r *Route) PathPrefix"},
-						Type: {ScopeQualified: "(tpl string) *Route"},
-						NameAndTypeSeparator: "",
-						DefKeyword: "func",
-					},
-				},
-			},
-			]},
-			]);
+		]);
+	}
+
+	renderCTAButtons() {
+		return (<div styleName="cta-header">
+				{!context.hasLinkedGitHub && <div styleName="cta">
+					<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
+						<Button outline={true} color="warning"><GitHubIcon styleName="github-icon" />Add My GitHub Repositories</Button>
+					</a>
+				</div>}
+			{/* NOTE: The ChromeExtensionCTA is responsible for determining whether it should render the button or not*/}
+			<ChromeExtensionCTA/>
+		</div>);
 	}
 
 	render() {
@@ -132,27 +96,27 @@ class DashboardContainer extends Container {
 			<Helmet title="Home" />
 
 			{!context.currentUser &&
-				<div styleName="action">
-					<Link to="/login"> Sign in </Link>
+				<div styleName="anon-section">
+					<div styleName="anon-title">Index your GitHub code</div>
+					<div styleName="anon-header-sub">Web-based, IDE-like code browsing and global "find usages" for Go code.</div>
+				</div>
+			}
+
+			{!context.currentUser &&
+				<DashboardPromos/>
+			}
+
+			{context.currentUser &&
+				<div styleName="anon-section">
+					<div styleName="anon-title-left">My Dashboard</div>
+					{this.renderCTAButtons()}
 				</div>
 			}
 
 			{!context.currentUser &&
 				<div styleName="anon-section">
-					<img styleName="logo" src={`${context.assetsRoot || ""}/img/sourcegraph-logo.svg`}/>
-					<div styleName="anon-title">Code Intelligence for Teams</div>
-					<div styleName="anon-header-sub">Search, browse, and cross-reference code</div>
-					<div styleName="anon-header-counts">{this.state.numRepos.toLocaleString()} repositories &middot; {this.state.numFunctions.toLocaleString()} functions</div>
-				</div>
-			}
-
-			{!context.hasLinkedGitHub && context.currentUser &&
-				<div styleName="header">
-					<span styleName="cta">
-						<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
-						<Button outline={true} color="warning"><GitHubIcon styleName="github-icon" />Add My GitHub Repositories</Button>
-						</a>
-					</span>
+					<div styleName="anon-title">Jump in with live examples</div>
+					<div styleName="anon-header-sub">Select a function from the Go standard library and see its usage across all open-source libraries</div>
 				</div>
 			}
 
@@ -163,14 +127,11 @@ class DashboardContainer extends Container {
 
 			{!context.currentUser &&
 				<div styleName="cta-box">
-					<span styleName="cta">
-						<a href="join" onClick={() => EventLogger.logEventForPage("JoinCTAClicked", EventLocation.Dashboard)}>
-							<Button color="info" size="large">Add Sourcegraph to my code</Button>
-						</a>
-					</span>
+					<a href="join" onClick={() => EventLogger.logEventForPage("JoinCTAClicked", EventLocation.Dashboard, {PageLocation: "Bottom"})}>
+						<Button color="info" size="large">Add Sourcegraph to my Code</Button>
+					</a>
 				</div>
 			}
-
 		</div>);
 	}
 }

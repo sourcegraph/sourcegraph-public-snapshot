@@ -15,64 +15,59 @@
 					"type": "div",
 					"key": ".1",
 					"props": {
-						"styleName": "action",
-						"children": [
-							{
-								"type": "",
-								"props": {
-									"to": "/login",
-									"children": [
-										" Sign in "
-									],
-									"onlyActiveOnIndex": false,
-									"className": "",
-									"style": {}
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".2",
-					"props": {
 						"styleName": "anon-section",
 						"children": [
 							{
-								"type": "img",
+								"type": "div",
 								"key": ".0",
 								"props": {
-									"styleName": "logo",
-									"src": "/img/sourcegraph-logo.svg"
+									"styleName": "anon-title",
+									"children": [
+										"Index your GitHub code"
+									]
 								}
 							},
 							{
 								"type": "div",
 								"key": ".1",
 								"props": {
+									"styleName": "anon-header-sub",
+									"children": [
+										"Web-based, IDE-like code browsing and global \"find usages\" for Go code."
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "WrappedComponent",
+					"key": ".2",
+					"props": {}
+				},
+				{
+					"type": "div",
+					"key": ".4",
+					"props": {
+						"styleName": "anon-section",
+						"children": [
+							{
+								"type": "div",
+								"key": ".0",
+								"props": {
 									"styleName": "anon-title",
 									"children": [
-										"Code Intelligence for Teams"
+										"Jump in with live examples"
 									]
 								}
 							},
 							{
 								"type": "div",
-								"key": ".2",
+								"key": ".1",
 								"props": {
 									"styleName": "anon-header-sub",
 									"children": [
-										"Search, browse, and cross-reference code"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": ".3",
-								"props": {
-									"styleName": "anon-header-counts",
-									"children": [
-										"79,272 repositories · 143,203,753 functions"
+										"Select a function from the Go standard library and see its usage across all open-source libraries"
 									]
 								}
 							}
@@ -81,7 +76,7 @@
 				},
 				{
 					"type": "div",
-					"key": ".4",
+					"key": ".5",
 					"props": {
 						"styleName": "repos",
 						"children": [
@@ -129,46 +124,6 @@
 													}
 												}
 											]
-										},
-										{
-											"URI": "github.com/gorilla/mux",
-											"Owner": "gorilla",
-											"Name": "mux",
-											"Language": "Go",
-											"Examples": [
-												{
-													"Functions": {
-														"Path": "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
-														"FunctionCallCount": "40",
-														"FmtStrings": {
-															"Name": {
-																"ScopeQualified": "NewRouter"
-															},
-															"Type": {
-																"ScopeQualified": "()*Router"
-															},
-															"NameAndTypeSeparator": "",
-															"DefKeyword": "func"
-														}
-													}
-												},
-												{
-													"Functions": {
-														"Path": "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
-														"FunctionCallCount": "14",
-														"FmtStrings": {
-															"Name": {
-																"ScopeQualified": "(r *Route) PathPrefix"
-															},
-															"Type": {
-																"ScopeQualified": "(tpl string) *Route"
-															},
-															"NameAndTypeSeparator": "",
-															"DefKeyword": "func"
-														}
-													}
-												}
-											]
 										}
 									]
 								}
@@ -178,30 +133,22 @@
 				},
 				{
 					"type": "div",
-					"key": ".5",
+					"key": ".6",
 					"props": {
 						"styleName": "cta-box",
 						"children": [
 							{
-								"type": "span",
+								"type": "a",
 								"props": {
-									"styleName": "cta",
+									"href": "join",
 									"children": [
 										{
-											"type": "a",
+											"type": "WrappedComponent",
 											"props": {
-												"href": "join",
+												"color": "info",
+												"size": "large",
 												"children": [
-													{
-														"type": "WrappedComponent",
-														"props": {
-															"color": "info",
-															"size": "large",
-															"children": [
-																"Add Sourcegraph to my code"
-															]
-														}
-													}
+													"Add Sourcegraph to my Code"
 												]
 											}
 										}

@@ -38,7 +38,7 @@ class DashboardRepos extends React.Component {
 							</div>}
 
 							{repo.Examples && repo.Examples.map((functions, j) =>
-								<div styleName="function-example-container" key={j}>
+								<div styleName="container-vertical-padding" key={j}>
 									<Link to={functions.Functions.Path} styleName="function">
 										<code>{qualifiedNameAndType(functions.Functions)}</code>
 									</Link>

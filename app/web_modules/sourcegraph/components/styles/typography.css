@@ -170,6 +170,19 @@ html {
 	background-color: c_brand-orange;
 }
 
+.header-left {
+	composes: header tl;
+}
+.header-left::after {
+	content: '';
+	display: block;
+	margin-right: auto;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+
 .subheader {
 	composes: f3 lh-copy;
 	composes: silver from colors;

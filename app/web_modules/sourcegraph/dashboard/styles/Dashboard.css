@@ -11,13 +11,6 @@
 	composes: center from base;
 }
 
-.cta-box {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	composes: pv4 center from base;
-}
-
 .action {
 	margin-left: auto;
 	composes: pr4 pt3 from base;
@@ -31,61 +24,114 @@
 	text-align: center;
 }
 
-.total-repo-functions {
-	margin-left: auto;
-	composes: pr4 from base;
-	composes: f4 from typography;
-	display: inline-block;
-}
-
-.logo {
-	composes: mt0 from base;
-	max-width: 500px;
-}
-
 .anon-title {
 	composes: header-center from typography;
-	composes: pt3 pb4 from base;
+	composes: pt5 pb3 from base;
 }
 
 .anon-header-sub {
 	composes: subheader from typography;
+	composes: pb5 from base;
 }
 
-.anon-header-counts {
-	composes: subheader from typography;
-	composes: hidden-s from base;
-	font-size: 1.25rem;
+.anon-header-sub-left {
+	composes: normal-text from typography;
+	composes: pt4 pb3 from base;
+	text-align: left;
 }
 
-.anon-repo {
-	composes: col-4 from grid;
+.anon-title-left {
+	composes: header-left from typography;
+	composes: pt5 from base;
+	text-align: left;
 }
 
 .repos {
-	composes: col-8-ns col-12 from grid;
+	composes: col-7-ns col-12 from grid;
 	composes: mt4 from base;
 }
-
+	
 .header {
 	display: flex;
 	flex-wrap: wrap;
 	composes: mt4 from base;
 }
-.cta {
-	flex: 1 1 auto;
-	composes: mv3 from base;
-	composes: b from typography;
-}
-.filter {
-	composes: ma3 from base;
+
+.cta-header {
+	display: block;
+	flex-wrap: wrap;
+	
+	.left {
+		-webkit-align-self: flex-start;
+		align-self: flex-start;
+	}
 }
 
-.code-intelligence-cta {
+.promo-container {
+	display: -webkit-flex;
 	display: flex;
-	flex: 1 1 auto;
-	composes: pl3 from base;
+	-webkit-flex-direction: row;
+	flex-direction: row;
+	-webkit-align-items: center;
+	align-items: center;
+	-webkit-justify-content: center;
+	justify-content: center;
+}
+
+.promo-list {
+	display: block;
+	composes: col-4-l col-12-m col-12-s  from grid;
+	list-style: none;
+	text-align: left;
+	align-items: center;
+	composes: pl4 pr4 from base;
+}
+
+.promo-img {
+	composes: col-3 from grid;
+	composes: pl4 hidden-s hidden-m from base;
+	min-width: 650px;
+}
+
+.promo {
+	composes: br3 pl3 pr3 pt4 from base;
+	composes: b--light-gray from colors;
+	composes: lh-copy from typography;
+}
+
+.promo:hover {
+  cursor: pointer;
+}
+
+.promo-header {
+	composes: f3 b from typography;
+	composes: ma0 from base;
+}
+
+.promo-subtext {
+	composes: normal-text from typography;
+	composes: mb2 pb4 from base;
+}
+
+.flow-section {
+	composes: anon-section;
+	composes: hidden-s hidden-m from base;
+}
+
+.cta-box {
+	display: flex;
+	flex-grow: 1;
+	flex-direction: column;
+	align-items: center;
+	composes: pt5 pb6 center from base;
+}
+
+.cta {
+	display: flex;
 	composes: b from typography;
+	composes: pt3 from base;
+	text-align: center;
+	align-items: center;
 }
 
 .github-icon {
@@ -93,26 +139,14 @@
 	composes: f3 from typography;
 }
 
-.small-github-icon {
-	composes: pr0 from base;
-	composes: f3 from typography;
-}
-
-.list {
-	composes: pb3 from base;
-}
-
-.section-header-container {
-	display: flex;
-	justify-content: center;
-	composes: mv0 from base;
-	display: inline-block;
-}
-
 .list-section-header {
 	composes: ph3 pt4 pb2 from base;
 	composes: subsection-header from typography;
 	display: inline-block;
+}
+
+.list {
+	composes: pb3 from base;
 }
 
 .section-header-right {
@@ -126,17 +160,12 @@
 	composes: b--black-20 from colors;
 }
 
-.list-item-disabled {
-	composes: list-item;
-	composes: bg-near-white from colors;
-}
-
 .description {
 	composes: normal-text from typography;
 	composes: mv3 from base;
 }
 
-.function-example-container {
+.container-vertical-padding {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -154,13 +183,6 @@
 	composes: hidden-s from base;
 	composes: col-3-ns from grid;
 	text-align: right;
-}
-
-.updated {
-	composes: fw7 f5 tracked from typography;
-	composes: mb3 from base;
-	composes: moon-gray from colors;
-	text-transform: uppercase;
 }
 
 .uri {
