@@ -67,7 +67,9 @@ const BuildBackend = {
 						body: JSON.stringify({
 							CommitID: action.commitID,
 							Branch: action.branch,
-							Config: {Queue: true},
+							// HACK: this will enable builds queued through the ui
+							// to receive a higher priority.
+							Config: {Queue: true, Priority: 40},
 						}),
 					})
 						.then(checkStatus)
