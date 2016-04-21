@@ -26,6 +26,7 @@ func Main() error {
 	var (
 		lt       load.LoadTest
 		endpoint string
+		duration time.Duration
 		err      error
 	)
 	flag.StringVar(&endpoint, "endpoint", "", "Endpoint to load test (eg https://staging.sourcegraph.com)")
@@ -33,6 +34,7 @@ func Main() error {
 	flag.StringVar(&lt.Password, "password", "", "Password for user")
 	flag.BoolVar(&lt.Anonymous, "anonymous", false, "Do not login")
 	flag.Uint64Var(&lt.Rate, "rate", 0, "Requests per second")
+	flag.DurationVar(&duration, "duration", 0, "How long to run the load test for. 0 means forever")
 	flag.DurationVar(&lt.ReportPeriod, "report-period", 10*time.Minute, "Rate at which to report partial metrics")
 	flag.Parse()
 	lt.TargetPaths = flag.Args()
@@ -54,9 +56,14 @@ func Main() error {
 		cancel()
 	}()
 
+	if duration > 0 {
+		log.Printf("Duration: %s", duration)
+		ctx, _ = context.WithDeadline(ctx, time.Now().Add(duration))
+	}
+
 	for {
 		err = lt.Run(ctx)
-		if ctx.Err() == context.Canceled {
+		if ctx.Err() != nil {
 			break
 		} else if err != nil {
 			return err
