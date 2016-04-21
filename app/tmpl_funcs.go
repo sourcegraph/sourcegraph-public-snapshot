@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/json"
@@ -94,8 +95,16 @@ var tmplFuncs = htmpl.FuncMap{
 }
 
 func rawJSON(v *json.RawMessage) htmpl.JS {
-	if v == nil || *v == nil || len(*v) == 0 {
+	if v == nil || len(*v) == 0 {
 		return "null"
 	}
-	return htmpl.JS(string(*v))
+
+	// SECURITY: Run through Go's JSON encoder to ensure this is
+	// properly escaped JSON. Specifically, if it contains "<" or
+	// ">" chars, we must escape those, or else they could be
+	// interpreted as ending a <script> tag in an HTML page.
+	var buf bytes.Buffer
+	json.HTMLEscape(&buf, *v)
+
+	return htmpl.JS(buf.String())
 }
