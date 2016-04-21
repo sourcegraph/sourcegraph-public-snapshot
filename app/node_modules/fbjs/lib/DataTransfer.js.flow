@@ -54,8 +54,9 @@ class DataTransfer {
   isRichText() {
     // If HTML is available, treat this data as rich text. This way, we avoid
     // using a pasted image if it is packaged with HTML -- this may occur with
-    // pastes from MS Word, for example.
-    if (this.getHTML()) {
+    // pastes from MS Word, for example.  However this is only rich text if
+    // there's accompanying text.
+    if (this.getHTML() && this.getText()) {
       return true;
     }
 
