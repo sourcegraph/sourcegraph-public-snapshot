@@ -99,7 +99,9 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
-var reposGithubPublicCache = cache.TTL(cache.Sync(lru.New(500)), time.Minute)
+var reposGithubPublicCache = cache.TTL(
+	cache.Sync(lru.New(500)),
+	conf.GetenvDurationOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL", "1m"))
 var reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "repos",
