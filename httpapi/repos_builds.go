@@ -64,6 +64,8 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
+	op.Config.Priority = 40
+
 	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
