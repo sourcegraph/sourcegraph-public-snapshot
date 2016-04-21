@@ -98,7 +98,7 @@
 											"Examples": [
 												{
 													"Functions": {
-														"Path": "github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
+														"Path": "/github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
 														"FunctionCallCount": "2313",
 														"FmtStrings": {
 															"Name": {
@@ -114,7 +114,7 @@
 												},
 												{
 													"Functions": {
-														"Path": "github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
+														"Path": "/github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
 														"FunctionCallCount": "1313",
 														"FmtStrings": {
 															"Name": {
@@ -138,7 +138,7 @@
 											"Examples": [
 												{
 													"Functions": {
-														"Path": "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
+														"Path": "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
 														"FunctionCallCount": "40",
 														"FmtStrings": {
 															"Name": {
@@ -154,7 +154,7 @@
 												},
 												{
 													"Functions": {
-														"Path": "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
+														"Path": "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
 														"FunctionCallCount": "14",
 														"FmtStrings": {
 															"Name": {

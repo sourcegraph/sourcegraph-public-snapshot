@@ -76,7 +76,7 @@ class DashboardContainer extends Container {
 			Language: "Go",
 			Examples: [
 				{Functions: {
-					Path: "github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
+					Path: "/github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
 					FunctionCallCount: "2313",
 					FmtStrings: {
 						Name: {
@@ -85,7 +85,7 @@ class DashboardContainer extends Container {
 							}, NameAndTypeSeparator: "", DefKeyword: "func"}},
 				},
 				{Functions: {
-					Path: "github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
+					Path: "/github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
 					FunctionCallCount: "1313",
 					FmtStrings: {
 						Name: {ScopeQualified: "fmt.Sprintf"},
@@ -102,7 +102,7 @@ class DashboardContainer extends Container {
 			Language: "Go",
 			Examples: [
 				{Functions: {
-					Path: "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
+					Path: "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
 					FunctionCallCount: "40",
 					FmtStrings: {
 						Name: {ScopeQualified: "NewRouter"},
@@ -113,7 +113,7 @@ class DashboardContainer extends Container {
 				},
 			},
 				{Functions: {
-					Path: "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
+					Path: "/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
 					FunctionCallCount: "14",
 					FmtStrings: {
 						Name: {ScopeQualified: "(r *Route) PathPrefix"},
