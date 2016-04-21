@@ -157,7 +157,9 @@ class DashboardContainer extends Container {
 				</div>
 			}
 
-			<GlobalSearch query={this.props.location.query.q || ""}/>
+			{context.currentUser && context.currentUser.Admin &&
+				<GlobalSearch query={this.props.location.query.q || ""}/>
+			}
 
 			<div styleName="repos">
 				<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])}
