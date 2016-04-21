@@ -132,6 +132,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 	if strings.HasPrefix(repo.URI, "github.com/") {
 		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
 		if err != nil {
+			reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
 			return err
 		}
 		if !ghrepo.Private {
