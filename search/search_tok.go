@@ -8,8 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
-// TODO(beyang): tests for these functions
-
 var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)
 
 func BagOfWords(def *graph.Def) map[string]int {
