@@ -103,7 +103,7 @@ const BuildBackend = {
 						.catch((err) => ({Error: err}))
 						.then((resp) => {
 							resp.text().then((text) => {
-								let maxID = resp.headers["x-sourcegraph-log-max-id"];
+								let maxID = resp.headers.get("x-sourcegraph-log-max-id");
 								if (maxID) {
 									maxID = parseInt(maxID, 10);
 								}

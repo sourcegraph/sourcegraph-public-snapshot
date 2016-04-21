@@ -33,7 +33,7 @@ describe("BuildBackend", () => {
 
 		BuildBackend.fetch = function(url, options) {
 			expect(url).to.be(expectedURI);
-			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("a"), headers: {"x-sourcegraph-log-max-id": 789}});
+			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("a"), headers: {get() { return "789"; }}});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			BuildBackend.__onDispatch(new BuildActions.WantLog(action.repo, action.buildID, action.taskID));
@@ -55,7 +55,7 @@ describe("BuildBackend", () => {
 		let expectedURI = `/.api/repos/${action.repo}/-/builds/${action.buildID}/tasks/${action.taskID}/log?MinID=12`;
 		BuildBackend.fetch = function(url, options) {
 			expect(url).to.be(expectedURI);
-			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("c"), headers: {"x-sourcegraph-log-max-id": 34}});
+			return immediateSyncPromise({status: 200, text: () => immediateSyncPromise("c"), headers: {get() { return 34; }}});
 		};
 
 		expect(Dispatcher.Stores.catchDispatched(() => {
