@@ -42,12 +42,7 @@ var tmplFuncs = htmpl.FuncMap{
 		}
 		return string(b), nil
 	},
-	"rawJSON": func(v *json.RawMessage) htmpl.JS {
-		if v == nil || *v == nil || len(*v) == 0 {
-			return "null"
-		}
-		return htmpl.JS(string(*v))
-	},
+	"rawJSON": rawJSON,
 
 	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
 
@@ -96,4 +91,11 @@ var tmplFuncs = htmpl.FuncMap{
 		mac.Write([]byte(email))
 		return string(mac.Sum(nil))
 	},
+}
+
+func rawJSON(v *json.RawMessage) htmpl.JS {
+	if v == nil || *v == nil || len(*v) == 0 {
+		return "null"
+	}
+	return htmpl.JS(string(*v))
 }
