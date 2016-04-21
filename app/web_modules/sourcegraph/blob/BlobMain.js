@@ -113,6 +113,10 @@ export default class BlobMain extends Container {
 			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
 		}
+
+		if (nextState.anns && nextState.blob !== prevState.blob && (prevState.anns !== nextState.anns || prevState.blob !== nextState.blob)) {
+			this.context.status.cache(true);
+		}
 	}
 
 	stores() { return [DefStore]; }

@@ -52,6 +52,7 @@ function renderIter(i, props, location, deadline, callback) {
 			body: htmlStr,
 			contentType: "text/html; charset=utf-8",
 			stores: dumpStores(),
+			cache: location.state && location.state.cache,
 			head: {
 				htmlAttributes: head.htmlAttributes.toString(),
 				title: head.title.toString(),
