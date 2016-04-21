@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
@@ -45,7 +47,10 @@ func (t *LoadTest) Run(ctx context.Context) error {
 	}
 
 	atk := vegeta.NewAttacker(t.AttackerOpts...)
-	tr := t.targeter(hdr)
+	tr, err := t.targeter(hdr)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("Starting %v", t)
 	res := atk.Attack(tr, t.Rate, testDuration)
@@ -96,17 +101,30 @@ func (t *LoadTest) getCookie() (*authedCookie, error) {
 	return getAuthedCookie(t.Endpoint, t.Username, t.Password)
 }
 
-func (t *LoadTest) targeter(hdr http.Header) vegeta.Targeter {
-	targets := make([]vegeta.Target, len(t.TargetPaths))
+func (t *LoadTest) targeter(hdr http.Header) (vegeta.Targeter, error) {
+	targets := make([]WeightedTarget, len(t.TargetPaths))
 	for i, p := range t.TargetPaths {
-		targets[i] = vegeta.Target{
-			Method: "GET",
-			URL:    t.Endpoint.String() + p,
-			Header: hdr,
+		f := strings.Fields(p)
+		if len(f) == 1 {
+			f = append(f, "1")
 		}
-		log.Println("Target:", targets[i].URL)
+		url := t.Endpoint.String() + f[0]
+		weight, err := strconv.ParseFloat(f[1], 64)
+		if err != nil {
+			return nil, fmt.Errorf("Weight %q is not a float. Target %q", f[1], p)
+		}
+
+		targets[i] = WeightedTarget{
+			Target: vegeta.Target{
+				Method: "GET",
+				URL:    url,
+				Header: hdr,
+			},
+			Weight: weight,
+		}
+		log.Printf("Target: %gx %s", weight, url)
 	}
-	return vegeta.NewStaticTargeter(targets...)
+	return NewWeightedTargeter(targets...), nil
 }
 
 func (t *LoadTest) report(m *vegeta.Metrics) {
