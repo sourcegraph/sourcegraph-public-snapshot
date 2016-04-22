@@ -44,9 +44,6 @@ func Before(ctx context.Context, server, method string, arg interface{}) context
 		spanID = appdash.NewSpanID(parent)
 	}
 	ctx = traceutil.NewContext(ctx, spanID)
-
-	log15.Debug("gRPC before", "rpc", server+"."+method, "spanID", spanID)
-
 	return ctx
 }
 

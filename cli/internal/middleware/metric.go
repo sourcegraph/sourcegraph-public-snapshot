@@ -38,8 +38,6 @@ func init() {
 // Metrics captures and exports metrics to prometheus for our HTTP handlers
 func Metrics(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String(), "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent())
-
 		start := time.Now()
 		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
 		next.ServeHTTP(rwIntercept, r)
@@ -63,7 +61,7 @@ func Metrics(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "duration", duration, "code", code)
+		log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "duration", duration)
 	})
 }
 
