@@ -213,6 +213,10 @@ func (c *ServeCmd) Execute(args []string) error {
 		logHandler = log15.FilterHandler(loghandlers.NotNoisey, logHandler)
 	}
 
+	// Filter trace logs
+	log.Println(globalOpt.TraceThreshold)
+	logHandler = log15.FilterHandler(loghandlers.Trace(globalOpt.Trace, globalOpt.TraceThreshold), logHandler)
+
 	// Filter log output by level.
 	lvl, err := log15.LvlFromString(globalOpt.LogLevel)
 	if err != nil {

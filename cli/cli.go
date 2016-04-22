@@ -2,6 +2,7 @@ package cli
 
 import (
 	"log"
+	"time"
 
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
@@ -17,6 +18,9 @@ var globalOpt struct {
 	Verbose    bool                 `long:"verbose" short:"v" description:"show verbose output (same as --log-level=dbug)" env:"SRC_VERBOSE"`
 	VerbosePkg string               `long:"verbose-pkg" description:"if set, only log output from specified package" env:"SRC_VERBOSE_PKG"`
 	LogLevel   string               `long:"log-level" description:"upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)" default:"info" env:"SRC_LOG_LEVEL"`
+
+	Trace          []string      `long:"log-trace" description:"which trace logs to show." env:"SRC_LOG_TRACE"`
+	TraceThreshold time.Duration `long:"log-trace-threshold" description:"Show traces that take longer than this." env:"SRC_LOG_TRACE_THRESHOLD"`
 }
 
 func init() {
