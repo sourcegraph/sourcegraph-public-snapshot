@@ -41,6 +41,7 @@ const (
 
 	mediaTypeV3      = "application/vnd.github.v3+json"
 	defaultMediaType = "application/octet-stream"
+	mediaTypeV3SHA   = "application/vnd.github.v3.sha"
 
 	// Media Type values to access preview APIs
 
@@ -60,11 +61,11 @@ const (
 	// https://developer.github.com/changes/2016-02-11-issue-locking-api/
 	mediaTypeIssueLockingPreview = "application/vnd.github.the-key-preview+json"
 
-	// https://developer.github.com/changes/2016-02-24-commit-reference-sha-api/
-	mediaTypeCommitReferenceSHAPreview = "application/vnd.github.chitauri-preview+sha"
-
 	// https://help.github.com/enterprise/2.4/admin/guides/migrations/exporting-the-github-com-organization-s-repositories/
 	mediaTypeMigrationsPreview = "application/vnd.github.wyandotte-preview+json"
+
+	// https://developer.github.com/changes/2016-04-06-deployment-and-deployment-status-enhancements/
+	mediaTypeDeploymentStatusPreview = "application/vnd.github.ant-man-preview+json"
 )
 
 // A Client manages communication with the GitHub API.
@@ -89,18 +90,19 @@ type Client struct {
 	rate   Rate // Rate limit for the client as determined by the most recent API call.
 
 	// Services used for talking to different parts of the GitHub API.
-	Activity      *ActivityService
-	Gists         *GistsService
-	Git           *GitService
-	Gitignores    *GitignoresService
-	Issues        *IssuesService
-	Organizations *OrganizationsService
-	PullRequests  *PullRequestsService
-	Repositories  *RepositoriesService
-	Search        *SearchService
-	Users         *UsersService
-	Licenses      *LicensesService
-	Migrations    *MigrationService
+	Activity       *ActivityService
+	Authorizations *AuthorizationsService
+	Gists          *GistsService
+	Git            *GitService
+	Gitignores     *GitignoresService
+	Issues         *IssuesService
+	Organizations  *OrganizationsService
+	PullRequests   *PullRequestsService
+	Repositories   *RepositoriesService
+	Search         *SearchService
+	Users          *UsersService
+	Licenses       *LicensesService
+	Migrations     *MigrationService
 }
 
 // ListOptions specifies the optional parameters to various List methods that
@@ -153,6 +155,7 @@ func NewClient(httpClient *http.Client) *Client {
 
 	c := &Client{client: httpClient, BaseURL: baseURL, UserAgent: userAgent, UploadURL: uploadURL}
 	c.Activity = &ActivityService{client: c}
+	c.Authorizations = &AuthorizationsService{client: c}
 	c.Gists = &GistsService{client: c}
 	c.Git = &GitService{client: c}
 	c.Gitignores = &GitignoresService{client: c}
@@ -329,17 +332,41 @@ func (c *Client) Rate() Rate {
 // JSON decoded and stored in the value pointed to by v, or returned as an
 // error if an API error has occurred.  If v implements the io.Writer
 // interface, the raw response body will be written to v, without attempting to
-// first decode it.
+// first decode it.  If rate limit is exceeded and reset time is in the future,
+// Do returns *RateLimitError immediately without making a remote API call.
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
+	// TODO: Support different rate limits for different request types. There are
+	//       separate rate limits for search endpoints, and all other endpoints.
+	//       Also can't use a single c.rate at that point...
+	//
+	//       SearchService endpoints may have /search/ as request path prefix?
+	//
+	// If we've hit rate limit, don't make further requests before Reset time.
+	c.rateMu.Lock()
+	rate := c.rate
+	c.rateMu.Unlock()
+	if !rate.Reset.Time.IsZero() && rate.Remaining == 0 && time.Now().Before(rate.Reset.Time) {
+		// Create a fake response.
+		resp := &http.Response{
+			StatusCode: http.StatusTooManyRequests,
+			Request:    req,
+		}
+		return nil, &RateLimitError{
+			Rate:     rate,
+			Response: resp,
+			Message:  fmt.Sprintf("API rate limit of %v still exceeded until %v, not making remote request.", rate.Limit, rate.Reset.Time),
+		}
+	}
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
+		// Drain up to 512 bytes and close the body to let the Transport reuse the connection
+		io.CopyN(ioutil.Discard, resp.Body, 512)
+		resp.Body.Close()
 	}()
 
 	response := newResponse(resp)
@@ -365,6 +392,7 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 			}
 		}
 	}
+
 	return response, err
 }
 
