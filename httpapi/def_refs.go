@@ -90,7 +90,7 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if opt.ListOptions.PerPage == 0 && opt.ListOptions.PageOrDefault() == 1 {
-		opt.ListOptions.PerPage = 10000
+		opt.ListOptions.PerPage = 100
 	}
 
 	refLocations, err := cl.Defs.ListRefLocations(ctx, &sourcegraph.DefsListRefLocationsOp{
