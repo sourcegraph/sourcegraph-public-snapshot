@@ -8,8 +8,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// Noisey filters out high firing and low signal debug logs
-func Noisey(r *log15.Record) bool {
+// NotNoisey filters out high firing and low signal debug logs
+func NotNoisey(r *log15.Record) bool {
 	if r.Lvl != log15.LvlDebug {
 		return true
 	}
@@ -26,7 +26,7 @@ func Noisey(r *log15.Record) bool {
 	if !ok {
 		return true
 	}
-	for _, n := range noisyRPC {
+	for _, n := range noiseyRPC {
 		if rpc == n {
 			return false
 		}
@@ -34,4 +34,4 @@ func Noisey(r *log15.Record) bool {
 	return true
 }
 
-var noisyRPC = []string{"Builds.DequeueNext", "MirrorRepos.RefreshVCS"}
+var noiseyRPC = []string{"Builds.DequeueNext", "MirrorRepos.RefreshVCS"}

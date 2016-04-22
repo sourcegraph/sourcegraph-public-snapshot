@@ -210,7 +210,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	// special dbug level which excludes the noisey logs
 	if globalOpt.LogLevel == "dbug-dev" {
 		globalOpt.LogLevel = "dbug"
-		logHandler = log15.FilterHandler(loghandlers.Noisey, logHandler)
+		logHandler = log15.FilterHandler(loghandlers.NotNoisey, logHandler)
 	}
 
 	// Filter log output by level.

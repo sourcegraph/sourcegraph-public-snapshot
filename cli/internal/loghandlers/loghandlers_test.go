@@ -7,70 +7,33 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func TestNoisey(t *testing.T) {
-	cases := []struct {
-		Keep bool
-		log15.Record
-	}{
-		// gRPC's to keep
-		{
-			Keep: true,
-			Record: log15.Record{
-				Lvl: log15.LvlDebug,
-				Msg: "TRACE gRPC",
-				Ctx: []interface{}{"rpc", "Annotations.List", "spanID", "SPANID"},
-			},
-		},
-		{
-			Keep: true,
-			Record: log15.Record{
-				Lvl: log15.LvlDebug,
-				Msg: "TRACE gRPC",
-				Ctx: []interface{}{"rpc", "RepoTree.Get", "spanID", "SPANID", "duration", time.Second},
-			},
-		},
-
-		// Keep non-debug
-		{
-			Keep: true,
-			Record: log15.Record{
-				Lvl: log15.LvlWarn,
-				Msg: "repoUpdater: RefreshVCS:",
-				Ctx: []interface{}{"err", "error"},
-			},
-		},
-
-		// Noisey
-		{
-			Keep: false,
-			Record: log15.Record{
-				Lvl: log15.LvlDebug,
-				Msg: "repoUpdater: RefreshVCS:",
-				Ctx: []interface{}{"err", "error"},
-			},
-		},
+func TestNotNoisey(t *testing.T) {
+	keep := []log15.Record{
+		mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", "Annotations.List", "spanID", "SPANID"),
+		mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", "RepoTree.Get", "spanID", "SPANID", "duration", time.Second),
+		mkRecord(log15.LvlWarn, "repoUpdater: RefreshVCS:", "err", "error"),
 	}
-	for _, rpc := range noisyRPC {
-		cases = append(cases, struct {
-			Keep bool
-			log15.Record
-		}{
-			Keep: false,
-			Record: log15.Record{
-				Lvl: log15.LvlDebug,
-				Msg: "TRACE gRPC",
-				Ctx: []interface{}{"rpc", rpc},
-			},
-		})
+	noisey := []log15.Record{mkRecord(log15.LvlDebug, "repoUpdater: RefreshVCS:", "err", "error")}
+	for _, rpc := range noiseyRPC {
+		noisey = append(noisey, mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", rpc))
 	}
 
-	for _, c := range cases {
-		if Noisey(&c.Record) != c.Keep {
-			if c.Keep {
-				t.Errorf("Should keep %v", c.Record)
-			} else {
-				t.Errorf("Should filter out %v", c.Record)
-			}
+	for _, r := range keep {
+		if !NotNoisey(&r) {
+			t.Errorf("Should keep %v", r)
 		}
+	}
+	for _, r := range noisey {
+		if NotNoisey(&r) {
+			t.Errorf("Should filter out %v", r)
+		}
+	}
+}
+
+func mkRecord(lvl log15.Lvl, msg string, ctx ...interface{}) log15.Record {
+	return log15.Record{
+		Lvl: lvl,
+		Msg: msg,
+		Ctx: ctx,
 	}
 }
