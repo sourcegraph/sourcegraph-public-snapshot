@@ -19,7 +19,7 @@ import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import DashboardPromos from "./DashboardPromos";
-import ChromeExtensionCTA from "./ChromeExtensionCTA";
+// import ChromeExtensionCTA from "./ChromeExtensionCTA";
 
 class DashboardContainer extends Container {
 
@@ -86,8 +86,8 @@ class DashboardContainer extends Container {
 						<Button outline={true} color="warning"><GitHubIcon styleName="github-icon" />Add My GitHub Repositories</Button>
 					</a>
 				</div>}
-			{/* NOTE: The ChromeExtensionCTA is responsible for determining whether it should render the button or not*/}
-			<ChromeExtensionCTA/>
+			{/* NOTE: The ChromeExtensionCTA (container) is responsible for determining whether it should render the button. */}
+			{/* <ChromeExtensionCTA /> */}
 		</div>);
 	}
 
