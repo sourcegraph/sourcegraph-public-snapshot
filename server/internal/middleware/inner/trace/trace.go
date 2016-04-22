@@ -110,5 +110,5 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 	uid := strconv.Itoa(authpkg.ActorFromContext(ctx).UID)
-	log15.Debug("gRPC after", "rpc", name, "uid", uid, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
+	log15.Debug("TRACE gRPC", "rpc", name, "uid", uid, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
 }

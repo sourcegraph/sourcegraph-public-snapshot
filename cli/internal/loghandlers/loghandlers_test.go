@@ -17,7 +17,7 @@ func TestNoisey(t *testing.T) {
 			Keep: true,
 			Record: log15.Record{
 				Lvl: log15.LvlDebug,
-				Msg: "gRPC before",
+				Msg: "TRACE gRPC",
 				Ctx: []interface{}{"rpc", "Annotations.List", "spanID", "SPANID"},
 			},
 		},
@@ -25,7 +25,7 @@ func TestNoisey(t *testing.T) {
 			Keep: true,
 			Record: log15.Record{
 				Lvl: log15.LvlDebug,
-				Msg: "gRPC after",
+				Msg: "TRACE gRPC",
 				Ctx: []interface{}{"rpc", "RepoTree.Get", "spanID", "SPANID", "duration", time.Second},
 			},
 		},
@@ -58,7 +58,7 @@ func TestNoisey(t *testing.T) {
 			Keep: false,
 			Record: log15.Record{
 				Lvl: log15.LvlDebug,
-				Msg: "gRPC before",
+				Msg: "TRACE gRPC",
 				Ctx: []interface{}{"rpc", rpc},
 			},
 		})

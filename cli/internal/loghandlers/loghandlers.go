@@ -19,7 +19,7 @@ func Noisey(r *log15.Record) bool {
 			return false
 		}
 	}
-	if !strings.HasPrefix(r.Msg, "gRPC ") || len(r.Ctx) < 2 {
+	if !strings.HasPrefix(r.Msg, "TRACE gRPC") || len(r.Ctx) < 2 {
 		return true
 	}
 	rpc, ok := r.Ctx[1].(string)
