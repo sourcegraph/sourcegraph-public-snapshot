@@ -32,6 +32,11 @@ var (
 	}, []string{"repo"})
 )
 
+func init() {
+	prometheus.MustRegister(enqueueCounter)
+	prometheus.MustRegister(acceptedCounter)
+}
+
 // Enqueue queues a mirror repo for refresh. If asUser is not nil, that user's
 // auth token will be used for performing the fetch from the remote host.
 func Enqueue(repoSpec sourcegraph.RepoSpec, asUser *sourcegraph.UserSpec) {
