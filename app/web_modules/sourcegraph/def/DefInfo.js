@@ -54,7 +54,7 @@ class DefInfo extends Container {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
 		}
 
-		if (prevState.defCommitID !== nextState.defCommitID) {
+		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			if (ctx.features && ctx.features.Authors) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 			}
