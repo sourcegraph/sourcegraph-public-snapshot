@@ -37,6 +37,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
@@ -209,7 +210,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	// special dbug level which excludes the noisey logs
 	if globalOpt.LogLevel == "dbug-dev" {
 		globalOpt.LogLevel = "dbug"
-		logHandler = log15.FilterHandler(noiseyLogFilter, logHandler)
+		logHandler = log15.FilterHandler(loghandlers.Noisey, logHandler)
 	}
 
 	// Filter log output by level.
@@ -661,30 +662,4 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(3 * time.Minute)
 	return tc, nil
-}
-
-func noiseyLogFilter(r *log15.Record) bool {
-	if r.Lvl != log15.LvlDebug {
-		return true
-	}
-	noiseyPrefixes := []string{"repoUpdater: RefreshVCS"}
-	for _, prefix := range noiseyPrefixes {
-		if strings.HasPrefix(r.Msg, prefix) {
-			return false
-		}
-	}
-	if !strings.HasPrefix(r.Msg, "gRPC ") || len(r.Ctx) < 2 {
-		return true
-	}
-	rpc, ok := r.Ctx[1].(string)
-	if !ok {
-		return true
-	}
-	noisyRpc := []string{"Builds.DequeueNext", "MirrorRepos.RefreshVCS"}
-	for _, n := range noisyRpc {
-		if rpc == n {
-			return false
-		}
-	}
-	return true
 }
