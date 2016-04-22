@@ -13,8 +13,8 @@ func TestGetTrackedRepo(t *testing.T) {
 		{"/github.com/kubernetes/kubernetes@master/-/tree/README.md", "github.com/kubernetes/kubernetes"},
 
 		// Unrelated repo
-		{"/github.com/gorilla/mux@master/-/tree/mux.go", "unknown"},
-		{"/github.com/gorilla/mux", "unknown"},
+		{"/github.com/gorilla/muxy@master/-/tree/mux.go", "unknown"},
+		{"/github.com/gorilla/muxy", "unknown"},
 
 		// Unrelated URL
 		{"/blog/133554180524/announcing-the-sourcegraph-developer-release-the", "unknown"},

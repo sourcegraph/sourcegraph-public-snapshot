@@ -17,6 +17,9 @@ func RepoURIHost(repoURI string) string {
 
 var trackedRepo = []string{
 	"github.com/kubernetes/kubernetes",
+	"github.com/gorilla/mux",
+	"github.com/golang/go",
+	"sourcegraph/sourcegraph",
 }
 var trackedRepoRe = regexp.MustCompile(`\b(` + strings.Join(trackedRepo, "|") + `)\b`)
 
