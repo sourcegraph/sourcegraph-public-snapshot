@@ -35,6 +35,7 @@ import styles from "./styles/Tree.css";
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
+const MAX_QUERY_LENGTH = 32;
 
 function pathSplit(path: string): string[] {
 	if (path === "") throw new Error("invalid empty path");
@@ -145,6 +146,12 @@ class TreeSearch extends Container {
 		Object.assign(state, props);
 
 		state.query = props.query || "";
+		if (state.query.length > MAX_QUERY_LENGTH) {
+			// HACK: Truncate query if it exceeds Fuse's max query length.
+			// We can probably handle this better and should support longer
+			// queries, but this prevents outright errors from occurring.
+			state.query = state.query.slice(0, MAX_QUERY_LENGTH);
+		}
 
 		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
 		state.fileList = TreeStore.fileLists.get(state.repo, state.rev);
@@ -184,6 +191,7 @@ class TreeSearch extends Container {
 				distance: 1000,
 				location: 0,
 				threshold: 0.1,
+				maxPatternLength: MAX_QUERY_LENGTH,
 			}) : null;
 		}
 
@@ -550,6 +558,7 @@ class TreeSearch extends Container {
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Jump to symbols or files..."
+						maxLength={MAX_QUERY_LENGTH}
 						domRef={(e) => this._queryInput = e} />
 				</div>
 				<div styleName="list-header">

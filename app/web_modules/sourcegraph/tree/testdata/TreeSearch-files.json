@@ -17,7 +17,8 @@
 									"block": true,
 									"autoFocus": true,
 									"defaultValue": "",
-									"placeholder": "Jump to symbols or files..."
+									"placeholder": "Jump to symbols or files...",
+									"maxLength": 32
 								}
 							}
 						]
