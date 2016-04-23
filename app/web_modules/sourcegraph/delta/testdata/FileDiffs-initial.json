@@ -36,7 +36,8 @@
 							"content": {}
 						},
 						"defs": {
-							"content": {}
+							"content": {},
+							"pos": {}
 						}
 					}
 				},
@@ -57,7 +58,8 @@
 							"content": {}
 						},
 						"defs": {
-							"content": {}
+							"content": {},
+							"pos": {}
 						}
 					}
 				}
