@@ -3,7 +3,10 @@ package localstore
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
+
+	"code.google.com/p/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
 
@@ -91,6 +94,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	// decreasing ref counts per repo, and the file list in each individual DefRepoRef is
 	// also sorted by descending ref counts.
 	var repoRefs []*sourcegraph.DefRepoRef
+	defRepoIdx := -1
 	// refsByRepo groups each referencing file by repo.
 	refsByRepo := make(map[string]*sourcegraph.DefRepoRef)
 	for _, r := range dbRefResult {
@@ -100,7 +104,10 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 				Count: int32(r.RepoCount),
 			}
 			repoRefs = append(repoRefs, refsByRepo[r.Repo])
-
+			// Note the position of the def's own repo in the slice.
+			if op.Def.Repo == r.Repo {
+				defRepoIdx = len(repoRefs) - 1
+			}
 		}
 		if r.File != "" && r.Count != 0 {
 			refsByRepo[r.Repo].Files = append(refsByRepo[r.Repo].Files, &sourcegraph.DefFileRef{
@@ -110,30 +117,46 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		}
 	}
 
+	// Place the def's own repo at the head of the slice, if it exists in the slice and is
+	// not at the head already.
+	if defRepoIdx > 0 {
+		repoRefs[0], repoRefs[defRepoIdx] = repoRefs[defRepoIdx], repoRefs[0]
+	}
+
 	// Filter out repos that the user does not have access to.
-	var filteredRepoRefs []*sourcegraph.DefRepoRef
-	defRepoIdx := -1
-	for i, r := range repoRefs {
+	hasAccess := make([]bool, len(repoRefs))
+	par := parallel.NewRun(30)
+	var mu sync.Mutex
+	for i_, r_ := range repoRefs {
+		i, r := i_, r_
 		// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
-		// of GitHub Repos.Get calls in the accesscontrol check above.
+		// of GitHub Repos.Get calls in the accesscontrol check below.
 		// TODO: remove this limit once we properly cache GitHub API responses.
 		if i >= 100 {
 			break
 		}
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err != nil {
+		par.Do(func() error {
+			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
+				mu.Lock()
+				hasAccess[i] = true
+				mu.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
+	}
+
+	var filteredRepoRefs []*sourcegraph.DefRepoRef
+	for i, r := range repoRefs {
+		if i >= 100 {
+			break
+		}
+		if !hasAccess[i] {
 			continue
 		}
 		filteredRepoRefs = append(filteredRepoRefs, r)
-		// Note the position of the def's own repo in the slice.
-		if op.Def.Repo == r.Repo {
-			defRepoIdx = len(filteredRepoRefs) - 1
-		}
-	}
-
-	// Place the def's own repo at the head of the slice, if it exists in the slice and is
-	// not at the head already.
-	if defRepoIdx > 0 {
-		filteredRepoRefs[0], filteredRepoRefs[defRepoIdx] = filteredRepoRefs[defRepoIdx], filteredRepoRefs[0]
 	}
 
 	return &sourcegraph.RefLocationsList{RepoRefs: filteredRepoRefs}, nil
