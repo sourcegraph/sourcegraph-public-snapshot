@@ -22,11 +22,13 @@ export class SearchStore extends Store {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case SearchActions.ResultsFetched:
-			this.results = deepFreeze(Object.assign({}, this.results, {
-				content: Object.assign({}, this.results.content, {
+			this.results = deepFreeze({
+				...this.results,
+				content: {
+					...this.results.content,
 					[action.query]: action.defs,
-				}),
-			}));
+				},
+			});
 			break;
 
 		default:

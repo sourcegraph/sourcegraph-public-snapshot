@@ -24,7 +24,7 @@ func init() {
 		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
 		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
-		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', doc));`,
+		`CREATE INDEX doc_idx ON global_defs USING gin(to_tsvector('english', doc));`,
 	)
 }
 

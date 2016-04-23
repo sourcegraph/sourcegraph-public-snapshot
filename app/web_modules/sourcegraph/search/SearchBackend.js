@@ -3,10 +3,9 @@
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import SearchStore from "sourcegraph/search/SearchStore";
 import Dispatcher from "sourcegraph/Dispatcher";
+import {RESULTS_LIMIT} from "sourcegraph/search/GlobalSearch";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
-
-const RESULTS_LIMIT = 20;
 
 const SearchBackend = {
 	fetch: defaultFetch,

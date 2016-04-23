@@ -3,6 +3,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
+import {browserHistory} from "react-router";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
@@ -20,8 +21,11 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import context from "sourcegraph/app/context";
 
-const RESULTS_LIMIT = 20;
+export const RESULTS_LIMIT = 20;
 
+// GlobalSearch is the global search bar + results component.
+// Tech debt: this duplicates a lot of code with TreeSearch and we
+// should consider merging them at some point.
 class GlobalSearch extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
@@ -41,7 +45,6 @@ class GlobalSearch extends Container {
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
 		this._focusInput = this._focusInput.bind(this);
-		this._handleFocus = this._handleFocus.bind(this);
 		this._blurInput = this._blurInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._onChangeQuery = this._onChangeQuery.bind(this);
@@ -68,9 +71,6 @@ class GlobalSearch extends Container {
 		if (global.window) {
 			window.addEventListener("focus", this._focusInput);
 		}
-
-		// TODO(beyang): hack?
-		Dispatcher.Backends.dispatch(new SearchActions.WantResults(this.state.query));
 	}
 
 	componentWillUnmount() {
@@ -109,7 +109,7 @@ class GlobalSearch extends Container {
 	}
 
 	_navigateTo(url: string) {
-		this.context.router.push(url);
+		browserHistory.push(url);
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
@@ -178,10 +178,6 @@ class GlobalSearch extends Container {
 		if (this.refs.input) this.refs.input.focus();
 	}
 
-	_handleFocus() {
-		this._focusInput();
-	}
-
 	_blurInput() {
 		if (this.refs.input) this.refs.input.blur();
 		this.setState({
@@ -201,7 +197,7 @@ class GlobalSearch extends Container {
 	_onSelection() {
 		const i = this._normalizedSelectionIndex();
 		if (i === -1) {
-				return;
+			return;
 		}
 		const def = this.state.matchingDefs.Defs[i];
 		this._navigateTo(urlToDef(def));
