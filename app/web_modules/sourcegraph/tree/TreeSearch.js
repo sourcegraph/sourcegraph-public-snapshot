@@ -195,8 +195,17 @@ class TreeSearch extends Container {
 			}) : null;
 		}
 
+		if (prevState.matchingDefs !== nextState.matchingDefs) {
+			// Keep selectionIndex on same item even after def results are loaded. Prevents
+			// the selection from jumping around as more data comes in.
+			const prevNumDefs = Math.max(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.length : 0);
+			const nextNumDefs = Math.max(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.length : 0);
+			nextState.selectionIndex += (nextNumDefs - prevNumDefs);
+		}
+
 		if (prevState.path !== nextState.path || prevState.query !== nextState.query || prevState.fileList !== nextState.fileList || prevState.fileTree !== nextState.fileTree) {
 			nextState.fileResults = null;
+			nextState.selectionIndex = 0;
 
 			// Show entire file tree as file results.
 			//
@@ -245,15 +254,12 @@ class TreeSearch extends Container {
 					// TODO Handle errors in a more standard way.
 					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
 				}
-			} else {
-				nextState.selectionIndex = 0;
-				if (nextState.fuzzyFinder) {
-					nextState.fileResults = nextState.fuzzyFinder.search(nextState.query).map(i => nextState.fileList.Files[i]).map(file => ({
-						name: file,
-						isDirectory: false,
-						url: urlToBlob(nextState.repo, nextState.rev, file),
-					}));
-				}
+			} else if (nextState.fuzzyFinder) {
+				nextState.fileResults = nextState.fuzzyFinder.search(nextState.query).map(i => nextState.fileList.Files[i]).map(file => ({
+					name: file,
+					isDirectory: false,
+					url: urlToBlob(nextState.repo, nextState.rev, file),
+				}));
 			}
 		}
 	}
