@@ -83,17 +83,18 @@ class DefInfo extends Container {
 						<div styleName="def-info">
 							<div styleName="main">
 								{def && def.DocHTML && <p dangerouslySetInnerHTML={def && def.DocHTML}></p>}
-								{def && !def.Error && refLocs && !refLocs.Error && refLocs.length > 0 &&
+								{def && !def.Error &&
 									<div>
 										<h2>Used in</h2>
-										{refLocs.filter((r) => r && r.Files).map((repoRef, i) => (
+										{!refLocs && <i>Loading...</i>}
+										{refLocs && refLocs.filter((r) => r && r.Files).map((repoRef, i) => (
 											<Link styleName="refs-link" key={i} to={urlToDefRefs(def, repoRef.Repo)}><span styleName="badge">{repoRef.Count}</span> {repoRef.Repo}</Link>
 										))}
 									</div>
 								}
 							</div>
 							<div styleName="aside">
-								<h2>Authors</h2>
+								{this.state.authors && <h2>Authors</h2>}
 								{this.state.authors && <AuthorList authors={this.state.authors} />}
 							</div>
 						</div>
