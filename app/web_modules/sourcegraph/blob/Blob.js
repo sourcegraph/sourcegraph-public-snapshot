@@ -338,7 +338,8 @@ class Blob extends Component {
 		if (!$line) return false;
 		let elemTop = $line.offsetTop;
 		let elemBottom = elemTop + $line.clientHeight;
-		return elemBottom <= bottom && elemTop >= top;
+		const deadZone = 150; // consider things not visible if they are near the screen top/bottom and hard to notice
+		return elemBottom <= (bottom - deadZone) && elemTop >= (top + deadZone);
 	}
 
 	getOffsetTopForByte(byte: number): number {
