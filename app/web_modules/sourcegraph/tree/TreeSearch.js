@@ -100,6 +100,7 @@ class TreeSearch extends Container {
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
+		this._handleInput = this._handleInput.bind(this);
 		this._focusInput = this._focusInput.bind(this);
 		this._handleFocus = this._handleFocus.bind(this);
 		this._blurInput = this._blurInput.bind(this);
@@ -108,7 +109,7 @@ class TreeSearch extends Container {
 			if (query !== this.state.query) {
 				this.props.onChangeQuery(query);
 			}
-		}, 75, {leading: false, trailing: true});
+		}, 150, {leading: false, trailing: true});
 	}
 
 	componentDidMount() {
@@ -288,10 +289,14 @@ class TreeSearch extends Container {
 			break;
 
 		default:
-			if (this.state.focused) {
-				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.value : ""), 0);
-			}
+			// Changes to the input value are handled by _handleInput.
 			break;
+		}
+	}
+
+	_handleInput(e: KeyboardEvent) {
+		if (this.state.focused) {
+			this._debouncedSetQuery(this._queryInput ? this._queryInput.value : "");
 		}
 	}
 
@@ -537,6 +542,7 @@ class TreeSearch extends Container {
 						block={true}
 						onFocus={this._focusInput}
 						onBlur={this._blurInput}
+						onInput={this._handleInput}
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Jump to symbols or files..."
