@@ -91,6 +91,7 @@
 @value c_mid-gray from colors;
 .list-item-empty {
 	color: c_mid-gray;
+	text-align: center;
 }
 
 @value c_dark-blue from colors;

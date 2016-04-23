@@ -236,10 +236,12 @@ class GlobalSearch extends Container {
 	}
 
 	_results(): Array<any> {
-		const emptyItem = <div styleName="list-item list-item-empty" key="_nosymbol"></div>;
-		if (!this.state.matchingDefs) return [emptyItem];
+		if (!this.state.query) return [<div styleName="list-item list-item-empty" key="_nosymbol"></div>];
 
-		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [emptyItem];
+		const noResultsItem = <div styleName="list-item list-item-empty" key="_nosymbol">No results found</div>;
+		if (!this.state.matchingDefs) return [noResultsItem];
+
+		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [noResultsItem];
 
 		let list = [],
 			limit = this.state.matchingDefs.Defs.length > RESULTS_LIMIT ? RESULTS_LIMIT : this.state.matchingDefs.Defs.length;
