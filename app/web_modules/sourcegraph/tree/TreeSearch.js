@@ -48,6 +48,12 @@ function pathJoin(pathComponents: string[]): string {
 	return pathComponents.join("/");
 }
 
+function pathDir(path: string): string {
+	// Remove last item from path.
+	const parts = pathSplit(path);
+	return pathJoin(parts.splice(0, parts.length - 1));
+}
+
 class TreeSearch extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
@@ -211,6 +217,18 @@ class TreeSearch extends Container {
 						path: `${pathPrefix}/${dirKey.substr(1)}`,
 						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dirKey.substr(1)}`),
 					})) : [];
+					// Add parent dir link if showing a subdir.
+					if (pathPrefix) {
+						const parentDir = pathDir(pathPrefix);
+						dirs.unshift({
+							name: "..",
+							isDirectory: true,
+							isParentDirectory: true,
+							path: parentDir,
+							url: urlToTree(nextState.repo, nextState.rev, parentDir),
+						});
+					}
+
 					const files = !err ? dirLevel.Files.map(file => ({
 						name: file,
 						isDirectory: false,
@@ -265,10 +283,7 @@ class TreeSearch extends Container {
 
 		case 37: // ArrowLeft
 			if (this.state.path.length !== 0) {
-				// Remove last item from path.
-				const parts = pathSplit(this.state.path);
-				const parentPath = pathJoin(parts.splice(0, parts.length - 1));
-				this.state.onSelectPath(parentPath);
+				this.state.onSelectPath(pathDir(this.state.path));
 			}
 			this._temporarilyIgnoreMouseSelection();
 
@@ -404,13 +419,18 @@ class TreeSearch extends Container {
 
 			const selected = this._normalizedSelectionIndex() - this._numSymbolResults() === i;
 
+			let icon;
+			if (item.isParentDirectory) icon = null;
+			else if (item.isDirectory) icon = <FolderIcon />;
+			else icon = <FileIcon />;
+
 			list.push(
-				<Link styleName={selected ? "list-item-selected" : "list-item"}
+				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={itemURL}>
-					<span style={{paddingRight: "1rem"}}>{item.isDirectory ? <FolderIcon /> : <FileIcon />}</span>
+					<span styleName="icon">{icon}</span>
 					{item.name}
 				</Link>
 			);

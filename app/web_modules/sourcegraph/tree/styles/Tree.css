@@ -100,3 +100,12 @@
 	display: none;
 }
 
+
+.parent-dir {
+	font-weight: bold;
+}
+.icon {
+	display: inline-block;
+	padding-right: 1rem;
+	min-width: 15px;
+}
