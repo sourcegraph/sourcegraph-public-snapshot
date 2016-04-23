@@ -104,12 +104,14 @@ export class RepoStore extends Store {
 				}),
 			}));
 
-			// Update resolution to reflect the newly created repo.
-			this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
-				content: Object.assign({}, this.resolutions.content, {
-					[keyFor(action.repo)]: {Result: {Repo: {URI: action.repoObj.URI}}},
-				}),
-			}));
+			if (!action.repoObj.Error) {
+				// Update resolution to reflect the newly created repo.
+				this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
+					content: Object.assign({}, this.resolutions.content, {
+						[keyFor(action.repo)]: {Result: {Repo: {URI: action.repoObj.URI}}},
+					}),
+				}));
+			}
 			break;
 
 		case RepoActions.FetchedBranches:
