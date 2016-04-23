@@ -58,6 +58,13 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		return nil, err
 	}
 
+	// HACK(beyang): this behavior should really be set by an options struct
+	// field and not depend on permissions grants. Callers of this method
+	// assume DefaultBranch will be set right now, but it is not always set.
+	// For now, always set remote fields if the repository is public. (It
+	// cannot be set for private repositories, because otherwise the import
+	// step of builds will break).
+	//
 	// If the actor doesn't have a special grant to access this repo,
 	// query the remote server for the remote repo, to ensure the
 	// actor can access this repo.
@@ -69,6 +76,9 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
 			return nil, err
 		}
+	} else {
+		// if the actor does have a special grant (e.g., a worker), still best-effort attempt to set fields from remote.
+		s.setRepoFieldsFromRemote(ctx, repo)
 	}
 
 	if repo.Blocked {
