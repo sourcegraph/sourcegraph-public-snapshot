@@ -48,6 +48,14 @@
 							}
 						]
 					}
+				},
+				{
+					"type": "i",
+					"props": {
+						"children": [
+							"Loading..."
+						]
+					}
 				}
 			]
 		}

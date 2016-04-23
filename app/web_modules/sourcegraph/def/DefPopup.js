@@ -53,13 +53,12 @@ class DefPopup extends Container {
 				{this.props.onboardingCTA}
 				<header className={s.boxTitle}><Link to={`${urlToDef(this.state.defObj)}/-/info`}>{qualifiedNameAndType(def)}</Link></header>
 				<header className={s.sectionTitle}>Used in {!refLocs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
+				{!refLocs && <i>Loading...</i>}
 				{refLocs && refLocs.length === 0 &&	<i>No usages found</i>}
 				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
 				{authors && <header className={s.sectionTitle}>Authors {!authors && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>}
-				{authors && authors.length === 0 &&
-					<i>No authors found</i>
-				}
+				{authors && authors.length === 0 && <i>No authors found</i>}
 				{authors && authors.length > 0 &&
 					<ol className={s.personList}>
 						{authors.map((a, i) => (
