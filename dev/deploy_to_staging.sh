@@ -3,6 +3,7 @@
 set -ex
 
 VERSION=$1
+SERVER=$2
 
 make dist PACKAGEFLAGS="--os=linux $VERSION"
 
@@ -11,4 +12,4 @@ docker build -t us.gcr.io/sourcegraph-dev/sourcegraph:$VERSION deploy/sourcegrap
 gcloud config set project sourcegraph-dev
 gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:$VERSION
 
-curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=staging4" -F "version=$VERSION"
+curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$SERVER" -F "version=$VERSION"
