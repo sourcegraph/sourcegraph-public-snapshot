@@ -14,10 +14,6 @@
 	composes: center from base;
 }
 
-.refs-page {
-	composes: col-10 from grid;
-}
-
 .refs-container {
 	composes: pv2 ph4 from base;
 }
@@ -28,8 +24,10 @@
 }
 
 .ref-locations {
-	width: 100%;
-	display: flex;
+	/* Don't let long filenames take up too much width. */
+	flex: 0 0 auto;
+	min-width: 270px;
+	max-width: 30%;
 }
 
 .refs {
