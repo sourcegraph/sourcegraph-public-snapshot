@@ -15,7 +15,8 @@ describe("DefPopup", () => {
 			<DefPopup
 				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings, DocHTML: "someDoc"}}
 				examples={{test: "examples"}}
-				highlightedDef="otherURL" />
+				highlightedDef="otherURL" />,
+				{features: {}},
 		);
 	});
 
@@ -24,7 +25,8 @@ describe("DefPopup", () => {
 			<DefPopup
 				def={{Repo: "r", CommitID: "c", FmtStrings: fmtStrings}}
 				examples={{test: "examples"}}
-				highlightedDef={null} />
+				highlightedDef={null} />,
+				{features: {}},
 		);
 	});
 });

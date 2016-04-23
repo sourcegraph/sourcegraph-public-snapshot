@@ -11,7 +11,6 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
-import context from "sourcegraph/app/context";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import {urlToDef} from "sourcegraph/def/routes";
 
@@ -21,6 +20,10 @@ class DefPopup extends Container {
 		refLocations: React.PropTypes.array,
 		path: React.PropTypes.string.isRequired,
 		onboardingCTA: React.PropTypes.element,
+	};
+
+	static contextTypes = {
+		features: React.PropTypes.object.isRequired,
 	};
 
 	reconcileState(state, props) {
@@ -35,7 +38,7 @@ class DefPopup extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def) {
-			if (context.features && context.features.Authors) {
+			if (this.context.features.Authors) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.rev, nextState.def));
 			}
 		}
