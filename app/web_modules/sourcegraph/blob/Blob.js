@@ -3,7 +3,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
 import Component from "sourcegraph/Component";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobLine from "sourcegraph/blob/BlobLine";
@@ -326,7 +325,7 @@ class Blob extends Component {
 		if (!this.refs.table) { return; }
 		let rect = this.refs.table.getBoundingClientRect();
 		const y = rect.height / this.state.lines.length * (line - 1) - 100;
-		animatedScrollTo(document.body, y, 350);
+		window.scrollTo(0, y);
 	}
 
 	// _lineIsVisible returns true iff the line is scrolled into view.
