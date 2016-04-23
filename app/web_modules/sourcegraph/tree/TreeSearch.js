@@ -201,11 +201,16 @@ class TreeSearch extends Container {
 		}
 
 		if (prevState.matchingDefs !== nextState.matchingDefs) {
-			// Keep selectionIndex on same item even after def results are loaded. Prevents
+			// Keep selectionIndex on same file item even after def results are loaded. Prevents
 			// the selection from jumping around as more data comes in.
-			const prevNumDefs = Math.max(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.length : 0);
-			const nextNumDefs = Math.max(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.length : 0);
-			nextState.selectionIndex += (nextNumDefs - prevNumDefs);
+			const prevNumDefs = Math.min(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.length : 0);
+			const nextNumDefs = Math.min(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.length : 0);
+			const defWasSelected = nextState.selectionIndex < prevNumDefs || (prevState.fileResults && prevState.fileResults.length === 0);
+			if (defWasSelected) {
+				nextState.selectionIndex = 0;
+			} else {
+				nextState.selectionIndex += (nextNumDefs - prevNumDefs);
+			}
 		}
 
 		if (prevState.path !== nextState.path || prevState.query !== nextState.query || prevState.fileList !== nextState.fileList || prevState.fileTree !== nextState.fileTree) {
