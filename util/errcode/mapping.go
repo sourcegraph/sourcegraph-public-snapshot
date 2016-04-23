@@ -17,7 +17,7 @@ func grpcToHTTP(code codes.Code) int {
 // HTTPToGRPC returns the most appropriate gRPC error code for the
 // HTTP status. For example, HTTP 404 is mapped to codes.NotFound.
 func HTTPToGRPC(statusCode int) codes.Code {
-	if statusCode < 400 && statusCode != http.StatusAccepted {
+	if statusCode < 400 {
 		return codes.OK
 	}
 	for g, h := range grpcToHTTPMap {
@@ -47,5 +47,4 @@ var grpcToHTTPMap = map[codes.Code]int{
 	codes.OutOfRange:         http.StatusRequestedRangeNotSatisfiable,
 	codes.Unimplemented:      http.StatusNotImplemented,
 	codes.ResourceExhausted:  http.StatusTooManyRequests,
-	codes.Unavailable:        http.StatusAccepted,
 }
