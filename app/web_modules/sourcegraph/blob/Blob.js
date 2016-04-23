@@ -335,6 +335,7 @@ class Blob extends Component {
 		let top = document.body.scrollTop;
 		let bottom = top + window.innerHeight;
 		let $line = this.refs.table.querySelector(`[data-line="${line}"]`);
+		if (!$line) return false;
 		let elemTop = $line.offsetTop;
 		let elemBottom = elemTop + $line.clientHeight;
 		return elemBottom <= bottom && elemTop >= top;
