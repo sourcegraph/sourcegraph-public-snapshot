@@ -40,9 +40,7 @@ export default class FileMargin extends React.Component {
 	_childOffsetTop(i) {
 		if (!this.props.lineFromByte) return null;
 		const child = React.Children.toArray(this.props.children)[i];
-		console.time("lineFromByte");
 		const lineIndex = this.props.lineFromByte(child.props.byte) - 1; // 0-indexed so line 1 is at 0px
-		console.timeEnd("lineFromByte");
 		return `calc(${lineIndex} * ${this.state.codeLineHeight} + ${firstCodeLineTopPadding})`;
 	}
 

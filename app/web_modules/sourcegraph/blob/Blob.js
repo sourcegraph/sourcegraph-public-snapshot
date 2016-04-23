@@ -2,7 +2,6 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import utf8 from "utf8";
 
 import animatedScrollTo from "sourcegraph/util/animatedScrollTo";
 import Component from "sourcegraph/Component";
@@ -14,6 +13,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
+import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
 import s from "sourcegraph/blob/styles/Blob.css";
 import type {Def} from "sourcegraph/def";
@@ -177,7 +177,7 @@ class Blob extends Component {
 			if (props.contents) {
 				state.contents = props.contents;
 				state.lines = fileLines(props.contents);
-				state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : this._computeLineStartBytes(state.lines);
+				state.lineStartBytes = state.annotations && state.annotations.LineStartBytes ? state.annotations.LineStartBytes : computeLineStartBytes(state.lines);
 			}
 		}
 
@@ -189,16 +189,6 @@ class Blob extends Component {
 			state.startLine = lineFromByte(state.lines, state.startByte);
 			state.endLine = lineFromByte(state.lines, state.endByte);
 		}
-	}
-
-	_computeLineStartBytes(lines: string[]): number[] {
-		let pos: number = 0;
-		return lines.map((line) => {
-			let start = pos;
-			// Encode the line using utf8 to account for multi-byte unicode characters.
-			pos += utf8.encode(line).length + 1; // add 1 to account for newline
-			return start;
-		});
 	}
 
 	_consolidateRanges(ranges: Range[]): ?Range[] {

@@ -25,7 +25,7 @@ import {urlToDef} from "sourcegraph/def/routes";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import {httpStatusCode} from "sourcegraph/app/status";
 import Header from "sourcegraph/components/Header";
-import lineFromByte from "sourcegraph/blob/lineFromByte";
+import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 
 export default class BlobMain extends Container {
 	static propTypes = {
@@ -119,7 +119,7 @@ export default class BlobMain extends Container {
 		}
 
 		if (prevState.blob !== nextState.blob) {
-			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? ((byte) => lineFromByte(nextState.blob.ContentsString, byte)) : null;
+			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? createLineFromByteFunc(nextState.blob.ContentsString) : null;
 		}
 	}
 
