@@ -75,7 +75,7 @@
 .cta {
 	display: flex;
 	composes: b from typography;
-	composes: pt3 from base;
+	composes: pb2 from base;
 	text-align: center;
 	align-items: center;
 }
