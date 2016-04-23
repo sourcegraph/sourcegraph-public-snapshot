@@ -19,6 +19,8 @@ class Button extends Component {
 		let style = `${this.state.outline ? "outline-" : "solid-"}${this.state.color ? this.state.color : "default"}`;
 		if (this.state.disabled || this.state.loading) style = `${style} disabled`;
 		if (this.state.block) style = `${style} block`;
+		if (this.state.lowercase) style = `${style} lowercase`;
+		if (this.state.unspaced) style = `${style} unspaced`;
 		style = `${style} ${this.state.size ? this.state.size : "normal"}`;
 
 		return (
@@ -37,6 +39,8 @@ Button.propTypes = {
 	size: React.PropTypes.string, // "small", "normal", "large"
 	disabled: React.PropTypes.bool,
 	loading: React.PropTypes.bool,
+	lowercase: React.PropTypes.bool,
+	unspaced: React.PropTypes.bool,
 	color: React.PropTypes.string, // "primary", "default"
 	onClick: React.PropTypes.func,
 };
