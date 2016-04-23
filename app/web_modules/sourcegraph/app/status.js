@@ -98,7 +98,8 @@ export function withStatusContext(Component) {
 					},
 
 					cache: (cache: bool): void => {
-						if (!this._getLocationState().cache) this._setLocationState({cache: cache});
+						// TODO figure out how to do this without breaking routing.
+						// if (!this._getLocationState().cache) this._setLocationState({cache: cache});
 					},
 				},
 			};
