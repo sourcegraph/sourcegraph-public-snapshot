@@ -43,6 +43,46 @@
 							}
 						]
 					}
+				},
+				{
+					"type": "div",
+					"props": {
+						"styleName": "list-item",
+						"children": [
+							{
+								"type": "div",
+								"key": ".0",
+								"props": {
+									"styleName": "uri-container",
+									"children": [
+										{
+											"type": "div",
+											"props": {
+												"styleName": "uri",
+												"children": [
+													{
+														"type": "WrappedComponent",
+														"props": {
+															"repo": "someURL"
+														}
+													}
+												]
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "p",
+								"props": {
+									"styleName": "description",
+									"children": [
+										"someDescription"
+									]
+								}
+							}
+						]
+					}
 				}
 			]
 		}

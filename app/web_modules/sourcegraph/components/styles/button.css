@@ -11,12 +11,6 @@
     user-select: none;
     box-sizing: border-box;
 }
-.lowercase {
-    text-transform: none !important;
-}
-.unspaced {
-    letter-spacing: 0 !important;
-}
 .btn:focus {
     outline: 0;
 }
@@ -47,8 +41,7 @@
 }
 
 .large {
-    composes: pa4 from base;
-    font-size: 1.25rem !important;
+    composes: pa4 from base
 }
 .normal {
     composes: pa3 from base;

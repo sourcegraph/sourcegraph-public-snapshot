@@ -23,12 +23,7 @@
 								"props": {
 									"styleName": "anon-title",
 									"children": [
-										{
-											"type": "img",
-											"props": {
-												"src": "undefined/img/sourcegraph-logo.svg"
-											}
-										}
+										"Index your GitHub code"
 									]
 								}
 							},
@@ -38,7 +33,41 @@
 								"props": {
 									"styleName": "anon-header-sub",
 									"children": [
-										"Save time and code better with live usage examples."
+										"Web-based, IDE-like code browsing and global \"find usages\" for Go code."
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "WrappedComponent",
+					"key": ".2",
+					"props": {}
+				},
+				{
+					"type": "div",
+					"key": ".4",
+					"props": {
+						"styleName": "anon-section",
+						"children": [
+							{
+								"type": "div",
+								"key": ".0",
+								"props": {
+									"styleName": "anon-title",
+									"children": [
+										"Jump in with live examples"
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": ".1",
+								"props": {
+									"styleName": "anon-header-sub",
+									"children": [
+										"Select a function from the Go standard library and see its usage across all open-source libraries"
 									]
 								}
 							}
@@ -47,61 +76,80 @@
 				},
 				{
 					"type": "div",
-					"key": ".2",
+					"key": ".5",
+					"props": {
+						"styleName": "repos",
+						"children": [
+							{
+								"type": "WrappedComponent",
+								"props": {
+									"repos": [],
+									"exampleRepos": [
+										{
+											"URI": "github.com/golang/go",
+											"Owner": "golang",
+											"Name": "go",
+											"Language": "Go",
+											"Examples": [
+												{
+													"Functions": {
+														"Path": "/github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
+														"FunctionCallCount": "2313",
+														"FmtStrings": {
+															"Name": {
+																"ScopeQualified": "http.Get"
+															},
+															"Type": {
+																"ScopeQualified": "(url string) (resp *Response, err error)"
+															},
+															"NameAndTypeSeparator": "",
+															"DefKeyword": "func"
+														}
+													}
+												},
+												{
+													"Functions": {
+														"Path": "/github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
+														"FunctionCallCount": "1313",
+														"FmtStrings": {
+															"Name": {
+																"ScopeQualified": "fmt.Sprintf"
+															},
+															"Type": {
+																"ScopeQualified": "(format string, a ...interface{}) string"
+															},
+															"NameAndTypeSeparator": "",
+															"DefKeyword": "func"
+														}
+													}
+												}
+											]
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					"type": "div",
+					"key": ".6",
 					"props": {
 						"styleName": "cta-box",
 						"children": [
 							{
-								"type": "div",
-								"key": ".0",
+								"type": "a",
 								"props": {
-									"styleName": "cta-headline",
-									"children": [
-										"See everywhere a Go function is called, globally."
-									]
-								}
-							},
-							{
-								"type": "",
-								"key": ".1",
-								"props": {
-									"to": "github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info",
+									"href": "join",
 									"children": [
 										{
 											"type": "WrappedComponent",
 											"props": {
-												"color": "primary",
+												"color": "info",
 												"size": "large",
-												"unspaced": true,
-												"lowercase": true,
 												"children": [
-													"See usage examples for http.NewRequest »"
+													"Add Sourcegraph to my Code"
 												]
-											}
-										}
-									],
-									"onlyActiveOnIndex": false,
-									"className": "",
-									"style": {}
-								}
-							},
-							{
-								"type": "div",
-								"key": ".2",
-								"props": {
-									"styleName": "cta-subline",
-									"children": [
-										{
-											"type": "",
-											"props": {
-												"styleName": "cta-link",
-												"to": "join",
-												"children": [
-													"Sign up for private code"
-												],
-												"onlyActiveOnIndex": false,
-												"className": "",
-												"style": {}
 											}
 										}
 									]

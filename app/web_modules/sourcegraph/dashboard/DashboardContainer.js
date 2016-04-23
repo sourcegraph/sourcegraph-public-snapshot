@@ -1,5 +1,4 @@
 import React from "react";
-import {Link} from "react-router";
 import Helmet from "react-helmet";
 
 import Container from "sourcegraph/Container";
@@ -18,28 +17,22 @@ import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
+import deepFreeze from "sourcegraph/util/deepFreeze";
+import DashboardPromos from "./DashboardPromos";
 // import ChromeExtensionCTA from "./ChromeExtensionCTA";
 
 class DashboardContainer extends Container {
-	constructor(props) {
-		super(props);
-		this.state = {
-			showChromeExtensionCTA: false,
-		};
-	}
 
 	componentDidMount() {
 		super.componentDidMount();
 		if (this.state.githubRedirect) {
 			EventLogger.logEvent("LinkGitHubCompleted");
 		}
-		setTimeout(() => this.setState({
-			showChromeExtensionCTA: global.chrome && global.document && !document.getElementById("chrome-extension-installed"),
-		}), 0);
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
+		state.exampleRepos = this._exampleRepos();
 		state.repos = DashboardStore.repos || null;
 		state.remoteRepos = DashboardStore.remoteRepos || null;
 		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
@@ -56,55 +49,95 @@ class DashboardContainer extends Container {
 
 	stores() { return [DashboardStore]; }
 
+	_exampleRepos() {
+		return deepFreeze([{
+			URI: "github.com/golang/go",
+			Owner: "golang",
+			Name: "go",
+			Language: "Go",
+			Examples: [
+				{Functions: {
+					Path: "/github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
+					FunctionCallCount: "2313",
+					FmtStrings: {
+						Name: {
+							ScopeQualified: "http.Get"}, Type: {
+								ScopeQualified: "(url string) (resp *Response, err error)",
+							}, NameAndTypeSeparator: "", DefKeyword: "func"}},
+				},
+				{Functions: {
+					Path: "/github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
+					FunctionCallCount: "1313",
+					FmtStrings: {
+						Name: {ScopeQualified: "fmt.Sprintf"},
+						Type: {ScopeQualified: "(format string, a ...interface{}) string"}, NameAndTypeSeparator: "", DefKeyword: "func",
+					},
+				},
+				},
+			],
+		},
+		]);
+	}
+
 	renderCTAButtons() {
-		return (
-			<div>
+		return (<div styleName="cta-header">
 				{!context.hasLinkedGitHub && <div styleName="cta">
 					<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
-					<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Add My GitHub Repositories</Button>
+						<Button outline={true} color="warning"><GitHubIcon styleName="github-icon" />Add My GitHub Repositories</Button>
 					</a>
 				</div>}
-			</div>
-		);
+			{/* NOTE: The ChromeExtensionCTA (container) is responsible for determining whether it should render the button. */}
+			{/* <ChromeExtensionCTA /> */}
+		</div>);
 	}
 
 	render() {
-		return (
-			<div styleName="container">
-				<Helmet title="Home" />
+		return (<div styleName="container">
+			<Helmet title="Home" />
 
-				{!context.currentUser &&
-					<div styleName="anon-section">
-						<div styleName="anon-title"><img src={`${context.assetsRoot}/img/sourcegraph-logo.svg`}/></div>
-						<div styleName="anon-header-sub">Save time and code better with live usage examples.</div>
-					</div>
-				}
-				{!context.currentUser &&
-					<div styleName="cta-box">
-						<div styleName="cta-headline">See everywhere a Go function is called, globally.</div>
-						<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => EventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
-							<Button color="primary" size="large" unspaced={true} lowercase={true}>See usage examples for http.NewRequest &raquo;</Button>
-						</Link>
-						<div styleName="cta-subline">
-							<Link styleName="cta-link" to="join">Sign up for private code</Link>
-							{/* this.state.showChromeExtensionCTA && <span>|</span> */}
-							{/* this.state.showChromeExtensionCTA && <ChromeExtensionCTA /> */}
-						</div>
-					</div>
-				}
+			{!context.currentUser &&
+				<div styleName="anon-section">
+					<div styleName="anon-title">Index your GitHub code</div>
+					<div styleName="anon-header-sub">Web-based, IDE-like code browsing and global "find usages" for Go code.</div>
+				</div>
+			}
 
-				{context.currentUser &&
-					<div styleName="anon-section">
-						{this.renderCTAButtons()}
-					</div>
-				}
+			{!context.currentUser &&
+				<DashboardPromos/>
+			}
 
-				{context.currentUser && <div styleName="repos">
-					<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} />
-				</div>}
+			{context.currentUser &&
+				<div styleName="anon-section">
+					<div styleName="anon-title-left">My Dashboard</div>
+					{this.renderCTAButtons()}
+				</div>
+			}
+
+			{!context.currentUser &&
+				<div styleName="anon-section">
+					<div styleName="anon-title">Jump in with live examples</div>
+					<div styleName="anon-header-sub">Select a function from the Go standard library and see its usage across all open-source libraries</div>
+				</div>
+			}
+
+			<div styleName="repos">
+				<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])}
+					exampleRepos={this.state.exampleRepos}/>
 			</div>
-		);
+
+			{!context.currentUser &&
+				<div styleName="cta-box">
+					<a href="join" onClick={() => EventLogger.logEventForPage("JoinCTAClicked", EventLocation.Dashboard, {PageLocation: "Bottom"})}>
+						<Button color="info" size="large">Add Sourcegraph to my Code</Button>
+					</a>
+				</div>
+			}
+		</div>);
 	}
 }
+
+DashboardContainer.propTypes = {
+};
+
 
 export default CSSModules(DashboardContainer, styles);
