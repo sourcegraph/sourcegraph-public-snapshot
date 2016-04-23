@@ -15,18 +15,31 @@
 					"type": "div",
 					"key": ".1",
 					"props": {
-						"styleName": "action",
+						"styleName": "anon-section",
 						"children": [
 							{
-								"type": "",
+								"type": "div",
+								"key": ".0",
 								"props": {
-									"to": "/login",
+									"styleName": "anon-title",
 									"children": [
-										" Sign in "
-									],
-									"onlyActiveOnIndex": false,
-									"className": "",
-									"style": {}
+										{
+											"type": "img",
+											"props": {
+												"src": "undefined/img/sourcegraph-logo.svg"
+											}
+										}
+									]
+								}
+							},
+							{
+								"type": "div",
+								"key": ".1",
+								"props": {
+									"styleName": "anon-header-sub",
+									"children": [
+										"Save time and code better with live usage examples."
+									]
 								}
 							}
 						]
@@ -36,173 +49,59 @@
 					"type": "div",
 					"key": ".2",
 					"props": {
-						"styleName": "anon-section",
+						"styleName": "cta-box",
 						"children": [
 							{
-								"type": "img",
+								"type": "div",
 								"key": ".0",
 								"props": {
-									"styleName": "logo",
-									"src": "/img/sourcegraph-logo.svg"
+									"styleName": "cta-headline",
+									"children": [
+										"See everywhere a Go function is called, globally."
+									]
 								}
 							},
 							{
-								"type": "div",
+								"type": "",
 								"key": ".1",
 								"props": {
-									"styleName": "anon-title",
+									"to": "github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info",
 									"children": [
-										"Code Intelligence for Teams"
-									]
+										{
+											"type": "WrappedComponent",
+											"props": {
+												"color": "primary",
+												"size": "large",
+												"unspaced": true,
+												"lowercase": true,
+												"children": [
+													"See usage examples for http.NewRequest »"
+												]
+											}
+										}
+									],
+									"onlyActiveOnIndex": false,
+									"className": "",
+									"style": {}
 								}
 							},
 							{
 								"type": "div",
 								"key": ".2",
 								"props": {
-									"styleName": "anon-header-sub",
-									"children": [
-										"Search, browse, and cross-reference code"
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": ".3",
-								"props": {
-									"styleName": "anon-header-counts",
-									"children": [
-										"79,272 repositories · 143,203,753 functions"
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".4",
-					"props": {
-						"styleName": "repos",
-						"children": [
-							{
-								"type": "WrappedComponent",
-								"props": {
-									"repos": [],
-									"exampleRepos": [
-										{
-											"URI": "github.com/golang/go",
-											"Owner": "golang",
-											"Name": "go",
-											"Language": "Go",
-											"Examples": [
-												{
-													"Functions": {
-														"Path": "github.com/golang/go@master/-/def/GoPackage/net/http/-/Get",
-														"FunctionCallCount": "2313",
-														"FmtStrings": {
-															"Name": {
-																"ScopeQualified": "http.Get"
-															},
-															"Type": {
-																"ScopeQualified": "(url string) (resp *Response, err error)"
-															},
-															"NameAndTypeSeparator": "",
-															"DefKeyword": "func"
-														}
-													}
-												},
-												{
-													"Functions": {
-														"Path": "github.com/golang/go@master/-/def/GoPackage/fmt/-/Sprintf",
-														"FunctionCallCount": "1313",
-														"FmtStrings": {
-															"Name": {
-																"ScopeQualified": "fmt.Sprintf"
-															},
-															"Type": {
-																"ScopeQualified": "(format string, a ...interface{}) string"
-															},
-															"NameAndTypeSeparator": "",
-															"DefKeyword": "func"
-														}
-													}
-												}
-											]
-										},
-										{
-											"URI": "github.com/gorilla/mux",
-											"Owner": "gorilla",
-											"Name": "mux",
-											"Language": "Go",
-											"Examples": [
-												{
-													"Functions": {
-														"Path": "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/NewRouter",
-														"FunctionCallCount": "40",
-														"FmtStrings": {
-															"Name": {
-																"ScopeQualified": "NewRouter"
-															},
-															"Type": {
-																"ScopeQualified": "()*Router"
-															},
-															"NameAndTypeSeparator": "",
-															"DefKeyword": "func"
-														}
-													}
-												},
-												{
-													"Functions": {
-														"Path": "github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Route/PathPrefix",
-														"FunctionCallCount": "14",
-														"FmtStrings": {
-															"Name": {
-																"ScopeQualified": "(r *Route) PathPrefix"
-															},
-															"Type": {
-																"ScopeQualified": "(tpl string) *Route"
-															},
-															"NameAndTypeSeparator": "",
-															"DefKeyword": "func"
-														}
-													}
-												}
-											]
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".5",
-					"props": {
-						"styleName": "cta-box",
-						"children": [
-							{
-								"type": "span",
-								"props": {
-									"styleName": "cta",
+									"styleName": "cta-subline",
 									"children": [
 										{
-											"type": "a",
+											"type": "",
 											"props": {
-												"href": "join",
+												"styleName": "cta-link",
+												"to": "join",
 												"children": [
-													{
-														"type": "WrappedComponent",
-														"props": {
-															"color": "info",
-															"size": "large",
-															"children": [
-																"Add Sourcegraph to my code"
-															]
-														}
-													}
-												]
+													"Sign up for private code"
+												],
+												"onlyActiveOnIndex": false,
+												"className": "",
+												"style": {}
 											}
 										}
 									]

@@ -11,6 +11,21 @@ export class FetchedRepo {
 	}
 }
 
+export class WantInventory {
+	constructor(repo, rev) {
+		this.repo = repo;
+		this.rev = rev;
+	}
+}
+
+export class FetchedInventory {
+	constructor(repo, rev, inventory) {
+		this.repo = repo;
+		this.rev = rev;
+		this.inventory = inventory;
+	}
+}
+
 export class RepoCloning {
 	constructor(repo, isCloning) {
 		this.repo = repo;

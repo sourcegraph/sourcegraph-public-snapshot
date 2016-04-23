@@ -27,12 +27,15 @@
 	composes: f5 from typography;
 	font-weight: bold;
 }
-.badge {
-	font-size: 10px;
-	vertical-align: 1px;
+.badge-padding {
 	padding: 3px 5px;
 	composes: br2 from base;
 	composes: bg-blue-1 blue-8 from colors;
+}
+.badge {
+	composes: badge-padding;
+	font-size: 10px;
+	vertical-align: 1px;
 }
 .activeGroupHeader {
 	font-weight: bold;

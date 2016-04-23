@@ -1899,6 +1899,15 @@ message Annotation {
 	// region.
 	string Class = 4;
 
+	// Def is whether this annotation marks the definition of the
+	// item described in URL or URLs. For example, "Foo" in "func Foo() {}"
+	// would have its annotation with Def=true.
+	//
+	// Marking whether this annotation is a def lets us
+	// jump-to-definition here from other refs in the same file
+	// without needing to load the defs for those refs.
+	bool Def = 7;
+
 	// WantInner indicates that this annotation, when being applied to
 	// the underlying text, should be inner (i.e., more deeply
 	// nested). Larger numbers mean greater precedence for being

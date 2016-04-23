@@ -287,6 +287,10 @@ func (s *RepositoriesService) GetByID(id int) (*Repository, *Response, error) {
 		return nil, nil, err
 	}
 
+	// TODO: remove custom Accept header when the license support fully launches
+	// https://developer.github.com/v3/licenses/#get-a-repositorys-license
+	req.Header.Set("Accept", mediaTypeLicensesPreview)
+
 	repository := new(Repository)
 	resp, err := s.client.Do(req, repository)
 	if err != nil {

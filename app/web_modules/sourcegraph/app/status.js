@@ -17,7 +17,12 @@ export type Status = {
 
 export type State = {
 	// error is an error that occurred loading the current page, if any.
-	error: ?Error;
+	error?: ?Error;
+
+	// cache is whether the rendered HTML should be cached. It should
+	// only be true for URLs whose content is unlikely to change (e.g.,
+	// blob or def pages).
+	cache?: bool;
 };
 
 // promises are tracked here, not in Location.state, to avoid needless component
@@ -91,11 +96,15 @@ export function withStatusContext(Component) {
 						// succeeded.
 						if (!this._getLocationState().error) this._setLocationState({error: error});
 					},
+
+					cache: (cache: bool): void => {
+						if (!this._getLocationState().cache) this._setLocationState({cache: cache});
+					},
 				},
 			};
 		}
 
-		emptyState: State = {error: null};
+		emptyState: State = {error: null, cache: false};
 
 		_getLocationState(): State {
 			return this.props.location.state ? this.props.location.state : {...this.emptyState};

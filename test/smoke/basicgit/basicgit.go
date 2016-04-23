@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -19,10 +18,6 @@ var (
 	username = flag.String("username", "testuser1", "the username to use for src operations")
 	password = flag.String("password", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "the password to use for src operations")
 	email    = flag.String("email", "email@email.email", "the email to use for src operations")
-
-	registeredClient            = "testserver"
-	registeredClientURL         = "http://localhost:3080"
-	registeredClientRedirectURL = "http://localhost:3080/login/oauth/receive"
 
 	verbose = true
 
@@ -170,20 +165,6 @@ func ce(cmdStr string, args ...interface{}) error {
 		fmt.Printf("$ %s\n", expCmdStr)
 	}
 	return newCmd(cmdStr, args...).Run()
-}
-
-func cJSON(cmdStr string, args ...interface{}) (map[string]interface{}, error) {
-	cmd := newCmd(cmdStr, args...)
-	cmd.Stdout = nil
-	stdout, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	outObj := make(map[string]interface{})
-	if err := json.Unmarshal(stdout, &outObj); err != nil {
-		return nil, err
-	}
-	return outObj, nil
 }
 
 // noErr runs the specified command. If the error code is non-zero,

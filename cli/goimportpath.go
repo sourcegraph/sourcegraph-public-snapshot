@@ -49,6 +49,7 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 		return
 	}
 
+	httpctx.SetRouteName(req, "go-get")
 	if !strings.HasPrefix(req.URL.Path, "/") {
 		err := fmt.Errorf("req.URL.Path doesn't have a leading /: %q", req.URL.Path)
 		log.Println(err)

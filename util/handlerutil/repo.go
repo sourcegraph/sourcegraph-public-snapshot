@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/doc"
-	"html/template"
 	"net/http"
 	"strings"
 
@@ -186,25 +185,6 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 
 	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
 	return nil
-}
-
-// FlattenName flattens a nested TreeEntry name, joining with slashes.
-func FlattenName(e *sourcegraph.BasicTreeEntry) string {
-	if len(e.Entries) == 1 {
-		return e.Name + "/" + FlattenName(e.Entries[0])
-	} else {
-		return e.Name
-	}
-}
-
-// FlattenNameHTML flattens a nested TreeEntry name, returning HTML for rendering the slash-separated name
-// with all but the last elements grayed out.
-func FlattenNameHTML(e *sourcegraph.BasicTreeEntry) template.HTML {
-	if len(e.Entries) == 1 {
-		return template.HTML(`<span class="dim">`+template.HTMLEscapeString(e.Name)+`/</span>`) + FlattenNameHTML(e.Entries[0])
-	} else {
-		return template.HTML(template.HTMLEscapeString(e.Name))
-	}
 }
 
 // ResolveSrclibDataVersion calls Repos.GetSrclibDataVersionForPath on

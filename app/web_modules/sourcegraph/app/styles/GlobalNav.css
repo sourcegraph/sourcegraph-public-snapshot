@@ -29,6 +29,7 @@
 	width: 2.7rem;
 	height: 2.7rem;
 }
+
 .logo:hover {
 	animation: spin 0.5s ease-in-out 1;
 }
@@ -39,6 +40,11 @@
 	align-items: center;
 	composes: pv1 ph2 from base;
 	composes: f3 from typography;
+}
+
+.context {
+	display: flex;
+	align-content: center;
 }
 
 .actions {

@@ -17,7 +17,8 @@
 									"block": true,
 									"autoFocus": true,
 									"defaultValue": "",
-									"placeholder": "Jump to symbols or files..."
+									"placeholder": "Jump to symbols or files...",
+									"maxLength": 32
 								}
 							}
 						]
@@ -245,18 +246,37 @@
 						"children": [
 							{
 								"type": "",
+								"key": ".$/repo@rev/-/tree/p1",
+								"props": {
+									"styleName": "list-item-selected parent-dir",
+									"to": "/repo@rev/-/tree/p1",
+									"children": [
+										{
+											"type": "span",
+											"key": ".0",
+											"props": {
+												"styleName": "icon"
+											}
+										},
+										".."
+									],
+									"onlyActiveOnIndex": false,
+									"className": "",
+									"style": {}
+								}
+							},
+							{
+								"type": "",
 								"key": ".$/repo@rev/-/blob/p1/p2/f3",
 								"props": {
-									"styleName": "list-item-selected",
+									"styleName": "list-item ",
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
 											"type": "span",
 											"key": ".0",
 											"props": {
-												"style": {
-													"paddingRight": "1rem"
-												},
+												"styleName": "icon",
 												"children": [
 													{
 														"type": "GoFileText",

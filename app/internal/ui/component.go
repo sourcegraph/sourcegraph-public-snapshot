@@ -117,9 +117,12 @@ func renderRouterState(ctx context.Context, state *renderState) (*RenderResult, 
 // HACK: Don't cache HTTP 202, or else we could permanently cache
 // "Repo is cloning" interstitials, etc.
 func isCacheable(res json.RawMessage) bool {
-	var o struct{ StatusCode int }
+	var o struct {
+		StatusCode int
+		Cache      bool
+	}
 	json.Unmarshal(res, &o)
-	return o.StatusCode == http.StatusOK
+	return o.StatusCode == http.StatusOK && o.Cache
 }
 
 func truncateArg(arg []byte) string {

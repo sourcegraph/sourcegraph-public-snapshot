@@ -10,6 +10,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -79,6 +80,30 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, res)
+}
+
+func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	if err != nil {
+		return err
+	}
+
+	res, err := cl.Repos.GetInventory(ctx, &repoRevSpec)
+	if err != nil {
+		return err
+	}
+
+	resp := struct {
+		Languages                  []*inventory.Lang
+		PrimaryProgrammingLanguage string
+	}{
+		Languages:                  res.Languages,
+		PrimaryProgrammingLanguage: res.PrimaryProgrammingLanguage(),
+	}
+
+	return writeJSON(w, &resp)
 }
 
 func serveRepos(w http.ResponseWriter, r *http.Request) error {

@@ -7,23 +7,34 @@ import {defPath} from "sourcegraph/def";
 import type {Route} from "react-router";
 import type {Def} from "sourcegraph/def";
 
-let _components;
+import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
+import withDef from "sourcegraph/def/withDef";
+import DefInfo from "sourcegraph/def/DefInfo";
+import DefNavContext from "sourcegraph/def/DefNavContext";
+import RefsMain from "sourcegraph/def/RefsMain";
+
+// TODO these routes didn't work with async loading. Fix them.
+const infoRoute = {
+	path: "info",
+	components: {
+		main: withResolvedRepoRev(withDef(DefInfo)),
+		repoNavContext: DefNavContext,
+	},
+};
+
+const refsRoute = {
+	path: "refs",
+	components: {
+		main: withResolvedRepoRev(withDef(RefsMain)),
+		repoNavContext: DefNavContext,
+	},
+};
 
 export const routes: Array<Route> =[
 	{
-		path: `${rel.def}/-/refs`,
-		getComponents: (location, callback) => {
-			require.ensure([], (require) => {
-				if (!_components) {
-					const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
-					const withDef = require("sourcegraph/def/withDef").default;
-					_components = {
-						main: withResolvedRepoRev(withDef(require("sourcegraph/def/RefsMain").default)),
-						repoNavContext: require("sourcegraph/def/DefNavContext").default,
-					};
-				}
-				callback(null, _components);
-			});
+		path: `${rel.def}*/-/`,
+		getChildRoutes: (location, callback) => {
+			callback(null, [infoRoute, refsRoute]);
 		},
 	},
 	{

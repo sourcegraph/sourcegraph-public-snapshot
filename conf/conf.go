@@ -13,13 +13,6 @@ import (
 
 var (
 	BuildLogDir = GetenvOrDefault("SG_BUILD_LOG_DIR", filepath.Join(fileutil.TempDir(), "sg-log/build"))
-	NavMessage  = os.Getenv("SG_NAV_MSG")
-
-	// RequireSecrets is a boolean indicating whether to call
-	// log.Fatal if any of the secret values are not present (ticket
-	// signing key, PEM encryption key, etc.). It should be true in
-	// production but may be false for local development.
-	RequireSecrets = GetenvBool("SG_REQUIRE_SECRETS")
 )
 
 func MustGetenv(name string) string {

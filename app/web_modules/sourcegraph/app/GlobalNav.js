@@ -32,7 +32,6 @@ class GlobalNav extends React.Component {
 				<Link to="/">
 					<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
 				</Link>
-
 				<div styleName="context-container">{this.props.navContext}</div>
 
 				<div styleName="actions">

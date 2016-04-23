@@ -35,6 +35,7 @@ import styles from "./styles/Tree.css";
 const SYMBOL_LIMIT = 5;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
+const MAX_QUERY_LENGTH = 32;
 
 function pathSplit(path: string): string[] {
 	if (path === "") throw new Error("invalid empty path");
@@ -46,6 +47,17 @@ function pathSplit(path: string): string[] {
 function pathJoin(pathComponents: string[]): string {
 	if (pathComponents.length === 0) return "/";
 	return pathComponents.join("/");
+}
+
+function pathJoin2(a: string, b: string): string {
+	if (!a || a === "/") return b;
+	return `${a}/${b}`;
+}
+
+function pathDir(path: string): string {
+	// Remove last item from path.
+	const parts = pathSplit(path);
+	return pathJoin(parts.splice(0, parts.length - 1));
 }
 
 class TreeSearch extends Container {
@@ -100,6 +112,7 @@ class TreeSearch extends Container {
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
+		this._handleInput = this._handleInput.bind(this);
 		this._focusInput = this._focusInput.bind(this);
 		this._handleFocus = this._handleFocus.bind(this);
 		this._blurInput = this._blurInput.bind(this);
@@ -108,7 +121,7 @@ class TreeSearch extends Container {
 			if (query !== this.state.query) {
 				this.props.onChangeQuery(query);
 			}
-		}, 75, {leading: false, trailing: true});
+		}, 150, {leading: false, trailing: true});
 	}
 
 	componentDidMount() {
@@ -138,6 +151,12 @@ class TreeSearch extends Container {
 		Object.assign(state, props);
 
 		state.query = props.query || "";
+		if (state.query.length > MAX_QUERY_LENGTH) {
+			// HACK: Truncate query if it exceeds Fuse's max query length.
+			// We can probably handle this better and should support longer
+			// queries, but this prevents outright errors from occurring.
+			state.query = state.query.slice(0, MAX_QUERY_LENGTH);
+		}
 
 		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
 		state.fileList = TreeStore.fileLists.get(state.repo, state.rev);
@@ -177,11 +196,26 @@ class TreeSearch extends Container {
 				distance: 1000,
 				location: 0,
 				threshold: 0.1,
+				maxPatternLength: MAX_QUERY_LENGTH,
 			}) : null;
+		}
+
+		if (prevState.matchingDefs !== nextState.matchingDefs) {
+			// Keep selectionIndex on same file item even after def results are loaded. Prevents
+			// the selection from jumping around as more data comes in.
+			const prevNumDefs = Math.min(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.length : 0);
+			const nextNumDefs = Math.min(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.length : 0);
+			const defWasSelected = nextState.selectionIndex < prevNumDefs || (prevState.fileResults && prevState.fileResults.length === 0);
+			if (defWasSelected) {
+				nextState.selectionIndex = 0;
+			} else {
+				nextState.selectionIndex += (nextNumDefs - prevNumDefs);
+			}
 		}
 
 		if (prevState.path !== nextState.path || prevState.query !== nextState.query || prevState.fileList !== nextState.fileList || prevState.fileTree !== nextState.fileTree) {
 			nextState.fileResults = null;
+			nextState.selectionIndex = 0;
 
 			// Show entire file tree as file results.
 			//
@@ -207,26 +241,35 @@ class TreeSearch extends Container {
 					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dirKey => ({
 						name: dirKey.substr(1), // dirKey is prefixed to avoid clash with predefined fields like "constructor"
 						isDirectory: true,
-						path: `${pathPrefix}/${dirKey.substr(1)}`,
-						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dirKey.substr(1)}`),
+						path: pathJoin2(pathPrefix, dirKey.substr(1)),
+						url: urlToTree(nextState.repo, nextState.rev, pathJoin2(pathPrefix, dirKey.substr(1))),
 					})) : [];
+					// Add parent dir link if showing a subdir.
+					if (pathPrefix) {
+						const parentDir = pathDir(pathPrefix);
+						dirs.unshift({
+							name: "..",
+							isDirectory: true,
+							isParentDirectory: true,
+							path: parentDir,
+							url: urlToTree(nextState.repo, nextState.rev, parentDir),
+						});
+					}
+
 					const files = !err ? dirLevel.Files.map(file => ({
 						name: file,
 						isDirectory: false,
-						url: urlToBlob(nextState.repo, nextState.rev, `${pathPrefix}/${file}`),
+						url: urlToBlob(nextState.repo, nextState.rev, pathJoin2(pathPrefix, file)),
 					})) : [];
 					// TODO Handle errors in a more standard way.
 					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
 				}
-			} else {
-				nextState.selectionIndex = 0;
-				if (nextState.fuzzyFinder) {
-					nextState.fileResults = nextState.fuzzyFinder.search(nextState.query).map(i => nextState.fileList.Files[i]).map(file => ({
-						name: file,
-						isDirectory: false,
-						url: urlToBlob(nextState.repo, nextState.rev, file),
-					}));
-				}
+			} else if (nextState.fuzzyFinder) {
+				nextState.fileResults = nextState.fuzzyFinder.search(nextState.query).map(i => nextState.fileList.Files[i]).map(file => ({
+					name: file,
+					isDirectory: false,
+					url: urlToBlob(nextState.repo, nextState.rev, file),
+				}));
 			}
 		}
 	}
@@ -262,25 +305,6 @@ class TreeSearch extends Container {
 			e.preventDefault();
 			break;
 
-		case 37: // ArrowLeft
-			if (this.state.path.length !== 0) {
-				// Remove last item from path.
-				const parts = pathSplit(this.state.path);
-				const parentPath = pathJoin(parts.splice(0, parts.length - 1));
-				this.state.onSelectPath(parentPath);
-			}
-			this._temporarilyIgnoreMouseSelection();
-
-			// Allow default (cursor movement in <input>)
-			break;
-
-		case 39: // ArrowRight
-			this._onSelection();
-			this._temporarilyIgnoreMouseSelection();
-
-			// Allow default (cursor movement in <input>)
-			break;
-
 		case 13: // Enter
 			this._onSelection();
 			this._temporarilyIgnoreMouseSelection();
@@ -288,10 +312,14 @@ class TreeSearch extends Container {
 			break;
 
 		default:
-			if (this.state.focused) {
-				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.value : ""), 0);
-			}
+			// Changes to the input value are handled by _handleInput.
 			break;
+		}
+	}
+
+	_handleInput(e: KeyboardEvent) {
+		if (this.state.focused) {
+			this._debouncedSetQuery(this._queryInput ? this._queryInput.value : "");
 		}
 	}
 
@@ -399,13 +427,18 @@ class TreeSearch extends Container {
 
 			const selected = this._normalizedSelectionIndex() - this._numSymbolResults() === i;
 
+			let icon;
+			if (item.isParentDirectory) icon = null;
+			else if (item.isDirectory) icon = <FolderIcon />;
+			else icon = <FileIcon />;
+
 			list.push(
-				<Link styleName={selected ? "list-item-selected" : "list-item"}
+				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={itemURL}>
-					<span style={{paddingRight: "1rem"}}>{item.isDirectory ? <FolderIcon /> : <FileIcon />}</span>
+					<span styleName="icon">{icon}</span>
 					{item.name}
 				</Link>
 			);
@@ -537,9 +570,11 @@ class TreeSearch extends Container {
 						block={true}
 						onFocus={this._focusInput}
 						onBlur={this._blurInput}
+						onInput={this._handleInput}
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Jump to symbols or files..."
+						maxLength={MAX_QUERY_LENGTH}
 						domRef={(e) => this._queryInput = e} />
 				</div>
 				<div styleName="list-header">

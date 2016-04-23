@@ -4,19 +4,44 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
 )
 
 const (
 	repoUpdaterQueueDepth = 10
 )
 
+var (
+	enqueueCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "enqueue",
+		Help:      "Number of requests to enqueue repos (but not necessarily accepted into queue)",
+	}, []string{"repo"})
+
+	acceptedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "enqueue_accepted",
+		Help:      "Number of requests to enqueue repos that were accepted / added to queue",
+	}, []string{"repo"})
+)
+
+func init() {
+	prometheus.MustRegister(enqueueCounter)
+	prometheus.MustRegister(acceptedCounter)
+}
+
 // Enqueue queues a mirror repo for refresh. If asUser is not nil, that user's
 // auth token will be used for performing the fetch from the remote host.
 func Enqueue(repoSpec sourcegraph.RepoSpec, asUser *sourcegraph.UserSpec) {
+	enqueueCounter.WithLabelValues(util.GetTrackedRepo(repoSpec.String())).Inc()
 	RepoUpdater.enqueue(&repoUpdateOp{RepoSpec: repoSpec, AsUser: asUser})
 }
 
@@ -67,6 +92,7 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 
 	select {
 	case ru.queue <- op:
+		acceptedCounter.WithLabelValues(util.GetTrackedRepo(op.RepoSpec.String())).Inc()
 		ru.recent[op.RepoSpec] = now
 	default:
 		// Skip since queue is full.

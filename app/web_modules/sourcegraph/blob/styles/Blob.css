@@ -79,9 +79,11 @@ by a lot of other modules (e.g., for def boxes)? */
 	min-width: 40px;
 	background-color: #fafafc;
 }
+@value codeLineHeight 16px;
+@value firstCodeLineTopPadding 8px;
 .lineCell {
-	padding-top: 1px;
-	padding-bottom: 1px;
+	line-height: codeLineHeight;
+	composes: pv0 from base;
 }
 .line {}
 .lineNumber {
@@ -89,7 +91,6 @@ by a lot of other modules (e.g., for def boxes)? */
 	display: block;
 	text-align: right;
 	white-space: nowrap;
-	vertical-align: top;
 	composes: light-silver from colors;
 	padding-right: 8px;
 	user-select: none;
@@ -97,6 +98,7 @@ by a lot of other modules (e.g., for def boxes)? */
 }
 .lineNumber:before {
 	content: attr(data-line);
+	line-height: codeLineHeight;
 }
 .selectedLineNumber {
 	composes: lineNumber;
@@ -106,7 +108,7 @@ by a lot of other modules (e.g., for def boxes)? */
 	color: c_gray;
 }
 .line:first-child .lineNumber, .line:first-child .lineContent {
-	padding-top: 9px;
+	padding-top: firstCodeLineTopPadding;
 }
 .lineContent {
 	composes: lineCell;
@@ -151,6 +153,7 @@ by a lot of other modules (e.g., for def boxes)? */
 .placeholderWhitespace {
 	float: right;
 	background-color: white;
+	height: codeLineHeight;
 }
 .lineContentPlaceholder {
 	composes: pa0 from base;

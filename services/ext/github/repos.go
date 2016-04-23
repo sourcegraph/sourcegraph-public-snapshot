@@ -3,28 +3,65 @@ package github
 import (
 	"fmt"
 
+	"github.com/golang/groupcache/lru"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
+var reposGithubPublicCache = cache.TTL(
+	cache.Sync(lru.New(100000)),
+	conf.GetenvDurationOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL", "10m"))
+var reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_cache_hit",
+	Help:      "Counts cache hits and misses for public github repo metadata.",
+}, []string{"type"})
+
+func init() {
+	prometheus.MustRegister(reposGithubPublicCacheCounter)
+}
+
 type Repos struct{}
 
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
+	// This function is called a lot, especially on popular public
+	// repos. For public repos we have the same result for everyone, so it
+	// is cacheable. (Permissions can change, but we no longer store that.) But
+	// for the purpose of avoiding rate limits, we set all public repos to
+	// read-only permissions.
+	if remoteRepo, found := reposGithubPublicCache.Get(repo); found {
+		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
+		return remoteRepo.(*sourcegraph.RemoteRepo), nil
+	}
+
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
+		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
 		return nil, &store.RepoNotFoundError{Repo: repo}
 	}
 
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
 	if err != nil {
+		reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", repo))
 	}
+	remoteRepo := toRemoteRepo(ghrepo)
+	if ghrepo.Private != nil && !*ghrepo.Private {
+		reposGithubPublicCache.Add(repo, remoteRepo)
+		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
+	} else {
+		reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
+	}
 
-	return toRemoteRepo(ghrepo), nil
+	return remoteRepo, nil
 }
 
 func (s *Repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {

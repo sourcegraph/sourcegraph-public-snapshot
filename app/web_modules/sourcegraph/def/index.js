@@ -24,6 +24,17 @@ export function routeParams(url: string): {repo: string, rev: ?string, def: stri
 	};
 }
 
+// fastParseDefPath quickly parses "TYPE/-/UNIT/-/PATH" from a URL
+// or pathname like "/REPO/-/def/TYPE/-/UNIT/-/PATH". It is much
+// faster than routeParams but should only be called on URLs that are
+// known to be def URLs.
+const _defPathIndicator = "/-/def/";
+export function fastParseDefPath(url: string): ?string {
+	const i = url.indexOf(_defPathIndicator);
+	if (i === -1) return null;
+	return url.slice(i + _defPathIndicator.length);
+}
+
 export function defPath(def: Def): string {
 	return `${def.UnitType}/${def.Unit}/-/${def.Path}`;
 }

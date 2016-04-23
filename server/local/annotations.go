@@ -181,6 +181,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 
 		anns[i] = &sourcegraph.Annotation{
 			URL:       approuter.Rel.URLToDef(def).String(),
+			Def:       ref.Def,
 			StartByte: ref.Start,
 			EndByte:   ref.End,
 		}

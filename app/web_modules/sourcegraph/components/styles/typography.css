@@ -156,6 +156,8 @@ html {
 	opacity: .9;
 	background-color: c_brand-orange;
 }
+
+
 .header-center {
 	composes: header tc;
 }
@@ -164,6 +166,34 @@ html {
 	display: block;
 	margin-right: auto;
 	margin-left: auto;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+
+.header-center-padded {
+	composes: header-center;
+}
+.header-center-padded::after {
+	content: '';
+	display: block;
+	margin-top: 30px;
+	margin-bottom: 30px;
+	margin-left: auto;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
+}
+
+.header-left {
+	composes: header tl;
+}
+.header-left::after {
+	content: '';
+	display: block;
+	margin-right: auto;
 	width: 35px;
 	height: 3px;
 	opacity: .9;
@@ -198,6 +228,11 @@ html {
 
 .normal-text {
 	composes: f4;
+	composes: mid-gray from colors;
+}
+
+.heavy-text {
+	composes: f3;
 	composes: mid-gray from colors;
 }
 

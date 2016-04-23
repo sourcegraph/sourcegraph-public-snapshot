@@ -67,7 +67,9 @@ const BuildBackend = {
 						body: JSON.stringify({
 							CommitID: action.commitID,
 							Branch: action.branch,
-							Config: {Queue: true},
+							// HACK: this will enable builds queued through the ui
+							// to receive a higher priority.
+							Config: {Queue: true, Priority: 40},
 						}),
 					})
 						.then(checkStatus)
@@ -103,7 +105,7 @@ const BuildBackend = {
 						.catch((err) => ({Error: err}))
 						.then((resp) => {
 							resp.text().then((text) => {
-								let maxID = resp.headers["x-sourcegraph-log-max-id"];
+								let maxID = resp.headers.get("x-sourcegraph-log-max-id");
 								if (maxID) {
 									maxID = parseInt(maxID, 10);
 								}

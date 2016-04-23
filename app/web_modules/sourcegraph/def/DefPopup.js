@@ -1,6 +1,7 @@
 // @flow weak
 
 import React from "react";
+import {Link} from "react-router";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import s from "sourcegraph/def/styles/Def.css";
@@ -12,6 +13,7 @@ import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
 import context from "sourcegraph/app/context";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
+import {urlToDef} from "sourcegraph/def/routes";
 
 class DefPopup extends Container {
 	static propTypes = {
@@ -49,15 +51,14 @@ class DefPopup extends Container {
 		return (
 			<div className={s.marginBox}>
 				{this.props.onboardingCTA}
-				<header className={s.boxTitle}>{qualifiedNameAndType(def)}</header>
+				<header className={s.boxTitle}><Link to={`${urlToDef(this.state.defObj)}/-/info`}>{qualifiedNameAndType(def)}</Link></header>
 				<header className={s.sectionTitle}>Used in {!refLocs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
+				{!refLocs && <i>Loading...</i>}
 				{refLocs && refLocs.length === 0 &&	<i>No usages found</i>}
 				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
 				{authors && <header className={s.sectionTitle}>Authors {!authors && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>}
-				{authors && authors.length === 0 &&
-					<i>No authors found</i>
-				}
+				{authors && authors.length === 0 && <i>No authors found</i>}
 				{authors && authors.length > 0 &&
 					<ol className={s.personList}>
 						{authors.map((a, i) => (

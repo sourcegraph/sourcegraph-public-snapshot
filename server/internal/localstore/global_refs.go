@@ -98,6 +98,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 				Count: int32(r.RepoCount),
 			}
 			repoRefs = append(repoRefs, refsByRepo[r.Repo])
+
 		}
 		if r.File != "" && r.Count != 0 {
 			refsByRepo[r.Repo].Files = append(refsByRepo[r.Repo].Files, &sourcegraph.DefFileRef{
@@ -110,7 +111,13 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	// Filter out repos that the user does not have access to.
 	var filteredRepoRefs []*sourcegraph.DefRepoRef
 	defRepoIdx := -1
-	for _, r := range repoRefs {
+	for i, r := range repoRefs {
+		// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
+		// of GitHub Repos.Get calls in the accesscontrol check above.
+		// TODO: remove this limit once we properly cache GitHub API responses.
+		if i >= 100 {
+			break
+		}
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err != nil {
 			continue
 		}

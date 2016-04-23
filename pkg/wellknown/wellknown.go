@@ -35,6 +35,7 @@ const ConfigPath = "/.well-known/sourcegraph"
 // Meta.Config API method.
 func AddConfigHandler(mux *http.ServeMux) {
 	mux.HandleFunc(ConfigPath, func(w http.ResponseWriter, r *http.Request) {
+		httpctx.SetRouteName(r, "well-known")
 		if r.Method != "GET" {
 			http.Error(w, "", http.StatusMethodNotAllowed)
 			return

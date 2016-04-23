@@ -436,10 +436,10 @@
 			"revisionTime": "2014-06-01T20:15:51-07:00"
 		},
 		{
-			"checksumSHA1": "sdCabsgARy0Enk3R50HObBIprtI=",
+			"checksumSHA1": "mLkzk8pxY96ytWV8ubvdDyWjupE=",
 			"path": "github.com/sourcegraph/go-github/github",
-			"revision": "07096d106fdca8276164e63a14a4eb4856bd0726",
-			"revisionTime": "2015-04-03T04:58:40Z"
+			"revision": "75fa29d042f205557049e3ba0826a81f701c8173",
+			"revisionTime": "2016-04-22T02:59:26Z"
 		},
 		{
 			"path": "github.com/sourcegraph/go-papertrail/papertrail",

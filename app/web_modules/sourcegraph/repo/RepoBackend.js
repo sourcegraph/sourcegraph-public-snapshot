@@ -108,6 +108,21 @@ const RepoBackend = {
 				break;
 			}
 
+		case RepoActions.WantInventory:
+			{
+				let inventory = RepoStore.inventory.get(action.repo, action.rev);
+				if (inventory === null) {
+					trackPromise(
+						RepoBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/inventory`)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.rev, data)))
+					);
+				}
+				break;
+			}
+
 		case RepoActions.RefreshVCS:
 			{
 				trackPromise(

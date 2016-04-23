@@ -2,7 +2,6 @@
 
 import React from "react";
 import Helmet from "react-helmet";
-import last from "lodash/array/last";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -21,10 +20,11 @@ import "sourcegraph/build/BuildBackend";
 import Style from "sourcegraph/blob/styles/Blob.css";
 import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
 import urlTo from "sourcegraph/util/urlTo";
-import {urlToDef} from "sourcegraph/def/routes";
+import {urlToDef2} from "sourcegraph/def/routes";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import {httpStatusCode} from "sourcegraph/app/status";
 import Header from "sourcegraph/components/Header";
+import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 
 export default class BlobMain extends Container {
 	static propTypes = {
@@ -53,32 +53,16 @@ export default class BlobMain extends Container {
 		status: React.PropTypes.object,
 	};
 
-	constructor(props) {
-		super(props);
-		this._setBlobRef = this._setBlobRef.bind(this);
-	}
-
 	componentDidMount() {
 		if (super.componentDidMount) super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
-		this._unlistenBefore = this.context.router.listenBefore((location) => {
-			// When the route change, if we navigate to a different file clear the
-			// currently highlighted def if there is one, otherwise it will be stuck
-			// on the next page since no mouseout event can be triggered.
-			if (this.state.blob && this.state.highlightedDefObj && !this.state.highlightedDefObj.Error &&
-					this.state.blob.Name !== last(this.state.highlightedDefObj.File.split("/"))) {
-				Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
-			}
-		});
 	}
 
 	componentWillUnmount() {
 		if (super.componentWillUnmount) super.componentWillUnmount();
-		if (this._unlistenBefore) this._unlistenBefore();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	_unlistenBefore: () => void;
 	_dispatcherToken: string;
 
 	reconcileState(state, props) {
@@ -103,15 +87,25 @@ export default class BlobMain extends Container {
 		} else {
 			state.highlightedDefObj = null;
 		}
-		state.activeDef = props.defObj && !props.defObj.Error ? urlToDef(props.defObj, state.rev) : null;
-		state.startByte = props.defObj && !props.defObj.Error ? props.defObj.DefStart : null;
-		state.endByte = props.defObj && !props.defObj.Error ? props.defObj.DefEnd : null;
+		state.activeDef = props.def ? urlToDef2(state.repo, state.rev, props.def) : null;
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
 			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
+		}
+
+		if (nextState.anns && !nextState.anns.Error && nextState.blob && !nextState.blob.Error && (prevState.anns !== nextState.anns || prevState.blob !== nextState.blob)) {
+			// Only cache if there are ref annotations (indicating the rev
+			// has been built). This avoids the issue where we cache the
+			// blob with just syntax highlighting annotations, and when
+			// the build finishes the stale file without refs is still shown.
+			this.context.status.cache(nextState.anns.Annotations.some((ann) => ann.URL || ann.URLs));
+		}
+
+		if (prevState.blob !== nextState.blob) {
+			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? createLineFromByteFunc(nextState.blob.ContentsString) : null;
 		}
 	}
 
@@ -144,12 +138,6 @@ export default class BlobMain extends Container {
 		else this.context.router.push(url);
 	}
 
-	_setBlobRef(e) {
-		if (this.state._blob !== e) {
-			this.setState({_blob: e, _getOffsetTopForByte: e ? e.getOffsetTopForByte.bind(e) : null});
-		}
-	}
-
 	render() {
 		if (this.state.blob && this.state.blob.Error) {
 			return (
@@ -174,7 +162,6 @@ export default class BlobMain extends Container {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path}
-						ref={this._setBlobRef}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}
 						lineNumbers={true}
@@ -192,8 +179,8 @@ export default class BlobMain extends Container {
 						dispatchSelections={true} />}
 					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				<FileMargin getOffsetTopForByte={this.state._getOffsetTopForByte || null} className={Style.margin}>
-					{this.props.children}
+				<FileMargin className={Style.margin} lineFromByte={this.state.lineFromByte}>
+					{this.state.children}
 				</FileMargin>
 			</div>
 		);

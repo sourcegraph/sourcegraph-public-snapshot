@@ -46,6 +46,11 @@ Testing
 * Don't use `sinon` or other methods to override behavior of code "from the outside". Instead use proper encapsulation and some helper API for testing.
 * Tests do not have to use correct types for mock data if the tested code does not care about the type, e.g. if it just passes the data through.
 
+Development notes
+-----------------
+
+Run `enableActionLog()` in the browser JS console to log action dispatches. Run `disableActionLog()` to turn logging off.
+
 The `Component` base class
 --------------------------
 

@@ -17,3 +17,8 @@ declare module "lodash/array/last" {
 	declare function last(array: Array<any>): any;
 	declare var exports: typeof last;
 }
+
+declare module "lodash/number/random" {
+	declare function random(lower: number, upper: ?number, floating: ?boolean): any;
+	declare var exports: typeof random;
+}

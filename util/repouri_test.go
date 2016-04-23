@@ -13,8 +13,8 @@ func TestGetTrackedRepo(t *testing.T) {
 		{"/github.com/kubernetes/kubernetes@master/-/tree/README.md", "github.com/kubernetes/kubernetes"},
 
 		// Unrelated repo
-		{"/github.com/gorilla/mux@master/-/tree/mux.go", "unknown"},
-		{"/github.com/gorilla/mux", "unknown"},
+		{"/github.com/gorilla/muxy@master/-/tree/mux.go", "unknown"},
+		{"/github.com/gorilla/muxy", "unknown"},
 
 		// Unrelated URL
 		{"/blog/133554180524/announcing-the-sourcegraph-developer-release-the", "unknown"},
@@ -28,4 +28,11 @@ func TestGetTrackedRepo(t *testing.T) {
 			t.Errorf("getTrackedRepo(%#v) == %#v != %#v", c.Path, got, c.TrackedRepo)
 		}
 	}
+	// a trackedRepo must always be tracked
+	for _, r := range trackedRepo {
+		if GetTrackedRepo(r) != r {
+			t.Errorf("Repo should be tracked: %v", r)
+		}
+	}
+
 }

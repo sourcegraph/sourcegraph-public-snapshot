@@ -55,9 +55,10 @@ func New(graphstore string, transport http.RoundTripper) store.MultiRepoStoreImp
 	if strings.HasPrefix(graphstore, "gcloudstorage://") {
 		rp = &EvenlyDistributedRepoPaths{}
 	}
-	return store.NewFSMultiRepoStore(VFS(graphstore, transport), &store.FSMultiRepoStoreConf{
+	s := store.NewFSMultiRepoStore(VFS(graphstore, transport), &store.FSMultiRepoStoreConf{
 		RepoPaths: rp,
 	})
+	return withMetrics(graphstore, s)
 }
 
 // VFS returns the virtual filesystem where the graph data is stored.

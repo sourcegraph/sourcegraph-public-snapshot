@@ -20,7 +20,7 @@
 	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
 }
 
-.common:invalid, .common:focus:invalid {
+.common:focus:invalid {
 	outline: none;
 	border-color: c_red;
 }

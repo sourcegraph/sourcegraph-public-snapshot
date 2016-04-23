@@ -5,66 +5,56 @@
 @value grid "sourcegraph/components/styles/grid.css";
 
 .container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
 	composes: center from base;
-}
-
-.cta-box {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	composes: pv4 center from base;
-}
-
-.action {
-	margin-left: auto;
-	composes: pr4 pt3 from base;
-	composes: f4 from typography;
-	display: inline-block;
 }
 
 .anon-section {
 	composes: col-8-ns col-10 from grid;
-	composes: mt4 ph3 from base;
+	composes: mt4 ph3 center from base;
 	text-align: center;
 }
 
-.total-repo-functions {
-	margin-left: auto;
-	composes: pr4 from base;
-	composes: f4 from typography;
-	display: inline-block;
-}
-
-.logo {
-	composes: mt0 from base;
+.anon-title {
+	composes: header-center-padded from typography;
+	composes: pt5 pb3 center from base;
 	max-width: 500px;
 }
 
-.anon-title {
-	composes: header-center from typography;
-	composes: pt3 pb4 from base;
-}
-
 .anon-header-sub {
+	composes: section-header from typography;
+	composes: pb4 from base;
+}
+.cta-box {
+	composes: pt2 center from base;
+	composes: heavy-text tc from typography;
+}
+
+.cta-headline {
+	composes: pb4 from base;
+	composes: f3 mid-gray from typography;
+}
+
+.cta-subline {
+	composes: col-8-ns col-10 from grid;
+	composes: pt5 center from base;
 	composes: subheader from typography;
 }
 
-.anon-header-counts {
-	composes: subheader from typography;
-	composes: hidden-s from base;
-	font-size: 1.25rem;
+.cta-link {
+	composes: ma3 from base;
+	composes: gray from colors;
+	cursor: pointer;
 }
 
-.anon-repo {
-	composes: col-4 from grid;
+.anon-title-left {
+	composes: header-left measure from typography;
+	composes: pt5 from base;
+	text-align: left;
 }
 
 .repos {
-	composes: col-8-ns col-12 from grid;
-	composes: mt4 from base;
+	composes: col-7-ns col-12 from grid;
+	composes: mt4 center from base;
 }
 
 .header {
@@ -72,41 +62,22 @@
 	flex-wrap: wrap;
 	composes: mt4 from base;
 }
+
+.cta-headercta-header {
+	display: block;
+	flex-wrap: wrap;
+
+	.left {
+		align-self: flex-start;
+	}
+}
+
 .cta {
-	flex: 1 1 auto;
-	composes: mv3 from base;
-	composes: b from typography;
-}
-.filter {
-	composes: ma3 from base;
-}
-
-.code-intelligence-cta {
 	display: flex;
-	flex: 1 1 auto;
-	composes: pl3 from base;
 	composes: b from typography;
-}
-
-.github-icon {
-	composes: pr2 from base;
-	composes: f3 from typography;
-}
-
-.small-github-icon {
-	composes: pr0 from base;
-	composes: f3 from typography;
-}
-
-.list {
-	composes: pb3 from base;
-}
-
-.section-header-container {
-	display: flex;
-	justify-content: center;
-	composes: mv0 from base;
-	display: inline-block;
+	composes: pb2 from base;
+	text-align: center;
+	align-items: center;
 }
 
 .list-section-header {
@@ -115,10 +86,8 @@
 	display: inline-block;
 }
 
-.section-header-right {
-	margin-left: auto;
-	composes: subsection-header from typography;
-	display: inline-block;
+.list {
+	composes: pb3 from base;
 }
 
 .list-item {
@@ -126,41 +95,16 @@
 	composes: b--black-20 from colors;
 }
 
-.list-item-disabled {
-	composes: list-item;
-	composes: bg-near-white from colors;
-}
-
 .description {
 	composes: normal-text from typography;
 	composes: mv3 from base;
 }
 
-.function-example-container {
+.container-vertical-padding {
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	composes: pt3 pb2 from base;
-}
-
-.function {
-	composes: pr5 from base;
-	composes: f4 from typography;
-	composes: col-9-ns col-12 from grid;
-}
-
-.function-call-count {
-	composes: f4 from typography;
-	composes: hidden-s from base;
-	composes: col-3-ns from grid;
-	text-align: right;
-}
-
-.updated {
-	composes: fw7 f5 tracked from typography;
-	composes: mb3 from base;
-	composes: moon-gray from colors;
-	text-transform: uppercase;
 }
 
 .uri {
@@ -171,11 +115,4 @@
 
 .uri-container {
 	composes: mv0 from base;
-}
-
-.disable-reason {
-	composes: i f4 from typography;
-	composes: brand-orange from colors;
-	/* TODO(wholien): standardize opacity/no magic numbers */
-	opacity: .66;
 }

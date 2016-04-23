@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/golang/groupcache/lru"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"strings"
@@ -26,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -61,7 +58,12 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		return nil, err
 	}
 
-	// Set the fields from the repository remote (if it exists)
+	// HACK(beyang): this behavior should really be set by an options struct
+	// field and not depend on permissions grants. Callers of this method
+	// assume DefaultBranch will be set right now, but it is not always set.
+	// For now, always set remote fields if the repository is public. (It
+	// cannot be set for private repositories, because otherwise the import
+	// step of builds will break).
 	//
 	// If the actor doesn't have a special grant to access this repo,
 	// query the remote server for the remote repo, to ensure the
@@ -70,8 +72,13 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 	// Special grants are given to drone workers to fetch repo metadata
 	// when configuring a build.
 	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repoSpec.URI)
-	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil && !hasGrant {
-		return nil, err
+	if !hasGrant {
+		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+			return nil, err
+		}
+	} else {
+		// if the actor does have a special grant (e.g., a worker), still best-effort attempt to set fields from remote.
+		s.setRepoFieldsFromRemote(ctx, repo)
 	}
 
 	if repo.Blocked {
@@ -99,44 +106,14 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
-var reposGithubPublicCache = cache.TTL(cache.Sync(lru.New(500)), time.Minute)
-var reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "github_cache_hit",
-	Help:      "Counts cache hits and misses for public github repo metadata.",
-}, []string{"type"})
-
-func init() {
-	prometheus.MustRegister(reposGithubPublicCacheCounter)
-}
-
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
-
-	// This function is called a lot, especially on popular public
-	// repos. For public repos we have the same result for everyone, so it
-	// is cacheable. (Permissions can change, but we no longer store that.) But
-	// for the purpose of avoiding rate limits, we set all public repos to
-	// read-only permissions.
-	if ghrepo, found := reposGithubPublicCache.Get(repo.URI); found {
-		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
-		repoSetFromRemote(repo, ghrepo.(*sourcegraph.RemoteRepo))
-		return nil
-	}
-
 	// Fetch latest metadata from GitHub (we don't even try to keep
 	// our cache up to date).
 	if strings.HasPrefix(repo.URI, "github.com/") {
 		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
 		if err != nil {
 			return err
-		}
-		if !ghrepo.Private {
-			reposGithubPublicCache.Add(repo.URI, ghrepo)
-			reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
-		} else {
-			reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
 		}
 		repoSetFromRemote(repo, ghrepo)
 	}

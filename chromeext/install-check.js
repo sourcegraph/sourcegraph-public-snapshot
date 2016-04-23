@@ -10,11 +10,10 @@ can detect in order to conditionally show the CTA.
 See: https://groups.google.com/a/chromium.org/forum/#!topic/chromium-extensions/8ArcsWMBaM4
 */
 
-function detectExistence() {
-	console.log("we're in shte script");
-	var el = document.createElement("div");
-	el.id = "chrome-extension-installed";
-	document.getElementById("chrome-extension-install-button").appendChild(el);
-};
+function addScript() {
+	var script = document.createElement("div");
+	script.id = "chrome-extension-installed";
+	document.body.appendChild(script);
+}
 
-document.addEventListener("DOMContentLoaded", detectExistence);
+document.addEventListener("DOMContentLoaded", addScript);
