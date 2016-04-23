@@ -49,6 +49,11 @@ function pathJoin(pathComponents: string[]): string {
 	return pathComponents.join("/");
 }
 
+function pathJoin2(a: string, b: string): string {
+	if (!a || a === "/") return b;
+	return `${a}/${b}`;
+}
+
 function pathDir(path: string): string {
 	// Remove last item from path.
 	const parts = pathSplit(path);
@@ -231,8 +236,8 @@ class TreeSearch extends Container {
 					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dirKey => ({
 						name: dirKey.substr(1), // dirKey is prefixed to avoid clash with predefined fields like "constructor"
 						isDirectory: true,
-						path: `${pathPrefix}/${dirKey.substr(1)}`,
-						url: urlToTree(nextState.repo, nextState.rev, `${pathPrefix}/${dirKey.substr(1)}`),
+						path: pathJoin2(pathPrefix, dirKey.substr(1)),
+						url: urlToTree(nextState.repo, nextState.rev, pathJoin2(pathPrefix, dirKey.substr(1))),
 					})) : [];
 					// Add parent dir link if showing a subdir.
 					if (pathPrefix) {
@@ -249,7 +254,7 @@ class TreeSearch extends Container {
 					const files = !err ? dirLevel.Files.map(file => ({
 						name: file,
 						isDirectory: false,
-						url: urlToBlob(nextState.repo, nextState.rev, `${pathPrefix}/${file}`),
+						url: urlToBlob(nextState.repo, nextState.rev, pathJoin2(pathPrefix, file)),
 					})) : [];
 					// TODO Handle errors in a more standard way.
 					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
