@@ -200,6 +200,9 @@ class GlobalSearch extends Container {
 
 	_onSelection() {
 		const i = this._normalizedSelectionIndex();
+		if (i === -1) {
+				return;
+		}
 		const def = this.state.matchingDefs.Defs[i];
 		this._navigateTo(urlToDef(def));
 	}
