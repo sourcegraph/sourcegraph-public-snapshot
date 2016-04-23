@@ -281,22 +281,6 @@ class TreeSearch extends Container {
 			e.preventDefault();
 			break;
 
-		case 37: // ArrowLeft
-			if (this.state.path.length !== 0) {
-				this.state.onSelectPath(pathDir(this.state.path));
-			}
-			this._temporarilyIgnoreMouseSelection();
-
-			// Allow default (cursor movement in <input>)
-			break;
-
-		case 39: // ArrowRight
-			this._onSelection();
-			this._temporarilyIgnoreMouseSelection();
-
-			// Allow default (cursor movement in <input>)
-			break;
-
 		case 13: // Enter
 			this._onSelection();
 			this._temporarilyIgnoreMouseSelection();
