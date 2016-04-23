@@ -31,6 +31,8 @@ function renderIter(i, props, location, deadline, callback) {
 
 	let t0 = Date.now();
 
+	let prevPathname = location.pathname;
+
 	// Trigger a render so that we start the async data fetches.
 	let htmlStr;
 	try {
@@ -38,6 +40,15 @@ function renderIter(i, props, location, deadline, callback) {
 		if (global.process.env.DEBUGUI) console.log(`RENDER#${i}: renderToString took ${Date.now() - t0} msec`);
 	} catch (e) {
 		return Promise.reject(e);
+	}
+
+	if (location.pathname !== prevPathname) {
+		return Promise.resolve({
+			statusCode: 301,
+			redirectLocation: location.pathname,
+			contentType: "text/html",
+			body: "Redirecting...",
+		});
 	}
 
 	if (trackedPromisesCount() === 0) {
