@@ -2,7 +2,6 @@
 
 import React from "react";
 import Helmet from "react-helmet";
-import last from "lodash/array/last";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -57,24 +56,13 @@ export default class BlobMain extends Container {
 	componentDidMount() {
 		if (super.componentDidMount) super.componentDidMount();
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
-		this._unlistenBefore = this.context.router.listenBefore((location) => {
-			// When the route change, if we navigate to a different file clear the
-			// currently highlighted def if there is one, otherwise it will be stuck
-			// on the next page since no mouseout event can be triggered.
-			if (this.state.blob && this.state.highlightedDefObj && !this.state.highlightedDefObj.Error &&
-					this.state.blob.Name !== last(this.state.highlightedDefObj.File.split("/"))) {
-				Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
-			}
-		});
 	}
 
 	componentWillUnmount() {
 		if (super.componentWillUnmount) super.componentWillUnmount();
-		if (this._unlistenBefore) this._unlistenBefore();
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
 
-	_unlistenBefore: () => void;
 	_dispatcherToken: string;
 
 	reconcileState(state, props) {

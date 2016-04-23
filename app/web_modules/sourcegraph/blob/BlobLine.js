@@ -96,6 +96,10 @@ class BlobLine extends Component {
 								// Prevent navigating to a broken ref or not-yet-loaded def.
 								ev.preventDefault();
 							}
+
+							// Clear the def tooltip on click, or else it might be stuck
+							// to the cursor if no corresponding HighlightDef(null) is dispatched.
+							Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
 						}}
 						key={i}>{simpleContentsString(content)}</Link>
 				);
