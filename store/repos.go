@@ -83,3 +83,16 @@ func IsRepoNotFound(err error) bool {
 	_, ok := err.(*RepoNotFoundError)
 	return ok
 }
+
+// RepoExistError occurs when a repository already exists (but wasn't expected to).
+type RepoExistError struct {
+	URI string // the requested repo
+}
+
+func (e *RepoExistError) Error() string { return fmt.Sprintf("repo %q already exists", e.URI) }
+
+// IsRepoExist returns true iff err is a *RepoExistError.
+func IsRepoExist(err error) bool {
+	_, ok := err.(*RepoExistError)
+	return ok
+}
