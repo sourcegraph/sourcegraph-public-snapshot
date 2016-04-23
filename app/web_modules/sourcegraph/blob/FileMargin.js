@@ -1,62 +1,63 @@
 // @flow weak
 
 import React from "react";
-import Component from "sourcegraph/Component";
 // $FlowHack
-import {navbarHeight} from "sourcegraph/app/styles/GlobalNav.css";
+import {codeLineHeight, firstCodeLineTopPadding} from "sourcegraph/blob/styles/Blob.css";
 
-const navbarHeightPx = parseInt(navbarHeight, 10);
+let computedCodeLineHeight = codeLineHeight;
 
-export default class FileMargin extends Component {
-	constructor(props) {
-		super(props);
-		this.state = {extraPadding: 0};
-	}
+if (typeof document !== "undefined" && document.body.style.setProperty) {
+	// Compute code line height. It's not always the `codeLineHeight`
+	// value, when full-page zoom is being used, for example. This is
+	// necessary to properly align the boxes to the code on 90%, 100%,
+	// etc., full-page zoom levels.
+	let el = document.createElement("div");
+	el.style.lineHeight = codeLineHeight;
+	el.innerText = "a";
+	document.body.appendChild(el);
+	computedCodeLineHeight = `${el.getBoundingClientRect().height}px`;
+	document.body.removeChild(el);
+}
+
+
+export default class FileMargin extends React.Component {
+	state = {codeLineHeight: codeLineHeight};
 
 	componentDidMount() {
-		if (super.componentDidMount) super.componentDidMount();
-	}
-
-	componentDidUpdate() {
-		this._calculateExtraPadding();
-	}
-
-	reconcileState(state, props) {
-		state.getOffsetTopForByte = props.getOffsetTopForByte;
-		state.children = props.children && state.getOffsetTopForByte ?
-			React.Children.map(props.children, (child) => (
-				{top: state.getOffsetTopForByte(child.props.byte), component: child}
-			)) : null;
-	}
-
-	// _calculateExtraPadding will update the additional padding needed on the
-	// bottom of the sidebar to prevent the window from needing a scrollbar for
-	// any overflowing children.
-	_calculateExtraPadding() {
-		let el = this.refs && this.refs.sidebar;
-		if (!el) return;
-
-		for (let child of el.children) {
-			let offset = child.offsetHeight + navbarHeightPx + parseInt(child.dataset.offset, 10);
-			if (offset > (el.offsetHeight - this.state.extraPadding)) {
-				// Only update when this changes to prevent stack overflow.
-				if (offset === this.state.extraPadding) return;
-				this.setState({extraPadding: offset});
-				return;
-			}
+		// Initially render with the base line height, and then we'll later
+		// update with the computed line height to account for full-page zoom
+		// fractional pixel heights. To test this, reload the page at various
+		// full-page zoom levels.
+		if (this.state.codeLineHeight !== computedCodeLineHeight) {
+			setTimeout(() => {
+				this.setState({codeLineHeight: computedCodeLineHeight});
+			});
 		}
+	}
 
-		if (this.state.extraPadding !== 0) this.setState({extraPadding: 0});
+	// _childOffsetTop is the CSS height expression from the top of the container that the
+	// child should be offset.
+	_childOffsetTop(i) {
+		if (!this.props.lineFromByte) return null;
+		const child = React.Children.toArray(this.props.children)[i];
+		console.time("lineFromByte");
+		const lineIndex = this.props.lineFromByte(child.props.byte) - 1; // 0-indexed so line 1 is at 0px
+		console.timeEnd("lineFromByte");
+		return `calc(${lineIndex} * ${this.state.codeLineHeight} + ${firstCodeLineTopPadding})`;
 	}
 
 	render() {
+		let i = -1;
 		return (
-			<div className={this.props.className} ref="sidebar" style={{paddingBottom: this.state.extraPadding}}>
-				{this.state.children && this.state.children.map((child, i) => (
-					<div key={i} style={{position: "absolute", top: `${child.top}px`}} data-offset={child.top}>
-						{child.component}
-					</div>
-				))}
+			<div className={this.props.className}>
+				{React.Children.map(this.props.children, (child) => {
+					i++;
+					return (
+						<div key={i} style={{marginTop: this._childOffsetTop(i)}}>
+							{child}
+						</div>
+					);
+				})}
 			</div>
 		);
 	}
@@ -66,6 +67,7 @@ FileMargin.propTypes = {
 		React.PropTypes.arrayOf(React.PropTypes.element),
 		React.PropTypes.element,
 	]),
-	getOffsetTopForByte: React.PropTypes.func,
+
+	lineFromByte: React.PropTypes.func,
 	className: React.PropTypes.string,
 };

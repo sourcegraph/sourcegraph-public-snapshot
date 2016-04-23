@@ -25,6 +25,7 @@ import {urlToDef} from "sourcegraph/def/routes";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import {httpStatusCode} from "sourcegraph/app/status";
 import Header from "sourcegraph/components/Header";
+import lineFromByte from "sourcegraph/blob/lineFromByte";
 
 export default class BlobMain extends Container {
 	static propTypes = {
@@ -52,11 +53,6 @@ export default class BlobMain extends Container {
 		router: React.PropTypes.object.isRequired,
 		status: React.PropTypes.object,
 	};
-
-	constructor(props) {
-		super(props);
-		this._setBlobRef = this._setBlobRef.bind(this);
-	}
 
 	componentDidMount() {
 		if (super.componentDidMount) super.componentDidMount();
@@ -121,6 +117,10 @@ export default class BlobMain extends Container {
 			// the build finishes the stale file without refs is still shown.
 			this.context.status.cache(nextState.anns.Annotations.some((ann) => ann.URL || ann.URLs));
 		}
+
+		if (prevState.blob !== nextState.blob) {
+			nextState.lineFromByte = nextState.blob && typeof nextState.blob.ContentsString !== "undefined" ? ((byte) => lineFromByte(nextState.blob.ContentsString, byte)) : null;
+		}
 	}
 
 	stores() { return [DefStore]; }
@@ -152,12 +152,6 @@ export default class BlobMain extends Container {
 		else this.context.router.push(url);
 	}
 
-	_setBlobRef(e) {
-		if (this.state._blob !== e) {
-			this.setState({_blob: e, _getOffsetTopForByte: e ? e.getOffsetTopForByte.bind(e) : null});
-		}
-	}
-
 	render() {
 		if (this.state.blob && this.state.blob.Error) {
 			return (
@@ -182,7 +176,6 @@ export default class BlobMain extends Container {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path}
-						ref={this._setBlobRef}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}
 						lineNumbers={true}
@@ -200,8 +193,8 @@ export default class BlobMain extends Container {
 						dispatchSelections={true} />}
 					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				<FileMargin getOffsetTopForByte={this.state._getOffsetTopForByte || null} className={Style.margin}>
-					{this.props.children}
+				<FileMargin className={Style.margin} lineFromByte={this.state.lineFromByte}>
+					{this.state.children}
 				</FileMargin>
 			</div>
 		);
