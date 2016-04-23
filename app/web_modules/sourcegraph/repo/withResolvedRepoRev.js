@@ -8,6 +8,7 @@ import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
+import {urlToRepo} from "sourcegraph/repo/routes";
 
 export default function withResolvedRepoRev(Component) {
 	class WithResolvedRepoRev extends Container {
@@ -44,8 +45,20 @@ export default function withResolvedRepoRev(Component) {
 				if (nextState.repoResolution.Error) {
 					this.context.status.error(nextState.repoResolution.Error);
 				} else if (nextState.repoResolution.Result.RemoteRepo) {
+					let canonicalPath = `github.com/${nextState.repoResolution.Result.RemoteRepo.Owner}/${nextState.repoResolution.Result.RemoteRepo.Name}`;
+					if (nextState.repo !== canonicalPath) {
+						this.context.router.replace(urlToRepo(canonicalPath));
+						return;
+					}
+
 					// If it's a remote repo, do nothing; RepoMain should clone the repository.
-				} else {
+				} else if (nextState.repoResolution.Result.Repo) {
+					let canonicalPath = nextState.repoResolution.Result.Repo.URI;
+					if (nextState.repo !== canonicalPath) {
+						this.context.router.replace(urlToRepo(canonicalPath));
+						return;
+					}
+
 					// Fetch it if it's a local repo.
 					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 				}
