@@ -19,12 +19,13 @@ class DashboardRepos extends React.Component {
 	}
 
 	render() {
-		let repos = this.props.exampleRepos.concat(this.props.repos.sort(this._repoSort));
+		let repos = this.props.repos.sort(this._repoSort);
 
-		return (repos.length > 0 &&
+		return (
 			<div styleName="list">
 				{context.currentUser && <div styleName="list-section-header">Repositories</div>}
-				{repos.map((repo, i) =>
+				{repos.length === 0 && <div styleName="list-item" />}
+				{repos.length > 0 && repos.map((repo, i) =>
 					<div key={i}>
 						<div styleName="list-item">
 							<div styleName="uri-container">
@@ -58,7 +59,6 @@ class DashboardRepos extends React.Component {
 
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	exampleRepos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
 };
 
 export default CSSModules(DashboardRepos, styles);
