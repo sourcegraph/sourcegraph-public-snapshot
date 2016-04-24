@@ -23,7 +23,8 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Graph.Import", op.Repo); err != nil {
 		return nil, err
 	}
-	if _, err := pb.Server(store.GraphFromContext(ctx)).Import(ctx, op); err != nil {
+	gstore := store.GraphFromContext(ctx)
+	if _, err := pb.Server(gstore).Import(ctx, op); err != nil {
 		return nil, err
 	}
 
@@ -38,10 +39,16 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		return nil, err
 	}
 	if string(commitID) == op.CommitID {
-		// Currently the xref store holds data for only the HEAD commit of the default
+		// Currently the global graph stores hold data for only the HEAD commit of the default
 		// branch of the repo. We keep the commitID field empty to signify that
-		// the refs are always pointing to the HEAD commit of the default branch (which
+		// the data is always pointing to the HEAD commit of the default branch (which
 		// is the default behavior on our app for empty repoRevSpecs).
+
+		// TODO(beyang): move this out of here. Call at the gRPC level.
+		if err := store.GlobalDefsFromContext(ctx).Update(ctx, []string{op.Repo}); err != nil {
+			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
+		}
+
 		op.CommitID = ""
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
 			// Temporarily log and ignore error in updating the global ref store.
@@ -49,6 +56,7 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 			log15.Error("error updating global ref store", "repo", op.Repo, "error", err)
 		}
 	}
+
 	return &pbtypes.Void{}, nil
 }
 

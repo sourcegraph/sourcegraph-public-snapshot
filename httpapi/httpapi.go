@@ -70,6 +70,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.DefRefs).Handler(handler(serveDefRefs))
 	m.Get(apirouter.DefRefLocations).Handler(handler(serveDefRefLocations))
 	m.Get(apirouter.Defs).Handler(handler(serveDefs))
+	m.Get(apirouter.GlobalSearch).Handler(handler(serveGlobalSearch))
 	m.Get(apirouter.Repo).Handler(handler(serveRepo))
 	m.Get(apirouter.RepoResolve).Handler(handler(serveRepoResolve))
 	m.Get(apirouter.RepoInventory).Handler(handler(serveRepoInventory))

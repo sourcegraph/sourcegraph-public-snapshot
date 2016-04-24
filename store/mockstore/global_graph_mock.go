@@ -9,6 +9,24 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 
+type GlobalDefs struct {
+	Search_           func(ctx context.Context, op *store.GlobalDefSearchOp) (*sourcegraph.SearchResultsList, error)
+	Update_           func(ctx context.Context, repos []string) error
+	RefreshRefCounts_ func(ctx context.Context, repos []string) error
+}
+
+func (s *GlobalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	return s.Search_(ctx, op)
+}
+
+func (s *GlobalDefs) Update(ctx context.Context, repos []string) error { return s.Update_(ctx, repos) }
+
+func (s *GlobalDefs) RefreshRefCounts(ctx context.Context, repos []string) error {
+	return s.RefreshRefCounts_(ctx, repos)
+}
+
+var _ store.GlobalDefs = (*GlobalDefs)(nil)
+
 type GlobalRefs struct {
 	Get_    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 	Update_ func(ctx context.Context, op *pb.ImportOp) error

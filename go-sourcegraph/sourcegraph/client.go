@@ -20,6 +20,7 @@ type Client struct {
 	RepoStatuses RepoStatusesClient
 	RepoTree     RepoTreeClient
 	Repos        ReposClient
+	Search       SearchClient
 	Users        UsersClient
 
 	// gRPC client connection used to communicate with the Sourcegraph
@@ -47,6 +48,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.RepoStatuses = NewRepoStatusesClient(conn)
 	c.RepoTree = NewRepoTreeClient(conn)
 	c.Repos = NewReposClient(conn)
+	c.Search = NewSearchClient(conn)
 	c.Users = NewUsersClient(conn)
 
 	return c

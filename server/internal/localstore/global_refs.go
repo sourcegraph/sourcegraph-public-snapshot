@@ -138,7 +138,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Import", op.Repo); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
 		return err
 	}
 

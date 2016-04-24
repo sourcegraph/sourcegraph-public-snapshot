@@ -43,7 +43,7 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 func TestBuilds_Get(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -56,7 +56,7 @@ func TestBuilds_Get(t *testing.T) {
 func TestBuilds_List(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -78,7 +78,7 @@ func TestBuilds_List(t *testing.T) {
 // TestBuilds_List_byRepoAndCommitID verifies the correct functioning of
 // the Builds.List method when filtering by a repo and commit ID.
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -103,7 +103,7 @@ func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
 func TestBuilds_ListBuildTasks(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := builds{}
@@ -129,7 +129,7 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 func TestBuilds_Create(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -147,7 +147,7 @@ func TestBuilds_Create(t *testing.T) {
 // TestBuilds_Create_New verifies that passing a Build with ID == 0 to
 // Builds.Create will generate an ID for it.
 func TestBuilds_Create_New(t *testing.T) {
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -168,7 +168,7 @@ func TestBuilds_Create_New(t *testing.T) {
 // ID == 0 to Builds.Create will generate an ID for it that
 // is greater than all other builds' IDs.
 func TestBuilds_Create_SequentialID(t *testing.T) {
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -193,7 +193,7 @@ func TestBuilds_Create_SequentialID(t *testing.T) {
 func TestBuilds_Update(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -224,7 +224,7 @@ func TestBuilds_Update(t *testing.T) {
 func TestBuilds_Update_builderConfig(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -248,7 +248,7 @@ func TestBuilds_Update_builderConfig(t *testing.T) {
 func TestBuilds_CreateTasks(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -274,7 +274,7 @@ func TestBuilds_CreateTasks(t *testing.T) {
 // with unset IDs, IDs are generated such that they are sequential in
 // the build.
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -296,7 +296,7 @@ func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
 func TestBuilds_UpdateTask(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -324,7 +324,7 @@ func TestBuilds_UpdateTask(t *testing.T) {
 func TestBuilds_GetTask(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -342,7 +342,7 @@ func TestBuilds_GetTask(t *testing.T) {
 func TestBuilds_DequeueNext(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -364,7 +364,7 @@ func TestBuilds_DequeueNext(t *testing.T) {
 func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
@@ -407,7 +407,7 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}

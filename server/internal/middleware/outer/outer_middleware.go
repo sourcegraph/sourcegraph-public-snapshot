@@ -44,6 +44,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		RepoStatuses:      wrappedRepoStatuses{ctxFunc, services},
 		RepoTree:          wrappedRepoTree{ctxFunc, services},
 		Repos:             wrappedRepos{ctxFunc, services},
+		Search:            wrappedSearch{ctxFunc, services},
 		Users:             wrappedUsers{ctxFunc, services},
 	}
 	return s
@@ -1917,6 +1918,71 @@ func (s wrappedRepos) UploadPack(ctx context.Context, v1 *sourcegraph.UploadPack
 	}
 
 	rv, err := innerSvc.UploadPack(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+type wrappedSearch struct {
+	ctxFunc  ContextFunc
+	services svc.Services
+}
+
+func (s wrappedSearch) Search(ctx context.Context, v1 *sourcegraph.SearchOp) (returnedResult *sourcegraph.SearchResultsList, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Search.Search: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.SearchOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Search")
+	}
+
+	rv, err := innerSvc.Search(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+func (s wrappedSearch) RefreshIndex(ctx context.Context, v1 *sourcegraph.SearchRefreshIndexOp) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Search.RefreshIndex: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.SearchOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Search")
+	}
+
+	rv, err := innerSvc.RefreshIndex(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

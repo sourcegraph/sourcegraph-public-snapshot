@@ -30,6 +30,7 @@ const (
 	DefRefLocations  = "def.ref.locations"
 	DefAuthors       = "def.authors"
 	Defs             = "defs"
+	GlobalSearch     = "global.search"
 	Repo             = "repo"
 	RepoResolve      = "repo.resolve"
 	RepoCreate       = "repo.create"
@@ -76,6 +77,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
 	base.Path("/remote-repos").Methods("GET").Name(RemoteRepos)
+
+	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
 
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
 

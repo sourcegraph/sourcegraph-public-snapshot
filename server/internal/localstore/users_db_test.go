@@ -42,7 +42,7 @@ func userLogins(users []*sourcegraph.User) []string {
 // outcome).
 func TestUsers_Get_existingByLogin(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -63,7 +63,7 @@ func TestUsers_Get_existingByLogin(t *testing.T) {
 // with the UID of a user that exists (i.e., the successful outcome).
 func TestUsers_Get_existingByUID(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -86,7 +86,7 @@ func TestUsers_Get_existingByUID(t *testing.T) {
 // successful outcome).
 func TestUsers_Get_existingByBoth(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -112,7 +112,7 @@ func TestUsers_Get_existingByBoth(t *testing.T) {
 // refer to the same user.
 func TestUsers_Get_existingByBothConflict(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -146,7 +146,7 @@ func TestUsers_Get_existingByBothConflict(t *testing.T) {
 // those points to an existing user.
 func TestUsers_Get_existingByBothOnlyOneExist(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -170,7 +170,7 @@ func TestUsers_Get_existingByBothOnlyOneExist(t *testing.T) {
 // called with a login of a user that does not exist.
 func TestUsers_Get_nonexistentLogin(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -187,7 +187,7 @@ func TestUsers_Get_nonexistentLogin(t *testing.T) {
 // called with a UID of a user that does not exist.
 func TestUsers_Get_nonexistentUID(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -203,7 +203,7 @@ func TestUsers_Get_nonexistentUID(t *testing.T) {
 // TestUsers_List_ok tests the behavior of Users.List.
 func TestUsers_List_ok(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}
@@ -232,7 +232,7 @@ func TestUsers_List_ok(t *testing.T) {
 // a query.
 func TestUsers_List_query(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &users{}

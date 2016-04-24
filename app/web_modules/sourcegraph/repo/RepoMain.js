@@ -96,6 +96,7 @@ class RepoMain extends React.Component {
 	}
 
 	_onChangeQuery(query: string) {
+		console.log("printf HERE");
 		this.setState({treeSearchQuery: query});
 	}
 
