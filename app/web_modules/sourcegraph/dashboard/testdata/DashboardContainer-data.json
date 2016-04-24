@@ -93,6 +93,7 @@
 									"children": [
 										{
 											"type": "",
+											"key": ".0",
 											"props": {
 												"styleName": "cta-link",
 												"to": "join",

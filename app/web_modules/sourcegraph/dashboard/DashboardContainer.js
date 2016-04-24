@@ -18,7 +18,7 @@ import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
-// import ChromeExtensionCTA from "./ChromeExtensionCTA";
+import ChromeExtensionCTA from "./ChromeExtensionCTA";
 
 class DashboardContainer extends Container {
 	constructor(props) {
@@ -87,8 +87,8 @@ class DashboardContainer extends Container {
 						</Link>
 						<div styleName="cta-subline">
 							<Link styleName="cta-link" to="join">Sign up for private code</Link>
-							{/* this.state.showChromeExtensionCTA && <span>|</span> */}
-							{/* this.state.showChromeExtensionCTA && <ChromeExtensionCTA /> */}
+							{this.state.showChromeExtensionCTA && <span>|</span>}
+							{this.state.showChromeExtensionCTA && <ChromeExtensionCTA />}
 						</div>
 					</div>
 				}
