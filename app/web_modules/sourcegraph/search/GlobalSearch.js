@@ -19,7 +19,6 @@ import {Input} from "sourcegraph/components";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
-import context from "sourcegraph/app/context";
 
 export const RESULTS_LIMIT = 20;
 
@@ -29,6 +28,7 @@ export const RESULTS_LIMIT = 20;
 class GlobalSearch extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		siteConfig: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -279,7 +279,7 @@ class GlobalSearch extends Container {
 	render() {
 		return (<div styleName="container">
 			<div styleName="search-section">
-				<img styleName="logo" src={`${context.assetsRoot || ""}/img/sourcegraph-logo.svg`}/>
+				<img styleName="logo" src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`}/>
 				<div styleName="search-title">The global graph of code at your fingertips</div>
 				<div styleName="input-container">
 					<Input type="text"
