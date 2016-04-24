@@ -293,8 +293,10 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 }
 
 func (g *globalDefs) RefreshRefCounts(ctx context.Context, repos []string) error {
-	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "GlobalDefs.RefreshRefCounts"); err != nil {
-		return err
+	for _, r := range repos {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.RefreshRefCounts", r); err != nil {
+			return err
+		}
 	}
 	var args []interface{}
 	arg := func(a interface{}) string {
