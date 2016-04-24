@@ -17,7 +17,7 @@ import (
 func TestAccounts_Create_ok(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -55,7 +55,7 @@ func TestAccounts_Create_ok(t *testing.T) {
 func TestAccounts_Create_duplicate(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -78,7 +78,7 @@ func TestAccounts_Create_duplicate(t *testing.T) {
 func TestAccounts_Create_noLogin(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -94,7 +94,7 @@ func TestAccounts_Create_noLogin(t *testing.T) {
 func TestAccounts_Create_uidAlreadySet(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -110,7 +110,7 @@ func TestAccounts_Create_uidAlreadySet(t *testing.T) {
 func TestAccounts_Create_noEmail(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -126,7 +126,7 @@ func TestAccounts_Create_noEmail(t *testing.T) {
 func TestAccounts_Create_ExistingEmail(t *testing.T) {
 	t.Parallel()
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -147,7 +147,7 @@ func TestAccounts_Create_ExistingEmail(t *testing.T) {
 // reset. It is also used to set up the ResetPassword tests.
 func TestAccounts_RequestPasswordReset(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -166,7 +166,7 @@ func TestAccounts_RequestPasswordReset(t *testing.T) {
 // TestAccounts_ResetPassword_ok tests that we can successfully reset a password.
 func TestAccounts_ResetPassword_ok(t *testing.T) {
 	// t.Parallel() // TODO s.RequestPasswordReset occasionally has a data race with the same function from TestAccounts_RequestPasswordReset
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &accounts{}
@@ -186,7 +186,7 @@ func TestAccounts_ResetPassword_ok(t *testing.T) {
 // the correct token.
 func TestAccounts_ResetPassword_badtoken(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := accounts{}

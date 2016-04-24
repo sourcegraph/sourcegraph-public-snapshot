@@ -14,7 +14,7 @@ func TestUsers_ListEmails(t *testing.T) {
 
 	var as accounts
 	var us users
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	userSpec := sourcegraph.UserSpec{UID: 1}

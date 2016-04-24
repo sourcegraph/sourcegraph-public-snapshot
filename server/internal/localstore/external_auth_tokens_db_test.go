@@ -14,7 +14,7 @@ func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	wantToken := &auth.ExternalAuthToken{
@@ -39,7 +39,7 @@ func TestExternalAuthTokens_GetUserToken_notFound(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	tok, err := s.GetUserToken(ctx, 1, "example.com", "c")
@@ -55,7 +55,7 @@ func TestExternalAuthTokens_SetUserToken_create(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	tok := &auth.ExternalAuthToken{
@@ -83,7 +83,7 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	tok0 := &auth.ExternalAuthToken{
@@ -120,7 +120,7 @@ func TestExternalAuthTokens_SetUserToken_delete(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	tok0 := &auth.ExternalAuthToken{
@@ -151,7 +151,7 @@ func TestExternalAuthTokens_ListExternalUsers_empty(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	dbToks := []*auth.ExternalAuthToken{
@@ -195,7 +195,7 @@ func TestExternalAuthTokens_ListExternalUsers_nonempty(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	dbToks := []*auth.ExternalAuthToken{

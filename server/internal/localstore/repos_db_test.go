@@ -32,7 +32,7 @@ func TestRepos_List(t *testing.T) {
 	t.Parallel()
 
 	var s repos
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
@@ -53,7 +53,7 @@ func TestRepos_List_type(t *testing.T) {
 	r2 := &sourcegraph.Repo{URI: "r2"}
 
 	var s repos
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s.mustCreate(ctx, t, r1, r2)
@@ -90,7 +90,7 @@ func TestRepos_List_type(t *testing.T) {
 // a query.
 func TestRepos_List_query(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -129,7 +129,7 @@ func TestRepos_List_query(t *testing.T) {
 // URIs.
 func TestRepos_List_URIs(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -182,7 +182,7 @@ func (r *RepoGetterMockUnauthorizedRepo) Get(ctx context.Context, uri string) (*
 func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 	repoGetter = &RepoGetterMockPublicRepo{}
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -219,7 +219,7 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 	repoGetter = &RepoGetterMockPrivateRepo{}
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -241,7 +241,7 @@ func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 	repoGetter = &RepoGetterMockUnauthorizedRepo{}
 
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -263,7 +263,7 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 
 func TestRepos_Create(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -289,7 +289,7 @@ func TestRepos_Create(t *testing.T) {
 
 func TestRepos_Create_dupe(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -311,7 +311,7 @@ func TestRepos_Create_dupe(t *testing.T) {
 // update a repo's description.
 func TestRepos_Update_Description(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -343,7 +343,7 @@ func TestRepos_Update_Description(t *testing.T) {
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}
@@ -380,7 +380,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 
 func TestRepos_Update_PushedAt(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &repos{}

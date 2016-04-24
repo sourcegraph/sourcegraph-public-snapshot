@@ -20,7 +20,7 @@ func nextUID() int32 {
 // Passwords.CheckUIDPassword when called with valid credentials.
 func TestPasswords_CheckUIDPassword_valid(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -38,7 +38,7 @@ func TestPasswords_CheckUIDPassword_valid(t *testing.T) {
 // Passwords.CheckUIDPassword when called with invalid credentials.
 func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -56,7 +56,7 @@ func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
 // Passwords.CheckUIDPassword when called with empty credentials.
 func TestPasswords_CheckUIDPassword_empty(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -74,7 +74,7 @@ func TestPasswords_CheckUIDPassword_empty(t *testing.T) {
 // Passwords.CheckUIDPassword when there is no password set.
 func TestPasswords_CheckUIDPassword_noneSet(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -89,7 +89,7 @@ func TestPasswords_CheckUIDPassword_noneSet(t *testing.T) {
 // given user (but other users have passwords).
 func TestPasswords_CheckUIDPassword_noneSetForUser(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -107,7 +107,7 @@ func TestPasswords_CheckUIDPassword_noneSetForUser(t *testing.T) {
 // TestPasswords_SetPassword_ok tests changing the password.
 func TestPasswords_SetPassword_ok(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -140,7 +140,7 @@ func TestPasswords_SetPassword_ok(t *testing.T) {
 // empty password.
 func TestPasswords_SetPassword_empty(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}
@@ -154,7 +154,7 @@ func TestPasswords_SetPassword_empty(t *testing.T) {
 // valid password to an empty password.
 func TestPasswords_SetPassword_setToEmpty(t *testing.T) {
 	t.Parallel()
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	s := &password{}

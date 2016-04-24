@@ -56,10 +56,11 @@ func fromDBDef(d *dbGlobalDef) *sourcegraph.Def {
 
 	var data pbtypes.RawMessage
 	data.Unmarshal(d.Data)
-	return &sourcegraph.Def{
+	def := &sourcegraph.Def{
 		Def: graph.Def{
 			DefKey: graph.DefKey{
 				Repo:     d.Repo,
+				CommitID: d.CommitID,
 				UnitType: d.UnitType,
 				Unit:     d.Unit,
 				Path:     d.Path,
@@ -70,9 +71,12 @@ func fromDBDef(d *dbGlobalDef) *sourcegraph.Def {
 			File: d.File,
 
 			Data: data,
-			Docs: []*graph.DefDoc{{Format: "text/plain", Data: d.Doc}},
 		},
 	}
+	if d.Doc != "" {
+		def.Docs = []*graph.DefDoc{{Format: "text/plain", Data: d.Doc}}
+	}
+	return def
 }
 
 func toDBDef(d *sourcegraph.Def) *dbGlobalDef {
@@ -134,7 +138,7 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	} else {
 		scoreSQL = `ref_ct score`
 	}
-	selectSQL := `SELECT repo, unit_type, unit, path, name, kind, file, data, doc, ref_ct, ` + scoreSQL + ` FROM global_defs`
+	selectSQL := `SELECT repo, commit_id, unit_type, unit, path, name, kind, file, data, doc, ref_ct, ` + scoreSQL + ` FROM global_defs`
 	var whereSQL string
 	{
 		var wheres []string

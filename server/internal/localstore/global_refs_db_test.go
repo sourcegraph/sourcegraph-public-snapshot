@@ -14,7 +14,7 @@ func TestGlobalRefs(t *testing.T) {
 	t.Parallel()
 
 	var g globalRefs
-	ctx, done := testContext()
+	ctx, _, done := testContext()
 	defer done()
 
 	testRefs1 := []*graph.Ref{
