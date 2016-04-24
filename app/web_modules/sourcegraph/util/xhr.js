@@ -30,13 +30,21 @@ function defaultOptions(): RequestOptions {
 	};
 }
 
+let _globalBaseURL: string = ""; // private
+
+// setGlobalBaseURL sets the base URL to use for all fetches.
+export function setGlobalBaseURL(baseURL: string): void {
+	if (baseURL.endsWith("/")) throw new Error("base URL must not have trailing slash");
+	_globalBaseURL = baseURL;
+}
+
 // defaultFetch wraps the fetch API.
 //
 // Note: the caller might wrap this with singleflightFetch.
 export function defaultFetch(url: string | Request, options?: RequestOptions): Promise<Response> {
 	if (typeof url !== "string") throw new Error("url must be a string (complex requests are not yet supported)");
 	if (typeof global !== "undefined" && global.process && global.process.env.JSSERVER) {
-		url = `${context.appURL}${url}`;
+		url = `${_globalBaseURL}${url}`;
 	}
 
 	let defaults = defaultOptions();

@@ -1,18 +1,21 @@
 import React from "react";
 
-import context from "sourcegraph/app/context";
 import {Link} from "react-router";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Footer.css";
 
 class Footer extends React.Component {
+	static contextTypes = {
+		siteConfig: React.PropTypes.object.isRequired,
+	};
+
 	render() {
 		return (
 			<div styleName="footer">
 				<ul styleName="left-box">
 					<li styleName="item">
 						<Link to="/" styleName="link">
-							<img styleName="logo-mark" title="Sourcegraph" alt="Sourcegraph logo" src={`${context.assetsRoot}/img/sourcegraph-mark.svg`} />
+							<img styleName="logo-mark" title="Sourcegraph" alt="Sourcegraph logo" src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-mark.svg`} />
 						</Link>
 					</li>
 					<li styleName="item"><a styleName="link" href="/blog/">Blog</a></li>

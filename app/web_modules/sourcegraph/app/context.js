@@ -2,9 +2,9 @@
 
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import type {Features} from "sourcegraph/app/features";
+import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
 
 let context: {
-	appURL?: string;
 	authorization?: string;
 	csrfToken?: string;
 	cacheControl?: string;
@@ -12,8 +12,6 @@ let context: {
 	userEmail?: string;
 	currentSpanID?: string;
 	userAgentIsBot?: boolean;
-	assetsRoot?: string;
-	buildVars?: {Version: string};
 	hasLinkedGitHub?: boolean;
 } = {};
 
@@ -21,6 +19,9 @@ let context: {
 type ContextInput = typeof context & {
 	// We are migrating from a global context object to using React context
 	// as much as possible. These fields are only available using context wrappers.
+	appURL?: string;
+	assetsRoot?: string;
+	buildVars?: {Version: string};
 	features?: Features;
 };
 
@@ -31,6 +32,15 @@ export function reset(ctx: ContextInput) {
 	if (typeof features !== "undefined") {
 		setGlobalFeatures(features);
 	}
+
+	const {appURL, assetsRoot, buildVars} = ctx;
+	if (typeof appURL === "undefined" || typeof assetsRoot === "undefined" || typeof buildVars === "undefined") {
+		throw new Error("appURL, assetsRoot, and buildVars must all be set");
+	}
+	setGlobalSiteConfig({appURL, assetsRoot, buildVars});
+	delete ctx.appURL;
+	delete ctx.assetsRoot;
+	delete ctx.buildVars;
 
 	context = ctx;
 }

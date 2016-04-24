@@ -3,6 +3,7 @@
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
+import type {SiteConfig} from "sourcegraph/app/siteConfig";
 
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -24,6 +25,7 @@ export class EventLogger {
 	intercomEvents: Array<any>;
 	isUserAgentBot: bool;
 	_dispatcherToken: any;
+	_siteConfig: ?SiteConfig;
 
 	constructor() {
 		this._amplitude = null;
@@ -59,6 +61,10 @@ export class EventLogger {
 		};
 	}
 
+	setSiteConfig(siteConfig: SiteConfig) {
+		this._siteConfig = siteConfig;
+	}
+
 	// Loads the Amplitude JavaScript SDK if this
 	// code is run in the browser (i.e. not with node
 	// when doing server-side rendering.) If any events
@@ -75,11 +81,15 @@ export class EventLogger {
 				user = context.currentUser.Login;
 			}
 
+			if (!this._siteConfig) {
+				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
+			}
+
 			let apiKey = "608f75cce80d583063837b8f5b18be54";
-			if (context.buildVars && context.buildVars.Version === "dev") {
+			if (this._siteConfig.buildVars.Version === "dev") {
 				apiKey = "2b4b1117d1faf3960c81899a4422a222";
 			} else {
-				switch (context.appURL) {
+				switch (this._siteConfig.appURL) {
 				case "https://sourcegraph.com":
 					apiKey = "e3c885c30d2c0c8bf33b1497b17806ba";
 					break;
