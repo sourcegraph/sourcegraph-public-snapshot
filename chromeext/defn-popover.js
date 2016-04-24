@@ -1,5 +1,5 @@
 var ajaxCache = {};
-function sourcegraph_activateDefnPopovers(el) {
+function sourcegraph_activateDefnPopovers(el, value) {
   var request;
   var activeA;
 
@@ -96,7 +96,9 @@ function sourcegraph_activateDefnPopovers(el) {
         console.error("Sourcegraph error getting definition info.", JSON.stringify(request));
       }
     }
-
+    if (value){
+      request.setRequestHeader("Authorization", "Basic "+btoa('x-oauth-basic:'+value))
+    }
     request.onerror = function() { console.error("Sourcegraph error getting definition info."); };
     request.send();
   }

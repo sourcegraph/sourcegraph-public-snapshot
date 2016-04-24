@@ -238,11 +238,11 @@
 			try{$('.nomatch').remove();}catch(err){}
 
 			if (document.getElementsByClassName('vis-private').length !==0){
-				getAuthToken();
+				setToken();
 			}
 
 			else {
-				setRev();
+				setToken();
 			}
 		}
 		$('.tree-finder-input2:last').focus();
@@ -330,10 +330,10 @@
 
 
 				if (document.getElementsByClassName('vis-private').length !==0){
-					getAuthToken();
+					setToken();
 				}
 				else {
-					setRev();
+					setToken();
 				}
 
 			}
@@ -348,34 +348,38 @@
 
 	}
 
+	function setToken() {
+		var value= "";
+		(chrome.storage.local.get("value",function(e){
+			value=e.value;
+			setRev(value);
+		}))
+	}
 
-	//Get authentication token from Sourcegraph to ensure user is logged in to Sourcegraph for private code
-	function getAuthToken(){
+	function setRev(value) {
 		try{document.getElementById("loadingDiv").style.display='block'}catch(err){}
-		if (document.getElementsByClassName('vis-private').length !==0){
-			$.ajax ({
-				method:"GET",
-				url: "https://sourcegraph.com"
-			}).done(authHandler)
+		var version;
+		if (value){
+			version = $.ajax ({
+				dataType: "json",
+				method: "GET",
+				url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"/-/srclib-data-version?",
+				headers: {
+					"authorization": "Basic " + btoa("x-oauth-basic:"+value)
+				}
+			}).done(function(result){
+				ajaxCall(result.CommitID, value);
+			})
 		}
-	}
-	function authHandler(data) {
-		var doc = (new DOMParser()).parseFromString(data,"text/xml");
-		token = ("x-oauth-basic:"+doc.getElementsByTagName("head")[0].getAttribute('data-current-user-oauth2-access-token'));
-		setRev(token)
-	}
-
-	function setRev(token) {
-		var version = $.ajax ({
-			dataType: "json",
-			method: "GET",
-			url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"/-/srclib-data-version?",
-			headers: {
-				authorization:'Basic ' + token
-			}
-		}).done(function(result){
-			ajaxCall(result.CommitID, token);
-		})
+		else {
+			var version = $.ajax ({
+				dataType: "json",
+				method: "GET",
+				url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"/-/srclib-data-version?"
+			}).done(function(result){
+				ajaxCall(result.CommitID, value);
+			})
+		}
 		version.fail(function(jqXHR, textStatus, errorThrown) {
 			nomatch = "<p>No matches</p>"
 			if (textStatus!=='abort'){
@@ -397,26 +401,33 @@
 	//Problematic because we'll show a message "No definition matches" for both, I haven't yet found a way to distinguish the build
 	//failure or ongoing case and the actual no def case.  There is only a fail case for getText because getDefs seems to never return
 	//an error when the repo is not built, but instead an empty list.
-	function ajaxCall(rev, token){
-		try{document.getElementById("loadingDiv").style.display='block'}catch(err){}
-		getDefs = $.ajax ({
-			method: "GET",
-			url: "https://sourcegraph.com/.api/defs?RepoRevs=github.com%2F"+user+"%2F"+repo+"@"+rev+"&Nonlocal=true&Query="+query+"&PerPage=100&Page=1",
-			headers: {
-				'authorization': 'Basic ' + window.btoa(token)
-			}
-		}).done(removeDefLoadingDiv, showDefResults);
-		getText = $.ajax ({
-			method: "GET",
-			url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@master==="+rev+"/-/tree-search?Query="+query+"&QueryType=fixed&N=10&ContextLines=2&Offset=0",
-			headers: {
-				'authorization': 'Basic ' + window.btoa(token)
-			}
-		}).done(removeTextLoadingDiv, showTextResults);
-		getText.fail(function(jqXHR, textStatus, errorThrown) {
+	function ajaxCall(rev, value){
+		var getDefsCall={};
+		getDefsCall.method="GET";
+		getDefsCall.url ="https://sourcegraph.com/.api/defs?RepoRevs=github.com%2F"+user+"%2F"+repo+"@"+rev+"&Nonlocal=true&Query="+query+"&PerPage=100&Page=1";
+		if (value) {
+			getDefsCall.headers= {"authorization": "Basic "+btoa("x-oauth-basic:"+value)}
+		}
+		getDefsCall.success=function(e) {
+			removeDefLoadingDiv();
+			showDefResults(e);
+		}
+		getDefs = $.ajax(getDefsCall);
+		var getTextCall={};
+		getTextCall.method="GET";
+		getTextCall.url="https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@master==="+rev+"/-/tree-search?Query="+query+"&QueryType=fixed&N=10&ContextLines=2&Offset=0"
+		if (value) {
+			getTextCall.headers= {"authorization": "Basic "+btoa("x-oauth-basic:"+value)}
+		}
+		getTextCall.success=function(e) {
+			removeTextLoadingDiv;
+			showTextResults(e, value);
+		}
+		getTextCall.error=(function(jqXHR, textStatus, errorThrown) {
 			nomatch = "<p>No matches</p>"
 			if (textStatus!=='abort'){
 				removeTextLoadingDiv();
+				removeDefLoadingDiv();
 				if (getText.status === 401){
 					nomatch ="<div class='nomatch'><p style='text-align:center;font-size:16px'><b> 401 (Unauthorized)</b></br></p><p style='text-align:center;font-size:12px'> You must be signed in on <a href='https://sourcegraph.com/login?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext'>sourcegraph.com</a> to search private code.</p></div>";
 				}
@@ -433,6 +444,8 @@
 			document.getElementById('codeCounter').innerHTML = "0";
 
 		});
+		getText = $.ajax(getTextCall);
+
 	}
 
 	//Removes loading div when searching for code
@@ -504,7 +517,7 @@
 	/* --------------------------------------------Text search --------------------------------------------------------------*/
 
 	//Generate def results table
-	function showTextResults(dataArray){
+	function showTextResults(dataArray, value){
 		document.addEventListener('click', function(e){
 			if(e.target.className === 'sgtextres') {
 				amplitude.logEvent('ViewTextSearchResult')
@@ -566,7 +579,7 @@
 		var countScrolls=0;
 
 		//listen for infinite scroll
-		document.addEventListener('scroll', getInfiniteResults, true);
+		document.addEventListener('scroll', getInfiniteResults(value), true);
 		if (! ($("body").height() > $(window).height()) && $('#seeText').hasClass('selected')) {
 			subsequentAjaxCalls(countScrolls);
 			countScrolls++;
@@ -576,9 +589,10 @@
 
 
 	//Trigger infinite scroll
-	function getInfiniteResults(){
+	function getInfiniteResults(value){
+		console.log('getinf')
 		if ($(window).scrollTop() + $(window).height() === $(document).height() && $('#seeText').hasClass('selected')){
-			subsequentAjaxCalls(countScrolls);
+			subsequentAjaxCalls(countScrolls, value);
 			countScrolls++;
 		}
 	}
@@ -615,25 +629,29 @@
 	}
 
 	//Get subsequent text results for infinite scroll
-	function subsequentAjaxCalls(numScrolls) {
+	function subsequentAjaxCalls(numScrolls, value) {
 		document.removeEventListener('scroll', getInfiniteResults, true);
 
 		if (!document.getElementById('load-more-results')){
 			$('.tree-finder.clearfix:last').append("<p style='text-align:center;font-size:16px' id='load-more-results'><b> Loading more results... </b></p>")
 		}
-		getInfiniteText = $.ajax ({
-			method: "GET",
-			url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@"+branch+"==="+commitID+"/-/tree-search?Query="+query+"&QueryType=fixed&N=10&ContextLines=2&Offset="+numScrolls*10,
-			headers: {
-				'authorization': 'Basic ' + window.btoa(token)
-			}
-		}).done(removeLoading, infiniteTextResults)
-		getInfiniteText.fail( function() {
+		var getInfiniteResultsCall={};
+		getInfiniteResultsCall.method="GET";
+		getInfiniteResultsCall.url="https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@"+branch+"==="+commitID+"/-/tree-search?Query="+query+"&QueryType=fixed&N=10&ContextLines=2&Offset="+numScrolls*10
+		if (value) {
+			getInfiniteResultsCall.headers= {"authorization": "Basic "+btoa("x-oauth-basic:"+value)}
+		}
+		getInfiniteResultsCall.success=function(e) {
+			removeLoading();
+			infiniteTextResults(e);
+		}
+		var getInfiniteResultsAjax = $.ajax(getInfiniteResultsCall);
+		getInfiniteResultsCall.error=(function() {
 			removeLoading();
 			if (!document.getElementById('all-results')){
 				$('.code-list').append("<p style='text-align:center;font-size:16px' id='all-results'><b> All results shown. </b></p>");
+				document.removeEventListener('scroll', getInfiniteResults)
 			}
-			document.removeEventListener('scroll', getInfiniteResults)
 		})
 	}
 

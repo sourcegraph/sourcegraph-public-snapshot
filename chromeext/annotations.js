@@ -2,7 +2,7 @@
 
 (function(){
 	var consumingSpan, annotating;
-	var user, repo, path, rev;
+	var user, repo, path, rev, token;
 
 	function urlProperties(URL){
 		var urlsplit = URL.split("/");
@@ -20,16 +20,39 @@
 		}
 	}
 
-	function refresh() {
-		$.ajax ({
-			dataType: "json",
-			method: "POST",
-			url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"/-/refresh"
-		})
+	//set token before calling refresh
+	function initToken() {
+		if (repo) {
+			var value="";
+			(chrome.storage.local.get("value",function(e){
+				value=e.value;
+				refresh(value)
+			}))
+		}
+	}
+
+	function refresh(value) {
+		if (value) {
+			$.ajax ({
+				dataType: "json",
+				method: "POST",
+				url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"/-/refresh",
+				headers: {
+					authorization: "Basic " + btoa("x-oauth-basic:"+value)
+				}
+			})
+		}
+		else {
+			$.ajax ({
+				dataType: "json",
+				method: "POST",
+				url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"/-/refresh"
+			})
+		}
 	}
 
 	urlProperties(document.URL); //reset URL properties on each page load
-	refresh();					//refreshVCS repository on each page load
+	initToken();					//refreshVCS repository on each page load
 
 	if (document.URL.split("/")[5] === "blob"){
 		checkFile(document);
@@ -52,7 +75,7 @@
 
 	document.addEventListener('pjax:success', function() {
 		urlProperties(document.URL);
-		refresh();
+		initToken();
 		var evt = new Event('PJAX_PUSH_STATE_0923');
 		document.dispatchEvent(evt);
 	});
@@ -73,59 +96,71 @@
 			lang = finalPath[finalPath.length-1];
 			if (lang.toLowerCase() === "go") {
 				if (document.getElementsByClassName("vis-private").length !==0){
-					getAuthToken();
+					setToken();
 				}
 				else{
-					checkLatestCommit();
+					setToken();
 				}
 			}
 		}
 	}
 
-	function getAuthToken(){
-		if (document.getElementsByClassName("vis-private").length !==0){
-			$.ajax ({
-				method:"GET",
-				url: "https://sourcegraph.com"
-			}).done(authHandler)
-		}
+	function setToken() {
+		var value= "";
+		(chrome.storage.local.get("value",function(e){
+			value=e.value;
+			checkLatestCommit(value);
+		}))
 	}
 
-	//TODO: this has changed. For some reason cannot fetch user data from sourcegraph.
-	function authHandler(data) {
-		var doc = (new DOMParser()).parseFromString(data,"text/xml");
-		var token = ("x-oauth-basic:"+doc.getElementsByTagName("head")[0].getAttribute("data-current-user-oauth2-access-token"));
-		checkLatestCommit(token)
-	}
-
-	function checkLatestCommit(token) {
+	function checkLatestCommit(value) {
 		urlProperties(document.URL);
+		if (value) {
+			var checkCommit = $.ajax ({
+				dataType: "json",
+				method: "GET",
+				url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@"+rev+"/-/srclib-data-version?Path="+path,
+				headers: {
+					"authorization": "Basic " + btoa("x-oauth-basic:"+value)
+				}
 
-		var checkCommit = $.ajax ({
-			dataType: "json",
-			method: "GET",
-			url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@"+rev+"/-/srclib-data-version?Path="+path,
-			headers: {
-				"authorization": "Basic " + window.btoa(token)
-			}
-		}).done(function(result){
-			getAnnotations(token, result.CommitID, path)
-		});
+			}).done(function(result){
+				getAnnotations(value, result.CommitID, path)
+			});
+		}
+		else {
+			var checkCommit = $.ajax ({
+				dataType: "json",
+				method: "GET",
+				url: "https://sourcegraph.com/.api/repos/github.com/"+user+"/"+repo+"@"+rev+"/-/srclib-data-version?Path="+path,
+			}).done(function(result){
+				getAnnotations(value, result.CommitID, path)
+			});
+
+		}
 		checkCommit.fail(function(){
 			return;
 		})
 	}
 
-
-	function getAnnotations(token, rev, path) {
-		$.ajax ({
-			dataType: "json",
-			method: "GET",
-			url: "https://sourcegraph.com/.api/annotations?Entry.RepoRev.URI=github.com/"+user+"/"+repo+"&Entry.RepoRev.Rev="+rev+"&Entry.RepoRev.CommitID=&Entry.Path="+path+"&Range.StartByte=0&Range.EndByte=0",
-			headers: {
-				"authorization": "Basic " + window.btoa(token)
-			}
-		}).done(getSourcegraphRefLinks)
+	function getAnnotations(value, rev, path) {
+		if(value){
+			$.ajax ({
+				dataType: "json",
+				method: "GET",
+				url: "https://sourcegraph.com/.api/annotations?Entry.RepoRev.URI=github.com/"+user+"/"+repo+"&Entry.RepoRev.Rev="+rev+"&Entry.RepoRev.CommitID=&Entry.Path="+path+"&Range.StartByte=0&Range.EndByte=0",
+				headers: {
+					"authorization": "Basic " + btoa("x-oauth-basic:"+value)
+				}
+			}).done(getSourcegraphRefLinks)
+		}
+		else {
+			$.ajax ({
+				dataType: "json",
+				method: "GET",
+				url: "https://sourcegraph.com/.api/annotations?Entry.RepoRev.URI=github.com/"+user+"/"+repo+"&Entry.RepoRev.Rev="+rev+"&Entry.RepoRev.CommitID=&Entry.Path="+path+"&Range.StartByte=0&Range.EndByte=0"
+			}).done(getSourcegraphRefLinks)
+		}
 	}
 
 	//Here we are assuming no overlapping annotations.
@@ -141,7 +176,6 @@
 		}
 		traverseDOM(annsByStartByte, annsByEndByte);
 	}
-
 
 	function traverseDOM(annsByStartByte, annsByEndByte){
 		var table = document.querySelector("table");
@@ -210,14 +244,19 @@
 	function replace(code, output){
 		setTimeout(function(){
 			code.innerHTML = output;
-			defPopovers(code)
+			setPopoversToken(code)
 		})
 	}
-
-	function defPopovers(code) {
+	function setPopoversToken(code) {
+		(chrome.storage.local.get("value",function(e){
+			value=e.value;
+			defPopovers(code, value)
+		}))
+	}
+	function defPopovers(code, value) {
 		var newRows = code.childNodes
 		for (var n = 0; n < newRows.length; n++){
-			sourcegraph_activateDefnPopovers(newRows[n])
+			sourcegraph_activateDefnPopovers(newRows[n], value)
 
 		}
 	}
@@ -245,8 +284,6 @@
 		else {
 			return c
 		}
-
-
 	}
 
 })();
