@@ -249,11 +249,13 @@ class GlobalSearch extends Container {
 			const selected = this._normalizedSelectionIndex() === i;
 
 			let docstring = "";
-			def.Docs.forEach((doc) => {
-				if (doc.Format === "text/plain") {
-					docstring = doc.Data;
-				}
-			});
+			if (def.Docs) {
+				def.Docs.forEach((doc) => {
+					if (doc.Format === "text/plain") {
+						docstring = doc.Data;
+					}
+				});
+			}
 
 			list.push(
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
