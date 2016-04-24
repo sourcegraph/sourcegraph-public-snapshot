@@ -12,7 +12,7 @@ const context: {
 	currentSpanID?: string;
 	userAgentIsBot?: boolean;
 	assetsRoot?: string;
-	buildVars?: Object;
+	buildVars?: {Version: string};
 	hasLinkedGitHub?: boolean;
 
 	// We are migrating from a global context object to using React context

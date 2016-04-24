@@ -1,3 +1,5 @@
+// @flow weak
+
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
@@ -14,6 +16,15 @@ export const EventLocation = {
 };
 
 export class EventLogger {
+	_amplitude: any;
+	_intercomSettings: any;
+	events: Array<any>;
+	userProperties: Array<any>;
+	intercomProperties: Array<any>;
+	intercomEvents: Array<any>;
+	isUserAgentBot: bool;
+	_dispatcherToken: any;
+
 	constructor() {
 		this._amplitude = null;
 		this._intercomSettings = null;
@@ -26,7 +37,7 @@ export class EventLogger {
 		// Listen for all Stores dispatches.
 		// You must separately log "frontend" actions of interest,
 		// with the relevant event properties.
-		this.dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
+		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	// reset() receives any event data which is buffered
@@ -65,7 +76,7 @@ export class EventLogger {
 			}
 
 			let apiKey = "608f75cce80d583063837b8f5b18be54";
-			if (context.buildVars.Version === "dev") {
+			if (context.buildVars && context.buildVars.Version === "dev") {
 				apiKey = "2b4b1117d1faf3960c81899a4422a222";
 			} else {
 				switch (context.appURL) {
@@ -98,7 +109,7 @@ export class EventLogger {
 			this._intercomSettings = window.intercomSettings;
 		}
 
-		this.isUserAgentBot = context.userAgentIsBot;
+		this.isUserAgentBot = Boolean(context.userAgentIsBot);
 		this._flush();
 	}
 
