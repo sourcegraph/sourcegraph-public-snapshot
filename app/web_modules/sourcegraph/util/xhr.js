@@ -38,21 +38,44 @@ export function setGlobalBaseURL(baseURL: string): void {
 	_globalBaseURL = baseURL;
 }
 
+export function combineHeaders(a: any, b: any): any {
+	// NOTE(sqs): Flow gave a lot of weird "inconsistent use of library definitions" errors
+	// when I tried to use the Headers and HeadersInit types here. This has a unit test,
+	// so leave these as "any" types for now.
+	if (!b) return a;
+	if (!a) return b;
+
+	if (!(a instanceof Headers)) throw new Error("must be Headers type");
+	if (!(b instanceof Headers)) throw new Error("must be Headers type");
+
+	if (b.forEach) {
+		// node-fetch's Headers is not a full implementation and doesn't support iterable,
+		// but it does expose forEach.
+		b.forEach((val: string, name: string) => a.append(name, val));
+	} else {
+		for (let [name, val] of b) {
+			a.append(name, val);
+		}
+	}
+	return a;
+}
+
 // defaultFetch wraps the fetch API.
 //
 // Note: the caller might wrap this with singleflightFetch.
-export function defaultFetch(url: string | Request, options?: RequestOptions): Promise<Response> {
+export function defaultFetch(url: string | Request, init?: RequestOptions): Promise<Response> {
 	if (typeof url !== "string") throw new Error("url must be a string (complex requests are not yet supported)");
 	if (typeof global !== "undefined" && global.process && global.process.env.JSSERVER) {
 		url = `${_globalBaseURL}${url}`;
 	}
 
-	let defaults = defaultOptions();
+	const defaults = defaultOptions();
 
-	// Combine headers.
-	const headers = Object.assign({}, defaults.headers, options ? options.headers : null);
-
-	return fetch(url, Object.assign(defaults, options, {headers: headers}));
+	return fetch(url, {
+		...defaults,
+		...init,
+		headers: combineHeaders(defaults.headers, init ? init.headers : null),
+	});
 }
 
 // checkStatus is intended to be chained in a fetch call. For example:
