@@ -14,6 +14,8 @@ import styles from "./styles/App.css";
 
 import EventLogger from "sourcegraph/util/EventLogger";
 import {withStatusContext} from "sourcegraph/app/status";
+import {withFeaturesContext} from "sourcegraph/app/features";
+import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 
 const reactElement = React.PropTypes.oneOfType([
@@ -114,7 +116,7 @@ class App extends Component {
 
 export const rootRoute: Route = {
 	path: "/",
-	component: withAppdashRouteStateRecording(withStatusContext(CSSModules(App, styles))),
+	component: withAppdashRouteStateRecording(withSiteConfigContext(withFeaturesContext(withStatusContext(CSSModules(App, styles))))),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, require("sourcegraph/dashboard").route);

@@ -8,13 +8,13 @@ import child_process from "child_process";
 
 let noJSON = undefined; // eslint-disable-line no-undefined
 
-export default function(expected, filename, component) {
+export default function(expected, filename, component, context) {
 	let renderer = TestUtils.createRenderer();
 	let dispatchedToStores, dispatchedToBackends;
 	dispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
 		dispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
 			mockTimeout(() => {
-				renderer.render(component);
+				renderer.render(component, context);
 			});
 		});
 	});

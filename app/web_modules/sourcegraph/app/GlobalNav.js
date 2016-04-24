@@ -22,6 +22,9 @@ class GlobalNav extends React.Component {
 	static propTypes = {
 		navContext: React.PropTypes.element,
 	};
+	static contextTypes = {
+		siteConfig: React.PropTypes.object.isRequired,
+	};
 	static defaultProps: {};
 	props: Props;
 
@@ -30,7 +33,7 @@ class GlobalNav extends React.Component {
 		return (
 			<nav styleName="navbar" role="navigation">
 				<Link to="/">
-					<img styleName="logo" src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
+					<img styleName="logo" src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-mark.svg`}></img>
 				</Link>
 				<div styleName="context-container">{this.props.navContext}</div>
 

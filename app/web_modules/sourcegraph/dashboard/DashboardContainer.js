@@ -22,6 +22,10 @@ import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import ChromeExtensionCTA from "./ChromeExtensionCTA";
 
 class DashboardContainer extends Container {
+	static contextTypes = {
+		siteConfig: React.PropTypes.object.isRequired,
+	};
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -62,7 +66,7 @@ class DashboardContainer extends Container {
 			<div>
 				{!context.hasLinkedGitHub && <div styleName="cta">
 					<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
-					<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Add My GitHub Repositories</Button>
+						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Add My GitHub Repositories</Button>
 					</a>
 				</div>}
 			</div>
@@ -76,7 +80,7 @@ class DashboardContainer extends Container {
 
 				{!context.currentUser &&
 					<div styleName="anon-section">
-						<div styleName="anon-title"><img src={`${context.assetsRoot}/img/sourcegraph-logo.svg`}/></div>
+						<div styleName="anon-title"><img src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`}/></div>
 						<div styleName="anon-header-sub">Save time and code better with live usage examples.</div>
 					</div>
 				}

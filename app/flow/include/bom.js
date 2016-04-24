@@ -63,6 +63,7 @@ type RequestOptions = {
 
     cache?: ?CacheType;
     credentials?: ?CredentialsType;
+	compress?: ?bool;
     headers?: ?HeadersInit;
     integrity?: ?string;
     method?: ?MethodType;

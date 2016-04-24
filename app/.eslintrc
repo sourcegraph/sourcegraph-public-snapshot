@@ -13,6 +13,7 @@
 	},
 	"plugins": [
 		"react",
+		"flow-vars"
 	],
 	"env": {
 		"browser": true,
@@ -159,6 +160,9 @@
 		"react/self-closing-comp": 1,
 		"react/sort-comp": 1,
 		"react/wrap-multilines": 1,
+
+		"flow-vars/define-flow-type": 1,
+		"flow-vars/use-flow-type": 1,
 	}
 }
 

@@ -16,12 +16,12 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDefRefs} from "sourcegraph/def/routes";
 import Header from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/app/status";
-import ctx from "sourcegraph/app/context";
 
 class DefInfo extends Container {
 	static contextTypes = {
 		status: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
+		features: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -55,7 +55,7 @@ class DefInfo extends Container {
 		}
 
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
-			if (ctx.features && ctx.features.Authors) {
+			if (this.context.features.Authors) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 			}
 		}
