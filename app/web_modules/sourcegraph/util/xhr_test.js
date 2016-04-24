@@ -33,7 +33,7 @@ describe("combineHeaders", () => {
 			"X-Y": "z1",
 		});
 
-		expect(getHeaders(combineHeaders(a, b))).to.eql({
+		expect(getHeaders(combineHeaders(a, b))).to.eql({ // eslint-disable-line quote-props
 			w: ["w0"],
 			u: ["u0"],
 			"x-y": ["z0", "z1"],
