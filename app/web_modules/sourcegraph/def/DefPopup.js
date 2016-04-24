@@ -2,6 +2,7 @@
 
 import React from "react";
 import {Link} from "react-router";
+import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import s from "sourcegraph/def/styles/Def.css";
@@ -10,7 +11,7 @@ import {defPath} from "sourcegraph/def";
 import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import TimeAgo from "sourcegraph/util/TimeAgo";
-import {Avatar} from "sourcegraph/components";
+import {Avatar, Loader} from "sourcegraph/components";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import {urlToDef} from "sourcegraph/def/routes";
 
@@ -54,10 +55,11 @@ class DefPopup extends Container {
 		return (
 			<div className={s.marginBox}>
 				{this.props.onboardingCTA}
-				<header className={s.boxTitle}><Link to={`${urlToDef(this.state.defObj)}/-/info`}>{qualifiedNameAndType(def)}</Link></header>
-				<header className={s.sectionTitle}>Used in {!refLocs && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>
-				{!refLocs && <i>Loading...</i>}
-				{refLocs && refLocs.length === 0 &&	<i>No usages found</i>}
+				<header className={s.boxTitle}>
+					<Link to={`${urlToDef(this.state.defObj)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
+				</header>
+				<header className={s.sectionTitle}>Used in {!refLocs && <Loader />}</header>
+				{refLocs && refLocs.filter((r) => r && r.Files).length === 0 &&	<i>No usages found</i>}
 				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
 				{authors && <header className={s.sectionTitle}>Authors {!authors && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>}
@@ -76,4 +78,4 @@ class DefPopup extends Container {
 	}
 }
 
-export default DefPopup;
+export default CSSModules(DefPopup, s);

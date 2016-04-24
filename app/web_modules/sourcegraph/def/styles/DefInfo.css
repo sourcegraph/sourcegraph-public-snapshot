@@ -28,6 +28,20 @@
 	min-height: 50vh;
 }
 
+.def-title {
+	composes: black from colors;
+	font-weight: normal;
+}
+
+.def-title:hover {
+	text-decoration: underline;
+}
+
+.defName {
+	composes: blue from colors;
+	font-weight: bold;
+}
+
 .def-info {
 	width: 100%;
 	display: flex;
@@ -48,4 +62,7 @@
 	display: block;
 	composes: pt2 pb2 from base;
 	composes: f4 from typography;
+}
+
+.file-link {
 }

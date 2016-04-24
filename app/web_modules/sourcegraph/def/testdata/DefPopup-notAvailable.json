@@ -5,6 +5,7 @@
 			"children": [
 				{
 					"type": "header",
+					"key": ".1",
 					"props": {
 						"children": [
 							{
@@ -12,20 +13,28 @@
 								"props": {
 									"to": "/r/-/def/undefined/undefined/-/undefined/-/info",
 									"children": [
-										"a ",
 										{
 											"type": "span",
-											"key": "name",
 											"props": {
-												"style": {
-													"fontWeight": "bold"
-												},
+												"styleName": "def-title",
 												"children": [
-													"n"
+													"a ",
+													{
+														"type": "span",
+														"key": ".$name",
+														"props": {
+															"style": {
+																"fontWeight": "bold"
+															},
+															"children": [
+																"n"
+															]
+														}
+													},
+													"st"
 												]
 											}
-										},
-										"st"
+										}
 									],
 									"onlyActiveOnIndex": false,
 									"className": "",
@@ -37,23 +46,15 @@
 				},
 				{
 					"type": "header",
+					"key": ".2",
 					"props": {
 						"children": [
 							"Used in ",
 							{
-								"type": "i",
-								"props": {
-									"className": "fa fa-circle-o-notch fa-spin"
-								}
+								"type": "WrappedComponent",
+								"key": ".1",
+								"props": {}
 							}
-						]
-					}
-				},
-				{
-					"type": "i",
-					"props": {
-						"children": [
-							"Loading..."
 						]
 					}
 				}

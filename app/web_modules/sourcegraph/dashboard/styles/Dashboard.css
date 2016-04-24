@@ -46,12 +46,6 @@
 	cursor: pointer;
 }
 
-.anon-title-left {
-	composes: header-left measure from typography;
-	composes: pt5 from base;
-	text-align: left;
-}
-
 .repos {
 	composes: col-7-ns col-12 from grid;
 	composes: mt4 center from base;

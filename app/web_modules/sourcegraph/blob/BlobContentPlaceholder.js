@@ -21,7 +21,7 @@ const dummyLineLengths = [
 function BlobContentPlaceholder(props) {
 	let s = props.styles;
 
-	const numLines = 60;
+	const numLines = props.numLines || 60;
 	const lines = [];
 	for (let i = 0; i < numLines; i++) {
 		const line = i + 1;
@@ -43,8 +43,10 @@ function BlobContentPlaceholder(props) {
 		</div>
 	);
 }
+
 BlobContentPlaceholder.propTypes = {
 	styles: React.PropTypes.object,
+	numLines: React.PropTypes.number,
 };
 
 export default CSSModules(BlobContentPlaceholder, styles);

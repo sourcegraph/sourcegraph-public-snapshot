@@ -22,6 +22,16 @@
 	composes: black from colors;
 	composes: title;
 }
+.boxTitle:hover {
+	text-decoration: underline;
+}
+.def-title {
+	composes: black from colors;
+}
+.defName {
+	composes: blue from colors;
+	font-weight: bold;
+}
 .sectionTitle {
 	composes: pt3 from base;
 	composes: f5 from typography;

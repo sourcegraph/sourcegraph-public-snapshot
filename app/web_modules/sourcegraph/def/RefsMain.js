@@ -1,9 +1,11 @@
 // @flow weak
 
 import React from "react";
+import CSSModules from "react-css-modules";
 
 import Blob from "sourcegraph/blob/Blob";
 import BlobStore from "sourcegraph/blob/BlobStore";
+import BlobContentPlaceholder from "sourcegraph/blob/BlobContentPlaceholder";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import DefTooltip from "sourcegraph/def/DefTooltip";
@@ -15,15 +17,15 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {urlToDef, urlToDef2} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
-import CSSModules from "react-css-modules";
+import {urlToDefRefs} from "sourcegraph/def/routes";
 import styles from "./styles/Refs.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import {FileIcon} from "sourcegraph/components/Icons";
 import Header from "sourcegraph/components/Header";
 import {httpStatusCode} from "sourcegraph/app/status";
 
 const FILES_PER_PAGE = 5;
+const ALL_FILES = ".allfiles";
 
 class RefsMain extends Container {
 	static contextTypes = {
@@ -41,6 +43,8 @@ class RefsMain extends Container {
 			page: 1,
 		};
 		this._nextPage = this._nextPage.bind(this);
+		this._onFileSelect = this._onFileSelect.bind(this);
+		this._onRepoSelect = this._onRepoSelect.bind(this);
 	}
 
 	stores() {
@@ -156,30 +160,53 @@ class RefsMain extends Container {
 		});
 	}
 
-	render() {
-		let def = this.state.defObj;
-		let refLocs = this.state.refLocations;
+	_onFileSelect(e) {
+		let path = e.target.value;
+		path = path === ALL_FILES ? "" : path;
+		this.context.router.push(urlToDefRefs(this.state.defObj, this.state.refRepo, path));
+	}
 
-		if (refLocs && refLocs.Error) {
+	_onRepoSelect(e) {
+		let repo = e.target.value;
+		this.context.router.push(urlToDefRefs(this.state.defObj, repo, this.state.refFile));
+	}
+
+	render() {
+		if (this.state.refLocations && this.state.refLocations.Error) {
 			return (
 				<Header
-					title={`${httpStatusCode(refLocs.Error)}`}
+					title={`${httpStatusCode(this.state.refLocations.Error)}`}
 					subtitle={`References are not available.`} />
 			);
 		}
 
+		let def = this.state.defObj;
+		let refLocs = this.state.refLocations && this.state.refLocations.find((loc) => loc.Repo === this.state.refRepo);
+
 		let maxFilesShown = this.state.page * FILES_PER_PAGE;
 
 		return (
-			<div styleName="refs-container">
-				<h1>Refs to {this.state.defObj && <Link to={`${urlToDef(this.state.defObj)}/-/info`}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>}</h1>
+			<div styleName="container">
 				<div styleName="inner">
-					<div styleName="ref-locations">
-						{def && !def.Error && refLocs && !refLocs.Error && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.refRepo} path={this.state.refFile} />}
+					<h1>Refs to {this.state.defObj && <Link to={`${urlToDef(this.state.defObj)}/-/info`}><code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.defName})}</code></Link>}</h1>
+					<div styleName="subsection">
+						{refLocs && <span>{refLocs.Count} usages across {refLocs.Files.length} files.</span>}
+						<select styleName="filter-select" value={this.state.refFile || ALL_FILES} onChange={this._onFileSelect}>
+							<option value={ALL_FILES}>All Files</option>
+							{refLocs && refLocs.Files.map((file, i) => (
+								<option key={i} value={file.Path}>{file.Path} ({file.Count})</option>
+							))}
+						</select>
+						<select styleName="filter-select" value={this.state.refRepo} onChange={this._onRepoSelect}>
+							{this.state.refLocations && this.state.refLocations.map((loc, i) => (
+								<option key={i} value={loc.Repo}>{loc.Repo} ({loc.Count})</option>
+							))}
+						</select>
 					</div>
+					<hr/>
 					<div styleName="refs">
 						{this.state.files && this.state.files.map((file, i) => {
-							if (!file) return null;
+							if (!file) return <BlobContentPlaceholder key={i} numLines={30} />;
 							let entrySpec = this.state.entrySpecs[i];
 							let path = entrySpec.Path;
 							let repoRev = entrySpec.RepoRev;

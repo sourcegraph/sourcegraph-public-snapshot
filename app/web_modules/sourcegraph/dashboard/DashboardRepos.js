@@ -1,8 +1,6 @@
 import React from "react";
-import {Link} from "react-router";
 import RepoLink from "sourcegraph/components/RepoLink";
 
-import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import context from "sourcegraph/app/context";
 
 import CSSModules from "react-css-modules";
@@ -37,18 +35,6 @@ class DashboardRepos extends React.Component {
 							{repo.Description && <div>
 								<p styleName="description">{repo.Description}</p>
 							</div>}
-
-							{repo.Examples && repo.Examples.map((functions, j) =>
-								<div styleName="container-vertical-padding" key={j}>
-									<Link to={functions.Functions.Path} styleName="function">
-										<code>{qualifiedNameAndType(functions.Functions)}</code>
-									</Link>
-									{functions.Functions.FunctionCallCount &&
-										<Link to={functions.Functions.Path} styleName="function-call-count">
-											<code>{functions.Functions.FunctionCallCount} references</code>
-										</Link>}
-								</div>
-							)}
 						</div>
 					</div>
 				)}

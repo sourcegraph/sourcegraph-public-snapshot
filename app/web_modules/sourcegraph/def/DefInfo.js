@@ -76,8 +76,8 @@ class DefInfo extends Container {
 		return (
 			<div styleName="container">
 				<div styleName="refs-page">
-					<h1>{this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code>{qualifiedNameAndType(this.state.defObj)}</code></Link>}</h1>
-					{this.state.defObj && <p styleName="subheader">Defined in <Link to={urlToDef(this.state.defObj)}>{this.state.defObj.File}</Link></p>}
+					<h1>{this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.defName})}</code></Link>}</h1>
+					{this.state.defObj && <p styleName="subheader">Defined in <Link to={urlToDef(this.state.defObj)} styleName="file-link">{this.state.defObj.File}</Link></p>}
 					<hr/>
 					<div styleName="inner">
 						<div styleName="def-info">

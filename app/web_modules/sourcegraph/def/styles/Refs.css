@@ -14,13 +14,13 @@
 	composes: center from base;
 }
 
-.refs-container {
-	composes: pv2 ph4 from base;
+.inner {
+	composes: col-9 from grid;
 }
 
-.inner {
-	display: flex;
-	min-height: 50vh;
+.subsection {
+	composes: f4 from typography;
+	clear: both;
 }
 
 .ref-locations {
@@ -36,7 +36,7 @@
 }
 
 .file-name {
-	composes: pl3 mv1 from base;
+	composes: mv1 from base;
 }
 
 .refs-footer {
@@ -49,4 +49,24 @@
 	composes: tooltip-bottom from tooltips;
 	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
 	text-shadow: 0 1px 0 c_white;
+}
+
+.def-title {
+	composes: pl1 from base;
+	composes: black from colors;
+	font-weight: normal;
+}
+
+.def-title:hover {
+	text-decoration: underline;
+}
+
+.defName {
+	composes: blue from colors;
+	font-weight: bold;
+}
+
+.filter-select {
+	composes: ml1 from base;
+	float: right;
 }
