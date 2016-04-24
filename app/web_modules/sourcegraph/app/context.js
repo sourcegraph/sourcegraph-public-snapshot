@@ -42,7 +42,8 @@ export function reset(ctx: ContextInput) {
 	delete ctx.assetsRoot;
 	delete ctx.buildVars;
 
-	context = ctx;
+	// $FlowHack
+	Object.assign(context, ctx);
 }
 
 export default context;
