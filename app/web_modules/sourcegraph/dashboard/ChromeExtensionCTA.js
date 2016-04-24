@@ -1,41 +1,37 @@
 import React from "react";
 
-import Component from "sourcegraph/Component";
-
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
 import EventLogger from "sourcegraph/util/EventLogger";
 
 /* See: https://developer.chrome.com/webstore/inline_installation */
 
-class ChromeExtensionCTA extends Component {
+class ChromeExtensionCTA extends React.Component {
 	constructor(props) {
 		super(props);
 		this._handleClick = this._handleClick.bind(this);
-		this._successCompletionHandler = this._successCompletionHandler.bind(this);
-		this._failureCompletionHandler = this._failureCompletionHandler.bind(this);
+		this._successHandler = this._successHandler.bind(this);
+		this._failHandler = this._failHandler.bind(this);
 	}
 
 	componentDidMount() {
 		EventLogger.logEvent("ChromeExtensionCTAPresented");
 	}
 
-	reconcileState(state, props) {
-		Object.assign(state, props);
+	_successHandler() {
+		EventLogger.logEvent("ChromeExtensionInstalled");
+		if (this.props.onSuccess) this.props.onSuccess();
 	}
 
-	_successCompletionHandler() {
-		EventLogger.logEvent("ChromeExtensionInstallSuccess");
-	}
-
-	_failureCompletionHandler() {
+	_failHandler() {
 		EventLogger.logEvent("ChromeExtensionInstallFailed");
+		if (this.props.onFail) this.props.onFail();
 	}
 
 	_handleClick() {
 		EventLogger.logEvent("ChromeExtensionCTAClicked");
 		if (global.chrome) {
-			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successCompletionHandler, this._failureCompletionHandler);
+			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler, this._failHandler);
 		}
 	}
 
@@ -47,5 +43,10 @@ class ChromeExtensionCTA extends Component {
 		);
 	}
 }
+
+ChromeExtensionCTA.propTypes = {
+	onSuccess: React.PropTypes.func,
+	onFail: React.PropTypes.func,
+};
 
 export default CSSModules(ChromeExtensionCTA, styles);
