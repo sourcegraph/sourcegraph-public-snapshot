@@ -6,6 +6,7 @@ import type {Features} from "sourcegraph/app/features";
 let context: {
 	appURL?: string;
 	authorization?: string;
+	csrfToken?: string;
 	cacheControl?: string;
 	currentUser?: Object;
 	userEmail?: string;
