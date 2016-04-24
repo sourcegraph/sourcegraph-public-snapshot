@@ -26,7 +26,7 @@ export function setGlobalFeatures(features: Features) {
 	_globalFeatures = features;
 }
 
-// withStatusContext passes a "features" context item
+// withFeaturesContext passes a "features" context item
 // to Component's children and lets them query the
 // feature flags.
 export function withFeaturesContext(Component) {
