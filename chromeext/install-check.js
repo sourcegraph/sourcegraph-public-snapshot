@@ -11,7 +11,7 @@ See: https://groups.google.com/a/chromium.org/forum/#!topic/chromium-extensions/
 */
 
 function addScript() {
-	var script = document.createElement("div");
+	var script = document.createElement("script");
 	script.id = "chrome-extension-installed";
 	document.body.appendChild(script);
 }
