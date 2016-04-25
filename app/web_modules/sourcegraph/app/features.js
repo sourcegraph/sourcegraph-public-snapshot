@@ -22,7 +22,6 @@ let _globalFeatures: ?Features = null; // private, access via withFeaturesContex
 // and it and its subkeys will not change. Violating this will result in
 // undefined behavior.
 export function setGlobalFeatures(features: Features) {
-	if (_globalFeatures !== null) throw new Error("global feature flags already set, may only be set once");
 	_globalFeatures = features;
 }
 
