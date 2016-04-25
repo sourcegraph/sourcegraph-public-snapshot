@@ -7,14 +7,14 @@ class Component extends React.Component {
 	}
 
 	componentWillMount() {
-		this._updateState(Object.assign({}, this.state), this.props);
+		this._updateState(Object.assign({}, this.state), this.props, this.context);
 	}
 
-	componentWillReceiveProps(nextProps) {
-		this._updateState(Object.assign({}, this.state), nextProps);
+	componentWillReceiveProps(nextProps, nextContext) {
+		this._updateState(Object.assign({}, this.state), nextProps, nextContext);
 	}
 
-	shouldComponentUpdate(nextProps, nextState) {
+	shouldComponentUpdate(nextProps, nextState, nextContext) {
 		let keys = Object.keys(nextState);
 		if (Object.keys(this.state).length !== keys.length) {
 			return true;
@@ -29,12 +29,13 @@ class Component extends React.Component {
 	}
 
 	setState(patch, callback) {
-		this._updateState(Object.assign({}, this.state, patch), this.props, callback);
+		this._updateState(Object.assign({}, this.state, patch), this.props, this.context, callback);
 	}
 
-	_updateState(newState, props, callback) {
+	_updateState(newState, props, context, callback) {
 		this._checkForUndefined(props, "Property");
-		this.reconcileState(newState, props);
+		if (context) this._checkForUndefined(context, "Context");
+		this.reconcileState(newState, props, context);
 		this._checkForUndefined(newState, "State");
 		if (this.onStateTransition) {
 			this.onStateTransition(this.state, newState);
@@ -52,7 +53,7 @@ class Component extends React.Component {
 		}
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props, context) {
 		// override
 	}
 }
