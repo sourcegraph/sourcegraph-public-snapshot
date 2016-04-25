@@ -15,7 +15,7 @@ describe("TreeSearch", () => {
 		TreeStore.directDispatch(new TreeActions.FileListFetched("repo", "rev", {Files: ["p1/p2/f3", "p1/f2"]}));
 		autotest(testdataFiles, `${__dirname}/testdata/TreeSearch-files.json`,
 			<TreeSearch repo="repo" rev="rev" path="p1/p2" prefetch={true} overlay={true} location={{query: {q: ""}}} />,
-			{router: {}, status: {}},
+			{router: {}, status: {}, user: {}},
 		);
 	});
 });

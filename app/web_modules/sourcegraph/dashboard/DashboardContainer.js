@@ -24,6 +24,8 @@ import ChromeExtensionCTA from "./ChromeExtensionCTA";
 class DashboardContainer extends Container {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
+		user: React.PropTypes.object,
+		signedIn: React.PropTypes.bool.isRequired,
 	};
 
 	constructor(props) {
@@ -78,13 +80,13 @@ class DashboardContainer extends Container {
 			<div styleName="container">
 				<Helmet title="Home" />
 
-				{!context.currentUser &&
+				{!this.context.signedIn &&
 					<div styleName="anon-section">
 						<div styleName="anon-title"><img src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`}/></div>
 						<div styleName="anon-header-sub">Save time and code better with live usage examples.</div>
 					</div>
 				}
-				{!context.currentUser &&
+				{!this.context.signedIn &&
 					<div styleName="cta-box">
 						<div styleName="cta-headline">See everywhere a Go function is called, globally.</div>
 						<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => EventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
@@ -98,17 +100,17 @@ class DashboardContainer extends Container {
 					</div>
 				}
 
-				{context.currentUser &&
+				{this.context.signedIn &&
 					<div styleName="anon-section">
 						{this.renderCTAButtons()}
 					</div>
 				}
 
-				{context.currentUser && context.currentUser.Admin &&
+				{this.context.user && this.context.user.Admin &&
 					<GlobalSearch query={this.props.location.query.q || ""}/>
 				}
 
-				{context.currentUser && <div styleName="repos">
+				{this.context.signedIn && <div styleName="repos">
 					<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} />
 				</div>}
 			</div>

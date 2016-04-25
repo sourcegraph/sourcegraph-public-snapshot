@@ -14,6 +14,7 @@ import EventLogger from "sourcegraph/util/EventLogger";
 import {withStatusContext} from "sourcegraph/app/status";
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
+import {withUserContext} from "sourcegraph/app/user";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
 
 const reactElement = React.PropTypes.oneOfType([
@@ -42,9 +43,11 @@ export const rootRoute: Route = {
 		withViewEventsLogged(
 			withAppdashRouteStateRecording(
 				withSiteConfigContext(
-					withFeaturesContext(
-						withStatusContext(
-							CSSModules(App, styles)
+					withUserContext(
+						withFeaturesContext(
+							withStatusContext(
+								CSSModules(App, styles)
+							)
 						)
 					)
 				)

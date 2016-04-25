@@ -19,7 +19,8 @@ describe("DashboardRepos", () => {
 				repos={repos}
 				exampleRepos={repos}
 				hasLinkedGitHub={true}
-				linkGitHubURL={""} />
+				linkGitHubURL={""} />,
+			{signedIn: false},
 		);
 	});
 });

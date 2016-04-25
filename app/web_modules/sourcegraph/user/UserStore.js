@@ -4,7 +4,8 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 export class UserStore extends Store {
-	reset(data?: {authInfo: any, users: any}) {
+	reset(data?: {activeAccessToken?: string, authInfo: any, users: any}) {
+		this.activeAccessToken = data && data.activeAccessToken ? data.activeAccessToken : null;
 		this.authInfo = deepFreeze({
 			byAccessToken: data && data.authInfo ? data.authInfo.byAccessToken : {},
 			get(accessToken) {
@@ -33,9 +34,21 @@ export class UserStore extends Store {
 
 	toJSON() {
 		return {
+			activeAccessToken: this.activeAccessToken,
 			authInfo: this.authInfo,
 			users: this.users,
 		};
+	}
+
+	// activeUser returns the User object for the active user, if there is one
+	// and if the User object is already persisted in the store. Otherwise it
+	// returns null.
+	activeUser() {
+		if (!this.activeAccessToken) return null;
+		const authInfo = this.authInfo.get(this.activeAccessToken);
+		if (!authInfo || !authInfo.UID) return null;
+		const user = this.users.get(authInfo.UID);
+		return user && !user.Error ? user : null;
 	}
 
 	__onDispatch(action) {

@@ -1,12 +1,14 @@
 import React from "react";
 import RepoLink from "sourcegraph/components/RepoLink";
 
-import context from "sourcegraph/app/context";
-
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
 
 class DashboardRepos extends React.Component {
+	static contextTypes = {
+		signedIn: React.PropTypes.bool.isRequired,
+	};
+
 	_repoSort(a, b) {
 		const name = (repo) => `${repo.Owner}/${repo.Name}`;
 		const nameA = name(a);
@@ -21,7 +23,7 @@ class DashboardRepos extends React.Component {
 
 		return (
 			<div styleName="list">
-				{context.currentUser && <div styleName="list-section-header">Repositories</div>}
+				{this.context.signedIn && <div styleName="list-section-header">Repositories</div>}
 				{repos.length === 0 && <div styleName="list-item" />}
 				{repos.length > 0 && repos.map((repo, i) =>
 					<div key={i}>

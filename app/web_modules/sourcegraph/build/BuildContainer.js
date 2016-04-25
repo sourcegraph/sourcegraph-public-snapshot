@@ -13,7 +13,6 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import {trimRepo} from "sourcegraph/repo";
-import context from "sourcegraph/app/context";
 
 import {Button} from "sourcegraph/components";
 
@@ -25,6 +24,10 @@ const updateIntervalMsec = 1500;
 class BuildContainer extends Container {
 	static propTypes = {
 		params: React.PropTypes.object.isRequired,
+	};
+
+	static contextTypes = {
+		user: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -91,7 +94,7 @@ class BuildContainer extends Container {
 				<Helmet title={`Build #${this.state.id} | ${trimRepo(this.state.repo)}`} />
 				<div styleName="actions">
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
-					{context.currentUser && context.currentUser.Admin && <Button style={{marginLeft: "1.5rem"}} size="small" outline={true} onClick={() => {
+					{this.context.user && this.context.user.Admin && <Button style={{marginLeft: "1.5rem"}} size="small" outline={true} onClick={() => {
 						Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.build.Repo, this.state.build.CommitID));
 					}}>Rebuild</Button>}
 				</div>

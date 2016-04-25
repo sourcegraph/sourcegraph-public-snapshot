@@ -3,17 +3,24 @@
 import {setGlobalFeatures} from "sourcegraph/app/features";
 import type {Features} from "sourcegraph/app/features";
 import {setGlobalSiteConfig} from "sourcegraph/app/siteConfig";
+import UserStore from "sourcegraph/user/UserStore";
 
 let context: {
-	authorization?: string;
 	csrfToken?: string;
 	cacheControl?: string;
-	currentUser?: Object;
 	userEmail?: string;
 	currentSpanID?: string;
 	userAgentIsBot?: boolean;
 	hasLinkedGitHub?: boolean;
-} = {};
+} = {
+	// Some fields were migrated to React context from this global context object. These
+	// getters prevent you from accidentally accessing these fields in their old home,
+	// on this object.
+	// $FlowHack
+	get currentUser() {
+		throw new Error("currentUser is now accessible via this.context.user in components that specify 'user' in contextTypes");
+	},
+};
 
 // ContextInput is the input context to set up the JS environment (e.g., from Go).
 type ContextInput = typeof context & {
@@ -23,6 +30,9 @@ type ContextInput = typeof context & {
 	assetsRoot?: string;
 	buildVars?: {Version: string};
 	features?: Features;
+
+	// This is now available in UserStore.activeAccessToken.
+	accessToken?: string;
 };
 
 // Sets the values of the context given a JSContext object from the server.
@@ -41,6 +51,11 @@ export function reset(ctx: ContextInput) {
 	delete ctx.appURL;
 	delete ctx.assetsRoot;
 	delete ctx.buildVars;
+
+	if (ctx.accessToken) {
+		UserStore.activeAccessToken = ctx.accessToken;
+	}
+	delete ctx.accessToken;
 
 	// $FlowHack
 	Object.assign(context, ctx);

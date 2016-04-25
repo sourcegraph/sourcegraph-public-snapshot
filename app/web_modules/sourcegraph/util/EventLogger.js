@@ -10,6 +10,7 @@ import type {Route} from "react-router";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import UserStore from "sourcegraph/user/UserStore";
 
 export const EventLocation = {
 	Login: "Login",
@@ -78,10 +79,7 @@ export class EventLogger {
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
 
-			let user = null;
-			if (context.currentUser) {
-				user = context.currentUser.Login;
-			}
+			const user = UserStore.activeUser();
 
 			if (!this._siteConfig) {
 				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
@@ -106,12 +104,12 @@ export class EventLogger {
 				}
 			}
 
-			this._amplitude.init(apiKey, user, {
+			this._amplitude.init(apiKey, user ? user.Login : null, {
 				includeReferrer: true,
 			});
 
-			if (context.currentUser && context.currentUser.RegisteredAt) {
-				this.setUserProperty("registered_at", new Date(context.currentUser.RegisteredAt).toDateString());
+			if (user && user.RegisteredAt) {
+				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
 			}
 			if (context.userEmail) {
 				this.setUserProperty("email", context.userEmail);
@@ -134,7 +132,7 @@ export class EventLogger {
 		return Boolean(this._intercomSettings) && !this.isUserAgentBot;
 	}
 
-	// sets current context's user properties
+	// sets current user's properties
 	setUserProperty(property, value) {
 		if (!this._shouldFlushAmplitude()) {
 			this.userProperties = deepFreeze(this.userProperties.concat([[property, value]]));
@@ -143,7 +141,7 @@ export class EventLogger {
 		}
 	}
 
-	// records events for the current context's user
+	// records events for the current user
 	logEvent(eventName, eventProperties) {
 		if (!this._shouldFlushAmplitude()) {
 			this.events = deepFreeze(this.events.concat([[eventName, eventProperties]]));
@@ -160,7 +158,7 @@ export class EventLogger {
 		this.logEvent(eventName, props);
 	}
 
-	// sets current context's users property value
+	// sets current user's property value
 	setIntercomProperty(property, value) {
 		if (!this._shouldFlushIntercom()) {
 			this.intercomProperties = deepFreeze(this.intercomProperties.concat([[property, value]]));
@@ -169,7 +167,7 @@ export class EventLogger {
 		}
 	}
 
-	// records intercom events for the current context's user
+	// records intercom events for the current user
 	logIntercomEvent(eventName, eventProperties) {
 		if (!this._shouldFlushIntercom()) {
 			this.intercomEvents = deepFreeze(this.intercomEvents.concat([[eventName, eventProperties]]));

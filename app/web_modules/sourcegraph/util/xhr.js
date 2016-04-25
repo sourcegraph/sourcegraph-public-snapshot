@@ -4,6 +4,7 @@ import {btoa} from "abab";
 import "whatwg-fetch";
 
 import context from "sourcegraph/app/context";
+import UserStore from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 //
@@ -14,8 +15,8 @@ import context from "sourcegraph/app/context";
 function defaultOptions(): RequestOptions {
 	const headers = new Headers();
 	if (context.csrfToken) headers.set("X-Csrf-Token", context.csrfToken);
-	if (context.authorization) {
-		let auth = `x-oauth-basic:${context.authorization}`;
+	if (UserStore.activeAccessToken) {
+		let auth = `x-oauth-basic:${UserStore.activeAccessToken}`;
 		headers.set("Authorization", `Basic ${btoa(auth)}`);
 	}
 	if (context.cacheControl) headers.set("Cache-Control", context.cacheControl);
