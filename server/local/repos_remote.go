@@ -26,6 +26,14 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 		// Next, see if it's a GitHub repo.
 		repo, err := getGitHubRepo(ctx, op.Path)
 		if err == nil {
+			// If canonical location differs, try looking up locally at canonical location.
+			if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
+				if repo, err := store.ReposFromContext(ctx).Get(ctx, canonicalPath); err == nil {
+					repoSpec := repo.RepoSpec()
+					return &sourcegraph.RepoResolution{Result: &sourcegraph.RepoResolution_Repo{Repo: &repoSpec}}, nil
+				}
+			}
+
 			return &sourcegraph.RepoResolution{
 				Result: &sourcegraph.RepoResolution_RemoteRepo{RemoteRepo: repo},
 			}, nil

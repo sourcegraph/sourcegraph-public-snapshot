@@ -110,7 +110,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
 	// Fetch latest metadata from GitHub (we don't even try to keep
 	// our cache up to date).
-	if strings.HasPrefix(repo.URI, "github.com/") {
+	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
 		if err != nil {
 			return err

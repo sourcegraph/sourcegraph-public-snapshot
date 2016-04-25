@@ -47,14 +47,39 @@ describe("withResolvedRepoRev", () => {
 			expect(res.actions).to.eql([]);
 		});
 		it("should trigger WantRepo for resolved local repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {Repo: {}}}));
-			const res = render(<C params={{splat: "r"}} />);
+			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {Repo: {URI: "r"}}}));
+			let calledReplace = false;
+			const res = render(<C params={{splat: "r"}} />, {
+				router: {replace: () => calledReplace = true},
+			});
+			expect(calledReplace).to.be(false);
 			expect(res.actions).to.eql([new RepoActions.WantRepo("r")]);
 		});
 		it("should NOT trigger WantRepo for resolved remote repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {RemoteRepo: {}}}));
-			const res = render(<C params={{splat: "r"}} />);
+			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {Result: {RemoteRepo: {Owner: "user", Name: "repo"}}}));
+			let calledReplace = false;
+			const res = render(<C params={{splat: "github.com/user/repo"}} />, {
+				router: {replace: () => calledReplace = true},
+			});
+			expect(calledReplace).to.be(false);
 			expect(res.actions).to.eql([]);
+		});
+
+		it("should redirect for resolved local repos with different canonical name", () => {
+			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Result: {Repo: {URI: "renamedRepo"}}}));
+			let calledReplace = false;
+			render(<C params={{splat: "repo"}} />, {
+				router: {replace: () => calledReplace = true},
+			});
+			expect(calledReplace).to.be(true);
+		});
+		it("should redirect for resolved remote repos with different canonical name", () => {
+			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {Result: {RemoteRepo: {Owner: "renamedUser", Name: "renamedRepo"}}}));
+			let calledReplace = false;
+			render(<C params={{splat: "github.com/user/repo"}} />, {
+				router: {replace: () => calledReplace = true},
+			});
+			expect(calledReplace).to.be(true);
 		});
 	});
 });

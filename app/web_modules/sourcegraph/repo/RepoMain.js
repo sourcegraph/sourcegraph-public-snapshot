@@ -43,7 +43,7 @@ class RepoMain extends React.Component {
 		this._showTreeSearchModal = this._showTreeSearchModal.bind(this);
 		this._dismissTreeSearchModal = this._dismissTreeSearchModal.bind(this);
 
-		this._repoResolutionUpdated(this.props.repo, null, this.props.repoResolution);
+		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
 	}
 
 	state: {
@@ -67,7 +67,7 @@ class RepoMain extends React.Component {
 
 	componentWillReceiveProps(nextProps) {
 		if (this.props.repoResolution !== nextProps.repoResolution) {
-			this._repoResolutionUpdated(nextProps.repo, this.props.repoResolution, nextProps.repoResolution);
+			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
 		}
 	}
 
@@ -78,11 +78,11 @@ class RepoMain extends React.Component {
 		}
 	}
 
-	_repoResolutionUpdated(repo: string, prevResolution: ?Object, nextResolution: Object) {
+	_repoResolutionUpdated(repo: string, resolution: Object) {
 		// Create the repo if this repo was just resolved to a remote repo (which
 		// must be explicitly created, as we do right here).
-		if (repo && prevResolution !== nextResolution && nextResolution && !nextResolution.Error && nextResolution.Result.RemoteRepo) {
-			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, nextResolution.Result.RemoteRepo));
+		if (repo && resolution && !resolution.Error && resolution.Result.RemoteRepo) {
+			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.Result.RemoteRepo));
 		}
 	}
 

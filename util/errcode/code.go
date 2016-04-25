@@ -39,6 +39,8 @@ func HTTP(err error) int {
 		return http.StatusAccepted
 	} else if (vcs.IsRepoNotExist(err) && !err.(vcs.RepoNotExistError).CloneInProgress) || strings.Contains(err.Error(), vcs.RepoNotExistError{}.Error()) {
 		return http.StatusNotFound
+	} else if err == vcs.ErrRepoExist {
+		return http.StatusConflict
 	}
 
 	switch e := err.(type) {
@@ -54,6 +56,8 @@ func HTTP(err error) int {
 		return http.StatusBadRequest
 	case *store.RepoNotFoundError:
 		return http.StatusNotFound
+	case *store.RepoExistError:
+		return http.StatusConflict
 	case *store.UserNotFoundError:
 		return http.StatusNotFound
 	case *store.AccountAlreadyExistsError:

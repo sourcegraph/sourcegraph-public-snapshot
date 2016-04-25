@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lib/pq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -359,6 +360,10 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		return err
 	}
 
+	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
+		return &store.RepoExistError{URI: repo.URI}
+	}
+
 	// Create the filesystem repo where the git data lives. (The repo
 	// metadata, such as the existence, description, language, etc.,
 	// live in PostgreSQL.)
@@ -371,7 +376,14 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 
 	var r dbRepo
 	r.fromRepo(newRepo)
-	return appDBH(ctx).Insert(&r)
+	err := appDBH(ctx).Insert(&r)
+	if err, ok := err.(*pq.Error); ok && err.Code == pq.ErrorCode("23505") { // unique_violation of repo primary key (URI) constraint.
+		if err.Constraint != "repo_pkey" {
+			log15.Warn("Expected unique_violation of repo_pkey constraint, but it was something else; did it change?", "constraint", err.Constraint, "err", err)
+		}
+		return &store.RepoExistError{URI: newRepo.URI}
+	}
+	return err
 }
 
 func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
