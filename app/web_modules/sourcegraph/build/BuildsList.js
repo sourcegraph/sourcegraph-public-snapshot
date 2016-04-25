@@ -9,6 +9,7 @@ import BuildStore from "sourcegraph/build/BuildStore";
 import {buildStatus, buildClass, elapsed} from "sourcegraph/build/Build";
 import {trimRepo} from "sourcegraph/repo";
 import {urlToBuild} from "sourcegraph/build/routes";
+import {urlToRepo} from "sourcegraph/repo/routes";
 
 import {Button} from "sourcegraph/components";
 
@@ -120,6 +121,7 @@ class BuildsList extends Container {
 				{this.state.builds !== null && this.state.builds.length !== 0 && [
 					<div key="header" styleName="list-item">
 						<span styleName="list-id">#</span>
+						<span styleName="list-repo">Repository</span>
 						<span styleName="list-status">Status</span>
 						<span styleName="list-elapsed">Elapsed</span>
 					</div>,
@@ -133,6 +135,7 @@ class BuildsList extends Container {
 									<Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link>
 								}
 							</span>
+							<span styleName="list-repo"><a href={urlToRepo(build.Repo)}>{build.Repo}</a></span>
 							<span styleName="list-status">{this._rowStatus(build)}</span>
 							<span styleName="list-elapsed">{elapsed(build)}</span>
 						</div>

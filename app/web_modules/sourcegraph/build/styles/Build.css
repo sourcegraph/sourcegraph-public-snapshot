@@ -136,10 +136,15 @@
 	flex: 1;
 }
 
+.list-repo {
+	composes: list-cell;
+	flex: 3;
+}
+
 .list-status {
 	composes: list-cell;
 	composes: pl4 from base;
-	flex: 6;
+	flex: 3;
 }
 
 .list-elapsed {
