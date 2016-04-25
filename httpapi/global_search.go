@@ -18,8 +18,10 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	var params struct {
-		Query string
-		Limit int32
+		Query    string
+		Repos    []string
+		NotRepos []string
+		Limit    int32
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
 		return err
@@ -32,6 +34,8 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	op := &sourcegraph.SearchOp{
 		Query: params.Query,
 		Opt: &sourcegraph.SearchOptions{
+			Repos:       params.Repos,
+			NotRepos:    params.NotRepos,
 			ListOptions: sourcegraph.ListOptions{PerPage: params.Limit},
 		},
 	}

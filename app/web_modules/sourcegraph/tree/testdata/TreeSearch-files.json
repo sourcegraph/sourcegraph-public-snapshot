@@ -30,7 +30,7 @@
 					"props": {
 						"styleName": "list-header",
 						"children": [
-							"Symbols"
+							"Symbols in current repository"
 						]
 					}
 				},
@@ -176,11 +176,11 @@
 				},
 				{
 					"type": "div",
-					"key": ".3",
+					"key": ".4",
 					"props": {
 						"styleName": "list-header",
 						"children": [
-							"Files",
+							"Files in",
 							{
 								"type": "span",
 								"key": ".1",
@@ -240,15 +240,15 @@
 				},
 				{
 					"type": "div",
-					"key": ".4",
+					"key": ".5",
 					"props": {
 						"styleName": "list-item-group",
 						"children": [
 							{
 								"type": "",
-								"key": ".$/repo@rev/-/tree/p1",
+								"key": ".$f=2/repo@rev/-/tree/p1",
 								"props": {
-									"styleName": "list-item-selected parent-dir",
+									"styleName": "list-item parent-dir",
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										{
@@ -267,7 +267,7 @@
 							},
 							{
 								"type": "",
-								"key": ".$/repo@rev/-/blob/p1/p2/f3",
+								"key": ".$f=2/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"styleName": "list-item ",
 									"to": "/repo@rev/-/blob/p1/p2/f3",

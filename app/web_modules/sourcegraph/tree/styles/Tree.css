@@ -23,13 +23,13 @@
 	display: flex;
 }
 
+@value c_near-white from colors;
 .list-header {
 	display: flex;
 	align-items: center;
-	composes: b tracked f4 from typography;
-	composes: ph3 pt4 pb2 from base;
+	composes: mh3 pb1 from base;
+	composes: ftracked f6 from typography;
 	composes: gray from colors;
-	text-transform: uppercase;
 }
 
 .list-item-group {
@@ -73,13 +73,11 @@
 }
 
 .file-path {
-	composes: pl3 pv2 from base;
-	composes: normal-text b from typography;
+	composes: pl3 from base;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	flex: 1 1 auto;
-	font-weight: bold;
 	letter-spacing: initial;
 	text-transform: none;
 }

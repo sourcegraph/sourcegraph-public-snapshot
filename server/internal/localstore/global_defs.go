@@ -142,8 +142,19 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	var whereSQL string
 	{
 		var wheres []string
-		if op.RepoQuery != "" {
-			wheres = append(wheres, `repo=`+arg(op.RepoQuery))
+		if len(op.Opt.Repos) > 0 {
+			var r []string
+			for _, repo := range op.Opt.Repos {
+				r = append(r, arg(repo))
+			}
+			wheres = append(wheres, `repo IN (`+strings.Join(r, ", ")+`)`)
+		}
+		if len(op.Opt.NotRepos) > 0 {
+			var r []string
+			for _, repo := range op.Opt.NotRepos {
+				r = append(r, arg(repo))
+			}
+			wheres = append(wheres, `repo NOT IN (`+strings.Join(r, ", ")+`)`)
 		}
 		if op.UnitQuery != "" {
 			wheres = append(wheres, `unit=`+arg(op.UnitQuery))

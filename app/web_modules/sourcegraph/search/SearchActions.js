@@ -4,9 +4,15 @@ import type {Def} from "sourcegraph/def";
 
 export class WantResults {
 	query: string;
+	repos: ?Array<string>;
+	notRepos: ?Array<string>;
+	limit: ?number;
 
-	constructor(query: string) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number) {
 		this.query = query;
+		this.repos = repos;
+		this.notRepos = notRepos;
+		this.limit = limit;
 	}
 }
 

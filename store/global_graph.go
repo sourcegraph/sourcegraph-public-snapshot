@@ -33,7 +33,6 @@ type GlobalRefs interface {
 }
 
 type GlobalDefSearchOp struct {
-	RepoQuery     string
 	UnitQuery     string
 	UnitTypeQuery string
 

@@ -10,10 +10,13 @@ import debounce from "lodash/function/debounce";
 import trimLeft from "lodash/string/trimLeft";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import DefStore from "sourcegraph/def/DefStore";
+import SearchStore from "sourcegraph/search/SearchStore";
 import "sourcegraph/tree/TreeBackend";
 import "sourcegraph/def/DefBackend";
+import "sourcegraph/search/SearchBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import * as SearchActions from "sourcegraph/search/SearchActions";
 import Header from "sourcegraph/components/Header";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToBlob} from "sourcegraph/blob/routes";
@@ -26,6 +29,7 @@ import type {Route} from "react-router";
 
 import {Input, Loader, RepoLink} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
+import context from "sourcegraph/app/context";
 
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
@@ -90,6 +94,7 @@ class TreeSearch extends Container {
 		query: string;
 		focused: boolean;
 		matchingDefs: ?{Defs: Array<Def>};
+		xdefs: ?{Defs: Array<Def>};
 		selectionIndex: number;
 		defListFilePathPrefix: ?string;
 	};
@@ -105,6 +110,7 @@ class TreeSearch extends Container {
 			query: "",
 			focused: !props.overlay,
 			matchingDefs: null,
+			xdefs: null,
 			selectionIndex: 0,
 			defListFilePathPrefix: null,
 		};
@@ -145,7 +151,7 @@ class TreeSearch extends Container {
 		}
 	}
 
-	stores(): Array<Object> { return [TreeStore, DefStore]; }
+	stores(): Array<Object> { return [TreeStore, DefStore, SearchStore]; }
 
 	reconcileState(state: TreeSearch.state, props: TreeSearch.props): void {
 		Object.assign(state, props);
@@ -167,7 +173,10 @@ class TreeSearch extends Container {
 		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
 
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
+
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
+
+		state.xdefs = SearchStore.results.get(state.query);
 	}
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
@@ -185,6 +194,11 @@ class TreeSearch extends Container {
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false)
 				);
 			}
+		}
+
+		// Global search results only show up for admin users
+		if (context.currentUser && context.currentUser.Admin) {
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo], 3));
 		}
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
@@ -352,6 +366,11 @@ class TreeSearch extends Container {
 		return Math.min(this.state.matchingDefs.Defs.length, SYMBOL_LIMIT);
 	}
 
+	_numXDefResults(): number {
+		if (!this.state.xdefs || !this.state.xdefs.Defs) return 0;
+		return this.state.xdefs.Defs.length;
+	}
+
 	_numFileResults(): number {
 		if (!this.state.fileResults) return 0;
 		let numFileResults = Math.min(this.state.fileResults.length, FILE_LIMIT);
@@ -362,7 +381,7 @@ class TreeSearch extends Container {
 	}
 
 	_numResults(): number {
-		return this._numFileResults() + this._numSymbolResults();
+		return this._numFileResults() + this._numSymbolResults() + this._numXDefResults();
 	}
 
 	_normalizedSelectionIndex(): number {
@@ -375,9 +394,15 @@ class TreeSearch extends Container {
 			// Def result
 			const def = this.state.matchingDefs.Defs[i];
 			this._navigateTo(urlToDef(def));
+		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
+			// XDef result
+			let d = i - this._numSymbolResults();
+			const def = this.state.xdefs.Defs[d];
+			this._navigateTo(urlToDef(def));
 		} else {
 			// File or dir result
-			let result = this.state.fileResults[i - this._numSymbolResults()];
+			let d = i - (this._numSymbolResults() + this._numXDefResults());
+			let result = this.state.fileResults[d];
 			if (result.isDirectory) {
 				this.state.onSelectPath(result.path);
 			} else {
@@ -410,7 +435,7 @@ class TreeSearch extends Container {
 		return null;
 	}
 
-	_listItems(): Array<any> {
+	_listItems(offset: number): Array<any> {
 		const items = this.state.fileResults;
 		const emptyItem = <div styleName="list-item list-item-empty" key="_nofiles"><i>No matches.</i></div>;
 		if (!items || items.length === 0) return [emptyItem];
@@ -425,19 +450,20 @@ class TreeSearch extends Container {
 			let item = items[i],
 				itemURL = item.url;
 
-			const selected = this._normalizedSelectionIndex() - this._numSymbolResults() === i;
+			const selected = this._normalizedSelectionIndex() - offset === i;
 
 			let icon;
 			if (item.isParentDirectory) icon = null;
 			else if (item.isDirectory) icon = <FolderIcon />;
 			else icon = <FileIcon />;
 
+			let key = `f:${itemURL}`;
 			list.push(
 				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
-					key={itemURL}>
+					key={key}>
 					<span styleName="icon">{icon}</span>
 					{item.name}
 				</Link>
@@ -475,7 +501,7 @@ class TreeSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_symbolItems(): ?Array<any> {
+	_symbolItems(offset: number): ?Array<any> {
 		if (this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID) return null;
 
 		const contentPlaceholderItem = (i) => (
@@ -506,22 +532,64 @@ class TreeSearch extends Container {
 
 		for (let i = 0; i < limit; i++) {
 			let def = this.state.matchingDefs.Defs[i];
-			let defURL = urlToDef(def, this.state.rev);
+			list.push(this._defToLink(def, offset + i, "i"));
+		}
 
-			const selected = this._normalizedSelectionIndex() === i;
+		return list;
+	}
 
-			list.push(
+	_xdefItems(offset: number): {items: ?Array<any>, count: number} {
+		let groups = [];
+		let groupToDefs = {};
+
+		if (!this.state.xdefs || !this.state.xdefs.Defs) {
+			return {items: [], count: 0};
+		}
+		let defs = this.state.xdefs.Defs;
+		for (let i = 0; i < defs.length; i++) {
+			let repo = defs[i].Repo;
+			if (!groupToDefs[repo]) {
+				let repoDefs = [];
+				groups.push(repo);
+				groupToDefs[repo] = repoDefs;
+			}
+			groupToDefs[repo].push(defs[i]);
+		}
+
+		let sections = [];
+		let idx = offset;
+		for (let i = 0; i < groups.length; i++) {
+			let items = [];
+			let repo = groups[i];
+			let rdefs = groupToDefs[repo];
+			for (let j = 0; j < rdefs.length; j++) {
+				let def = rdefs[j];
+				items.push(this._defToLink(def, idx, "x"));
+				idx++;
+			}
+			sections.push(
+				<div key={`group-header:${repo}`} styleName="list-header">Symbols in {repo}</div>,
+				<div key={`group:${repo}`} styleName="list-item-group">
+					{items}
+				</div>
+			);
+		}
+		return {items: sections, count: idx - offset};
+	}
+
+	_defToLink(def: Def, i: number, prefix: string) {
+		const selected = this._normalizedSelectionIndex() === i;
+		let defURL = urlToDef(def, this.state.rev);
+		let key = `${prefix}:${defURL}`;
+		return (
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
-					key={defURL}>
-					<code>{qualifiedNameAndType(def)}</code>
+					key={key}>
+						<code>{qualifiedNameAndType(def)}</code>
 				</Link>
-			);
-		}
-
-		return list;
+		);
 	}
 
 	_overlayBreadcrumb() {
@@ -563,6 +631,11 @@ class TreeSearch extends Container {
 					subtitle={code === 404 ? `Directory "${this.state.path}" not found.` : "Directory is not available."} />
 			);
 		}
+
+		let symbolItems = this._symbolItems(0) || [];
+		let xdefInfo = this._xdefItems(symbolItems.length) || {items: [], count: 0};
+		let listItems = this._listItems(symbolItems.length + xdefInfo.count) || [];
+
 		return (
 			<div styleName="tree-common">
 				<div styleName="input-container">
@@ -578,10 +651,10 @@ class TreeSearch extends Container {
 						domRef={(e) => this._queryInput = e} />
 				</div>
 				<div styleName="list-header">
-					Symbols
+					Symbols in current repository
 				</div>
 				<div>
-					{this._symbolItems()}
+					{symbolItems}
 					{this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID &&
 						<div styleName="list-item list-item-empty">
 							<span style={{paddingRight: "1rem"}}><Loader /></span>
@@ -591,12 +664,15 @@ class TreeSearch extends Container {
 						</div>
 					}
 				</div>
+
+				{xdefInfo.items}
+
 				<div styleName="list-header">
-					Files
+					Files in
 					{!this.state.query && this.state.overlay && this._overlayBreadcrumb()}
 				</div>
 				<div styleName="list-item-group">
-					{this._listItems()}
+					{listItems}
 				</div>
 			</div>
 		);
