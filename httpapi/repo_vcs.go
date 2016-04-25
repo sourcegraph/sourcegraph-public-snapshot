@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
@@ -40,7 +40,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
+	ctx, cl := handlerutil.Client(r)
 
 	var opt sourcegraph.MirrorReposRefreshVCSOp
 	err := schemaDecoder.Decode(&opt, r.URL.Query())
@@ -53,9 +53,12 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// TODO(slimsag): find the best way to communicate potential mirror repo
-	// update failures to the user / frontend.
-	repoupdater.Enqueue(repoSpec, handlerutil.UserFromContext(ctx))
+	authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	repoupdater.Enqueue(repoSpec, authInfo.UserSpec())
 	w.WriteHeader(http.StatusAccepted)
 	return nil
 }

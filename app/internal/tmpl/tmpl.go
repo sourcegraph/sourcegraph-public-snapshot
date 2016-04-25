@@ -21,9 +21,9 @@ import (
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
@@ -93,7 +93,8 @@ type Common struct {
 	Session   *appauth.Session // the session cookie
 	CSRFToken string
 
-	CurrentUser   *sourcegraph.User
+	Actor auth.Actor
+
 	CurrentRoute  string
 	CurrentURI    *url.URL
 	CurrentURL    *url.URL
@@ -186,7 +187,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		}
 
 		field.Set(reflect.ValueOf(Common{
-			CurrentUser: handlerutil.FullUserFromRequest(req),
+			Actor: auth.ActorFromContext(ctx),
 
 			RequestHost: req.Host,
 

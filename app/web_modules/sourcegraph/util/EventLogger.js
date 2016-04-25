@@ -79,6 +79,7 @@ export class EventLogger {
 		const user = UserStore.activeUser();
 		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
 		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+		const authInfo = UserStore.activeAuthInfo();
 
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
@@ -117,8 +118,18 @@ export class EventLogger {
 				this.setUserProperty("email", primaryEmail);
 			}
 		}
+
 		if (global.window) {
 			this._intercomSettings = window.intercomSettings;
+		}
+		if (this._intercomSettings && user && authInfo) {
+			this.setIntercomProperty("name", user.Name);
+			if (primaryEmail) this.setIntercomProperty("email", primaryEmail);
+			this.setIntercomProperty("user_id", user.UID.toString());
+			this.setIntercomProperty("user_hash", authInfo.IntercomHash);
+			this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
+			// $FlowHack
+			Intercom("boot", this._intercomSettings); // eslint-disable-line no-undef
 		}
 
 		// FullStory

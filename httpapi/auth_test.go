@@ -25,7 +25,7 @@ func TestAuthInfo_includeUserAndEmails(t *testing.T) {
 		calledIdentify = true
 		return &want.AuthInfo, nil
 	}
-	mock.Auth.GetExternalToken_ = func(context.Context, *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	mock.Auth.GetExternalToken_ = func(context.Context, *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		calledAuthGetExternalToken = true
 		return want.GitHubToken, nil
 	}

@@ -2,13 +2,10 @@ package app
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
 	"net/url"
-	"os"
 
 	"golang.org/x/net/context"
 
@@ -69,12 +66,6 @@ var tmplFuncs = htmpl.FuncMap{
 	},
 
 	"buildvar": func() buildvar.Vars { return buildvar.All },
-
-	"intercomHMAC": func(email string) string {
-		mac := hmac.New(sha256.New, []byte(os.Getenv("SG_INTERCOM_SECRET_KEY")))
-		mac.Write([]byte(email))
-		return string(mac.Sum(nil))
-	},
 }
 
 func rawJSON(v *json.RawMessage) htmpl.JS {

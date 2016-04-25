@@ -49,12 +49,18 @@ export class UserStore extends Store {
 		};
 	}
 
+	// activeAuthInfo returns the AuthInfo object for the active user, if there
+	// is one. Otherwise it returns null.
+	activeAuthInfo() {
+		if (!this.activeAccessToken) return null;
+		return this.authInfo.get(this.activeAccessToken);
+	}
+
 	// activeUser returns the User object for the active user, if there is one
 	// and if the User object is already persisted in the store. Otherwise it
 	// returns null.
 	activeUser() {
-		if (!this.activeAccessToken) return null;
-		const authInfo = this.authInfo.get(this.activeAccessToken);
+		const authInfo = this.activeAuthInfo();
 		if (!authInfo || !authInfo.UID) return null;
 		const user = this.users.get(authInfo.UID);
 		return user && !user.Error ? user : null;

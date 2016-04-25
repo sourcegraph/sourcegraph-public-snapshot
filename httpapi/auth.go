@@ -13,7 +13,6 @@ import (
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -35,7 +34,7 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 	res := authInfo{AuthInfo: *info}
 
 	if info.UID != 0 {
-		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
 			UID:      info.UID,
 			Host:     "github.com",
 			ClientID: "", // defaults to GitHub client ID in environment
@@ -150,16 +149,7 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-
-	// Delete their session.
 	appauth.DeleteSessionCookie(w)
-
-	// Clear the user in the request context so that we don't show the logout
-	// page with the user's info.
-	ctx = handlerutil.ClearUser(ctx)
-	httpctx.SetForRequest(r, ctx)
-
 	return writeJSON(w, &authResponse{Success: true})
 }
 
