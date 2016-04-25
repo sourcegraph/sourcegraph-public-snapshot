@@ -391,7 +391,7 @@ class TreeSearch extends Container {
 			const def = this.state.matchingDefs.Defs[i];
 			this._navigateTo(urlToDef(def));
 		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
-			// Def result
+			// XDef result
 			let d = i - this._numSymbolResults();
 			const def = this.state.xdefs.Defs[d];
 			this._navigateTo(urlToDef(def));
@@ -576,7 +576,7 @@ class TreeSearch extends Container {
 	_defToLink(def: Def, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
 		let defURL = urlToDef(def, this.state.rev);
-		let key = `${prefix}:${defURL}:${Math.random()}`;
+		let key = `${prefix}:${defURL}`;
 		return (
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
@@ -600,10 +600,10 @@ class TreeSearch extends Container {
 
 		let fileBreadcrumb = breadcrumb(
 			filepath,
-			(i) => <span key={`ps:${i}`} styleName="path-sep">/</span>,
+			(i) => <span key={i} styleName="path-sep">/</span>,
 			(path, component, i, isLast) => (
 				<Link to={urlToPathPrefix(i)}
-					key={`u:${i}`}
+					key={i}
 					styleName={isLast ? "path-active" : "path-inactive"}>
 					{component}
 				</Link>
