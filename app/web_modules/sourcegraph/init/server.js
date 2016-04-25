@@ -92,8 +92,8 @@ function resetAll(arg) {
 	// It's also CRUCIAL that we exit the process (see the process.exit call below)
 	// if there is a failure, since there might be other in-flight async operations
 	// that could alter global state after the failure is reported.
-	context.reset(arg.jsContext);
 	resetStores();
+	context.reset(arg.jsContext);
 }
 
 // handle is called from Go to render the page's contents.
