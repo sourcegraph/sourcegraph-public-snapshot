@@ -48,9 +48,10 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		if err := store.GlobalDefsFromContext(ctx).Update(ctx, []string{op.Repo}); err != nil {
 			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
 		}
-		if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, []string{op.Repo}); err != nil {
-			log15.Error("error updating global def store ref counts", "repo", op.Repo, "error", err)
-		}
+		// TODO(beyang): uncomment this once index is created
+		// if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, []string{op.Repo}); err != nil {
+		// 	log15.Error("error updating global def store ref counts", "repo", op.Repo, "error", err)
+		// }
 
 		op.CommitID = ""
 		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
