@@ -53,8 +53,10 @@ export default function withResolvedRepoRev(Component) {
 			if (nextState.repoObj && prevState.repoObj !== nextState.repoObj) {
 				this.context.status.error(nextState.repoObj.Error);
 			}
-			if (nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning && nextState.rev) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.rev));
+			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev) {
+				if (nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning && nextState.rev) {
+					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.rev));
+				}
 			}
 			if (nextState.isCloning && prevState.isCloning !== nextState.isCloning) {
 				this.context.status.error({status: 202});
