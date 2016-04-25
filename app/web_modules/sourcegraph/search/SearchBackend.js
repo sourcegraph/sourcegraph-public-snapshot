@@ -33,7 +33,7 @@ const SearchBackend = {
 				let results = SearchStore.results.get(action.query);
 				if (results === null) {
 					trackPromise(
-						SearchBackend.fetch(`/.api/global-search?` + q.join('&'))
+						SearchBackend.fetch(`/.api/global-search?${q.join("&")}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))

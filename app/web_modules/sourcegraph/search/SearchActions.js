@@ -2,13 +2,11 @@
 
 import type {Def} from "sourcegraph/def";
 
-const DEFAULT_LIMIT = 20;
-
 export class WantResults {
 	query: string;
 	repos: ?Array<string>;
 	notRepos: ?Array<string>;
-	limit: number;
+	limit: ?number;
 
 	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number) {
 		this.query = query;

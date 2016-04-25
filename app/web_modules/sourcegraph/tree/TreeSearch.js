@@ -453,12 +453,13 @@ class TreeSearch extends Container {
 			else if (item.isDirectory) icon = <FolderIcon />;
 			else icon = <FileIcon />;
 
+			let key = `f:${itemURL}`;
 			list.push(
 				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
-					key={"f:"+itemURL}>
+					key={key}>
 					<span styleName="icon">{icon}</span>
 					{item.name}
 				</Link>
@@ -534,7 +535,7 @@ class TreeSearch extends Container {
 	}
 
 	_xdefItems(offset: number): {items: ?Array<any>, count: number} {
-		let groups = [];;
+		let groups = [];
 		let groupToDefs = {};
 
 		if (!this.state.xdefs || !this.state.xdefs.Defs) {
@@ -563,8 +564,8 @@ class TreeSearch extends Container {
 				idx++;
 			}
 			sections.push(
-				<div styleName="list-header">Symbols in {repo}</div>,
-				<div styleName="list-item-group">
+				<div key={`group-header:${repo}`} styleName="list-header">Symbols in {repo}</div>,
+				<div key={`group:${repo}`} styleName="list-item-group">
 					{items}
 				</div>
 			);
@@ -575,13 +576,16 @@ class TreeSearch extends Container {
 	_defToLink(def: Def, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
 		let defURL = urlToDef(def, this.state.rev);
-		return <Link styleName={selected ? "list-item-selected" : "list-item"}
-			onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
-			ref={selected ? this._setSelectedItem : null}
-			to={defURL}
-			key={prefix+":"+defURL}>
-				<code>{qualifiedNameAndType(def)}</code>
-			</Link>;
+		let key = `${prefix}:${defURL}:${Math.random()}`;
+		return (
+				<Link styleName={selected ? "list-item-selected" : "list-item"}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
+					ref={selected ? this._setSelectedItem : null}
+					to={defURL}
+					key={key}>
+						<code>{qualifiedNameAndType(def)}</code>
+				</Link>
+		);
 	}
 
 	_overlayBreadcrumb() {
@@ -596,10 +600,10 @@ class TreeSearch extends Container {
 
 		let fileBreadcrumb = breadcrumb(
 			filepath,
-			(i) => <span key={"ps"+i} styleName="path-sep">/</span>,
+			(i) => <span key={`ps:${i}`} styleName="path-sep">/</span>,
 			(path, component, i, isLast) => (
 				<Link to={urlToPathPrefix(i)}
-					key={i}
+					key={`u:${i}`}
 					styleName={isLast ? "path-active" : "path-inactive"}>
 					{component}
 				</Link>
