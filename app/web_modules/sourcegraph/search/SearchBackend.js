@@ -30,7 +30,7 @@ const SearchBackend = {
 					q.push(`NotRepos=${encodeURIComponent(action.notRepos)}`);
 				}
 
-				let results = SearchStore.results.get(action.query);
+				let results = SearchStore.results.get(q);
 				if (results === null) {
 					trackPromise(
 						SearchBackend.fetch(`/.api/global-search?${q.join("&")}`)
