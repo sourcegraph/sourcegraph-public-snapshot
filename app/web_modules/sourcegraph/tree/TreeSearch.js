@@ -195,7 +195,7 @@ class TreeSearch extends Container {
 			}
 		}
 
-		Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo]));
+		Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo], 3));
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
 			nextState.lastDefinedMatchingDefs = prevState.matchingDefs;

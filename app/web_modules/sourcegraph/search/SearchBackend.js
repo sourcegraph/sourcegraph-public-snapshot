@@ -19,8 +19,10 @@ const SearchBackend = {
 					break;
 				}
 
+				let limit = action.limit || RESULTS_LIMIT;
+
 				let q = [`Query=${encodeURIComponent(action.query)}`];
-				q.push(`Limit=${RESULTS_LIMIT}`);
+				q.push(`Limit=${limit}`);
 				if (action.repos) {
 					q.push(`Repos=${encodeURIComponent(action.repos)}`);
 				}
