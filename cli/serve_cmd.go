@@ -243,45 +243,11 @@ func (c *ServeCmd) Execute(args []string) error {
 		startDebugServer(c.ProfBindAddr)
 	}
 
-	var (
-		sharedCtxFuncs []func(context.Context) context.Context
-		serverCtxFuncs []func(context.Context) context.Context = cli.ServerContext
-		clientCtxFuncs []func(context.Context) context.Context = cli.ClientContext
-	)
-
-	// graphstore
-	serverCtxFuncs = append(serverCtxFuncs, c.GraphStoreOpts.context)
-
 	app.Init()
 
 	appURL, err := c.configureAppURL()
 	if err != nil {
 		return err
-	}
-
-	// Shared context setup between client and server.
-	sharedCtxFunc := func(ctx context.Context) context.Context {
-		for _, f := range sharedCtxFuncs {
-			ctx = f(ctx)
-		}
-		ctx = conf.WithURL(ctx, appURL)
-		return ctx
-	}
-	clientCtxFunc := func(ctx context.Context) context.Context {
-		ctx = sharedCtxFunc(ctx)
-		for _, f := range clientCtxFuncs {
-			ctx = f(ctx)
-		}
-		ctx = WithClientContext(ctx)
-		return ctx
-	}
-	serverCtxFunc := func(ctx context.Context) context.Context {
-		ctx = sharedCtxFunc(ctx)
-		for _, f := range serverCtxFuncs {
-			ctx = f(ctx)
-		}
-		ctx = client.Endpoint.NewContext(ctx)
-		return ctx
 	}
 
 	// Server identity keypair
@@ -293,14 +259,31 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Uncomment to add ID key prefix to log messages.
 	// log.SetPrefix(bold(idKey.ID[:4] + ": "))
 
-	sharedCtxFuncs = append(sharedCtxFuncs, func(ctx context.Context) context.Context {
+	// Shared context setup between client and server.
+	sharedCtxFunc := func(ctx context.Context) context.Context {
 		ctx = idkey.NewContext(ctx, idKey)
+		ctx = conf.WithURL(ctx, appURL)
 		return ctx
-	})
-	sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
-	clientCtxFuncs = append(clientCtxFuncs, func(ctx context.Context) context.Context {
-		return sourcegraph.WithCredentials(ctx, sharedSecretToken)
-	})
+	}
+	clientCtxFunc := func(ctx context.Context) context.Context {
+		ctx = sharedCtxFunc(ctx)
+		for _, f := range cli.ClientContext {
+			ctx = f(ctx)
+		}
+		sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
+		ctx = sourcegraph.WithCredentials(ctx, sharedSecretToken)
+		ctx = WithClientContext(ctx)
+		return ctx
+	}
+	serverCtxFunc := func(ctx context.Context) context.Context {
+		ctx = sharedCtxFunc(ctx)
+		for _, f := range cli.ServerContext {
+			ctx = f(ctx)
+		}
+		ctx = c.GraphStoreOpts.context(ctx)
+		ctx = client.Endpoint.NewContext(ctx)
+		return ctx
+	}
 
 	clientCtx := clientCtxFunc(context.Background())
 
