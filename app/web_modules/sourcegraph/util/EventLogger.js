@@ -1,5 +1,6 @@
 // @flow weak
 
+import React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
@@ -257,3 +258,27 @@ export class EventLogger {
 }
 
 export default new EventLogger();
+
+// withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
+// in the component's context.
+export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass): ReactClass {
+	class WithEventLogger extends React.Component {
+		static childContextTypes = {
+			eventLogger: React.PropTypes.object,
+		};
+
+		constructor(props) {
+			super(props);
+			eventLogger.init();
+		}
+
+		getChildContext(): {eventLogger: EventLogger} {
+			return {eventLogger};
+		}
+
+		render() {
+			return <Component {...this.props} />;
+		}
+	}
+	return WithEventLogger;
+}
