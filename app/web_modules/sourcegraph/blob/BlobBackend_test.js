@@ -80,4 +80,9 @@ describe("prepareAnnotations", () => {
 			{StartByte: 3, EndByte: 4, URL: "c"},
 		]);
 	});
+	it("should handle zero annotations", () => {
+		expect(
+			prepareAnnotations([])
+		).to.eql([]);
+	});
 });

@@ -97,11 +97,13 @@ export default class BlobMain extends Container {
 		}
 
 		if (nextState.anns && !nextState.anns.Error && nextState.blob && !nextState.blob.Error && (prevState.anns !== nextState.anns || prevState.blob !== nextState.blob)) {
-			// Only cache if there are ref annotations (indicating the rev
-			// has been built). This avoids the issue where we cache the
-			// blob with just syntax highlighting annotations, and when
-			// the build finishes the stale file without refs is still shown.
-			this.context.status.cache(nextState.anns.Annotations.some((ann) => ann.URL || ann.URLs));
+			if (nextState.anns.Annotations) {
+				// Only cache if there are ref annotations (indicating the rev
+				// has been built). This avoids the issue where we cache the
+				// blob with just syntax highlighting annotations, and when
+				// the build finishes the stale file without refs is still shown.
+				this.context.status.cache(nextState.anns.Annotations.some((ann) => ann.URL || ann.URLs));
+			}
 		}
 
 		if (prevState.blob !== nextState.blob) {

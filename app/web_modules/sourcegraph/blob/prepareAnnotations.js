@@ -8,6 +8,10 @@ import {sortAnns} from "sourcegraph/blob/Annotations";
 //
 // NOTE: This logic must be kept in sync with annotations.Prepare in Go.
 export default function prepareAnnotations(anns: Array<Annotation>): Array<Annotation> {
+	if (anns.length === 0) {
+		return anns;
+	}
+
 	// Ensure that syntax highlighting is the innermost annotation so
 	// that the CSS colors are applied (otherwise ref links appear in
 	// the normal link color).
