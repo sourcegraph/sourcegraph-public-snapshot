@@ -38,7 +38,19 @@ App.propTypes = {
 
 export const rootRoute: Route = {
 	path: "/",
-	component: withEventLoggerContext(EventLogger, withViewEventsLogged(withAppdashRouteStateRecording(withSiteConfigContext(withFeaturesContext(withStatusContext(CSSModules(App, styles))))))),
+	component: withEventLoggerContext(EventLogger,
+		withViewEventsLogged(
+			withAppdashRouteStateRecording(
+				withSiteConfigContext(
+					withFeaturesContext(
+						withStatusContext(
+							CSSModules(App, styles)
+						)
+					)
+				)
+			)
+		)
+	),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, require("sourcegraph/dashboard").route);
