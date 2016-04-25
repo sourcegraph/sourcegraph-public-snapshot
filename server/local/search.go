@@ -30,12 +30,12 @@ var tokenToKind = map[string]string{
 }
 
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
-	var repo, unit, unitType string
+	var unit, unitType string
 	var kinds []string
 	var descToks []string                            // "descriptor" tokens that don't have a special filter meaning.
 	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
 		if strings.HasPrefix(token, "r:") {
-			repo = strings.TrimPrefix(token, "r:")
+			op.Opt.Repos = append(op.Opt.Repos, strings.TrimPrefix(token, "r:"))
 			continue
 		}
 		if strings.HasPrefix(token, "u:") {
@@ -64,7 +64,6 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	}
 
 	results, err := store.GlobalDefsFromContext(ctx).Search(ctx, &store.GlobalDefSearchOp{
-		RepoQuery:     repo,
 		UnitQuery:     unit,
 		UnitTypeQuery: unitType,
 

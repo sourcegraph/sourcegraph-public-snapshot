@@ -18,10 +18,20 @@ const SearchBackend = {
 				if (!action.query || action.query === "") {
 					break;
 				}
+
+				let q = [`Query=${encodeURIComponent(action.query)}`];
+				q.push(`Limit=${RESULTS_LIMIT}`);
+				if (action.repos) {
+					q.push(`Repos=${encodeURIComponent(action.repos)}`);
+				}
+				if (action.notRepos) {
+					q.push(`NotRepos=${encodeURIComponent(action.notRepos)}`);
+				}
+
 				let results = SearchStore.results.get(action.query);
 				if (results === null) {
 					trackPromise(
-						SearchBackend.fetch(`/.api/global-search?Query=${encodeURIComponent(action.query)}&Limit=${RESULTS_LIMIT}`)
+						SearchBackend.fetch(`/.api/global-search?` + q.join('&'))
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
