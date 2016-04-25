@@ -544,7 +544,7 @@ var _ sourcegraph.UsersServer = (*UsersServer)(nil)
 type AuthClient struct {
 	GetAccessToken_   func(ctx context.Context, in *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
 	Identify_         func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error)
-	GetExternalToken_ func(ctx context.Context, in *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error)
+	GetExternalToken_ func(ctx context.Context, in *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error)
 	SetExternalToken_ func(ctx context.Context, in *sourcegraph.ExternalToken) (*pbtypes.Void, error)
 }
 
@@ -556,7 +556,7 @@ func (s *AuthClient) Identify(ctx context.Context, in *pbtypes.Void, opts ...grp
 	return s.Identify_(ctx, in)
 }
 
-func (s *AuthClient) GetExternalToken(ctx context.Context, in *sourcegraph.ExternalTokenRequest, opts ...grpc.CallOption) (*sourcegraph.ExternalToken, error) {
+func (s *AuthClient) GetExternalToken(ctx context.Context, in *sourcegraph.ExternalTokenSpec, opts ...grpc.CallOption) (*sourcegraph.ExternalToken, error) {
 	return s.GetExternalToken_(ctx, in)
 }
 
@@ -569,7 +569,7 @@ var _ sourcegraph.AuthClient = (*AuthClient)(nil)
 type AuthServer struct {
 	GetAccessToken_   func(v0 context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
 	Identify_         func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error)
-	GetExternalToken_ func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error)
+	GetExternalToken_ func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error)
 	SetExternalToken_ func(v0 context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error)
 }
 
@@ -581,7 +581,7 @@ func (s *AuthServer) Identify(v0 context.Context, v1 *pbtypes.Void) (*sourcegrap
 	return s.Identify_(v0, v1)
 }
 
-func (s *AuthServer) GetExternalToken(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+func (s *AuthServer) GetExternalToken(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 	return s.GetExternalToken_(v0, v1)
 }
 

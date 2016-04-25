@@ -47,7 +47,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 	// otherwise proceed without their credentials. It will work for public repos.
 	remoteOpts := vcs.RemoteOpts{}
 	if asUserUID != 0 {
-		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: asUserUID})
+		extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{UID: asUserUID})
 		if err == nil {
 			// Set the auth token to be used in repo VCS operations.
 			remoteOpts.HTTPS = &vcs.HTTPSConfig{

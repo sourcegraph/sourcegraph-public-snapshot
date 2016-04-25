@@ -219,7 +219,7 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 	return
 }
 
-func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenRequest) (res *sourcegraph.ExternalToken, err error) {
+func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *sourcegraph.ExternalToken, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "GetExternalToken", param)
 	defer func() {

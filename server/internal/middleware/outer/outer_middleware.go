@@ -400,7 +400,7 @@ func (s wrappedAuth) Identify(ctx context.Context, v1 *pbtypes.Void) (returnedRe
 	return rv, nil
 }
 
-func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenRequest) (returnedResult *sourcegraph.ExternalToken, returnedError error) {
+func (s wrappedAuth) GetExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenSpec) (returnedResult *sourcegraph.ExternalToken, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10

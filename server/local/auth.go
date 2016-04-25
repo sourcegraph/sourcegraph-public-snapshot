@@ -111,9 +111,9 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 	}, nil
 }
 
-func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 	if request == nil {
-		request = &sourcegraph.ExternalTokenRequest{}
+		request = &sourcegraph.ExternalTokenSpec{}
 	}
 	extTokensStore := store.ExternalAuthTokensFromContext(ctx)
 

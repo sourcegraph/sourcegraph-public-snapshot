@@ -25,7 +25,7 @@ func TestRefreshVCS(t *testing.T) {
 			return &vcs.UpdateResult{Changes: []vcs.Change{}}, nil
 		},
 	})
-	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
 
@@ -56,7 +56,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 		built = true
 		return &sourcegraph.Build{}, nil
 	}
-	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
 
@@ -89,7 +89,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 		built = true
 		return &sourcegraph.Build{}, nil
 	}
-	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
 

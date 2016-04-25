@@ -111,7 +111,7 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.Auth
 
 	var hasGitHubLinked bool
 	// Fetch user's GitHub token.
-	extToken, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: user.UID})
+	extToken, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{UID: user.UID})
 	if err == nil && extToken.Token != "" {
 		hasGitHubLinked = true
 	}
