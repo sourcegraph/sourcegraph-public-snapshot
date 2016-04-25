@@ -76,10 +76,12 @@ export class EventLogger {
 	// any subequent calls to logEvent or setUserProperty
 	// will be buffered.
 	init() {
+		const user = UserStore.activeUser();
+		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
+		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
-
-			const user = UserStore.activeUser();
 
 			if (!this._siteConfig) {
 				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
@@ -111,12 +113,22 @@ export class EventLogger {
 			if (user && user.RegisteredAt) {
 				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
 			}
-			if (context.userEmail) {
-				this.setUserProperty("email", context.userEmail);
+			if (primaryEmail) {
+				this.setUserProperty("email", primaryEmail);
 			}
 		}
 		if (global.window) {
 			this._intercomSettings = window.intercomSettings;
+		}
+
+		// FullStory
+		if (global.FS && user) {
+			const id = user.Email || user.Login;
+			// $FlowHack
+			FS.identify(id, { // eslint-disable-line no-undef
+				displayName: user.Name,
+				email: primaryEmail,
+			});
 		}
 
 		this.isUserAgentBot = Boolean(context.userAgentIsBot);

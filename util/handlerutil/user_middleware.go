@@ -28,11 +28,10 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 
 	cred := sourcegraph.CredentialsFromContext(ctx)
 	if cred != nil && UserFromRequest(r) == nil && fetchUserForCredentials(cred) {
-		if authInfo, user, email, hasGitHub := identifyUser(ctx, w); authInfo != nil {
+		if authInfo, user, hasGitHub := identifyUser(ctx, w); authInfo != nil {
 			// This code should be kept in sync with ClearUser and WithUser.
 			ctx = withUser(ctx, authInfo.UserSpec())
 			ctx = withFullUser(ctx, user)
-			ctx = withEmail(ctx, email)
 			ctx = withHasLinkedGitHub(ctx, hasGitHub)
 			ctx = auth.WithActor(ctx, auth.Actor{
 				UID:   int(authInfo.UID),
@@ -52,7 +51,6 @@ func UserMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 func ClearUser(ctx context.Context) context.Context {
 	ctx = withUser(ctx, nil)
 	ctx = withFullUser(ctx, nil)
-	ctx = withEmail(ctx, "")
 	ctx = auth.WithActor(ctx, auth.Actor{})
 	ctx = sourcegraph.WithCredentials(ctx, nil)
 	return ctx
@@ -75,12 +73,12 @@ func WithUser(ctx context.Context, user sourcegraph.UserSpec) context.Context {
 	return ctx
 }
 
-func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.AuthInfo, *sourcegraph.User, string, bool) {
+func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.AuthInfo, *sourcegraph.User, bool) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
 		appauth.DeleteSessionCookie(w)
-		return nil, nil, "", false
+		return nil, nil, false
 	}
 
 	// Call to Identify will be authenticated with the
@@ -89,14 +87,14 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.Auth
 	if err != nil {
 		log.Printf("warning: identifying current user failed: %s (continuing, deleting cookie)", err)
 		appauth.DeleteSessionCookie(w)
-		return nil, nil, "", false
+		return nil, nil, false
 	}
 
 	if authInfo.UID == 0 {
 		// The cookie was probably created by another server; delete it.
 		log.Printf("warning: credentials don't identify a user on this server (continuing, deleting cookie)")
 		appauth.DeleteSessionCookie(w)
-		return nil, nil, "", false
+		return nil, nil, false
 	}
 
 	// Fetch full user.
@@ -106,7 +104,7 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.Auth
 			log.Printf("warning: fetching full user failed: %s (continuing, deleting cookie)", err)
 			appauth.DeleteSessionCookie(w)
 		}
-		return nil, nil, "", false
+		return nil, nil, false
 	}
 
 	var hasGitHubLinked bool
@@ -116,28 +114,7 @@ func identifyUser(ctx context.Context, w http.ResponseWriter) (*sourcegraph.Auth
 		hasGitHubLinked = true
 	}
 
-	// Fetch user emails.
-	userSpec := user.Spec()
-	email := "" // primary email address
-	emails, err := cl.Users.ListEmails(ctx, &userSpec)
-	if err != nil {
-		if grpc.Code(err) == codes.PermissionDenied || user.IsOrganization {
-			// We are not allowed to view the emails or its an org and orgs don't have emails
-			// so just show an empty email.
-			return authInfo, user, email, hasGitHubLinked
-		} else {
-			log.Printf("warning: fetching user emails failed: %s (continuing, deleting cookie)", err)
-			return nil, nil, "", false
-		}
-	}
-
-	for _, elem := range emails.EmailAddrs {
-		if elem.Primary {
-			return authInfo, user, elem.Email, hasGitHubLinked
-		}
-	}
-
-	return authInfo, user, email, hasGitHubLinked
+	return authInfo, user, hasGitHubLinked
 }
 
 // fetchUserForCredentials is whether UserMiddleware should try to
@@ -187,27 +164,10 @@ func FullUserFromContext(ctx context.Context) *sourcegraph.User {
 	return user
 }
 
-// EmailFromRequest returns the request's context's primary email for the user (if any).
-func EmailFromRequest(r *http.Request) string {
-	return EmailFromContext(httpctx.FromRequest(r))
-}
-
-// EmailFromContext returns the context's primary email list for the user user (if any).
-func EmailFromContext(ctx context.Context) string {
-	email, _ := ctx.Value(emailAddrKey).(string)
-	return email
-}
-
 // withFullUser returns a copy of the context with the full user added to it
 // (and available via FullUserFromContext).
 func withFullUser(ctx context.Context, user *sourcegraph.User) context.Context {
 	return context.WithValue(ctx, fullUserKey, user)
-}
-
-// withEmail returns a copy of the context with the primary email added to it
-// (and available via UserEmailFromContext).
-func withEmail(ctx context.Context, email string) context.Context {
-	return context.WithValue(ctx, emailAddrKey, email)
 }
 
 // HasLinkedGitHubFromRequest returns the request's context's flag setting if user has linked their.

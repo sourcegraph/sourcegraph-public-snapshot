@@ -13,6 +13,10 @@ export type AuthInfo = {
 	Login: string;
 };
 
+export type EmailAddr = {
+	Email: string;
+};
+
 const login = {
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {

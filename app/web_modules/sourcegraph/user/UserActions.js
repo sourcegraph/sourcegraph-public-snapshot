@@ -1,6 +1,6 @@
 // @flow
 
-import type {AuthInfo, User} from "sourcegraph/user";
+import type {AuthInfo, User, EmailAddr} from "sourcegraph/user";
 
 export class WantAuthInfo {
 	accessToken: string;
@@ -35,6 +35,24 @@ export class FetchedUser {
 	constructor(uid: number, user: User | {Error: any}) {
 		this.uid = uid;
 		this.user = user;
+	}
+}
+
+export class WantEmails {
+	uid: number;
+
+	constructor(uid: number) {
+		this.uid = uid;
+	}
+}
+
+export class FetchedEmails {
+	uid: number;
+	emails: Array<EmailAddr> | {Error: any};
+
+	constructor(uid: number, emails: Array<EmailAddr> | {Error: any}) {
+		this.uid = uid;
+		this.emails = emails;
 	}
 }
 

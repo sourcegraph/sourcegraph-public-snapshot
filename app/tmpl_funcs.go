@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
@@ -55,22 +54,6 @@ var tmplFuncs = htmpl.FuncMap{
 	},
 
 	"assetURL": assets.URL,
-
-	"getClientIDOrHostName": func(ctx context.Context, appURL *url.URL) string {
-		clientID := idkey.FromContext(ctx).ID
-		if clientID != "" {
-			// return a shortened clientID, to match the clientID logged
-			// in eventsutil/events.go:getShortClientID.
-			if len(clientID) > 6 {
-				return clientID[:6]
-			}
-			return clientID
-		}
-		if appURL == nil {
-			return "unknown-host"
-		}
-		return appURL.Host
-	},
 
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 

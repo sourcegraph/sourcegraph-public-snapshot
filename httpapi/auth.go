@@ -19,7 +19,8 @@ import (
 
 type authInfo struct {
 	sourcegraph.AuthInfo
-	IncludedUser *sourcegraph.User `json:",omitempty"`
+	IncludedUser   *sourcegraph.User        `json:",omitempty"`
+	IncludedEmails []*sourcegraph.EmailAddr `json:",omitempty"`
 }
 
 func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
@@ -40,6 +41,16 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 			res.IncludedUser = user
 		} else {
 			log15.Warn("Error optimistically including user in serveAuthInfo", "uid", info.UID, "err", err)
+		}
+	}
+
+	// Also optimistically include emails
+	if info.UID != 0 {
+		emails, err := cl.Users.ListEmails(ctx, &sourcegraph.UserSpec{UID: info.UID})
+		if err == nil {
+			res.IncludedEmails = emails.EmailAddrs
+		} else {
+			log15.Warn("Error optimistically including emails in serveAuthInfo", "uid", info.UID, "err", err)
 		}
 	}
 

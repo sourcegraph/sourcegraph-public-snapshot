@@ -72,3 +72,16 @@ func (s *UsersClient) MockList(t *testing.T, wantUsers ...string) (called *bool)
 	}
 	return
 }
+
+func (s *UsersClient) MockListEmails(t *testing.T, wantEmails ...string) (called *bool) {
+	called = new(bool)
+	s.ListEmails_ = func(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.EmailAddrList, error) {
+		*called = true
+		emails := make([]*sourcegraph.EmailAddr, len(wantEmails))
+		for i, email := range wantEmails {
+			emails[i] = &sourcegraph.EmailAddr{Email: email, Primary: i == 0}
+		}
+		return &sourcegraph.EmailAddrList{EmailAddrs: emails}, nil
+	}
+	return
+}

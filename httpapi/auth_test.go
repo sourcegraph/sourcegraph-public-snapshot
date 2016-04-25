@@ -10,10 +10,14 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func TestAuthInfo_includeUser(t *testing.T) {
+func TestAuthInfo_includeUserAndEmails(t *testing.T) {
 	c, mock := newTest()
 
-	want := &authInfo{AuthInfo: sourcegraph.AuthInfo{UID: 1}, IncludedUser: &sourcegraph.User{UID: 1}}
+	want := &authInfo{
+		AuthInfo:       sourcegraph.AuthInfo{UID: 1},
+		IncludedUser:   &sourcegraph.User{UID: 1},
+		IncludedEmails: []*sourcegraph.EmailAddr{{Email: "a@a.com", Primary: true}},
+	}
 
 	var calledIdentify bool
 	mock.Auth.Identify_ = func(context.Context, *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
@@ -21,6 +25,7 @@ func TestAuthInfo_includeUser(t *testing.T) {
 		return &want.AuthInfo, nil
 	}
 	calledUsersGet := mock.Users.MockGetByUID(t, 1)
+	calledUsersListEmails := mock.Users.MockListEmails(t, "a@a.com")
 
 	var authInfo *authInfo
 	if err := c.GetJSON("/auth-info", &authInfo); err != nil {
@@ -34,6 +39,9 @@ func TestAuthInfo_includeUser(t *testing.T) {
 	}
 	if !*calledUsersGet {
 		t.Error("!calledUsersGet")
+	}
+	if !*calledUsersListEmails {
+		t.Error("!calledUsersListEmails")
 	}
 }
 

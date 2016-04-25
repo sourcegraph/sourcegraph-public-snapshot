@@ -94,7 +94,6 @@ type Common struct {
 	CSRFToken string
 
 	CurrentUser   *sourcegraph.User
-	UserEmail     string
 	CurrentRoute  string
 	CurrentURI    *url.URL
 	CurrentURL    *url.URL
@@ -188,7 +187,6 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 
 		field.Set(reflect.ValueOf(Common{
 			CurrentUser: handlerutil.FullUserFromRequest(req),
-			UserEmail:   handlerutil.EmailFromRequest(req),
 
 			RequestHost: req.Host,
 

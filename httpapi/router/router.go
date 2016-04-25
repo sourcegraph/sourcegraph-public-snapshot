@@ -53,6 +53,7 @@ const (
 	SrclibCoverage   = "srclib.coverage"
 	SrclibDataVer    = "srclib.data-version"
 	User             = "user"
+	UserEmails       = "user.emails"
 
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
 )
@@ -85,7 +86,10 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
 
 	base.Path("/auth-info").Methods("GET").Name(AuthInfo)
-	base.Path("/users/" + routevar.User).Methods("GET").Name(User)
+	userPath := "/users/" + routevar.User
+	base.Path(userPath).Methods("GET").Name(User)
+	user := base.PathPrefix(userPath + "/").Subrouter()
+	user.Path("/emails").Methods("GET").Name(UserEmails)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo

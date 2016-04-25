@@ -26,7 +26,6 @@ type JSContext struct {
 	AccessToken     string        `json:"accessToken"`
 	CacheControl    string        `json:"cacheControl"`
 	CSRFToken       string        `json:"csrfToken"`
-	UserEmail       string        `json:"userEmail"`
 	HasLinkedGitHub bool          `json:"hasLinkedGitHub"`
 	CurrentSpanID   string        `json:"currentSpanID"`
 	UserAgentIsBot  bool          `json:"userAgentIsBot"`
@@ -55,7 +54,6 @@ func NewJSContextFromRequest(ctx context.Context, req *http.Request) (JSContext,
 		AppURL:          conf.AppURL(ctx).String(),
 		CacheControl:    cacheControl,
 		CSRFToken:       nosurf.Token(req),
-		UserEmail:       handlerutil.EmailFromRequest(req),
 		HasLinkedGitHub: handlerutil.HasLinkedGitHubFromRequest(req),
 		CurrentSpanID:   traceutil.SpanIDFromContext(ctx).String(),
 		UserAgentIsBot:  isBot(eventsutil.UserAgentFromContext(ctx)),

@@ -8,7 +8,6 @@ import UserStore from "sourcegraph/user/UserStore";
 let context: {
 	csrfToken?: string;
 	cacheControl?: string;
-	userEmail?: string;
 	currentSpanID?: string;
 	userAgentIsBot?: boolean;
 	hasLinkedGitHub?: boolean;
@@ -19,6 +18,10 @@ let context: {
 	// $FlowHack
 	get currentUser() {
 		throw new Error("currentUser is now accessible via this.context.user in components that specify 'user' in contextTypes");
+	},
+	// $FlowHack
+	get userEmail() {
+		throw new Error("userEmail is no longer available globally; use the UserBackend/UserStore to retrieve it");
 	},
 };
 

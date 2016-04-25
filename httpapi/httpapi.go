@@ -92,6 +92,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
 	m.Get(apirouter.User).Handler(handler(serveUser))
+	m.Get(apirouter.UserEmails).Handler(handler(serveUserEmails))
 	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))
 
 	// RepoRefresh handler requires the user, so install a middleware just for

@@ -4,7 +4,7 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 export class UserStore extends Store {
-	reset(data?: {activeAccessToken?: string, authInfo: any, users: any}) {
+	reset(data?: {activeAccessToken?: string, authInfo: any, users: any, emails: any}) {
 		this.activeAccessToken = data && data.activeAccessToken ? data.activeAccessToken : null;
 		this.authInfo = deepFreeze({
 			byAccessToken: data && data.authInfo ? data.authInfo.byAccessToken : {},
@@ -14,6 +14,12 @@ export class UserStore extends Store {
 		});
 		this.users = deepFreeze({
 			byUID: data && data.users ? data.users.byUID : {},
+			get(uid) {
+				return this.byUID[uid] || null;
+			},
+		});
+		this.emails = deepFreeze({
+			byUID: data && data.emails ? data.emails.byUID : {},
 			get(uid) {
 				return this.byUID[uid] || null;
 			},
@@ -37,6 +43,7 @@ export class UserStore extends Store {
 			activeAccessToken: this.activeAccessToken,
 			authInfo: this.authInfo,
 			users: this.users,
+			emails: this.emails,
 		};
 	}
 
@@ -72,6 +79,16 @@ export class UserStore extends Store {
 				byUID: {
 					...this.users.byUID,
 					[action.uid]: action.user,
+				},
+			});
+			this.__emitChange();
+			return;
+		} else if (action instanceof UserActions.FetchedEmails) {
+			this.emails = deepFreeze({
+				...this.emails,
+				byUID: {
+					...this.emails.byUID,
+					[action.uid]: action.emails,
 				},
 			});
 			this.__emitChange();

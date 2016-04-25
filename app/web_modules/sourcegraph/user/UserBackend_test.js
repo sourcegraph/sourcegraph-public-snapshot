@@ -6,10 +6,11 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import UserBackend from "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
 import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
-import type {AuthInfo, User} from "sourcegraph/user";
+import type {AuthInfo, User, EmailAddr} from "sourcegraph/user";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"};
 const sampleUser: User = {UID: 1, Login: "u"};
+const sampleEmails: Array<EmailAddr> = [{Email: "a@a.com"}];
 
 describe("UserBackend", () => {
 	describe("should handle WantAuthInfo", () => {
@@ -22,16 +23,21 @@ describe("UserBackend", () => {
 				UserBackend.__onDispatch(new UserActions.WantAuthInfo("t"));
 			})).to.eql([new UserActions.FetchedAuthInfo("t", sampleAuthInfo)]);
 		});
-		it("with authInfo available, with included user", () => {
+		it("with authInfo available, with included user and emails", () => {
 			UserBackend.fetch = function(url, options) {
 				expect(url).to.be("/.api/auth-info");
-				return immediateSyncPromise({status: 200, json: () => ({...sampleAuthInfo, IncludedUser: sampleUser})});
+				return immediateSyncPromise({status: 200, json: () => ({
+					...sampleAuthInfo,
+					IncludedUser: sampleUser,
+					IncludedEmails: sampleEmails,
+				})});
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantAuthInfo("t"));
 			})).to.eql([
 				new UserActions.FetchedAuthInfo("t", sampleAuthInfo),
 				new UserActions.FetchedUser(sampleUser.UID, sampleUser),
+				new UserActions.FetchedEmails(sampleUser.UID, sampleEmails),
 			]);
 		});
 		it("with authInfo unexpected error", () => {
@@ -62,6 +68,26 @@ describe("UserBackend", () => {
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				UserBackend.__onDispatch(new UserActions.WantUser(1));
 			})).to.eql([new UserActions.FetchedUser(1, {Error: "error"})]);
+		});
+	});
+	describe("should handle WantEmails", () => {
+		it("with emails available", () => {
+			UserBackend.fetch = function(url, options) {
+				expect(url).to.be("/.api/users/1$/emails");
+				return immediateSyncPromise({status: 200, json: () => ({EmailAddrs: sampleEmails})});
+			};
+			expect(Dispatcher.Stores.catchDispatched(() => {
+				UserBackend.__onDispatch(new UserActions.WantEmails(1));
+			})).to.eql([new UserActions.FetchedEmails(1, sampleEmails)]);
+		});
+		it("with emails not available", () => {
+			UserBackend.fetch = function(url, options) {
+				expect(url).to.be("/.api/users/1$/emails");
+				return immediateSyncPromise({status: 404, text: () => immediateSyncPromise("error", true)});
+			};
+			expect(Dispatcher.Stores.catchDispatched(() => {
+				UserBackend.__onDispatch(new UserActions.WantEmails(1));
+			})).to.eql([new UserActions.FetchedEmails(1, {Error: "error"})]);
 		});
 	});
 });

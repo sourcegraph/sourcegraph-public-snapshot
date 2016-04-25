@@ -22,12 +22,19 @@ const UserBackend = {
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
 						.then((data) => {
-							// The user might've been optimistically included in the API response.
+							// The user and emails might've been optimistically included in the API response.
 							let user = data.IncludedUser;
 							if (user) delete data.IncludedUser;
+							let emails = data.IncludedEmails;
+							if (emails) delete data.IncludedEmails;
+
 							Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
+
 							if (user && data.UID) {
 								Dispatcher.Stores.dispatch(new UserActions.FetchedUser(data.UID, user));
+							}
+							if (emails && data.UID) {
+								Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(data.UID, emails));
 							}
 						})
 				);
@@ -40,6 +47,16 @@ const UserBackend = {
 						.then((resp) => resp.json())
 						.catch((err) => ({Error: err}))
 						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data)))
+				);
+			}
+		} else if (action instanceof UserActions.WantEmails) {
+			if (UserStore.emails.get(action.uid) === null) {
+				trackPromise(
+					UserBackend.fetch(`/.api/users/${action.uid}$/emails`)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(action.uid, data && data.EmailAddrs ? data.EmailAddrs : data)))
 				);
 			}
 		}
