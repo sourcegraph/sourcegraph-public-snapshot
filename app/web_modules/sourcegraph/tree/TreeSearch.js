@@ -390,9 +390,15 @@ class TreeSearch extends Container {
 			// Def result
 			const def = this.state.matchingDefs.Defs[i];
 			this._navigateTo(urlToDef(def));
+		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
+			// Def result
+			let d = i - this._numSymbolResults();
+			const def = this.state.xdefs.Defs[d];
+			this._navigateTo(urlToDef(def));
 		} else {
 			// File or dir result
-			let result = this.state.fileResults[i - this._numSymbolResults()];
+			let d = i - (this._numSymbolResults() + this._numXDefResults());
+			let result = this.state.fileResults[d];
 			if (result.isDirectory) {
 				this.state.onSelectPath(result.path);
 			} else {
@@ -452,7 +458,7 @@ class TreeSearch extends Container {
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
-					key={itemURL}>
+					key={"f:"+itemURL}>
 					<span styleName="icon">{icon}</span>
 					{item.name}
 				</Link>
@@ -590,7 +596,7 @@ class TreeSearch extends Container {
 
 		let fileBreadcrumb = breadcrumb(
 			filepath,
-			(i) => <span key={i} styleName="path-sep">/</span>,
+			(i) => <span key={"ps"+i} styleName="path-sep">/</span>,
 			(path, component, i, isLast) => (
 				<Link to={urlToPathPrefix(i)}
 					key={i}
