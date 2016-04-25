@@ -32,7 +32,6 @@
 
 .refs {
 	flex: 1 1 auto;
-	overflow: hidden;
 }
 
 .file-name {
