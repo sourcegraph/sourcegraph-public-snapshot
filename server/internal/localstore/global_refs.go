@@ -18,6 +18,8 @@ func init() {
 	GraphSchema.Map.AddTableWithName(dbGlobalRef{}, "global_refs").SetKeys(false, "DefRepo", "DefUnitType", "DefUnit", "DefPath", "Repo", "CommitID", "File")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`ALTER TABLE global_refs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
+		`CREATE INDEX CONCURRENTLY global_refs_repo ON global_refs(repo text_pattern_ops);`,
+		`CREATE INDEX CONCURRENTLY global_refs_def_repo ON global_refs(def_repo text_pattern_ops);`,
 	)
 }
 
