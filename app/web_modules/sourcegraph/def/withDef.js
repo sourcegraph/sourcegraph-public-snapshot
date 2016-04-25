@@ -15,7 +15,6 @@ import {httpStatusCode} from "sourcegraph/app/status";
 export default function withDef(Component) {
 	class WithDef extends Container {
 		static contextTypes = {
-			router: React.PropTypes.object,
 			status: React.PropTypes.object,
 		};
 

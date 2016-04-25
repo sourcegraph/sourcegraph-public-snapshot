@@ -13,8 +13,8 @@ import {urlToRepo} from "sourcegraph/repo/routes";
 export default function withResolvedRepoRev(Component) {
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {
-			router: React.PropTypes.object.isRequired,
 			status: React.PropTypes.object.isRequired,
+			router: React.PropTypes.object.isRequired,
 		};
 
 		static propTypes = {
