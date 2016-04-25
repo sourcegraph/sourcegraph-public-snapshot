@@ -22,6 +22,7 @@ const (
 	ResetPassword  = "reset"
 
 	Annotations      = "annotations"
+	AuthInfo         = "auth-info"
 	BlackHole        = "blackhole"
 	Builds           = "builds"
 	BuildTaskLog     = "build.task.log"
@@ -51,6 +52,7 @@ const (
 	SrclibImport     = "srclib.import"
 	SrclibCoverage   = "srclib.coverage"
 	SrclibDataVer    = "srclib.data-version"
+	User             = "user"
 
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
 )
@@ -81,6 +83,9 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
 
 	base.Path("/internal/appdash/record-span").Methods("POST").Name(InternalAppdashRecordSpan)
+
+	base.Path("/auth-info").Methods("GET").Name(AuthInfo)
+	base.Path("/users/" + routevar.User).Methods("GET").Name(User)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
