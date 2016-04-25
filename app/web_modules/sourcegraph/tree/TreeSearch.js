@@ -29,6 +29,7 @@ import type {Route} from "react-router";
 
 import {Input, Loader, RepoLink} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
+import context from "sourcegraph/app/context";
 
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
@@ -195,7 +196,10 @@ class TreeSearch extends Container {
 			}
 		}
 
-		Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo], 3));
+		// Global search results only show up for admin users
+		if (context.currentUser && context.currentUser.Admin) {
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo], 3));
+		}
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
 			nextState.lastDefinedMatchingDefs = prevState.matchingDefs;
