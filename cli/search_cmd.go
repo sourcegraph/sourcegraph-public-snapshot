@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -29,9 +28,9 @@ type searchCmd struct {
 }
 
 func (c *searchCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 	if c.Refresh != "" {
-		_, err := cl.Search.RefreshIndex(client.Ctx, &sourcegraph.SearchRefreshIndexOp{
+		_, err := cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
 			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.Refresh}},
 			RefreshCounts: true,
 			RefreshSearch: true,
@@ -47,7 +46,7 @@ func (c *searchCmd) Execute(args []string) error {
 		log.Fatal("src search: empty query")
 	}
 
-	results, err := cl.Search.Search(client.Ctx, &sourcegraph.SearchOp{
+	results, err := cl.Search.Search(cliContext, &sourcegraph.SearchOp{
 		Query: query,
 		Opt: &sourcegraph.SearchOptions{
 			ListOptions: sourcegraph.ListOptions{

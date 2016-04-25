@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -47,8 +46,8 @@ func (c *metaCmd) Execute(args []string) error { return nil }
 type metaStatusCmd struct{}
 
 func (c *metaStatusCmd) Execute(args []string) error {
-	cl := client.Client()
-	status, err := cl.Meta.Status(client.Ctx, &pbtypes.Void{})
+	cl := cliClient
+	status, err := cl.Meta.Status(cliContext, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -59,9 +58,9 @@ func (c *metaStatusCmd) Execute(args []string) error {
 type metaConfigCmd struct{}
 
 func (c *metaConfigCmd) Execute(args []string) error {
-	log.Println("#", client.Endpoint.URLOrDefault())
-	cl := client.Client()
-	config, err := cl.Meta.Config(client.Ctx, &pbtypes.Void{})
+	log.Println("#", endpoint.URLOrDefault())
+	cl := cliClient
+	config, err := cl.Meta.Config(cliContext, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -76,7 +75,7 @@ func (c *metaConfigCmd) Execute(args []string) error {
 // getRemoteAppURL returns the parsed AppURL of the remote Sourcegraph
 // server configured in ctx.
 func getRemoteAppURL(ctx context.Context) (*url.URL, error) {
-	conf, err := client.Client().Meta.Config(ctx, &pbtypes.Void{})
+	conf, err := cliClient.Meta.Config(ctx, &pbtypes.Void{})
 	if err != nil {
 		return nil, err
 	}

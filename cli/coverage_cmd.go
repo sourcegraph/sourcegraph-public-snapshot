@@ -6,16 +6,16 @@ import (
 	"os"
 	"strings"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
@@ -57,7 +57,7 @@ type coverageCmd struct {
 }
 
 func (c *coverageCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 	var langs []string
 	langRepos := make(map[string][]string)
 	if specificRepo := c.Repo; specificRepo != "" {
@@ -98,7 +98,7 @@ func (c *coverageCmd) Execute(args []string) error {
 		Langs    []*langCoverage
 		Endpoint string
 	}
-	data.Endpoint = client.Endpoint.URL
+	data.Endpoint = endpoint.URL
 
 	p := parallel.NewRun(30)
 	var dlMu sync.Mutex
@@ -113,7 +113,7 @@ func (c *coverageCmd) Execute(args []string) error {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, client.Ctx, repo, lang)
+				cov, err := getCoverage(cl, cliContext, repo, lang)
 				if err != nil {
 					return fmt.Errorf("error getting coverage for %s: %s", repo, err)
 				}

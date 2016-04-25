@@ -1,9 +1,8 @@
 package worker
 
 import (
-	"errors"
-	"log"
 	"math/rand"
+	"net/url"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,59 +12,27 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-func init() {
-	_, err := cli.CLI.AddCommand("work",
-		"worker",
-		`
-Runs the worker, which monitors the build and other queues and spawns processes to run
-builds.`,
-		&WorkCmd{},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+// RunWorker starts the worker loop with the given parameters.
+func RunWorker(key *idkey.IDKey, endpoint *url.URL, parallel int, dequeueMsec int) error {
+	ctx := sourcegraph.WithGRPCEndpoint(context.Background(), endpoint)
+	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.DefensiveReuseTokenSource(nil, sharedsecret.ShortTokenSource(key, "worker:build")))
 
-type WorkCmd struct {
-	Parallel    int `short:"p" long:"parallel" description:"number of parallel builds to run" default:"2" env:"SRC_WORK_PARALLEL"`
-	DequeueMsec int `long:"dequeue-msec" description:"if no builds are dequeued, sleep up to this many msec before trying again" default:"1000" env:"SRC_WORK_DEQUEUE_MSEC"`
-}
-
-func (c *WorkCmd) Execute(args []string) error {
-	if c.Parallel <= 0 {
-		return errors.New("-p/--parallel must be > 0")
-	}
-
-	idKeyData := os.Getenv("SRC_ID_KEY_DATA")
-	if idKeyData == "" {
-		return errors.New("SRC_ID_KEY_DATA is not available")
-	}
-	key, err := idkey.FromString(idKeyData)
+	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return RunWorker(key, c.Parallel, c.DequeueMsec)
-}
+	ctx, cancel := context.WithCancel(ctx)
 
-// RunWorker starts the worker loop with the given parameters.
-func RunWorker(key *idkey.IDKey, parallel int, dequeueMsec int) error {
-	client.Ctx = sourcegraph.WithCredentials(client.Ctx, sharedsecret.DefensiveReuseTokenSource(nil, sharedsecret.ShortTokenSource(key, "worker:build")))
-
-	cl := client.Client()
-	ctx, cancel := context.WithCancel(client.Ctx)
-
-	go buildReaper(client.Ctx)
+	go buildReaper(ctx)
 
 	// Watch for sigkill so we can mark builds as ended before termination.
 	var (
@@ -81,7 +48,7 @@ func RunWorker(key *idkey.IDKey, parallel int, dequeueMsec int) error {
 		activeBuilds.RLock()
 		defer activeBuilds.RUnlock()
 		cancel()
-		buildCleanup(client.Ctx, activeBuilds)
+		buildCleanup(ctx, activeBuilds)
 	}()
 
 	throttle := time.Tick(time.Second / time.Duration(parallel))

@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
@@ -58,7 +57,11 @@ func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next h
 	}
 
 	ctx := httpctx.FromRequest(req)
-	cl := client.Client()
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		log.Println("sourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
 	pathElements := strings.Split(req.URL.Path[1:], "/")
 
 	// Check if the requested path or its prefix is a hosted repository.

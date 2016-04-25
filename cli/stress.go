@@ -11,9 +11,9 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/rogpeppe/rog-go/parallel"
 
-	"github.com/dustin/go-humanize"
 	"golang.org/x/net/context"
 
 	"strings"
@@ -23,7 +23,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/expvarutil"
 )
@@ -65,8 +64,8 @@ type stressCmd struct {
 func (c *stressCmd) quiet() bool { return !c.Log }
 
 func (c *stressCmd) Execute(args []string) error {
-	ctx := client.Ctx
-	cl := client.Client()
+	ctx := cliContext
+	cl := cliClient
 
 	allOps := !(c.Git || c.RepoPage || c.FilePage)
 
@@ -230,7 +229,7 @@ func humanizeByteDelta(pre, post uint64, iters int) string {
 }
 
 func (c *stressCmd) fetchRepos(ctx context.Context) error {
-	cl := client.Client()
+	cl := cliClient
 	if c.Repo == "" {
 		allRepos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{PerPage: 20},
@@ -250,7 +249,7 @@ func (c *stressCmd) fetchRepos(ctx context.Context) error {
 }
 
 func (c *stressCmd) fetchFiles(ctx context.Context) error {
-	cl := client.Client()
+	cl := cliClient
 	c.files = make(map[string]string, len(c.repos))
 	if c.File == "" {
 		for _, repo := range c.repos {

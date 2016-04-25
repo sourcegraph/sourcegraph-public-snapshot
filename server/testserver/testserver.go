@@ -27,12 +27,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	appdashcli "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
@@ -76,7 +74,7 @@ type Server struct {
 
 type Config struct {
 	Flags      []interface{} // flags to `src`
-	Endpoint   client.EndpointOpts
+	Endpoint   cli.EndpointOpts
 	Serve      cli.ServeCmd
 	ServeFlags []interface{} // flags to `src serve`
 }
@@ -375,13 +373,13 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Config.Serve.GraphStoreOpts.Root = reposDir
 
 	// Worker
-	s.Config.Serve.WorkCmd = worker.WorkCmd{
+	s.Config.Serve.WorkCmd = cli.WorkCmd{
 		DequeueMsec: 100,
 		Parallel:    2,
 	}
 
 	s.Ctx = context.Background()
-	s.Ctx = s.Config.Endpoint.NewContext(s.Ctx)
+	s.Ctx = sourcegraph.WithGRPCEndpoint(s.Ctx, s.Config.Endpoint.URLOrDefault())
 	s.Ctx = conf.WithURL(s.Ctx, parseURL(s.Config.Serve.AppURL))
 
 	// ID key

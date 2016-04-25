@@ -17,7 +17,6 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/builder"
@@ -51,12 +50,12 @@ func (c *checkCmd) Execute(args []string) error {
 		return err
 	}
 
-	builder, err := c.configureBuilder(client.Ctx)
+	builder, err := c.configureBuilder(cliContext)
 	if err != nil {
 		return err
 	}
 
-	if err := builder.Exec(client.Ctx); err != nil {
+	if err := builder.Exec(cliContext); err != nil {
 		fmt.Println(red("FAIL"))
 		return err
 	}

@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 )
 
@@ -30,7 +29,7 @@ type infoCmd struct{}
 func (c *infoCmd) Execute(_ []string) error {
 	fmt.Println("# System requirements")
 
-	ctx, cancel := context.WithTimeout(client.Ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(cliContext, 5*time.Second)
 	defer cancel()
 	hasErr := false
 	for _, st := range sysreq.Check(ctx, skippedSysReqs()) {

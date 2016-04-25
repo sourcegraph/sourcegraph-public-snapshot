@@ -4,8 +4,6 @@ import (
 	"log"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -17,7 +15,7 @@ func printErrorHelp(err error) {
 	// authentication or connectivity issues.
 	code := grpc.Code(err)
 	if code == codes.Unauthenticated {
-		endpoint := client.Endpoint.URL
+		endpoint := endpoint.URL
 		if endpoint == "" {
 			endpoint = "<url-to-sourcegraph-server>"
 		}
@@ -36,7 +34,7 @@ To authenticate with the server, run:
 		// instead of something more concrete that we can rely on (instead of a
 		// string containment check).
 
-		endpoint := client.Endpoint.URLOrDefault()
+		endpoint := endpoint.URLOrDefault()
 		log.Printf(`
 ================================================================================
 ======== The server at %v is not available.

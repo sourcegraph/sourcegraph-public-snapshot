@@ -1,20 +1,17 @@
-package client
+package cli
 
 import (
 	"log"
 	"net/url"
 
-	"golang.org/x/net/context"
-
-	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/userauth"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
-var Endpoint EndpointOpts
+var endpoint EndpointOpts
 
 func init() {
-	sgxcli.CLI.AddGroup("Client API endpoint", "", &Endpoint)
+	cli.CLI.AddGroup("Client API endpoint", "", &endpoint)
 }
 
 // EndpointOpts sets the URL to use when contacting the Sourcegraph
@@ -31,11 +28,6 @@ type EndpointOpts struct {
 	// URL is the raw endpoint URL. Callers should almost never use
 	// this; use the URLOrDefault method instead.
 	URL string `short:"u" long:"endpoint" description:"URL to Sourcegraph server" default:"" env:"SRC_URL"`
-}
-
-// NewContext sets the server endpoint in the context.
-func (c *EndpointOpts) NewContext(ctx context.Context) context.Context {
-	return sourcegraph.WithGRPCEndpoint(ctx, c.URLOrDefault())
 }
 
 // URLOrDefault returns c.Endpoint as a *url.URL but with various

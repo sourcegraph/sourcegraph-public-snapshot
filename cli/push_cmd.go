@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -49,12 +48,12 @@ func (c *pushCmd) Execute(args []string) error {
 	repoSpec := sourcegraph.RepoSpec{URI: c.Repo}
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: commitID}
 
-	appURL, err := getRemoteAppURL(client.Ctx)
+	appURL, err := getRemoteAppURL(cliContext)
 	if err != nil {
 		return err
 	}
 
-	if err := c.do(client.Ctx, repoRevSpec); err != nil {
+	if err := c.do(cliContext, repoRevSpec); err != nil {
 		return err
 	}
 
@@ -64,7 +63,7 @@ func (c *pushCmd) Execute(args []string) error {
 }
 
 func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (err error) {
-	cl := client.Client()
+	cl := cliClient
 
 	// Resolve to the full commit ID, and ensure that the remote
 	// server knows about the commit.

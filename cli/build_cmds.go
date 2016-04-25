@@ -9,7 +9,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 )
@@ -65,12 +64,12 @@ type buildsGetCmd struct {
 }
 
 func (c *buildsGetCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 	opt := &sourcegraph.BuildSpec{
 		Repo: sourcegraph.RepoSpec{URI: c.Args.Repo},
 		ID:   c.Args.ID,
 	}
-	build, err := cl.Builds.Get(client.Ctx, opt)
+	build, err := cl.Builds.Get(cliContext, opt)
 	if err != nil {
 		return err
 	}
@@ -96,7 +95,7 @@ type buildsListCmd struct {
 }
 
 func (c *buildsListCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	opt := &sourcegraph.BuildListOptions{
 		Repo:        c.Repo,
@@ -113,7 +112,7 @@ func (c *buildsListCmd) Execute(args []string) error {
 
 	for page := int32(1); ; page++ {
 		opt.ListOptions.Page = page
-		builds, err := cl.Builds.List(client.Ctx, opt)
+		builds, err := cl.Builds.List(cliContext, opt)
 		if err != nil {
 			return err
 		}
@@ -148,9 +147,9 @@ func ago(t time.Time) string {
 type buildsStatsCmd struct{}
 
 func (c *buildsStatsCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
-	numBuilds, err := statsutil.ComputeBuildStats(cl, client.Ctx)
+	numBuilds, err := statsutil.ComputeBuildStats(cl, cliContext)
 	if err != nil {
 		return err
 	}

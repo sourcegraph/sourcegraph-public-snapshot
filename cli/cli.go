@@ -3,11 +3,11 @@ package cli
 import (
 	"log"
 
+	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	"bytes"
 
-	"sourcegraph.com/sourcegraph/go-flags"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 

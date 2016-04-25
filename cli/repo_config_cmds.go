@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"sourcegraph.com/sourcegraph/go-flags"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
@@ -51,11 +50,11 @@ type repoConfigGetCmd struct {
 }
 
 func (c *repoConfigGetCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	repoSpec := &sourcegraph.RepoSpec{URI: c.Args.URI}
 
-	conf, err := cl.Repos.GetConfig(client.Ctx, repoSpec)
+	conf, err := cl.Repos.GetConfig(cliContext, repoSpec)
 	if err != nil {
 		return err
 	}
@@ -79,18 +78,18 @@ type repoConfigAppCmd struct {
 }
 
 func (c *repoConfigAppCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	if (!c.Enable && !c.Disable) || (c.Enable && c.Disable) {
 		return errors.New("exactly one of --enable and --disable must be specified")
 	}
 
-	repo, err := cl.Repos.Get(client.Ctx, &sourcegraph.RepoSpec{URI: c.Args.Repo})
+	repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{URI: c.Args.Repo})
 	if err != nil {
 		return err
 	}
 
-	_, err = cl.Repos.ConfigureApp(client.Ctx, &sourcegraph.RepoConfigureAppOp{
+	_, err = cl.Repos.ConfigureApp(cliContext, &sourcegraph.RepoConfigureAppOp{
 		Repo:   repo.RepoSpec(),
 		App:    c.Args.App,
 		Enable: c.Enable,

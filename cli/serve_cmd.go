@@ -37,7 +37,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
@@ -159,7 +158,7 @@ type ServeCmd struct {
 
 	Prefetch bool `long:"prefetch" description:"prefetch directory children" env:"SRC_PREFETCH"`
 
-	worker.WorkCmd
+	WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
 
@@ -190,8 +189,8 @@ func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	}
 
 	// Endpoint defaults to the AppURL.
-	if client.Endpoint.URL == "" {
-		client.Endpoint.URL = appURL.String()
+	if endpoint.URL == "" {
+		endpoint.URL = appURL.String()
 	}
 
 	return appURL, nil
@@ -263,6 +262,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	sharedCtxFunc := func(ctx context.Context) context.Context {
 		ctx = idkey.NewContext(ctx, idKey)
 		ctx = conf.WithURL(ctx, appURL)
+		ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint.URLOrDefault())
 		return ctx
 	}
 	clientCtxFunc := func(ctx context.Context) context.Context {
@@ -272,7 +272,6 @@ func (c *ServeCmd) Execute(args []string) error {
 		}
 		sharedSecretToken := oauth2.ReuseTokenSource(nil, sharedsecret.TokenSource(idKey))
 		ctx = sourcegraph.WithCredentials(ctx, sharedSecretToken)
-		ctx = WithClientContext(ctx)
 		return ctx
 	}
 	serverCtxFunc := func(ctx context.Context) context.Context {
@@ -281,7 +280,6 @@ func (c *ServeCmd) Execute(args []string) error {
 			ctx = f(ctx)
 		}
 		ctx = c.GraphStoreOpts.context(ctx)
-		ctx = client.Endpoint.NewContext(ctx)
 		return ctx
 	}
 
@@ -450,7 +448,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Info("Skip starting worker process.")
 	} else {
 		go func() {
-			if err := worker.RunWorker(idKey, c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
+			if err := worker.RunWorker(idKey, endpoint.URLOrDefault(), c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()

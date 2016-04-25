@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -61,8 +60,8 @@ func (c *authCmd) Execute(args []string) error { return nil }
 type authIdentifyCmd struct{}
 
 func (c *authIdentifyCmd) Execute(args []string) error {
-	cl := client.Client()
-	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
+	cl := cliClient
+	authInfo, err := cl.Auth.Identify(cliContext, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/client"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -104,9 +103,9 @@ type userCreateCmd struct {
 }
 
 func (c *userCreateCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
-	user, err := cl.Accounts.Create(client.Ctx, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password, Email: c.Args.Email})
+	user, err := cl.Accounts.Create(cliContext, &sourcegraph.NewAccount{Login: c.Args.Login, Password: c.Args.Password, Email: c.Args.Email})
 	if err != nil {
 		return err
 	}
@@ -122,10 +121,10 @@ type userListCmd struct {
 }
 
 func (c *userListCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	for page := 1; ; page++ {
-		users, err := cl.Users.List(client.Ctx, &sourcegraph.UsersListOptions{
+		users, err := cl.Users.List(cliContext, &sourcegraph.UsersListOptions{
 			Query:       c.Args.Query,
 			ListOptions: sourcegraph.ListOptions{Page: int32(page)},
 		})
@@ -150,13 +149,13 @@ type userGetCmd struct {
 }
 
 func (c *userGetCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
 	if err != nil {
 		return err
 	}
-	user, err := cl.Users.Get(client.Ctx, &userSpec)
+	user, err := cl.Users.Get(cliContext, &userSpec)
 	if err != nil {
 		return err
 	}
@@ -165,7 +164,7 @@ func (c *userGetCmd) Execute(args []string) error {
 
 	fmt.Println("# Emails")
 	userSpec2 := user.Spec()
-	emails, err := cl.Users.ListEmails(client.Ctx, &userSpec2)
+	emails, err := cl.Users.ListEmails(cliContext, &userSpec2)
 	if err != nil {
 		if grpc.Code(err) == codes.PermissionDenied {
 			fmt.Println("# (permission denied)")
@@ -192,13 +191,13 @@ type userUpdateCmd struct {
 }
 
 func (c *userUpdateCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
 	if err != nil {
 		return err
 	}
-	user, err := cl.Users.Get(client.Ctx, &userSpec)
+	user, err := cl.Users.Get(cliContext, &userSpec)
 	if err != nil {
 		return err
 	}
@@ -218,7 +217,7 @@ func (c *userUpdateCmd) Execute(args []string) error {
 			return fmt.Errorf("access level not recognized (should be one of read/write/admin): %s", c.Access)
 		}
 
-		if _, err := cl.Accounts.Update(client.Ctx, user); err != nil {
+		if _, err := cl.Accounts.Update(cliContext, user); err != nil {
 			return err
 		}
 		fmt.Printf("# updated access level for user %s to %s\n", user.Login, c.Access)
@@ -233,7 +232,7 @@ type userResetPasswordCmd struct {
 }
 
 func (c *userResetPasswordCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
 	person := &sourcegraph.PersonSpec{}
 	var identifier string
@@ -247,7 +246,7 @@ func (c *userResetPasswordCmd) Execute(args []string) error {
 		return fmt.Errorf("need to specify either email or login of the user account")
 	}
 
-	pendingReset, err := cl.Accounts.RequestPasswordReset(client.Ctx, person)
+	pendingReset, err := cl.Accounts.RequestPasswordReset(cliContext, person)
 	if err != nil {
 		return err
 	}
@@ -277,9 +276,9 @@ type userDeleteCmd struct {
 }
 
 func (c *userDeleteCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
-	authInfo, err := cl.Auth.Identify(client.Ctx, &pbtypes.Void{})
+	authInfo, err := cl.Auth.Identify(cliContext, &pbtypes.Void{})
 	if err != nil {
 		return err
 	}
@@ -302,7 +301,7 @@ func (c *userDeleteCmd) Execute(args []string) error {
 		return fmt.Errorf("need to specify email, login or UID of the user account")
 	}
 
-	_, err = cl.Accounts.Delete(client.Ctx, person)
+	_, err = cl.Accounts.Delete(cliContext, person)
 	if err != nil {
 		return err
 	}
@@ -322,14 +321,14 @@ type userRevokeExternalAuthCmd struct {
 }
 
 func (c *userRevokeExternalAuthCmd) Execute(args []string) error {
-	cl := client.Client()
+	cl := cliClient
 
-	user, err := cl.Users.Get(client.Ctx, &sourcegraph.UserSpec{Login: c.Args.User})
+	user, err := cl.Users.Get(cliContext, &sourcegraph.UserSpec{Login: c.Args.User})
 	if err != nil {
 		return err
 	}
 
-	_, err = cl.Auth.DeleteAndRevokeExternalToken(client.Ctx, &sourcegraph.ExternalTokenSpec{
+	_, err = cl.Auth.DeleteAndRevokeExternalToken(cliContext, &sourcegraph.ExternalTokenSpec{
 		UID:      user.UID,
 		Host:     c.Host,
 		ClientID: c.ClientID,

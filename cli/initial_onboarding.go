@@ -9,9 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/kr/fs"
 	"github.com/shurcooL/go/vfs/godocfs/godocfs"
