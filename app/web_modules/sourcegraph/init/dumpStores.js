@@ -6,6 +6,7 @@ import SearchStore from "sourcegraph/search/SearchStore";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
 import EventLogger from "sourcegraph/util/EventLogger";
+import UserStore from "sourcegraph/user/UserStore";
 
 export default function dumpStores() {
 	return {
@@ -16,6 +17,7 @@ export default function dumpStores() {
 		SearchStore,
 		DashboardStore,
 		BuildStore,
+		UserStore,
 		EventLogger,
 	};
 }

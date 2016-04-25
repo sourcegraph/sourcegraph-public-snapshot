@@ -4,7 +4,19 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 export class UserStore extends Store {
-	reset() {
+	reset(data?: {authInfo: any, users: any}) {
+		this.authInfo = deepFreeze({
+			byAccessToken: data && data.authInfo ? data.authInfo.byAccessToken : {},
+			get(accessToken) {
+				return this.byAccessToken[accessToken] || null;
+			},
+		});
+		this.users = deepFreeze({
+			byUID: data && data.users ? data.users.byUID : {},
+			get(uid) {
+				return this.byUID[uid] || null;
+			},
+		});
 		this.pendingAuthActions = deepFreeze({
 			content: {},
 			get(state) {
@@ -19,7 +31,40 @@ export class UserStore extends Store {
 		});
 	}
 
+	toJSON() {
+		return {
+			authInfo: this.authInfo,
+			users: this.users,
+		};
+	}
+
 	__onDispatch(action) {
+		// Using instanceof checks instead of switching on action.constructor
+		// lets Flow understand the type constraints, so we should move the
+		// rest of the switch-case bodies to this scheme.
+
+		if (action instanceof UserActions.FetchedAuthInfo) {
+			this.authInfo = deepFreeze({
+				...this.authInfo,
+				byAccessToken: {
+					...this.authInfo.byAccessToken,
+					[action.accessToken]: action.authInfo,
+				},
+			});
+			this.__emitChange();
+			return;
+		} else if (action instanceof UserActions.FetchedUser) {
+			this.users = deepFreeze({
+				...this.users,
+				byUID: {
+					...this.users.byUID,
+					[action.uid]: action.user,
+				},
+			});
+			this.__emitChange();
+			return;
+		}
+
 		switch (action.constructor) {
 		case UserActions.SubmitSignup: {
 			this.pendingAuthActions = deepFreeze({

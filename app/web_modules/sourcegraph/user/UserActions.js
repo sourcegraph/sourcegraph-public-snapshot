@@ -1,5 +1,43 @@
 // @flow
 
+import type {AuthInfo, User} from "sourcegraph/user";
+
+export class WantAuthInfo {
+	accessToken: string;
+
+	constructor(accessToken: string) {
+		this.accessToken = accessToken;
+	}
+}
+
+export class FetchedAuthInfo {
+	accessToken: string;
+	authInfo: ?(AuthInfo | {Error: any}); // null if unauthenticated
+
+	constructor(accessToken: string, authInfo: ?(AuthInfo | {Error: any})) {
+		this.accessToken = accessToken;
+		this.authInfo = authInfo;
+	}
+}
+
+export class WantUser {
+	uid: number;
+
+	constructor(uid: number) {
+		this.uid = uid;
+	}
+}
+
+export class FetchedUser {
+	uid: number;
+	user: User | {Error: any};
+
+	constructor(uid: number, user: User | {Error: any}) {
+		this.uid = uid;
+		this.user = user;
+	}
+}
+
 export class SubmitSignup {
 	login: string;
 	password: string;

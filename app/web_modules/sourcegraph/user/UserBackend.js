@@ -4,11 +4,46 @@ import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
+import UserStore from "sourcegraph/user/UserStore";
 
 const UserBackend = {
 	fetch: defaultFetch,
 
 	__onDispatch(action) {
+		// Using instanceof checks instead of switching on action.constructor
+		// lets Flow understand the type constraints, so we should move the
+		// rest of the switch-case bodies to this scheme.
+
+		if (action instanceof UserActions.WantAuthInfo) {
+			if (UserStore.authInfo.get(action.accessToken) === null) {
+				trackPromise(
+					UserBackend.fetch("/.api/auth-info")
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => {
+							// The user might've been optimistically included in the API response.
+							let user = data.IncludedUser;
+							if (user) delete data.IncludedUser;
+							Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
+							if (user && data.UID) {
+								Dispatcher.Stores.dispatch(new UserActions.FetchedUser(data.UID, user));
+							}
+						})
+				);
+			}
+		} else if (action instanceof UserActions.WantUser) {
+			if (UserStore.users.get(action.uid) === null) {
+				trackPromise(
+					UserBackend.fetch(`/.api/users/${action.uid}$`) // trailing "$" indicates UID lookup (not login/username)
+						.then(checkStatus)
+						.then((resp) => resp.json())
+						.catch((err) => ({Error: err}))
+						.then((data) => Dispatcher.Stores.dispatch(new UserActions.FetchedUser(action.uid, data)))
+				);
+			}
+		}
+
 		switch (action.constructor) {
 		case UserActions.SubmitSignup:
 			trackPromise(
