@@ -2,16 +2,8 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
-import context from "sourcegraph/app/context";
-
-const _onEnterAuthedUserRedirect = function(nextState, replace) {
-	if (context.currentUser) {
-		replace("/");
-	}
-};
 
 const login = {
-	onEnter: _onEnterAuthedUserRedirect,
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
@@ -21,7 +13,6 @@ const login = {
 	},
 };
 const signup = {
-	onEnter: _onEnterAuthedUserRedirect,
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
@@ -31,7 +22,6 @@ const signup = {
 	},
 };
 const forgot = {
-	onEnter: _onEnterAuthedUserRedirect,
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
@@ -41,7 +31,6 @@ const forgot = {
 	},
 };
 const reset = {
-	onEnter: _onEnterAuthedUserRedirect,
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
