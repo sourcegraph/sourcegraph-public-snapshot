@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
 
