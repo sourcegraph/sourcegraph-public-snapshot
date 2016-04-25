@@ -15,6 +15,32 @@
 								"props": {
 									"type": "text",
 									"block": true,
+									"onFocus": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"query": "",
+												"notRepos": [
+													"repo"
+												],
+												"limit": 3
+											}
+										]
+									},
+									"onBlur": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"query": "",
+												"notRepos": [
+													"repo"
+												],
+												"limit": 3
+											}
+										]
+									},
 									"autoFocus": true,
 									"defaultValue": "",
 									"placeholder": "Jump to symbols or files...",
@@ -30,7 +56,7 @@
 					"props": {
 						"styleName": "list-header",
 						"children": [
-							"Symbols"
+							"Symbols in current repository"
 						]
 					}
 				},
@@ -176,11 +202,11 @@
 				},
 				{
 					"type": "div",
-					"key": ".3",
+					"key": ".4",
 					"props": {
 						"styleName": "list-header",
 						"children": [
-							"Files",
+							"Files in",
 							{
 								"type": "span",
 								"key": ".1",
@@ -196,7 +222,7 @@
 										},
 										{
 											"type": "",
-											"key": ".1:$0",
+											"key": ".1:$u=20",
 											"props": {
 												"to": "/repo@rev/-/tree/p1",
 												"styleName": "path-inactive",
@@ -210,7 +236,7 @@
 										},
 										{
 											"type": "span",
-											"key": ".1:$-1",
+											"key": ".1:$ps=2-1",
 											"props": {
 												"styleName": "path-sep",
 												"children": [
@@ -220,7 +246,7 @@
 										},
 										{
 											"type": "",
-											"key": ".1:$1",
+											"key": ".1:$u=21",
 											"props": {
 												"to": "/repo@rev/-/tree/p1/p2",
 												"styleName": "path-active",
@@ -240,15 +266,28 @@
 				},
 				{
 					"type": "div",
-					"key": ".4",
+					"key": ".5",
 					"props": {
 						"styleName": "list-item-group",
 						"children": [
 							{
 								"type": "",
-								"key": ".$/repo@rev/-/tree/p1",
+								"key": ".$f=2/repo@rev/-/tree/p1",
 								"props": {
-									"styleName": "list-item-selected parent-dir",
+									"styleName": "list-item parent-dir",
+									"onMouseOver": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"query": "",
+												"notRepos": [
+													"repo"
+												],
+												"limit": 3
+											}
+										]
+									},
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										{
@@ -267,9 +306,22 @@
 							},
 							{
 								"type": "",
-								"key": ".$/repo@rev/-/blob/p1/p2/f3",
+								"key": ".$f=2/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"styleName": "list-item ",
+									"onMouseOver": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"query": "",
+												"notRepos": [
+													"repo"
+												],
+												"limit": 3
+											}
+										]
+									},
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
@@ -308,6 +360,14 @@
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"rev": "rev"
+		},
+		{
+			"$constructor": "WantResults",
+			"query": "",
+			"notRepos": [
+				null
+			],
+			"limit": 3
 		}
 	]
 }
