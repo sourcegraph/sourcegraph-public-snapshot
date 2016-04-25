@@ -19,8 +19,9 @@ import (
 
 type authInfo struct {
 	sourcegraph.AuthInfo
-	IncludedUser   *sourcegraph.User        `json:",omitempty"`
-	IncludedEmails []*sourcegraph.EmailAddr `json:",omitempty"`
+	IncludedUser   *sourcegraph.User          `json:",omitempty"`
+	IncludedEmails []*sourcegraph.EmailAddr   `json:",omitempty"`
+	GitHubToken    *sourcegraph.ExternalToken `json:",omitempty"`
 }
 
 func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
@@ -32,6 +33,22 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	res := authInfo{AuthInfo: *info}
+
+	if info.UID != 0 {
+		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{
+			UID:      info.UID,
+			Host:     "github.com",
+			ClientID: "", // defaults to GitHub client ID in environment
+		})
+		if err == nil {
+			// No need to include the actual access token.
+			tok.Token = ""
+
+			res.GitHubToken = tok
+		} else if grpc.Code(err) != codes.NotFound {
+			log15.Warn("Error getting GitHub token in serveAuthInfo", "uid", info.UID, "err", err)
+		}
+	}
 
 	// As an optimization, optimistically include the user to avoid
 	// the client needing to make another roundtrip.

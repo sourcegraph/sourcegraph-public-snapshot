@@ -222,7 +222,7 @@ export class EventLogger {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DashboardActions.RemoteReposFetched:
-			if (action.data.HasLinkedGitHub && action.data.RemoteRepos) {
+			if (action.data.RemoteRepos) {
 				let orgs = {};
 				for (let repo of action.data.RemoteRepos) {
 					if (repo.OwnerIsOrg) orgs[repo.Owner] = true;

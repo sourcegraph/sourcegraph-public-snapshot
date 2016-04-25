@@ -10,7 +10,6 @@ let context: {
 	cacheControl?: string;
 	currentSpanID?: string;
 	userAgentIsBot?: boolean;
-	hasLinkedGitHub?: boolean;
 } = {
 	// Some fields were migrated to React context from this global context object. These
 	// getters prevent you from accidentally accessing these fields in their old home,
@@ -22,6 +21,10 @@ let context: {
 	// $FlowHack
 	get userEmail() {
 		throw new Error("userEmail is no longer available globally; use the UserBackend/UserStore to retrieve it");
+	},
+	// $FlowHack
+	get hasLinkedGitHub() {
+		throw new Error("hasLinkedGitHub is no longer available globally; use the UserBackend/UserStore directly");
 	},
 };
 

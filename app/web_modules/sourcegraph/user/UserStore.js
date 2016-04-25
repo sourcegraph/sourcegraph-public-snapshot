@@ -6,6 +6,7 @@ import * as UserActions from "sourcegraph/user/UserActions";
 export class UserStore extends Store {
 	reset(data?: {activeAccessToken?: string, authInfo: any, users: any, emails: any}) {
 		this.activeAccessToken = data && data.activeAccessToken ? data.activeAccessToken : null;
+		this.activeGitHubToken = data && data.activeGitHubToken ? data.activeGitHubToken : null;
 		this.authInfo = deepFreeze({
 			byAccessToken: data && data.authInfo ? data.authInfo.byAccessToken : {},
 			get(accessToken) {
@@ -41,6 +42,7 @@ export class UserStore extends Store {
 	toJSON() {
 		return {
 			activeAccessToken: this.activeAccessToken,
+			activeGitHubToken: this.activeGitHubToken,
 			authInfo: this.authInfo,
 			users: this.users,
 			emails: this.emails,
@@ -93,7 +95,12 @@ export class UserStore extends Store {
 			});
 			this.__emitChange();
 			return;
+		} else if (action instanceof UserActions.FetchedGitHubToken) {
+			this.activeGitHubToken = action.token;
+			this.__emitChange();
+			return;
 		}
+
 
 		switch (action.constructor) {
 		case UserActions.SubmitSignup: {

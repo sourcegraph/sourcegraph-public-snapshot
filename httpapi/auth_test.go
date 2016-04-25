@@ -17,12 +17,17 @@ func TestAuthInfo_includeUserAndEmails(t *testing.T) {
 		AuthInfo:       sourcegraph.AuthInfo{UID: 1},
 		IncludedUser:   &sourcegraph.User{UID: 1},
 		IncludedEmails: []*sourcegraph.EmailAddr{{Email: "a@a.com", Primary: true}},
+		GitHubToken:    &sourcegraph.ExternalToken{Token: "t"},
 	}
 
-	var calledIdentify bool
+	var calledIdentify, calledAuthGetExternalToken bool
 	mock.Auth.Identify_ = func(context.Context, *pbtypes.Void) (*sourcegraph.AuthInfo, error) {
 		calledIdentify = true
 		return &want.AuthInfo, nil
+	}
+	mock.Auth.GetExternalToken_ = func(context.Context, *sourcegraph.ExternalTokenRequest) (*sourcegraph.ExternalToken, error) {
+		calledAuthGetExternalToken = true
+		return want.GitHubToken, nil
 	}
 	calledUsersGet := mock.Users.MockGetByUID(t, 1)
 	calledUsersListEmails := mock.Users.MockListEmails(t, "a@a.com")
@@ -36,6 +41,9 @@ func TestAuthInfo_includeUserAndEmails(t *testing.T) {
 	}
 	if !calledIdentify {
 		t.Error("!calledIdentify")
+	}
+	if !calledAuthGetExternalToken {
+		t.Error("!calledAuthGetExternalToken")
 	}
 	if !*calledUsersGet {
 		t.Error("!calledUsersGet")

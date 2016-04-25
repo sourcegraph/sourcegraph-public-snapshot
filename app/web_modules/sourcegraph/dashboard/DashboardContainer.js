@@ -10,7 +10,6 @@ import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-import context from "sourcegraph/app/context";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
@@ -26,6 +25,7 @@ class DashboardContainer extends Container {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
+		githubToken: React.PropTypes.object,
 	};
 
 	constructor(props) {
@@ -66,7 +66,7 @@ class DashboardContainer extends Container {
 	renderCTAButtons() {
 		return (
 			<div>
-				{!context.hasLinkedGitHub && <div styleName="cta">
+				{!this.context.githubToken && <div styleName="cta">
 					<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
 						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Add My GitHub Repositories</Button>
 					</a>

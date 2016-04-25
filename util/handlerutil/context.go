@@ -5,5 +5,4 @@ type contextKey int
 const (
 	userKey contextKey = iota
 	fullUserKey
-	hasLinkedGitHubKey
 )

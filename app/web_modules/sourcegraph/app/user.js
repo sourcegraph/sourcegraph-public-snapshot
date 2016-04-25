@@ -19,6 +19,9 @@ export function withUserContext(Component: ReactClass): ReactClass {
 			// that only care "is there a logged-in user?" should use signedIn,
 			// not `user !== null`, to check for that.
 			signedIn: React.PropTypes.bool.isRequired,
+
+			// githubToken is the user's ExternalToken for github.com.
+			githubToken: React.PropTypes.object,
 		};
 
 		constructor(props) {
@@ -32,6 +35,7 @@ export function withUserContext(Component: ReactClass): ReactClass {
 
 			state.accessToken = UserStore.activeAccessToken || null;
 			state.authInfo = state.accessToken ? UserStore.authInfo.get(state.accessToken) : null;
+			state.githubToken = UserStore.activeGitHubToken || null;
 			state.user = state.authInfo && !state.authInfo.Error ? UserStore.users.get(state.authInfo.UID) : null;
 		}
 
@@ -51,6 +55,7 @@ export function withUserContext(Component: ReactClass): ReactClass {
 			return {
 				user: this.state.user && !this.state.user.Error ? this.state.user : null,
 				signedIn: Boolean(this.state.accessToken),
+				githubToken: this.state.githubToken,
 			};
 		}
 

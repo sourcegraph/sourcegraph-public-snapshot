@@ -6,9 +6,10 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import UserBackend from "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
 import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
-import type {AuthInfo, User, EmailAddr} from "sourcegraph/user";
+import type {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user";
 
 const sampleAuthInfo: AuthInfo = {UID: 1, Login: "u"};
+const sampleToken: ExternalToken = {uid: 1, host: "example.com", scope: "s"};
 const sampleUser: User = {UID: 1, Login: "u"};
 const sampleEmails: Array<EmailAddr> = [{Email: "a@a.com"}];
 
@@ -23,11 +24,12 @@ describe("UserBackend", () => {
 				UserBackend.__onDispatch(new UserActions.WantAuthInfo("t"));
 			})).to.eql([new UserActions.FetchedAuthInfo("t", sampleAuthInfo)]);
 		});
-		it("with authInfo available, with included user and emails", () => {
+		it("with authInfo available, with included GitHub token and user and emails", () => {
 			UserBackend.fetch = function(url, options) {
 				expect(url).to.be("/.api/auth-info");
 				return immediateSyncPromise({status: 200, json: () => ({
 					...sampleAuthInfo,
+					GitHubToken: sampleToken,
 					IncludedUser: sampleUser,
 					IncludedEmails: sampleEmails,
 				})});
@@ -38,6 +40,7 @@ describe("UserBackend", () => {
 				new UserActions.FetchedAuthInfo("t", sampleAuthInfo),
 				new UserActions.FetchedUser(sampleUser.UID, sampleUser),
 				new UserActions.FetchedEmails(sampleUser.UID, sampleEmails),
+				new UserActions.FetchedGitHubToken(sampleUser.UID, sampleToken),
 			]);
 		});
 		it("with authInfo unexpected error", () => {

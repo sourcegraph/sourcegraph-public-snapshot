@@ -1,6 +1,6 @@
 // @flow
 
-import type {AuthInfo, User, EmailAddr} from "sourcegraph/user";
+import type {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user";
 
 export class WantAuthInfo {
 	accessToken: string;
@@ -53,6 +53,18 @@ export class FetchedEmails {
 	constructor(uid: number, emails: Array<EmailAddr> | {Error: any}) {
 		this.uid = uid;
 		this.emails = emails;
+	}
+}
+
+// No WantGitHubToken because it is included in the AuthInfo response.
+
+export class FetchedGitHubToken {
+	uid: number;
+	token: ExternalToken | {Error: any};
+
+	constructor(uid: number, token: ExternalToken | {Error: any}) {
+		this.uid = uid;
+		this.token = token;
 	}
 }
 

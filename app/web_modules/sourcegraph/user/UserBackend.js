@@ -27,6 +27,8 @@ const UserBackend = {
 							if (user) delete data.IncludedUser;
 							let emails = data.IncludedEmails;
 							if (emails) delete data.IncludedEmails;
+							let token = data.GitHubToken;
+							if (token) delete data.GitHubToken;
 
 							Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
 
@@ -35,6 +37,9 @@ const UserBackend = {
 							}
 							if (emails && data.UID) {
 								Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(data.UID, emails));
+							}
+							if (token && data.UID) {
+								Dispatcher.Stores.dispatch(new UserActions.FetchedGitHubToken(data.UID, token));
 							}
 						})
 				);
