@@ -30,11 +30,15 @@ const UserBackend = {
 							let token = data.GitHubToken;
 							if (token) delete data.GitHubToken;
 
-							Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
-
+							// Dispatch FetchedUser before FetchedAuthInfo because it's common for components
+							// to dispatch a WantUser when the auth info is received, and dispatching FetchedUser
+							// first means that WantUser will immediately return because the data is already there.
 							if (user && data.UID) {
 								Dispatcher.Stores.dispatch(new UserActions.FetchedUser(data.UID, user));
 							}
+
+							Dispatcher.Stores.dispatch(new UserActions.FetchedAuthInfo(action.accessToken, data));
+
 							if (emails && data.UID) {
 								Dispatcher.Stores.dispatch(new UserActions.FetchedEmails(data.UID, emails));
 							}
