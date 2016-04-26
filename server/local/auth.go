@@ -217,7 +217,7 @@ func setExternalTokenSpecDefaults(ctx context.Context, tokSpec *sourcegraph.Exte
 var intercomSecretKey = os.Getenv("SG_INTERCOM_SECRET_KEY")
 
 func intercomHMAC(uid int) string {
-	if uid == 0 {
+	if uid == 0 || intercomSecretKey == "" {
 		return ""
 	}
 	mac := hmac.New(sha256.New, []byte(intercomSecretKey))
