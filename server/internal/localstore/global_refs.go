@@ -212,6 +212,12 @@ ON COMMIT DROP;`
 			if r.DefUnitType == "" {
 				r.DefUnitType = op.Unit.UnitType
 			}
+			// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
+			// doesn't add significant value; yet it adds up to a lot of space in the db,
+			// and queries for refs of builtin defs take long to finish.
+			if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
+				continue
+			}
 			if _, err := tx.Exec(tmpInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath, op.Repo, op.CommitID, r.File, 1); err != nil {
 				return err
 			}
