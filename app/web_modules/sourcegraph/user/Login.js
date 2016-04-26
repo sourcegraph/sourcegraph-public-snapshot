@@ -15,6 +15,14 @@ import CSSModules from "react-css-modules";
 import style from "./styles/user.css";
 
 class Login extends Container {
+	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	state = {
+		submitted: false,
+	};
+
 	constructor(props) {
 		super(props);
 		this._loginInput = null;
@@ -28,9 +36,18 @@ class Login extends Container {
 		state.authResponse = UserStore.authResponses.get("login");
 	}
 
+	onStateTransition(prevState, nextState) {
+		if (prevState.authResponse !== nextState.authResponse) {
+			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
+				setTimeout(() => this.context.router.replace("/"));
+			}
+		}
+	}
+
 	stores() { return [UserStore]; }
 
 	_handleSubmit(ev) {
+		this.setState({submitted: true});
 		ev.preventDefault();
 		Dispatcher.Stores.dispatch(new UserActions.SubmitLogin());
 		Dispatcher.Backends.dispatch(new UserActions.SubmitLogin(
@@ -65,7 +82,7 @@ class Login extends Container {
 					<Button color="primary"
 						id="e2etest-login-button"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Sign in</Button>
+						loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Sign in</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>

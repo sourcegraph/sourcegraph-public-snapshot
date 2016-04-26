@@ -107,12 +107,7 @@ const UserBackend = {
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data));
-						if (!data.Error) {
-							window.location.href = "/";
-						}
-					})
+					.then((data) => Dispatcher.Stores.dispatch(new UserActions.LoginCompleted(data)))
 			);
 			break;
 		case UserActions.SubmitLogout:
@@ -124,12 +119,7 @@ const UserBackend = {
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
-						if (!data.Error) {
-							window.location.href = "/";
-						}
-					})
+					.then((data) => Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data)))
 			);
 			break;
 		case UserActions.SubmitForgotPassword:

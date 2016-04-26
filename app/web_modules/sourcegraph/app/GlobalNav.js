@@ -2,14 +2,8 @@
 
 import React from "react";
 import {Link} from "react-router";
-
-import Dispatcher from "sourcegraph/Dispatcher";
-
-import "sourcegraph/user/UserBackend"; // for side effects
-import * as UserActions from "sourcegraph/user/UserActions";
-
-import {Avatar, Popover, Button} from "sourcegraph/components";
-
+import {Avatar, Popover} from "sourcegraph/components";
+import LogoutButton from "sourcegraph/user/LogoutButton";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
 
@@ -27,10 +21,7 @@ function GlobalNav({navContext}, {user, siteConfig, signedIn}) {
 						<div styleName="username">
 							<Popover left={true}>
 								{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
-								<Button outline={true}
-									size="small"
-									block={true}
-									onClick={() => Dispatcher.Backends.dispatch(new UserActions.SubmitLogout())}>Sign Out</Button>
+								<LogoutButton outline={true} size="small" block={true} />
 							</Popover>
 						</div>
 					</div>

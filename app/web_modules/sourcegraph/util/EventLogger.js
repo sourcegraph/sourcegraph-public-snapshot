@@ -5,6 +5,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
+import type {AuthInfo, User} from "sourcegraph/user";
 import {getViewName, getRoutePattern} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
@@ -20,7 +21,10 @@ export const EventLocation = {
 };
 
 export class EventLogger {
-	_amplitude: any;
+	_amplitude: any = null;
+	_intercom: any = null;
+	_fullStory: any = null;
+
 	_intercomSettings: any;
 	events: Array<any>;
 	userProperties: Array<any>;
@@ -31,13 +35,15 @@ export class EventLogger {
 	_siteConfig: ?SiteConfig;
 
 	constructor() {
-		this._amplitude = null;
 		this._intercomSettings = null;
 
 		this.events = deepFreeze([]);
 		this.userProperties = deepFreeze([]);
 		this.intercomProperties = deepFreeze([]);
 		this.intercomEvents = deepFreeze([]);
+
+		// Listen to the UserStore for changes in the user login/logout state.
+		UserStore.addListener(() => this._updateUser());
 
 		// Listen for all Stores dispatches.
 		// You must separately log "frontend" actions of interest,
@@ -68,19 +74,8 @@ export class EventLogger {
 		this._siteConfig = siteConfig;
 	}
 
-	// Loads the Amplitude JavaScript SDK if this
-	// code is run in the browser (i.e. not with node
-	// when doing server-side rendering.) If any events
-	// have been buffered, it will flush them immediately.
-	// If you do not call init() or it is run on the server,
-	// any subequent calls to logEvent or setUserProperty
-	// will be buffered.
+	// init initializes Amplitude and Intercom.
 	init() {
-		const user = UserStore.activeUser();
-		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
-		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
-		const authInfo = UserStore.activeAuthInfo();
-
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
 
@@ -107,46 +102,87 @@ export class EventLogger {
 				}
 			}
 
-			this._amplitude.init(apiKey, user ? user.Login : null, {
+			this._amplitude.init(apiKey, null, {
 				includeReferrer: true,
 			});
-
-			if (user && user.RegisteredAt) {
-				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
-			}
-			if (primaryEmail) {
-				this.setUserProperty("email", primaryEmail);
-			}
 		}
 
-		if (global.window) {
+		if (global.Intercom) this._intercom = global.Intercom;
+		if (global.FS) this._fullStory = global.FS;
+
+		if (typeof window !== "undefined") {
 			this._intercomSettings = window.intercomSettings;
-		}
-		if (this._intercomSettings && user && authInfo) {
-			this.setIntercomProperty("name", user.Name);
-			if (primaryEmail) this.setIntercomProperty("email", primaryEmail);
-			this.setIntercomProperty("user_id", user.UID.toString());
-			this.setIntercomProperty("user_hash", authInfo.IntercomHash);
-			this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
-			// $FlowHack
-			Intercom("boot", this._intercomSettings); // eslint-disable-line no-undef
-		}
-
-		// FullStory
-		if (global.FS && user) {
-			const id = user.Email || user.Login;
-			// $FlowHack
-			FS.identify(id, { // eslint-disable-line no-undef
-				displayName: user.Name,
-				email: primaryEmail,
-			});
 		}
 
 		this.isUserAgentBot = Boolean(context.userAgentIsBot);
+	}
+
+	// User data from the previous call to _updateUser.
+	_user: ?User;
+	_authInfo: AuthInfo = {};
+	_primaryEmail: ?string;
+
+	// _updateUser is be called whenever the user changes (after login or logout,
+	// or on the initial page load);
+	//
+	// If any events have been buffered, it will flush them immediately.
+	// If you do not call _updateUser or it is run on the server,
+	// any subequent calls to logEvent or setUserProperty will be buffered.
+	_updateUser() {
+		const user = UserStore.activeUser();
+		const authInfo = UserStore.activeAuthInfo();
+		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
+		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+
+		if (this._authInfo !== authInfo) {
+			if (this._authInfo && this._authInfo.UID && (!authInfo || this._authInfo.UID !== authInfo.UID)) {
+				// The user logged out or another user logged in on the same browser.
+
+				// Distinguish between 2 users who log in from the same browser; see
+				// https://github.com/amplitude/Amplitude-Javascript#logging-out-and-anonymous-users.
+				if (this._amplitude) this._amplitude.regenerateDeviceId();
+
+				// Prevent the next user who logs in (e.g., on a public terminal) from
+				// seeing the previous user's Intercom messages.
+				if (this._intercom) this._intercom("shutdown");
+
+				if (this._fullStory) this._fullStory.clearUserCookie();
+			}
+
+			if (authInfo) {
+				if (this._amplitude && authInfo.Login) this._amplitude.setUserId(authInfo.Login || null);
+				if (authInfo.UID) this.setIntercomProperty("user_id", authInfo.UID.toString());
+				if (authInfo.IntercomHash) this.setIntercomProperty("user_hash", authInfo.IntercomHash);
+				if (this._fullStory && authInfo.Login) {
+					this._fullStory.identify(authInfo.Login);
+				}
+			}
+			if (this._intercom) this._intercom("boot", this._intercomSettings);
+		}
+		if (this._user !== user && user) {
+			if (user.Name) this.setIntercomProperty("name", user.Name);
+			if (this._fullStory) this._fullStory.setUserVars({displayName: user.Name});
+			if (user.RegisteredAt) {
+				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
+				this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
+			}
+		}
+		if (this._primaryEmail !== primaryEmail) {
+			if (primaryEmail) {
+				this.setUserProperty("email", primaryEmail);
+				this.setIntercomProperty("email", primaryEmail);
+				if (this._fullStory) this._fullStory.setUserVars({email: primaryEmail});
+			}
+		}
+
+		this._user = user;
+		this._authInfo = authInfo;
+		this._primaryEmail = primaryEmail;
+
 		this._flush();
 	}
 
-	// Only flush events on the client, after a call to init().
+	// Only flush events on the client, after a call to _updateUser().
 	// Filter out bot / test user agents.
 	_shouldFlushAmplitude() {
 		return Boolean(this._amplitude) && !this.isUserAgentBot;

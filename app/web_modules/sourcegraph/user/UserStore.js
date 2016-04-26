@@ -66,6 +66,11 @@ export class UserStore extends Store {
 		return user && !user.Error ? user : null;
 	}
 
+	_clearAuth() {
+		this.activeAccessToken = null;
+		this.activeGitHubToken = null;
+	}
+
 	__onDispatch(action) {
 		// Using instanceof checks instead of switching on action.constructor
 		// lets Flow understand the type constraints, so we should move the
@@ -130,6 +135,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.SubmitLogout: {
+			this._clearAuth();
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -160,6 +166,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.SignupCompleted: {
+			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -177,6 +184,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.LoginCompleted: {
+			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -194,8 +202,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.LogoutCompleted: {
-			this.activeAccessToken = null;
-			this.activeGitHubToken = null;
+			this._clearAuth();
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {

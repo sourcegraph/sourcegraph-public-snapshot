@@ -45,11 +45,15 @@ class DashboardContainer extends Container {
 		}), 0);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props, context) {
 		Object.assign(state, props);
 		state.repos = DashboardStore.repos || null;
 		state.remoteRepos = DashboardStore.remoteRepos || null;
 		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
+
+		state.signedIn = context.signedIn;
+		state.githubToken = context.githubToken;
+		state.user = context.user;
 	}
 
 	onStateTransition(prevState, nextState) {
