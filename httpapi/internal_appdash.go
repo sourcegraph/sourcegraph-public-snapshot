@@ -88,7 +88,7 @@ func serveInternalAppdashRecordSpan(w http.ResponseWriter, r *http.Request) erro
 		// span's parent span ID so we become a sibling.
 		Span: spanID.Parent,
 	})
-	rec := appdash.NewRecorder(newSpan, collector)
+	rec := traceutil.NewRecorder(newSpan, collector)
 	rec.Name(fmt.Sprintf("Browser %s", ev.Name))
 	rec.Event(ev)
 	return nil

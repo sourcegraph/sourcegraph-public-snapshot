@@ -2,7 +2,9 @@
 package traceutil
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	gcontext "github.com/gorilla/context"
 	"golang.org/x/net/context"
@@ -10,6 +12,12 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
+
+func NewRecorder(span appdash.SpanID, c appdash.Collector) *appdash.Recorder {
+	rec := appdash.NewRecorder(span, c)
+	rec.Logger = log.New(os.Stderr, "appdash: ", log.LstdFlags)
+	return rec
+}
 
 // Recorder creates a new appdash Recorder for an existing span.
 func Recorder(ctx context.Context) *appdash.Recorder {
@@ -22,7 +30,7 @@ func Recorder(ctx context.Context) *appdash.Recorder {
 	if span.Trace == 0 {
 		// log.Println("no trace set in context")
 	}
-	return appdash.NewRecorder(span, c)
+	return NewRecorder(span, c)
 }
 
 // DefaultCollector is the default Appdash collector to use. It is
