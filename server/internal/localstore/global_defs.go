@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -194,118 +195,140 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	return &sourcegraph.SearchResultsList{Results: results}, nil
 }
 
-func (g *globalDefs) Update(ctx context.Context, repos []string) error {
-	for _, repo := range repos {
-		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repo); err != nil {
+func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) error {
+	for _, repoUnit := range op.RepoUnits {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repoUnit.Repo.URI); err != nil {
 			return err
 		}
 	}
 
-	for _, repo := range repos {
-		if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-			vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
+	for _, repoUnit := range op.RepoUnits {
+		// Get units for each repo if they aren't specified
+		var units []unit.ID2
+		if repoUnit.Unit != "" {
+			units = []unit.ID2{{Type: repoUnit.UnitType, Name: repoUnit.Unit}}
+		} else {
+			g := store.GraphFromContext(ctx)
+			units_, err := g.Units(sstore.ByRepos(repoUnit.Repo.URI))
 			if err != nil {
 				return err
 			}
-			commitID, err := vcsrepo.ResolveRevision("HEAD")
-			if err != nil {
-				return err
+			for _, u := range units_ {
+				units = append(units, u.ID2())
 			}
+		}
 
-			gstore := store.GraphFromContext(ctx)
-			defs, err := gstore.Defs(sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: string(commitID)}))
-			if err != nil {
-				return err
-			}
-
-			for _, d := range defs {
-				// Ignore broken defs
-				if d.Path == "" {
-					continue
+		// Split up update by unit
+		for _, unt := range units {
+			if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+				vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoUnit.Repo.URI)
+				if err != nil {
+					return err
 				}
-				// Ignore local defs
-				if d.Local || strings.Contains(d.Path, "$") {
-					continue
-				}
-				if d.Repo == "" {
-					d.Repo = repo
+				commitID, err := vcsrepo.ResolveRevision("HEAD")
+				if err != nil {
+					return err
 				}
 
-				var docstring string
-				if len(d.Docs) == 1 {
-					docstring = d.Docs[0].Data
-				} else {
-					for _, candidate := range d.Docs {
-						if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
-							docstring = candidate.Data
+				gstore := store.GraphFromContext(ctx)
+				defs, err := gstore.Defs(
+					sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: string(commitID)}),
+					sstore.ByUnits(unt),
+				)
+				if err != nil {
+					return err
+				}
+
+				for _, d := range defs {
+					// Ignore broken defs
+					if d.Path == "" {
+						continue
+					}
+					// Ignore local defs (KLUDGE)
+					if d.Local || strings.Contains(d.Path, "$") {
+						continue
+					}
+					if d.Repo == "" {
+						d.Repo = repoUnit.Repo.URI
+					}
+
+					var docstring string
+					if len(d.Docs) == 1 {
+						docstring = d.Docs[0].Data
+					} else {
+						for _, candidate := range d.Docs {
+							if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
+								docstring = candidate.Data
+							}
 						}
+					}
+
+					data, err := d.Data.Marshal()
+					if err != nil {
+						data = []byte{}
+					}
+					bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
+
+					var args []interface{}
+					arg := func(v interface{}) string {
+						args = append(args, v)
+						return fmt.Sprintf("$%d", len(args))
+					}
+
+					upsertSQL := `
+WITH upsert AS (
+UPDATE global_defs SET name=` + arg(d.Name) +
+						`, kind=` + arg(d.Kind) +
+						`, file=` + arg(d.File) +
+						`, commit_id=` + arg(d.CommitID) +
+						`, updated_at=now()` +
+						`, data=` + arg(data) +
+						`, bow=` + arg(bow) +
+						`, doc=` + arg(docstring) +
+						` WHERE repo=` + arg(d.Repo) +
+						` AND unit_type=` + arg(d.UnitType) +
+						` AND unit=` + arg(d.Unit) +
+						` AND path=` + arg(d.Path) +
+						` RETURNING *
+)
+INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
+						arg(d.Repo) + `, ` +
+						arg(d.CommitID) + `, ` +
+						arg(d.UnitType) + `, ` +
+						arg(d.Unit) + `, ` +
+						arg(d.Path) + `, ` +
+						arg(d.Name) + `, ` +
+						arg(d.Kind) + `, ` +
+						arg(d.File) + `, ` +
+						`now(), ` +
+						arg(data) + `, ` +
+						arg(bow) + `, ` +
+						arg(docstring) + `
+WHERE NOT EXISTS (SELECT * FROM upsert);`
+					if _, err := tx.Exec(upsertSQL, args...); err != nil {
+						return err
 					}
 				}
 
-				data, err := d.Data.Marshal()
-				if err != nil {
-					data = []byte{}
-				}
-				bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
-
-				var args []interface{}
-				arg := func(v interface{}) string {
-					args = append(args, v)
-					return fmt.Sprintf("$%d", len(args))
-				}
-
-				upsertSQL := `
-WITH upsert AS (
-UPDATE global_defs SET name=` + arg(d.Name) +
-					`, kind=` + arg(d.Kind) +
-					`, file=` + arg(d.File) +
-					`, commit_id=` + arg(d.CommitID) +
-					`, updated_at=now()` +
-					`, data=` + arg(data) +
-					`, bow=` + arg(bow) +
-					`, doc=` + arg(docstring) +
-					` WHERE repo=` + arg(d.Repo) +
-					` AND unit_type=` + arg(d.UnitType) +
-					` AND unit=` + arg(d.Unit) +
-					` AND path=` + arg(d.Path) +
-					` RETURNING *
-)
-INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
-					arg(d.Repo) + `, ` +
-					arg(d.CommitID) + `, ` +
-					arg(d.UnitType) + `, ` +
-					arg(d.Unit) + `, ` +
-					arg(d.Path) + `, ` +
-					arg(d.Name) + `, ` +
-					arg(d.Kind) + `, ` +
-					arg(d.File) + `, ` +
-					`now(), ` +
-					arg(data) + `, ` +
-					arg(bow) + `, ` +
-					arg(docstring) + `
-WHERE NOT EXISTS (SELECT * FROM upsert);`
-				if _, err := tx.Exec(upsertSQL, args...); err != nil {
+				// Delete old entries
+				if _, err := tx.Exec(`DELETE FROM global_defs WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND commit_id!=$4`,
+					repoUnit.Repo.URI, unt.Type, unt.Name, string(commitID)); err != nil {
 					return err
 				}
-			}
+				return nil
 
-			// Delete old entries
-			if _, err := tx.Exec(`DELETE FROM global_defs WHERE repo=$1 AND commit_id!=$2`, repo, string(commitID)); err != nil {
+			}); err != nil { // end transaction
 				return err
 			}
-			return nil
-
-		}); err != nil { // end transaction
-			return err
 		}
 	}
 
 	return nil
 }
 
-func (g *globalDefs) RefreshRefCounts(ctx context.Context, repos []string) error {
-	for _, r := range repos {
-		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.RefreshRefCounts", r); err != nil {
+func (g *globalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpdateOp) error {
+	for _, r := range op.RepoUnits {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.RefreshRefCounts", r.Repo.URI); err != nil {
 			return err
 		}
 	}
@@ -316,18 +339,18 @@ func (g *globalDefs) RefreshRefCounts(ctx context.Context, repos []string) error
 		return v
 	}
 
-	repoBindVars := make([]string, len(repos))
-	for i, repo := range repos {
-		repoBindVars[i] = arg(repo)
+	repoBindVars := make([]string, 3*len(op.RepoUnits))
+	for i, repoUnit := range op.RepoUnits {
+		repoBindVars[i] = "(" + arg(repoUnit.Repo.URI) + "," + arg(repoUnit.UnitType) + "," + arg(repoUnit.Unit) + ")"
 	}
 
 	updateSQL := `UPDATE global_defs d
 SET ref_ct = refs.ref_ct
 FROM (SELECT def_repo, def_unit_type, def_unit, def_path, sum(count) ref_ct
       FROM global_refs
-      WHERE def_repo in (` + strings.Join(repoBindVars, ",") + `)
+      WHERE (def_repo, def_unit_type, def_unit) IN (` + strings.Join(repoBindVars, ",") + `)
       GROUP BY def_repo, def_unit_type, def_unit, def_path) refs
-WHERE repo = def_repo AND unit_type = refs.def_unit_type AND unit = refs.def_unit AND path = refs.def_path;`
+WHERE repo=def_repo AND unit_type=refs.def_unit_type AND unit=refs.def_unit AND path=refs.def_path;`
 
 	_, err := graphDBH(ctx).Exec(updateSQL, args...)
 	return err

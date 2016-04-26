@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
 func TestGlobalDefs(t *testing.T) {
@@ -30,12 +31,8 @@ func TestGlobalDefs(t *testing.T) {
 		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "pqr"}, Name: "PQR", Kind: "field", File: "b.go"},
 	}
 
-	// if err := g.mustUpdate(ctx, t, "a/b", "a/b/u", "t", testDefs1); err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	// s := store.GraphFromContext(ctx).(*srcstore.MockMultiRepoStore)
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
+	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Name: "a/b/u", Type: "t"})
 	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
@@ -43,9 +40,7 @@ func TestGlobalDefs(t *testing.T) {
 			},
 		}, nil
 	}
-	// mockstore.GraphMockDefs(s, testDefs1...)
-	// mockstore.Graph
-	g.Update(ctx, []string{"a/b"})
+	g.Update(ctx, store.GlobalDefUpdateOp{[]store.RepoUnit{{Repo: sourcegraph.RepoSpec{"a/b"}}}})
 
 	testCases := []struct {
 		Query   []string

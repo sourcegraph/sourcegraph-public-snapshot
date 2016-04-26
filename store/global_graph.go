@@ -12,13 +12,18 @@ type GlobalDefs interface {
 	// query, and ranks the defs by a combination of bag of words similarity and global ref count.
 	Search(ctx context.Context, op *GlobalDefSearchOp) (*sourcegraph.SearchResultsList, error)
 
-	// Update takes the graph output of a source unit and updates the set of defs in
-	// the global def store that originate from this source unit.
-	Update(ctx context.Context, repos []string) error
+	// Update takes the graph output of a list of source units and
+	// updates the set of defs in the global def store that originate
+	// from these source units. If a repository is specified in op
+	// with an empty source unit, then Update updates the data for
+	// the entire repository.
+	Update(ctx context.Context, op GlobalDefUpdateOp) error
 
 	// RefreshRefCounts computes and sets the global ref counts of all defs in the
-	// specified repos.
-	RefreshRefCounts(ctx context.Context, repos []string) error
+	// specified source units. If a repository is specified in op with
+	// an empty source unit, then RefreshRefCounts updates ref counts
+	// for the entire repository.
+	RefreshRefCounts(ctx context.Context, op GlobalDefUpdateOp) error
 }
 
 // GlobalRefs defines the interface for getting and listing global ref locations.
@@ -45,4 +50,14 @@ type GlobalDefSearchOp struct {
 	TokQuery []string
 
 	Opt *sourcegraph.SearchOptions
+}
+
+type GlobalDefUpdateOp struct {
+	RepoUnits []RepoUnit
+}
+
+type RepoUnit struct {
+	Repo     sourcegraph.RepoSpec
+	Unit     string
+	UnitType string
 }
