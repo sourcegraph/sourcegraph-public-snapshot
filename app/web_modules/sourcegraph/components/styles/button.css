@@ -6,16 +6,9 @@
     composes: br3 from base;
     composes: button-text from typography;
     display: inline-block;
-    text-transform: uppercase;
     cursor: pointer;
     user-select: none;
     box-sizing: border-box;
-}
-.lowercase {
-    text-transform: none !important;
-}
-.unspaced {
-    letter-spacing: 0 !important;
 }
 .btn:focus {
     outline: 0;

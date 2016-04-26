@@ -243,7 +243,7 @@ html {
 }
 
 .button-text {
-	composes: tc tracked-mega f5;
+	composes: tc f4;
 }
 
 .input-text {

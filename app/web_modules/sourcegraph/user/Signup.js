@@ -75,7 +75,7 @@ class Signup extends Container {
 					<Button color="primary"
 						id="e2etest-register-button"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create Account & Add GitHub Repositories</Button>
+						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create account & add GitHub repositories</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
