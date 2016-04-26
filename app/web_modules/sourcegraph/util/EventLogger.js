@@ -1,10 +1,12 @@
 // @flow weak
 
+import React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
-
+import {getViewName, getRoutePattern} from "sourcegraph/app/routePatterns";
+import type {Route} from "react-router";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -257,3 +259,82 @@ export class EventLogger {
 }
 
 export default new EventLogger();
+
+// withEventLoggerContext makes eventLogger accessible as this.context.eventLogger
+// in the component's context.
+export function withEventLoggerContext(eventLogger: EventLogger, Component: ReactClass): ReactClass {
+	class WithEventLogger extends React.Component {
+		static childContextTypes = {
+			eventLogger: React.PropTypes.object,
+		};
+
+		constructor(props) {
+			super(props);
+			eventLogger.init();
+		}
+
+		getChildContext(): {eventLogger: EventLogger} {
+			return {eventLogger};
+		}
+
+		render() {
+			return <Component {...this.props} />;
+		}
+	}
+	return WithEventLogger;
+}
+
+// withViewEventsLogged calls this.context.eventLogger.logEvent when the
+// location's pathname changes.
+export function withViewEventsLogged(Component: ReactClass): ReactClass {
+	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
+		static propTypes = {
+			routes: React.PropTypes.arrayOf(React.PropTypes.object),
+			location: React.PropTypes.object,
+		};
+
+		static contextTypes = {
+			router: React.PropTypes.object.isRequired,
+			eventLogger: React.PropTypes.object.isRequired,
+		};
+
+		componentDidMount() {
+			this._logView(this.props.routes, this.props.location);
+		}
+
+		componentWillReceiveProps(nextProps) {
+			// Greedily log page views. Technically changing the pathname
+			// may match the same "view" (e.g. interacting with the directory
+			// tree navigations will change your URL,  but not feel like separate
+			// page events). We will log any change in pathname as a separate event.
+			// NOTE: this will not log separate page views when query string / hash
+			// values are updated.
+			if (this.props.location.pathname !== nextProps.location.pathname) {
+				this._logView(nextProps.routes, nextProps.location);
+			}
+		}
+
+		_logView(routes: Array<Route>, location: Location) {
+			let eventProps = {
+				referred_by_chrome_ext: false,
+				url: location.pathname,
+			};
+			if (location.query && location.query["utm_source"] === "chromeext") {
+				eventProps.referred_by_chrome_ext = true;
+			}
+
+			const viewName = getViewName(routes);
+			if (viewName) {
+				this.context.eventLogger.logEvent(viewName, eventProps);
+			} else {
+				this.context.eventLogger.logEvent("UnmatchedRoute", {
+					...eventProps,
+					pattern: getRoutePattern(routes),
+				});
+			}
+		}
+
+		render() { return <Component {...this.props} />; }
+	}
+	return WithViewEventsLogged;
+}
