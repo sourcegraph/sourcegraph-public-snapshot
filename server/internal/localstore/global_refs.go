@@ -62,28 +62,28 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return v
 	}
 
-	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM global_refs"
-	orderBySql := " ORDER BY repo_count DESC, count DESC"
-	var groupBySql string
-	if op.Opt.ReposOnly {
-		sql = "SELECT repo, SUM(count) AS repo_count FROM global_refs"
-		groupBySql = " GROUP BY repo"
-		orderBySql = " ORDER BY repo_count DESC"
-	}
-
-	sql += ` WHERE def_repo=` + arg(op.Def.Repo) + ` AND def_unit_type=` + arg(op.Def.UnitType) + ` AND def_unit=` + arg(op.Def.Unit) + ` AND def_path=` + arg(op.Def.Path)
-
+	innerSelectSql := `SELECT repo, file, count FROM global_refs`
+	innerSelectSql += ` WHERE def_repo=` + arg(op.Def.Repo) + ` AND def_unit_type=` + arg(op.Def.UnitType) + ` AND def_unit=` + arg(op.Def.Unit) + ` AND def_path=` + arg(op.Def.Path)
+	innerSelectSql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	if len(op.Opt.Repos) > 0 {
 		repoBindVars := make([]string, len(op.Opt.Repos))
 		for i, r := range op.Opt.Repos {
 			repoBindVars[i] = arg(r)
 		}
-		sql += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
+		innerSelectSql += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
+	}
+
+	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSql + ") res"
+	orderBySql := " ORDER BY repo_count DESC, count DESC"
+	var groupBySql string
+	if op.Opt.ReposOnly {
+		sql = "SELECT repo, SUM(count) AS repo_count FROM (" + innerSelectSql + ") res"
+		groupBySql = " GROUP BY repo"
+		orderBySql = " ORDER BY repo_count DESC"
 	}
 
 	sql += groupBySql
 	sql += orderBySql
-	sql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 
 	var dbRefResult []*dbRefLocationsResult
 	if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
@@ -211,6 +211,12 @@ ON COMMIT DROP;`
 			}
 			if r.DefUnitType == "" {
 				r.DefUnitType = op.Unit.UnitType
+			}
+			// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
+			// doesn't add significant value; yet it adds up to a lot of space in the db,
+			// and queries for refs of builtin defs take long to finish.
+			if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
+				continue
 			}
 			if _, err := tx.Exec(tmpInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath, op.Repo, op.CommitID, r.File, 1); err != nil {
 				return err
