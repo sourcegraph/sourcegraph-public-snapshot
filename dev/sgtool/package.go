@@ -73,7 +73,7 @@ func (c *PackageCmd) Execute(args []string) error {
 		os.Getenv("GOPATH"),
 	}, string(filepath.ListSeparator))
 
-	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates", "./misc/sampledata")
+	genCmd := exec.Command("go", "generate", "./app/assets", "./app/templates")
 	overrideEnv(genCmd, "GOPATH", gopath)
 	if err := execCmd(genCmd); err != nil {
 		return err
