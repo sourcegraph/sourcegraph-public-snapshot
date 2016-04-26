@@ -4,11 +4,15 @@ import (
 	"errors"
 	"os/exec"
 	"path"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/neelance/chanrpc/chanrpcutil"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
 )
 
 type execRequest struct {
@@ -38,6 +42,7 @@ func handleExecRequest(req *execRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
+	start := time.Now()
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
 	_, cloneInProgress := cloning[dir]
@@ -45,11 +50,13 @@ func handleExecRequest(req *execRequest) {
 	if cloneInProgress {
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{CloneInProgress: true}
+		observeExec(req, start, "clone-in-progress")
 		return
 	}
 	if !repoExists(dir) {
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{RepoNotFound: true}
+		observeExec(req, start, "repo-not-found")
 		return
 	}
 
@@ -87,6 +94,7 @@ func handleExecRequest(req *execRequest) {
 		ExitStatus: exitStatus,
 	}
 	close(processResultChan)
+	observeExec(req, start, strconv.Itoa(exitStatus))
 }
 
 type Cmd struct {
@@ -145,4 +153,25 @@ func (c *Cmd) Output() ([]byte, error) {
 func (c *Cmd) CombinedOutput() ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput()
 	return append(stdout, stderr...), err
+}
+
+var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "exec_duration_seconds",
+	Help:      "gitserver.Command latencies in seconds.",
+	Buckets:   []float64{0.1, 0.5, 1.0, 2.0},
+}, []string{"cmd", "repo", "status"})
+
+func init() {
+	prometheus.MustRegister(execDuration)
+}
+
+func observeExec(req *execRequest, start time.Time, status string) {
+	repo := util.GetTrackedRepo(req.Repo)
+	cmd := ""
+	if len(req.Args) > 0 {
+		cmd = req.Args[0]
+	}
+	execDuration.WithLabelValues(cmd, repo, status).Observe(time.Since(start).Seconds())
 }
