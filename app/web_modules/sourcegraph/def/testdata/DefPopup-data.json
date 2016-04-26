@@ -49,12 +49,27 @@
 					"key": ".1",
 					"props": {
 						"children": [
-							"Used in ",
-							{
-								"type": "WrappedComponent",
-								"key": ".1",
-								"props": {}
-							}
+							"Used in"
+						]
+					}
+				},
+				{
+					"type": "span",
+					"key": ".2",
+					"props": {
+						"styleName": "loading",
+						"children": [
+							"Loading..."
+						]
+					}
+				},
+				{
+					"type": "span",
+					"key": ".6",
+					"props": {
+						"styleName": "loading",
+						"children": [
+							"Loading..."
 						]
 					}
 				}

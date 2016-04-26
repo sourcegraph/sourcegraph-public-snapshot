@@ -72,6 +72,9 @@
 .currentFileRefs {
 	font-weight: bold;
 }
+.loading {
+	composes: black from colors;
+}
 
 /* Def box authors */
 .personList {

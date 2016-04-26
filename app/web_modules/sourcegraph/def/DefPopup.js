@@ -11,7 +11,7 @@ import {defPath} from "sourcegraph/def";
 import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import TimeAgo from "sourcegraph/util/TimeAgo";
-import {Avatar, Loader} from "sourcegraph/components";
+import {Avatar} from "sourcegraph/components";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import {urlToDef} from "sourcegraph/def/routes";
 
@@ -56,11 +56,13 @@ class DefPopup extends Container {
 				<header className={s.boxTitle}>
 					<Link to={`${urlToDef(this.state.defObj)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 				</header>
-				<header className={s.sectionTitle}>Used in {!refLocs && <Loader />}</header>
+				<header className={s.sectionTitle}>Used in</header>
+				{!refLocs && <span styleName="loading">Loading...</span>}
 				{refLocs && refLocs.filter((r) => r && r.Files).length === 0 &&	<i>No usages found</i>}
 				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
-				{authors && <header className={s.sectionTitle}>Authors {!authors && <i className="fa fa-circle-o-notch fa-spin"></i>}</header>}
+				{authors && <header className={s.sectionTitle}>Authors</header>}
+				{!authors && <span styleName="loading">Loading...</span>}
 				{authors && authors.length === 0 && <i>No authors found</i>}
 				{authors && authors.length > 0 &&
 					<ol className={s.personList}>
