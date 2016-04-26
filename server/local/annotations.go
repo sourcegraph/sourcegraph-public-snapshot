@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"path/filepath"
 	"sync"
 
@@ -145,6 +146,10 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 
 	if dataVer.CommitID != opt.Entry.RepoRev.CommitID {
 		log15.Warn("Annotations.listRefs: commit ID in argument did not match the last srclib version; for best performance, avoid duplicate work by pre-resolving the last srclib version for the commit before calling Annotations.List.", "resolved", dataVer.CommitID, "requested", opt.Entry.RepoRev.CommitID)
+	}
+
+	if opt.Entry.Path == "" {
+		return nil, fmt.Errorf("listRefs: no file path specified")
 	}
 
 	filters := []srcstore.RefFilter{
