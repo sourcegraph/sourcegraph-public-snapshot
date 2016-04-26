@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ var ciFactor = func() int {
 func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
 
-	if v := os.Getenv("SG_DISABLE_JSSERVER"); v != "" {
+	if parseBool(os.Getenv("SG_DISABLE_JSSERVER")) || parseBool(r.URL.Query().Get("disable_jsserver")) {
 		ctx = ui.DisabledReactPrerendering(ctx)
 	}
 
@@ -91,4 +92,9 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return tmpl.Exec(r, w, "ui.html", statusCode, header, &data)
+}
+
+func parseBool(s string) bool {
+	b, _ := strconv.ParseBool(s)
+	return b
 }
