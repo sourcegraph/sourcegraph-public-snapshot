@@ -223,25 +223,30 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 
 		// Split up update by unit
 		for _, unt := range units {
-			if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+			var defs []*graph.Def
+			var commitID string
+			{
+				var err error
 				vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoUnit.Repo.URI)
 				if err != nil {
 					return err
 				}
-				commitID, err := vcsrepo.ResolveRevision("HEAD")
+				c, err := vcsrepo.ResolveRevision("HEAD")
 				if err != nil {
 					return err
 				}
-
+				commitID = string(c)
 				gstore := store.GraphFromContext(ctx)
-				defs, err := gstore.Defs(
-					sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: string(commitID)}),
+				defs, err = gstore.Defs(
+					sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: commitID}),
 					sstore.ByUnits(unt),
 				)
 				if err != nil {
 					return err
 				}
+			}
 
+			if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
 				for _, d := range defs {
 					// Ignore broken defs
 					if d.Path == "" {
@@ -315,7 +320,7 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 
 				// Delete old entries
 				if _, err := tx.Exec(`DELETE FROM global_defs WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND commit_id!=$4`,
-					repoUnit.Repo.URI, unt.Type, unt.Name, string(commitID)); err != nil {
+					repoUnit.Repo.URI, unt.Type, unt.Name, commitID); err != nil {
 					return err
 				}
 				return nil
