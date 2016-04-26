@@ -42,10 +42,11 @@ export default class LogoutButton extends Container {
 	stores() { return [UserStore]; }
 
 	_handleClick(ev) {
-		this.setState({submitted: true});
 		ev.preventDefault();
-		Dispatcher.Stores.dispatch(new UserActions.SubmitLogout());
-		Dispatcher.Backends.dispatch(new UserActions.SubmitLogout());
+		this.setState({submitted: true}, () => {
+			Dispatcher.Stores.dispatch(new UserActions.SubmitLogout());
+			Dispatcher.Backends.dispatch(new UserActions.SubmitLogout());
+		});
 	}
 
 	render() {

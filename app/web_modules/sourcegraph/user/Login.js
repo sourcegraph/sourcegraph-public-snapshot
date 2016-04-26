@@ -14,9 +14,9 @@ import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
 import style from "./styles/user.css";
 
-class Login extends Container {
-	static contextTypes = {
-		router: React.PropTypes.object.isRequired,
+export class LoginForm extends Container {
+	static propTypes = {
+		onLoginSuccess: React.PropTypes.func.isRequired,
 	};
 
 	state = {
@@ -39,7 +39,7 @@ class Login extends Container {
 	onStateTransition(prevState, nextState) {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
-				setTimeout(() => this.context.router.replace("/"));
+				setTimeout(() => this.props.onLoginSuccess());
 			}
 		}
 	}
@@ -47,20 +47,20 @@ class Login extends Container {
 	stores() { return [UserStore]; }
 
 	_handleSubmit(ev) {
-		this.setState({submitted: true});
 		ev.preventDefault();
-		Dispatcher.Stores.dispatch(new UserActions.SubmitLogin());
-		Dispatcher.Backends.dispatch(new UserActions.SubmitLogin(
+		this.setState({submitted: true}, () => {
+			Dispatcher.Stores.dispatch(new UserActions.SubmitLogin());
+			Dispatcher.Backends.dispatch(new UserActions.SubmitLogin(
 				this._loginInput.value,
 				this._passwordInput.value,
-		));
+			));
+		});
 	}
 
 	render() {
 		return (
-			<form styleName="container" onSubmit={this._handleSubmit}>
-				<Helmet title="Sign In" />
-				<div styleName="title">Hey there, welcome back!</div>
+			<form {...this.props} onSubmit={this._handleSubmit}>
+				<div styleName="title">Sign in to Sourcegraph</div>
 				<div styleName="action">
 					<Input type="text"
 						id="e2etest-login-field"
@@ -87,7 +87,7 @@ class Login extends Container {
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
-				<div styleName="subtext">Oh no, <a href="/forgot">I forgot my password</a>.</div>
+				<div styleName="subtext"><a href="/forgot">Forgot password?</a></div>
 				<div styleName="alt-action">
 					<span>Don't have an account yet?</span>
 					<span styleName="alt-button"><Link to="/join"><Button size="small" outline={true}>Sign up</Button></Link></span>
@@ -96,5 +96,22 @@ class Login extends Container {
 		);
 	}
 }
+LoginForm = CSSModules(LoginForm, style);
+
+// Login is the standalone login page.
+function Login(props, {router}) {
+	return (
+		<div>
+			<Helmet title="Sign In" />
+			<LoginForm {...props}
+				styleName="container"
+				onLoginSuccess={() => router.replace("/")} />
+		</div>
+	);
+}
+Login.contextTypes = {
+	router: React.PropTypes.object.isRequired,
+};
+
 
 export default redirectIfLoggedIn("/", CSSModules(Login, style));

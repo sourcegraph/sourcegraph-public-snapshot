@@ -37,4 +37,27 @@ Modal.propTypes = {
 	onDismiss: React.PropTypes.func,
 };
 
-export default CSSModules(Modal, styles);
+Modal = CSSModules(Modal, styles);
+export default Modal;
+
+// LocationStateModal wraps <Modal> and uses a key on the location state
+// to determine whether it is displayed. Use LocationStateModal with
+// LocationStateToggleLink.
+export function LocationStateModal({location, stateKey, children}, {router}) {
+	return (
+		<Modal shown={location.state && Boolean(location.state[stateKey])}
+			onDismiss={() => router.replace({...location, state: {...location.state, [stateKey]: false}})}>
+			{children}
+		</Modal>
+	);
+}
+LocationStateModal.propTypes = {
+	location: React.PropTypes.object.isRequired,
+
+	// stateKey is the name of the key on the location's state that this
+	// StateToggleLink component toggles.
+	stateKey: React.PropTypes.string.isRequired,
+};
+LocationStateModal.contextTypes = {
+	router: React.PropTypes.object.isRequired,
+};

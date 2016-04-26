@@ -2,12 +2,24 @@
 
 import React from "react";
 import {Link} from "react-router";
+import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+import {LocationStateModal} from "sourcegraph/components/Modal";
 import {Avatar, Popover} from "sourcegraph/components";
 import LogoutButton from "sourcegraph/user/LogoutButton";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
+import {LoginForm} from "sourcegraph/user/Login";
+import {SignupForm} from "sourcegraph/user/Signup";
 
-function GlobalNav({navContext}, {user, siteConfig, signedIn}) {
+// dismissModal creates a function that dismisses the modal by setting
+// the location state's stateKey property to false.
+function dismissModal(stateKey, location, router) {
+	return () => {
+		router.replace({...location, state: {...location.state, [stateKey]: false}});
+	};
+}
+
+function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router}) {
 	return (
 		<nav styleName="navbar" role="navigation">
 			<Link to="/">
@@ -28,16 +40,26 @@ function GlobalNav({navContext}, {user, siteConfig, signedIn}) {
 				}
 				{!signedIn &&
 					<div styleName="action">
-						<Link to="/join">
+						<LocationStateToggleLink href="/join" stateKey="signupModal" location={location}>
 							Sign up
-						</Link>
+						</LocationStateToggleLink>
+						{location.state && location.state.signupModal &&
+							<LocationStateModal stateKey="signupModal" location={location}>
+								<div styleName="modal"><SignupForm onSignupSuccess={dismissModal("signupModal", location, router)} /></div>
+							</LocationStateModal>
+						}
 					</div>
 				}
 				{!signedIn &&
 					<div styleName="action">
-						<Link to="/login">
+						<LocationStateToggleLink href="/login" stateKey="loginModal" location={location}>
 							Sign in
-						</Link>
+						</LocationStateToggleLink>
+						{location.state && location.state.loginModal &&
+							<LocationStateModal stateKey="loginModal" location={location}>
+								<div styleName="modal"><LoginForm onLoginSuccess={dismissModal("loginModal", location, router)} /></div>
+							</LocationStateModal>
+						}
 					</div>
 				}
 			</div>
@@ -46,11 +68,13 @@ function GlobalNav({navContext}, {user, siteConfig, signedIn}) {
 }
 GlobalNav.propTypes = {
 	navContext: React.PropTypes.element,
+	location: React.PropTypes.object.isRequired,
 };
 GlobalNav.contextTypes = {
 	siteConfig: React.PropTypes.object.isRequired,
 	user: React.PropTypes.object,
 	signedIn: React.PropTypes.bool.isRequired,
+	router: React.PropTypes.object.isRequired,
 };
 
 export default CSSModules(GlobalNav, styles);

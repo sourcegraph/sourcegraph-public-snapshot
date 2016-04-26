@@ -26,7 +26,7 @@ function App(props) {
 	return (
 		<div styleName="main-container">
 			<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-			<GlobalNav navContext={props.navContext} />
+			<GlobalNav navContext={props.navContext} location={props.location} />
 			<div styleName="main-content">{props.main}</div>
 			<Footer />
 		</div>
@@ -35,6 +35,7 @@ function App(props) {
 App.propTypes = {
 	main: reactElement,
 	navContext: reactElement,
+	location: React.PropTypes.object.isRequired,
 };
 
 export const rootRoute: Route = {

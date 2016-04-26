@@ -19,7 +19,8 @@
 }
 
 .modal {
-	composes: mv6 br2 from base;
+	composes: center mv6 br2 from base;
+	composes: bg-white from colors;
 	composes: modal-shadow;
 	max-width: 700px; /* TODO: use rem */
 	min-width: 300px; /* TODO: use rem */

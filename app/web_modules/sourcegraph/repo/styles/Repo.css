@@ -27,8 +27,6 @@
 /* Repo Main */
 .tree-search-modal {
 	composes: f4 from typography;
-	composes: bg-white from colors;
 	composes: col-9 from grid;
 	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: center from base;
 }

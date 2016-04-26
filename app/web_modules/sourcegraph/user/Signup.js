@@ -14,7 +14,14 @@ import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
 import style from "./styles/user.css";
 
-class Signup extends Container {
+export class SignupForm extends Container {
+	static propTypes = {
+		onSignupSuccess: React.PropTypes.func.isRequired,
+	};
+	state = {
+		submitted: false,
+	};
+
 	constructor(props) {
 		super(props);
 		this._loginInput = null;
@@ -29,23 +36,34 @@ class Signup extends Container {
 		state.authResponse = UserStore.authResponses.get("signup");
 	}
 
+
+	onStateTransition(prevState, nextState) {
+		if (prevState.authResponse !== nextState.authResponse) {
+			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
+				setTimeout(() => this.props.onSignupSuccess());
+			}
+		}
+	}
+
 	stores() { return [UserStore]; }
 
 	_handleSubmit(ev) {
 		ev.preventDefault();
-		Dispatcher.Stores.dispatch(new UserActions.SubmitSignup());
-		Dispatcher.Backends.dispatch(new UserActions.SubmitSignup(
-			this._loginInput.value,
-			this._passwordInput.value,
-			this._emailInput.value,
-		));
+		this.setState({submitted: true}, () => {
+			Dispatcher.Stores.dispatch(new UserActions.SubmitSignup());
+			Dispatcher.Backends.dispatch(new UserActions.SubmitSignup(
+				this._loginInput.value,
+				this._passwordInput.value,
+				this._emailInput.value,
+			));
+		});
 	}
 
 	render() {
 		return (
-			<form styleName="container" onSubmit={this._handleSubmit}>
+			<form {...this.props} onSubmit={this._handleSubmit}>
 				<Helmet title="Sign Up" />
-				<div styleName="title">Get started with Sourcegraph</div>
+				<div styleName="title">Sign up for Sourcegraph</div>
 				<div styleName="action">
 					<Input type="text"
 						id="e2etest-login-field"
@@ -75,7 +93,7 @@ class Signup extends Container {
 					<Button color="primary"
 						id="e2etest-register-button"
 						block={true}
-						loading={this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)}>Create account & add GitHub repositories</Button>
+						loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Create account & add GitHub repositories</Button>
 				</div>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
@@ -89,5 +107,20 @@ class Signup extends Container {
 		);
 	}
 }
+SignupForm = CSSModules(SignupForm, style);
+
+function Signup(props, {router}) {
+	return (
+		<div>
+			<Helmet title="Sign Up" />
+			<SignupForm {...props}
+				styleName="container"
+				onSignupSuccess={() => router.replace("/")} />
+		</div>
+	);
+}
+Signup.contextTypes = {
+	router: React.PropTypes.object.isRequired,
+};
 
 export default redirectIfLoggedIn("/", CSSModules(Signup, style));
