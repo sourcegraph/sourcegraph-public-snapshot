@@ -8,7 +8,6 @@ import (
 
 	"github.com/justinas/nosurf"
 
-	"sourcegraph.com/sourcegraph/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
@@ -18,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
