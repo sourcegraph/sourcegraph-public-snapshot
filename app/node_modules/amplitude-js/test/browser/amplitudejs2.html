@@ -10,25 +10,30 @@
       as.onload = function() {window.amplitude.runQueuedFunctions();};
       var s = document.getElementsByTagName('script')[0];
       s.parentNode.insertBefore(as, s);
-      var Identify = function() {this._q = []; return this;};
-      function proxyIdentify(fn) {
-        Identify.prototype[fn] = function() {
+      function proxy(obj, fn) {
+        obj.prototype[fn] = function() {
           this._q.push([fn].concat(Array.prototype.slice.call(arguments, 0))); return this;
         };
       }
-      var identifyFuncs = ['add', 'append', 'clearAll', 'set', 'setOnce', 'unset'];
-      for (var i = 0; i < identifyFuncs.length; i++) {proxyIdentify(identifyFuncs[i]);}
+      var Identify = function() {this._q = []; return this;};
+      var identifyFuncs = ['add', 'append', 'clearAll', 'prepend', 'set', 'setOnce', 'unset'];
+      for (var i = 0; i < identifyFuncs.length; i++) {proxy(Identify,identifyFuncs[i]);}
       amplitude.Identify = Identify;
+      var Revenue = function() {this._q = []; return this;};
+      var revenueFuncs = ['setProductId', 'setQuantity', 'setPrice', 'setRevenueType', 'setEventProperties'];
+      for (var j = 0; j < revenueFuncs.length; j++) {proxy(Revenue, revenueFuncs[j]);}
+      amplitude.Revenue = Revenue;
       var funcs = ['init', 'logEvent', 'logRevenue', 'setUserId', 'setUserProperties',
                    'setOptOut', 'setVersionName', 'setDomain', 'setDeviceId',
-                   'setGlobalUserProperties', 'identify', 'clearUserProperties'];
+                   'setGlobalUserProperties', 'identify', 'clearUserProperties',
+                   'setGroup', 'logRevenueV2', 'regenerateDeviceId'];
       function setUpProxy(instance) {
-        function proxy(fn) {
+        function proxyMain(fn) {
           instance[fn] = function() {
             instance._q.push([fn].concat(Array.prototype.slice.call(arguments, 0)));
           };
         }
-        for (var j = 0; j < funcs.length; j++) {proxy(funcs[j]);}
+        for (var k = 0; k < funcs.length; k++) {proxyMain(funcs[k]);}
       }
       setUpProxy(amplitude);
       window.amplitude = amplitude;

@@ -73,8 +73,8 @@ var validateProperties = function validateProperties(properties) {
     var key = property;
     var keyType = type(key);
     if (keyType !== 'string') {
-      log('WARNING: Non-string property key, received type ' + keyType + ', coercing to string "' + key + '"');
       key = String(key);
+      log('WARNING: Non-string property key, received type ' + keyType + ', coercing to string "' + key + '"');
     }
 
     // validate value
@@ -118,11 +118,76 @@ var validatePropertyValue = function validatePropertyValue(key, value) {
   return value;
 };
 
+var validateGroups = function validateGroups(groups) {
+  var groupsType = type(groups);
+  if (groupsType !== 'object') {
+    log('Error: invalid groups format. Expecting Javascript object, received ' + groupsType + ', ignoring');
+    return {};
+  }
+
+  var copy = {}; // create a copy with all of the valid properties
+  for (var group in groups) {
+    if (!groups.hasOwnProperty(group)) {
+      continue;
+    }
+
+    // validate key
+    var key = group;
+    var keyType = type(key);
+    if (keyType !== 'string') {
+      key = String(key);
+      log('WARNING: Non-string groupType, received type ' + keyType + ', coercing to string "' + key + '"');
+    }
+
+    // validate value
+    var value = validateGroupName(key, groups[group]);
+    if (value === null) {
+      continue;
+    }
+    copy[key] = value;
+  }
+  return copy;
+};
+
+var validateGroupName = function validateGroupName(key, groupName) {
+  var groupNameType = type(groupName);
+  if (groupNameType === 'string') {
+    return groupName;
+  }
+  if (groupNameType === 'date' || groupNameType === 'number' || groupNameType === 'boolean') {
+    groupName = String(groupName);
+    log('WARNING: Non-string groupName, received type ' + groupNameType + ', coercing to string "' + groupName + '"');
+    return groupName;
+  }
+  if (groupNameType === 'array') {
+    // check for nested arrays or objects
+    var arrayCopy = [];
+    for (var i = 0; i < groupName.length; i++) {
+      var element = groupName[i];
+      var elemType = type(element);
+      if (elemType === 'array' || elemType === 'object') {
+        log('WARNING: Skipping nested ' + elemType + ' in array groupName');
+        continue;
+      } else if (elemType === 'string') {
+        arrayCopy.push(element);
+      } else if (elemType === 'date' || elemType === 'number' || elemType === 'boolean') {
+        element = String(element);
+        log('WARNING: Non-string groupName, received type ' + elemType + ', coercing to string "' + element + '"');
+        arrayCopy.push(element);
+      }
+    }
+    return arrayCopy;
+  }
+  log('WARNING: Non-string groupName, received type ' + groupNameType +
+        '. Please use strings or array of strings for groupName');
+};
+
 module.exports = {
   log: log,
   isEmptyString: isEmptyString,
   sessionStorageEnabled: sessionStorageEnabled,
   truncate: truncate,
+  validateGroups: validateGroups,
   validateInput: validateInput,
   validateProperties: validateProperties
 };

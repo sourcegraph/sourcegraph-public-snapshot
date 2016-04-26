@@ -9,3 +9,4 @@
   require('./utm.js');
   require('./amplitude.js');
   require('./utils.js');
+  require('./revenue.js');

@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "abab": "^1.0.3",
-    "amplitude-js": "git://github.com/amplitude/Amplitude-Javascript.git#v2.11.0",
+    "amplitude-js": "git://github.com/amplitude/Amplitude-Javascript.git#v2.12.1",
     "autotrack": "^0.6.2",
     "babel-polyfill": "6.1.19",
     "classnames": "2.1.3",
