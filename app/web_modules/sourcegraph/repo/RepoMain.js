@@ -79,17 +79,18 @@ class RepoMain extends React.Component {
 	}
 
 	_repoResolutionUpdated(repo: string, resolution: Object) {
-		// Create the repo if this repo was just resolved to a remote repo (which
-		// must be explicitly created, as we do right here).
-		if (repo && resolution && !resolution.Error && resolution.Result.RemoteRepo) {
+		// Create the repo if we don't have repoObj (the result of creating a repo) yet,
+		// and this repo was just resolved to a remote repo (which must be explicitly created,
+		// as we do right here).
+		if (!this.props.repoObj && repo && resolution && !resolution.Error && resolution.Result.RemoteRepo) {
 			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.Result.RemoteRepo));
 		}
 	}
 
 	_isMounted: boolean;
 	_handleKeyDown: () => void;
-	_showTreeSearchModal:	() => void;
-	_dismissTreeSearchModal:	() => void;
+	_showTreeSearchModal: () => void;
+	_dismissTreeSearchModal: () => void;
 
 	_onSelectPath(path: string) {
 		this.setState({treeSearchPath: path});
