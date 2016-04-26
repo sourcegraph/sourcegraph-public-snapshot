@@ -72,8 +72,6 @@
 											"props": {
 												"color": "primary",
 												"size": "large",
-												"unspaced": true,
-												"lowercase": true,
 												"children": [
 													"See usage examples for http.NewRequest »"
 												]
