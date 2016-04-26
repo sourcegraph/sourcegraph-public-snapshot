@@ -50,15 +50,17 @@ func FromRequestOrNil(r *http.Request) context.Context {
 }
 
 // Base is a middleware that sets a context.Context on each HTTP request.
-func Base(ctx context.Context) func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-		ctx2 := FromRequestOrNil(r)
-		if ctx2 == nil {
-			ctx2 = ctx
-		}
-		SetForRequest(r, ctx)
-		defer gcontext.Clear(r)
-		next(w, r)
+func Base(ctx context.Context) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx2 := FromRequestOrNil(r)
+			if ctx2 == nil {
+				ctx2 = ctx
+			}
+			SetForRequest(r, ctx)
+			defer gcontext.Clear(r)
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 

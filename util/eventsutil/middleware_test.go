@@ -14,7 +14,7 @@ func TestAgentMiddleware(t *testing.T) {
 	var called bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httpctx.SetForRequest(r, context.Background())
-		AgentMiddleware(w, r, func(w http.ResponseWriter, r *http.Request) {
+		AgentMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called = true
 			ctx := httpctx.FromRequest(r)
 
@@ -22,7 +22,7 @@ func TestAgentMiddleware(t *testing.T) {
 			if want := "sourcegraphbot"; userAgent != want {
 				t.Errorf("got User-Agent %q, want %q", userAgent, want)
 			}
-		})
+		})).ServeHTTP(w, r)
 	}))
 	defer server.Close()
 

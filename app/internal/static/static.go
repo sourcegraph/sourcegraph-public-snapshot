@@ -12,11 +12,12 @@ import (
 	"os"
 	"path"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"sync"
 
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/httpfs"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
@@ -45,25 +46,27 @@ func init() {
 //
 // Implementation note: unlike staticMiddleware, it needs no
 // instantiation.
-func Middleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if Flags.Dir == "" {
-		next(w, r)
-		return
-	}
-
-	reuseMu.Lock()
-	if reuse == nil {
-		var err error
-		reuse, err = newMiddleware()
-		if err != nil {
-			log15.Crit("static middleware init failed", "err", err, "Flags", Flags)
-			http.Error(w, "static middleware error", http.StatusInternalServerError)
+func Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if Flags.Dir == "" {
+			next.ServeHTTP(w, r)
 			return
 		}
-	}
-	reuseMu.Unlock()
 
-	reuse.Middleware(w, r, next)
+		reuseMu.Lock()
+		if reuse == nil {
+			var err error
+			reuse, err = newMiddleware()
+			if err != nil {
+				log15.Crit("static middleware init failed", "err", err, "Flags", Flags)
+				http.Error(w, "static middleware error", http.StatusInternalServerError)
+				return
+			}
+		}
+		reuseMu.Unlock()
+
+		reuse.Middleware(w, r, next.ServeHTTP)
+	})
 }
 
 var (

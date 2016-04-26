@@ -35,33 +35,35 @@ func init() {
 }
 
 // Metrics captures and exports metrics to prometheus for our HTTP handlers
-func Metrics(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String(), "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent())
+func Metrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String(), "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent())
 
-	start := time.Now()
-	rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
-	next(rwIntercept, r)
+		start := time.Now()
+		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
+		next.ServeHTTP(rwIntercept, r)
 
-	// If we have an error, name is an empty string which
-	// indicates to httptrace to use a fallback value
-	name, _ := httpctx.RouteNameOrError(r)
-	// If the code is zero, the inner Handler never explicitly called
-	// WriterHeader. We can assume the response code is 200 in such a case
-	code := rwIntercept.Code
-	if code == 0 {
-		code = 200
-	}
-	duration := time.Now().Sub(start)
-	labels := prometheus.Labels{
-		"route":  name,
-		"method": strings.ToLower(r.Method),
-		"code":   strconv.Itoa(code),
-		"repo":   util.GetTrackedRepo(r.URL.Path),
-	}
-	requestDuration.With(labels).Observe(duration.Seconds())
-	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
+		// If we have an error, name is an empty string which
+		// indicates to httptrace to use a fallback value
+		name, _ := httpctx.RouteNameOrError(r)
+		// If the code is zero, the inner Handler never explicitly called
+		// WriterHeader. We can assume the response code is 200 in such a case
+		code := rwIntercept.Code
+		if code == 0 {
+			code = 200
+		}
+		duration := time.Now().Sub(start)
+		labels := prometheus.Labels{
+			"route":  name,
+			"method": strings.ToLower(r.Method),
+			"code":   strconv.Itoa(code),
+			"repo":   util.GetTrackedRepo(r.URL.Path),
+		}
+		requestDuration.With(labels).Observe(duration.Seconds())
+		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-	log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "duration", duration, "code", code)
+		log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "duration", duration, "code", code)
+	})
 }
 
 // ResponseWriterStatusIntercept implements the http.ResponseWriter interface

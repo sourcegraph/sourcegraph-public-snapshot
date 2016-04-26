@@ -42,86 +42,88 @@ var goImportMetaTagTemplate = template.Must(template.New("").Parse(`<html><head>
 // 2. Otherwise, if the username (first path element) is "sourcegraph", consider it to be a vanity
 //    import path pointing to github.com/sourcegraph/<repo> as the clone URL.
 // 3. All other requests are served with 404 Not Found.
-func sourcegraphComGoGetHandler(w http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	if req.URL.Query().Get("go-get") != "1" {
-		next(w, req)
-		return
-	}
-
-	httpctx.SetRouteName(req, "go-get")
-	if !strings.HasPrefix(req.URL.Path, "/") {
-		err := fmt.Errorf("req.URL.Path doesn't have a leading /: %q", req.URL.Path)
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	ctx := httpctx.FromRequest(req)
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		log.Println("sourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-	}
-	pathElements := strings.Split(req.URL.Path[1:], "/")
-
-	// Check if the requested path or its prefix is a hosted repository.
-	//
-	// If there are 3 path elements, e.g., "/alpha/beta/gamma", start by checking
-	// repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
-	for i := 1; i <= len(pathElements); i++ {
-		repoPath := strings.Join(pathElements[:i], "/")
-
-		_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
-			URI: repoPath,
-		})
-		if errcode.HTTP(err) == http.StatusNotFound {
-			continue
-		} else if err != nil {
-			// TODO: Distinguish between other known/expected errors vs unexpected errors,
-			//       and treat unexpected errors appropriately. Doing this requires Repos.Get
-			//       method to be documented to specify which known error types it can return.
-			log.Println("sourcegraphComGoGetHandler: cl.Repos.Get:", err)
-			http.Error(w, "error getting repository", http.StatusInternalServerError)
+func sourcegraphComGoGetHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Query().Get("go-get") != "1" {
+			next.ServeHTTP(w, req)
 			return
 		}
 
-		// Repo found. Serve a go-import meta tag.
-
-		appURL := conf.AppURL(ctx)
-		scheme := appURL.Scheme
-		host := appURL.Host
-
-		goImportMetaTagTemplate.Execute(w, goImportMetaTag{
-			ImportPrefix: path.Join(host, repoPath),
-			VCS:          "git",
-			RepoRoot:     scheme + "://" + host + "/" + repoPath,
-		})
-		if err != nil {
-			log.Println("goImportMetaTagTemplate.Execute:", err)
+		httpctx.SetRouteName(req, "go-get")
+		if !strings.HasPrefix(req.URL.Path, "/") {
+			err := fmt.Errorf("req.URL.Path doesn't have a leading /: %q", req.URL.Path)
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
-		return
-	}
 
-	// Handle "go get sourcegraph.com/{sourcegraph,sqs}/*" for all non-hosted repositories.
-	// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
-	if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
-		host := conf.AppURL(ctx).Host
-
-		user := pathElements[0]
-		repo := pathElements[1]
-
-		err := goImportMetaTagTemplate.Execute(w, goImportMetaTag{
-			ImportPrefix: path.Join(host, user, repo),
-			VCS:          "git",
-			RepoRoot:     "https://github.com/" + user + "/" + repo,
-		})
+		ctx := httpctx.FromRequest(req)
+		cl, err := sourcegraph.NewClientFromContext(ctx)
 		if err != nil {
-			log.Println("goImportMetaTagTemplate.Execute:", err)
+			log.Println("sourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
 		}
-		return
-	}
+		pathElements := strings.Split(req.URL.Path[1:], "/")
 
-	// If we get here, there isn't a Go package for this request.
-	http.Error(w, "no such repository", http.StatusNotFound)
-	return
+		// Check if the requested path or its prefix is a hosted repository.
+		//
+		// If there are 3 path elements, e.g., "/alpha/beta/gamma", start by checking
+		// repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
+		for i := 1; i <= len(pathElements); i++ {
+			repoPath := strings.Join(pathElements[:i], "/")
+
+			_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
+				URI: repoPath,
+			})
+			if errcode.HTTP(err) == http.StatusNotFound {
+				continue
+			} else if err != nil {
+				// TODO: Distinguish between other known/expected errors vs unexpected errors,
+				//       and treat unexpected errors appropriately. Doing this requires Repos.Get
+				//       method to be documented to specify which known error types it can return.
+				log.Println("sourcegraphComGoGetHandler: cl.Repos.Get:", err)
+				http.Error(w, "error getting repository", http.StatusInternalServerError)
+				return
+			}
+
+			// Repo found. Serve a go-import meta tag.
+
+			appURL := conf.AppURL(ctx)
+			scheme := appURL.Scheme
+			host := appURL.Host
+
+			goImportMetaTagTemplate.Execute(w, goImportMetaTag{
+				ImportPrefix: path.Join(host, repoPath),
+				VCS:          "git",
+				RepoRoot:     scheme + "://" + host + "/" + repoPath,
+			})
+			if err != nil {
+				log.Println("goImportMetaTagTemplate.Execute:", err)
+			}
+			return
+		}
+
+		// Handle "go get sourcegraph.com/{sourcegraph,sqs}/*" for all non-hosted repositories.
+		// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
+		if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
+			host := conf.AppURL(ctx).Host
+
+			user := pathElements[0]
+			repo := pathElements[1]
+
+			err := goImportMetaTagTemplate.Execute(w, goImportMetaTag{
+				ImportPrefix: path.Join(host, user, repo),
+				VCS:          "git",
+				RepoRoot:     "https://github.com/" + user + "/" + repo,
+			})
+			if err != nil {
+				log.Println("goImportMetaTagTemplate.Execute:", err)
+			}
+			return
+		}
+
+		// If we get here, there isn't a Go package for this request.
+		http.Error(w, "no such repository", http.StatusNotFound)
+		return
+	})
 }

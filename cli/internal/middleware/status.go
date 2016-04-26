@@ -37,12 +37,14 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 // so among other things it allows non-HTTPS requests to our status
 // endpoint. It should be the first middleware (or at least before any
 // other middlewares that would deny AWS ELB access to it).
-func HealthCheck(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if r.URL.Path == statusEndpoint {
-		statusHandler(w, r)
-		return
-	}
-	next(w, r)
+func HealthCheck(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == statusEndpoint {
+			statusHandler(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 var hostname string

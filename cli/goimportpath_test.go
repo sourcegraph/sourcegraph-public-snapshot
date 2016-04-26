@@ -72,7 +72,7 @@ func TestGoImportPath(t *testing.T) {
 		}
 		httpctx.SetForRequest(req, mock.Ctx)
 
-		sourcegraphComGoGetHandler(rw, req, nil)
+		sourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
 		if got, want := rw.Code, test.wantStatus; got != want {
 			t.Errorf("%s:\ngot  %#v\nwant %#v", test.path, got, want)
@@ -105,7 +105,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	}
 	httpctx.SetForRequest(req, mock.Ctx)
 
-	sourcegraphComGoGetHandler(rw, req, nil)
+	sourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
 	got := attemptedRepoURIs
 	want := []string{"alpha", "alpha/beta", "alpha/beta/gamma"}

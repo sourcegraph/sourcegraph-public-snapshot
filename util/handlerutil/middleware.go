@@ -5,49 +5,47 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-type Middleware func(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc)
+type Middleware func(next http.Handler) http.Handler
 
 func WithMiddleware(h http.Handler, mw ...Middleware) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(mw) >= 2 {
-			mw[0](w, r, WithMiddleware(h, mw[1:]...).ServeHTTP)
-		} else if len(mw) == 1 {
-			mw[0](w, r, h.ServeHTTP)
-		} else if len(mw) == 0 {
-			h.ServeHTTP(w, r)
-		}
-	})
+	if len(mw) == 0 {
+		return h
+	}
+	return mw[0](WithMiddleware(h, mw[1:]...))
 }
 
 // ActorMiddleware fetches the actor info and stores it in the
 // context for downstream HTTP handlers. A middleware that calls
 // sourcegraph.WithCredentials based on the request's auth must
 // already have run for ActorMiddleware to work.
-func ActorMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ctx, cl := Client(r)
+func ActorMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cl := Client(r)
 
-	if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil && fetchUserForCredentials(cred) {
-		authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
-		if err == nil {
-			ctx = auth.WithActor(ctx, auth.Actor{
-				UID:   int(authInfo.UID),
-				Login: authInfo.Login,
-				Write: authInfo.Write,
-				Admin: authInfo.Admin,
-			})
-			httpctx.SetForRequest(r, ctx)
-		} else if err != nil {
-			log15.Error("Auth.Identify in ActorMiddleware failed.", "err", err)
+		if cred := sourcegraph.CredentialsFromContext(ctx); cred != nil && fetchUserForCredentials(cred) {
+			authInfo, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+			if err == nil {
+				ctx = auth.WithActor(ctx, auth.Actor{
+					UID:   int(authInfo.UID),
+					Login: authInfo.Login,
+					Write: authInfo.Write,
+					Admin: authInfo.Admin,
+				})
+				httpctx.SetForRequest(r, ctx)
+			} else if err != nil {
+				log15.Error("Auth.Identify in ActorMiddleware failed.", "err", err)
+			}
 		}
-	}
 
-	next(w, r)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // fetchUserForCredentials is whether ActorMiddleware should try to

@@ -101,9 +101,11 @@ var cspConfig = csp.Config{
 	},
 }
 
-func tmplReloadMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if appconf.Flags.ReloadAssets {
-		tmpl.Load()
-	}
-	next(w, r)
+func tmplReloadMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if appconf.Flags.ReloadAssets {
+			tmpl.Load()
+		}
+		next.ServeHTTP(w, r)
+	})
 }

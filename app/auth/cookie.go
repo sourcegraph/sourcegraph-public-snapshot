@@ -107,20 +107,22 @@ func DeleteSessionCookie(w http.ResponseWriter) {
 // cookie (if any). It performs no validation or authentication of the
 // access token; it merely causes it to be passed along verbatim in
 // outgoing API requests.
-func CookieMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if sess, err := ReadSessionCookie(r); err == nil {
-		ctx := httpctx.FromRequest(r)
-		ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: sess.AccessToken}))
-		httpctx.SetForRequest(r, ctx)
+func CookieMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if sess, err := ReadSessionCookie(r); err == nil {
+			ctx := httpctx.FromRequest(r)
+			ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: sess.AccessToken}))
+			httpctx.SetForRequest(r, ctx)
 
-		// Vary based on Authorization header if the request is
-		// operating with any level of authorization, so that the
-		// response can't be cached and mixed in with unauthorized
-		// responses in an HTTP cache.
-		w.Header().Add("vary", "Authorization")
-	} else if err != ErrNoSession {
-		log.Printf("%s %s: Error checking request auth info: %s (will delete session cookie).", r.Method, r.URL.RequestURI(), err)
-		DeleteSessionCookie(w)
-	}
-	next(w, r)
+			// Vary based on Authorization header if the request is
+			// operating with any level of authorization, so that the
+			// response can't be cached and mixed in with unauthorized
+			// responses in an HTTP cache.
+			w.Header().Add("vary", "Authorization")
+		} else if err != ErrNoSession {
+			log.Printf("%s %s: Error checking request auth info: %s (will delete session cookie).", r.Method, r.URL.RequestURI(), err)
+			DeleteSessionCookie(w)
+		}
+		next.ServeHTTP(w, r)
+	})
 }

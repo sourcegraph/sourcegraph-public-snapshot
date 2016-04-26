@@ -26,26 +26,28 @@ type Handler struct {
 }
 
 // Middleware is the middleware implementation of this CSP handler.
-func (h *Handler) Middleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if h.csp != "" {
-		w.Header().Set("Content-Security-Policy", h.csp)
-	}
-	if h.cspReportOnly != "" {
-		w.Header().Set("Content-Security-Policy-Report-Only", h.cspReportOnly)
-	}
-
-	if r.Method == "POST" {
-		requestURI := r.URL.RequestURI()
-		if h.cfg.Policy != nil && requestURI == h.cfg.Policy.ReportURI {
-			h.logCSPReport("Content-Security-Policy", h.cfg.Policy, r.Body)
-			return
-		} else if h.cfg.PolicyReportOnly != nil && requestURI == h.cfg.PolicyReportOnly.ReportURI {
-			h.logCSPReport("Content-Security-Policy-Report-Only", h.cfg.Policy, r.Body)
-			return
+func (h *Handler) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if h.csp != "" {
+			w.Header().Set("Content-Security-Policy", h.csp)
 		}
-	}
+		if h.cspReportOnly != "" {
+			w.Header().Set("Content-Security-Policy-Report-Only", h.cspReportOnly)
+		}
 
-	next(w, r)
+		if r.Method == "POST" {
+			requestURI := r.URL.RequestURI()
+			if h.cfg.Policy != nil && requestURI == h.cfg.Policy.ReportURI {
+				h.logCSPReport("Content-Security-Policy", h.cfg.Policy, r.Body)
+				return
+			} else if h.cfg.PolicyReportOnly != nil && requestURI == h.cfg.PolicyReportOnly.ReportURI {
+				h.logCSPReport("Content-Security-Policy-Report-Only", h.cfg.Policy, r.Body)
+				return
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 // compile precompiles the Content-Security-Policy{,-Report-Only}

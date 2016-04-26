@@ -16,11 +16,13 @@ const (
 
 // AgentMiddleware fetches the user's user agent and stores it
 // in the context for downstream HTTP handlers.
-func AgentMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	ctx := httpctx.FromRequest(r)
-	ctx = WithUserAgent(ctx, url.QueryEscape(r.UserAgent()))
-	httpctx.SetForRequest(r, ctx)
-	next(w, r)
+func AgentMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := httpctx.FromRequest(r)
+		ctx = WithUserAgent(ctx, url.QueryEscape(r.UserAgent()))
+		httpctx.SetForRequest(r, ctx)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // WithUserAgent returns a copy of the context with the user agent added to it

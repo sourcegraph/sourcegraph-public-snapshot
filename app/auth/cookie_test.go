@@ -16,7 +16,7 @@ func TestCookieMiddleware(t *testing.T) {
 	var called bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		httpctx.SetForRequest(r, context.Background())
-		CookieMiddleware(w, r, func(w http.ResponseWriter, r *http.Request) {
+		CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called = true
 			ctx := httpctx.FromRequest(r)
 
@@ -28,7 +28,7 @@ func TestCookieMiddleware(t *testing.T) {
 			if want := "mytoken"; tok.AccessToken != want {
 				t.Errorf("got token %q, want %q", tok.AccessToken, want)
 			}
-		})
+		})).ServeHTTP(w, r)
 	}))
 	defer server.Close()
 
