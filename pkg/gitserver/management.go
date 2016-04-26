@@ -39,22 +39,25 @@ var (
 )
 
 func handleCreateRequest(req *createRequest) {
+	start := time.Now()
+	status := ""
+
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
+	defer func() { defer observeCreate(start, status) }()
 
-	start := time.Now()
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
 	if _, ok := cloning[dir]; ok {
 		cloningMu.Unlock()
 		req.ReplyChan <- &createReply{CloneInProgress: true}
-		observeCreate(start, "clone-in-progress")
+		status = "clone-in-progress"
 		return
 	}
 	if repoExists(dir) {
 		cloningMu.Unlock()
 		req.ReplyChan <- &createReply{RepoExist: true}
-		observeCreate(start, "repo-exists")
+		status = "repo-exists"
 		return
 	}
 
@@ -77,21 +80,21 @@ func handleCreateRequest(req *createRequest) {
 		cmd.Stderr = &outputBuf
 		if err := runWithRemoteOpts(cmd, req.Opt); err != nil {
 			req.ReplyChan <- &createReply{Error: fmt.Sprintf("cloning repository %s failed with output:\n%s", req.Repo, outputBuf.String())}
-			observeCreate(start, "clone-fail")
+			status = "clone-fail"
 			return
 		}
 		req.ReplyChan <- &createReply{}
-		observeCreate(start, "clone-success")
+		status = "clone-success"
 		return
 	}
 
 	cmd := exec.Command("git", "init", "--bare", dir)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		req.ReplyChan <- &createReply{Error: fmt.Sprintf("initializing repository %s failed with output:\n%s", req.Repo, string(out))}
-		observeCreate(start, "init-fail")
+		status = "init-fail"
 		return
 	}
-	observeCreate(start, "init-success")
+	status = "init-success"
 	req.ReplyChan <- &createReply{}
 }
 
@@ -180,8 +183,11 @@ type removeReply struct {
 func (r *removeReply) repoFound() bool { return !r.RepoNotFound }
 
 func handleRemoveRequest(req *removeRequest) {
+	status := ""
+
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
+	defer func() { defer observeRemove(status) }()
 
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
@@ -189,12 +195,12 @@ func handleRemoveRequest(req *removeRequest) {
 	cloningMu.Unlock()
 	if cloneInProgress {
 		req.ReplyChan <- &removeReply{CloneInProgress: true}
-		observeRemove("clone-in-progress")
+		status = "clone-in-progress"
 		return
 	}
 	if !repoExists(dir) {
 		req.ReplyChan <- &removeReply{RepoNotFound: true}
-		observeRemove("repo-not-found")
+		status = "repo-not-found"
 		return
 	}
 
@@ -202,17 +208,17 @@ func handleRemoveRequest(req *removeRequest) {
 	cmd.Dir = dir
 	if err := cmd.Run(); err != nil {
 		req.ReplyChan <- &removeReply{Error: fmt.Sprintf("not a repository: %s", req.Repo)}
-		observeRemove("not-a-repository")
+		status = "not-a-repository"
 		return
 	}
 
 	if err := os.RemoveAll(dir); err != nil {
 		req.ReplyChan <- &removeReply{Error: err.Error()}
-		observeRemove("failed")
+		status = "failed"
 		return
 	}
 	req.ReplyChan <- &removeReply{}
-	observeRemove("success")
+	status = "success"
 }
 
 func Remove(repo string) error {

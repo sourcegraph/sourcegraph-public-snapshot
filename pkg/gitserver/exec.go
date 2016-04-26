@@ -39,10 +39,13 @@ type processResult struct {
 }
 
 func handleExecRequest(req *execRequest) {
+	start := time.Now()
+	status := ""
+
+	defer func() { observeExec(req, start, status) }()
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
-	start := time.Now()
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
 	_, cloneInProgress := cloning[dir]
@@ -50,13 +53,13 @@ func handleExecRequest(req *execRequest) {
 	if cloneInProgress {
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{CloneInProgress: true}
-		observeExec(req, start, "clone-in-progress")
+		status = "clone-in-progress"
 		return
 	}
 	if !repoExists(dir) {
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{RepoNotFound: true}
-		observeExec(req, start, "repo-not-found")
+		status = "repo-not-found"
 		return
 	}
 
@@ -94,7 +97,7 @@ func handleExecRequest(req *execRequest) {
 		ExitStatus: exitStatus,
 	}
 	close(processResultChan)
-	observeExec(req, start, strconv.Itoa(exitStatus))
+	status = strconv.Itoa(exitStatus)
 }
 
 type Cmd struct {

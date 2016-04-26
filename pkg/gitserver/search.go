@@ -37,22 +37,25 @@ type searchReply struct {
 func (r *searchReply) repoFound() bool { return !r.RepoNotFound }
 
 func handleSearchRequest(req *searchRequest) {
+	start := time.Now()
+	status := ""
+
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
+	defer func() { defer observeSearch(req, start, status) }()
 
-	start := time.Now()
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
 	_, cloneInProgress := cloning[dir]
 	cloningMu.Unlock()
 	if cloneInProgress {
 		req.ReplyChan <- &searchReply{CloneInProgress: true}
-		observeSearch(req, start, "clone-in-progress")
+		status = "clone-in-progress"
 		return
 	}
 	if !repoExists(dir) {
 		req.ReplyChan <- &searchReply{RepoNotFound: true}
-		observeSearch(req, start, "repo-not-found")
+		status = "repo-not-found"
 		return
 	}
 
@@ -62,7 +65,7 @@ func handleSearchRequest(req *searchRequest) {
 		queryType = "--fixed-strings"
 	default:
 		req.ReplyChan <- &searchReply{Error: fmt.Sprintf("unrecognized QueryType: %q", req.Opt.QueryType)}
-		observeSearch(req, start, "error")
+		status = "error"
 		return
 	}
 
@@ -72,13 +75,13 @@ func handleSearchRequest(req *searchRequest) {
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		req.ReplyChan <- &searchReply{Error: err.Error()}
-		observeSearch(req, start, "error")
+		status = "error"
 		return
 	}
 	defer out.Close()
 	if err := cmd.Start(); err != nil {
 		req.ReplyChan <- &searchReply{Error: err.Error()}
-		observeSearch(req, start, "error")
+		status = "error"
 		return
 	}
 
@@ -165,14 +168,14 @@ func handleSearchRequest(req *searchRequest) {
 	cmd.Process.Kill()
 	if err != nil {
 		req.ReplyChan <- &searchReply{Error: err.Error()}
-		observeSearch(req, start, "error")
+		status = "error"
 		return
 	}
 
 	req.ReplyChan <- &searchReply{
 		Results: results,
 	}
-	observeSearch(req, start, "success")
+	status = "success"
 }
 
 func exitStatus(err error) int {
