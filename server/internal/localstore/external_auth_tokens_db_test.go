@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 )
 
 func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
@@ -116,7 +117,7 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 	}
 }
 
-func TestExternalAuthTokens_SetUserToken_delete(t *testing.T) {
+func TestExternalAuthTokens_DeleteToken(t *testing.T) {
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -131,13 +132,13 @@ func TestExternalAuthTokens_SetUserToken_delete(t *testing.T) {
 	}
 	s.mustSetUserToken(ctx, t, tok0)
 
-	tok1 := &auth.ExternalAuthToken{
-		User:     1,
+	tokSpec := &sourcegraph.ExternalTokenSpec{
+		UID:      1,
 		Host:     "example.com",
 		ClientID: "c",
-		Token:    "",
 	}
-	if err := s.SetUserToken(ctx, tok1); err != nil {
+
+	if err := s.DeleteToken(ctx, tokSpec); err != nil {
 		t.Fatal(err)
 	}
 

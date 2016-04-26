@@ -34,7 +34,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	usersStore := store.UsersFromContext(ctx)
 
 	client := githubutil.Default.AuthedClient(extToken.Token)
-	githubCtx := github.NewContextWithClient(ctx, client, true)
+	githubCtx := github.NewContextWithClient(ctx, true, client, nil)
 
 	ghOrgsStore := github.Orgs{}
 	ghOrgs, err := ghOrgsStore.List(githubCtx, sourcegraph.UserSpec{}, &sourcegraph.ListOptions{PerPage: 100})

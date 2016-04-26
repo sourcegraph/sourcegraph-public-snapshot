@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sqs/pbtypes"
@@ -111,26 +112,15 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 	}, nil
 }
 
-func (s *auth) GetExternalToken(ctx context.Context, request *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
-	if request == nil {
-		request = &sourcegraph.ExternalTokenSpec{}
+func (s *auth) GetExternalToken(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
+	if tok == nil {
+		tok = &sourcegraph.ExternalTokenSpec{}
 	}
 	extTokensStore := store.ExternalAuthTokensFromContext(ctx)
 
-	if request.ClientID == "" {
-		request.ClientID = githubClientID
-	}
+	setExternalTokenSpecDefaults(ctx, tok, nil)
 
-	if request.Host == "" {
-		request.Host = githubcli.Config.Host()
-	}
-
-	uid := int(request.UID)
-	if uid == 0 {
-		uid = authpkg.ActorFromContext(ctx).UID
-	}
-
-	dbToken, err := extTokensStore.GetUserToken(ctx, uid, request.Host, request.ClientID)
+	dbToken, err := extTokensStore.GetUserToken(ctx, int(tok.UID), tok.Host, tok.ClientID)
 	if err == authpkg.ErrNoExternalAuthToken {
 		return nil, grpc.Errorf(codes.NotFound, "no external auth token found")
 	} else if err != nil {
@@ -153,21 +143,10 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 	}
 	extTokensStore := store.ExternalAuthTokensFromContext(ctx)
 
-	if extToken.ClientID == "" {
-		extToken.ClientID = githubClientID
-	}
-
-	if extToken.Host == "" {
-		extToken.Host = githubcli.Config.Host()
-	}
-
-	uid := int(extToken.UID)
-	if uid == 0 {
-		uid = authpkg.ActorFromContext(ctx).UID
-	}
+	setExternalTokenSpecDefaults(ctx, nil, extToken)
 
 	dbToken := &authpkg.ExternalAuthToken{
-		User:     uid,
+		User:     int(extToken.UID),
 		Host:     extToken.Host,
 		Token:    extToken.Token,
 		Scope:    extToken.Scope,
@@ -177,4 +156,54 @@ func (s *auth) SetExternalToken(ctx context.Context, extToken *sourcegraph.Exter
 
 	err := extTokensStore.SetUserToken(ctx, dbToken)
 	return &pbtypes.Void{}, err
+}
+
+func (s *auth) DeleteAndRevokeExternalToken(ctx context.Context, tokSpec *sourcegraph.ExternalTokenSpec) (*pbtypes.Void, error) {
+	store := store.ExternalAuthTokensFromContext(ctx)
+
+	setExternalTokenSpecDefaults(ctx, tokSpec, nil)
+
+	tok, err := store.GetUserToken(ctx, int(tokSpec.UID), tokSpec.Host, tokSpec.ClientID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := store.DeleteToken(ctx, tokSpec); err != nil {
+		return nil, err
+	}
+
+	// Revoke token if it's from GitHub.
+	if tok.Host == githubcli.Config.Host() && tok.ClientID == githubClientID {
+		if err := (&github.Authorizations{}).Revoke(ctx, tok.ClientID, tok.Token); err != nil {
+			return nil, err
+		}
+	}
+
+	return &pbtypes.Void{}, err
+}
+
+func setExternalTokenSpecDefaults(ctx context.Context, tokSpec *sourcegraph.ExternalTokenSpec, tok *sourcegraph.ExternalToken) {
+	// Exact same logic for both ExternalToken and ExternalTokenSpec, so
+	// handle both here. Usually you'll only pass in one or the other.
+
+	if tok != nil && tok.ClientID == "" {
+		tok.ClientID = githubClientID
+	}
+	if tokSpec != nil && tokSpec.ClientID == "" {
+		tokSpec.ClientID = githubClientID
+	}
+
+	if tok != nil && tok.Host == "" {
+		tok.Host = githubcli.Config.Host()
+	}
+	if tokSpec != nil && tokSpec.Host == "" {
+		tokSpec.Host = githubcli.Config.Host()
+	}
+
+	if tok != nil && tok.UID == 0 {
+		tok.UID = int32(authpkg.ActorFromContext(ctx).UID)
+	}
+	if tokSpec != nil && tokSpec.UID == 0 {
+		tokSpec.UID = int32(authpkg.ActorFromContext(ctx).UID)
+	}
 }

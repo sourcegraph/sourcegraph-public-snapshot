@@ -28,3 +28,13 @@ func (s mockGitHubRepos) GetByID(id int) (*github.Repository, *github.Response, 
 func (s mockGitHubRepos) List(user string, opt *github.RepositoryListOptions) ([]github.Repository, *github.Response, error) {
 	return s.List_(user, opt)
 }
+
+type mockGitHubAuthorizations struct {
+	Revoke_ func(clientID, token string) (*github.Response, error)
+}
+
+var _ githubAuthorizations = (*mockGitHubAuthorizations)(nil)
+
+func (s mockGitHubAuthorizations) Revoke(clientID, token string) (*github.Response, error) {
+	return s.Revoke_(clientID, token)
+}

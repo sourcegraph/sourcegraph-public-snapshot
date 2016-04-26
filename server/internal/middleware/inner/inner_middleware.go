@@ -245,6 +245,19 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 	return
 }
 
+func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Auth", "DeleteAndRevokeExternalToken", param)
+	defer func() {
+		trace.After(ctx, "Auth", "DeleteAndRevokeExternalToken", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
+	}
+	return
+}
+
 type wrappedBuilds struct{}
 
 func (s wrappedBuilds) Get(ctx context.Context, param *sourcegraph.BuildSpec) (res *sourcegraph.Build, err error) {

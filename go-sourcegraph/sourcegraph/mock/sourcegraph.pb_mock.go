@@ -542,10 +542,11 @@ func (s *UsersServer) Count(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.
 var _ sourcegraph.UsersServer = (*UsersServer)(nil)
 
 type AuthClient struct {
-	GetAccessToken_   func(ctx context.Context, in *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
-	Identify_         func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error)
-	GetExternalToken_ func(ctx context.Context, in *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error)
-	SetExternalToken_ func(ctx context.Context, in *sourcegraph.ExternalToken) (*pbtypes.Void, error)
+	GetAccessToken_               func(ctx context.Context, in *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
+	Identify_                     func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.AuthInfo, error)
+	GetExternalToken_             func(ctx context.Context, in *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error)
+	SetExternalToken_             func(ctx context.Context, in *sourcegraph.ExternalToken) (*pbtypes.Void, error)
+	DeleteAndRevokeExternalToken_ func(ctx context.Context, in *sourcegraph.ExternalTokenSpec) (*pbtypes.Void, error)
 }
 
 func (s *AuthClient) GetAccessToken(ctx context.Context, in *sourcegraph.AccessTokenRequest, opts ...grpc.CallOption) (*sourcegraph.AccessTokenResponse, error) {
@@ -564,13 +565,18 @@ func (s *AuthClient) SetExternalToken(ctx context.Context, in *sourcegraph.Exter
 	return s.SetExternalToken_(ctx, in)
 }
 
+func (s *AuthClient) DeleteAndRevokeExternalToken(ctx context.Context, in *sourcegraph.ExternalTokenSpec, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.DeleteAndRevokeExternalToken_(ctx, in)
+}
+
 var _ sourcegraph.AuthClient = (*AuthClient)(nil)
 
 type AuthServer struct {
-	GetAccessToken_   func(v0 context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
-	Identify_         func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error)
-	GetExternalToken_ func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error)
-	SetExternalToken_ func(v0 context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error)
+	GetAccessToken_               func(v0 context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error)
+	Identify_                     func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.AuthInfo, error)
+	GetExternalToken_             func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error)
+	SetExternalToken_             func(v0 context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error)
+	DeleteAndRevokeExternalToken_ func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*pbtypes.Void, error)
 }
 
 func (s *AuthServer) GetAccessToken(v0 context.Context, v1 *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
@@ -587,6 +593,10 @@ func (s *AuthServer) GetExternalToken(v0 context.Context, v1 *sourcegraph.Extern
 
 func (s *AuthServer) SetExternalToken(v0 context.Context, v1 *sourcegraph.ExternalToken) (*pbtypes.Void, error) {
 	return s.SetExternalToken_(v0, v1)
+}
+
+func (s *AuthServer) DeleteAndRevokeExternalToken(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*pbtypes.Void, error) {
+	return s.DeleteAndRevokeExternalToken_(v0, v1)
 }
 
 var _ sourcegraph.AuthServer = (*AuthServer)(nil)

@@ -460,6 +460,36 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, v1 *sourcegraph.Exter
 	return rv, nil
 }
 
+func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, v1 *sourcegraph.ExternalTokenSpec) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Auth.DeleteAndRevokeExternalToken: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AuthOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Auth")
+	}
+
+	rv, err := innerSvc.DeleteAndRevokeExternalToken(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 type wrappedBuilds struct {
 	ctxFunc  ContextFunc
 	services svc.Services
