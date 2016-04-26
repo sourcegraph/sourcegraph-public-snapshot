@@ -149,7 +149,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 	}
 
 	if opt.Entry.Path == "" {
-		return nil, fmt.Errorf("listRefs: no file path specified")
+		return nil, fmt.Errorf("listRefs: no file path specified for file in %v", opt.Entry.RepoRev)
 	}
 
 	filters := []srcstore.RefFilter{
