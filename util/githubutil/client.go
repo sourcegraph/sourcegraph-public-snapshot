@@ -86,6 +86,29 @@ func (c *Config) AuthedClient(token string) *github.Client {
 	return c.client(c.OAuth.Client(ctx, &oauth2.Token{AccessToken: token}))
 }
 
+// ApplicationAuthedClient returns a GitHub API client that sends the
+// OAuth2 application's client credentials in HTTP basic auth. It is
+// necessary to do this for some API endpoints, such as the "revoke an
+// authorization for an application" endpoint.
+//
+// This is different from UnauthedClient, which uses the application's
+// client ID and secret, but passes them in the URL, not the HTTP
+// Authorization header. GitHub treats those two differently.
+func (c *Config) ApplicationAuthedClient() *github.Client {
+	// No need for caching; this is a rarely used client and is only
+	// used uncached for POST/DELETE operations anyway.
+
+	var t http.RoundTripper = c.baseTransport()
+
+	t = &github.BasicAuthTransport{
+		Username:  c.OAuth.ClientID,
+		Password:  c.OAuth.ClientSecret,
+		Transport: t,
+	}
+
+	return c.client(&http.Client{Transport: t})
+}
+
 // client creates a new GitHub API client from the transport.
 func (c *Config) client(httpClient *http.Client) *github.Client {
 	{

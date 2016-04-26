@@ -219,7 +219,7 @@ func (s wrappedAuth) Identify(ctx context.Context, param *pbtypes.Void) (res *so
 	return
 }
 
-func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenRequest) (res *sourcegraph.ExternalToken, err error) {
+func (s wrappedAuth) GetExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *sourcegraph.ExternalToken, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Auth", "GetExternalToken", param)
 	defer func() {
@@ -241,6 +241,19 @@ func (s wrappedAuth) SetExternalToken(ctx context.Context, param *sourcegraph.Ex
 	res, err = local.Services.Auth.SetExternalToken(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Auth.SetExternalToken returned nil, nil")
+	}
+	return
+}
+
+func (s wrappedAuth) DeleteAndRevokeExternalToken(ctx context.Context, param *sourcegraph.ExternalTokenSpec) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Auth", "DeleteAndRevokeExternalToken", param)
+	defer func() {
+		trace.After(ctx, "Auth", "DeleteAndRevokeExternalToken", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Auth.DeleteAndRevokeExternalToken(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Auth.DeleteAndRevokeExternalToken returned nil, nil")
 	}
 	return
 }

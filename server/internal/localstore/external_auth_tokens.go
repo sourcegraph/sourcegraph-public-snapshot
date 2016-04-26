@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
@@ -54,11 +55,6 @@ func (s *externalAuthTokens) SetUserToken(ctx context.Context, tok *auth.Externa
 	return dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {
 		ctx = WithAppDBH(ctx, tx)
 
-		if tok.Token == "" {
-			_, err := tx.Delete(tok)
-			return err
-		}
-
 		if _, err := s.GetUserToken(ctx, tok.User, tok.Host, tok.ClientID); err == auth.ErrNoExternalAuthToken {
 			return tx.Insert(tok)
 		} else if err != nil && err != auth.ErrExternalAuthTokenDisabled {
@@ -98,4 +94,13 @@ func (s *externalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []in
 		return nil, err
 	}
 	return toks, nil
+}
+
+func (s *externalAuthTokens) DeleteToken(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error {
+	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "ExternalAuthTokens.DeleteToken", tok.UID); err != nil {
+		return err
+	}
+
+	_, err := appDBH(ctx).Exec(`DELETE FROM ext_auth_token WHERE "user"=$1 AND "host"=$2 AND client_id=$3;`, tok.UID, tok.Host, tok.ClientID)
+	return err
 }

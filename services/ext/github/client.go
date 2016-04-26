@@ -35,13 +35,20 @@ type minimalClient struct {
 	repos githubRepos
 	orgs  githubOrgs
 
+	// These are authenticated as the OAuth2 client application using
+	// HTTP Basic auth, not as the user. (Some GitHub API endpoints
+	// require that.)
+	appAuthorizations githubAuthorizations
+
 	isAuthedUser bool // whether the client is using a GitHub user's auth token
 }
 
-func newMinimalClient(client *github.Client, isAuthedUser bool) *minimalClient {
+func newMinimalClient(isAuthedUser bool, userClient *github.Client, appClient *github.Client) *minimalClient {
 	return &minimalClient{
-		repos: client.Repositories,
-		orgs:  client.Organizations,
+		repos: userClient.Repositories,
+		orgs:  userClient.Organizations,
+
+		appAuthorizations: appClient.Authorizations,
 
 		isAuthedUser: isAuthedUser,
 	}
@@ -56,6 +63,10 @@ type githubRepos interface {
 type githubOrgs interface {
 	ListMembers(org string, opt *github.ListMembersOptions) ([]github.User, *github.Response, error)
 	List(member string, opt *github.ListOptions) ([]github.Organization, *github.Response, error)
+}
+
+type githubAuthorizations interface {
+	Revoke(clientID, token string) (*github.Response, error)
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
@@ -76,9 +87,8 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
 		// token revoked, delete token from DB
-		_, err = svc.Auth(ctx).SetExternalToken(ctx, &sourcegraph.ExternalToken{
-			UID:   int32(auth.ActorFromContext(ctx).UID),
-			Token: "",
+		_, err = svc.Auth(ctx).DeleteAndRevokeExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
+			UID: int32(auth.ActorFromContext(ctx).UID),
 		})
 		if err != nil {
 			log15.Error("could not delete external token", "error", err)

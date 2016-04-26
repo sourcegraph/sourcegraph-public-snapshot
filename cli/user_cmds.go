@@ -80,6 +80,15 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	_, err = userGroup.AddCommand("revoke-external-auth",
+		"revoke an external authorization",
+		"Revoke and delete an external authorization (e.g., a GitHub OAuth2 authorization).",
+		&userRevokeExternalAuthCmd{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type userCmd struct{}
@@ -300,5 +309,34 @@ func (c *userDeleteCmd) Execute(args []string) error {
 
 	fmt.Printf("# User %q deleted.\n", identifier)
 
+	return nil
+}
+
+type userRevokeExternalAuthCmd struct {
+	Host     string `long:"host" description:"host of external authorization provider" default-mask:"github.com"`
+	ClientID string `long:"client-id" description:"external OAuth2 client ID" default-mask:"(github.com value)"`
+
+	Args struct {
+		User string `name:"User" description:"user login"`
+	} `positional-args:"yes" required:"yes"`
+}
+
+func (c *userRevokeExternalAuthCmd) Execute(args []string) error {
+	cl := client.Client()
+
+	user, err := cl.Users.Get(client.Ctx, &sourcegraph.UserSpec{Login: c.Args.User})
+	if err != nil {
+		return err
+	}
+
+	_, err = cl.Auth.DeleteAndRevokeExternalToken(client.Ctx, &sourcegraph.ExternalTokenSpec{
+		UID:      user.UID,
+		Host:     c.Host,
+		ClientID: c.ClientID,
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("# External authorization for user %q deleted.\n", user.Login)
 	return nil
 }

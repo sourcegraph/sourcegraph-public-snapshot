@@ -1183,11 +1183,17 @@ service Auth {
 
 	// GetExternalToken returns a stored token that authorizes this server
 	// to an external service on behalf of the user.
-	rpc GetExternalToken(ExternalTokenRequest) returns (ExternalToken);
+	rpc GetExternalToken(ExternalTokenSpec) returns (ExternalToken);
 
 	// SetExternalToken stores a token that authorizes this server
 	// to an external service on behalf of the user.
 	rpc SetExternalToken(ExternalToken) returns (pbtypes.Void);
+
+	// DeleteAndRevokeExternalToken deletes the specified token from
+	// Sourcegraph and revokes/disables the token on the external host
+	// (e.g., for GitHub, it hits the "revoke an authorizations for an
+	// application" API endpoint).
+	rpc DeleteAndRevokeExternalToken(ExternalTokenSpec) returns (pbtypes.Void);
 }
 
 // LoginCredentials is the information a user submits to log in.
@@ -1240,9 +1246,9 @@ message AuthInfo {
 	bool Admin = 6;
 }
 
-// ExternalTokenRequest specifies a request for a stored auth token
+// ExternalTokenSpec specifies a request for a stored auth token
 // of a user for an external host.
-message ExternalTokenRequest {
+message ExternalTokenSpec {
 	// UID is the UID of the user whose token is requested.
 	int32 uid = 1 [(gogoproto.customname) = "UID"];
 

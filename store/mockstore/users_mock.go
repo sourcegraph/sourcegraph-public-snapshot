@@ -86,6 +86,7 @@ var _ store.Directory = (*Directory)(nil)
 type ExternalAuthTokens struct {
 	GetUserToken_      func(ctx context.Context, user int, host, clientID string) (*auth.ExternalAuthToken, error)
 	SetUserToken_      func(ctx context.Context, tok *auth.ExternalAuthToken) error
+	DeleteToken_       func(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error
 	ListExternalUsers_ func(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error)
 }
 
@@ -95,6 +96,10 @@ func (s *ExternalAuthTokens) GetUserToken(ctx context.Context, user int, host, c
 
 func (s *ExternalAuthTokens) SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error {
 	return s.SetUserToken_(ctx, tok)
+}
+
+func (s *ExternalAuthTokens) DeleteToken(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error {
+	return s.DeleteToken_(ctx, tok)
 }
 
 func (s *ExternalAuthTokens) ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error) {

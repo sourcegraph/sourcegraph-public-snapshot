@@ -23,7 +23,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	}
 
 	// This call will also confirm that the request actor has access to this user's teammate info.
-	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenRequest{UID: user.UID})
+	extToken, err := svc.Auth(ctx).GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{UID: user.UID})
 	if grpc.Code(err) == codes.NotFound {
 		return &sourcegraph.Teammates{}, nil
 	} else if err != nil {
@@ -34,7 +34,7 @@ func (s *users) ListTeammates(ctx context.Context, user *sourcegraph.UserSpec) (
 	usersStore := store.UsersFromContext(ctx)
 
 	client := githubutil.Default.AuthedClient(extToken.Token)
-	githubCtx := github.NewContextWithClient(ctx, client, true)
+	githubCtx := github.NewContextWithClient(ctx, true, client, nil)
 
 	ghOrgsStore := github.Orgs{}
 	ghOrgs, err := ghOrgsStore.List(githubCtx, sourcegraph.UserSpec{}, &sourcegraph.ListOptions{PerPage: 100})

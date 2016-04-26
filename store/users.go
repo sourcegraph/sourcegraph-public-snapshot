@@ -53,6 +53,9 @@ type ExternalAuthTokens interface {
 	// returned.
 	SetUserToken(ctx context.Context, tok *auth.ExternalAuthToken) error
 
+	// DeleteToken deletes the token from the database.
+	DeleteToken(ctx context.Context, tok *sourcegraph.ExternalTokenSpec) error
+
 	// ListExternalUsers returns the list of external tokens corresponding to
 	// the given external user ids.
 	ListExternalUsers(ctx context.Context, extUIDs []int, host, clientID string) ([]*auth.ExternalAuthToken, error)
