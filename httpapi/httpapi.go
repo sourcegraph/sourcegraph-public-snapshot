@@ -52,7 +52,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		}
 		cspConfig.Policy.ReportURI = reportURI.String()
 		cspHandler := csp.NewHandler(cspConfig)
-		mw = append(mw, cspHandler.ServeHTTP)
+		mw = append(mw, cspHandler.Middleware)
 	}
 
 	// Set handlers for the installed routes.

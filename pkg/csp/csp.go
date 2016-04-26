@@ -1,4 +1,4 @@
-// Package csp provides an HTTP handler for setting
+// Package csp provides a middleware for setting
 // Content-Security-Policy headers and receiving CSP violation
 // reports.
 package csp
@@ -25,8 +25,8 @@ type Handler struct {
 	ReportLog *log.Logger
 }
 
-// ServeHTTP implements http.Handler.
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+// Middleware is the middleware implementation of this CSP handler.
+func (h *Handler) Middleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if h.csp != "" {
 		w.Header().Set("Content-Security-Policy", h.csp)
 	}
@@ -45,9 +45,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 		}
 	}
 
-	if next != nil {
-		next(w, r)
-	}
+	next(w, r)
 }
 
 // compile precompiles the Content-Security-Policy{,-Report-Only}

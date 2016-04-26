@@ -62,7 +62,7 @@ func NewHandler(r *router.Router) http.Handler {
 	if conf.GetenvBool("SG_USE_CSP") {
 		cspHandler := csp.NewHandler(cspConfig)
 		cspHandler.ReportLog = log.New(ioutil.Discard, "", 0)
-		mw = append(mw, cspHandler.ServeHTTP)
+		mw = append(mw, cspHandler.Middleware)
 	}
 
 	m.Handle("/", handlerutil.WithMiddleware(r, tmplReloadMiddleware))
