@@ -13,10 +13,10 @@
 		{{if deployedGitCommitID}}
 			sentryTags["Deployed commit"] = "{{deployedGitCommitID}}";
 		{{end}}
-		{{if .CurrentUser}}
-			sentryTags["Authed"] = "{{.CurrentUser.Login}}" ? "yes" : "no";
-			sentryTags["Authed UID"] = "{{.CurrentUser.UID}}";
-			sentryTags["Authed user"] = "{{.CurrentUser.Login}}";
+		{{if .Actor.IsAuthenticated}}
+			sentryTags["Authed"] = "{{.Actor.Login}}" ? "yes" : "no";
+			sentryTags["Authed UID"] = "{{.Actor.UID}}";
+			sentryTags["Authed user"] = "{{.Actor.Login}}";
 		{{end}}
 		{{if .CurrentSpanID}}
 			{{if .CurrentSpanID.Trace}}
@@ -43,16 +43,6 @@
 		window["_fs_host"] = "www.fullstory.com";
 		window["_fs_org"] = "WQW7";
 		(function(m,n,e,t,l,o,g,y){g=m[e]=function(a,b){g.q?g.q.push([a,b]):g._api(a,b);};g.q=[];o=n.createElement(t);o.async=1;o.src="https://"+_fs_host+"/s/fs.js";y=n.getElementsByTagName(t)[0];y.parentNode.insertBefore(o,y);g.identify=function(i,v){g(l,{uid:i});if(v)g(l,v)};g.setUserVars=function(v){FS(l,v)};g.identifyAccount=function(i,v){o="account";v=v||{};v.acctId=i;FS(o,v)};g.clearUserCookie=function(d,i){d=n.domain;while(1){n.cookie="fs_uid=;domain="+d+";path=/;expires="+new Date(0);i=d.indexOf(".");if(i<0)break;d=d.slice(i+1)}}})(window,document,"FS","script","user");
-		{{if .CurrentUser}}
-			FS.identify("{{.CurrentUser.Login}}@{{getClientIDOrHostName .Ctx .AppURL}}", {
-				{{if .CurrentUser.Name}}
-				displayName: "{{.CurrentUser.Name}}",
-				{{end}}
-				{{if .UserEmail}}
-				email: "{{.UserEmail}}",
-				{{end}}
-			});
-		{{end}}
 	</script>
 	<!-- End of FullStory script -->
 
@@ -63,7 +53,7 @@
 				window.ga("create", {{googleAnalyticsTrackingID}}, "auto");
 				window.ga("require", "linkid", "https://www.google-analytics.com/plugins/ua/linkid.js");
 				window.ga("require", "urlChangeTracker");
-				window.ga("set", "dimension1", Boolean({{if .CurrentUser}}{{.CurrentUser.Login}}{{else}}false{{end}}));
+				window.ga("set", "dimension1", Boolean({{if .Actor.IsAuthenticated}}{{.Actor.Login}}{{else}}false{{end}}));
 				window.ga("set", "dimension4", "web");
 				window.ga("send", "pageview");
 		</script>
@@ -71,29 +61,11 @@
 	<!-- End of Google Analytics script -->
 
 	<!-- Start of Intercom scripts -->
-	{{if .CurrentUser}}
-		<script ignore-csp>
-			{{if .UserEmail}}
-			window.intercomSettings = {
-				app_id: "wd8xxn47",
-				name: "{{or .CurrentUser.Login .CurrentUser.Name}}",
-				email: {{.UserEmail}},
-				user_hash: {{intercomHMAC .UserEmail}},
-				created_at: Math.floor(new Date("{{.CurrentUser.RegisteredAt}}").getTime() / 1000),
-			};
-			{{else}}
-			window.intercomSettings = {
-				app_id: "wd8xxn47",
-			}
-			{{end}}
-		</script>
-	{{else}}
-		<script ignore-csp>
-			window.intercomSettings = {
-				app_id: "wd8xxn47",
-			}
-		</script>
-	{{end}}
+	<script ignore-csp>
+		window.intercomSettings = {
+			app_id: "wd8xxn47",
+		}
+	</script>
 
 	<script ignore-csp>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wd8xxn47';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
 	<!-- End of Intercom scripts -->

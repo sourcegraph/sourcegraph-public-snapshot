@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/schemautil"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -125,8 +126,9 @@ func oauthLoginURL(r *http.Request, state oauthAuthorizeClientState) (*url.URL, 
 
 func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
 	ctx, cl := handlerutil.Client(r)
-	currentUser := handlerutil.UserFromRequest(r)
-	if currentUser == nil {
+
+	actor := auth.ActorFromContext(ctx)
+	if !actor.IsAuthenticated() {
 		return &errcode.HTTPErr{Status: http.StatusUnauthorized, Err: errors.New("user must be logged in")}
 	}
 
@@ -164,7 +166,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	_, err = cl.Auth.SetExternalToken(ctx, &sourcegraph.ExternalToken{
-		UID:      currentUser.UID,
+		UID:      int32(actor.UID),
 		Host:     githubcli.Config.Host(),
 		Token:    token.AccessToken,
 		Scope:    strings.Join(scopes, ","),
@@ -175,9 +177,9 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	sendLinkGitHubSlackMsg(ctx, currentUser, user)
+	sendLinkGitHubSlackMsg(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login}, user)
 
-	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: currentUser.UID})
+	sgUser, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: int32(actor.UID)})
 	if err != nil {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
@@ -193,7 +195,7 @@ func serveGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	_, err = cl.Accounts.Update(ctx, sgUser)
 	if err != nil {
-		log15.Info("Could not update profile info", "github_user", *user.Login, "sourcegraph_user", currentUser.Login)
+		log15.Info("Could not update profile info", "github_user", *user.Login, "sourcegraph_user", actor.Login)
 	}
 
 	returnTo := state.ReturnTo

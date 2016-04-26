@@ -1,8 +1,12 @@
 package local
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"math"
 	"os"
+	"strconv"
 	"time"
 
 	"golang.org/x/net/context"
@@ -109,6 +113,8 @@ func (s *auth) Identify(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.Auth
 
 		Write: a.HasWriteAccess(),
 		Admin: a.HasAdminAccess(),
+
+		IntercomHash: intercomHMAC(a.UID),
 	}, nil
 }
 
@@ -206,4 +212,15 @@ func setExternalTokenSpecDefaults(ctx context.Context, tokSpec *sourcegraph.Exte
 	if tokSpec != nil && tokSpec.UID == 0 {
 		tokSpec.UID = int32(authpkg.ActorFromContext(ctx).UID)
 	}
+}
+
+var intercomSecretKey = os.Getenv("SG_INTERCOM_SECRET_KEY")
+
+func intercomHMAC(uid int) string {
+	if uid == 0 {
+		return ""
+	}
+	mac := hmac.New(sha256.New, []byte(intercomSecretKey))
+	mac.Write([]byte(strconv.Itoa(uid)))
+	return hex.EncodeToString(mac.Sum(nil))
 }

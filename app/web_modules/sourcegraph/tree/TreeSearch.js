@@ -29,7 +29,6 @@ import type {Route} from "react-router";
 
 import {Input, Loader, RepoLink} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
-import context from "sourcegraph/app/context";
 
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
@@ -102,6 +101,7 @@ class TreeSearch extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		status: React.PropTypes.object,
+		user: React.PropTypes.object,
 	};
 
 	constructor(props: TreeSearch.props) {
@@ -197,7 +197,7 @@ class TreeSearch extends Container {
 		}
 
 		// Global search results only show up for admin users
-		if (context.currentUser && context.currentUser.Admin) {
+		if (this.context.user && this.context.user.Admin) {
 			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo], 3));
 		}
 

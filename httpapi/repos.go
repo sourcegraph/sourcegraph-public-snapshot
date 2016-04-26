@@ -185,15 +185,7 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	response := struct {
-		*sourcegraph.RemoteRepoList
-		HasLinkedGitHub bool
-	}{
-		RemoteRepoList:  remoteRepos,
-		HasLinkedGitHub: err == nil,
-	}
-
-	return writeJSON(w, &response)
+	return writeJSON(w, remoteRepos)
 }
 
 // getRepoLastBuildTime returns the time of the newest build for the

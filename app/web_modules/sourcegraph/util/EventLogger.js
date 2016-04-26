@@ -10,6 +10,7 @@ import type {Route} from "react-router";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import UserStore from "sourcegraph/user/UserStore";
 
 export const EventLocation = {
 	Login: "Login",
@@ -75,13 +76,13 @@ export class EventLogger {
 	// any subequent calls to logEvent or setUserProperty
 	// will be buffered.
 	init() {
+		const user = UserStore.activeUser();
+		const emails = user && user.UID ? UserStore.emails.get(user.UID) : null;
+		const primaryEmail = emails && !emails.Error ? emails.filter(e => e.Primary).map(e => e.Email)[0] : null;
+		const authInfo = UserStore.activeAuthInfo();
+
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js");
-
-			let user = null;
-			if (context.currentUser) {
-				user = context.currentUser.Login;
-			}
 
 			if (!this._siteConfig) {
 				throw new Error("EventLogger requires SiteConfig to be previously set using EventLogger.setSiteConfig before EventLogger can be initialized.");
@@ -106,19 +107,39 @@ export class EventLogger {
 				}
 			}
 
-			this._amplitude.init(apiKey, user, {
+			this._amplitude.init(apiKey, user ? user.Login : null, {
 				includeReferrer: true,
 			});
 
-			if (context.currentUser && context.currentUser.RegisteredAt) {
-				this.setUserProperty("registered_at", new Date(context.currentUser.RegisteredAt).toDateString());
+			if (user && user.RegisteredAt) {
+				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
 			}
-			if (context.userEmail) {
-				this.setUserProperty("email", context.userEmail);
+			if (primaryEmail) {
+				this.setUserProperty("email", primaryEmail);
 			}
 		}
+
 		if (global.window) {
 			this._intercomSettings = window.intercomSettings;
+		}
+		if (this._intercomSettings && user && authInfo) {
+			this.setIntercomProperty("name", user.Name);
+			if (primaryEmail) this.setIntercomProperty("email", primaryEmail);
+			this.setIntercomProperty("user_id", user.UID.toString());
+			this.setIntercomProperty("user_hash", authInfo.IntercomHash);
+			this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
+			// $FlowHack
+			Intercom("boot", this._intercomSettings); // eslint-disable-line no-undef
+		}
+
+		// FullStory
+		if (global.FS && user) {
+			const id = user.Email || user.Login;
+			// $FlowHack
+			FS.identify(id, { // eslint-disable-line no-undef
+				displayName: user.Name,
+				email: primaryEmail,
+			});
 		}
 
 		this.isUserAgentBot = Boolean(context.userAgentIsBot);
@@ -134,7 +155,7 @@ export class EventLogger {
 		return Boolean(this._intercomSettings) && !this.isUserAgentBot;
 	}
 
-	// sets current context's user properties
+	// sets current user's properties
 	setUserProperty(property, value) {
 		if (!this._shouldFlushAmplitude()) {
 			this.userProperties = deepFreeze(this.userProperties.concat([[property, value]]));
@@ -143,7 +164,7 @@ export class EventLogger {
 		}
 	}
 
-	// records events for the current context's user
+	// records events for the current user
 	logEvent(eventName, eventProperties) {
 		if (!this._shouldFlushAmplitude()) {
 			this.events = deepFreeze(this.events.concat([[eventName, eventProperties]]));
@@ -160,7 +181,7 @@ export class EventLogger {
 		this.logEvent(eventName, props);
 	}
 
-	// sets current context's users property value
+	// sets current user's property value
 	setIntercomProperty(property, value) {
 		if (!this._shouldFlushIntercom()) {
 			this.intercomProperties = deepFreeze(this.intercomProperties.concat([[property, value]]));
@@ -169,7 +190,7 @@ export class EventLogger {
 		}
 	}
 
-	// records intercom events for the current context's user
+	// records intercom events for the current user
 	logIntercomEvent(eventName, eventProperties) {
 		if (!this._shouldFlushIntercom()) {
 			this.intercomEvents = deepFreeze(this.intercomEvents.concat([[eventName, eventProperties]]));
@@ -212,7 +233,7 @@ export class EventLogger {
 	__onDispatch(action) {
 		switch (action.constructor) {
 		case DashboardActions.RemoteReposFetched:
-			if (action.data.HasLinkedGitHub && action.data.RemoteRepos) {
+			if (action.data.RemoteRepos) {
 				let orgs = {};
 				for (let repo of action.data.RemoteRepos) {
 					if (repo.OwnerIsOrg) orgs[repo.Owner] = true;

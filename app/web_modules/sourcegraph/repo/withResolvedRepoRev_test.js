@@ -43,7 +43,7 @@ describe("withResolvedRepoRev", () => {
 
 	describe("repo resolution", () => {
 		it("should NOT initially trigger WantResolveRepo (the route onEnter/onChange does it)", () => {
-			const res = render(<C params={{splat: "r"}} />);
+			const res = render(<C params={{splat: "r"}} />, {router: {}});
 			expect(res.actions).to.eql([]);
 		});
 		it("should trigger WantRepo for resolved local repos", () => {

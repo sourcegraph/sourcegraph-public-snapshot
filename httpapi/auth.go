@@ -13,13 +13,14 @@ import (
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
 type authInfo struct {
 	sourcegraph.AuthInfo
-	IncludedUser *sourcegraph.User `json:",omitempty"`
+	IncludedUser   *sourcegraph.User          `json:",omitempty"`
+	IncludedEmails []*sourcegraph.EmailAddr   `json:",omitempty"`
+	GitHubToken    *sourcegraph.ExternalToken `json:",omitempty"`
 }
 
 func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
@@ -32,6 +33,22 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 
 	res := authInfo{AuthInfo: *info}
 
+	if info.UID != 0 {
+		tok, err := cl.Auth.GetExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
+			UID:      info.UID,
+			Host:     "github.com",
+			ClientID: "", // defaults to GitHub client ID in environment
+		})
+		if err == nil {
+			// No need to include the actual access token.
+			tok.Token = ""
+
+			res.GitHubToken = tok
+		} else if grpc.Code(err) != codes.NotFound {
+			log15.Warn("Error getting GitHub token in serveAuthInfo", "uid", info.UID, "err", err)
+		}
+	}
+
 	// As an optimization, optimistically include the user to avoid
 	// the client needing to make another roundtrip.
 	if info.UID != 0 {
@@ -40,6 +57,16 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 			res.IncludedUser = user
 		} else {
 			log15.Warn("Error optimistically including user in serveAuthInfo", "uid", info.UID, "err", err)
+		}
+	}
+
+	// Also optimistically include emails
+	if info.UID != 0 {
+		emails, err := cl.Users.ListEmails(ctx, &sourcegraph.UserSpec{UID: info.UID})
+		if err == nil {
+			res.IncludedEmails = emails.EmailAddrs
+		} else {
+			log15.Warn("Error optimistically including emails in serveAuthInfo", "uid", info.UID, "err", err)
 		}
 	}
 
@@ -122,16 +149,7 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
-	ctx := httpctx.FromRequest(r)
-
-	// Delete their session.
 	appauth.DeleteSessionCookie(w)
-
-	// Clear the user in the request context so that we don't show the logout
-	// page with the user's info.
-	ctx = handlerutil.ClearUser(ctx)
-	httpctx.SetForRequest(r, ctx)
-
 	return writeJSON(w, &authResponse{Success: true})
 }
 

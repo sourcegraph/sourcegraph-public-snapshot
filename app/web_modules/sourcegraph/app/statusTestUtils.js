@@ -18,6 +18,7 @@ export function renderedStatus(component): State {
 					if (err && !status.error) status.error = err;
 				},
 			},
+			router: {},
 		});
 	});
 	return status;

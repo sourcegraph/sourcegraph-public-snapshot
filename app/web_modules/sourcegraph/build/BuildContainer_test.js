@@ -13,7 +13,8 @@ import testdataInitial from "sourcegraph/build/testdata/BuildContainer-initial.j
 describe("BuildContainer", () => {
 	it("should initially render empty and want build and tasks", () => {
 		autotest(testdataInitial, `${__dirname}/testdata/BuildContainer-initial.json`,
-			<BuildContainer	params={{splat: "r", id: "1"}} />
+			<BuildContainer	params={{splat: "r", id: "1"}} />,
+			{user: null},
 		);
 	});
 

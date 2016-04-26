@@ -1,5 +1,73 @@
 // @flow
 
+import type {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user";
+
+export class WantAuthInfo {
+	accessToken: string;
+
+	constructor(accessToken: string) {
+		this.accessToken = accessToken;
+	}
+}
+
+export class FetchedAuthInfo {
+	accessToken: string;
+	authInfo: ?(AuthInfo | {Error: any}); // null if unauthenticated
+
+	constructor(accessToken: string, authInfo: ?(AuthInfo | {Error: any})) {
+		this.accessToken = accessToken;
+		this.authInfo = authInfo;
+	}
+}
+
+export class WantUser {
+	uid: number;
+
+	constructor(uid: number) {
+		this.uid = uid;
+	}
+}
+
+export class FetchedUser {
+	uid: number;
+	user: User | {Error: any};
+
+	constructor(uid: number, user: User | {Error: any}) {
+		this.uid = uid;
+		this.user = user;
+	}
+}
+
+export class WantEmails {
+	uid: number;
+
+	constructor(uid: number) {
+		this.uid = uid;
+	}
+}
+
+export class FetchedEmails {
+	uid: number;
+	emails: Array<EmailAddr> | {Error: any};
+
+	constructor(uid: number, emails: Array<EmailAddr> | {Error: any}) {
+		this.uid = uid;
+		this.emails = emails;
+	}
+}
+
+// No WantGitHubToken because it is included in the AuthInfo response.
+
+export class FetchedGitHubToken {
+	uid: number;
+	token: ExternalToken | {Error: any};
+
+	constructor(uid: number, token: ExternalToken | {Error: any}) {
+		this.uid = uid;
+		this.token = token;
+	}
+}
+
 export class SubmitSignup {
 	login: string;
 	password: string;

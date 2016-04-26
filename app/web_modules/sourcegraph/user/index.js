@@ -3,6 +3,26 @@
 import {rel} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
 
+export type User = {
+	UID: number;
+	Login: string;
+};
+
+export type AuthInfo = {
+	UID: number;
+	Login: string;
+};
+
+export type EmailAddr = {
+	Email: string;
+};
+
+export type ExternalToken = {
+	uid: number;
+	host: string;
+	scope: string;
+};
+
 const login = {
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {

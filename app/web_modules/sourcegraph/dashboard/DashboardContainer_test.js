@@ -9,7 +9,12 @@ describe("DashboardContainer", () => {
 	it("should render a dashboard", () => {
 		autotest(testdataData, `${__dirname}/testdata/DashboardContainer-data.json`,
 			<DashboardContainer />,
-			{siteConfig: {}},
+			{
+				siteConfig: {},
+				signedIn: false,
+				user: null,
+				githubToken: null,
+			},
 		);
 	});
 });

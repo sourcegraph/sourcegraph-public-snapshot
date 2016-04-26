@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
@@ -16,7 +16,7 @@ func init() {
 		// to prevent any subsequent gRPC requests from hitting the
 		// same unauthorized error (eg. if the token has expired).
 		ctx := httpctx.FromRequest(r)
-		ctx = handlerutil.ClearUser(ctx)
+		ctx = sourcegraph.WithCredentials(ctx, nil)
 		httpctx.SetForRequest(r, ctx)
 		return RedirectToLogIn(w, r)
 	}
