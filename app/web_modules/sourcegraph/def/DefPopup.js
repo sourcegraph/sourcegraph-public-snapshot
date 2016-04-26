@@ -20,7 +20,6 @@ class DefPopup extends Container {
 		def: React.PropTypes.object.isRequired,
 		refLocations: React.PropTypes.array,
 		path: React.PropTypes.string.isRequired,
-		onboardingCTA: React.PropTypes.element,
 	};
 
 	static contextTypes = {
@@ -54,7 +53,6 @@ class DefPopup extends Container {
 
 		return (
 			<div className={s.marginBox}>
-				{this.props.onboardingCTA}
 				<header className={s.boxTitle}>
 					<Link to={`${urlToDef(this.state.defObj)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 				</header>

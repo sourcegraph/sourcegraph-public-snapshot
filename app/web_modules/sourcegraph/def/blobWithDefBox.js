@@ -3,8 +3,6 @@
 import React from "react";
 import DefPopup from "sourcegraph/def/DefPopup";
 import type {Helper} from "sourcegraph/blob/BlobLoader";
-import LinkGitHubCTA from "sourcegraph/def/LinkGitHubCTA";
-import {EventLocation} from "sourcegraph/util/EventLogger";
 import DefStore from "sourcegraph/def/DefStore";
 
 // blobWithDefBox uses the def's path as the blob file to load, and it
@@ -18,6 +16,6 @@ export default ({
 	},
 
 	renderProps(state) {
-		return state.defObj && !state.defObj.Error ? {children: <DefPopup def={state.defObj} refLocations={state.refLocations} path={state.path} byte={state.startByte} onboardingCTA={<LinkGitHubCTA location={EventLocation.DefPopup}/>} />} : null;
+		return state.defObj && !state.defObj.Error ? {children: <DefPopup def={state.defObj} refLocations={state.refLocations} path={state.path} byte={state.startByte} />} : null;
 	},
 }: Helper);
