@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -60,7 +61,7 @@ func Metrics(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	requestDuration.With(labels).Observe(duration.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-	log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "duration", duration, "code", code)
+	log15.Debug("HTTP Request after", "method", r.Method, "URL", r.URL.String(), "routename", name, "spanID", traceutil.SpanID(r), "duration", duration, "code", code)
 }
 
 // ResponseWriterStatusIntercept implements the http.ResponseWriter interface
