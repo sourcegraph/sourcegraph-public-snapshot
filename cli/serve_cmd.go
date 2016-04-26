@@ -250,7 +250,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Server identity keypair
-	idKey, createdIDKey, err := c.generateOrReadIDKey()
+	idKey, _, err := c.generateOrReadIDKey()
 	if err != nil {
 		return err
 	}
@@ -457,13 +457,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	// Occasionally compute instance usage stats for uplink, but don't do
 	// it too often
 	go statsutil.ComputeUsageStats(clientCtx, 10*time.Minute)
-
-	// Prepare for initial onboarding.
-	if createdIDKey && !c.NoInitialOnboarding {
-		if err := c.prepareInitialOnboarding(clientCtx); err != nil {
-			log15.Warn("Error preparing initial onboarding", "err", err)
-		}
-	}
 
 	select {}
 }
