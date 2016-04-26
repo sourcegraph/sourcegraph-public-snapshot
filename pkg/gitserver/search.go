@@ -12,8 +12,12 @@ import (
 	"runtime"
 	"strconv"
 	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util"
 )
 
 type searchRequest struct {
@@ -36,16 +40,19 @@ func handleSearchRequest(req *searchRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
+	start := time.Now()
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
 	_, cloneInProgress := cloning[dir]
 	cloningMu.Unlock()
 	if cloneInProgress {
 		req.ReplyChan <- &searchReply{CloneInProgress: true}
+		observeSearch(req, start, "clone-in-progress")
 		return
 	}
 	if !repoExists(dir) {
 		req.ReplyChan <- &searchReply{RepoNotFound: true}
+		observeSearch(req, start, "repo-not-found")
 		return
 	}
 
@@ -55,6 +62,7 @@ func handleSearchRequest(req *searchRequest) {
 		queryType = "--fixed-strings"
 	default:
 		req.ReplyChan <- &searchReply{Error: fmt.Sprintf("unrecognized QueryType: %q", req.Opt.QueryType)}
+		observeSearch(req, start, "error")
 		return
 	}
 
@@ -64,11 +72,13 @@ func handleSearchRequest(req *searchRequest) {
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		req.ReplyChan <- &searchReply{Error: err.Error()}
+		observeSearch(req, start, "error")
 		return
 	}
 	defer out.Close()
 	if err := cmd.Start(); err != nil {
 		req.ReplyChan <- &searchReply{Error: err.Error()}
+		observeSearch(req, start, "error")
 		return
 	}
 
@@ -155,12 +165,14 @@ func handleSearchRequest(req *searchRequest) {
 	cmd.Process.Kill()
 	if err != nil {
 		req.ReplyChan <- &searchReply{Error: err.Error()}
+		observeSearch(req, start, "error")
 		return
 	}
 
 	req.ReplyChan <- &searchReply{
 		Results: results,
 	}
+	observeSearch(req, start, "success")
 }
 
 func exitStatus(err error) int {
@@ -195,4 +207,21 @@ func Search(repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.Sea
 		return nil, errors.New(reply.Error)
 	}
 	return reply.Results, nil
+}
+
+var searchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "search_duration_seconds",
+	Help:      "gitserver.Search latencies in seconds.",
+	Buckets:   []float64{0.1, 0.5, 1.0, 2.0},
+}, []string{"query_type", "repo", "status"})
+
+func init() {
+	prometheus.MustRegister(searchDuration)
+}
+
+func observeSearch(req *searchRequest, start time.Time, status string) {
+	repo := util.GetTrackedRepo(req.Repo)
+	searchDuration.WithLabelValues(req.Opt.QueryType, repo, status).Observe(time.Since(start).Seconds())
 }
