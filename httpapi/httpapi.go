@@ -62,6 +62,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.ResetPassword).Handler(nosurf.New(grpcErrorHandler(servePasswordReset)))
 
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
+	m.Get(apirouter.AuthInfo).Handler(handler(serveAuthInfo))
 	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
 	m.Get(apirouter.Builds).Handler(handler(serveBuilds))
 	m.Get(apirouter.BuildTaskLog).Handler(handler(serveBuildTaskLog))
@@ -90,6 +91,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SrclibImport).Handler(handler(serveSrclibImport))
 	m.Get(apirouter.SrclibCoverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
+	m.Get(apirouter.User).Handler(handler(serveUser))
 	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))
 
 	// RepoRefresh handler requires the user, so install a middleware just for

@@ -10,12 +10,16 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
 
 import "sourcegraph/user/UserBackend"; // for side effects
-
+import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
 import style from "./styles/user.css";
 
 // TODO: prevent mounting this component if user is logged in
 class ResetPassword extends Container {
+	static contextTypes = {
+		user: React.PropTypes.object,
+	};
+
 	constructor(props) {
 		super(props);
 		this._passwordInput = null;
@@ -23,7 +27,7 @@ class ResetPassword extends Container {
 		this._handleSubmit = this._handleSubmit.bind(this);
 	}
 
-	reconcileState(state, props) {
+	reconcileState(state, props, context) {
 		Object.assign(state, props);
 		state.token = state.location.query && state.location.query.token; // TODO: error handling (missing token)
 		state.pendingAuthAction = UserStore.pendingAuthActions.get("reset");
@@ -81,4 +85,4 @@ class ResetPassword extends Container {
 	}
 }
 
-export default CSSModules(ResetPassword, style);
+export default redirectIfLoggedIn("/", CSSModules(ResetPassword, style));

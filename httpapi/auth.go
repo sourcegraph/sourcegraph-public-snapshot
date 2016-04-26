@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -12,7 +14,37 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sqs/pbtypes"
 )
+
+type authInfo struct {
+	sourcegraph.AuthInfo
+	IncludedUser *sourcegraph.User `json:",omitempty"`
+}
+
+func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	info, err := cl.Auth.Identify(ctx, &pbtypes.Void{})
+	if err != nil {
+		return err
+	}
+
+	res := authInfo{AuthInfo: *info}
+
+	// As an optimization, optimistically include the user to avoid
+	// the client needing to make another roundtrip.
+	if info.UID != 0 {
+		user, err := cl.Users.Get(ctx, &sourcegraph.UserSpec{UID: info.UID})
+		if err == nil {
+			res.IncludedUser = user
+		} else {
+			log15.Warn("Error optimistically including user in serveAuthInfo", "uid", info.UID, "err", err)
+		}
+	}
+
+	return writeJSON(w, res)
+}
 
 type authResponse struct {
 	Success bool

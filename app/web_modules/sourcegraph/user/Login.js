@@ -10,7 +10,7 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
 
 import "sourcegraph/user/UserBackend"; // for side effects
-
+import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
 import style from "./styles/user.css";
 
@@ -80,4 +80,4 @@ class Login extends Container {
 	}
 }
 
-export default CSSModules(Login, style);
+export default redirectIfLoggedIn("/", CSSModules(Login, style));

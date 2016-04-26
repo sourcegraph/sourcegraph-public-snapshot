@@ -34,6 +34,19 @@ func (s *UsersClient) MockGet(t *testing.T, wantUser string) (called *bool) {
 	return
 }
 
+func (s *UsersClient) MockGetByUID(t *testing.T, wantUser int32) (called *bool) {
+	called = new(bool)
+	s.Get_ = func(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.User, error) {
+		*called = true
+		if user.UID != wantUser {
+			t.Errorf("got UID %d, want %d", user.UID, wantUser)
+			return nil, grpc.Errorf(codes.NotFound, "user with UID %d not found", wantUser)
+		}
+		return &sourcegraph.User{UID: wantUser}, nil
+	}
+	return
+}
+
 func (s *UsersClient) MockGet_Return(t *testing.T, returns *sourcegraph.User) (called *bool) {
 	called = new(bool)
 	s.Get_ = func(ctx context.Context, user *sourcegraph.UserSpec) (*sourcegraph.User, error) {

@@ -1,5 +1,11 @@
+// @flow
+
 export class SubmitSignup {
-	constructor(login, password, email) {
+	login: string;
+	password: string;
+	email: string;
+
+	constructor(login: string, password: string, email: string) {
 		this.login = login;
 		this.password = password;
 		this.email = email;
@@ -7,7 +13,11 @@ export class SubmitSignup {
 }
 
 export class SignupCompleted {
-	constructor(email, resp) {
+	email: string;
+	resp: any;
+	eventName: string;
+
+	constructor(email: string, resp: any) {
 		this.email = email;
 		this.resp = resp;
 		this.eventName = "SignupCompleted";
@@ -15,14 +25,20 @@ export class SignupCompleted {
 }
 
 export class SubmitLogin {
-	constructor(login, password) {
+	login: string;
+	password: string;
+
+	constructor(login: string, password: string) {
 		this.login = login;
 		this.password = password;
 	}
 }
 
 export class LoginCompleted {
-	constructor(resp) {
+	resp: any;
+	eventName: string;
+
+	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "LoginCompleted";
 	}
@@ -33,27 +49,39 @@ export class SubmitLogout {
 }
 
 export class LogoutCompleted {
-	constructor(resp) {
+	resp: any;
+	eventName: string;
+
+	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "LogoutCompleted";
 	}
 }
 
 export class SubmitForgotPassword {
-	constructor(email) {
+	email: string;
+
+	constructor(email: string) {
 		this.email = email;
 	}
 }
 
 export class ForgotPasswordCompleted {
-	constructor(resp) {
+	resp: any;
+	eventName: string;
+
+	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "ForgotPasswordCompleted";
 	}
 }
 
 export class SubmitResetPassword {
-	constructor(password, confirmPassword, token) {
+	password: string;
+	confirmPassword: string;
+	token: string;
+
+	constructor(password: string, confirmPassword: string, token: string) {
 		this.password = password;
 		this.confirmPassword = confirmPassword;
 		this.token = token;
@@ -61,7 +89,10 @@ export class SubmitResetPassword {
 }
 
 export class ResetPasswordCompleted {
-	constructor(resp) {
+	resp: any;
+	eventName: string;
+
+	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "ResetPasswordCompleted";
 	}
