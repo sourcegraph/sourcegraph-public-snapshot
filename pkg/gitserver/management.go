@@ -11,6 +11,9 @@ import (
 	"os/exec"
 	"path"
 	"sync"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -39,16 +42,19 @@ func handleCreateRequest(req *createRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
+	start := time.Now()
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
 	if _, ok := cloning[dir]; ok {
 		cloningMu.Unlock()
 		req.ReplyChan <- &createReply{CloneInProgress: true}
+		observeCreate(start, "clone-in-progress")
 		return
 	}
 	if repoExists(dir) {
 		cloningMu.Unlock()
 		req.ReplyChan <- &createReply{RepoExist: true}
+		observeCreate(start, "repo-exists")
 		return
 	}
 
@@ -71,17 +77,21 @@ func handleCreateRequest(req *createRequest) {
 		cmd.Stderr = &outputBuf
 		if err := runWithRemoteOpts(cmd, req.Opt); err != nil {
 			req.ReplyChan <- &createReply{Error: fmt.Sprintf("cloning repository %s failed with output:\n%s", req.Repo, outputBuf.String())}
+			observeCreate(start, "clone-fail")
 			return
 		}
 		req.ReplyChan <- &createReply{}
+		observeCreate(start, "clone-success")
 		return
 	}
 
 	cmd := exec.Command("git", "init", "--bare", dir)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		req.ReplyChan <- &createReply{Error: fmt.Sprintf("initializing repository %s failed with output:\n%s", req.Repo, string(out))}
+		observeCreate(start, "init-fail")
 		return
 	}
+	observeCreate(start, "init-success")
 	req.ReplyChan <- &createReply{}
 }
 
@@ -179,10 +189,12 @@ func handleRemoveRequest(req *removeRequest) {
 	cloningMu.Unlock()
 	if cloneInProgress {
 		req.ReplyChan <- &removeReply{CloneInProgress: true}
+		observeRemove("clone-in-progress")
 		return
 	}
 	if !repoExists(dir) {
 		req.ReplyChan <- &removeReply{RepoNotFound: true}
+		observeRemove("repo-not-found")
 		return
 	}
 
@@ -190,14 +202,17 @@ func handleRemoveRequest(req *removeRequest) {
 	cmd.Dir = dir
 	if err := cmd.Run(); err != nil {
 		req.ReplyChan <- &removeReply{Error: fmt.Sprintf("not a repository: %s", req.Repo)}
+		observeRemove("not-a-repository")
 		return
 	}
 
 	if err := os.RemoveAll(dir); err != nil {
 		req.ReplyChan <- &removeReply{Error: err.Error()}
+		observeRemove("failed")
 		return
 	}
 	req.ReplyChan <- &removeReply{}
+	observeRemove("success")
 }
 
 func Remove(repo string) error {
@@ -218,4 +233,32 @@ func Remove(repo string) error {
 		return errors.New(reply.Error)
 	}
 	return nil
+}
+
+// remove should be pretty much instant, so we just track counts
+var removeCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "remove_total",
+	Help:      "Total calls to gitserver.Remove",
+}, []string{"status"})
+var createDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "create_duration_seconds",
+	Help:      "gitserver.Init and gitserver.Clone latencies in seconds.",
+	Buckets:   []float64{1, 5, 10, 60, 600},
+}, []string{"status"})
+
+func init() {
+	prometheus.MustRegister(removeCounter)
+	prometheus.MustRegister(createDuration)
+}
+
+func observeRemove(status string) {
+	removeCounter.WithLabelValues(status).Inc()
+}
+
+func observeCreate(start time.Time, status string) {
+	createDuration.WithLabelValues(status).Observe(time.Since(start).Seconds())
 }
