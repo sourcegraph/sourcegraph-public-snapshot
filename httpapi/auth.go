@@ -6,6 +6,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -75,6 +76,11 @@ func serveAuthInfo(w http.ResponseWriter, r *http.Request) error {
 
 type authResponse struct {
 	Success bool
+
+	// AccessToken is the Sourcegraph access token. It is only set
+	// after signing up or logging in successfully through the HTTP
+	// API.
+	AccessToken string `json:",omitempty"`
 }
 
 func serveLogin(w http.ResponseWriter, r *http.Request) error {
@@ -88,27 +94,7 @@ func serveLogin(w http.ResponseWriter, r *http.Request) error {
 	}
 	defer r.Body.Close()
 
-	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
-		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
-			ResourceOwnerPassword: &sourcegraph.LoginCredentials{
-				Login:    loginForm.Login,
-				Password: loginForm.Password,
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	// Authenticate future requests.
-	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tok.AccessToken}))
-
-	// Authenticate as newly created user.
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}); err != nil {
-		return err
-	}
-
-	return writeJSON(w, &authResponse{Success: true})
+	return finishLoginOrSignup(ctx, cl, w, loginForm.Login, loginForm.Password)
 }
 
 func serveSignup(w http.ResponseWriter, r *http.Request) error {
@@ -127,10 +113,14 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	return finishLoginOrSignup(ctx, cl, w, signupForm.Login, signupForm.Password)
+}
+
+func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.ResponseWriter, login, password string) error {
 	// Get the newly created user's API key to authenticate future requests.
 	tok, err := cl.Auth.GetAccessToken(ctx, &sourcegraph.AccessTokenRequest{
 		AuthorizationGrant: &sourcegraph.AccessTokenRequest_ResourceOwnerPassword{
-			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: signupForm.Login, Password: signupForm.Password},
+			ResourceOwnerPassword: &sourcegraph.LoginCredentials{Login: login, Password: password},
 		},
 	})
 	if err != nil {
@@ -145,7 +135,7 @@ func serveSignup(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, &authResponse{Success: true})
+	return writeJSON(w, &authResponse{Success: true, AccessToken: tok.AccessToken})
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
