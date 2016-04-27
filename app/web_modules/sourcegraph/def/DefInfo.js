@@ -51,7 +51,7 @@ class DefInfo extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def, true));
 		}
 
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
@@ -87,7 +87,7 @@ class DefInfo extends Container {
 									<div>
 										<h2>Used in</h2>
 										{!refLocs && <i>Loading...</i>}
-										{refLocs && refLocs.filter((r) => r && r.Files).map((repoRef, i) => (
+										{refLocs && refLocs.map((repoRef, i) => (
 											<Link styleName="refs-link" key={i} to={urlToDefRefs(def, repoRef.Repo)}><span styleName="badge">{repoRef.Count}</span> {repoRef.Repo}</Link>
 										))}
 									</div>
