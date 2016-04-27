@@ -64,6 +64,27 @@
 					}
 				},
 				{
+					"type": "RefLocationsList",
+					"key": ".4",
+					"props": {
+						"def": {
+							"Repo": "r",
+							"CommitID": "c",
+							"FmtStrings": {
+								"DefKeyword": "a",
+								"NameAndTypeSeparator": "s",
+								"Name": {
+									"ScopeQualified": "n"
+								},
+								"Type": {
+									"ScopeQualified": "t"
+								}
+							}
+						},
+						"repo": "r"
+					}
+				},
+				{
 					"type": "span",
 					"key": ".6",
 					"props": {

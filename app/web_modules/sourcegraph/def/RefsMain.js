@@ -190,10 +190,10 @@ class RefsMain extends Container {
 				<div styleName="inner">
 					<h1>Refs to {this.state.defObj && <Link to={`${urlToDef(this.state.defObj)}/-/info`}><code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.defName})}</code></Link>}</h1>
 					<div styleName="subsection">
-						{refLocs && <span>{refLocs.Count} usages across {refLocs.Files.length} files.</span>}
+						{refLocs && refLocs.Files && <span>{refLocs.Count} usages across {refLocs.Files.length} files.</span>}
 						<select styleName="filter-select" value={this.state.refFile || ALL_FILES} onChange={this._onFileSelect}>
 							<option value={ALL_FILES}>All Files</option>
-							{refLocs && refLocs.Files.map((file, i) => (
+							{refLocs && refLocs.Files && refLocs.Files.map((file, i) => (
 								<option key={i} value={file.Path}>{file.Path} ({file.Count})</option>
 							))}
 						</select>

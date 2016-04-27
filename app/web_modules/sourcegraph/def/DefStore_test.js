@@ -23,7 +23,7 @@ describe("DefStore", () => {
 	});
 
 	it("should handle RefLocationsFetched", () => {
-		DefStore.directDispatch(new DefActions.RefLocationsFetched("r", "v", "d", ["someData"]));
+		DefStore.directDispatch(new DefActions.RefLocationsFetched("r", "v", "d", false, ["someData"]));
 		expect(DefStore.refLocations.get("r", "v", "d")).to.eql(["someData"]);
 	});
 

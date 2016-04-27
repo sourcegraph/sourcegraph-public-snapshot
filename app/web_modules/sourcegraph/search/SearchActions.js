@@ -20,10 +20,12 @@ export class ResultsFetched {
 	query: string;
 	defs: Array<Def>;
 	eventName: string;
+	limit: ?number;
 
-	constructor(query: string, defs: Array<Def>) {
+	constructor(query: string, limit: ?number, defs: Array<Def>) {
 		this.query = query;
 		this.defs = defs;
 		this.eventName = "ResultsFetched";
+		this.limit = limit;
 	}
 }
