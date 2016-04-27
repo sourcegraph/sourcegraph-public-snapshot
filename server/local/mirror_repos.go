@@ -38,7 +38,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		var err error
 		asUserUID, err = getUIDFromUserSpec(ctx, op.AsUser)
 		if err != nil {
-			log15.Error("getUIDFromUserSpec", "error", err)
+			log15.Error("RefreshVCS: getUIDFromUserSpec", "error", err)
 			return nil, err
 		}
 	}
@@ -57,7 +57,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
 			ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, authpkg.Actor{UID: int(asUserUID)}))
 			if err != nil {
-				log15.Error("failed github authentication for user", "error", err, "uid", asUserUID)
+				log15.Error("RefreshVCS: failed github authentication for user", "error", err, "uid", asUserUID)
 				return nil, err
 			}
 		}
@@ -65,26 +65,26 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 
 	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)
 	if err != nil {
-		log15.Error("failed to get repo", "error", err, "repo", op.Repo)
+		log15.Error("RefreshVCS: failed to get repo", "error", err, "repo", op.Repo)
 		return nil, err
 	}
 
 	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
 	if err != nil {
-		log15.Error("Failed to open VCS", "error", err, "URI", repo.URI)
+		log15.Error("RefreshVCS: failed to open VCS", "error", err, "URI", repo.URI)
 		return nil, err
 	}
 	if err := s.updateRepo(ctx, repo, vcsRepo, remoteOpts); err != nil {
 		if !vcs.IsRepoNotExist(err) {
-			log15.Error("update repo failed unexpectedly", "error", err, "repo", repo.URI)
+			log15.Error("RefreshVCS: update repo failed unexpectedly", "error", err, "repo", repo.URI)
 			return nil, err
 		}
 		if err.(vcs.RepoNotExistError).CloneInProgress {
-			log15.Info("clone in progress, not updating", "repo", repo.URI)
+			log15.Info("RefreshVCS: clone in progress, not updating", "repo", repo.URI)
 			return &pbtypes.Void{}, nil
 		}
 		if err := s.cloneRepo(ctx, repo, remoteOpts); err != nil {
-			log15.Info("cloneRepo failed", "error", err, "repo", repo.URI)
+			log15.Info("RefreshVCS: cloneRepo failed", "error", err, "repo", repo.URI)
 			return nil, err
 		}
 	}
