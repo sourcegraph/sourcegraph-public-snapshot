@@ -17,6 +17,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -30,7 +31,7 @@ var ciFactor = func() int {
 func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
 
-	if parseBool(os.Getenv("SG_DISABLE_JSSERVER")) || parseBool(r.URL.Query().Get("disable_jsserver")) {
+	if !feature.Features.JSServer || parseBool(os.Getenv("SG_DISABLE_JSSERVER")) || parseBool(r.URL.Query().Get("disable_jsserver")) {
 		ctx = ui.DisabledReactPrerendering(ctx)
 	}
 
