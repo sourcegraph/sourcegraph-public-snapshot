@@ -64,7 +64,7 @@ const DefBackend = {
 				let refLocations = DefStore.refLocations.get(action.repo, action.rev, action.def, action.reposOnly);
 				if (refLocations === null) {
 					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/ref-locations`;
-					if (action.reposOnly) {
+					if (action.reposOnly === true) {
 						url += "?ReposOnly=true";
 					}
 					trackPromise(
