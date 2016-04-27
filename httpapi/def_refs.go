@@ -130,17 +130,20 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 			refsPerFile[ref.File]++
 			totalCount++
 		}
-		fl := sortByRefCount(refsPerFile)
 
-		localRefs := &sourcegraph.DefRepoRef{
-			Repo:  defSpec.Repo,
-			Count: totalCount,
-			Files: fl,
+		if totalCount > 0 {
+			fl := sortByRefCount(refsPerFile)
+
+			localRefs := &sourcegraph.DefRepoRef{
+				Repo:  defSpec.Repo,
+				Count: totalCount,
+				Files: fl,
+			}
+
+			refLocations.RepoRefs = append(refLocations.RepoRefs, localRefs)
+			lastIdx := len(refLocations.RepoRefs) - 1
+			refLocations.RepoRefs[0], refLocations.RepoRefs[lastIdx] = refLocations.RepoRefs[lastIdx], refLocations.RepoRefs[0]
 		}
-
-		refLocations.RepoRefs = append(refLocations.RepoRefs, localRefs)
-		lastIdx := len(refLocations.RepoRefs) - 1
-		refLocations.RepoRefs[0], refLocations.RepoRefs[lastIdx] = refLocations.RepoRefs[lastIdx], refLocations.RepoRefs[0]
 	}
 
 	return json.NewEncoder(w).Encode(refLocations.RepoRefs)
