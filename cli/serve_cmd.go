@@ -454,9 +454,12 @@ func (c *ServeCmd) Execute(args []string) error {
 		}()
 	}
 
-	// Occasionally compute instance usage stats for uplink, but don't do
-	// it too often
-	go statsutil.ComputeUsageStats(clientCtx, 10*time.Minute)
+	// Occasionally compute instance usage stats
+	usageStatsCtx, err := c.authenticateScopedContext(clientCtx, idKey, []string{"internal:usagestats"})
+	if err != nil {
+		return err
+	}
+	go statsutil.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
 
 	select {}
 }
