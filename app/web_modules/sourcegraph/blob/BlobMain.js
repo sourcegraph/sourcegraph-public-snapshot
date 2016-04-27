@@ -181,9 +181,11 @@ export default class BlobMain extends Container {
 						dispatchSelections={true} />}
 					{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 				</div>
-				<FileMargin className={Style.margin} lineFromByte={this.state.lineFromByte}>
-					{this.state.children}
-				</FileMargin>
+				<div style={(!this.state.blob || !this.state.anns) ? {visibility: "hidden"} : null}>
+					<FileMargin className={Style.margin} lineFromByte={this.state.lineFromByte}>
+						{this.state.children}
+					</FileMargin>
+				</div>
 			</div>
 		);
 	}
