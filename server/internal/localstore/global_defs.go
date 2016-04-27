@@ -347,7 +347,7 @@ func (g *globalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpd
 		return v
 	}
 
-	repoBindVars := make([]string, 3*len(op.RepoUnits))
+	repoBindVars := make([]string, len(op.RepoUnits))
 	for i, repoUnit := range op.RepoUnits {
 		repoBindVars[i] = "(" + arg(repoUnit.Repo.URI) + "," + arg(repoUnit.UnitType) + "," + arg(repoUnit.Unit) + ")"
 	}
