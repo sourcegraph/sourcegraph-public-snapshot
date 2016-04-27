@@ -335,7 +335,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		mw = append(mw, middleware.EnsureHostname)
 	}
 	mw = append(mw, middleware.Metrics)
-	if traceMiddleware := traceutil.HTTPMiddleware(); traceMiddleware != nil {
+	if traceMiddleware := traceutil.HTTPMiddleware; traceMiddleware != nil {
 		mw = append(mw, traceMiddleware)
 	}
 	mw = append(mw, sourcegraphComGoGetHandler)

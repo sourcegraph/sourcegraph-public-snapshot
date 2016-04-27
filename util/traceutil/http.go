@@ -6,11 +6,10 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
-func HTTPMiddleware() handlerutil.Middleware {
+func HTTPMiddleware(next http.Handler) http.Handler {
 	if DefaultCollector == nil {
 		return nil
 	}
@@ -32,9 +31,7 @@ func HTTPMiddleware() handlerutil.Middleware {
 	}
 
 	m := httptrace.Middleware(DefaultCollector, config)
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			m(w, r, next.ServeHTTP)
-		})
-	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		m(w, r, next.ServeHTTP)
+	})
 }
