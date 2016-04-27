@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/resolveutil"
 )
 
 func init() {
@@ -41,6 +42,17 @@ func serveGDDORefs(w http.ResponseWriter, r *http.Request) error {
 
 	if repo == "" && isGoRepoPath(pkg) {
 		repo = "github.com/golang/go"
+	} else {
+		// Attempt to resolve custom import paths
+		resolvedRepo, err := resolveutil.ResolveCustomImportPath(repo)
+		if err == nil {
+			repo = resolvedRepo.RepoURI
+		}
+
+		resolvedPkg, err := resolveutil.ResolveCustomImportPath(pkg)
+		if err == nil {
+			pkg = resolvedPkg.CanonicalImportPath
+		}
 	}
 
 	if repo == "" || pkg == "" || def == "" {
