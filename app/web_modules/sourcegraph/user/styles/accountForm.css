@@ -17,5 +17,7 @@
 .label-link { composes: label-link from form; }
 .mid-text { composes: mid-text from form; }
 .sub-text { composes: sub-text from form; }
+.error { composes: error from form; }
+.success { composes: success from form; }
 .form {	composes: stacked from form; }
 

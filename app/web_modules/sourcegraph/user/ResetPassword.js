@@ -14,8 +14,10 @@ import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
 import style from "sourcegraph/user/styles/accountForm.css";
 
-// TODO: prevent mounting this component if user is logged in
 class ResetPassword extends Container {
+	static propTypes = {
+		location: React.PropTypes.object,
+	};
 	static contextTypes = {
 		user: React.PropTypes.object,
 	};
@@ -51,21 +53,23 @@ class ResetPassword extends Container {
 			<form styleName="full-page form" onSubmit={this._handleSubmit}>
 				<Helmet title="Reset Password" />
 				<h1 styleName="title">Reset your password</h1>
-				<div styleName="action">
+				<label>
+					<span>New password</span>
 					<Input type="password"
-						placeholder="New password"
 						domRef={(e) => this._passwordInput = e}
+						name="password"
+						autoComplete="new-password"
 						autoFocus={true}
 						block={true}
 						required={true} />
-				</div>
-				<div styleName="action">
+				</label>
+				<label>
+					<span>Confirm new password</span>
 					<Input type="password"
-						placeholder="Confirm password"
 						domRef={(e) => this._confirmInput = e}
 						block={true}
 						required={true} />
-				</div>
+				</label>
 				<Button color="primary"
 					block={true}
 					loading={this.state.pendingAuthAction}>Reset Password</Button>
