@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
@@ -34,7 +35,7 @@ var pageLoadDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "trace",
 	Name:      "browser_span_duration_seconds",
 	Help:      "Total time taken to perform a given browser operation.",
-	Buckets:   []float64{1, 5, 10, 60, 300},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, pageLoadLabels)
 
 func init() {

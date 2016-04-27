@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -325,7 +326,7 @@ var buildsDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "builds",
 	Name:      "duration_seconds",
 	Help:      "The builds latencies in seconds.",
-	Buckets:   []float64{1, 5, 10, 60, 300},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, metricLabels)
 var buildsHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",

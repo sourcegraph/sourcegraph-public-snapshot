@@ -13,6 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 )
 
 type execRequest struct {
@@ -163,7 +164,7 @@ var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "gitserver",
 	Name:      "exec_duration_seconds",
 	Help:      "gitserver.Command latencies in seconds.",
-	Buckets:   []float64{0.1, 0.5, 1.0, 2.0},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, []string{"cmd", "repo", "status"})
 
 func init() {

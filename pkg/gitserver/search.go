@@ -18,6 +18,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 )
 
 type searchRequest struct {
@@ -217,7 +218,7 @@ var searchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "gitserver",
 	Name:      "search_duration_seconds",
 	Help:      "gitserver.Search latencies in seconds.",
-	Buckets:   []float64{0.1, 0.5, 1.0, 2.0},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, []string{"query_type", "repo", "status"})
 
 func init() {

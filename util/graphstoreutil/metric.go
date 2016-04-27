@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/unit"
@@ -21,7 +22,7 @@ var opDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "graphstore",
 	Name:      "op_duration_seconds",
 	Help:      "GraphStore operation latencies in seconds.",
-	Buckets:   []float64{0.1, 0.5, 1.0, 2.0, 5.0, 10.0},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, []string{"name", "method", "repo", "error"})
 
 func init() {

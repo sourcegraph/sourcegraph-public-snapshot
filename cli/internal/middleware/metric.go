@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
@@ -20,7 +21,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "http",
 	Name:      "request_duration_seconds",
 	Help:      "The HTTP request latencies in seconds.",
-	Buckets:   []float64{1, 5, 10, 60, 300},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, metricLabels)
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",

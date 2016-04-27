@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/appdash"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
@@ -58,7 +59,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "grpc",
 	Name:      "client_request_duration_seconds",
 	Help:      "Total time spent on grpc endpoints.",
-	Buckets:   []float64{1, 5, 10, 60, 300},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, metricLabels)
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",

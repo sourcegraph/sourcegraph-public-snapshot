@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 )
 
 type createRequest struct {
@@ -253,7 +254,7 @@ var createDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "gitserver",
 	Name:      "create_duration_seconds",
 	Help:      "gitserver.Init and gitserver.Clone latencies in seconds.",
-	Buckets:   []float64{1, 5, 10, 60, 600},
+	Buckets:   statsutil.UserLatencyBuckets,
 }, []string{"status"})
 
 func init() {
