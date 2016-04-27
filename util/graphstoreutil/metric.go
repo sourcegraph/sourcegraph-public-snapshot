@@ -21,7 +21,7 @@ var opDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "graphstore",
 	Name:      "op_duration_seconds",
 	Help:      "GraphStore operation latencies in seconds.",
-	Buckets:   []float64{0.05, 0.1, 0.2, 0.4, 0.8},
+	Buckets:   []float64{0.1, 0.5, 1.0, 2.0, 5.0, 10.0},
 }, []string{"name", "method", "repo", "error"})
 
 func init() {
