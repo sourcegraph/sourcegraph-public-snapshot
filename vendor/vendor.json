@@ -170,6 +170,12 @@
 			"tree": true
 		},
 		{
+			"checksumSHA1": "MPyFWYYFHu0lwwgiuCOVkbipa1E=",
+			"path": "github.com/golang/gddo/gosrc",
+			"revision": "56fdb27532ffe5f8f0d2c7c8b1f0b4d1da481f10",
+			"revisionTime": "2016-04-20T02:17:25Z"
+		},
+		{
 			"path": "github.com/golang/groupcache/lru",
 			"revision": "4eab30f13db9d8b25c752e99d1583628ac2fa422",
 			"revisionTime": "2016-02-11T14:59:07-08:00"
@@ -616,6 +622,12 @@
 			"revisionTime": "2016-03-09T21:59:58Z"
 		},
 		{
+			"checksumSHA1": "Qcux0aRMct+cJM7MJFw1aXs1Vks=",
+			"path": "golang.org/x/tools/go/vcs",
+			"revision": "4e3242e000c9086052d8d700ca255d64e2b9fdfb",
+			"revisionTime": "2016-04-25T21:56:12Z"
+		},
+		{
 			"path": "golang.org/x/tools/godoc/vfs",
 			"revision": "093d7650abf0a26882924de03a6c840a00356572",
 			"revisionTime": "2016-03-09T21:59:58Z"
@@ -904,6 +916,12 @@
 			"path": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
 			"revision": "a8fecc625132854e8381291178fad0f8d91ea28f",
 			"revisionTime": "2015-06-04T23:21:56+02:00"
+		},
+		{
+			"checksumSHA1": "dFepT1iTBteUuGa0d51FmSOqVG8=",
+			"path": "sourcegraph.com/sourcegraph/srclib-go/depresolve",
+			"revision": "0865a087dbcfc0f66ea22febaa15e6fa6ca5d9f2",
+			"revisionTime": "2016-04-27T01:22:07Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
