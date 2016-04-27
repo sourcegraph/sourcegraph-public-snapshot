@@ -8,7 +8,7 @@
 
 .border {
 	composes: br2 ba from base;
-	composes: b--light-silver from colors;
+	composes: b--moon-gray from colors;
 }
 
 .focus-border {
@@ -18,6 +18,7 @@
 .common:focus {
 	outline: none;
 	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
+	background-color: white;
 }
 
 .common:focus:invalid {
@@ -27,9 +28,9 @@
 
 .common {
 	composes: border;
-	composes: pa3 from base;
-	composes: input-text from typography;
+	padding: 7px 8px;
 	appearance: none;
+	composes: bg-near-white from colors;
 }
 
 .common::-webkit-input-placeholder {
@@ -52,6 +53,6 @@
 
 .block {
 	composes: common;
-	display: flex;
-	flex: 1 1 auto;
+	display: block;
+	width: 100%;
 }

@@ -63,6 +63,9 @@
 
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: pa3 pt4 from base;
-	composes: col-5-l col-6-ns col-11 from grid;
+	composes: f5 from typography;
+	composes: pa3 from base;
+	composes: col-10 from grid;
+	max-width: 340px;
+	min-width: 300px;
 }

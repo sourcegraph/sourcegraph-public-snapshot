@@ -11,7 +11,7 @@ import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
-import style from "./styles/user.css";
+import style from "sourcegraph/user/styles/accountForm.css";
 
 // TODO: prevent mounting this component if user is logged in
 class ForgotPassword extends Container {
@@ -37,36 +37,30 @@ class ForgotPassword extends Container {
 
 	render() {
 		return (
-			<form styleName="container" onSubmit={this._handleSubmit}>
+			<form styleName="full-page form" onSubmit={this._handleSubmit}>
 				<Helmet title="Forgot Password" />
-				<div styleName="title">Forgot your password?</div>
-				<div styleName="subtext">
-					It happens to the best of us.
-					<br />
-					Enter your email below and we'll send you a link to recover your password.
-				</div>
-				<div styleName="action">
+				<h1 styleName="title">Forgot your password?</h1>
+				<label>
+					<span>Email address</span>
 					<Input type="email"
 						placeholder="Email"
 						domRef={(e) => this._emailInput = e}
 						autoFocus={true}
 						block={true}
 						required={true} />
-				</div>
-				<div styleName="button">
-					<Button color="primary"
-						block={true}
-						loading={this.state.pendingAuthAction}>Reset Password</Button>
-				</div>
+				</label>
+				<Button color="primary"
+					block={true}
+					loading={this.state.pendingAuthAction}>Reset Password</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
+					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Success &&
-					<div styleName="success-text">Email sent - check your inbox!</div>
+					<div styleName="success">Email sent - check your inbox!</div>
 				}
 			</form>
 		);
 	}
 }
 
-export default redirectIfLoggedIn("/", CSSModules(ForgotPassword, style));
+export default redirectIfLoggedIn("/", CSSModules(ForgotPassword, style, {allowMultiple: true}));

@@ -142,7 +142,7 @@ html {
 }
 
 .header {
-	composes: f2 f1-ns;
+	composes: f3 f2-ns;
 	composes: dark-gray from colors;
 }
 @value c_brand-orange from colors;
@@ -244,9 +244,4 @@ html {
 
 .button-text {
 	composes: tc f4;
-}
-
-.input-text {
-	composes: f4;
-	composes: blue from colors;
 }

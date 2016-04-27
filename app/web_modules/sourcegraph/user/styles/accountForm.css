@@ -1,0 +1,21 @@
+@value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value form "sourcegraph/components/styles/form.css";
+
+.full-page {
+	composes: col-9 col-5-m col-4-l from grid;
+	composes: pa2 mv5 center from base;
+}
+
+.title {
+	composes: header-center from typography;
+	composes: pa0 ma0 mb3 from base;
+}
+
+.label-link { composes: label-link from form; }
+.mid-text { composes: mid-text from form; }
+.sub-text { composes: sub-text from form; }
+.form {	composes: stacked from form; }
+

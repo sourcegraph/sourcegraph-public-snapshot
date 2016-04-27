@@ -12,7 +12,7 @@ import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
-import style from "./styles/user.css";
+import style from "sourcegraph/user/styles/accountForm.css";
 
 export class LoginForm extends Container {
 	static propTypes = {
@@ -59,39 +59,46 @@ export class LoginForm extends Container {
 
 	render() {
 		return (
-			<form {...this.props} onSubmit={this._handleSubmit}>
-				<div styleName="title">Sign in to Sourcegraph</div>
-				<div styleName="action">
+			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
+				<h1 styleName="title">Sign in to Sourcegraph</h1>
+				<label>
+					<span>Username</span>
 					<Input type="text"
 						id="e2etest-login-field"
+						name="username"
+						autoComplete="username"
 						autoFocus={true}
-						placeholder="Username"
+						autoCapitalize={false}
+						autoCorrect={false}
+						minLength="3"
+						tabIndex="1"
 						domRef={(e) => this._loginInput = e}
 						block={true}
 						required={true} />
-				</div>
-				<div styleName="action">
+				</label>
+				<label>
+					<span>Password</span>
+					<Link styleName="label-link" to="/forgot">Forgot password?</Link>
 					<Input type="password"
 						id="e2etest-password-field"
-						placeholder="Password"
+						autoComplete="current-password"
+						name="password"
+						tabIndex="2"
 						domRef={(e) => this._passwordInput = e}
 						block={true}
 						required={true} />
-				</div>
-				<div styleName="button">
-					<Button color="primary"
-						id="e2etest-login-button"
-						block={true}
-						loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Sign in</Button>
-				</div>
+				</label>
+				<Button color="primary"
+					id="e2etest-login-button"
+					tabIndex="3"
+					block={true}
+					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Sign in</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
-					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
+					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}
-				<div styleName="subtext"><Link to="/forgot">Forgot password?</Link></div>
-				<div styleName="alt-action">
-					<span>Don't have an account yet?</span>
-					<span styleName="alt-button"><Link to="/join"><Button size="small" outline={true}>Sign up</Button></Link></span>
-				</div>
+				<p styleName="sub-text">
+					No account yet? <Link to="/join">Sign up.</Link>
+				</p>
 			</form>
 		);
 	}
@@ -101,10 +108,9 @@ LoginForm = CSSModules(LoginForm, style);
 // Login is the standalone login page.
 function Login(props, {router}) {
 	return (
-		<div>
+		<div styleName="full-page">
 			<Helmet title="Sign In" />
 			<LoginForm {...props}
-				styleName="container"
 				onLoginSuccess={() => router.replace("/")} />
 		</div>
 	);
