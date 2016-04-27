@@ -29,6 +29,15 @@
 	overflow-y: auto;
 }
 
+@media screen and (max-width: 40em) {
+	.modal {
+		width: 100vw;
+		margin-top: 5em;
+		max-width: none !important;
+		max-height: none !important;
+	}
+}
+
 .hidden {
 	display: none;
 }
