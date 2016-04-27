@@ -1,0 +1,109 @@
+.app {
+	display: flex;
+	align-items: flex-start;
+}
+
+.input-box {
+	display: flex;
+}
+
+.input-addon {
+	position: relative;
+	color: #4078c0;
+	font-size: 20px;
+	padding-left: 20px;
+	padding: 5px;
+}
+
+.input {
+	padding: 5px;
+	font-size: 16px;
+	border: none;
+	flex: 1 1 auto;
+}
+.input:focus {
+	outline: none;
+	border: none;
+	box-shadow: none;
+}
+
+.list {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.list-item-empty {
+	padding: 10px;
+	font-style: italic;
+}
+
+.def-result-row:hover td{
+    background-color:transparent;
+}
+
+.octicon-chevron {
+	width: 21px;
+}
+
+tr:hover .octicon-chevron-right {
+    color:#4078c0;
+}
+
+.page-icon {
+	padding-right: 5px;
+}
+
+.menu-item {
+	cursor: pointer;
+}
+
+.menu-item svg {
+	font-size: 20px;
+}
+
+.blob-code {
+	line-height:18px;
+}
+
+.file-box {
+	font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.code-list {
+	padding-left:20px;
+}
+
+.text-result-title {
+	font-weight: 600;
+}
+
+.popover {
+	background-color: rgba(255, 255, 255, .93);
+	max-width: 360px;
+	width: 360px;
+	border: 1px solid rgba(13, 13, 13, .2);
+	border-radius: 4px;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	padding: 6px 12px;
+	font-size: 14px !important;
+	z-index: 20;
+	position: absolute;
+}
+.popoverTitle {
+	font-size: 12px;
+	font-family: monospace;
+	margin-bottom: 10px;
+}
+.popover code,
+.popover pre,
+.popover tt {
+	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+.popoverRepo {
+	color: #888;
+	font-size: 10px;
+}
+
+.sgdef {
+	color: inherit !important;
+}

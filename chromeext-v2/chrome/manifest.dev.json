@@ -1,0 +1,22 @@
+{
+  "version": "0.0.0",
+  "name": "Sourcegraph",
+  "manifest_version": 2,
+  "description": "Sourcegraph browser extension for Chrome",
+  "browser_action": {
+    "default_title": "Sourcegraph"
+  },
+  "icons": {
+    "16": "img/icon-16.png",
+    "48": "img/icon-48.png",
+    "128": "img/icon-128.png"
+  },
+  "web_accessible_resources": [
+    "inject.html"
+  ],
+  "background": {
+    "page": "background.html"
+  },
+  "permissions": [ "contextMenus", "management", "tabs", "storage", "https://github.com/*", "https://sourcegraph.com/" ],
+  "content_security_policy": "default-src 'self'; script-src 'self' https://localhost:3000 'unsafe-eval'; connect-src https://sourcegraph.com/ https://localhost:3000 wss://localhost:3000; style-src https://github.com/ 'unsafe-inline' 'self' blob:; img-src 'self' data:;"
+}

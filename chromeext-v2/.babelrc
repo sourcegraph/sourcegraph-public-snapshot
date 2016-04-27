@@ -1,0 +1,11 @@
+{
+  "presets": ["es2015", "stage-0", "react"],
+  "plugins": ["add-module-exports", "transform-decorators-legacy", "transform-runtime"],
+  "env": {
+    "test": {
+      "plugins": [
+        ["webpack-loaders", { "config": "webpack/test.config.js", "verbose": false }]
+      ]
+    }
+  }
+}
