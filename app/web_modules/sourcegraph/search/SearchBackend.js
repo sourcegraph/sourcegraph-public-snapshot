@@ -38,7 +38,7 @@ const SearchBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched(action.query, data));
+								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched(action.query, action.limit, data));
 							})
 					);
 				}

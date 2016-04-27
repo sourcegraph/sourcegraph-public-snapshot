@@ -121,11 +121,13 @@ export class WantRefLocations {
 	repo: string;
 	rev: ?string;
 	def: string;
+	reposOnly: bool;
 
-	constructor(repo: string, rev: ?string, def: string) {
+	constructor(repo: string, rev: ?string, def: string, reposOnly: ?bool) {
 		this.repo = repo;
 		this.rev = rev;
 		this.def = def;
+		this.reposOnly = (reposOnly === true);
 	}
 }
 
@@ -133,12 +135,14 @@ export class RefLocationsFetched {
 	repo: string;
 	rev: ?string;
 	def: string;
+	reposOnly: bool;
 	locations: Array<Object>;
 
-	constructor(repo: string, rev: ?string, def: string, locations: Array<Object>) {
+	constructor(repo: string, rev: ?string, def: string, reposOnly: bool, locations: Array<Object>) {
 		this.repo = repo;
 		this.rev = rev;
 		this.def = def;
+		this.reposOnly = reposOnly;
 		this.locations = locations;
 	}
 }

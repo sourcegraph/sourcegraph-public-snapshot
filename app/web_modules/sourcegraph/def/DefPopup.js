@@ -57,9 +57,10 @@ class DefPopup extends Container {
 					<Link to={`${urlToDef(this.state.defObj)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 				</header>
 				<header className={s.sectionTitle}>Used in</header>
+
 				{!refLocs && <span styleName="loading">Loading...</span>}
-				{refLocs && refLocs.filter((r) => r && r.Files).length === 0 &&	<i>No usages found</i>}
-				{refLocs && refLocs.length > 0 && <RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
+				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
+				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
 				{authors && <header className={s.sectionTitle}>Authors</header>}
 				{!authors && <span styleName="loading">Loading...</span>}
