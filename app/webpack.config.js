@@ -136,7 +136,4 @@ var serverConfig = {
 	postcss: [require("postcss-modules-values")],
 };
 
-module.exports = [
-	config(browserConfig),
-	config(serverConfig),
-];
+module.exports = process.env.BROWSER_ONLY ? config(browserConfig) : [config(browserConfig), config(serverConfig)];
