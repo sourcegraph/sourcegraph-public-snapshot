@@ -57,7 +57,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
 			ctx, err = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, authpkg.Actor{UID: int(asUserUID)}))
 			if err != nil {
-				log15.Error("failed github authenticatoin for user", "error", err, "uid", asUserUID)
+				log15.Error("failed github authentication for user", "error", err, "uid", asUserUID)
 				return nil, err
 			}
 		}
