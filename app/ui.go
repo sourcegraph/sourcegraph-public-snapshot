@@ -31,14 +31,15 @@ var ciFactor = func() int {
 func serveUI(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
 
+	var statusCode int
 	if !feature.Features.JSServer || parseBool(os.Getenv("SG_DISABLE_JSSERVER")) || parseBool(r.URL.Query().Get("disable_jsserver")) {
 		ctx = ui.DisabledReactPrerendering(ctx)
+		statusCode = http.StatusOK
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond*time.Duration(ciFactor))
 	defer cancel()
 
-	var statusCode int
 	res, err := ui.RenderRouter(ctx, r, nil)
 	if err != nil {
 		switch err {
