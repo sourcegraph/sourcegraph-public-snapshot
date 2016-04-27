@@ -42,9 +42,9 @@ func handleExecRequest(req *execRequest) {
 	start := time.Now()
 	status := ""
 
-	defer func() { observeExec(req, start, status) }()
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
+	defer func() { observeExec(req, start, status) }()
 
 	dir := path.Join(ReposDir, req.Repo)
 	cloningMu.Lock()
