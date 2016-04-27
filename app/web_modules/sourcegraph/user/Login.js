@@ -87,7 +87,7 @@ export class LoginForm extends Container {
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="errtext">{this.state.authResponse.Error.body.message}</div>
 				}
-				<div styleName="subtext"><a href="/forgot">Forgot password?</a></div>
+				<div styleName="subtext"><Link to="/forgot">Forgot password?</Link></div>
 				<div styleName="alt-action">
 					<span>Don't have an account yet?</span>
 					<span styleName="alt-button"><Link to="/join"><Button size="small" outline={true}>Sign up</Button></Link></span>
