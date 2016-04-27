@@ -9,8 +9,8 @@ export type User = {
 };
 
 export type AuthInfo = {
-	UID: number;
-	Login: string;
+	UID?: number;
+	Login?: string;
 };
 
 export type EmailAddr = {
