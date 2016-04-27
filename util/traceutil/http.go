@@ -11,7 +11,7 @@ import (
 
 func HTTPMiddleware(next http.Handler) http.Handler {
 	if DefaultCollector == nil {
-		return nil
+		return next
 	}
 	config := &httptrace.MiddlewareConfig{
 		RouteName: func(r *http.Request) string {
@@ -32,6 +32,9 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 
 	m := httptrace.Middleware(DefaultCollector, config)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m(w, r, next.ServeHTTP)
+		m(w, r, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Appdash-Trace", SpanID(r).Trace.String())
+			next.ServeHTTP(w, r)
+		})
 	})
 }

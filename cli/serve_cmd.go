@@ -335,9 +335,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		mw = append(mw, middleware.EnsureHostname)
 	}
 	mw = append(mw, middleware.Metrics)
-	if traceMiddleware := traceutil.HTTPMiddleware; traceMiddleware != nil {
-		mw = append(mw, traceMiddleware)
-	}
+	mw = append(mw, traceutil.HTTPMiddleware)
 	mw = append(mw, sourcegraphComGoGetHandler)
 	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_GITHUB_CLONE_PROXY")); v {
 		mw = append(mw, middleware.GitHubCloneProxy)
