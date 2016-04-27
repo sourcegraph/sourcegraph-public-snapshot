@@ -194,6 +194,8 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.LogoutCompleted: {
+			this.activeAccessToken = null;
+			this.activeGitHubToken = null;
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {

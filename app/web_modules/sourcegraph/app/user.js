@@ -8,6 +8,23 @@ import "sourcegraph/user/UserBackend";
 import * as UserActions from "sourcegraph/user/UserActions";
 import type {User} from "sourcegraph/user";
 
+type childContext = {user: ?User, signedIn: bool, githubToken: ?Object};
+
+// getChildContext is exported separately so it can be tested directly. It is
+// hard to test that children get the right context data using React's existing
+// test helpers.
+export const getChildContext = (state: any): childContext => ({
+	user: state.user && !state.user.Error ? state.user : null,
+
+	// signedIn is true initially if there's an access token. But if the authInfo
+	// is empty, then it means that the access token is expired or invalid. At that
+	// point, we need to set signedIn to false so that, e.g., the "log out" link appears.
+	// Otherwise the user is unable to log out so they can re-log in to refresh their creds.
+	signedIn: Boolean(state.accessToken && (!state.authInfo || state.authInfo.UID)),
+
+	githubToken: state.githubToken || null,
+});
+
 // withUserContext passes user-related context items
 // to Component's children.
 export function withUserContext(Component: ReactClass): ReactClass {
@@ -40,24 +57,18 @@ export function withUserContext(Component: ReactClass): ReactClass {
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (nextState.accessToken && prevState.accessToken !== nextState.accessToken) {
+			if (nextState.accessToken && !nextState.authInfo && prevState.accessToken !== nextState.accessToken) {
 				Dispatcher.Backends.dispatch(new UserActions.WantAuthInfo(nextState.accessToken));
 			}
 
 			if (prevState.authInfo !== nextState.authInfo) {
-				if (nextState.authInfo && !nextState.authInfo.Error && nextState.authInfo.UID) {
+				if (nextState.authInfo && !nextState.user && !nextState.authInfo.Error && nextState.authInfo.UID) {
 					Dispatcher.Backends.dispatch(new UserActions.WantUser(nextState.authInfo.UID));
 				}
 			}
 		}
 
-		getChildContext(): {user: ?User} {
-			return {
-				user: this.state.user && !this.state.user.Error ? this.state.user : null,
-				signedIn: Boolean(this.state.accessToken),
-				githubToken: this.state.githubToken,
-			};
-		}
+		getChildContext(): childContext { return getChildContext(this.state); }
 
 		render() {
 			return <Component {...this.props} />;
