@@ -3,6 +3,9 @@ package oauth2util
 import (
 	"strings"
 
+	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -51,7 +54,11 @@ func GRPCMiddleware(ctx context.Context) (context.Context, error) {
 
 	actor, err := accesstoken.ParseAndVerify(idkey.FromContext(ctx), tokStr)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Unauthenticated, "access token middleware failed to parse/verify token: %s", err)
+		if vErr, ok := err.(*jwt.ValidationError); ok && vErr.Errors&jwt.ValidationErrorExpired != 0 {
+			return ctx, nil
+		}
+		log15.Error("access token middleware failed to parse/verify token", "error", err)
+		return ctx, nil
 	}
 
 	// Make future calls use this access token.
