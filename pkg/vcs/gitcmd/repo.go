@@ -572,7 +572,6 @@ func (r *Repository) BlameFile(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk,
 		// Consume hunk
 		hunkHeader := strings.Split(remainingLines[0], " ")
 		if len(hunkHeader) != 4 {
-			fmt.Printf("Remaining lines: %+v, %d, '%s'\n", remainingLines, len(remainingLines), remainingLines[0])
 			return nil, fmt.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s'", hunkHeader)
 		}
 		commitID := hunkHeader[0]
