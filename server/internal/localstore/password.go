@@ -1,10 +1,10 @@
 package localstore
 
 import (
-	"errors"
-
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
@@ -36,7 +36,9 @@ func (p password) CheckUIDPassword(ctx context.Context, UID int32, password stri
 		return err
 	}
 	if hashed == "" {
-		return &store.UserNotFoundError{UID: int(UID)}
+		// Either the user has no password (and can only log in via
+		// GitHub OAuth2, etc.) or the user does not exist.
+		return grpc.Errorf(codes.PermissionDenied, "password login not allowed for uid %d", UID)
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hashed), []byte(password))
 }
@@ -45,8 +47,12 @@ func (p password) SetPassword(ctx context.Context, uid int32, password string) e
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Password.SetPassword", uid); err != nil {
 		return err
 	}
+
 	if password == "" {
-		return errors.New("password must not be empty")
+		// Clear password (user can only log in via GitHub OAuth2, for
+		// example).
+		_, err := appDBH(ctx).Exec(`DELETE FROM passwords WHERE uid=$1;`, uid)
+		return err
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 11)

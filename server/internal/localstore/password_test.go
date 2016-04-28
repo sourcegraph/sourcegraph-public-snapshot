@@ -145,7 +145,12 @@ func TestPasswords_SetPassword_empty(t *testing.T) {
 
 	s := &password{}
 	uid := nextUID()
-	if err := s.SetPassword(ctx, uid, ""); err == nil {
+	if err := s.SetPassword(ctx, uid, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// No password should be accepted.
+	if err := s.CheckUIDPassword(ctx, uid, ""); err == nil {
 		t.Fatal("err == nil")
 	}
 }
@@ -164,15 +169,15 @@ func TestPasswords_SetPassword_setToEmpty(t *testing.T) {
 	}
 
 	// Set to empty
-	if err := s.SetPassword(ctx, uid, ""); err == nil {
-		t.Fatal("err == nil")
-	}
-
-	// Password should remain as "p".
-	if err := s.CheckUIDPassword(ctx, uid, "p"); err != nil {
+	if err := s.SetPassword(ctx, uid, ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.CheckUIDPassword(ctx, uid, "p2"); err == nil {
+
+	// No password should work: the old password should no longer work, and "" should also not work.
+	if err := s.CheckUIDPassword(ctx, uid, "p"); err == nil {
+		t.Fatal("err == nil")
+	}
+	if err := s.CheckUIDPassword(ctx, uid, ""); err == nil {
 		t.Fatal("err == nil")
 	}
 }

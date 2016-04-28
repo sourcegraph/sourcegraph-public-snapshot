@@ -59,13 +59,10 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid login: %q", newAcct.Login)
 	}
 
-	if newAcct.Password == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "empty password")
-	}
-
-	if newAcct.Email == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "empty email")
-	}
+	// Allow empty passwords and emails. This can occur if the user is
+	// signing up from GitHub. We don't ask for their password, only
+	// the GitHub UID. And if they lack a public GitHub email address,
+	// we still want to create the account without one.
 
 	now := pbtypes.NewTimestamp(time.Now())
 	newUser := &sourcegraph.User{
@@ -76,7 +73,10 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 		Admin:        admin,
 	}
 
-	email := &sourcegraph.EmailAddr{Email: newAcct.Email, Primary: true}
+	var email *sourcegraph.EmailAddr
+	if newAcct.Email != "" {
+		email = &sourcegraph.EmailAddr{Email: newAcct.Email, Primary: true}
+	}
 
 	created, err := accountsStore.Create(elevatedActor(ctx), newUser, email)
 	if err != nil {
@@ -84,8 +84,19 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 	}
 
 	userSpec := created.Spec()
-	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: int(userSpec.UID), Login: userSpec.Login})
-	if err := store.PasswordFromContext(ctx).SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
+	actor := authpkg.Actor{
+		UID:   int(userSpec.UID),
+		Login: userSpec.Login,
+		Write: write,
+		Admin: admin,
+	}
+	ctx = authpkg.WithActor(ctx, actor)
+
+	if newAcct.Password != "" {
+		if err := store.PasswordFromContext(ctx).SetPassword(ctx, userSpec.UID, newAcct.Password); err != nil {
+			return nil, err
+		}
+	}
 		return nil, err
 	}
 
