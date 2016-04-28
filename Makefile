@@ -140,7 +140,7 @@ app/assets/bundle.js: app-dep
 
 # GOFLAGS is all test build tags (use smtest/mdtest/lgtest targets to
 # execute common subsets of tests).
-GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest uitest'
+GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check app/assets/bundle.js

@@ -28,9 +28,7 @@ To run a specific test:
 cd sourcegraph/app
 NODE_PATH=web_modules NODE_ENV=test ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill --require ignore-styles ./web_modules/path/to/The_Test.js
 ```
-## Server-side rendering
 
-During a request, components for the current route are rendered on the back-end and served as HTML via a JavaScript server. To disable this feature for debugging purposes, set the environment variable `SG_DISABLE_JSSERVER=t`. 
 
 ## Notes
 

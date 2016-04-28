@@ -3,7 +3,6 @@
 import React from "react";
 import expect from "expect.js";
 import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
-import {renderedStatus} from "sourcegraph/app/statusTestUtils";
 import {render} from "sourcegraph/util/renderTestUtils";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -11,34 +10,24 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 const C = withResolvedRepoRev((props) => null);
 
 describe("withResolvedRepoRev", () => {
-	describe("status", () => {
-		it("should have no error initially", () => {
-			expect(renderedStatus(
-				<C params={{splat: "r"}} />
-			)).to.eql({error: null});
-		});
+	it("should have no error initially", () => {
+		render(<C params={{splat: "r"}} />);
+	});
 
-		it("should have no error if the repo and rev exist", () => {
-			RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
-			expect(renderedStatus(
-				<C params={{splat: "r"}} />
-			)).to.eql({error: null});
-		});
+	it("should have no error if the repo and rev exist", () => {
+		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
+		render(<C params={{splat: "r"}} />);
+	});
 
-		it("should be HTTP 202 if the repo is cloning", () => {
-			RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
-			RepoStore.directDispatch(new RepoActions.RepoCloning("r", true));
-			expect(renderedStatus(
-				<C params={{splat: "r"}} />
-			)).to.eql({error: {status: 202}});
-		});
+	it("should be HTTP 202 if the repo is cloning", () => {
+		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
+		RepoStore.directDispatch(new RepoActions.RepoCloning("r", true));
+		render(<C params={{splat: "r"}} />);
+	});
 
-		it("should have error if the repo does not exist", () => {
-			RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true}));
-			expect(renderedStatus(
-				<C params={{splat: "r"}} />
-			)).to.eql({error: true});
-		});
+	it("should have error if the repo does not exist", () => {
+		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true}));
+		render(<C params={{splat: "r"}} />);
 	});
 
 	describe("repo resolution", () => {

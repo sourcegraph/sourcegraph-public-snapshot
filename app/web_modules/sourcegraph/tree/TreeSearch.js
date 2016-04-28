@@ -22,7 +22,7 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {urlToDef} from "sourcegraph/def/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
-import {httpStatusCode} from "sourcegraph/app/status";
+import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
@@ -100,7 +100,6 @@ class TreeSearch extends Container {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
-		status: React.PropTypes.object,
 		user: React.PropTypes.object,
 	};
 
@@ -244,8 +243,8 @@ class TreeSearch extends Container {
 							dirLevel = dirLevel.Dirs[dirKey];
 						} else {
 							if (!dirLevel.Dirs[dirKey] && !dirLevel.Files[part]) {
-								err = {response: {body: `invalid path: '${part}'`, status: 404}};
-								this.context.status.error(err);
+								// TODO(sqs): show an error page
+								console.error(`Invalid path: ${part}`);
 							}
 							break;
 						}

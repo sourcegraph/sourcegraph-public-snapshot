@@ -3,11 +3,10 @@
 import React from "react";
 import expect from "expect.js";
 import withFileBlob from "sourcegraph/blob/withFileBlob";
-import {renderedStatus} from "sourcegraph/app/statusTestUtils";
+import {render} from "sourcegraph/util/renderTestUtils";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {rel as relPath} from "sourcegraph/app/routePatterns";
-import {render} from "sourcegraph/util/renderTestUtils";
 
 const C = withFileBlob((props) => null);
 
@@ -17,26 +16,18 @@ const props = {
 };
 
 describe("withFileBlob", () => {
-	describe("status", () => {
-		it("should have no error initially", () => {
-			expect(renderedStatus(
-				<C repo="r" rev="v" {...props} />
-			)).to.eql({error: null});
-		});
+	it("should render initially", () => {
+		render(<C repo="r" rev="v" {...props} />);
+	});
 
-		it("should have no error if the blob and rev exist", () => {
-			BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {CommitID: "c"}));
-			expect(renderedStatus(
-				<C repo="r" rev="v" commitID="c" {...props} />
-			)).to.eql({error: null});
-		});
+	it("should render when the blob and rev exist", () => {
+		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {CommitID: "c"}));
+		render(<C repo="r" rev="v" commitID="c" {...props} />);
+	});
 
-		it("should have error if the blob does not exist", () => {
-			BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Error: true}));
-			expect(renderedStatus(
-				<C repo="r" rev="v" {...props} />
-			)).to.eql({error: true});
-		});
+	it("should render when the blob does not exist", () => {
+		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Error: true}));
+		render(<C repo="r" rev="v" {...props} />);
 	});
 	it("should redirect to the tree URL when the blob is a tree", (done) => {
 		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Entries: [], CommitID: "c"}));

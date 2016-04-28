@@ -22,14 +22,13 @@ import styles from "./styles/Refs.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {FileIcon} from "sourcegraph/components/Icons";
 import Header from "sourcegraph/components/Header";
-import {httpStatusCode} from "sourcegraph/app/status";
+import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
 const FILES_PER_PAGE = 5;
 const ALL_FILES = ".allfiles";
 
 class RefsMain extends Container {
 	static contextTypes = {
-		status: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
 	};
 
@@ -130,14 +129,6 @@ class RefsMain extends Container {
 			if (nextState.refRepo) {
 				Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo, nextState.refFile));
 			}
-		}
-
-		if (nextState.refs && prevState.refs !== nextState.refs) {
-			this.context.status.error(nextState.refs.Error);
-		}
-
-		if (nextState.refLocations && prevState.refLocations !== nextState.refLocations) {
-			this.context.status.error(nextState.refLocations.Error);
 		}
 
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.page !== prevState.page)) {

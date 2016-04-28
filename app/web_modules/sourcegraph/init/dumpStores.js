@@ -5,7 +5,6 @@ import TreeStore from "sourcegraph/tree/TreeStore";
 import SearchStore from "sourcegraph/search/SearchStore";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
-import EventLogger from "sourcegraph/util/EventLogger";
 import UserStore from "sourcegraph/user/UserStore";
 
 export default function dumpStores() {
@@ -18,6 +17,5 @@ export default function dumpStores() {
 		DashboardStore,
 		BuildStore,
 		UserStore,
-		EventLogger,
 	};
 }

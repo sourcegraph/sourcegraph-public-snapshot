@@ -8,7 +8,7 @@ import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
-import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
+import {EventLocation} from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 import CSSModules from "react-css-modules";
@@ -26,6 +26,7 @@ class DashboardContainer extends Container {
 		user: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -38,7 +39,7 @@ class DashboardContainer extends Container {
 	componentDidMount() {
 		super.componentDidMount();
 		if (this.state.githubRedirect) {
-			EventLogger.logEvent("LinkGitHubCompleted");
+			this.context.eventLogger.logEvent("LinkGitHubCompleted");
 		}
 		setTimeout(() => this.setState({
 			showChromeExtensionCTA: global.chrome && global.document && !document.getElementById("chrome-extension-installed"),
@@ -71,7 +72,7 @@ class DashboardContainer extends Container {
 		return (
 			<div>
 				{!this.context.githubToken && <div styleName="cta">
-					<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
+				<a href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
 						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Link GitHub account</Button>
 					</a>
 				</div>}
@@ -93,7 +94,7 @@ class DashboardContainer extends Container {
 				{!this.context.signedIn &&
 					<div styleName="cta-box">
 						<div styleName="cta-headline">See everywhere a Go function is called, globally.</div>
-						<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => EventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
+						<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => this.context.eventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
 							<Button color="primary" size="large">See usage examples for http.NewRequest &raquo;</Button>
 						</Link>
 						<div styleName="cta-subline">

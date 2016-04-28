@@ -9,11 +9,10 @@ import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import withFileBlob from "sourcegraph/blob/withFileBlob";
 import withAnnotations from "sourcegraph/blob/withAnnotations";
 import BlobMain from "sourcegraph/blob/BlobMain";
-import type {Status} from "sourcegraph/app/status";
 
 export type Helper = {
 	reconcileState: (state: Object, props: Object) => void;
-	onStateTransition?: (prevState: Object, nextState: Object, context: {status: Status}) => void;
+	onStateTransition?: (prevState: Object, nextState: Object) => void;
 	renderProps?: (state: Object) => Object;
 	render?: (state: Object) => ?Element;
 };
@@ -45,10 +44,6 @@ export type Helper = {
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
 	class BlobLoader extends Container {
-		static contextTypes = {
-			status: React.PropTypes.object.isRequired,
-		};
-
 		_helpers: ?Array<Helper>;
 		_stores: ?Array<Object>;
 
@@ -87,7 +82,7 @@ function blobLoader(Component) {
 		onStateTransition(prevState, nextState) {
 			if (this._helpers) {
 				this._helpers.forEach((h) => {
-					if (h.onStateTransition) h.onStateTransition(prevState, nextState, this.context);
+					if (h.onStateTransition) h.onStateTransition(prevState, nextState);
 				});
 			}
 		}

@@ -7,7 +7,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import type {Helper} from "sourcegraph/blob/BlobLoader";
 import Header from "sourcegraph/components/Header";
-import {httpStatusCode} from "sourcegraph/app/status";
+import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
 // withDefAndRefLocations fetches the def and ref locations for the
 // def specified in the properties.
@@ -19,18 +19,10 @@ export default ({
 		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
 	},
 
-	onStateTransition(prevState, nextState, context) {
+	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def, true));
-		}
-
-		if (nextState.defObj && prevState.defObj !== nextState.defObj) {
-			context.status.error(nextState.defObj.Error);
-		}
-
-		if (nextState.refLocations && prevState.refLocations !== nextState.refLocations) {
-			context.status.error(nextState.refLocations.Error);
 		}
 	},
 

@@ -1,28 +1,19 @@
 // @flow weak
 
 import React from "react";
-import expect from "expect.js";
 import RefsMain from "sourcegraph/def/RefsMain";
-import {renderedStatus} from "sourcegraph/app/statusTestUtils";
+import {render} from "sourcegraph/util/renderTestUtils";
 
 describe("RefsMain", () => {
-	describe("status", () => {
-		it("should have no error initially", () => {
-			expect(renderedStatus(
-				<RefsMain />
-			)).to.eql({error: null});
-		});
+	it("should render initially", () => {
+		render(<RefsMain />);
+	});
 
-		it("should have error if the refs failed ", () => {
-			expect(renderedStatus(
-				<RefsMain defObj={{File: "foo.go"}} refs={{Error: true}} />
-			)).to.eql({error: true});
-		});
+	it("should render if the refs failed ", () => {
+		render(<RefsMain defObj={{File: "foo.go"}} refs={{Error: true}} />);
+	});
 
-		it("should have no error if the def and refs loaded", () => {
-			expect(renderedStatus(
-				<RefsMain defObj={{}} refs={[]} />
-			)).to.eql({error: null});
-		});
+	it("should render if the def and refs loaded", () => {
+		render(<RefsMain defObj={{}} refs={[]} />);
 	});
 });

@@ -47,7 +47,6 @@ kinds of tests contained in the file.
   tests that require Internet access, but we may do so later.
 * **githubtest**: tests that require access to the GitHub API.
 * **buildtest**: tests that execute srclib to build repositories.
-* **uitest**: tests that use the JavaScript/Go bridge.
 
 **Why?** Using build tags encourages writing tests that use the minimum set of
 resources (and therefore execute as quickly as possible). To enforce

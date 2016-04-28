@@ -2,7 +2,6 @@
 
 import React from "react";
 import Dispatcher from "sourcegraph/Dispatcher";
-import deepFreeze from "sourcegraph/util/deepFreeze";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
 import type {AuthInfo, User} from "sourcegraph/user";
@@ -26,21 +25,12 @@ export class EventLogger {
 	_fullStory: any = null;
 
 	_intercomSettings: any;
-	events: Array<any>;
-	userProperties: Array<any>;
-	intercomProperties: Array<any>;
-	intercomEvents: Array<any>;
 	isUserAgentBot: bool;
 	_dispatcherToken: any;
 	_siteConfig: ?SiteConfig;
 
 	constructor() {
 		this._intercomSettings = null;
-
-		this.events = deepFreeze([]);
-		this.userProperties = deepFreeze([]);
-		this.intercomProperties = deepFreeze([]);
-		this.intercomEvents = deepFreeze([]);
 
 		// Listen to the UserStore for changes in the user login/logout state.
 		UserStore.addListener(() => this._updateUser());
@@ -49,25 +39,6 @@ export class EventLogger {
 		// You must separately log "frontend" actions of interest,
 		// with the relevant event properties.
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
-	}
-
-	// reset() receives any event data which is buffered
-	// during server-side rendering; this data will
-	// be flushed after the first call to
-	// init() in the browser.
-	reset(data) {
-		this.events = deepFreeze(data && data.events ? data.events : this.events);
-		this.userProperties = deepFreeze(data && data.userProperties ? data.userProperties : this.userProperties);
-		this.intercomProperties = deepFreeze(data && data.intercomProperties ? data.intercomProperties : this.intercomProperties);
-		this.intercomEvents = deepFreeze(data && data.intercomEvents ? data.intercomEvents : this.intercomEvents);
-	}
-	toJSON() {
-		return {
-			events: this.events,
-			userProperties: this.userProperties,
-			intercomProperties: this.intercomProperties,
-			intercomEvents: this.intercomEvents,
-		};
 	}
 
 	setSiteConfig(siteConfig: SiteConfig) {
@@ -178,26 +149,11 @@ export class EventLogger {
 		this._user = user;
 		this._authInfo = authInfo;
 		this._primaryEmail = primaryEmail;
-
-		this._flush();
-	}
-
-	// Only flush events on the client, after a call to _updateUser().
-	// Filter out bot / test user agents.
-	_shouldFlushAmplitude() {
-		return Boolean(this._amplitude) && !this.isUserAgentBot;
-	}
-	_shouldFlushIntercom() {
-		return Boolean(this._intercomSettings) && !this.isUserAgentBot;
 	}
 
 	// sets current user's properties
 	setUserProperty(property, value) {
-		if (!this._shouldFlushAmplitude()) {
-			this.userProperties = deepFreeze(this.userProperties.concat([[property, value]]));
-		} else {
-			this._amplitude.identify(new this._amplitude.Identify().set(property, value));
-		}
+		this._amplitude.identify(new this._amplitude.Identify().set(property, value));
 	}
 
 	// records events for the current user
@@ -205,11 +161,7 @@ export class EventLogger {
 		if (typeof window !== "undefined" && window.localStorage["event-log"]) {
 			console.debug("%cEVENT %s", "color: #aaa", eventName, eventProperties);
 		}
-		if (!this._shouldFlushAmplitude()) {
-			this.events = deepFreeze(this.events.concat([[eventName, eventProperties]]));
-		} else {
-			this._amplitude.logEvent(eventName, eventProperties);
-		}
+		this._amplitude.logEvent(eventName, eventProperties);
 	}
 
 	logEventForPage(eventName, pageName, eventProperties) {
@@ -222,51 +174,12 @@ export class EventLogger {
 
 	// sets current user's property value
 	setIntercomProperty(property, value) {
-		if (!this._shouldFlushIntercom()) {
-			this.intercomProperties = deepFreeze(this.intercomProperties.concat([[property, value]]));
-		} else {
-			this._intercomSettings[property] = value;
-		}
+		if (this._intercom) this._intercomSettings[property] = value;
 	}
 
 	// records intercom events for the current user
 	logIntercomEvent(eventName, eventProperties) {
-		if (!this._shouldFlushIntercom()) {
-			this.intercomEvents = deepFreeze(this.intercomEvents.concat([[eventName, eventProperties]]));
-		} else {
-			window.Intercom("trackEvent", eventName, eventProperties);
-		}
-	}
-
-	_flush() {
-		if (this._shouldFlushAmplitude()) { // sanity check
-			if (this.events) {
-				for (let tuple of this.events) {
-					this.logEvent(tuple[0], tuple[1]);
-				}
-				this.events = deepFreeze([]);
-			}
-			if (this.userProperties) {
-				for (let tuple of this.userProperties) {
-					this.setUserProperty(tuple[0], tuple[1]);
-				}
-				this.userProperties = deepFreeze([]);
-			}
-		}
-		if (this._shouldFlushIntercom()) {
-			if (this.intercomEvents) {
-				for (let tuple of this.intercomEvents) {
-					this.logIntercomEvent(tuple[0], tuple[1]);
-				}
-				this.intercomEvents = deepFreeze([]);
-			}
-			if (this.intercomProperties) {
-				for (let tuple of this.intercomProperties) {
-					this.setIntercomProperty(tuple[0], tuple[1]);
-				}
-				this.intercomProperties = deepFreeze([]);
-			}
-		}
+		if (this._intercom) this._intercom("trackEvent", eventName, eventProperties);
 	}
 
 	__onDispatch(action) {
@@ -313,8 +226,6 @@ export class EventLogger {
 			}
 			break;
 		}
-
-		this._flush(); // No need to __emitChange(); components need not be re-rendered.
 	}
 }
 

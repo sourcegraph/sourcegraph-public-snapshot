@@ -14,6 +14,7 @@ describe("DashboardContainer", () => {
 				signedIn: false,
 				user: null,
 				githubToken: null,
+				eventLogger: {logEvent: () => null},
 			},
 		);
 	});

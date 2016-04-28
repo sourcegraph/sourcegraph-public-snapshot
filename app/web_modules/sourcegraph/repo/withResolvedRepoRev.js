@@ -13,7 +13,6 @@ import {urlToRepo} from "sourcegraph/repo/routes";
 export default function withResolvedRepoRev(Component) {
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {
-			status: React.PropTypes.object.isRequired,
 			router: React.PropTypes.object.isRequired,
 		};
 
@@ -42,9 +41,7 @@ export default function withResolvedRepoRev(Component) {
 
 		onStateTransition(prevState, nextState) {
 			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
-				if (nextState.repoResolution.Error) {
-					this.context.status.error(nextState.repoResolution.Error);
-				} else if (nextState.repoResolution.Result.RemoteRepo) {
+				if (nextState.repoResolution.Result.RemoteRepo) {
 					let canonicalPath = `github.com/${nextState.repoResolution.Result.RemoteRepo.Owner}/${nextState.repoResolution.Result.RemoteRepo.Name}`;
 					if (nextState.repo !== canonicalPath) {
 						this.context.router.replace(urlToRepo(canonicalPath));
@@ -63,16 +60,10 @@ export default function withResolvedRepoRev(Component) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 				}
 			}
-			if (nextState.repoObj && prevState.repoObj !== nextState.repoObj) {
-				this.context.status.error(nextState.repoObj.Error);
-			}
 			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev) {
 				if (nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning && nextState.rev) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.rev));
 				}
-			}
-			if (nextState.isCloning && prevState.isCloning !== nextState.isCloning) {
-				this.context.status.error({status: 202});
 			}
 		}
 

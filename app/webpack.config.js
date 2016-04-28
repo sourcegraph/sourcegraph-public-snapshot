@@ -109,31 +109,4 @@ var browserConfig = {
 	},
 };
 
-var serverConfig = {
-	name: "server",
-	target: "node",
-	cache: true,
-	entry: "./web_modules/sourcegraph/init/server.js",
-	output: {
-		path: __dirname+"/assets",
-		filename: "[name].server.js",
-	},
-	plugins: commonPlugins.concat([
-		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
-	]),
-	module: {
-		preLoaders: [eslintPreloader],
-		loaders: [
-			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
-			//{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
-			{
-				test: /\.css$/,
-				loader: "css-loader/locals?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader",
-			},
-		],
-	},
-	// PostCSS is necessary here for some reason (otherwise postcss-modules-scope complains).
-	postcss: [require("postcss-modules-values")],
-};
-
-module.exports = process.env.BROWSER_ONLY ? config(browserConfig) : [config(browserConfig), config(serverConfig)];
+module.exports = config(browserConfig);

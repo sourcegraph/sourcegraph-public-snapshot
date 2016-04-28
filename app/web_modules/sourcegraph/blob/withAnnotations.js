@@ -12,10 +12,6 @@ import "sourcegraph/blob/BlobBackend";
 // for the repo, rev, and path passed to it as properties.
 export default function withAnnotations(Component) {
 	class WithAnnotations extends Container {
-		static contextTypes = {
-			status: React.PropTypes.object.isRequired,
-		};
-
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
@@ -42,10 +38,6 @@ export default function withAnnotations(Component) {
 					// resolutions).
 					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, nextState.commitID, nextState.path, 0, 0));
 				}
-			}
-
-			if (nextState.anns && prevState.anns !== nextState.anns) {
-				this.context.status.error(nextState.anns.Error);
 			}
 		}
 

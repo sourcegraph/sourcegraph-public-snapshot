@@ -18,7 +18,6 @@ import {urlToTree} from "sourcegraph/tree/routes";
 export default function withFileBlob(Component) {
 	class WithFileBlob extends Container {
 		static contextTypes = {
-			status: React.PropTypes.object.isRequired,
 			router: React.PropTypes.object.isRequired,
 		};
 
@@ -51,8 +50,6 @@ export default function withFileBlob(Component) {
 			}
 
 			if (nextState.blob && prevState.blob !== nextState.blob) {
-				this.context.status.error(nextState.blob.Error);
-
 				// If the entry is a tree (not a file), redirect to the "/tree/" URL.
 				// Run in setTimeout because it warns otherwise.
 				if (nextState.blob.Entries) {

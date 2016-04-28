@@ -5,7 +5,6 @@ import TreeStore from "sourcegraph/tree/TreeStore";
 import SearchStore from "sourcegraph/search/SearchStore";
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
-import EventLogger from "sourcegraph/util/EventLogger";
 import UserStore from "sourcegraph/user/UserStore";
 
 // resetStores resets all stores with the provided data. If null is provided,
@@ -19,5 +18,4 @@ export default function resetStores(data) {
 	DashboardStore.reset(data ? data.DashboardStore : null);
 	BuildStore.reset(data ? data.BuildStore : null);
 	UserStore.reset(data ? data.UserStore : null);
-	EventLogger.reset(data ? data.EventLogger : null);
 }

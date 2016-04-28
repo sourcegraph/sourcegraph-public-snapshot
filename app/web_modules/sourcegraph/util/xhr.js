@@ -7,10 +7,6 @@ import context from "sourcegraph/app/context";
 import UserStore from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
-//
-// Use the fetch API (not XHR) because it is the future standard and because
-// we can intercept calls to fetch in the reactbridge to render React
-// components on the server even if they fetch external data.
 
 function defaultOptions(): RequestOptions {
 	const headers = new Headers();
@@ -24,19 +20,7 @@ function defaultOptions(): RequestOptions {
 	return {
 		headers,
 		credentials: "same-origin",
-
-		// Compress requests for browser clients but not for jsserver renderer (which
-		// is colocated with the API endpoint, so network is fast).
-		compress: typeof document !== "undefined",
 	};
-}
-
-let _globalBaseURL: string = ""; // private
-
-// setGlobalBaseURL sets the base URL to use for all fetches.
-export function setGlobalBaseURL(baseURL: string): void {
-	if (baseURL.endsWith("/")) throw new Error("base URL must not have trailing slash");
-	_globalBaseURL = baseURL;
 }
 
 export function combineHeaders(a: any, b: any): any {
@@ -66,9 +50,6 @@ export function combineHeaders(a: any, b: any): any {
 // Note: the caller might wrap this with singleflightFetch.
 export function defaultFetch(url: string | Request, init?: RequestOptions): Promise<Response> {
 	if (typeof url !== "string") throw new Error("url must be a string (complex requests are not yet supported)");
-	if (typeof global !== "undefined" && global.process && global.process.env.JSSERVER) {
-		url = `${_globalBaseURL}${url}`;
-	}
 
 	const defaults = defaultOptions();
 

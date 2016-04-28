@@ -8,7 +8,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {httpStatusCode} from "sourcegraph/app/status";
+import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 
 import Header from "sourcegraph/components/Header";
@@ -27,7 +27,6 @@ class RepoMain extends React.Component {
 	};
 
 	static contextTypes = {
-		status: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
 	};
 

@@ -2,7 +2,6 @@
 
 import React from "react";
 import EventLogger from "sourcegraph/util/EventLogger";
-import {setGlobalBaseURL} from "sourcegraph/util/xhr";
 
 // SiteConfig is site-wide configuration for a Sourcegraph server.
 export type SiteConfig = {
@@ -27,7 +26,6 @@ export function setGlobalSiteConfig(siteConfig: SiteConfig) {
 	// HACK: Set this info in other places that need it but that
 	// aren't React components (which could access it via this.context.siteConfig).
 	EventLogger.setSiteConfig(siteConfig);
-	setGlobalBaseURL(siteConfig.appURL);
 }
 
 // withStatusContext passes a "siteConfig" context item

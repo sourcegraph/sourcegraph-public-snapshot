@@ -1,9 +1,8 @@
 // @flow weak
 
 import React from "react";
-import expect from "expect.js";
 import withDef from "sourcegraph/def/withDef";
-import {renderedStatus} from "sourcegraph/app/statusTestUtils";
+import {render} from "sourcegraph/util/renderTestUtils";
 import DefStore from "sourcegraph/def/DefStore";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {rel as relPath} from "sourcegraph/app/routePatterns";
@@ -16,25 +15,17 @@ const props = {
 };
 
 describe("withDef", () => {
-	describe("status", () => {
-		it("should have no error initially", () => {
-			expect(renderedStatus(
-				<C repo="r" rev="v" {...props} />
-			)).to.eql({error: null});
-		});
+	it("should render initially", () => {
+		render(<C repo="r" rev="v" {...props} />);
+	});
 
-		it("should have no error if the def and rev exist", () => {
-			DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", {CommitID: "c"}));
-			expect(renderedStatus(
-				<C repo="r" rev="v" {...props} />
-			)).to.eql({error: null});
-		});
+	it("should render if the def and rev exist", () => {
+		DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", {CommitID: "c"}));
+		render(<C repo="r" rev="v" {...props} />);
+	});
 
-		it("should have error if the def does not exist", () => {
-			DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", {Error: true}));
-			expect(renderedStatus(
-				<C repo="r" rev="v" {...props} />
-			)).to.eql({error: true});
-		});
+	it("should render if the def does not exist", () => {
+		DefStore.directDispatch(new DefActions.DefFetched("r", "v", "d", {Error: true}));
+		render(<C repo="r" rev="v" {...props} />);
 	});
 });

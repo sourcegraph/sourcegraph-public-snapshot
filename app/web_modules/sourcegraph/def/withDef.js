@@ -8,16 +8,12 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import Container from "sourcegraph/Container";
 import {routeParams as defRouteParams} from "sourcegraph/def";
 import Header from "sourcegraph/components/Header";
-import {httpStatusCode} from "sourcegraph/app/status";
+import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
 // withDef fetches the def specified in the params. It also fetches
 // the def stored in DefStore.highlightedDef.
 export default function withDef(Component) {
 	class WithDef extends Container {
-		static contextTypes = {
-			status: React.PropTypes.object,
-		};
-
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
@@ -45,10 +41,6 @@ export default function withDef(Component) {
 		onStateTransition(prevState, nextState) {
 			if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
-			}
-
-			if (nextState.defObj && prevState.defObj !== nextState.defObj) {
-				this.context.status.error(nextState.defObj.Error);
 			}
 
 			if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {

@@ -9,8 +9,6 @@ RUN apk add --update --update-cache \
   git@edge \
   # for /etc/mime.types, needed by HTTP server
   mailcap \
-  # for server-side React component rendering
-  nodejs \
   && rm -rf /var/cache/apk/*
 
 RUN { \

@@ -11,7 +11,6 @@ import styles from "./styles/App.css";
 
 import {withEventLoggerContext, withViewEventsLogged} from "sourcegraph/util/EventLogger";
 import EventLogger from "sourcegraph/util/EventLogger";
-import {withStatusContext} from "sourcegraph/app/status";
 import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
@@ -46,9 +45,7 @@ export const rootRoute: Route = {
 				withSiteConfigContext(
 					withUserContext(
 						withFeaturesContext(
-							withStatusContext(
-								CSSModules(App, styles)
-							)
+							CSSModules(App, styles)
 						)
 					)
 				)

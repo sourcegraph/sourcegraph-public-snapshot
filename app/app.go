@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"

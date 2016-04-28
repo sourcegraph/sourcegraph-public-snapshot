@@ -15,11 +15,10 @@ import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDefRefs} from "sourcegraph/def/routes";
 import Header from "sourcegraph/components/Header";
-import {httpStatusCode} from "sourcegraph/app/status";
+import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
 class DefInfo extends Container {
 	static contextTypes = {
-		status: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,
 	};
