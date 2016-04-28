@@ -11,6 +11,14 @@
 	composes: b db mr3 from base;
 }
 
+/* Hide filename on narrow screens. */
+@media screen and (max-width: 48em) {
+	.repo-nav-context {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+
 .container {
 	composes: pt6 from base;
 }

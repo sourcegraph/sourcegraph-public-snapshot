@@ -30,7 +30,7 @@ class NavContext extends React.Component {
 					</Label>
 				}
 				<RepoLink repo={this.props.repo} />
-				{this.props.repoNavContext}
+				<div styleName="repo-nav-context">{this.props.repoNavContext}</div>
 			</div>
 		);
 	}
