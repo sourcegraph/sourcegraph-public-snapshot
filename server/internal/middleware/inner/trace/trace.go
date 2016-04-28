@@ -99,6 +99,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	if err != nil {
 		errStr = err.Error()
 	}
+	name := server + "." + method
 	call := &traceutil.GRPCCall{
 		Server:     server,
 		Method:     method,
@@ -111,9 +112,9 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	rec := traceutil.Recorder(ctx)
 	rec.Name(server + "." + method)
 	rec.Event(call)
-	// TODO measure metrics on the server, rather than the client
+
 	labels := prometheus.Labels{
-		"method":  server + "." + method,
+		"method":  name,
 		"success": strconv.FormatBool(err == nil),
 	}
 	requestCount.With(labels).Inc()
@@ -126,5 +127,5 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	}
 	requestPerUser.With(labels).Inc()
 
-	log15.Debug("gRPC after", "rpc", server+"."+method, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
+	log15.Debug("gRPC after", "rpc", name, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
 }
