@@ -2,7 +2,7 @@
 
 import React from "react";
 import {Link} from "react-router";
-import {urlToDefRefs} from "sourcegraph/def/routes";
+import {urlToDefInfo} from "sourcegraph/def/routes";
 import s from "sourcegraph/def/styles/Def.css";
 
 export default class RefLocationsList extends React.Component {
@@ -26,12 +26,12 @@ export default class RefLocationsList extends React.Component {
 				{refLocs.map((repoRef, i) => (
 					<div key={i} className={s.allRefs}>
 						<header className={this.props.repo === repoRef.Repo ? s.activeGroupHeader : ""}>
-							<span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefRefs(def, repoRef.Repo)}>{repoRef.Repo}</Link>
+							<span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefInfo(def)}>{repoRef.Repo}</Link>
 						</header>
 						<div className={s.refsGroup}>
 							{repoRef.Files && repoRef.Files.map((file, j) => (
 								<div key={j} className={`${s.refFilename} ${this.props.repo === repoRef.Repo && this.props.path === file.Path ? s.currentFileRefs : ""}`}>
-									<span className={s.refsCount}>{file.Count}</span> <Link title={file.Path} to={urlToDefRefs(def, repoRef.Repo, file.Path)}>{file.Path}</Link>
+									<span className={s.refsCount}>{file.Count}</span> <Link title={file.Path} to={urlToDefInfo(def)}>{file.Path}</Link>
 								</div>
 							))}
 						</div>

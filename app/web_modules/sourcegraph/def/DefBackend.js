@@ -73,7 +73,9 @@ const DefBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action.repo, action.rev, action.def, action.reposOnly, data));
+								if (data && !data.Error) { // TODO(rothfels): figure out why this is sometimes returning null
+									Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action.repo, action.rev, action.def, action.reposOnly, data));
+								}
 							})
 					);
 				}

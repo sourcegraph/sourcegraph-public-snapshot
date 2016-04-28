@@ -16,7 +16,7 @@ export default ({
 		state.def = props.params ? props.params.splat[1] : null;
 
 		state.defObj = state.def ? DefStore.defs.get(state.repo, state.rev, state.def) : null;
-		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
+		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def, true) : null;
 	},
 
 	onStateTransition(prevState, nextState) {

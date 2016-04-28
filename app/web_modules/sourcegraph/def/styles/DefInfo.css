@@ -16,7 +16,7 @@
 }
 
 .refs-page {
-	composes: col-8 from grid;
+	composes: col-11 from grid;
 }
 
 .subheader {

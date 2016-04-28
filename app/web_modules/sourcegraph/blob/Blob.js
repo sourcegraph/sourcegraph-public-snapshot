@@ -360,7 +360,6 @@ class Blob extends Component {
 		let renderedLines: number = 0;
 		this.state.lines.forEach((line, i: number) => {
 			const lineNumber = 1 + i + this.state.contentsOffsetLine;
-			const isVisible = lineNumber >= this.state.visStartLine && lineNumber < this.state.visEndLine;
 			if (this.state.displayRanges && !this._withinDisplayedRange(lineNumber)) {
 				return;
 			}
@@ -386,8 +385,8 @@ class Blob extends Component {
 					contents={line}
 					annotations={this.state.lineAnns ? (this.state.lineAnns[i] || null) : null}
 					selected={this.state.highlightSelectedLines && this.state.startLine && this.state.endLine && this.state.startLine <= lineNumber && this.state.endLine >= lineNumber}
-					highlightedDef={isVisible ? this.state.highlightedDef : null}
-					highlightedDefObj={isVisible ? this.state.highlightedDefObj : null}
+					highlightedDef={this.state.highlightedDef}
+					highlightedDefObj={this.state.highlightedDefObj}
 					activeDef={this.state.activeDef}
 					activeDefNoRev={this.state.activeDefNoRev}
 					key={i} />

@@ -10,17 +10,7 @@
 .container {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	composes: center from base;
-}
-
-.inner {
-	composes: col-9 from grid;
-}
-
-.subsection {
-	composes: f4 from typography;
-	clear: both;
+	composes: mb5 from base;
 }
 
 .ref-locations {
@@ -34,38 +24,41 @@
 	flex: 1 1 auto;
 }
 
-.file-name {
-	composes: mv1 from base;
+.repo {
+	composes: mv3 from base;
 }
 
-.refs-footer {
-	width: 100%;
-	text-align: center;
+.filename {
+	composes: mv3 from base;
 }
 
-.search-hotkey {
-	composes: bg-black-10 from colors;
-	composes: tooltip-bottom from tooltips;
-	box-shadow: 0 1px 0 c_black-20,0 0 0 2px c_white inset;
-	text-shadow: 0 1px 0 c_white;
+.paginator {
+	composes: tc from typography;
 }
 
-.def-title {
-	composes: pl1 from base;
-	composes: black from colors;
-	font-weight: normal;
+.pageLink {
+	cursor: pointer;
+	composes: gray from colors;
 }
 
-.def-title:hover {
-	text-decoration: underline;
+@value c_dark-blue from colors;
+.pageLink:hover {
+	color: c_dark-blue;
 }
 
-.defName {
-	composes: blue from colors;
-	font-weight: bold;
+.fileIcon {
+	composes: gray from colors;
+	composes: ml2 from base;
+}
+.fileIcon:hover {
+	color: c_dark-blue;
 }
 
-.filter-select {
-	composes: ml1 from base;
-	float: right;
+.sep {
+	composes: ph1 from base;
+	composes: gray from colors;
+}
+
+.pathPart {
+	composes: mid-gray from colors;
 }

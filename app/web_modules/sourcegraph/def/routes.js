@@ -11,7 +11,6 @@ import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import withDef from "sourcegraph/def/withDef";
 import DefInfo from "sourcegraph/def/DefInfo";
 import DefNavContext from "sourcegraph/def/DefNavContext";
-import RefsMain from "sourcegraph/def/RefsMain";
 
 // TODO these routes didn't work with async loading. Fix them.
 const infoRoute = {
@@ -22,19 +21,11 @@ const infoRoute = {
 	},
 };
 
-const refsRoute = {
-	path: "refs",
-	components: {
-		main: withResolvedRepoRev(withDef(RefsMain)),
-		repoNavContext: DefNavContext,
-	},
-};
-
 export const routes: Array<Route> =[
 	{
 		path: `${rel.def}*/-/`,
 		getChildRoutes: (location, callback) => {
-			callback(null, [infoRoute, refsRoute]);
+			callback(null, [infoRoute]);
 		},
 	},
 	{
@@ -73,19 +64,9 @@ export function urlToDef(def: Def, rev: ?string): string {
 	return urlTo("def", defParams(def, rev));
 }
 
-export function urlToDefRefs(def: Def, refRepo: string, refFile?: string): string {
-	let u = urlTo("defRefs", defParams(def));
-	u = `${u}?repo=${refRepo}`;
-	if (refFile) u = `${u}&file=${encodeURIComponent(refFile)}`;
-	return u;
-}
-
-// hotfix (hack): we should merge this with urlToDefRefs and always pass a revision,
-// but that is tricky given he current usage
-export function urlToDefRefs2(def: Def, refRepo: string, rev: string): string {
-	let u = urlTo("defRefs", defParams(def, rev));
-	u = `${u}?repo=${refRepo}`;
-	return u;
+// TODO: add revision
+export function urlToDefInfo(def: Def): string {
+	return urlTo("defInfo", defParams(def));
 }
 
 export function urlToDef2(repo: string, rev: string, def: string): string {

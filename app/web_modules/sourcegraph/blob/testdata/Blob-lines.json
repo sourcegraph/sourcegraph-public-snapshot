@@ -19,7 +19,8 @@
 												"lineNumber": 1,
 												"startByte": 0,
 												"contents": "hello",
-												"selected": false
+												"selected": false,
+												"highlightedDef": "otherDef"
 											}
 										},
 										{
@@ -29,7 +30,8 @@
 												"lineNumber": 2,
 												"startByte": 6,
 												"contents": "world",
-												"selected": false
+												"selected": false,
+												"highlightedDef": "otherDef"
 											}
 										}
 									]

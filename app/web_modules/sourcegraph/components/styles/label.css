@@ -41,3 +41,52 @@
 	composes: bg-red from colors;
 }
 
+.purple {
+	composes: label;
+	composes: bg-purple from colors;
+}
+
+.outline {
+	composes: br4 ba ph2 pv1 from base;
+	composes: f6 b sans-serif from typography;
+	composes: dark-gray from colors;
+	text-transform: uppercase;
+	display: flex;
+	align-items: center;
+}
+
+.outline-default {
+	composes: outline;
+	composes: b--gray from colors;
+}
+
+.outline-primary {
+	composes: outline;
+	composes: b--blue from colors;
+}
+
+.outline-success {
+	composes: outline;
+	composes: b--green from colors;
+}
+
+.outline-info {
+	composes: outline;
+	composes: b--aqua from colors;
+}
+
+.outline-warning {
+	composes: outline;
+	composes: b--orange from colors;
+}
+
+.outline-danger {
+	composes: outline;
+	composes: b--red from colors;
+}
+
+.outline-purple {
+	composes: outline;
+	composes: b--purple from colors;
+}
+
