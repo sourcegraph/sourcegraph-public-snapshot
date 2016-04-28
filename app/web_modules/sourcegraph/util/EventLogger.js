@@ -202,6 +202,9 @@ export class EventLogger {
 
 	// records events for the current user
 	logEvent(eventName, eventProperties) {
+		if (typeof window !== "undefined" && window.localStorage["event-log"]) {
+			console.debug("%cEVENT %s", "color: #aaa", eventName, eventProperties);
+		}
 		if (!this._shouldFlushAmplitude()) {
 			this.events = deepFreeze(this.events.concat([[eventName, eventProperties]]));
 		} else {
