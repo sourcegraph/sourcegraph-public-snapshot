@@ -80,6 +80,14 @@ export function urlToDefRefs(def: Def, refRepo: string, refFile?: string): strin
 	return u;
 }
 
+// hotfix (hack): we should merge this with urlToDefRefs and always pass a revision,
+// but that is tricky given he current usage
+export function urlToDefRefs2(def: Def, refRepo: string, rev: string): string {
+	let u = urlTo("defRefs", defParams(def, rev));
+	u = `${u}?repo=${refRepo}`;
+	return u;
+}
+
 export function urlToDef2(repo: string, rev: string, def: string): string {
 	return urlTo("def", {splat: [`${repo}@${rev}`, def]});
 }

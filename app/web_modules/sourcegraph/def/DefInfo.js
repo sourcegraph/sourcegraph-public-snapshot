@@ -13,7 +13,7 @@ import {urlToDef} from "sourcegraph/def/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import {urlToDefRefs} from "sourcegraph/def/routes";
+import {urlToDefRefs2} from "sourcegraph/def/routes";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
@@ -87,7 +87,7 @@ class DefInfo extends Container {
 										<h2>Used in</h2>
 										{!refLocs && <i>Loading...</i>}
 										{refLocs && refLocs.map((repoRef, i) => (
-											<Link styleName="refs-link" key={i} to={urlToDefRefs(def, repoRef.Repo)}><span styleName="badge">{repoRef.Count}</span> {repoRef.Repo}</Link>
+											<Link styleName="refs-link" key={i} to={urlToDefRefs2(def, repoRef.Repo, this.state.rev)}><span styleName="badge">{repoRef.Count}</span> {repoRef.Repo}</Link>
 										))}
 									</div>
 								}
