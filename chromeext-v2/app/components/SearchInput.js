@@ -40,7 +40,8 @@ export default class SearchInput extends React.Component {
 				placeholder={this.props.placeholder}
 				value={this.state.text}
 				onChange={this.handleChange}
-				onKeyDown={this.handleSubmit} />
+				onKeyDown={this.handleSubmit}
+				className="sg-input" />
 		);
 	}
 }

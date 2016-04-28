@@ -201,6 +201,7 @@ class InjectApp extends React.Component {
 			this.appFrame((frameDiv) => {
 				$(".container.new-discussion-timeline").children().hide();
 				$(".container.new-discussion-timeline").append(this.frameDiv);
+				$(".sg-input").focus();
 				this.setState({appFrameIsVisible: true});
 			});
 		} else if (this.state.appFrameIsVisible) {

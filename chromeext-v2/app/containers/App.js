@@ -15,6 +15,8 @@ import * as Actions from "../actions";
 import CSSModules from "react-css-modules";
 import styles from "../components/App.css";
 
+import {default as checkErrorStatus} from "../actions/xhr"
+
 @connect(
 	(state) => ({
 		repo: state.repo,
@@ -63,11 +65,22 @@ export default class App extends Component {
 		return this.props.srclibDataVersion.content[keyFor(this.props.repo, this.props.rev, this.props.path)];
 	}
 
+	_srclibDataVersionFetch() {
+		return this.props.srclibDataVersion.fetches[keyFor(this.props.repo, this.props.rev, this.props.path)];
+	}
+
 	_defs() {
 		const srclibDataVersion = this._srclibDataVersion();
 		if (!srclibDataVersion || !srclibDataVersion.CommitID) return null;
 		return this.props.defs.content[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
 	}
+
+	_defsFetch() {
+		const srclibDataVersion = this._srclibDataVersion();
+		if (!srclibDataVersion || !srclibDataVersion.CommitID) return null;
+		return this.props.defs.fetches[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
+	}
+
 
 	// TODO: share this code with main application.
 	defPath(def) {
@@ -101,16 +114,26 @@ export default class App extends Component {
 		return this.props.text.content[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
 	}
 
+	_textFetch() {
+		const srclibDataVersion = this._srclibDataVersion();
+		if (!srclibDataVersion || !srclibDataVersion.CommitID) return null;
+		return this.props.text.fetches[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
+	}
+
 	render() {
 		const srclibDataVersion = this._srclibDataVersion();
+		const srclibDataVersionFetch = this._srclibDataVersionFetch();
 		const defs = this._defs();
 		const text = this._text();
+		const defsFetch = this._defsFetch();
+		const textFetch = this._textFetch();
+
 		return (
 			<div styleName="app">
-				<div className="column one-fourth">
+				<div styleName="column-one-fourth">
 					<SearchMenu onSelect={this.handleMenuSelect} selected={this.state.selected} />
 				</div>
-				<div className="column three-fourths">
+				<div styleName="column-three-fourths">
 					<div className="breadcrumb flex-table" styleName="input-box">
 						<span styleName="input-addon">{`${this.props.repo.split('/')[2]} /`}</span>
 						<SearchInput text={this.props.query} placeholder="Search for symbols..." onSubmit={this.handleSubmit} />
@@ -124,18 +147,39 @@ export default class App extends Component {
 							</tbody>
 						</table>
 						{!srclibDataVersion || !srclibDataVersion.CommitID &&
-							<div styleName="list-item-empty">Fetching...</div>
+							<h3 styleName="list-item-empty">Fetching...</h3>
 						}
-						{srclibDataVersion && srclibDataVersion.CommitID && (!defs || !defs.Defs || defs.Defs.length === 0) &&
-							<div styleName="list-item-empty">No results.</div>
+						{srclibDataVersionFetch === true || defsFetch === true &&
+							<h3 styleName="list-item-empty">Loading...</h3>
+						}
+						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 404 &&
+							<h3 styleName="list-item-empty">404 Not Found</h3>
+						}
+						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 401 &&
+							<h3 styleName="list-item-empty">401 Unauthorized: Log in to Sourcegraph to search private code</h3>
+						}
+						{srclibDataVersionFetch === false && defs && !defs.Defs &&
+							<h3 styleName="list-item-empty">No matches found.</h3>
 						}
 					</div>}
 					{this.state.selected === "text" && <div className="code-list" styleName="code-list">
 						{text && text.SearchResults && text.SearchResults.map((item, i) =>
 							<TextSearchResult key={i} query={this.props.query} match={item.Match} file={item.File} startLine={item.StartLine} endLine={item.EndLine} repo={this.props.repo}/>
 						)}
-						{srclibDataVersion && srclibDataVersion.CommitID && (!text || !text.SearchResults || text.SearchResults.length === 0) &&
-							<div styleName="list-item-empty">No results.</div>
+						{!srclibDataVersion || !srclibDataVersion.CommitID &&
+							<h3 styleName="list-item-empty">Fetching...</h3>
+						}
+						{srclibDataVersionFetch === true || textFetch === true &&
+							<h3 styleName="list-item-empty">Loading...</h3>
+						}
+						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 404 &&
+							<h3 styleName="list-item-empty">404 Not Found</h3>
+						}
+						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 401 &&
+							<h3 styleName="list-item-empty">401 Unauthorized: Log in to Sourcegraph to search private code</h3>
+						}
+						{srclibDataVersionFetch === false && text && !text.SearchResults &&
+							<h3 styleName="list-item-empty">No matches found.</h3>
 						}
 					</div>
 					}

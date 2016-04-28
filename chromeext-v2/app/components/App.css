@@ -3,6 +3,14 @@
 	align-items: flex-start;
 }
 
+.column-one-fourth {
+	width:25%;
+}
+
+.column-three-fourths {
+	width:75%;
+}
+
 .input-box {
 	display: flex;
 }
@@ -12,12 +20,15 @@
 	color: #4078c0;
 	font-size: 20px;
 	padding-left: 20px;
+	margin-left: 20px;
 	padding: 5px;
+	padding-bottom:none;
 }
 
 .input {
 	padding: 5px;
-	font-size: 16px;
+	padding-bottom: 10px; /* To get in line with breadcrumb */
+	font-size: 18px;
 	border: none;
 	flex: 1 1 auto;
 }
@@ -33,8 +44,7 @@
 }
 
 .list-item-empty {
-	padding: 10px;
-	font-style: italic;
+	text-align: center;
 }
 
 .def-result-row:hover td{
@@ -53,12 +63,28 @@ tr:hover .octicon-chevron-right {
 	padding-right: 5px;
 }
 
+.menu-item svg {
+	font-size: 20px;
+}
+
 .menu-item {
+	cursor: pointer;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	border-bottom-color: rgba(0,0,0,.2);
+	padding: .75rem;
+	display: flex;
+	align-items: center;
 	cursor: pointer;
 }
 
-.menu-item svg {
-	font-size: 20px;
+.menu-item-selected {
+	composes: menu-item;
+	border-left-style: solid !important;
+	border-left-width: 3px !important;
+	border-left-color: #d26911 !important;
+	font-weight: bold;
+	color: #111;
 }
 
 .blob-code {
@@ -88,11 +114,14 @@ tr:hover .octicon-chevron-right {
 	font-size: 14px !important;
 	z-index: 20;
 	position: absolute;
+	word-wrap: break-word;
+	overflow: auto;
 }
 .popoverTitle {
 	font-size: 12px;
 	font-family: monospace;
 	margin-bottom: 10px;
+	word-wrap: break-word;
 }
 .popover code,
 .popover pre,

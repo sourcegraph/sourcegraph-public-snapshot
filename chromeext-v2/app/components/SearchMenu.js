@@ -30,10 +30,10 @@ export default class SearchMenu extends React.Component {
 	render() {
 		return (
 			<nav className="menu">
-				<div styleName="menu-item" className={this.state.selected === "def" ? "menu-item selected" : "menu-item"} onClick={() => this.select("def")}>
+				<div styleName={this.state.selected === "def" ? "menu-item-selected" : "menu-item"} onClick={() => this.select("def")}>
 					<CodeIcon /><span style={{marginLeft: "10px"}}>Code</span>
 				</div>
-				<div styleName="menu-item" className={this.state.selected === "text" ? "menu-item selected" : "menu-item"} onClick={() => this.select("text")}>
+				<div styleName={this.state.selected === "text" ? "menu-item-selected" : "menu-item"} onClick={() => this.select("text")}>
 					<TextIcon /><span style={{marginLeft: "10px"}}>Text</span>
 				</div>
 			</nav>
