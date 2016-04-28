@@ -71,19 +71,10 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help:      "Last time a request finished for a grpc endpoint.",
 }, metricLabels)
 
-var userMetricLabels = []string{"uid", "service"}
-var requestPerUser = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "grpc",
-	Name:      "client_requests_per_user",
-	Help:      "Total number of requests per user id.",
-}, userMetricLabels)
-
 func init() {
 	prometheus.MustRegister(requestCount)
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
-	prometheus.MustRegister(requestPerUser)
 }
 
 // After is called after a method executes and is passed the elapsed
@@ -122,11 +113,5 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 	uid := strconv.Itoa(authpkg.ActorFromContext(ctx).UID)
-	labels = prometheus.Labels{
-		"uid":     uid,
-		"service": server,
-	}
-	requestPerUser.With(labels).Inc()
-
 	log15.Debug("gRPC after", "rpc", name, "uid", uid, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
 }
