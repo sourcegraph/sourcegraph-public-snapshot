@@ -88,7 +88,7 @@ class GlobalSearch extends Container {
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
 
-		state.matchingDefs = SearchStore.results.get(state.query);
+		state.matchingDefs = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT);
 		if (state.matchingDefs !== null) {
 			state.lastDefinedMatchingDefs = state.matchingDefs;
 		} else {
@@ -99,7 +99,7 @@ class GlobalSearch extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query));
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT));
 		}
 	}
 

@@ -5,12 +5,16 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 
+function keyForResults(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number): string {
+	return `${query}#${repos ? repos.join(":") : ""}#${notRepos ? notRepos.join(":") : ""}#${limit || ""}`;
+}
+
 export class SearchStore extends Store {
 	reset(data?: {results: any}) {
 		this.results = deepFreeze({
 			content: data && data.results ? data.results : {},
-			get(query) {
-				return this.content[query] || null;
+			get(query, repos, notRepos, limit) {
+				return this.content[keyForResults(query, repos, notRepos, limit)] || null;
 			},
 		});
 	}
@@ -26,7 +30,7 @@ export class SearchStore extends Store {
 				...this.results,
 				content: {
 					...this.results.content,
-					[action.query]: action.defs,
+					[keyForResults(action.query, action.repos, action.notRepos, action.limit)]: action.defs,
 				},
 			});
 			break;

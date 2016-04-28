@@ -36,6 +36,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Tree.css";
 
 const SYMBOL_LIMIT = 5;
+const GLOBAL_DEFS_LIMIT = 3;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
 const MAX_QUERY_LENGTH = 32;
@@ -175,7 +176,7 @@ class TreeSearch extends Container {
 
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
 
-		state.xdefs = SearchStore.results.get(state.query);
+		state.xdefs = SearchStore.results.get(state.query, null, [this.state.repo], GLOBAL_DEFS_LIMIT);
 	}
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
@@ -196,8 +197,8 @@ class TreeSearch extends Container {
 		}
 
 		// Global search results only show up for admin users
-		if (this.context.user && this.context.user.Admin) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [this.state.repo], 3));
+		if (this.context.user && this.context.user.Admin && (prevState.query !== nextState.query || prevState.repo !== nextState.repo)) {
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [nextState.repo], GLOBAL_DEFS_LIMIT));
 		}
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
