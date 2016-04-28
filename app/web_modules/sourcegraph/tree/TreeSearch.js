@@ -292,6 +292,8 @@ class TreeSearch extends Container {
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
+		if (!this.state.focused) return;
+
 		let idx, max;
 		switch (e.keyCode) {
 		case 40: // ArrowDown
