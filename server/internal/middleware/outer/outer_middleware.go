@@ -2145,36 +2145,6 @@ func (s wrappedUsers) List(ctx context.Context, v1 *sourcegraph.UsersListOptions
 	return rv, nil
 }
 
-func (s wrappedUsers) ListTeammates(ctx context.Context, v1 *sourcegraph.UserSpec) (returnedResult *sourcegraph.Teammates, returnedError error) {
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			returnedError = grpc.Errorf(codes.Internal, "panic in Users.ListTeammates: %v\n\n%s", err, buf)
-			returnedResult = nil
-		}
-	}()
-
-	var err error
-	ctx, err = initContext(ctx, s.ctxFunc, s.services)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	innerSvc := svc.UsersOrNil(ctx)
-	if innerSvc == nil {
-		return nil, grpc.Errorf(codes.Unimplemented, "Users")
-	}
-
-	rv, err := innerSvc.ListTeammates(ctx, v1)
-	if err != nil {
-		return nil, wrapErr(err)
-	}
-
-	return rv, nil
-}
-
 func (s wrappedUsers) Count(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.UserCount, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {

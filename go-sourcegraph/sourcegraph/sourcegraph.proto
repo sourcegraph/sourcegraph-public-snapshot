@@ -905,34 +905,6 @@ message PersonSpec {
 	int32 UID = 3;
 }
 
-// RemoteUser specifies a GitHub user that may have linked a Sourcegraph
-// user account.
-message RemoteUser {
-	// RemoteAccount specifies the GitHub user account information for the user.
-	User RemoteAccount = 1;
-
-	// LocalAccount specifies the Sourcegraph user account information for the
-	// user. If this field is nil, the remote user does not have any linked
-	// Sourcegraph account.
-	User LocalAccount = 2;
-
-	// Email specifies the primary email of the GitHub user.
-	string Email = 3;
-
-	// Organization specifies which organization this user is part of
-	string Organization = 5;
-}
-
-// Teammates lists all members of all GitHub organizations that a user is
-// part of. A teammate may or may not have a linked Sourcegraph account.
-message Teammates {
-	// Users is a list of all github users that are on a organization with the user
-	repeated RemoteUser Users = 1;
-
-	// Organizations is a list of organizations the user is a part of
-	repeated string Organizations = 2;
-}
-
 message TaskSpec {
 	BuildSpec Build = 1 [(gogoproto.nullable) = false];
 	uint64 ID = 2;
@@ -1188,10 +1160,6 @@ service Users {
 
 	// List users.
 	rpc List(UsersListOptions) returns (UserList);
-
-	// ListTeammates fetches all members of the GitHub organizations
-	// that the current user is part of.
-	rpc ListTeammates(UserSpec) returns (Teammates);
 
 	// Count returns the number of users signed up on this instance.
 	rpc Count(pbtypes.Void) returns (UserCount);
