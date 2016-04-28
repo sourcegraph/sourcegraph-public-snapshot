@@ -165,12 +165,21 @@ export class DefStore extends Store {
 			break;
 
 		case DefActions.RefLocationsFetched:
-			this.refLocations = deepFreeze(Object.assign({}, this.refLocations, {
-				content: Object.assign({}, this.refLocations.content, {
-					[defKey(action.repo, action.rev, action.def)]: getRankedRefLocations(action.locations),
-				}),
-			}));
-			break;
+			{
+				let locations;
+				if (!action.locations.Error) {
+					locations = getRankedRefLocations(action.locations);
+				} else {
+					locations = action.locations;
+				}
+
+				this.refLocations = deepFreeze(Object.assign({}, this.refLocations, {
+					content: Object.assign({}, this.refLocations.content, {
+						[defKey(action.repo, action.rev, action.def)]: locations,
+					}),
+				}));
+				break;
+			}
 
 		case DefActions.RefsFetched:
 			this.refs = deepFreeze(Object.assign({}, this.refs, {
