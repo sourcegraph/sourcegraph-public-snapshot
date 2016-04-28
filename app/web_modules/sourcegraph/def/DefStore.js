@@ -167,7 +167,7 @@ export class DefStore extends Store {
 		case DefActions.RefLocationsFetched:
 			{
 				let locations;
-				if (!action.locations.Error) {
+				if (action.locations && !action.locations.Error) {
 					locations = getRankedRefLocations(action.locations);
 				} else {
 					locations = action.locations;
