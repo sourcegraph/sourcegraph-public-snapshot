@@ -412,14 +412,14 @@ func (s *PeopleServer) Get(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sou
 var _ sourcegraph.PeopleServer = (*PeopleServer)(nil)
 
 type AccountsClient struct {
-	Create_               func(ctx context.Context, in *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error)
+	Create_               func(ctx context.Context, in *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error)
 	RequestPasswordReset_ func(ctx context.Context, in *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(ctx context.Context, in *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error)
 	Delete_               func(ctx context.Context, in *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
-func (s *AccountsClient) Create(ctx context.Context, in *sourcegraph.NewAccount, opts ...grpc.CallOption) (*sourcegraph.UserSpec, error) {
+func (s *AccountsClient) Create(ctx context.Context, in *sourcegraph.NewAccount, opts ...grpc.CallOption) (*sourcegraph.CreatedAccount, error) {
 	return s.Create_(ctx, in)
 }
 
@@ -442,14 +442,14 @@ func (s *AccountsClient) Delete(ctx context.Context, in *sourcegraph.PersonSpec,
 var _ sourcegraph.AccountsClient = (*AccountsClient)(nil)
 
 type AccountsServer struct {
-	Create_               func(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error)
+	Create_               func(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error)
 	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*sourcegraph.PendingPasswordReset, error)
 	ResetPassword_        func(v0 context.Context, v1 *sourcegraph.NewPassword) (*pbtypes.Void, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) (*pbtypes.Void, error)
 	Delete_               func(v0 context.Context, v1 *sourcegraph.PersonSpec) (*pbtypes.Void, error)
 }
 
-func (s *AccountsServer) Create(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
+func (s *AccountsServer) Create(v0 context.Context, v1 *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error) {
 	return s.Create_(v0, v1)
 }
 

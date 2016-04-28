@@ -150,7 +150,7 @@ type wrappedAccounts struct {
 	services svc.Services
 }
 
-func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) (returnedResult *sourcegraph.UserSpec, returnedError error) {
+func (s wrappedAccounts) Create(ctx context.Context, v1 *sourcegraph.NewAccount) (returnedResult *sourcegraph.CreatedAccount, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10

@@ -111,7 +111,7 @@ func (s wrappedMultiRepoImporter) Index(ctx context.Context, param *pb.IndexOp) 
 
 type wrappedAccounts struct{}
 
-func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccount) (res *sourcegraph.UserSpec, err error) {
+func (s wrappedAccounts) Create(ctx context.Context, param *sourcegraph.NewAccount) (res *sourcegraph.CreatedAccount, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Accounts", "Create", param)
 	defer func() {

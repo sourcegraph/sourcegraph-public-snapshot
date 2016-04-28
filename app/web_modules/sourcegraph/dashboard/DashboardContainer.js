@@ -72,7 +72,7 @@ class DashboardContainer extends Container {
 			<div>
 				{!this.context.githubToken && <div styleName="cta">
 					<a href={urlToGitHubOAuth} onClick={() => EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
-						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Add My GitHub Repositories</Button>
+						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Link GitHub account</Button>
 					</a>
 				</div>}
 			</div>

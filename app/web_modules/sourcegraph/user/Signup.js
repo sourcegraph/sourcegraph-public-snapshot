@@ -8,7 +8,7 @@ import {Button, Input} from "sourcegraph/components";
 
 import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
-
+import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
@@ -17,6 +17,7 @@ import style from "sourcegraph/user/styles/accountForm.css";
 export class SignupForm extends Container {
 	static propTypes = {
 		onSignupSuccess: React.PropTypes.func.isRequired,
+		location: React.PropTypes.object.isRequired,
 	};
 	state = {
 		submitted: false,
@@ -34,6 +35,12 @@ export class SignupForm extends Container {
 		Object.assign(state, props);
 		state.pendingAuthAction = UserStore.pendingAuthActions.get("signup");
 		state.authResponse = UserStore.authResponses.get("signup");
+
+		// These are set by the GitHub OAuth2 receive endpoint if there is an
+		// error.
+		state.githubError = (props.location.query && props.location.query["github-signup-error"]) || null;
+		state.githubLogin = (props.location.query && props.location.query.login) || null;
+		state.githubEmail = (props.location.query && props.location.query.email) || null;
 	}
 
 
@@ -63,11 +70,18 @@ export class SignupForm extends Container {
 		return (
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
 				<div styleName="title">Sign up for Sourcegraph</div>
+				{!this.state.githubError && [
+					<GitHubAuthButton key="1">Sign up with GitHub</GitHubAuthButton>,
+					<p key="2" styleName="divider">or</p>,
+				]}
+				{this.state.githubError === "username-or-email-taken" && <div styleName="error">Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}
+				{this.state.githubError === "unknown" && <div styleName="error">Sorry, signing up via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try creating a separate Sourcegraph account below.</div>}
 				<label>
 					<span>Username</span>
 					<Input type="text"
 						id="e2etest-login-field"
 						name="username"
+						defaultValue={this.state.githubLogin || null}
 						domRef={(e) => this._loginInput = e}
 						autoComplete="username"
 						autoFocus={true}
@@ -83,6 +97,7 @@ export class SignupForm extends Container {
 					<Input type="email"
 						id="e2etest-email-field"
 						name="email"
+						defaultValue={this.state.githubEmail || null}
 						autoComplete="email"
 						autoCapitalize={false}
 						tabIndex="2"
@@ -104,11 +119,12 @@ export class SignupForm extends Container {
 				<p styleName="mid-text">
 					By creating an account, you agree to our <a href="/privacy">privacy policy</a> and <a href="/legal">terms</a>.
 				</p>
-				<Button color="primary"
+				<Button
+					color={this.state.githubError ? "primary" : "default"}
 					id="e2etest-register-button"
 					tabIndex="4"
 					block={true}
-					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Create account & add GitHub repositories</Button>
+					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Create account</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}

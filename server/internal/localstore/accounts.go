@@ -26,10 +26,6 @@ type accounts struct{}
 
 var _ store.Accounts = (*accounts)(nil)
 
-func (s *accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "GetByGitHubID")
-}
-
 func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "Accounts.Create"); err != nil {
 		return nil, err
@@ -57,8 +53,10 @@ func (s *accounts) Create(ctx context.Context, newUser *sourcegraph.User, email 
 			return err
 		}
 
-		if err := tx.Insert(&userEmailAddrRow{UID: int(insertedUser.UID), EmailAddr: *email}); err != nil {
-			return grpc.Errorf(codes.AlreadyExists, "%s has already been registered with another account", email.Email)
+		if email != nil {
+			if err := tx.Insert(&userEmailAddrRow{UID: int(insertedUser.UID), EmailAddr: *email}); err != nil {
+				return grpc.Errorf(codes.AlreadyExists, "%s has already been registered with another account", email.Email)
+			}
 		}
 		return nil
 	})

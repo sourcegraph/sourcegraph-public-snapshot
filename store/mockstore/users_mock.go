@@ -9,11 +9,12 @@ import (
 )
 
 type Users struct {
-	Get_          func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error)
-	GetWithEmail_ func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
-	List_         func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
-	ListEmails_   func(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
-	Count_        func(v0 context.Context) (int32, error)
+	Get_              func(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error)
+	GetWithEmail_     func(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
+	List_             func(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
+	ListEmails_       func(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
+	Count_            func(v0 context.Context) (int32, error)
+	GetUIDByGitHubID_ func(ctx context.Context, githubUID int) (int32, error)
 }
 
 func (s *Users) Get(ctx context.Context, user sourcegraph.UserSpec) (*sourcegraph.User, error) {
@@ -34,11 +35,14 @@ func (s *Users) ListEmails(v0 context.Context, v1 sourcegraph.UserSpec) ([]*sour
 
 func (s *Users) Count(v0 context.Context) (int32, error) { return s.Count_(v0) }
 
+func (s *Users) GetUIDByGitHubID(ctx context.Context, githubUID int) (int32, error) {
+	return s.GetUIDByGitHubID_(ctx, githubUID)
+}
+
 var _ store.Users = (*Users)(nil)
 
 type Accounts struct {
 	Create_               func(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error)
-	GetByGitHubID_        func(ctx context.Context, id int) (*sourcegraph.User, error)
 	Update_               func(v0 context.Context, v1 *sourcegraph.User) error
 	UpdateEmails_         func(v0 context.Context, v1 sourcegraph.UserSpec, v2 []*sourcegraph.EmailAddr) error
 	RequestPasswordReset_ func(v0 context.Context, v1 *sourcegraph.User) (*sourcegraph.PasswordResetToken, error)
@@ -48,10 +52,6 @@ type Accounts struct {
 
 func (s *Accounts) Create(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error) {
 	return s.Create_(ctx, newUser, email)
-}
-
-func (s *Accounts) GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error) {
-	return s.GetByGitHubID_(ctx, id)
 }
 
 func (s *Accounts) Update(v0 context.Context, v1 *sourcegraph.User) error { return s.Update_(v0, v1) }

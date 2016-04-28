@@ -26,8 +26,7 @@ func TestSrclibPush(t *testing.T) {
 	}
 	defer a.Close()
 
-	_, err := testutil.CreateAccount(t, ctx, "u")
-	if err != nil {
+	if err := testutil.CreateAccount(t, ctx, "u"); err != nil {
 		t.Fatal(err)
 	}
 

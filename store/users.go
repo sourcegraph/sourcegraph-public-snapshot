@@ -16,14 +16,17 @@ type Users interface {
 	List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
 	ListEmails(context.Context, sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
 	Count(context.Context) (int32, error)
+
+	// GetUIDByGitHubID gets the Sourcegraph UID for the user given
+	// the GitHub UID that they've authorized tokens with (in
+	// ExternalAuthTokens).
+	GetUIDByGitHubID(ctx context.Context, githubUID int) (int32, error)
 }
 
 // Accounts manages user accounts that can be registered and
-// created. External sources of users (e.g., GitHub) should probably
-// only implement Users.
+// created.
 type Accounts interface {
 	Create(ctx context.Context, newUser *sourcegraph.User, email *sourcegraph.EmailAddr) (*sourcegraph.User, error)
-	GetByGitHubID(ctx context.Context, id int) (*sourcegraph.User, error)
 	Update(context.Context, *sourcegraph.User) error
 	UpdateEmails(context.Context, sourcegraph.UserSpec, []*sourcegraph.EmailAddr) error
 	RequestPasswordReset(context.Context, *sourcegraph.User) (*sourcegraph.PasswordResetToken, error)

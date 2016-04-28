@@ -96,7 +96,8 @@ func testGitServer(t *testing.T, tests []interface{}) {
 	defer server.Close()
 
 	// Create a test user.
-	userSpec, err := server.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: "u", Email: "u@example.com", Password: "p"})
+	const login = "u"
+	acct, err := server.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: login, Email: "u@example.com", Password: "p"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +130,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 				t.Errorf("FAILED: %s : %v", test.String(), err)
 			}
 		case gitPushTest:
-			user := &sourcegraph.User{UID: userSpec.UID, Login: userSpec.Login, Write: test.canWrite, Admin: test.isAdmin}
+			user := &sourcegraph.User{UID: acct.UID, Login: login, Write: test.canWrite, Admin: test.isAdmin}
 			if _, err = server.Client.Accounts.Update(ctx, user); err != nil {
 				t.Errorf("Error while updating user permissions: %s", err)
 				continue

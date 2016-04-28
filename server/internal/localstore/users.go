@@ -204,3 +204,14 @@ func (s *users) Count(ctx context.Context) (int32, error) {
 	count, err := appDBH(ctx).SelectInt("SELECT count(*) FROM users WHERE NOT disabled;")
 	return int32(count), err
 }
+
+func (s *users) GetUIDByGitHubID(ctx context.Context, githubUID int) (int32, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.GetUIDByGitHubID", ""); err != nil {
+		return 0, err
+	}
+	uid, err := appDBH(ctx).SelectInt(`SELECT "user" FROM ext_auth_token WHERE host='github.com' AND (NOT disabled) AND ext_uid=$1;`, githubUID)
+	if err == sql.ErrNoRows || uid == 0 {
+		err = grpc.Errorf(codes.NotFound, "no external auth token for github user %d", githubUID)
+	}
+	return int32(uid), err
+}

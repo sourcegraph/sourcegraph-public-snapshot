@@ -133,7 +133,7 @@
 @value c_black-50 from colors;
 .outline-default {
     composes: outline;
-    composes: b--black-50 mid-gray from colors;
+    composes: b--gray dark-gray from colors;
 }
 .outline-default:hover,
 .outline-default:focus {
@@ -172,7 +172,7 @@
 
 .solid-default {
     composes: solid;
-    composes: mid-gray bg-moon-gray from colors;
+    composes: dark-gray bg-light-gray from colors;
 }
 
 .solid-primary {

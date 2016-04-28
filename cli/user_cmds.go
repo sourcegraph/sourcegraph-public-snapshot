@@ -110,7 +110,7 @@ func (c *userCreateCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# Created user %q with UID %d", user.Login, user.UID)
+	log.Printf("# Created user %q with UID %d", c.Args.Login, user.UID)
 	return nil
 }
 

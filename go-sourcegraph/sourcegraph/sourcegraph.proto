@@ -1095,7 +1095,7 @@ service People {
 // can't create/update information about).
 service Accounts {
 	// Create creates a new user account.
-	rpc Create(NewAccount) returns (UserSpec);
+	rpc Create(NewAccount) returns (CreatedAccount);
 
 	// RequestPasswordReset stores a password reset token in the database, to
 	// later verify the authenticity of a user using CheckResetToken
@@ -1109,6 +1109,20 @@ service Accounts {
 
 	// Delete deletes a user account from this server.
 	rpc Delete(PersonSpec) returns (pbtypes.Void);
+}
+
+// CreatedAccount is a newly created account.
+message CreatedAccount {
+	int32 UID = 1;
+
+	// TemporaryAccessToken is a temporary access token that grants
+	// full access to this account. It can be used by the caller of
+	// Accounts.Create to perform any immediate setup necessary on the
+	// account (e.g., linking GitHub tokens) without needing to
+	// create/generate a password for the account (which otherwise
+	// would be the only way, via the resource owner password grant
+	// type, to get an access token).
+	string TemporaryAccessToken = 2;
 }
 
 message PasswordResetToken {
@@ -1151,7 +1165,9 @@ message NewAccount {
 	// Email is the primary email address for the new user account.
 	string Email = 2;
 
-	// Password is the password for the new user account.
+	// Password is the password for the new user account. If empty,
+	// the user can only log into the account via GitHub or some other
+	// external auth provider (until they reset the password).
 	string Password = 3;
 
 	// UID is the desired UID for the new user account.
@@ -1225,6 +1241,19 @@ message LoginCredentials {
 	string Password = 2;
 }
 
+// GitHubAuthCode is a custom authorization grant type we support.
+// It lets you log into Sourcegraph by presenting a valid GitHub
+// authorization code for the same user.
+message GitHubAuthCode {
+	// Code is the GitHub OAuth2 authorization code returned from
+	// GitHub.
+	string Code = 1;
+
+	// Host is always "github.com" for now, but can be used in the
+	// future to support GitHub Enterprises located at different URLs.
+	string Host = 2;
+}
+
 // AccessTokenRequest contains the information necessary to
 // request an OAuth2 access token. It supports a subset of
 // authorization grant types specified in
@@ -1234,6 +1263,7 @@ message AccessTokenRequest {
 	// information on OAuth2 authorization grant types.
 	oneof authorization_grant {
 		LoginCredentials ResourceOwnerPassword = 2;
+		GitHubAuthCode GitHubAuthCode = 3;
 	}
 
 	repeated string Scope = 17;
@@ -1248,6 +1278,22 @@ message AccessTokenResponse {
 	int32 ExpiresInSec = 3; // optional
 	string RefreshToken = 4; // optional
 	repeated string Scope = 5; // optional if equal to the requested scope
+
+	// Extra fields only used by Sourcegraph.
+	int32 UID = 6; // the Sourcegraph UID of the user corresponding to the auth'd GitHubAuthCode's user
+	string GitHubAccessToken = 7; // the GitHub access token obtained by exchanging the GitHubAuthCode
+	GitHubUser GitHubUser = 8; // the authenticated GitHub user for the GitHubAuthCode
+}
+
+// GitHubUser represents a GitHub user.
+message GitHubUser {
+	int32 ID = 1; // user ID
+	string Login = 2;
+	string Name = 3;
+	string Email = 4;
+	string Location = 5;
+	string Company = 6;
+	string AvatarURL = 7;
 }
 
 // AuthInfo describes the currently authenticated client and/or user

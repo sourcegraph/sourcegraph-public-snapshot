@@ -11,20 +11,20 @@ import (
 
 const password = "pw"
 
-func CreateAccount(t *testing.T, ctx context.Context, login string) (*sourcegraph.UserSpec, error) {
+func CreateAccount(t *testing.T, ctx context.Context, login string) error {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
-	user, err := cl.Accounts.Create(ctx, &sourcegraph.NewAccount{
+	created, err := cl.Accounts.Create(ctx, &sourcegraph.NewAccount{
 		Login:    login,
 		Email:    login + "@example.com",
 		Password: password,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	t.Logf("created account %q (UID %d)", user.Login, user.UID)
+	t.Logf("created account %q (UID %d)", login, created.UID)
 
-	return user, nil
+	return nil
 }
 
 func EnsureUserExists(t *testing.T, ctx context.Context, login string) int {

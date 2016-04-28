@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
+	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -27,7 +29,7 @@ var Accounts sourcegraph.AccountsServer = &accounts{}
 
 type accounts struct{}
 
-func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.UserSpec, error) {
+func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) (*sourcegraph.CreatedAccount, error) {
 	usersStore := store.UsersFromContext(ctx)
 
 	var write, admin bool
@@ -41,14 +43,14 @@ func (s *accounts) Create(ctx context.Context, newAcct *sourcegraph.NewAccount) 
 		admin = true
 	}
 
-	user, err := s.createWithPermissions(ctx, newAcct, write, admin)
+	acct, err := s.createWithPermissions(ctx, newAcct, write, admin)
 	if err != nil {
 		return nil, err
 	}
-	return user, err
+	return acct, err
 }
 
-func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.UserSpec, error) {
+func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegraph.NewAccount, write, admin bool) (*sourcegraph.CreatedAccount, error) {
 	accountsStore := store.AccountsFromContext(ctx)
 
 	if newAcct.Login == "" {
@@ -97,11 +99,15 @@ func (s *accounts) createWithPermissions(ctx context.Context, newAcct *sourcegra
 			return nil, err
 		}
 	}
+
+	// Return a temporary access token.
+	tok, err := accesstoken.New(idkey.FromContext(ctx), &actor, nil, 7*24*time.Hour, true)
+	if err != nil {
 		return nil, err
 	}
 
 	sendAccountCreateSlackMsg(ctx, newAcct.Login, newAcct.Email)
-	return &userSpec, nil
+	return &sourcegraph.CreatedAccount{UID: userSpec.UID, TemporaryAccessToken: tok.AccessToken}, nil
 }
 
 func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.Void, error) {

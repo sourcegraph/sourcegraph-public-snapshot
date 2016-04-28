@@ -3,7 +3,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
-import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import UserStore from "sourcegraph/user/UserStore";
 
 const UserBackend = {
@@ -90,7 +89,6 @@ const UserBackend = {
 							// Currently the only way to signup is from the signup page. When this changes we will
 							// want to modify how we are tracking this event.
 							EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Signup);
-							window.location.href = urlToGitHubOAuth;
 						}
 					})
 				);

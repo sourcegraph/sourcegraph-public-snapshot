@@ -1,0 +1,31 @@
+// @flow
+
+import React from "react";
+import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
+import {GitHubIcon} from "sourcegraph/components/Icons";
+import CSSModules from "react-css-modules";
+import {Button} from "sourcegraph/components";
+import style from "sourcegraph/user/styles/accountForm.css";
+
+function GitHubAuthButton({children}, {eventLogger}) {
+	return (
+		<a href={urlToGitHubOAuth} styleName="github"
+			onClick={() => eventLogger.logEvent("InitiateGitHubOAuth2Flow")}>
+			<Button type="button" formNoValidate={true} color="primary" block={true}>
+				<GitHubIcon />&nbsp; {children}
+			</Button>
+		</a>
+	);
+}
+GitHubAuthButton.propTypes = {
+	children: React.PropTypes.oneOfType([
+		React.PropTypes.arrayOf(React.PropTypes.element),
+		React.PropTypes.element,
+		React.PropTypes.string,
+	]),
+};
+GitHubAuthButton.contextTypes = {
+	eventLogger: React.PropTypes.object.isRequired,
+};
+
+export default CSSModules(GitHubAuthButton, style);

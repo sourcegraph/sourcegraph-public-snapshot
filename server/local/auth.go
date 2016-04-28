@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -40,6 +41,8 @@ var _ sourcegraph.AuthServer = (*auth)(nil)
 func (s *auth) GetAccessToken(ctx context.Context, op *sourcegraph.AccessTokenRequest) (*sourcegraph.AccessTokenResponse, error) {
 	if resOwnerPassword := op.GetResourceOwnerPassword(); resOwnerPassword != nil {
 		return s.authenticateLogin(ctx, resOwnerPassword)
+	} else if githubAuthCode := op.GetGitHubAuthCode(); githubAuthCode != nil {
+		return s.authenticateGitHubAuthCode(ctx, githubAuthCode)
 	} else {
 		return nil, grpc.Errorf(codes.Unauthenticated, "no supported auth credentials provided")
 	}
@@ -82,6 +85,89 @@ func (s *auth) authenticateLogin(ctx context.Context, cred *sourcegraph.LoginCre
 	}
 
 	return accessTokenToTokenResponse(tok), nil
+}
+
+func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourcegraph.GitHubAuthCode) (*sourcegraph.AccessTokenResponse, error) {
+	if authCode.Host != "github.com" {
+		return nil, grpc.Errorf(codes.Unimplemented, "non-github.com hosts not yet supported")
+	}
+	if authCode.Code == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "code cannot be empty")
+	}
+
+	// Exchange the code for a GitHub access token.
+	ghToken, err := githubutil.Default.OAuth.Exchange(oauth2.NoContext, authCode.Code)
+	if err != nil {
+		return nil, err
+	}
+	if !ghToken.Valid() {
+		return nil, grpc.Errorf(codes.PermissionDenied, "exchanging auth code yielded invalid GitHub OAuth2 token")
+	}
+
+	// Get the current user.
+	gh := githubutil.Default.AuthedClient(ghToken.AccessToken)
+	ghUser, _, err := gh.Users.Get("")
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if this corresponds to an existing Sourcegraph user; if
+	// so, return that info in the response to allow the app to know
+	// when it needs to create a new Sourcegraph user.
+	var resp *sourcegraph.AccessTokenResponse
+	uid, err := store.UsersFromContext(ctx).GetUIDByGitHubID(ctx, *ghUser.ID)
+	if err == nil {
+		user, err := (&users{}).Get(ctx, &sourcegraph.UserSpec{UID: uid})
+		if err != nil {
+			return nil, err
+		}
+
+		// Generate the Sourcegraph access token. We only do this if
+		// there's an existing Sourcegraph user for this GitHub access
+		// token; otherwise, the Sourcegraph access token would be
+		// anonymous, which'd be pointless.
+		a := authpkg.ActorFromContext(ctx)
+		a.UID = int(user.UID)
+		a.Login = user.Login
+		a.Write = user.Write
+		a.Admin = user.Admin
+		tok, err := accesstoken.New(idkey.FromContext(ctx), &a, nil, 7*24*time.Hour, true)
+		if err != nil {
+			return nil, err
+		}
+		resp = accessTokenToTokenResponse(tok)
+		resp.UID = uid
+	} else if grpc.Code(err) == codes.NotFound {
+		// Do nothing.
+	} else if err != nil {
+		return nil, err
+	}
+
+	if resp == nil {
+		resp = &sourcegraph.AccessTokenResponse{}
+	}
+	resp.GitHubAccessToken = ghToken.AccessToken
+	resp.GitHubUser = &sourcegraph.GitHubUser{
+		ID:    int32(*ghUser.ID),
+		Login: *ghUser.Login,
+	}
+	if ghUser.Name != nil {
+		resp.GitHubUser.Name = *ghUser.Name
+	}
+	if ghUser.Email != nil {
+		resp.GitHubUser.Email = *ghUser.Email
+	}
+	if ghUser.Location != nil {
+		resp.GitHubUser.Location = *ghUser.Location
+	}
+	if ghUser.Company != nil {
+		resp.GitHubUser.Company = *ghUser.Company
+	}
+	if ghUser.AvatarURL != nil {
+		resp.GitHubUser.AvatarURL = *ghUser.AvatarURL
+	}
+
+	return resp, nil
 }
 
 func accessTokenToTokenResponse(t *oauth2.Token) *sourcegraph.AccessTokenResponse {
