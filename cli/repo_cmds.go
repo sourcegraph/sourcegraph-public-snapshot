@@ -331,7 +331,8 @@ func (c *repoDeleteCmd) Execute(args []string) error {
 }
 
 type repoSyncCmd struct {
-	Force bool `long:"force" short:"f" description:"force rebuild even if build exists for the latest commit"`
+	Force bool   `long:"force" short:"f" description:"force rebuild even if build exists for the latest commit"`
+	Rev   string `long:"revision" short:"r" description:"sync the specified branch or commit ID"`
 
 	Args struct {
 		URIs []string `name:"REPO-URI" description:"repository URIs (e.g., host.com/myrepo)"`
@@ -368,18 +369,21 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
 
-	repo, err := cl.Repos.Get(cliContext, &repoSpec)
-	if err != nil {
-		return err
+	rev := c.Rev
+	if rev == "" {
+		repo, err := cl.Repos.Get(cliContext, &repoSpec)
+		if err != nil {
+			return err
+		}
+		rev = repo.DefaultBranch
 	}
-
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: repo.DefaultBranch}
+	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: rev}
 	commit, err := cl.Repos.GetCommit(cliContext, &repoRevSpec)
 	if err != nil {
 		return err
 	}
 	repoRevSpec.CommitID = string(commit.ID)
-	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], repo.DefaultBranch, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
+	log.Printf("Got latest commit %s (%s): %s (%s %s).", commit.ID[:8], rev, textutil.Truncate(50, commit.Message), commit.Author.Email, timeutil.TimeAgo(commit.Author.Date))
 
 	builds, err := cl.Builds.List(cliContext, &sourcegraph.BuildListOptions{
 		Repo:      repoRevSpec.URI,
