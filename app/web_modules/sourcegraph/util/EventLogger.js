@@ -350,7 +350,7 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 	class WithViewEventsLogged extends React.Component { // eslint-disable-line react/no-multi-comp
 		static propTypes = {
 			routes: React.PropTypes.arrayOf(React.PropTypes.object),
-			location: React.PropTypes.object,
+			location: React.PropTypes.object.isRequired,
 		};
 
 		static contextTypes = {
@@ -360,6 +360,7 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 
 		componentDidMount() {
 			this._logView(this.props.routes, this.props.location);
+			this._checkEventQuery();
 		}
 
 		componentWillReceiveProps(nextProps) {
@@ -371,6 +372,27 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
+			}
+
+			this._checkEventQuery();
+		}
+
+		_checkEventQuery() {
+			// Allow tracking events that occurred externally and resulted in a redirect
+			// back to Sourcegraph. Pull the event name out of the URL.
+			if (this.props.location.query && this.props.location.query._event) {
+				this.context.eventLogger.logEvent(this.props.location.query._event);
+
+				// Won't take effect until we call replace below, but prevents this
+				// from being called 2x before the setTimeout block runs.
+				delete this.props.location.query._event;
+
+				// Remove _event from the URL to canonicalize the URL and make it
+				// less ugly.
+				const locWithoutEvent = {...this.props.location,
+					query: {...this.props.location.query, _event: undefined}, // eslint-disable-line no-undefined
+				};
+				this.context.router.replace(locWithoutEvent);
 			}
 		}
 
