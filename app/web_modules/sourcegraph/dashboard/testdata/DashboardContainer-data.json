@@ -65,7 +65,7 @@
 								"type": "",
 								"key": ".1",
 								"props": {
-									"to": "github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info",
+									"to": "github.com/golang/go@80e9a7f0797c73b27471eb4b371baa1c7ccb427b/-/def/GoPackage/net/http/-/NewRequest/-/info",
 									"children": [
 										{
 											"type": "WrappedComponent",

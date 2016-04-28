@@ -94,7 +94,8 @@ class DashboardContainer extends Container {
 				{!this.context.signedIn &&
 					<div styleName="cta-box">
 						<div styleName="cta-headline">See everywhere a Go function is called, globally.</div>
-						<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => this.context.eventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
+						{/* hotfix: hardcode to a commit where srclib data is available */}
+						<Link to="github.com/golang/go@80e9a7f0797c73b27471eb4b371baa1c7ccb427b/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => this.context.eventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
 							<Button color="primary" size="large">See usage examples for http.NewRequest &raquo;</Button>
 						</Link>
 						<div styleName="cta-subline">
