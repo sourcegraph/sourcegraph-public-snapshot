@@ -121,11 +121,12 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 	requestDuration.With(labels).Observe(elapsed.Seconds())
 	requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
+	uid := strconv.Itoa(authpkg.ActorFromContext(ctx).UID)
 	labels = prometheus.Labels{
-		"uid":     strconv.Itoa(authpkg.ActorFromContext(ctx).UID),
+		"uid":     uid,
 		"service": server,
 	}
 	requestPerUser.With(labels).Inc()
 
-	log15.Debug("gRPC after", "rpc", name, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
+	log15.Debug("gRPC after", "rpc", name, "uid", uid, "spanID", traceutil.SpanIDFromContext(ctx), "duration", elapsed)
 }
