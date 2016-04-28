@@ -89,6 +89,10 @@ func init() {
 func After(ctx context.Context, server, method string, arg interface{}, err error, elapsed time.Duration) {
 	elapsed += time.Millisecond // HACK: make everything show up in the chart
 	sr := time.Now().Add(-1 * elapsed)
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
 	call := &traceutil.GRPCCall{
 		Server:     server,
 		Method:     method,
@@ -96,7 +100,7 @@ func After(ctx context.Context, server, method string, arg interface{}, err erro
 		ArgType:    fmt.Sprintf("%T", arg),
 		ServerRecv: sr,
 		ServerSend: time.Now(),
-		Err:        fmt.Sprintf("%#v", err),
+		Err:        errStr,
 	}
 	rec := traceutil.Recorder(ctx)
 	rec.Name(server + "." + method)
