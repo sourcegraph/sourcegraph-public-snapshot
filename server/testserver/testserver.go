@@ -328,30 +328,8 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.SGPATH = sgpath
 
 	// Find unused ports
-	var (
-		httpPort,
-		httpsPort,
-		appdashHTTPPort,
-		appdashInfluxPort,
-		appdashInfluxAdminPort,
-		appdashInfluxCollectdPort,
-		appdashInfluxGraphitePort,
-		appdashInfluxHTTPDPort,
-		appdashInfluxOpenTSDBPort,
-		appdashInfluxUDPPort int
-	)
-	s.selectUnusedPorts(
-		&httpPort,
-		&httpsPort,
-		&appdashHTTPPort,
-		&appdashInfluxPort,
-		&appdashInfluxAdminPort,
-		&appdashInfluxCollectdPort,
-		&appdashInfluxGraphitePort,
-		&appdashInfluxHTTPDPort,
-		&appdashInfluxOpenTSDBPort,
-		&appdashInfluxUDPPort,
-	)
+	var httpPort, httpsPort int
+	s.selectUnusedPorts(&httpPort, &httpsPort)
 
 	var mainHTTPPort int
 	switch scheme {
@@ -383,20 +361,13 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	// FS
 	s.Config.Serve.ReposDir = reposDir
 
-	// Appdash
-	localAddr := func(p int) string { return fmt.Sprintf("localhost:%d", p) }
+	// Disable Appdash, because it depends on InfluxDB we would have to use
+	// random ports for all InfluxDB services (influxd, admin, collectd,
+	// graphite, httpd, opentsdb, and udp services) and also use random influx
+	// directories for both influxdb and it's meta service, otherwise we could
+	// not avoid race conditions between parralel tests. Not worth it.
 	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ServerConfig{
-		HTTPAddr:           localAddr(appdashHTTPPort),
-		InfluxAddr:         localAddr(appdashInfluxPort),
-		InfluxAdminAddr:    localAddr(appdashInfluxAdminPort),
-		InfluxCollectdAddr: localAddr(appdashInfluxCollectdPort),
-		InfluxGraphiteAddr: localAddr(appdashInfluxGraphitePort),
-		InfluxHTTPDAddr:    localAddr(appdashInfluxHTTPDPort),
-		InfluxOpenTSDBAddr: localAddr(appdashInfluxOpenTSDBPort),
-		InfluxUDPAddr:      localAddr(appdashInfluxUDPPort),
-	})
-	s.Config.ServeFlags = append(s.Config.ServeFlags, &appdashcli.ClientConfig{
-		URL: fmt.Sprintf("http://localhost:%d", appdashHTTPPort),
+		Disable: true,
 	})
 
 	// Graphstore
