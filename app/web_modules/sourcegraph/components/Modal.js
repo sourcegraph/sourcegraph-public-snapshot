@@ -43,10 +43,14 @@ export default Modal;
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
-export function LocationStateModal({location, stateKey, children}, {router}) {
+export function LocationStateModal({location, stateKey, children, onDismiss}, {router}) {
+	const onDismiss2 = () => {
+		router.replace({...location, state: {...location.state, [stateKey]: false}});
+		if (onDismiss) onDismiss();
+	};
 	return (
 		<Modal shown={location.state && Boolean(location.state[stateKey])}
-			onDismiss={() => router.replace({...location, state: {...location.state, [stateKey]: false}})}>
+			onDismiss={onDismiss2}>
 			{children}
 		</Modal>
 	);
@@ -57,6 +61,8 @@ LocationStateModal.propTypes = {
 	// stateKey is the name of the key on the location's state that this
 	// StateToggleLink component toggles.
 	stateKey: React.PropTypes.string.isRequired,
+
+	onDismiss: React.PropTypes.func,
 };
 LocationStateModal.contextTypes = {
 	router: React.PropTypes.object.isRequired,

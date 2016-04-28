@@ -23,6 +23,8 @@ export default function LocationStateToggleLink(props, {router}) {
 
 		ev.preventDefault();
 		router.push({...location, state: {...location.state, [stateKey]: !active}});
+
+		if (props.onToggle) props.onToggle(!active);
 	};
 
 	return (
@@ -43,6 +45,9 @@ LocationStateToggleLink.propTypes = {
 	// href is the URL used if the user opens the link in
 	// a new tab or copies the link.
 	href: React.PropTypes.string,
+
+	// onToggle is called when the link is toggled ON.
+	onToggle: React.PropTypes.func,
 };
 LocationStateToggleLink.contextTypes = {
 	router: React.PropTypes.object.isRequired,

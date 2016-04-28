@@ -19,7 +19,7 @@ function dismissModal(stateKey, location, router) {
 	};
 }
 
-function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router}) {
+function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, eventLogger}) {
 	return (
 		<nav styleName="navbar" role="navigation">
 			<Link to="/">
@@ -40,11 +40,13 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router})
 				}
 				{!signedIn &&
 					<div styleName="action">
-						<LocationStateToggleLink href="/join" stateKey="signupModal" location={location}>
+						<LocationStateToggleLink href="/join" stateKey="signupModal" location={location}
+							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
 							Sign up
 						</LocationStateToggleLink>
 						{location.state && location.state.signupModal &&
-							<LocationStateModal stateKey="signupModal" location={location}>
+							<LocationStateModal stateKey="signupModal" location={location}
+								onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
 								<div styleName="modal"><SignupForm onSignupSuccess={dismissModal("signupModal", location, router)} /></div>
 							</LocationStateModal>
 						}
@@ -52,11 +54,13 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router})
 				}
 				{!signedIn &&
 					<div styleName="action">
-						<LocationStateToggleLink href="/login" stateKey="loginModal" location={location}>
+						<LocationStateToggleLink href="/login" stateKey="loginModal" location={location}
+							onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
 							Sign in
 						</LocationStateToggleLink>
 						{location.state && location.state.loginModal &&
-							<LocationStateModal stateKey="loginModal" location={location}>
+							<LocationStateModal stateKey="loginModal" location={location}
+								onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
 								<div styleName="modal"><LoginForm onLoginSuccess={dismissModal("loginModal", location, router)} /></div>
 							</LocationStateModal>
 						}
@@ -75,6 +79,7 @@ GlobalNav.contextTypes = {
 	user: React.PropTypes.object,
 	signedIn: React.PropTypes.bool.isRequired,
 	router: React.PropTypes.object.isRequired,
+	eventLogger: React.PropTypes.object.isRequired,
 };
 
 export default CSSModules(GlobalNav, styles);
