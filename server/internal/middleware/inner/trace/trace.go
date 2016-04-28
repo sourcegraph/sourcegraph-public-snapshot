@@ -36,9 +36,12 @@ func prepareArg(server, method string, arg interface{}) interface{} {
 // and method name and the argument. The returned context is passed
 // when invoking the underlying method.
 func Before(ctx context.Context, server, method string, arg interface{}) context.Context {
-	spanID := traceutil.SpanIDFromContext(ctx)
-	if spanID == (appdash.SpanID{}) {
+	parent := traceutil.SpanIDFromContext(ctx)
+	var spanID appdash.SpanID
+	if parent == (appdash.SpanID{}) {
 		spanID = appdash.NewRootSpanID()
+	} else {
+		spanID = appdash.NewSpanID(parent)
 	}
 	ctx = traceutil.NewContext(ctx, spanID)
 
