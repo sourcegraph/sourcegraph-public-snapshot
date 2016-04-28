@@ -80,4 +80,13 @@ func (r *ResponseWriterStatusIntercept) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// Flush implements the http.Flusher interface and sends any buffered
+// data to the client, if the underlying http.ResponseWriter itself
+// implements http.Flusher.
+func (r *ResponseWriterStatusIntercept) Flush() {
+	if f, ok := r.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 var _ http.ResponseWriter = (*ResponseWriterStatusIntercept)(nil)
