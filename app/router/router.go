@@ -50,8 +50,8 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/sitemap.xml").Methods("GET").Name(SitemapIndex)
 
-	base.Path("/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
-	base.Path("/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
+	base.Path("/-/github-oauth/initiate").Methods("GET").Name(GitHubOAuth2Initiate)
+	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 
