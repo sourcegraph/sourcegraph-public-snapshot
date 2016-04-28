@@ -90,8 +90,11 @@ func init() {
 // execution time since the method's BeforeFunc was called and the
 // error returned, if any.
 func After(ctx context.Context, server, method string, arg interface{}, err error, elapsed time.Duration) {
-	elapsed += time.Millisecond // HACK: make everything show up in the chart
 	sr := time.Now().Add(-1 * elapsed)
+	// HACK: make everything show up in the chart
+	if elapsed < time.Millisecond {
+		sr = time.Now().Add(-time.Millisecond)
+	}
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()
