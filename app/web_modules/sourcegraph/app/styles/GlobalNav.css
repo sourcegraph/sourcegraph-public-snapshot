@@ -13,7 +13,7 @@
 .navbar {
 	display: flex;
 	align-items: center;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	composes: bb from base;
 	border-color: #efefef;
 	background-color: #fafafa;
@@ -46,6 +46,10 @@
 .context {
 	display: flex;
 	align-content: center;
+
+	/* Collapse and add ellipsis if too long. Make sure we can show the logo and avatar. */
+	white-space: nowrap;
+	max-width: calc(100vw - 120px);
 }
 
 .actions {
