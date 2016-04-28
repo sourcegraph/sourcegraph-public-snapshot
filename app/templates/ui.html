@@ -9,6 +9,14 @@
 		window.__StoreData = {{rawJSON .Stores}};
 	</script>
 {{end}}
+{{if .FetchURLs}}
+	<script ignore-csp>
+		window.__PushPromises = { {{range .FetchURLs -}}"{{.}}": null,{{- end}} }
+		window.__resolvePushPromise = function(url, data) {
+			window.__PushPromises[url] = data;
+		}
+	</script>
+{{end}}
 {{end}}
 
 {{define "Body"}}{{.Body}}{{end}}

@@ -8,6 +8,10 @@ import UserStore from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 
+const MAX_PREFETCH_WAIT_TIME = 5 * 1000;
+const pushPromises = (typeof window !== "undefined") ? (window.__PushPromises || {}) : {};
+const loadedPushPromises = new Set();
+
 function defaultOptions(): RequestOptions {
 	const headers = new Headers();
 	if (context.csrfToken) headers.set("X-Csrf-Token", context.csrfToken);
@@ -34,7 +38,7 @@ export function combineHeaders(a: any, b: any): any {
 	if (!(b instanceof Headers)) throw new Error("must be Headers type");
 
 	if (b.forEach) {
-		// node-fetch's Headers is not a full implementation and doesn't support iterable,
+		// node-fetcs Headers is not a full implementation and doesn't support iterable,
 		// but it does expose forEach.
 		b.forEach((val: string, name: string) => a.append(name, val));
 	} else {
@@ -53,11 +57,25 @@ export function defaultFetch(url: string | Request, init?: RequestOptions): Prom
 
 	const defaults = defaultOptions();
 
-	return fetch(url, {
+	let prefetchURL = url.replace(/^\/\.api/, "");
+
+	let newFetch = () => (fetch(url, {
 		...defaults,
 		...init,
 		headers: combineHeaders(defaults.headers, init ? init.headers : null),
-	});
+	}));
+
+	// Before initiating a round-trip fetch, see if the server has promised a
+	// prefetch is on the way.
+	if (pushPromises && (pushPromises[prefetchURL] || pushPromises[prefetchURL] === null)) {
+		return prefetch(prefetchURL)
+		.catch((err) => {
+			console.log("Error prefetching: ", err);
+			return newFetch();
+		});
+	}
+
+	return newFetch();
 }
 
 // checkStatus is intended to be chained in a fetch call. For example:
@@ -81,4 +99,76 @@ export function checkStatus(resp: Response): Promise<Response> | Response {
 		}
 		throw err;
 	});
+}
+
+class PrefetchResponse {
+	body: string;
+	url: string;
+	status: number;
+	statusText: string;
+	type: string;
+
+	constructor(body, options) {
+		this.type = "basic";
+		this.status = options.status;
+		this.statusText = options.statusText;
+		this.url = options.url;
+		this.body = body;
+	}
+
+	json() {
+		return (new Promise((resolve, reject) => {
+			resolve(JSON.parse(this.body));
+		}));
+	}
+
+	text() {
+		return (new Promise((resolve, reject) => {
+			resolve(this.body);
+		}));
+	}
+
+	clone() {
+		return Object.assign({}, this);
+	}
+}
+
+// prefetch takes a given URL and returns a Promise that waits for a push
+// promise for that URL to be resolved by the server.
+function prefetch(url): Promise {
+	let p = new Promise((resolve, reject) => {
+		let waitTime = 0;
+		let waitInterval = 25;
+		let timeout = setInterval(() => {
+			// Reject after waiting too long for a prefetch to complete.
+			if (waitTime > MAX_PREFETCH_WAIT_TIME) {
+				clearInterval(timeout);
+				reject(`Prefetch for ${url} timed out (waited ${waitTime}ms)`);
+			}
+			if (pushPromises[url]) {
+				clearInterval(timeout);
+				loadedPushPromises.add(url);
+				let resp = new PrefetchResponse(pushPromises[url], {
+					status: 200,
+					statusText: "OK",
+					url: url,
+				});
+				// Flow expects a real Response object, but for our purposes
+				// PrefetchResponse works here as well.
+				resolve(resp);
+			}
+			waitTime += waitInterval;
+		}, waitInterval);
+	});
+	return p;
+}
+
+export function unusedPushPromises(): Array<string> {
+	let unused = [];
+	for (let url of Object.keys(pushPromises)) {
+		if (!loadedPushPromises.has(url))	{
+			unused.push(url);
+		}
+	}
+	return unused;
 }
