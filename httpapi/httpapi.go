@@ -109,9 +109,6 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 	return handlerutil.HandlerWithErrorReturn{
 		Handler: func(w http.ResponseWriter, r *http.Request) error {
 			w.Header().Set("Content-Type", "application/json")
-			// Allowing access to all origins simplifies debugging sourcegraph.com pages from localhost.
-			// Security note: this is acceptable because we don't use cookie middleware.
-			w.Header().Set("Access-Control-Allow-Origin", "*")
 			return h(w, r)
 		},
 		Error: handleError,
