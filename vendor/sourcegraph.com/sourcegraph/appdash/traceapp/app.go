@@ -12,14 +12,19 @@
 package traceapp
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	htmpl "html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
-	"sort"
 	"strings"
 	"sync"
 
@@ -34,21 +39,42 @@ import (
 type App struct {
 	*Router
 
-	Store   appdash.Store
-	Queryer appdash.Queryer
+	Store      appdash.Store
+	Queryer    appdash.Queryer
+	Aggregator appdash.Aggregator
 
 	tmplLock sync.Mutex
 	tmpls    map[string]*htmpl.Template
+
+	Log     *log.Logger
+	baseURL *url.URL
 }
 
 // New creates a new application handler. If r is nil, a new router is
 // created.
-func New(r *Router) *App {
+//
+// The given base URL is the absolute base URL under which traceapp is being
+// served, e.g., "https://appdash.mysite.com" or "https://mysite.com/appdash".
+// The base URL must contain a scheme and host, or else an error will be
+// returned.
+func New(r *Router, base *url.URL) (*App, error) {
 	if r == nil {
 		r = NewRouter(nil)
 	}
 
-	app := &App{Router: r}
+	// Validate the base URL and use the root path if none was specified.
+	if base.Scheme == "" || base.Host == "" {
+		return nil, fmt.Errorf("appdash: base URL must contain both scheme and port, found %q", base.String())
+	}
+	if base.Path == "" {
+		base.Path = "/"
+	}
+
+	app := &App{
+		Router:  r,
+		Log:     log.New(os.Stderr, "appdash: ", log.LstdFlags),
+		baseURL: base,
+	}
 
 	r.r.Get(RootRoute).Handler(handlerFunc(app.serveRoot))
 	r.r.Get(TraceRoute).Handler(handlerFunc(app.serveTrace))
@@ -64,7 +90,7 @@ func New(r *Router) *App {
 	// Static file serving.
 	r.r.Get(StaticRoute).Handler(http.StripPrefix("/static/", http.FileServer(static.Data)))
 
-	return app
+	return app, nil
 }
 
 // ServeHTTP implements http.Handler.
@@ -81,6 +107,23 @@ func (a *App) serveRoot(w http.ResponseWriter, r *http.Request) error {
 func (a *App) serveTrace(w http.ResponseWriter, r *http.Request) error {
 	v := mux.Vars(r)
 
+	if permalink := r.URL.Query().Get("permalink"); permalink != "" {
+		// If the user specified a permalink, then decode it directly into a
+		// trace structure and place it into storage for viewing.
+		gz, err := gzip.NewReader(base64.NewDecoder(base64.RawURLEncoding, strings.NewReader(permalink)))
+		if err != nil {
+			return err
+		}
+		var upload *appdash.Trace
+		if err := json.NewDecoder(gz).Decode(&upload); err != nil {
+			return err
+		}
+		if err := a.uploadTraces(upload); err != nil {
+			return err
+		}
+	}
+
+	// Look in the store for the trace.
 	traceID, err := appdash.ParseID(v["Trace"])
 	if err != nil {
 		return err
@@ -134,26 +177,47 @@ func (a *App) serveTrace(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	// The JSON trace is the human-readable trace form for exporting.
+	jsonTrace, err := json.MarshalIndent([]*appdash.Trace{trace}, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// The permalink of the trace is literally the JSON encoded trace gzipped & base64 encoded.
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(base64.NewEncoder(base64.RawURLEncoding, &buf))
+	err = json.NewEncoder(gz).Encode(trace)
+	if err != nil {
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		return err
+	}
+	permalink, err := a.URLToTrace(trace.ID.Trace)
+	if err != nil {
+		return err
+	}
+	permalink.RawQuery = "permalink=" + buf.String()
+
 	return a.renderTemplate(w, r, "trace.html", http.StatusOK, &struct {
 		TemplateCommon
 		Trace             *appdash.Trace
 		ShowTimelineChart bool
 		VisData           []timelineItem
 		ProfileURL        string
+		Permalink         string
+		JSONTrace         string
 	}{
 		Trace:             trace,
 		ShowTimelineChart: showTimelineChart,
 		VisData:           visData,
 		ProfileURL:        profile.String(),
+		Permalink:         permalink.String(),
+		JSONTrace:         string(jsonTrace),
 	})
 }
 
 func (a *App) serveTraces(w http.ResponseWriter, r *http.Request) error {
-	traces, err := a.Queryer.Traces()
-	if err != nil {
-		return err
-	}
-
 	// Parse the query for a comma-separated list of traces that we should only
 	// show (all others are hidden).
 	var showJust []appdash.ID
@@ -166,10 +230,12 @@ func (a *App) serveTraces(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	// Sort the traces by ID to ensure that the display order doesn't change upon
-	// multiple page reloads if Queryer.Traces is e.g. backed by a map (which has
-	// a random iteration order).
-	sort.Sort(tracesByID(traces))
+	traces, err := a.Queryer.Traces(appdash.TracesOpts{
+		TraceIDs: showJust,
+	})
+	if err != nil {
+		return err
+	}
 
 	return a.renderTemplate(w, r, "traces.html", http.StatusOK, &struct {
 		TemplateCommon
@@ -178,21 +244,6 @@ func (a *App) serveTraces(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Traces: traces,
 		Visible: func(t *appdash.Trace) bool {
-			// Hide the traces that contain aggregate events (that's all they have, so
-			// they are not very useful to users).
-			if t.IsAggregate() {
-				return false
-			}
-
-			if len(showJust) > 0 {
-				// Showing just a few traces.
-				for _, id := range showJust {
-					if id == t.Span.ID.Trace {
-						return true
-					}
-				}
-				return false
-			}
 			return true
 		},
 	})
@@ -200,7 +251,7 @@ func (a *App) serveTraces(w http.ResponseWriter, r *http.Request) error {
 
 func (a *App) serveAggregate(w http.ResponseWriter, r *http.Request) error {
 	// By default we display all traces.
-	traces, err := a.Queryer.Traces()
+	traces, err := a.Queryer.Traces(appdash.TracesOpts{})
 	if err != nil {
 		return err
 	}
@@ -253,11 +304,15 @@ func (a *App) serveTraceUpload(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	return a.uploadTraces(traces...)
+}
 
+// uploadTraces uploads literal traces into the storage system for later viewing.
+func (a *App) uploadTraces(traces ...*appdash.Trace) error {
 	// Collect the unmarshaled traces, ignoring any previously existing ones (i.e.
 	// ones that would collide / be merged together).
 	for _, trace := range traces {
-		_, err = a.Store.Trace(trace.Span.ID.Trace)
+		_, err := a.Store.Trace(trace.Span.ID.Trace)
 		if err != appdash.ErrTraceNotFound {
 			// The trace collides with an existing trace, ignore it.
 			continue

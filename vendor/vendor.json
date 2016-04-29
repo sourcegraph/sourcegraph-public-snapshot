@@ -877,9 +877,11 @@
 			"revisionTime": "2015-06-24T11:29:02+01:00"
 		},
 		{
+			"checksumSHA1": "8wIl2ncrBXSFEWxb/+o65KAGcAI=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash",
 			"path": "sourcegraph.com/sourcegraph/appdash",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/appdash-data",
@@ -887,29 +889,39 @@
 			"revisionTime": "2015-10-05T15:14:46-07:00"
 		},
 		{
+			"checksumSHA1": "ZeYUSbD7p6GJvvPf0t91NU1LMKc=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/httptrace",
 			"path": "sourcegraph.com/sourcegraph/appdash/httptrace",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "JYGXK0rF/LoIg8jGrOlaO9OqPbI=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/internal/wire",
 			"path": "sourcegraph.com/sourcegraph/appdash/internal/wire",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "DbYAyk4lKSOp6kv7cyvHLm/OoLU=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/sqltrace",
 			"path": "sourcegraph.com/sourcegraph/appdash/sqltrace",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "i6e8THzt/uN5sCbybwRNgmrS36g=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/traceapp",
 			"path": "sourcegraph.com/sourcegraph/appdash/traceapp",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "r/Lqgpq/Sz2Nx7AFiuBKHmFURn0=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
 			"path": "sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
 			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",

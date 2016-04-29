@@ -98,11 +98,12 @@ func Middleware(c appdash.Collector, conf *MiddlewareConfig) func(rw http.Respon
 
 		rec := appdash.NewRecorder(*spanID, c)
 		if e.Route != "" {
-			rec.Name(e.Route)
+			rec.Name("Serve " + e.Route)
 		} else {
-			rec.Name(r.URL.Host + r.URL.Path)
+			rec.Name("Serve " + r.URL.Host + r.URL.Path)
 		}
 		rec.Event(e)
+		rec.Finish()
 	}
 }
 

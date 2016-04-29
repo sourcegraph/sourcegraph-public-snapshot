@@ -61,14 +61,10 @@ func (a *App) renderTemplate(w http.ResponseWriter, r *http.Request, name string
 
 	if data != nil {
 		// Set TemplateCommon values.
-		baseURL, err := a.URLTo(RootRoute)
-		if err != nil {
-			return err
-		}
 		reflect.ValueOf(data).Elem().FieldByName("TemplateCommon").Set(reflect.ValueOf(TemplateCommon{
 			CurrentRoute: mux.CurrentRoute(r).GetName(),
 			CurrentURI:   r.URL,
-			BaseURL:      baseURL,
+			BaseURL:      a.baseURL,
 		}))
 	}
 
