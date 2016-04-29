@@ -1,6 +1,5 @@
 import * as UserActions from "sourcegraph/user/UserActions";
 import Dispatcher from "sourcegraph/Dispatcher";
-import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
 import UserStore from "sourcegraph/user/UserStore";
@@ -85,11 +84,6 @@ const UserBackend = {
 					.catch((err) => ({Error: err}))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
-						if (!data.Error) {
-							// Currently the only way to signup is from the signup page. When this changes we will
-							// want to modify how we are tracking this event.
-							EventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Signup);
-						}
 					})
 				);
 			break;
