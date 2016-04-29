@@ -80,6 +80,7 @@ func VFS(graphstore string, transport http.RoundTripper) rwvfs.WalkableFileSyste
 		if err != nil {
 			log.Fatal("graphstoreutil.VFS:", err)
 		}
+		fs = withVFSCache(fs)
 	} else if s3URL, err := parseS3Bucket(graphstore); err != nil {
 		log.Fatal("Parsing graphstore:", err)
 	} else if s3URL != nil {
