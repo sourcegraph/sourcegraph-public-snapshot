@@ -156,8 +156,11 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 	}
 
 	if repo.Mirror {
-		actor := authpkg.ActorFromContext(ctx)
-		repoupdater.Enqueue(repo.RepoSpec(), &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login})
+		var asUser *sourcegraph.UserSpec
+		if actor := authpkg.ActorFromContext(ctx); actor.UID != 0 {
+			asUser = &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login}
+		}
+		repoupdater.Enqueue(repo.RepoSpec(), asUser)
 	}
 
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)

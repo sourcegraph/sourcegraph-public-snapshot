@@ -10,6 +10,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
+import context from "sourcegraph/app/context";
 
 import Header from "sourcegraph/components/Header";
 
@@ -82,6 +83,11 @@ class RepoMain extends React.Component {
 		// and this repo was just resolved to a remote repo (which must be explicitly created,
 		// as we do right here).
 		if (!this.props.repoObj && repo && resolution && !resolution.Error && resolution.Result.RemoteRepo) {
+			// Don't create the repo if user agent is bot.
+			if (context.userAgentIsBot) {
+				return;
+			}
+
 			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.Result.RemoteRepo));
 		}
 	}

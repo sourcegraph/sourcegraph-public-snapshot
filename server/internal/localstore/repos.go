@@ -15,7 +15,6 @@ import (
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -352,10 +351,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		if !newRepo.Mirror {
 			return grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
 		}
-		// All authenticated users can create GitHub mirrors.
-		if !auth.ActorFromContext(ctx).IsAuthenticated() {
-			return grpc.Errorf(codes.Unauthenticated, "cannot create GitHub mirror as anonymous user")
-		}
+		// Anyone can create GitHub mirrors.
 	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
 		return err
 	}
