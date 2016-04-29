@@ -38,6 +38,11 @@ class RefsContainer extends Container {
 		router: React.PropTypes.object.isRequired,
 	};
 
+	constructor(props) {
+		super(props);
+		this.rangesMemo = {}; // optimization: cache the line range that should be displayed for each ref
+	}
+
 	stores() {
 		return [DefStore, BlobStore];
 	}
@@ -95,7 +100,6 @@ class RefsContainer extends Container {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
 				if (!fileIndex.has(ref.File)) {
-					// console.log("cool i'm inside this loop");
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
 					filesByName[ref.File] = file;
 					entrySpecsByName[ref.File] = {RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File};
@@ -104,12 +108,16 @@ class RefsContainer extends Container {
 				}
 				let file = fileIndex.get(ref.File);
 				if (file) {
-					// Determine the line range that should be displayed for each ref.
-					let contents = file.ContentsString;
-					ranges[ref.File].push([
-						Math.max(lineFromByte(contents, ref.Start) - SNIPPET_REF_CONTEXT_LINES, 0),
-						lineFromByte(contents, ref.End) + SNIPPET_REF_CONTEXT_LINES,
-					]);
+					if (this.rangesMemo[ref.File]) {
+						ranges[ref.File] = this.rangesMemo[ref.File];
+					} else {
+						let contents = file.ContentsString;
+						ranges[ref.File].push([
+							Math.max(lineFromByte(contents, ref.Start) - SNIPPET_REF_CONTEXT_LINES, 0),
+							lineFromByte(contents, ref.End) + SNIPPET_REF_CONTEXT_LINES,
+						]);
+						this.rangesMemo[ref.File] = ranges[ref.File];
+					}
 				}
 				anns[ref.File] = BlobStore.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
 			}
