@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/groupcache/lru"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/tools/godoc/vfs"
 	"sourcegraph.com/sourcegraph/rwvfs"
@@ -59,3 +60,24 @@ func (f *mergedFS) String() string {
 func (f *mergedFS) Create(path string) (io.WriteCloser, error) { return f.rwfs.Create(path) }
 func (f *mergedFS) Mkdir(name string) error                    { return f.rwfs.Mkdir(name) }
 func (f *mergedFS) Remove(name string) error                   { return f.rwfs.Remove(name) }
+
+// Register some cache hit metrics
+func init() {
+	c := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "graphstore",
+		Name:      "cache_hit",
+		Help:      "Counts cache hits and misses for graphstore cache.",
+	}, []string{"cache", "type"})
+	prometheus.MustRegister(c)
+	versionCache = cache.Hook(
+		versionCache,
+		c.WithLabelValues("version", "hit").Inc,
+		c.WithLabelValues("version", "miss").Inc,
+	)
+	idxCache = cache.Hook(
+		idxCache,
+		c.WithLabelValues("idx", "hit").Inc,
+		c.WithLabelValues("idx", "miss").Inc,
+	)
+}
