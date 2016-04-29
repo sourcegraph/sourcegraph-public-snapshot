@@ -73,7 +73,9 @@ class RefsContainer extends Container {
 		}
 		if (state.fileLocations && !state.shownFiles) {
 			// Initially show the first three files only
-			state.shownFiles = state.shownFiles ? state.shownFiles : state.fileLocations.map((file, i) => i < (props.initNumSnippets || 0));
+			state.shownFiles = state.fileLocations.map((file, i) => i < (props.initNumSnippets || 0));
+			state.shownFileIndex = {}; // keep an index, for lookup by name
+			state.fileLocations.forEach((file, i) => state.shownFileIndex[file.Path] = i);
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
@@ -144,14 +146,16 @@ class RefsContainer extends Container {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
 		}
 
-		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs)) {
+		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
 			let wantedFiles = new Set();
 			for (let ref of nextState.refs) {
-				if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
 				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
-				Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
-				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
-				wantedFiles.add(ref.File);
+				if ((!prevState.shownFiles && nextState.shownFiles) || nextState.shownFiles[nextState.shownFileIndex[ref.File]]) {
+					if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
+					Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
+					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
+					wantedFiles.add(ref.File);
+				}
 			}
 		}
 	}
