@@ -23,6 +23,11 @@ function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, re
 	return `${defKey(repo, rev, def)}#${refRepo}#${refFile || ""}`;
 }
 
+function refLocationsKey(repo: string, rev: ?string, def: string, reposOnly: ?bool): string {
+	return `${defKey(repo, rev, def)}:${reposOnly || false}`;
+}
+
+
 type DefPos = {
 	// Mirrors the fields of the same name in Def so that if the whole
 	// Def is available, we can just use it as its own DefPos.
@@ -70,8 +75,8 @@ export class DefStore extends Store {
 		});
 		this.refLocations = deepFreeze({
 			content: data && data.refLocations ? data.refLocations.content : {},
-			get(repo: string, rev: ?string, def: string) {
-				return this.content[defKey(repo, rev, def)] || null;
+			get(repo: string, rev: ?string, def: string, reposOnly: ?bool) {
+				return this.content[refLocationsKey(repo, rev, def, reposOnly)] || null;
 			},
 		});
 	}
@@ -166,17 +171,16 @@ export class DefStore extends Store {
 
 		case DefActions.RefLocationsFetched:
 			{
-				let locations;
-				if (action.locations && !action.locations.Error) {
-					locations = getRankedRefLocations(action.locations);
-				} else {
-					locations = action.locations;
+				const rankedLocations = action.locations.Error ? action.locations : getRankedRefLocations(action.locations);
+				let updatedContent = {
+					[refLocationsKey(action.repo, action.rev, action.def, action.reposOnly)]: rankedLocations,
+				};
+				if (!action.reposOnly) {
+					// optimization; if full ref locations fetched this data can satisfy reposOnly queries
+					updatedContent[refLocationsKey(action.repo, action.rev, action.def, true)] = rankedLocations;
 				}
-
 				this.refLocations = deepFreeze(Object.assign({}, this.refLocations, {
-					content: Object.assign({}, this.refLocations.content, {
-						[defKey(action.repo, action.rev, action.def)]: locations,
-					}),
+					content: Object.assign({}, this.refLocations.content, updatedContent),
 				}));
 				break;
 			}

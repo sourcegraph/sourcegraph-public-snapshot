@@ -20,7 +20,6 @@ describe("repo route", () => {
 		"/a": {params: {splat: "a"}},
 		"/a/b": {params: {splat: "a/b"}},
 		"/a/b/-/def/d/d/-/d": {params: {splat: ["a/b", "d/d/-/d"]}},
-		"/a/b/-/def/d/d/-/d/-/refs": {params: {splat: ["a/b", "d/d/-/d"]}},
 	};
 	Object.keys(tests).forEach((pathname) => {
 		it(`matches '${pathname}'`, (done) => {

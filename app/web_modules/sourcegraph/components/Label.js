@@ -9,11 +9,12 @@ class Label extends React.Component {
 	static propTypes = {
 		style: React.PropTypes.object,
 		color: React.PropTypes.string,
+		outline: React.PropTypes.bool,
 		children: React.PropTypes.any,
 	};
 
 	render() {
-		return <span style={this.props.style} styleName={`label ${this.props.color || "default"}`}>{this.props.children}</span>;
+		return <span style={this.props.style} styleName={`${this.props.outline ? "outline-" : ""}${this.props.color || "default"}`}>{this.props.children}</span>;
 	}
 }
 

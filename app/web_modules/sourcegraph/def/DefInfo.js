@@ -5,6 +5,7 @@ import React from "react";
 import AuthorList from "sourcegraph/def/AuthorList";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
+import RefsContainer from "sourcegraph/def/RefsContainer";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -13,7 +14,6 @@ import {urlToDef} from "sourcegraph/def/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import {urlToDefRefs2} from "sourcegraph/def/routes";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
@@ -44,7 +44,7 @@ class DefInfo extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
-		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
+		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def, true) : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 	}
 
@@ -75,8 +75,13 @@ class DefInfo extends Container {
 		return (
 			<div styleName="container">
 				<div styleName="refs-page">
-					<h1>{this.state.defObj && <Link to={urlToDef(this.state.defObj)}><code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.defName})}</code></Link>}</h1>
-					{this.state.defObj && <p styleName="subheader">Defined in <Link to={urlToDef(this.state.defObj)} styleName="file-link">{this.state.defObj.File}</Link></p>}
+					{this.state.defObj &&
+						<h1>
+							<Link to={urlToDef(this.state.defObj)}>
+								<code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.defName})}</code>
+							</Link>
+						</h1>
+					}
 					<hr/>
 					<div styleName="inner">
 						<div styleName="def-info">
@@ -84,11 +89,11 @@ class DefInfo extends Container {
 								{def && def.DocHTML && <p dangerouslySetInnerHTML={def && def.DocHTML}></p>}
 								{def && !def.Error &&
 									<div>
-										<h2>Used in</h2>
 										{!refLocs && <i>Loading...</i>}
-										{refLocs && refLocs.map((repoRef, i) => (
-											<Link styleName="refs-link" key={i} to={urlToDefRefs2(def, repoRef.Repo, this.state.rev)}><span styleName="badge">{repoRef.Count}</span> {repoRef.Repo}</Link>
-										))}
+										{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
+											refRepo={refRepo.Repo}
+											initNumSnippets={i === 0 ? 3 : 0}
+											fileCollapseThreshold={5} />)}
 									</div>
 								}
 							</div>
