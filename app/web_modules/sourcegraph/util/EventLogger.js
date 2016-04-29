@@ -25,7 +25,7 @@ export class EventLogger {
 	_fullStory: any = null;
 
 	_intercomSettings: any;
-	isUserAgentBot: bool;
+	userAgentIsBot: bool;
 	_dispatcherToken: any;
 	_siteConfig: ?SiteConfig;
 
@@ -85,7 +85,7 @@ export class EventLogger {
 			this._intercomSettings = window.intercomSettings;
 		}
 
-		this.isUserAgentBot = Boolean(context.userAgentIsBot);
+		this.userAgentIsBot = Boolean(context.userAgentIsBot);
 	}
 
 	// User data from the previous call to _updateUser.
@@ -156,8 +156,12 @@ export class EventLogger {
 		this._amplitude.identify(new this._amplitude.Identify().set(property, value));
 	}
 
-	// records events for the current user
+	// records events for the current user, if user agent is not bot
 	logEvent(eventName, eventProperties) {
+		if (this.userAgentIsBot) {
+			// Filter out bot or test user agents.
+			return;
+		}
 		if (typeof window !== "undefined" && window.localStorage["event-log"]) {
 			console.debug("%cEVENT %s", "color: #aaa", eventName, eventProperties);
 		}
