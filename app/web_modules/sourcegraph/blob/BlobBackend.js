@@ -1,11 +1,11 @@
 // @flow weak
 
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {trackPromise} from "sourcegraph/app/status";
 
 const BlobBackend = {
@@ -20,14 +20,7 @@ const BlobBackend = {
 					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/tree/${action.path}?ContentsAsString=true`;
 					trackPromise(
 						BlobBackend.fetch(url)
-							.then((resp) => {
-								if (resp.status === 200) {
-									Dispatcher.Stores.dispatch(new RepoActions.RepoCloning(action.repo, false));
-								} else if (resp.status === 202) {
-									Dispatcher.Stores.dispatch(new RepoActions.RepoCloning(action.repo, true));
-								}
-								return resp;
-							})
+							.then(updateRepoCloning(action.repo))
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))

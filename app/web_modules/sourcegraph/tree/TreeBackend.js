@@ -1,8 +1,8 @@
 import * as TreeActions from "sourcegraph/tree/TreeActions";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {trackPromise} from "sourcegraph/app/status";
 
 const TreeBackend = {
@@ -31,14 +31,7 @@ const TreeBackend = {
 				if (fileList === null) {
 					trackPromise(
 						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/tree-list`)
-							.then((resp) => {
-								if (resp.status === 200) {
-									Dispatcher.Stores.dispatch(new RepoActions.RepoCloning(action.repo, false));
-								} else if (resp.status === 202) {
-									Dispatcher.Stores.dispatch(new RepoActions.RepoCloning(action.repo, true));
-								}
-								return resp;
-							})
+							.then(updateRepoCloning(action.repo))
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
