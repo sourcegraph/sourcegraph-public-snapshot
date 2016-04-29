@@ -14,7 +14,7 @@ type Repos struct {
 	Get_    func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List_   func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 	Create_ func(v0 context.Context, v1 *sourcegraph.Repo) error
-	Update_ func(v0 context.Context, v1 *store.RepoUpdate) error
+	Update_ func(v0 context.Context, v1 store.RepoUpdate) error
 	Delete_ func(ctx context.Context, repo string) error
 }
 
@@ -28,7 +28,7 @@ func (s *Repos) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*so
 
 func (s *Repos) Create(v0 context.Context, v1 *sourcegraph.Repo) error { return s.Create_(v0, v1) }
 
-func (s *Repos) Update(v0 context.Context, v1 *store.RepoUpdate) error { return s.Update_(v0, v1) }
+func (s *Repos) Update(v0 context.Context, v1 store.RepoUpdate) error { return s.Update_(v0, v1) }
 
 func (s *Repos) Delete(ctx context.Context, repo string) error { return s.Delete_(ctx, repo) }
 

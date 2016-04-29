@@ -386,7 +386,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	return err
 }
 
-func (s *repos) Update(ctx context.Context, op *store.RepoUpdate) error {
+func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
 		return err
 	}

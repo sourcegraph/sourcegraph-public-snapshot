@@ -652,7 +652,7 @@ message BuildConfig {
 message BuildJob {
 	// Spec is the BuildSpec of the referenced build.
 	BuildSpec Spec = 1 [(gogoproto.nullable) = false];
-	
+
 	// CommitID is the full resolved commit ID to build.
 	string CommitID = 3;
 
@@ -664,7 +664,7 @@ message BuildJob {
 	// commit. See Branch for more information. A single commit can
 	// have any number of tags.
 	string Tag = 15;
-	
+
 	// AccessToken is a token that has write access to the repository being built.
 	string AccessToken = 16;
 }

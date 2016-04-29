@@ -328,7 +328,7 @@ func TestRepos_Update_Description(t *testing.T) {
 		t.Errorf("got description %q, want %q", repo.Description, want)
 	}
 
-	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}}); err != nil {
+	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}, Description: "d"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,7 +362,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 
 	// Perform any update.
 	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, UpdatedAt: &newTime}); err != nil {
+	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, UpdatedAt: &newTime}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -398,7 +398,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	}
 
 	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, &store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, PushedAt: &newTime}); err != nil {
+	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: sourcegraph.RepoSpec{URI: "a/b"}}, PushedAt: &newTime}); err != nil {
 		t.Fatal(err)
 	}
 

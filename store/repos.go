@@ -13,19 +13,19 @@ import (
 // Repos defines the interface for stores that persist and query
 // repositories.
 type Repos interface {
-	// Get gets a repository.
+	// Get a repository.
 	Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
-	// List lists repositories.
+	// List repositories.
 	List(context.Context, *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 
-	// Create creates a repository.
+	// Create a repository.
 	Create(context.Context, *sourcegraph.Repo) error
 
-	// Update updates a repository.
-	Update(context.Context, *RepoUpdate) error
+	// Update a repository.
+	Update(context.Context, RepoUpdate) error
 
-	// Delete deletes a repository.
+	// Delete a repository.
 	Delete(ctx context.Context, repo string) error
 }
 

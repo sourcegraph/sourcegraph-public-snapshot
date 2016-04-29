@@ -101,7 +101,7 @@ func verifyRepoWriteAccess(ctx context.Context, repoSpec sourcegraph.RepoSpec) e
 
 func updateRepoPushedAt(ctx context.Context, repo sourcegraph.RepoSpec) error {
 	now := time.Now()
-	return store.ReposFromContext(ctx).Update(ctx, &store.RepoUpdate{
+	return store.ReposFromContext(ctx).Update(ctx, store.RepoUpdate{
 		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo},
 		PushedAt:      &now,
 		// Note: No need to update the UpdatedAt field, since it

@@ -64,5 +64,3 @@ export default function withDef(Component) {
 
 	return WithDef;
 }
-
-

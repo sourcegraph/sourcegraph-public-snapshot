@@ -134,14 +134,16 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 	switch {
 	case op.GetNew() != nil:
 		repo, err = s.newRepo(ctx, op.GetNew())
+		if err != nil {
+			return
+		}
 	case op.GetFromGitHubID() != 0:
 		repo, err = s.newRepoFromGitHubID(ctx, int(op.GetFromGitHubID()))
+		if err != nil {
+			return
+		}
 	default:
 		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
-	}
-
-	if err != nil {
-		return
 	}
 
 	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
@@ -190,8 +192,8 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 	}, nil
 }
 
-func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourcegraph.Repo, error) {
-	ghrepo, err := (&github.Repos{}).GetByID(ctx, githubID)
+func (s *repos) newRepoFromGitHubID(ctx context.Context, gitHubID int) (*sourcegraph.Repo, error) {
+	ghrepo, err := (&github.Repos{}).GetByID(ctx, gitHubID)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +218,7 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, githubID int) (*sourceg
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
 	ts := time.Now()
-	update := &store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
+	update := store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
