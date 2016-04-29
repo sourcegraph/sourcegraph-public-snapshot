@@ -2,6 +2,7 @@
 
 import React from "react";
 import DefStore from "sourcegraph/def/DefStore";
+import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -18,9 +19,10 @@ export default function withDef(Component) {
 			repo: React.PropTypes.string.isRequired,
 			rev: React.PropTypes.string.isRequired,
 			params: React.PropTypes.object.isRequired,
+			isCloning: React.PropTypes.bool,
 		};
 
-		stores() { return [DefStore]; }
+		stores() { return [DefStore, RepoStore]; }
 
 		reconcileState(state, props) {
 			Object.assign(state, props);
@@ -36,6 +38,8 @@ export default function withDef(Component) {
 			} else {
 				state.highlightedDefObj = null;
 			}
+
+			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
 		onStateTransition(prevState, nextState) {
@@ -50,6 +54,14 @@ export default function withDef(Component) {
 		}
 
 		render() {
+			if (this.state.isCloning) {
+				return (
+					<Header
+						title="Cloning this repository"
+						subtitle="Refresh this page in a minute." />
+				);
+			}
+
 			if (this.state.defObj && this.state.defObj.Error) {
 				return (
 					<Header

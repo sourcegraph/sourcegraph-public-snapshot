@@ -4,6 +4,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {trackPromise} from "sourcegraph/app/status";
 
 const DefBackend = {
@@ -17,6 +18,7 @@ const DefBackend = {
 				if (def === null) {
 					trackPromise(
 						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
+							.then(updateRepoCloning(action.repo))
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))

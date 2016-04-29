@@ -3,6 +3,7 @@ import expect from "expect.js";
 import Dispatcher from "sourcegraph/Dispatcher";
 import DefBackend from "sourcegraph/def/DefBackend";
 import * as DefActions from "sourcegraph/def/DefActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 
 describe("DefBackend", () => {
@@ -14,7 +15,10 @@ describe("DefBackend", () => {
 			};
 			expect(Dispatcher.Stores.catchDispatched(() => {
 				DefBackend.__onDispatch(new DefActions.WantDef("r", "v", "d"));
-			})).to.eql([new DefActions.DefFetched("r", "v", "d", "someDefData")]);
+			})).to.eql([
+				new RepoActions.RepoCloning("r", false),
+				new DefActions.DefFetched("r", "v", "d", "someDefData"),
+			]);
 		});
 
 		it("with def not available", () => {
