@@ -37,7 +37,8 @@
 }
 
 .list-item {
-	display: block;
+	display: flex;
+	align-items: center;
 	composes: pa3 mh3 bt from base;
 	composes: blue b--black-20 from colors;
 	word-wrap: break-word;
@@ -103,7 +104,5 @@
 	font-weight: bold;
 }
 .icon {
-	display: inline-block;
 	padding-right: 1rem;
-	min-width: 15px;
 }

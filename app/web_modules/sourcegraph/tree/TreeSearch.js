@@ -456,8 +456,8 @@ class TreeSearch extends Container {
 
 			let icon;
 			if (item.isParentDirectory) icon = null;
-			else if (item.isDirectory) icon = <FolderIcon />;
-			else icon = <FileIcon />;
+			else if (item.isDirectory) icon = <FolderIcon styleName="icon" />;
+			else icon = <FileIcon styleName="icon" />;
 
 			let key = `f:${itemURL}`;
 			list.push(
@@ -466,7 +466,7 @@ class TreeSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={key}>
-					<span styleName="icon">{icon}</span>
+					{icon}
 					{item.name}
 				</Link>
 			);
@@ -635,8 +635,8 @@ class TreeSearch extends Container {
 		}
 
 		let symbolItems = this._symbolItems(0) || [];
-		let xdefInfo = this._xdefItems(symbolItems.length) || {items: [], count: 0};
-		let listItems = this._listItems(symbolItems.length + xdefInfo.count) || [];
+		let xdefInfo = this._xdefItems(this._numSymbolResults()) || {items: [], count: 0};
+		let listItems = this._listItems(this._numSymbolResults() + this._numXDefResults()) || [];
 
 		return (
 			<div styleName="tree-common">
