@@ -11,8 +11,8 @@ function isModifiedEvent(ev) { return Boolean(ev.metaKey || ev.altKey || ev.ctrl
 // reflected in the URL. Something else will have to read the location state
 // to determine whether to show it.
 export default function LocationStateToggleLink(props, {router}) {
-	const {location, children, stateKey, ...other} = props;
-	const active = location.state && Boolean(location.state[stateKey]);
+	const {location, children, modalName, ...other} = props;
+	const active = location.state && location.state.modal === modalName;
 
 	// Copied from react-router Link.js.
 	const handleClick = (ev) => {
@@ -22,7 +22,7 @@ export default function LocationStateToggleLink(props, {router}) {
 		if (props.target) return;
 
 		ev.preventDefault();
-		router.push({...location, state: {...location.state, [stateKey]: !active}});
+		router.push({...location, state: {...location.state, modal: active ? null : modalName}});
 
 		if (props.onToggle) props.onToggle(!active);
 	};
@@ -38,9 +38,9 @@ export default function LocationStateToggleLink(props, {router}) {
 LocationStateToggleLink.propTypes = {
 	location: React.PropTypes.object.isRequired,
 
-	// stateKey is the name of the key on the location's state that this
+	// modalName is the name of the modal (location.state.modal value) that this
 	// LocationStateToggleLink component toggles.
-	stateKey: React.PropTypes.string.isRequired,
+	modalName: React.PropTypes.string.isRequired,
 
 	// href is the URL used if the user opens the link in
 	// a new tab or copies the link.

@@ -40,16 +40,27 @@ Modal.propTypes = {
 Modal = CSSModules(Modal, styles);
 export default Modal;
 
+// dismissModal creates a function that dismisses the modal by setting
+// the location state's modal property to null.
+export function dismissModal(modalName, location, router) {
+	return () => {
+		if (location.state && location.state.modal !== modalName) {
+			console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
+		}
+		router.replace({...location, state: {...location.state, modal: null}});
+	};
+}
+
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
-export function LocationStateModal({location, stateKey, children, onDismiss}, {router}) {
+export function LocationStateModal({location, modalName, children, onDismiss}, {router}) {
 	const onDismiss2 = () => {
-		router.replace({...location, state: {...location.state, [stateKey]: false}});
+		dismissModal(modalName, location, router)();
 		if (onDismiss) onDismiss();
 	};
 	return (
-		<Modal shown={location.state && Boolean(location.state[stateKey])}
+		<Modal shown={location.state && location.state.modal === modalName}
 			onDismiss={onDismiss2}>
 			{children}
 		</Modal>
@@ -58,9 +69,9 @@ export function LocationStateModal({location, stateKey, children, onDismiss}, {r
 LocationStateModal.propTypes = {
 	location: React.PropTypes.object.isRequired,
 
-	// stateKey is the name of the key on the location's state that this
-	// StateToggleLink component toggles.
-	stateKey: React.PropTypes.string.isRequired,
+	// modalName is the name of the modal (location.state.modal value) that this
+	// LocationStateToggleLink component toggles.
+	modalName: React.PropTypes.string.isRequired,
 
 	onDismiss: React.PropTypes.func,
 };
