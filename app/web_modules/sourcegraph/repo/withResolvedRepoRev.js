@@ -41,7 +41,9 @@ export default function withResolvedRepoRev(Component) {
 
 		onStateTransition(prevState, nextState) {
 			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
-				if (nextState.repoResolution.Result.RemoteRepo) {
+				if (nextState.repoResolution.Error) {
+					// Do nothing.
+				} else if (nextState.repoResolution.Result.RemoteRepo) {
 					let canonicalPath = `github.com/${nextState.repoResolution.Result.RemoteRepo.Owner}/${nextState.repoResolution.Result.RemoteRepo.Name}`;
 					if (nextState.repo !== canonicalPath) {
 						this.context.router.replace(urlToRepo(canonicalPath));
