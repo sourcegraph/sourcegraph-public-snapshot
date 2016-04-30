@@ -10,22 +10,22 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 const C = withResolvedRepoRev((props) => null);
 
 describe("withResolvedRepoRev", () => {
-	it("should have no error initially", () => {
+	it("should render initially", () => {
 		render(<C params={{splat: "r"}} />);
 	});
 
-	it("should have no error if the repo and rev exist", () => {
+	it("should render if the repo and rev exist", () => {
 		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
 		render(<C params={{splat: "r"}} />);
 	});
 
-	it("should be HTTP 202 if the repo is cloning", () => {
+	it("should render if the repo is cloning", () => {
 		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
 		RepoStore.directDispatch(new RepoActions.RepoCloning("r", true));
 		render(<C params={{splat: "r"}} />);
 	});
 
-	it("should have error if the repo does not exist", () => {
+	it("should render if the repo does not exist", () => {
 		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true}));
 		render(<C params={{splat: "r"}} />);
 	});
