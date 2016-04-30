@@ -248,16 +248,9 @@
 								"type": "",
 								"key": ".$f=2/repo@rev/-/tree/p1",
 								"props": {
-									"styleName": "list-item parent-dir",
+									"styleName": "list-item-selected parent-dir",
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
-										{
-											"type": "span",
-											"key": ".0",
-											"props": {
-												"styleName": "icon"
-											}
-										},
 										".."
 									],
 									"onlyActiveOnIndex": false,
@@ -273,16 +266,10 @@
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
-											"type": "span",
+											"type": "WrappedComponent",
 											"key": ".0",
 											"props": {
-												"styleName": "icon",
-												"children": [
-													{
-														"type": "WrappedComponent",
-														"props": {}
-													}
-												]
+												"styleName": "icon"
 											}
 										},
 										"f3"
