@@ -44,8 +44,6 @@ class GlobalSearch extends Container {
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._focusInput = this._focusInput.bind(this);
-		this._blurInput = this._blurInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._onChangeQuery = this._onChangeQuery.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
@@ -67,19 +65,12 @@ class GlobalSearch extends Container {
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
-
-		if (global.window) {
-			window.addEventListener("focus", this._focusInput);
-		}
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
-		}
-		if (global.window) {
-			window.removeEventListener("focus", this._focusInput);
 		}
 	}
 
@@ -171,18 +162,6 @@ class GlobalSearch extends Container {
 
 	_setSelectedItem(e: any) {
 		this._selectedItem = e;
-	}
-
-	_focusInput() {
-		this.setState({focused: true});
-		if (this.refs.input) this.refs.input.focus();
-	}
-
-	_blurInput() {
-		if (this.refs.input) this.refs.input.blur();
-		this.setState({
-			focused: false,
-		});
 	}
 
 	_numResults(): number {
@@ -284,8 +263,8 @@ class GlobalSearch extends Container {
 				<div styleName="input-container">
 					<Input type="text"
 						block={true}
-						onFocus={this._focusInput}
-						onBlur={this._blurInput}
+						onFocus={() => this.setState({focused: true})}
+						onBlur={() => this.setState({focused: false})}
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Search for symbols..."
