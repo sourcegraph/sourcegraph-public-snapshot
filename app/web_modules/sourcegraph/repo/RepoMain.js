@@ -126,10 +126,6 @@ class RepoMain extends React.Component {
 			e.preventDefault();
 			this._showTreeSearchModal();
 			break;
-
-		case 27: // ESC
-			if (disableTreeSearchOverlay) break;
-			this._dismissTreeSearchModal();
 		}
 	}
 

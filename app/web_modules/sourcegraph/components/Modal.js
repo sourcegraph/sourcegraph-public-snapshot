@@ -7,10 +7,29 @@ class Modal extends React.Component {
 	constructor(props) {
 		super(props);
 		this._onClick = this._onClick.bind(this);
+		this._handleKeydown = this._handleKeydown.bind(this);
+	}
+
+	componentDidMount() {
+		if (typeof document !== "undefined") {
+			document.addEventListener("keydown", this._handleKeydown);
+		}
+	}
+
+	componentWillUnmount() {
+		if (typeof document !== "undefined") {
+			document.removeEventListener("keydown", this._handleKeydown);
+		}
 	}
 
 	_onClick(e) {
 		if (e.target === this.refs.modal_container) {
+			if (this.props.onDismiss) this.props.onDismiss();
+		}
+	}
+
+	_handleKeydown(e: KeyboardEvent) {
+		if (e.keyCode === 27 /* ESC */) {
 			if (this.props.onDismiss) this.props.onDismiss();
 		}
 	}
