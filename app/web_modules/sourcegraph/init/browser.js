@@ -5,7 +5,7 @@ import "sourcegraph/util/actionLogger";
 import "sourcegraph/app/appdash";
 import {Router, browserHistory as history, match} from "react-router";
 import {rootRoute} from "sourcegraph/app/App";
-import resetStores from "sourcegraph/init/resetStores";
+import {reset as resetStores} from "sourcegraph/init/stores";
 import * as context from "sourcegraph/app/context";
 
 // REQUIRED. Configures Sentry error monitoring.
