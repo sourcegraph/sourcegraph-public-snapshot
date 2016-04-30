@@ -50,7 +50,7 @@ class DefInfo extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def, true));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
 		}
 
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
@@ -92,6 +92,7 @@ class DefInfo extends Container {
 										{!refLocs && <i>Loading...</i>}
 										{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
 											refRepo={refRepo.Repo}
+											prefetch={i === 0}
 											initNumSnippets={i === 0 ? 3 : 0}
 											fileCollapseThreshold={5} />)}
 									</div>

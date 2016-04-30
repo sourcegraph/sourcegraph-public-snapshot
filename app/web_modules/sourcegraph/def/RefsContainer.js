@@ -31,6 +31,7 @@ const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above
 class RefsContainer extends Container {
 	static propTypes = {
 		refRepo: React.PropTypes.string.isRequired,
+		prefetch: React.PropTypes.bool,
 		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
 		fileCollapseThreshold: React.PropTypes.number, // number of files to show before "and X more..."-style paginator
 	};
@@ -64,6 +65,8 @@ class RefsContainer extends Container {
 	}
 
 	reconcileState(state, props) {
+		state.prefetch = props.prefetch || false;
+
 		if (typeof state.showAllFiles === "undefined") {
 			state.showAllFiles = false;
 		}
@@ -84,7 +87,12 @@ class RefsContainer extends Container {
 		if (state.refLocations && !state.fileLocations) {
 			state.fileLocations = state.refLocations
 				.filter((loc) => loc.Repo === state.refRepo)
-				.map((loc) => loc.Files);
+				.map((loc) => {
+					// optimization: initialize entrySpecs to show file links before refs are resolved
+					// hardcode "master" revision until refs are fetched
+					loc.Files.forEach((file) => this.entrySpecsByName[file.Path] = {RepoRev: {URI: loc.Repo, Rev: "master"}, Path: file.Path});
+					return loc.Files;
+				});
 			state.fileLocations = [].concat.apply([], state.fileLocations).sort((a, b) => b.Count - a.Count); // flatten
 		}
 		if (state.fileLocations && !state.shownFiles) {
@@ -111,7 +119,8 @@ class RefsContainer extends Container {
 			for (let ref of state.refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
-				this.entrySpecsByName[ref.File] = this.entrySpecsByName[ref.File] ? this.entrySpecsByName[ref.File] : {RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File};
+				// this.entrySpecsByName[ref.File] = this.entrySpecsByName[ref.File] ? this.entrySpecsByName[ref.File] : {RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File};
+				if (this.entrySpecsByName[ref.File]) this.entrySpecsByName[ref.File].RepoRev.Rev = refRev; // update entry specs revision to be the appropriate ref revision
 
 				if (!this.filesByName[ref.File]) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
@@ -146,10 +155,13 @@ class RefsContainer extends Container {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
 		}
 
-		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo) {
-			if (nextState.refRepo) {
-				Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));
-			}
+		// optimization: since multiple RefContainers may be shown on a page, fetching refs for every container
+		// when the component is mounted will cause unnecessary re-render cycles across components.
+		// Instead, lazily fetch ref data on mouseover.
+		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
+		const initialLoad = !prevState.repo && !prevState.rev && !prevState.def && !prevState.refRepo;
+		if ((initialLoad && nextState.prefetch) || (refPropsUpdated && !initialLoad) || (nextState.mouseover && !prevState.mouseover)) {
+			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
