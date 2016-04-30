@@ -10,7 +10,15 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 import {urlToRepo} from "sourcegraph/repo/routes";
 
-export default function withResolvedRepoRev(Component) {
+// withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
+// from the route params. If isMainComponent is true, then it also dispatches
+// actions to populate that data if necessary (dispatch should only be
+// true for the main component, not the nav or other secondary components,
+// or else duplicate WantResolveRepo, etc., actions will be dispatched
+// and could lead to multiple WantCreateRepo, etc., actions being sent
+// to the server).
+export default function withResolvedRepoRev(Component: ReactClass, isMainComponent?: bool): ReactClass {
+	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container {
 		static contextTypes = {
 			router: React.PropTypes.object.isRequired,
@@ -40,6 +48,13 @@ export default function withResolvedRepoRev(Component) {
 		}
 
 		onStateTransition(prevState, nextState) {
+			if (!isMainComponent) return;
+
+			// Handle change in params OR lost resolution (due to auth change, etc.).
+			if (nextState.repo && !nextState.repoResolution && (prevState.repo !== nextState.repo || prevState.repoResolution !== nextState.repoResolution)) {
+				Dispatcher.Backends.dispatch(new RepoActions.WantResolveRepo(nextState.repo));
+			}
+
 			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
 				if (nextState.repoResolution.Error) {
 					// Do nothing.

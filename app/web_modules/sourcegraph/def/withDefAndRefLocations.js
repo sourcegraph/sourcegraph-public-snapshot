@@ -20,7 +20,8 @@ export default ({
 	},
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+		// Handle change in params OR lost def data (due to auth change, etc.).
+		if (nextState.def && !nextState.defObj && (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || prevState.defObj !== nextState.defObj)) {
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def, true));
 		}

@@ -4,7 +4,7 @@ import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 export class UserStore extends Store {
-	reset(data?: {activeAccessToken?: string, authInfo: any, users: any, emails: any}) {
+	reset(data?: any) {
 		this.activeAccessToken = data && data.activeAccessToken ? data.activeAccessToken : null;
 		this.activeGitHubToken = data && data.activeGitHubToken ? data.activeGitHubToken : null;
 		this.authInfo = deepFreeze({
@@ -26,13 +26,13 @@ export class UserStore extends Store {
 			},
 		});
 		this.pendingAuthActions = deepFreeze({
-			content: {},
+			content: data && data.pendingAuthActions ? data.pendingAuthActions.content : {},
 			get(state) {
 				return this.content[state] || null;
 			},
 		});
 		this.authResponses = deepFreeze({
-			content: {},
+			content: data && data.authResponses ? data.authResponses.content : {},
 			get(state) {
 				return this.content[state] || null;
 			},
@@ -46,6 +46,8 @@ export class UserStore extends Store {
 			authInfo: this.authInfo,
 			users: this.users,
 			emails: this.emails,
+			pendingAuthActions: this.pendingAuthActions,
+			authResponses: this.authResponses,
 		};
 	}
 
@@ -66,9 +68,12 @@ export class UserStore extends Store {
 		return user && !user.Error ? user : null;
 	}
 
-	_clearAuth() {
+	// _resetAuth causes resetOnAuthChange's listener to be called, which clears
+	// all store data after an auth change (login/signup/logout). This is so that
+	// users don't see data that was fetched with the auth of the previous user signed
+	// into the app in their browser.
+	_resetAuth() {
 		this.activeAccessToken = null;
-		this.activeGitHubToken = null;
 	}
 
 	__onDispatch(action) {
@@ -135,7 +140,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.SubmitLogout: {
-			this._clearAuth();
+			this._resetAuth();
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {
@@ -166,6 +171,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.SignupCompleted: {
+			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
@@ -184,6 +190,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.LoginCompleted: {
+			this._resetAuth();
 			if (action.resp && action.resp.Success) this.activeAccessToken = action.resp.AccessToken;
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
@@ -202,7 +209,7 @@ export class UserStore extends Store {
 			break;
 		}
 		case UserActions.LogoutCompleted: {
-			this._clearAuth();
+			this._resetAuth();
 			this.pendingAuthActions = deepFreeze({
 				...this.pendingAuthActions,
 				content: {

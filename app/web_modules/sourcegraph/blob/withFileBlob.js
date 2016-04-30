@@ -45,7 +45,8 @@ export default function withFileBlob(Component) {
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path)) {
+			// Handle change in params OR lost file contents (due to auth change, etc.).
+			if (nextState.path && !nextState.blob && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
 				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.path));
 			}
 

@@ -2,34 +2,19 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import urlTo from "sourcegraph/util/urlTo";
-import {makeRepoRev, repoPath, repoParam} from "sourcegraph/repo";
-import type {Route, RouterState} from "react-router";
+import {makeRepoRev} from "sourcegraph/repo";
+import type {Route} from "react-router";
 
 let _components;
 
 const common = {
-	onEnter: (nextState: RouterState, replace: Function, callback: Function) => {
-		common.onChange(null, nextState, replace, callback);
-	},
-	onChange: (prevState: ?RouterState, nextState: RouterState, replace: Function, callback: Function) => {
-		require.ensure([], (require) => {
-			// Ensure these are loaded so they respond to our dispatched actions right below.
-			require("sourcegraph/repo/RepoBackend");
-			require("sourcegraph/repo/RepoStore");
-			const RepoActions = require("sourcegraph/repo/RepoActions");
-
-			const repo = repoPath(repoParam(nextState.params.splat));
-			require("sourcegraph/Dispatcher").default.Backends.dispatch(new RepoActions.WantResolveRepo(repo));
-			callback();
-		});
-	},
 	getComponents: (location, callback) => {
 		require.ensure([], (require) => {
 			if (!_components) {
 				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
 				_components = {
-					navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default),
-					main: withResolvedRepoRev(require("sourcegraph/repo/RepoMain").default),
+					navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default, false),
+					main: withResolvedRepoRev(require("sourcegraph/repo/RepoMain").default, true),
 				};
 			}
 			callback(null, _components);

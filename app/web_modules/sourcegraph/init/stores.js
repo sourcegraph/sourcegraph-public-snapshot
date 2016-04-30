@@ -9,7 +9,9 @@ import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
 import UserStore from "sourcegraph/user/UserStore";
 
-const allStores = {
+// allStores is a function because there is a cyclic dependency between
+// UserStore and this module, so UserStore is null at eval-time.
+const allStores = () => ({
 	BlobStore,
 	DefStore,
 	RepoStore,
@@ -18,18 +20,19 @@ const allStores = {
 	DashboardStore,
 	BuildStore,
 	UserStore,
-};
+});
 
 // forEach calls f(store, name) for all stores.
 export function forEach(f: (store: Object, name: string) => void): void {
-	Object.keys(allStores).forEach((key) => {
-		f(allStores[key], key);
+	const stores = allStores();
+	Object.keys(stores).forEach((key) => {
+		f(stores[key], key);
 	});
 }
 
 // reset resets all stores with the provided data. If null is provided,
 // then the stories are cleared.
-export function reset(data: Object): void {
+export function reset(data: ?Object): void {
 	forEach((store, name) => {
 		store.reset(data ? data[name] : null);
 	});
