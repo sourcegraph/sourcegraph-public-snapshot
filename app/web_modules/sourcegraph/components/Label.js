@@ -7,6 +7,7 @@ import styles from "./styles/label.css";
 
 class Label extends React.Component {
 	static propTypes = {
+		className: React.PropTypes.string,
 		style: React.PropTypes.object,
 		color: React.PropTypes.string,
 		outline: React.PropTypes.bool,
@@ -14,7 +15,13 @@ class Label extends React.Component {
 	};
 
 	render() {
-		return <span style={this.props.style} styleName={`${this.props.outline ? "outline-" : ""}${this.props.color || "default"}`}>{this.props.children}</span>;
+		return (
+			<span className={this.props.className} style={this.props.style}>
+				<span styleName={`${this.props.outline ? "outline-" : ""}${this.props.color || "default"}`}>
+					{this.props.children}
+				</span>
+			</span>
+		);
 	}
 }
 

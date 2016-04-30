@@ -10,30 +10,56 @@
 .container {
 	display: flex;
 	flex-direction: column;
-	composes: mb5 from base;
+	composes: mb4 from base;
 }
 
-.ref-locations {
-	/* Don't let long filenames take up too much width. */
-	flex: 0 0 auto;
-	min-width: 270px;
-	max-width: 30%;
+.repo {
+	composes: mv3 from base;
+	font-weight: normal;
+	display: flex;
+	align-items: center;
+}
+
+.repoLink {
+	composes: mid-gray from colors;
+}
+
+.repoIcon {
+	composes: gray from colors;
+	composes: pr2 from base;
 }
 
 .refs {
 	flex: 1 1 auto;
 }
 
-.repo {
-	composes: mv3 from base;
+.refsLabel {
+	composes: pl2 from base;
+	composes: small-text from typography;
 }
 
 .filename {
-	composes: mv3 from base;
+	composes: pa2 mt2 ba br1 from base;
+	composes: f5 from typography;
+	composes: mid-gray from colors;
+	background-color: #f7f7f7;
+	border-color: #d8d8d8;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+}
+
+.viewFile {
+	margin-left: auto;
+}
+
+.toggleIcon {
+	composes: mid-gray from colors;
+	composes: pr3 from base;
 }
 
 .paginator {
-	composes: tc from typography;
+	composes: mt3 from base;
 }
 
 .pageLink {
@@ -46,19 +72,6 @@
 	color: c_dark-blue;
 }
 
-.fileIcon {
-	composes: gray from colors;
-	composes: ml2 from base;
-}
-.fileIcon:hover {
-	color: c_dark-blue;
-}
-
 .sep {
 	composes: ph1 from base;
-	composes: gray from colors;
-}
-
-.pathPart {
-	composes: mid-gray from colors;
 }

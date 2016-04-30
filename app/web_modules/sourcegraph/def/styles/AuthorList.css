@@ -1,0 +1,55 @@
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.list {
+	composes: mt1 mb2 from base;
+	list-style-type: none;
+	padding-left: 0;
+}
+
+.list-horizontal {
+	composes: list;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.pencil-icon {
+	composes: gray from colors;
+	composes: f4 from typography;
+	composes: pr3 from base;
+}
+
+.person {
+	composes: pv1 from base;
+	composes: f6 from typography;
+	composes: mid-gray from colors;
+	display: flex;
+	align-items: center;
+}
+
+.person-horizontal {
+	composes: person;
+	composes: pr3 from base;
+}
+
+.badge-wrapper {
+	min-width: 2.5rem;
+	text-align: right;
+	display: inline-block;
+}
+
+.badge {
+	composes: br2 pv1 ph2 from base;
+	composes: bg-blue-1 blue-8 from colors;
+	composes: f6 from typography;
+}
+
+.avatar {
+	composes: ph2 from base;
+}
+
+.timestamp {
+	composes: ml1 from base;
+	composes: light-silver from colors;
+}

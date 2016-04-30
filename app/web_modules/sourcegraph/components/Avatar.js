@@ -18,7 +18,7 @@ class Avatar extends Component {
 
 	render() {
 		return (
-			<img styleName={this.state.size ? this.state.size : "small"} src={this.state.img || PLACEHOLDER_IMAGE} />
+			<img className={this.props.className} styleName={this.state.size ? this.state.size : "small"} src={this.state.img || PLACEHOLDER_IMAGE} />
 		);
 	}
 }
@@ -26,6 +26,7 @@ class Avatar extends Component {
 Avatar.propTypes = {
 	img: React.PropTypes.string,
 	size: React.PropTypes.string,
+	className: React.PropTypes.string,
 };
 
 export default CSSModules(Avatar, styles);

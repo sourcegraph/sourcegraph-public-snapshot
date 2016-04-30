@@ -76,34 +76,6 @@
 	composes: black from colors;
 }
 
-/* Def box authors */
-.personList {
-	composes: mt1 mb2 from base;
-	list-style-type: none;
-	padding-left: 0;
-}
-.person {
-	composes: pt1 pb2 from base;
-	composes: mid-gray from colors;
-}
-.person :global img {
-	vertical-align: -5px;
-}
-.badgeMinWidthWrapper {
-	min-width: 2.5rem;
-	text-align: right;
-	display: inline-block;
-}
-.bytesProportion {
-	composes: badge;
-}
-.author { composes: person; }
-.timestamp {
-	composes: ml1 from base;
-	composes: light-silver from colors;
-	composes: f6 from typography;
-}
-
 /* Def tooltip */
 .tooltip {
 	position: fixed;

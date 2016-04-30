@@ -2,7 +2,6 @@
 
 import React from "react";
 import update from "react/lib/update";
-import CSSModules from "react-css-modules";
 
 import Blob from "sourcegraph/blob/Blob";
 import BlobStore from "sourcegraph/blob/BlobStore";
@@ -19,16 +18,16 @@ import {routeParams as defRouteParams} from "sourcegraph/def";
 import {urlToDef, urlToDef2} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
-import styles from "./styles/Refs.css";
-import {FileIcon} from "sourcegraph/components/Icons";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
-import {RepoLink, Label} from "sourcegraph/components";
+import {RepoLink} from "sourcegraph/components";
+import {TriangleRightIcon, TriangleDownIcon} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
+import styles from "./styles/Refs.css";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
-class RefsContainer extends Container {
+export default class RefsContainer extends Container {
 	static propTypes = {
 		refRepo: React.PropTypes.string.isRequired,
 		prefetch: React.PropTypes.bool,
@@ -130,15 +129,14 @@ class RefsContainer extends Container {
 
 				if (this.filesByName[ref.File]) {
 					this.ranges[ref.File] = this.ranges[ref.File] ? this.ranges[ref.File] : [];
-					if (this.rangesMemo[ref.File]) {
-						this.ranges[ref.File] = this.rangesMemo[ref.File];
-					} else {
+					const rangeKey = `${ref.File}${ref.Start}`;
+					if (!this.rangesMemo[rangeKey]) {
 						let contents = this.filesByName[ref.File].ContentsString;
 						this.ranges[ref.File].push([
 							Math.max(lineFromByte(contents, ref.Start) - SNIPPET_REF_CONTEXT_LINES, 0),
 							lineFromByte(contents, ref.End) + SNIPPET_REF_CONTEXT_LINES,
 						]);
-						this.rangesMemo[ref.File] = this.ranges[ref.File];
+						this.rangesMemo[rangeKey] = true;
 					}
 				}
 				if (!this.anns[ref.File]) {
@@ -187,22 +185,24 @@ class RefsContainer extends Container {
 			(path, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
 		);
 		return (
-			<h3 key={entrySpec.Path} className={styles.filename}>
-				<Label outline={true} style={{display: "inline-block", marginRight: "5px"}}>{`${count} ref${count > 1 ? "s" : ""}`}</Label>
-				<a href={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}
-					onClick={(e) => {
-						e.preventDefault();
-						this.setState(update(this.state, {shownFiles: {$splice: [[i, 1, !this.state.shownFiles[i]]]}}));
-					}}>{pathBreadcrumb}</a>
-				<Link to={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}><span className={styles.fileIcon}><FileIcon /></span></Link>
-			</h3>
+			<div key={entrySpec.Path} className={styles.filename} onClick={(e) => {
+				e.preventDefault();
+				this.setState(update(this.state, {shownFiles: {$splice: [[i, 1, !this.state.shownFiles[i]]]}}));
+			}}>
+				{this.state.shownFiles[i] ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
+				{pathBreadcrumb}
+				<div className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</div>
+				<Link className={styles.viewFile} to={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}>
+					<span className={styles.pageLink}>View</span>
+				</Link>
+			</div>
 		);
 	}
 
 	paginatorText() {
 		const remainder = this.state.fileLocations.slice(this.state.fileCollapseThreshold);
 		const count = remainder.reduce((memo, file) => memo + file.Count, 0);
-		return `${count} more ref${count > 1 ? "s" : ""} in ${remainder.length} file${remainder.length > 1 ? "s" : ""}`;
+		return `Used ${count} more time${count > 1 ? "s" : ""} in ${remainder.length} other file${remainder.length > 1 ? "s" : ""} ...`;
 	}
 
 	render() {
@@ -223,15 +223,9 @@ class RefsContainer extends Container {
 				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
-					{this.state.refCount &&
-						<h2 className={styles.repo}>
-							<Label outline={true} style={{display: "inline-block", marginRight: "10px", fontSize: "18px"}}>
-								{`${this.state.refCount} refs`}
-							</Label>
-							<RepoLink repo={this.state.refRepo} />
-						</h2>
-					}
-					<hr/>
+					<h2 className={styles.repo}>
+						<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
+					</h2>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
 							if (!this.entrySpecsByName[loc.Path] || (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold)) return null;
@@ -265,8 +259,9 @@ class RefsContainer extends Container {
 						})}
 					</div>
 					{!this.state.showAllFiles && this.state.fileLocations && this.state.fileLocations.length > this.state.fileCollapseThreshold &&
-						<div className={styles.paginator}>
-							<span className={styles.pageLink} onClick={() => this.setState({showAllFiles: true})}>{this.paginatorText()}</span>
+						<div className={styles.filename} onClick={() => this.setState({showAllFiles: true})}>
+							<TriangleRightIcon className={styles.toggleIcon} />
+							{this.paginatorText()}
 						</div>
 					}
 				</div>
@@ -275,5 +270,3 @@ class RefsContainer extends Container {
 		);
 	}
 }
-
-export default CSSModules(RefsContainer, styles);

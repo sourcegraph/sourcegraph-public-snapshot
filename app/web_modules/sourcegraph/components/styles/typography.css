@@ -212,8 +212,18 @@ html {
 
 .subsection-header {
 	composes: b f4 tracked;
-	composes: gray from colors;
+	composes: mid-gray from colors;
 	text-transform: uppercase;
+}
+.subsection-header::after {
+	content: '';
+	display: block;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	width: 35px;
+	height: 3px;
+	opacity: .9;
+	background-color: c_brand-orange;
 }
 
 .small-text {

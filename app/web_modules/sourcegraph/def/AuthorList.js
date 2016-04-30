@@ -3,26 +3,38 @@
 import React from "react";
 import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
-import styles from "sourcegraph/def/styles/Def.css";
+import {PencilIcon} from "sourcegraph/components/Icons";
+
+
+import CSSModules from "react-css-modules";
+import styles from "./styles/AuthorList.css";
 
 class AuthorList extends React.Component {
 	static propTypes = {
 		authors: React.PropTypes.object.isRequired,
+		horizontal: React.PropTypes.bool,
+		className: React.PropTypes.string,
 	};
 
 	render() {
 		let authors = this.props.authors ? this.props.authors.DefAuthors || [] : null;
 
 		return (
-			<div>
+			<div className={this.props.className}>
 				{authors && authors.length === 0 &&
-					<i>No authors found</i>
+					<i>None found</i>
 				}
 				{authors && authors.length > 0 &&
-					<ol className={styles.personList}>
+					<ol styleName={`list${this.props.horizontal ? "-horizontal" : ""}`}>
+						{this.props.horizontal && <PencilIcon styleName="pencil-icon" />}
 						{authors.map((a, i) => (
-							<li key={i} className={styles.author}>
-								<span className={styles.badgeMinWidthWrapper}><span className={styles.bytesProportion}>{Math.round(100 * a.BytesProportion)}%</span></span> <Avatar size="tiny" img={a.AvatarURL} /> {a.Email} <TimeAgo time={a.LastCommitDate} className={styles.timestamp} />
+							<li key={i} styleName={`person${this.props.horizontal ? "-horizontal" : ""}`}>
+								<div styleName="badge-wrapper">
+									<span styleName="badge">{Math.round(100 * a.BytesProportion)}%</span>
+								</div>
+								<Avatar styleName="avatar" size="tiny" img={a.AvatarURL} />
+								{a.Email}
+								<TimeAgo time={a.LastCommitDate} styleName="timestamp" />
 							</li>
 						))}
 					</ol>
@@ -32,4 +44,4 @@ class AuthorList extends React.Component {
 	}
 }
 
-export default AuthorList;
+export default CSSModules(AuthorList, styles);

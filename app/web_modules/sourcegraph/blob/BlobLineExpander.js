@@ -5,7 +5,6 @@ import CSSModules from "react-css-modules";
 
 import Component from "sourcegraph/Component";
 import styles from "sourcegraph/blob/styles/Blob.css";
-import {TriangleUpIcon, TriangleDownIcon} from "sourcegraph/components/Icons";
 
 export type Range = [number, number];
 
@@ -32,13 +31,12 @@ class BlobLineExpander extends Component {
 
 	render() {
 		return (
-			<tr styleName="line-expander" onClick={this._onClick}>
-				<td>
+			<tr styleName="line-expander">
+				<td styleName="line-expander-cell" onClick={this._onClick}>
+					{/* TODO support doing the up/down arrow logic automatically */}
+					<div styleName="line-expander-icon">...</div>
 				</td>
 				<td>
-					{/* TODO support doing the up/down arrow logic automatically */}
-					{this.state.direction !== "up" && <p styleName="line-expander-icon"><TriangleDownIcon /></p>}
-					{this.state.direction !== "down" && <p styleName="line-expander-icon"><TriangleUpIcon /></p>}
 				</td>
 			</tr>
 		);

@@ -74,36 +74,28 @@ class DefInfo extends Container {
 
 		return (
 			<div styleName="container">
-				<div styleName="refs-page">
-					{this.state.defObj &&
-						<h1>
-							<Link to={urlToDef(this.state.defObj)}>
-								<code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.defName})}</code>
-							</Link>
-						</h1>
-					}
-					<hr/>
-					<div styleName="inner">
-						<div styleName="def-info">
-							<div styleName="main">
-								{def && def.DocHTML && <p dangerouslySetInnerHTML={def && def.DocHTML}></p>}
-								{def && !def.Error &&
-									<div>
-										{!refLocs && <i>Loading...</i>}
-										{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
-											refRepo={refRepo.Repo}
-											prefetch={i === 0}
-											initNumSnippets={i === 0 ? 3 : 0}
-											fileCollapseThreshold={5} />)}
-									</div>
-								}
-							</div>
-							<div styleName="aside">
-								{this.state.authors && <h2>Authors</h2>}
-								{this.state.authors && <AuthorList authors={this.state.authors} />}
-							</div>
+				{this.state.defObj &&
+					<h1>
+						<Link to={urlToDef(this.state.defObj)}>
+							<code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.def})}</code>
+						</Link>
+					</h1>
+				}
+				<hr/>
+				<div styleName="main">
+					{this.state.authors && <AuthorList authors={this.state.authors} horizontal={true} />}
+					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
+					{def && !def.Error &&
+						<div>
+							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length > 1 ? "ies" : "y"}` : ""}`}</div>
+							{!refLocs && <i>Loading...</i>}
+							{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
+								refRepo={refRepo.Repo}
+								prefetch={i === 0}
+								initNumSnippets={i === 0 ? 3 : 0}
+								fileCollapseThreshold={5} />)}
 						</div>
-					</div>
+					}
 				</div>
 			</div>
 		);

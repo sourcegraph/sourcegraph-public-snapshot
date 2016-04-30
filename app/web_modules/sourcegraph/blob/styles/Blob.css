@@ -140,14 +140,22 @@ by a lot of other modules (e.g., for def boxes)? */
 	background-color: #ffe998;
 }
 .line-expander {
-	composes: faded-blue bg-pale-blue from colors;
-	line-height: 0.8;
-	cursor: pointer;
-	min-height: 26px;
+	composes: faded-blue from colors;
+	background-color: rgba(64,120,192,.06);
+	line-height: 0.7;
 	text-align: center;
 }
+.line-expander-cell {
+	composes: line-expander;
+	cursor: pointer;
+}
+.line-expander-cell:hover {
+	color: white;
+	background-color: rgba(64,120,192,.9);
+}
 .line-expander-icon {
-	composes: mt1 mb1 from base;
+	composes: pb2 from base;
+	text-align: center;
 }
 
 .placeholderWhitespace {

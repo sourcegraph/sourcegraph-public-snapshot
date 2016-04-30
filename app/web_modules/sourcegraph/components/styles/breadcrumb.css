@@ -3,7 +3,6 @@
 
 .sep {
 	composes: ph2 from base;
-	composes: mid-gray from colors;
 }
 
 .link {
