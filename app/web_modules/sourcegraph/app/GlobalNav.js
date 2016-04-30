@@ -44,17 +44,17 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
 							Sign up
 						</LocationStateToggleLink>
-						{location.state && location.state.signupModal &&
-							<LocationStateModal stateKey="signupModal" location={location}
-								onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
-								<div styleName="modal">
-									<SignupForm
-										onSignupSuccess={dismissModal("signupModal", location, router)}
-										location={location} />
-								</div>
-							</LocationStateModal>
-						}
 					</div>
+				}
+				{location.state && location.state.signupModal &&
+					<LocationStateModal stateKey="signupModal" location={location}
+						onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
+						<div styleName="modal">
+							<SignupForm
+								onSignupSuccess={dismissModal("signupModal", location, router)}
+								location={location} />
+						</div>
+					</LocationStateModal>
 				}
 				{!signedIn &&
 					<div styleName="action">
@@ -62,17 +62,17 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 							onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
 							Sign in
 						</LocationStateToggleLink>
-						{location.state && location.state.loginModal &&
-							<LocationStateModal stateKey="loginModal" location={location}
-								onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
-								<div styleName="modal">
-									<LoginForm
-										onLoginSuccess={dismissModal("loginModal", location, router)}
-										location={location} />
-								</div>
-							</LocationStateModal>
-						}
 					</div>
+				}
+				{location.state && location.state.loginModal &&
+					<LocationStateModal stateKey="loginModal" location={location}
+						onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
+						<div styleName="modal">
+							<LoginForm
+								onLoginSuccess={dismissModal("loginModal", location, router)}
+								location={location} />
+						</div>
+					</LocationStateModal>
 				}
 			</div>
 		</nav>

@@ -6,14 +6,14 @@
 			"children": [
 				{
 					"type": "HelmetWrapper",
-					"key": ".0",
+					"key": ".1",
 					"props": {
 						"title": "Home"
 					}
 				},
 				{
 					"type": "div",
-					"key": ".1",
+					"key": ".2",
 					"props": {
 						"styleName": "anon-section",
 						"children": [
@@ -47,7 +47,7 @@
 				},
 				{
 					"type": "div",
-					"key": ".2",
+					"key": ".3",
 					"props": {
 						"styleName": "cta-box",
 						"children": [

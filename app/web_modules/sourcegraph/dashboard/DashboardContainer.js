@@ -19,6 +19,7 @@ import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import ChromeExtensionCTA from "./ChromeExtensionCTA";
+import OnboardingModals from "./OnboardingModals";
 
 class DashboardContainer extends Container {
 	static contextTypes = {
@@ -55,6 +56,13 @@ class DashboardContainer extends Container {
 		state.signedIn = context.signedIn;
 		state.githubToken = context.githubToken;
 		state.user = context.user;
+
+		if (global.window && window.localStorage["onboard-state"]) {
+			state.onboardingExperience = localStorage["onboard-state"];
+		} else if (props.location && props.location.state && props.location.state["onboarding"]) {
+			state.onboardingExperience = props.location.state["onboarding"];
+			props.location.state["onboarding"] = null;
+		}
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -83,8 +91,8 @@ class DashboardContainer extends Container {
 	render() {
 		return (
 			<div styleName="container">
+			{this.state.onboardingExperience && <OnboardingModals location={this.state.location} onboardingFlow={this.state.onboardingExperience} canShowChromeExtensionCTA={this.state.showChromeExtensionCTA}/>}
 				<Helmet title="Home" />
-
 				{!this.context.signedIn &&
 					<div styleName="anon-section">
 						<div styleName="anon-title"><img src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`}/></div>

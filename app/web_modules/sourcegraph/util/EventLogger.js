@@ -17,6 +17,7 @@ export const EventLocation = {
 	Signup: "Signup",
 	Dashboard: "Dashboard",
 	DefPopup: "DefPopup",
+	Onboarding: "Onboarding",
 };
 
 export class EventLogger {
