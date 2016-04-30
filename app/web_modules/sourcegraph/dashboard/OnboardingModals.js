@@ -59,7 +59,7 @@ class OnboardingModals extends Component {
 				body: "Sourcegraph will save you time with live usage examples for code, drawn from hundreds of thousands of open source repositories.",
 				hasNext: true,
 				img: this._onboardCheckmarkImages.bind(this),
-				primaryCTA: this._bigCTA.bind(this, "Get the tools", this.state.canShowChromeExtensionCTA ? "open-source-2" : "open-source-3", "ContinueCTAClicked"),
+				primaryCTA: this._bigCTA.bind(this, "Get the tools", "ContinueCTAClicked", this.state.canShowChromeExtensionCTA ? "open-source-2" : "open-source-3"),
 			},
 			"open-source-2": {
 				header: "Reading code on GitHub? No problem",
