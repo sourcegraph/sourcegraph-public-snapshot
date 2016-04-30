@@ -66,7 +66,7 @@ export class LoginForm extends Container {
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
 				<h1 styleName="title">Sign in to Sourcegraph</h1>
 				{this.state.githubError && <div styleName="error">Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
-				<GitHubAuthButton>Continue with GitHub</GitHubAuthButton>
+				<GitHubAuthButton tabIndex="1">Continue with GitHub</GitHubAuthButton>
 				<p styleName="divider">or</p>
 				<label>
 					<span>Username</span>
@@ -78,7 +78,7 @@ export class LoginForm extends Container {
 						autoCapitalize={false}
 						autoCorrect={false}
 						minLength="3"
-						tabIndex="1"
+						tabIndex="2"
 						domRef={(e) => this._loginInput = e}
 						block={true}
 						required={true} />
@@ -90,21 +90,21 @@ export class LoginForm extends Container {
 						id="e2etest-password-field"
 						autoComplete="current-password"
 						name="password"
-						tabIndex="2"
+						tabIndex="3"
 						domRef={(e) => this._passwordInput = e}
 						block={true}
 						required={true} />
 				</label>
 				<Button color="default"
 					id="e2etest-login-button"
-					tabIndex="3"
+					tabIndex="4"
 					block={true}
 					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Sign in</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}
 				<p styleName="sub-text">
-					No account yet? <Link to="/join">Sign up.</Link>
+					No account yet? <Link tabIndex="5" to="/join">Sign up.</Link>
 				</p>
 			</form>
 		);
