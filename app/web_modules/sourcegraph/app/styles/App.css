@@ -6,7 +6,8 @@ the entire viewport height.
 	display: flex;
 	min-height: 100vh;
 	flex-direction: column;
+	overflow: auto;
 }
 .main-content {
-	flex: 1;
+	flex: 1 0 auto;
 }
