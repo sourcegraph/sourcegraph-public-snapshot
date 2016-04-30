@@ -41,7 +41,23 @@ class RefsContainer extends Container {
 	constructor(props) {
 		super(props);
 		this.rangesMemo = {}; // optimization: cache the line range that should be displayed for each ref
+
+		// optimization: these memos reduce the amount of component state which must be copied in reconcileState
+		this.filesByName = {};
+		this.entrySpecsByName = {};
+		this.ranges = {};
+		this.anns = {};
 	}
+
+	shouldComponentUpdate(nextProps, nextState, nextContext) {
+		if (super.shouldComponentUpdate(nextProps, nextState, nextContext)) return true;
+
+		// Since the reference values of the memo'd state don't change even though the contents
+		// may be updated (e.g. as a result of asynchronous fetches) reconcileState
+		// must set a special flag if it resolves new data from a store which is kept in the memo.
+		return Boolean(nextState.forceComponentUpdate);
+	}
+
 
 	stores() {
 		return [DefStore, BlobStore];
@@ -79,54 +95,49 @@ class RefsContainer extends Container {
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		state.filesByName = null;
-		state.entrySpecsByName = null;
-		state.ranges = null;
-		state.anns = null;
 
-		state.highlightedDef = DefStore.highlightedDef;
-		if (state.highlightedDef) {
-			let {repo, rev, def} = defRouteParams(state.highlightedDef);
-			state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
-		} else {
-			state.highlightedDefObj = null;
+		if (state.mouseover) {
+			state.highlightedDef = DefStore.highlightedDef;
+			if (state.highlightedDef) {
+				let {repo, rev, def} = defRouteParams(state.highlightedDef);
+				state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
+			} else {
+				state.highlightedDefObj = null;
+			}
 		}
 
+		state.forceComponentUpdate = false;
 		if (state.refs && !state.refs.Error) {
-			let filesByName = {};
-			let entrySpecsByName = {};
-			let ranges = {};
-			let anns = {};
-			let fileIndex = new Map();
 			for (let ref of state.refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
-				if (!fileIndex.has(ref.File)) {
+				this.entrySpecsByName[ref.File] = this.entrySpecsByName[ref.File] ? this.entrySpecsByName[ref.File] : {RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File};
+
+				if (!this.filesByName[ref.File]) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
-					filesByName[ref.File] = file;
-					entrySpecsByName[ref.File] = {RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File};
-					ranges[ref.File] = [];
-					fileIndex.set(ref.File, file);
+					if (file && !this.filesByName[ref.File]) state.forceComponentUpdate = true;
+					this.filesByName[ref.File] = file;
 				}
-				let file = fileIndex.get(ref.File);
-				if (file) {
+
+				if (this.filesByName[ref.File]) {
+					this.ranges[ref.File] = this.ranges[ref.File] ? this.ranges[ref.File] : [];
 					if (this.rangesMemo[ref.File]) {
-						ranges[ref.File] = this.rangesMemo[ref.File];
+						this.ranges[ref.File] = this.rangesMemo[ref.File];
 					} else {
-						let contents = file.ContentsString;
-						ranges[ref.File].push([
+						let contents = this.filesByName[ref.File].ContentsString;
+						this.ranges[ref.File].push([
 							Math.max(lineFromByte(contents, ref.Start) - SNIPPET_REF_CONTEXT_LINES, 0),
 							lineFromByte(contents, ref.End) + SNIPPET_REF_CONTEXT_LINES,
 						]);
-						this.rangesMemo[ref.File] = ranges[ref.File];
+						this.rangesMemo[ref.File] = this.ranges[ref.File];
 					}
 				}
-				anns[ref.File] = BlobStore.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
+				if (!this.anns[ref.File]) {
+					let anns = BlobStore.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
+					if (anns && !this.anns[ref.File]) state.forceComponentUpdate = true;
+					this.anns[ref.File] = anns;
+				}
 			}
-			state.filesByName = filesByName;
-			state.entrySpecsByName = entrySpecsByName;
-			state.ranges = ranges;
-			state.anns = anns;
 		}
 	}
 
@@ -142,19 +153,16 @@ class RefsContainer extends Container {
 		}
 
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
+			const {repo, rev, def} = defRouteParams(nextState.highlightedDef);
 			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
 		}
 
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
-			let wantedFiles = new Set();
 			for (let ref of nextState.refs) {
 				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
-				if ((!prevState.shownFiles && nextState.shownFiles) || nextState.shownFiles[nextState.shownFileIndex[ref.File]]) {
-					if (wantedFiles.has(ref.File)) continue; // Prevent many requests for the same file.
+				if (nextState.shownFiles && nextState.shownFiles[nextState.shownFileIndex[ref.File]]) {
 					Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
 					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
-					wantedFiles.add(ref.File);
 				}
 			}
 		}
@@ -197,7 +205,11 @@ class RefsContainer extends Container {
 		let def = this.state.defObj;
 
 		return (
-			<div className={styles.container}>
+			<div className={styles.container}
+				onMouseOver={() => this.setState({mouseover: true})}
+				onMouseOut={() => this.setState({mouseover: false})}>
+				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
+				{/* this is important since there may be many ref containers on the page */}
 				<div>
 					{this.state.refCount &&
 						<h2 className={styles.repo}>
@@ -210,15 +222,14 @@ class RefsContainer extends Container {
 					<hr/>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
-							if (!this.state.entrySpecsByName || (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold)) return null;
+							if (!this.entrySpecsByName[loc.Path] || (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold)) return null;
 
-							let entrySpec = this.state.entrySpecsByName[loc.Path];
+							let entrySpec = this.entrySpecsByName[loc.Path];
 							if (!this.state.shownFiles[i]) return this.renderFileHeader(entrySpec, loc.Count, i);
 
-							let file = this.state.filesByName ? this.state.filesByName[loc.Path] : null;
+							let file = this.filesByName ? this.filesByName[loc.Path] : null;
 							if (!file) {
-								let numLines = (SNIPPET_REF_CONTEXT_LINES * 2 * loc.Count) + (loc.Count * 2); // heuristic
-								return <div key={i}>{this.renderFileHeader(entrySpec, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={numLines} /></div>;
+								return <div key={i}>{this.renderFileHeader(entrySpec, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
 							}
 							let path = entrySpec.Path;
 							let repoRev = entrySpec.RepoRev;
@@ -230,11 +241,11 @@ class RefsContainer extends Container {
 										rev={repoRev.Rev}
 										path={path}
 										contents={file.ContentsString}
-										annotations={this.state.anns[path] || null}
+										annotations={this.anns[path] || null}
 										activeDef={this.state.activeDef}
 										activeDefNoRev={this.state.activeDef ? urlToDef(def, "") : null}
 										lineNumbers={true}
-										displayRanges={this.state.ranges[path] || null}
+										displayRanges={this.ranges[path] || null}
 										highlightedDef={this.state.highlightedDef || null}
 										highlightedDefObj={this.state.highlightedDefObj || null} />
 								</div>

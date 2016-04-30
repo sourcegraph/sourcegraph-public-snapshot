@@ -5,10 +5,11 @@ import DefStore from "sourcegraph/def/DefStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
+import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {trackPromise} from "sourcegraph/app/status";
 
 const DefBackend = {
-	fetch: defaultFetch,
+	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
 		switch (action.constructor) {

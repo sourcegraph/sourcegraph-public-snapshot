@@ -5,11 +5,12 @@ import BlobStore from "sourcegraph/blob/BlobStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import prepareAnnotations from "sourcegraph/blob/prepareAnnotations";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
+import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {trackPromise} from "sourcegraph/app/status";
 
 const BlobBackend = {
-	fetch: defaultFetch,
+	fetch: singleflightFetch(defaultFetch),
 
 	__onDispatch(action) {
 		switch (action.constructor) {
