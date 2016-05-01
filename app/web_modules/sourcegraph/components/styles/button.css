@@ -49,6 +49,10 @@
 .small {
     composes: pa2 from base;
 }
+.tiny {
+	composes: fa6 from typography;
+    composes: ph2 pv1 from base;
+}
 
 /* buttons have an active shadow */
 @value c_black-10 from colors;
