@@ -161,7 +161,6 @@ class RepoMain extends React.Component {
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.state.treeSearchActive &&
 					<Modal
-						shown={true}
 						onDismiss={this._dismissTreeSearchModal}>
 						<div styleName="tree-search-modal">
 							<TreeSearch

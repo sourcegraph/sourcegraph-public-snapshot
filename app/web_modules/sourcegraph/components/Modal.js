@@ -38,7 +38,7 @@ class Modal extends React.Component {
 	render() {
 		return (
 			<div ref="modal_container"
-				styleName={this.props.shown ? "container" : "hidden"}
+				styleName="container"
 				onClick={this._onClick}>
 					{this.props.children}
 			</div>
@@ -47,7 +47,6 @@ class Modal extends React.Component {
 }
 
 Modal.propTypes = {
-	shown: React.PropTypes.bool.isRequired,
 	onDismiss: React.PropTypes.func,
 	children: React.PropTypes.oneOfType([
 		React.PropTypes.arrayOf(React.PropTypes.element),
@@ -73,13 +72,14 @@ export function dismissModal(modalName, location, router) {
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
 export function LocationStateModal({location, modalName, children, onDismiss}, {router}) {
+	if (!location.state || location.state.modal !== modalName) return null;
+
 	const onDismiss2 = () => {
 		dismissModal(modalName, location, router)();
 		if (onDismiss) onDismiss();
 	};
 	return (
-		<Modal shown={location.state && location.state.modal === modalName}
-			onDismiss={onDismiss2}>
+		<Modal onDismiss={onDismiss2}>
 			{children}
 		</Modal>
 	);
