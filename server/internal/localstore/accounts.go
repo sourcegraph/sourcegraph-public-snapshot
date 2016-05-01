@@ -107,6 +107,10 @@ func (s *accounts) Delete(ctx context.Context, uid int32) error {
 			return err
 		}
 
+		if _, err := tx.Exec(`DELETE FROM ext_auth_token WHERE "user"=$1;`, dbUID); err != nil {
+			return err
+		}
+
 		return nil
 	})
 }
