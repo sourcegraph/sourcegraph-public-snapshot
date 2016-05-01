@@ -59,7 +59,6 @@
 @value c_black-90 from colors;
 .active-shadow:active {
     box-shadow: 0 0 0 1px c_black-10 inset, 0 0 6px c_black-10 inset;
-    border-color: c_black-90;
 }
 
 /* block button fits to width of container */
