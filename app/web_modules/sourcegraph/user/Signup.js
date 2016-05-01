@@ -70,7 +70,7 @@ export class SignupForm extends Container {
 	render() {
 		return (
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
-				<div styleName="title">Sign up for Sourcegraph</div>
+				<h1 styleName="title">Sign up for Sourcegraph</h1>
 				{!this.state.githubError && [
 					<GitHubAuthButton tabIndex="1" key="1">Continue with GitHub</GitHubAuthButton>,
 					<p key="2" styleName="divider">or</p>,
