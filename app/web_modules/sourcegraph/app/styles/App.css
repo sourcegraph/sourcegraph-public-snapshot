@@ -22,4 +22,5 @@ Prevent scrolling the main content when a modal is being displayed.
 	composes: main-container;
 	position: fixed;
 	overflow: none;
+	filter: saturate(0%) opacity(80%);
 }
