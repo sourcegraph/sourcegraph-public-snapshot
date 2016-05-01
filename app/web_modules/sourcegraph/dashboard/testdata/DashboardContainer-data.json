@@ -96,7 +96,7 @@
 												"styleName": "cta-link",
 												"to": "join",
 												"children": [
-													"Sign up for private code"
+													"Sign up"
 												],
 												"onlyActiveOnIndex": false,
 												"className": "",

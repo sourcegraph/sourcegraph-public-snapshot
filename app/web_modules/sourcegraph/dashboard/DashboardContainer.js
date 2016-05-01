@@ -80,8 +80,14 @@ class DashboardContainer extends Container {
 		return (
 			<div>
 				{!this.context.githubToken && <div styleName="cta">
-				<a href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("SubmitLinkGitHub", EventLocation.Dashboard)}>
-						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Link GitHub account</Button>
+				<a href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: true})}>
+						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />&nbsp;Link GitHub account</Button>
+					</a>
+				</div>}
+				{this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) && <div styleName="cta">
+					<a href={`${urlToGitHubOAuth}?scopes=read:org,repo,user:email`}
+						onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>
+						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />&nbsp;Use with private repositories</Button>
 					</a>
 				</div>}
 			</div>
@@ -107,7 +113,7 @@ class DashboardContainer extends Container {
 							<Button color="primary" size="large">See usage examples for http.NewRequest &raquo;</Button>
 						</Link>
 						<div styleName="cta-subline">
-							<Link styleName="cta-link" to="join">Sign up for private code</Link>
+							<Link styleName="cta-link" to="join">Sign up</Link>
 							{this.state.showChromeExtensionCTA && <span>|</span>}
 							{this.state.showChromeExtensionCTA && <ChromeExtensionCTA onSuccess={() => this.setState({showChromeExtensionCTA: false})}/>}
 						</div>

@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -146,6 +147,11 @@ func (s *auth) authenticateGitHubAuthCode(ctx context.Context, authCode *sourceg
 	if resp == nil {
 		resp = &sourcegraph.AccessTokenResponse{}
 	}
+
+	if scope, ok := ghToken.Extra("scope").(string); ok && scope != "" {
+		resp.Scope = strings.Split(scope, ",")
+	}
+
 	resp.GitHubAccessToken = ghToken.AccessToken
 	resp.GitHubUser = &sourcegraph.GitHubUser{
 		ID:    int32(*ghUser.ID),
