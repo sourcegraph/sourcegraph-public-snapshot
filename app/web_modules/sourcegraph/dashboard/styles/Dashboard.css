@@ -9,7 +9,7 @@
 }
 
 .anon-section {
-	composes: col-8-ns col-10 from grid;
+	composes: col-9-ns from grid;
 	composes: mt4 ph3 center from base;
 	text-align: center;
 }
@@ -35,7 +35,7 @@
 }
 
 .cta-subline {
-	composes: col-8-ns col-10 from grid;
+	composes: col-9-ns from grid;
 	composes: pt5 center from base;
 	composes: subheader from typography;
 }
@@ -47,7 +47,7 @@
 }
 
 .repos {
-	composes: col-7-ns col-12 from grid;
+	composes: col-9-ns from grid;
 	composes: mt4 center from base;
 }
 
