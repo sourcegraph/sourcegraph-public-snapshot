@@ -3,7 +3,6 @@
 @value typography "./typography.css";
 
 .btn {
-    composes: br3 from base;
     composes: button-text from typography;
     display: inline-block;
     cursor: pointer;
@@ -40,18 +39,18 @@
 }
 
 .large {
-    composes: pa4 from base;
+    composes: pa4 br3 from base;
     font-size: 1.25rem !important;
 }
 .normal {
-    composes: pa3 from base;
+    composes: pa3 br3 from base;
 }
 .small {
-    composes: pa2 from base;
+    composes: pa2 br2 from base;
 }
 .tiny {
 	composes: fa6 from typography;
-    composes: ph2 pv1 from base;
+    composes: br2 ph2 pv1 from base;
 }
 
 /* buttons have an active shadow */
@@ -166,8 +165,9 @@
 /* solid buttons */
 @value c_light-gray from colors;
 .solid {
-    border: solid 1px c_light-gray;
-    composes: btn active-shadow;
+	border-style: solid;
+	border-width: 1px;
+	composes: btn active-shadow;
 	background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
 }
 .solid:hover,
