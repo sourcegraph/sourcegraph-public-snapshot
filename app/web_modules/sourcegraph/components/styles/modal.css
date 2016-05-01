@@ -4,7 +4,7 @@
 @value c_black-30 from colors;
 
 .container {
-	composes: bg-black-50 from colors;
+	composes: bg-black-70 from colors;
 	composes: center from base;
 	z-index: 100; /* TODO: extract z-index into module */
 	position: fixed;
@@ -36,8 +36,4 @@
 		max-width: none !important;
 		max-height: none !important;
 	}
-}
-
-.hidden {
-	display: none;
 }

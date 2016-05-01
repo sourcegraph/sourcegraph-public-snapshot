@@ -72,7 +72,7 @@ export class SignupForm extends Container {
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
 				<div styleName="title">Sign up for Sourcegraph</div>
 				{!this.state.githubError && [
-					<GitHubAuthButton key="1">Continue with GitHub</GitHubAuthButton>,
+					<GitHubAuthButton tabIndex="1" key="1">Continue with GitHub</GitHubAuthButton>,
 					<p key="2" styleName="divider">or</p>,
 				]}
 				{this.state.githubError === "username-or-email-taken" && <div styleName="error">Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}
@@ -89,7 +89,7 @@ export class SignupForm extends Container {
 						autoCapitalize={false}
 						autoCorrect={false}
 						minLength="3"
-						tabIndex="1"
+						tabIndex="2"
 						block={true}
 						required={true} />
 				</label>
@@ -101,7 +101,7 @@ export class SignupForm extends Container {
 						defaultValue={this.state.githubEmail || null}
 						autoComplete="email"
 						autoCapitalize={false}
-						tabIndex="2"
+						tabIndex="3"
 						domRef={(e) => this._emailInput = e}
 						block={true}
 						required={true} />
@@ -113,7 +113,7 @@ export class SignupForm extends Container {
 						name="password"
 						autoComplete="new-password"
 						domRef={(e) => this._passwordInput = e}
-						tabIndex="3"
+						tabIndex="4"
 						block={true}
 						required={true} />
 				</label>
@@ -123,14 +123,14 @@ export class SignupForm extends Container {
 				<Button
 					color={this.state.githubError ? "primary" : "default"}
 					id="e2etest-register-button"
-					tabIndex="4"
+					tabIndex="5"
 					block={true}
 					loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}>Create account</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&
 					<div styleName="error">{this.state.authResponse.Error.body.message}</div>
 				}
 				<p styleName="sub-text">
-					Already have an account? <Link to="/login">Sign in.</Link>
+					Already have an account? <Link tabIndex="6" to="/login">Sign in.</Link>
 				</p>
 			</form>
 		);

@@ -42,10 +42,9 @@ class DashboardModal extends Component {
 	}
 
 	render() {
+		if (!this.state.visible) return null;
 		return (
-			<Modal
-				shown={this.state.visible}
-				onDismiss={this.hide}>
+			<Modal onDismiss={this.hide}>
 				<div styleName="container">
 					<div styleName="modal">
 						<div styleName="header">

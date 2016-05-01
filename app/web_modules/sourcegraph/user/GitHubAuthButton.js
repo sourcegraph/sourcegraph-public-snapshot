@@ -7,12 +7,12 @@ import CSSModules from "react-css-modules";
 import {Button} from "sourcegraph/components";
 import style from "sourcegraph/user/styles/accountForm.css";
 
-function GitHubAuthButton({children}, {eventLogger}) {
+function GitHubAuthButton(props, {eventLogger}) {
 	return (
 		<a href={urlToGitHubOAuth} styleName="github"
-			onClick={() => eventLogger.logEvent("InitiateGitHubOAuth2Flow")}>
+			onClick={() => eventLogger.logEvent("InitiateGitHubOAuth2Flow")} {...props}>
 			<Button type="button" formNoValidate={true} color="primary" block={true}>
-				<GitHubIcon />&nbsp; {children}
+				<GitHubIcon />&nbsp; {props.children}
 			</Button>
 		</a>
 	);

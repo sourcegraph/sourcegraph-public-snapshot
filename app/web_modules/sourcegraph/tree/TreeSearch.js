@@ -119,9 +119,6 @@ class TreeSearch extends Container {
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
 		this._handleInput = this._handleInput.bind(this);
-		this._focusInput = this._focusInput.bind(this);
-		this._handleFocus = this._handleFocus.bind(this);
-		this._blurInput = this._blurInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._debouncedSetQuery = debounce((query) => {
 			if (query !== this.state.query) {
@@ -135,19 +132,12 @@ class TreeSearch extends Container {
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
-
-		if (global.window) {
-			window.addEventListener("focus", this._focusInput);
-		}
 	}
 
 	componentWillUnmount() {
 		super.componentWillUnmount();
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
-		}
-		if (global.window) {
-			window.removeEventListener("focus", this._focusInput);
 		}
 	}
 
@@ -345,22 +335,6 @@ class TreeSearch extends Container {
 
 	_setSelectedItem(e: any) {
 		this._selectedItem = e;
-	}
-
-	_focusInput() {
-		this.setState({focused: true});
-		if (this.refs.input) this.refs.input.focus();
-	}
-
-	_handleFocus() {
-		this._focusInput();
-	}
-
-	_blurInput() {
-		if (this.refs.input) this.refs.input.blur();
-		this.setState({
-			focused: false,
-		});
 	}
 
 	_numSymbolResults(): number {
@@ -643,8 +617,8 @@ class TreeSearch extends Container {
 				<div styleName="input-container">
 					<Input type="text"
 						block={true}
-						onFocus={this._focusInput}
-						onBlur={this._blurInput}
+						onFocus={() => this.setState({focused: true})}
+						onBlur={(e) => this.setState({focused: false})}
 						onInput={this._handleInput}
 						autoFocus={true}
 						defaultValue={this.state.query}

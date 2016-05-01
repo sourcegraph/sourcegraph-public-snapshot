@@ -23,7 +23,7 @@ const reactElement = React.PropTypes.oneOfType([
 
 function App(props) {
 	return (
-		<div styleName="main-container">
+		<div styleName={props.location.state && props.location.state.modal ? "main-container-with-modal" : "main-container"}>
 			<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 			<GlobalNav navContext={props.navContext} location={props.location} />
 			<div styleName="main-content">{props.main}</div>
