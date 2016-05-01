@@ -7,6 +7,10 @@
 .nav {
 	composes: context from GlobalNav;
 }
+.nav > span {
+	display: inline-block;
+	flex: 0 0 auto;
+}
 .repoName {
 	composes: b db mr3 from base;
 }
