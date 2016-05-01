@@ -67,18 +67,18 @@
 @value c_black-05 rgba( 0, 0, 0, .05 );
 @value c_black-025 rgba( 0, 0, 0, .025 );
 @value c_black-0125 rgba( 0, 0, 0, .0125 );
-@value c_white-90 rgba( 0, 0, 0, .9 );
-@value c_white-80 rgba( 0, 0, 0, .8 );
-@value c_white-70 rgba( 0, 0, 0, .7 );
-@value c_white-60 rgba( 0, 0, 0, .6 );
-@value c_white-50 rgba( 0, 0, 0, .5 );
-@value c_white-40 rgba( 0, 0, 0, .4 );
-@value c_white-30 rgba( 0, 0, 0, .3 );
-@value c_white-20 rgba( 0, 0, 0, .2 );
-@value c_white-10 rgba( 0, 0, 0, .1 );
-@value c_white-05 rgba( 0, 0, 0, .05 );
-@value c_white-025 rgba( 0, 0, 0, .025 );
-@value c_white-0125 rgba( 0, 0, 0, .0125 );
+@value c_white-90 rgba( 255, 255, 255, .9 );
+@value c_white-80 rgba( 255, 255, 255, .8 );
+@value c_white-70 rgba( 255, 255, 255, .7 );
+@value c_white-60 rgba( 255, 255, 255, .6 );
+@value c_white-50 rgba( 255, 255, 255, .5 );
+@value c_white-40 rgba( 255, 255, 255, .4 );
+@value c_white-30 rgba( 255, 255, 255, .3 );
+@value c_white-20 rgba( 255, 255, 255, .2 );
+@value c_white-10 rgba( 255, 255, 255, .1 );
+@value c_white-05 rgba( 255, 255, 255, .05 );
+@value c_white-025 rgba( 255, 255, 255, .025 );
+@value c_white-0125 rgba( 255, 255, 255, .0125 );
 
 /* Colors */
 .navy { color: c_navy; }
