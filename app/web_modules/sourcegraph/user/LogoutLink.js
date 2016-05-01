@@ -1,12 +1,11 @@
 import React from "react";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {Button} from "sourcegraph/components";
 import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-export default class LogoutButton extends Container {
+export default class LogoutLink extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -51,9 +50,9 @@ export default class LogoutButton extends Container {
 
 	render() {
 		return (
-			<Button {...this.props}
-				loading={this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error))}
-				onClick={this._handleClick}>Sign Out</Button>
+			<a {...this.props} onClick={this._handleClick}>
+				{this.state.submitted && (this.state.pendingAuthAction || (this.state.authResponse && !this.state.authResponse.Error)) ? "..." : "Sign out"}
+			</a>
 		);
 	}
 }

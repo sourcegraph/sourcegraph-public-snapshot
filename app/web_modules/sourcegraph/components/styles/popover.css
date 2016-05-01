@@ -1,7 +1,7 @@
 @value base "./base.css";
 @value colors "./colors.css";
 
-@value c_black-30 from colors;
+@value c_black-20 from colors;
 
 .container {
 	position: relative;
@@ -9,7 +9,7 @@
 }
 
 .shadow {
-	box-shadow: 2px 2px 10px 0px c_black-30;
+	box-shadow: 2px 2px 7px 0px c_black-20;
 }
 
 .popover {

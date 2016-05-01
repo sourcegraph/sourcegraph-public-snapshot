@@ -1,0 +1,24 @@
+@value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+
+.menu {
+	composes: ph0 pv2 ma0 br3 from base;
+	composes: bg-white from colors;
+	overflow: hidden;
+	min-width: 12rem;
+	list-style-type: none;
+}
+.item {}
+.item-content {
+	display: block;
+	composes: pv2 ph3 from base;
+	composes: dark-gray from colors;
+	cursor: pointer;
+}
+@value c_brand-blue from colors;
+.item:hover .item-content {
+	background-color: c_brand-blue;
+	color: white;
+}

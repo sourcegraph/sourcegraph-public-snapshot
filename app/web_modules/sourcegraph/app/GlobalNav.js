@@ -4,8 +4,8 @@ import React from "react";
 import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Button, Popover} from "sourcegraph/components";
-import LogoutButton from "sourcegraph/user/LogoutButton";
+import {Avatar, Button, Popover, Menu} from "sourcegraph/components";
+import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
 import {LoginForm} from "sourcegraph/user/Login";
@@ -24,7 +24,10 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 					<div styleName="action-username">
 						<Popover left={true}>
 							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
-							<LogoutButton outline={true} size="small" block={true} />
+							<Menu>
+								<Link to="/">Your repositories</Link>
+								<LogoutLink outline={true} size="small" block={true} />
+							</Menu>
 						</Popover>
 					</div>
 				}
