@@ -4,8 +4,8 @@
 @value typography "sourcegraph/components/styles/typography.css";
 
 .menu {
-	composes: ph0 pv2 ma0 br3 from base;
-	composes: bg-white from colors;
+	composes: ph0 pv2 ma0 br3 ba from base;
+	composes: bg-white b--moon-gray from colors;
 	overflow: hidden;
 	min-width: 12rem;
 	list-style-type: none;
