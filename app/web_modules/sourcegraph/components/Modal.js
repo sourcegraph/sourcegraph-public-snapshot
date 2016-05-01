@@ -57,14 +57,20 @@ Modal.propTypes = {
 Modal = renderedOnBody(CSSModules(Modal, styles));
 export default Modal;
 
+// setLocationModalState shows or hides a modal by setting the location.state.modal
+// property to modalName if shown is true and null otherwise.
+export function setLocationModalState(router: any, location: Location, modalName: string, visible: bool) {
+	if (location.state && location.state.modal && location.state.modal !== modalName) {
+		console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
+	}
+	router.replace({...location, state: {...location.state, modal: visible ? modalName : null}});
+}
+
 // dismissModal creates a function that dismisses the modal by setting
 // the location state's modal property to null.
 export function dismissModal(modalName, location, router) {
 	return () => {
-		if (location.state && location.state.modal !== modalName) {
-			console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
-		}
-		router.replace({...location, state: {...location.state, modal: null}});
+		setLocationModalState(router, location, modalName, false);
 	};
 }
 

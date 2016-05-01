@@ -3,7 +3,7 @@
 import React from "react";
 import Helmet from "react-helmet";
 import TreeSearch from "sourcegraph/tree/TreeSearch";
-import Modal from "sourcegraph/components/Modal";
+import Modal, {setLocationModalState} from "sourcegraph/components/Modal";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -13,6 +13,8 @@ import {trimRepo} from "sourcegraph/repo";
 import context from "sourcegraph/app/context";
 
 import Header from "sourcegraph/components/Header";
+
+const TREE_SEARCH_MODAL_NAME = "TreeSearch";
 
 class RepoMain extends React.Component {
 	static propTypes = {
@@ -34,7 +36,6 @@ class RepoMain extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			treeSearchActive: false,
 			treeSearchPath: "/",
 			treeSearchQuery: "",
 		};
@@ -47,7 +48,6 @@ class RepoMain extends React.Component {
 	}
 
 	state: {
-		treeSearchActive: boolean,
 		treeSearchPath: string,
 		treeSearchQuery: string,
 	};
@@ -62,7 +62,6 @@ class RepoMain extends React.Component {
 		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
 		// that new changes on the remote are pulled.
 		this.context.router.listenBefore(() => Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo)));
-		this.context.router.listenBefore(this._dismissTreeSearchModal);
 	}
 
 	componentWillReceiveProps(nextProps) {
@@ -106,12 +105,12 @@ class RepoMain extends React.Component {
 	}
 
 	_showTreeSearchModal() {
-		this.setState({treeSearchActive: true, treeSearchPath: "/", treeSearchQuery: ""});
+		setLocationModalState(this.context.router, this.props.location, TREE_SEARCH_MODAL_NAME, true);
+		this.setState({treeSearchPath: "/", treeSearchQuery: ""});
 	}
 
-	_dismissTreeSearchModal() {
-		if (!this._isMounted) return;
-		this.setState({treeSearchActive: false});
+	_dismissTreeSearchModal(loc) {
+		setLocationModalState(this.context.router, this.props.location, TREE_SEARCH_MODAL_NAME, false);
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
@@ -159,9 +158,8 @@ class RepoMain extends React.Component {
 			<div>
 				<Helmet title={trimRepo(this.props.repo)} />
 				{this.props.main}
-				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.state.treeSearchActive &&
-					<Modal
-						onDismiss={this._dismissTreeSearchModal}>
+				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
+					<Modal onDismiss={this._dismissTreeSearchModal}>
 						<div styleName="tree-search-modal">
 							<TreeSearch
 								repo={this.props.repo}
