@@ -165,8 +165,9 @@
 }
 
 /* solid buttons */
+@value c_light-gray from colors;
 .solid {
-    border: none;
+    border: solid 1px c_light-gray;
     composes: btn active-shadow;
 }
 .solid:hover,
@@ -176,30 +177,30 @@
 
 .solid-default {
     composes: solid;
-    composes: dark-gray bg-light-gray from colors;
+    composes: dark-gray bg-light-gray b--light-gray from colors;
 }
 
 .solid-primary {
     composes: solid;
-    composes: white bg-blue from colors;
+    composes: white bg-blue b--blue from colors;
 }
 
 .solid-success {
     composes: solid;
-    composes: white bg-green from colors;
+    composes: white bg-green b--green from colors;
 }
 
 .solid-danger {
     composes: solid;
-    composes: white bg-red from colors;
+    composes: white bg-red b--red from colors;
 }
 
 .solid-info {
     composes: solid;
-    composes: white bg-teal from colors;
+    composes: white bg-teal b--teal from colors;
 }
 
 .solid-warning {
     composes: solid;
-    composes: white bg-orange from colors;
+    composes: white bg-orange b--orange from colors;
 }
