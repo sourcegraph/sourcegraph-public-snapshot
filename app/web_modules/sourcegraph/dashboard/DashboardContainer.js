@@ -39,9 +39,6 @@ class DashboardContainer extends Container {
 
 	componentDidMount() {
 		super.componentDidMount();
-		if (this.state.githubRedirect) {
-			this.context.eventLogger.logEvent("LinkGitHubCompleted");
-		}
 		setTimeout(() => this.setState({
 			showChromeExtensionCTA: global.chrome && global.document && !document.getElementById("chrome-extension-installed"),
 		}), 0);
@@ -51,13 +48,14 @@ class DashboardContainer extends Container {
 		Object.assign(state, props);
 		state.repos = DashboardStore.repos || null;
 		state.remoteRepos = DashboardStore.remoteRepos || null;
-		state.githubRedirect = props.location && props.location.query ? (props.location.query["github-onboarding"] || false) : false;
 
 		state.signedIn = context.signedIn;
 		state.githubToken = context.githubToken;
 		state.user = context.user;
 
-		if (global.window && window.localStorage["onboard-state"]) {
+		if (props.location.query && props.location.query["onboarding"]) {
+			state.onboardingExperience = props.location.query["onboarding"];
+		} else if (global.window && window.localStorage["onboard-state"]) {
 			state.onboardingExperience = localStorage["onboard-state"];
 		} else if (props.location && props.location.state && props.location.state["onboarding"]) {
 			state.onboardingExperience = props.location.state["onboarding"];
