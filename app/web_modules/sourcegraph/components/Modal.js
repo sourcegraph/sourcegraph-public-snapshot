@@ -14,12 +14,16 @@ class Modal extends React.Component {
 	componentDidMount() {
 		if (typeof document !== "undefined") {
 			document.addEventListener("keydown", this._handleKeydown);
+
+			// Prevent the page below the modal from scrolling.
+			document.body.style.overflow = "hidden";
 		}
 	}
 
 	componentWillUnmount() {
 		if (typeof document !== "undefined") {
 			document.removeEventListener("keydown", this._handleKeydown);
+			document.body.style.overflow = "";
 		}
 	}
 
