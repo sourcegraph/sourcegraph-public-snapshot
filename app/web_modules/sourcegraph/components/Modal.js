@@ -2,6 +2,7 @@ import React from "react";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/modal.css";
+import renderedOnBody from "sourcegraph/util/renderedOnBody";
 
 class Modal extends React.Component {
 	constructor(props) {
@@ -54,7 +55,7 @@ Modal.propTypes = {
 	]),
 };
 
-Modal = CSSModules(Modal, styles);
+Modal = renderedOnBody(CSSModules(Modal, styles));
 export default Modal;
 
 // dismissModal creates a function that dismisses the modal by setting
