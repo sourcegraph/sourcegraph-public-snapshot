@@ -58,10 +58,13 @@
 	flex: 0 0 auto;
 }
 .action {
-	composes: ph0 pt0 from base;
 	composes: f4 from typography;
 	display: inline-block;
 	white-space: nowrap;
+}
+.action-username {
+	composes: action;
+	composes: pt1 ph3 from base;
 }
 
 .username {

@@ -21,13 +21,11 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 			<div styleName="actions">
 				{user &&
-					<div styleName="action">
-						<div styleName="username">
-							<Popover left={true}>
-								{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
-								<LogoutButton outline={true} size="small" block={true} />
-							</Popover>
-						</div>
+					<div styleName="action-username">
+						<Popover left={true}>
+							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
+							<LogoutButton outline={true} size="small" block={true} />
+						</Popover>
 					</div>
 				}
 				{!signedIn &&
