@@ -18,14 +18,16 @@ export class WantResults {
 
 export class ResultsFetched {
 	query: string;
-	defs: Array<Def>;
-	eventName: string;
+	repos: ?Array<string>;
+	notRepos: ?Array<string>;
 	limit: ?number;
+	defs: Array<Def>;
 
-	constructor(query: string, limit: ?number, defs: Array<Def>) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, defs: Array<Def>) {
 		this.query = query;
-		this.defs = defs;
-		this.eventName = "ResultsFetched";
 		this.limit = limit;
+		this.repos = repos;
+		this.notRepos = notRepos;
+		this.defs = defs;
 	}
 }
