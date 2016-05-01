@@ -84,16 +84,15 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		log15.Debug("exceeded github rate limit", "error", err, "op", op)
 		return grpc.Errorf(codes.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
 	}
-	switch resp.StatusCode {
-	case http.StatusUnauthorized:
-		// token revoked, delete token from DB
+	if uid := auth.ActorFromContext(ctx).UID; resp.StatusCode == http.StatusUnauthorized && uid != 0 {
+		// Token possibly revoked, so delete it from DB.
 		_, err = svc.Auth(ctx).DeleteAndRevokeExternalToken(ctx, &sourcegraph.ExternalTokenSpec{
-			UID: int32(auth.ActorFromContext(ctx).UID),
+			UID: int32(uid),
 		})
 		if err != nil {
-			log15.Error("could not delete external token", "error", err)
+			log15.Error("could not delete external token", "error", err, "uid", uid)
 		}
-	default:
+	} else {
 		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
 	}
 
