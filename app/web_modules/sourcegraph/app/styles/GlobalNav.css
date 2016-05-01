@@ -49,16 +49,19 @@
 
 	/* Collapse and add ellipsis if too long. Make sure we can show the logo and avatar. */
 	white-space: nowrap;
-	max-width: calc(100vw - 120px);
+	max-width: calc(100vw - 230px);
 }
 
 .actions {
-	composes: ph3 from base;
+	composes: ml3 from base;
+	white-space: nowrap;
+	flex: 0 0 auto;
 }
 .action {
-	composes: pl4 pt1 from base;
+	composes: ph0 pt0 from base;
 	composes: f4 from typography;
 	display: inline-block;
+	white-space: nowrap;
 }
 
 .username {

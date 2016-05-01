@@ -4,7 +4,7 @@ import React from "react";
 import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Popover} from "sourcegraph/components";
+import {Avatar, Button, Popover} from "sourcegraph/components";
 import LogoutButton from "sourcegraph/user/LogoutButton";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
@@ -32,27 +32,9 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 				}
 				{!signedIn &&
 					<div styleName="action">
-						<LocationStateToggleLink href="/join" modalName="signup" location={location}
-							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
-							Sign up
-						</LocationStateToggleLink>
-					</div>
-				}
-				{location.state && location.state.modal === "signup" &&
-					<LocationStateModal modalName="signup" location={location}
-						onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
-						<div styleName="modal">
-							<SignupForm
-								onSignupSuccess={dismissModal("signup", location, router)}
-								location={location} />
-						</div>
-					</LocationStateModal>
-				}
-				{!signedIn &&
-					<div styleName="action">
 						<LocationStateToggleLink href="/login" modalName="login" location={location}
 							onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
-							Sign in
+							<Button color="default" size="nav" block={true}>Sign in</Button>
 						</LocationStateToggleLink>
 					</div>
 				}
@@ -62,6 +44,24 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 						<div styleName="modal">
 							<LoginForm
 								onLoginSuccess={dismissModal("login", location, router)}
+								location={location} />
+						</div>
+					</LocationStateModal>
+				}
+				{!signedIn &&
+					<div styleName="action">
+						<LocationStateToggleLink href="/join" modalName="signup" location={location}
+							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
+							<Button color="primary" size="nav" block={true}>Sign up</Button>
+						</LocationStateToggleLink>
+					</div>
+				}
+				{location.state && location.state.modal === "signup" &&
+					<LocationStateModal modalName="signup" location={location}
+						onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
+						<div styleName="modal">
+							<SignupForm
+								onSignupSuccess={dismissModal("signup", location, router)}
 								location={location} />
 						</div>
 					</LocationStateModal>

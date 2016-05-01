@@ -52,6 +52,15 @@
 	composes: fa6 from typography;
     composes: br2 ph2 pv1 from base;
 }
+/* Button size for buttons on the nav bar. */
+.nav {
+	/* GlobalNav navbarHeight + 1px (can't use vars in calc). */
+	height: 41px;
+	margin-bottom: -1px;
+	composes: fa6 from typography;
+    composes: pv1 ph3 from base;
+	border-top-color: transparent !important;
+}
 
 /* buttons have an active shadow */
 @value c_black-10 from colors;
@@ -177,7 +186,7 @@
 
 .solid-default {
     composes: solid;
-    composes: dark-gray bg-light-gray b--light-gray from colors;
+    composes: dark-gray bg-light-gray b--moon-gray from colors;
 }
 
 .solid-primary {
