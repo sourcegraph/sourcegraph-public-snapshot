@@ -44,13 +44,19 @@ class DefInfo extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
-		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
+		state.refLocations = state.def ? DefStore.getRefLocations({
+			repo: state.repo, rev: state.rev, def: state.def, reposOnly: true, repos: [],
+		}) : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
+				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: false, repos: [],
+			}, {
+				perPage: 50,
+			}));
 		}
 
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {

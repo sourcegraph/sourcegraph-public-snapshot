@@ -6,10 +6,11 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {defPath} from "sourcegraph/def";
-import type {Def} from "sourcegraph/def";
+import type {Def, RefLocationsKey} from "sourcegraph/def";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
 import {fastParseDefPath} from "sourcegraph/def";
+import toQuery from "sourcegraph/util/toQuery";
 
 function defKey(repo: string, rev: ?string, def: string): string {
 	return `${repo}#${rev || ""}#${def}`;
@@ -23,10 +24,10 @@ function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, re
 	return `${defKey(repo, rev, def)}#${refRepo}#${refFile || ""}`;
 }
 
-function refLocationsKey(repo: string, rev: ?string, def: string, reposOnly: ?bool): string {
-	return `${defKey(repo, rev, def)}:${reposOnly || false}`;
+function refLocationsKeyFor(r: RefLocationsKey): string {
+	let q = toQuery({ReposOnly: r.reposOnly, Query: r.repos});
+	return `/.api/repos/${r.repo}${r.rev ? `@${r.rev}` : ""}/-/def/${r.def}/-/ref-locations?${q}`;
 }
-
 
 type DefPos = {
 	// Mirrors the fields of the same name in Def so that if the whole
@@ -37,6 +38,11 @@ type DefPos = {
 };
 
 export class DefStore extends Store {
+	refLocations_: Object;
+	getRefLocations(r: RefLocationsKey): ?Object {
+		return this.refLocations_[refLocationsKeyFor(r)] || null;
+	}
+
 	reset(data?: {defs: any, refs: any}) {
 		this.defs = deepFreeze({
 			content: data && data.defs ? data.defs.content : {},
@@ -73,12 +79,7 @@ export class DefStore extends Store {
 				return this.content[refsKeyFor(repo, rev, def, refRepo, refFile)] || null;
 			},
 		});
-		this.refLocations = deepFreeze({
-			content: data && data.refLocations ? data.refLocations.content : {},
-			get(repo: string, rev: ?string, def: string, reposOnly: ?bool) {
-				return this.content[refLocationsKey(repo, rev, def, reposOnly)] || null;
-			},
-		});
+		this.refLocations_ = deepFreeze(data && data.refLocations ? data.refLocations.content : {});
 	}
 
 	toJSON() {
@@ -171,17 +172,18 @@ export class DefStore extends Store {
 
 		case DefActions.RefLocationsFetched:
 			{
-				const rankedLocations = action.locations.Error ? action.locations : getRankedRefLocations(action.locations);
-				let updatedContent = {
-					[refLocationsKey(action.repo, action.rev, action.def, action.reposOnly)]: rankedLocations,
-				};
-				if (!action.reposOnly) {
+				let a = (action: DefActions.RefLocationsFetched);
+				const rankedLocations = a.locations.Error ? a.locations : getRankedRefLocations(a.locations);
+				let updatedContent = {};
+				updatedContent[refLocationsKeyFor(a.request.resource)] = rankedLocations;
+				if (!a.request.resource.reposOnly) {
 					// optimization; if full ref locations fetched this data can satisfy reposOnly queries
-					updatedContent[refLocationsKey(action.repo, action.rev, action.def, true)] = rankedLocations;
+					let r2 = Object.assign({}, a.request.resource);
+					r2.reposOnly = true;
+					updatedContent[refLocationsKeyFor(r2)] = rankedLocations;
 				}
-				this.refLocations = deepFreeze(Object.assign({}, this.refLocations, {
-					content: Object.assign({}, this.refLocations.content, updatedContent),
-				}));
+
+				this.refLocations_ = deepFreeze(Object.assign({}, this.refLocations_, updatedContent));
 				break;
 			}
 
@@ -224,4 +226,4 @@ function getRankedRefLocations(locations) {
 	return repos;
 }
 
-export default new DefStore(Dispatcher.Stores);
+export default (new DefStore(Dispatcher.Stores): DefStore);

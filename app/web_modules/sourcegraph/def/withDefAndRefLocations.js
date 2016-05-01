@@ -14,9 +14,14 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 export default ({
 	reconcileState(state, props) {
 		state.def = props.params ? props.params.splat[1] : null;
-
 		state.defObj = state.def ? DefStore.defs.get(state.repo, state.rev, state.def) : null;
-		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def, true) : null;
+		state.refLocations = state.def ? DefStore.getRefLocations({
+			repo: state.repo,
+			rev: state.rev,
+			def: state.def,
+			reposOnly: true,
+			repos: [],
+		}) : null;
 	},
 
 	onStateTransition(prevState, nextState) {
@@ -26,7 +31,9 @@ export default ({
 				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
 			}
 			if (!nextState.refLocations) {
-				Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def, true));
+				Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
+					repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: true, repos: [],
+				}));
 			}
 		}
 	},

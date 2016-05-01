@@ -77,7 +77,9 @@ export default class RefsContainer extends Container {
 		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
 
-		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
+		state.refLocations = state.def ? DefStore.getRefLocations({
+			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+		}) : null;
 
 		state.refRepo = props.refRepo;
 		if (state.refLocations && !state.fileLocations) {
@@ -146,7 +148,15 @@ export default class RefsContainer extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations(nextState.repo, nextState.rev, nextState.def));
+			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
+				repo: nextState.repo,
+				rev: nextState.rev,
+				def: nextState.def,
+				reposOnly: nextState.reposOnly,
+				repos: nextState.repos,
+			}, {
+				perPage: 50,
+			}));
 		}
 
 		// optimization: since multiple RefContainers may be shown on a page, fetching refs for every container

@@ -38,3 +38,11 @@ export function fastParseDefPath(url: string): ?string {
 export function defPath(def: Def): string {
 	return `${def.UnitType}/${def.Unit}/-/${def.Path}`;
 }
+
+export type RefLocationsKey = {
+	repo: string;
+	rev: ?string;
+	def: string;
+	reposOnly: bool;
+	repos: Array<string>;
+}

@@ -1,6 +1,7 @@
 // @flow
 
-import type {Def, Ref} from "sourcegraph/def";
+import type {Def, Ref, RefLocationsKey} from "sourcegraph/def";
+import toQuery from "sourcegraph/util/toQuery";
 
 export class WantDef {
 	repo: string;
@@ -113,31 +114,38 @@ export class HighlightDef {
 }
 
 export class WantRefLocations {
-	repo: string;
-	rev: ?string;
-	def: string;
-	reposOnly: bool;
+	resource: RefLocationsKey;
+	perPage: ?number;
+	page: ?number;
 
-	constructor(repo: string, rev: ?string, def: string, reposOnly: ?bool) {
-		this.repo = repo;
-		this.rev = rev;
-		this.def = def;
-		this.reposOnly = (reposOnly === true);
+	constructor(r: RefLocationsKey, p?: {perPage?: number, page?: number}) {
+		this.resource = r;
+		if (p) {
+			this.perPage = p.perPage;
+			this.page = p.page;
+		}
+	}
+
+	url(): string {
+		let q = toQuery({
+			ReposOnly: this.resource.reposOnly,
+			Query: this.resource.repos,
+			Page: this.page,
+			PerPage: this.perPage,
+		});
+		if (q) {
+			q = `?${q}`;
+		}
+		return `/.api/repos/${this.resource.repo}${this.resource.rev ? `@${this.resource.rev}` : ""}/-/def/${this.resource.def}/-/ref-locations${q}`;
 	}
 }
 
 export class RefLocationsFetched {
-	repo: string;
-	rev: ?string;
-	def: string;
-	reposOnly: bool;
+	request: WantRefLocations;
 	locations: Array<Object>;
 
-	constructor(repo: string, rev: ?string, def: string, reposOnly: bool, locations: Array<Object>) {
-		this.repo = repo;
-		this.rev = rev;
-		this.def = def;
-		this.reposOnly = reposOnly;
+	constructor(request: WantRefLocations, locations: Array<Object>) {
+		this.request = request;
 		this.locations = locations;
 	}
 }

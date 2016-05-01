@@ -48,8 +48,13 @@ describe("DefBackend", () => {
 			return immediateSyncPromise({status: 200, json: () => "someRefData"});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			DefBackend.__onDispatch(new DefActions.WantRefLocations("r", "v", "d", false));
-		})).to.eql([new DefActions.RefLocationsFetched("r", "v", "d", false, "someRefData")]);
+			DefBackend.__onDispatch(new DefActions.WantRefLocations({
+				repo: "r", rev: "v", def: "d", reposOnly: false, repos: [],
+			}));
+		})).to.eql([new DefActions.RefLocationsFetched(
+			new DefActions.WantRefLocations({
+				repo: "r", rev: "v", def: "d", reposOnly: false, repos: [],
+			}), "someRefData")]);
 	});
 
 	describe("should handle WantRefs", () => {

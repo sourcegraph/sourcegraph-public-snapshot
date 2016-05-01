@@ -64,20 +64,21 @@ const DefBackend = {
 
 		case DefActions.WantRefLocations:
 			{
-				let refLocations = DefStore.refLocations.get(action.repo, action.rev, action.def, action.reposOnly);
+				let a = (action: DefActions.WantRefLocations);
+				let refLocations = DefStore.getRefLocations(a.resource);
 				if (refLocations === null) {
-					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/ref-locations`;
-					if (action.reposOnly === true) {
-						url += "?ReposOnly=true";
-					}
+					let url = a.url();
 					trackPromise(
 						DefBackend.fetch(url)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								if (data && !data.Error) { // TODO(rothfels): figure out why this is sometimes returning null
-									Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action.repo, action.rev, action.def, action.reposOnly, data));
+								if (!data) {
+									data = []; // nil arrays are serialized as null by the server
+								}
+								if (!data.Error) {
+									Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action, data));
 								}
 							})
 					);
