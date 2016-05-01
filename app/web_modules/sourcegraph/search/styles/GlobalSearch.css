@@ -9,7 +9,7 @@
 	flex-direction: column;
 	align-items: center;
 	composes: center from base;
-        composes: col-6 from grid;
+	composes: col-9-ns from grid;
 }
 
 .search-section {
