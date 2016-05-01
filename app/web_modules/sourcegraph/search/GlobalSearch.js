@@ -258,8 +258,6 @@ class GlobalSearch extends Container {
 	render() {
 		return (<div styleName="container">
 			<div styleName="search-section">
-				<img styleName="logo" src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`}/>
-				<div styleName="search-title">The global graph of code at your fingertips</div>
 				<div styleName="input-container">
 					<Input type="text"
 						block={true}

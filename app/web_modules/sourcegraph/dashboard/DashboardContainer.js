@@ -120,14 +120,14 @@ class DashboardContainer extends Container {
 					</div>
 				}
 
+				{this.context.user && this.context.user.Admin &&
+					<GlobalSearch query={this.props.location.query.q || ""}/>
+				}
+
 				{this.context.signedIn &&
 					<div styleName="anon-section">
 						{this.renderCTAButtons()}
 					</div>
-				}
-
-				{this.context.user && this.context.user.Admin &&
-					<GlobalSearch query={this.props.location.query.q || ""}/>
 				}
 
 				{this.context.signedIn && <div styleName="repos">
