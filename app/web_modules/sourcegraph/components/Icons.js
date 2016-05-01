@@ -17,7 +17,7 @@ export const PencilIcon = iconWrapper(require("react-icons/lib/go/pencil"));
 function iconWrapper(Component) {
 	class IconWrapper extends React.Component {
 		static propTypes = {
-			className: React.PropTypes.object.isRequired,
+			className: React.PropTypes.object,
 		};
 
 		render() {
