@@ -168,10 +168,11 @@
 .solid {
     border: solid 1px c_light-gray;
     composes: btn active-shadow;
+	background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
 }
 .solid:hover,
 .solid:focus {
-    background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+    background-image: linear-gradient(transparent, rgba(0,0,0, 0.10) 40%, rgba(0,0,0, 0.20));
 }
 
 .solid-default {
