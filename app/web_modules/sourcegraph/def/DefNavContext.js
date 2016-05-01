@@ -13,14 +13,15 @@ import styles from "sourcegraph/components/styles/breadcrumb.css";
 class DefNavContext extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string,
 		params: React.PropTypes.object.isRequired,
 	}
 
 	reconcileState(state, props) {
-		Object.assign(state, props);
+		state.repo = props.repo;
+		state.rev = props.rev;
 		const defPath = props.params.splat[1];
-		state.defPos = DefStore.defs.getPos(state.repo, state.rev, defPath);
+		state.defPos = state.rev ? DefStore.defs.getPos(state.repo, state.rev, defPath) : null;
 	}
 
 	stores() { return [DefStore]; }
