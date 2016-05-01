@@ -80,9 +80,6 @@ export default class RefsContainer extends Container {
 		state.refLocations = state.def ? DefStore.refLocations.get(state.repo, state.rev, state.def) : null;
 
 		state.refRepo = props.refRepo;
-		if (state.refLocations && !state.refCount) {
-			state.refCount = state.refLocations.find((loc) => loc.Repo === state.refRepo).Count;
-		}
 		if (state.refLocations && !state.fileLocations) {
 			state.fileLocations = state.refLocations
 				.filter((loc) => loc.Repo === state.refRepo)
@@ -118,7 +115,6 @@ export default class RefsContainer extends Container {
 			for (let ref of state.refs || []) {
 				if (!ref) continue;
 				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
-				// this.entrySpecsByName[ref.File] = this.entrySpecsByName[ref.File] ? this.entrySpecsByName[ref.File] : {RepoRev: {URI: ref.Repo, Rev: refRev}, Path: ref.File};
 				if (this.entrySpecsByName[ref.File]) this.entrySpecsByName[ref.File].RepoRev.Rev = refRev; // update entry specs revision to be the appropriate ref revision
 
 				if (!this.filesByName[ref.File]) {

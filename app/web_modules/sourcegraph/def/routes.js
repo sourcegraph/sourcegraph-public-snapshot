@@ -7,34 +7,28 @@ import {defPath} from "sourcegraph/def";
 import type {Route} from "react-router";
 import type {Def} from "sourcegraph/def";
 
-import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
-import withDef from "sourcegraph/def/withDef";
-import DefInfo from "sourcegraph/def/DefInfo";
-import DefNavContext from "sourcegraph/def/DefNavContext";
-
-// TODO these routes didn't work with async loading. Fix them.
-const infoRoute = {
-	path: "info",
-	components: {
-		main: withResolvedRepoRev(withDef(DefInfo)),
-		repoNavContext: DefNavContext,
-	},
-};
-
-export const routes: Array<Route> =[
+export const routes: Array<Route> = [
 	{
-		path: `${rel.def}*/-/`,
-		getChildRoutes: (location, callback) => {
-			callback(null, [infoRoute]);
+		path: `${rel.def}/-/info`,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+				const withDef = require("sourcegraph/def/withDef").default;
+				callback(null, {
+					main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
+					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
+				});
+			});
 		},
 	},
 	{
 		path: rel.def,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
+				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
 				callback(null, {
 					main: require("sourcegraph/blob/BlobLoader").default,
-					repoNavContext: require("sourcegraph/def/DefNavContext").default,
+					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
 				}, [
 					require("sourcegraph/def/withDefAndRefLocations").default,
 					require("sourcegraph/def/blobWithDefBox").default,

@@ -10,9 +10,8 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {defPath} from "sourcegraph/def";
 import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
-import TimeAgo from "sourcegraph/util/TimeAgo";
-import {Avatar} from "sourcegraph/components";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
+import AuthorList from "sourcegraph/def/AuthorList";
 import {urlToDef} from "sourcegraph/def/routes";
 
 class DefPopup extends Container {
@@ -49,7 +48,6 @@ class DefPopup extends Container {
 	render() {
 		let def = this.props.def;
 		let refLocs = this.props.refLocations;
-		let authors = this.state.authors ? this.state.authors.DefAuthors || [] : null;
 
 		return (
 			<div className={s.marginBox}>
@@ -62,18 +60,9 @@ class DefPopup extends Container {
 				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
 				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
 
-				{authors && <header className={s.sectionTitle}>Authors</header>}
-				{!authors && <span styleName="loading">Loading...</span>}
-				{authors && authors.length === 0 && <i>No authors found</i>}
-				{authors && authors.length > 0 &&
-					<ol className={s.personList}>
-						{authors.map((a, i) => (
-							<li key={i} className={s.author}>
-								<span className={s.badgeMinWidthWrapper}><span className={s.bytesProportion}>{Math.round(100 * a.BytesProportion)}%</span></span> <Avatar size="tiny" img={a.AvatarURL} /> {a.Email} <TimeAgo time={a.LastCommitDate} className={s.timestamp} />
-							</li>
-						))}
-					</ol>
-				}
+				{this.state.authors && <header className={s.sectionTitle}>Authors</header>}
+				{!this.state.authors && <span styleName="loading">Loading...</span>}
+				{this.state.authors && <AuthorList authors={this.state.authors} />}
 			</div>
 		);
 	}

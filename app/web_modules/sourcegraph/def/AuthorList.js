@@ -5,7 +5,6 @@ import TimeAgo from "sourcegraph/util/TimeAgo";
 import {Avatar} from "sourcegraph/components";
 import {PencilIcon} from "sourcegraph/components/Icons";
 
-
 import CSSModules from "react-css-modules";
 import styles from "./styles/AuthorList.css";
 
