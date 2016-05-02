@@ -15,6 +15,8 @@ export function repoRev(repoRevRouteVar: string): ?string {
 	return repoRevRouteVar.slice(at + 1);
 }
 
+// makeRepoRev returns "<repo>@<rev>" if rev is a non-empty string, otherwise
+// it returns just "<repo>".
 export function makeRepoRev(repo: string, rev: string): string {
 	if (rev) return `${repo}@${rev}`;
 	return repo;
