@@ -8,7 +8,6 @@ import UserStore from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 
-const MAX_PREFETCH_WAIT_TIME = 5 * 1000;
 const pushPromises = (typeof window !== "undefined") ? (window.__PushPromises || {}) : {};
 const loadedPushPromises = new Set();
 
@@ -137,14 +136,9 @@ class PrefetchResponse {
 // promise for that URL to be resolved by the server.
 function prefetch(url): Promise {
 	let p = new Promise((resolve, reject) => {
-		let waitTime = 0;
 		let waitInterval = 25;
+		// Poll for server pushes until we see data.
 		let timeout = setInterval(() => {
-			// Reject after waiting too long for a prefetch to complete.
-			if (waitTime > MAX_PREFETCH_WAIT_TIME) {
-				clearInterval(timeout);
-				reject(`Prefetch for ${url} timed out (waited ${waitTime}ms)`);
-			}
 			if (pushPromises[url]) {
 				clearInterval(timeout);
 				loadedPushPromises.add(url);
@@ -157,7 +151,6 @@ function prefetch(url): Promise {
 				// PrefetchResponse works here as well.
 				resolve(resp);
 			}
-			waitTime += waitInterval;
 		}, waitInterval);
 	});
 	return p;

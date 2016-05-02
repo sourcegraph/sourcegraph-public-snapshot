@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"html/template"
 	"net/http"
 	"os"
@@ -23,7 +24,7 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if _, ok := w.(http.Flusher); !ok {
-		log15.Warn("cannot prefetch, HTTP response flushing not supported")
+		return errors.New("cannot prefetch, HTTP response flushing not supported")
 	} else {
 		if os.Getenv("SG_DISABLE_PREFETCH") == "" {
 			var err error
