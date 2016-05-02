@@ -1,6 +1,6 @@
 {
-  "version": "0.0.0",
-  "name": "Sourcegraph",
+  "version": "1.1.0",
+  "name": "Sourcegraph Chrome extension for GitHub",
   "manifest_version": 2,
   "description": "Sourcegraph browser extension for Chrome",
   "browser_action": {

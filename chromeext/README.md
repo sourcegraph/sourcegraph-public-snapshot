@@ -1,50 +1,54 @@
-# Sourcegraph chrome extension
+# Sourcegraph browser extension for Google Chrome
 
-Enhance code browsing on GitHub: code search, instant documentaton tooltips, and jump-to-definition links for code on GitHub.
+## Features
 
-This extension enhances file pages on GitHub by adding instant documentation and type tooltips to code on GitHub, and making every identifer a jump-to-definition link. It also adds a search button and keyboard shortcut (shift-T) that allow you to search for functions, types, and other code definitions within your repository. The search function also provides complete text results. You'll wonder how you browsed code on GitHub without it.
+The chrome extension includes popup (browser action), window (context menu), and injected page views.
 
-Here's what people are saying about Sourcegraph:
+State is managed by [Redux](https://github.com/reactjs/redux) and persisted to Chrome local storage.
 
-- "it's already my favorite online doc tool. give it a try" - @edapx
-- "Sourcegraph has been quickly moving in priority on my Chrome bookmarks. You need to check out this tool." - @goinggodotnet
-- "Loving Sourcegraph.com to find documentation and real code examples" - @IndianGuru
-- "Being able to search actual open source code is amazing. Very very fast as well!" and Sourcegraph is blowing my mind right now." - @joshtaylor
-- "Sourcegraph is amazing" - Jakub W.
-- "Sourcegraph is an essential tool for every Pythonist, Gopher, and Nodester." - @nimolix
-- "Impressive #golang code navigation by Sourcegraph!" - @francesc
+## Installation
 
-You can also search and browse code on Sourcegraph itself at https://sourcegraph.com.
-
-Currently, Sourcegraph supports Go repositories. This extension will work on all public Go code. To use code search on private Go repositories, sign up for Sourcegraph at https://sourcegraph.com and link your GitHub account. Support for more languages will be rolled out soon. Stay tuned!   
-
-Prerequisite: Using the extension requires the repository to be built on Sourcegraph. All popular Go repositories are already built. To trigger a build of a repository, visit https://sourcegraph.com/github.com/USER/REPO.    
+```bash
+$ npm install
+```
 
 ## Development
 
-## Prerequisites
+```bash
+$ npm run dev
+```
+* Allow `https://localhost:3000` (insecure) connections in Chrome. (Because `injectpage` injected GitHub (https) pages, so `webpack-dev-server` procotol must be https.)
+* [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked) with `./dev` folder.
+* Webpack will manage hot reloading via `react-transform`.
 
-## Building
+#### Using Redux DevTools Extension
 
-Go to `chrome://extensions`in Chrome, check `Developer mode` and use `Load Unpacked Extension` to load the
-`chromeext` directory.
+You can use [redux-devtools-extension](https://github.com/zalmoxisus/redux-devtools-extension) in development mode.
 
-To reload the Chrome extension when you change files, install
-[Extensions Reloader](https://chrome.google.com/webstore/detail/fimgfedafeadlieiabdeeaodndnlbhid), 
-or simply `Update extensions` and `Reload` the extension at chrome://extensions.
+## Build
 
-## Publishing
+```bash
+$ npm run build
+```
 
-To publish a new version:
+## Compress
 
-1. Visit the [Chrome Web Store](https://chrome.google.com/webstore).
-1. Click the Settings gear in top right corner -> `Developer Dashboard`.
-1. Choose the right extension with the `Status` of `Published` and click `Edit`.
-1. Bump the version in `manifest.json` to be greater than the current one.
-1. Test that it works by loading it into Chrome via `Load Unpacked Extension`.
-1. `cd chromeext` and `zip -r chromeext.zip *` to create a zip of the `chromeext` directory.
-1. Click `Upload Updated Package` on the developer dashboard to upload the new zip file.
-1. Scroll to the bottom of the page and hit `Publish Changes`.
+```bash
+$ npm run build
+$ npm run compress -- [options]
+```
 
+#### Options
 
+If you want to build a `crx` file, provide options and add an `update.xml` file url in [manifest.json](https://developer.chrome.com/extensions/autoupdate#update_url manifest.json).
 
+* --app-id: the extension id
+* --key: private key path (default: './key.pem')
+  you can use `npm run compress-keygen` to generate private key `./key.pem`
+* --codebase: the `crx` file url
+
+See [autoupdate guide](https://developer.chrome.com/extensions/autoupdate) for more information.
+
+## Boilerplate
+
+This project was adapted from this boilerplate: https://github.com/jhen0409/react-chrome-extension-boilerplate.
