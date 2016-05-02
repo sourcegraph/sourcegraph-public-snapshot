@@ -30,7 +30,7 @@ export const abs: {[key: RouteName]: string} = {
 	admin: rel.admin,
 	adminBuilds: `${rel.admin}${rel.builds}`,
 	def: `${rel.repo}/-/${rel.def}`,
-	defInfo: `${rel.repo}/-/${rel.def}*/-/info`,
+	defInfo: `${rel.repo}/-/${rel.def}/-/info`,
 	repo: rel.repo,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
