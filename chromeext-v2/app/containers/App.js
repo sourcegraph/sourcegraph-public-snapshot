@@ -127,16 +127,21 @@ export default class App extends Component {
 		const text = this._text();
 		const defsFetch = this._defsFetch();
 		const textFetch = this._textFetch();
-
 		return (
 			<div styleName="app">
-				<div styleName="column-one-fourth">
+				{/*<div styleName="column-one-fourth">
 					<SearchMenu onSelect={this.handleMenuSelect} selected={this.state.selected} />
-				</div>
-				<div styleName="column-three-fourths">
+				</div>*/}
+				<div styleName="full-column" /*styleName="column-three-fourths"*/ >
 					<div className="breadcrumb flex-table" styleName="input-box">
 						<span styleName="input-addon">{`${this.props.repo.split('/')[2]} /`}</span>
-						<SearchInput text={this.props.query} placeholder="Search for symbols..." onSubmit={this.handleSubmit} />
+						{this.state.selected === "def" &&
+							<SearchInput placeholder="Search for symbols..." onSubmit={this.handleSubmit} />
+						}
+						{this.state.selected === "text" &&
+							<SearchInput placeholder="Search for text..." onSubmit={this.handleSubmit} />
+						}
+
 					</div>
 					{this.state.selected === "def" && <div className="tree-finder clearfix" styleName="list">
 						<table className="tree-browser css-truncate">
@@ -150,10 +155,10 @@ export default class App extends Component {
 							<h3 styleName="list-item-empty">Fetching...</h3>
 						}
 						{srclibDataVersionFetch === true || defsFetch === true &&
-							<h3 styleName="list-item-empty">Loading...</h3>
+							<h3 styleName="list-item-empty">Searching...</h3>
 						}
 						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 404 &&
-							<h3 styleName="list-item-empty">404 Not Found</h3>
+							<h3 styleName="list-item-empty">404 Not Found: This repository has not been indexed by Sourcegraph.<br/><a href={`https://sourcegraph.com/${this.props.repo}`}>Let Sourcegraph index this repository.</a></h3>
 						}
 						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 401 &&
 							<h3 styleName="list-item-empty">401 Unauthorized: Log in to Sourcegraph to search private code</h3>

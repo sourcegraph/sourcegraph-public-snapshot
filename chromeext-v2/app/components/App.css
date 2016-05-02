@@ -47,10 +47,20 @@
 	text-align: center;
 }
 
+.def-result-row td{
+    word-wrap: break-word !important;
+    padding-right:5px;
+    overflow:hidden;
+    max-width:649px;
+}
+
 .def-result-row:hover td{
     background-color:transparent;
 }
 
+.full-column {
+	width: 100%;
+}
 .octicon-chevron {
 	width: 21px;
 }

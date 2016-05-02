@@ -166,7 +166,7 @@ class InjectApp extends React.Component {
 				const createStore = require("../../app/store/configureStore");
 
 				const frameDiv = document.createElement("div");
-				frameDiv.id="sourcegraph-iframe";
+				frameDiv.id="sourcegraph-frame";
 				render(<Root store={createStore(initialState)} />, frameDiv);
 
 				this.frameDiv = frameDiv;
@@ -190,18 +190,15 @@ class InjectApp extends React.Component {
 	// content and mount an iframe embedding the chrome extension (react) app.
 	toggleAppFrame = () => {
 		// TODO: remove jquery
-		// let repoContent = document.querySelector(".repository-content");
-		// if (repoContent) {
-		// 	repoContent.parentElement.appendChild(frame);
-		// } else {
-		// 	console.log("No repo content found.");
-		// }
-		if (!this.frameDiv) {
+		if (!document.getElementById('sourcegraph-frame')) {
 			// Lazy initial application bootstrap; add app frame to DOM.
 			this.appFrame((frameDiv) => {
 				$(".container.new-discussion-timeline").children().hide();
 				$(".container.new-discussion-timeline").append(this.frameDiv);
-				$(".sg-input").focus();
+				this.frameDiv.style.display = "block";
+				setTimeout(function(){
+					$('.sg-input').focus(); // Auto focus input, with slight delay so T doesn't appear
+				}, 1);
 				this.setState({appFrameIsVisible: true});
 			});
 		} else if (this.state.appFrameIsVisible) {
