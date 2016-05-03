@@ -52,13 +52,13 @@ class DefPopup extends Container {
 		return (
 			<div className={s.marginBox}>
 				<header className={s.boxTitle}>
-					<Link to={`${urlToDef(this.state.defObj)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
+					<Link to={`${urlToDef(this.state.defObj, this.state.rev)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 				</header>
 				<header className={s.sectionTitle}>Used in</header>
 
 				{!refLocs && <span styleName="loading">Loading...</span>}
 				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
-				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} path={this.state.path} />}
+				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} rev={this.state.rev} path={this.state.path} />}
 
 				{this.state.authors && <header className={s.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span styleName="loading">Loading...</span>}

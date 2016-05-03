@@ -44,6 +44,7 @@ function defParams(def: Def, rev: ?string): Object {
 	return {splat: [`${def.Repo}${revPart}`, defPath(def)]};
 }
 
+// urlToDef returns a URL to the given def at the optional revision.
 export function urlToDef(def: Def, rev: ?string): string {
 	rev = rev === null ? def.CommitID : rev;
 	if ((def.File === null || def.Kind === "package")) {
@@ -58,11 +59,12 @@ export function urlToDef(def: Def, rev: ?string): string {
 	return urlTo("def", defParams(def, rev));
 }
 
-// TODO: add revision
-export function urlToDefInfo(def: Def): string {
-	return urlTo("defInfo", defParams(def));
+// urlToDefInfo returns a URL to the given def's info at the optional revision.
+export function urlToDefInfo(def: Def, rev: ?string): string {
+	return urlTo("defInfo", defParams(def, rev));
 }
 
+// urlToDef2 returns a URL to the given repositories def at the given revision.
 export function urlToDef2(repo: string, rev: string, def: string): string {
 	return urlTo("def", {splat: [`${repo}@${rev}`, def]});
 }

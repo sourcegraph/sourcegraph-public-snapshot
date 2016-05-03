@@ -10,8 +10,9 @@ export default class RefLocationsList extends React.Component {
 		def: React.PropTypes.object.isRequired,
 		refLocations: React.PropTypes.array,
 
-		// Current repo and path, so that they can be highlighted.
+		// Current repo and path info, so that they can be highlighted.
 		repo: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string.isRequired,
 		path: React.PropTypes.string,
 	};
 
@@ -26,12 +27,12 @@ export default class RefLocationsList extends React.Component {
 				{refLocs.map((repoRef, i) => (
 					<div key={i} className={s.allRefs}>
 						<header className={this.props.repo === repoRef.Repo ? s.activeGroupHeader : ""}>
-							<span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefInfo(def)}>{repoRef.Repo}</Link>
+							<span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefInfo(def, this.props.rev)}>{repoRef.Repo}</Link>
 						</header>
 						<div className={s.refsGroup}>
 							{repoRef.Files && repoRef.Files.map((file, j) => (
 								<div key={j} className={`${s.refFilename} ${this.props.repo === repoRef.Repo && this.props.path === file.Path ? s.currentFileRefs : ""}`}>
-									<span className={s.refsCount}>{file.Count}</span> <Link title={file.Path} to={urlToDefInfo(def)}>{file.Path}</Link>
+									<span className={s.refsCount}>{file.Count}</span> <Link title={file.Path} to={urlToDefInfo(def, this.props.rev)}>{file.Path}</Link>
 								</div>
 							))}
 						</div>

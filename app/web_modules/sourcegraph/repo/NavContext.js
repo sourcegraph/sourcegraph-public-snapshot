@@ -29,7 +29,7 @@ class NavContext extends React.Component {
 						{`${this.props.inventory.PrimaryProgrammingLanguage} is not yet supported`}
 					</Label>
 				}
-				<RepoLink repo={this.props.repo} />
+				<RepoLink repo={this.props.repo} rev={this.props.rev} />
 				<div styleName="repo-nav-context">{this.props.repoNavContext}</div>
 			</div>
 		);
