@@ -204,7 +204,8 @@ class InjectApp extends React.Component {
 	removeAppFrame = () => {
 		const el = document.querySelector(".repository-content");
 		if (el) el.style.display = "block";
-		if (this.frameDiv) this.frameDiv.style.display = "none";
+		const frame = document.getElementById("sourcegraph-frame");
+		if (frame) frame.style.display = "none";
 		this.setState({appFrameIsVisible: false});
 	}
 
@@ -230,8 +231,9 @@ class InjectApp extends React.Component {
 			this.removeAppFrame();
 		} else {
 			// Toggle visiblity on.
-			document.querySelector(".repository-content").style.display = "none"
-			this.frameDiv.style.display = "block";
+			document.querySelector(".repository-content").style.display = "none";
+			const frame = document.getElementById("sourcegraph-frame");
+			if (frame) frame.style.display = "block";
 			this.setState({appFrameIsVisible: true}, focusInput);
 		}
 	};
