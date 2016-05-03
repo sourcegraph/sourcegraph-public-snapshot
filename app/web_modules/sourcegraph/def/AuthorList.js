@@ -29,7 +29,7 @@ class AuthorList extends React.Component {
 						{authors.map((a, i) => (
 							<li key={i} styleName={`person${this.props.horizontal ? "-horizontal" : ""}`}>
 								<div styleName="badge-wrapper">
-									<span styleName="badge">{Math.round(100 * a.BytesProportion)}%</span>
+									<span styleName="badge">{Math.round(100 * a.BytesProportion) || "< 1"}%</span>
 								</div>
 								<Avatar styleName="avatar" size="tiny" img={a.AvatarURL} />
 								{a.Email}
