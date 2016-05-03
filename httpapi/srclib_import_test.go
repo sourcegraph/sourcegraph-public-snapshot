@@ -34,7 +34,9 @@ func TestSrclibImport(t *testing.T) {
 
 	calledReposGet := mock.Repos.MockGet(t, wantRepo)
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, wantCommitID)
-	mock.Search.RefreshIndex_ = func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {}
+	mock.Search.RefreshIndex_ = func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
+		return nil, nil
+	}
 
 	// Mock the srclib store interface (and replace the old
 	// newSrclibStoreClient value when done).
