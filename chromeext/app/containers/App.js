@@ -1,5 +1,4 @@
 import React, {Component, PropTypes} from "react";
-import {formatPattern} from "react-router/lib/PatternUtils";
 
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
@@ -69,31 +68,9 @@ export default class App extends Component {
 		return this.props.defs.fetches[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
 	}
 
-
-	// TODO: share this code with main application.
-	defPath(def) {
-		return `${def.UnitType}/${def.Unit}/-/${def.Path}`;
-	}
-
-	defParams(def, rev) {
-		rev = rev === null ? def.CommitID : rev;
-		const revPart = rev ? `@${rev || def.CommitID}` : "";
-		return {splat: [`${def.Repo}${revPart}`, this.defPath(def)]};
-	}
-
 	urlToDef(def, rev) {
-		rev = rev === null ? def.CommitID : rev;
-		if ((def.File === null || def.Kind === "package")) {
-			// The def's File field refers to a directory (e.g., in the
-			// case of a Go package). We can't show a dir in this view,
-			// so just redirect to the dir listing.
-			//
-			// TODO(sqs): Improve handling of this case.
-			// let file = def.File === "." ? "" : def.File;
-			// return urlToTree(def.Repo, rev, file);
-			console.log("TODO");
-		}
-		return formatPattern("*/-/def/*", this.defParams(def, rev));
+		rev = rev ? rev : (def.CommitID || "");
+		return `${def.Repo}${rev ? `@${rev}` : ""}/-/def/${def.UnitType}/${def.Unit}/-/${def.Path}/-/info`;
 	}
 
 	render() {
@@ -112,7 +89,7 @@ export default class App extends Component {
 						<table className="tree-browser css-truncate">
 							<tbody className="tree-browser-result js-tree-browser-result">
 							{defs && defs.Defs && defs.Defs.map((item, i) =>
-								<DefSearchResult key={i} href={`https://sourcegraph.com/${this.urlToDef(item /*, rev */)}`} qualifiedNameAndType={qualifiedNameAndType(item)} />
+								<DefSearchResult key={i} href={`https://sourcegraph.com/${this.urlToDef(item, this.props.rev)}`} qualifiedNameAndType={qualifiedNameAndType(item)} />
 							)}
 							</tbody>
 						</table>

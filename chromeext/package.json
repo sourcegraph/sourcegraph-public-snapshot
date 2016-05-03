@@ -59,7 +59,6 @@
     "react-dom": "^0.14.7",
     "react-icons": "^2.0.1",
     "react-redux": "^4.3.0",
-    "react-router": "^2.3.0",
     "redux": "^3.2.1",
     "redux-logger": "^2.6.1",
     "redux-thunk": "^2.0.1",
