@@ -6,6 +6,7 @@ import AuthorList from "sourcegraph/def/AuthorList";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import RefsContainer from "sourcegraph/def/RefsContainer";
+import DefContainer from "sourcegraph/def/DefContainer";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -91,6 +92,7 @@ class DefInfo extends Container {
 				<div styleName="main">
 					{this.state.authors && <AuthorList authors={this.state.authors} horizontal={true} />}
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
+					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
 							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length === 1 ? "y" : "ies"}` : ""}`}</div>
