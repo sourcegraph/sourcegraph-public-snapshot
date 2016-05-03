@@ -10,10 +10,12 @@ import (
 
 	"golang.org/x/net/context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 func TestSrclibImport(t *testing.T) {
@@ -32,6 +34,7 @@ func TestSrclibImport(t *testing.T) {
 
 	calledReposGet := mock.Repos.MockGet(t, wantRepo)
 	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, wantCommitID)
+	mock.Search.RefreshIndex_ = func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {}
 
 	// Mock the srclib store interface (and replace the old
 	// newSrclibStoreClient value when done).
