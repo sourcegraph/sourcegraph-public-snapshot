@@ -129,22 +129,27 @@ class PrefetchResponse {
 // prefetch takes a given URL and returns a Promise that waits for a push
 // promise for that URL to be resolved by the server.
 function prefetch(url): Promise {
+	const maxWait = 30 * 1000;
 	let p = new Promise((resolve, reject) => {
 		let waitInterval = 25;
+		let waitTime = 0;
 		// Poll for server pushes until we see data.
 		let timeout = setInterval(() => {
-			if (pushPromises[url]) {
+			let payload = pushPromises[url];
+			if (waitTime > maxWait) reject("Prefetch request timeout");
+			if (payload) {
 				clearInterval(timeout);
 				loadedPushPromises.add(url);
-				let resp = new PrefetchResponse(pushPromises[url], {
-					status: 200,
-					statusText: "OK",
+				let resp = new PrefetchResponse(payload.body, {
+					status: payload.status,
+					statusText: "", // Not supported
 					url: url,
 				});
 				// Flow expects a real Response object, but for our purposes
 				// PrefetchResponse works here as well.
 				resolve(resp);
 			}
+			waitTime += waitInterval;
 		}, waitInterval);
 	});
 	return p;

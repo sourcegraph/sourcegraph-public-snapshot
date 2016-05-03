@@ -12,8 +12,8 @@
 {{if .FetchURLs}}
 	<script ignore-csp>
 		window.__PushPromises = { {{range .FetchURLs -}}"{{.}}": null,{{- end}} }
-		window.__resolvePushPromise = function(url, data) {
-			window.__PushPromises[url] = data;
+		window.__resolvePushPromise = function(url, status, body) {
+			window.__PushPromises[url] = {status: status, body: body};
 		}
 	</script>
 {{end}}

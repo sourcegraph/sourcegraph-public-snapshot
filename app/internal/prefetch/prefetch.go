@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/auth"
@@ -104,9 +105,10 @@ func ResolveFetches(w FlushWriter, req *http.Request, urls []string) error {
 
 		out := httptest.NewRecorder()
 		apiHandler.ServeHTTP(out, fetchReq)
-		resp := out.Body.String()
+		status := strconv.FormatInt(int64(out.Code), 10)
+		body := out.Body.String()
 		w.Write([]byte(`
-<script>window.__resolvePushPromise("` + template.JSEscapeString(url) + `","` + template.JSEscapeString(resp) + `")</script>`))
+<script>window.__resolvePushPromise("` + template.JSEscapeString(url) + `",` + status + `,"` + template.JSEscapeString(body) + `")</script>`))
 	}
 	w.(http.Flusher).Flush()
 	return nil
