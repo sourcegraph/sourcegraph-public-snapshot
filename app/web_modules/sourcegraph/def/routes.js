@@ -22,6 +22,12 @@ export const routes: Array<Route> = [
 		},
 	},
 	{
+		path: `${rel.def}/-/refs`, // backwards compatibility redirect
+		onEnter: (nextState, replace) => {
+			replace(nextState.location.pathname.replace("/-/refs", "/-/info"));
+		},
+	},
+	{
 		path: rel.def,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
