@@ -1,6 +1,6 @@
 import React from "react";
 import {Link} from "react-router";
-import {urlToRepoRev} from "sourcegraph/repo/routes";
+import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import CSSModules from "react-css-modules";
@@ -9,7 +9,7 @@ import styles from "./styles/breadcrumb.css";
 class RepoLink extends React.Component {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string,
 		disabledLink: React.PropTypes.bool,
 		className: React.PropTypes.string,
 	}
@@ -27,7 +27,7 @@ class RepoLink extends React.Component {
 			(i) => <span key={i} styleName="sep">/</span>,
 			(path, component, i, isLast) => (
 				isLast && !this.props.disabledLink ?
-					<Link to={urlToRepoRev(this.props.repo, this.props.rev)}
+					<Link to={this.props.rev ? urlToRepoRev(this.props.repo, this.props.rev) : urlToRepo(this.props.repo)}
 						title={trimmedPath}
 						key={i}
 						styleName={isLast ? "active" : "inactive"}>
