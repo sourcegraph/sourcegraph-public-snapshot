@@ -436,7 +436,7 @@ class TreeSearch extends Container {
 			let key = `f:${itemURL}`;
 			list.push(
 				<Link styleName={`${selected ? "list-item-selected" : "list-item"} ${item.isParentDirectory ? "parent-dir" : ""}`}
-					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults())}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i + this._numSymbolResults() + this._numXDefResults())}
 					ref={selected ? this._setSelectedItem : null}
 					to={itemURL}
 					key={key}>
