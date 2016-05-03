@@ -2,7 +2,7 @@ import React from "react";
 import DashboardModal from "./DashboardModal";
 import styles from "./styles/DashboardModal.css";
 import CSSModules from "react-css-modules";
-import EventLogger, {EventLocation} from "sourcegraph/util/EventLogger";
+import EventLogger from "sourcegraph/util/EventLogger";
 import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
@@ -20,6 +20,7 @@ class OnboardingModals extends Component {
 		user: React.PropTypes.object,
 		githubToken: React.PropTypes.object,
 		siteConfig: React.PropTypes.object.isRequired,
+		router: React.PropTypes.object.isRequired,
 	}
 
 	constructor(props) {
@@ -30,18 +31,13 @@ class OnboardingModals extends Component {
 			gitHubAuthed: false,
 		};
 
-		EventLogger.logEventForPage("OnboardingModalsViewed", EventLocation.Onboarding);
+		EventLogger.logEvent("OnboardingModalsViewed");
 	}
 
 	reconcileState(state, props, context) {
 		Object.assign(state, props);
 		state.gitHubAuthed = context.githubToken;
-
-		if (state.onboardingFlowState) {
-			localStorage["onboard-state"] = state.onboardingFlowState;
-		} else {
-			localStorage.removeItem("onboard-state");
-		}
+		state.onboardingFlowState = props.onboardingFlow;
 
 		state.modals = {
 			"new-user": {
@@ -123,19 +119,20 @@ class OnboardingModals extends Component {
 				onboardingFlowState: null,
 			});
 
-			EventLogger.logEventForPage("OnboardingSequenceCompleted", EventLocation.Onboarding, {CurrentModal: this.state.onboardingFlowState, CTA: "Dismiss", GitHubAuthed: this.state.gitHubAuthed ? "true" : "false"});
-			return;
-		}
-
-		if (actionName) {
-			EventLogger.logEventForPage(actionName, EventLocation.Onboarding, {CurrentModal: this.state.onboardingFlowState, GitHubAuthed: this.state.gitHubAuthed ? "true" : "false"});
+			EventLogger.logEvent("OnboardingSequenceCompleted", {CurrentModal: this.state.onboardingFlowState, CTA: "Dismiss", GitHubAuthed: this.state.gitHubAuthed ? "true" : "false"});
 		} else {
-			EventLogger.logEventForPage("OnboardingModalCTAClicked", EventLocation.Onboarding, {CurrentModal: this.state.onboardingFlowState, GitHubAuthed: this.state.gitHubAuthed ? "true" : "false"});
+			if (actionName) {
+				EventLogger.logEvent(actionName, {CurrentModal: this.state.onboardingFlowState, GitHubAuthed: this.state.gitHubAuthed ? "true" : "false"});
+			} else {
+				EventLogger.logEvent("OnboardingModalCTAClicked", {CurrentModal: this.state.onboardingFlowState, GitHubAuthed: this.state.gitHubAuthed ? "true" : "false"});
+			}
+
+			this.setState({
+				onboardingFlowState: nextPath,
+			});
 		}
 
-		this.setState({
-			onboardingFlowState: nextPath,
-		});
+		this.context.router.replace({...location, state: {...location.state, _onboarding: nextPath}});
 	}
 
 	_onboardCheckmarkImages() {
@@ -163,7 +160,7 @@ class OnboardingModals extends Component {
 		return (
 			<div styleName="cta">
 				<a href={urlToGitHubOAuth} onClick={() => {
-					EventLogger.logEventForPage("OnboardingModalGithubCTAClicked", EventLocation.Onboarding);
+					EventLogger.logEvent("OnboardingModalGithubCTAClicked");
 				}}>
 					<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Continue with GitHub</Button>
 				</a>
@@ -192,8 +189,8 @@ class OnboardingModals extends Component {
 		return (
 			<div styleName="cta">
 				<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => {
-					EventLogger.logEventForPage("OnboardingSequenceCompleted", EventLocation.Onboarding, {CurrentModal: this.state.onboardingFlowState, CTA: "Dismiss", GitHubAuthed: this.state.gitHubAuthed});
-					EventLogger.logEventForPage("GoHTTPDefRefsCTAClicked", EventLocation.Onboarding);
+					EventLogger.logEvent("OnboardingSequenceCompleted", {CurrentModal: this.state.onboardingFlowState, CTA: "Dismiss", GitHubAuthed: this.state.gitHubAuthed});
+					EventLogger.logEvent("GoHTTPDefRefsCTAClicked");
 				}}>
 				<Button color="primary" size="large" unspaced={true} lowercase={true}>See usage examples for http.NewRequest &raquo;</Button>
 				</Link>

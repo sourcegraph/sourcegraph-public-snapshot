@@ -62,7 +62,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 						onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
 						<div styleName="modal">
 							<SignupForm
-								onSignupSuccess={dismissModal("signup", location, router)}
+								onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
 								location={location} />
 						</div>
 					</LocationStateModal>

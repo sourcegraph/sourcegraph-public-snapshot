@@ -17,7 +17,6 @@ export const EventLocation = {
 	Signup: "Signup",
 	Dashboard: "Dashboard",
 	DefPopup: "DefPopup",
-	Onboarding: "Onboarding",
 };
 
 export class EventLogger {
@@ -209,8 +208,14 @@ export class EventLogger {
 			if (action.email) {
 				this.setUserProperty("email", action.email);
 			}
+
 			if (action.eventName) {
-				this.logEvent(action.eventName, {error: Boolean(action.resp.Error)});
+				if (action.signupChannel) {
+					this.setUserProperty("signup_channel", action.signupChannel);
+					this.logEvent(action.eventName, {error: Boolean(action.resp.Error), signup_channel: action.signupChannel});
+				} else {
+					this.logEvent(action.eventName, {error: Boolean(action.resp.Error)});
+				}
 			}
 			break;
 
@@ -293,11 +298,31 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			this._checkEventQuery();
 		}
 
+		camelCaseToUnderscore(input) {
+			if (input.charAt(0) === "_") {
+				input = input.substring(1);
+			}
+
+			return input.replace(/([A-Z])/g, function($1) {
+				return `_${$1.toLowerCase()}`;
+			});
+		}
+
 		_checkEventQuery() {
 			// Allow tracking events that occurred externally and resulted in a redirect
 			// back to Sourcegraph. Pull the event name out of the URL.
 			if (this.props.location.query && this.props.location.query._event) {
-				this.context.eventLogger.logEvent(this.props.location.query._event);
+				// For login signup related metrics a channel will be associated with the signup.
+				// This ensures we can track one metrics "SignupCompleted" and then query on the channel
+				// for more granular metrics.
+				let eventProperties= {};
+				for (let key in this.props.location.query) {
+					if (key !== "_event") {
+						eventProperties[this.camelCaseToUnderscore(key)] = this.props.location.query[key];
+					}
+				}
+
+				this.context.eventLogger.logEvent(this.props.location.query._event, eventProperties);
 
 				// Won't take effect until we call replace below, but prevents this
 				// from being called 2x before the setTimeout block runs.
@@ -306,8 +331,13 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = {...this.props.location,
-					query: {...this.props.location.query, _event: undefined}, // eslint-disable-line no-undefined
+					query: {...this.props.location.query, _event: undefined, _signupChannel: undefined, _onboarding: undefined}, // eslint-disable-line no-undefined
+					state: {...this.props.location.state, _onboarding: this.props.location.query._onboarding},
 				};
+
+				delete this.props.location.query._signupChannel;
+				delete this.props.location.query._onboarding;
+
 				this.context.router.replace(locWithoutEvent);
 			}
 		}

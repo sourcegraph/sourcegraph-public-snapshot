@@ -53,15 +53,8 @@ class DashboardContainer extends Container {
 		state.githubToken = context.githubToken;
 		state.user = context.user;
 
-		if (props.location) {
-			if (props.location.query && props.location.query["onboarding"]) {
-				state.onboardingExperience = props.location.query["onboarding"];
-			} else if (global.window && window.localStorage["onboard-state"]) {
-				state.onboardingExperience = localStorage["onboard-state"];
-			} else if (props.location.state && props.location.state["onboarding"]) {
-				state.onboardingExperience = props.location.state["onboarding"];
-				props.location.state["onboarding"] = null;
-			}
+		if (props.location && props.location.state) {
+			state.onboardingExperience = props.location.state["_onboarding"] && state.signedIn ? props.location.state["_onboarding"] : null;
 		}
 	}
 

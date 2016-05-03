@@ -63,18 +63,19 @@ export default Modal;
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
-export function setLocationModalState(router: any, location: Location, modalName: string, visible: bool) {
+export function setLocationModalState(router: any, location: Location, modalName: string, visible: bool, updatedState: Object) {
 	if (location.state && location.state.modal && location.state.modal !== modalName) {
 		console.error(`location.state.modal is not ${modalName}, is:`, location.state.modal);
 	}
-	router.replace({...location, state: {...location.state, modal: visible ? modalName : null}});
+
+	router.replace({...location, state: {...location.state, modal: visible ? modalName : null, ...updatedState}});
 }
 
 // dismissModal creates a function that dismisses the modal by setting
 // the location state's modal property to null.
-export function dismissModal(modalName, location, router) {
+export function dismissModal(modalName, location, router, updatedState) {
 	return () => {
-		setLocationModalState(router, location, modalName, false);
+		setLocationModalState(router, location, modalName, false, updatedState);
 	};
 }
 

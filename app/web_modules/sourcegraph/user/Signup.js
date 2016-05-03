@@ -47,7 +47,6 @@ export class SignupForm extends Container {
 	onStateTransition(prevState, nextState) {
 		if (prevState.authResponse !== nextState.authResponse) {
 			if (nextState.submitted && nextState.authResponse && nextState.authResponse.Success) {
-				this.props.location.state["onboarding"] = "new-user";
 				setTimeout(() => this.props.onSignupSuccess());
 			}
 		}

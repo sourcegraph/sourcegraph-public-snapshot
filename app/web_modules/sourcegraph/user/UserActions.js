@@ -84,11 +84,13 @@ export class SignupCompleted {
 	email: string;
 	resp: any;
 	eventName: string;
+	signupChannel: string;
 
 	constructor(email: string, resp: any) {
 		this.email = email;
 		this.resp = resp;
 		this.eventName = "SignupCompleted";
+		this.signupChannel = "email";
 	}
 }
 
