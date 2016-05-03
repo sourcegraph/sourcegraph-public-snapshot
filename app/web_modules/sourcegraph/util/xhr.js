@@ -8,6 +8,9 @@ import UserStore from "sourcegraph/user/UserStore";
 
 // This file provides a common entrypoint to the fetch API.
 
+const pushPromises = (typeof window !== "undefined") ? (window.__PushPromises || {}) : {};
+const loadedPushPromises = new Set();
+
 function defaultOptions(): RequestOptions {
 	const headers = new Headers();
 	if (context.csrfToken) headers.set("X-Csrf-Token", context.csrfToken);
@@ -53,6 +56,14 @@ export function defaultFetch(url: string | Request, init?: RequestOptions): Prom
 
 	const defaults = defaultOptions();
 
+	let prefetchURL = url.replace(/^\/\.api/, "");
+
+	// Before initiating a round-trip fetch, see if the server has promised a
+	// prefetch is on the way.
+	if (pushPromises && (pushPromises[prefetchURL] || pushPromises[prefetchURL] === null)) {
+		return prefetch(prefetchURL);
+	}
+
 	return fetch(url, {
 		...defaults,
 		...init,
@@ -81,4 +92,75 @@ export function checkStatus(resp: Response): Promise<Response> | Response {
 		}
 		throw err;
 	});
+}
+
+class PrefetchResponse {
+	body: string;
+	url: string;
+	status: number;
+	statusText: string;
+	type: string;
+
+	constructor(body, options) {
+		this.type = "basic";
+		this.status = options.status;
+		this.statusText = options.statusText;
+		this.url = options.url;
+		this.body = body;
+	}
+
+	json() {
+		return (new Promise((resolve, reject) => {
+			resolve(JSON.parse(this.body));
+		}));
+	}
+
+	text() {
+		return (new Promise((resolve, reject) => {
+			resolve(this.body);
+		}));
+	}
+
+	clone() {
+		return Object.assign({}, this);
+	}
+}
+
+// prefetch takes a given URL and returns a Promise that waits for a push
+// promise for that URL to be resolved by the server.
+function prefetch(url): Promise {
+	const maxWait = 30 * 1000;
+	let p = new Promise((resolve, reject) => {
+		let waitInterval = 25;
+		let waitTime = 0;
+		// Poll for server pushes until we see data.
+		let timeout = setInterval(() => {
+			let payload = pushPromises[url];
+			if (waitTime > maxWait) reject("Prefetch request timeout");
+			if (payload) {
+				clearInterval(timeout);
+				loadedPushPromises.add(url);
+				let resp = new PrefetchResponse(payload.body, {
+					status: payload.status,
+					statusText: "", // Not supported
+					url: url,
+				});
+				// Flow expects a real Response object, but for our purposes
+				// PrefetchResponse works here as well.
+				resolve(resp);
+			}
+			waitTime += waitInterval;
+		}, waitInterval);
+	});
+	return p;
+}
+
+export function unusedPushPromises(): Array<string> {
+	let unused = [];
+	for (let url of Object.keys(pushPromises)) {
+		if (!loadedPushPromises.has(url))	{
+			unused.push(url);
+		}
+	}
+	return unused;
 }
