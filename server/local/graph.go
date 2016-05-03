@@ -45,15 +45,21 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		// the data is always pointing to the HEAD commit of the default branch (which
 		// is the default behavior on our app for empty repoRevSpecs).
 
-		// TODO(beyang): move this out of here. Call at the gRPC level.
-		defsUpdateOp := store.GlobalDefUpdateOp{
-			RepoUnits: []store.RepoUnit{{Repo: sourcegraph.RepoSpec{op.Repo}, UnitType: op.Unit.UnitType, Unit: op.Unit.Unit}},
-		}
-		if err := store.GlobalDefsFromContext(ctx).Update(ctx, defsUpdateOp); err != nil {
-			log15.Error("error updating global def store", "repo", op.Repo, "error", err)
-		}
-		if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, defsUpdateOp); err != nil {
-			log15.Error("error updating global def store ref counts", "repo", op.Repo, "error", err)
+		if op.Repo != "github.com/golang/go" { // Kludge: disable global search update for Go standard lib
+
+			// TODO(beyang): move this out of here. Call at the gRPC level.
+			defsUpdateOp := store.GlobalDefUpdateOp{
+				RepoUnits: []store.RepoUnit{{Repo: sourcegraph.RepoSpec{op.Repo}, UnitType: op.Unit.UnitType, Unit: op.Unit.Unit}},
+			}
+			if err := store.GlobalDefsFromContext(ctx).Update(ctx, defsUpdateOp); err != nil {
+				log15.Error("error updating global def store", "repo", op.Repo, "error", err)
+			}
+			if err := store.GlobalDefsFromContext(ctx).RefreshRefCounts(ctx, defsUpdateOp); err != nil {
+				log15.Error("error updating global def store ref counts", "repo", op.Repo, "error", err)
+			}
+
+			return &pbtypes.Void{}, nil
+
 		}
 
 		op.CommitID = ""
