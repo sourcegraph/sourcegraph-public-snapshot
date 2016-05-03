@@ -322,6 +322,11 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 					}
 				}
 
+
+				if (this.props.location.query._githubAuthed) {
+					this.context.eventLogger.setUserProperty(this.camelCaseToUnderscore(this.props.location.query._githubAuthed), this.props.location.query._githubAuthed);
+				}
+
 				this.context.eventLogger.logEvent(this.props.location.query._event, eventProperties);
 
 				// Won't take effect until we call replace below, but prevents this

@@ -244,9 +244,9 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.C
 		return err
 	}
 
-	redirectURL := "/?_event=CompletedGitHubOAuth2Flow"
+	redirectURL := "/?_event=CompletedGitHubOAuth2Flow&_githubAuthed=true"
 	if firstTime {
-		redirectURL = "/?_event=SignupCompleted&_signupChannel=GitHubOAuth&_onboarding=new-user"
+		redirectURL = "/?_event=SignupCompleted&_signupChannel=GitHubOAuth&_onboarding=new-user&_githubAuthed=true"
 	}
 
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
