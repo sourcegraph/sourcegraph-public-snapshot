@@ -11,7 +11,7 @@
 							{
 								"type": "",
 								"props": {
-									"to": "/r/-/def/undefined/undefined/-/undefined/-/info",
+									"to": "/r@c/-/def/undefined/undefined/-/undefined/-/info",
 									"children": [
 										{
 											"type": "span",
@@ -81,7 +81,8 @@
 								}
 							}
 						},
-						"repo": "r"
+						"repo": "r",
+						"rev": "c"
 					}
 				},
 				{
