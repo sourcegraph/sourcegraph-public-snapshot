@@ -3,6 +3,7 @@ package prefetch
 import (
 	"encoding/base64"
 	"html/template"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -17,8 +18,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
 )
 
+type FlushWriter interface {
+	io.Writer
+	http.Flusher
+}
+
 const (
-	DefRoute = "def"
+	DefRoute = apirouter.Def
 )
 
 var router *mux.Router
@@ -60,7 +66,7 @@ func FetchURLsForRequest(req *http.Request) ([]string, error) {
 			fetches = append(fetches, inventoryURL.String())
 
 			// TODO kick-off the other fetches while we do the more intensive
-			// URL reoslution below.
+			// URL resolution below.
 			ctx, cl := handlerutil.Client(req)
 			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: vars["Repo"]})
 			if err != nil {
@@ -100,9 +106,6 @@ func FetchURLsForRequest(req *http.Request) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(fetches) == 0 {
-		return nil, err
-	}
 
 	for i, url := range fetches {
 		fetches[i] = template.JSEscapeString(url)
@@ -112,7 +115,7 @@ func FetchURLsForRequest(req *http.Request) ([]string, error) {
 
 // ResolveFetches fetches data for the given promise URLs and writes a callback
 // to the current response that injects the fetched data.
-func ResolveFetches(w http.ResponseWriter, req *http.Request, urls []string) error {
+func ResolveFetches(w FlushWriter, req *http.Request, urls []string) error {
 	if len(urls) == 0 {
 		return nil
 	}

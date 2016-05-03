@@ -25,13 +25,12 @@ func serveUI(w http.ResponseWriter, r *http.Request) error {
 
 	if _, ok := w.(http.Flusher); !ok {
 		return errors.New("cannot prefetch, HTTP response flushing not supported")
-	} else {
-		if os.Getenv("SG_DISABLE_PREFETCH") == "" {
-			var err error
-			data.FetchURLs, err = prefetch.FetchURLsForRequest(r)
-			if err != nil {
-				log15.Warn("error occured while generating prefetch URLs", "err", err)
-			}
+	}
+	if parseBool(os.Getenv("SG_DISABLE_PREFETCH")) {
+		var err error
+		data.FetchURLs, err = prefetch.FetchURLsForRequest(r)
+		if err != nil {
+			log15.Warn("error occured while generating prefetch URLs", "err", err)
 		}
 	}
 
