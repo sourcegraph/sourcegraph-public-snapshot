@@ -128,11 +128,6 @@ func fetchURLsForDef(req *http.Request, vars map[string]string) ([]string, error
 		return nil, err
 	}
 	fetches = append(fetches, authURL.String())
-	inventoryURL, err := apirouter.URL(apirouter.RepoInventory, vars)
-	if err != nil {
-		return nil, err
-	}
-	fetches = append(fetches, inventoryURL.String())
 
 	// TODO kick-off the other fetches while we do the more intensive
 	// URL resolution below.
@@ -141,16 +136,23 @@ func fetchURLsForDef(req *http.Request, vars map[string]string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	defVars := copyVars(vars)
-	if defVars["Rev"] == "" {
-		defVars["Rev"] = "@" + repo.DefaultBranch
+	varsWithRev := copyVars(vars)
+	if varsWithRev["Rev"] == "" {
+		varsWithRev["Rev"] = "@" + repo.DefaultBranch
 	}
-	defURL, err := apirouter.URL(apirouter.Def, defVars)
+	defURL, err := apirouter.URL(apirouter.Def, varsWithRev)
 	if err != nil {
 		return nil, err
 	}
 	fetches = append(fetches, defURL.String())
-	defRefsURL, err := apirouter.URL(apirouter.DefRefLocations, vars)
+
+	inventoryURL, err := apirouter.URL(apirouter.RepoInventory, varsWithRev)
+	if err != nil {
+		return nil, err
+	}
+	fetches = append(fetches, inventoryURL.String())
+
+	defRefsURL, err := apirouter.URL(apirouter.DefRefLocations, varsWithRev)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +165,7 @@ func fetchURLsForDef(req *http.Request, vars map[string]string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	treeVars := copyVars(defVars)
+	treeVars := copyVars(varsWithRev)
 	treeVars["Path"] = path.Join("/", def.File)
 	treeURL, err := apirouter.URL(apirouter.RepoTree, treeVars)
 	if err != nil {
@@ -174,7 +176,7 @@ func fetchURLsForDef(req *http.Request, vars map[string]string) ([]string, error
 	treeURL.RawQuery = q.Encode()
 	fetches = append(fetches, treeURL.String())
 
-	authorVars := copyVars(defVars)
+	authorVars := copyVars(varsWithRev)
 	authorVars["Rev"] = "@" + def.CommitID // Authors API needs a commit ID
 	authorURL, err := apirouter.URL(apirouter.DefAuthors, authorVars)
 	if err != nil {
