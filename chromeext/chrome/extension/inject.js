@@ -45,6 +45,9 @@ class InjectApp extends React.Component {
 		};
 		this.refreshState = this.refreshState.bind(this);
 		this.keyboardEvents = this.keyboardEvents.bind(this);
+		this.removeAppFrame = this.removeAppFrame.bind(this);
+		this.toggleAppFrame = this.toggleAppFrame.bind(this);
+		this.pjaxUpdate = this.pjaxUpdate.bind(this);
 	}
 
 	componentDidMount() {
@@ -58,11 +61,15 @@ class InjectApp extends React.Component {
 		}
 
 		if (window.location.href.match(/https:\/\/(www.)?github.com/)) {
-			document.addEventListener('keydown', this.keyboardEvents);
+			document.addEventListener("keydown", this.keyboardEvents);
+
+			// The window focus listener will refresh state to reflect the
+			// current repository being viewed.
+			window.addEventListener("focus", this.refreshState);
 		}
 
 		this.refreshState();
-		document.addEventListener('pjax:success', this.refreshState);
+		document.addEventListener("pjax:success", this.pjaxUpdate);
 
 		getExpiredSrclibDataVersion(this.props.srclibDataVersion).forEach(({repo, rev, path}) => this.props.actions.expireSrclibDataVersion(repo, rev, path));
 		getExpiredDefs(this.props.defs).forEach(({repo, rev, path, query}) => this.props.actions.expireDefs(repo, rev, path, query));
@@ -77,6 +84,12 @@ class InjectApp extends React.Component {
 			const annotations = nextProps.annotations.content[keyFor(nextProps.repo, srclibDataVersion.CommitID, nextProps.path)];
 			if (annotations) this.annotate(annotations);
 		}
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("keydown", this.keyboardEvents);
+		document.removeEventListener("pjax:success", this.pjaxUpdate);
+		window.removeEventListener("focus", this.refreshState);
 	}
 
 	parseURL() {
@@ -126,6 +139,13 @@ class InjectApp extends React.Component {
 			const annotations = this.props.annotations.content[keyFor(repo, srclibDataVersion.CommitID, path)];
 			if (annotations) this.annotate(annotations);
 		}
+	}
+
+	// pjaxUpdate is a wrapper around refresh state which is called whenever
+	// pjax completes successfully, etc. It will also remove the app frame.
+	pjaxUpdate() {
+		this.removeAppFrame();
+		this.refreshState();
 	}
 
 	// addSearchButton injects a button into the GitHub pagehead actions bar
@@ -181,6 +201,13 @@ class InjectApp extends React.Component {
 		}
 	}
 
+	removeAppFrame = () => {
+		const el = document.querySelector(".repository-content");
+		if (el) el.style.display = "block";
+		if (this.frameDiv) this.frameDiv.style.display = "none";
+		this.setState({appFrameIsVisible: false});
+	}
+
 	// toggleAppFrame is the handler for the pagehead "search code" button;
 	// it will directly manipulate the DOM to hide all GitHub repository
 	// content and mount an iframe embedding the chrome extension (react) app.
@@ -200,10 +227,7 @@ class InjectApp extends React.Component {
 			});
 		} else if (this.state.appFrameIsVisible) {
 			// Toggle visibility off.
-			document.querySelector(".repository-content").style.display = "block"
-			this.frameDiv.style.display = "none";
-			this.setState({appFrameIsVisible: false});
-			return;
+			this.removeAppFrame();
 		} else {
 			// Toggle visiblity on.
 			document.querySelector(".repository-content").style.display = "none"
