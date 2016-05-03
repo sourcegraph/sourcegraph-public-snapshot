@@ -61,10 +61,7 @@ export function defaultFetch(url: string | Request, init?: RequestOptions): Prom
 	// Before initiating a round-trip fetch, see if the server has promised a
 	// prefetch is on the way.
 	if (pushPromises && (pushPromises[prefetchURL] || pushPromises[prefetchURL] === null)) {
-		return prefetch(prefetchURL)
-			.catch((err) => {
-				console.error("Error prefetching: ", err);
-			});
+		return prefetch(prefetchURL);
 	}
 
 	return fetch(url, {
