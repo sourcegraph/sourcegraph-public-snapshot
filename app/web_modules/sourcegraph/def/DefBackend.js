@@ -23,9 +23,8 @@ const DefBackend = {
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
-							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data));
-							}));
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefFetched(action.repo, action.rev, action.def, data)))
+					);
 				}
 				break;
 			}
