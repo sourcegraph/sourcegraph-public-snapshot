@@ -9,6 +9,8 @@ import DefSearchResult from "../components/DefSearchResult";
 import {keyFor} from "../reducers/helpers";
 import * as Actions from "../actions";
 
+import _ from "lodash";
+
 import CSSModules from "react-css-modules";
 import styles from "../components/App.css";
 
@@ -41,6 +43,8 @@ export default class App extends Component {
 
 	constructor(props) {
 		super(props);
+		this.handleSubmit = _.debounce(this.handleSubmit, 50);
+		this.handleSubmit = this.handleSubmit.bind(this);
 	}
 
 	handleSubmit = (query) => {
@@ -83,7 +87,7 @@ export default class App extends Component {
 				<div styleName="full-column">
 					<div className="breadcrumb flex-table" styleName="input-box">
 						<span styleName="input-addon">{`${this.props.repo.split('/')[2]} /`}</span>
-						<SearchInput placeholder="Search for symbols..." onSubmit={this.handleSubmit} />
+						<SearchInput placeholder="Search for symbols..." onSubmit={this.handleSubmit} onChange={this.handleSubmit} />
 					</div>
 					<div className="tree-finder clearfix" styleName="list">
 						<table className="tree-browser css-truncate">
