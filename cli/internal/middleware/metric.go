@@ -41,7 +41,7 @@ func Metrics(next http.Handler) http.Handler {
 		log15.Debug("HTTP Request before", "method", r.Method, "URL", r.URL.String(), "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent())
 
 		start := time.Now()
-		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
+		rwIntercept := &responseWriterStatusIntercept{ResponseWriter: rw}
 		next.ServeHTTP(rwIntercept, r)
 
 		// If we have an error, name is an empty string which
@@ -67,15 +67,15 @@ func Metrics(next http.Handler) http.Handler {
 	})
 }
 
-// ResponseWriterStatusIntercept implements the http.ResponseWriter interface
+// responseWriterStatusIntercept implements the http.ResponseWriter interface
 // so we can intercept the status that we can otherwise not access
-type ResponseWriterStatusIntercept struct {
+type responseWriterStatusIntercept struct {
 	http.ResponseWriter
 	Code int
 }
 
 // WriteHeader saves the code and then delegates to http.ResponseWriter
-func (r *ResponseWriterStatusIntercept) WriteHeader(code int) {
+func (r *responseWriterStatusIntercept) WriteHeader(code int) {
 	r.Code = code
 	r.ResponseWriter.WriteHeader(code)
 }
@@ -83,10 +83,11 @@ func (r *ResponseWriterStatusIntercept) WriteHeader(code int) {
 // Flush implements the http.Flusher interface and sends any buffered
 // data to the client, if the underlying http.ResponseWriter itself
 // implements http.Flusher.
-func (r *ResponseWriterStatusIntercept) Flush() {
+func (r *responseWriterStatusIntercept) Flush() {
 	if f, ok := r.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
 }
 
-var _ http.ResponseWriter = (*ResponseWriterStatusIntercept)(nil)
+var _ http.ResponseWriter = (*responseWriterStatusIntercept)(nil)
+var _ http.Flusher = (*responseWriterStatusIntercept)(nil)
