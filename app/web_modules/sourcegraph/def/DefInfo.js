@@ -70,6 +70,7 @@ class DefInfo extends Container {
 	render() {
 		let def = this.state.defObj;
 		let refLocs = this.state.refLocations;
+		let authors = this.state.authors;
 
 		if (refLocs && refLocs.Error) {
 			return (
@@ -90,7 +91,7 @@ class DefInfo extends Container {
 				}
 				<hr/>
 				<div styleName="main">
-					{this.state.authors && <AuthorList authors={this.state.authors} horizontal={true} />}
+					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
