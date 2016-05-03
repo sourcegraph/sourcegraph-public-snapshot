@@ -93,7 +93,7 @@ class DefInfo extends Container {
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
 					{def && !def.Error &&
 						<div>
-							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length > 1 ? "ies" : "y"}` : ""}`}</div>
+							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length === 1 ? "y" : "ies"}` : ""}`}</div>
 							{!refLocs && <i>Loading...</i>}
 							{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
 								refRepo={refRepo.Repo}
