@@ -45,7 +45,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 
 	ctx, cl := handlerutil.Client(r)
 
-	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -97,6 +97,11 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
 		return fmt.Errorf("srclib import of %s failed: %s", repoRev, err)
+	}
+
+	if repo.Fork {
+		// Don't index forks in global search
+		return nil
 	}
 
 	// Best-effort global search re-index, don't block import

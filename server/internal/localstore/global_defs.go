@@ -256,6 +256,11 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 					if d.Local || strings.Contains(d.Path, "$") {
 						continue
 					}
+					// Ignore vendored defs
+					if strings.HasPrefix(d.File, "vendor/") {
+						continue
+					}
+
 					if d.Repo == "" {
 						d.Repo = repoUnit.Repo.URI
 					}
