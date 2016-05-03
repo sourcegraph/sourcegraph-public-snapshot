@@ -105,10 +105,10 @@ class InjectApp extends React.Component {
 		return {user, repo, rev, path};
 	}
 
-	viewingGoBlob() {
-		if (!this.props.path) return false;
+	viewingGoBlob(path) {
+		if (!path) return false;
 
-		const pathParts = this.props.path.split("/");
+		const pathParts = path.split("/");
 		const lang = pathParts[pathParts.length - 1].split(".")[1] || null;
 		return window.location.href.split("/")[5] === "blob" && document.querySelector(".file") && lang && lang.toLowerCase() === "go";
 	}
@@ -130,7 +130,7 @@ class InjectApp extends React.Component {
 
 		this.props.actions.setRepoRev(repo, rev);
 		this.props.actions.setPath(path);
-		if (repo && rev && this.viewingGoBlob()) {
+		if (repo && rev && this.viewingGoBlob(path)) {
 			this.props.actions.getAnnotations(repo, rev, path);
 		}
 
@@ -237,8 +237,6 @@ class InjectApp extends React.Component {
 	};
 
 	annotate(json) {
-		if (!this.viewingGoBlob()) return;
-
 		let fileElem = document.querySelector(".file .blob-wrapper");
 		if (fileElem) {
 			if (document.querySelector(".vis-private") && !this.props.accessToken) {
