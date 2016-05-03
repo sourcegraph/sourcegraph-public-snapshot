@@ -64,7 +64,7 @@ export function urlToDefInfo(def: Def, rev: ?string): string {
 	return urlTo("defInfo", defParams(def, rev));
 }
 
-// urlToDef2 returns a URL to the given repositories def at the given revision.
-export function urlToDef2(repo: string, rev: string, def: string): string {
+// urlToRepoDef returns a URL to the given repositories def at the given revision.
+export function urlToRepoDef(repo: string, rev: string, def: string): string {
 	return urlTo("def", {splat: [`${repo}@${rev}`, def]});
 }

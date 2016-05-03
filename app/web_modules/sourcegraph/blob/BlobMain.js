@@ -20,7 +20,7 @@ import "sourcegraph/build/BuildBackend";
 import Style from "sourcegraph/blob/styles/Blob.css";
 import {lineCol, lineRange, parseLineRange} from "sourcegraph/blob/lineCol";
 import urlTo from "sourcegraph/util/urlTo";
-import {urlToDef2} from "sourcegraph/def/routes";
+import {urlToRepoDef} from "sourcegraph/def/routes";
 import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import Header from "sourcegraph/components/Header";
@@ -86,7 +86,7 @@ export default class BlobMain extends Container {
 		} else {
 			state.highlightedDefObj = null;
 		}
-		state.activeDef = props.def ? urlToDef2(state.repo, state.rev, props.def) : null;
+		state.activeDef = props.def ? urlToRepoDef(state.repo, state.rev, props.def) : null;
 	}
 
 	onStateTransition(prevState, nextState) {

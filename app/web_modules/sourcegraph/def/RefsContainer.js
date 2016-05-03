@@ -15,7 +15,7 @@ import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {routeParams as defRouteParams} from "sourcegraph/def";
-import {urlToDef, urlToDef2} from "sourcegraph/def/routes";
+import {urlToDef, urlToRepoDef} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import Header from "sourcegraph/components/Header";
@@ -75,7 +75,7 @@ export default class RefsContainer extends Container {
 		state.rev = props.rev || null;
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
-		state.activeDef = state.def ? urlToDef2(state.repo, state.rev, state.def) : state.def;
+		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
 		state.refLocations = state.def ? DefStore.getRefLocations({
 			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
