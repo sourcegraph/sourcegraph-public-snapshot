@@ -27,6 +27,15 @@ var (
 	// add a large TTL just in case.
 	idxCache = cache.TTL(cache.Sync(lru.New(10000)), time.Hour)
 	idxRe    = regexp.MustCompile(`^.*\.idx$`)
+
+	// def and ref files have similiar characteristics to the idx files,
+	// except there are more of them. However, we use the same settings as
+	// idx files, but keep it as a separate cache to prevent blowing out
+	// the idx cache.
+	defCache = cache.TTL(cache.Sync(lru.New(10000)), time.Hour)
+	defRe    = regexp.MustCompile(`^.*def\.dat$`)
+	refCache = cache.TTL(cache.Sync(lru.New(10000)), time.Hour)
+	refRe    = regexp.MustCompile(`^.*ref\.dat$`)
 )
 
 // withVFSCache returns a graphstore which caches commonly accessed
@@ -34,6 +43,8 @@ var (
 func withVFSCache(rwfs rwvfs.FileSystem) rwvfs.FileSystem {
 	cfs := cachedvfs.New(rwfs, versionCache, versionRe)
 	cfs = cachedvfs.New(cfs, idxCache, idxRe)
+	cfs = cachedvfs.New(cfs, refCache, refRe)
+	cfs = cachedvfs.New(cfs, defCache, defRe)
 	return &mergedFS{fs: cfs, rwfs: rwfs}
 }
 
@@ -79,5 +90,15 @@ func init() {
 		idxCache,
 		c.WithLabelValues("idx", "hit").Inc,
 		c.WithLabelValues("idx", "miss").Inc,
+	)
+	defCache = cache.Hook(
+		defCache,
+		c.WithLabelValues("def", "hit").Inc,
+		c.WithLabelValues("def", "miss").Inc,
+	)
+	refCache = cache.Hook(
+		refCache,
+		c.WithLabelValues("ref", "hit").Inc,
+		c.WithLabelValues("ref", "miss").Inc,
 	)
 }
