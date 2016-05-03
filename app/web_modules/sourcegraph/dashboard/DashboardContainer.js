@@ -94,7 +94,7 @@ class DashboardContainer extends Container {
 				<Helmet title="Home" />
 				{!this.context.signedIn &&
 					<div styleName="anon-section">
-						<div styleName="anon-title"><img src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`}/></div>
+						<div styleName="anon-title"><img src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`} styleName="logomark-wide"/></div>
 						<div styleName="anon-header-sub">Save time and code better with live usage examples.</div>
 					</div>
 				}
