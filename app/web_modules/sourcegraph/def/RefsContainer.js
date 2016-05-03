@@ -230,7 +230,7 @@ export default class RefsContainer extends Container {
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
 					<h2 className={styles.repo}>
-						<RepoLink className={styles.repoLink} repo={this.state.refRepo} rev={this.state.rev}/>
+						<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
 					</h2>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
