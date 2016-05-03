@@ -8,7 +8,6 @@ export default function() {
 		const store = next(reducer, initialState);
 		store.subscribe(() => {
 			const state = store.getState();
-			console.log(state);
 			saveState(state);
 			// You may include other side effects like `chrome.browserAction.setBadgeText`,
 			// event logging, etc.
