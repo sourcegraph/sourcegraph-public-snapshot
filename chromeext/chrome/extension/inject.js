@@ -2,7 +2,6 @@ import React from "react";
 import {render} from "react-dom";
 import {bindActionCreators} from "redux";
 import {connect, Provider} from "react-redux";
-import $ from "jquery";
 
 import addAnnotations from "./annotations";
 
@@ -186,29 +185,30 @@ class InjectApp extends React.Component {
 	// it will directly manipulate the DOM to hide all GitHub repository
 	// content and mount an iframe embedding the chrome extension (react) app.
 	toggleAppFrame = () => {
-		// TODO: remove jquery
+		const focusInput = () => {
+			const el = document.querySelector(".sg-input");
+			if (el) setTimeout(() => el.focus()); // Auto focus input, with slight delay so T doesn't appear
+		}
+
 		if (!document.getElementById('sourcegraph-frame')) {
 			// Lazy initial application bootstrap; add app frame to DOM.
 			this.appFrame((frameDiv) => {
-				$(".container.new-discussion-timeline").children().hide();
-				$(".container.new-discussion-timeline").append(this.frameDiv);
-				this.frameDiv.style.display = "block";
-				setTimeout(function(){
-					$('.sg-input').focus(); // Auto focus input, with slight delay so T doesn't appear
-				}, 1);
-				this.setState({appFrameIsVisible: true});
+				document.querySelector(".repository-content").style.display = "none";
+				document.querySelector(".container.new-discussion-timeline").appendChild(frameDiv);
+				frameDiv.style.display = "block";
+				this.setState({appFrameIsVisible: true}, focusInput);
 			});
 		} else if (this.state.appFrameIsVisible) {
 			// Toggle visibility off.
-			$(".repository-content").show();
+			document.querySelector(".repository-content").style.display = "block"
 			this.frameDiv.style.display = "none";
 			this.setState({appFrameIsVisible: false});
 			return;
 		} else {
 			// Toggle visiblity on.
-			$(".container.new-discussion-timeline").children().hide();
+			document.querySelector(".repository-content").style.display = "none"
 			this.frameDiv.style.display = "block";
-			this.setState({appFrameIsVisible: true});
+			this.setState({appFrameIsVisible: true}, focusInput);
 		}
 	};
 
@@ -217,11 +217,6 @@ class InjectApp extends React.Component {
 
 		let fileElem = document.querySelector(".file .blob-wrapper");
 		if (fileElem) {
-			// document.addEventListener("click", function(e){
-			// 	if (e.target.className === "sgdef") {
-			// 		amplitude.logEvent("JumpToDefinition");
-			// 	}
-			// })
 			if (document.querySelector(".vis-private") && !this.props.accessToken) {
 				console.error("Sourcegraph chrome extension will not work on private code until you login on Sourcegraph.com");
 			} else {
