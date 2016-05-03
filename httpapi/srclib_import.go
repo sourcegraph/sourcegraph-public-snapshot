@@ -11,12 +11,14 @@ import (
 	pathpkg "path"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/common/log"
 
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
@@ -95,6 +97,18 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
 		return fmt.Errorf("srclib import of %s failed: %s", repoRev, err)
 	}
+
+	// Best-effort global search re-index, don't block import
+	go func() {
+		_, err := cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
+			Repos:         []*sourcegraph.RepoSpec{{repoRev.URI}},
+			RefreshCounts: true,
+			RefreshSearch: true,
+		})
+		if err != nil {
+			log.Error("search indexing failed", "repo", repoRev.URI, "commit", repoRev.CommitID, "err", err)
+		}
+	}()
 
 	return nil
 }
