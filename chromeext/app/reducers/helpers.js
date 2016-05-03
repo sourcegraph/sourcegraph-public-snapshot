@@ -30,12 +30,6 @@ export function getExpiredDefs(data) {
 		.map(parseKey);
 }
 
-export function getExpiredText(data) {
-	return Object.keys(data.timestamps)
-		.filter((key) => data.timestamps[key] && (Date.now() - data.timestamps[key]) > (1000 * 60 * 24)) // expire every day
-		.map(parseKey);
-}
-
 export function getExpiredAnnotations(data) {
 	return Object.keys(data.timestamps)
 		.filter((key) => data.timestamps[key] && (Date.now() - data.timestamps[key]) > (1000 * 60 * 24)) // expire every day

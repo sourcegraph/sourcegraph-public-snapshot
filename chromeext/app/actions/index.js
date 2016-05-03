@@ -57,26 +57,6 @@ export function getDefs(repo, rev, path, query) {
 	}
 }
 
-export function getText(repo, rev, path, query) {
-	return function (dispatch, getState) {
-		const state = getState();
-		// Before fetching text, get the srclib data version.
-		const srclibDataVersion = state.srclibDataVersion.content[keyFor(repo, rev, path)];
-		if (srclibDataVersion && srclibDataVersion.CommitID) {
-			if (state.text.content[keyFor(repo, srclibDataVersion.CommitID, path, query)]) return Promise.resolve(); // nothing to do; already have text
-		}
-
-		fetchSrclibDataVersion(dispatch, srclibDataVersion, repo, rev, path).then((json) => {
-			rev = json.CommitID;
-			if (state.text.content[keyFor(repo, rev, path, query)]) return Promise.resolve(); // nothing to do; already have text
-			dispatch({type: types.WANT_TEXT, repo, rev, query, path})
-			return fetch(`https://sourcegraph.com/.api/repos/${encodeURIComponent(repo)}@${encodeURIComponent(rev)}===${encodeURIComponent(rev)}/-/tree-search?Query=${encodeURIComponent(query)}&QueryType=fixed&N=10&ContextLines=2&Offset=0`)
-				.then((json) => dispatch({type: types.FETCHED_TEXT, repo, rev, query, path, json}))
-				.catch((err) => dispatch({type: types.FETCHED_TEXT, repo, rev, query, path, err}));
-		})
-	}
-}
-
 export function getAnnotations(repo, rev, path) {
 	return function (dispatch, getState) {
 		const state = getState();
@@ -106,10 +86,6 @@ export function expireSrclibDataVersion(repo, rev, path) {
 
 export function expireDefs(repo, rev, path, query) {
 	return {type: types.EXPIRE_DEFS, repo, rev, path, query};
-}
-
-export function expireText(repo, rev, path, query) {
-	return {type: types.EXPIRE_TEXT, repo, rev, path, query};
 }
 
 // refreshVCS has no UI side effects

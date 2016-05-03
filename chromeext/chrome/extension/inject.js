@@ -10,7 +10,7 @@ import {useAccessToken} from "../../app/actions/xhr";
 import * as Actions from "../../app/actions";
 import Root from "../../app/containers/Root";
 import {SearchIcon} from "../../app/components/Icons";
-import {keyFor, getExpiredSrclibDataVersion, getExpiredDefs, getExpiredText, getExpiredAnnotations} from "../../app/reducers/helpers";
+import {keyFor, getExpiredSrclibDataVersion, getExpiredDefs, getExpiredAnnotations} from "../../app/reducers/helpers";
 import createStore from "../../app/store/configureStore";
 
 @connect(
@@ -22,7 +22,6 @@ import createStore from "../../app/store/configureStore";
 		srclibDataVersion: state.srclibDataVersion,
 		annotations: state.annotations,
 		defs: state.defs,
-		text: state.text,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -37,7 +36,6 @@ class InjectApp extends React.Component {
 		srclibDataVersion: React.PropTypes.object.isRequired,
 		annotations: React.PropTypes.object.isRequired,
 		defs: React.PropTypes.object.isRequired,
-		text: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired
 	};
 
@@ -69,7 +67,6 @@ class InjectApp extends React.Component {
 
 		getExpiredSrclibDataVersion(this.props.srclibDataVersion).forEach(({repo, rev, path}) => this.props.actions.expireSrclibDataVersion(repo, rev, path));
 		getExpiredDefs(this.props.defs).forEach(({repo, rev, path, query}) => this.props.actions.expireDefs(repo, rev, path, query));
-		getExpiredText(this.props.text).forEach(({repo, rev, path, query}) => this.props.actions.expireText(repo, rev, path, query));
 		getExpiredAnnotations(this.props.annotations).forEach(({repo, rev, path}) => this.props.actions.expireAnnotations(repo, rev, path));
 	}
 

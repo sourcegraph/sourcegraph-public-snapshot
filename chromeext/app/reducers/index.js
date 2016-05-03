@@ -133,49 +133,6 @@ const defs = function(state = {content: {}, fetches: {}, timestamps: {}}, action
 	}
 }
 
-const text = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.WANT_TEXT:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: true,
-			}
-		};
-	case ActionTypes.FETCHED_TEXT:
-		return {
-			...state,
-			fetches: {
-				...state.fetches,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: action.err ? action.err : false,
-			},
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: action.json ? action.json : null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: action.json ? Date.now() : null,
-			}
-		};
-	case ActionTypes.EXPIRE_TEXT:
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: null,
-			},
-			timestamps: {
-				...state.timestamps,
-				[keyFor(action.repo, action.rev, action.path, action.query)]: null,
-			}
-		};
-	default:
-		return state;
-	}
-}
-
 const annotations = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.WANT_ANNOTATIONS:
@@ -219,4 +176,4 @@ const annotations = function(state = {content: {}, fetches: {}, timestamps: {}},
 	}
 }
 
-export default combineReducers({accessToken, repo, rev, path, query, srclibDataVersion, defs, annotations, text});
+export default combineReducers({accessToken, repo, rev, path, query, srclibDataVersion, defs, annotations});

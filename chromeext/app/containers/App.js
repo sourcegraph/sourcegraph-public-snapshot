@@ -5,9 +5,7 @@ import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
 
 import {qualifiedNameAndType} from "../components/Formatter";
-import SearchMenu from "../components/SearchMenu";
 import SearchInput from "../components/SearchInput";
-import TextSearchResult from "../components/TextSearchResult";
 import DefSearchResult from "../components/DefSearchResult";
 import {keyFor} from "../reducers/helpers";
 import * as Actions from "../actions";
@@ -25,7 +23,6 @@ import {default as checkErrorStatus} from "../actions/xhr"
 		query: state.query,
 		srclibDataVersion: state.srclibDataVersion,
 		defs: state.defs,
-		text: state.text,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -40,26 +37,17 @@ export default class App extends Component {
 		query: PropTypes.string.isRequired,
 		srclibDataVersion: PropTypes.object.isRequired,
 		defs: PropTypes.object.isRequired,
-		text: PropTypes.object.isRequired,
 		actions: PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
 		super(props);
-		this.state = {
-			selected: "def",
-		}
 	}
 
 	handleSubmit = (query) => {
 		this.props.actions.setQuery(query);
 		this.props.actions.getDefs(this.props.repo, this.props.rev, this.props.path, query);
-		this.props.actions.getText(this.props.repo, this.props.rev, this.props.path, query);
 	};
-
-	handleMenuSelect = (selected) => {
-		this.setState({selected});
-	}
 
 	_srclibDataVersion() {
 		return this.props.srclibDataVersion.content[keyFor(this.props.repo, this.props.rev, this.props.path)];
@@ -108,42 +96,19 @@ export default class App extends Component {
 		return formatPattern("*/-/def/*", this.defParams(def, rev));
 	}
 
-	_text() {
-		const srclibDataVersion = this._srclibDataVersion();
-		if (!srclibDataVersion || !srclibDataVersion.CommitID) return null;
-		return this.props.text.content[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
-	}
-
-	_textFetch() {
-		const srclibDataVersion = this._srclibDataVersion();
-		if (!srclibDataVersion || !srclibDataVersion.CommitID) return null;
-		return this.props.text.fetches[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
-	}
-
 	render() {
 		const srclibDataVersion = this._srclibDataVersion();
 		const srclibDataVersionFetch = this._srclibDataVersionFetch();
 		const defs = this._defs();
-		const text = this._text();
 		const defsFetch = this._defsFetch();
-		const textFetch = this._textFetch();
 		return (
 			<div styleName="app">
-				{/*<div styleName="column-one-fourth">
-					<SearchMenu onSelect={this.handleMenuSelect} selected={this.state.selected} />
-				</div>*/}
-				<div styleName="full-column" /*styleName="column-three-fourths"*/ >
+				<div styleName="full-column">
 					<div className="breadcrumb flex-table" styleName="input-box">
 						<span styleName="input-addon">{`${this.props.repo.split('/')[2]} /`}</span>
-						{this.state.selected === "def" &&
-							<SearchInput placeholder="Search for symbols..." onSubmit={this.handleSubmit} />
-						}
-						{this.state.selected === "text" &&
-							<SearchInput placeholder="Search for text..." onSubmit={this.handleSubmit} />
-						}
-
+						<SearchInput placeholder="Search for symbols..." onSubmit={this.handleSubmit} />
 					</div>
-					{this.state.selected === "def" && <div className="tree-finder clearfix" styleName="list">
+					<div className="tree-finder clearfix" styleName="list">
 						<table className="tree-browser css-truncate">
 							<tbody className="tree-browser-result js-tree-browser-result">
 							{defs && defs.Defs && defs.Defs.map((item, i) =>
@@ -166,28 +131,7 @@ export default class App extends Component {
 						{srclibDataVersionFetch === false && defs && !defs.Defs &&
 							<h3 styleName="list-item-empty">No matches found.</h3>
 						}
-					</div>}
-					{this.state.selected === "text" && <div className="code-list" styleName="code-list">
-						{text && text.SearchResults && text.SearchResults.map((item, i) =>
-							<TextSearchResult key={i} query={this.props.query} match={item.Match} file={item.File} startLine={item.StartLine} endLine={item.EndLine} repo={this.props.repo}/>
-						)}
-						{!srclibDataVersion || !srclibDataVersion.CommitID &&
-							<h3 styleName="list-item-empty">Fetching...</h3>
-						}
-						{srclibDataVersionFetch === true || textFetch === true &&
-							<h3 styleName="list-item-empty">Loading...</h3>
-						}
-						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 404 &&
-							<h3 styleName="list-item-empty">404 Not Found</h3>
-						}
-						{srclibDataVersionFetch && srclibDataVersionFetch.response && srclibDataVersionFetch.response.status === 401 &&
-							<h3 styleName="list-item-empty">401 Unauthorized: Log in to Sourcegraph to search private code</h3>
-						}
-						{srclibDataVersionFetch === false && text && !text.SearchResults &&
-							<h3 styleName="list-item-empty">No matches found.</h3>
-						}
 					</div>
-					}
 				</div>
 			</div>
 		);
