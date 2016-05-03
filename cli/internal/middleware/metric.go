@@ -67,8 +67,9 @@ func Metrics(next http.Handler) http.Handler {
 	})
 }
 
-// responseWriterStatusIntercept implements the http.ResponseWriter interface
-// so we can intercept the status that we can otherwise not access
+// responseWriterStatusIntercept implements the http.ResponseWriter and
+// http.Flusher interface so we can intercept the status that we can otherwise
+// not access
 type responseWriterStatusIntercept struct {
 	http.ResponseWriter
 	Code int

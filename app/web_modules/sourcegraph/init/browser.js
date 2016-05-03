@@ -23,7 +23,7 @@ if (typeof window !== "undefined" && window.__StoreData) {
 if (typeof window !== "undefined" && window.__PushPromises) {
 	// A while after the page has loaded, check to see if there were any orphaned
 	// push promises that were not fetched.
-	let timeout = 6 // seconds
+	let timeout = 6; // seconds
 	setTimeout(() => {
 		let unused = unusedPushPromises();
 		if (unused.length > 0) {
