@@ -5,7 +5,7 @@
 
 .container {
 	composes: center mt4 from base;
-	composes: col-10 from grid;
+	composes: col-11 col-10-ns from grid;
 	min-height: 50vh;
 }
 
@@ -38,5 +38,5 @@
 }
 
 .main {
-	composes: col-11 from grid;
+	composes: col-12 col-11-ns from grid;
 }
