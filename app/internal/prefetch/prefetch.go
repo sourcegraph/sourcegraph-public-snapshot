@@ -105,7 +105,7 @@ func ResolveFetches(w FlushWriter, req *http.Request, urls []string) error {
 
 		out := httptest.NewRecorder()
 		apiHandler.ServeHTTP(out, fetchReq)
-		status := strconv.FormatInt(int64(out.Code), 10)
+		status := strconv.Itoa(out.Code)
 		body := out.Body.String()
 		w.Write([]byte(`
 <script>window.__resolvePushPromise("` + template.JSEscapeString(url) + `",` + status + `,"` + template.JSEscapeString(body) + `")</script>`))
