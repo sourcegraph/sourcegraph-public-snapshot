@@ -1,5 +1,7 @@
 import React from "react";
 
+// TECH DEBT: this file was copied from "app/web_modules/sourcegraph/def/Formatter.js"
+
 export function qualifiedNameAndType(def, opts) {
 	if (!def) throw new Error("def is null");
 	if (!def.FmtStrings) return "(unknown def)";
@@ -9,7 +11,7 @@ export function qualifiedNameAndType(def, opts) {
 	if (f.Name.Unqualified) {
 		let parts = name.split(f.Name.Unqualified);
 		name = [
-			parts[0],
+			parts.slice(0, parts.length - 1).join(f.Name.Unqualified),
 			<span key="unqualified" className={opts && opts.unqualifiedNameClass}>{f.Name.Unqualified}</span>,
 		];
 	}

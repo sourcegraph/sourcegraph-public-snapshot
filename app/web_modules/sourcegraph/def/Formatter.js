@@ -16,7 +16,7 @@ export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
 	if (f.Name.Unqualified) {
 		let parts = name.split(f.Name.Unqualified);
 		name = [
-			parts[0],
+			parts.slice(0, parts.length - 1).join(f.Name.Unqualified),
 			<span key="unqualified" className={opts && opts.unqualifiedNameClass}>{f.Name.Unqualified}</span>,
 		];
 	}
