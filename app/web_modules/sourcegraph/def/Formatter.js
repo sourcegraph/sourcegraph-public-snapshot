@@ -13,7 +13,7 @@ export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
 	const f = def.FmtStrings;
 
 	let name = f.Name.ScopeQualified;
-	if (f.Name.Unqualified) {
+	if (f.Name.Unqualified && name) {
 		let parts = name.split(f.Name.Unqualified);
 		name = [
 			parts.slice(0, parts.length - 1).join(f.Name.Unqualified),
