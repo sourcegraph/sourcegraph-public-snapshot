@@ -67,10 +67,17 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
 				const txt = document.createElement("textarea");
-				txt.innerHTML = children[j].outerHTML;
-				if (txt.value.indexOf("<nil>") !== -1) {
-					console.log("hi", txt.value);
-					debug = true;
+				// HACK: Quote marks for imported package were not getting linked
+				// properly. The first mark was a separate anchor tag because GitHub
+				// places quote marks in separate span tags. This hack makes it
+				// such that if an element has childNodes, we merge the innerText
+				// and set that as the innerHTML of the main span tag.
+				if (children[j].children.length>0) {
+					children[j].innerHTML = children[j].innerText
+					txt.innerHTML = children[j].outerHTML
+				}
+				else {
+					txt.innerHTML = children[j].outerHTML;
 				}
 				// childNodeChars = children[j].outerHTML.split("");
 				childNodeChars = txt.value.split("");
@@ -83,25 +90,19 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 
 			// go through each char of childNodes
 			for (let k = 0; k < childNodeChars.length; k++) {
-				if (debug) console.log("k =", k)
 				if (childNodeChars[k] === "<" && (childNodeChars.slice(k, k+5).join("") === "<span" || childNodeChars.slice(k, k+6).join("") === "</span")) {
-					if (debug) console.log("consuming span")
 					consumingSpan = true;
 				}
 
 				if (!consumingSpan){
-					if (debug) console.log("annotating (before)", output)
 					output += next(childNodeChars[k], startByte, annsByStartByte, annsByEndByte)
-					if (debug) console.log("annotating (after)", output)
 					startByte += utf8.encode(childNodeChars[k]).length
 				}
 				else {
-					if (debug) console.log("not annotating...")
 					output += childNodeChars[k]
 				}
 
 				if (childNodeChars[k] === ">" && consumingSpan) {
-					if (debug) console.log("closed span")
 					consumingSpan = false;
 				}
 			}
