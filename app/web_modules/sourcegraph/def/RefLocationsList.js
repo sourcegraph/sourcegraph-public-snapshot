@@ -11,7 +11,7 @@ import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 class RefLocationsList extends React.Component {
 	static propTypes = {
 		def: React.PropTypes.object.isRequired,
-		refLocations: React.PropTypes.array,
+		refLocations: React.PropTypes.object,
 
 		// Current repo and path info, so that they can be highlighted.
 		repo: React.PropTypes.string.isRequired,
@@ -37,7 +37,7 @@ class RefLocationsList extends React.Component {
 
 		return (
 			<div>
-				{refLocs.map((repoRef, i) => (
+				{refLocs.RepoRefs.map((repoRef, i) => (
 					<div key={i} styleName="all-refs">
 						<header styleName={this.props.repo === repoRef.Repo ? "active-group-header" : ""}>
 							<span styleName="refs-count">{repoRef.Count}</span> <Link to={urlToDefInfo(def, this.props.rev)}>{repoRef.Repo}</Link>
@@ -46,7 +46,7 @@ class RefLocationsList extends React.Component {
 				))}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't
 					annoyingly show it for every single internal ref. */}
-				{(refLocs && refLocs.length > 1 && (!this.context.signedIn || noGitHubPrivateReposScope)) &&
+				{(refLocs && refLocs.RepoRefs.length > 1 && (!this.context.signedIn || noGitHubPrivateReposScope)) &&
 					<p styleName="private-repos-cta">
 						{!this.context.signedIn &&
 							<LocationStateToggleLink styleName="cta-link"
