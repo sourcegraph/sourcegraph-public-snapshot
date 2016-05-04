@@ -102,13 +102,26 @@ export default class RefsContainer extends Container {
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
 		if (state.refs && state.fileLocations && !state.prunedFileLocations) {
+			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
 			// state.refs does *not* include the def itself, and this component fetches blobs based on
 			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
 			// endpoint and *does* include the file location of the def.  Once refs are fetched,
 			// prune state.fileLocations to include only files which have non-def refs.
+			// This also resolves an issue where refs pagination causes some of the refLocations
+			// files to not be fetched (since no refs match these file locations).
 			const fileIndex = {};
 			state.refs.forEach((ref) => fileIndex[ref.File] = true);
-			state.fileLocations = state.fileLocations.filter((loc) => fileIndex[loc.Path]);
+
+			const fileIndexExclusions = {};
+			state.fileLocations = state.fileLocations.filter((loc, i) => {
+				if (fileIndex[loc.Path]) return true;
+				fileIndexExclusions[i] = true;
+				return false;
+			});
+			state.shownFiles = state.shownFiles.filter((val, i) => !fileIndexExclusions[i]);
+
+			state.shownFileIndex = {}; // update index, since some file may have been excluded
+			state.fileLocations.forEach((file, i) => state.shownFileIndex[file.Path] = i);
 			state.prunedFileLocations = true; // optimization: only run this loop once
 		}
 
