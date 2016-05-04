@@ -76,6 +76,15 @@
 	composes: black from colors;
 }
 
+.private-repos-cta {
+	composes: mt2 from base;
+	composes: fa6 from typography;
+	font-style2: italic;
+}
+.cta-link {
+	composes: mid-gray from colors;
+}
+
 /* Def tooltip */
 .tooltip {
 	position: fixed;
