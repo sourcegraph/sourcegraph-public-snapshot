@@ -101,7 +101,7 @@ class DefInfo extends Container {
 							{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
 								refRepo={refRepo.Repo}
 								prefetch={i === 0}
-								initNumSnippets={i === 0 ? 3 : 0}
+								initNumSnippets={i === 0 ? 1 : 0}
 								fileCollapseThreshold={5} />)}
 						</div>
 					}
