@@ -33,7 +33,7 @@ class RefLocationsList extends React.Component {
 
 		if (!refLocs) return null;
 
-		const noGitHubPrivateReposScope = !this.context.githubToken || !this.context.githubToken.scopes || !this.context.githubToken.scopes.includes("repo");
+		const noGitHubPrivateReposScope = !this.context.githubToken || !this.context.githubToken.scope || !this.context.githubToken.scope.includes("repo");
 
 		return (
 			<div>
