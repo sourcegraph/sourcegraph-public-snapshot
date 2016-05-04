@@ -1,4 +1,7 @@
+@value typography "./typography.css";
+
 .icon {
+	composes: v-btm from typography;
 	display: inline-flex;
 	align-items: center;
 }

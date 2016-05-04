@@ -4,6 +4,7 @@
 
 .btn {
     composes: button-text from typography;
+    composes: tc from typography;
     display: inline-block;
     cursor: pointer;
     user-select: none;
@@ -11,12 +12,6 @@
 }
 .btn:focus {
     outline: 0;
-}
-
-.content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .btn[disabled],
@@ -72,9 +67,7 @@
 /* block button fits to width of container */
 .block {
     composes: btn;
-    display: flex;
-    flex: 1 1 auto;
-    justify-content: center;
+    display: block;
     width: 100%;
 }
 

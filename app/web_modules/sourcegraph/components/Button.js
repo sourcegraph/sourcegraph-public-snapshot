@@ -25,7 +25,7 @@ class Button extends Component {
 			<button {...this.props} styleName={style}
 				onClick={this.state.onClick}>
 				{this.state.loading && <Loader stretch={Boolean(this.state.block)} />}
-				<span styleName="content">{!this.state.loading && this.state.children}</span>
+				{!this.state.loading && this.state.children}
 			</button>
 		);
 	}
