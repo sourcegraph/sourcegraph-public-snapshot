@@ -19,7 +19,7 @@ RUN { \
 # required for Git
 ENV HOME "/root"
 
-ENV STATIC_SITE_VERSION 0269d1777b8033357597761001468e9506755ffc
+ENV STATIC_SITE_VERSION ffe0480e0a5305f1b74843cde7b59c3c5d7da40c
 ENV STATIC_SITE_URL https://s3-us-west-2.amazonaws.com/sourcegraph-site/sourcegraph-site-$STATIC_SITE_VERSION.tar
 RUN curl -Ls $STATIC_SITE_URL | tar x
 
