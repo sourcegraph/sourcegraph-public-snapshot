@@ -61,11 +61,19 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 		// Go through each childNode
 		for (let j = 0; j < children.length; j++) {
 			let childNodeChars;
+			let debug = false;
 
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
-				childNodeChars = children[j].outerHTML.split("");
+				const txt = document.createElement("textarea");
+				txt.innerHTML = children[j].outerHTML;
+				if (txt.value.indexOf("<nil>") !== -1) {
+					console.log("hi", txt.value);
+					debug = true;
+				}
+				// childNodeChars = children[j].outerHTML.split("");
+				childNodeChars = txt.value.split("");
 			}
 
 			// when we are returning the <span> element, we don"t want to increment startByte
@@ -75,19 +83,25 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 
 			// go through each char of childNodes
 			for (let k = 0; k < childNodeChars.length; k++) {
-				if (childNodeChars[k] === "<" && childNodeChars[k+1] !== " ") {
+				if (debug) console.log("k =", k)
+				if (childNodeChars[k] === "<" && (childNodeChars.slice(k, k+5).join("") === "<span" || childNodeChars.slice(k, k+6).join("") === "</span")) {
+					if (debug) console.log("consuming span")
 					consumingSpan = true;
 				}
 
 				if (!consumingSpan){
+					if (debug) console.log("annotating (before)", output)
 					output += next(childNodeChars[k], startByte, annsByStartByte, annsByEndByte)
+					if (debug) console.log("annotating (after)", output)
 					startByte += utf8.encode(childNodeChars[k]).length
 				}
 				else {
+					if (debug) console.log("not annotating...")
 					output += childNodeChars[k]
 				}
 
-				if (childNodeChars[k] === ">") {
+				if (childNodeChars[k] === ">" && consumingSpan) {
+					if (debug) console.log("closed span")
 					consumingSpan = false;
 				}
 			}
@@ -108,6 +122,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 // next is a helper method for traverseDOM
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	let matchDetails = annsByStartByte[byteCount];
+	c = `&#${c.charCodeAt(0)};`
 
 	// if there is a match
 	if (!annotating && matchDetails) {
