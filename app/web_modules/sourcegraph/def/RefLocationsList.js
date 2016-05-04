@@ -3,9 +3,10 @@
 import React from "react";
 import {Link} from "react-router";
 import {urlToDefInfo} from "sourcegraph/def/routes";
-import s from "sourcegraph/def/styles/Def.css";
+import styles from "sourcegraph/def/styles/Def.css";
+import CSSModules from "react-css-modules";
 
-export default class RefLocationsList extends React.Component {
+class RefLocationsList extends React.Component {
 	static propTypes = {
 		def: React.PropTypes.object.isRequired,
 		refLocations: React.PropTypes.array,
@@ -25,14 +26,14 @@ export default class RefLocationsList extends React.Component {
 		return (
 			<div>
 				{refLocs.map((repoRef, i) => (
-					<div key={i} className={s.allRefs}>
-						<header className={this.props.repo === repoRef.Repo ? s.activeGroupHeader : ""}>
-							<span className={s.refsCount}>{repoRef.Count}</span> <Link to={urlToDefInfo(def, this.props.rev)}>{repoRef.Repo}</Link>
+					<div key={i} styleName="all-refs">
+						<header styleName={this.props.repo === repoRef.Repo ? "active-group-header" : ""}>
+							<span styleName="refs-count">{repoRef.Count}</span> <Link to={urlToDefInfo(def, this.props.rev)}>{repoRef.Repo}</Link>
 						</header>
-						<div className={s.refsGroup}>
+						<div styleName="refs-group">
 							{repoRef.Files && repoRef.Files.map((file, j) => (
-								<div key={j} className={`${s.refFilename} ${this.props.repo === repoRef.Repo && this.props.path === file.Path ? s.currentFileRefs : ""}`}>
-									<span className={s.refsCount}>{file.Count}</span> <Link title={file.Path} to={urlToDefInfo(def, this.props.rev)}>{file.Path}</Link>
+								<div key={j} styleName={`ref-filename ${this.props.repo === repoRef.Repo && this.props.path === file.Path ? "current-file-refs" : ""}`}>
+									<span styleName="refs-count">{file.Count}</span> <Link title={file.Path} to={urlToDefInfo(def, this.props.rev)}>{file.Path}</Link>
 								</div>
 							))}
 						</div>
@@ -42,3 +43,5 @@ export default class RefLocationsList extends React.Component {
 		);
 	}
 }
+
+export default CSSModules(RefLocationsList, styles, {allowMultiple: true});

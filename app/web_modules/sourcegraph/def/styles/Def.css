@@ -47,29 +47,29 @@
 	font-size: 10px;
 	vertical-align: 1px;
 }
-.activeGroupHeader {
+.active-group-header {
 	font-weight: bold;
 }
-.allRefs {
+.all-refs {
 	line-height: 1.7;
 	white-space: nowrap;
 	font-size: 1.08rem;
 	composes: pt1 from base;
 }
-.refsGroup {
+.refs-group {
 	white-space: nowrap;
 	composes: pl4 from base;
 }
-.refFilename {
+.ref-filename {
 	word-wrap: break-word;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
-.refsCount {
+.refs-count {
 	composes: badge;
 }
-.currentFileRefs {
+.current-file-refs {
 	font-weight: bold;
 }
 .loading {

@@ -64,7 +64,7 @@
 					}
 				},
 				{
-					"type": "RefLocationsList",
+					"type": "WrappedComponent",
 					"key": ".4",
 					"props": {
 						"def": {

@@ -5,20 +5,27 @@
 			"children": [
 				{
 					"type": "div",
-					"key": "0",
+					"key": ".$0",
 					"props": {
+						"styleName": "all-refs",
 						"children": [
 							{
 								"type": "header",
+								"key": ".0",
 								"props": {
+									"styleName": "active-group-header",
 									"children": [
 										{
 											"type": "span",
-											"props": {}
+											"key": ".0",
+											"props": {
+												"styleName": "refs-count"
+											}
 										},
 										" ",
 										{
 											"type": "",
+											"key": ".2",
 											"props": {
 												"to": "/r@v/-/def/undefined/undefined/-/undefined/-/info",
 												"children": [
@@ -34,17 +41,21 @@
 							},
 							{
 								"type": "div",
+								"key": ".1",
 								"props": {
+									"styleName": "refs-group",
 									"children": [
 										{
 											"type": "div",
-											"key": "0",
+											"key": ".$0",
 											"props": {
-												"className": "undefined ",
+												"styleName": "ref-filename ",
 												"children": [
 													{
 														"type": "span",
+														"key": ".0",
 														"props": {
+															"styleName": "refs-count",
 															"children": [
 																"2"
 															]
@@ -53,6 +64,7 @@
 													" ",
 													{
 														"type": "",
+														"key": ".2",
 														"props": {
 															"title": "f",
 															"to": "/r@v/-/def/undefined/undefined/-/undefined/-/info",
