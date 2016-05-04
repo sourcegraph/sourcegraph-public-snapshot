@@ -8,6 +8,7 @@ The `Nan::MaybeLocal` and `Nan::Maybe` types are monads that encapsulate `v8::Lo
   - <a href="#api_nan_nothing"><b><code>Nan::Nothing</code></b></a>
   - <a href="#api_nan_just"><b><code>Nan::Just</code></b></a>
 * **Maybe Helpers**
+  - <a href="#api_nan_call"><b><code>Nan::Call()</code></b></a>
   - <a href="#api_nan_to_detail_string"><b><code>Nan::ToDetailString()</code></b></a>
   - <a href="#api_nan_to_array_index"><b><code>Nan::ToArrayIndex()</code></b></a>
   - <a href="#api_nan_equals"><b><code>Nan::Equals()</code></b></a>
@@ -111,6 +112,17 @@ Construct a `Nan::Maybe` type representing _just_ a value.
 
 ```c++
 template<typename T> Nan::Maybe<T> Nan::Just(const T &t);
+```
+
+<a name="api_nan_call"></a>
+### Nan::Call()
+
+A helper method for calling [`v8::Function#Call()`](https://v8docs.nodesource.com/io.js-3.0/d5/d54/classv8_1_1_function.html#a468a89f737af0612db10132799c827c0) in a way compatible across supported versions of V8.
+
+Signature:
+
+```c++
+Nan::MaybeLocal<v8::Value> Nan::Call(v8::Local<v8::Function> fun, v8::Local<v8::Object> recv, int argc, v8::Local<v8::Value> argv[]);
 ```
 
 

@@ -1,19 +1,18 @@
-# FSEvents [![NPM](https://nodei.co/npm/fsevents.png)](https://nodei.co/npm/fsevents/)
-## Native Access to Mac OS-X FSEvents
+# fsevents [![NPM](https://nodei.co/npm/fsevents.png)](https://nodei.co/npm/fsevents/)
 
- * [Node.js](http://nodejs.org/)
- * [Github repo](https://github.com/strongloop/fsevents.git)
- * [Module Site](https://github.com/strongloop/fsevents)
- * [NPM Page](https://npmjs.org/package/fsevents)
+Native access to OS X FSEvents in [Node.js](http://nodejs.org/)
+
+The FSEvents API in OS X allows applications to register for notifications of
+changes to a given directory tree. It is a very fast and lightweight alternative
+to kqueue.
+
+This is a low-level library. For a cross-compatible file watching module that
+uses fsevents, check out [Chokidar](https://www.npmjs.com/package/chokidar).
+
+* [Module Site & GitHub](https://github.com/strongloop/fsevents)
+* [NPM Page](https://npmjs.org/package/fsevents)
 
 ## Installation
-
-	$ npm install -g node-gyp
-	$	git clone https://github.com/strongloop/fsevents.git fsevents
-	$ cd fsevents
-	$ node-pre-gyp configure build
-
-OR SIMPLY
 
 	$ npm install fsevents
 
@@ -23,7 +22,7 @@ OR SIMPLY
 var fsevents = require('fsevents');
 var watcher = fsevents(__dirname);
 watcher.on('fsevent', function(path, flags, id) { }); // RAW Event as emitted by OS-X
-watcher.on('change', function(path, info) {}); // Common Event for all changes
+watcher.on('change', function(path, info) { }); // Common Event for all changes
 watcher.start() // To start observation
 watcher.stop()  // To end observation
 ```

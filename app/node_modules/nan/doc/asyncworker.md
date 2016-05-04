@@ -75,6 +75,7 @@ class AsyncProgressWorker : public AsyncWorker {
 
   class ExecutionProgress {
    public:
+    void Signal() const;
     void Send(const char* data, size_t size) const;
   };
 

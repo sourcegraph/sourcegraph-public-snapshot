@@ -1,7 +1,7 @@
 /*********************************************************************
  * NAN - Native Abstractions for Node.js
  *
- * Copyright (c) 2015 NAN contributors
+ * Copyright (c) 2016 NAN contributors
  *
  * MIT License <https://github.com/nodejs/nan/blob/master/LICENSE.md>
  ********************************************************************/

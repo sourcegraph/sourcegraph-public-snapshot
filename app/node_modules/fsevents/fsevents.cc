@@ -90,10 +90,10 @@ void FSEvents::Initialize(v8::Handle<v8::Object> exports) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   tpl->PrototypeTemplate()->Set(
            Nan::New<v8::String>("start").ToLocalChecked(),
-           Nan::New<v8::FunctionTemplate>(FSEvents::Start)->GetFunction());
+           Nan::New<v8::FunctionTemplate>(FSEvents::Start));
   tpl->PrototypeTemplate()->Set(
            Nan::New<v8::String>("stop").ToLocalChecked(),
-           Nan::New<v8::FunctionTemplate>(FSEvents::Stop)->GetFunction());
+           Nan::New<v8::FunctionTemplate>(FSEvents::Stop));
   exports->Set(Nan::New<v8::String>("Constants").ToLocalChecked(), Constants());
   exports->Set(Nan::New<v8::String>("FSEvents").ToLocalChecked(),
                tpl->GetFunction());
