@@ -131,7 +131,7 @@ class DefInfo extends Container {
 						<div>
 							<div styleName="section-label">
 								{`Used in ${refLocs ? `${refLocs.Total} repositor${refLocs.Total === 1 ? "y" : "ies"}` : ""}`}
-								{refLocs && refLocs.Total > 1 && <span styleName="section-sub-label">(showing {(page-1)*perPage}-{refLocs.Total})</span>}
+								{refLocs && refLocs.Total > 1 && <span styleName="section-sub-label">(showing {(page-1)*perPage}-{page*perPage})</span>}
 							</div>
 							{!refLocs && <i>Loading...</i>}
 							{refLocs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
