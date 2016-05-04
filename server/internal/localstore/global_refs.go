@@ -63,9 +63,13 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return v
 	}
 
-	innerSelectSql := `SELECT repo, file, count FROM global_refs`
-	innerSelectSql += ` WHERE def_repo=` + arg(op.Def.Repo) + ` AND def_unit_type=` + arg(op.Def.UnitType) + ` AND def_unit=` + arg(op.Def.Unit) + ` AND def_path=` + arg(op.Def.Path)
-	innerSelectSql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
+	argDefRepo := arg(op.Def.Repo)
+	argDefUnitType := arg(op.Def.UnitType)
+	argDefUnit := arg(op.Def.Unit)
+	argDefPath := arg(op.Def.Path)
+
+	whereDefFour := ` WHERE def_repo=` + argDefRepo + ` AND def_unit_type=` + argDefUnitType + ` AND def_unit=` + argDefUnit + ` AND def_path=` + argDefPath
+	innerSelectSql := `SELECT repo, file, count FROM global_refs` + whereDefFour
 	if len(op.Opt.Repos) > 0 {
 		repoBindVars := make([]string, len(op.Opt.Repos))
 		for i, r := range op.Opt.Repos {
@@ -74,13 +78,15 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		innerSelectSql += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
 	}
 
+	paginationSql := fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSql + ") res"
+	sql += " WHERE repo IN (SELECT DISTINCT repo FROM global_refs" + whereDefFour + paginationSql + ")"
 	orderBySql := " ORDER BY repo_count DESC, count DESC"
 	var groupBySql string
 	if op.Opt.ReposOnly {
 		sql = "SELECT repo, SUM(count) AS repo_count FROM (" + innerSelectSql + ") res"
 		groupBySql = " GROUP BY repo"
-		orderBySql = " ORDER BY repo_count DESC"
+		orderBySql = " ORDER BY repo_count DESC" + paginationSql
 	}
 
 	sql += groupBySql
@@ -89,6 +95,26 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	var dbRefResult []*dbRefLocationsResult
 	if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
 		return nil, err
+	}
+
+	// Count the total number of repos for pagination purposes.
+	var totalRepoCount int32
+	if op.Opt.ReposOnly {
+		var countArgs []interface{}
+		countArg := func(a interface{}) string {
+			v := gorp.PostgresDialect{}.BindVar(len(countArgs))
+			countArgs = append(countArgs, a)
+			return v
+		}
+
+		inner := "SELECT DISTINCT repo FROM global_refs WHERE"
+		inner += " def_repo=" + countArg(op.Def.Repo) + " AND def_unit_type=" + countArg(op.Def.UnitType) + " AND def_unit=" + countArg(op.Def.Unit) + " AND def_path=" + countArg(op.Def.Path)
+		q := "SELECT COUNT(repo) FROM (" + inner + ") res;"
+		c, err := graphDBH(ctx).SelectInt(q, countArgs...)
+		if err != nil {
+			return nil, err
+		}
+		totalRepoCount = int32(c)
 	}
 
 	// repoRefs holds the ordered list of repos referencing this def. The list is sorted by
@@ -158,7 +184,10 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		filteredRepoRefs = append(filteredRepoRefs, r)
 	}
 
-	return &sourcegraph.RefLocationsList{RepoRefs: filteredRepoRefs}, nil
+	return &sourcegraph.RefLocationsList{
+		RepoRefs:     filteredRepoRefs,
+		ListResponse: sourcegraph.ListResponse{Total: totalRepoCount},
+	}, nil
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
