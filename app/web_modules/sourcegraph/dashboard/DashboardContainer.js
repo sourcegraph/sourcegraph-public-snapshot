@@ -16,7 +16,7 @@ import styles from "./styles/Dashboard.css";
 
 import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
-import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
+import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import ChromeExtensionCTA from "./ChromeExtensionCTA";
 import OnboardingModals from "./OnboardingModals";
@@ -78,7 +78,7 @@ class DashboardContainer extends Container {
 					</a>
 				</div>}
 				{this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) && <div styleName="cta">
-					<a href={`${urlToGitHubOAuth}?scopes=read:org,repo,user:email`}
+					<a href={urlToPrivateGitHubOAuth}
 						onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>
 						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />&nbsp;Use with private repositories</Button>
 					</a>

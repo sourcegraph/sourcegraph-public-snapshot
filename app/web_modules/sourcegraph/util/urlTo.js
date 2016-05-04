@@ -12,3 +12,4 @@ export default function urlTo(name: RouteName, params: RouteParams): string {
 }
 
 export const urlToGitHubOAuth = "/-/github-oauth/initiate";
+export const urlToPrivateGitHubOAuth = `${urlToGitHubOAuth}?scopes=read:org,repo,user:email`;
