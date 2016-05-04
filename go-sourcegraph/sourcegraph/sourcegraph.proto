@@ -492,8 +492,7 @@ message VCSCredentials {
 }
 
 // RemoteRepo is a repo canonically stored on an external host, and
-// possibly mirrored on the local instance. Currently it's assumed
-// that RemoteRepo represents a GitHub repo.
+// possibly mirrored on the local instance.
 message RemoteRepo {
 	// GitHubID is the repo's GitHub repository ID.
 	int32 GitHubID = 1;

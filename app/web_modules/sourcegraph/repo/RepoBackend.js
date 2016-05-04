@@ -54,22 +54,36 @@ const RepoBackend = {
 
 		case RepoActions.WantCreateRepo:
 			{
+				let body = {Op: {FromGitHubID: action.remoteRepo.GitHubID}};
+				if (!action.remoteRepo.GitHubID) { // non-GitHub repositories
+					body = {
+						Op: {
+							New: {
+								URI: action.remoteRepo.HTTPCloneURL.replace("https://", ""),
+								CloneURL: action.remoteRepo.HTTPCloneURL,
+								DefaultBranch: "master",
+								Mirror: true,
+							},
+						},
+					};
+				}
+
 				trackPromise(
 					RepoBackend.fetch(`/.api/repos`, {
 						method: "POST",
-						body: JSON.stringify({Op: {FromGitHubID: action.remoteRepo.GitHubID}}),
+						body: JSON.stringify(body),
 					})
-						.then(checkStatus)
-						.then((resp) => resp.json())
-						.catch((err) => ({Error: err}))
-						.then((data) => {
-							Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
-							if (!data.Error) {
-								const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
-								EventLogger.logEvent("AddRepo", eventProps);
-								EventLogger.logIntercomEvent("add-repo", eventProps);
-							}
-						})
+					.then(checkStatus)
+					.then((resp) => resp.json())
+					.catch((err) => ({Error: err}))
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
+						if (!data.Error) {
+							const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
+							EventLogger.logEvent("AddRepo", eventProps);
+							EventLogger.logIntercomEvent("add-repo", eventProps);
+						}
+					})
 				);
 				break;
 			}

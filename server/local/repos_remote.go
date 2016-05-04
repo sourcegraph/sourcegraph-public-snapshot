@@ -1,6 +1,8 @@
 package local
 
 import (
+	"strings"
+
 	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -38,6 +40,13 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 				Result: &sourcegraph.RepoResolution_RemoteRepo{RemoteRepo: repo},
 			}, nil
 		} else if errcode.GRPC(err) == codes.NotFound {
+			if strings.HasPrefix(op.Path, "gopkg.in/") {
+				return &sourcegraph.RepoResolution{
+					Result: &sourcegraph.RepoResolution_RemoteRepo{
+						RemoteRepo: &sourcegraph.RemoteRepo{HTTPCloneURL: "https://" + op.Path},
+					},
+				}, nil
+			}
 			return nil, grpc.Errorf(codes.NotFound, "repo %q not found locally or remotely", op.Path)
 		} else {
 			return nil, err

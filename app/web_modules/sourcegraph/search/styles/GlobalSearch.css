@@ -34,13 +34,13 @@
 }
 
 .list-item {
-	composes: pa3 bt from base;
+	composes: pa2 from base;
 	composes: sans-serif from typography;
 	composes: b--black-20 from colors;
 }
 
 .input-container {
-	composes: ma3 from base;
+	composes: mv3 from base;
 	composes: sans-serif f3 from typography;
 	display: flex;
 }
@@ -73,12 +73,15 @@
 	color: c_dark-gray !important;
 	padding-top: 0.25em;
 	font-weight: bold;
+	font-size: 0.9em;
 }
 
 .search-result-repo {
+	font-size: 0.9em;
 }
 
 .search-result-file {
+	font-size: 0.9em;
 }
 
 .search-result-doc {
