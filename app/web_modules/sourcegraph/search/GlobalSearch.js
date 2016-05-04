@@ -246,7 +246,7 @@ class GlobalSearch extends Container {
 					<div styleName="search-result-main"><code>{qualifiedNameAndType(def)}</code></div>
 					<div styleName="search-result-info">
 							<code><span styleName="search-result-repo">{def.Repo}</span>: <span styleName="search-result-file">{def.File}</span></code><br/>
-							<span styleName="search-result-ref-count">{def.RefCount}</span> examples found
+							{def.RefCount > 0 && <span><span styleName="search-result-ref-count">{def.RefCount}</span> examples found</span>}
 					</div>
 					<div styleName="search-result-doc">{firstLine(docstring)}</div>
 				</Link>
