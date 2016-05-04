@@ -4,8 +4,9 @@
 @value typography "sourcegraph/components/styles/typography.css";
 
 .container {
-	composes: center mt4 from base;
-	composes: col-11 col-10-ns from grid;
+	composes: center ph2 from base;
+	composes: col-11-ns from grid;
+	max-width: 68rem;
 	min-height: 50vh;
 }
 
@@ -37,6 +38,4 @@
 	composes: normal-text from typography;
 }
 
-.main {
-	composes: col-12 col-11-ns from grid;
-}
+.main {}
