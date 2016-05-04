@@ -48,6 +48,7 @@ class InjectApp extends React.Component {
 		this.removeAppFrame = this.removeAppFrame.bind(this);
 		this.toggleAppFrame = this.toggleAppFrame.bind(this);
 		this.pjaxUpdate = this.pjaxUpdate.bind(this);
+		this.focusUpdate = this.focusUpdate.bind(this);
 	}
 
 	componentDidMount() {
@@ -65,7 +66,7 @@ class InjectApp extends React.Component {
 
 			// The window focus listener will refresh state to reflect the
 			// current repository being viewed.
-			window.addEventListener("focus", this.refreshState);
+			window.addEventListener("focus", this.focusUpdate);
 		}
 
 		this.refreshState();
@@ -89,7 +90,7 @@ class InjectApp extends React.Component {
 	componentWillUnmount() {
 		document.removeEventListener("keydown", this.keyboardEvents);
 		document.removeEventListener("pjax:success", this.pjaxUpdate);
-		window.removeEventListener("focus", this.refreshState);
+		window.removeEventListener("focus", this.focusUpdate);
 	}
 
 	parseURL() {
@@ -141,11 +142,24 @@ class InjectApp extends React.Component {
 		}
 	}
 
-	// pjaxUpdate is a wrapper around refresh state which is called whenever
+	// pjaxUpdate is a wrapper around refreshState which is called whenever
 	// pjax completes successfully, etc. It will also remove the app frame.
 	pjaxUpdate() {
 		this.removeAppFrame();
 		this.refreshState();
+	}
+
+	// focusUpdate is a wrapper around refreshState which is called whenever
+	// the window tab becomes focused on GitHub.com; it will first read
+	// local storage for any data (e.g. Sourcegraph access token) set via other
+	// tabs.
+	focusUpdate() {
+		chrome.storage.local.get("state", (obj) => {
+			const {state} = obj;
+			const accessToken = JSON.parse(state || "{}").accessToken
+			if (accessToken) this.props.actions.setAccessToken(accessToken); // without this, access token may be overwritten to null
+			this.refreshState();
+		});
 	}
 
 	// addSearchButton injects a button into the GitHub pagehead actions bar
@@ -255,7 +269,7 @@ class InjectApp extends React.Component {
 }
 
 const bootstrapApp = function() {
-	chrome.storage.local.get("state", obj => {
+	chrome.storage.local.get("state", (obj) => {
 		const {state} = obj;
 		const initialState = JSON.parse(state || "{}");
 
