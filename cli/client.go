@@ -20,8 +20,18 @@ var cliClient *sourcegraph.Client
 
 func init() {
 	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
-		// The "src version" command does not need a context at all.
-		if cli.CLI.Active != nil && cli.CLI.Active.Name == "version" {
+		skipGRPC := map[string]bool{
+			// "src version" command does not need a context
+			// at all.
+			"version": true,
+			// "src serve" creates its own (and its server would
+			// not have started anyway by the time this client
+			// would attempt to connect).
+			"serve": true,
+			// "src git-server" does not need a context at all.
+			"git-server": true,
+		}
+		if cli.CLI.Active != nil && skipGRPC[cli.CLI.Active.Name] {
 			return
 		}
 
