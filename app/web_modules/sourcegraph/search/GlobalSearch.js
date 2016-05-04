@@ -44,6 +44,7 @@ class GlobalSearch extends Container {
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
+		this._handleInput = this._handleInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._onChangeQuery = this._onChangeQuery.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
@@ -80,12 +81,6 @@ class GlobalSearch extends Container {
 		Object.assign(state, props);
 
 		state.matchingDefs = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT);
-		if (state.matchingDefs !== null) {
-			state.lastDefinedMatchingDefs = state.matchingDefs;
-		} else {
-			// Prevent flashing "No Matches" while a query is in progress.
-			state.matchingDefs = state.lastDefinedMatchingDefs || null;
-		}
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -149,10 +144,14 @@ class GlobalSearch extends Container {
 			e.preventDefault();
 			break;
 		default:
-			if (this.state.focused) {
-				setTimeout(() => this._debouncedSetQuery(this._queryInput ? this._queryInput.value : ""), 0);
-			}
+			// Changes to the input value are handled by _handleInput.
 			break;
+		}
+	}
+
+	_handleInput(e: KeyboardEvent) {
+		if (this.state.focused) {
+			this._debouncedSetQuery(this._queryInput ? this._queryInput.value : "");
 		}
 	}
 
@@ -214,7 +213,9 @@ class GlobalSearch extends Container {
 		if (!this.state.query) return [<div styleName="list-item list-item-empty" key="_nosymbol"></div>];
 
 		const noResultsItem = <div styleName="list-item list-item-empty" key="_nosymbol">No results found</div>;
-		if (!this.state.matchingDefs) return [noResultsItem];
+		if (!this.state.matchingDefs) {
+			return [<div key="1" styleName="list-item list-item-empty">Loading...</div>];
+		}
 
 		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [noResultsItem];
 
@@ -263,6 +264,7 @@ class GlobalSearch extends Container {
 						block={true}
 						onFocus={() => this.setState({focused: true})}
 						onBlur={() => this.setState({focused: false})}
+						onInput={this._handleInput}
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Search for symbols..."
