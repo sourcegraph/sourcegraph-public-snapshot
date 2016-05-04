@@ -165,7 +165,7 @@ class TreeSearch extends Container {
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
 
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
-		if (state.matchingDefs) {
+		if (state.matchingDefs && state.matchingDefs.Defs) {
 			// filter package results
 			state.matchingDefs = {
 				...state.matchingDefs,
