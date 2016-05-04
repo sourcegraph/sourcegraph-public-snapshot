@@ -1,5 +1,7 @@
 // @flow weak
 
+import utf8 from "utf8";
+
 export type Annotation = {
 	StartByte: number;
 	EndByte: number;
@@ -37,13 +39,16 @@ export function sortAnns(anns) {
 // TODO(sqs): This is mixing bytes (in anns.StartByte/EndByte) and code points
 // (when we iterate over a string). Fix this! Need to use Int8Array or similar?
 export function annotate(text: string, startByte: number, anns: Annotation[], render) {
+
+	let utf = utf8.encode(text);
+
 	let out = [[]];
 
 	// Keep a stack of open annotations (i.e., that have been opened and not
 	// yet closed.
 	let open = [];
 
-	for (let b0 = 0; b0 < text.length; b0++) {
+	for (let b0 = 0; b0 < utf.length; b0++) {
 		let b = b0 + startByte;
 		// Open annotations that begin here.
 		for (let i = 0; i < anns.length; i++) {
@@ -67,11 +72,11 @@ export function annotate(text: string, startByte: number, anns: Annotation[], re
 		}
 
 		// Just append to the existing string if the last item is a string.
-		if (typeof text[b0] === "undefined") throw new Error("undefined text");
+		if (typeof utf[b0] === "undefined") throw new Error("undefined text");
 		if (typeof out[0][out[0].length - 1] === "string") {
-			out[0][out[0].length - 1] += text[b0];
+			out[0][out[0].length - 1] += utf[b0];
 		} else {
-			out[0].push(text[b0]);
+			out[0].push(utf[b0]);
 		}
 
 		// Close annotations that end after this byte, handling overlapping

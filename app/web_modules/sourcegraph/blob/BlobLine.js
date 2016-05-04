@@ -2,6 +2,7 @@
 
 import React from "react";
 import {Link} from "react-router";
+import utf8 from "utf8";
 
 import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
@@ -19,6 +20,19 @@ function simpleContentsString(contents) {
 	if (!(contents instanceof Array)) return contents;
 	if (contents.some((e) => typeof e !== "string")) return contents;
 	return contents.join("");
+}
+
+// converts each string component of contents from UTF-8
+function fromUtf8(contents) {
+	if (typeof contents === "string") {
+		return utf8.decode(contents);
+	}
+	if (!(contents instanceof Array)) {
+		return contents;
+	}
+	return contents.map((e) =>
+		typeof e !== "string" ? e : utf8.decode(e)
+	);
 }
 
 class BlobLine extends Component {
@@ -70,7 +84,7 @@ class BlobLine extends Component {
 	_annotate() {
 		const hasURL = (ann, url) => url && (ann.URL ? ann.URL === url : ann.URLs.includes(url));
 		let i = 0;
-		return annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
+		return fromUtf8(annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
 			i++;
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
@@ -101,16 +115,15 @@ class BlobLine extends Component {
 							// to the cursor if no corresponding HighlightDef(null) is dispatched.
 							Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null));
 						}}
-						key={i}>{simpleContentsString(content)}</Link>
+						key={i}>{fromUtf8(content)}</Link>
 				);
 			}
-			return <span key={i} className={ann.Class}>{simpleContentsString(content)}</span>;
-		});
+			return <span key={i} className={ann.Class}>{fromUtf8(content)}</span>;
+		}));
 	}
 
 	render() {
-		let contents = this.state.annotations ? this._annotate() : this.state.contents;
-		contents = simpleContentsString(contents);
+		let contents = this.state.annotations ? this._annotate() : simpleContentsString(this.state.contents);
 
 		// A single newline makes this line show up (correctly) as an empty line
 		// when copied and pasted, instead of being omitted entirely.
