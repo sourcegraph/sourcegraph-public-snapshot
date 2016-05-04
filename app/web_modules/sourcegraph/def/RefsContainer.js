@@ -101,6 +101,16 @@ export default class RefsContainer extends Container {
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
+		if (state.refs && state.fileLocations && !state.prunedFileLocations) {
+			// state.refs does *not* include the def itself, and this component fetches blobs based on
+			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
+			// endpoint and *does* include the file location of the def.  Once refs are fetched,
+			// prune state.fileLocations to include only files which have non-def refs.
+			const fileIndex = {};
+			state.refs.forEach((ref) => fileIndex[ref.File] = true);
+			state.fileLocations = state.fileLocations.filter((loc) => fileIndex[loc.Path]);
+			state.prunedFileLocations = true; // optimization: only run this loop once
+		}
 
 		if (state.mouseover) {
 			state.highlightedDef = DefStore.highlightedDef;
