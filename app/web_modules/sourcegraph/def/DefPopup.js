@@ -60,7 +60,7 @@ class DefPopup extends Container {
 				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
 				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} rev={this.state.rev} path={this.state.path} />}
 
-				{this.state.authors && <header className={s.sectionTitle}>Authors</header>}
+				{<header className={s.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span styleName="loading">Loading...</span>}
 				{this.state.authors && <AuthorList authors={this.state.authors} />}
 			</div>

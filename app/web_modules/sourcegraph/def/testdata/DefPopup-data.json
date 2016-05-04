@@ -87,6 +87,15 @@
 					}
 				},
 				{
+					"type": "header",
+					"key": ".5",
+					"props": {
+						"children": [
+							"Authors"
+						]
+					}
+				},
+				{
 					"type": "span",
 					"key": ".6",
 					"props": {
