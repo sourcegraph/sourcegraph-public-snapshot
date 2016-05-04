@@ -128,6 +128,7 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) {
 	repo.Fork = ghrepo.Fork
 	repo.Private = ghrepo.Private
 	repo.UpdatedAt = ghrepo.UpdatedAt
+	repo.PushedAt = ghrepo.PushedAt
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo *sourcegraph.Repo, err error) {

@@ -528,6 +528,9 @@ message RemoteRepo {
 	// metadata edit) to the repo on GitHub.
 	pbtypes.Timestamp UpdatedAt = 9;
 
+	// PushedAt is the date of the most recent git push to the repo.
+	pbtypes.Timestamp PushedAt = 14;
+
 	// Private is true for private repos.
 	bool Private = 10;
 

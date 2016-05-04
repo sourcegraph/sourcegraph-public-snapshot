@@ -9,12 +9,11 @@ class DashboardRepos extends React.Component {
 		signedIn: React.PropTypes.bool.isRequired,
 	};
 
+	// _repoSort is a comparison function that sorts more recently
+	// pushed repos first.
 	_repoSort(a, b) {
-		const name = (repo) => `${repo.Owner}/${repo.Name}`;
-		const nameA = name(a);
-		const nameB = name(b);
-		if (nameA < nameB) return -1;
-		else if (nameA > nameB) return 1;
+		if (a.PushedAt < b.PushedAt) return 1;
+		else if (a.PushedAt > b.PushedAt) return -1;
 		return 0;
 	}
 

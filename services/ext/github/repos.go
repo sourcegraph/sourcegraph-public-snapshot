@@ -105,6 +105,10 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 		ts := pbtypes.NewTimestamp(ghrepo.UpdatedAt.Time)
 		repo.UpdatedAt = &ts
 	}
+	if ghrepo.PushedAt != nil {
+		ts := pbtypes.NewTimestamp(ghrepo.PushedAt.Time)
+		repo.PushedAt = &ts
+	}
 	if ghrepo.WatchersCount != nil {
 		repo.Stars = int32(*ghrepo.WatchersCount)
 	}
