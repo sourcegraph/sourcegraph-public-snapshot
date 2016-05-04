@@ -16,6 +16,13 @@ export default ({
 	},
 
 	renderProps(state) {
-		return state.defObj && !state.defObj.Error ? {children: <DefPopup def={state.defObj} refLocations={state.refLocations} path={state.path} byte={state.startByte} />} : null;
+		return state.defObj && !state.defObj.Error ? {
+			children: <DefPopup
+				def={state.defObj}
+				refLocations={state.refLocations}
+				path={state.path}
+				byte={state.startByte}
+				location={state.location} />,
+		} : null;
 	},
 }: Helper);

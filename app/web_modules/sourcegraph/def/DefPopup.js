@@ -19,6 +19,7 @@ class DefPopup extends Container {
 		def: React.PropTypes.object.isRequired,
 		refLocations: React.PropTypes.array,
 		path: React.PropTypes.string.isRequired,
+		location: React.PropTypes.object.isRequired,
 	};
 
 	static contextTypes = {
@@ -58,7 +59,7 @@ class DefPopup extends Container {
 
 				{!refLocs && <span styleName="loading">Loading...</span>}
 				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
-				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} rev={this.state.rev} path={this.state.path} />}
+				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
 
 				{<header className={s.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span styleName="loading">Loading...</span>}
