@@ -49,7 +49,7 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+			repo: state.repo, rev: state.rev, def: state.def, reposOnly: true, repos: [],
 		}) : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 	}
@@ -72,7 +72,7 @@ class DefInfo extends Container {
 	}
 
 	_page() {
-		return parseInt(this.props.location.query.Page, 10) || 0;
+		return parseInt(this.props.location.query.Page, 10) || 1;
 	}
 
 	_perPage() {
