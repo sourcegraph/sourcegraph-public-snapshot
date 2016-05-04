@@ -142,9 +142,9 @@ export class WantRefLocations {
 
 export class RefLocationsFetched {
 	request: WantRefLocations;
-	locations: Array<Object>;
+	locations: Object;
 
-	constructor(request: WantRefLocations, locations: Array<Object>) {
+	constructor(request: WantRefLocations, locations: Object) {
 		this.request = request;
 		this.locations = locations;
 	}

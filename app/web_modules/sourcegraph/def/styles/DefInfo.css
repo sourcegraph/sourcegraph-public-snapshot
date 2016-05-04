@@ -38,8 +38,37 @@
 	composes: pt3 pb1 from base;
 }
 
+.section-sub-label {
+	composes: small-text from typography;
+	margin-left: .5em;
+	position: relative;
+	top: -2px;
+	text-transform: lowercase;
+}
+
 .description {
 	composes: normal-text from typography;
 }
 
 .main {}
+
+.pagination {
+	font-size: 16px;
+	padding-bottom: 1.4em;
+	text-align: center;
+}
+
+.pagination-link {
+	composes: button-text from typography;
+	padding-left: .1em;
+	padding-right: .1em;
+}
+
+.pagination-link-disabled {
+	composes: pagination-link;
+	font-weight: bold;
+}
+
+.icon {
+	font-weight: bold;
+}

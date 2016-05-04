@@ -29,6 +29,8 @@ const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above
 
 export default class RefsContainer extends Container {
 	static propTypes = {
+		page: React.PropTypes.number,
+		perPage: React.PropTypes.number,
 		refRepo: React.PropTypes.string.isRequired,
 		prefetch: React.PropTypes.bool,
 		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
@@ -83,7 +85,7 @@ export default class RefsContainer extends Container {
 
 		state.refRepo = props.refRepo;
 		if (state.refLocations && !state.fileLocations) {
-			state.fileLocations = state.refLocations
+			state.fileLocations = state.refLocations.RepoRefs
 				.filter((loc) => loc.Repo === state.refRepo)
 				.map((loc) => {
 					// optimization: initialize entrySpecs to show file links before refs are resolved
@@ -178,7 +180,8 @@ export default class RefsContainer extends Container {
 				reposOnly: nextState.reposOnly,
 				repos: nextState.repos,
 			}, {
-				perPage: 50,
+				page: this.props.page,
+				perPage: this.props.perPage,
 			}));
 		}
 

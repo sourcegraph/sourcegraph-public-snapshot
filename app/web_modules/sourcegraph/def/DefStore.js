@@ -40,7 +40,14 @@ type DefPos = {
 export class DefStore extends Store {
 	refLocations_: Object;
 	getRefLocations(r: RefLocationsKey): ?Object {
-		return this.refLocations_[refLocationsKeyFor(r)] || null;
+		let repoRefs = this.refLocations_.RepoRefs[refLocationsKeyFor(r)] || null;
+		if (!repoRefs) {
+			return null;
+		}
+		return {
+			RepoRefs: repoRefs,
+			Total: this.refLocations_.Total,
+		};
 	}
 
 	reset(data?: {defs: any, refs: any}) {
@@ -79,7 +86,9 @@ export class DefStore extends Store {
 				return this.content[refsKeyFor(repo, rev, def, refRepo, refFile)] || null;
 			},
 		});
-		this.refLocations_ = deepFreeze(data && data.refLocations ? data.refLocations.content : {});
+		this.refLocations_ = {
+			RepoRefs: deepFreeze(data && data.refLocations ? data.refLocations.content : {}),
+		};
 	}
 
 	toJSON() {
@@ -173,7 +182,7 @@ export class DefStore extends Store {
 		case DefActions.RefLocationsFetched:
 			{
 				let a = (action: DefActions.RefLocationsFetched);
-				const rankedLocations = a.locations.Error ? a.locations : getRankedRefLocations(a.locations);
+				const rankedLocations = a.Error ? a.locations.RepoRefs : getRankedRefLocations(a.locations.RepoRefs);
 				let updatedContent = {};
 				updatedContent[refLocationsKeyFor(a.request.resource)] = rankedLocations;
 				if (!a.request.resource.reposOnly) {
@@ -182,8 +191,10 @@ export class DefStore extends Store {
 					r2.reposOnly = true;
 					updatedContent[refLocationsKeyFor(r2)] = rankedLocations;
 				}
-
-				this.refLocations_ = deepFreeze(Object.assign({}, this.refLocations_, updatedContent));
+				this.refLocations_.RepoRefs = deepFreeze(Object.assign({}, this.refLocations_, updatedContent));
+				if (a.locations.Total) {
+					this.refLocations_.Total = a.locations.Total;
+				}
 				break;
 			}
 

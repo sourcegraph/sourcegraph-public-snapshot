@@ -11,15 +11,18 @@ import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {urlToDef} from "sourcegraph/def/routes";
+import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
+const reposPerPage = 10;
+
 class DefInfo extends Container {
 	static contextTypes = {
+		location: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,
 	};
@@ -54,9 +57,10 @@ class DefInfo extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: false, repos: [],
+				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: true, repos: [],
 			}, {
-				perPage: 50,
+				page: this._page(),
+				perPage: this._perPage(),
 			}));
 		}
 
@@ -65,6 +69,14 @@ class DefInfo extends Container {
 				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 			}
 		}
+	}
+
+	_page() {
+		return parseInt(this.props.location.query.Page, 10) || 0;
+	}
+
+	_perPage() {
+		return parseInt(this.props.location.query.PerPage, 10) || reposPerPage;
 	}
 
 	render() {
@@ -79,6 +91,26 @@ class DefInfo extends Container {
 					subtitle={`References are not available.`} />
 			);
 		}
+
+		let page = this._page();
+		let perPage = this._perPage();
+		let lastPage = 0;
+		if (refLocs) {
+			lastPage = refLocs.Total / perPage;
+		}
+
+		// If we have less than ten pages, just show them all.
+		let range = function(start, end) {
+			return Array.from(new Array(end), (x, i) => i + start);
+		};
+		let pages = [];
+		if (page > 1) {
+			pages = pages.concat(range(1, page));
+		}
+		if (page < lastPage) {
+			pages = pages.concat(range(page, lastPage));
+		}
+		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
 		return (
 			<div styleName="container">
@@ -97,13 +129,29 @@ class DefInfo extends Container {
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
-							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length === 1 ? "y" : "ies"}` : ""}`}</div>
+							<div styleName="section-label">
+								{`Used in ${refLocs ? `${refLocs.Total} repositor${refLocs.Total === 1 ? "y" : "ies"}` : ""}`}
+								{refLocs && refLocs.Total > 1 && <span styleName="section-sub-label">(showing {(page-1)*perPage}-{refLocs.Total})</span>}
+							</div>
 							{!refLocs && <i>Loading...</i>}
-							{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
+							{refLocs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
 								refRepo={refRepo.Repo}
 								prefetch={i === 0}
 								initNumSnippets={i === 0 ? 1 : 0}
 								fileCollapseThreshold={5} />)}
+
+							{lastPage > 1 && <div styleName="pagination">
+								{lastPage > 10 && page > 1 && <Link styleName="icon" to={`${pageUrl}1`}>⇤</Link>}
+								{lastPage > 10 && page > 1 && <Link styleName="icon" to={`${pageUrl}${page-1}`}>←</Link>}
+								{pages.map((n) => {
+									if (page === n) {
+										return <span key={n} styleName="pagination-link-disabled" to={`${pageUrl}${n}`}>{n}</span>;
+									}
+									return <Link key={n} styleName="pagination-link" to={`${pageUrl}${n}`}>{n}</Link>;
+								})}
+								{lastPage > 10 && page < lastPage && <Link styleName="icon" to={`${pageUrl}${page+1}`}>→</Link>}
+								{lastPage > 10 && page < lastPage && <Link styleName="icon" to={`${pageUrl}${lastPage}`}>⇥</Link>}
+							</div>}
 						</div>
 					}
 				</div>
