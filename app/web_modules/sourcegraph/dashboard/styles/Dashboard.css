@@ -24,6 +24,11 @@
 	composes: section-header from typography;
 	composes: pb4 from base;
 }
+
+.logomark-wide {
+	max-width: 100%;
+}
+
 .cta-box {
 	composes: pt2 center from base;
 	composes: heavy-text tc from typography;

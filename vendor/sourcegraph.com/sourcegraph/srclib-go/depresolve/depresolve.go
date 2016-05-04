@@ -33,6 +33,13 @@ func ResolveImportPath(importPath string) (*dep.ResolvedTarget, error) {
 		}
 		target.ToRepoCloneURL = cloneURL
 
+	// Special-case google.golang.org/grpc/... import paths for performance
+	// and to avoid hitting GitHub rate limit. It does not follow the same pattern
+	// as the general google.golang.org/... case below.
+	case importPath == "google.golang.org/grpc" || strings.HasPrefix(importPath, "google.golang.org/grpc/"):
+		target.ToRepoCloneURL = "https://" + strings.Replace(importPath, "google.golang.org/grpc", "github.com/grpc/grpc-go", 1) + ".git"
+		target.ToUnit = strings.Replace(importPath, "google.golang.org/grpc", "github.com/grpc/grpc-go", 1)
+
 	// Special-case google.golang.org/... (e.g., /appengine) import
 	// paths for performance and to avoid hitting GitHub rate limit.
 	case strings.HasPrefix(importPath, "google.golang.org/"):
