@@ -11,6 +11,10 @@ import styles from "../../app/components/App.css";
 // and that there are no overlapping annotations in the json
 // returned by the Sourcegraph API.
 export default function addAnnotations(json) {
+	if (document.getElementById("sourcegraph-annotation-marker")) {
+		return;
+	}
+
 	let annsByStartByte = {};
 	let annsByEndByte = {};
 	for (let i = 0; i < json.Annotations.length; i++){
@@ -21,6 +25,16 @@ export default function addAnnotations(json) {
 		}
 	}
 	traverseDOM(annsByStartByte, annsByEndByte);
+
+	// Prevent double annotation on any file by adding some hidden
+	// state to the page.
+	const el = document.querySelector(".blob-wrapper");
+	if (el) {
+		const annotationMarker = document.createElement("div");
+		annotationMarker.id = "sourcegraph-annotation-marker";
+		annotationMarker.style.display = "none";
+		el.appendChild(annotationMarker);
+	}
 }
 
 let annotating = false; // HACK: private value indicating whether annotation is in progress for a single node (def)

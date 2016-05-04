@@ -182,7 +182,7 @@ class InjectApp extends React.Component {
 				const createStore = require("../../app/store/configureStore");
 
 				const frameDiv = document.createElement("div");
-				frameDiv.id="sourcegraph-frame";
+				frameDiv.id = "sourcegraph-frame";
 				render(<Root store={createStore(initialState)} />, frameDiv);
 
 				this.frameDiv = frameDiv;
