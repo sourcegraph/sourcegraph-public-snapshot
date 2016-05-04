@@ -978,8 +978,7 @@ func (*VCSCredentials) ProtoMessage()               {}
 func (*VCSCredentials) Descriptor() ([]byte, []int) { return fileDescriptorSourcegraph, []int{36} }
 
 // RemoteRepo is a repo canonically stored on an external host, and
-// possibly mirrored on the local instance. Currently it's assumed
-// that RemoteRepo represents a GitHub repo.
+// possibly mirrored on the local instance.
 type RemoteRepo struct {
 	// GitHubID is the repo's GitHub repository ID.
 	GitHubID int32 `protobuf:"varint,1,opt,name=GitHubID,proto3" json:"GitHubID,omitempty"`

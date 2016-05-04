@@ -59,7 +59,16 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 				if (nextState.repoResolution.Error) {
 					// Do nothing.
 				} else if (nextState.repoResolution.Result.RemoteRepo) {
+					let remoteRepo = nextState.repoResolution.Result.RemoteRepo;
 					let canonicalPath = `github.com/${nextState.repoResolution.Result.RemoteRepo.Owner}/${nextState.repoResolution.Result.RemoteRepo.Name}`;
+					if (remoteRepo.HTTPCloneURL && !remoteRepo.HTTPCloneURL.startsWith("https://github.com/")) {
+						if (remoteRepo.HTTPCloneURL.startsWith("https://")) {
+							canonicalPath = remoteRepo.HTTPCloneURL.substr("https://".length);
+						} else if (remoteRepo.HTTPCloneURL.startsWith("http://")) {
+							canonicalPath = remoteRepo.HTTPCloneURL.substr("http://".length);
+						}
+					}
+
 					if (nextState.repo !== canonicalPath) {
 						this.context.router.replace(urlToRepo(canonicalPath));
 						return;
