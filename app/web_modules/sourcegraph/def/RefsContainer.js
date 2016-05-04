@@ -192,7 +192,6 @@ export default class RefsContainer extends Container {
 		);
 		return (
 			<div key={entrySpec.Path} className={styles.filename} onClick={(e) => {
-				e.preventDefault();
 				this.setState(update(this.state, {shownFiles: {$splice: [[i, 1, !this.state.shownFiles[i]]]}}));
 			}}>
 				{this.state.shownFiles[i] ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
