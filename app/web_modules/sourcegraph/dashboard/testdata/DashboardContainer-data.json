@@ -26,7 +26,8 @@
 										{
 											"type": "img",
 											"props": {
-												"src": "undefined/img/sourcegraph-logo.svg"
+												"src": "undefined/img/sourcegraph-logo.svg",
+												"styleName": "logomark-wide"
 											}
 										}
 									]
