@@ -88,6 +88,10 @@
 	composes: pa3 mh3 bt from base;
 	composes: b--black-20 from colors;
 }
+.list-item-loading {
+	composes: list-item;
+	composes: gray from colors;
+}
 
 .description {
 	composes: normal-text from typography;

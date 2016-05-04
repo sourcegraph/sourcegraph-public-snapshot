@@ -24,7 +24,7 @@ class DashboardRepos extends React.Component {
 		return (
 			<div styleName="list">
 				{this.context.signedIn && <div styleName="list-section-header">Repositories</div>}
-				{repos.length === 0 && <div styleName="list-item" />}
+				{repos.length === 0 && <div styleName="list-item-loading">Loading...</div>}
 				{repos.length > 0 && repos.map((repo, i) =>
 					<div key={i}>
 						<div styleName="list-item">
