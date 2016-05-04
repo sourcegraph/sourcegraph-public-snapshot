@@ -26,7 +26,7 @@ export default ({
 
 	onStateTransition(prevState, nextState) {
 		// Handle change in params OR lost def data (due to auth change, etc.).
-		if (nextState.def && (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def)) {
+		if (nextState.def && (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || nextState.defObj !== prevState.defObj || nextState.refLocations !== prevState.refLocations)) {
 			if (!nextState.defObj) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
 			}
