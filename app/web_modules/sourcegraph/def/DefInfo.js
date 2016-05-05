@@ -49,7 +49,7 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+			repo: state.repo, rev: state.rev, def: state.def, repos: [],
 			page: this._page(),
 			perPage: this._perPage(),
 		}) : null;
@@ -59,7 +59,7 @@ class DefInfo extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: false, repos: [],
+				repo: nextState.repo, rev: nextState.rev, def: nextState.def, repos: [],
 				page: this._page(),
 				perPage: this._perPage(),
 			}));

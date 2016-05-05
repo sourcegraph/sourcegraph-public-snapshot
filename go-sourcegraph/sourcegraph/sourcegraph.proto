@@ -1442,10 +1442,6 @@ message DefListRefLocationsOptions {
 	// If empty, all repos are searched for references.
 	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// ReposOnly restricts the result to repo level counts;
-	// file names are not returned.
-	bool ReposOnly = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];

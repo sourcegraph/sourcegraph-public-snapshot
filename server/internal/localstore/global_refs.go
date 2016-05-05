@@ -76,14 +76,6 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	paginationSql := fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSql + ") res"
 	orderBySql := " ORDER BY repo ASC, repo_count DESC, count DESC" + paginationSql
-	var groupBySql string
-	if op.Opt.ReposOnly {
-		sql = "SELECT repo, SUM(count) AS repo_count FROM (" + innerSelectSql + ") res"
-		groupBySql = " GROUP BY repo"
-		orderBySql = " ORDER BY repo_count DESC" + paginationSql
-	}
-
-	sql += groupBySql
 	sql += orderBySql
 
 	var dbRefResult []*dbRefLocationsResult

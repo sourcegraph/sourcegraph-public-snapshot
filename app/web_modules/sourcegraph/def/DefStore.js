@@ -24,7 +24,7 @@ function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, re
 }
 
 function refLocationsKeyFor(r: RefLocationsKey): string {
-	let q = toQuery({ReposOnly: r.reposOnly, Query: r.repos, Page: r.page || 1, PerPage: r.perPage || 10});
+	let q = toQuery({Query: r.repos, Page: r.page || 1, PerPage: r.perPage || 10});
 	return `/.api/repos/${r.repo}${r.rev ? `@${r.rev}` : ""}/-/def/${r.def}/-/ref-locations?${q}`;
 }
 

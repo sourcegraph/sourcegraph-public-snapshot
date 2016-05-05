@@ -122,7 +122,6 @@ export class WantRefLocations {
 
 	url(): string {
 		let q = toQuery({
-			ReposOnly: this.resource.reposOnly,
 			Query: this.resource.repos,
 			Page: this.resource.page,
 			PerPage: this.resource.perPage,
