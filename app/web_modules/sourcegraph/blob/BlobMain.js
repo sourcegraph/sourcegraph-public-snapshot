@@ -33,6 +33,7 @@ export default class BlobMain extends Container {
 		path: React.PropTypes.string,
 		blob: React.PropTypes.object,
 		anns: React.PropTypes.object,
+		skipAnns: React.PropTypes.bool,
 		startLine: React.PropTypes.number,
 		startCol: React.PropTypes.number,
 		startByte: React.PropTypes.number,
@@ -70,6 +71,7 @@ export default class BlobMain extends Container {
 		state.path = props.path || null;
 		state.blob = props.blob || null;
 		state.anns = props.anns || null;
+		state.skipAnns = props.skipAnns || false;
 		state.startLine = props.startLine || null;
 		state.startCol = props.startCol || null;
 		state.startByte = props.startByte || null;
@@ -147,14 +149,15 @@ export default class BlobMain extends Container {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path} />
-					{(!this.state.blob || !this.state.anns) && <BlobContentPlaceholder />}
-					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && this.state.anns && !this.state.anns.Error &&
+					{(!this.state.blob || (!this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
+					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
 					<Blob
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path}
 						contents={this.state.blob.ContentsString}
 						annotations={this.state.anns}
+						skipAnns={this.state.skipAnns}
 						lineNumbers={true}
 						highlightSelectedLines={true}
 						highlightedDef={this.state.highlightedDef}
