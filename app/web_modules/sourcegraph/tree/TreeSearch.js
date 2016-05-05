@@ -512,9 +512,13 @@ class TreeSearch extends Container {
 		let list = [],
 			limit = defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : defs.length;
 
+		// If the build is behind, link to the last built commit to avoid links resulting in 404s.
+		let defRev = this.state.srclibDataVersion && this.state.srclibDataVersion.CommitsBehind ?
+			this.state.srclibDataVersion.CommitID : this.state.rev;
+
 		for (let i = 0; i < limit; i++) {
 			let def = defs[i];
-			list.push(this._defToLink(def, offset + i, "i"));
+			list.push(this._defToLink(def, defRev, offset + i, "i"));
 		}
 
 		return list;
@@ -546,7 +550,7 @@ class TreeSearch extends Container {
 			let rdefs = groupToDefs[repo];
 			for (let j = 0; j < rdefs.length; j++) {
 				let def = rdefs[j];
-				items.push(this._defToLink(def, idx, "x"));
+				items.push(this._defToLink(def, null, idx, "x"));
 				idx++;
 			}
 			sections.push(
@@ -559,9 +563,9 @@ class TreeSearch extends Container {
 		return {items: sections, count: idx - offset};
 	}
 
-	_defToLink(def: Def, i: number, prefix: string) {
+	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
-		let defURL = urlToDef(def, this.state.rev);
+		let defURL = urlToDef(def, rev);
 		let key = `${prefix}:${defURL}`;
 		return (
 				<Link styleName={selected ? "list-item-selected" : "list-item"}
