@@ -100,10 +100,10 @@ class DefInfo extends Container {
 		let refLocs = this.state.refLocations;
 		let authors = this.state.authors;
 
-		if (refLocs && refLocs.Error) {
+		if (!refLocs || refLocs.Error) {
 			return (
 				<Header
-					title={`${httpStatusCode(refLocs.Error)}`}
+					title={`${!refLocs ? "no references" : httpStatusCode(refLocs.Error)}`}
 					subtitle={`References are not available.`} />
 			);
 		}

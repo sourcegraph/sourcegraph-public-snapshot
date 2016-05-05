@@ -74,10 +74,7 @@ const DefBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								if (!data) {
-									data = {}; // the nil object is serialized as null by the server
-								}
-								if (!data.Error) {
+								if (!data || data && !data.Error) {
 									Dispatcher.Stores.dispatch(new DefActions.RefLocationsFetched(action, data));
 								}
 							})
