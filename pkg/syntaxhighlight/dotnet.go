@@ -99,8 +99,12 @@ func init() {
 				Default(`#pop`),
 			},
 			`namespace`: {
+				MS.Consume(``, true),
 				MS.Lookahead(`\(`, `#pop`),
-				MS.Token(`(`+csIdent+`|\.)+`, Name_Namespace, `#pop`),
+				MS.Token(csIdent, Name_Namespace),
+				MS.MatcherToken(Words(`;`), Punctuation, `#pop`),
+				MS.MatcherToken(Words(`.`), Punctuation),
+				Default(`#pop`),
 			},
 		})
 }
