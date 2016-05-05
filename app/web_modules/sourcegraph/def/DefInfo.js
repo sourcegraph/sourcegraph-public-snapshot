@@ -122,11 +122,9 @@ class DefInfo extends Container {
 		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
 		let refTimes = "";
-		let fileTimes = "";
 		let repoTimes = "";
 		if (refLocs) {
 			refTimes = refLocs.TotalRefs === 1 ? "1 time" : `${refLocs.TotalRefs} times`;
-			fileTimes = refLocs.TotalFiles === 1 ? "1 file" : `${refLocs.TotalFiles} files`;
 			repoTimes = refLocs.TotalRepos === 1 ? "1 repository" : `${refLocs.TotalRepos} repositories`;
 		}
 
