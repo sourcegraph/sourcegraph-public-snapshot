@@ -12,6 +12,7 @@ func clearAll(t *testing.T, prefix string) {
 }
 
 func TestRedis(t *testing.T) {
+	clearAll(t, globalPrefix)
 	globalPrefix = "__test__TestRedis"
 	defer clearAll(t, globalPrefix)
 
@@ -77,6 +78,7 @@ func TestRedis(t *testing.T) {
 }
 
 func TestRedis_values(t *testing.T) {
+	clearAll(t, globalPrefix)
 	globalPrefix = "__test__TestRedis_values"
 	defer clearAll(t, globalPrefix)
 

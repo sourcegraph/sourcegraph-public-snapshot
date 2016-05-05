@@ -36,6 +36,10 @@ func redisPool() (*pool.Pool, error) {
 	connPoolMu.Lock()
 	defer connPoolMu.Unlock()
 
+	if connPool_ != nil {
+		return connPool_, nil
+	}
+
 	hostname := os.Getenv("SRC_APP_URL")
 	if hostname == "" {
 		hostname, _ = os.Hostname()
@@ -105,8 +109,7 @@ func (r *Redis) Get(key string, dst interface{}) error {
 }
 
 // Add adds a value to the Redis-backed cache with the specified key.
-// If ttlSeconds < 0, then a TTL will not be set. Note that setting
-// TTL = 0 will return an error.
+// If ttlSeconds =< 0, then a TTL will not be set.
 func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 
@@ -126,7 +129,7 @@ func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 		return err
 	}
 
-	if ttlSeconds < 0 {
+	if ttlSeconds <= 0 {
 		resp := conn.Cmd("SET", rkey, vjson)
 		if resp.Err != nil {
 			return fmt.Errorf("Redis.Add error: %s", resp.Err)

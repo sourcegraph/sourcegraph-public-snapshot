@@ -3,9 +3,12 @@ package github
 import (
 	"fmt"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -13,11 +16,8 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-const (
-	reposGithubPublicCacheTTL = 600
-)
-
 var (
+	reposGithubPublicCacheTTL     = conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL", 600)
 	reposGithubPublicCache        = rcache.New("gh_pub")
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
@@ -44,7 +44,7 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		return &cachedRemoteRepo, nil
 	} else if err != rcache.ErrNotFound {
-		return nil, err
+		log15.Error("github cache-get error", "err", err)
 	}
 
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
