@@ -38,14 +38,6 @@
 	composes: pt3 pb1 from base;
 }
 
-.section-sub-label {
-	composes: small-text from typography;
-	margin-left: .5em;
-	position: relative;
-	top: -2px;
-	text-transform: lowercase;
-}
-
 .description {
 	composes: normal-text from typography;
 }

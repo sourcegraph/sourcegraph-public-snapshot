@@ -18,7 +18,7 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
-const filesPerPage = 10;
+const filesPerPage = 50;
 
 class DefInfo extends Container {
 	static contextTypes = {
@@ -114,11 +114,6 @@ class DefInfo extends Container {
 		let pages = this._pageNumbers(page);
 		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
-		let repoTimes = "";
-		if (refLocs) {
-			repoTimes = `${refLocs.TotalRepos} repositor${refLocs.TotalRepos > 1 ? "ies" : "y"}`;
-		}
-
 		return (
 			<div styleName="container">
 				{this.state.defObj &&
@@ -137,8 +132,7 @@ class DefInfo extends Container {
 					{def && !def.Error &&
 						<div>
 							<div styleName="section-label">
-								{refLocs ? `Used in ${repoTimes}` : "Used in 0 repositories"}
-								{refLocs && refLocs.TotalFiles > 1 && <span styleName="section-sub-label">(showing files {(page-1)*perPage+1}-{page*perPage < refLocs.TotalFiles ? page*perPage : refLocs.TotalFiles} of {refLocs.TotalFiles})</span>}
+								{refLocs && `Used in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
 							</div>
 							{!refLocs && <i>Loading...</i>}
 							{refLocs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
