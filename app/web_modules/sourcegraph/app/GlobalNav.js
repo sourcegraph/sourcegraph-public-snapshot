@@ -16,7 +16,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 	if (!signedIn) {
 		return (
-			<div>
+			<div styleName="logged-out-nav">
 				<Logo width="220px" type="logotype" />
 			</div>
 		);

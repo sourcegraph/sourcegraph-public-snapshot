@@ -1,7 +1,6 @@
 @value modal "sourcegraph/components/styles/modal.css";
 @value colors "sourcegraph/components/styles/colors.css";
-
-@import "sourcegraph/app/styles/Globals.css";
+@value typography "sourcegraph/components/styles/typography.css";
 
 
 /*
@@ -26,4 +25,20 @@ Prevent scrolling the main content when a modal is being displayed.
 .main-container-with-modal {
 	composes: main-container;
 	filter: saturate(0%) opacity(80%);
+}
+
+/* Responsive type scaling */
+@value desktop-base-size from typography;
+body {
+	font-size: desktop-base-size;
+}
+
+@value mobile-base-size from typography;
+@media only screen
+and (min-device-width: 320px)
+and (max-device-width: 480px)
+and (-webkit-min-device-pixel-ratio: 2) {
+	body {
+		font-size: mobile-base-size;
+	}
 }

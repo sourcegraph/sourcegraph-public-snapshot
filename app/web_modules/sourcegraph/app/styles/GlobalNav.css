@@ -5,8 +5,8 @@
 
 @value navbarHeight 40px;
 
-.logged-out-home-container {
-	composes: bg-pale-blue from colors;
+.logged-out-nav {
+	
 }
 
 .navbar + * {

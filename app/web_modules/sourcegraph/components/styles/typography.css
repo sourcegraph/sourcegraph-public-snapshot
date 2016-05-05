@@ -2,17 +2,30 @@
 @value base "./base.css";
 @import "sourcegraph/app/styles/vars/typography.css";
 
+/* TYPE VARIABLES */
+
+@value desktop-base-size: 14px;
+@value mobile-base-size: 12px;
+
+@value font-size-1: 2.8rem;
+@value font-size-2: 2.25rem;
+@value font-size-3: 1.75rem;
+@value font-size-4: 1.25rem;
+@value font-size-5: 1rem;
+@value font-size-6: .875rem;
+
+
 /*
 	 TYPE SCALE
 */
 
 /* Type Scale */
-.f1 { font-size: var(--font-size-1) }
-.f2 { font-size: var(--font-size-2); }
-.f3 { font-size: var(--font-size-3); }
-.f4 { font-size: var(--font-size-4); }
-.f5 { font-size: var(--font-size-5); }
-.f6 { font-size: var(--font-size-6); }
+.f1 { font-size: font-size-1; }
+.f2 { font-size: font-size-2; }
+.f3 { font-size: font-size-3; }
+.f4 { font-size: font-size-4; }
+.f5 { font-size: font-size-5; }
+.f6 { font-size: font-size-6; }
 
 /*
 	 MEASURE
