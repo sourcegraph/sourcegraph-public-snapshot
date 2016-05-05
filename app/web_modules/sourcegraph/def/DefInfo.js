@@ -135,6 +135,9 @@ class DefInfo extends Container {
 			repoTimes = `${refLocs.TotalRepos} repositor${refLocs.TotalRepos > 1 ? "ies" : "y"}`;
 		}
 
+		// Under this many pages, we will hide the first/prev/next/last quick links.
+		const hideFirstPrevNextLast = 10;
+
 		return (
 			<div styleName="container">
 				{this.state.defObj &&
@@ -164,16 +167,16 @@ class DefInfo extends Container {
 								fileCollapseThreshold={5} />)}
 
 							{lastPage > 1 && <div styleName="pagination">
-								{lastPage > 10 && page > 1 && <Link styleName="icon" to={`${pageUrl}1`}>⇤</Link>}
-								{lastPage > 10 && page > 1 && <Link styleName="icon" to={`${pageUrl}${page-1}`}>←</Link>}
+								{lastPage > hideFirstPrevNextLast && page > 1 && <Link styleName="icon" to={`${pageUrl}1`}>⇤</Link>}
+								{lastPage > hideFirstPrevNextLast && page > 1 && <Link styleName="icon" to={`${pageUrl}${page-1}`}>←</Link>}
 								{pages.map((n) => {
 									if (page === n) {
 										return <span key={n} styleName="pagination-link-disabled" to={`${pageUrl}${n}`}>{n}</span>;
 									}
 									return <Link key={n} styleName="pagination-link" to={`${pageUrl}${n}`}>{n}</Link>;
 								})}
-								{lastPage > 10 && page < lastPage && <Link styleName="icon" to={`${pageUrl}${page+1}`}>→</Link>}
-								{lastPage > 10 && page < lastPage && <Link styleName="icon" to={`${pageUrl}${lastPage}`}>⇥</Link>}
+								{lastPage > hideFirstPrevNextLast && page < lastPage && <Link styleName="icon" to={`${pageUrl}${page+1}`}>→</Link>}
+								{lastPage > hideFirstPrevNextLast && page < lastPage && <Link styleName="icon" to={`${pageUrl}${lastPage}`}>⇥</Link>}
 							</div>}
 						</div>
 					}
