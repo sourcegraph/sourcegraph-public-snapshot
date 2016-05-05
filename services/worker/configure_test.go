@@ -37,7 +37,6 @@ func TestDroneRepoLink(t *testing.T) {
 		"http://example.com/my/repo.git":         "example.com/my/repo",
 		"http://u:p@example.com/my/repo":         "example.com/my/repo",
 		"http://example.com:1234/my/repo":        "my/repo",
-		"http://example.com:http/my/repo":        "my/repo",
 		"http://localhost/my/repo":               "my/repo",
 		"http://127.0.0.1/my/repo":               "my/repo",
 		"http://127.0.0.1:1234/my/repo":          "my/repo",

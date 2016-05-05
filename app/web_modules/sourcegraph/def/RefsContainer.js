@@ -276,6 +276,7 @@ export default class RefsContainer extends Container {
 										path={path}
 										contents={file.ContentsString}
 										annotations={this.anns[path] || null}
+										skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
 										activeDef={this.state.activeDef}
 										activeDefNoRev={this.state.activeDef ? urlToDef(def, "") : null}
 										lineNumbers={true}

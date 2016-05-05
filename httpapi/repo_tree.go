@@ -58,8 +58,9 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 
 	// As an optimization, optimistically include the file's
 	// annotations (if this entry is a file), to save a round-trip in
-	// most cases.
-	if entry.Type == sourcegraph.FileEntry {
+	// most cases. Don't do this if the file is large; currently
+	// the heuristic is ~ 2500 lines at avg. 40 chars per line
+	if entry.Type == sourcegraph.FileEntry && len(entry.ContentsString) < (40*2500) {
 		anns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
 			Entry: entrySpec,
 			Range: &opt.FileRange,

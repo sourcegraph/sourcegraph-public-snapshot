@@ -25,6 +25,7 @@ class Blob extends Component {
 			LineStartBytes: React.PropTypes.array,
 		}),
 		lineNumbers: React.PropTypes.bool,
+		skipAnns: React.PropTypes.bool,
 		startLine: React.PropTypes.number,
 		startCol: React.PropTypes.number,
 		startByte: React.PropTypes.number,
@@ -163,7 +164,7 @@ class Blob extends Component {
 
 		let updateAnns = false;
 
-		if (state.annotations !== props.annotations) {
+		if (state.annotations !== props.annotations && !props.skipAnns) {
 			state.annotations = props.annotations;
 			updateAnns = true;
 		}

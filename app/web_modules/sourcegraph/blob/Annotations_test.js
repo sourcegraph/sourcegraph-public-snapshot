@@ -1,6 +1,7 @@
 // @flow weak
 
 import expect from "expect.js";
+import utf8 from "utf8";
 
 import {annotate, sortAnns} from "sourcegraph/blob/Annotations";
 
@@ -182,7 +183,7 @@ describe("Annotations.annotate", () => {
 		it(key, () => {
 			const test = testCases[key];
 			const anns = sortAnns(test.anns);
-			const out = annotate(test.input, 0, anns, render).join("");
+			const out = utf8.decode(annotate(test.input, 0, anns, render).join(""));
 			expect(out).to.eql(test.want);
 		});
 	});

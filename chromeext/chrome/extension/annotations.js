@@ -65,7 +65,20 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
-				childNodeChars = children[j].outerHTML.split("");
+				// Convert html entities to the code equivalent, remember to revert later.
+				const txt = document.createElement("textarea");
+				// Quote marks for imported packages were not getting linked
+				// properly. The first mark was a separate anchor tag because GitHub
+				// places quote marks in separate span tags. This hack makes it
+				// such that if an element has childNodes, we merge the innerText
+				// and set that as the innerHTML of the main span tag.
+				if (children[j].children.length > 0) {
+					children[j].innerHTML = children[j].innerText
+					txt.innerHTML = children[j].outerHTML
+				} else {
+					txt.innerHTML = children[j].outerHTML;
+				}
+				childNodeChars = txt.value.split("");
 			}
 
 			// when we are returning the <span> element, we don"t want to increment startByte
@@ -75,7 +88,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 
 			// go through each char of childNodes
 			for (let k = 0; k < childNodeChars.length; k++) {
-				if (childNodeChars[k] === "<" && childNodeChars[k+1] !== " ") {
+				if (childNodeChars[k] === "<" && (childNodeChars.slice(k, k+5).join("") === "<span" || childNodeChars.slice(k, k+6).join("") === "</span")) {
 					consumingSpan = true;
 				}
 
@@ -87,7 +100,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 					output += childNodeChars[k]
 				}
 
-				if (childNodeChars[k] === ">") {
+				if (childNodeChars[k] === ">" && consumingSpan) {
 					consumingSpan = false;
 				}
 			}
@@ -108,6 +121,8 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 // next is a helper method for traverseDOM
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	let matchDetails = annsByStartByte[byteCount];
+	// convert character to unicode
+	c = `&#${c.charCodeAt(0)};`
 
 	// if there is a match
 	if (!annotating && matchDetails) {

@@ -165,13 +165,6 @@ class TreeSearch extends Container {
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
 
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
-		if (state.matchingDefs && state.matchingDefs.Defs) {
-			// filter package results
-			state.matchingDefs = {
-				...state.matchingDefs,
-				Defs: state.matchingDefs.Defs.filter((def) => def.Kind !== "package"),
-			};
-		}
 
 		state.xdefs = SearchStore.results.get(state.query, null, [this.state.repo], GLOBAL_DEFS_LIMIT);
 	}
@@ -214,8 +207,8 @@ class TreeSearch extends Container {
 		if (prevState.matchingDefs !== nextState.matchingDefs) {
 			// Keep selectionIndex on same file item even after def results are loaded. Prevents
 			// the selection from jumping around as more data comes in.
-			const prevNumDefs = Math.min(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.length : 0);
-			const nextNumDefs = Math.min(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.length : 0);
+			const prevNumDefs = Math.min(SYMBOL_LIMIT, prevState.matchingDefs && prevState.matchingDefs.Defs ? prevState.matchingDefs.Defs.filter(this._symbolFilter).length : 0);
+			const nextNumDefs = Math.min(SYMBOL_LIMIT, nextState.matchingDefs && nextState.matchingDefs.Defs ? nextState.matchingDefs.Defs.filter(this._symbolFilter).length : 0);
 			const defWasSelected = nextState.selectionIndex < prevNumDefs || (prevState.fileResults && prevState.fileResults.length === 0);
 			if (defWasSelected) {
 				nextState.selectionIndex = 0;
@@ -346,7 +339,7 @@ class TreeSearch extends Container {
 
 	_numSymbolResults(): number {
 		if (!this.state.matchingDefs || !this.state.matchingDefs.Defs) return 0;
-		return Math.min(this.state.matchingDefs.Defs.length, SYMBOL_LIMIT);
+		return Math.min(this.state.matchingDefs.Defs.filter(this._symbolFilter).length, SYMBOL_LIMIT);
 	}
 
 	_numXDefResults(): number {
@@ -375,7 +368,7 @@ class TreeSearch extends Container {
 		const i = this._normalizedSelectionIndex();
 		if (i < this._numSymbolResults()) {
 			// Def result
-			const def = this.state.matchingDefs.Defs[i];
+			const def = this.state.matchingDefs.Defs.filter(this._symbolFilter)[i];
 			this._navigateTo(urlToDef(def));
 		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
 			// XDef result
@@ -484,6 +477,11 @@ class TreeSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
+	_symbolFilter(def) {
+		// Do not show package results.
+		return def.Kind !== "package";
+	}
+
 	_symbolItems(offset: number): ?Array<any> {
 		if (this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID) return null;
 
@@ -506,16 +504,21 @@ class TreeSearch extends Container {
 			return placeholders;
 		}
 
-		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) {
+		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.filter(this._symbolFilter).length === 0)) {
 			return [<div styleName="list-item list-item-empty" key="_nosymbol"><i>No matches.</i></div>];
 		}
 
+		const defs = this.state.matchingDefs.Defs.filter(this._symbolFilter);
 		let list = [],
-			limit = this.state.matchingDefs.Defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : this.state.matchingDefs.Defs.length;
+			limit = defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : defs.length;
+
+		// If the build is behind, link to the last built commit to avoid links resulting in 404s.
+		let defRev = this.state.srclibDataVersion && this.state.srclibDataVersion.CommitsBehind ?
+			this.state.srclibDataVersion.CommitID : this.state.rev;
 
 		for (let i = 0; i < limit; i++) {
-			let def = this.state.matchingDefs.Defs[i];
-			list.push(this._defToLink(def, offset + i, "i"));
+			let def = defs[i];
+			list.push(this._defToLink(def, defRev, offset + i, "i"));
 		}
 
 		return list;
@@ -547,7 +550,7 @@ class TreeSearch extends Container {
 			let rdefs = groupToDefs[repo];
 			for (let j = 0; j < rdefs.length; j++) {
 				let def = rdefs[j];
-				items.push(this._defToLink(def, idx, "x"));
+				items.push(this._defToLink(def, null, idx, "x"));
 				idx++;
 			}
 			sections.push(
@@ -560,9 +563,9 @@ class TreeSearch extends Container {
 		return {items: sections, count: idx - offset};
 	}
 
-	_defToLink(def: Def, i: number, prefix: string) {
+	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
-		let defURL = urlToDef(def, this.state.rev);
+		let defURL = urlToDef(def, rev);
 		let key = `${prefix}:${defURL}`;
 		return (
 				<Link styleName={selected ? "list-item-selected" : "list-item"}

@@ -27,15 +27,18 @@ export default function withAnnotations(Component) {
 			Object.assign(state, props);
 
 			state.anns = state.path && state.commitID ? BlobStore.annotations.get(state.repo, state.rev, state.commitID, state.path, 0, 0) : null;
+			const contentLenth = state.blob ? state.blob.ContentsString.length : 0;
+			state.skipAnns = contentLenth >= 40*2500; // ~ 2500 lines, avg. 40 chars per line
 		}
 
 		onStateTransition(prevState, nextState) {
 			if (nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path)) {
-				if (nextState.commitID) {
+				if (nextState.commitID && !nextState.skipAnns) {
 					// Require that the rev has been resolved to a commit ID to fetch,
 					// so that we reuse that resolution on the client (which ensures
 					// consistency and frees the server from performing repetitive
-					// resolutions).
+					// resolutions). Also require that the file isn't above line count
+					// threshold for fetching annotations.
 					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.rev, nextState.commitID, nextState.path, 0, 0));
 				}
 			}
