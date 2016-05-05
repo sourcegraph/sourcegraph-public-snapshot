@@ -132,7 +132,7 @@ class DefInfo extends Container {
 
 		let repoTimes = "";
 		if (refLocs) {
-			repoTimes = refLocs.TotalRepos === 1 ? "1 repository" : `${refLocs.TotalRepos} repositories`;
+			repoTimes = `${refLocs.TotalRepos} repositor${refLocs.TotalRepos > 1 ? "ies" : "y"}`;
 		}
 
 		return (
