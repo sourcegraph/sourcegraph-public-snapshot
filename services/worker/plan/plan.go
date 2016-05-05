@@ -43,6 +43,10 @@ func Create(configYAML string, droneYMLFileExists bool, inv *inventory.Inventory
 		return "", nil, err
 	}
 
+	if err := setTweakGitattributes(config); err != nil {
+		return "", nil, err
+	}
+
 	finalConfigYAML, err := marshalConfigWithMatrix(*config, axes)
 	if err != nil {
 		return "", nil, err
@@ -61,5 +65,16 @@ func setCloneCompleteHistory(config *droneyaml.Config) error {
 	}
 
 	config.Clone.Vargs["complete"] = true
+	return nil
+}
+
+// setTweakGitattributes enforces tweaking of .gitattributes to exclude
+// any feature that may modify file contents when file is being checked out.
+func setTweakGitattributes(config *droneyaml.Config) error {
+	if config.Clone.Vargs == nil {
+		config.Clone.Vargs = droneyaml.Vargs{}
+	}
+
+	config.Clone.Vargs["tweak_gitattributes"] = true
 	return nil
 }
