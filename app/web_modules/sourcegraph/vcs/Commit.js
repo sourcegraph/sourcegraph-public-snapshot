@@ -14,6 +14,9 @@ class Commit extends Component {
 		if (state.commit !== props.commit) {
 			state.commit = props.commit;
 		}
+		if (state.repo !== props.repo) {
+			state.repo = props.repo;
+		}
 	}
 
 	render() {
@@ -24,7 +27,7 @@ class Commit extends Component {
 				</div>
 				<div styleName="body">
 					<div styleName="title">
-						<Link to={`/${this.state.commit.RepoURI}@${this.state.commit.ID}/-/commit`}>
+						<Link to={`/${this.state.repo}@${this.state.commit.ID}/-/commit`}>
 							<code styleName="sha">{this.state.commit.ID.substring(0, 6)}</code>
 							{this.state.commit.Message.slice(0, 70)}
 						</Link>
@@ -41,6 +44,7 @@ class Commit extends Component {
 
 Commit.propTypes = {
 	commit: React.PropTypes.object.isRequired,
+	repo: React.PropTypes.string.isRequired,
 };
 
 export default CSSModules(Commit, styles);

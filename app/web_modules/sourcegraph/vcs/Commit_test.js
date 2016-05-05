@@ -15,22 +15,24 @@ const sampleCommit = {
 	AuthorPerson: {AvatarURL: "http://example.com/avatar.png"},
 };
 
+const sampleRepo = "sourcegraph.com/sourcegraph";
+
 describe("Commit", () => {
 	it("should initially render empty", () => {
 		autotest(testdataInitial, `${__dirname}/testdata/Commit-initial.json`,
-			<Commit commit={sampleCommit} />
+			<Commit commit={sampleCommit} repo={sampleRepo} />
 		);
 	});
 
 	it("should render commit", () => {
 		autotest(testdataAvailable, `${__dirname}/testdata/Commit-available.json`,
-			<Commit	commit={sampleCommit} />
+			<Commit	commit={sampleCommit} repo={sampleRepo} />
 		);
 	});
 
 	it("should render commit without author information", () => {
 		autotest(testdataNoAuthorPerson, `${__dirname}/testdata/Commit-noAuthorPerson.json`,
-			<Commit	commit={{ID: "abc", Message: "msg", Author: {Date: ""}, AuthorPerson: null}} />
+			<Commit	commit={{ID: "abc", Message: "msg", Author: {Date: ""}, AuthorPerson: null}} repo={sampleRepo} />
 		);
 	});
 });

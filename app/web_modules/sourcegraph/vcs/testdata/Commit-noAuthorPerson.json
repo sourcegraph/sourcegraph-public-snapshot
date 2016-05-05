@@ -35,7 +35,7 @@
 										{
 											"type": "",
 											"props": {
-												"to": "/undefined@abc/-/commit",
+												"to": "/sourcegraph.com/sourcegraph@abc/-/commit",
 												"children": [
 													{
 														"type": "code",
