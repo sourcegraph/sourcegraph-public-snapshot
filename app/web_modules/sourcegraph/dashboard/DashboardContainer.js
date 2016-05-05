@@ -20,6 +20,7 @@ import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo"
 
 import ChromeExtensionCTA from "./ChromeExtensionCTA";
 import OnboardingModals from "./OnboardingModals";
+import HomeContainer from "./HomeContainer";
 
 class DashboardContainer extends Container {
 	static contextTypes = {
@@ -88,7 +89,7 @@ class DashboardContainer extends Container {
 	}
 
 	renderSignedOutHomepage() {
-		return <div>Signed out</div>;
+		return <HomeContainer />;
 	}
 
 	render() {

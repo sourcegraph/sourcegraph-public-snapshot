@@ -16,7 +16,9 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 	if (!signedIn) {
 		return (
-			<Logo width="50%" type="logotype"/>
+			<div>
+				<Logo width="220px" type="logotype" />
+			</div>
 		);
 	}
 

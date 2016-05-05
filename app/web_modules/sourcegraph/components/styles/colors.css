@@ -5,6 +5,7 @@
 @value c_blue-1 rgba(15, 182, 242, .1);
 @value c_faded-blue rgb(155, 194, 215);
 @value c_dark-blue rgba(0, 59, 155, 1);
+@value c_pale-blue rgba(247, 249, 255, 1);
 
 @value c_purple rgba(177, 20, 247, 1);
 @value c_purple-8 rgba(177, 20, 247, .8);
@@ -25,7 +26,6 @@
 @value c_green-2 rgba(13, 206, 183, .2);
 
 @value c_yellow #FFC770;
-
 
 @value c_red rgba(246, 106, 106, 1);
 @value c_red-8 rgba(246, 106, 106, .8);
@@ -142,7 +142,6 @@
 .transparent { color: transparent; }
 
 /* Backgrounds */
-.bg-navy { background-color: c_navy; }
 .bg-blue { background-color: c_blue; }
 .bg-blue-8 { background-color: c_blue-8; }
 .bg-blue-5 { background-color: c_blue-5; }

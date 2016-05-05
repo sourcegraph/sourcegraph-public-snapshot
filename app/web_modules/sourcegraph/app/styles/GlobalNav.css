@@ -5,6 +5,10 @@
 
 @value navbarHeight 40px;
 
+.logged-out-home-container {
+	composes: bg-pale-blue from colors;
+}
+
 .navbar + * {
 	/* Account for navbar's position: fixed. */
 	padding-top: navbarHeight;

@@ -1,4 +1,6 @@
 @value modal "sourcegraph/components/styles/modal.css";
+@value colors "sourcegraph/components/styles/colors.css";
+
 @import "sourcegraph/app/styles/Globals.css";
 
 
@@ -7,6 +9,7 @@ Stick footer at bottom even if the page content doesn't take up
 the entire viewport height.
 */
 .main-container {
+	composes: bg-pale-blue from colors;
 	display: flex;
 	min-height: 100vh;
 	flex-direction: column;
