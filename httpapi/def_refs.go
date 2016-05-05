@@ -105,8 +105,15 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 	// of the default branch of the repo hasn't been built yet after the switch to pgsql
 	// global refs store. Fallback to fetching local repo refs from graph store.
 	//
-	// TODO(pararth): remove this kludge after migration is complete for all existing repos.
-	if len(refLocations.RepoRefs) == 0 || refLocations.RepoRefs[0].Repo != def.Repo {
+	// TODO(slimsag): remove this kludge after migration is complete for all existing repos.
+	containsDefRepo := false
+	for _, refs := range refLocations.RepoRefs {
+		if refs.Repo == def.Repo {
+			containsDefRepo = true
+			break
+		}
+	}
+	if len(refLocations.RepoRefs) == 0 || !containsDefRepo {
 		// Scope the local repo ref search to the def's commit ID.
 		defSpec.CommitID = def.CommitID
 		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
@@ -142,7 +149,7 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return json.NewEncoder(w).Encode(refLocations.RepoRefs)
+	return json.NewEncoder(w).Encode(refLocations)
 }
 
 type fileList []*sourcegraph.DefFileRef
