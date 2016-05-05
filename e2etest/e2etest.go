@@ -155,6 +155,11 @@ type Test struct {
 	//
 	// Tests must log all output to t.Log instead of via other logging packages.
 	Func func(t *T) error
+
+	// Quarantined tests are run as usual, but their failures are not
+	// reported. This is useful for understanding the effectiveness of new
+	// tests / temporarily disabling bad tests
+	Quarantined bool
 }
 
 // Register should be called inside of an init function in order to register a
@@ -302,9 +307,11 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 						continue
 					}
 
-					failuresMu.Lock()
-					failures++
-					failuresMu.Unlock()
+					if !test.Quarantined {
+						failuresMu.Lock()
+						failures++
+						failuresMu.Unlock()
+					}
 
 					t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
 					testCounter.WithLabelValues(test.Name, "failure").Inc()
