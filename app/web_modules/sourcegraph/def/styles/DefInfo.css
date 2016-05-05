@@ -10,6 +10,10 @@
 	min-height: 50vh;
 }
 
+.back-icon {
+	composes: gray from colors;
+}
+
 .def-title {
 	composes: black from colors;
 	font-weight: normal;

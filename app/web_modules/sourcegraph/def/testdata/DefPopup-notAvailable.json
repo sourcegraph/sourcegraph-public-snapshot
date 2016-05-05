@@ -10,7 +10,9 @@
 						"children": [
 							{
 								"type": "",
+								"key": ".0",
 								"props": {
+									"className": "",
 									"to": "/r@c/-/def/undefined/undefined/-/undefined/-/info",
 									"children": [
 										{
@@ -37,7 +39,19 @@
 										}
 									],
 									"onlyActiveOnIndex": false,
+									"style": {}
+								}
+							},
+							{
+								"type": "",
+								"key": ".1",
+								"props": {
 									"className": "",
+									"to": "/r@c/-/def/undefined/undefined/-/undefined/-/info",
+									"children": [
+										"»"
+									],
+									"onlyActiveOnIndex": false,
 									"style": {}
 								}
 							}

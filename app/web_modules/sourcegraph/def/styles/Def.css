@@ -4,7 +4,7 @@
 @value blob "sourcegraph/blob/styles/Blob.css";
 
 .title {
-	composes: code f5 from typography;
+	composes: code f4 from typography;
 	word-wrap: break-word;
 	white-space: pre-line;
 }
@@ -21,6 +21,11 @@
 .boxTitle {
 	composes: black from colors;
 	composes: title;
+}
+.boxIcon {
+	composes: gray from colors;
+	composes: f4 from typography;
+	composes: pl3 from base;
 }
 .boxTitle:hover {
 	text-decoration: underline;
@@ -55,10 +60,6 @@
 	white-space: nowrap;
 	font-size: 1.08rem;
 	composes: pt1 from base;
-}
-.refs-group {
-	white-space: nowrap;
-	composes: pl4 from base;
 }
 .ref-filename {
 	word-wrap: break-word;
