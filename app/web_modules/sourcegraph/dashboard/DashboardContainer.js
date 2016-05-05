@@ -87,40 +87,23 @@ class DashboardContainer extends Container {
 		);
 	}
 
+	renderSignedOutHomepage() {
+		return <div>Signed out</div>;
+	}
+
 	render() {
 		return (
 			<div styleName="container">
-			{this.state.onboardingExperience && <OnboardingModals location={this.state.location} onboardingFlow={this.state.onboardingExperience} canShowChromeExtensionCTA={this.state.showChromeExtensionCTA}/>}
+				{this.state.onboardingExperience && <OnboardingModals location={this.state.location} onboardingFlow={this.state.onboardingExperience} canShowChromeExtensionCTA={this.state.showChromeExtensionCTA}/>}
+
 				<Helmet title="Home" />
+
 				{!this.context.signedIn &&
-					<div styleName="anon-section">
-						<div styleName="anon-title"><img src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-logo.svg`} styleName="logomark-wide"/></div>
-						<div styleName="anon-header-sub">Save time and code better with live usage examples.</div>
-					</div>
-				}
-				{!this.context.signedIn &&
-					<div styleName="cta-box">
-						<div styleName="cta-headline">See everywhere a Go function is called, globally.</div>
-						{/* hotfix: hardcode to a commit where srclib data is available */}
-						<Link to="github.com/golang/go@80e9a7f0797c73b27471eb4b371baa1c7ccb427b/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => this.context.eventLogger.logEvent("GoHTTPDefRefsCTAClicked")}>
-							<Button color="primary" size="large">See usage examples for http.NewRequest &raquo;</Button>
-						</Link>
-						<div styleName="cta-subline">
-							<Link styleName="cta-link" to="join">Sign up</Link>
-							{this.state.showChromeExtensionCTA && <span>|</span>}
-							{this.state.showChromeExtensionCTA && <ChromeExtensionCTA onSuccess={() => this.setState({showChromeExtensionCTA: false})}/>}
-						</div>
-					</div>
+ 					this.renderSignedOutHomepage()
 				}
 
 				{this.context.user && this.context.user.Admin &&
 					<GlobalSearch query={this.props.location.query.q || ""}/>
-				}
-
-				{this.context.signedIn &&
-					<div styleName="anon-section">
-						{this.renderCTAButtons()}
-					</div>
 				}
 
 				{this.context.signedIn && <div styleName="repos">
