@@ -4,6 +4,7 @@ import React from "react";
 import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
+import Logo from "sourcegraph/components/Logo";
 import {Avatar, Button, Popover, Menu} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
@@ -12,6 +13,13 @@ import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
 
 function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, eventLogger}) {
+
+	if (!signedIn) {
+		return (
+			<Logo width="50%" type="logotype"/>
+		);
+	}
+
 	return (
 		<nav styleName="navbar" role="navigation">
 			<Link to="/">
