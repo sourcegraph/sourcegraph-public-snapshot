@@ -1,21 +1,13 @@
 package rcache
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
 
 func clearAll(t *testing.T, prefix string) {
-	conn, err := connPool.Get()
-	if err != nil {
+	if err := ClearAllForTest(prefix); err != nil {
 		t.Fatal(err)
-	}
-	defer connPool.Put(conn)
-
-	resp := conn.Cmd("EVAL", "return redis.call('del', unpack(redis.call('keys', ARGV[1])))", 0, fmt.Sprintf("%s:*", prefix))
-	if resp.Err != nil {
-		t.Fatalf("error clearing Redis test data: %s", resp.Err)
 	}
 }
 

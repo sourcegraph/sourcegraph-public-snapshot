@@ -153,3 +153,24 @@ func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 	}
 	return nil
 }
+
+// ClearAllForTest clears all of the entries with a given prefix. This
+// is an O(n) operation and should only be used in tests.
+func ClearAllForTest(prefix string) error {
+	conn, err := connPool.Get()
+	if err != nil {
+		return err
+	}
+	defer connPool.Put(conn)
+
+	resp := conn.Cmd("EVAL", `local keys = redis.call('keys', ARGV[1])
+if #keys > 0 then
+	return redis.call('del', unpack(keys))
+else
+	return ''
+end`, 0, fmt.Sprintf("%s:*", fmt.Sprintf("%s:%s", globalPrefix, prefix)))
+	if resp.Err != nil {
+		return fmt.Errorf("error clearing Redis test data: %s", resp.Err)
+	}
+	return nil
+}
