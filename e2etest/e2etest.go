@@ -28,6 +28,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/nlopes/slack"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
 	"sourcegraph.com/sourcegraph/go-selenium"
 )
@@ -209,6 +210,24 @@ func (t *testRunner) slackMessage(messageType int, msg, quoted string) {
 	}
 }
 
+var runCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "e2etest",
+	Name:      "run",
+	Help:      "Number of times the testsuite has run",
+}, []string{"state"})
+var testCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "e2etest",
+	Name:      "test",
+	Help:      "Number of times an individual test has run",
+}, []string{"name", "state"})
+
+func init() {
+	prometheus.MustRegister(runCounter)
+	prometheus.MustRegister(testCounter)
+}
+
 // run runs the test suite over and over again against $TARGET, if $TARGET is set,
 // otherwise it runs the test suite just once.
 func (t *testRunner) run() {
@@ -260,6 +279,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
 					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
+					testCounter.WithLabelValues(test.Name, "error").Inc()
 					return nil
 				}
 
@@ -270,6 +290,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
 						t.slackMessage(typeWarning, msg, "")
+						testCounter.WithLabelValues(test.Name, "retry").Inc()
 
 						// When running without Slack support, write the screenshot to a file
 						// instead.
@@ -286,6 +307,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					failuresMu.Unlock()
 
 					t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
+					testCounter.WithLabelValues(test.Name, "failure").Inc()
 
 					// When running without Slack support, write the screenshot to a file
 					// instead.
@@ -297,6 +319,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					return nil
 				}
 				t.log.Printf("[success] [%v] [%v]\n", test.Name, unitTime)
+				testCounter.WithLabelValues(test.Name, "success").Inc()
 				return nil
 			}
 			panic("never here")
@@ -307,11 +330,14 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 	t.log.Printf("%v tests finished in %v [%v success] [%v failure]\n", total, time.Since(start), total-failures, failures)
 
 	if failures == 0 {
+		runCounter.WithLabelValues("success").Inc()
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
 			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
 		}
 	} else {
+		runCounter.WithLabelValues("failure").Inc()
+
 		// Only send @channel on the first failure, not all consecutive ones (that
 		// would be very annoying).
 		atChannel := ""
@@ -507,6 +533,8 @@ Environment:
       Slack channel to which test result output and test failure screenshots will be sent to.
   SLACK_WARNING_CHANNEL (optional)
       If specified, send warning (verbose) log messages to this channel instead of SLACK_CHANNEL.
+  PROMETHEUS_IO_ADDR (optional)
+      If specified, prometheus metric will be exported on this address (eg :6060)
 
 Flags:
 `)
@@ -625,6 +653,16 @@ Flags:
 			}
 			tr.slackMessage(typeNormal, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
 		}
+	}
+
+	if addr := os.Getenv("PROMETHEUS_IO_ADDR"); addr != "" {
+		http.Handle("/metrics", prometheus.Handler())
+		go func() {
+			err := http.ListenAndServe(addr, nil)
+			if err != nil {
+				log.Fatal("Prometheus ListenAndServe:", err)
+			}
+		}()
 	}
 
 	tr.run()
