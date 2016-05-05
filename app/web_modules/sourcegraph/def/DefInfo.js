@@ -130,10 +130,8 @@ class DefInfo extends Container {
 		let pages = this._pageNumbers(page);
 		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
-		let refTimes = "";
 		let repoTimes = "";
 		if (refLocs) {
-			refTimes = refLocs.TotalRefs === 1 ? "1 time" : `${refLocs.TotalRefs} times`;
 			repoTimes = refLocs.TotalRepos === 1 ? "1 repository" : `${refLocs.TotalRepos} repositories`;
 		}
 
@@ -155,7 +153,7 @@ class DefInfo extends Container {
 					{def && !def.Error &&
 						<div>
 							<div styleName="section-label">
-								{refLocs? `Used in ${repoTimes} ${refTimes}` : "Used in 0 repositories"}
+								{refLocs ? `Used in ${repoTimes}` : "Used in 0 repositories"}
 								{refLocs && refLocs.TotalFiles > 1 && <span styleName="section-sub-label">(showing files {(page-1)*perPage}-{page*perPage < refLocs.TotalFiles ? page*perPage : refLocs.TotalFiles} of {refLocs.TotalFiles})</span>}
 							</div>
 							{!refLocs && <i>Loading...</i>}
