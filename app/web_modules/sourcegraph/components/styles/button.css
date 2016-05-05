@@ -111,15 +111,15 @@
     color: c_red;
 }
 
-@value c_teal from colors;
+@value c_blue from colors;
 .outline-info {
     composes: outline;
-    composes: b--teal-8 teal-8 from colors;
+    composes: b--blue-8 blue-8 from colors;
 }
 .outline-info:hover,
 .outline-info:focus {
-    border-color: c_teal;
-    color: c_teal;
+    border-color: c_blue;
+    color: c_blue;
 }
 
 @value c_orange from colors;
@@ -199,7 +199,7 @@
 
 .solid-info {
     composes: solid;
-    composes: white bg-teal b--teal from colors;
+    composes: white bg-blue b--blue from colors;
 }
 
 .solid-warning {

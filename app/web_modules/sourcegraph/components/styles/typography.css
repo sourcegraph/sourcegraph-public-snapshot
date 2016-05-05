@@ -144,7 +144,7 @@ html {
 	composes: f3 f2-ns;
 	composes: dark-gray from colors;
 }
-@value c_brand-orange from colors;
+@value c_orange from colors;
 .header::after {
 	content: '';
 	display: block;
@@ -153,7 +153,7 @@ html {
 	width: 35px;
 	height: 3px;
 	opacity: .9;
-	background-color: c_brand-orange;
+	background-color: c_orange;
 }
 
 
@@ -168,7 +168,7 @@ html {
 	width: 35px;
 	height: 3px;
 	opacity: .9;
-	background-color: c_brand-orange;
+	background-color: c_orange;
 }
 
 .header-center-padded {
@@ -183,7 +183,7 @@ html {
 	width: 35px;
 	height: 3px;
 	opacity: .9;
-	background-color: c_brand-orange;
+	background-color: c_orange;
 }
 
 .header-left {
@@ -196,7 +196,7 @@ html {
 	width: 35px;
 	height: 3px;
 	opacity: .9;
-	background-color: c_brand-orange;
+	background-color: c_orange;
 }
 
 .subheader {
@@ -222,7 +222,7 @@ html {
 	width: 35px;
 	height: 3px;
 	opacity: .9;
-	background-color: c_brand-orange;
+	background-color: c_orange;
 }
 
 .small-text {

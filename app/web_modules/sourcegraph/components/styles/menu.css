@@ -17,8 +17,8 @@
 	composes: dark-gray from colors;
 	cursor: pointer;
 }
-@value c_brand-blue from colors;
+@value c_blue from colors;
 .item:hover .item-content {
-	background-color: c_brand-blue;
+	background-color: c_blue;
 	color: white;
 }
