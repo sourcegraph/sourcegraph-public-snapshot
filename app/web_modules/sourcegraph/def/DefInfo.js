@@ -80,6 +80,37 @@ class DefInfo extends Container {
 		return parseInt(this.props.location.query.PerPage, 10) || filesPerPage;
 	}
 
+	// _pageNumbers returns up to four page numbers to the left and right of
+	// the given page number, clamping the result to [1, this._lastPage()].
+	_pageNumbers(page) {
+		// If we have less than ten pages, just show them all.
+		let range = function(start, end) {
+			return Array.from(new Array(end-start), (x, i) => i + start);
+		};
+		let pages = [];
+		if (page > 1) {
+			let min = page - 4;
+			if (min < 1) {
+				min = 1;
+			}
+			pages = pages.concat(range(min, page+1));
+		}
+		let lastPage = this._lastPage();
+		if (page < lastPage) {
+			let max = page + 4;
+			if (max > lastPage) {
+				max = lastPage;
+			}
+			pages = pages.concat(range(page, max+1));
+		}
+		return pages;
+	}
+
+	// _lastPage returns the last page number.
+	_lastPage() {
+		return this.state.refLocations ? Math.ceil(this.state.refLocations.TotalFiles / this._perPage()) : 0;
+	}
+
 	render() {
 		let def = this.state.defObj;
 		let refLocs = this.state.refLocations;
@@ -95,30 +126,8 @@ class DefInfo extends Container {
 
 		let page = this._page();
 		let perPage = this._perPage();
-		let lastPage = 0;
-		if (refLocs) {
-			lastPage = Math.ceil(refLocs.TotalFiles / perPage);
-		}
-
-		// If we have less than ten pages, just show them all.
-		let range = function(start, end) {
-			return Array.from(new Array(end-start), (x, i) => i + start);
-		};
-		let pages = [];
-		if (page > 1) {
-			let min = page - 4;
-			if (min < 1) {
-				min = 1;
-			}
-			pages = pages.concat(range(min, page+1));
-		}
-		if (page < lastPage) {
-			let max = page + 4;
-			if (max > lastPage) {
-				max = lastPage;
-			}
-			pages = pages.concat(range(page, max+1));
-		}
+		let lastPage = this._lastPage();
+		let pages = this._pageNumbers(page);
 		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
 		let refTimes = "";
