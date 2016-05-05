@@ -4,13 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"time"
+	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/fileutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -28,53 +25,32 @@ const (
 )
 
 var (
-	connPool     *pool.Pool
+	connPool_    *pool.Pool
+	connPoolMu   sync.Mutex
 	globalPrefix string
 )
 
-func init() {
+// redisPool creates the Redis connection pool if it isn't already
+// open and returns it. Subsequent calls return the same pool.
+func redisPool() (*pool.Pool, error) {
+	connPoolMu.Lock()
+	defer connPoolMu.Unlock()
+
 	hostname := os.Getenv("SRC_APP_URL")
 	if hostname == "" {
 		hostname, _ = os.Hostname()
 	}
 	globalPrefix = fmt.Sprintf("%s:%s", hostname, dataVersion)
 
-	var endpoint string
-	if e := os.Getenv("REDIS_MASTER_ENDPOINT"); e != "" {
-		endpoint = e
-	} else {
-		endpoint = createlocalRedisServer()
+	endpoint := conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")
+
+	p, err := pool.New("tcp", endpoint, maxClients)
+	if err != nil {
+		return nil, fmt.Errorf("Could not connect to Redis server at %s: %s", endpoint, err)
 	}
+	connPool_ = p
 
-	var err error
-	for i := 0; i < 6; i++ { // try to establish connection 6 times (local Redis server might take awhile to start up)
-		var p *pool.Pool
-		p, err = pool.New("tcp", endpoint, maxClients)
-		if err == nil {
-			connPool = p
-			return
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-	log.Fatalf("Could not connect to Redis server at %s: %s", endpoint, err)
-}
-
-func createlocalRedisServer() string {
-	const redisPort = 6379
-	const redisImage = "redis"
-	redisDir := filepath.Join(fileutil.TempDir(), "redis")
-
-	go func() {
-		log.Printf("Attempting to start local Redis")
-		cmd := exec.Command("docker", "run", "-p", fmt.Sprintf("%d:%d", redisPort, redisPort), "-v", fmt.Sprintf("%s:/data", redisDir), redisImage)
-		cmd.Stdout, cmd.Stderr = nil, nil
-		if err := cmd.Start(); err != nil {
-			log.Printf("Local Redis probably already running, data dir at %s, listening on %d", redisDir, redisPort)
-		} else {
-			log.Printf("Local Redis server started, data dir at %s, listening on :%d", redisDir, redisPort)
-		}
-	}()
-	return fmt.Sprintf(":%d", redisPort)
+	return connPool_, nil
 }
 
 // Redis is a cache implemented on top of a Redis client. It is
@@ -98,6 +74,11 @@ var ErrNotFound = errors.New("Redis key not found")
 // destination. If the key does not exist, it will return ErrNotFound.
 func (r *Redis) Get(key string, dst interface{}) error {
 	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
+
+	connPool, err := redisPool()
+	if err != nil {
+		return err
+	}
 
 	conn, err := connPool.Get()
 	if err != nil {
@@ -129,6 +110,11 @@ func (r *Redis) Get(key string, dst interface{}) error {
 func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 	rkey := fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
 
+	connPool, err := redisPool()
+	if err != nil {
+		return err
+	}
+
 	conn, err := connPool.Get()
 	if err != nil {
 		return err
@@ -157,6 +143,11 @@ func (r *Redis) Add(key string, val interface{}, ttlSeconds int) error {
 // ClearAllForTest clears all of the entries with a given prefix. This
 // is an O(n) operation and should only be used in tests.
 func ClearAllForTest(prefix string) error {
+	connPool, err := redisPool()
+	if err != nil {
+		return err
+	}
+
 	conn, err := connPool.Get()
 	if err != nil {
 		return err
