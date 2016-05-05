@@ -646,7 +646,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1990
   },
@@ -884,7 +884,7 @@
   {
     "text": "NewReader",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2063
   },
@@ -912,7 +912,7 @@
   {
     "text": "NewBuffer",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2079
   },
@@ -1073,7 +1073,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2131
   },
@@ -1283,7 +1283,7 @@
   {
     "text": "Copy",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2203
   },
@@ -1388,7 +1388,7 @@
   {
     "text": "Close",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2231
   },
@@ -1535,7 +1535,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2275
   },
@@ -1787,7 +1787,7 @@
   {
     "text": "Bytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2364
   },
@@ -2270,7 +2270,7 @@
   {
     "text": "Name",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2566
   },
@@ -2438,7 +2438,7 @@
   {
     "text": "Size",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2626
   },
@@ -2606,7 +2606,7 @@
   {
     "text": "Mode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2685
   },
@@ -2788,7 +2788,7 @@
   {
     "text": "ModTime",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2750
   },
@@ -2970,7 +2970,7 @@
   {
     "text": "IsDir",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2819
   },
@@ -3124,7 +3124,7 @@
   {
     "text": "Sys",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2876
   },
@@ -3341,7 +3341,7 @@
   {
     "text": "fontMfizz12LicenseTxtBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 5581
   },
@@ -3460,7 +3460,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 5636
   },
@@ -3565,7 +3565,7 @@
   {
     "text": "fontMfizz12LicenseTxt",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 5718
   },
@@ -3712,7 +3712,7 @@
   {
     "text": "fontMfizz12LicenseTxtBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 5775
   },
@@ -4034,7 +4034,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 5925
   },
@@ -4111,7 +4111,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 5954
   },
@@ -4475,7 +4475,7 @@
   {
     "text": "fontMfizz12ReadmeMdBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 7796
   },
@@ -4594,7 +4594,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 7849
   },
@@ -4699,7 +4699,7 @@
   {
     "text": "fontMfizz12ReadmeMd",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 7927
   },
@@ -4846,7 +4846,7 @@
   {
     "text": "fontMfizz12ReadmeMdBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 7982
   },
@@ -5168,7 +5168,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 8127
   },
@@ -5245,7 +5245,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 8156
   },
@@ -5609,7 +5609,7 @@
   {
     "text": "fontMfizz12ReleaseNotesMdBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 9788
   },
@@ -5728,7 +5728,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 9847
   },
@@ -5833,7 +5833,7 @@
   {
     "text": "fontMfizz12ReleaseNotesMd",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 9938
   },
@@ -5980,7 +5980,7 @@
   {
     "text": "fontMfizz12ReleaseNotesMdBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 9999
   },
@@ -6302,7 +6302,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 10157
   },
@@ -6379,7 +6379,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 10186
   },
@@ -6743,7 +6743,7 @@
   {
     "text": "fontMfizz12FontMfizzCssBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 17892
   },
@@ -6862,7 +6862,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 17949
   },
@@ -6967,7 +6967,7 @@
   {
     "text": "fontMfizz12FontMfizzCss",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 18036
   },
@@ -7114,7 +7114,7 @@
   {
     "text": "fontMfizz12FontMfizzCssBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 18095
   },
@@ -7436,7 +7436,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 18250
   },
@@ -7513,7 +7513,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 18279
   },
@@ -7877,7 +7877,7 @@
   {
     "text": "fontMfizz12FontMfizzEotBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 134509
   },
@@ -7996,7 +7996,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 134566
   },
@@ -8101,7 +8101,7 @@
   {
     "text": "fontMfizz12FontMfizzEot",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 134653
   },
@@ -8248,7 +8248,7 @@
   {
     "text": "fontMfizz12FontMfizzEotBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 134712
   },
@@ -8570,7 +8570,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 134868
   },
@@ -8647,7 +8647,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 134897
   },
@@ -9011,7 +9011,7 @@
   {
     "text": "fontMfizz12FontMfizzSvgBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 584411
   },
@@ -9130,7 +9130,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 584468
   },
@@ -9235,7 +9235,7 @@
   {
     "text": "fontMfizz12FontMfizzSvg",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 584555
   },
@@ -9382,7 +9382,7 @@
   {
     "text": "fontMfizz12FontMfizzSvgBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 584614
   },
@@ -9704,7 +9704,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 584771
   },
@@ -9781,7 +9781,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 584800
   },
@@ -10145,7 +10145,7 @@
   {
     "text": "fontMfizz12FontMfizzTtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 706114
   },
@@ -10264,7 +10264,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 706171
   },
@@ -10369,7 +10369,7 @@
   {
     "text": "fontMfizz12FontMfizzTtf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 706258
   },
@@ -10516,7 +10516,7 @@
   {
     "text": "fontMfizz12FontMfizzTtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 706317
   },
@@ -10838,7 +10838,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 706473
   },
@@ -10915,7 +10915,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 706502
   },
@@ -11279,7 +11279,7 @@
   {
     "text": "fontMfizz12FontMfizzWoffBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 822729
   },
@@ -11398,7 +11398,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 822787
   },
@@ -11503,7 +11503,7 @@
   {
     "text": "fontMfizz12FontMfizzWoff",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 822876
   },
@@ -11650,7 +11650,7 @@
   {
     "text": "fontMfizz12FontMfizzWoffBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 822936
   },
@@ -11972,7 +11972,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 823094
   },
@@ -12049,7 +12049,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 823123
   },
@@ -12413,7 +12413,7 @@
   {
     "text": "fontMfizz12IconsJsonBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 825050
   },
@@ -12532,7 +12532,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 825104
   },
@@ -12637,7 +12637,7 @@
   {
     "text": "fontMfizz12IconsJson",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 825184
   },
@@ -12784,7 +12784,7 @@
   {
     "text": "fontMfizz12IconsJsonBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 825240
   },
@@ -13106,7 +13106,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 825387
   },
@@ -13183,7 +13183,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 825416
   },
@@ -13547,7 +13547,7 @@
   {
     "text": "fontMfizz12PreviewHtmlBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 848965
   },
@@ -13666,7 +13666,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 849021
   },
@@ -13771,7 +13771,7 @@
   {
     "text": "fontMfizz12PreviewHtml",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 849105
   },
@@ -13918,7 +13918,7 @@
   {
     "text": "fontMfizz12PreviewHtmlBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 849163
   },
@@ -14240,7 +14240,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 849317
   },
@@ -14317,7 +14317,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 849346
   },
@@ -14681,7 +14681,7 @@
   {
     "text": "gothamBlackGothamBlackCssBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 850206
   },
@@ -14800,7 +14800,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 850265
   },
@@ -14905,7 +14905,7 @@
   {
     "text": "gothamBlackGothamBlackCss",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 850354
   },
@@ -15052,7 +15052,7 @@
   {
     "text": "gothamBlackGothamBlackCssBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 850415
   },
@@ -15374,7 +15374,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 850571
   },
@@ -15451,7 +15451,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 850600
   },
@@ -15815,7 +15815,7 @@
   {
     "text": "gothamBlackGothamBlackEotBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 956708
   },
@@ -15934,7 +15934,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 956767
   },
@@ -16039,7 +16039,7 @@
   {
     "text": "gothamBlackGothamBlackEot",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 956856
   },
@@ -16186,7 +16186,7 @@
   {
     "text": "gothamBlackGothamBlackEotBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 956917
   },
@@ -16508,7 +16508,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 957075
   },
@@ -16585,7 +16585,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 957104
   },
@@ -16949,7 +16949,7 @@
   {
     "text": "gothamBlackGothamBlackOtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1072916
   },
@@ -17068,7 +17068,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1072975
   },
@@ -17173,7 +17173,7 @@
   {
     "text": "gothamBlackGothamBlackOtf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1073064
   },
@@ -17320,7 +17320,7 @@
   {
     "text": "gothamBlackGothamBlackOtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1073125
   },
@@ -17642,7 +17642,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1073283
   },
@@ -17719,7 +17719,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1073312
   },
@@ -18083,7 +18083,7 @@
   {
     "text": "gothamBlackGothamBlackSvgBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1153772
   },
@@ -18202,7 +18202,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1153831
   },
@@ -18307,7 +18307,7 @@
   {
     "text": "gothamBlackGothamBlackSvg",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1153920
   },
@@ -18454,7 +18454,7 @@
   {
     "text": "gothamBlackGothamBlackSvgBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1153981
   },
@@ -18776,7 +18776,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1154139
   },
@@ -18853,7 +18853,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1154168
   },
@@ -19217,7 +19217,7 @@
   {
     "text": "gothamBlackGothamBlackTtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1259896
   },
@@ -19336,7 +19336,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1259955
   },
@@ -19441,7 +19441,7 @@
   {
     "text": "gothamBlackGothamBlackTtf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1260044
   },
@@ -19588,7 +19588,7 @@
   {
     "text": "gothamBlackGothamBlackTtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1260105
   },
@@ -19910,7 +19910,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1260263
   },
@@ -19987,7 +19987,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1260292
   },
@@ -20351,7 +20351,7 @@
   {
     "text": "gothamBlackGothamBlackWoffBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1367509
   },
@@ -20470,7 +20470,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1367569
   },
@@ -20575,7 +20575,7 @@
   {
     "text": "gothamBlackGothamBlackWoff",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1367660
   },
@@ -20722,7 +20722,7 @@
   {
     "text": "gothamBlackGothamBlackWoffBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1367722
   },
@@ -21044,7 +21044,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1367882
   },
@@ -21121,7 +21121,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1367911
   },
@@ -21485,7 +21485,7 @@
   {
     "text": "imgFaviconPngBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1370039
   },
@@ -21604,7 +21604,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1370086
   },
@@ -21709,7 +21709,7 @@
   {
     "text": "imgFaviconPng",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1370149
   },
@@ -21856,7 +21856,7 @@
   {
     "text": "imgFaviconPngBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1370198
   },
@@ -22178,7 +22178,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1370328
   },
@@ -22255,7 +22255,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1370357
   },
@@ -22619,7 +22619,7 @@
   {
     "text": "imgGopherHoverPngBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1452417
   },
@@ -22738,7 +22738,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1452468
   },
@@ -22843,7 +22843,7 @@
   {
     "text": "imgGopherHoverPng",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1452540
   },
@@ -22990,7 +22990,7 @@
   {
     "text": "imgGopherHoverPngBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1452593
   },
@@ -23312,7 +23312,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1452734
   },
@@ -23389,7 +23389,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1452763
   },
@@ -23753,7 +23753,7 @@
   {
     "text": "imgGopherPngBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1524082
   },
@@ -23872,7 +23872,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1524128
   },
@@ -23977,7 +23977,7 @@
   {
     "text": "imgGopherPng",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1524189
   },
@@ -24124,7 +24124,7 @@
   {
     "text": "imgGopherPngBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1524237
   },
@@ -24446,7 +24446,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1524367
   },
@@ -24523,7 +24523,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1524396
   },
@@ -24887,7 +24887,7 @@
   {
     "text": "proximaNovaProximaNovaCssBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1525256
   },
@@ -25006,7 +25006,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1525315
   },
@@ -25111,7 +25111,7 @@
   {
     "text": "proximaNovaProximaNovaCss",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1525404
   },
@@ -25258,7 +25258,7 @@
   {
     "text": "proximaNovaProximaNovaCssBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1525465
   },
@@ -25580,7 +25580,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1525621
   },
@@ -25657,7 +25657,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1525650
   },
@@ -26021,7 +26021,7 @@
   {
     "text": "proximaNovaProximaNovaEotBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1686634
   },
@@ -26140,7 +26140,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1686693
   },
@@ -26245,7 +26245,7 @@
   {
     "text": "proximaNovaProximaNovaEot",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1686782
   },
@@ -26392,7 +26392,7 @@
   {
     "text": "proximaNovaProximaNovaEotBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1686843
   },
@@ -26714,7 +26714,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1687001
   },
@@ -26791,7 +26791,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1687030
   },
@@ -27155,7 +27155,7 @@
   {
     "text": "proximaNovaProximaNovaOtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1855162
   },
@@ -27274,7 +27274,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1855221
   },
@@ -27379,7 +27379,7 @@
   {
     "text": "proximaNovaProximaNovaOtf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1855310
   },
@@ -27526,7 +27526,7 @@
   {
     "text": "proximaNovaProximaNovaOtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1855371
   },
@@ -27848,7 +27848,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1855529
   },
@@ -27925,7 +27925,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 1855558
   },
@@ -28289,7 +28289,7 @@
   {
     "text": "proximaNovaProximaNovaSvgBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2037522
   },
@@ -28408,7 +28408,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2037581
   },
@@ -28513,7 +28513,7 @@
   {
     "text": "proximaNovaProximaNovaSvg",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2037670
   },
@@ -28660,7 +28660,7 @@
   {
     "text": "proximaNovaProximaNovaSvgBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2037731
   },
@@ -28982,7 +28982,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2037890
   },
@@ -29059,7 +29059,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2037919
   },
@@ -29423,7 +29423,7 @@
   {
     "text": "proximaNovaProximaNovaTtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2198375
   },
@@ -29542,7 +29542,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2198434
   },
@@ -29647,7 +29647,7 @@
   {
     "text": "proximaNovaProximaNovaTtf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2198523
   },
@@ -29794,7 +29794,7 @@
   {
     "text": "proximaNovaProximaNovaTtfBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2198584
   },
@@ -30116,7 +30116,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2198742
   },
@@ -30193,7 +30193,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2198771
   },
@@ -30557,7 +30557,7 @@
   {
     "text": "proximaNovaProximaNovaWoffBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2367208
   },
@@ -30676,7 +30676,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2367268
   },
@@ -30781,7 +30781,7 @@
   {
     "text": "proximaNovaProximaNovaWoff",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2367359
   },
@@ -30928,7 +30928,7 @@
   {
     "text": "proximaNovaProximaNovaWoffBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2367421
   },
@@ -31250,7 +31250,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2367581
   },
@@ -31327,7 +31327,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2367610
   },
@@ -31691,7 +31691,7 @@
   {
     "text": "sourcegraphDumpBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2807584
   },
@@ -31810,7 +31810,7 @@
   {
     "text": "bindataRead",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2807633
   },
@@ -31915,7 +31915,7 @@
   {
     "text": "sourcegraphDump",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2807699
   },
@@ -32062,7 +32062,7 @@
   {
     "text": "sourcegraphDumpBytes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2807750
   },
@@ -32384,7 +32384,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2807886
   },
@@ -32461,7 +32461,7 @@
   {
     "text": "Unix",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2807915
   },
@@ -32776,7 +32776,7 @@
   {
     "text": "Asset",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808137
   },
@@ -32944,7 +32944,7 @@
   {
     "text": "Replace",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808201
   },
@@ -33231,7 +33231,7 @@
   {
     "text": "f",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808286
   },
@@ -33378,7 +33378,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808327
   },
@@ -33595,7 +33595,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808427
   },
@@ -33707,7 +33707,7 @@
   {
     "text": "MustAsset",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808600
   },
@@ -33847,7 +33847,7 @@
   {
     "text": "Asset",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808643
   },
@@ -34064,7 +34064,7 @@
   {
     "text": "Error",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808717
   },
@@ -34211,7 +34211,7 @@
   {
     "text": "AssetInfo",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808896
   },
@@ -34379,7 +34379,7 @@
   {
     "text": "Replace",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2808969
   },
@@ -34666,7 +34666,7 @@
   {
     "text": "f",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2809054
   },
@@ -34813,7 +34813,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2809095
   },
@@ -35030,7 +35030,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2809198
   },
@@ -35128,7 +35128,7 @@
   {
     "text": "AssetNames",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2809292
   },
@@ -37039,7 +37039,7 @@
   {
     "text": "AssetDir",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2811659
   },
@@ -37340,7 +37340,7 @@
   {
     "text": "Replace",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2811768
   },
@@ -37487,7 +37487,7 @@
   {
     "text": "Split",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2811819
   },
@@ -37844,7 +37844,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2811944
   },
@@ -38075,7 +38075,7 @@
   {
     "text": "Errorf",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2812032
   },
@@ -42786,7 +42786,7 @@
   {
     "text": "RestoreAsset",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814469
   },
@@ -42933,7 +42933,7 @@
   {
     "text": "Asset",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814522
   },
@@ -43129,7 +43129,7 @@
   {
     "text": "AssetInfo",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814581
   },
@@ -43318,7 +43318,7 @@
   {
     "text": "MkdirAll",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814640
   },
@@ -43332,7 +43332,7 @@
   {
     "text": "_filePath",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814649
   },
@@ -43381,7 +43381,7 @@
   {
     "text": "Dir",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814673
   },
@@ -43444,7 +43444,7 @@
   {
     "text": "FileMode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814688
   },
@@ -43640,7 +43640,7 @@
   {
     "text": "WriteFile",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814751
   },
@@ -43654,7 +43654,7 @@
   {
     "text": "_filePath",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814761
   },
@@ -43752,7 +43752,7 @@
   {
     "text": "Mode",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814794
   },
@@ -43941,7 +43941,7 @@
   {
     "text": "Chtimes",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814845
   },
@@ -43955,7 +43955,7 @@
   {
     "text": "_filePath",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814853
   },
@@ -44032,7 +44032,7 @@
   {
     "text": "ModTime",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814880
   },
@@ -44081,7 +44081,7 @@
   {
     "text": "ModTime",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2814896
   },
@@ -44298,7 +44298,7 @@
   {
     "text": "RestoreAssets",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815033
   },
@@ -44445,7 +44445,7 @@
   {
     "text": "AssetDir",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815091
   },
@@ -44578,7 +44578,7 @@
   {
     "text": "RestoreAsset",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815141
   },
@@ -44795,7 +44795,7 @@
   {
     "text": "RestoreAssets",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815218
   },
@@ -44844,7 +44844,7 @@
   {
     "text": "Join",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815246
   },
@@ -45089,7 +45089,7 @@
   {
     "text": "_filePath",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815324
   },
@@ -45229,7 +45229,7 @@
   {
     "text": "Replace",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815388
   },
@@ -45362,7 +45362,7 @@
   {
     "text": "Join",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815434
   },
@@ -45460,7 +45460,7 @@
   {
     "text": "Split",
     "type": {
-      "name": "nx"
+      "name": "na"
     },
     "offset": 2815469
   },
