@@ -18,7 +18,7 @@ make build && make push
 If updating a single toolchain, run:
 
 ```
-TOOLCHAINS=$TOOLCHAIN_NAME make build && make push
+TOOLCHAINS=$TOOLCHAIN_NAME make build && TOOLCHAINS=$TOOLCHAIN_NAME make push
 ```
 
 0. Update `srclib_images.go`.
