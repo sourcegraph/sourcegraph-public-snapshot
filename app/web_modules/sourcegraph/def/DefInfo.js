@@ -83,25 +83,9 @@ class DefInfo extends Container {
 	// _pageNumbers returns up to four page numbers to the left and right of
 	// the given page number, clamping the result to [1, this._lastPage()].
 	_pageNumbers(page) {
-		// If we have less than ten pages, just show them all.
-		let range = function(start, end) {
-			return Array.from(new Array(end-start), (x, i) => i + start);
-		};
 		let pages = [];
-		if (page > 1) {
-			let min = page - 4;
-			if (min < 1) {
-				min = 1;
-			}
-			pages = pages.concat(range(min, page+1));
-		}
-		let lastPage = this._lastPage();
-		if (page < lastPage) {
-			let max = page + 4;
-			if (max > lastPage) {
-				max = lastPage;
-			}
-			pages = pages.concat(range(page, max+1));
+		for (let i = Math.max(page - 4, 1); i <= Math.min(page + 4, this._lastPage()); i++) {
+			pages.push(i);
 		}
 		return pages;
 	}
@@ -135,9 +119,6 @@ class DefInfo extends Container {
 			repoTimes = `${refLocs.TotalRepos} repositor${refLocs.TotalRepos > 1 ? "ies" : "y"}`;
 		}
 
-		// Under this many pages, we will hide the first/prev/next/last quick links.
-		const hideFirstPrevNextLast = 10;
-
 		return (
 			<div styleName="container">
 				{this.state.defObj &&
@@ -149,7 +130,7 @@ class DefInfo extends Container {
 					</h1>
 				}
 				<hr/>
-				<div styleName="main">
+				<div>
 					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
 					{def && !def.Error && <DefContainer {...this.props} />}
@@ -157,7 +138,7 @@ class DefInfo extends Container {
 						<div>
 							<div styleName="section-label">
 								{refLocs ? `Used in ${repoTimes}` : "Used in 0 repositories"}
-								{refLocs && refLocs.TotalFiles > 1 && <span styleName="section-sub-label">(showing files {(page-1)*perPage}-{page*perPage < refLocs.TotalFiles ? page*perPage : refLocs.TotalFiles} of {refLocs.TotalFiles})</span>}
+								{refLocs && refLocs.TotalFiles > 1 && <span styleName="section-sub-label">(showing files {(page-1)*perPage+1}-{page*perPage < refLocs.TotalFiles ? page*perPage : refLocs.TotalFiles} of {refLocs.TotalFiles})</span>}
 							</div>
 							{!refLocs && <i>Loading...</i>}
 							{refLocs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
@@ -167,16 +148,14 @@ class DefInfo extends Container {
 								fileCollapseThreshold={5} />)}
 
 							{lastPage > 1 && <div styleName="pagination">
-								{lastPage > hideFirstPrevNextLast && page > 1 && <Link styleName="icon" to={`${pageUrl}1`}>⇤</Link>}
-								{lastPage > hideFirstPrevNextLast && page > 1 && <Link styleName="icon" to={`${pageUrl}${page-1}`}>←</Link>}
+								{page > 1 && <Link styleName="pagination-link" key="first-page" to={`${pageUrl}1`}>⇤</Link>}
 								{pages.map((n) => {
 									if (page === n) {
-										return <span key={n} styleName="pagination-link-disabled" to={`${pageUrl}${n}`}>{n}</span>;
+										return <span key={`page:${n}`} styleName="pagination-link-disabled" to={`${pageUrl}${n}`}>{n}</span>;
 									}
-									return <Link key={n} styleName="pagination-link" to={`${pageUrl}${n}`}>{n}</Link>;
+									return <Link key={`page:${n}`} styleName="pagination-link" to={`${pageUrl}${n}`}>{n}</Link>;
 								})}
-								{lastPage > hideFirstPrevNextLast && page < lastPage && <Link styleName="icon" to={`${pageUrl}${page+1}`}>→</Link>}
-								{lastPage > hideFirstPrevNextLast && page < lastPage && <Link styleName="icon" to={`${pageUrl}${lastPage}`}>⇥</Link>}
+								{page < lastPage && <Link styleName="pagination-link" key="last-page" to={`${pageUrl}${lastPage}`}>⇥</Link>}
 							</div>}
 						</div>
 					}
