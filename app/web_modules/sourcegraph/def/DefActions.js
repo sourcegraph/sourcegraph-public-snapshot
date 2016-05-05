@@ -115,23 +115,17 @@ export class HighlightDef {
 
 export class WantRefLocations {
 	resource: RefLocationsKey;
-	perPage: ?number;
-	page: ?number;
 
-	constructor(r: RefLocationsKey, p?: {perPage?: number, page?: number}) {
+	constructor(r: RefLocationsKey) {
 		this.resource = r;
-		if (p) {
-			this.perPage = p.perPage;
-			this.page = p.page;
-		}
 	}
 
 	url(): string {
 		let q = toQuery({
 			ReposOnly: this.resource.reposOnly,
 			Query: this.resource.repos,
-			Page: this.page,
-			PerPage: this.perPage,
+			Page: this.resource.page,
+			PerPage: this.resource.perPage,
 		});
 		if (q) {
 			q = `?${q}`;

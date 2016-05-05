@@ -25,7 +25,7 @@ function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, re
 }
 
 function refLocationsKeyFor(r: RefLocationsKey): string {
-	let q = toQuery({ReposOnly: r.reposOnly, Query: r.repos});
+	let q = toQuery({ReposOnly: r.reposOnly, Query: r.repos, Page: r.page || 1, PerPage: r.perPage || 10});
 	return `/.api/repos/${r.repo}${r.rev ? `@${r.rev}` : ""}/-/def/${r.def}/-/ref-locations?${q}`;
 }
 
@@ -40,14 +40,7 @@ type DefPos = {
 export class DefStore extends Store {
 	refLocations_: Object;
 	getRefLocations(r: RefLocationsKey): ?Object {
-		let repoRefs = this.refLocations_.RepoRefs[refLocationsKeyFor(r)] || null;
-		if (!repoRefs) {
-			return null;
-		}
-		return {
-			RepoRefs: repoRefs,
-			Total: this.refLocations_.Total,
-		};
+		return this.refLocations_[refLocationsKeyFor(r)] || null;
 	}
 
 	reset(data?: {defs: any, refs: any}) {
@@ -86,9 +79,7 @@ export class DefStore extends Store {
 				return this.content[refsKeyFor(repo, rev, def, refRepo, refFile)] || null;
 			},
 		});
-		this.refLocations_ = {
-			RepoRefs: deepFreeze(data && data.refLocations ? data.refLocations.content : {}),
-		};
+		this.refLocations_ = deepFreeze(data && data.refLocations ? data.refLocations.content : {});
 	}
 
 	toJSON() {
@@ -182,19 +173,9 @@ export class DefStore extends Store {
 		case DefActions.RefLocationsFetched:
 			{
 				let a = (action: DefActions.RefLocationsFetched);
-				const rankedLocations = a.Error ? a.locations.RepoRefs : getRankedRefLocations(a.locations.RepoRefs);
 				let updatedContent = {};
-				updatedContent[refLocationsKeyFor(a.request.resource)] = rankedLocations;
-				if (!a.request.resource.reposOnly) {
-					// optimization; if full ref locations fetched this data can satisfy reposOnly queries
-					let r2 = Object.assign({}, a.request.resource);
-					r2.reposOnly = true;
-					updatedContent[refLocationsKeyFor(r2)] = rankedLocations;
-				}
-				this.refLocations_.RepoRefs = deepFreeze(Object.assign({}, this.refLocations_, updatedContent));
-				if (a.locations.Total) {
-					this.refLocations_.Total = a.locations.Total;
-				}
+				updatedContent[refLocationsKeyFor(a.request.resource)] = a.locations;
+				this.refLocations_ = deepFreeze(Object.assign({}, this.refLocations_, updatedContent));
 				break;
 			}
 
@@ -212,29 +193,6 @@ export class DefStore extends Store {
 
 		this.__emitChange();
 	}
-}
-
-function getRankedRefLocations(locations) {
-	if (locations.length <= 2) {
-		return locations;
-	}
-	let dashboardRepos = DashboardStore.repos;
-	let repos = [];
-
-	// The first repo of locations is the current repo.
-	repos.push(locations[0]);
-
-	let otherRepos = [];
-	let i = 1;
-	for (; i < locations.length; i++) {
-		if (dashboardRepos && locations[i].Repo in dashboardRepos) {
-			repos.push(locations[i]);
-		} else {
-			otherRepos.push(locations[i]);
-		}
-	}
-	Array.prototype.push.apply(repos, otherRepos);
-	return repos;
 }
 
 export default (new DefStore(Dispatcher.Stores): DefStore);

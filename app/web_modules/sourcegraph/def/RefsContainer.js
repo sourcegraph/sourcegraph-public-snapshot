@@ -81,6 +81,8 @@ export default class RefsContainer extends Container {
 
 		state.refLocations = state.def ? DefStore.getRefLocations({
 			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+			page: this.props.page,
+			perPage: this.props.perPage,
 		}) : null;
 
 		state.refRepo = props.refRepo;
@@ -179,7 +181,6 @@ export default class RefsContainer extends Container {
 				def: nextState.def,
 				reposOnly: nextState.reposOnly,
 				repos: nextState.repos,
-			}, {
 				page: this.props.page,
 				perPage: this.props.perPage,
 			}));

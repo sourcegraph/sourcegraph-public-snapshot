@@ -18,7 +18,7 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
-const reposPerPage = 10;
+const filesPerPage = 10;
 
 class DefInfo extends Container {
 	static contextTypes = {
@@ -49,7 +49,9 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: true, repos: [],
+			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+			page: this._page(),
+			perPage: this._perPage(),
 		}) : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 	}
@@ -57,8 +59,7 @@ class DefInfo extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: true, repos: [],
-			}, {
+				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: false, repos: [],
 				page: this._page(),
 				perPage: this._perPage(),
 			}));
@@ -76,7 +77,7 @@ class DefInfo extends Container {
 	}
 
 	_perPage() {
-		return parseInt(this.props.location.query.PerPage, 10) || reposPerPage;
+		return parseInt(this.props.location.query.PerPage, 10) || filesPerPage;
 	}
 
 	render() {
@@ -96,12 +97,12 @@ class DefInfo extends Container {
 		let perPage = this._perPage();
 		let lastPage = 0;
 		if (refLocs) {
-			lastPage = Math.ceil(refLocs.Total / perPage);
+			lastPage = Math.ceil(refLocs.TotalFiles / perPage);
 		}
 
 		// If we have less than ten pages, just show them all.
 		let range = function(start, end) {
-			return Array.from(new Array(end), (x, i) => i + start);
+			return Array.from(new Array(end-start), (x, i) => i + start);
 		};
 		let pages = [];
 		if (page > 1) {
@@ -109,16 +110,25 @@ class DefInfo extends Container {
 			if (min < 1) {
 				min = 1;
 			}
-			pages = pages.concat(range(min, page));
+			pages = pages.concat(range(min, page+1));
 		}
 		if (page < lastPage) {
 			let max = page + 4;
 			if (max > lastPage) {
 				max = lastPage;
 			}
-			pages = pages.concat(range(page, max));
+			pages = pages.concat(range(page, max+1));
 		}
 		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
+
+		let refTimes = "";
+		let fileTimes = "";
+		let repoTimes = "";
+		if (refLocs) {
+			refTimes = refLocs.TotalRefs === 1 ? "1 time" : `${refLocs.TotalRefs} times`;
+			fileTimes = refLocs.TotalFiles === 1 ? "1 file" : `${refLocs.TotalFiles} files`;
+			repoTimes = refLocs.TotalRepos === 1 ? "1 repository" : `${refLocs.TotalRepos} repositories`;
+		}
 
 		return (
 			<div styleName="container">
@@ -138,8 +148,8 @@ class DefInfo extends Container {
 					{def && !def.Error &&
 						<div>
 							<div styleName="section-label">
-								{`Used in ${refLocs ? `${refLocs.Total} repositor${refLocs.Total === 1 ? "y" : "ies"}` : ""}`}
-								{refLocs && refLocs.Total > 1 && <span styleName="section-sub-label">(showing {(page-1)*perPage}-{page*perPage})</span>}
+								{refLocs? `Used in ${repoTimes} ${refTimes}` : "Used in 0 repositories"}
+								{refLocs && refLocs.TotalFiles > 1 && <span styleName="section-sub-label">(showing files {(page-1)*perPage}-{page*perPage < refLocs.TotalFiles ? page*perPage : refLocs.TotalFiles} of {refLocs.TotalFiles})</span>}
 							</div>
 							{!refLocs && <i>Loading...</i>}
 							{refLocs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
