@@ -96,7 +96,7 @@ class DefInfo extends Container {
 		let perPage = this._perPage();
 		let lastPage = 0;
 		if (refLocs) {
-			lastPage = refLocs.Total / perPage;
+			lastPage = Math.ceil(refLocs.Total / perPage);
 		}
 
 		// If we have less than ten pages, just show them all.
@@ -105,10 +105,18 @@ class DefInfo extends Container {
 		};
 		let pages = [];
 		if (page > 1) {
-			pages = pages.concat(range(1, page));
+			let min = page - 4;
+			if (min < 1) {
+				min = 1;
+			}
+			pages = pages.concat(range(min, page));
 		}
 		if (page < lastPage) {
-			pages = pages.concat(range(page, lastPage));
+			let max = page + 4;
+			if (max > lastPage) {
+				max = lastPage;
+			}
+			pages = pages.concat(range(page, max));
 		}
 		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
