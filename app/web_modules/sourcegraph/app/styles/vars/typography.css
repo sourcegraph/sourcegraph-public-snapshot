@@ -1,0 +1,11 @@
+:root {
+  --desktop-base-size: 14px;
+  --mobile-base-size: 12px;
+
+  --font-size-1: 2.8rem;
+  --font-size-2: 2.25rem;
+  --font-size-3: 1.75rem;
+  --font-size-4: 1.25rem;
+  --font-size-5: 1rem;
+  --font-size-6: .875rem;
+}

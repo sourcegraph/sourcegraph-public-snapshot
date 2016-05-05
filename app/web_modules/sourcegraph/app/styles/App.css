@@ -1,4 +1,6 @@
 @value modal "sourcegraph/components/styles/modal.css";
+@import "sourcegraph/app/styles/Globals.css";
+
 
 /*
 Stick footer at bottom even if the page content doesn't take up

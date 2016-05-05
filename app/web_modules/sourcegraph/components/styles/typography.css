@@ -1,19 +1,18 @@
 @value colors "./colors.css";
 @value base "./base.css";
+@import "sourcegraph/app/styles/vars/typography.css";
 
 /*
 	 TYPE SCALE
 */
-/* For Hero Titles */
-.f-6, .f-headline { font-size: 6rem; }
-.f-5, .f-subheadline { font-size: 5rem; }
+
 /* Type Scale */
-.f1 { font-size: 3rem; }
-.f2 { font-size: 2.25rem; }
-.f3 { font-size: 1.5rem; }
-.f4 { font-size: 1.25rem; }
-.f5 { font-size: 1rem; }
-.f6 { font-size: .875rem; }
+.f1 { font-size: var(--font-size-1) }
+.f2 { font-size: var(--font-size-2); }
+.f3 { font-size: var(--font-size-3); }
+.f4 { font-size: var(--font-size-4); }
+.f5 { font-size: var(--font-size-5); }
+.f6 { font-size: var(--font-size-6); }
 
 /*
 	 MEASURE
