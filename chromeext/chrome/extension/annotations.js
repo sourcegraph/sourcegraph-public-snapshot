@@ -61,25 +61,23 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 		// Go through each childNode
 		for (let j = 0; j < children.length; j++) {
 			let childNodeChars;
-			let debug = false;
 
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
+				// Convert html entities to the code equivalent, remember to revert later.
 				const txt = document.createElement("textarea");
-				// HACK: Quote marks for imported package were not getting linked
+				// Quote marks for imported packages were not getting linked
 				// properly. The first mark was a separate anchor tag because GitHub
 				// places quote marks in separate span tags. This hack makes it
 				// such that if an element has childNodes, we merge the innerText
 				// and set that as the innerHTML of the main span tag.
-				if (children[j].children.length>0) {
+				if (children[j].children.length > 0) {
 					children[j].innerHTML = children[j].innerText
 					txt.innerHTML = children[j].outerHTML
-				}
-				else {
+				} else {
 					txt.innerHTML = children[j].outerHTML;
 				}
-				// childNodeChars = children[j].outerHTML.split("");
 				childNodeChars = txt.value.split("");
 			}
 
@@ -123,6 +121,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 // next is a helper method for traverseDOM
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	let matchDetails = annsByStartByte[byteCount];
+	// convert character to unicode
 	c = `&#${c.charCodeAt(0)};`
 
 	// if there is a match
