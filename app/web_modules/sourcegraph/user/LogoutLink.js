@@ -31,9 +31,6 @@ export default class LogoutLink extends Container {
 				if (nextState.authResponse && nextState.authResponse.Error) {
 					console.error(`Logout failed: ${nextState.authResponse.Error.body.message}`);
 				}
-				if (nextState.authResponse && nextState.authResponse.Success) {
-					this.context.router.push("/");
-				}
 			}
 		}
 	}
