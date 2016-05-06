@@ -389,15 +389,7 @@ func (t *testRunner) sendAlert() error {
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
 func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
-	// Create a selenium web driver for the test.
-	// Set up webdriver.
-	caps := selenium.Capabilities(map[string]interface{}{
-		"browserName": "chrome",
-		"chromeOptions": map[string]interface{}{
-			"args": []string{"user-agent=" + e2etestuser.UserAgent},
-		},
-	})
-	wd, err := selenium.NewRemote(caps, t.executor)
+	wd, err := newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
 	}
@@ -444,6 +436,16 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 
 	// Execute the test.
 	return test.Func(ctx), nil
+}
+
+func newWebDriver() (selenium.WebDriver, error) {
+	caps := selenium.Capabilities(map[string]interface{}{
+		"browserName": "chrome",
+		"chromeOptions": map[string]interface{}{
+			"args": []string{"user-agent=" + e2etestuser.UserAgent},
+		},
+	})
+	return selenium.NewRemote(caps, t.executor)
 }
 
 // slackFileUpload implements slack multipart file upload.
@@ -512,42 +514,12 @@ var (
 	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
 )
 
-func Main() {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, `
-Environment:
-  SELENIUM_SERVER_IP (required)
-      IP address of the Selenium server (run 'docker-machine ls' on OS X and Windows; use 'localhost' on Linux)
-  TARGET (required)
-      target Sourcegraph server to test against (e.g. 'http://192.168.1.1:3080', use LAN IP due to Docker!)
-  SELENIUM_SERVER_PORT = "4444"
-      port of the Selenium server
-  ID_KEY_DATA (optional)
-      If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
-  SLACK_API_TOKEN (optional)
-      If specified, send information about tests to Slack.
-  SLACK_CHANNEL = "e2etest"
-      Slack channel to which test result output and test failure screenshots will be sent to.
-  SLACK_WARNING_CHANNEL (optional)
-      If specified, send warning (verbose) log messages to this channel instead of SLACK_CHANNEL.
-  PROMETHEUS_IO_ADDR (optional)
-      If specified, prometheus metric will be exported on this address (eg :6060)
-
-Flags:
-`)
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-
-	// Prepare logging.
-	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
-
+func parseEnv() error {
 	// Determine which Selenium server to connect to.
 	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
 	serverPort := os.Getenv("SELENIUM_SERVER_PORT")
 	if serverAddr == "" {
-		log.Fatal("Unable to get SELENIUM_SERVER_IP from environment")
+		return errors.New("unable to get SELENIUM_SERVER_IP from environment")
 	}
 	if serverPort == "" {
 		serverPort = "4444" // default to standard Selenium port
@@ -559,7 +531,7 @@ Flags:
 
 	u, err := url.Parse(fmt.Sprintf("%s:%s", serverAddr, serverPort))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	u.Path = path.Join(u.Path, "wd/hub")
@@ -569,38 +541,38 @@ Flags:
 	// Determine the target Sourcegraph instance to test against.
 	target := os.Getenv("TARGET")
 	if target == "" {
-		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
+		return errors.New("unable to get TARGET Sourcegraph instance from environment")
 	}
 	tr.target, err = url.Parse(target)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if tr.target.Scheme == "" {
-		log.Fatal("TARGET must specify scheme (http or https) prefix")
+		return errors.New("TARGET must specify scheme (http or https) prefix")
 	}
 
 	// Find server ID key information.
 	if key := os.Getenv("ID_KEY_DATA"); key != "" {
 		tr.idKey, err = idkey.FromString(key)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	} else {
 		sgpath := os.Getenv("SGPATH")
 		if sgpath == "" {
 			currentUser, err := user.Current()
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			sgpath = filepath.Join(currentUser.HomeDir, ".sourcegraph")
 		}
 		data, err := ioutil.ReadFile(filepath.Join(sgpath, "id.pem"))
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		tr.idKey, err = idkey.New(data)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
@@ -622,7 +594,7 @@ Flags:
 		// Find the channel IDs.
 		channels, err := tr.slack.GetChannels(true)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		findChannel := func(name string) *slack.Channel {
 			for _, c := range channels {
@@ -663,6 +635,45 @@ Flags:
 				log.Fatal("Prometheus ListenAndServe:", err)
 			}
 		}()
+	}
+
+	return nil
+}
+
+func Main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, `
+Environment:
+  SELENIUM_SERVER_IP (required)
+      IP address of the Selenium server (run 'docker-machine ls' on OS X and Windows; use 'localhost' on Linux)
+  TARGET (required)
+      target Sourcegraph server to test against (e.g. 'http://192.168.1.1:3080', use LAN IP due to Docker!)
+  SELENIUM_SERVER_PORT = "4444"
+      port of the Selenium server
+  ID_KEY_DATA (optional)
+      If specified, the Base64-encoded string is used in place of '$SGPATH/id.pem' for authenticating
+  SLACK_API_TOKEN (optional)
+      If specified, send information about tests to Slack.
+  SLACK_CHANNEL = "e2etest"
+      Slack channel to which test result output and test failure screenshots will be sent to.
+  SLACK_WARNING_CHANNEL (optional)
+      If specified, send warning (verbose) log messages to this channel instead of SLACK_CHANNEL.
+  PROMETHEUS_IO_ADDR (optional)
+      If specified, prometheus metric will be exported on this address (eg :6060)
+
+Flags:
+`)
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	// Prepare logging.
+	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
+
+	err := parseEnv()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	tr.run()
