@@ -36,7 +36,7 @@ class HomeContainer extends Component {
 								<p>Connect your GitHub account to Sourcegraph and we’ll analyze your repositories – letting you look up and reference code from any other public repository on the graph.</p>
 							</div>
 							<a href="#" styleName="btn-main">Sign up and connect</a>
-							<a href="#" styleName="link-secondary">Explore public repos</a>
+							<a href="#">Explore public repos</a>
 						</div>
 					</div>
 
@@ -129,6 +129,7 @@ class HomeContainer extends Component {
 							<div styleName="content-right-5">
 								<h2 styleName="header-white">Stop coding alone</h2>
 								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
+								<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-white">Join the graph</a>
 							</div>
 						</div>
 					</div>

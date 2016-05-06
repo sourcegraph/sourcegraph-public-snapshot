@@ -12,12 +12,13 @@
 
 .container {
   composes: max-width-lg from layout;
-  composes: center from base;
+	composes: col-12-ns col-11 from grid;
+	composes: center from base;
 }
 
 .container-lg {
+	composes: col-12-ns col-11 from grid;
   composes: center from base;
-  width: 100%;
   max-width: 1200px;
 }
 
@@ -99,7 +100,11 @@
   composes: mr4 from base;
 }
 
-.link-secondary {}
+.btn-white {
+	composes: solid normal from button;
+	composes: fw6 from typography;
+	composes: purple bg-white b--white from colors;
+}
 
 .box-white {
   composes: ba bw1 br2 center cf from base;
@@ -206,4 +211,5 @@
 }
 .content-right-5 {
 	composes: col-ns col-5-ns col-right-ns from grid;
+	composes: mt4 from base;
 }
