@@ -77,7 +77,6 @@ func TestContainerAddrForHost(t *testing.T) {
 
 		"http://localhost/my/repo":           "http://@" + containerHostname + "/my/repo",
 		"http://localhost:1234/my/repo":      "http://@" + containerHostname + ":1234/my/repo",
-		"http://localhost:http/my/repo":      "http://@" + containerHostname + ":http/my/repo",
 		"http://localhost/my/localhost/repo": "http://@" + containerHostname + "/my/localhost/repo",
 		"u@localhost:my/repo.git":            "ssh://u@" + containerHostname + "/my/repo.git",
 		"localhost:my/repo.git":              "ssh://@" + containerHostname + "/my/repo.git",

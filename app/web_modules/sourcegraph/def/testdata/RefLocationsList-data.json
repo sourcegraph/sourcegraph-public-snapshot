@@ -11,7 +11,6 @@
 						"children": [
 							{
 								"type": "header",
-								"key": ".0",
 								"props": {
 									"styleName": "active-group-header",
 									"children": [
@@ -34,49 +33,6 @@
 												"onlyActiveOnIndex": false,
 												"className": "",
 												"style": {}
-											}
-										}
-									]
-								}
-							},
-							{
-								"type": "div",
-								"key": ".1",
-								"props": {
-									"styleName": "refs-group",
-									"children": [
-										{
-											"type": "div",
-											"key": ".$0",
-											"props": {
-												"styleName": "ref-filename ",
-												"children": [
-													{
-														"type": "span",
-														"key": ".0",
-														"props": {
-															"styleName": "refs-count",
-															"children": [
-																"2"
-															]
-														}
-													},
-													" ",
-													{
-														"type": "",
-														"key": ".2",
-														"props": {
-															"title": "f",
-															"to": "/r@v/-/def/undefined/undefined/-/undefined/-/info",
-															"children": [
-																"f"
-															],
-															"onlyActiveOnIndex": false,
-															"className": "",
-															"style": {}
-														}
-													}
-												]
 											}
 										}
 									]

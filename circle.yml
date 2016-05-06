@@ -2,12 +2,14 @@ machine:
   services:
     - docker
     - postgresql
+    - redis
   environment:
     REPO: ../.go_workspace/src/sourcegraph.com/sourcegraph/sourcegraph
     PGUSER: ubuntu
     PGDATABASE: circle_test
     PGSSLMODE: disable
     PATH: $HOME/google-cloud-sdk/bin:$HOME/protobuf-3.0.0-beta-1/src:$PATH
+    REDIS_MASTER_ENDPOINT: ":6379"
     CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
 

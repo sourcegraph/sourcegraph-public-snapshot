@@ -21,7 +21,7 @@ func TestGoOffsets(t *testing.T) {
 		{"package", Keyword_Namespace, 0},
 		{"a", Name_Other, 8},
 		{"func", Keyword_Declaration, 10},
-		{"init", Name_Other, 15},
+		{"init", Name_Attribute, 15},
 		{"(", Punctuation, 19},
 		{")", Punctuation, 20},
 		{"{", Punctuation, 22},

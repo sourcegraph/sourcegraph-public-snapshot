@@ -293,6 +293,48 @@
 			"revisionTime": "2015-10-11T12:25:29+02:00"
 		},
 		{
+			"checksumSHA1": "B70RlXzd+TYXerzISy/f/+TQQXw=",
+			"path": "github.com/mediocregopher/radix.v2",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
+			"checksumSHA1": "jHSOP6ZfonCkLaFYjSGcunmTab8=",
+			"path": "github.com/mediocregopher/radix.v2/cluster",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
+			"checksumSHA1": "8ZSsHmBOqTGuBju5jVDV77qGYGo=",
+			"path": "github.com/mediocregopher/radix.v2/pool",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
+			"checksumSHA1": "pTBkvagxF8ocdzm7QC9p18uOm7A=",
+			"path": "github.com/mediocregopher/radix.v2/pubsub",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
+			"checksumSHA1": "16UHP9YVwZhtTmWawN1dVPdohvE=",
+			"path": "github.com/mediocregopher/radix.v2/redis",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
+			"checksumSHA1": "6n2MLgtxGAW+WTlSM6lpso7ttzA=",
+			"path": "github.com/mediocregopher/radix.v2/sentinel",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
+			"checksumSHA1": "3trAeUc1o4KayhTfaE3zt3Tc4ak=",
+			"path": "github.com/mediocregopher/radix.v2/util",
+			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
+			"revisionTime": "2016-04-15T23:49:38Z"
+		},
+		{
 			"path": "github.com/microcosm-cc/bluemonday",
 			"revision": "4ac6f27528d0a3f2a59e0b0a6f6b3ff0bb89fe20",
 			"revisionTime": "2015-11-02T10:20:00-08:00"

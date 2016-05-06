@@ -92,7 +92,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 				Image: droneSrclibGoImage,
 			},
 			Commands:     srclibBuildCommands,
-			AllowFailure: true,
+			AllowFailure: false,
 		},
 	},
 	"JavaScript": droneyaml.BuildItem{

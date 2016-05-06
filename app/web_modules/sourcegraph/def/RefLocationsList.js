@@ -42,13 +42,6 @@ class RefLocationsList extends React.Component {
 						<header styleName={this.props.repo === repoRef.Repo ? "active-group-header" : ""}>
 							<span styleName="refs-count">{repoRef.Count}</span> <Link to={urlToDefInfo(def, this.props.rev)}>{repoRef.Repo}</Link>
 						</header>
-						<div styleName="refs-group">
-							{repoRef.Files && repoRef.Files.map((file, j) => (
-								<div key={j} styleName={`ref-filename ${this.props.repo === repoRef.Repo && this.props.path === file.Path ? "current-file-refs" : ""}`}>
-									<span styleName="refs-count">{file.Count}</span> <Link title={file.Path} to={urlToDefInfo(def, this.props.rev)}>{file.Path}</Link>
-								</div>
-							))}
-						</div>
 					</div>
 				))}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't

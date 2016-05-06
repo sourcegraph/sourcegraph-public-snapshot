@@ -9,17 +9,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/golang/groupcache/lru"
 	"github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 )
 
-func resetCache() {
-	reposGithubPublicCache = cache.TTL(
-		cache.Sync(lru.New(500)),
-		conf.GetenvDurationOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL", "1m"))
+const testGHCachePrefix = "__test__gh_pub"
+
+func resetCache(t *testing.T) {
+	if err := rcache.ClearAllForTest(testGHCachePrefix); err != nil {
+		t.Fatal(err)
+	}
+	reposGithubPublicCache = rcache.New(testGHCachePrefix)
 }
 
 // TestRepos_Get_existing_public tests the behavior of Repos.Get when called on a
@@ -38,7 +39,7 @@ func TestRepos_Get_existing_private(t *testing.T) {
 // repo that is private (i.e., it shouldn't be cached).
 func testRepos_Get(t *testing.T, private bool) {
 	githubcli.Config.GitHubHost = "github.com"
-	resetCache()
+	resetCache(t)
 
 	var calledGet bool
 	ctx := testContext(&minimalClient{
@@ -95,7 +96,7 @@ func testRepos_Get(t *testing.T, private bool) {
 // on a repo that does not exist.
 func TestRepos_Get_nonexistent(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
-	resetCache()
+	resetCache(t)
 
 	ctx := testContext(&minimalClient{
 		repos: mockGitHubRepos{

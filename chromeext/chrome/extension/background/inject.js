@@ -9,7 +9,8 @@ function isInjected(tabId) {
 
 function loadScript(name, tabId, cb) {
 	if (process.env.NODE_ENV === "production") {
-		chrome.tabs.executeScript(tabId, {file: `/js/${name}.bundle.js`, runAt: "document_end"}, cb);
+		// Do not use direct tab injection; instead, scripts are loaded via
+		// content_scripts (see: https://developer.chrome.com/extensions/content_scripts).
 	} else {
 		// dev: async fetch bundle
 		fetch(`https://localhost:3000/js/${name}.bundle.js`)
@@ -30,13 +31,15 @@ function loadScript(name, tabId, cb) {
 	}
 }
 
-const arrowURLs = ["^https://github\\.com", "^https://sourcegraph\\.com"];
+const arrowURLs = ["^https://github\\.com", "^https://www\\.github\\.com", "^https://sourcegraph\\.com", "^https://www\\.sourcegraph\\.com"];
 
-chrome.tabs.onUpdated.addListener(async function(tabId, changeInfo, tab) {
-	if (changeInfo.status !== "loading" || !tab.url.match(arrowURLs.join("|"))) return;
+if (process.env.NODE_ENV !== "production") {
+	chrome.tabs.onUpdated.addListener(async function(tabId, changeInfo, tab) {
+		if (changeInfo.status !== "loading" || !tab.url.match(arrowURLs.join("|"))) return;
 
-	const result = await isInjected(tabId);
-	if (chrome.runtime.lastError || result[0]) return;
+		const result = await isInjected(tabId);
+		if (chrome.runtime.lastError || result[0]) return;
 
-	loadScript("inject", tabId, () => console.log("load inject bundle success!"));
-});
+		loadScript("inject", tabId, () => console.log("load inject bundle success!"));
+	});
+}

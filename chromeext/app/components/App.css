@@ -27,7 +27,7 @@
 
 .input {
 	padding: 5px;
-	padding-bottom: 10px; /* To get in line with breadcrumb */
+	padding-bottom: 5px; /* To get in line with breadcrumb */
 	font-size: 18px;
 	border: none;
 	flex: 1 1 auto;

@@ -111,7 +111,13 @@ const UserBackend = {
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data)))
+					.then((data) => {
+						Dispatcher.Stores.dispatch(new UserActions.LogoutCompleted(data));
+						// Redirect on logout.
+						if (data.Success) {
+							window.location.href = "/";
+						}
+					})
 			);
 			break;
 		case UserActions.SubmitForgotPassword:

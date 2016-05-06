@@ -138,6 +138,8 @@ func (self *goLexer) emit(tok *Token) *Token {
 			// built-in functions such as panic()
 			if goBuiltIn(prev.Text) {
 				prev.Type = Name_Builtin
+			} else {
+				prev.Type = Name_Attribute
 			}
 		}
 		self.cache = append(self.cache, tok)
