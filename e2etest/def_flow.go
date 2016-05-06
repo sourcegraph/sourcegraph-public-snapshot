@@ -61,7 +61,7 @@ func TestDefFlow(t *T) error {
 	// Check that the def link appears
 	var defLink selenium.WebElement
 	getDefLink := func() bool {
-		links, err := wd.FindElements(selenium.ByTagName, "a")
+		links, err := wd.FindElements(selenium.ByXPATH, "//a[contains(@href, 'Header/Get')]")
 		if err != nil {
 			return false
 		}
