@@ -11,11 +11,11 @@ func init() {
 	Register(&Test{
 		Name:        "def_flow",
 		Description: "start at info page for net/http/Header.Get (gddo entrypoint), click on def, go back to info",
-		Func:        TestDefFlow,
+		Func:        testDefFlow,
 	})
 }
 
-func TestDefFlow(t *T) error {
+func testDefFlow(t *T) error {
 	wd := t.WebDriver
 
 	err := wd.Get(t.Endpoint("/github.com/golang/go/-/def/GoPackage/net/http/-/Header/Get/-/info"))

@@ -15,11 +15,11 @@ func init() {
 	Register(&Test{
 		Name:        "register_flow",
 		Description: "Registers a brand new user account via the join page.",
-		Func:        TestRegisterFlow,
+		Func:        testRegisterFlow,
 	})
 }
 
-func TestRegisterFlow(t *T) error {
+func testRegisterFlow(t *T) error {
 	// Create gRPC client connection so we can talk to the server. e2etest uses
 	// the server's ID key for authentication, which means it can do ANYTHING with
 	// no restrictions. Be careful!
