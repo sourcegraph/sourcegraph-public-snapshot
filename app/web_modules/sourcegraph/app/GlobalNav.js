@@ -5,7 +5,7 @@ import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
 import Logo from "sourcegraph/components/Logo";
-import {Avatar, Button, Popover, Menu} from "sourcegraph/components";
+import {Avatar, Popover, Menu} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";

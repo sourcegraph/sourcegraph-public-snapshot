@@ -1,5 +1,4 @@
 import React from "react";
-import {Link} from "react-router";
 import Helmet from "react-helmet";
 
 import Container from "sourcegraph/Container";
@@ -18,7 +17,6 @@ import {Button} from "sourcegraph/components";
 import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 
-import ChromeExtensionCTA from "./ChromeExtensionCTA";
 import OnboardingModals from "./OnboardingModals";
 import HomeContainer from "./HomeContainer";
 
@@ -99,9 +97,7 @@ class DashboardContainer extends Container {
 
 				<Helmet title="Home" />
 
-				{!this.context.signedIn &&
- 					this.renderSignedOutHomepage()
-				}
+				{!this.context.signedIn && this.renderSignedOutHomepage()}
 
 				{this.context.user && this.context.user.Admin &&
 					<GlobalSearch query={this.props.location.query.q || ""}/>
