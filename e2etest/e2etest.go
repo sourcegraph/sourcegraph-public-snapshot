@@ -38,9 +38,6 @@ import (
 type T struct {
 	selenium.WebDriverT
 
-	// Log is where all errors, warnings, etc. should be written to.
-	Log *log.Logger
-
 	// Target is the target Sourcegraph server to test, e.g. https://sourcegraph.com
 	Target *url.URL
 
@@ -437,7 +434,6 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 
 	// Setup the context for the test.
 	ctx := &T{
-		Log:       t.log,
 		Target:    t.target,
 		TestLogin: e2etestuser.Prefix + test.Name,
 		TestEmail: e2etestuser.Prefix + test.Name + "@sourcegraph.com",
