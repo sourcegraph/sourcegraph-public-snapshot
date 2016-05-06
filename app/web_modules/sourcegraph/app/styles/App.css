@@ -29,8 +29,13 @@ Prevent scrolling the main content when a modal is being displayed.
 
 /* Responsive type scaling */
 @value desktop-base-size from typography;
+@value c_cool-gray from colors;
+
 body {
+	color: c_cool-gray;
 	font-size: desktop-base-size;
+	letter-spacing: 0.8;
+	line-height: 1.6;
 }
 
 @value mobile-base-size from typography;
