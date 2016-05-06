@@ -18,7 +18,7 @@ class NavContext extends React.Component {
 
 	_isLanguageSupported() {
 		if (!this.props.inventory || !this.props.inventory.Languages) return true; // innocent until proven guilty
-		return this.props.inventory.Languages.filter((lang) => lang.Name === "Go" || lang.Name === "Java").length > 0;
+		return this.props.inventory.Languages.filter((lang) => ["Go", "Java", "JavaScript"].includes(lang.Name)).length > 0;
 	}
 
 	render() {

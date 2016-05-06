@@ -8,8 +8,7 @@
 FROM node:5.7.0-slim
 
 RUN apt-get update -y
-RUN apt-get install -qq git make
-RUN npm install --silent -g node-gyp-install
+RUN apt-get install -qq git
 
 #
 # Install srclib-javascript executable
@@ -20,9 +19,7 @@ ADD $TOOLCHAIN_URL /toolchain/t
 RUN (cd /toolchain && tar xfz t && rm t && mv * /toolchain/t) || true
 RUN mkdir -p $SRCLIBPATH/sourcegraph.com/sourcegraph && mv /toolchain/t $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript
-# Otherwise these get picked up as being in the jsg package
-ENV NODEJS_CORE_MODULES_DIR /tmp/node_core_modules
-RUN ln -rs $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-javascript/node_modules/jsg/testdata/node_core_modules $NODEJS_CORE_MODULES_DIR
+RUN npm install
 
 #
 # Install srclib binary (assumes this has been built on the Docker host)
