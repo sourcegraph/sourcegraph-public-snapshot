@@ -2,12 +2,38 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 @value grid "sourcegraph/components/styles/grid.css";
+@value layout "sourcegraph/components/styles/layout.css";
+@value link "sourcegraph/components/styles/link.css";
+@value button "sourcegraph/components/styles/button.css";
 
 @value navbarHeight 40px;
 
-.logged-out-nav {
-	
+/* Logged out nav */
+
+.logged-out-header {
+	composes: max-width-lg from layout;
+	composes: center mt4 from base;
 }
+
+.logged-out-nav {
+	composes: fr from base;
+}
+
+.logged-out-nav-item {
+	composes: link-subtle from link;
+	composes: pa3 mr2 from base;
+}
+
+.btn-login {
+	composes: btn normal outline outline-primary from button;
+	composes: mr4 ml2 from base;
+}
+.btn-signup {
+	composes: btn normal solid-primary from button;
+}
+
+
+/* Logged in navigation */
 
 .navbar + * {
 	/* Account for navbar's position: fixed. */

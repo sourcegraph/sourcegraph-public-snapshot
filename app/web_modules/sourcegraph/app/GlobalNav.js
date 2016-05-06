@@ -16,8 +16,14 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 	if (!signedIn) {
 		return (
-			<div styleName="logged-out-nav">
-				<Logo width="220px" type="logotype" />
+			<div styleName="logged-out-header">
+				<a href="/"><Logo width="220px" type="logotype" /></a>
+				<nav styleName="logged-out-nav">
+					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
+					<a href="/about" styleName="logged-out-nav-item">About</a>
+					<a href="/about" styleName="btn-login">Log in</a>
+					<a href="/about" styleName="btn-signup">Sign up for free</a>
+				</nav>
 			</div>
 		);
 	}
