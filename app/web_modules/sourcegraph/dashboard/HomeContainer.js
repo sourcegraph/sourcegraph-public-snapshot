@@ -63,19 +63,75 @@ class HomeContainer extends Component {
 					</div>
 
 					<div styleName="box-white">
-						<h1 styleName="h1">Growing language support</h1>
-						<hr styleName="short-blue-line" />
-						<p styleName="lead">Language support for Sourcegraph is powered by <a href="https://srclib.org/">srclib</a>, an hackable code analysis library.</p>
-					</div>
+						<div styleName="responsive-container">
+							<h1 styleName="h1">Growing language support</h1>
+							<hr styleName="short-blue-line" />
+							<p styleName="lead">Language support for Sourcegraph is powered by <a href="https://srclib.org/">srclib</a>, an hackable code analysis library.</p>
 
-					<div styleName="box-purple-gradient">
-						<div styleName="container">
-							<h2 styleName="header-white">Stop coding alone</h2>
-							<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
+							<div styleName="language">Go</div>
+							<h5 styleName="header-5">Top Go Projects</h5>
+
+							<div styleName="row">
+								<div styleName="featured-project">
+									<a href="https://sourcegraph.com/github.com/golang/go">golang/go</a>
+									<p styleName="project-desc">
+										Used by 21,453 developers <br />
+										Used in 5,398 projects
+									</p>
+								</div>
+								<div styleName="featured-project">
+									<a href="https://sourcegraph.com/github.com/aws/aws-sdk-go">aws-sdk-go</a>
+									<p styleName="project-desc">
+										Used by 21,453 developers <br />
+										Used in 5,398 projects
+									</p>
+								</div>
+								<div styleName="featured-project">
+									<a href="https://sourcegraph.com/github.com/kubernetes/kubernetes">kubernetes/kubernetes</a>
+									<p styleName="project-desc">
+										Used by 21,453 developers <br />
+										Used in 5,398 projects
+									</p>
+								</div>
+							</div>
+
+							<h5 styleName="header-5">Coming soon</h5>
+
+							<div styleName="row">
+								<div styleName="language-2">
+									C#
+								</div>
+								<div styleName="language-3">
+									Java
+								</div>
+								<div styleName="language-5">
+									JavaScript
+								</div>
+								<div styleName="language-2">
+									Ruby
+								</div>
+							</div>
 						</div>
 					</div>
 
+				</div>
 
+				<div styleName="box-purple-gradient">
+					<div styleName="container">
+						<div styleName="row">
+							<div styleName="img-left-4">
+								<img src={`${siteConfig.assetsRoot}/img/Homepage/how-ref.gif`} styleName="how-img" />
+								<div>
+									<div styleName="question-mark">?</div>
+									<div styleName="question">How are other developers using this function?</div>
+								</div>
+							</div>
+							<div styleName="content-right-5">
+								<h2 styleName="header-white">Stop coding alone</h2>
+								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
+							</div>
+						</div>
+					</div>
 				</div>
 
 			</div>

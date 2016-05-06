@@ -102,7 +102,7 @@
 .link-secondary {}
 
 .box-white {
-  composes: ba bw1 br2 ph5 pv2 center from base;
+  composes: ba bw1 br2 center cf from base;
   composes: bg-white b--black-05 from colors;
   composes: col-8-ns from grid;
   z-index: 20;
@@ -110,14 +110,19 @@
   margin-bottom: -20px;
 }
 
+.responsive-container {
+	composes: col-9 from grid;
+ 	composes: pt2 pb6 center from base;
+}
+
 .lead {
   composes: f4 tc from typography;
   composes: cool-mid-gray from colors;
-  composes: mt5 from base;
+  composes: mt5 mb5 from base;
 }
 
 .box-purple-gradient {
-  composes: pv5 from base;
+  composes: pv6 from base;
   background-image: linear-gradient(-180deg, #8E2DFC 0%, #B114F7 77%);
 }
 
@@ -128,4 +133,77 @@
 .header-white {
   composes: f2 from typography;
   composes: white from colors;
+}
+
+.header-5 {
+	composes: f5 tracked from typography;
+	composes: cool-mid-gray from colors;
+	text-transform: uppercase;
+}
+
+.row {
+	composes: cf from base;
+}
+
+.project-desc {
+	composes: mt0 from base;
+	composes: f5 from typography;
+	composes: cool-gray-5 from colors;
+	line-height: 1.6;
+}
+
+.featured-project {
+	composes: col-ns col-4-ns from grid;
+}
+
+.language {
+	composes: f2 from typography;
+	composes: cool-gray-8 from colors;
+}
+
+.language-3 {
+	composes: language;
+	composes: col-ns col-3-ns from grid;
+}
+
+.language-2 {
+	composes: language;
+	composes: col-ns col-2-ns from grid;
+}
+
+.language-5 {
+	composes: language;
+	composes: col-ns col-5-ns from grid;
+}
+
+.img-left-4 {
+	composes: col-ns col-6-ns from grid;
+  composes: bg-light-purple from colors;
+	composes: br2 from base;
+  box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
+}
+
+.how-img {
+	display: block;
+	width: 100%;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+
+.question {
+		composes: ml3 from base;
+		padding-top: 16px;
+}
+
+.question-mark {
+	composes: bg-purple white from colors;
+	composes: br-100 ma3 fl from base;
+	composes: tc v-btm f4 from typography;
+	width: 32px;
+	height: 32px;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+.content-right-5 {
+	composes: col-ns col-5-ns col-right-ns from grid;
 }
