@@ -54,6 +54,9 @@ type T struct {
 	// calling Fatalf).
 	WebDriver selenium.WebDriver
 
+	// testingT provides a Fatalf implementation
+	testingT selenium.TestingT
+
 	tr *testRunner
 }
 
@@ -69,7 +72,10 @@ func (e *internalError) Error() string {
 // package we are a single process, we instead cause a panic (which is caught
 // by the test executor).
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
-	panic(fmt.Sprintf(fmtStr, v...))
+	if t.testingT == nil {
+		panic(fmt.Sprintf(fmtStr, v...))
+	}
+	t.testingT.Fatalf(fmtStr, v...)
 }
 
 // Endpoint returns an absolute URL given one relative to the target instance
@@ -389,7 +395,7 @@ func (t *testRunner) sendAlert() error {
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
 func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
-	wd, err := newWebDriver()
+	wd, err := t.newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
 	}
@@ -424,7 +430,21 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 		wd.Quit()
 	}()
 
-	// Setup the context for the test.
+	ctx := t.newT(test, wd)
+	return test.Func(ctx), nil
+}
+
+func (t *testRunner) newWebDriver() (selenium.WebDriver, error) {
+	caps := selenium.Capabilities(map[string]interface{}{
+		"browserName": "chrome",
+		"chromeOptions": map[string]interface{}{
+			"args": []string{"user-agent=" + e2etestuser.UserAgent},
+		},
+	})
+	return selenium.NewRemote(caps, t.executor)
+}
+
+func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 	ctx := &T{
 		Target:    t.target,
 		TestLogin: e2etestuser.Prefix + test.Name,
@@ -433,19 +453,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 		tr:        t,
 	}
 	ctx.WebDriverT = ctx.WebDriver.T(ctx)
-
-	// Execute the test.
-	return test.Func(ctx), nil
-}
-
-func newWebDriver() (selenium.WebDriver, error) {
-	caps := selenium.Capabilities(map[string]interface{}{
-		"browserName": "chrome",
-		"chromeOptions": map[string]interface{}{
-			"args": []string{"user-agent=" + e2etestuser.UserAgent},
-		},
-	})
-	return selenium.NewRemote(caps, t.executor)
+	return ctx
 }
 
 // slackFileUpload implements slack multipart file upload.
