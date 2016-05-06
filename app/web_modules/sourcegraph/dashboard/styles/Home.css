@@ -1,2 +1,122 @@
+@value layout "sourcegraph/components/styles/layout.css";
+@value base "sourcegraph/components/styles/base.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value button "sourcegraph/components/styles/button.css";
+
+
 .home {
+	composes: mt4 from base;
+}
+
+.container {
+  composes: max-width-lg from layout;
+  composes: center from base;
+}
+
+.container-lg {
+  composes: center from base;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.h1 {
+  composes: f1 fw4 tc from typography;
+  composes: center mv5 from base;
+  /*background: url("/sourcegraph/asse")*/
+  width: 100%;
+  max-width: 740px;
+}
+
+.h2 {
+  composes: f2 fw4 tc from typography;
+  composes: cool-mid-gray from colors;
+  composes: mt5 mb6 center from base;
+  width: 100%;
+  max-width: 620px;
+}
+
+.h3 {
+  composes: f3 fw6 from typography;
+  composes: blue from colors;
+}
+
+.text-purple {
+  composes: purple from colors;
+}
+
+@value line-width: 175px;
+
+.short-purple-line {
+  composes: ba bw3 mt5 from base;
+  composes: b--purple from colors;
+  width: line-width;
+}
+
+.short-blue-line {
+  composes: ba bw3 mt4 from base;
+  composes: b--blue from colors;
+  width: line-width;
+}
+
+.content-block {
+  composes: mv6 cf from base;
+}
+
+.img {
+  composes: br2 ba bw1 from base;
+  composes: b--black-10 from colors;
+  width: 100%;
+  box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
+}
+
+.img-left {
+  composes: col-ns col-5-ns from grid;
+  margin-left: -5px;
+}
+
+.img-right {
+  composes: col-ns col-5-ns col-right-ns from grid;
+  margin-right: -5px;
+}
+
+.content-right {
+  composes: col-ns col-6-ns col-right-ns from grid;
+}
+
+.content-left {
+  composes: col-ns col-6-ns col-right-ns from grid;
+}
+
+.content {
+  composes: mb4 from base;
+  max-width: 420px;
+}
+
+.btn-main {
+	composes: btn normal solid-primary from button;
+  composes: mr4 from base;
+}
+
+.link-secondary {}
+
+.box-white {
+  composes: ba bw1 br2 ph5 pv2 center from base;
+  composes: bg-white b--black-05 from colors;
+  composes: col-8-ns from grid;
+  z-index: 20;
+  position: relative;
+  margin-bottom: -20px;
+}
+
+.lead {
+  composes: f4 tc from typography;
+  composes: cool-mid-gray from colors;
+  composes: mt5 from base;
+}
+
+.box-purple-gradient {
+  composes: pv5 from base;
+  background-image: linear-gradient(-180deg, #8E2DFC 0%, #B114F7 77%);
 }

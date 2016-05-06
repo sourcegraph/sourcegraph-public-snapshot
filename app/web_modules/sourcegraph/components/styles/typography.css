@@ -1,16 +1,15 @@
 @value colors "./colors.css";
 @value base "./base.css";
-@import "sourcegraph/app/styles/vars/typography.css";
 
 /* TYPE VARIABLES */
 
 @value desktop-base-size: 14px;
 @value mobile-base-size: 12px;
 
-@value font-size-1: 2.8rem;
-@value font-size-2: 2.25rem;
-@value font-size-3: 1.75rem;
-@value font-size-4: 1.25rem;
+@value font-size-1: 3.35rem;
+@value font-size-2: 2.1rem;
+@value font-size-3: 2.0rem;
+@value font-size-4: 1.5rem;
 @value font-size-5: 1rem;
 @value font-size-6: .875rem;
 
@@ -20,12 +19,33 @@
 */
 
 /* Type Scale */
-.f1 { font-size: font-size-1; }
-.f2 { font-size: font-size-2; }
-.f3 { font-size: font-size-3; }
-.f4 { font-size: font-size-4; }
-.f5 { font-size: font-size-5; }
-.f6 { font-size: font-size-6; }
+.f1 {
+	font-size: font-size-1;
+	line-height: 1.45;
+	letter-spacing: 0.8px;
+}
+.f2 {
+	font-size: font-size-2;
+	line-height: 1.45;
+	letter-spacing: 0.9px;
+}
+.f3 {
+	font-size: font-size-3;
+	line-height: 1.45;
+	letter-spacing: 0.9px;
+}
+.f4 {
+	font-size: font-size-4;
+	line-height: 1.45;
+}
+.f5 {
+	font-size: font-size-5;
+	line-height: 1.45;
+}
+.f6 {
+	font-size: font-size-6;
+	line-height: 1.45;
+}
 
 /*
 	 MEASURE
@@ -262,8 +282,4 @@ html {
 	composes: f4;
 	composes: mid-gray from colors;
 	font-style: italic;
-}
-
-.button-text {
-	composes: tc f4;
 }

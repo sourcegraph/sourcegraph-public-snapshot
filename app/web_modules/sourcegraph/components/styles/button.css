@@ -2,13 +2,18 @@
 @value colors "./colors.css";
 @value typography "./typography.css";
 
+@value btn-transition: all 0.4s;
+
 .btn {
-    composes: button-text from typography;
-    composes: tc from typography;
+    composes: tc fw5 from typography;
     display: inline-block;
     cursor: pointer;
     user-select: none;
     box-sizing: border-box;
+    transition: btn-transition;
+    -webkit-transition: btn-transition;
+    -moz-transition: btn-transition;
+    -ms-transition: btn-transition;
 }
 .btn:focus {
     outline: 0;
@@ -34,18 +39,20 @@
 }
 
 .large {
-    composes: pa4 br3 from base;
+    composes: pa4 br2 from base;
     font-size: 1.25rem !important;
 }
 .normal {
-    composes: pa3 br3 from base;
+    composes: ph3 br2 from base;
+    padding-top: 9px;
+    padding-bottom: 9px;
 }
 .small {
     composes: pa2 br2 from base;
 }
 .tiny {
 	composes: fa6 from typography;
-    composes: br2 ph2 pv1 from base;
+  composes: br2 ph2 pv1 from base;
 }
 /* Button size for buttons on the nav bar. */
 .nav {
@@ -57,13 +64,6 @@
 	border-top-color: transparent !important;
 }
 
-/* buttons have an active shadow */
-@value c_black-10 from colors;
-@value c_black-90 from colors;
-.active-shadow:active {
-    box-shadow: 0 0 0 1px c_black-10 inset, 0 0 6px c_black-10 inset;
-}
-
 /* block button fits to width of container */
 .block {
     composes: btn;
@@ -73,15 +73,15 @@
 
 /* outline buttons */
 .outline {
-    composes: btn active-shadow;
-    composes: ba from base;
+    composes: btn;
+    composes: ba bw2 from base;
     composes: bg-white from colors;
     background-image: none;
 }
 @value c_blue from colors;
 .outline-primary {
     composes: outline;
-    composes: b--blue-8 blue-8 from colors;
+    composes: b--blue-5 blue from colors;
 }
 .outline-primary:hover,
 .outline-primary:focus {
@@ -168,13 +168,8 @@
 @value c_light-gray from colors;
 .solid {
 	border-style: solid;
-	border-width: 1px;
-	composes: btn active-shadow;
-	background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
-}
-.solid:hover,
-.solid:focus {
-    background-image: linear-gradient(transparent, rgba(0,0,0, 0.10) 40%, rgba(0,0,0, 0.20));
+	border-width: 2px;
+	composes: btn;
 }
 
 .solid-default {
@@ -185,6 +180,14 @@
 .solid-primary {
     composes: solid;
     composes: white bg-blue b--blue from colors;
+}
+
+@value c_dark-blue-2 from colors;
+.solid-primary:hover,
+.solid-primary:focus {
+  color: white;
+  background: c_dark-blue-2;
+  border-color: c_dark-blue-2;
 }
 
 .solid-success {

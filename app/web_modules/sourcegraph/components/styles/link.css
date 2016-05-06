@@ -1,6 +1,7 @@
 @value colors "./colors.css";
 @value c_blue from colors;
 @value c_dark-blue from colors;
+@value c_cool-gray-5 from colors;
 
 /* Can't use "composes" on tag names */
 a {
@@ -19,4 +20,12 @@ a:hover {
 .link:hover {
 	text-decoration: none;
 	color: c_dark-blue;   /* TODO: can't use compose on pseudoelements. */
+}
+
+.link-subtle {
+	composes: cool-mid-gray from colors;
+}
+
+.link-subtle:hover {
+	color: c_cool-gray-8;
 }

@@ -5,6 +5,7 @@
 @value c_blue-1 rgba(15, 182, 242, .1);
 @value c_faded-blue rgb(155, 194, 215);
 @value c_dark-blue rgba(0, 59, 155, 1);
+@value c_dark-blue-2 rgb(0, 166, 222);
 @value c_pale-blue rgba(247, 249, 255, 1);
 
 @value c_purple rgba(177, 20, 247, 1);
@@ -37,6 +38,7 @@
 @value c_cool-gray-5 rgba(52, 74, 102, .5);
 @value c_cool-gray-2 rgba(52, 74, 102, .2);
 
+@value c_cool-mid-gray rgba(119, 147, 174, 1);
 
 @value c_dark-gray #333;
 @value c_mid-gray #555;
@@ -105,6 +107,8 @@
 .cool-gray-5 { color: c_cool-gray-5; }
 .cool-gray-2 { color: c_cool-gray-2; }
 .cool-gray-1 { color: c_cool-gray-1; }
+.cool-mid-gray { color: c_cool-mid-gray; }
+
 .black { color: black; }
 .dark-gray { color: c_dark-gray; }
 .mid-gray { color: c_mid-gray; }
