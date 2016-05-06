@@ -13,7 +13,6 @@ func init() {
 		Name:        "def_flow",
 		Description: "start at info page for net/http/Header.Get (gddo entrypoint), click on def, go back to info",
 		Func:        TestDefFlow,
-		Quarantined: true,
 	})
 }
 
