@@ -16,6 +16,17 @@
 	composes: center from base;
 }
 
+.container-with-globe {
+	composes: container;
+	composes: mv6 from base;
+	background: url('../../../../assets/img/world-illo.svg') no-repeat top center;
+}
+
+.bg {
+	position: absolute;
+	z-index: 0;
+	top: 100px;
+}
 .container-lg {
 	composes: col-12-ns col-11 from grid;
   composes: center from base;
@@ -88,6 +99,7 @@
 
 .content-left {
   composes: col-ns col-6-ns col-right-ns from grid;
+	composes: pr4 from base;
 }
 
 .content {
@@ -128,7 +140,9 @@
 
 .box-purple-gradient {
   composes: pv6 from base;
-  background-image: linear-gradient(-180deg, #8E2DFC 0%, #B114F7 77%);
+  background-image: url('../../../../assets/img/world-illo-faded.svg'), linear-gradient(#8E2DFC, #B114F7);
+	background-repeat: no-repeat;
+	background-position: 110% 30%;
 }
 
 .text-white {

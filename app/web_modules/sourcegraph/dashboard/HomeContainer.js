@@ -19,7 +19,7 @@ class HomeContainer extends Component {
 		const {siteConfig} = this.context;
 		return (
 			<div styleName="home">
-				<div styleName="container">
+				<div styleName="container-with-globe">
 					<h1 styleName="h1">
 						<strong styleName="text-purple">Write better code</strong> by accessing examples and references from developers around the world
 					</h1>
@@ -121,7 +121,7 @@ class HomeContainer extends Component {
 						<div styleName="row">
 							<div styleName="img-left-4">
 								<img src={`${siteConfig.assetsRoot}/img/Homepage/how-ref.gif`} styleName="how-img" />
-								<div>
+								<div styleName="row">
 									<div styleName="question-mark">?</div>
 									<div styleName="question">How are other developers using this function?</div>
 								</div>
