@@ -73,7 +73,12 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 				// such that if an element has childNodes, we merge the innerText
 				// and set that as the innerHTML of the main span tag.
 				if (children[j].children.length > 0) {
-					children[j].innerHTML = children[j].innerText
+					const innerTextArray = children[j].innerText.split("");
+					const escapedTextArray = innerTextArray.map(s =>
+						(`&#${s.charCodeAt(0)}`)
+					)
+					const y = escapedTextArray.join("");
+					children[j].innerHTML = y;
 					txt.innerHTML = children[j].outerHTML
 				} else {
 					txt.innerHTML = children[j].outerHTML;
