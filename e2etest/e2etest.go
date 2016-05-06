@@ -185,6 +185,9 @@ func (t *testRunner) slackMessage(messageType int, msg, quoted string) {
 	if t.slack == nil {
 		return
 	}
+	if messageType == typeWarning && t.slackWarningChannel == nil {
+		return
+	}
 
 	params := slack.PostMessageParameters{
 		Username:  "e2etest",
@@ -617,7 +620,7 @@ Flags:
 			channelName = "e2etest"
 		}
 		if warningChannelName == "" {
-			warningChannelName = channelName
+			log.Println("SLACK_WARNING_CHANNEL not configured, warnings will not appear on slack")
 		}
 
 		// Find the channel IDs.
@@ -639,11 +642,13 @@ Flags:
 			log.Println("disabling slack notifications")
 			tr.slack = nil
 		}
-		tr.slackWarningChannel = findChannel(warningChannelName)
-		if tr.slackWarningChannel == nil {
-			log.Println("could not find slack warning channel", warningChannelName)
-			log.Println("defaulting to SLACK_CHANNEL instead")
-			tr.slackWarningChannel = tr.slackChannel
+		if warningChannelName != "" {
+			tr.slackWarningChannel = findChannel(warningChannelName)
+			if tr.slackWarningChannel == nil {
+				log.Println("could not find slack warning channel", warningChannelName)
+				log.Println("defaulting to SLACK_CHANNEL instead")
+				tr.slackWarningChannel = tr.slackChannel
+			}
 		}
 		if tr.slackChannel != nil {
 			registeredTests := &bytes.Buffer{}
