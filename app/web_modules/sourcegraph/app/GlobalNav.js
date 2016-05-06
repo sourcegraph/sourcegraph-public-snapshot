@@ -22,15 +22,56 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 				<nav styleName="logged-out-nav">
 					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
 					<a href="/about" styleName="logged-out-nav-item">About</a>
-					<a href="/about" styleName="btn-login">Log in</a>
-					<a href="/about" styleName="btn-signup">Sign up for free</a>
+					<LocationStateToggleLink href="/login"
+						modalName="login"
+						location={location}
+						onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")} styleName="btn-login">Log in
+					</LocationStateToggleLink>
+					<LocationStateToggleLink href="/join"
+						modalName="signup" location={location}
+						onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}
+						styleName="btn-signup">
+						Sign up for free
+					</LocationStateToggleLink>
 				</nav>
 				<nav styleName="logged-out-nav-mobile">
 					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
 					<a href="/about" styleName="logged-out-nav-item">About</a>
-					<a href="/about" styleName="btn-login">Log in</a>
-					<a href="/about" styleName="btn-signup">Sign up</a>
+					<LocationStateToggleLink href="/login"
+						modalName="login"
+						location={location}
+						onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")} styleName="btn-login">Log in
+					</LocationStateToggleLink>
+					<LocationStateToggleLink href="/join"
+						modalName="signup" location={location}
+						onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}
+						styleName="btn-signup">
+						Sign up
+					</LocationStateToggleLink>
 				</nav>
+
+				{location.state && location.state.modal === "login" &&
+					<LocationStateModal modalName="login" location={location}
+						onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
+						<div styleName="modal">
+							<LoginForm
+								onLoginSuccess={dismissModal("login", location, router)}
+								location={location} />
+						</div>
+					</LocationStateModal>
+				}
+
+				{location.state && location.state.modal === "signup" &&
+					<LocationStateModal modalName="signup" location={location}
+						onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
+						<div styleName="modal">
+							<SignupForm
+								onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
+								location={location} />
+						</div>
+					</LocationStateModal>
+				}
+
 			</div>
 		);
 	}
@@ -53,42 +94,6 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 							</Menu>
 						</Popover>
 					</div>
-				}
-				{!signedIn &&
-					<div styleName="action">
-						<LocationStateToggleLink href="/login" modalName="login" location={location}
-							onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
-							<Button color="default" size="nav" block={true}>Sign in</Button>
-						</LocationStateToggleLink>
-					</div>
-				}
-				{location.state && location.state.modal === "login" &&
-					<LocationStateModal modalName="login" location={location}
-						onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
-						<div styleName="modal">
-							<LoginForm
-								onLoginSuccess={dismissModal("login", location, router)}
-								location={location} />
-						</div>
-					</LocationStateModal>
-				}
-				{!signedIn &&
-					<div styleName="action">
-						<LocationStateToggleLink href="/join" modalName="signup" location={location}
-							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
-							<Button color="primary" size="nav" block={true}>Sign up</Button>
-						</LocationStateToggleLink>
-					</div>
-				}
-				{location.state && location.state.modal === "signup" &&
-					<LocationStateModal modalName="signup" location={location}
-						onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
-						<div styleName="modal">
-							<SignupForm
-								onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
-								location={location} />
-						</div>
-					</LocationStateModal>
 				}
 			</div>
 		</nav>

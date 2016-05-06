@@ -175,6 +175,13 @@
 	composes: col-ns col-4-ns from grid;
 }
 
+.label-blue {
+	composes: bg-blue white from colors;
+	composes: br4 ph3 pv1 ml2 from base;
+	composes: f5 v-mid from typography;
+	display: inline-block;
+}
+
 .language {
 	composes: f2 from typography;
 	composes: cool-gray-8 from colors;
@@ -203,10 +210,9 @@
 }
 
 .how-img {
+	composes: br3 br--top from base;
 	display: block;
 	width: 100%;
-	border-top-left-radius: 3px;
-	border-top-right-radius: 3px;
 }
 
 .question {

@@ -35,8 +35,8 @@ class HomeContainer extends Component {
 								<h3 styleName="h3">Search public and (your) private code</h3>
 								<p>Connect your GitHub account to Sourcegraph and we’ll analyze your repositories – letting you look up and reference code from any other public repository on the graph.</p>
 							</div>
-							<a href="#" styleName="btn-main">Sign up and connect</a>
-							<a href="#">Explore public repos</a>
+							<a href="/join" styleName="btn-main">Sign up and connect</a>
+							<a href="/github.com/kubernetes/kubernetes">Explore a public repo</a>
 						</div>
 					</div>
 
@@ -47,11 +47,12 @@ class HomeContainer extends Component {
 								<h3 styleName="h3">On GitHub</h3>
 								<p>Sourcegraph’s Chrome extension uses the global graph to show you how any library or function in GitHub is being used – across both public and your own private repos.</p>
 							</div>
-							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-main">Install the Chrome extension</a>
+							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-main" target="new">Install the Chrome extension</a>
 						</div>
 					</div>
 
-					<div styleName="content-block">
+					{/* Waiting on Google :)
+						<div styleName="content-block">
 						<div styleName="img-left"><img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-godocs.png`} styleName="img" width="460" /></div>
 						<div styleName="content-right">
 							<div styleName="content">
@@ -60,15 +61,18 @@ class HomeContainer extends Component {
 							</div>
 							<a href="https://godoc.org/" styleName="btn-main">View on GoDoc.org</a>
 						</div>
-					</div>
+					</div>*/}
 
 					<div styleName="box-white">
 						<div styleName="responsive-container">
 							<h1 styleName="h1">Growing language support</h1>
 							<hr styleName="short-blue-line" />
-							<p styleName="lead">Language support for Sourcegraph is powered by <a href="https://srclib.org/">srclib</a>, an hackable code analysis library.</p>
+							<p styleName="lead">Language support for Sourcegraph is powered by <a href="https://srclib.org/" target="new">srclib</a>, an hackable code analysis library.</p>
 
-							<div styleName="language">Go</div>
+							<div styleName="language">
+								Go
+								<span styleName="label-blue">55,123 projects</span>
+							</div>
 							<h5 styleName="header-5">Top Go Projects</h5>
 
 							<div styleName="row">
@@ -129,7 +133,7 @@ class HomeContainer extends Component {
 							<div styleName="content-right-5">
 								<h2 styleName="header-white">Stop coding alone</h2>
 								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
-								<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-white">Join the graph</a>
+								<a href="/join" styleName="btn-white">Join the graph</a>
 							</div>
 						</div>
 					</div>
