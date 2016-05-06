@@ -1,7 +1,6 @@
 package e2etest
 
 import (
-	"errors"
 	"regexp"
 	"time"
 
@@ -60,37 +59,32 @@ func TestDefFlow(t *T) error {
 
 	// Check that the def link appears
 	var defLink selenium.WebElement
-	getDefLink := func() bool {
-		links, err := wd.FindElements(selenium.ByXPATH, "//a[contains(@href, 'Header/Get')]")
-		if err != nil {
-			return false
-		}
-
-		for _, link := range links {
-			text, err := link.Text()
+	getDefLink := func(hrefRE string) func() bool {
+		re := regexp.MustCompile(hrefRE)
+		return func() bool {
+			links, err := wd.FindElements(selenium.ByXPATH, "//a[contains(@href, 'Header/Get')]")
 			if err != nil {
 				return false
 			}
-			if text == "(Header).Get(key string) string" {
+			for _, link := range links {
+				if href, err := link.GetAttribute("href"); err != nil || !re.MatchString(href) {
+					continue
+				}
+				if text, err := link.Text(); err != nil || text != "(Header).Get(key string) string" {
+					continue
+				}
 				defLink = link
 				return true
 			}
+			return false
 		}
-		return false
 	}
 	t.WaitForCondition(
 		timeout,
 		100*time.Millisecond,
-		getDefLink,
+		getDefLink("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get"),
 		"Wait for Def link",
 	)
-	href, err := defLink.GetAttribute("href")
-	if err != nil {
-		return err
-	}
-	if matched, _ := regexp.MatchString("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get", href); !matched {
-		return errors.New("unexpected def href: " + href)
-	}
 
 	err = defLink.Click()
 	if err != nil {
@@ -99,16 +93,9 @@ func TestDefFlow(t *T) error {
 	t.WaitForCondition(
 		timeout,
 		100*time.Millisecond,
-		getDefLink,
+		getDefLink("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info"),
 		"Wait for Def Info link",
 	)
-	href, err = defLink.GetAttribute("href")
-	if err != nil {
-		return err
-	}
-	if matched, _ := regexp.MatchString("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info", href); !matched {
-		return errors.New("unexpected def info href: " + href)
-	}
 
 	err = defLink.Click()
 	if err != nil {
