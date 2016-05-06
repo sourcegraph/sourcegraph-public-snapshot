@@ -43,7 +43,6 @@ export type RefLocationsKey = {
 	repo: string;
 	rev: ?string;
 	def: string;
-	page?: number;
-	perPage?: number;
+	reposOnly: bool;
 	repos: Array<string>;
 }

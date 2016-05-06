@@ -20,7 +20,7 @@ describe("RefLocationsList", () => {
 				repo="r" rev="v" path="p"
 				def={{Repo: "r", CommitID: "c"}}
 				location={{}}
-				refLocations={{RepoRefs: [{Repo: "r", Files: [{Path: "f", Count: 2}]}]}} />,
+				refLocations={[{Repo: "r", Files: [{Path: "f", Count: 2}]}]} />,
 			{...ctx, signedIn: true, githubToken: {scope: "repo"}},
 		);
 	});
@@ -31,18 +31,16 @@ describe("RefLocationsList", () => {
 				repo="r" rev="v" path="p"
 				def={{Repo: "r", CommitID: "c"}}
 				location={{}}
-				refLocations={{}} />,
+				refLocations={[]} />,
 			ctx,
 		);
 	});
 
 	describe("signup and private repo CTA", () => {
-		const refLocsMoreThan1 = {
-			RepoRefs: [
-				{Repo: "r", Files: [{Path: "f", Count: 2}]},
-				{Repo: "r2", Files: [{Path: "f2", Count: 4}]},
-			],
-		};
+		const refLocsMoreThan1 = [
+			{Repo: "r", Files: [{Path: "f", Count: 2}]},
+			{Repo: "r2", Files: [{Path: "f2", Count: 4}]},
+		];
 
 		it("should show signup CTA if not authed", () => {
 			const s = renderToString(
