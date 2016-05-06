@@ -479,11 +479,9 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 	 BORDER WIDTH
 */
 .bw0 { border-width: 0; }
-.bw1 { border-width: .125rem; }
-.bw2 { border-width: .25rem; }
-.bw3 { border-width: .5rem; }
-.bw4 { border-width: 1rem; }
-.bw5 { border-width: 2rem; }
+.bw1 { border-width: 1px; }
+.bw2 { border-width: 2px; }
+.bw3 { border-width: 3px; }
 
 /*
 	 BORDER RADIUS
