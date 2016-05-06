@@ -42,7 +42,7 @@ type T struct {
 	Log *log.Logger
 
 	// Target is the target Sourcegraph server to test, e.g. https://sourcegraph.com
-	Target string
+	Target *url.URL
 
 	// TestLogin is a username prefixed with e2etestuser.Prefix which is unique
 	// for this test. In specific it is e2etestuser.Prefix + Test.Name.
@@ -79,10 +79,7 @@ func (t *T) Fatalf(fmtStr string, v ...interface{}) {
 // root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
 // will return "https://sourcegraph.com/login"
 func (t *T) Endpoint(e string) string {
-	u, err := url.Parse(t.Target)
-	if err != nil {
-		panic(err) // Target is validated in main, always.
-	}
+	u := *t.Target
 	u.Path = path.Join(u.Path, e)
 	return u.String()
 }
@@ -90,20 +87,15 @@ func (t *T) Endpoint(e string) string {
 // GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
 // server's ID key, and thus has 100% unrestricted access. Use with caution!
 func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
-	target, err := url.Parse(t.Target)
-	if err != nil {
-		panic(err) // Target is validated in main, always.
-	}
-
 	// Create context with gRPC endpoint and idKey credentials.
-	ctx := context.TODO()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, target)
+	ctx := context.Background()
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, t.Target)
 	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
 
 	// Create client.
 	c, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		t.Fatalf("could not create gRPC client:", c)
+		t.Fatalf("could not create gRPC client: %v", c)
 	}
 	return ctx, c
 }
@@ -172,7 +164,7 @@ func Register(t *Test) {
 // methods to make testing easier.
 type testRunner struct {
 	log      *log.Logger
-	target   string
+	target   *url.URL
 	tests    []*Test
 	executor string
 	idKey    *idkey.IDKey
@@ -340,7 +332,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		runCounter.WithLabelValues("success").Inc()
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
-			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
+			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target.String()), "")
 		}
 	} else {
 		runCounter.WithLabelValues("failure").Inc()
@@ -354,7 +346,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		}
 		t.slackMessage(
 			typeNormal,
-			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target),
+			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target.String()),
 			t.slackLogBuffer.String(),
 		)
 
@@ -576,15 +568,15 @@ Flags:
 	tr.executor = u.String()
 
 	// Determine the target Sourcegraph instance to test against.
-	tr.target = os.Getenv("TARGET")
-	if tr.target == "" {
+	target := os.Getenv("TARGET")
+	if target == "" {
 		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
 	}
-	tgt, err := url.Parse(tr.target)
+	tr.target, err = url.Parse(target)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if tgt.Scheme == "" {
+	if tr.target.Scheme == "" {
 		log.Fatal("TARGET must specify scheme (http or https) prefix")
 	}
 
