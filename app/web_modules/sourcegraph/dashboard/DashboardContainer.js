@@ -86,10 +86,6 @@ class DashboardContainer extends Container {
 		);
 	}
 
-	renderSignedOutHomepage() {
-		return <HomeContainer />;
-	}
-
 	render() {
 		return (
 			<div styleName="container">
@@ -97,7 +93,7 @@ class DashboardContainer extends Container {
 
 				<Helmet title="Home" />
 
-				{!this.context.signedIn && this.renderSignedOutHomepage()}
+				{!this.context.signedIn && <HomeContainer />}
 
 				{this.context.user && this.context.user.Admin &&
 					<GlobalSearch query={this.props.location.query.q || ""}/>
