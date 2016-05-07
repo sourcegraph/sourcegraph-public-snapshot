@@ -11,9 +11,6 @@
     user-select: none;
     box-sizing: border-box;
     transition: btn-transition;
-    -webkit-transition: btn-transition;
-    -moz-transition: btn-transition;
-    -ms-transition: btn-transition;
 }
 .btn:focus {
     outline: 0;
