@@ -48,8 +48,8 @@
     composes: pa2 br2 from base;
 }
 .tiny {
-	composes: fa6 from typography;
-  composes: br2 ph2 pv1 from base;
+    composes: fa6 from typography;
+    composes: br2 ph2 pv1 from base;
 }
 /* Button size for buttons on the nav bar. */
 .nav {
@@ -182,9 +182,9 @@
 @value c_dark-blue-2 from colors;
 .solid-primary:hover,
 .solid-primary:focus {
-  color: white;
-  background: c_dark-blue-2;
-  border-color: c_dark-blue-2;
+    color: white;
+    background: c_dark-blue-2;
+    border-color: c_dark-blue-2;
 }
 
 .solid-success {

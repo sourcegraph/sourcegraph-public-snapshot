@@ -30,86 +30,86 @@
 
 .container-lg {
 	composes: col-12-ns col-11 from grid;
-  composes: center from base;
-  max-width: 1200px;
+	composes: center from base;
+	max-width: 1200px;
 }
 
 .h1 {
-  composes: f1 fw4 tc from typography;
-  composes: center mv5 from base;
-  width: 100%;
-  max-width: 740px;
+	composes: f1 fw4 tc from typography;
+	composes: center mv5 from base;
+	width: 100%;
+	max-width: 740px;
 }
 
 .h2 {
-  composes: f2 fw4 tc from typography;
-  composes: cool-mid-gray from colors;
-  composes: mt5 mb6 center from base;
-  width: 100%;
-  max-width: 620px;
+	composes: f2 fw4 tc from typography;
+	composes: cool-mid-gray from colors;
+	composes: mt5 mb6 center from base;
+	width: 100%;
+	max-width: 620px;
 }
 
 .h3 {
-  composes: f3 fw6 from typography;
-  composes: blue from colors;
+	composes: f3 fw6 from typography;
+	composes: blue from colors;
 }
 
 .text-purple {
-  composes: purple from colors;
+	composes: purple from colors;
 }
 
 @value line-width: 175px;
 
 .short-purple-line {
-  composes: ba bw3 mt5 from base;
-  composes: b--purple from colors;
-  width: line-width;
+	composes: ba bw3 mt5 from base;
+	composes: b--purple from colors;
+	width: line-width;
 }
 
 .short-blue-line {
-  composes: ba bw3 mt4 from base;
-  composes: b--blue from colors;
-  width: line-width;
+	composes: ba bw3 mt4 from base;
+	composes: b--blue from colors;
+	width: line-width;
 }
 
 .content-block {
-  composes: mv6 cf from base;
+	composes: mv6 cf from base;
 }
 
 .img {
-  composes: br2 ba bw1 from base;
-  composes: b--black-05 from colors;
-  width: 100%;
-  box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
+	composes: br2 ba bw1 from base;
+	composes: b--black-05 from colors;
+	width: 100%;
+	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
 }
 
 .img-left {
-  composes: col-ns col-5-ns from grid;
-  margin-left: -5px;
+	composes: col-ns col-5-ns from grid;
+	margin-left: -5px;
 }
 
 .img-right {
-  composes: col-ns col-5-ns col-right-ns from grid;
-  margin-right: -5px;
+	composes: col-ns col-5-ns col-right-ns from grid;
+	margin-right: -5px;
 }
 
 .content-right {
-  composes: col-ns col-6-ns col-right-ns from grid;
+	composes: col-ns col-6-ns col-right-ns from grid;
 }
 
 .content-left {
-  composes: col-ns col-6-ns col-right-ns from grid;
+	composes: col-ns col-6-ns col-right-ns from grid;
 	composes: pr4 from base;
 }
 
 .content {
-  composes: mb4 from base;
-  max-width: 420px;
+	composes: mb4 from base;
+	max-width: 420px;
 }
 
 .btn-main {
 	composes: btn normal solid-primary from button;
-  composes: mr4 from base;
+	composes: mr4 from base;
 }
 
 .btn-white {
@@ -119,12 +119,12 @@
 }
 
 .box-white {
-  composes: ba bw1 br2 center cf from base;
-  composes: bg-white b--black-05 from colors;
-  composes: col-8-ns from grid;
-  z-index: 20;
-  position: relative;
-  margin-bottom: -20px;
+	composes: ba bw1 br2 center cf from base;
+	composes: bg-white b--black-05 from colors;
+	composes: col-8-ns from grid;
+	z-index: 20;
+	position: relative;
+	margin-bottom: -20px;
 }
 
 .responsive-container {
@@ -133,25 +133,25 @@
 }
 
 .lead {
-  composes: f4 tc from typography;
-  composes: cool-mid-gray from colors;
-  composes: mt5 mb5 from base;
+	composes: f4 tc from typography;
+	composes: cool-mid-gray from colors;
+	composes: mt5 mb5 from base;
 }
 
 .box-purple-gradient {
-  composes: pv6 from base;
-  background-image: url('../../../../assets/img/world-illo-faded.svg'), linear-gradient(#8E2DFC, #B114F7);
+	composes: pv6 from base;
+	background-image: url('../../../../assets/img/world-illo-faded.svg'), linear-gradient(#8E2DFC, #B114F7);
 	background-repeat: no-repeat;
 	background-position: 110% 30%;
 }
 
 .text-white {
-  composes: white from colors;
+	composes: white from colors;
 }
 
 .header-white {
-  composes: f2 from typography;
-  composes: white from colors;
+	composes: f2 from typography;
+	composes: white from colors;
 }
 
 .header-5 {
@@ -204,9 +204,9 @@
 
 .img-left-4 {
 	composes: col-ns col-6-ns from grid;
-  composes: bg-light-purple from colors;
+	composes: bg-light-purple from colors;
 	composes: br2 from base;
-  box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
+	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
 }
 
 .how-img {
@@ -226,9 +226,10 @@
 	composes: tc v-btm f4 from typography;
 	width: 32px;
 	height: 32px;
-  padding-top: 4px;
-  box-sizing: border-box;
+	padding-top: 4px;
+	box-sizing: border-box;
 }
+
 .content-right-5 {
 	composes: col-ns col-5-ns col-right-ns from grid;
 	composes: mt4 from base;
