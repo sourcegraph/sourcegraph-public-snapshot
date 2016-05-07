@@ -11,7 +11,7 @@
 }
 
 .container {
-  composes: max-width-lg from layout;
+	composes: max-width-lg from layout;
 	composes: col-12-ns col-11 from grid;
 	composes: center from base;
 }
@@ -27,6 +27,7 @@
 	z-index: 0;
 	top: 100px;
 }
+
 .container-lg {
 	composes: col-12-ns col-11 from grid;
   composes: center from base;
@@ -36,7 +37,6 @@
 .h1 {
   composes: f1 fw4 tc from typography;
   composes: center mv5 from base;
-  /*background: url("/sourcegraph/asse")*/
   width: 100%;
   max-width: 740px;
 }

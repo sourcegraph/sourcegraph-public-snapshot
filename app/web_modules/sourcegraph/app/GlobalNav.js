@@ -17,8 +17,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 	if (!signedIn) {
 		return (
 			<div styleName="logged-out-header">
-				<a href="/" styleName="logo"><Logo width="220px" type="logotype" /></a>
-				<a href="/" styleName="logo-mobile"><Logo width="220px" type="logotype" /></a>
+				<a href="/" styleName="header-logo"><Logo width="220px" type="logotype" /></a>
 				<nav styleName="logged-out-nav">
 					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
 					<a href="/about" styleName="logged-out-nav-item">About</a>
@@ -32,21 +31,6 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 						onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}
 						styleName="btn-signup">
 						Sign up for free
-					</LocationStateToggleLink>
-				</nav>
-				<nav styleName="logged-out-nav-mobile">
-					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
-					<a href="/about" styleName="logged-out-nav-item">About</a>
-					<LocationStateToggleLink href="/login"
-						modalName="login"
-						location={location}
-						onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")} styleName="btn-login">Log in
-					</LocationStateToggleLink>
-					<LocationStateToggleLink href="/join"
-						modalName="signup" location={location}
-						onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}
-						styleName="btn-signup">
-						Sign up
 					</LocationStateToggleLink>
 				</nav>
 

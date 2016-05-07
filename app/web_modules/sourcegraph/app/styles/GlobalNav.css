@@ -10,16 +10,19 @@
 
 /* Logged out nav */
 
-.logo {
-	composes: xs-hide from layout;
+.header-logo {
 	composes: fl from base;
 }
 
-.logo-mobile {
-	composes: sm-hide md-hide lg-hide from layout;
-	composes: mb4 from base;
-	composes: tc from typography;
-	display: block;
+@value media-sm from layout;
+@media media-sm {
+	.header-logo {
+		composes: center fn from base;
+	}
+	.logged-out-nav {
+		composes: center fn mt3 from base;
+		display: block;
+	}
 }
 
 .logged-out-header {
@@ -29,13 +32,7 @@
 }
 
 .logged-out-nav {
-	composes: xs-hide from layout;
 	composes: fr from base;
-}
-
-.logged-out-nav-mobile {
-	composes: fn from base;
-	composes: sm-hide md-hide lg-hide from layout;
 }
 
 .logged-out-nav-item {
