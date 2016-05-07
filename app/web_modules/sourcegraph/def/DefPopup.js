@@ -17,7 +17,7 @@ import {urlToDef} from "sourcegraph/def/routes";
 class DefPopup extends Container {
 	static propTypes = {
 		def: React.PropTypes.object.isRequired,
-		refLocations: React.PropTypes.array,
+		refLocations: React.PropTypes.object,
 		path: React.PropTypes.string.isRequired,
 		location: React.PropTypes.object.isRequired,
 	};

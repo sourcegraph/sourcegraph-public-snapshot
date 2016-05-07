@@ -42,4 +42,17 @@
 	composes: normal-text from typography;
 }
 
-.main {}
+.pagination {
+	composes: f4 tc from typography;
+	composes: pb4 from base;
+}
+
+.pagination-link {
+	composes: button-text from typography;
+	composes: ph2 from base;
+}
+
+.pagination-link-disabled {
+	composes: pagination-link;
+	font-weight: bold;
+}
