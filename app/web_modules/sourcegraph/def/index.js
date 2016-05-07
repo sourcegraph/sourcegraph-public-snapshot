@@ -14,9 +14,13 @@ export type DefKey = {
 
 export type Ref = Object;
 
-export function routeParams(url: string): {repo: string, rev: ?string, def: string} {
+export function routeParams(url: string): {repo: string, rev: ?string, def: string, err: ?string} {
 	let v = getRouteParams(abs.def, url);
-	if (!v) throw new Error(`Invalid def URL: ${url}`);
+	if (!v) {
+		return {
+			err: `Invalid def URL: ${url}`,
+		};
+	}
 	return {
 		repo: repoPath(repoParam(v.splat[0])),
 		rev: repoRev(repoParam(v.splat[0])),

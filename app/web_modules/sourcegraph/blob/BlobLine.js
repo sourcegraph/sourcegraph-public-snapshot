@@ -3,6 +3,7 @@
 import React from "react";
 import {Link} from "react-router";
 import utf8 from "utf8";
+import * as urllib from "url";
 
 import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
@@ -81,11 +82,42 @@ class BlobLine extends Component {
 		});
 	}
 
+	_isExternalLinkAnn(ann: Annotation): bool {
+		if (!ann.URL) return false;
+		let u = urllib.parse(ann.URL);
+		if (u.protocol === "http:" || u.protocol === "https:") {
+			if (u.hostname === "nodejs.org" || u.hostname === "developer.mozilla.org") {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	_annotate() {
 		const hasURL = (ann, url) => url && (ann.URL ? ann.URL === url : ann.URLs.includes(url));
 		let i = 0;
 		return fromUtf8(annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
 			i++;
+
+			// If ann.URL is an absolute URL with scheme http or https, create an anchor with a link to the URL (e.g., an
+			// external URL to Mozilla's CSS reference documentation site.
+			if (this._isExternalLinkAnn(ann)) {
+				let isHighlighted = hasURL(ann, this.state.highlightedDef);
+				return (
+					<a
+						className={classNames(ann.Class, {
+							[s.highlightedAnn]: isHighlighted && (!this.state.highlightedDefObj || !this.state.highlightedDefObj.Error),
+						})}
+						target="_blank"
+						href={ann.URL}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL))}
+						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
+						key={i}>
+						{simpleContentsString(content)}
+					</a>
+				);
+			}
+
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
 			if ((ann.URL || ann.URLs) && !this._hasLink(content)) {

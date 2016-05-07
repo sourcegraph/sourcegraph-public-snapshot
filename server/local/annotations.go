@@ -3,6 +3,7 @@ package local
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -184,8 +185,18 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 			def.CommitID = opt.Entry.RepoRev.Rev
 		}
 
+		var u string
+		if strings.HasPrefix(def.Path, "https://") || strings.HasPrefix(def.Path, "http://") {
+			// If the ref's def path is an absolute URL, set the annotation's URL to be that.
+			// This is used in some languages (e.g., JavaScript, CSS) for references to builtin
+			// or standard library definitions.
+			u = def.Path
+		} else {
+			u = approuter.Rel.URLToDef(def).String()
+		}
+
 		anns[i] = &sourcegraph.Annotation{
-			URL:       approuter.Rel.URLToDef(def).String(),
+			URL:       u,
 			Def:       ref.Def,
 			StartByte: ref.Start,
 			EndByte:   ref.End,
