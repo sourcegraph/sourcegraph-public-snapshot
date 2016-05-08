@@ -6,6 +6,7 @@ import utf8 from "utf8";
 import * as urllib from "url";
 
 import {annotate} from "sourcegraph/blob/Annotations";
+import type {Annotation} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";

@@ -18,6 +18,9 @@ export function routeParams(url: string): {repo: string, rev: ?string, def: stri
 	let v = getRouteParams(abs.def, url);
 	if (!v) {
 		return {
+			repo: "",
+			rev: null,
+			def: "",
 			err: `Invalid def URL: ${url}`,
 		};
 	}
@@ -25,6 +28,7 @@ export function routeParams(url: string): {repo: string, rev: ?string, def: stri
 		repo: repoPath(repoParam(v.splat[0])),
 		rev: repoRev(repoParam(v.splat[0])),
 		def: v.splat[1],
+		err: null,
 	};
 }
 
