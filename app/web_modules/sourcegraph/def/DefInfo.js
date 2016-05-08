@@ -131,11 +131,13 @@ class DefInfo extends Container {
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
-							<div styleName="section-label">
-								{refLocs && `Used in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
-							</div>
+							{refLocs && refLocs.TotalRepos &&
+								<div styleName="section-label">
+									{`Used in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
+								</div>
+							}
 							{!refLocs && <i>Loading...</i>}
-							{refLocs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
+							{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
 								refRepo={refRepo.Repo}
 								prefetch={i === 0}
 								initNumSnippets={i === 0 ? 1 : 0}
