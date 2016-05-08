@@ -27,13 +27,17 @@ TOOLCHAINS=$TOOLCHAIN_NAME make build && TOOLCHAINS=$TOOLCHAIN_NAME make push
 Development
 -----------
 
+### srclib core
 During development of srclib core, run `DEV=1 make clean && make srclib && make build`
 
+### srclib toolchain
 During development of a srclib toolchain, clone a local copy of your toolchain
 repository to a subdirectory and pass it to the Dockerfile:
 
 ```
-docker build --build-arg TOOLCHAIN_URL=path/to/local/toolchain/repo -t sourcegraph/$@ -f ./Dockerfile.$@ .
+docker build --build-arg TOOLCHAIN_URL=path/to/local/toolchain/repo -t local-toolchain -f ./Dockerfile.srclib-${language-name} .
 ```
 
-Each time, you'll need to restart your Sourcegraph server for the new Docker images to be picked up.
+Then update `srclib_images.go` to set the toolchain image to be "local-toolchain".
+
+You'll need to restart your Sourcegraph server for the new Docker image to be picked up.
