@@ -105,7 +105,7 @@ export default class RefsContainer extends Container {
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		if (state.refs && state.fileLocations && !state.prunedFileLocations) {
+		if (state.refs && !state.refs.Error && state.fileLocations && !state.prunedFileLocations) {
 			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
 			// state.refs does *not* include the def itself, and this component fetches blobs based on
 			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
