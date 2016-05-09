@@ -29,6 +29,8 @@ const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above
 
 export default class RefsContainer extends Container {
 	static propTypes = {
+		page: React.PropTypes.number,
+		perPage: React.PropTypes.number,
 		refRepo: React.PropTypes.string.isRequired,
 		prefetch: React.PropTypes.bool,
 		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
@@ -78,12 +80,14 @@ export default class RefsContainer extends Container {
 		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+			repo: state.repo, rev: state.rev, def: state.def, repos: [],
+			page: this.props.page,
+			perPage: this.props.perPage,
 		}) : null;
 
 		state.refRepo = props.refRepo;
 		if (state.refLocations && !state.fileLocations) {
-			state.fileLocations = state.refLocations
+			state.fileLocations = state.refLocations.RepoRefs
 				.filter((loc) => loc.Repo === state.refRepo)
 				.map((loc) => {
 					// optimization: initialize entrySpecs to show file links before refs are resolved
@@ -101,7 +105,7 @@ export default class RefsContainer extends Container {
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		if (state.refs && state.fileLocations && !state.prunedFileLocations) {
+		if (state.refs && !state.refs.Error && state.fileLocations && !state.prunedFileLocations) {
 			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
 			// state.refs does *not* include the def itself, and this component fetches blobs based on
 			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
@@ -175,10 +179,9 @@ export default class RefsContainer extends Container {
 				repo: nextState.repo,
 				rev: nextState.rev,
 				def: nextState.def,
-				reposOnly: nextState.reposOnly,
 				repos: nextState.repos,
-			}, {
-				perPage: 50,
+				page: this.props.page,
+				perPage: this.props.perPage,
 			}));
 		}
 
