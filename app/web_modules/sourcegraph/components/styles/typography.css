@@ -4,21 +4,11 @@
 
 /* Type */
 
-@value desktop-base-size from vars;
-@value mobile-base-size from vars;
-
-@value font-size-1 from vars;
-@value font-size-2 from vars;
-@value font-size-3 from vars;
-@value font-size-4 from vars;
-@value font-size-5 from vars;
-@value font-size-6 from vars;
+@value desktop-base-size, mobile-base-size from vars;
+@value font-size-1, font-size-2, font-size-3, font-size-4, font-size-5, font-size-6 from vars;
 
 /* Responsive variables */
-@value media-sm from vars;
-@value media-ns from vars;
-@value media-md from vars;
-@value media-lg from vars;
+@value media-sm, media-ns, media-md, media-lg from vars;
 
 /* Color variables */
 @value c_orange from colors;

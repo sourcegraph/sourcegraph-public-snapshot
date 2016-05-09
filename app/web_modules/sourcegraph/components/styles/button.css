@@ -4,16 +4,7 @@
 
 @value btn-transition: all 0.4s;
 
-@value c_blue from colors;
-@value c_green from colors;
-@value c_orange from colors;
-@value c_dark-gray from colors;
-@value c_black-50 from colors;
-@value c_purple from colors;
-@value c_light-gray from colors;
-@value c_red from colors;
-@value c_blue from colors;
-@value c_dark-blue-2 from colors;
+@value c_blue, c_green, c_orange, c_dark-gray, c_black-50, c_purple, c_light-gray, c_red, c_blue, c_dark-blue-2 from colors;
 
 .btn {
     composes: tc fw5 from typography;

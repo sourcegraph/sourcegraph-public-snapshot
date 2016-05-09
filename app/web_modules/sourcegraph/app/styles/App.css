@@ -2,8 +2,7 @@
 @value colors "sourcegraph/components/styles/colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value desktop-base-size from vars;
-@value mobile-base-size from vars;
+@value desktop-base-size, mobile-base-size, media-sm from vars;
 @value c_cool-gray from colors;
 
 /*
@@ -43,10 +42,7 @@ body {
 	line-height: 1.6;
 }
 
-@media only screen
-and (min-device-width: 320px)
-and (max-device-width: 480px)
-and (-webkit-min-device-pixel-ratio: 2) {
+@media only screen and media-sm {
 	body {
 		font-size: mobile-base-size;
 	}

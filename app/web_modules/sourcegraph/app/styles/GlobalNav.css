@@ -18,7 +18,7 @@
 
 
 @media media-sm {
-	/* Composes don't work within media querie */
+	/* Composes don't work within media queries */
 	.header-logo {
 		float: none;
 		margin: auto;

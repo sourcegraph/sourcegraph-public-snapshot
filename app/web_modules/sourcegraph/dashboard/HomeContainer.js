@@ -119,7 +119,7 @@ class HomeContainer extends Component {
 									JavaScript
 								</div>
 								<div styleName="language-2">
-									Ruby
+									Python
 								</div>
 							</div>
 						</div>
