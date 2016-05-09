@@ -3,11 +3,14 @@ import {Link} from "react-router";
 import Component from "sourcegraph/Component";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Home.css";
+import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+
 
 class HomeContainer extends Component {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		siteConfig: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -15,7 +18,7 @@ class HomeContainer extends Component {
 	}
 
 	render() {
-		const {siteConfig} = this.context;
+		const {siteConfig, eventLogger} = this.context;
 		return (
 			<div styleName="home">
 				<div styleName="container-with-globe">
@@ -34,8 +37,13 @@ class HomeContainer extends Component {
 								<h3 styleName="h3">Search public and (your) private code</h3>
 								<p>Connect your GitHub account to Sourcegraph and we’ll analyze your repositories – letting you look up and reference code from any other public repository on the graph.</p>
 							</div>
-							<Link to="/join" styleName="btn-main">Sign up and connect</Link>
-							<Link to="/github.com/kubernetes/kubernetes">Explore a public repo</Link>
+							<LocationStateToggleLink href="/join"
+								modalName="signup" location={location}
+								onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-maincontent"})}
+								styleName="btn-main">
+								Sign up and connect
+							</LocationStateToggleLink>
+							<Link to="/github.com/kubernetes/kubernetes" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Explore a public repo</Link>
 						</div>
 					</div>
 
@@ -46,7 +54,7 @@ class HomeContainer extends Component {
 								<h3 styleName="h3">On GitHub</h3>
 								<p>Sourcegraph’s Chrome extension uses the global graph to show you how any library or function in GitHub is being used – across both public and your own private repos.</p>
 							</div>
-							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-main" target="new">Install the Chrome extension</a>
+							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-main" target="new" onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>Install the Chrome extension</a>
 						</div>
 					</div>
 
@@ -132,7 +140,12 @@ class HomeContainer extends Component {
 							<div styleName="content-right-5">
 								<h2 styleName="header-white">Stop coding alone</h2>
 								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
-								<Link to="/join" styleName="btn-white">Join the graph</Link>
+								<LocationStateToggleLink href="/join"
+									modalName="signup" location={location}
+									onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-bottom"})}
+									styleName="btn-white">
+									Join the graph
+								</LocationStateToggleLink>
 							</div>
 						</div>
 					</div>

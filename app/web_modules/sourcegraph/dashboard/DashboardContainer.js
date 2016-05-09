@@ -93,7 +93,7 @@ class DashboardContainer extends Container {
 
 				<Helmet title="Home" />
 
-				{!this.context.signedIn && <HomeContainer />}
+				{!this.context.signedIn && <HomeContainer location={this.props.location} />}
 
 				{this.context.user && this.context.user.Admin &&
 					<GlobalSearch query={this.props.location.query.q || ""}/>
