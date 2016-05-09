@@ -1,10 +1,4 @@
-# Sourcegraph browser extension for Google Chrome
-
-## Features
-
-The chrome extension includes popup (browser action), window (context menu), and injected page views.
-
-State is managed by [Redux](https://github.com/reactjs/redux) and persisted to Chrome local storage.
+# Sourcegraph browser extensions for Google Chrome and Firefox
 
 ## Installation
 
@@ -17,7 +11,7 @@ $ npm install
 ```bash
 $ npm run dev
 ```
-* Allow `https://localhost:3000` (insecure) connections in Chrome. (Because `injectpage` injected GitHub (https) pages, so `webpack-dev-server` procotol must be https.)
+* Allow `https://localhost:3000` (insecure) connections in Chrome (navigate to https://localhost:3000, click "ADVANCED", then "Proceed to localhost"). This is necessary because pages are injected on Sourcegraph/GitHub (https), so `webpack-dev-server` procotol must also be https.
 * [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked) with `./dev` folder.
 * Webpack will manage hot reloading via `react-transform`.
 
@@ -31,7 +25,11 @@ You can use [redux-devtools-extension](https://github.com/zalmoxisus/redux-devto
 $ npm run build
 ```
 
-## Compress
+#### Firefox
+
+To bundle the extension for Firefox, compress the *contents* of the `/build` folder (not the folder itself). Rename the file `sourcegraph.xpi`.
+
+## Compress (chrome only)
 
 ```bash
 $ npm run build

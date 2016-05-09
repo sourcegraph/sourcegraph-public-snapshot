@@ -3,7 +3,6 @@ const webpack = require('webpack');
 
 module.exports = {
 	entry: {
-		app: path.join(__dirname, '../chrome/extension/app'),
 		background: path.join(__dirname, '../chrome/extension/background'),
 		inject: path.join(__dirname, '../chrome/extension/inject')
 	},

@@ -154,9 +154,8 @@ class InjectApp extends React.Component {
 	// local storage for any data (e.g. Sourcegraph access token) set via other
 	// tabs.
 	focusUpdate() {
-		chrome.storage.local.get("state", (obj) => {
-			const {state} = obj;
-			const accessToken = JSON.parse(state || "{}").accessToken
+		chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
+			const accessToken = state.accessToken;
 			if (accessToken) this.props.actions.setAccessToken(accessToken); // without this, access token may be overwritten to null
 			this.refreshState();
 		});
@@ -189,15 +188,12 @@ class InjectApp extends React.Component {
 	// (asynchronously) connecting to chrome local storage.
 	appFrame(cb) {
 		if (!this.frameDiv) {
-			chrome.storage.local.get("state", (obj) => {
-				const {state} = obj;
-				const initialState = JSON.parse(state || "{}");
-
+			chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
 				const createStore = require("../../app/store/configureStore");
 
 				const frameDiv = document.createElement("div");
 				frameDiv.id = "sourcegraph-frame";
-				render(<Root store={createStore(initialState)} />, frameDiv);
+				render(<Root store={createStore(state)} />, frameDiv);
 
 				this.frameDiv = frameDiv;
 				cb(frameDiv);
@@ -269,14 +265,11 @@ class InjectApp extends React.Component {
 }
 
 const bootstrapApp = function() {
-	chrome.storage.local.get("state", (obj) => {
-		const {state} = obj;
-		const initialState = JSON.parse(state || "{}");
-
+	chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
 		const app = document.createElement("div");
 		app.id = "sourcegraph-app-bootstrap";
 		app.style.display = "none";
-		render(<Provider store={createStore(initialState)}><InjectApp /></Provider>, app);
+		render(<Provider store={createStore(state)}><InjectApp /></Provider>, app);
 
 		document.body.appendChild(app);
 	});

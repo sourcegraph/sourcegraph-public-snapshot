@@ -1,3 +1,5 @@
+import "./fetch";
+
 let token = null;
 export function useAccessToken(tok) {
 	token = tok;

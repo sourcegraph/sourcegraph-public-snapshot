@@ -1,6 +1,6 @@
 function saveState(state) {
 	delete state.text; // migrate unused data
-	chrome.storage.local.set({state: JSON.stringify(state)});
+	chrome.runtime.sendMessage(null, {type: "set", state: JSON.stringify(state)}, {});
 }
 
 export default function() {

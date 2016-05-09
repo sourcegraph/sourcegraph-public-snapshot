@@ -19,14 +19,10 @@ function promisifyAll(obj, list) {
 // let chrome extension api support Promise
 promisifyAll(chrome, [
 	"tabs",
-	"windows",
-	"browserAction",
-	"contextMenus"
 ]);
 promisifyAll(chrome.storage, [
 	"local",
 ]);
 
-require("./background/contextMenus");
+require("./background/storage");
 require("./background/inject");
-require("./background/badge");

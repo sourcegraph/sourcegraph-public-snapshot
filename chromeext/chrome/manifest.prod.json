@@ -1,10 +1,15 @@
 {
   "version": "1.1.6",
-  "name": "Sourcegraph Chrome extension for GitHub",
+  "name": "Sourcegraph browser extension for GitHub",
   "manifest_version": 2,
-  "description": "Sourcegraph browser extension for Chrome",
+  "description": "Sourcegraph browser extension for GitHub",
   "browser_action": {
     "default_title": "Sourcegraph"
+  },
+  "applications": {
+    "gecko": {
+      "id": "firefox-extension@sourcegraph.com"
+    }
   },
   "icons": {
     "16": "img/icon-16.png",
@@ -16,12 +21,9 @@
     "run_at": "document_end",
     "js": ["js/inject.bundle.js"]
   }],
-  "web_accessible_resources": [
-    "inject.html", "js/inject.bundle.js"
-  ],
   "background": {
-    "page": "background.html"
+    "scripts": ["js/background.bundle.js"]
   },
-  "permissions": [ "contextMenus", "storage", "https://github.com/*", "https://www.github.com/*", "https://sourcegraph.com/*", "https://www.sourcegraph.com/*" ],
+  "permissions": [ "storage", "https://github.com/*", "https://www.github.com/*", "https://sourcegraph.com/*", "https://www.sourcegraph.com/*" ],
   "content_security_policy": "default-src 'self'; script-src 'self'; style-src * 'unsafe-inline'; img-src 'self' data:;"
 }
