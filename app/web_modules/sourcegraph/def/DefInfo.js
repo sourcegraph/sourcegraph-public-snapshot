@@ -72,11 +72,11 @@ class DefInfo extends Container {
 		}
 	}
 
-	_page() {
+	_page(): number {
 		return parseInt(this.props.location.query.Page, 10) || 1;
 	}
 
-	_perPage() {
+	_perPage(): number {
 		return parseInt(this.props.location.query.PerPage, 10) || filesPerPage;
 	}
 
