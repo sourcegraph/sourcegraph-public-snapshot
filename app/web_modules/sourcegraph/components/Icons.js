@@ -15,20 +15,10 @@ export const PencilIcon = iconWrapper(require("react-icons/lib/go/pencil"));
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon styleName="foo" />
 function iconWrapper(Component) {
-	class IconWrapper extends React.Component {
-		static propTypes = {
-			className: React.PropTypes.string,
-			title: React.PropTypes.string,
-		};
-
-		render() {
-			return (
-				<div className={this.props.className} title={this.props.title} styleName="icon">
-					<Component />
-				</div>
-			);
-		}
-	}
-
-	return CSSModules(IconWrapper, styles);
+	const C = ({className, title}) => <div className={className} title={title} styleName="icon"><Component /></div>; // eslint-disable-line react/jsx-key
+	C.propTypes = {
+		className: React.PropTypes.string,
+		title: React.PropTypes.string,
+	};
+	return CSSModules(C, styles);
 }
