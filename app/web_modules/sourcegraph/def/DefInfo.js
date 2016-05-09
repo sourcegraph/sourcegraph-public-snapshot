@@ -11,15 +11,18 @@ import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {urlToDef} from "sourcegraph/def/routes";
+import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 
+const filesPerPage = 50;
+
 class DefInfo extends Container {
 	static contextTypes = {
+		location: React.PropTypes.object,
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,
 	};
@@ -46,7 +49,9 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
+			repo: state.repo, rev: state.rev, def: state.def, repos: [],
+			page: this._page(),
+			perPage: this._perPage(),
 		}) : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 	}
@@ -54,9 +59,9 @@ class DefInfo extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: false, repos: [],
-			}, {
-				perPage: 50,
+				repo: nextState.repo, rev: nextState.rev, def: nextState.def, repos: [],
+				page: this._page(),
+				perPage: this._perPage(),
 			}));
 		}
 
@@ -67,6 +72,29 @@ class DefInfo extends Container {
 		}
 	}
 
+	_page(): number {
+		return parseInt(this.props.location.query.Page, 10) || 1;
+	}
+
+	_perPage(): number {
+		return parseInt(this.props.location.query.PerPage, 10) || filesPerPage;
+	}
+
+	// _pageNumbers returns up to four page numbers to the left and right of
+	// the given page number, clamping the result to [1, this._lastPage()].
+	_pageNumbers(page) {
+		let pages = [];
+		for (let i = Math.max(page - 4, 1); i <= Math.min(page + 4, this._lastPage()); i++) {
+			pages.push(i);
+		}
+		return pages;
+	}
+
+	// _lastPage returns the last page number.
+	_lastPage() {
+		return this.state.refLocations ? Math.ceil(this.state.refLocations.TotalFiles / this._perPage()) : 0;
+	}
+
 	render() {
 		let def = this.state.defObj;
 		let refLocs = this.state.refLocations;
@@ -75,10 +103,16 @@ class DefInfo extends Container {
 		if (refLocs && refLocs.Error) {
 			return (
 				<Header
-					title={`${httpStatusCode(refLocs.Error)}`}
+					title={`${!refLocs ? "No references" : httpStatusCode(refLocs.Error)}`}
 					subtitle={`References are not available.`} />
 			);
 		}
+
+		let page = this._page();
+		let perPage = this._perPage();
+		let lastPage = this._lastPage();
+		let pages = this._pageNumbers(page);
+		let pageUrl = this.state.defObj ? `${urlToDefInfo(this.state.defObj, this.state.rev)}?Page=` : "";
 
 		return (
 			<div styleName="container">
@@ -91,19 +125,42 @@ class DefInfo extends Container {
 					</h1>
 				}
 				<hr/>
-				<div styleName="main">
+				<div>
 					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
+					{/* TODO DocHTML will not be set if the this def was loaded via the
+						serveDefs endpoint instead of the serveDef endpoint. In this case
+						we'll fallback to displaying plain text. We should be able to
+						sanitize/render DocHTML on the front-end to make this consistent.
+					*/}
+					{def && !def.DocHTML && def.Docs && def.Docs.length &&
+						<div styleName="description">{def.Docs[0].Data}</div>
+					}
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
-							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length === 1 ? "y" : "ies"}` : ""}`}</div>
+							{refLocs && refLocs.TotalRepos &&
+								<div styleName="section-label">
+									{`Used in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
+								</div>
+							}
 							{!refLocs && <i>Loading...</i>}
-							{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
+							{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((refRepo, i) => <RefsContainer page={page} perPage={perPage} {...this.props} key={i}
 								refRepo={refRepo.Repo}
 								prefetch={i === 0}
 								initNumSnippets={i === 0 ? 1 : 0}
 								fileCollapseThreshold={5} />)}
+
+							{lastPage > 1 && <div styleName="pagination">
+								{page > 1 && <Link styleName="pagination-link" key="first-page" to={`${pageUrl}1`}>⇤</Link>}
+								{pages.map((n) => {
+									if (page === n) {
+										return <span key={`page:${n}`} styleName="pagination-link-disabled" to={`${pageUrl}${n}`}>{n}</span>;
+									}
+									return <Link key={`page:${n}`} styleName="pagination-link" to={`${pageUrl}${n}`}>{n}</Link>;
+								})}
+								{page < lastPage && <Link styleName="pagination-link" key="last-page" to={`${pageUrl}${lastPage}`}>⇥</Link>}
+							</div>}
 						</div>
 					}
 				</div>

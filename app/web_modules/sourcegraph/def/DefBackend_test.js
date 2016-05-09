@@ -49,11 +49,11 @@ describe("DefBackend", () => {
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			DefBackend.__onDispatch(new DefActions.WantRefLocations({
-				repo: "r", rev: "v", def: "d", reposOnly: false, repos: [],
+				repo: "r", rev: "v", def: "d", repos: [],
 			}));
 		})).to.eql([new DefActions.RefLocationsFetched(
 			new DefActions.WantRefLocations({
-				repo: "r", rev: "v", def: "d", reposOnly: false, repos: [],
+				repo: "r", rev: "v", def: "d", repos: [],
 			}), "someRefData")]);
 	});
 

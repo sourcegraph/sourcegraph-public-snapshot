@@ -104,7 +104,6 @@
 	composes: title;
 }
 .doc {
-	max-height: 100px;
 	overflow-y: hidden;
 	word-wrap: break-word;
 }

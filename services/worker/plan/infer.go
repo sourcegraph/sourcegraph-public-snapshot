@@ -60,7 +60,7 @@ var langConfigs = map[string]struct {
 				AllowFailure: true,
 			},
 		},
-		matrix: map[string][]string{"GO_VERSION": []string{"1.6"}},
+		matrix: map[string][]string{"GO_VERSION": {"1.6"}},
 	},
 	"JavaScript": {
 		build: droneyaml.BuildItem{
@@ -77,10 +77,11 @@ var langConfigs = map[string]struct {
 				AllowFailure: true,
 			},
 		},
-		matrix: map[string][]string{"NODE_VERSION": []string{"4"}},
+		matrix: map[string][]string{"NODE_VERSION": {"4"}},
 	},
 	"Java":       {},
 	"Python":     {},
 	"TypeScript": {},
 	"C#":         {},
+	"CSS":        {},
 }

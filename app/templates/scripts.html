@@ -36,6 +36,41 @@
 </script>
 <!-- End of Sentry config -->
 
+<!-- Splunk config -->
+<script ignore-csp>
+	(function(){
+		var splunkTags = {};
+
+		{{if deployedGitCommitID}}
+			splunkTags["Deployed commit"] = "{{deployedGitCommitID}}";
+		{{end}}
+		{{if .Actor.IsAuthenticated}}
+			splunkTags["User"] = {
+				Authed: "{{.Actor.Login}}" ? true : false,
+				UID: {{.Actor.UID}},
+				Login: "{{.Actor.Login}}",
+			};
+		{{end}}
+		{{if .CurrentSpanID}}
+			splunkTags["Appdash"] = {};
+			{{if .CurrentSpanID.Trace}}
+				splunkTags.Appdash.Trace = "{{.CurrentSpanID.Trace}}";
+			{{end}}
+			{{if .CurrentSpanID.Span}}
+				splunkTags.Appdash.Span = "{{.CurrentSpanID.Span}}";
+			{{end}}
+			{{if .CurrentSpanID.Parent}}
+				splunkTags.Appdash.Parent = "{{.CurrentSpanID.Parent}}";
+			{{end}}
+		{{end}}
+
+		// TODO(slimsag): bubble Splunk config down the stack from appconf in
+		// template here instead of hard-coding in Splunk.js
+		window._splunkTags = splunkTags;
+	})();
+</script>
+<!-- End of Splunk config -->
+
 {{if not appconf.DisableSupportServices}}
 	<!-- Start of FullStory script -->
 	<script ignore-csp>

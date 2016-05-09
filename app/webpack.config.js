@@ -77,14 +77,16 @@ var browserConfig = {
 	target: "web",
 	cache: true,
 	entry: "./web_modules/sourcegraph/init/browser.js",
+	devtool: "source-map",
 	output: {
 		path: __dirname+"/assets",
 		filename: "[name].browser.js",
+		sourceMapFilename: "[file].map",
 	},
 	plugins: commonPlugins.concat([
 		new FlowStatusWebpackPlugin({restartFlow: false}),
 		new ExtractTextPlugin("[name].css", {allChunks: true, ignoreOrder: true}),
-		new webpack.optimize.MinChunkSizePlugin({minChunkSize: 700000}),
+		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 	]),
 	module: {
 		preLoaders: [eslintPreloader],

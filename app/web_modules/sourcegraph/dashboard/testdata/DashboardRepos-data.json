@@ -6,6 +6,16 @@
 			"children": [
 				{
 					"type": "div",
+					"key": ".2",
+					"props": {
+						"styleName": "list-item-loading",
+						"children": [
+							"Link your GitHub account above to see your repositories here."
+						]
+					}
+				},
+				{
+					"type": "div",
 					"props": {
 						"styleName": "list-item",
 						"children": [

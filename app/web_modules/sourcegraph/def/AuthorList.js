@@ -21,11 +21,11 @@ class AuthorList extends React.Component {
 		return (
 			<div className={this.props.className}>
 				{authors && authors.length === 0 &&
-					<i>None found</i>
+					<i>No authors found</i>
 				}
 				{authors && authors.length > 0 &&
 					<ol styleName={`list${this.props.horizontal ? "-horizontal" : ""}`}>
-						{this.props.horizontal && <PencilIcon styleName="pencil-icon" />}
+						{this.props.horizontal && <PencilIcon title="Authors" styleName="pencil-icon" />}
 						{authors.map((a, i) => (
 							<li key={i} styleName={`person${this.props.horizontal ? "-horizontal" : ""}`}>
 								<div styleName="badge-wrapper">

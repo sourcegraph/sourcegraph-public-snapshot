@@ -93,8 +93,14 @@ export default class BlobMain extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			let {repo, rev, def} = defRouteParams(nextState.highlightedDef);
-			Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
+			if (!(nextState.highlightedDef.startsWith("http:") || nextState.highlightedDef.startsWith("https:"))) { // kludge to filter out external def links
+				let {repo, rev, def, err} = defRouteParams(nextState.highlightedDef);
+				if (err) {
+					console.err(err);
+				} else {
+					Dispatcher.Backends.dispatch(new DefActions.WantDef(repo, rev, def));
+				}
+			}
 		}
 
 		if (prevState.blob !== nextState.blob) {

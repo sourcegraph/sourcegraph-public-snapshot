@@ -12,6 +12,9 @@ import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
 
+// REQUIRED. Configures Splunk error monitoring.
+import "sourcegraph/init/Splunk";
+
 // REQUIRED. Enables HTML history API (pushState) tracking in Google Analytics.
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
 import "autotrack/lib/plugins/url-change-tracker";

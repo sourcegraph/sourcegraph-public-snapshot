@@ -182,8 +182,10 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		if !op.Mirror {
 			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ repos can only be mirrors")
 		}
-		// Disallow creating GitHub mirrors via repo URI and clone URL. If we do, we should ensure they match here.
-		return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ mirrors repos can only be created via GitHub Repository ID, not via URI")
+		if !(op.CloneURL == fmt.Sprintf("https://%s", op.URI) || op.CloneURL == fmt.Sprintf("https://%s.git", op.URI)) {
+			// Disallow creating GitHub mirrors via repo URI and clone URL unless they match.
+			return nil, grpc.Errorf(codes.InvalidArgument, "github.com/ mirrors repos can only be created if the clone URL matches the repo URI")
+		}
 	}
 
 	if op.DefaultBranch == "" {

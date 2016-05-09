@@ -85,7 +85,7 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 // images, or else users' builds will fail because the required image
 // is not available on the Docker Hub.
 var langSrclibConfigs = map[string]droneyaml.BuildItem{
-	"Go": droneyaml.BuildItem{
+	"Go": {
 		Key: "Go (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -95,7 +95,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: false,
 		},
 	},
-	"JavaScript": droneyaml.BuildItem{
+	"JavaScript": {
 		Key: "JavaScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -105,7 +105,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"Java": droneyaml.BuildItem{
+	"Java": {
 		Key: "Java (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -115,7 +115,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"PHP": droneyaml.BuildItem{
+	"PHP": {
 		Key: "PHP (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -125,7 +125,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"Objective-C": droneyaml.BuildItem{
+	"Objective-C": {
 		Key: "Objective-C (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -135,7 +135,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"Python": droneyaml.BuildItem{
+	"Python": {
 		Key: "Python (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -145,7 +145,7 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"TypeScript": droneyaml.BuildItem{
+	"TypeScript": {
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
@@ -155,11 +155,21 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"C#": droneyaml.BuildItem{
+	"C#": {
 		Key: "C# (indexing)",
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				Image: droneSrclibCSharpImage,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
+	"CSS": {
+		Key: "CSS (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: droneSrclibCSSImage,
 			},
 			Commands:     srclibBuildCommands,
 			AllowFailure: true,
