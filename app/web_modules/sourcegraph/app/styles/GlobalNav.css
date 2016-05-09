@@ -14,14 +14,19 @@
 	composes: fl from base;
 }
 
+
 @value media-sm from layout;
 @media media-sm {
+	/* Composes don't work within media querie */
 	.header-logo {
-		composes: center fn from base;
+		float: none;
+		margin: auto;
 	}
 	.logged-out-nav {
-		composes: center fn mt3 from base;
+		float: none;
 		display: block;
+		margin: auto;
+		margin-top: 1rem;
 	}
 }
 
