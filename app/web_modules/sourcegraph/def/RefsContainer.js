@@ -215,12 +215,14 @@ export default class RefsContainer extends Container {
 		);
 		return (
 			<div key={entrySpec.Path} className={styles.filename} onClick={(e) => {
+				if (e.button !== 0) return; // only expand on main button click
 				this.setState(update(this.state, {shownFiles: {$splice: [[i, 1, !this.state.shownFiles[i]]]}}));
 			}}>
 				{this.state.shownFiles[i] ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
 				{pathBreadcrumb}
 				<div className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</div>
-				<Link className={styles.viewFile} to={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}>
+				<Link className={styles.viewFile}
+					to={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}>
 					<span className={styles.pageLink}>View</span>
 				</Link>
 			</div>
