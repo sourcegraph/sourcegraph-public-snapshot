@@ -86,24 +86,22 @@ class HomeContainer extends Component {
 								<div styleName="featured-project">
 									<Link to ="/github.com/golang/go">golang/go</Link>
 									<p styleName="project-desc">
-										Used by 21,453 developers <br />
-										Used in 5,398 projects
-									</p>
-								</div>
-								<div styleName="featured-project">
-									<Link to ="/github.com/aws/aws-sdk-go">aws-sdk-go</Link>
-									<p styleName="project-desc">
-										Used by 21,453 developers <br />
-										Used in 5,398 projects
+										An open source programming language that makes it easy to build simple, reliable, and efficient software.
 									</p>
 								</div>
 								<div styleName="featured-project">
 									<Link to ="/github.com/kubernetes/kubernetes">kubernetes/kubernetes</Link>
 									<p styleName="project-desc">
-										Used by 21,453 developers <br />
-										Used in 5,398 projects
+										A system for managing containerized applications across multiple hosts.
 									</p>
 								</div>
+								<div styleName="featured-project">
+									<Link to ="/github.com/aws/aws-sdk-go">aws-sdk-go</Link>
+									<p styleName="project-desc">
+										The official AWS SDK for the Go programming language.
+									</p>
+								</div>
+
 							</div>
 
 							<h5 styleName="header-5">Coming soon</h5>

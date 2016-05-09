@@ -173,6 +173,7 @@
 
 .featured-project {
 	composes: col-ns col-4-ns from grid;
+	composes: pr3 from base;
 }
 
 .label-blue {

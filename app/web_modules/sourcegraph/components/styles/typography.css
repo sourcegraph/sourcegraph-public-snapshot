@@ -29,7 +29,7 @@
 .f3 {
 	font-size: font-size-3;
 	line-height: 1.45;
-
+}
 .f4 {
 	font-size: font-size-4;
 	line-height: 1.45;
@@ -62,7 +62,7 @@
 code, .code { font-family: Menlo, Consolas, Monaco, monospace; }
 
 html {
-	font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'helvetica neue', 'helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
+	font-family: -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
 }
 
 /*
