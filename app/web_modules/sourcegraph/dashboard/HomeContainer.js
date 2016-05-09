@@ -74,7 +74,7 @@ class HomeContainer extends Component {
 						<div styleName="responsive-container">
 							<h1 styleName="h1">Growing language support</h1>
 							<hr styleName="short-blue-line" />
-							<p styleName="lead">Language support for Sourcegraph is powered by <a href="https://srclib.org/" target="new">srclib</a>, an hackable code analysis library.</p>
+							<p styleName="lead">Language support for Sourcegraph is powered by <a href="https://srclib.org/" target="new">srclib</a>, a hackable code analysis library.</p>
 
 							<div styleName="language">
 								Go
