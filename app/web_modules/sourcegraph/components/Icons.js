@@ -18,11 +18,12 @@ function iconWrapper(Component) {
 	class IconWrapper extends React.Component {
 		static propTypes = {
 			className: React.PropTypes.string,
+			title: React.PropTypes.string,
 		};
 
 		render() {
 			return (
-				<div className={this.props.className} styleName="icon">
+				<div className={this.props.className} title={this.props.title} styleName="icon">
 					<Component />
 				</div>
 			);
