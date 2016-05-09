@@ -214,9 +214,6 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 							fmt.Fprintf(w, " - %s\n", lang.Name)
 						}
 					}
-
-					// Filter to sane list of languages after printing everything.
-					inv.Languages = filterToRealProgrammingLangs(inv.Languages)
 				}
 				return err
 			},
@@ -425,16 +422,4 @@ var skipLangs = map[string]struct{}{
 	"Tcsh":      struct{}{},
 	"SaltStack": struct{}{},
 	"PLpgSQL":   struct{}{},
-}
-
-func filterToRealProgrammingLangs(langs []*inventory.Lang) []*inventory.Lang {
-	langs = inventory.ProgrammingLangsOnly(langs)
-	var real []*inventory.Lang
-	for _, lang := range langs {
-		if _, skip := skipLangs[lang.Name]; skip {
-			continue
-		}
-		real = append(real, lang)
-	}
-	return real
 }
