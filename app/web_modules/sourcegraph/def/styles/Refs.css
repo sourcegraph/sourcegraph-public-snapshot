@@ -36,6 +36,7 @@
 .refsLabel {
 	composes: pl2 from base;
 	composes: small-text from typography;
+	user-select: none;
 }
 
 .filename {
@@ -65,6 +66,7 @@
 .pageLink {
 	cursor: pointer;
 	composes: gray from colors;
+	user-select: none;
 }
 
 @value c_dark-blue from colors;
@@ -78,4 +80,5 @@
 
 .label {
 	font-weight: bold;
+	user-select: none;
 }
