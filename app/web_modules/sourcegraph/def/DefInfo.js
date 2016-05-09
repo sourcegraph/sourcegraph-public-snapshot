@@ -94,6 +94,14 @@ class DefInfo extends Container {
 				<div styleName="main">
 					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
+					{/* TODO DocHTML will not be set if the this def was loaded via the
+						serveDefs endpoint instead of the serveDef endpoint. In this case
+						we'll fallback to displaying plain text. We should be able to
+						sanitize/render DocHTML on the front-end to make this consistent.
+					*/}
+					{def && !def.DocHTML && def.Docs && def.Docs.length &&
+						<div styleName="description">{def.Docs[0].Data}</div>
+					}
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
