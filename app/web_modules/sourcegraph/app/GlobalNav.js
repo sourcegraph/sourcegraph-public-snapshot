@@ -17,10 +17,10 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 	if (!signedIn && location.pathname === "/") {
 		return (
 			<div styleName="logged-out-header">
-				<a href="/" styleName="header-logo"><Logo width="220px" type="logotype" /></a>
+				<Link to="/" styleName="header-logo"><Logo width="220px" type="logotype" /></Link>
 				<nav styleName="logged-out-nav">
-					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
-					<a href="/about" styleName="logged-out-nav-item">About</a>
+					<Link to="/blog" styleName="logged-out-nav-item">Blog</Link>
+					<Link to="/about" styleName="logged-out-nav-item">About</Link>
 					<LocationStateToggleLink href="/login"
 						modalName="login"
 						location={location}
