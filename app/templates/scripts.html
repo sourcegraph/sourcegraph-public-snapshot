@@ -44,11 +44,11 @@
 		{{if deployedGitCommitID}}
 			splunkTags["Deployed commit"] = "{{deployedGitCommitID}}";
 		{{end}}
-		{{if .CurrentUser}}
+		{{if .Actor.IsAuthenticated}}
 			splunkTags["User"] = {
-				Authed: "{{.CurrentUser.Login}}" ? true : false,
-				UID: {{.CurrentUser.UID}},
-				Login: "{{.CurrentUser.Login}}",
+				Authed: "{{.Actor.Login}}" ? true : false,
+				UID: {{.Actor.UID}},
+				Login: "{{.Actor.Login}}",
 			};
 		{{end}}
 		{{if .CurrentSpanID}}
