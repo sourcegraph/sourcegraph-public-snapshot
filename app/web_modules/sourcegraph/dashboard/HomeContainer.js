@@ -137,7 +137,7 @@ class HomeContainer extends Component {
 							</div>
 							<div styleName="content-right-5">
 								<h2 styleName="header-white">Stop coding alone</h2>
-								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
+								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers all over the web.</p>
 								<LocationStateToggleLink href="/join"
 									modalName="signup" location={location}
 									onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-bottom"})}
