@@ -75,3 +75,7 @@
 .sep {
 	composes: ph1 from base;
 }
+
+.label {
+	font-weight: bold;
+}

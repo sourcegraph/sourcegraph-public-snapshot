@@ -75,7 +75,7 @@ class DefContainer extends Container {
 		}
 	}
 
-	renderFileHeader(def) {
+	renderFileHeader(def, beginningLine) {
 		let pathBreadcrumb = breadcrumb(
 			def.File,
 			(j) => <span key={j} className={styles.sep}>/</span>,
@@ -86,7 +86,9 @@ class DefContainer extends Container {
 				this.setState({showDef: !this.state.showDef});
 			}}>
 				{this.state.showDef ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
+				<label className={styles.label}>Definition:</label>&nbsp;
 				{pathBreadcrumb}
+				<span className={styles.refsLabel}>line {beginningLine}</span>
 				<Link className={styles.viewFile} to={urlToBlob(def.Repo, this.state.rev, def.File)}>
 					<span className={styles.pageLink}>View</span>
 				</Link>
@@ -108,7 +110,7 @@ class DefContainer extends Container {
 			<div className={styles.container}
 				onMouseOver={() => this.setState({mouseover: true})}
 				onMouseOut={() => this.setState({mouseover: false})}>
-				{this.renderFileHeader(def)}
+				{this.renderFileHeader(def, beginningLine)}
 				{this.state.showDef && this.state.defFile && <Blob
 					repo={def.Repo}
 					rev={this.state.rev}
