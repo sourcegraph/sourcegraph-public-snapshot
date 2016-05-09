@@ -30,7 +30,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 						modalName="signup" location={location}
 						onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}
 						styleName="btn-signup">
-						Sign up free
+						Sign up
 					</LocationStateToggleLink>
 				</nav>
 

@@ -43,14 +43,15 @@
 
 .logged-out-nav-item {
 	composes: link-subtle from link;
-	composes: pa2 mr2 from base;
+	composes: pa2 ml2 from base;
 }
 
 .btn-login {
 	composes: btn normal outline outline-primary from button;
-	composes: mr4 ml2 from base;
+	composes: ml4 from base;
 }
 .btn-signup {
+	composes: ml4 from base;
 	composes: btn normal solid-primary from button;
 }
 
