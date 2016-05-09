@@ -1,4 +1,5 @@
 @value base "sourcegraph/components/styles/base.css";
+@value vars "sourcegraph/components/styles/_vars.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value typography "sourcegraph/components/styles/typography.css";
 @value grid "sourcegraph/components/styles/grid.css";
@@ -7,6 +8,7 @@
 @value button "sourcegraph/components/styles/button.css";
 
 @value navbarHeight 40px;
+@value media-sm from vars;
 
 /* Logged out nav */
 
@@ -15,7 +17,6 @@
 }
 
 
-@value media-sm from layout;
 @media media-sm {
 	/* Composes don't work within media querie */
 	.header-logo {

@@ -4,6 +4,17 @@
 
 @value btn-transition: all 0.4s;
 
+@value c_blue from colors;
+@value c_green from colors;
+@value c_orange from colors;
+@value c_dark-gray from colors;
+@value c_black-50 from colors;
+@value c_purple from colors;
+@value c_light-gray from colors;
+@value c_red from colors;
+@value c_blue from colors;
+@value c_dark-blue-2 from colors;
+
 .btn {
     composes: tc fw5 from typography;
     display: inline-block;
@@ -75,7 +86,6 @@
     composes: bg-white from colors;
     background-image: none;
 }
-@value c_blue from colors;
 .outline-primary {
     composes: outline;
     composes: b--blue-5 blue from colors;
@@ -86,7 +96,6 @@
     color: c_blue;
 }
 
-@value c_green from colors;
 .outline-success {
     composes: outline;
     composes: b--green-8 green-8 from colors;
@@ -97,7 +106,6 @@
     color: c_green;
 }
 
-@value c_red from colors;
 .outline-danger {
     composes: outline;
     composes: b--red-8 red-8 from colors;
@@ -108,7 +116,6 @@
     color: c_red;
 }
 
-@value c_blue from colors;
 .outline-info {
     composes: outline;
     composes: b--blue-8 blue-8 from colors;
@@ -119,7 +126,6 @@
     color: c_blue;
 }
 
-@value c_orange from colors;
 .outline-warning {
     composes: outline;
     composes: b--orange-8 orange-8 from colors;
@@ -130,8 +136,6 @@
     color: c_orange;
 }
 
-@value c_dark-gray from colors;
-@value c_black-50 from colors;
 .outline-default {
     composes: outline;
     composes: b--gray dark-gray from colors;
@@ -145,7 +149,6 @@
 /* "active" state for button links */
 /* Set this as <Link activeClassName={buttonStyles["outline-active"]} /> */
 /* Overrides child button's styles. */
-@value c_purple from colors;
 .outline-active {
     composes: outline;
     color: c_purple !important;
@@ -162,7 +165,6 @@
 }
 
 /* solid buttons */
-@value c_light-gray from colors;
 .solid {
 	border-style: solid;
 	border-width: 2px;
@@ -179,7 +181,6 @@
     composes: white bg-blue b--blue from colors;
 }
 
-@value c_dark-blue-2 from colors;
 .solid-primary:hover,
 .solid-primary:focus {
     color: white;

@@ -4,6 +4,14 @@
 @value animation "sourcegraph/components/styles/animation.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
+/* TODO (chexee): move some of these to vars or individual components */
+@value marginBoxBorderWidth 4px;
+@value c_blue from colors;
+@value contentWidth 690px;
+@value marginWidth 290px;
+@value codeLineHeight 16px;
+@value firstCodeLineTopPadding 8px;
+
 .pathComponent {}
 .inactivePathComponent {
 	composes: pathComponent;
@@ -14,8 +22,7 @@
 }
 
 /* Layout */
-@value contentWidth 690px;
-@value marginWidth 290px;
+
 .container {
 	display: flex;
 	align-items: start;
@@ -35,10 +42,6 @@
 	}
 }
 
-/* TODO(sqs): move these to a separate file bc they are going to be used
-by a lot of other modules (e.g., for def boxes)? */
-@value marginBoxBorderWidth 4px;
-@value c_blue from colors;
 .marginBox {
 	composes: pt1 pb2 ph2 from base;
 }
@@ -79,8 +82,7 @@ by a lot of other modules (e.g., for def boxes)? */
 	min-width: 40px;
 	background-color: #fafafc;
 }
-@value codeLineHeight 16px;
-@value firstCodeLineTopPadding 8px;
+
 .lineCell {
 	line-height: codeLineHeight;
 	composes: pv0 from base;

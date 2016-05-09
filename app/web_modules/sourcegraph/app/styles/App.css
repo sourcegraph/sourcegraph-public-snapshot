@@ -1,7 +1,10 @@
 @value modal "sourcegraph/components/styles/modal.css";
 @value colors "sourcegraph/components/styles/colors.css";
-@value typography "sourcegraph/components/styles/typography.css";
+@value vars "sourcegraph/components/styles/_vars.css";
 
+@value desktop-base-size from vars;
+@value mobile-base-size from vars;
+@value c_cool-gray from colors;
 
 /*
 Stick footer at bottom even if the page content doesn't take up
@@ -32,8 +35,6 @@ Prevent scrolling the main content when a modal is being displayed.
 }
 
 /* Responsive type scaling */
-@value desktop-base-size from typography;
-@value c_cool-gray from colors;
 
 body {
 	color: c_cool-gray;
@@ -42,7 +43,6 @@ body {
 	line-height: 1.6;
 }
 
-@value mobile-base-size from typography;
 @media only screen
 and (min-device-width: 320px)
 and (max-device-width: 480px)

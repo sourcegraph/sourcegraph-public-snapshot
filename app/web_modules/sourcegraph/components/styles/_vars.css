@@ -1,0 +1,16 @@
+/* Responsive variables */
+@value media-sm: (max-width: 48em);
+@value media-md: (min-width: 48em) and (max-width: 64em);
+@value media-lg: (min-width: 64em);
+@value media-ns: (min-width: 48em);
+
+/* Type variables */
+@value desktop-base-size: 14px;
+@value mobile-base-size: 12px;
+
+@value font-size-1: 3.35rem;
+@value font-size-2: 2.1rem;
+@value font-size-3: 2.0rem;
+@value font-size-4: 1.5rem;
+@value font-size-5: 1rem;
+@value font-size-6: .875rem;
