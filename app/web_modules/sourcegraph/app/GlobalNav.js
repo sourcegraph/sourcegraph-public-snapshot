@@ -14,7 +14,7 @@ import {SignupForm} from "sourcegraph/user/Signup";
 
 function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, eventLogger}) {
 
-	if (!signedIn) {
+	if (!signedIn && location.pathname === "/") {
 		return (
 			<div styleName="logged-out-header">
 				<a href="/" styleName="header-logo"><Logo width="220px" type="logotype" /></a>

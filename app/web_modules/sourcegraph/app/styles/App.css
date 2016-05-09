@@ -8,7 +8,6 @@ Stick footer at bottom even if the page content doesn't take up
 the entire viewport height.
 */
 .main-container {
-	composes: bg-pale-blue from colors;
 	display: flex;
 	min-height: 100vh;
 	flex-direction: column;
@@ -25,6 +24,11 @@ Prevent scrolling the main content when a modal is being displayed.
 .main-container-with-modal {
 	composes: main-container;
 	filter: saturate(0%) opacity(80%);
+}
+
+.main-container-homepage {
+	composes: main-container;
+	composes: bg-pale-blue from colors;
 }
 
 /* Responsive type scaling */

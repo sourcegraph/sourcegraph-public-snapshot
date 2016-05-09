@@ -21,9 +21,13 @@ const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.element,
 ]);
 
-function App(props) {
+function App(props, {signedIn}) {
+	let styleName = "main-container";
+	if (props.location.state && props.location.state.modal) styleName = "main-container-with-modal";
+	if (!signedIn && location.pathname === "/") styleName = "main-container-homepage";
+
 	return (
-		<div styleName={props.location.state && props.location.state.modal ? "main-container-with-modal" : "main-container"}>
+		<div styleName={styleName}>
 			<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 			<GlobalNav navContext={props.navContext} location={props.location} />
 			<div styleName="main-content">{props.main}</div>
@@ -35,6 +39,10 @@ App.propTypes = {
 	main: reactElement,
 	navContext: reactElement,
 	location: React.PropTypes.object.isRequired,
+};
+
+App.contextTypes = {
+	signedIn: React.PropTypes.bool.isRequired,
 };
 
 export const rootRoute: Route = {
