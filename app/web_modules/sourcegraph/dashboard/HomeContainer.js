@@ -1,7 +1,6 @@
 import React from "react";
-
+import {Link} from "react-router";
 import Component from "sourcegraph/Component";
-
 import CSSModules from "react-css-modules";
 import styles from "./styles/Home.css";
 
@@ -35,8 +34,8 @@ class HomeContainer extends Component {
 								<h3 styleName="h3">Search public and (your) private code</h3>
 								<p>Connect your GitHub account to Sourcegraph and we’ll analyze your repositories – letting you look up and reference code from any other public repository on the graph.</p>
 							</div>
-							<a href="/join" styleName="btn-main">Sign up and connect</a>
-							<a href="/github.com/kubernetes/kubernetes">Explore a public repo</a>
+							<Link to="/join" styleName="btn-main">Sign up and connect</Link>
+							<Link to="/github.com/kubernetes/kubernetes">Explore a public repo</Link>
 						</div>
 					</div>
 
@@ -77,21 +76,21 @@ class HomeContainer extends Component {
 
 							<div styleName="row">
 								<div styleName="featured-project">
-									<a href="https://sourcegraph.com/github.com/golang/go">golang/go</a>
+									<Link to ="/github.com/golang/go">golang/go</Link>
 									<p styleName="project-desc">
 										Used by 21,453 developers <br />
 										Used in 5,398 projects
 									</p>
 								</div>
 								<div styleName="featured-project">
-									<a href="https://sourcegraph.com/github.com/aws/aws-sdk-go">aws-sdk-go</a>
+									<Link to ="/github.com/aws/aws-sdk-go">aws-sdk-go</Link>
 									<p styleName="project-desc">
 										Used by 21,453 developers <br />
 										Used in 5,398 projects
 									</p>
 								</div>
 								<div styleName="featured-project">
-									<a href="https://sourcegraph.com/github.com/kubernetes/kubernetes">kubernetes/kubernetes</a>
+									<Link to ="/github.com/kubernetes/kubernetes">kubernetes/kubernetes</Link>
 									<p styleName="project-desc">
 										Used by 21,453 developers <br />
 										Used in 5,398 projects
@@ -133,7 +132,7 @@ class HomeContainer extends Component {
 							<div styleName="content-right-5">
 								<h2 styleName="header-white">Stop coding alone</h2>
 								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers from around the world.</p>
-								<a href="/join" styleName="btn-white">Join the graph</a>
+								<Link to="/join" styleName="btn-white">Join the graph</Link>
 							</div>
 						</div>
 					</div>
