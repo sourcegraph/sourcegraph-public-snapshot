@@ -21,18 +21,15 @@
 .f1 {
 	font-size: font-size-1;
 	line-height: 1.45;
-	letter-spacing: 0.8px;
 }
 .f2 {
 	font-size: font-size-2;
 	line-height: 1.45;
-	letter-spacing: 0.9px;
 }
 .f3 {
 	font-size: font-size-3;
 	line-height: 1.45;
-	letter-spacing: 0.9px;
-}
+
 .f4 {
 	font-size: font-size-4;
 	line-height: 1.45;
