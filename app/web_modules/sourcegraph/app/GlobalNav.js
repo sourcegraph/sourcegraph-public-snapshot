@@ -19,8 +19,8 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 			<div styleName="logged-out-header">
 				<Link to="/" styleName="header-logo"><Logo width="220px" type="logotype" /></Link>
 				<nav styleName="logged-out-nav">
-					<Link to="/blog" styleName="logged-out-nav-item">Blog</Link>
-					<Link to="/about" styleName="logged-out-nav-item">About</Link>
+					<a href="/blog" styleName="logged-out-nav-item">Blog</a>
+					<a href="/about" styleName="logged-out-nav-item">About</a>
 					<LocationStateToggleLink href="/login"
 						modalName="login"
 						location={location}
