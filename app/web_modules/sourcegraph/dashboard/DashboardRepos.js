@@ -7,6 +7,7 @@ import styles from "./styles/Dashboard.css";
 class DashboardRepos extends React.Component {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
+		githubToken: React.PropTypes.object,
 	};
 
 	// _repoSort is a comparison function that sorts more recently
@@ -23,7 +24,8 @@ class DashboardRepos extends React.Component {
 		return (
 			<div styleName="list">
 				{this.context.signedIn && <div styleName="list-section-header">Repositories</div>}
-				{repos.length === 0 && <div styleName="list-item-loading">Loading...</div>}
+				{this.context.githubToken && repos.length === 0 && <div styleName="list-item-loading">Loading...</div>}
+				{!this.context.githubToken && <div styleName="list-item-loading">Link your GitHub account above to see your repositories here.</div>}
 				{repos.length > 0 && repos.map((repo, i) =>
 					<div key={i}>
 						<div styleName="list-item">
