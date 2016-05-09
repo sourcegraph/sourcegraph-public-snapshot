@@ -966,22 +966,22 @@
 			"revisionTime": "2015-06-04T23:21:56+02:00"
 		},
 		{
-			"checksumSHA1": "wQIuqzoIQcdnpr04NFgVQBCBbGo=",
+			"checksumSHA1": "RRE1/XQIHYx0QIujyqA7vddvs/w=",
 			"path": "sourcegraph.com/sourcegraph/srclib-go/depresolve",
-			"revision": "117415609a84484813fcb221d994457cc7d1575a",
-			"revisionTime": "2016-05-04T19:07:37Z"
+			"revision": "60f68d147b6ebd20e9e6c0b6fd36ccfa1cce07d2",
+			"revisionTime": "2016-05-09T12:40:41Z"
 		},
 		{
 			"checksumSHA1": "yrklc6tNTVHOEAE1WShWDnfSAD4=",
 			"path": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
-			"revision": "117415609a84484813fcb221d994457cc7d1575a",
-			"revisionTime": "2016-05-04T19:07:37Z"
+			"revision": "60f68d147b6ebd20e9e6c0b6fd36ccfa1cce07d2",
+			"revisionTime": "2016-05-09T12:40:41Z"
 		},
 		{
 			"checksumSHA1": "sAmLsjAFmJxhhhiY6cHZK7wKzMQ=",
 			"path": "sourcegraph.com/sourcegraph/srclib-go/golang_def",
-			"revision": "117415609a84484813fcb221d994457cc7d1575a",
-			"revisionTime": "2016-05-04T19:07:37Z"
+			"revision": "60f68d147b6ebd20e9e6c0b6fd36ccfa1cce07d2",
+			"revisionTime": "2016-05-09T12:40:41Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-haskell/haskell",

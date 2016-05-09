@@ -26,7 +26,7 @@ func ResolveImportPath(importPath string) (*dep.ResolvedTarget, error) {
 		target.ToRevSpec = "" // TODO(sqs): fill in when graphing stdlib repo
 
 	// Special-case github.com/... import paths for performance.
-	case strings.HasPrefix(importPath, "github.com/") || strings.HasPrefix(importPath, "sourcegraph.com/"):
+	case strings.HasPrefix(importPath, "github.com/"):
 		cloneURL, err := standardRepoHostImportPathToCloneURL(importPath)
 		if err != nil {
 			return nil, err
