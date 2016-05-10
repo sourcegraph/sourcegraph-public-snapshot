@@ -1,7 +1,6 @@
 // Splunk error monitoring code
 
 import "whatwg-fetch";
-import context from "sourcegraph/app/context";
 
 let appIsHandlingError = false;
 
@@ -20,7 +19,7 @@ function globalErrorHandler(ev) {
 			"Content-Type": "application/json",
 		}),
 		body: JSON.stringify({
-			source: context.currentUser ? context.currentUser.Login : "anonymous",
+			source: ev["User"] ? ev["User"].Login : "anonymous",
 			sourcetype: "sourcegraph-frontend",
 			event: ev,
 		}),
