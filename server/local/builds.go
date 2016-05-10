@@ -2,8 +2,8 @@ package local
 
 import (
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
