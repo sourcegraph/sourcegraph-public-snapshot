@@ -115,36 +115,6 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"PHP": {
-		Key: "PHP (indexing)",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image: droneSrclibBasicImage,
-			},
-			Commands:     srclibBuildCommands,
-			AllowFailure: true,
-		},
-	},
-	"Objective-C": {
-		Key: "Objective-C (indexing)",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image: droneSrclibBasicImage,
-			},
-			Commands:     srclibBuildCommands,
-			AllowFailure: true,
-		},
-	},
-	"Python": {
-		Key: "Python (indexing)",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image: droneSrclibPythonImage,
-			},
-			Commands:     srclibBuildCommands,
-			AllowFailure: true,
-		},
-	},
 	"TypeScript": {
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
