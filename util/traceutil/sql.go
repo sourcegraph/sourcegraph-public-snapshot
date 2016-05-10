@@ -29,7 +29,7 @@ func (x SQLExecutor) record(start time.Time, query string, args []interface{}) {
 	// Because SQL queries can often be quite long, we instead take append a
 	// CRC32 hash of the query string to represent the unique "type" of SQL
 	// query that it is.
-	rec.Name(fmt.Sprintf("SQL %d", crc32.ChecksumIEEE([]byte(query))))
+	rec.Name(fmt.Sprintf("SQL (query type %d)", crc32.ChecksumIEEE([]byte(query))))
 	rec.Event(sqltrace.SQLEvent{
 		SQL:        dbutil.UnbindQuery(query, args...),
 		ClientSend: start,
