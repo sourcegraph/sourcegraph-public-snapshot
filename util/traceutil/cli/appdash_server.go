@@ -97,7 +97,7 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	// Create a default InfluxDB configuration.
 	conf, err := appdash.NewInfluxDBConfig()
 	if err != nil {
-		log.Fatalf("failed to create influxdb config, error: %v", err)
+		return fmt.Errorf("failed to create influxdb config, error: %v", err)
 	}
 
 	// Usage metrics are non-invasive; but we disable them anyway to get rid of
@@ -132,7 +132,7 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 		logOutputName = os.ExpandEnv(filepath.Join(f.InfluxLogDir, "influxdb.log"))
 		logFile, err := os.OpenFile(logOutputName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
-			log.Fatalf("failed to open influxdb log file, error: %v", err)
+			return fmt.Errorf("failed to open influxdb log file, error: %v", err)
 		}
 		conf.LogOutput = logFile
 	}
@@ -146,29 +146,29 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	if collectorUseTLS {
 		certBytes, err := ioutil.ReadFile(f.TLSCertFile)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		keyBytes, err := ioutil.ReadFile(f.TLSKeyFile)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		var tc tls.Config
 		cert, err := tls.X509KeyPair(certBytes, keyBytes)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		tc.Certificates = []tls.Certificate{cert}
 		l, err = tls.Listen(listenNet, f.CollectorAddr, &tc)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		proto = fmt.Sprintf("TLS with cert %s, key %s", f.TLSCertFile, f.TLSKeyFile)
 	} else {
 		var err error
 		l, err = net.Listen(listenNet, f.CollectorAddr)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		proto = "plaintext (non-TLS) TCP"
 	}
