@@ -126,8 +126,8 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 
 	logOutputName := ""
 	if f.LogDebug {
-		logOutputName = "(stdout)"
-		conf.LogOutput = os.Stdout
+		logOutputName = "(stderr)"
+		conf.LogOutput = os.Stderr
 	} else if f.InfluxLogDir != "" {
 		logOutputName = os.ExpandEnv(filepath.Join(f.InfluxLogDir, "influxdb.log"))
 		logFile, err := os.OpenFile(logOutputName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
