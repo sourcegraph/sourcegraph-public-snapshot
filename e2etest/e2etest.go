@@ -621,9 +621,7 @@ func parseEnv() error {
 		if warningChannelName != "" {
 			tr.slackWarningChannel = findChannel(warningChannelName)
 			if tr.slackWarningChannel == nil {
-				log.Println("could not find slack warning channel", warningChannelName)
-				log.Println("defaulting to SLACK_CHANNEL instead")
-				tr.slackWarningChannel = tr.slackChannel
+				log.Printf("SLACK_WARNING_CHANNEL=%s does not exist, warnings will not appear on slack.", warningChannelName)
 			}
 		}
 		if tr.slackChannel != nil {
