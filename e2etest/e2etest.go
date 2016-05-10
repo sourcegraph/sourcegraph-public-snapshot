@@ -38,11 +38,8 @@ import (
 type T struct {
 	selenium.WebDriverT
 
-	// Log is where all errors, warnings, etc. should be written to.
-	Log *log.Logger
-
 	// Target is the target Sourcegraph server to test, e.g. https://sourcegraph.com
-	Target string
+	Target *url.URL
 
 	// TestLogin is a username prefixed with e2etestuser.Prefix which is unique
 	// for this test. In specific it is e2etestuser.Prefix + Test.Name.
@@ -56,6 +53,9 @@ type T struct {
 	// handle errors yourself (the embedded WebDriverT handles them for you by
 	// calling Fatalf).
 	WebDriver selenium.WebDriver
+
+	// testingT provides a Fatalf implementation
+	testingT selenium.TestingT
 
 	tr *testRunner
 }
@@ -72,17 +72,17 @@ func (e *internalError) Error() string {
 // package we are a single process, we instead cause a panic (which is caught
 // by the test executor).
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
-	panic(fmt.Sprintf(fmtStr, v...))
+	if t.testingT == nil {
+		panic(fmt.Sprintf(fmtStr, v...))
+	}
+	t.testingT.Fatalf(fmtStr, v...)
 }
 
 // Endpoint returns an absolute URL given one relative to the target instance
 // root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
 // will return "https://sourcegraph.com/login"
 func (t *T) Endpoint(e string) string {
-	u, err := url.Parse(t.Target)
-	if err != nil {
-		panic(err) // Target is validated in main, always.
-	}
+	u := *t.Target
 	u.Path = path.Join(u.Path, e)
 	return u.String()
 }
@@ -90,20 +90,15 @@ func (t *T) Endpoint(e string) string {
 // GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the
 // server's ID key, and thus has 100% unrestricted access. Use with caution!
 func (t *T) GRPCClient() (context.Context, *sourcegraph.Client) {
-	target, err := url.Parse(t.Target)
-	if err != nil {
-		panic(err) // Target is validated in main, always.
-	}
-
 	// Create context with gRPC endpoint and idKey credentials.
-	ctx := context.TODO()
-	ctx = sourcegraph.WithGRPCEndpoint(ctx, target)
+	ctx := context.Background()
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, t.Target)
 	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.TokenSource(t.tr.idKey, "internal:e2etest"))
 
 	// Create client.
 	c, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		t.Fatalf("could not create gRPC client:", c)
+		t.Fatalf("could not create gRPC client: %v", c)
 	}
 	return ctx, c
 }
@@ -122,10 +117,11 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
-// WaitForRedirect waits up to 20s for a redirect to the given endpoint (e.g.,
-// "/login").
-func (t *T) WaitForRedirect(endpoint, description string) {
-	endpointURL := t.Endpoint(endpoint)
+// WaitForRedirect waits up to 20s for a redirect to the given URL (e.g.,
+// "https://sourcegraph.com/login").
+//
+// Use t.Endpoint("/foo") to get an endpoint relative to $TARGET easily.
+func (t *T) WaitForRedirect(url, description string) {
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
@@ -134,10 +130,53 @@ func (t *T) WaitForRedirect(endpoint, description string) {
 			if err != nil {
 				return false
 			}
-			return currentURL == endpointURL
+			return currentURL == url
 		},
-		fmt.Sprintf("%s (%s)", description, endpointURL),
+		fmt.Sprintf("%s (%s)", description, url),
 	)
+}
+
+// WaitForRedirectPrefix waits up to 20s for a redirect to a page with the
+// given prefix (e.g., "https://github.com/login" matches if the URL is really
+// "https://github.com/login?foo").
+func (t *T) WaitForRedirectPrefix(prefix, description string) {
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			currentURL, err := t.WebDriver.CurrentURL()
+			if err != nil {
+				return false
+			}
+			return strings.HasPrefix(currentURL, prefix)
+		},
+		fmt.Sprintf("%s (%s)", description, prefix),
+	)
+}
+
+// FindElementWithPartialText finds an element of the given tagName, whose Text
+// contains the specified partial text. After 20s of waiting for the element to
+// appear, it fails with the given reason.
+//
+// Note: XPath is not good at characters it needs to quote, so ensure
+// partialText is a relatively simple string
+func (t *T) FindElementWithPartialText(tagName, partialText, reason string) selenium.WebElement {
+	var elem selenium.WebElement
+	var err error
+	xpath := fmt.Sprintf("//%s[contains(text(), %q)]", tagName, partialText)
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			elem, err = t.WebDriver.FindElement(selenium.ByXPATH, xpath)
+			if err != nil {
+				return false
+			}
+			return true
+		},
+		reason,
+	)
+	return elem
 }
 
 // Test represents a single E2E test.
@@ -172,7 +211,7 @@ func Register(t *Test) {
 // methods to make testing easier.
 type testRunner struct {
 	log      *log.Logger
-	target   string
+	target   *url.URL
 	tests    []*Test
 	executor string
 	idKey    *idkey.IDKey
@@ -191,6 +230,9 @@ const (
 
 func (t *testRunner) slackMessage(messageType int, msg, quoted string) {
 	if t.slack == nil {
+		return
+	}
+	if messageType == typeWarning && t.slackWarningChannel == nil {
 		return
 	}
 
@@ -340,7 +382,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		runCounter.WithLabelValues("success").Inc()
 		t.slackSkipAtChannel = false // do @channel on next failure
 		if logSuccess {
-			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target), "")
+			t.slackMessage(typeNormal, fmt.Sprintf(":thumbsup: *Success! %v tests successful against %v!*", total, t.target.String()), "")
 		}
 	} else {
 		runCounter.WithLabelValues("failure").Inc()
@@ -354,7 +396,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 		}
 		t.slackMessage(
 			typeNormal,
-			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target),
+			fmt.Sprintf(":fire: *FAILURE! %v/%v tests failed against %v: *"+atChannel, failures, total, t.target.String()),
 			t.slackLogBuffer.String(),
 		)
 
@@ -397,15 +439,7 @@ func (t *testRunner) sendAlert() error {
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
 func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
-	// Create a selenium web driver for the test.
-	// Set up webdriver.
-	caps := selenium.Capabilities(map[string]interface{}{
-		"browserName": "chrome",
-		"chromeOptions": map[string]interface{}{
-			"args": []string{"user-agent=" + e2etestuser.UserAgent},
-		},
-	})
-	wd, err := selenium.NewRemote(caps, t.executor)
+	wd, err := t.newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
 	}
@@ -440,9 +474,22 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 		wd.Quit()
 	}()
 
-	// Setup the context for the test.
+	ctx := t.newT(test, wd)
+	return test.Func(ctx), nil
+}
+
+func (t *testRunner) newWebDriver() (selenium.WebDriver, error) {
+	caps := selenium.Capabilities(map[string]interface{}{
+		"browserName": "chrome",
+		"chromeOptions": map[string]interface{}{
+			"args": []string{"user-agent=" + e2etestuser.UserAgent},
+		},
+	})
+	return selenium.NewRemote(caps, t.executor)
+}
+
+func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 	ctx := &T{
-		Log:       t.log,
 		Target:    t.target,
 		TestLogin: e2etestuser.Prefix + test.Name,
 		TestEmail: e2etestuser.Prefix + test.Name + "@sourcegraph.com",
@@ -450,9 +497,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 		tr:        t,
 	}
 	ctx.WebDriverT = ctx.WebDriver.T(ctx)
-
-	// Execute the test.
-	return test.Func(ctx), nil
+	return ctx
 }
 
 // slackFileUpload implements slack multipart file upload.
@@ -521,6 +566,130 @@ var (
 	retriesFlag = flag.Int("retries", 3, "maximum number of times to retry a test before considering it failed")
 )
 
+func parseEnv() error {
+	// Determine which Selenium server to connect to.
+	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
+	serverPort := os.Getenv("SELENIUM_SERVER_PORT")
+	if serverAddr == "" {
+		return errors.New("unable to get SELENIUM_SERVER_IP from environment")
+	}
+	if serverPort == "" {
+		serverPort = "4444" // default to standard Selenium port
+	}
+
+	if !strings.Contains(serverAddr, "://") {
+		serverAddr = "http://" + serverAddr
+	}
+
+	u, err := url.Parse(fmt.Sprintf("%s:%s", serverAddr, serverPort))
+	if err != nil {
+		return err
+	}
+
+	u.Path = path.Join(u.Path, "wd/hub")
+
+	tr.executor = u.String()
+
+	// Determine the target Sourcegraph instance to test against.
+	target := os.Getenv("TARGET")
+	if target == "" {
+		return errors.New("unable to get TARGET Sourcegraph instance from environment")
+	}
+	tr.target, err = url.Parse(target)
+	if err != nil {
+		return err
+	}
+	if tr.target.Scheme == "" {
+		return errors.New("TARGET must specify scheme (http or https) prefix")
+	}
+
+	// Find server ID key information.
+	if key := os.Getenv("ID_KEY_DATA"); key != "" {
+		tr.idKey, err = idkey.FromString(key)
+		if err != nil {
+			return err
+		}
+	} else {
+		sgpath := os.Getenv("SGPATH")
+		if sgpath == "" {
+			currentUser, err := user.Current()
+			if err != nil {
+				return err
+			}
+			sgpath = filepath.Join(currentUser.HomeDir, ".sourcegraph")
+		}
+		data, err := ioutil.ReadFile(filepath.Join(sgpath, "id.pem"))
+		if err != nil {
+			return err
+		}
+		tr.idKey, err = idkey.New(data)
+		if err != nil {
+			return err
+		}
+	}
+
+	if token := os.Getenv("SLACK_API_TOKEN"); token != "" {
+		tr.slack = slack.New(token)
+		tr.slackToken = token
+
+		// Determine which slack channel and warning channel we should use.
+		// Find the channel IDs.
+		channelName := os.Getenv("SLACK_CHANNEL")
+		warningChannelName := os.Getenv("SLACK_WARNING_CHANNEL")
+		if channelName == "" {
+			channelName = "e2etest"
+		}
+		if warningChannelName == "" {
+			log.Println("SLACK_WARNING_CHANNEL not configured, warnings will not appear on slack")
+		}
+
+		// Find the channel IDs.
+		channels, err := tr.slack.GetChannels(true)
+		if err != nil {
+			return err
+		}
+		findChannel := func(name string) *slack.Channel {
+			for _, c := range channels {
+				if c.Name == name {
+					return &c
+				}
+			}
+			return nil
+		}
+		tr.slackChannel = findChannel(channelName)
+		if tr.slackChannel == nil {
+			log.Println("could not find slack channel", channelName)
+			log.Println("disabling slack notifications")
+			tr.slack = nil
+		}
+		if warningChannelName != "" {
+			tr.slackWarningChannel = findChannel(warningChannelName)
+			if tr.slackWarningChannel == nil {
+				log.Printf("SLACK_WARNING_CHANNEL=%s does not exist, warnings will not appear on slack.", warningChannelName)
+			}
+		}
+		if tr.slackChannel != nil {
+			registeredTests := &bytes.Buffer{}
+			for _, t := range tr.tests {
+				fmt.Fprintf(registeredTests, "[%v]: %v\n", t.Name, t.Description)
+			}
+			tr.slackMessage(typeNormal, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
+		}
+	}
+
+	if addr := os.Getenv("PROMETHEUS_IO_ADDR"); addr != "" {
+		http.Handle("/metrics", prometheus.Handler())
+		go func() {
+			err := http.ListenAndServe(addr, nil)
+			if err != nil {
+				log.Fatal("Prometheus ListenAndServe:", err)
+			}
+		}()
+	}
+
+	return nil
+}
+
 func Main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -552,124 +721,9 @@ Flags:
 	// Prepare logging.
 	tr.log = log.New(io.MultiWriter(os.Stderr, tr.slackLogBuffer), "", 0)
 
-	// Determine which Selenium server to connect to.
-	serverAddr := os.Getenv("SELENIUM_SERVER_IP")
-	serverPort := os.Getenv("SELENIUM_SERVER_PORT")
-	if serverAddr == "" {
-		log.Fatal("Unable to get SELENIUM_SERVER_IP from environment")
-	}
-	if serverPort == "" {
-		serverPort = "4444" // default to standard Selenium port
-	}
-
-	if !strings.Contains(serverAddr, "://") {
-		serverAddr = "http://" + serverAddr
-	}
-
-	u, err := url.Parse(fmt.Sprintf("%s:%s", serverAddr, serverPort))
+	err := parseEnv()
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	u.Path = path.Join(u.Path, "wd/hub")
-
-	tr.executor = u.String()
-
-	// Determine the target Sourcegraph instance to test against.
-	tr.target = os.Getenv("TARGET")
-	if tr.target == "" {
-		log.Fatal("Unable to get TARGET Sourcegraph instance from environment")
-	}
-	tgt, err := url.Parse(tr.target)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if tgt.Scheme == "" {
-		log.Fatal("TARGET must specify scheme (http or https) prefix")
-	}
-
-	// Find server ID key information.
-	if key := os.Getenv("ID_KEY_DATA"); key != "" {
-		tr.idKey, err = idkey.FromString(key)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		sgpath := os.Getenv("SGPATH")
-		if sgpath == "" {
-			currentUser, err := user.Current()
-			if err != nil {
-				log.Fatal(err)
-			}
-			sgpath = filepath.Join(currentUser.HomeDir, ".sourcegraph")
-		}
-		data, err := ioutil.ReadFile(filepath.Join(sgpath, "id.pem"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		tr.idKey, err = idkey.New(data)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if token := os.Getenv("SLACK_API_TOKEN"); token != "" {
-		tr.slack = slack.New(token)
-		tr.slackToken = token
-
-		// Determine which slack channel and warning channel we should use.
-		// Find the channel IDs.
-		channelName := os.Getenv("SLACK_CHANNEL")
-		warningChannelName := os.Getenv("SLACK_WARNING_CHANNEL")
-		if channelName == "" {
-			channelName = "e2etest"
-		}
-		if warningChannelName == "" {
-			warningChannelName = channelName
-		}
-
-		// Find the channel IDs.
-		channels, err := tr.slack.GetChannels(true)
-		if err != nil {
-			log.Fatal(err)
-		}
-		findChannel := func(name string) *slack.Channel {
-			for _, c := range channels {
-				if c.Name == name {
-					return &c
-				}
-			}
-			return nil
-		}
-		tr.slackChannel = findChannel(channelName)
-		if tr.slackChannel == nil {
-			log.Println("could not find slack channel", channelName)
-			log.Println("disabling slack notifications")
-			tr.slack = nil
-		}
-		tr.slackWarningChannel = findChannel(warningChannelName)
-		if tr.slackWarningChannel == nil {
-			log.Println("could not find slack warning channel", warningChannelName)
-			log.Println("defaulting to SLACK_CHANNEL instead")
-			tr.slackWarningChannel = tr.slackChannel
-		}
-		if tr.slackChannel != nil {
-			registeredTests := &bytes.Buffer{}
-			for _, t := range tr.tests {
-				fmt.Fprintf(registeredTests, "[%v]: %v\n", t.Name, t.Description)
-			}
-			tr.slackMessage(typeNormal, ":shield: *Ready and reporting for duty!* Registered tests:", registeredTests.String())
-		}
-	}
-
-	if addr := os.Getenv("PROMETHEUS_IO_ADDR"); addr != "" {
-		http.Handle("/metrics", prometheus.Handler())
-		go func() {
-			err := http.ListenAndServe(addr, nil)
-			if err != nil {
-				log.Fatal("Prometheus ListenAndServe:", err)
-			}
-		}()
 	}
 
 	tr.run()

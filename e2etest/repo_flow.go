@@ -13,11 +13,11 @@ func init() {
 	Register(&Test{
 		Name:        "repo_flow",
 		Description: "fetch gorilla/mux repository, visit mux.go, and look at hover-over, def pop-up, and jump-to-def",
-		Func:        TestRepoFlow,
+		Func:        testRepoFlow,
 	})
 }
 
-func TestRepoFlow(t *T) error {
+func testRepoFlow(t *T) error {
 	wd := t.WebDriver
 
 	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
@@ -26,32 +26,7 @@ func TestRepoFlow(t *T) error {
 	}
 
 	// Check that the "mux.go" codefile link appears.
-	var muxLink selenium.WebElement
-	getMuxLink := func() bool {
-		links, err := wd.FindElements(selenium.ByTagName, "a")
-		if err != nil {
-			return false
-		}
-
-		for _, link := range links {
-			text, err := link.Text()
-			if err != nil {
-				return false
-			}
-			if strings.Contains(text, "mux.go") {
-				muxLink = link
-				return true
-			}
-		}
-		return false
-	}
-
-	t.WaitForCondition(
-		20*time.Second,
-		100*time.Millisecond,
-		getMuxLink,
-		"Wait for mux.go codefile link to appear",
-	)
+	muxLink := t.FindElementWithPartialText("a", "mux.go", "Wait for mux.go codefile link to appear")
 
 	// If the link is displayed and enabled, click it.
 	want := "/github.com/gorilla/mux@master/-/blob/mux.go"
@@ -85,7 +60,7 @@ func TestRepoFlow(t *T) error {
 
 	muxLink.Click()
 
-	t.WaitForRedirect(want, "wait for mux.go code file to load")
+	t.WaitForRedirect(t.Endpoint(want), "wait for mux.go code file to load")
 
 	// Wait for the "Router" ref span to appear.
 	var routerSpan selenium.WebElement
@@ -123,7 +98,7 @@ func TestRepoFlow(t *T) error {
 	routerSpan.Click()      // Click the element.
 
 	t.WaitForRedirect(
-		"/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router",
+		t.Endpoint("/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router"),
 		"wait for Router def to load",
 	)
 	return nil

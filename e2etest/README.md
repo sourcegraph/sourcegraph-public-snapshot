@@ -13,15 +13,25 @@ from an end user's perspective (i.e. from within an actual web browser) using
 End-to-end tests are run constantly against sourcegraph.com.
 You may additionally run them locally on your machine:
 
-1. Run Selenium server via Docker:
-    - `docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0`
-3. Run the E2E tests once:
+1. Run Selenium server:
+    - `docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0` is via
+      docker, and is headless (ie you can't watch the run)
+    - `brew install Caskroom/cask/java selenium-server-standalone
+      chromedriver` via brew to run tests in a local browser. Then run
+      `selenium-server -p 4444`
+2. Run an E2E tests:
+    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com go test -run TestDefFlow`
+        - OS X: use `docker-machine ls` to find the IP of the machine if using docker.
+        - Other: Just use `localhost`.
+
+Alternatively you can use the full e2etest stack that runs in production:
+1. Run the tests
     - `go install sourcegraph.com/sourcegraph/infrastructure/docker-images/e2etest`
     - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com e2etest -once`
         - OS X: use `docker-machine ls` to find the IP of the machine.
         - Linux: Just use `localhost`.
-4. Run a specific E2E test once: `e2etest -once -run="login_flow"`
-5. Run tests against local Sourcegraph instance: specify `TARGET=http://<LOCAL_MACHINE_IP>:3080` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
+2. Run a specific E2E test once: `e2etest -once -run="login_flow"`
+3. Run tests against local Sourcegraph instance: specify `TARGET=http://<LOCAL_MACHINE_IP>:3080` NOT `localhost` (Selenium runs inside a Docker container, use LAN IP instead).
 
 For authentication with the `TARGET` server, your `~/.sourcegraph/id.pem` is used by default. Set `ID_KEY_DATA=...` to specify a Base64-encoded form of this file.
 
@@ -36,6 +46,8 @@ To add a new E2E page test:
   (see `login_flow.go` for example).
 - See the godoc for the [sourcegraph.com/sourcegraph/go-selenium package](https://godoc.org/sourcegraph.com/sourcegraph/go-selenium)
   which makes writing these tests very easy.
+- Don't use `t.Fatalf` as assertions, rather rely on `WaitForCondition`. It
+  leads to more reliable E2E tests.
 
 ## Testing criteria
 
