@@ -51,16 +51,7 @@
 }
 .tiny {
     composes: fa6 from typography;
-    composes: br2 ph2 pv1 from base;
-}
-/* Button size for buttons on the nav bar. */
-.nav {
-	/* GlobalNav navbarHeight + 1px (can't use vars in calc). */
-	height: 41px;
-	margin-bottom: -1px;
-	composes: fa6 from typography;
-    composes: pv1 ph3 from base;
-	border-top-color: transparent !important;
+    composes: br2 ph3 pv1 from base;
 }
 
 /* block button fits to width of container */

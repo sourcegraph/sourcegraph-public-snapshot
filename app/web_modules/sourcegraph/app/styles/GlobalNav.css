@@ -79,7 +79,7 @@
 }
 
 .logo {
-	composes: mt1 mh2 from base;
+	composes: mt2 mh2 from base;
 	width: 2.7rem;
 	height: 2.7rem;
 }
@@ -111,7 +111,7 @@
 	flex: 0 0 auto;
 }
 .action {
-	composes: f4 from typography;
+	composes: mv2 mr3 from base;
 	display: inline-block;
 	white-space: nowrap;
 }
