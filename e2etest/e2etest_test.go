@@ -35,9 +35,9 @@ func TestMain(m *testing.M) {
 
 func runE2E(t *testing.T, name string) {
 	var test *Test
-	for i := range tr.tests {
-		if tr.tests[i].Name == name {
-			test = tr.tests[i]
+	for _, tst := range tr.tests {
+		if tst.Name == name {
+			test = tst
 		}
 	}
 	if test == nil {
