@@ -58,18 +58,6 @@ class HomeContainer extends Component {
 						</div>
 					</div>
 
-					{/* Waiting on Google :)
-						<div styleName="content-block">
-						<div styleName="img-left"><img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-godocs.png`} styleName="img" width="460" /></div>
-						<div styleName="content-right">
-							<div styleName="content">
-								<h3 styleName="h3">In Go documentation</h3>
-								<p>Our GoDoc integration shows global graph usage and references for Go’s standard library. Browse docs and examples as seamlessly as looking up code in your editor.</p>
-							</div>
-							<a href="https://godoc.org/" styleName="btn-main">View on GoDoc.org</a>
-						</div>
-					</div>*/}
-
 					<div styleName="box-white">
 						<div styleName="responsive-container">
 							<h1 styleName="h1">Growing language support</h1>
