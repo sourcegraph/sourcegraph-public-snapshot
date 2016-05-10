@@ -45,6 +45,8 @@ To add a new E2E page test:
   (see `login_flow.go` for example).
 - See the godoc for the [sourcegraph.com/sourcegraph/go-selenium package](https://godoc.org/sourcegraph.com/sourcegraph/go-selenium)
   which makes writing these tests very easy.
+- Don't use `t.Fatalf` as assertions, rather rely on `WaitForCondition`. It
+  leads to more reliable E2E tests.
 
 ## Testing criteria
 
@@ -56,8 +58,6 @@ To add a new E2E page test:
   - Logging in as an existing user.
   - Jumping to a definition (on a prebuilt repository / one whose build can
     never break).
-- Do rely on `WaitForCondition` instead of using `t.Fatalf`. It leads to more
-  reliable E2E tests.
 - Do write unit tests and integration tests for the same code that you are
   testing in E2E tests. E2E tests do not replace unit or integration tests, they
   only act as a last line of defense.
