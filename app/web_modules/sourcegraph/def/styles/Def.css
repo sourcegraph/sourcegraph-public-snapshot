@@ -4,7 +4,7 @@
 @value blob "sourcegraph/blob/styles/Blob.css";
 
 .title {
-	composes: code f4 from typography;
+	composes: code fw5 from typography;
 	word-wrap: break-word;
 	white-space: pre-line;
 }
@@ -92,15 +92,14 @@
 	z-index: 1000;
 	max-width: 460px;
 	min-width: 120px;
-	composes: br1 pa2 from base;
-	composes: f6 from typography;
-	color: #eee;
-	composes: bg-dark-gray from colors;
+	composes: br1 pa3 br2 from base;
+	composes: bg-cool-gray white from colors;
 }
 .content {
+	composes: f5 from typography;
+	line-height: 1.5;
 }
 .tooltipTitle {
-	composes: light-gray from colors;
 	composes: title;
 }
 .doc {
