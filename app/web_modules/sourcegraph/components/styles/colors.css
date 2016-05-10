@@ -1,10 +1,11 @@
 @value c_blue rgba(15, 182, 242, 1);
+@value c_blue-text rgba(0, 146, 214, 1);
 @value c_blue-8 rgba(15, 182, 242, .8);
 @value c_blue-5 rgba(15, 182, 242, .5);
 @value c_blue-2 rgba(15, 182, 242, .2);
 @value c_blue-1 rgba(15, 182, 242, .1);
 @value c_faded-blue rgb(155, 194, 215);
-@value c_dark-blue rgba(0, 59, 155, 1);
+@value c_dark-blue rgba(0, 82, 140, 1);
 @value c_dark-blue-2 rgb(0, 166, 222);
 @value c_pale-blue rgba(247, 249, 255, 1);
 
@@ -74,7 +75,7 @@
 @value c_white-0125 rgba( 255, 255, 255, .0125 );
 
 /* Colors */
-.blue { color: c_blue; }
+.blue { color: c_blue-text; }
 .blue-8 { color: c_blue-8; }
 .blue-5 { color: c_blue-5; }
 .blue-2 { color: c_blue-2; }
