@@ -1,5 +1,7 @@
 # Changelog
 
+- Apr 29, 2016 - **Breaking Change!**
+  - [#162](https://github.com/sourcegraph/appdash/pull/162) `traceapp.New` now requires a base URL parameter for compatability with HTTPS in trace permalinks.
 - Apr 26, 2016
   - [#153](https://github.com/sourcegraph/appdash/pull/153) Added a Recorder.Logger field which, when non-nil, causes errors to be logged instead of checked explicitly via the Errors method.
   - [#154](https://github.com/sourcegraph/appdash/pull/154) Added trace permalinks which encode the trace within the URL.

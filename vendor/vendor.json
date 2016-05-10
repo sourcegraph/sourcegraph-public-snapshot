@@ -1165,11 +1165,10 @@
 			"revisionTime": "2015-06-24T11:29:02+01:00"
 		},
 		{
-			"checksumSHA1": "8wIl2ncrBXSFEWxb/+o65KAGcAI=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash",
+			"checksumSHA1": "1dkzYpsgM3bs3WxRgraAa5D4leE=",
 			"path": "sourcegraph.com/sourcegraph/appdash",
-			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
-			"revisionTime": "2016-04-29T09:01:15Z"
+			"revision": "ffef4305504c224c92ab792bc316843e04c8f3e8",
+			"revisionTime": "2016-05-10T01:28:43Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/appdash-data",
