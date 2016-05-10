@@ -12,13 +12,11 @@ import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
-
-import {Button} from "sourcegraph/components";
-import {GitHubIcon} from "sourcegraph/components/Icons";
 import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import OnboardingModals from "./OnboardingModals";
 import HomeContainer from "./HomeContainer";
+import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
 
 class DashboardContainer extends Container {
 	static contextTypes = {
@@ -73,13 +71,13 @@ class DashboardContainer extends Container {
 			<div>
 				{!this.context.githubToken && <div styleName="cta">
 				<a href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: true})}>
-						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />&nbsp;Link GitHub account</Button>
+						<GitHubAuthButton>Link GitHub account</GitHubAuthButton>
 					</a>
 				</div>}
 				{this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) && <div styleName="cta">
 					<a href={urlToPrivateGitHubOAuth}
 						onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>
-						<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />&nbsp;Use with private repositories</Button>
+						<GitHubAuthButton >Use with private repositories</GitHubAuthButton>
 					</a>
 				</div>}
 			</div>
@@ -97,6 +95,12 @@ class DashboardContainer extends Container {
 
 				{this.context.user && this.context.user.Admin &&
 					<GlobalSearch query={this.props.location.query.q || ""}/>
+				}
+
+				{this.context.signedIn &&
+					<div styleName="anon-section">
+						{this.renderCTAButtons()}
+					</div>
 				}
 
 				{this.context.signedIn && <div styleName="repos">
