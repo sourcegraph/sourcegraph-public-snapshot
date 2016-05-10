@@ -3,6 +3,7 @@ package local
 import (
 	"fmt"
 	"time"
+	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -62,6 +63,10 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)
 	if err != nil {
 		return nil, err
+	}
+
+	if strings.Compare(repo.URI, "github.com/dotnet/coreclr") == 0 || strings.Compare(repo.URI, "github.com/Microsoft/referencesource") == 0 {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is frozen", repo.URI)
 	}
 
 	if repo.Blocked {
