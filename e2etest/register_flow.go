@@ -102,7 +102,7 @@ func testRegisterFlow(t *T) error {
 	submit := t.FindElement(selenium.ById, "e2etest-register-button")
 	submit.Click()
 
-	// TODO(slimsag): make this test work with the new GitHub onboarding flow!
-	//t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to homepage after register")
+	// Wait for redirect to Sourcegraph homepage.
+	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to homepage after register")
 	return nil
 }
