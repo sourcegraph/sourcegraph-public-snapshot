@@ -90,9 +90,9 @@ class HomeContainer extends Component {
 									</p>
 								</div>
 								<div styleName="featured-project">
-									<Link to ="/github.com/kubernetes/kubernetes">kubernetes/kubernetes</Link>
+									<Link to ="/github.com/gorilla/mux">gorilla/mux</Link>
 									<p styleName="project-desc">
-										A system for managing containerized applications across multiple hosts.
+										A powerful URL router and dispatcher.
 									</p>
 								</div>
 								<div styleName="featured-project">
