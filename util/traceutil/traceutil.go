@@ -13,9 +13,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
 
+var logger = log.New(os.Stderr, "appdash: ", log.LstdFlags)
+
 func NewRecorder(span appdash.SpanID, c appdash.Collector) *appdash.Recorder {
 	rec := appdash.NewRecorder(span, c)
-	rec.Logger = log.New(os.Stderr, "appdash: ", log.LstdFlags)
+	rec.Logger = logger
 	return rec
 }
 
