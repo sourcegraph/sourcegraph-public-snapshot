@@ -43,7 +43,7 @@ class HomeContainer extends Component {
 								styleName="btn-main">
 								Sign up and connect
 							</LocationStateToggleLink>
-							<Link to="/github.com/gorilla/mux" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Explore a public repo</Link>
+							<Link to="/github.com/aws/aws-sdk-go/-/def/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Explore public code example</Link>
 						</div>
 					</div>
 
