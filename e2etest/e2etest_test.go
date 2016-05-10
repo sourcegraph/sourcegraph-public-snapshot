@@ -52,17 +52,9 @@ func runE2E(t *testing.T, name string) {
 	}
 	defer wd.Quit()
 	e2eT := tr.newT(test, wd)
-	e2eT.testingT = &seleniumTestingT{t}
+	e2eT.testingT = t
 	err = test.Func(e2eT)
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-type seleniumTestingT struct {
-	t *testing.T
-}
-
-func (t *seleniumTestingT) Fatalf(fmt string, v ...interface{}) {
-	t.t.Fatalf(fmt, v...)
 }

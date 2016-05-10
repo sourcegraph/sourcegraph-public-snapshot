@@ -17,7 +17,8 @@ You may additionally run them locally on your machine:
     - `docker run -d -p 4444:4444 selenium/standalone-chrome:2.52.0` is via
       docker, and is headless (ie you can't watch the run)
     - `brew install Caskroom/cask/java selenium-server-standalone
-      chromedriver` via brew to run tests in a local browser.
+      chromedriver` via brew to run tests in a local browser. Then run
+      `selenium-server -p 4444`
 2. Run an E2E tests:
     - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com go test -run TestDefFlow`
         - OS X: use `docker-machine ls` to find the IP of the machine if using docker.
