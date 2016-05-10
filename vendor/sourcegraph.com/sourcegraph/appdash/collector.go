@@ -134,7 +134,7 @@ type ChunkedCollector struct {
 // 	c := &ChunkedCollector{
 // 		Collector:    c,
 // 		MinInterval:  500 * time.Millisecond,
-// 		FlushTimeout: 50 * time.Millisecond,
+// 		FlushTimeout: 2 * time.Second,
 // 		MaxQueueSize: 32 * 1024 * 1024, // 32 MB
 // 		Log:          log.New(os.Stderr, "appdash: ", log.LstdFlags),
 // 	}
@@ -143,7 +143,7 @@ func NewChunkedCollector(c Collector) *ChunkedCollector {
 	return &ChunkedCollector{
 		Collector:    c,
 		MinInterval:  500 * time.Millisecond,
-		FlushTimeout: 50 * time.Millisecond,
+		FlushTimeout: 2 * time.Second,
 		MaxQueueSize: 32 * 1024 * 1024, // 32 MB
 		Log:          log.New(os.Stderr, "appdash: ", log.LstdFlags),
 	}
@@ -176,7 +176,7 @@ func (cc *ChunkedCollector) Collect(span SpanID, anns ...Annotation) error {
 	if cc.MaxQueueSize != 0 && cc.queueSizeBytes+collectionSize > cc.MaxQueueSize {
 		if cc.Log != nil {
 			cc.Log.Println("ChunkedCollector: queue entirely dropped (trace data will be missing)")
-			cc.Log.Println("ChunkedCollector: queueSize:%v queueSizeBytes:%v + collectionSize:%v\n", len(cc.pendingBySpanID), cc.queueSizeBytes, collectionSize)
+			cc.Log.Printf("ChunkedCollector: queueSize:%v queueSizeBytes:%v + collectionSize:%v\n", len(cc.pendingBySpanID), cc.queueSizeBytes, collectionSize)
 		}
 		cc.pendingBySpanID = nil
 		cc.queueSizeBytes = 0
@@ -209,6 +209,7 @@ func (cc *ChunkedCollector) Flush() error {
 
 	cc.mu.Lock()
 	pendingBySpanID := cc.pendingBySpanID
+	queueSizeBytes := cc.queueSizeBytes
 	cc.pendingBySpanID = nil
 	cc.queueSizeBytes = 0
 	cc.mu.Unlock()
@@ -226,7 +227,7 @@ func (cc *ChunkedCollector) Flush() error {
 			cc.mu.Lock()
 			if cc.Log != nil {
 				cc.Log.Println("ChunkedCollector: queue entirely dropped (trace data will be missing)")
-				cc.Log.Println("ChunkedCollector: queueSize:%v queueSizeBytes:%v\n", len(cc.pendingBySpanID), cc.queueSizeBytes)
+				cc.Log.Printf("ChunkedCollector: queueSize:%v queueSizeBytes:%v\n", len(pendingBySpanID), queueSizeBytes)
 			}
 			cc.mu.Unlock()
 			errs = append(errs, ErrQueueDropped)

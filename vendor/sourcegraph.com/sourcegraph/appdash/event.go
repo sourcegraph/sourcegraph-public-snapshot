@@ -126,6 +126,7 @@ func init() {
 	RegisterEvent(logEvent{})
 	RegisterEvent(msgEvent{})
 	RegisterEvent(timespanEvent{})
+	RegisterEvent(Timespan{})
 }
 
 // UnmarshalEvents unmarshals all events found in anns into
@@ -151,6 +152,11 @@ func UnmarshalEvents(anns Annotations, events *[]Event) error {
 type spanName struct{ Name string }
 
 func (spanName) Schema() string { return "name" }
+
+// SpanName returns an Event containing a human readable Span name.
+func SpanName(name string) Event {
+	return spanName{Name: name}
+}
 
 // Msg returns an Event that contains only a human-readable message.
 func Msg(msg string) Event {
@@ -179,6 +185,17 @@ func (timespanEvent) Schema() string      { return "timespan" }
 func (ev timespanEvent) Start() time.Time { return ev.S }
 func (ev timespanEvent) End() time.Time   { return ev.E }
 
+// Timespan is an event that satisfies the appdash.TimespanEvent interface.
+// This is used to show its beginning and end times of a span.
+type Timespan struct {
+	S time.Time `trace:"Span.Start"`
+	E time.Time `trace:"Span.End"`
+}
+
+func (s Timespan) Schema() string   { return "Timespan" }
+func (s Timespan) Start() time.Time { return s.S }
+func (s Timespan) End() time.Time   { return s.E }
+
 // A TimestampedEvent is an Event with a timestamp.
 type TimestampedEvent interface {
 	Timestamp() time.Time
@@ -188,6 +205,12 @@ type TimestampedEvent interface {
 // contains only a human-readable message.
 func Log(msg string) Event {
 	return logEvent{Msg: msg, Time: time.Now()}
+}
+
+// LogWithTimestamp returns an Event with an explicit timestamp that contains
+// only a human readable message.
+func LogWithTimestamp(msg string, timestamp time.Time) logEvent {
+	return logEvent{Msg: msg, Time: timestamp}
 }
 
 type logEvent struct {

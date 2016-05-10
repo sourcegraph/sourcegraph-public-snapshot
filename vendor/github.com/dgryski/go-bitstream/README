@@ -1,0 +1,3 @@
+bitstream: read and write bits from io.Reader and io.Writer streams
+
+Full package documentation available at: http://godoc.org/github.com/dgryski/go-bitstream

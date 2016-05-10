@@ -1,6 +1,7 @@
 import utf8 from "utf8";
 import fetch from "../../app/actions/xhr";
 import styles from "../../app/components/App.css";
+import _ from "lodash";
 
 // addAnnotations takes json annotation data returned from the
 // Sourcegraph annotations API and manipulates the DOM to add
@@ -10,8 +11,16 @@ import styles from "../../app/components/App.css";
 // is "ready" to be annotated (e.g. DOM elements have all been rendered)
 // and that there are no overlapping annotations in the json
 // returned by the Sourcegraph API.
+//
+// It assumes that the formatted html provided by the Sourcegraph API
+// for doc tooltips is "safe" to be injected into the page.
+//
+// It does *not* assume that the code that is being annotated is safe
+// to be executed in our script, so we take care to properly escape
+// characters during the annotation loop.
 export default function addAnnotations(json) {
 	if (document.getElementById("sourcegraph-annotation-marker")) {
+		// This function is not idempotent; don't let it run twice.
 		return;
 	}
 
@@ -37,7 +46,7 @@ export default function addAnnotations(json) {
 	}
 }
 
-let annotating = false; // HACK: private value indicating whether annotation is in progress for a single node (def)
+let annotating = false; // imperative private value indicating whether annotation is in progress for a single token (def)
 
 // traverseDOM handles the actual DOM manipulation.
 function traverseDOM(annsByStartByte, annsByEndByte){
@@ -49,8 +58,8 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 		let output = "";
 		let row = table.rows[i];
 
-
 		// Code is always the second <td> element; we want to replace code.innerhtml
+		// with a Sourcegraph-"linkified" version of the token, or the same token
 		let code = row.cells[1]
 		let children = code.childNodes;
 		let startByte = count;
@@ -58,37 +67,23 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 		if (code.textContent !== "\n") {
 			count++; // newline
 		}
-		// Go through each childNode
+
 		for (let j = 0; j < children.length; j++) {
-			let childNodeChars;
+			let childNodeChars; // the "inner-stuff" of the code cell
 
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
-				// Convert html entities to the code equivalent, remember to revert later.
-				const txt = document.createElement("textarea");
-				// Quote marks for imported packages were not getting linked
-				// properly. The first mark was a separate anchor tag because GitHub
-				// places quote marks in separate span tags. This hack makes it
-				// such that if an element has childNodes, we merge the innerText
-				// and set that as the innerHTML of the main span tag.
-				if (children[j].children.length > 0) {
-					const innerTextArray = children[j].innerText.split("");
-					const escapedTextArray = innerTextArray.map(s =>
-						(`&#${s.charCodeAt(0)}`)
-					)
-					const y = escapedTextArray.join("");
-					children[j].innerHTML = y;
-					txt.innerHTML = children[j].outerHTML
-				} else {
-					txt.innerHTML = children[j].outerHTML;
+				if (children[j].children.length > 1) {
+					// HACK: combine children spans, e.g. for a quoted token
+					// there may be 3 spans, one for each quote and one
+					// for the token iteself
+					children[j].innerHTML = _.escape(children[j].innerText);
 				}
-				childNodeChars = txt.value.split("");
+				childNodeChars = _.unescape(children[j].outerHTML).split("");
 			}
 
-			// when we are returning the <span> element, we don"t want to increment startByte
 			let consumingSpan = false;
-			// keep track of whether we are currently on a definition with a link
 			annotating = false;
 
 			// go through each char of childNodes
@@ -102,6 +97,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 					startByte += utf8.encode(childNodeChars[k]).length
 				}
 				else {
+					// when we are consuming the <span> element, don't increment startByte
 					output += childNodeChars[k]
 				}
 
@@ -119,18 +115,20 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 			for (let n = 0; n < newRows.length; n++) {
 				addPopover(newRows[n]);
 			}
-		}, 0);
+		});
 	}
 }
 
-// next is a helper method for traverseDOM
+// next is a helper method for traverseDOM which transforms a character
+// into itself or wraps the character in a starting/ending anchor tag
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	let matchDetails = annsByStartByte[byteCount];
-	// convert character to unicode
-	c = `&#${c.charCodeAt(0)};`
+
+	c = _.escape(c); // IMPORTANT: escape all markup injected in HTML
 
 	// if there is a match
 	if (!annotating && matchDetails) {
+		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
 			return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext" target="tab" class=${styles.sgdef}>${c}</a>`;
 		}
@@ -218,25 +216,3 @@ function addPopover(el) {
 			.catch((err) => console.log("Error getting definition info.") && cb(null));
 	}
 }
-
-function defQualifiedName(def) {
-	if (!def || !def.FmtStrings) return "(unknown)";
-	let f = def.FmtStrings;
-	return `${escapeHTML(f.DefKeyword + " ")}<span style="font-weight:bold">${escapeHTML(f.Name.ScopeQualified)}</span>${escapeHTML(f.NameAndTypeSeparator + f.Type.ScopeQualified)}`;
-}
-
-const entityMap = {
-	"&": "&amp;",
-	"<": "&lt;",
-	">": "&gt;",
-	'"': "&quot;",
-	"'": "&#39;",
-	"/": "&#x2F;",
-};
-
-function escapeHTML(string) {
-	return String(string).replace(/[&<>"'\/]/g, function (s) {
-		return entityMap[s];
-	});
-};
-

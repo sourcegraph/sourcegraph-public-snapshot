@@ -53,13 +53,13 @@ type multiQueryer struct {
 //
 // It panics if any underlying store does not implement the appdash Queryer
 // interface.
-func (mq *multiQueryer) Traces() ([]*Trace, error) {
+func (mq *multiQueryer) Traces(opts TracesOpts) ([]*Trace, error) {
 	var (
 		union = make(map[ID]struct{})
 		all   []*Trace
 	)
 	for _, q := range mq.queryers {
-		traces, err := q.Traces()
+		traces, err := q.Traces(TracesOpts{})
 		if err != nil {
 			return nil, err
 		}

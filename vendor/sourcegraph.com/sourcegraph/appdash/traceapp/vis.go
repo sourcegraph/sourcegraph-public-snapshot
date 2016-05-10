@@ -92,6 +92,15 @@ func (a *App) d3timelineInner(t *appdash.Trace, depth int) ([]timelineItem, erro
 	}
 	for _, e := range events {
 		if e, ok := e.(appdash.TimespanEvent); ok {
+			// Continue to next iteration
+			// if e.Start() or e.End() are empty time values.
+			if e.Start() == (time.Time{}) || e.End() == (time.Time{}) {
+				if a.Log != nil {
+					a.Log.Printf("Found a TimespanEvent: %+v with invalid/zero times.", e)
+				}
+				// Continuing so frontend does not break due to current event missing start/end time values.
+				continue
+			}
 			start := e.Start().UnixNano() / int64(time.Millisecond)
 			end := e.End().UnixNano() / int64(time.Millisecond)
 			ts := timelineItemTimespan{

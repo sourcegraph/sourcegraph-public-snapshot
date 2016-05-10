@@ -1,5 +1,25 @@
 # Sourcegraph browser extensions for Google Chrome and Firefox
 
+## Project structure
+
+```
+server
+├── app <-- React/Redux applicaiton providing definition-based code search
+├── chrome
+│   └── extension
+│       └── background
+│       	└── inject.js <-- helper functions for development only
+│       	└── storage.js <-- wrapper for chrome.storage get/set
+│       └── annotations.js <-- logic for linkifying GitHub code with Sourcegraph annotation data
+│       └── background.js <-- background script for development workflows & storage
+│       └── inject.js <-- manages app/annotation injection
+│   └── views <- extension "pages" (for development only)
+│   └── manifest.dev.json <-- supports hot-reloading code (requires extra permissions)
+│   └── manifest.prod.json <-- manifest for production build, requires minimal permissions
+├── scripts <-- build/development scripts
+├── webpack <-- build configuration
+```
+
 ## Installation
 
 ```bash

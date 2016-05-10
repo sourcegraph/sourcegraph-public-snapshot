@@ -8,6 +8,12 @@
 			"revisionTime": "2016-02-01T17:24:52-08:00"
 		},
 		{
+			"checksumSHA1": "2ipiutC6YdWYkSSVat8gaiLDHFk=",
+			"path": "github.com/BurntSushi/toml",
+			"revision": "a4eecd407cf4129fc902ece859a0114e4cf1a7f4",
+			"revisionTime": "2016-02-23T09:08:35Z"
+		},
+		{
 			"path": "github.com/NYTimes/gziphandler",
 			"revision": "a88790d49798560db24af70fb6a10a66e2549a72",
 			"revisionTime": "2016-02-07T20:52:08-05:00"
@@ -53,6 +59,12 @@
 			"revisionTime": "2014-04-22T10:41:19-07:00"
 		},
 		{
+			"checksumSHA1": "bPUhgaLCetE+EXIriFxHpsQGLvo=",
+			"path": "github.com/bmizerany/pat",
+			"revision": "b8a35001b773c267eb260a691f4e5499a3531600",
+			"revisionTime": "2014-06-25T23:47:03Z"
+		},
+		{
 			"path": "github.com/cznic/mathutil",
 			"revision": "38a5fe05cd94d69433fd1c928417834c604f281d",
 			"revisionTime": "2016-01-19T17:31:16+01:00"
@@ -61,6 +73,18 @@
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "acc5a5f31e3493f1992315fd85aa49226372b810",
 			"revisionTime": "2015-10-20T13:53:03-07:00"
+		},
+		{
+			"checksumSHA1": "CMB4DjUPik77XwlMk2mymaIYR4Q=",
+			"path": "github.com/dgryski/go-bits",
+			"revision": "86c69b3c986f9d40065df5bd8f765796549eef2e",
+			"revisionTime": "2015-12-05T06:34:27Z"
+		},
+		{
+			"checksumSHA1": "W7Z+HpZWO7m5A5EJlGu8LZ3318o=",
+			"path": "github.com/dgryski/go-bitstream",
+			"revision": "27cd5973303fde7d914860be1ea4b927a6be0c92",
+			"revisionTime": "2015-12-05T06:35:14Z"
 		},
 		{
 			"path": "github.com/docker/go-units",
@@ -138,6 +162,12 @@
 			"revisionTime": "2014-07-29T21:48:43-07:00"
 		},
 		{
+			"checksumSHA1": "RyxjBqJbUAWaMbKzIpgrfArCl5A=",
+			"path": "github.com/gengo/grpc-gateway/internal",
+			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
+			"revisionTime": "2015-06-19T05:51:51Z"
+		},
+		{
 			"path": "github.com/gengo/grpc-gateway/protoc-gen-grpc-gateway/descriptor",
 			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
 			"revisionTime": "2015-06-19T14:51:51+09:00"
@@ -176,6 +206,12 @@
 			"revisionTime": "2016-04-20T02:17:25Z"
 		},
 		{
+			"checksumSHA1": "URsJa4y/sUUw/STmbeYx9EKqaYE=",
+			"path": "github.com/golang/glog",
+			"revision": "44145f04b68cf362d9c4df2182967c2275eaefed",
+			"revisionTime": "2014-09-23T20:47:00Z"
+		},
+		{
 			"path": "github.com/golang/groupcache/lru",
 			"revision": "4eab30f13db9d8b25c752e99d1583628ac2fa422",
 			"revisionTime": "2016-02-11T14:59:07-08:00"
@@ -185,6 +221,24 @@
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
 			"revisionTime": "2015-04-30T09:19:26+10:00"
+		},
+		{
+			"checksumSHA1": "P//dYFK3RlzMvp7ynyBMQAt/Me0=",
+			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
+			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
+			"revisionTime": "2015-04-29T23:19:26Z"
+		},
+		{
+			"checksumSHA1": "Wm56G/87eo9K54xCvaUF3NlnlnE=",
+			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
+			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
+			"revisionTime": "2015-04-29T23:19:26Z"
+		},
+		{
+			"checksumSHA1": "GY7dynH9c1Yy+XS7iO5g5MrY6Bk=",
+			"path": "github.com/golang/snappy",
+			"revision": "5979233c5d6225d4a8e438cdd0b411888449ddab",
+			"revisionTime": "2016-02-12T11:30:41Z"
 		},
 		{
 			"path": "github.com/google/go-querystring/query",
@@ -218,6 +272,216 @@
 			"revisionTime": "2016-03-03T14:01:16-06:00"
 		},
 		{
+			"checksumSHA1": "wBlAlMftQZLtHrSFm1zLVLbjrbs=",
+			"path": "github.com/influxdata/influxdb",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "vRFG8i/Vo+5iu05zxa1ZqB+XTpw=",
+			"path": "github.com/influxdata/influxdb/client",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "rFPsYs3FA9q5oUH2cOMVNq1zyFY=",
+			"path": "github.com/influxdata/influxdb/cluster",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "Uh9ycnLgOFeEvSXZx9blhCPG1p0=",
+			"path": "github.com/influxdata/influxdb/cluster/internal",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "1/18VrxBdT2C4QOoCwktFRxv4sM=",
+			"path": "github.com/influxdata/influxdb/cmd/influxd/run",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "b1UC/RiTdpD3FjCJcYxreTBdlVU=",
+			"path": "github.com/influxdata/influxdb/influxql",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "8+Jg3BYIQsoGFcU2T6ebKmssolU=",
+			"path": "github.com/influxdata/influxdb/influxql/internal",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "rdjLKfNb9yeWrIVuzlmQnuY8EMk=",
+			"path": "github.com/influxdata/influxdb/models",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "RvhKWFVfQrk7mMOYhPLlvNo3cRc=",
+			"path": "github.com/influxdata/influxdb/monitor",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "Ow+e/Ix8n+i0RzvX8EMiPXKZnCw=",
+			"path": "github.com/influxdata/influxdb/monitor/diagnostics",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "2w3Gla45aneQ6D1qmTsUWsOPYDI=",
+			"path": "github.com/influxdata/influxdb/pkg/escape",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "RBCH/eoeY8765+nw2rh2WJTA9iM=",
+			"path": "github.com/influxdata/influxdb/services/admin",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "kG7thdKT1CaQyqC173DPXGjHHdE=",
+			"path": "github.com/influxdata/influxdb/services/admin/statik",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "ytIC6xyB4jH0cyJ0ux3ULRlYMoc=",
+			"path": "github.com/influxdata/influxdb/services/collectd",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "FykPhrMyIRsv1i5ylkAAUJZHP6k=",
+			"path": "github.com/influxdata/influxdb/services/continuous_querier",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "p0Uq/2hT7EBDO0fnqHxV0TOPHNo=",
+			"path": "github.com/influxdata/influxdb/services/copier",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "vKGDmvVZfsXvkW7akcn8+/O1QCg=",
+			"path": "github.com/influxdata/influxdb/services/copier/internal",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "tapeWHDirlKNP1mwMKfFsCtw/v0=",
+			"path": "github.com/influxdata/influxdb/services/graphite",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "q9GS10zD++yUPHVDPSZcg1ub3n8=",
+			"path": "github.com/influxdata/influxdb/services/httpd",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "OemEVc+EKBQA8jmSl0PYKhGQ3lM=",
+			"path": "github.com/influxdata/influxdb/services/meta",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "19DN9R2P8geTqS2KTIFEeFFJGic=",
+			"path": "github.com/influxdata/influxdb/services/meta/internal",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "dYTvwkqovJHEc5lL97GGGBeKCKY=",
+			"path": "github.com/influxdata/influxdb/services/opentsdb",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "wPtQ4ErmaXKz3tQ2o/+njY6rEk4=",
+			"path": "github.com/influxdata/influxdb/services/precreator",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "2/csmMqg8iNV8X8NEOHd27THY5U=",
+			"path": "github.com/influxdata/influxdb/services/retention",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "JGtTGzQ6Agd/AHaJpNlUDI1zJLs=",
+			"path": "github.com/influxdata/influxdb/services/snapshotter",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "4ouJH68q4//pEWfoiec8uxI6CwA=",
+			"path": "github.com/influxdata/influxdb/services/subscriber",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "ZjlL2sVmJL/uvLZ2LnHVGH+FhWE=",
+			"path": "github.com/influxdata/influxdb/services/udp",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "faqrq8NhJv3VNu/lZS8ciY77ZK0=",
+			"path": "github.com/influxdata/influxdb/tcp",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "6TdjAjF2uLZNB0pVM43MG3DAtZo=",
+			"path": "github.com/influxdata/influxdb/toml",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "y9ZhG+T2ayeBvE7m+9ZAmFeQuoU=",
+			"path": "github.com/influxdata/influxdb/tsdb",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "mPnh1Tcdm5RpuH6ZkHgY3AisZ5Q=",
+			"path": "github.com/influxdata/influxdb/tsdb/engine",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "oHvCXj7DLfJe78Z5bXRka4EgifY=",
+			"path": "github.com/influxdata/influxdb/tsdb/engine/tsm1",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "ArILbBm5unGQhga6EoFwPQqGl2g=",
+			"path": "github.com/influxdata/influxdb/tsdb/internal",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "nM65RxEKPZEsCaJepBvATwv3b0Q=",
+			"path": "github.com/influxdata/influxdb/uuid",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
+			"checksumSHA1": "y6t89mEyPkbW/Bpvz/F4nzWmn5U=",
+			"path": "github.com/influxdata/usage-client/v1",
+			"revision": "475977e68d79883d9c8d67131c84e4241523f452",
+			"revisionTime": "2015-12-04T15:23:49Z"
+		},
+		{
 			"path": "github.com/jpillora/backoff",
 			"revision": "f85df8d02bdf497eea1b176c7a52bac31ec62aac",
 			"revisionTime": "2016-03-02T10:05:12+11:00"
@@ -228,6 +492,12 @@
 			"revisionTime": "2015-12-18T00:41:17+02:00"
 		},
 		{
+			"checksumSHA1": "icbeXb3ZtWYyg3ap3Vb6ZspNzQE=",
+			"path": "github.com/jwilder/encoding/simple8b",
+			"revision": "b421ab402545ef5a119f4f827784c6551d9bfc37",
+			"revisionTime": "2016-04-21T17:50:35Z"
+		},
+		{
 			"path": "github.com/kardianos/osext",
 			"revision": "8fef92e41e22a70e700a96b29f066cda30ea24ef",
 			"revisionTime": "2015-04-09T20:44:20-07:00"
@@ -236,6 +506,12 @@
 			"path": "github.com/keegancsmith/tmpfriend",
 			"revision": "8cd4ff81b86b4b424d900910cefa16ff016acfea",
 			"revisionTime": "2016-01-12T00:40:12+02:00"
+		},
+		{
+			"checksumSHA1": "Zj9TeCs5Kzub9ONPxsVOlfDiDSo=",
+			"path": "github.com/kimor79/gollectd",
+			"revision": "61d0deeb4ffcc167b2a1baa8efd72365692811bc",
+			"revisionTime": "2015-06-17T06:49:03Z"
 		},
 		{
 			"path": "github.com/kr/binarydist",
@@ -385,6 +661,12 @@
 			"path": "github.com/prometheus/procfs",
 			"revision": "c91d8eefde16bd047416409eb56353ea84a186e4",
 			"revisionTime": "2015-06-16T16:46:31+02:00"
+		},
+		{
+			"checksumSHA1": "FdnIB5f7S6Ic0jlk8egixo2kPhY=",
+			"path": "github.com/rakyll/statik/fs",
+			"revision": "274df120e9065bdd08eb1120e0375e3dc1ae8465",
+			"revisionTime": "2015-04-19T18:00:43Z"
 		},
 		{
 			"path": "github.com/rogpeppe/rog-go/parallel",
@@ -841,6 +1123,12 @@
 			"revisionTime": "2016-04-13T17:35:15Z"
 		},
 		{
+			"checksumSHA1": "eVLQ5gnR3HVumEbARIa+ef5WL9M=",
+			"path": "gopkg.in/fatih/pool.v2",
+			"revision": "cba550ebf9bce999a02e963296d4bc7a486cb715",
+			"revisionTime": "2015-03-25T16:32:52Z"
+		},
+		{
 			"checksumSHA1": "0vRxoJBB9TdAb/qp9kM9+wKQwcQ=",
 			"path": "gopkg.in/gorp.v1",
 			"revision": "cfc99f60faeef6479ec4c06eca8c8b4439608024",
@@ -877,9 +1165,10 @@
 			"revisionTime": "2015-06-24T11:29:02+01:00"
 		},
 		{
+			"checksumSHA1": "1dkzYpsgM3bs3WxRgraAa5D4leE=",
 			"path": "sourcegraph.com/sourcegraph/appdash",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "ffef4305504c224c92ab792bc316843e04c8f3e8",
+			"revisionTime": "2016-05-10T01:28:43Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/appdash-data",
@@ -887,29 +1176,39 @@
 			"revisionTime": "2015-10-05T15:14:46-07:00"
 		},
 		{
+			"checksumSHA1": "ZeYUSbD7p6GJvvPf0t91NU1LMKc=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/httptrace",
 			"path": "sourcegraph.com/sourcegraph/appdash/httptrace",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "JYGXK0rF/LoIg8jGrOlaO9OqPbI=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/internal/wire",
 			"path": "sourcegraph.com/sourcegraph/appdash/internal/wire",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "DbYAyk4lKSOp6kv7cyvHLm/OoLU=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/sqltrace",
 			"path": "sourcegraph.com/sourcegraph/appdash/sqltrace",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "i6e8THzt/uN5sCbybwRNgmrS36g=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/traceapp",
 			"path": "sourcegraph.com/sourcegraph/appdash/traceapp",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
+			"checksumSHA1": "r/Lqgpq/Sz2Nx7AFiuBKHmFURn0=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
 			"path": "sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
-			"revision": "baab45659df9bb8dc600bfc1e812813e4e18a25f",
-			"revisionTime": "2016-03-07T19:44:56-07:00"
+			"revision": "2a3415d03a43b774874cd19e8d61c417799cdeca",
+			"revisionTime": "2016-04-29T09:01:15Z"
 		},
 		{
 			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",

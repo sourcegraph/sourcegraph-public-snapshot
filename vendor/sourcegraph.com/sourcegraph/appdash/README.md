@@ -40,6 +40,8 @@ distribution. This means that if you want to modify the template data in `tracea
 
 After you're finished making changes to the templates, always run `go generate sourcegraph.com/sourcegraph/appdash/traceapp/tmpl` so that the `data_vfsdata.go` file is updated for normal Appdash users that aren't interested in modifying the template data.
 
+Dependencies are vendored using [govendor](https://github.com/kardianos/govendor). Prior to updating InfluxDB dependencies [you should run gdm restore in that repository](https://github.com/influxdata/influxdb/blob/master/CONTRIBUTING.md#build-and-test).
+
 ## Components
 
 Appdash follows the design and naming conventions of
@@ -90,6 +92,11 @@ There are 4 main components/concepts in appdash:
 
 Appdash has clients available for Go, Python (see `python/` subdir) and Ruby (see https://github.com/bsm/appdash-rb).
 
+## OpenTracing Support
+
+Appdash supports the [OpenTracing](http://opentracing.io) API. Please see the
+`opentracing` subdir for the Go implementation, or see [the GoDoc](https://godoc.org/sourcegraph.com/sourcegraph/appdash/opentracing)
+for API documentation.
 
 ## Acknowledgments
 

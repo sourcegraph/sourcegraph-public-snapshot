@@ -11,9 +11,9 @@ import (
 func init() { appdash.RegisterEvent(GitEvent{}) }
 
 type GitEvent struct {
-	Name, Args string
-	StartTime  time.Time
-	EndTime    time.Time
+	Args      string
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func (GitEvent) Schema() string { return "Git" }
@@ -27,11 +27,13 @@ func (r *Repository) trace(start time.Time, name string, args ...interface{}) {
 		for i, arg := range args {
 			argStrs[i] = fmt.Sprintf("%#v", arg)
 		}
-		r.AppdashRec.Child().Event(GitEvent{
-			Name:      "git." + name,
+		rec := r.AppdashRec.Child()
+		rec.Event(GitEvent{
 			Args:      strings.Join(argStrs, ", "),
 			StartTime: start,
 			EndTime:   time.Now(),
 		})
+		rec.Name("git." + name)
+		rec.Finish()
 	}
 }
