@@ -16,15 +16,15 @@ class NavContext extends React.Component {
 		repoNavContext: React.PropTypes.element,
 	};
 
-	_isLanguageSupported() {
-		if (!this.props.inventory || !this.props.inventory.Languages) return true; // innocent until proven guilty
-		return this.props.inventory.Languages.filter((lang) => ["Go", "Java", "JavaScript"].includes(lang.Name)).length > 0;
+	_isLanguageUnsupported(): bool {
+		if (!this.props.inventory || !this.props.inventory.Languages || !this.props.inventory.PrimaryProgrammingLanguage) return false; // innocent until proven guilty
+		return this.props.inventory.Languages.filter((lang) => ["Go", "Java", "JavaScript"].includes(lang.Name)).length === 0;
 	}
 
 	render() {
 		return (
 			<div styleName="nav">
-				{!this._isLanguageSupported() &&
+				{this._isLanguageUnsupported() &&
 					<Label style={{marginRight: "10px"}} color="warning">
 						{`${this.props.inventory.PrimaryProgrammingLanguage} is not yet supported`}
 					</Label>
