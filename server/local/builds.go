@@ -2,7 +2,6 @@ package local
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -27,6 +26,11 @@ var Builds sourcegraph.BuildsServer = &builds{}
 type builds struct{}
 
 var _ sourcegraph.BuildsServer = (*builds)(nil)
+
+var frozenRepos = map[string]struct{}{
+	"github.com/dotnet/coreclr": struct{}{},
+	"github.com/Microsoft/referencesource": struct{}{},
+}
 
 func (s *builds) Get(ctx context.Context, build *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	return store.BuildsFromContext(ctx).Get(ctx, *build)
@@ -65,7 +69,8 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, err
 	}
 
-	if strings.Compare(repo.URI, "github.com/dotnet/coreclr") == 0 || strings.Compare(repo.URI, "github.com/Microsoft/referencesource") == 0 {
+	// HACK: prevent repos with manually graphed and pushed data from updates that spoil them
+	if _, isFrozen := frozenRepos[repo.URI]; isFrozen {
 		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is frozen", repo.URI)
 	}
 
