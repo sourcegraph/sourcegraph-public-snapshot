@@ -19,6 +19,7 @@ export default ({
 			repo: state.repo,
 			rev: state.rev,
 			def: state.def,
+			reposOnly: true,
 			repos: [],
 		}) : null;
 	},
@@ -31,7 +32,7 @@ export default ({
 			}
 			if (!nextState.refLocations) {
 				Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-					repo: nextState.repo, rev: nextState.rev, def: nextState.def, repos: [],
+					repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: true, repos: [],
 				}));
 			}
 		}
