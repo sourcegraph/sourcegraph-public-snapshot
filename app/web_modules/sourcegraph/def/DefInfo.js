@@ -17,6 +17,8 @@ import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
+import Helmet from "react-helmet";
+import {trimRepo} from "sourcegraph/repo";
 
 const filesPerPage = 50;
 
@@ -116,6 +118,7 @@ class DefInfo extends Container {
 
 		return (
 			<div styleName="container">
+				{this.state.defObj && this.state.defObj.Name && <Helmet title={`${this.state.defObj.Name} · ${trimRepo(this.state.repo)}`} />}
 				{this.state.defObj &&
 					<h1>
 						<Link styleName="back-icon" to={urlToDef(this.state.defObj, this.state.rev)}>&laquo;</Link>
