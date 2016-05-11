@@ -356,9 +356,11 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 			// Attempt the test a number of times, to weed out any flakiness that could occur.
 			for attempt := 0; attempt < *retriesFlag; attempt++ {
 				unitStart := time.Now()
+				wouldAttemptAgain := attempt+1 < *retriesFlag
+
 				// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
 				// but we want all tests to run regardless.
-				err, screenshot := t.runTest(test)
+				err, screenshot := t.runTest(test, wouldAttemptAgain)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
 					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
@@ -369,7 +371,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 				unitTime := time.Since(unitStart)
 				if err != nil {
 					// If we would attempt this test again, then just log warnings and retry.
-					if !*runOnce && attempt+1 < *retriesFlag {
+					if !*runOnce && wouldAttemptAgain {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
 						t.slackMessage(typeWarning, msg, "")
@@ -474,7 +476,11 @@ func (t *testRunner) sendAlert() error {
 // runTest runs a single test and recovers from panics, should they occur. If
 // the test failed for any reason err != nil is returned. If it was possible to
 // capture a screenshot of the error, screenshot will be the encoded PNG bytes.
-func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
+//
+// warningChannel specifies whether or not the screenshot should be uploaded to
+// the warning Slack channel in the event of an error. Otherwise, it is
+// uploaded to the normal (failure) channel.
+func (t *testRunner) runTest(test *Test, warningChannel bool) (err error, screenshot []byte) {
 	wd, err := t.newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
@@ -502,7 +508,7 @@ func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 			if err2 != nil {
 				t.log.Println("could not capture screenshot for", test.Name, err2)
 			} else if t.slack != nil {
-				if err2 = t.slackFileUpload(screenshot, test.Name+".png"); err2 != nil {
+				if err2 = t.slackFileUpload(screenshot, test.Name+".png", warningChannel); err2 != nil {
 					t.log.Println("could not upload screenshot to Slack", test.Name, err2)
 				}
 			}
@@ -539,7 +545,7 @@ func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 // slackFileUpload implements slack multipart file upload.
 //
 // TODO(slimsag): upstream this type of change to github.com/nlopes/slack.
-func (t *testRunner) slackFileUpload(f []byte, title string) error {
+func (t *testRunner) slackFileUpload(f []byte, title string, warningChannel bool) error {
 	b := &bytes.Buffer{}
 	w := multipart.NewWriter(b)
 	fw, err := w.CreateFormFile("file", title)
@@ -554,8 +560,12 @@ func (t *testRunner) slackFileUpload(f []byte, title string) error {
 	}
 
 	// Write additional fields.
+	channel := t.slackChannel.ID
+	if warningChannel {
+		channel = t.slackWarningChannel.ID
+	}
 	fields := map[string]string{
-		"channels": t.slackChannel.ID,
+		"channels": channel,
 		"token":    t.slackToken,
 	}
 	for k, v := range fields {
