@@ -626,6 +626,7 @@ class TreeSearch extends Container {
 			<div styleName="tree-common">
 				<div styleName="input-container">
 					<Input type="text"
+						id="search-input"
 						block={true}
 						onFocus={() => this.setState({focused: true})}
 						onBlur={(e) => this.setState({focused: false})}

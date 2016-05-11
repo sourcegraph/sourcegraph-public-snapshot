@@ -1,5 +1,0 @@
-{
-  "phabricator.uri" : "https://srcgraph.phacility.com/",
-  "repository.callsign": "SG",
-  "arc.feature.start.default": "origin/master"
-}
