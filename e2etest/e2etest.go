@@ -16,12 +16,14 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/net/context"
 
+	"sourcegraph.com/sourcegraph/go-selenium"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
@@ -30,7 +32,6 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
-	"sourcegraph.com/sourcegraph/go-selenium"
 )
 
 // T is passed as context into all tests. It provides generic helper methods to
@@ -117,6 +118,66 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
+// WaitForElement waits up to 20s for an element that matches the given selector and filters.
+func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.WebElement {
+	var element selenium.WebElement
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			elements, err := t.WebDriver.FindElements(by, value)
+			if err != nil {
+				return false
+			}
+			f := And(filters...)
+			for _, e := range elements {
+				if f(e) {
+					element = e
+					return true
+				}
+			}
+			return false
+		},
+		fmt.Sprintf("Wait for element to appear: %s %q", by, value),
+	)
+	return element
+}
+
+type ElementFilter func(selenium.WebElement) bool
+
+func And(filters ...ElementFilter) ElementFilter {
+	return func(e selenium.WebElement) bool {
+		for _, f := range filters {
+			if !f(e) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+func Or(filters ...ElementFilter) ElementFilter {
+	return func(e selenium.WebElement) bool {
+		for _, f := range filters {
+			if f(e) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func MatchAttribute(attr, pattern string) ElementFilter {
+	r := regexp.MustCompile(pattern)
+	return func(e selenium.WebElement) bool {
+		href, err := e.GetAttribute(attr)
+		if err != nil {
+			return false
+		}
+		return r.MatchString(href)
+	}
+}
+
 // WaitForRedirect waits up to 20s for a redirect to the given URL (e.g.,
 // "https://sourcegraph.com/login").
 //
@@ -152,31 +213,6 @@ func (t *T) WaitForRedirectPrefix(prefix, description string) {
 		},
 		fmt.Sprintf("%s (%s)", description, prefix),
 	)
-}
-
-// FindElementWithPartialText finds an element of the given tagName, whose Text
-// contains the specified partial text. After 20s of waiting for the element to
-// appear, it fails with the given reason.
-//
-// Note: XPath is not good at characters it needs to quote, so ensure
-// partialText is a relatively simple string
-func (t *T) FindElementWithPartialText(tagName, partialText, reason string) selenium.WebElement {
-	var elem selenium.WebElement
-	var err error
-	xpath := fmt.Sprintf("//%s[contains(text(), %q)]", tagName, partialText)
-	t.WaitForCondition(
-		20*time.Second,
-		100*time.Millisecond,
-		func() bool {
-			elem, err = t.WebDriver.FindElement(selenium.ByXPATH, xpath)
-			if err != nil {
-				return false
-			}
-			return true
-		},
-		reason,
-	)
-	return elem
 }
 
 // Test represents a single E2E test.
