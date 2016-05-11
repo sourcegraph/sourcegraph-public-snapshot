@@ -14,6 +14,7 @@
 								"type": "WrappedComponent",
 								"props": {
 									"type": "text",
+									"id": "search-input",
 									"block": true,
 									"autoFocus": true,
 									"defaultValue": "",
