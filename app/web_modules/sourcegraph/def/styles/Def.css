@@ -45,11 +45,11 @@
 .badge-padding {
 	padding: 3px 5px;
 	composes: br2 from base;
-	composes: bg-blue-1 blue-8 from colors;
+	composes: fw6 f5 from typography;
+	composes: bg-blue-1 blue from colors;
 }
 .badge {
 	composes: badge-padding;
-	font-size: 10px;
 	vertical-align: 1px;
 }
 .active-group-header {
@@ -58,7 +58,6 @@
 .all-refs {
 	line-height: 1.7;
 	white-space: nowrap;
-	font-size: 1.08rem;
 	composes: pt1 from base;
 }
 .ref-filename {
