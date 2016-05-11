@@ -1,8 +1,8 @@
 package e2etest
 
 import (
+	"errors"
 	"regexp"
-	"time"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
 )
@@ -23,73 +23,34 @@ func testDefFlow(t *T) error {
 		return err
 	}
 
-	timeout := 20 * time.Second
-	canFindElement := func(by, value string) func() bool {
-		return func() bool {
-			_, err := wd.FindElement(by, value)
-			return err == nil
-		}
-	}
-
-	t.WaitForCondition(
-		timeout,
-		100*time.Millisecond,
-		canFindElement(selenium.ByLinkText, "View"),
-		"Wait for View link(s) to appear",
-	)
-	t.WaitForCondition(
-		timeout,
-		100*time.Millisecond,
-		canFindElement(selenium.ByXPATH, "//*[contains(text(), 'Get gets the first value associated with the given key')]"),
-		"Wait for doc string to appear",
-	)
-	t.WaitForCondition(
-		timeout,
-		100*time.Millisecond,
-		canFindElement(selenium.ByXPATH, "//*[contains(text(), 'petarm')]"),
-		"Wait for author to appear",
-	)
-	t.WaitForCondition(
-		timeout,
-		100*time.Millisecond,
-		canFindElement(selenium.ByXPATH, "//*[contains(text(), 'Used in')]"),
-		"Wait for DefInfo tracked count",
-	)
+	t.WaitForElement(selenium.ByLinkText, "View")
+	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Get gets the first value associated with the given key')]")
+	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'petarm')]")
+	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Used in')]")
 	// TODO(keegancsmith) Find a reliable way to tell if the code view has loaded
 
 	// Check that the def link appears
-	var defLink selenium.WebElement
-	getDefLink := func(hrefRE string) func() bool {
-		re := regexp.MustCompile(hrefRE)
-		return func() bool {
-			var err error
-			defLink, err = wd.FindElement(selenium.ByLinkText, "(Header).Get(key string) string")
-			if err != nil {
-				return false
-			}
-			if href, err := defLink.GetAttribute("href"); err != nil || !re.MatchString(href) {
-				return false
-			}
-			return true
-		}
+	defLink := t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string")
+	href, err := defLink.GetAttribute("href")
+	if err != nil {
+		return err
 	}
-	t.WaitForCondition(
-		timeout,
-		100*time.Millisecond,
-		getDefLink("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get"),
-		"Wait for Def link",
-	)
+	if matched, _ := regexp.MatchString("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get", href); !matched {
+		return errors.New("unexpected def href: " + href)
+	}
 
 	err = defLink.Click()
 	if err != nil {
 		return err
 	}
-	t.WaitForCondition(
-		timeout,
-		100*time.Millisecond,
-		getDefLink("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info"),
-		"Wait for Def Info link",
-	)
+	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string")
+	href, err = defLink.GetAttribute("href")
+	if err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info", href); !matched {
+		return errors.New("unexpected def info href: " + href)
+	}
 
 	err = defLink.Click()
 	if err != nil {

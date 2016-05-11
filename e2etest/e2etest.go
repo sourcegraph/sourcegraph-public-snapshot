@@ -117,6 +117,22 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
+// WaitForElement waits up to 20s for an element that matches the given selector.
+func (t *T) WaitForElement(by, value string) selenium.WebElement {
+	var element selenium.WebElement
+	t.WaitForCondition(
+		20*time.Second,
+		100*time.Millisecond,
+		func() bool {
+			var err error
+			element, err = t.WebDriver.FindElement(by, value)
+			return err == nil
+		},
+		fmt.Sprintf("Wait for element to appear: %s %q", by, value),
+	)
+	return element
+}
+
 // WaitForRedirect waits up to 20s for a redirect to the given URL (e.g.,
 // "https://sourcegraph.com/login").
 //
