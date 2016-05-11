@@ -41,8 +41,8 @@
 
 .badge {
 	composes: br2 pv1 ph2 from base;
-	composes: bg-blue-1 blue-8 from colors;
-	composes: f6 from typography;
+	composes: bg-blue-1 blue from colors;
+	composes: f5 fw6 from typography;
 }
 
 .avatar {
