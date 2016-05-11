@@ -22,6 +22,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"sourcegraph.com/sourcegraph/go-selenium"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
@@ -30,7 +31,6 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
-	"sourcegraph.com/sourcegraph/go-selenium"
 )
 
 // T is passed as context into all tests. It provides generic helper methods to
@@ -152,31 +152,6 @@ func (t *T) WaitForRedirectPrefix(prefix, description string) {
 		},
 		fmt.Sprintf("%s (%s)", description, prefix),
 	)
-}
-
-// FindElementWithPartialText finds an element of the given tagName, whose Text
-// contains the specified partial text. After 20s of waiting for the element to
-// appear, it fails with the given reason.
-//
-// Note: XPath is not good at characters it needs to quote, so ensure
-// partialText is a relatively simple string
-func (t *T) FindElementWithPartialText(tagName, partialText, reason string) selenium.WebElement {
-	var elem selenium.WebElement
-	var err error
-	xpath := fmt.Sprintf("//%s[contains(text(), %q)]", tagName, partialText)
-	t.WaitForCondition(
-		20*time.Second,
-		100*time.Millisecond,
-		func() bool {
-			elem, err = t.WebDriver.FindElement(selenium.ByXPATH, xpath)
-			if err != nil {
-				return false
-			}
-			return true
-		},
-		reason,
-	)
-	return elem
 }
 
 // Test represents a single E2E test.

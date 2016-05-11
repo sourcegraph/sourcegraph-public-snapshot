@@ -62,21 +62,15 @@ func testDefFlow(t *T) error {
 	getDefLink := func(hrefRE string) func() bool {
 		re := regexp.MustCompile(hrefRE)
 		return func() bool {
-			links, err := wd.FindElements(selenium.ByXPATH, "//a[contains(@href, 'Header/Get')]")
+			var err error
+			defLink, err = wd.FindElement(selenium.ByLinkText, "(Header).Get(key string) string")
 			if err != nil {
 				return false
 			}
-			for _, link := range links {
-				if href, err := link.GetAttribute("href"); err != nil || !re.MatchString(href) {
-					continue
-				}
-				if text, err := link.Text(); err != nil || text != "(Header).Get(key string) string" {
-					continue
-				}
-				defLink = link
-				return true
+			if href, err := defLink.GetAttribute("href"); err != nil || !re.MatchString(href) {
+				return false
 			}
-			return false
+			return true
 		}
 	}
 	t.WaitForCondition(
