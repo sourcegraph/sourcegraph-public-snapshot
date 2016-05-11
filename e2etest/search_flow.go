@@ -1,11 +1,6 @@
 package e2etest
 
-import (
-	"errors"
-	"regexp"
-
-	"sourcegraph.com/sourcegraph/go-selenium"
-)
+import "sourcegraph.com/sourcegraph/go-selenium"
 
 func init() {
 	Register(&Test{
@@ -27,14 +22,7 @@ func TestSearchFlow(t *T) error {
 	searchInput := t.WaitForElement(selenium.ById, "search-input")
 	searchInput.SendKeys("RouteMatch")
 
-	resultLink := t.WaitForElement(selenium.ByLinkText, "type RouteMatch struct")
-	href, err := resultLink.GetAttribute("href")
-	if err != nil {
-		return err
-	}
-	if matched, _ := regexp.MatchString("/github.com/gorilla/mux@[^/]+/-/def/GoPackage/github.com/gorilla/mux/-/RouteMatch", href); !matched {
-		return errors.New("unexpected def href: " + href)
-	}
+	t.WaitForElement(selenium.ByLinkText, "type RouteMatch struct", MatchAttribute("href", `/github\.com/gorilla/mux@[^/]+/-/def/GoPackage/github.com/gorilla/mux/-/RouteMatch`))
 
 	return nil
 }

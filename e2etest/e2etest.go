@@ -16,6 +16,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -117,20 +118,64 @@ func (t *T) WaitForCondition(d time.Duration, optimisticD time.Duration, cond fu
 	t.Fatalf("timed out waiting %v for condition %q to be met", d, condName)
 }
 
-// WaitForElement waits up to 20s for an element that matches the given selector.
-func (t *T) WaitForElement(by, value string) selenium.WebElement {
+// WaitForElement waits up to 20s for an element that matches the given selector and filters.
+func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.WebElement {
 	var element selenium.WebElement
 	t.WaitForCondition(
 		20*time.Second,
 		100*time.Millisecond,
 		func() bool {
-			var err error
-			element, err = t.WebDriver.FindElement(by, value)
-			return err == nil
+			elements, err := t.WebDriver.FindElements(by, value)
+			if err != nil {
+				return false
+			}
+			f := And(filters...)
+			for _, e := range elements {
+				if f(e) {
+					element = e
+					return true
+				}
+			}
+			return false
 		},
 		fmt.Sprintf("Wait for element to appear: %s %q", by, value),
 	)
 	return element
+}
+
+type ElementFilter func(selenium.WebElement) bool
+
+func And(filters ...ElementFilter) ElementFilter {
+	return func(e selenium.WebElement) bool {
+		for _, f := range filters {
+			if !f(e) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+func Or(filters ...ElementFilter) ElementFilter {
+	return func(e selenium.WebElement) bool {
+		for _, f := range filters {
+			if f(e) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func MatchAttribute(attr, pattern string) ElementFilter {
+	r := regexp.MustCompile(pattern)
+	return func(e selenium.WebElement) bool {
+		href, err := e.GetAttribute(attr)
+		if err != nil {
+			return false
+		}
+		return r.MatchString(href)
+	}
 }
 
 // WaitForRedirect waits up to 20s for a redirect to the given URL (e.g.,

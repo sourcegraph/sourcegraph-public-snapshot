@@ -2,8 +2,6 @@ package e2etest
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"time"
 
 	"sourcegraph.com/sourcegraph/go-selenium"
@@ -26,19 +24,7 @@ func testRepoFlow(t *T) error {
 	}
 
 	// Check that the "mux.go" codefile link appears.
-	muxLink := t.WaitForElement(selenium.ByLinkText, "mux.go")
-
-	// If the link is displayed and enabled, click it.
-	want := "/github.com/gorilla/mux@master/-/blob/mux.go"
-
-	got, err := muxLink.GetAttribute("href")
-	if err != nil {
-		return err
-	}
-
-	if !strings.Contains(got, want) {
-		return fmt.Errorf("got %s, want %s", got, want)
-	}
+	muxLink := t.WaitForElement(selenium.ByLinkText, "mux.go", MatchAttribute("href", `/github\.com/gorilla/mux@master/-/blob/mux.go`))
 
 	isDisplayed, err := muxLink.IsDisplayed()
 	if err != nil {
@@ -60,7 +46,7 @@ func testRepoFlow(t *T) error {
 
 	muxLink.Click()
 
-	t.WaitForRedirect(t.Endpoint(want), "wait for mux.go code file to load")
+	t.WaitForRedirect(t.Endpoint("/github.com/gorilla/mux@master/-/blob/mux.go"), "wait for mux.go code file to load")
 
 	// Wait for the "Router" ref link to appear.
 	routerLink := t.WaitForElement(selenium.ByLinkText, "Router")

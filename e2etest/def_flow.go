@@ -1,11 +1,6 @@
 package e2etest
 
-import (
-	"errors"
-	"regexp"
-
-	"sourcegraph.com/sourcegraph/go-selenium"
-)
+import "sourcegraph.com/sourcegraph/go-selenium"
 
 func init() {
 	Register(&Test{
@@ -30,31 +25,15 @@ func testDefFlow(t *T) error {
 	// TODO(keegancsmith) Find a reliable way to tell if the code view has loaded
 
 	// Check that the def link appears
-	defLink := t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string")
-	href, err := defLink.GetAttribute("href")
-	if err != nil {
+	defLink := t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get`))
+	if err = defLink.Click(); err != nil {
 		return err
-	}
-	if matched, _ := regexp.MatchString("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get", href); !matched {
-		return errors.New("unexpected def href: " + href)
 	}
 
-	err = defLink.Click()
-	if err != nil {
+	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info`))
+	if err = defLink.Click(); err != nil {
 		return err
-	}
-	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string")
-	href, err = defLink.GetAttribute("href")
-	if err != nil {
-		return err
-	}
-	if matched, _ := regexp.MatchString("/github.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info", href); !matched {
-		return errors.New("unexpected def info href: " + href)
 	}
 
-	err = defLink.Click()
-	if err != nil {
-		return err
-	}
 	return nil
 }
