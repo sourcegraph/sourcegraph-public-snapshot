@@ -89,6 +89,7 @@ type ServerConfig struct {
 // if serveInGoroutine is true then serving the Appdash UI will occur in a
 // separate goroutine (rather than blocking).
 func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
+	clientFlags.url = f.URL
 	if f.Disable {
 		log15.Debug("Appdash server (collector and web UI) is disabled")
 		return nil
@@ -176,7 +177,6 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	// Configure appdash client.
 	clientFlags.RemoteAddr = l.Addr().String()
 	clientFlags.TLS = collectorUseTLS
-	clientFlags.url = f.URL
 
 	serve := func() {
 		log15.Info("InfluxDB server starting", "logoutput", logOutputName)
