@@ -18,7 +18,7 @@ const DefBackend = {
 				let def = DefStore.defs.get(action.repo, action.rev, action.def);
 				if (def === null) {
 					trackPromise(
-						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}`)
+						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${encodeURIComponent(action.def)}`)
 							.then(updateRepoCloning(action.repo))
 							.then(checkStatus)
 							.then((resp) => resp.json())
