@@ -65,6 +65,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 
 	innerSelectSql := `SELECT repo, file, count FROM global_refs`
 	innerSelectSql += ` WHERE def_repo=` + arg(op.Def.Repo) + ` AND def_unit_type=` + arg(op.Def.UnitType) + ` AND def_unit=` + arg(op.Def.Unit) + ` AND def_path=` + arg(op.Def.Path)
+	innerSelectSql += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	if len(op.Opt.Repos) > 0 {
 		repoBindVars := make([]string, len(op.Opt.Repos))
 		for i, r := range op.Opt.Repos {
@@ -73,9 +74,16 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		innerSelectSql += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
 	}
 
-	paginationSql := fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSql + ") res"
-	orderBySql := " ORDER BY repo ASC, repo_count DESC, count DESC" + paginationSql
+	orderBySql := " ORDER BY repo_count DESC, count DESC"
+	var groupBySql string
+	if op.Opt.ReposOnly {
+		sql = "SELECT repo, SUM(count) AS repo_count FROM (" + innerSelectSql + ") res"
+		groupBySql = " GROUP BY repo"
+		orderBySql = " ORDER BY repo_count DESC"
+	}
+
+	sql += groupBySql
 	sql += orderBySql
 
 	var dbRefResult []*dbRefLocationsResult
@@ -83,32 +91,11 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return nil, err
 	}
 
-	// For pagination and display purposes, count the total number of refs,
-	// files, and repos.
-	type result struct {
-		Refs, Files, Repos int32
-	}
-	var stats *result
-	{
-		var countArgs []interface{}
-		countArg := func(a interface{}) string {
-			v := gorp.PostgresDialect{}.BindVar(len(countArgs))
-			countArgs = append(countArgs, a)
-			return v
-		}
-		q := "SELECT SUM(count) AS Refs, COUNT(repo) AS Files, COUNT(DISTINCT repo) AS Repos FROM global_refs WHERE"
-		q += " def_repo=" + countArg(op.Def.Repo) + " AND def_unit_type=" + countArg(op.Def.UnitType) + " AND def_unit=" + countArg(op.Def.Unit) + " AND def_path=" + countArg(op.Def.Path)
-		rows, err := graphDBH(ctx).Select(result{}, q, countArgs...)
-		if err != nil {
-			return nil, err
-		}
-		stats = rows[0].(*result)
-	}
-
 	// repoRefs holds the ordered list of repos referencing this def. The list is sorted by
 	// decreasing ref counts per repo, and the file list in each individual DefRepoRef is
 	// also sorted by descending ref counts.
 	var repoRefs []*sourcegraph.DefRepoRef
+	defRepoIdx := -1
 	// refsByRepo groups each referencing file by repo.
 	refsByRepo := make(map[string]*sourcegraph.DefRepoRef)
 	for _, r := range dbRefResult {
@@ -118,6 +105,10 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 				Count: int32(r.RepoCount),
 			}
 			repoRefs = append(repoRefs, refsByRepo[r.Repo])
+			// Note the position of the def's own repo in the slice.
+			if op.Def.Repo == r.Repo {
+				defRepoIdx = len(repoRefs) - 1
+			}
 		}
 		if r.File != "" && r.Count != 0 {
 			refsByRepo[r.Repo].Files = append(refsByRepo[r.Repo].Files, &sourcegraph.DefFileRef{
@@ -125,6 +116,12 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 				Count: int32(r.Count),
 			})
 		}
+	}
+
+	// Place the def's own repo at the head of the slice, if it exists in the slice and is
+	// not at the head already.
+	if defRepoIdx > 0 {
+		repoRefs[0], repoRefs[defRepoIdx] = repoRefs[defRepoIdx], repoRefs[0]
 	}
 
 	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
@@ -161,12 +158,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		filteredRepoRefs = append(filteredRepoRefs, r)
 	}
 
-	return &sourcegraph.RefLocationsList{
-		RepoRefs:   filteredRepoRefs,
-		TotalRefs:  stats.Refs,
-		TotalFiles: stats.Files,
-		TotalRepos: stats.Repos,
-	}, nil
+	return &sourcegraph.RefLocationsList{RepoRefs: filteredRepoRefs}, nil
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
