@@ -63,31 +63,6 @@ serve-mothership-dev:
 	@echo See docs/dev/OAuth2.md Demo configuration
 	$(MAKE) serve-dev SERVEFLAGS="--http-addr=:13080 --app-url http://demo-mothership:13080 --appdash.disable-server $(SERVEFLAGS)"
 
-BD_SGPATH = $(HOME)/.sourcegraph
-serve-beyang-dev:
-	SG_FEATURE_DISCUSSIONS=f $(MAKE) serve-dev SRCFLAGS="-v --grpc-endpoint http://localhost:3100 $(SRCFLAGS)" SERVEFLAGS="\
---graphstore.root='$(BD_SGPATH)/repos' \
---no-worker \
---app-url '' \
---app.custom-logo 'MyLogo' \
---app.disable-apps \
---app.disable-dir-defs \
---app.disable-external-links \
---app.disable-repo-tree-search \
---app.disable-search \
---app.no-ui-build \
---app.show-latest-built-commit \
---app.check-for-updates 0 \
---appdash.http-addr ':7800' \
---appdash.url 'http://localhost:7800' \
---clean \
---grpc-addr ':3100' \
---http-addr ':3000' \
---local.clcache 10s \
---local.clcachesize 2000 \
---num-workers 0 \
-$(SERVEFLAGS)"
-
 PROMETHEUS_STORAGE ?= $(shell eval `src config` && echo $${SGPATH}/prometheus)
 serve-metrics-dev:
 	@# Assumes your src is listening on the default address (localhost:3080)
