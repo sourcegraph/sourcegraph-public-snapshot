@@ -58,7 +58,7 @@ func serveCoverage(w http.ResponseWriter, r *http.Request) error {
 Bfore, commit %s had %s.
 After, commit %s has %s.`, repoRev.URI, dataVer.CommitID, summary(prevCov), repoRev.CommitID, summary(cov)),
 					IconEmoji: ":warning:",
-					Channel:   "srclib",
+					Channel:   "global-graph",
 				})
 			}
 		}

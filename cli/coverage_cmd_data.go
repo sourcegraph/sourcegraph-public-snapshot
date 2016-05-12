@@ -354,7 +354,7 @@ var langRepos_ = map[string][]string{
 		"github.com/gruntjs/grunt",
 		"github.com/dimsemenov/PhotoSwipe",
 		"github.com/jasmine/jasmine",
-		"github.com/pugjs/jade",
+		"github.com/pugjs/pug",
 		"github.com/petkaantonov/bluebird",
 		"github.com/request/request",
 		"github.com/julianshapiro/velocity",
@@ -378,7 +378,7 @@ var langRepos_ = map[string][]string{
 		"github.com/jlmakes/scrollreveal.js",
 		"github.com/node-inspector/node-inspector",
 		"github.com/janl/mustache.js",
-		"github.com/jrburke/requirejs",
+		"github.com/requirejs/requirejs",
 	},
 	"TypeScript": []string{
 		"github.com/Microsoft/vscode",
