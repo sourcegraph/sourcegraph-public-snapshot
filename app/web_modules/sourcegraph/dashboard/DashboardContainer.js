@@ -7,12 +7,11 @@ import "./DashboardBackend"; // for side effects
 import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
-import {EventLocation} from "sourcegraph/util/EventLogger";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
-import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 
 import OnboardingModals from "./OnboardingModals";
 import HomeContainer from "./HomeContainer";
@@ -70,15 +69,10 @@ class DashboardContainer extends Container {
 		return (
 			<div>
 				{!this.context.githubToken && <div styleName="cta">
-				<a href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: true})}>
-						<GitHubAuthButton>Link GitHub account</GitHubAuthButton>
-					</a>
+					<GitHubAuthButton>Link GitHub account</GitHubAuthButton>
 				</div>}
 				{this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) && <div styleName="cta">
-					<a href={urlToPrivateGitHubOAuth}
-						onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>
-						<GitHubAuthButton >Use with private repositories</GitHubAuthButton>
-					</a>
+					<GitHubAuthButton url={urlToPrivateGitHubOAuth}>Use with private repositories</GitHubAuthButton>
 				</div>}
 			</div>
 		);

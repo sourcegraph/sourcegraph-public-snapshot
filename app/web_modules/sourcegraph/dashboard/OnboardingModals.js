@@ -4,11 +4,10 @@ import styles from "./styles/DashboardModal.css";
 import CSSModules from "react-css-modules";
 import EventLogger from "sourcegraph/util/EventLogger";
 import {Button} from "sourcegraph/components";
-import {GitHubIcon} from "sourcegraph/components/Icons";
-import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import ChromeExtensionCTA from "./LiteChromeExtensionCTA";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
+import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
 
 class OnboardingModals extends Component {
 	static propTypes = {
@@ -159,11 +158,7 @@ class OnboardingModals extends Component {
 	_gitHubCTA(nextPath) {
 		return (
 			<div styleName="cta">
-				<a href={urlToGitHubOAuth} onClick={() => {
-					EventLogger.logEvent("OnboardingModalGithubCTAClicked");
-				}}>
-					<Button outline={true} color="warning"><GitHubIcon style={{marginRight: "10px", fontSize: "16px"}} />Continue with GitHub</Button>
-				</a>
+				<GitHubAuthButton>Link GitHub account</GitHubAuthButton>
 			</div>
 		);
 	}

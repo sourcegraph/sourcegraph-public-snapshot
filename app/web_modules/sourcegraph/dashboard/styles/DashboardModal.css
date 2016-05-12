@@ -27,7 +27,7 @@
     composes: b from typography;
     composes: pb2 pt3 from base;
     text-align: center;
-    align-items: center;
+    align-self: center;
 }
 
 /* -- title -- */

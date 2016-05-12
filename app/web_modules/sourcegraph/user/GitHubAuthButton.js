@@ -9,7 +9,7 @@ import style from "sourcegraph/user/styles/accountForm.css";
 
 function GitHubAuthButton(props, {eventLogger}) {
 	return (
-		<a href={urlToGitHubOAuth} styleName="github"
+		<a href={props.url ? props.url : urlToGitHubOAuth} styleName="github"
 			onClick={() => eventLogger.logEvent("InitiateGitHubOAuth2Flow")} {...props}>
 			<Button type="button" formNoValidate={true} color="primary" block={true}>
 				<GitHubIcon />&nbsp; {props.children}
@@ -18,6 +18,7 @@ function GitHubAuthButton(props, {eventLogger}) {
 	);
 }
 GitHubAuthButton.propTypes = {
+	url: React.PropTypes.string,
 	children: React.PropTypes.oneOfType([
 		React.PropTypes.arrayOf(React.PropTypes.element),
 		React.PropTypes.element,
