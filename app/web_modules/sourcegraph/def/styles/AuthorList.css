@@ -14,6 +14,12 @@
 	flex-wrap: wrap;
 }
 
+@media screen and (max-width: 48em) {
+	.list-horizontal {
+		margin: 0 10px;
+	}
+}
+
 .pencil-icon {
 	composes: gray from colors;
 	composes: f4 from typography;

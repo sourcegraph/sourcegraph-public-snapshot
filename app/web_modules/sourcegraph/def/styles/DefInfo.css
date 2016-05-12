@@ -4,7 +4,7 @@
 @value typography "sourcegraph/components/styles/typography.css";
 
 .container {
-	composes: center ph2 from base;
+	composes: center from base;
 	composes: col-11-ns from grid;
 	max-width: 68rem;
 	min-height: 50vh;
@@ -44,3 +44,10 @@
 }
 
 .main {}
+
+@media screen and (max-width: 48em) {
+	.def-header, .description, .section-label {
+		margin-left: 10px;
+		margin-right: 10px;
+	}
+}

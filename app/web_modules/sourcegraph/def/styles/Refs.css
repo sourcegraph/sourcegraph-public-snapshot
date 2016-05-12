@@ -20,6 +20,12 @@
 	align-items: center;
 }
 
+@media screen and (max-width: 48em) {
+	.repo {
+		margin: 0 10px;
+	}
+}
+
 .repoLink {
 	composes: mid-gray from colors;
 }

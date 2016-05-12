@@ -98,7 +98,7 @@ class DefInfo extends Container {
 					<Helmet title={title} />
 				}
 				{this.state.defObj &&
-					<h1>
+					<h1 styleName="def-header">
 						<Link title="View definition in code" styleName="back-icon" to={urlToDef(this.state.defObj, this.state.rev)}>&laquo;</Link>
 						&nbsp;
 						<Link to={urlToDef(this.state.defObj, this.state.rev)}>
