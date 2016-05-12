@@ -34,8 +34,6 @@ func Create(configYAML string, droneYMLFileExists bool, inv *inventory.Inventory
 		}
 	}
 
-	config.Build = nil // disable build
-
 	// Add the srclib analysis steps to the CI test plan.
 	if err := configureSrclib(inv, config, axes, srclibImportURL, srclibCoverageURL); err != nil {
 		return "", nil, err
