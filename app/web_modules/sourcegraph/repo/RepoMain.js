@@ -156,7 +156,14 @@ class RepoMain extends React.Component {
 
 		return (
 			<div>
-				<Helmet title={trimRepo(this.props.repo)} />
+				{this.props.repoObj && this.props.repoObj.Description ?
+					<Helmet
+						title={trimRepo(this.props.repo)}
+						meta={[
+							{name: "description", content: this.props.repoObj.Description},
+						]} /> :
+					<Helmet title={trimRepo(this.props.repo)} />
+				}
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
 					<Modal onDismiss={this._dismissTreeSearchModal}>

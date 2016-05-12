@@ -1,7 +1,7 @@
 // @flow weak
 
 import React from "react";
-
+import Helmet from "react-helmet";
 import AuthorList from "sourcegraph/def/AuthorList";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
@@ -17,7 +17,6 @@ import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
-import Helmet from "react-helmet";
 import {trimRepo} from "sourcegraph/repo";
 
 class DefInfo extends Container {
@@ -84,6 +83,12 @@ class DefInfo extends Container {
 
 		return (
 			<div styleName="container">
+				{def && def.Docs && def.Docs.length && def.Docs[0].Data &&
+					<Helmet
+						meta={[
+							{name: "description", content: def.Docs[0].Data},
+						]} />
+				}
 				{this.state.defObj && this.state.defObj.Name && <Helmet title={`${this.state.defObj.Name} · ${trimRepo(this.state.repo)}`} />}
 				{this.state.defObj &&
 					<h1>
