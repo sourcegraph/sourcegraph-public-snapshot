@@ -27,7 +27,7 @@ export default function withAnnotations(Component) {
 			Object.assign(state, props);
 
 			state.anns = state.path && state.commitID ? BlobStore.annotations.get(state.repo, state.rev, state.commitID, state.path, 0, 0) : null;
-			const contentLenth = state.blob ? state.blob.ContentsString.length : 0;
+			const contentLenth = state.blob && !state.blob.Error ? state.blob.ContentsString.length : 0;
 			state.skipAnns = contentLenth >= 40*2500; // ~ 2500 lines, avg. 40 chars per line
 		}
 

@@ -155,7 +155,7 @@ export default class BlobMain extends Container {
 						repo={this.state.repo}
 						rev={this.state.rev}
 						path={this.state.path} />
-					{(!this.state.blob || (!this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
+					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
 					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&
 					<Blob
 						repo={this.state.repo}
