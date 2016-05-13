@@ -99,7 +99,8 @@ class DefInfo extends Container {
 				}
 				{this.state.defObj &&
 					<h1>
-						<Link styleName="back-icon" to={urlToDef(this.state.defObj, this.state.rev)}>&laquo;</Link>
+						<Link title="View definition in code" styleName="back-icon" to={urlToDef(this.state.defObj, this.state.rev)}>&laquo;</Link>
+						&nbsp;
 						<Link to={urlToDef(this.state.defObj, this.state.rev)}>
 							<code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.def})}</code>
 						</Link>

@@ -23,7 +23,7 @@ export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
 
 	return [
 		f.DefKeyword,
-		" ",
+		f.DefKeyword ? " " : "",
 		<span key="name" className={opts && opts.nameClass} style={opts && opts.nameClass ? {} : {fontWeight: "bold"}}>{name}</span>, // give default bold styling if not provided
 		f.NameAndTypeSeparator,
 		f.Type.ScopeQualified,
