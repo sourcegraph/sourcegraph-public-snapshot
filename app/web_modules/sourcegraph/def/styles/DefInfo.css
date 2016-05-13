@@ -17,6 +17,7 @@
 .def-title {
 	composes: black from colors;
 	font-weight: normal;
+	line-height: normal;
 }
 
 .def-title:hover {
