@@ -188,6 +188,7 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		return nil, err
 	}
 
+	// Critical permissions check. DO NOT REMOVE.
 	var results []*sourcegraph.SearchResult
 	for _, d := range dbSearchResults {
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalDefs.Search", d.Repo); err != nil {
