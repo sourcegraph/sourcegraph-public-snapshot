@@ -18,6 +18,7 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
+import {defTitle, defTitleOK} from "sourcegraph/def";
 
 class DefInfo extends Container {
 	static contextTypes = {
@@ -81,15 +82,21 @@ class DefInfo extends Container {
 			);
 		}
 
+		let title = trimRepo(this.state.repo);
+		if (defTitleOK(this.state.defObj)) {
+			title = `${defTitle(this.state.defObj)} · ${trimRepo(this.state.repo)}`;
+		}
+
 		return (
 			<div styleName="container">
-				{def && def.Docs && def.Docs.length && def.Docs[0].Data &&
+				{def && def.Docs && def.Docs.length && def.Docs[0].Data ?
 					<Helmet
+						title={title}
 						meta={[
 							{name: "description", content: def.Docs[0].Data},
-						]} />
+						]} /> :
+					<Helmet title={title} />}
 				}
-				{this.state.defObj && this.state.defObj.Name && <Helmet title={`${this.state.defObj.Name} · ${trimRepo(this.state.repo)}`} />}
 				{this.state.defObj &&
 					<h1>
 						<Link styleName="back-icon" to={urlToDef(this.state.defObj, this.state.rev)}>&laquo;</Link>

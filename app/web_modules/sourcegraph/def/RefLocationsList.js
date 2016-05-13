@@ -1,12 +1,15 @@
 // @flow
 
 import React from "react";
+import Helmet from "react-helmet";
 import {Link} from "react-router";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 import styles from "sourcegraph/def/styles/Def.css";
 import CSSModules from "react-css-modules";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import {trimRepo} from "sourcegraph/repo";
+import {defTitle, defTitleOK} from "sourcegraph/def";
 
 class RefLocationsList extends React.Component {
 	static propTypes = {
@@ -37,6 +40,7 @@ class RefLocationsList extends React.Component {
 
 		return (
 			<div>
+				{defTitleOK(def) && <Helmet title={`${defTitle(def)} · ${trimRepo(this.props.repo)}`} />}
 				{refLocs.map((repoRef, i) => (
 					<div key={i} styleName="all-refs">
 						<header styleName={this.props.repo === repoRef.Repo ? "active-group-header" : ""}>
