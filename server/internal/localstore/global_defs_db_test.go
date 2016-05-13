@@ -49,8 +49,8 @@ func TestGlobalDefs(t *testing.T) {
 		{
 			[]string{"abc"},
 			[]*sourcegraph.SearchResult{
-				{Def: sourcegraph.Def{Def: *testDefs1[0]}},
 				{Def: sourcegraph.Def{Def: *testDefs1[1]}},
+				{Def: sourcegraph.Def{Def: *testDefs1[0]}},
 			},
 		},
 		{
