@@ -20,9 +20,10 @@ func init() {
 }
 
 type searchCmd struct {
-	Refresh string `long:"refresh" description:"repository URI for which to update the search index and scores"`
-	Limit   int32  `long:"limit" description:"limit # of search results" default:"10"`
-	Args    struct {
+	Refresh       string `long:"refresh" description:"repository URI for which to update the search index and counts (implies --refresh-counts)"`
+	RefreshCounts string `long:"refresh-counts" description:"repository URI for which to update the search counts"`
+	Limit         int32  `long:"limit" description:"limit # of search results" default:"10"`
+	Args          struct {
 		Query []string `name:"QUERY" description:"search query"`
 	} `positional-args:"yes" required:"yes"`
 }
@@ -34,6 +35,15 @@ func (c *searchCmd) Execute(args []string) error {
 			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.Refresh}},
 			RefreshCounts: true,
 			RefreshSearch: true,
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	} else if c.RefreshCounts != "" {
+		_, err := cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
+			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.RefreshCounts}},
+			RefreshCounts: true,
 		})
 		if err != nil {
 			return err
