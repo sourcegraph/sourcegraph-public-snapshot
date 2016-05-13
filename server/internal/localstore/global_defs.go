@@ -166,9 +166,14 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		if op.UnitTypeQuery != "" {
 			wheres = append(wheres, `lower(unit_type)=lower(`+arg(op.UnitTypeQuery)+`)`)
 		}
-		if bowQuery != "" {
-			wheres = append(wheres, "bow != ''")
-			wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ to_tsvector('english', bow)`)
+
+		if len(op.TokQuery) == 1 { // special-case single token queries for performance
+			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
+		} else {
+			if bowQuery != "" {
+				wheres = append(wheres, "bow != ''")
+				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ to_tsvector('english', bow)`)
+			}
 		}
 
 		whereSQL = fmt.Sprint(`WHERE (` + strings.Join(wheres, ") AND (") + `)`)
@@ -245,7 +250,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 					continue
 				}
 				// Ignore vendored defs
-				if strings.HasPrefix(d.File, "vendor/") {
+				if strings.HasPrefix(d.File, "vendor/") || strings.HasPrefix(d.File, "Godeps/") || strings.Contains(d.File, "/vendor/") {
 					continue
 				}
 
