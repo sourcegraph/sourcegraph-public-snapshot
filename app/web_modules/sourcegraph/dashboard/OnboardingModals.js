@@ -8,6 +8,7 @@ import ChromeExtensionCTA from "./LiteChromeExtensionCTA";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
 import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import {urlToDefInfo} from "sourcegraph/def/routes";
 
 class OnboardingModals extends Component {
 	static propTypes = {
@@ -183,7 +184,7 @@ class OnboardingModals extends Component {
 	_goLangCTALink() {
 		return (
 			<div styleName="cta">
-				<Link to="github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest/-/info" onClick={() => {
+				<Link to={urlToDefInfo({Repo: "github.com/golang/go", UnitType: "GoPackage", Unit: "net/http", Path: "NewRequest"})} onClick={() => {
 					EventLogger.logEvent("OnboardingSequenceCompleted", {CurrentModal: this.state.onboardingFlowState, CTA: "Dismiss", GitHubAuthed: this.state.gitHubAuthed});
 					EventLogger.logEvent("GoHTTPDefRefsCTAClicked");
 				}}>

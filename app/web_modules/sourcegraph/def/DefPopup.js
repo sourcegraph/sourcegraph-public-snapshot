@@ -12,7 +12,7 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import RefLocationsList from "sourcegraph/def/RefLocationsList";
 import AuthorList from "sourcegraph/def/AuthorList";
-import {urlToDef} from "sourcegraph/def/routes";
+import {urlToDefInfo} from "sourcegraph/def/routes";
 
 class DefPopup extends Container {
 	static propTypes = {
@@ -53,8 +53,8 @@ class DefPopup extends Container {
 		return (
 			<div className={s.marginBox}>
 				<header>
-					<Link className={s.boxTitle} to={`${urlToDef(this.state.defObj, this.state.rev)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
-					<Link className={s.boxIcon} to={`${urlToDef(this.state.defObj, this.state.rev)}/-/info`}>&raquo;</Link>
+					<Link className={s.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
+					<Link className={s.boxIcon} to={urlToDefInfo(this.state.defObj, this.state.rev)}>&raquo;</Link>
 				</header>
 				<header className={s.sectionTitle}>Used in
 					<span>

@@ -15,7 +15,7 @@ export const rel: {[key: RouteName]: string} = {
 	reset: "reset",
 	admin: "-/",
 	def: "def/*",
-	defInfo: "info",
+	defInfo: "info/*",
 	repo: "*", // matches both "repo" and "repo@rev"
 	tree: "tree/*",
 	blob: "blob/*",
@@ -34,7 +34,7 @@ export const abs: {[key: RouteName]: string} = {
 	admin: rel.admin,
 	adminBuilds: `${rel.admin}${rel.builds}`,
 	def: `${rel.repo}/-/${rel.def}`,
-	defInfo: `${rel.repo}/-/${rel.def}/-/info`,
+	defInfo: `${rel.repo}/-/${rel.defInfo}`,
 	repo: rel.repo,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,

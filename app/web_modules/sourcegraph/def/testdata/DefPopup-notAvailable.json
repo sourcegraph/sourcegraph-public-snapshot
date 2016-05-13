@@ -13,7 +13,7 @@
 								"key": ".0",
 								"props": {
 									"className": "",
-									"to": "/r@c/-/def/undefined/undefined/-/undefined/-/info",
+									"to": "/r@c/-/info/undefined/undefined/-/undefined",
 									"children": [
 										{
 											"type": "span",
@@ -47,7 +47,7 @@
 								"key": ".1",
 								"props": {
 									"className": "",
-									"to": "/r@c/-/def/undefined/undefined/-/undefined/-/info",
+									"to": "/r@c/-/info/undefined/undefined/-/undefined",
 									"children": [
 										"»"
 									],

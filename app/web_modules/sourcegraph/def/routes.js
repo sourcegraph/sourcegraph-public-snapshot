@@ -9,7 +9,7 @@ import type {Def} from "sourcegraph/def";
 
 export const routes: Array<Route> = [
 	{
-		path: `${rel.def}/-/info`,
+		path: rel.defInfo,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
@@ -22,9 +22,15 @@ export const routes: Array<Route> = [
 		},
 	},
 	{
+		path: `${rel.def}/-/info`, // backwards compatibility redirect
+		onEnter: (nextState, replace) => {
+			replace(nextState.location.pathname.substr(0, nextState.location.pathname.length - "/-/info".length).replace("/-/def/", "/-/info/"));
+		},
+	},
+	{
 		path: `${rel.def}/-/refs`, // backwards compatibility redirect
 		onEnter: (nextState, replace) => {
-			replace(nextState.location.pathname.replace("/-/refs", "/-/info"));
+			replace(nextState.location.pathname.substr(0, nextState.location.pathname.length - "/-/refs".length).replace("/-/def/", "/-/info/"));
 		},
 	},
 	{

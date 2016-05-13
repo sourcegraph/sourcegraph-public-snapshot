@@ -13,7 +13,7 @@ func init() {
 func testDefFlow(t *T) error {
 	wd := t.WebDriver
 
-	err := wd.Get(t.Endpoint("/github.com/golang/go/-/def/GoPackage/net/http/-/Header/Get/-/info"))
+	err := wd.Get(t.Endpoint("/github.com/golang/go/-/info/GoPackage/net/http/-/Header/Get"))
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func testDefFlow(t *T) error {
 		return err
 	}
 
-	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get/-/info`))
+	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go@[^/]+/-/info/GoPackage/net/http/-/Header/Get`))
 	if err = defLink.Click(); err != nil {
 		return err
 	}

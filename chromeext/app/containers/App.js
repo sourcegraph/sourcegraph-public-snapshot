@@ -72,9 +72,15 @@ export default class App extends Component {
 		return this.props.defs.fetches[keyFor(this.props.repo, srclibDataVersion.CommitID, this.props.path, this.props.query)];
 	}
 
+	// TODO: Remove this, re-use this instead:
+	//
+	//       	import {urlToDefInfo} from "sourcegraph/def/routes";
+	//
+	//       Need to verify it doesn't break the DefSearchResult component below that uses urlToDef.
+	//       Who's familiar with it?
 	urlToDef(def, rev) {
 		rev = rev ? rev : (def.CommitID || "");
-		return `${def.Repo}${rev ? `@${rev}` : ""}/-/def/${def.UnitType}/${def.Unit}/-/${def.Path}/-/info`;
+		return `${def.Repo}${rev ? `@${rev}` : ""}/-/info/${def.UnitType}/${def.Unit}/-/${def.Path}`;
 	}
 
 	render() {

@@ -59,6 +59,6 @@ func serveGDDORefs(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("repo, pkg, and def must be specified in query string")}
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/%s/-/def/GoPackage/%s/-/%s/-/info", repo, pkg, def), http.StatusMovedPermanently)
+	http.Redirect(w, r, fmt.Sprintf("/%s/-/info/GoPackage/%s/-/%s", repo, pkg, def), http.StatusMovedPermanently)
 	return nil
 }
