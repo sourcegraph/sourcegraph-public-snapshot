@@ -562,6 +562,9 @@ func (t *testRunner) slackFileUpload(f []byte, title string, warningChannel bool
 	// Write additional fields.
 	channel := t.slackChannel.ID
 	if warningChannel {
+		if t.slackWarningChannel == nil {
+			return nil
+		}
 		channel = t.slackWarningChannel.ID
 	}
 	fields := map[string]string{
