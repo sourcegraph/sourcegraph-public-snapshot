@@ -95,7 +95,7 @@ class DefInfo extends Container {
 						meta={[
 							{name: "description", content: def.Docs[0].Data},
 						]} /> :
-					<Helmet title={title} />}
+					<Helmet title={title} />
 				}
 				{this.state.defObj &&
 					<h1>
