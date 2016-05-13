@@ -7,6 +7,7 @@
 	composes: code fw5 from typography;
 	word-wrap: break-word;
 	white-space: pre-line;
+	line-height: normal;
 }
 .title :global .name {
 	font-weight: bold;
@@ -26,6 +27,7 @@
 	composes: gray from colors;
 	composes: f4 from typography;
 	composes: pl3 from base;
+	line-height: normal;
 }
 .boxTitle:hover {
 	text-decoration: underline;
