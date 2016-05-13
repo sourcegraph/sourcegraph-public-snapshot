@@ -27,8 +27,8 @@ func init() {
 		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
 		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
 		`CREATE INDEX doc_idx ON global_defs USING gin(to_tsvector('english', doc));`,
+		`CREATE INDEX global_defs_name ON global_defs USING btree (lower(name));`,
 		`CREATE INDEX global_defs_repo ON global_defs USING btree (repo text_pattern_ops);`,
-		`CREATE INDEX global_defs_unit ON global_defs USING btree (unit text_pattern_ops);`,
 		`CREATE INDEX global_defs_updater ON global_defs USING btree (repo, unit_type, unit, path);`,
 	)
 }
