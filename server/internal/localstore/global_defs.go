@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -119,7 +120,7 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
-		return fmt.Sprintf("$%d", len(args))
+		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
 	if op.Opt == nil {
@@ -230,8 +231,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 				return err
 			}
 			commitID = string(c)
-			gstore := store.GraphFromContext(ctx)
-			defs, err = gstore.Defs(
+			defs, err = store.GraphFromContext(ctx).Defs(
 				sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: commitID}),
 				sstore.ByUnits(unit.ID2{Type: repoUnit.UnitType, Name: repoUnit.Unit}),
 			)
@@ -240,79 +240,88 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			}
 		}
 
-		if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-			for _, d := range defs {
-				// Ignore broken defs
-				if d.Path == "" {
-					continue
-				}
-				// Ignore local defs (KLUDGE)
-				if d.Local || strings.Contains(d.Path, "$") {
-					continue
-				}
-				// Ignore vendored defs
-				if strings.HasPrefix(d.File, "vendor/") || strings.HasPrefix(d.File, "Godeps/") || strings.Contains(d.File, "/vendor/") {
-					continue
-				}
+		type upsert struct {
+			query string
+			args  []interface{}
+		}
+		var upsertSQLs []upsert
+		for _, d := range defs {
+			// Ignore broken defs
+			if d.Path == "" {
+				continue
+			}
+			// Ignore local defs (KLUDGE)
+			if d.Local || strings.Contains(d.Path, "$") {
+				continue
+			}
+			// Ignore vendored defs
+			if filelang.IsVendored(d.File, false) {
+				continue
+			}
 
-				if d.Repo == "" {
-					d.Repo = repoUnit.Repo.URI
-				}
+			if d.Repo == "" {
+				d.Repo = repoUnit.Repo.URI
+			}
 
-				var docstring string
-				if len(d.Docs) == 1 {
-					docstring = d.Docs[0].Data
-				} else {
-					for _, candidate := range d.Docs {
-						if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
-							docstring = candidate.Data
-						}
+			var docstring string
+			if len(d.Docs) == 1 {
+				docstring = d.Docs[0].Data
+			} else {
+				for _, candidate := range d.Docs {
+					if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
+						docstring = candidate.Data
 					}
 				}
+			}
 
-				data, err := d.Data.Marshal()
-				if err != nil {
-					data = []byte{}
-				}
-				bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
+			data, err := d.Data.Marshal()
+			if err != nil {
+				data = []byte{}
+			}
+			bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
 
-				var args []interface{}
-				arg := func(v interface{}) string {
-					args = append(args, v)
-					return fmt.Sprintf("$%d", len(args))
-				}
+			var args []interface{}
+			arg := func(v interface{}) string {
+				args = append(args, v)
+				return gorp.PostgresDialect{}.BindVar(len(args) - 1)
+			}
 
-				upsertSQL := `
+			upsertSQL := `
 WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
-					`, kind=` + arg(d.Kind) +
-					`, file=` + arg(d.File) +
-					`, commit_id=` + arg(d.CommitID) +
-					`, updated_at=now()` +
-					`, data=` + arg(data) +
-					`, bow=` + arg(bow) +
-					`, doc=` + arg(docstring) +
-					` WHERE repo=` + arg(d.Repo) +
-					` AND unit_type=` + arg(d.UnitType) +
-					` AND unit=` + arg(d.Unit) +
-					` AND path=` + arg(d.Path) +
-					` RETURNING *
+				`, kind=` + arg(d.Kind) +
+				`, file=` + arg(d.File) +
+				`, commit_id=` + arg(d.CommitID) +
+				`, updated_at=now()` +
+				`, data=` + arg(data) +
+				`, bow=` + arg(bow) +
+				`, doc=` + arg(docstring) +
+				` WHERE repo=` + arg(d.Repo) +
+				` AND unit_type=` + arg(d.UnitType) +
+				` AND unit=` + arg(d.Unit) +
+				` AND path=` + arg(d.Path) +
+				` RETURNING *
 )
 INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
-					arg(d.Repo) + `, ` +
-					arg(d.CommitID) + `, ` +
-					arg(d.UnitType) + `, ` +
-					arg(d.Unit) + `, ` +
-					arg(d.Path) + `, ` +
-					arg(d.Name) + `, ` +
-					arg(d.Kind) + `, ` +
-					arg(d.File) + `, ` +
-					`now(), ` +
-					arg(data) + `, ` +
-					arg(bow) + `, ` +
-					arg(docstring) + `
+				arg(d.Repo) + `, ` +
+				arg(d.CommitID) + `, ` +
+				arg(d.UnitType) + `, ` +
+				arg(d.Unit) + `, ` +
+				arg(d.Path) + `, ` +
+				arg(d.Name) + `, ` +
+				arg(d.Kind) + `, ` +
+				arg(d.File) + `, ` +
+				`now(), ` +
+				arg(data) + `, ` +
+				arg(bow) + `, ` +
+				arg(docstring) + `
 WHERE NOT EXISTS (SELECT * FROM upsert);`
-				if _, err := tx.Exec(upsertSQL, args...); err != nil {
+			upsertSQLs = append(upsertSQLs, upsert{query: upsertSQL, args: args})
+		}
+
+		if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+			for _, upsertSQL := range upsertSQLs {
+				if _, err := tx.Exec(upsertSQL.query, upsertSQL.args...); err != nil {
 					return err
 				}
 			}
@@ -378,8 +387,7 @@ func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUni
 			continue
 		}
 
-		g := store.GraphFromContext(ctx)
-		units_, err := g.Units(sstore.ByRepos(repoUnit.Repo.URI))
+		units_, err := store.GraphFromContext(ctx).Units(sstore.ByRepos(repoUnit.Repo.URI))
 		if err != nil {
 			return nil, err
 		}

@@ -113,9 +113,9 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		})
 		if err != nil {
 			log15.Error("search indexing failed", "repo", repoRev.URI, "commit", repoRev.CommitID, "err", err)
-			return
+		} else {
+			log15.Info("search indexing succeeded", "repo", repoRev.URI, "commit", repoRev.CommitID)
 		}
-		log15.Info("search indexing succeeded", "repo", repoRev.URI, "commit", repoRev.CommitID)
 	}()
 
 	return nil
