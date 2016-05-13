@@ -45,9 +45,13 @@ export default class FileMargin extends React.Component {
 	}
 
 	render() {
+		let passthroughProps = {...this.props};
+		delete passthroughProps.children;
+		delete passthroughProps.lineFromByte;
+
 		let i = -1;
 		return (
-			<div className={this.props.className}>
+			<div {...passthroughProps}>
 				{React.Children.map(this.props.children, (child) => {
 					i++;
 					return (
@@ -67,5 +71,4 @@ FileMargin.propTypes = {
 	]),
 
 	lineFromByte: React.PropTypes.func,
-	className: React.PropTypes.string,
 };

@@ -28,13 +28,12 @@
 	align-items: start;
 }
 .content {
-	flex: 2 0 contentWidth;
-	width: contentWidth;
+	flex: 1.5 0 contentWidth;
 	max-width: calc(contentWidth * 1.4);
+	overflow: hidden;
 }
 .margin {
-	flex: 1 1 marginWidth;
-	width: marginWidth;
+	flex: 1 0 marginWidth;
 }
 @media (max-width: calc(contentWidth + 10px)) {
 	.content {
