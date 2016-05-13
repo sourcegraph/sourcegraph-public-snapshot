@@ -144,11 +144,14 @@ export default class RefsContainer extends Container {
 
 				if (!this.filesByName[ref.File]) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
-					if (file && !this.filesByName[ref.File]) state.forceComponentUpdate = true;
-					this.filesByName[ref.File] = file;
+					if (file) {
+						// Pass through Error to this.filesByName (i.e., proceed even if file.Error is truthy).
+						state.forceComponentUpdate = true;
+						this.filesByName[ref.File] = file;
+					}
 				}
 
-				if (this.filesByName[ref.File]) {
+				if (this.filesByName[ref.File] && !this.filesByName[ref.File].Error) {
 					this.ranges[ref.File] = this.ranges[ref.File] ? this.ranges[ref.File] : [];
 					const rangeKey = `${ref.File}${ref.Start}`;
 					if (!this.rangesMemo[rangeKey]) {
@@ -162,8 +165,11 @@ export default class RefsContainer extends Container {
 				}
 				if (!this.anns[ref.File]) {
 					let anns = BlobStore.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
-					if (anns && !this.anns[ref.File]) state.forceComponentUpdate = true;
-					this.anns[ref.File] = anns;
+					if (anns) {
+						// Pass through Error to this.anns (i.e., proceed even if anns.Error is truthy).
+						state.forceComponentUpdate = true;
+						this.anns[ref.File] = anns;
+					}
 				}
 			}
 		}
@@ -266,6 +272,9 @@ export default class RefsContainer extends Container {
 							let file = this.filesByName ? this.filesByName[loc.Path] : null;
 							if (!file) {
 								return <div key={i}>{this.renderFileHeader(entrySpec, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
+							}
+							if (file.Error) {
+								return <div key={i}>{this.renderFileHeader(entrySpec, loc.Count, i)}<p>Error loading code</p></div>;
 							}
 							let path = entrySpec.Path;
 							let repoRev = entrySpec.RepoRev;

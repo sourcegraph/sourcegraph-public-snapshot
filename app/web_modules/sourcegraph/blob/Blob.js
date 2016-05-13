@@ -355,6 +355,8 @@ class Blob extends Component {
 	}
 
 	render() {
+		if (!this.state.lines) return null;
+
 		let lastDisplayedLine = 0;
 		let lastRangeEnd = 0;
 		let lines = [];

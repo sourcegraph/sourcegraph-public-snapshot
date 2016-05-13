@@ -99,19 +99,20 @@ class DefContainer extends Container {
 	render() {
 		let def = this.state.defObj;
 		let deffile = def ? def.File : null;
-		let beginningLine = this.state.defFile ? Math.max(lineFromByte(this.state.defFile.ContentsString, this.state.defObj.DefStart), 0) : null;
+		let beginningLine = this.state.defFile && !this.state.defFile.Error ? Math.max(lineFromByte(this.state.defFile.ContentsString, this.state.defObj.DefStart), 0) : null;
 		// shows 15 lines of the def or the entire def, whichever is shorter
-		let defRange = this.state.defFile ? [[
+		let defRange = this.state.defFile && !this.state.defFile.Error ? [[
 			beginningLine,
 			Math.min(lineFromByte(this.state.defFile.ContentsString, this.state.defObj.DefEnd), beginningLine + 14),
 		]] : null;
-		let contents = this.state.defFile ? this.state.defFile.ContentsString : null;
+		let contents = this.state.defFile && !this.state.defFile.Error ? this.state.defFile.ContentsString : null;
 		return (
 			<div className={styles.container}
 				onMouseOver={() => this.setState({mouseover: true})}
 				onMouseOut={() => this.setState({mouseover: false})}>
 				{this.renderFileHeader(def, beginningLine)}
-				{this.state.showDef && this.state.defFile && <Blob
+				{this.state.showDef && this.state.defFile && this.state.defFile.Error && <p>Error loading code</p>}
+				{this.state.showDef && this.state.defFile && !this.state.defFile.Error && <Blob
 					repo={def.Repo}
 					rev={this.state.rev}
 					path={deffile}
