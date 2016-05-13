@@ -226,6 +226,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			if err != nil {
 				return err
 			}
+			// TODO(beyang): change this to ResolveRevision(repo.DefaultBranch)
 			c, err := vcsrepo.ResolveRevision("HEAD")
 			if err != nil {
 				return err
