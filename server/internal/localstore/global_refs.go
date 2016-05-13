@@ -124,13 +124,6 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		repoRefs[0], repoRefs[defRepoIdx] = repoRefs[defRepoIdx], repoRefs[0]
 	}
 
-	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
-	// of GitHub Repos.Get calls in the accesscontrol check below.
-	// TODO: remove this limit once we properly cache GitHub API responses.
-	if len(repoRefs) > 100 {
-		repoRefs = repoRefs[:100]
-	}
-
 	// Filter out repos that the user does not have access to.
 	hasAccess := make([]bool, len(repoRefs))
 	par := parallel.NewRun(30)
