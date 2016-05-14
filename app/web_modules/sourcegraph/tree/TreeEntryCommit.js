@@ -34,7 +34,7 @@ class TreeEntryCommit extends Container {
 				<div className="commit">
 					<time>{sig.Date}</time>
 					<div className="message">
-						<a href={`/${this.state.repo}/-/commits/${commit.ID}`}>{commit.Message}</a>
+						{commit.Message}
 					</div>
 				</div>
 		);

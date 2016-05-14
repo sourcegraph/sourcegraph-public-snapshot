@@ -120,9 +120,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		if i > 10 {
 			break
 		}
-		commitURL := router.Rel.URLToRepoCommit(repo.URI, string(c.ID))
-		commitMessages = append(commitMessages, fmt.Sprintf("<%s|%s>: %s",
-			conf.AppURL(ctx).ResolveReference(commitURL).String(),
+		commitMessages = append(commitMessages, fmt.Sprintf("%s: %s",
 			c.ID[:6],
 			textutil.ShortCommitMessage(80, c.Message),
 		))

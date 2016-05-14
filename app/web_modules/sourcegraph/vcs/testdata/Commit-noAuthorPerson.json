@@ -33,27 +33,16 @@
 									"styleName": "title",
 									"children": [
 										{
-											"type": "",
+											"type": "code",
+											"key": ".0",
 											"props": {
-												"to": "/sourcegraph.com/sourcegraph@abc/-/commit",
+												"styleName": "sha",
 												"children": [
-													{
-														"type": "code",
-														"key": ".0",
-														"props": {
-															"styleName": "sha",
-															"children": [
-																"abc"
-															]
-														}
-													},
-													"msg"
-												],
-												"onlyActiveOnIndex": false,
-												"className": "",
-												"style": {}
+													"abc"
+												]
 											}
-										}
+										},
+										"msg"
 									]
 								}
 							},

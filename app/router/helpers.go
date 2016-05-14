@@ -21,10 +21,6 @@ func (r *Router) URLToRepoRev(repo, rev string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s%s", repo, revStr(rev))}
 }
 
-func (r *Router) URLToRepoCommit(repo, rev string) *url.URL {
-	return &url.URL{Path: fmt.Sprintf("/%s%s/-/commit", repo, revStr(rev))}
-}
-
 func (r *Router) URLToRepoTreeEntry(repo, rev, path string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s%s/-/tree/%s", repo, revStr(rev), path)}
 }

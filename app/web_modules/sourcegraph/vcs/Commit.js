@@ -1,5 +1,4 @@
 import React from "react";
-import {Link} from "react-router";
 
 import Component from "sourcegraph/Component";
 import TimeAgo from "sourcegraph/util/TimeAgo";
@@ -27,10 +26,8 @@ class Commit extends Component {
 				</div>
 				<div styleName="body">
 					<div styleName="title">
-						<Link to={`/${this.state.repo}@${this.state.commit.ID}/-/commit`}>
-							<code styleName="sha">{this.state.commit.ID.substring(0, 6)}</code>
-							{this.state.commit.Message.slice(0, 70)}
-						</Link>
+						<code styleName="sha">{this.state.commit.ID.substring(0, 6)}</code>
+						{this.state.commit.Message.slice(0, 70)}
 					</div>
 					<div styleName="text">
 						<span>authored <TimeAgo time={this.state.commit.Author.Date} /></span>
