@@ -1,18 +1,14 @@
 # Sourcegraph: Code Intelligence for teams
 
 Sourcegraph is a **Git repository service** with Code Intelligence. You
-can [use Sourcegraph on Sourcegraph.com](https://sourcegraph.com/join) for free.
+can [use Sourcegraph on Sourcegraph.com](https://sourcegraph.com) for free.
 
 Sourcegraph gives your team the power to build better software with:
 
 * **Code Intelligence:** Understand code more quickly with language-aware jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
 * **Live usage examples:** See how any function, class, etc., is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
 * **Smart search:** Find code quickly by function name, full text, etc.
-* **Deep integrations:** Works great with GitHub, GitHub Enterprise, and more.
 * **Hackable source code:** [Sourcegraph's source code](https://sourcegraph.com/sourcegraph/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).
-
-*More info? Watch the [demo video](https://www.youtube.com/watch?v=XOdh3-QJSzs) or read the
-[announcement blog post](https://sourcegraph.com/blog/133554180524/announcing-the-sourcegraph-developer-release-an).*
 
 ## Under the hood
 
