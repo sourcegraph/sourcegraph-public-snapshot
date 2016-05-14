@@ -47,10 +47,11 @@ export class BuildsFetched {
 }
 
 export class CreateBuild {
-	constructor(repo, commitID, branch) {
+	constructor(repo, commitID, branch, tag) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.branch = branch;
+		this.tag = tag;
 	}
 }
 
