@@ -860,7 +860,12 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		return nil, err
 	}
 
-	args := []string{"ls-tree", "--full-name", string(commit)}
+	args := []string{
+		"ls-tree",
+		"--long", // show size
+		"--full-name",
+		string(commit),
+	}
 	if recurse {
 		args = append(args, "-r", "-t")
 	}
@@ -892,16 +897,26 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		if tabPos == -1 {
 			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
 		}
-		info := strings.SplitN(line[:tabPos], " ", 3)
+		info := strings.SplitN(line[:tabPos], " ", 4)
 		name := line[tabPos+1:]
 
-		if len(info) != 3 {
+		if len(info) != 4 {
 			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
 		}
 		typ := info[1]
 		oid := info[2]
 		if len(oid) != 40 {
 			return nil, fmt.Errorf("invalid `git ls-tree` oid output: %q", oid)
+		}
+
+		sizeStr := strings.TrimSpace(info[3])
+		var size int64
+		if sizeStr != "-" {
+			// Size of "-" indicates a dir or submodule.
+			size, err = strconv.ParseInt(sizeStr, 10, 64)
+			if err != nil || size < 0 {
+				return nil, fmt.Errorf("invalid `git ls-tree` size output: %q (error: %s)", sizeStr, err)
+			}
 		}
 
 		var sys interface{}
@@ -937,6 +952,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		fis[i] = &util.FileInfo{
 			Name_: name[prefixLen:],
 			Mode_: os.FileMode(mode),
+			Size_: size,
 			Sys_:  sys,
 		}
 	}

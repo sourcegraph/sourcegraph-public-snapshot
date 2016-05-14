@@ -809,6 +809,9 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		if link1Info.Name() != "link1" {
 			t.Errorf("%s: got link1 Name %q, want %q", label, link1Info.Name(), "link1")
 		}
+		if link1Info.Size() != 0 {
+			t.Errorf("%s: got link1 Size %d, want %d", label, link1Info.Size(), 0)
+		}
 	}
 }
 
@@ -866,6 +869,9 @@ func TestRepository_FileSystem(t *testing.T) {
 		if name := dir1Info.Name(); name != "dir1" {
 			t.Errorf("%s: got dir1 name %q, want 'dir1'", label, name)
 		}
+		if dir1Info.Size() != 0 {
+			t.Errorf("%s: got dir1 size %d, want 0", label, dir1Info.Size())
+		}
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := fs1.ReadDir("dir1")
@@ -877,8 +883,12 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got %d dir1 entries, want 1", label, len(dir1Entries))
 			continue
 		}
-		if file1Info := dir1Entries[0]; file1Info.Name() != "file1" {
+		file1Info := dir1Entries[0]
+		if file1Info.Name() != "file1" {
 			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		}
+		if want := int64(7); file1Info.Size() != want {
+			t.Errorf("%s: got dir1 entry size == %d, want %d", label, file1Info.Size(), want)
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
@@ -895,7 +905,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if !bytes.Equal(file1Data, []byte("infile1")) {
 			t.Errorf("%s: got file1Data == %q, want %q", label, string(file1Data), "infile1")
 		}
-		file1Info, err := fs1.Stat("dir1/file1")
+		file1Info, err = fs1.Stat("dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1/file1): %s", label, err)
 			continue
@@ -905,6 +915,9 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 		if name := file1Info.Name(); name != "file1" {
 			t.Errorf("%s: got file1 name %q, want 'file1'", label, name)
+		}
+		if want := int64(7); file1Info.Size() != want {
+			t.Errorf("%s: got file1 size == %d, want %d", label, file1Info.Size(), want)
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
