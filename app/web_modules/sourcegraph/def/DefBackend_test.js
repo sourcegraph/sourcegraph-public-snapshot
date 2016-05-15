@@ -44,16 +44,16 @@ describe("DefBackend", () => {
 
 	it("should handle WantRefLocations", () => {
 		DefBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/repos/r@v/-/def/d/-/ref-locations");
+			expect(url).to.contain("/.api/repos/r@v/-/def/d/-/ref-locations");
 			return immediateSyncPromise({status: 200, json: () => "someRefData"});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			DefBackend.__onDispatch(new DefActions.WantRefLocations({
-				repo: "r", rev: "v", def: "d", reposOnly: false, repos: [],
+				repo: "r", rev: "v", def: "d", repos: [],
 			}));
 		})).to.eql([new DefActions.RefLocationsFetched(
 			new DefActions.WantRefLocations({
-				repo: "r", rev: "v", def: "d", reposOnly: false, repos: [],
+				repo: "r", rev: "v", def: "d", repos: [],
 			}), "someRefData")]);
 	});
 

@@ -7,6 +7,8 @@ import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefContainer from "sourcegraph/def/DefContainer";
+import {RefLocsPerPage} from "sourcegraph/def";
+import {Button} from "sourcegraph/components";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
@@ -28,6 +30,10 @@ class DefInfo extends Container {
 
 	constructor(props) {
 		super(props);
+		this.state = {
+			currPage: 1,
+		};
+		this._onNextPage = this._onNextPage.bind(this);
 	}
 
 	stores() {
@@ -47,18 +53,17 @@ class DefInfo extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
-		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
-		}) : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
+
+		state.refLocations = state.def ? DefStore.getRefLocations({
+			repo: state.repo, rev: state.rev, def: state.def, repos: [],
+		}) : null;
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
+		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, rev: nextState.rev, def: nextState.def, reposOnly: false, repos: [],
-			}, {
-				perPage: 50,
+				repo: nextState.repo, rev: nextState.rev, def: nextState.def, repos: [], page: nextState.currPage,
 			}));
 		}
 
@@ -69,10 +74,17 @@ class DefInfo extends Container {
 		}
 	}
 
+	_onNextPage() {
+		let nextPage = this.state.currPage + 1;
+		this.setState({currPage: nextPage});
+	}
+
 	render() {
 		let def = this.state.defObj;
 		let refLocs = this.state.refLocations;
 		let authors = this.state.authors;
+		let fileCount = refLocs && refLocs.RepoRefs ?
+			refLocs.RepoRefs.reduce((total, refs) => total + refs.Files.length, refLocs.RepoRefs[0].Files.length) : 0;
 
 		if (refLocs && refLocs.Error) {
 			return (
@@ -107,7 +119,7 @@ class DefInfo extends Container {
 					</h1>
 				}
 				<hr/>
-				<div styleName="main">
+				<div>
 					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
 					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
 					{/* TODO DocHTML will not be set if the this def was loaded via the
@@ -121,16 +133,35 @@ class DefInfo extends Container {
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
-							<div styleName="section-label">{`Used in ${refLocs ? `${refLocs.length} repositor${refLocs.length === 1 ? "y" : "ies"}` : ""}`}</div>
 							{!refLocs && <i>Loading...</i>}
-							{refLocs && refLocs.map((refRepo, i) => <RefsContainer {...this.props} key={i}
-								refRepo={refRepo.Repo}
+							{refLocs && refLocs.TotalRepos &&
+								<div styleName="section-label">
+									Used in {refLocs.TotalRepos} repositor{refLocs.TotalRepos === 1 ? "y" : "ies"}
+								</div>
+							}
+							{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs &&
+								<div styleName="section-label">
+									Used in {refLocs.RepoRefs.length}+ repositories
+								</div>
+							}
+							{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
+								key={i}
+								repo={this.props.repo}
+								rev={this.props.rev}
+								def={this.props.def}
+								defObj={this.props.defObj}
+								repoRefs={repoRefs}
 								prefetch={i === 0}
 								initNumSnippets={i === 0 ? 1 : 0}
 								fileCollapseThreshold={5} />)}
 						</div>
 					}
 				</div>
+				{refLocs && refLocs.RepoRefs && fileCount >= RefLocsPerPage && !refLocs.StreamTerminated &&
+					<div styleName="pagination">
+						<Button color="primary" onClick={this._onNextPage}>View More</Button>
+					</div>
+				}
 			</div>
 		);
 	}

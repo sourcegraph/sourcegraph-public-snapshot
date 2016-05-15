@@ -48,6 +48,11 @@ type dbRefLocationsResult struct {
 	Count     int
 }
 
+// dbRefStatsResult holds aggregation stats for a def's global refs.
+type dbRefStatsResult struct {
+	Repos int32
+}
+
 // globalRefs is a DB-backed implementation of the GlobalRefs store.
 type globalRefs struct{}
 
@@ -55,6 +60,18 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	if op.Opt == nil {
 		op.Opt = &sourcegraph.DefListRefLocationsOptions{}
 	}
+
+	// Optimization: fetch ref stats in parallel to fetching ref locations.
+	var stats *dbRefStatsResult
+	statsDone, errc := make(chan bool), make(chan error)
+	go func() {
+		var err error
+		stats, err = getRefStats(ctx, op)
+		if err != nil {
+			errc <- err
+		}
+		statsDone <- true
+	}()
 
 	var args []interface{}
 	arg := func(a interface{}) string {
@@ -76,14 +93,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 
 	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSql + ") res"
 	orderBySql := " ORDER BY repo_count DESC, count DESC"
-	var groupBySql string
-	if op.Opt.ReposOnly {
-		sql = "SELECT repo, SUM(count) AS repo_count FROM (" + innerSelectSql + ") res"
-		groupBySql = " GROUP BY repo"
-		orderBySql = " ORDER BY repo_count DESC"
-	}
 
-	sql += groupBySql
 	sql += orderBySql
 
 	var dbRefResult []*dbRefLocationsResult
@@ -118,8 +128,8 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		}
 	}
 
-	// Place the def's own repo at the head of the slice, if it exists in the slice and is
-	// not at the head already.
+	// Place the def's own repo at the head of the slice, if it exists in the
+	// slice and is not at the head already.
 	if defRepoIdx > 0 {
 		repoRefs[0], repoRefs[defRepoIdx] = repoRefs[defRepoIdx], repoRefs[0]
 	}
@@ -158,7 +168,49 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		filteredRepoRefs = append(filteredRepoRefs, r)
 	}
 
-	return &sourcegraph.RefLocationsList{RepoRefs: filteredRepoRefs}, nil
+	// Wait for the stats query we kicked off above to finish.
+	//
+	// TODO(perf): The query in getRefStats above can potentially be slow when
+	// the amount of repos referencing the given def is large. To prevent
+	// stalling, timeout if the query takes too long and return a default
+	// value. The performance of the query above improves after being cached,
+	// so it is possible on subsequent runs the timeout won't be triggered.
+	timeout := time.After(200 * time.Millisecond)
+	select {
+	case <-statsDone:
+	case <-timeout:
+		stats = &dbRefStatsResult{Repos: 0}
+	case err := <-errc:
+		return nil, err
+	}
+
+	return &sourcegraph.RefLocationsList{
+		RepoRefs:   filteredRepoRefs,
+		TotalRepos: stats.Repos,
+	}, nil
+}
+
+// getRefStats fetches global ref aggregation stats pagination and display
+// purposes.
+func getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*dbRefStatsResult, error) {
+	var stats *dbRefStatsResult
+	var countArgs []interface{}
+	countArg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(countArgs))
+		countArgs = append(countArgs, a)
+		return v
+	}
+
+	q := "SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs WHERE"
+	q += " def_repo=" + countArg(op.Def.Repo) + " AND def_unit_type=" + countArg(op.Def.UnitType) + " AND def_unit=" + countArg(op.Def.Unit) + " AND def_path=" + countArg(op.Def.Path)
+
+	rows, err := graphDBH(ctx).Select(dbRefStatsResult{}, q, countArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	stats = rows[0].(*dbRefStatsResult)
+	return stats, nil
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {

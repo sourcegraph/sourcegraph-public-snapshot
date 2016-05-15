@@ -14,6 +14,10 @@ export type DefKey = {
 
 export type Ref = Object;
 
+// Refs streaming pagnination assumes that the per page amount will be
+// consistent for each fetch.
+export const RefLocsPerPage = 30;
+
 export function routeParams(url: string): {repo: string, rev: ?string, def: string, err: ?string} {
 	let v = getRouteParams(abs.def, url);
 	if (!v) {
@@ -68,6 +72,7 @@ export type RefLocationsKey = {
 	repo: string;
 	rev: ?string;
 	def: string;
-	reposOnly: bool;
+	page?: number;
+	perPage?: number;
 	repos: Array<string>;
 }

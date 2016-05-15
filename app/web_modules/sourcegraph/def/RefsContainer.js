@@ -29,11 +29,19 @@ const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above
 
 export default class RefsContainer extends Container {
 	static propTypes = {
-		refRepo: React.PropTypes.string.isRequired,
-		prefetch: React.PropTypes.bool,
+		repo: React.PropTypes.string,
+		rev: React.PropTypes.string,
+		def: React.PropTypes.string,
+		defObj: React.PropTypes.object,
+		repoRefs: React.PropTypes.shape({
+			Repo: React.PropTypes.string,
+			Files: React.PropTypes.array,
+		}),
+		refetch: React.PropTypes.bool,
 		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
 		fileCollapseThreshold: React.PropTypes.number, // number of files to show before "and X more..."-style paginator
 	};
+
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -77,21 +85,14 @@ export default class RefsContainer extends Container {
 		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
-		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, reposOnly: false, repos: [],
-		}) : null;
-
-		state.refRepo = props.refRepo;
-		if (state.refLocations && !state.fileLocations) {
-			state.fileLocations = state.refLocations
-				.filter((loc) => loc.Repo === state.refRepo)
-				.map((loc) => {
-					// optimization: initialize entrySpecs to show file links before refs are resolved
-					// hardcode "master" revision until refs are fetched
-					loc.Files.forEach((file) => this.entrySpecsByName[file.Path] = {RepoRev: {URI: loc.Repo, Rev: "master"}, Path: file.Path});
-					return loc.Files;
-				});
-			state.fileLocations = [].concat.apply([], state.fileLocations).sort((a, b) => b.Count - a.Count); // flatten
+		state.refRepo = props.repoRefs.Repo || null;
+		state.repoRefLocations = props.repoRefs || null;
+		if (state.repoRefLocations) {
+			state.fileLocations = state.repoRefLocations.Files;
+			// optimization: initialize entrySpecs to show file links before refs are resolved
+			// hardcode "master" revision until refs are fetched
+			state.fileLocations.forEach((file) => this.entrySpecsByName[file.Path] = {RepoRev: {URI: state.refRepo, Rev: "master"}, Path: file.Path});
+			// TODO state.fileLocations = state.fileLocations.sort((a, b) => b.Count - a.Count); // flatten
 		}
 		if (state.fileLocations && !state.shownFiles) {
 			// Initially show the first three files only
@@ -101,7 +102,7 @@ export default class RefsContainer extends Container {
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		if (state.refs && state.fileLocations && !state.prunedFileLocations) {
+		if (state.refs && !state.refs.Error && state.fileLocations && !state.prunedFileLocations) {
 			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
 			// state.refs does *not* include the def itself, and this component fetches blobs based on
 			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
@@ -176,18 +177,6 @@ export default class RefsContainer extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo,
-				rev: nextState.rev,
-				def: nextState.def,
-				reposOnly: nextState.reposOnly,
-				repos: nextState.repos,
-			}, {
-				perPage: 50,
-			}));
-		}
-
 		// optimization: since multiple RefContainers may be shown on a page, fetching refs for every container
 		// when the component is mounted will cause unnecessary re-render cycles across components.
 		// Instead, lazily fetch ref data on mouseover.

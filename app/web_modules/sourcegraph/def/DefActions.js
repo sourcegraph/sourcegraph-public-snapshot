@@ -1,6 +1,7 @@
 // @flow
 
 import type {Def, Ref, RefLocationsKey} from "sourcegraph/def";
+import {RefLocsPerPage} from "sourcegraph/def";
 import toQuery from "sourcegraph/util/toQuery";
 
 export class WantDef {
@@ -115,23 +116,16 @@ export class HighlightDef {
 
 export class WantRefLocations {
 	resource: RefLocationsKey;
-	perPage: ?number;
-	page: ?number;
 
-	constructor(r: RefLocationsKey, p?: {perPage?: number, page?: number}) {
+	constructor(r: RefLocationsKey) {
 		this.resource = r;
-		if (p) {
-			this.perPage = p.perPage;
-			this.page = p.page;
-		}
 	}
 
 	url(): string {
 		let q = toQuery({
-			ReposOnly: this.resource.reposOnly,
 			Query: this.resource.repos,
-			Page: this.page,
-			PerPage: this.perPage,
+			Page: this.resource.page,
+			PerPage: RefLocsPerPage,
 		});
 		if (q) {
 			q = `?${q}`;
@@ -142,9 +136,9 @@ export class WantRefLocations {
 
 export class RefLocationsFetched {
 	request: WantRefLocations;
-	locations: Array<Object>;
+	locations: Object;
 
-	constructor(request: WantRefLocations, locations: Array<Object>) {
+	constructor(request: WantRefLocations, locations: Object) {
 		this.request = request;
 		this.locations = locations;
 	}

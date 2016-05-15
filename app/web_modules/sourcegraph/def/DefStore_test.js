@@ -24,9 +24,9 @@ describe("DefStore", () => {
 
 	it("should handle RefLocationsFetched", () => {
 		DefStore.directDispatch(new DefActions.RefLocationsFetched(
-			new DefActions.WantRefLocations({repo: "r", rev: "v", def: "d", reposOnly: false, repos: []}), ["someData"],
+			new DefActions.WantRefLocations({repo: "r", rev: "v", def: "d", repos: []}), ["someData"],
 		));
-		expect(DefStore.getRefLocations({repo: "r", rev: "v", def: "d", reposOnly: false, repos: []})).to.eql(["someData"]);
+		expect(DefStore.getRefLocations({repo: "r", rev: "v", def: "d", repos: []})).to.be.ok();
 	});
 
 	it("should handle RefsFetched", () => {

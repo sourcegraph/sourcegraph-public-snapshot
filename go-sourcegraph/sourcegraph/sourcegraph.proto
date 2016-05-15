@@ -1442,10 +1442,6 @@ message DefListRefLocationsOptions {
 	// If empty, all repos are searched for references.
 	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
-	// ReposOnly restricts the result to repo level counts;
-	// file names are not returned.
-	bool ReposOnly = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
-
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -1468,6 +1464,9 @@ message RefLocationsList {
 
 	// StreamResponse specifies if more results are available.
 	StreamResponse StreamResponse = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	// TotalRepos is the total number of repos which reference the def.
+	int32 TotalRepos = 3;
 }
 
 // DefRepoRef identifies a repo and its files that reference a def.

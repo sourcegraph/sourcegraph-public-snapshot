@@ -1,7 +1,6 @@
 // @flow weak
 
 import Store from "sourcegraph/Store";
-import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import Dispatcher from "sourcegraph/Dispatcher";
 import deepFreeze from "sourcegraph/util/deepFreeze";
 import * as DefActions from "sourcegraph/def/DefActions";
@@ -11,6 +10,7 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import "sourcegraph/def/DefBackend";
 import {fastParseDefPath} from "sourcegraph/def";
 import toQuery from "sourcegraph/util/toQuery";
+import update from "react/lib/update";
 
 function defKey(repo: string, rev: ?string, def: string): string {
 	return `${repo}#${rev || ""}#${def}`;
@@ -25,7 +25,11 @@ function refsKeyFor(repo: string, rev: ?string, def: string, refRepo: string, re
 }
 
 function refLocationsKeyFor(r: RefLocationsKey): string {
-	let q = toQuery({ReposOnly: r.reposOnly, Query: r.repos});
+	let opts: {Query?: Array<string>, Page?: number, PerPage?: number} = {Query: r.repos};
+	if (r.page) {
+		opts.Page = r.page;
+	}
+	let q = toQuery(opts);
 	return `/.api/repos/${r.repo}${r.rev ? `@${r.rev}` : ""}/-/def/${r.def}/-/ref-locations?${q}`;
 }
 
@@ -173,14 +177,55 @@ export class DefStore extends Store {
 		case DefActions.RefLocationsFetched:
 			{
 				let a = (action: DefActions.RefLocationsFetched);
-				const rankedLocations = a.locations.Error ? a.locations : getRankedRefLocations(a.locations);
+				let r = a.request.resource;
 				let updatedContent = {};
-				updatedContent[refLocationsKeyFor(a.request.resource)] = rankedLocations;
-				if (!a.request.resource.reposOnly) {
-					// optimization; if full ref locations fetched this data can satisfy reposOnly queries
-					let r2 = Object.assign({}, a.request.resource);
-					r2.reposOnly = true;
-					updatedContent[refLocationsKeyFor(r2)] = rankedLocations;
+				updatedContent[refLocationsKeyFor(r)] = a.locations;
+
+				// We need to support querying for refs without pagination options.
+				// Below we merge contents from any previous fetches with the latest
+				// fetch and store that as a new entry omitting pagination options.
+				//
+				// TODO this is a hack to support streaming pagination for performance
+				// reasons. This should be temporary, or we need to implement a
+				// properly formatted endpoint for this instead.
+				let r2 = Object.assign({}, r);
+				delete r2.page;
+				// Keep track of the position of the pages we've loaded to prevent
+				// saving the same set of refs twice.
+				let page = r.page || 0;
+				let refsForPage = this.getRefLocations(r);
+				let currentRefs = this.getRefLocations(r2);
+				let newRepoRefs = a.locations.RepoRefs;
+				if (!refsForPage && currentRefs && currentRefs.PagesFetched < page) {
+					currentRefs = update(currentRefs, {PagesFetched: {$set: page}});
+					if (currentRefs.RepoRefs && newRepoRefs) {
+						// If any of our new refs come from the same repo as the last ref
+						// in our current list, append those refs to the end of the list.
+						let lastRefIdx = currentRefs.RepoRefs.length - 1;
+						let lastRef = currentRefs.RepoRefs[lastRefIdx];
+						for (let ref of newRepoRefs) {
+							if (ref.Repo === lastRef.Repo) {
+								let mergedRefs = update(lastRef, {
+									Count: {$set: lastRef.Count + ref.Count},
+									Files: {$set: lastRef.Files.concat(ref.Files)},
+								});
+								currentRefs = update(currentRefs, {
+									RepoRefs: {[lastRefIdx]: {$set: mergedRefs}},
+								});
+							} else {
+								currentRefs = update(currentRefs, {
+									RepoRefs: {$push: [ref]},
+								});
+							}
+						}
+					}
+					// If no additional refs were fetched, communicate that the last page has been reached.
+					if (!a.locations.RepoRefs) {
+						currentRefs = update(currentRefs, {StreamTerminated: {$set: true}});
+					}
+					updatedContent[refLocationsKeyFor(r2)] = currentRefs;
+				} else {
+					updatedContent[refLocationsKeyFor(r2)] = Object.assign({}, a.locations, {PagesFetched: page});
 				}
 
 				this.refLocations_ = deepFreeze(Object.assign({}, this.refLocations_, updatedContent));
@@ -201,29 +246,6 @@ export class DefStore extends Store {
 
 		this.__emitChange();
 	}
-}
-
-function getRankedRefLocations(locations) {
-	if (locations.length <= 2) {
-		return locations;
-	}
-	let dashboardRepos = DashboardStore.repos;
-	let repos = [];
-
-	// The first repo of locations is the current repo.
-	repos.push(locations[0]);
-
-	let otherRepos = [];
-	let i = 1;
-	for (; i < locations.length; i++) {
-		if (dashboardRepos && locations[i].Repo in dashboardRepos) {
-			repos.push(locations[i]);
-		} else {
-			otherRepos.push(locations[i]);
-		}
-	}
-	Array.prototype.push.apply(repos, otherRepos);
-	return repos;
 }
 
 export default (new DefStore(Dispatcher.Stores): DefStore);

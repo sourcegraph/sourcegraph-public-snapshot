@@ -43,7 +43,11 @@
 	composes: normal-text from typography;
 }
 
-.main {}
+.pagination {
+	composes: pb5 from base;
+	display: flex;
+	justify-content: center;
+}
 
 @media screen and (max-width: 48em) {
 	.def-header, .description, .section-label {
