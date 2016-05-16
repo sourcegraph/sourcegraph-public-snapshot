@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -12,6 +13,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/experiment"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -57,6 +59,16 @@ type dbRefStatsResult struct {
 type globalRefs struct{}
 
 func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	e := experiment.Perf{
+		Name: "globalRefs.Get",
+		B:    func() { g.getNew(ctx, op) },
+	}
+	done := e.StartA()
+	defer done()
+	return g.get(ctx, op)
+}
+
+func (g *globalRefs) get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	if op.Opt == nil {
 		op.Opt = &sourcegraph.DefListRefLocationsOptions{}
 	}
@@ -213,7 +225,21 @@ func getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*
 	return stats, nil
 }
 
+func (g *globalRefs) getNew(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	return nil, errors.New("globalRefs.getNew is not yet implemented")
+}
+
 func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
+	e := experiment.Perf{
+		Name: "globalRefs.Update",
+		B:    func() { g.updateNew(ctx, op) },
+	}
+	done := e.StartA()
+	defer done()
+	return g.update(ctx, op)
+}
+
+func (g *globalRefs) update(ctx context.Context, op *pb.ImportOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
 		return err
 	}
@@ -288,4 +314,8 @@ ON COMMIT DROP;`
 
 		return nil
 	})
+}
+
+func (g *globalRefs) updateNew(ctx context.Context, op *pb.ImportOp) error {
+	return errors.New("globalRefs.updateNew is not yet implemented")
 }
