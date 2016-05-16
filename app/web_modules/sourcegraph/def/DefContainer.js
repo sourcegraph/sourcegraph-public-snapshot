@@ -7,6 +7,7 @@ import Blob from "sourcegraph/blob/Blob";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
+import DefTooltip from "sourcegraph/def/DefTooltip";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import {routeParams as defRouteParams} from "sourcegraph/def";
@@ -33,15 +34,17 @@ class DefContainer extends Container {
 	}
 
 	state: {
+		repo: string;
 		showDef: boolean;
 		mouseover: boolean;
 		rev: string;
 		defObj: Def;
 		activeDef: ?Object;
 	} = {
+		repo: "",
+		rev: "",
 		showDef: false,
 		mouseover: false,
-		rev: "",
 		defObj: {DefStart: null, DefEnd: null},
 		activeDef: null,
 	};
@@ -72,6 +75,7 @@ class DefContainer extends Container {
 		const initialLoad = !prevState.repo && !prevState.rev && !prevState.def && !prevState.defObj;
 		if ((defPropsUpdated && !initialLoad) || (nextState.mouseover && !prevState.mouseover && defPropsUpdated)) {
 			Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.defObj.Repo, nextState.rev, nextState.defObj.File));
+			Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.defObj.Repo, nextState.rev, nextState.defObj.CommitID, nextState.defObj.File));
 		}
 	}
 
@@ -124,6 +128,7 @@ class DefContainer extends Container {
 					displayRanges={defRange || null}
 					highlightedDef={this.state.highlightedDef || null}
 					highlightedDefObj={this.state.highlightedDefObj || null} />}
+				{this.state.highlightedDefObj && !this.state.highlightedDefObj.Error && <DefTooltip currentRepo={this.state.repo} def={this.state.highlightedDefObj} />}
 			</div>
 		);
 	}
