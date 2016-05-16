@@ -1,7 +1,6 @@
 // @flow weak
 
 import React from "react";
-import update from "react/lib/update";
 
 import Blob from "sourcegraph/blob/Blob";
 import BlobStore from "sourcegraph/blob/BlobStore";
@@ -48,6 +47,9 @@ export default class RefsContainer extends Container {
 
 	constructor(props) {
 		super(props);
+		this.state = {
+			shownFiles: new Set(),
+		};
 		this.rangesMemo = {}; // optimization: cache the line range that should be displayed for each ref
 
 		// optimization: these memos reduce the amount of component state which must be copied in reconcileState
@@ -55,6 +57,7 @@ export default class RefsContainer extends Container {
 		this.entrySpecsByName = {};
 		this.ranges = {};
 		this.anns = {};
+		this._toggleFile = this._toggleFile.bind(this);
 	}
 
 	shouldComponentUpdate(nextProps, nextState, nextContext) {
@@ -94,15 +97,9 @@ export default class RefsContainer extends Container {
 			state.fileLocations.forEach((file) => this.entrySpecsByName[file.Path] = {RepoRev: {URI: state.refRepo, Rev: "master"}, Path: file.Path});
 			// TODO state.fileLocations = state.fileLocations.sort((a, b) => b.Count - a.Count); // flatten
 		}
-		if (state.fileLocations && !state.shownFiles) {
-			// Initially show the first three files only
-			state.shownFiles = state.fileLocations.map((file, i) => i < (props.initNumSnippets || 0));
-			state.shownFileIndex = {}; // keep an index, for lookup by name
-			state.fileLocations.forEach((file, i) => state.shownFileIndex[file.Path] = i);
-		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		if (state.refs && !state.refs.Error && state.fileLocations && !state.prunedFileLocations) {
+		if (state.refs && !state.refs.Error && state.fileLocations) {
 			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
 			// state.refs does *not* include the def itself, and this component fetches blobs based on
 			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
@@ -119,11 +116,6 @@ export default class RefsContainer extends Container {
 				fileIndexExclusions[i] = true;
 				return false;
 			});
-			state.shownFiles = state.shownFiles.filter((val, i) => !fileIndexExclusions[i]);
-
-			state.shownFileIndex = {}; // update index, since some file may have been excluded
-			state.fileLocations.forEach((file, i) => state.shownFileIndex[file.Path] = i);
-			state.prunedFileLocations = true; // optimization: only run this loop once
 		}
 
 		if (state.mouseover) {
@@ -194,7 +186,7 @@ export default class RefsContainer extends Container {
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
 			for (let ref of nextState.refs) {
 				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
-				if (nextState.shownFiles && nextState.shownFiles[nextState.shownFileIndex[ref.File]]) {
+				if (nextState.shownFiles.has(ref.File)) {
 					Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
 					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
 				}
@@ -211,9 +203,9 @@ export default class RefsContainer extends Container {
 		return (
 			<div key={entrySpec.Path} className={styles.filename} onClick={(e) => {
 				if (e.button !== 0) return; // only expand on main button click
-				this.setState(update(this.state, {shownFiles: {$splice: [[i, 1, !this.state.shownFiles[i]]]}}));
+				this._toggleFile(entrySpec.Path);
 			}}>
-				{this.state.shownFiles[i] ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
+				{this.state.shownFiles.has(entrySpec.Path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
 				{pathBreadcrumb}
 				<div className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</div>
 				<Link className={styles.viewFile}
@@ -228,6 +220,17 @@ export default class RefsContainer extends Container {
 		const remainder = this.state.fileLocations.slice(this.state.fileCollapseThreshold);
 		const count = remainder.reduce((memo, file) => memo + file.Count, 0);
 		return `Used ${count} more time${count > 1 ? "s" : ""} in ${remainder.length} other file${remainder.length > 1 ? "s" : ""} ...`;
+	}
+
+	_toggleFile(path) {
+		let newOpenFiles = new Set();
+		this.state.shownFiles.forEach((f) => newOpenFiles.add(f));
+		if (this.state.shownFiles.has(path)) {
+			newOpenFiles.delete(path);
+		} else {
+			newOpenFiles.add(path);
+		}
+		this.setState({shownFiles: newOpenFiles});
 	}
 
 	render() {
@@ -253,10 +256,8 @@ export default class RefsContainer extends Container {
 					</h2>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
-							if (!this.entrySpecsByName[loc.Path] || (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold)) return null;
-
 							let entrySpec = this.entrySpecsByName[loc.Path];
-							if (!this.state.shownFiles[i]) return this.renderFileHeader(entrySpec, loc.Count, i);
+							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(entrySpec, loc.Count, i);
 
 							let file = this.filesByName ? this.filesByName[loc.Path] : null;
 							if (!file) {
