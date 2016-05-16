@@ -15,6 +15,7 @@ class RefLocationsList extends React.Component {
 	static propTypes = {
 		def: React.PropTypes.object.isRequired,
 		refLocations: React.PropTypes.object,
+		showMax: React.PropTypes.number,
 
 		// Current repo and path info, so that they can be highlighted.
 		repo: React.PropTypes.string.isRequired,
@@ -42,12 +43,13 @@ class RefLocationsList extends React.Component {
 			<div>
 				{defTitleOK(def) && <Helmet title={`${defTitle(def)} · ${trimRepo(this.props.repo)}`} />}
 				{refLocs.RepoRefs && refLocs.RepoRefs.map((repoRef, i) => (
-					<div key={i} styleName="all-refs">
+					this.props.showMax && i >= this.props.showMax ? null : <div key={i} styleName="all-refs">
 						<header styleName={this.props.repo === repoRef.Repo ? "active-group-header" : ""}>
-							<span styleName="refs-count">{repoRef.Count}</span> <Link to={urlToDefInfo(def, this.props.rev)}>{repoRef.Repo}</Link>
+							<span styleName="refs-count">{repoRef.Count}</span> <span>{repoRef.Repo}</span>
 						</header>
 					</div>
 				))}
+				{refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && refLocs && refLocs.TotalRepos && refLocs.TotalRepos > this.props.showMax && <span styleName="sectionTitle"><Link to={urlToDefInfo(def, this.props.rev)}>See more usages...</Link></span>}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't
 					annoyingly show it for every single internal ref. */}
 				{(refLocs.RepoRefs && refLocs.RepoRefs.length > 1 && (!this.context.signedIn || noGitHubPrivateReposScope)) &&

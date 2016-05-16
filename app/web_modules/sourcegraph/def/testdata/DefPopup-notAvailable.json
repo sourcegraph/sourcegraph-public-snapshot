@@ -63,7 +63,12 @@
 					"key": ".1",
 					"props": {
 						"children": [
-							"Used in"
+							"Used in",
+							{
+								"type": "span",
+								"key": ".1",
+								"props": {}
+							}
 						]
 					}
 				},
@@ -95,6 +100,7 @@
 								}
 							}
 						},
+						"showMax": 3,
 						"repo": "r",
 						"rev": "c"
 					}

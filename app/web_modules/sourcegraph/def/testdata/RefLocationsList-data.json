@@ -23,16 +23,12 @@
 										},
 										" ",
 										{
-											"type": "",
+											"type": "span",
 											"key": ".2",
 											"props": {
-												"to": "/r@v/-/def/undefined/undefined/-/undefined/-/info",
 												"children": [
 													"r"
-												],
-												"onlyActiveOnIndex": false,
-												"className": "",
-												"style": {}
+												]
 											}
 										}
 									]

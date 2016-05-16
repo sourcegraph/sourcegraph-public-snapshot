@@ -56,11 +56,16 @@ class DefPopup extends Container {
 					<Link className={s.boxTitle} to={`${urlToDef(this.state.defObj, this.state.rev)}/-/info`}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 					<Link className={s.boxIcon} to={`${urlToDef(this.state.defObj, this.state.rev)}/-/info`}>&raquo;</Link>
 				</header>
-				<header className={s.sectionTitle}>Used in</header>
+				<header className={s.sectionTitle}>Used in
+					<span>
+					{refLocs && refLocs.TotalRepos && ` ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
+					{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs && ` ${refLocs.RepoRefs.length}+ repositories`}
+					</span>
+				</header>
 
 				{!refLocs && <span styleName="loading">Loading...</span>}
 				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
-				{<RefLocationsList def={def} refLocations={refLocs} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
+				{<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
 
 				{<header className={s.sectionTitle}>Authors</header>}
 				{!this.state.authors && <span styleName="loading">Loading...</span>}
