@@ -5,6 +5,7 @@
 package srclib_support
 
 import (
+	_ "github.com/sourcegraph/srclib-css/css_def"
 	_ "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef"
 	_ "sourcegraph.com/sourcegraph/srclib-go/golang_def"
 	_ "sourcegraph.com/sourcegraph/srclib-haskell/haskell"
