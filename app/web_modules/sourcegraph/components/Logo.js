@@ -1,6 +1,6 @@
 import React from "react";
 
-// This componet renders the Sourcegraph logo, logomark, or logomark with tagline at custom sizes.
+// This component renders the Sourcegraph logo, logomark, or logomark with tagline at custom sizes.
 
 class Logo extends React.Component {
 
@@ -21,7 +21,7 @@ class Logo extends React.Component {
 		if (type === "logotype") logoImg = "sourcegraph-logo.svg";
 		if (type === "logotype-with-tag") logoImg = "sourcegraph-logo-tagline.svg";
 
-		return <img src={`${this.context.siteConfig.assetsRoot}/img/${logoImg}`} width={width} className={className} />;
+		return <img src={`${this.context.siteConfig.assetsRoot}/img/${logoImg}`} width={width} className={className} title="Sourcegraph" alt="Sourcegraph Logo" />;
 	}
 }
 

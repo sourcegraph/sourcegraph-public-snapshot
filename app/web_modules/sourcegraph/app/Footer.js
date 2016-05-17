@@ -1,6 +1,7 @@
 import React from "react";
 
 import {Link} from "react-router";
+import Logo from "sourcegraph/components/Logo";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Footer.css";
 
@@ -15,7 +16,7 @@ class Footer extends React.Component {
 				<ul styleName="left-box">
 					<li styleName="item">
 						<Link to="/" styleName="link">
-							<img styleName="logo-mark" title="Sourcegraph" alt="Sourcegraph logo" src={`${this.context.siteConfig.assetsRoot}/img/sourcegraph-mark.svg`} />
+							<Logo width="16px" styleName="logo-mark" />
 						</Link>
 					</li>
 					<li styleName="item"><a styleName="link" href="/blog/">Blog</a></li>

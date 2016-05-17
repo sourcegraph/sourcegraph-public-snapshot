@@ -41,7 +41,7 @@
 
 .refsLabel {
 	composes: pl2 from base;
-	composes: small-text from typography;
+	composes: silver from colors;
 	user-select: none;
 }
 

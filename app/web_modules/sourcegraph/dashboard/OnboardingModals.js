@@ -175,7 +175,7 @@ class OnboardingModals extends Component {
 	_bigCTA(copy, actionName, nextPath) {
 		return (
 			<div styleName="cta">
-				<Button onClick={this.clickHandler.bind(this, nextPath, actionName)} color="primary" size="large" unspaced={true} lowercase={true}>{copy}</Button>
+				<Button onClick={this.clickHandler.bind(this, nextPath, actionName)} color="blue" size="large" unspaced={true} lowercase={true}>{copy}</Button>
 			</div>
 		);
 	}
@@ -187,7 +187,7 @@ class OnboardingModals extends Component {
 					EventLogger.logEvent("OnboardingSequenceCompleted", {CurrentModal: this.state.onboardingFlowState, CTA: "Dismiss", GitHubAuthed: this.state.gitHubAuthed});
 					EventLogger.logEvent("GoHTTPDefRefsCTAClicked");
 				}}>
-				<Button color="primary" size="large" unspaced={true} lowercase={true}>See usage examples for http.NewRequest &raquo;</Button>
+				<Button color="blue" size="large" unspaced={true} lowercase={true}>See usage examples for http.NewRequest &raquo;</Button>
 				</Link>
 			</div>
 		);

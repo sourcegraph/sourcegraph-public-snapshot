@@ -35,7 +35,7 @@
 }
 
 .logo-mark {
-	width: 2.2rem;
+	composes: mt2 from base;
 }
 
 .item {

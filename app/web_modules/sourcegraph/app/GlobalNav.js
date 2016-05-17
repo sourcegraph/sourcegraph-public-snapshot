@@ -9,6 +9,7 @@ import {Avatar, Popover, Menu, Button} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
+import base from "sourcegraph/components/styles/base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
 
@@ -48,13 +49,14 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 						<LocationStateToggleLink href="/login"
 							modalName="login"
 							location={location}
-							onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")} styleName="btn-login">Log in
+							onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}
+							className={base.mh3}>
+							<Button color="blue" outline={true}>Log in</Button>
 						</LocationStateToggleLink>
 						<LocationStateToggleLink href="/join"
 							modalName="signup" location={location}
-							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}
-							styleName="btn-signup">
-							Sign up
+							onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
+							<Button color="blue">Sign up</Button>
 						</LocationStateToggleLink>
 					</nav>
 				</div>
@@ -62,7 +64,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 			{(signedIn || location.pathname !== "/") &&
 				<Link to="/">
-					<img styleName="logo" src={`${siteConfig.assetsRoot}/img/sourcegraph-mark.svg`}></img>
+					<Logo styleName="logo" width="24px" />
 				</Link>
 			}
 
@@ -88,13 +90,13 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 							<div styleName="action">
 								<LocationStateToggleLink href="/login" modalName="login" location={location}
 									onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
-									<Button color="primary" size="tiny" outline={true}>Sign in</Button>
+									<Button color="blue" outline={true}>Sign in</Button>
 								</LocationStateToggleLink>
 							</div>
 							<div styleName="action">
 								<LocationStateToggleLink href="/join" modalName="signup" location={location}
 									onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
-									<Button color="primary" size="tiny">Sign up</Button>
+									<Button color="blue">Sign up</Button>
 								</LocationStateToggleLink>
 							</div>
 						</div>

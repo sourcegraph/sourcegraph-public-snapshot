@@ -107,17 +107,6 @@
 	max-width: 420px;
 }
 
-.btn-main {
-	composes: btn normal solid-primary from button;
-	composes: mr4 from base;
-}
-
-.btn-white {
-	composes: solid normal from button;
-	composes: fw6 from typography;
-	composes: purple bg-white b--white from colors;
-}
-
 .box-white {
 	composes: ba bw1 br2 center cf from base;
 	composes: bg-white b--black-05 from colors;
@@ -165,9 +154,9 @@
 }
 
 .project-desc {
-	composes: mt0 from base;
+	composes: mt2 from base;
 	composes: f5 from typography;
-	composes: cool-gray-5 from colors;
+	composes: cool-gray from colors;
 	line-height: 1.6;
 }
 
@@ -178,7 +167,7 @@
 
 .label-blue {
 	composes: bg-blue white from colors;
-	composes: br4 ph3 pv1 ml2 from base;
+	composes: br10 ph3 pv1 ml2 from base;
 	composes: f5 v-mid from typography;
 	display: inline-block;
 }

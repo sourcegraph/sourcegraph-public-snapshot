@@ -49,7 +49,7 @@ class ForgotPassword extends Container {
 						block={true}
 						required={true} />
 				</label>
-				<Button color="primary"
+				<Button color="blue"
 					block={true}
 					loading={this.state.pendingAuthAction}>Reset Password</Button>
 				{!this.state.pendingAuthAction && this.state.authResponse && this.state.authResponse.Error &&

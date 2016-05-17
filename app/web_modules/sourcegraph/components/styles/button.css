@@ -4,18 +4,32 @@
 
 @value btn-transition: all 0.4s;
 
-@value c_blue, c_blue-text, c_green, c_orange, c_dark-gray, c_black-50, c_purple, c_light-gray, c_red, c_blue, c_dark-blue-2 from colors;
+@value c_blue, c_blue-text, c_dark-blue, c_dark-blue-2 from colors;
+@value c_cool-gray, c_cool-gray-5, c_cool-mid-gray, c_cool-dark-gray from colors;
+@value c_green, c_dark-green, c_green-text from colors;
+@value c_orange, c_dark-orange from colors;
+@value c_purple, c_dark-purple from colors;
+@value c_red, c_red-text from colors;
+
+/*
+    Base
+*/
 
 .btn {
     composes: tc fw5 from typography;
-    display: inline-block;
-    cursor: pointer;
-    user-select: none;
+    composes: ph3 pv2 br4 from base;
     box-sizing: border-box;
+    cursor: pointer;
+    display: inline-block;
     transition: btn-transition;
+    user-select: none;
 }
-.btn:focus {
-    outline: 0;
+
+/* Get rid of the inner focus border. */
+.btn:focus { outline: 0; }
+.btn::-moz-focus-inner{
+    padding: 0;
+    border: 0;
 }
 
 .btn[disabled],
@@ -23,110 +37,108 @@
 .disabled:hover,
 .disabled:focus,
 .disabled:active {
-    border: none;
+    background: c_cool-gray-5;
     background-image: none;
+    border: none;
+    box-shadow: none;
+    color: c_cool-gray;
+    cursor: not-allowed;
     filter: alpha(opacity=70);
     opacity: 0.70;
-    cursor: not-allowed;
-    box-shadow: none;
 }
 
-/* Get rid of the inner focus border. */
-.btn::-moz-focus-inner{
-    padding: 0;
-    border: 0;
-}
+/* Button – Size modifiers */
 
 .large {
-    composes: pa4 br2 from base;
-    font-size: 1.25rem !important;
-}
-.normal {
-    composes: ph3 br2 from base;
-    padding-top: 9px;
-    padding-bottom: 9px;
-}
-.small {
-    composes: pa2 br2 from base;
-}
-.tiny {
-    composes: fa6 from typography;
-    composes: br2 ph3 pv1 from base;
+    composes: f3 from typography;
+    composes: ph4 pv2 from base;
 }
 
-/* block button fits to width of container */
+.small {
+    composes: f6 from typography;
+    composes: ph1 from base;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* Button – Block modifier */
+
 .block {
     composes: btn;
     display: block;
     width: 100%;
 }
 
-/* outline buttons */
+/*
+    Style and color modifiers
+*/
+
+/* Outline */
+
 .outline {
     composes: btn;
     composes: ba bw2 from base;
     composes: bg-white from colors;
     background-image: none;
 }
-.outline-primary {
+
+.outline-blue {
     composes: outline;
-    composes: b--blue-5 blue from colors;
+    composes: b--blue blue from colors;
+}
+.outline-blue:hover,
+.outline-blue:focus {
+    color: c_dark-blue;
+    border-color: c_dark-blue-2;
 }
 
-.outline-primary:hover,
-.outline-primary:focus {
-    border-color: c_blue;
-    color: c_blue-text;
+.outline-purple {
+    composes: outline;
+    composes: b--purple purple from colors;
+}
+.outline-purple:hover,
+.outline-purple:focus {
+    color: c_dark-purple;
+    border-color: c_dark-purple;
 }
 
-.outline-success {
+.outline-green {
     composes: outline;
-    composes: b--green-8 green-8 from colors;
+    composes: b--green green from colors;
 }
-.outline-success:hover,
-.outline-success:focus {
-    border-color: c_green;
-    color: c_green;
+.outline-green:hover,
+.outline-green:focus {
+    color: c_dark-green;
+    border-color: c_dark-green;
 }
 
-.outline-danger {
+.outline-red {
     composes: outline;
-    composes: b--red-8 red-8 from colors;
+    composes: b--red red from colors;
 }
-.outline-danger:hover,
-.outline-danger:focus {
-    border-color: c_red;
-    color: c_red;
+.outline-red:hover,
+.outline-red:focus {
+    border-color: c_red-text;
 }
 
-.outline-info {
+.outline-orange {
     composes: outline;
-    composes: b--blue-8 blue-8 from colors;
+    composes: b--orange orange from colors;
 }
-.outline-info:hover,
-.outline-info:focus {
-    border-color: c_blue;
-    color: c_blue;
-}
-
-.outline-warning {
-    composes: outline;
-    composes: b--orange-8 orange-8 from colors;
-}
-.outline-warning:hover,
-.outline-warning:focus {
-    border-color: c_orange;
-    color: c_orange;
+.outline-orange:hover,
+.outline-orange:focus {
+    border-color: c_dark-orange;
+    color: c_dark-orange;
 }
 
 .outline-default {
     composes: outline;
-    composes: b--gray dark-gray from colors;
+    composes: b--cool-mid-gray cool-gray from colors;
 }
 .outline-default:hover,
 .outline-default:focus {
-    border-color: c_dark-gray;
-    color: c_dark-gray;
+    border-color: c_cool-dark-gray;
+    color: c_cool-gray;
 }
 
 /* "active" state for button links */
@@ -147,46 +159,76 @@
     color: c_purple !important;;
 }
 
-/* solid buttons */
+/* Solid */
+
 .solid {
+    composes: btn;
+    composes: white from colors;
 	border-style: solid;
 	border-width: 2px;
-	composes: btn;
 }
+.solid:hover { color: white; }
 
 .solid-default {
     composes: solid;
-    composes: dark-gray bg-light-gray b--moon-gray from colors;
+    composes: bg-cool-mid-gray b--cool-mid-gray from colors;
+}
+.solid-default:hover {
+    background: c_cool-gray;
+    border-color: c_cool-gray;
 }
 
-.solid-primary {
+.solid-blue {
     composes: solid;
-    composes: white bg-blue b--blue from colors;
+    composes: bg-blue b--blue from colors;
+}
+.solid-blue:hover {
+    background: c_blue-text;
+    border-color: c_blue-text;
 }
 
-.solid-primary:hover,
-.solid-primary:focus {
-    color: white;
-    background: c_dark-blue-2;
-    border-color: c_dark-blue-2;
-}
-
-.solid-success {
+.solid-purple {
     composes: solid;
-    composes: white bg-green b--green from colors;
+    composes: bg-purple b--purple from colors;
+}
+.solid-purple:hover {
+    background: c_dark-purple;
+    border-color: c_dark-purple;
 }
 
-.solid-danger {
+.solid-green {
+    composes: solid;
+    composes: bg-green b--green from colors;
+}
+.solid-green:hover {
+    background: c_green-text;
+    border-color: c_green-text;
+}
+
+.solid-red {
     composes: solid;
     composes: white bg-red b--red from colors;
 }
-
-.solid-info {
-    composes: solid;
-    composes: white bg-blue b--blue from colors;
+.solid-red:hover {
+    background: c_red-text;
+    border-color: c_red-text;
 }
 
-.solid-warning {
+.solid-orange {
     composes: solid;
     composes: white bg-orange b--orange from colors;
+}
+.solid-orange:hover {
+    background: c_dark-orange;
+    border-color: c_dark-orange;
+}
+
+.solid-white {
+    composes: solid;
+    composes: bg-white b--white from colors;
+    color: c_purple;
+}
+.solid-white:hover {
+    background: white;
+    color: c_dark-purple;
 }

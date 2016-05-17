@@ -11,7 +11,7 @@ function GitHubAuthButton(props, {eventLogger}) {
 	return (
 		<a href={props.url ? props.url : urlToGitHubOAuth} styleName="github"
 			onClick={() => eventLogger.logEvent("InitiateGitHubOAuth2Flow")} {...props}>
-			<Button type="button" formNoValidate={true} color="primary" block={true}>
+			<Button type="button" formNoValidate={true} color="blue" block={true}>
 				<GitHubIcon />&nbsp; {props.children}
 			</Button>
 		</a>

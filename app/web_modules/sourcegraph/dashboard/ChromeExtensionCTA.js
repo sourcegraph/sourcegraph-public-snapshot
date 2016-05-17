@@ -1,6 +1,7 @@
 import React from "react";
 
 import CSSModules from "react-css-modules";
+import Button from "sourcegraph/components/Button";
 import styles from "./styles/Dashboard.css";
 import EventLogger from "sourcegraph/util/EventLogger";
 
@@ -39,9 +40,9 @@ class ChromeExtensionCTA extends React.Component {
 
 	render() {
 		return (
-			<a styleName="cta-link" color="primary" outline={true} onClick={this._handleClick}>
+			<Button color="blue" outline={true} onClick={this._handleClick}>
 				Install Chrome extension for GitHub.com (3,250 users)
-			</a>
+			</Button>
 		);
 	}
 }

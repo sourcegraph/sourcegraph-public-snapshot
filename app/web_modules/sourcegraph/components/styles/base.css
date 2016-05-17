@@ -487,10 +487,11 @@ input[type="email"], input[type="url"], input[type="password"], .border-box { bo
 	 BORDER RADIUS
 */
 .br0 { border-radius: 0; }
-.br1 { border-radius: .125rem; }
-.br2 { border-radius: .25rem; }
-.br3 { border-radius: .5rem; }
-.br4 { border-radius: 1rem; }
+.br1 { border-radius: 1px; }
+.br2 { border-radius: 2px; }
+.br3 { border-radius: 3px; }
+.br4 { border-radius: 4px; }
+.br10 { border-radius: 10px; }
 .br-100 { border-radius: 100%; }
 .br--bottom { border-top-left-radius: 0; border-top-right-radius: 0; }
 .br--top { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }

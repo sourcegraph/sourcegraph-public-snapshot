@@ -120,7 +120,7 @@ export class SignupForm extends Container {
 					By creating an account, you agree to our <a href="/privacy">privacy policy</a> and <a href="/legal">terms</a>.
 				</p>
 				<Button
-					color={this.state.githubError ? "primary" : "default"}
+					color={this.state.githubError ? "blue" : "default"}
 					id="e2etest-register-button"
 					tabIndex="5"
 					block={true}

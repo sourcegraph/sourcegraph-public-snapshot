@@ -41,7 +41,7 @@ class LiteChromeExtensionCTA extends React.Component {
 
 	render() {
 		return (
-			<Button onClick={this._handleClick} color="primary" size="large" unspaced={true} lowercase={true}>Get the Chrome Extension</Button>
+			<Button onClick={this._handleClick} color="blue" size="large">Get the Chrome Extension</Button>
 		);
 	}
 }

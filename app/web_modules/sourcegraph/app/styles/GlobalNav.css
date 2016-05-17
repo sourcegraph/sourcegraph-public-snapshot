@@ -5,7 +5,6 @@
 @value grid "sourcegraph/components/styles/grid.css";
 @value layout "sourcegraph/components/styles/layout.css";
 @value link "sourcegraph/components/styles/link.css";
-@value button "sourcegraph/components/styles/button.css";
 
 @value navbarHeight 40px;
 @value media-sm from vars;
@@ -15,7 +14,6 @@
 .header-logo {
 	composes: fl from base;
 }
-
 
 @media media-sm {
 	/* Composes don't work within media queries */
@@ -46,16 +44,6 @@
 	composes: pa2 ml2 from base;
 }
 
-.btn-login {
-	composes: btn normal outline outline-primary from button;
-	composes: ml4 from base;
-}
-.btn-signup {
-	composes: ml4 from base;
-	composes: btn normal solid-primary from button;
-}
-
-
 /* Logged in navigation */
 
 .navbar + * {
@@ -79,9 +67,7 @@
 }
 
 .logo {
-	composes: mt2 mh2 from base;
-	width: 2.7rem;
-	height: 2.7rem;
+	composes: mt2 mh3 from base;
 }
 
 .logo:hover {
@@ -108,7 +94,7 @@
 .actions {
 	display: inline-flex;
 	align-items: center;
-	composes: ml3 from base;
+	composes: ml3 pv2 from base;
 	white-space: nowrap;
 	flex: 0 0 auto;
 }

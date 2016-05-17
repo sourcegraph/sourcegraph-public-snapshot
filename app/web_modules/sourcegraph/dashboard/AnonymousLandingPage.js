@@ -1,8 +1,11 @@
 import React from "react";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
+import Button from "sourcegraph/components/Button";
+import Logo from "sourcegraph/components/Logo";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Home.css";
+import base from "sourcegraph/components/styles/base.css";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 
 
@@ -31,30 +34,44 @@ class AnonymousLandingPage extends Component {
 				<div styleName="container-lg">
 
 					<div styleName="content-block">
-						<div styleName="img-left"><img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-sourcegraph.png`} styleName="img" width="460" /></div>
+						<div styleName="img-left">
+						<Link to="/github.com/golang/go@0cc710dca63b79ed2dd6ce9375502e76e5fc0484/-/tree/src/testing?q=testing" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>
+							<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-sourcegraph.png`} styleName="img" width="460" />
+						</Link>
+						</div>
 						<div styleName="content-right">
 							<div styleName="content">
+								<Logo width="32px" className={base.mt4} />
 								<h3 styleName="h3">Search public and (your) private code</h3>
 								<p>Connect your GitHub account to Sourcegraph and we’ll analyze your repositories – letting you look up and reference code from any other public repository on the graph.</p>
 							</div>
 							<LocationStateToggleLink href="/join"
 								modalName="signup" location={location}
 								onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-maincontent"})}
-								styleName="btn-main">
-								Sign up and connect
+								className={base.mr4}>
+								<Button color="blue">Sign up and connect</Button>
 							</LocationStateToggleLink>
 							<Link to="/github.com/aws/aws-sdk-go/-/def/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Explore public code example</Link>
 						</div>
 					</div>
 
 					<div styleName="content-block">
-						<div styleName="img-right"><img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-github.png`} styleName="img" width="460" /></div>
+						<div styleName="img-right">
+							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" target="new">
+								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-github.png`} styleName="img" width="460" />
+							</a>
+						</div>
 						<div styleName="content-left">
 							<div styleName="content">
+								<img src={`${siteConfig.assetsRoot}/img/symbols/branch.svg`} className={base.mt3} />
 								<h3 styleName="h3">On GitHub</h3>
 								<p>Sourcegraph’s Chrome extension uses the global graph to show you how any library or function in GitHub is being used – across both public and your own private repos.</p>
 							</div>
-							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" styleName="btn-main" target="new" onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>Install the Chrome extension</a>
+							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" target="new">
+								<Button color="blue" onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
+									Install the Chrome extension
+								</Button>
+							</a>
 						</div>
 					</div>
 
@@ -66,27 +83,36 @@ class AnonymousLandingPage extends Component {
 
 							<div styleName="language">
 								Go
-								<span styleName="label-blue">55,123 projects</span>
+								<span styleName="label-blue">45,427 projects</span>
 							</div>
 							<h5 styleName="header-5">Top Go Projects</h5>
 
 							<div styleName="row">
 								<div styleName="featured-project">
-									<Link to ="/github.com/golang/go">golang/go</Link>
+									<Link to ="/github.com/golang/go">
+										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
+										<strong>golang/go</strong>
+									</Link>
 									<p styleName="project-desc">
-										An open source programming language that makes it easy to build simple, reliable, and efficient software.
+										Used in 45,328 repositories
 									</p>
 								</div>
 								<div styleName="featured-project">
-									<Link to ="/github.com/gorilla/mux">gorilla/mux</Link>
+									<Link to ="/github.com/gorilla/mux">
+										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
+										<strong>gorilla/mux</strong>
+									</Link>
 									<p styleName="project-desc">
-										A powerful URL router and dispatcher.
+										Used in 1,843 repositories
 									</p>
 								</div>
 								<div styleName="featured-project">
-									<Link to ="/github.com/aws/aws-sdk-go">aws-sdk-go</Link>
+									<Link to ="/github.com/aws/aws-sdk-go">
+										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
+										<strong>aws-sdk-go</strong>
+									</Link>
 									<p styleName="project-desc">
-										The official AWS SDK for the Go programming language.
+										Used in 171 repositories
 									</p>
 								</div>
 
@@ -128,9 +154,8 @@ class AnonymousLandingPage extends Component {
 								<p styleName="text-white">Sourcegraph helps you write better code by giving you seamless access to references from codebases and developers all over the web.</p>
 								<LocationStateToggleLink href="/join"
 									modalName="signup" location={location}
-									onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-bottom"})}
-									styleName="btn-white">
-									Join the graph
+									onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-bottom"})}>
+									<Button color="white" className={base.mt3}>Join the graph</Button>
 								</LocationStateToggleLink>
 							</div>
 						</div>
