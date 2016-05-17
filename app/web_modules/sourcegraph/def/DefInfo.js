@@ -157,9 +157,12 @@ class DefInfo extends Container {
 						</div>
 					}
 				</div>
-				{refLocs && refLocs.RepoRefs && fileCount >= RefLocsPerPage && !refLocs.StreamTerminated &&
+				{/* Display the paginator if we have more files repos or repos to show. */}
+				{refLocs && refLocs.RepoRefs &&
+					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
+					!refLocs.StreamTerminated &&
 					<div styleName="pagination">
-						<Button color="primary" onClick={this._onNextPage}>View More</Button>
+						<Button color="blue" onClick={this._onNextPage}>View More</Button>
 					</div>
 				}
 			</div>
