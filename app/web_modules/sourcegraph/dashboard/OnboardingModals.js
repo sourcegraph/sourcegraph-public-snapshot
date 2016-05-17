@@ -136,7 +136,7 @@ class OnboardingModals extends Component {
 
 	_onboardCheckmarkImages() {
 		return (
-				<img styleName="feature-list" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SourcegraphFeatureList.svg`}></img>
+			<img styleName="feature-list" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SourcegraphFeatureList.svg`}></img>
 		);
 	}
 

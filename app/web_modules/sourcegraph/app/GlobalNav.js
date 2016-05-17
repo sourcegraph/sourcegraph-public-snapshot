@@ -70,17 +70,19 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 			{(signedIn || location.pathname !== "/") &&
 				<div styleName="actions">
-					{user &&
+					{user && <div style={{display: "inline-flex", alignItems: "center"}}>
+						<Link styleName="action" to="/repositories">Repositories</Link>
+						<Link styleName="action" to="/tools">Tools</Link>
 						<div styleName="action-username">
 							<Popover left={true}>
 								{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
 								<Menu>
-									<Link to="/">Your repositories</Link>
+									<Link to="/">Home</Link>
 									<LogoutLink outline={true} size="small" block={true} />
 								</Menu>
 							</Popover>
 						</div>
-					}
+					</div>}
 					{!signedIn &&
 						<div>
 							<div styleName="action">
@@ -102,6 +104,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 		</nav>
 	);
 }
+
 GlobalNav.propTypes = {
 	navContext: React.PropTypes.element,
 	location: React.PropTypes.object.isRequired,

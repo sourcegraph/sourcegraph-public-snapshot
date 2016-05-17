@@ -8,7 +8,6 @@
 	display: flex;
 	flex-direction: column;
 	composes: center from base;
-	composes: col-9-ns from grid;
 }
 
 .search-section {
@@ -47,6 +46,7 @@
 
 .list-item {
 	display: block;
+	composes: pt3 pb3 from base;
 	composes: col-12 from grid;
 	composes: blue b--black-20 from colors;
 	composes: sans-serif f3 from typography;
@@ -62,26 +62,26 @@
 @value c_dark-gray from colors;
 
 .search-result-info {
-        color: c_mid-gray;
-        font-size: 1.1rem;
-        line-height: 1.7rem;
-        padding-top: 0.5rem;
-        padding-bottom: 0.25rem;
+	color: c_mid-gray;
+	font-size: 0.9rem;
+	line-height: 1.7rem;
+	padding-top: 0.8rem;
+	padding-bottom: 0.25rem;
 }
 
 .search-result-ref-count {
 	color: c_dark-gray !important;
-	padding-top: 0.25em;
+	padding-top: 0.5em;
 	font-weight: bold;
 	font-size: 0.9em;
 }
 
 .search-result-repo {
-	font-size: 0.9em;
+	font-size: 1.2em;
 }
 
 .search-result-file {
-	font-size: 0.9em;
+	font-size: 1.2em;
 }
 
 .search-result-doc {

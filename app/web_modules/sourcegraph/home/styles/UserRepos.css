@@ -1,0 +1,15 @@
+@value base "sourcegraph/components/styles/base.css";
+@value grid "sourcegraph/components/styles/grid.css";
+@value colors "sourcegraph/components/styles/colors.css";
+@value typography "sourcegraph/components/styles/typography.css";
+@value grid "sourcegraph/components/styles/grid.css";
+
+.container {
+	composes: center from base;
+	justify-content: center;
+}
+
+.repos {
+	composes: col-9-ns from grid;
+	composes: mt4 center from base;
+}

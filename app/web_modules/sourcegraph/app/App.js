@@ -62,12 +62,13 @@ export const rootRoute: Route = {
 	),
 	getIndexRoute: (location, callback) => {
 		require.ensure([], (require) => {
-			callback(null, require("sourcegraph/dashboard").route);
+			callback(null, require("sourcegraph/dashboard").routes);
 		});
 	},
 	getChildRoutes: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, [
+				...require("sourcegraph/home").routes,
 				...require("sourcegraph/admin/routes").routes,
 				...require("sourcegraph/user").routes,
 				...require("sourcegraph/repo/routes").routes,

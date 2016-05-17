@@ -1,105 +1,27 @@
 import React from "react";
 import Helmet from "react-helmet";
-
-import Container from "sourcegraph/Container";
-import Dispatcher from "sourcegraph/Dispatcher";
-import "./DashboardBackend"; // for side effects
-import DashboardStore from "sourcegraph/dashboard/DashboardStore";
-import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-import GlobalSearch from "sourcegraph/search/GlobalSearch";
-import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
-
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
-import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import AnonymousLandingPage from "./AnonymousLandingPage";
+import HomeSearchContainer from "sourcegraph/home/HomeSearchContainer";
 
-import OnboardingModals from "./OnboardingModals";
-import HomeContainer from "./HomeContainer";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+class DashboardContainer extends React.Component {
+	static propTypes = {
+		location: React.PropTypes.object.isRequired,
+	}
 
-class DashboardContainer extends Container {
 	static contextTypes = {
-		siteConfig: React.PropTypes.object.isRequired,
-		user: React.PropTypes.object,
 		signedIn: React.PropTypes.bool.isRequired,
-		githubToken: React.PropTypes.object,
-		eventLogger: React.PropTypes.object.isRequired,
 	};
-
-	constructor(props) {
-		super(props);
-		this.state = {
-			showChromeExtensionCTA: false,
-		};
-	}
-
-	componentDidMount() {
-		super.componentDidMount();
-		setTimeout(() => this.setState({
-			showChromeExtensionCTA: global.chrome && global.document && !document.getElementById("chrome-extension-installed"),
-		}), 0);
-	}
-
-	reconcileState(state, props, context) {
-		Object.assign(state, props);
-		state.repos = DashboardStore.repos || null;
-		state.remoteRepos = DashboardStore.remoteRepos || null;
-
-		state.signedIn = context.signedIn;
-		state.githubToken = context.githubToken;
-		state.user = context.user;
-
-		if (props.location && props.location.state) {
-			state.onboardingExperience = props.location.state["_onboarding"] && state.signedIn ? props.location.state["_onboarding"] : null;
-		}
-	}
-
-	onStateTransition(prevState, nextState) {
-		if (nextState.repos === null && nextState.repos !== prevState.repos) {
-			Dispatcher.Backends.dispatch(new DashboardActions.WantRepos());
-		}
-		if (nextState.remoteRepos === null && nextState.remoteRepos !== prevState.remoteRepos) {
-			Dispatcher.Backends.dispatch(new DashboardActions.WantRemoteRepos());
-		}
-	}
-
-	stores() { return [DashboardStore]; }
-
-	renderCTAButtons() {
-		return (
-			<div>
-				{!this.context.githubToken && <div styleName="cta">
-					<GitHubAuthButton>Link GitHub account</GitHubAuthButton>
-				</div>}
-				{this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) && <div styleName="cta">
-					<GitHubAuthButton url={urlToPrivateGitHubOAuth}>Use with private repositories</GitHubAuthButton>
-				</div>}
-			</div>
-		);
-	}
 
 	render() {
 		return (
-			<div styleName="container">
-				{this.state.onboardingExperience && <OnboardingModals location={this.state.location} onboardingFlow={this.state.onboardingExperience} canShowChromeExtensionCTA={this.state.showChromeExtensionCTA}/>}
-
-				<Helmet title="Home" />
-
-				{!this.context.signedIn && <HomeContainer location={this.props.location} />}
-
-				{this.context.user && this.context.user.Admin &&
-					<GlobalSearch query={this.props.location.query.q || ""}/>
-				}
-
-				{this.context.signedIn &&
-					<div styleName="anon-section">
-						{this.renderCTAButtons()}
-					</div>
-				}
-
-				{this.context.signedIn && <div styleName="repos">
-					<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} />
-				</div>}
+			<div>
+				<div styleName="container">
+					<Helmet title="Home" />
+					{!this.context.signedIn && <AnonymousLandingPage location={this.props.location}/>}
+					{this.context.signedIn && <HomeSearchContainer location={this.props.location}/>}
+				</div>
 			</div>
 		);
 	}

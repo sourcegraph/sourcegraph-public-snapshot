@@ -5,7 +5,11 @@
 @value grid "sourcegraph/components/styles/grid.css";
 
 .container {
+	display: flex;
+	flex: 1 1 auto;
 	composes: center from base;
+	justify-content: center;
+	height: 100%;
 }
 
 .anon-section {
@@ -18,6 +22,12 @@
 	composes: header-center-padded from typography;
 	composes: pt5 pb3 center from base;
 	max-width: 500px;
+}
+
+.anon-title-left {
+	composes: f1 from typography;
+	composes: pt2 pb3 left from base;
+	text-align: left;
 }
 
 .anon-header-sub {
@@ -58,25 +68,39 @@
 
 .header {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: row;
+	justify-content: space-between;
 	composes: mt4 from base;
-}
-
-.cta-headercta-header {
-	display: block;
-	flex-wrap: wrap;
-
-	.left {
-		align-self: flex-start;
-	}
 }
 
 .cta {
 	display: flex;
 	composes: b from typography;
-	composes: pb2 from base;
+	composes: pa4 from base;
+	justify-content: center;
+}
+
+.filter {
+	align-self: flex-end;
+  	composes: ma3 from base;  	
+ }
+
+.suggestion-header {
+	composes: section-header from typography;
+}
+
+.suggestion-subheader {
+	composes: f4 fw2 from typography;
+	composes: pt3 pl5 pr5 from base;
 	text-align: center;
-	align-items: center;
+}
+
+.suggestion {
+	composes: f4 from typography;
+	composes: pa2 from base;
+	composes: moon-gray from colors;
+	text-align: center;
+	cursor: pointer;
 }
 
 .list-section-header {
@@ -94,7 +118,8 @@
 	composes: b--black-20 from colors;
 }
 .list-item-loading {
-	composes: list-item;
+	composes: pa3 mh3 bt from base;
+	composes: f4 fw2 from typography;
 	composes: gray from colors;
 }
 

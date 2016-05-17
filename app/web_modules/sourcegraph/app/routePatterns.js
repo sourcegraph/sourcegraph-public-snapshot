@@ -3,10 +3,12 @@
 import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
-export type RouteName = "dashboard" | "def" | "defInfo" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds";
+export type RouteName = "dashboard" | "tools" | "myRepos" | "def" | "defInfo" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds";
 
 export const rel: {[key: RouteName]: string} = {
 	dashboard: "",
+	tools: "tools",
+	myRepos: "repositories",
 	login: "login",
 	signup: "join",
 	forgot: "forgot",
@@ -23,6 +25,8 @@ export const rel: {[key: RouteName]: string} = {
 
 export const abs: {[key: RouteName]: string} = {
 	dashboard: rel.dashboard,
+	tools: rel.tools,
+	myRepos: rel.myRepos,
 	login: rel.login,
 	signup: rel.signup,
 	forgot: rel.forgot,

@@ -14,6 +14,10 @@ class RepoLink extends React.Component {
 		className: React.PropTypes.string,
 	}
 
+	static contextTypes = {
+		eventLogger: React.PropTypes.object.isRequired,
+	};
+
 	render() {
 		let trimmedPath = this.props.repo;
 		if (trimmedPath.indexOf("sourcegraph.com/") !== -1) {
@@ -30,7 +34,8 @@ class RepoLink extends React.Component {
 					<Link to={this.props.rev ? urlToRepoRev(this.props.repo, this.props.rev) : urlToRepo(this.props.repo)}
 						title={trimmedPath}
 						key={i}
-						styleName={isLast ? "active" : "inactive"}>
+						styleName={isLast ? "active" : "inactive"}
+						onClick={() => this.context.eventLogger.logEvent("RepoClicked", {repoName: trimmedPath})}>
 						{component}
 					</Link> :
 					<span key={i}>{component}</span>

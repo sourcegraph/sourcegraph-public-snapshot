@@ -2,7 +2,7 @@ import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
-
+import {withUserContext} from "sourcegraph/app/user";
 import testdataData from "sourcegraph/dashboard/testdata/DashboardRepos-data.json";
 
 describe("DashboardRepos", () => {
@@ -15,10 +15,10 @@ describe("DashboardRepos", () => {
 			Language: "Go",
 		}];
 		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
-			<DashboardRepos
+			React.createElement(withUserContext(<DashboardRepos
 				repos={repos}
 				exampleRepos={repos}
-				linkGitHubURL={""} />,
+				linkGitHubURL={""} />)),
 			{signedIn: false},
 		);
 	});

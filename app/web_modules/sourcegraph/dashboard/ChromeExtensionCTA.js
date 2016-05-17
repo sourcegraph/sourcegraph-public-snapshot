@@ -20,11 +20,13 @@ class ChromeExtensionCTA extends React.Component {
 
 	_successHandler() {
 		EventLogger.logEvent("ChromeExtensionInstalled");
+		EventLogger.setUserProperty("installed_chrome_extension", "true");
 		if (this.props.onSuccess) this.props.onSuccess();
 	}
 
 	_failHandler() {
 		EventLogger.logEvent("ChromeExtensionInstallFailed");
+		EventLogger.setUserProperty("installed_chrome_extension", "false");
 		if (this.props.onFail) this.props.onFail();
 	}
 

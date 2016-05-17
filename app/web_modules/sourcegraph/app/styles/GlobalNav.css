@@ -106,14 +106,17 @@
 }
 
 .actions {
+	display: inline-flex;
+	align-items: center;
 	composes: ml3 from base;
 	white-space: nowrap;
 	flex: 0 0 auto;
 }
 .action {
-	composes: mv2 mr3 from base;
+	composes: mr3 from base;
 	display: inline-block;
 	white-space: nowrap;
+	cursor: pointer;
 }
 .action-username {
 	composes: action;

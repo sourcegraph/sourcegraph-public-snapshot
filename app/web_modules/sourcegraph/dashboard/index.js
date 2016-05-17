@@ -1,7 +1,7 @@
 import {rel} from "sourcegraph/app/routePatterns";
+import type {Route} from "react-router";
 
-export const route = {
-	path: rel.dashboard,
+export const dashboard = {
 	getComponent: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, {
@@ -10,3 +10,12 @@ export const route = {
 		});
 	},
 };
+
+
+export const routes: Array<Route> = [
+	{
+		...dashboard,
+		path: rel.dashboard,
+	},
+];
+

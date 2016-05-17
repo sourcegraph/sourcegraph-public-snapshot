@@ -12,7 +12,7 @@ import debounce from "lodash/function/debounce";
 import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
-import {urlToDef} from "sourcegraph/def/routes";
+import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import type {Def} from "sourcegraph/def";
 
 import {Input} from "sourcegraph/components";
@@ -29,6 +29,7 @@ class GlobalSearch extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		siteConfig: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -92,6 +93,7 @@ class GlobalSearch extends Container {
 	_onChangeQuery(query: string) {
 		this.context.router.replace({...this.props.location, query: {q: query || undefined}}); // eslint-disable-line no-undefined
 		this.setState({query: query});
+		this.context.eventLogger.logEvent("GlobalSearchInitiated", {globalSearchQuery: query});
 	}
 
 	_navigateTo(url: string) {
@@ -224,7 +226,7 @@ class GlobalSearch extends Container {
 
 		for (let i = 0; i < limit; i++) {
 			let def = this.state.matchingDefs.Defs[i];
-			let defURL = urlToDef(def);
+			let defURL = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
 			const selected = this._normalizedSelectionIndex() === i;
 
@@ -242,10 +244,11 @@ class GlobalSearch extends Container {
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
-					key={defURL}>
+					key={defURL}
+					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: defURL})}>
 					<div styleName="search-result-main"><code>{qualifiedNameAndType(def)}</code></div>
 					<div styleName="search-result-info">
-							<code><span styleName="search-result-repo">{def.Repo}</span>: <span styleName="search-result-file">{def.File}</span></code><br/>
+							<code><span styleName="search-result-repo">Used in {def.Repo}</span><br/><span styleName="search-result-file">Referenced from {def.File}</span></code><br/>
 							{def.RefCount > 0 && <span><span styleName="search-result-ref-count">{def.RefCount.toLocaleString()}</span> examples found</span>}
 					</div>
 					<div styleName="search-result-doc">{firstLine(docstring)}</div>
@@ -267,7 +270,7 @@ class GlobalSearch extends Container {
 						onInput={this._handleInput}
 						autoFocus={true}
 						defaultValue={this.state.query}
-						placeholder="Search for symbols..."
+						placeholder="Search for symbols, functions and definitions..."
 						domRef={(e) => this._queryInput = e} />
 				</div>
 			</div>

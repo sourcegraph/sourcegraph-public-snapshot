@@ -6,7 +6,7 @@ import styles from "./styles/Home.css";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 
 
-class HomeContainer extends Component {
+class AnonymousLandingPage extends Component {
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		siteConfig: React.PropTypes.object.isRequired,
@@ -142,4 +142,4 @@ class HomeContainer extends Component {
 	}
 }
 
-export default CSSModules(HomeContainer, styles);
+export default CSSModules(AnonymousLandingPage, styles);
