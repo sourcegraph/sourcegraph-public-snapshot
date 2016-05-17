@@ -28,7 +28,7 @@ type builds struct{}
 var _ sourcegraph.BuildsServer = (*builds)(nil)
 
 var frozenRepos = map[string]struct{}{
-	"github.com/dotnet/coreclr": struct{}{},
+	"github.com/dotnet/coreclr":            struct{}{},
 	"github.com/Microsoft/referencesource": struct{}{},
 }
 
