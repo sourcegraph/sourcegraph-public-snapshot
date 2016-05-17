@@ -49,7 +49,7 @@ class RefLocationsList extends React.Component {
 						</header>
 					</div>
 				))}
-				{refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && refLocs && refLocs.TotalRepos && refLocs.TotalRepos > this.props.showMax && <span styleName="sectionTitle"><Link to={urlToDefInfo(def, this.props.rev)}>See more usages...</Link></span>}
+				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && (!refLocs.TotalRepos || refLocs.TotalRepos > this.props.showMax) && <span styleName="sectionTitle"><Link to={urlToDefInfo(def, this.props.rev)}>See more usages...</Link></span>}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't
 					annoyingly show it for every single internal ref. */}
 				{(refLocs.RepoRefs && refLocs.RepoRefs.length > 1 && (!this.context.signedIn || noGitHubPrivateReposScope)) &&
