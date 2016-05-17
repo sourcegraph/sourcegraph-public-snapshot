@@ -6,7 +6,7 @@
 @value layout "sourcegraph/components/styles/layout.css";
 @value link "sourcegraph/components/styles/link.css";
 
-@value navbarHeight 40px;
+@value navbarHeight 50px;
 @value media-sm from vars;
 
 /* Logged out nav */
@@ -60,7 +60,7 @@
 	background-color: #fafafa;
 	z-index: 100;
 
-	height: navbarHeight - 1px; /* 1px for border-bottom-width */
+	height: navbarHeight;
 	position: fixed;
 	top: 0;
 	width: 100%;
