@@ -17,26 +17,27 @@ class ToolsContainer extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			showChromeExtensionCTA: false,
+			showChromeExtensionCTA: !window.localStorage["installed_chrome_extension"],
 		};
 	}
 
 	componentDidMount() {
 		setTimeout(() => this.setState({
-			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
-		}), 0);
+			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap") && !window.localStorage["installed_chrome_extension"],
+		}), 1);
 	}
-
 	_successHandler() {
 		this.context.eventLogger.logEvent("ChromeExtensionInstalled");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false});
+		window.localStorage["installed_chrome_extension"] = true;
 	}
 
 	_failHandler() {
 		this.context.eventLogger.logEvent("ChromeExtensionInstallFailed");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
 		this.setState({showChromeExtensionCTA: true});
+		window.localStorage.removeItem("installed_chrome_extension");
 	}
 
 	_handleClick() {
