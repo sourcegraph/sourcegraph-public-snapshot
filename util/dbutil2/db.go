@@ -23,7 +23,7 @@ type Schema struct {
 	// creating the DB-mapped tables in this schema.
 	CreateSQL []string
 
-	// DropSQL contains SQL statements run immediately after
+	// DropSQL contains SQL statements run immediately before
 	// dropping the DB-mapped tables in this schema.
 	DropSQL []string
 
@@ -199,14 +199,14 @@ func (h *Handle) CreateSchema() error {
 // DropSchema drops the schema for this handle in the database
 // it's connected to.
 func (h *Handle) DropSchema() error {
-	if err := h.DropTablesIfExists(); err != nil {
-		return err
-	}
 	var errs []error
 	for _, sql := range h.schema.DropSQL {
 		if _, err := h.Exec(sql); err != nil {
 			errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
 		}
+	}
+	if err := h.DropTablesIfExists(); err != nil {
+		errs = append(errs, err)
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("%d errors dropping schema: %v (data source is %q)", len(errs), errs, h.DataSource)

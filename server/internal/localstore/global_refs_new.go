@@ -18,24 +18,35 @@ import (
 )
 
 func init() {
+	// dbDefKey DB-maps a DefKey (excluding commit-id) object. We keep
+	// this in a seperate table to reduce duplication in the global_refs
+	// table (postgresql does not do string interning)
+	type dbDefKey struct {
+		ID       int64  `db:"id"`
+		Repo     string `db:"repo"`
+		UnitType string `db:"unit_type"`
+		Unit     string `db:"unit"`
+		Path     string `db:"path"`
+	}
+	GraphSchema.Map.AddTableWithName(dbDefKey{}, "def_keys").SetKeys(true, "id").SetUniqueTogether("repo", "unit_type", "unit", "path")
+
 	// dbGlobalRef DB-maps a GlobalRef object.
 	type dbGlobalRef struct {
-		DefRepo     string `db:"def_repo"`
-		DefUnitType string `db:"def_unit_type"`
-		DefUnit     string `db:"def_unit"`
-		DefPath     string `db:"def_path"`
-		Repo        string
-		CommitID    string `db:"commit_id"`
-		File        string
-		Count       int
-		UpdatedAt   *time.Time `db:"updated_at"`
+		DefKeyID  int64 `db:"def_key_id"`
+		Repo      string
+		File      string
+		Count     int
+		UpdatedAt *time.Time `db:"updated_at"`
 	}
-	GraphSchema.Map.AddTableWithName(dbGlobalRef{}, "global_refs_new").SetKeys(false, "DefRepo", "DefUnitType", "DefUnit", "DefPath", "Repo", "CommitID", "File")
+	GraphSchema.Map.AddTableWithName(dbGlobalRef{}, "global_refs_new")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
-		`ALTER TABLE global_refs_new ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
-		`CREATE INDEX global_refs_new_repo ON global_refs_new(repo text_pattern_ops);`,
-		`CREATE INDEX global_refs_new_def_repo ON global_refs_new(def_repo text_pattern_ops);`,
-		`CREATE INDEX global_refs_new_commit_id ON global_refs_new USING btree (commit_id);`,
+		`CREATE INDEX global_refs_new_def_key_id ON global_refs_new USING btree (def_key_id);`,
+		`CREATE INDEX global_refs_new_repo ON global_refs_new USING btree (repo);`,
+		`CREATE MATERIALIZED VIEW global_refs_stats AS SELECT def_key_id, count(distinct repo) as repos FROM global_refs_new GROUP BY def_key_id;`,
+		`CREATE UNIQUE INDEX ON global_refs_stats (def_key_id);`,
+	)
+	GraphSchema.DropSQL = append(GraphSchema.DropSQL,
+		`DROP MATERIALIZED VIEW IF EXISTS global_refs_stats;`,
 	)
 }
 
@@ -49,14 +60,11 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
 	var totalRepos int64
-	statsDone, errc := make(chan bool), make(chan error)
+	statsDone := make(chan error)
 	go func() {
 		var err error
 		totalRepos, err = g.getRefStats(ctx, op)
-		if err != nil {
-			errc <- err
-		}
-		statsDone <- true
+		statsDone <- err
 	}()
 
 	var args []interface{}
@@ -67,7 +75,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 	}
 
 	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
-	innerSelectSQL += ` WHERE def_repo=` + arg(op.Def.Repo) + ` AND def_unit_type=` + arg(op.Def.UnitType) + ` AND def_unit=` + arg(op.Def.Unit) + ` AND def_path=` + arg(op.Def.Path)
+	innerSelectSQL += ` WHERE def_key_id=(SELECT id FROM def_keys WHERE repo=` + arg(op.Def.Repo) + ` AND unit_type=` + arg(op.Def.UnitType) + ` AND unit=` + arg(op.Def.Unit) + ` AND path=` + arg(op.Def.Path) + `)`
 	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	if len(op.Opt.Repos) > 0 {
 		repoBindVars := make([]string, len(op.Opt.Repos))
@@ -161,19 +169,11 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 		filteredRepoRefs = append(filteredRepoRefs, r)
 	}
 
-	// Wait for the stats query we kicked off above to finish.
-	//
-	// TODO(perf): The query in getRefStats above can potentially be slow when
-	// the amount of repos referencing the given def is large. To prevent
-	// stalling, timeout if the query takes too long and return a default
-	// value. The performance of the query above improves after being cached,
-	// so it is possible on subsequent runs the timeout won't be triggered.
-	timeout := time.After(200 * time.Millisecond)
 	select {
-	case <-statsDone:
-	case <-timeout:
-	case err := <-errc:
-		return nil, err
+	case err := <-statsDone:
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &sourcegraph.RefLocationsList{
@@ -185,17 +185,23 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 // getRefStats fetches global ref aggregation stats pagination and display
 // purposes.
 func (g *globalRefsNew) getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (int64, error) {
-	var countArgs []interface{}
-	countArg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(countArgs))
-		countArgs = append(countArgs, a)
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
 		return v
 	}
+	where := `def_key_id=(SELECT id FROM def_keys WHERE repo=` + arg(op.Def.Repo) + ` AND unit_type=` + arg(op.Def.UnitType) + ` AND unit=` + arg(op.Def.Unit) + ` AND path=` + arg(op.Def.Path) + `)`
 
-	q := "SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE"
-	q += " def_repo=" + countArg(op.Def.Repo) + " AND def_unit_type=" + countArg(op.Def.UnitType) + " AND def_unit=" + countArg(op.Def.Unit) + " AND def_path=" + countArg(op.Def.Path)
+	// Our strategy is to defer to the potentially stale materialized view
+	// if there are a large number of distinct repos. Otherwise we can
+	// calculate the exact value since it should be fast to do
+	count, err := graphDBH(ctx).SelectInt("SELECT repos FROM global_ref_stats WHERE "+where, args...)
+	if err == nil && count > 1000 {
+		return count, nil
+	}
 
-	return graphDBH(ctx).SelectInt(q, countArgs...)
+	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE "+where, args...)
 }
 
 func (g *globalRefsNew) Update(ctx context.Context, op *pb.ImportOp) error {
@@ -208,22 +214,20 @@ func (g *globalRefsNew) Update(ctx context.Context, op *pb.ImportOp) error {
 	}
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
-	def_repo TEXT,
-	def_unit_type TEXT,
-	def_unit TEXT,
-	def_path TEXT,
+	def_key_id bigint,
 	repo TEXT,
-	commit_id TEXT,
 	file TEXT,
 	count integer
 )
 ON COMMIT DROP;`
-	tmpInsertSQL := `INSERT INTO global_refs_tmp(def_repo, def_unit_type, def_unit, def_path, repo, commit_id, file, count) VALUES($1, $2, $3, $4, $5, $6, $7, $8);`
-	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1 AND commit_id=$2 AND file IN (SELECT file FROM global_refs_tmp GROUP BY file);`
-	finalInsertSQL := `INSERT INTO global_refs_new(def_repo, def_unit_type, def_unit, def_path, repo, commit_id, file, count, updated_at)
-	SELECT def_repo, def_unit_type, def_unit, def_path, repo, commit_id, file, sum(count) as count, now() as updated_at
+	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
+	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
+	tmpInsertSQL := `INSERT INTO global_refs_tmp(def_key_id, repo, file, count) VALUES($1, $2, $3, 1);`
+	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1 AND file IN (SELECT file FROM global_refs_tmp GROUP BY file);`
+	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, count, updated_at)
+	SELECT def_key_id, repo, file, sum(count) as count, now() as updated_at
 	FROM global_refs_tmp
-	GROUP BY def_repo, def_unit_type, def_unit, def_path, repo, commit_id, file;`
+	GROUP BY def_key_id, repo, file;`
 
 	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
 		// Create a temporary table to load all new ref data.
@@ -256,13 +260,28 @@ ON COMMIT DROP;`
 			if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
 				continue
 			}
-			if _, err := tx.Exec(tmpInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath, op.Repo, op.CommitID, r.File, 1); err != nil {
+
+			// Optimistically get the def key id, otherwise fallback to insertion
+			defKeyID, err := tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+			if defKeyID == 0 || err != nil {
+				if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					return err
+				}
+				defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+				if err != nil {
+					return err
+				} else if defKeyID == 0 {
+					return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+				}
+			}
+
+			if _, err := tx.Exec(tmpInsertSQL, defKeyID, op.Repo, r.File); err != nil {
 				return err
 			}
 		}
 
 		// Purge all existing ref data for files in this source unit.
-		if _, err := tx.Exec(finalDeleteSQL, op.Repo, op.CommitID); err != nil {
+		if _, err := tx.Exec(finalDeleteSQL, op.Repo); err != nil {
 			return err
 		}
 
