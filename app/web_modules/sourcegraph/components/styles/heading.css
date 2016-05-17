@@ -1,0 +1,33 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+
+.h1 { composes: f1 b from typography; }
+.h2 { composes: f2 b from typography; }
+.h3 { composes: f3 b from typography; }
+.h4 { composes: f4 b from typography; }
+.h5 {
+	composes: f5 b from typography;
+	text-transform: uppercase;
+}
+
+.blue { composes: blue from colors; }
+.white { composes: white from colors; }
+.purple { composes: purple from colors; }
+.orange { composes: orange from colors; }
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+
+.line {
+	composes: bw3 mv3 from base;
+	composes: v-middle from typography;
+	display: inline-block;
+	width: 5rem;
+}
+.l-blue { composes: b--blue from colors; }
+.l-purple {	composes: b--purple from colors; }
+.l-white {composes: b--white from colors; }
+.l-orange {	composes: b--orange from colors; }
+
+.center { composes: tc from typography; }
+.left { composes: tl from typography; }
+.right { composes: tr from typography; }

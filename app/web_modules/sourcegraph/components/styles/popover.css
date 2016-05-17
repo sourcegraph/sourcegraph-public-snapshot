@@ -1,5 +1,5 @@
-@value base "./base.css";
-@value colors "./colors.css";
+@value base "./_base.css";
+@value colors "./_colors.css";
 
 @value c_black-20 from colors;
 

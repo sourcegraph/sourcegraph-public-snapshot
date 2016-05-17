@@ -1,9 +1,7 @@
-@value base "sourcegraph/components/styles/base.css";
-@value grid "sourcegraph/components/styles/grid.css";
-@value colors "sourcegraph/components/styles/colors.css";
-@value typography "sourcegraph/components/styles/typography.css";
-@value grid "sourcegraph/components/styles/grid.css";
-
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
 
 .modal {
     display: flex;

@@ -1,0 +1,10 @@
+@value layout "sourcegraph/components/styles/_layout.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value base "sourcegraph/components/styles/_base.css";
+
+.container { composes: bg-near-white from colors; }
+
+.container-fixed {
+	composes: containerFixed from layout;
+	composes: pv6 ph4 from base;
+}

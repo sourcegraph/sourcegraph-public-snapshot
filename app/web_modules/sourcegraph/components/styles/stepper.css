@@ -1,0 +1,84 @@
+@value base "./_base.css";
+@value colors "./_colors.css";
+@value typography "./_typography.css";
+
+@value c_green, c_blue, c_purple, c_orange, c_cool-mid-gray, c_cool-pale-gray from colors;
+
+@value step-complete-size: 32px;
+@value step-incomplete-size: 20px;
+
+.stepper {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+	margin: auto -5%;
+}
+
+.step {
+	composes: v-mid tc from typography;
+	display: inline-block;
+	position: relative;
+	flex: 1 1 auto;
+}
+
+.step-text {
+	composes: f5 from typography;
+	display: block;
+}
+
+.step-complete .step-text { color: c_cool-mid-gray; }
+
+.step-node {
+	composes: br50 from base;
+	composes: tc from typography;
+	composes: v-mid from typography;
+	display: inline-block;
+	position: relative;
+	z-index: 1;
+}
+
+.step-node-complete {
+	composes: step-node;
+	composes: mb2 from base;
+	width: step-complete-size;
+	height: step-complete-size;
+	line-height: step-complete-size;
+}
+
+.node-green { composes: bg-green from colors; }
+.node-blue { composes: bg-blue from colors; }
+.node-purple { composes: bg-purple from colors; }
+.node-orange { composes: bg-orange from colors; }
+
+.line-green:before { background-color: c_green; }
+.line-blue:before { background-color: c_blue; }
+.line-purple:before { background-color: c_purple; }
+.line-orange:before { background-color: c_orange; }
+
+
+.check { composes: v-mid from typography; }
+
+.step-node-incomplete {
+	composes: step-node;
+	composes: bg-cool-pale-gray from colors;
+	composes: mb3 from base;
+	width: step-incomplete-size;
+	height: step-incomplete-size;
+	line-height: step-incomplete-size;
+	margin-top: 5px;
+}
+
+/* Create lines betvween nodes */
+.step:before {
+	content: "";
+  display: inline-block;
+  height: 7px;
+  width: 100%;
+  position: absolute;
+	  left: -50%;
+  	top: 12px;
+}
+
+.step:first-child:before { display: none; }
+.step-incomplete:before { background-color: c_cool-pale-gray; }

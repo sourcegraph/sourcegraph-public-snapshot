@@ -47,7 +47,7 @@
 /*
 PREVIOUS THEME
 
-@value colors "sourcegraph/components/styles/colors.css";
+@value colors "sourcegraph/components/styles/_colors.css";
 @value c_yellow from colors;
 :global .code {
 	color: #222222;

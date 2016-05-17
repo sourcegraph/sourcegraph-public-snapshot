@@ -1,4 +1,4 @@
-@value typography "./typography.css";
+@value typography "./_typography.css";
 
 .icon {
 	composes: v-txt-top from typography;

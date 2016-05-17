@@ -1,0 +1,7 @@
+@value base "sourcegraph/components/styles/_base.css";
+
+.containerFixed {
+	composes: center from base;
+	width: 100%;
+	max-width: 940px;
+}

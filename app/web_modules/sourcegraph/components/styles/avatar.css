@@ -1,4 +1,4 @@
-@value base "sourcegraph/components/styles/base.css";
+@value base "sourcegraph/components/styles/_base.css";
 
 .avatar {
 	composes: br2 from base;

@@ -1,6 +1,6 @@
-@value base "./base.css";
-@value colors "./colors.css";
-@value typography "./typography.css";
+@value base "./_base.css";
+@value colors "./_colors.css";
+@value typography "./_typography.css";
 
 @value c_blue-8 from colors;
 @value c_light-silver from colors;

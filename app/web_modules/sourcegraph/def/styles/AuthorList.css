@@ -1,6 +1,6 @@
-@value base "sourcegraph/components/styles/base.css";
-@value colors "sourcegraph/components/styles/colors.css";
-@value typography "sourcegraph/components/styles/typography.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
 
 .list {
 	composes: mt1 mb2 from base;

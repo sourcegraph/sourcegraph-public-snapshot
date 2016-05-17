@@ -1,5 +1,5 @@
-@value base "sourcegraph/components/styles/base.css";
-@value typography "sourcegraph/components/styles/typography.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value typography "sourcegraph/components/styles/_typography.css";
 
 .container {
 	display: flex;

@@ -1,6 +1,6 @@
-@value base "./base.css";
-@value colors "./colors.css";
-@value typography "./typography.css";
+@value base "./_base.css";
+@value colors "./_colors.css";
+@value typography "./_typography.css";
 
 .label {
 	composes: br4 ph2 pv1 from base;

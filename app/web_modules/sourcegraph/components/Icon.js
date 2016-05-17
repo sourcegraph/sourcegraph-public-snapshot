@@ -1,0 +1,25 @@
+// @flow
+
+import React from "react";
+
+class Icon extends React.Component {
+	static propTypes = {
+		className: React.PropTypes.string,
+		width: React.PropTypes.string, // appended by "px"
+		icon: React.PropTypes.string.isRequired, // See symbols directory
+	};
+
+	static contextTypes = {
+		siteConfig: React.PropTypes.object.isRequired,
+	};
+
+	static defaultProps = {
+		width: "16px",
+	};
+
+	render() {
+		return <img src={`${this.context.siteConfig.assetsRoot}/img/symbols/${this.props.icon}.svg`} width={this.props.width} className={this.props.className} />;
+	}
+}
+
+export default Icon;

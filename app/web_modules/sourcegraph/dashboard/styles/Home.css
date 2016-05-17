@@ -1,8 +1,8 @@
-@value layout "sourcegraph/components/styles/layout.css";
-@value base "sourcegraph/components/styles/base.css";
-@value colors "sourcegraph/components/styles/colors.css";
-@value typography "sourcegraph/components/styles/typography.css";
-@value grid "sourcegraph/components/styles/grid.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value grid "sourcegraph/components/styles/_grid.css";
 @value button "sourcegraph/components/styles/button.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
@@ -11,7 +11,7 @@
 }
 
 .container {
-	composes: max-width-lg from layout;
+	composes: containerFixed from layout;
 	composes: col-12-ns col-11 from grid;
 	composes: center from base;
 }
@@ -212,7 +212,7 @@
 
 .question-mark {
 	composes: bg-purple white from colors;
-	composes: br-100 ma3 fl from base;
+	composes: br100 ma3 fl from base;
 	composes: tc v-btm f4 from typography;
 	width: 32px;
 	height: 32px;

@@ -1,9 +1,9 @@
-@value base "sourcegraph/components/styles/base.css";
+@value base "sourcegraph/components/styles/_base.css";
 @value vars "sourcegraph/components/styles/_vars.css";
-@value colors "sourcegraph/components/styles/colors.css";
-@value typography "sourcegraph/components/styles/typography.css";
-@value grid "sourcegraph/components/styles/grid.css";
-@value layout "sourcegraph/components/styles/layout.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value layout "sourcegraph/components/styles/_layout.css";
 @value link "sourcegraph/components/styles/link.css";
 
 @value navbarHeight 50px;
@@ -30,7 +30,7 @@
 }
 
 .logged-out-header {
-	composes: max-width-lg from layout;
+	composes: containerFixed from layout;
 	composes: center mt4 ph3 from base;
 	composes: tc from typography;
 }

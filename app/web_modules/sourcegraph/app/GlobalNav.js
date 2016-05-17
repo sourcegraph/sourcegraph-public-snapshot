@@ -9,11 +9,12 @@ import {Avatar, Popover, Menu, Button} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
-import base from "sourcegraph/components/styles/base.css";
+import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
 
 function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, eventLogger}) {
+	if (location.pathname === "/styleguide") return <span />;
 	return (
 		<nav styleName={signedIn || location.pathname !== "/" ? "navbar" : ""} role="navigation">
 

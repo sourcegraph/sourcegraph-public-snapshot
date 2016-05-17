@@ -1,8 +1,8 @@
 @value vars "sourcegraph/components/styles/_vars.css";
-@value base "sourcegraph/components/styles/base.css";
-@value colors "sourcegraph/components/styles/colors.css";
-@value grid "sourcegraph/components/styles/grid.css";
-@value typography "sourcegraph/components/styles/typography.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value typography "sourcegraph/components/styles/_typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
 @value media-sm from vars;

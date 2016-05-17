@@ -5,7 +5,7 @@ import Button from "sourcegraph/components/Button";
 import Logo from "sourcegraph/components/Logo";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Home.css";
-import base from "sourcegraph/components/styles/base.css";
+import base from "sourcegraph/components/styles/_base.css";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 
 

@@ -2,7 +2,7 @@
 * http://kushagragour.in/lab/hint/
 * Copyright (c) 2016 Kushagra Gour; Licensed  */
 
-@value colors "./colors.css";
+@value colors "./_colors.css";
 @value c_black-70 from colors;
 @value c_black-30 from colors;
 @value c_white from colors;

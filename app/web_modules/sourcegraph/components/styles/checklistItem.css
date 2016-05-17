@@ -1,0 +1,51 @@
+@value base "./_base.css";
+@value colors "./_colors.css";
+@value typography "./_typography.css";
+@value vars "./_vars.css";
+@value media-sm from vars;
+@value check-size: 64px;
+@value check-size-mobile: 40px;
+
+.item {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: flex-start;
+}
+
+.check-container {
+	composes: br100 ba bw2 from base;
+	composes: tc from typography;
+	flex: 0 0 check-size;
+	width: check-size;
+	height: check-size;
+	line-height: check-size;
+}
+.check {
+	composes: v-mid from typography;
+	position: relative;
+	top: -2px;
+}
+.check-complete {
+	composes: check-container;
+	composes: b--green from colors;
+}
+.check-incomplete {
+	composes: check-container;
+	composes: b--cool-pale-gray from colors;
+}
+
+.content { composes: mh4 from base; }
+.content-complete {
+	composes: content;
+	opacity: 0.6;
+}
+
+@media media-sm {
+	.check-container {
+		width: check-size-mobile;
+		height: check-size-mobile;
+		line-height: check-size-mobile;
+		flex: 0 0 check-size-mobile;
+	}
+}

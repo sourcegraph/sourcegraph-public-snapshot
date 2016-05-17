@@ -1,0 +1,17 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value backgrounds "sourcegraph/components/styles/_backgrounds.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+.hero {
+	composes: tc from typography;
+	composes: pv5 from base;
+}
+
+.white { composes: bg-near-white from colors; } /* Default */
+.purple { composes: bg-purple bg-purple-gradient white from colors; }
+.blue { composes: bg-blue bg-blue-gradient white from colors; }
+.dark { composes: bg-cool-gray white from colors; }
+.green { composes: bg-green white from colors; }
+
+.bg-img-objects { composes: bg-pattern-objects from backgrounds; }

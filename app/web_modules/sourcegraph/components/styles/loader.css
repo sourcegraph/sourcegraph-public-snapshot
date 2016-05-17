@@ -1,4 +1,4 @@
-@value base "./base.css";
+@value base "./_base.css";
 
 .loader {
 	display: inline-block;
