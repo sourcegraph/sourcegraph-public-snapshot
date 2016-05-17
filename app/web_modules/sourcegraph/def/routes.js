@@ -67,6 +67,15 @@ export function urlToDef(def: Def, rev: ?string): string {
 
 // urlToDefInfo returns a URL to the given def's info at the optional revision.
 export function urlToDefInfo(def: Def, rev: ?string): string {
+	if ((def.File === null || def.Kind === "package")) {
+		// The def's File field refers to a directory (e.g., in the
+		// case of a Go package). We can't show a dir in this view,
+		// so just redirect to the dir listing.
+		//
+		// TODO(sqs): Improve handling of this case.
+		let file = def.File === "." ? "" : def.File;
+		return urlToTree(def.Repo, rev, file);
+	}
 	return urlTo("defInfo", defParams(def, rev));
 }
 
