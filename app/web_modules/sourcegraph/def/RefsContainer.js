@@ -49,6 +49,7 @@ export default class RefsContainer extends Container {
 		super(props);
 		this.state = {
 			shownFiles: new Set(),
+			initExpaneded: false, // Keep track of when we've auto-expanded snippets.
 		};
 		this.rangesMemo = {}; // optimization: cache the line range that should be displayed for each ref
 
@@ -116,6 +117,15 @@ export default class RefsContainer extends Container {
 				fileIndexExclusions[i] = true;
 				return false;
 			});
+		}
+
+		if (state.fileLocations && !state.initExpanded) {
+			// Auto-expand N snippets by default.
+			for (let i=0; i<props.initNumSnippets; i++) {
+				let loc = state.fileLocations[i];
+				if (loc) state.shownFiles.add(loc.Path);
+			}
+			state.initExpanded = true;
 		}
 
 		if (state.mouseover) {
