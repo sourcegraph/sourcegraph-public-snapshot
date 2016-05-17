@@ -256,6 +256,7 @@ export default class RefsContainer extends Container {
 					</h2>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
+							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
 							let entrySpec = this.entrySpecsByName[loc.Path];
 							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(entrySpec, loc.Count, i);
 
