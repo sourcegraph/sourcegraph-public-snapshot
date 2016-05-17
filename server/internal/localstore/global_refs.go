@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,13 +12,24 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/experiment"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 
 func init() {
+	// dbGlobalRef DB-maps a GlobalRef object.
+	type dbGlobalRef struct {
+		DefRepo     string `db:"def_repo"`
+		DefUnitType string `db:"def_unit_type"`
+		DefUnit     string `db:"def_unit"`
+		DefPath     string `db:"def_path"`
+		Repo        string
+		CommitID    string `db:"commit_id"`
+		File        string
+		Count       int
+		UpdatedAt   *time.Time `db:"updated_at"`
+	}
 	GraphSchema.Map.AddTableWithName(dbGlobalRef{}, "global_refs").SetKeys(false, "DefRepo", "DefUnitType", "DefUnit", "DefPath", "Repo", "CommitID", "File")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`ALTER TABLE global_refs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
@@ -29,56 +39,20 @@ func init() {
 	)
 }
 
-// dbGlobalRef DB-maps a GlobalRef object.
-type dbGlobalRef struct {
-	DefRepo     string `db:"def_repo"`
-	DefUnitType string `db:"def_unit_type"`
-	DefUnit     string `db:"def_unit"`
-	DefPath     string `db:"def_path"`
-	Repo        string
-	CommitID    string `db:"commit_id"`
-	File        string
-	Count       int
-	UpdatedAt   *time.Time `db:"updated_at"`
-}
-
-// dbRefLocationsResult holds the result of the SELECT query for fetching global refs.
-type dbRefLocationsResult struct {
-	Repo      string
-	RepoCount int `db:"repo_count"`
-	File      string
-	Count     int
-}
-
-// dbRefStatsResult holds aggregation stats for a def's global refs.
-type dbRefStatsResult struct {
-	Repos int32
-}
-
 // globalRefs is a DB-backed implementation of the GlobalRefs store.
 type globalRefs struct{}
 
 func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	e := experiment.Perf{
-		Name: "globalRefs.Get",
-		B:    func() { g.getNew(ctx, op) },
-	}
-	done := e.StartA()
-	defer done()
-	return g.get(ctx, op)
-}
-
-func (g *globalRefs) get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	if op.Opt == nil {
 		op.Opt = &sourcegraph.DefListRefLocationsOptions{}
 	}
 
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
-	var stats *dbRefStatsResult
+	var totalRepos int64
 	statsDone, errc := make(chan bool), make(chan error)
 	go func() {
 		var err error
-		stats, err = getRefStats(ctx, op)
+		totalRepos, err = g.getRefStats(ctx, op)
 		if err != nil {
 			errc <- err
 		}
@@ -108,6 +82,13 @@ func (g *globalRefs) get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 
 	sql += orderBySQL
 
+	// dbRefLocationsResult holds the result of the SELECT query for fetching global refs.
+	type dbRefLocationsResult struct {
+		Repo      string
+		RepoCount int `db:"repo_count"`
+		File      string
+		Count     int
+	}
 	var dbRefResult []*dbRefLocationsResult
 	if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
 		return nil, err
@@ -191,21 +172,19 @@ func (g *globalRefs) get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	select {
 	case <-statsDone:
 	case <-timeout:
-		stats = &dbRefStatsResult{Repos: 0}
 	case err := <-errc:
 		return nil, err
 	}
 
 	return &sourcegraph.RefLocationsList{
 		RepoRefs:   filteredRepoRefs,
-		TotalRepos: stats.Repos,
+		TotalRepos: int32(totalRepos),
 	}, nil
 }
 
 // getRefStats fetches global ref aggregation stats pagination and display
 // purposes.
-func getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*dbRefStatsResult, error) {
-	var stats *dbRefStatsResult
+func (g *globalRefs) getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (int64, error) {
 	var countArgs []interface{}
 	countArg := func(a interface{}) string {
 		v := gorp.PostgresDialect{}.BindVar(len(countArgs))
@@ -216,30 +195,10 @@ func getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*
 	q := "SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs WHERE"
 	q += " def_repo=" + countArg(op.Def.Repo) + " AND def_unit_type=" + countArg(op.Def.UnitType) + " AND def_unit=" + countArg(op.Def.Unit) + " AND def_path=" + countArg(op.Def.Path)
 
-	rows, err := graphDBH(ctx).Select(dbRefStatsResult{}, q, countArgs...)
-	if err != nil {
-		return nil, err
-	}
-
-	stats = rows[0].(*dbRefStatsResult)
-	return stats, nil
-}
-
-func (g *globalRefs) getNew(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	return nil, errors.New("globalRefs.getNew is not yet implemented")
+	return graphDBH(ctx).SelectInt(q, countArgs...)
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
-	e := experiment.Perf{
-		Name: "globalRefs.Update",
-		B:    func() { g.updateNew(ctx, op) },
-	}
-	done := e.StartA()
-	defer done()
-	return g.update(ctx, op)
-}
-
-func (g *globalRefs) update(ctx context.Context, op *pb.ImportOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
 		return err
 	}
@@ -314,8 +273,4 @@ ON COMMIT DROP;`
 
 		return nil
 	})
-}
-
-func (g *globalRefs) updateNew(ctx context.Context, op *pb.ImportOp) error {
-	return errors.New("globalRefs.updateNew is not yet implemented")
 }
