@@ -197,7 +197,7 @@ export default class RefsContainer extends Container {
 	renderFileHeader(entrySpec, count, i) {
 		let pathBreadcrumb = breadcrumb(
 			entrySpec.Path,
-			(j) => <span key={j} className={styles.sep}>/</span>,
+			(j) => <span key={j} className={styles.sep}> / </span>,
 			(path, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
 		);
 		return (
@@ -206,8 +206,10 @@ export default class RefsContainer extends Container {
 				this._toggleFile(entrySpec.Path);
 			}}>
 				{this.state.shownFiles.has(entrySpec.Path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
-				{pathBreadcrumb}
-				<div className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</div>
+				<div className={styles.pathContainer}>
+					{pathBreadcrumb}
+					<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
+				</div>
 				<Link className={styles.viewFile}
 					to={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}>
 					<span className={styles.pageLink}>View</span>

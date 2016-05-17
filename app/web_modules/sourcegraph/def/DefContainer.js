@@ -82,7 +82,7 @@ class DefContainer extends Container {
 	renderFileHeader(def, beginningLine) {
 		let pathBreadcrumb = breadcrumb(
 			def.File,
-			(j) => <span key={j} className={styles.sep}>/</span>,
+			(j) => <span key={j} className={styles.sep}> / </span>,
 			(path, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
 		);
 		return (
@@ -90,9 +90,11 @@ class DefContainer extends Container {
 				this.setState({showDef: !this.state.showDef});
 			}}>
 				{this.state.showDef ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
-				<label className={styles.label}>Definition:</label>&nbsp;
-				{pathBreadcrumb}
-				<span className={styles.refsLabel}>line {beginningLine}</span>
+				<div className={styles.pathContainer}>
+					<label className={styles.label}>Definition:</label>&nbsp;
+					{pathBreadcrumb}
+					<span className={styles.refsLabel}>line {beginningLine}</span>
+				</div>
 				<Link className={styles.viewFile} to={urlToBlob(def.Repo, this.state.rev, def.File)}>
 					<span className={styles.pageLink}>View</span>
 				</Link>

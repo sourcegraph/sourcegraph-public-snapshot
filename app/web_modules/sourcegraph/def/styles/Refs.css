@@ -3,9 +3,10 @@
 @value grid "sourcegraph/components/styles/grid.css";
 @value colors "sourcegraph/components/styles/colors.css";
 @value tooltips "sourcegraph/components/styles/tooltips.css";
+@value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_black-20 from colors;
-@value c_white from colors;
+@value c_dark-blue from colors;
+@value media-sm from vars;
 
 .container {
 	display: flex;
@@ -20,7 +21,7 @@
 	align-items: center;
 }
 
-@media screen and (max-width: 48em) {
+@media media-sm {
 	.repo {
 		margin: 0 10px;
 	}
@@ -56,13 +57,18 @@
 	cursor: pointer;
 }
 
+.pathContainer {
+	flex: 1 1 auto;
+}
+
 .viewFile {
-	margin-left: auto;
+	composes: tr from typography;
+	flex: 0 0 35px;
 }
 
 .toggleIcon {
 	composes: mid-gray from colors;
-	composes: pr3 from base;
+	flex: 0 0 15px;
 }
 
 .paginator {
@@ -75,13 +81,12 @@
 	user-select: none;
 }
 
-@value c_dark-blue from colors;
 .pageLink:hover {
 	color: c_dark-blue;
 }
 
 .sep {
-	composes: ph1 from base;
+	composes: silver from colors;
 }
 
 .label {
