@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/store"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
@@ -14,8 +15,21 @@ import (
 
 func TestGlobalRefs(t *testing.T) {
 	t.Parallel()
+	testGlobalRefs(t, &globalRefs{})
+}
 
-	var g globalRefs
+func TestGlobalRefsNew(t *testing.T) {
+	t.Parallel()
+	testGlobalRefs(t, &globalRefsNew{})
+}
+
+func TestGlobalRefsExperiment(t *testing.T) {
+	// Can't run in parallel since it will collide with the other
+	// GlobalRefs tests
+	testGlobalRefs(t, globalRefsExp)
+}
+
+func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	ctx, _, done := testContext()
 	defer done()
 
