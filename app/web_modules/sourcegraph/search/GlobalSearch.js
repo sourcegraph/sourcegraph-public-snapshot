@@ -180,7 +180,7 @@ class GlobalSearch extends Container {
 			return;
 		}
 		const def = this.state.matchingDefs.Defs[i];
-		this._navigateTo(urlToDef(def));
+		this._navigateTo(urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def));
 	}
 
 	_selectItem(i: number): void {
@@ -248,8 +248,7 @@ class GlobalSearch extends Container {
 					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: defURL})}>
 					<div styleName="search-result-main"><code>{qualifiedNameAndType(def)}</code></div>
 					<div styleName="search-result-info">
-							<code><span styleName="search-result-repo">Used in {def.Repo}</span><br/><span styleName="search-result-file">Referenced from {def.File}</span></code><br/>
-							{def.RefCount > 0 && <span><span styleName="search-result-ref-count">{def.RefCount.toLocaleString()}</span> examples found</span>}
+						<span styleName="search-result-repo">{def.Repo}</span>
 					</div>
 					<div styleName="search-result-doc">{firstLine(docstring)}</div>
 				</Link>
