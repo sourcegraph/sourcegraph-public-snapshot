@@ -8,6 +8,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/graph"
+	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
 func TestGlobalRefs(t *testing.T) {
@@ -37,19 +39,23 @@ func TestGlobalRefs(t *testing.T) {
 		{DefPath: "B/T", DefRepo: "", DefUnit: "x/y/d", File: "x/y/c/v.go"}, // same repo, different unit
 	}
 
-	if err := g.mustUpdate(ctx, t, "a/b", "a/b/u", "t", testRefs1); err != nil {
-		t.Fatal(err)
+	mustUpdate := func(repo, unitName, unitType string, refs []*graph.Ref) {
+		op := &pb.ImportOp{
+			Repo: repo,
+			Unit: &unit.RepoSourceUnit{Unit: unitName, UnitType: unitType},
+			Data: &graph.Output{
+				Refs: refs,
+			},
+		}
+		if err := g.Update(ctx, op); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if err := g.mustUpdate(ctx, t, "a/b", "a/b/p", "t", testRefs2); err != nil {
-		t.Fatal(err)
-	}
-	if err := g.mustUpdate(ctx, t, "x/y", "x/y/c", "t", testRefs3); err != nil {
-		t.Fatal(err)
-	}
+	mustUpdate("a/b", "a/b/u", "t", testRefs1)
+	mustUpdate("a/b", "a/b/p", "t", testRefs2)
+	mustUpdate("x/y", "x/y/c", "t", testRefs3)
 	// Updates should be idempotent.
-	if err := g.mustUpdate(ctx, t, "a/b", "a/b/p", "t", testRefs2); err != nil {
-		t.Fatal(err)
-	}
+	mustUpdate("a/b", "a/b/p", "t", testRefs2)
 
 	testCases := []struct {
 		Query  sourcegraph.DefSpec
