@@ -44,9 +44,9 @@ class HomeSearchContainer extends React.Component {
 					</div>
 					{!this.props.location.query.q && <div styleName="container">
 					{this.context.githubToken && <div styleName="suggestion-subheader">Top queries
-							<div styleName="suggestion"><Link to="github.com/golang/go@eb69476c66339ca494f98e65a78d315da99a9c79/-/def/GoPackage/net/http/-/Client/Get/-/info"><code>http.Get</code></Link></div>
-							<div styleName="suggestion"><Link to="github.com/golang/go@eb69476c66339ca494f98e65a78d315da99a9c79/-/def/GoPackage/fmt/-/Sprintf/-/info"><code>Sprintf</code></Link></div>
-							<div styleName="suggestion"><Link to="github.com/golang/go@b66b97e0a120880e37b03eba00c0c7679f0a70c1/-/def/GoPackage/image/-/Decode/-/info"><code>func Decode</code></Link></div>
+							<div styleName="suggestion"><Link to="github.com/golang/go@eb69476c66339ca494f98e65a78d315da99a9c79/-/info/GoPackage/net/http/-/Client/Get"><code>http.Get</code></Link></div>
+							<div styleName="suggestion"><Link to="github.com/golang/go@eb69476c66339ca494f98e65a78d315da99a9c79/-/info/GoPackage/fmt/-/Sprintf"><code>Sprintf</code></Link></div>
+							<div styleName="suggestion"><Link to="github.com/golang/go@b66b97e0a120880e37b03eba00c0c7679f0a70c1/-/info/GoPackage/image/-/Decode"><code>func Decode</code></Link></div>
 						</div>}
 						{!this.context.githubToken && <div>
 							<div styleName="suggestion-header">Did you know you can search your repositories?
