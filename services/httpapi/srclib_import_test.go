@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -28,7 +27,7 @@ func TestSrclibImport(t *testing.T) {
 
 	// Sample srclib data to import.
 	files := map[string]interface{}{
-		"a/b.unit.json":    &unit.SourceUnit{Name: "a/b", Type: "t", Dir: ".", Files: []string{"f"}},
+		"a/b.unit.json":    &unit.SourceUnit{Key: unit.Key{Name: "a/b", Type: "t"}, Info: unit.Info{Dir: ".", Files: []string{"f"}}},
 		"a/b/t.graph.json": graph.Output{Defs: []*graph.Def{{DefKey: graph.DefKey{Path: "p"}, Name: "n", File: "f"}}},
 	}
 
@@ -52,10 +51,10 @@ func TestSrclibImport(t *testing.T) {
 				if commitID != wantCommitID {
 					t.Errorf("got commitID %q, want %q", commitID, wantCommitID)
 				}
-				if want := files["a/b.unit.json"]; !reflect.DeepEqual(unit, want) {
+				if want := files["a/b.unit.json"]; !deepEqual(unit, want) {
 					t.Errorf("got unit %+v, want %+v", unit, want)
 				}
-				if want := files["a/b/t.graph.json"]; !reflect.DeepEqual(data, want) {
+				if want := files["a/b/t.graph.json"]; !deepEqual(data, want) {
 					t.Errorf("got graph data %+v, want %+v", data, want)
 				}
 				return nil
@@ -147,4 +146,16 @@ func TestSrclibImport_empty(t *testing.T) {
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
 	}
+}
+
+func deepEqual(u, v interface{}) bool {
+	u_, err := json.Marshal(u)
+	if err != nil {
+		return false
+	}
+	v_, err := json.Marshal(v)
+	if err != nil {
+		return false
+	}
+	return string(u_) == string(v_)
 }

@@ -41,12 +41,16 @@ func (c *URefsRepoCmd) Execute(args []string) error {
 	unitNames := hierarchicalNames("u", "unit", "", c.NUnits)
 	for _, unitName := range unitNames {
 		ut := &unit.SourceUnit{
-			Name:     fmt.Sprintf(unitName),
-			Type:     "GoPackage",
-			Repo:     c.Repo,
-			CommitID: c.CommitID,
-			Files:    []string{},
-			Dir:      unitName,
+			Key: unit.Key{
+				Name:     fmt.Sprintf(unitName),
+				Type:     "GoPackage",
+				Repo:     c.Repo,
+				CommitID: c.CommitID,
+			},
+			Info: unit.Info{
+				Files: []string{},
+				Dir:   unitName,
+			},
 		}
 		units = append(units, ut)
 	}

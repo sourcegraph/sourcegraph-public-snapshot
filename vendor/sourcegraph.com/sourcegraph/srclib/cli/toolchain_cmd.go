@@ -329,22 +329,29 @@ run this command again.`)
 		return err
 	}
 
-	if os.Getenv("GOPATH") == "" {
-		os.Setenv("GOPATH", path.Join(util.CurrentUserHomeDir(), ".srclib-gopath"))
+	// retrieve or create GOPATH
+	gopathDir := getGoPath()
+
+	// Go-based toolchains should be cloned into GOPATH/src/TOOLCHAIN
+	// otherwise govendor refuses to work if source code is located outside of GOPATH
+	gopathDir = filepath.Join(gopathDir, "src", toolchain)
+	if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
+		return err
 	}
 
+	log.Println("Downloading Go toolchain")
+	if err := cloneToolchain(gopathDir, toolchain); err != nil {
+		return err
+	}
+
+	// making parent directory of toolchain in SRCLIBPATH
 	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
 		return err
 	}
 
-	log.Println("Downloading Go toolchain")
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
-		return err
-	}
-
-	// Add symlink to GOPATH so install succeeds (necessary as long as there's a Go dependency in this toolchain)
-	err, gopathDir := symlinkToGopath(toolchain)
+	// Adding symlink SRCLIBPATH/TOOLCHAIN that points to GOPATH/src/TOOLCHAIN
+	err := symlink(gopathDir, srclibpathDir)
 	if err != nil {
 		return err
 	}
@@ -390,7 +397,7 @@ func installRubyToolchain() error {
 }
 
 func installJavaScriptToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-javascript"
+	const toolchain = "github.com/sourcegraph/srclib-javascript"
 
 	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
 
@@ -403,6 +410,11 @@ func installJavaScriptToolchain() error {
 
 	log.Println("Downloading JavaScript toolchain in", srclibpathDir)
 	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+		return err
+	}
+
+	log.Println("Building JavaScript toolchain program")
+	if err := execCmdInDir(srclibpathDir, "npm", "install"); err != nil {
 		return err
 	}
 
@@ -453,20 +465,35 @@ func installPythonToolchain() error {
 		}
 	}
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	log.Println("Downloading Python toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	// retrieve or create GOPATH
+	gopathDir := getGoPath()
+
+	// Go-based toolchains should be cloned into GOPATH/src/TOOLCHAIN
+	// otherwise govendor refuses to work if source code is located outside of GOPATH
+	gopathDir = filepath.Join(gopathDir, "src", toolchain)
+	if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
 		return err
 	}
 
-	// Add symlink to GOPATH so install succeeds (necessary as long as there's a Go dependency in this toolchain)
-	err, gopathDir := symlinkToGopath(toolchain)
+	log.Println("Downloading Python toolchain")
+	if err := cloneToolchain(gopathDir, toolchain); err != nil {
+		return err
+	}
+
+	// making parent directory of toolchain in SRCLIBPATH
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+		return err
+	}
+
+	// Adding symlink SRCLIBPATH/TOOLCHAIN that points to GOPATH/src/TOOLCHAIN
+	err := symlink(gopathDir, srclibpathDir)
 	if err != nil {
 		return err
 	}
 
-	log.Println("Installing deps for Python toolchain in", gopathDir)
-	if err := execCmdInDir(gopathDir, "make", "install"); err != nil {
+	log.Println("Building Python toolchain program")
+	if err := execCmdInDir(gopathDir, "make"); err != nil {
 		return err
 	}
 
@@ -531,7 +558,7 @@ func installCSharpToolchain() error {
 
 	nugetdir := filepath.Join(srclibpathDir, "Srclib.Nuget")
 	log.Println("Downloading toolchain dependencies in", nugetdir)
-	if err := execCmdInDir("dnu", "restore", nugetdir); err != nil {
+	if err := execCmdInDir(nugetdir, "dnu", "restore"); err != nil {
 		return err
 	}
 
@@ -599,42 +626,40 @@ func isExecErrNotFound(err error) bool {
 	return false
 }
 
-func symlinkToGopath(toolchain string) (err error, gopathDir string) {
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		return fmt.Errorf("GOPATH not set"), ""
+// getGoPath returns first item in the GOPATH list
+// If there is no GOPATH set function sets GOPATH to ~/.srclib-gopath and returns ~/.srclib-gopath
+func getGoPath() string {
+	list := os.Getenv("GOPATH")
+	if list == "" {
+		goPath := path.Join(util.CurrentUserHomeDir(), ".srclib-gopath")
+		os.Setenv("GOPATH", goPath)
+		return goPath
 	}
+	return filepath.SplitList(list)[0]
+}
 
-	srcDir := filepath.Join(filepath.SplitList(gopath)[0], "src")
-	gopathDir = filepath.Join(srcDir, toolchain)
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain)
-
-	if fi, err := os.Lstat(gopathDir); os.IsNotExist(err) {
-		log.Printf("mkdir -p %s", filepath.Dir(gopathDir))
-		if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
-			return err, ""
+// symlink makes symlink "target" that points to "source"
+func symlink(source, target string) error {
+	if _, err := os.Lstat(target); os.IsNotExist(err) {
+		log.Printf("mkdir -p %s", filepath.Dir(target))
+		if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
+			return err
 		}
 		if runtime.GOOS != "windows" {
-			log.Printf("ln -s %s %s", srclibpathDir, gopathDir)
-			if err := os.Symlink(srclibpathDir, gopathDir); err != nil {
-				return err, ""
+			log.Printf("ln -s %s %s", source, target)
+			if err := os.Symlink(source, target); err != nil {
+				return err
 			}
 		} else {
 			// os.Symlink makes "file symbolic link" on Windows making impossible to install Go toolchain
 			// because `cd foo && make` requires "foo" to be either a directory or so-called "directory symbolic link".
 			// That's why we had to use `mklink /D bar foo`
-			if err := execCmdInDir(srclibpathDir, "cmd", "/c", "mklink", "/D", gopathDir, srclibpathDir); err != nil {
-				return err, ""
+			if err := execCmdInDir(source, "cmd", "/c", "mklink", "/D", target, source); err != nil {
+				return err
 			}
 		}
-	} else if err != nil {
-		return err, ""
-	} else if fi.Mode()&os.ModeSymlink == 0 {
-		// toolchain dir in GOPATH is not a symlink, so assume they
-		// intentionally cloned the toolchain repo into their GOPATH.
-		return nil, gopathDir
+		return nil
+	} else {
+		return err
 	}
-
-	log.Printf("Symlinked toolchain %s into your GOPATH at %s", toolchain, gopathDir)
-	return nil, gopathDir
 }

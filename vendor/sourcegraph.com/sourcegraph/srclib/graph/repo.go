@@ -51,8 +51,6 @@ func TryMakeURI(cloneURL string) (string, error) {
 	url, err := url.Parse(cloneURL)
 	if err != nil {
 		return "", err
-	} else if url.Path == "" || url.Path == "/" {
-		return "", fmt.Errorf("determining URI from repo clone URL failed: missing path from URL (%q)", cloneURL)
 	} else if url.Host == "" && (url.Path[0] == '/' || !strings.Contains(strings.Trim(url.Path, "/"), "/")) {
 		// We ensure our Path doesn't look like the output of TryMakeURI
 		// so that the output of this function is a fixed point.
@@ -62,7 +60,9 @@ func TryMakeURI(cloneURL string) (string, error) {
 	}
 
 	uri := strings.TrimSuffix(url.Path, ".git")
-	uri = path.Clean(uri)
+	if uri != "" {
+		uri = path.Clean(uri)
+	}
 	uri = strings.TrimSuffix(uri, "/")
 	return strings.ToLower(url.Host) + uri, nil
 }

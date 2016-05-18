@@ -432,7 +432,7 @@ func (c *StoreImportCmd) sample(s interface{}) error {
 	start := time.Now()
 	log.Printf("Making sample data (%d defs, %d refs)", c.SampleDefs, c.SampleRefs)
 	data := makeGraphData(c.SampleDefs, c.SampleRefs)
-	unit := &unit.SourceUnit{Type: "MyUnitType", Name: "MyUnit"}
+	unit := &unit.SourceUnit{Key: unit.Key{Type: "MyUnitType", Name: "MyUnit"}}
 	files := map[string]struct{}{}
 	for _, def := range data.Defs {
 		files[def.File] = struct{}{}

@@ -45,13 +45,17 @@ func CreateMakefile(buildDataDir string, buildStore buildstore.RepoBuildStore, v
 		allRules = append(allRules, rules...)
 	}
 
-	// Add an "all" rule at the very beginning.
+	// Add a ".PHONY" and "all" rules at the very beginning.
 	allTargets := make([]string, len(allRules))
 	for i, rule := range allRules {
 		allTargets[i] = rule.Target()
 	}
+
 	allRule := &makex.BasicRule{TargetFile: "all", PrereqFiles: allTargets}
 	allRules = append([]makex.Rule{allRule}, allRules...)
+
+	phonyRule := &makex.BasicRule{TargetFile: ".PHONY", PrereqFiles: []string{"all"}}
+	allRules = append([]makex.Rule{phonyRule}, allRules...)
 
 	// DELETE_ON_ERROR makes it so that the targets for failed recipes are
 	// deleted. This lets us do "1> $@" to write to the target file without

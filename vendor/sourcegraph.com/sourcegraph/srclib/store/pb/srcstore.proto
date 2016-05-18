@@ -30,7 +30,7 @@ service MultiRepoImporter {
 message ImportOp {
 	string Repo = 1;
 	string CommitID = 2;
-	unit.RepoSourceUnit Unit = 3;
+	unit.SourceUnit Unit = 3;
 	graph.Output Data = 4;
 }
 

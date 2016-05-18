@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+	"runtime"
 
 	"sourcegraph.com/sourcegraph/makex"
 	"sourcegraph.com/sourcegraph/srclib"
@@ -34,15 +34,10 @@ func makeGraphRules(c *config.Tree, dataDir string, existing []makex.Rule) ([]ma
 		if _, hasGraphAll := u.Ops[graphAllOp]; hasGraphAll {
 			continue
 		}
-		toolRef := u.Ops[graphOp]
-		if toolRef == nil {
-			choice, err := toolchain.ChooseTool(graphOp, u.Type)
-			if err != nil {
-				return nil, err
-			}
-			toolRef = choice
+		toolRef, err := toolchain.ChooseTool(graphOp, u.Type)
+		if err != nil {
+			return nil, err
 		}
-
 		rules = append(rules, &GraphUnitRule{dataDir, u, toolRef})
 	}
 	return rules, nil
@@ -115,7 +110,7 @@ func (r *GraphMultiUnitsRule) Target() string {
 	// the makefile rules (see plan/util.go). Both import command and coverage command
 	// call the Targets() method to get the *.graph.json filepaths for all units graphed
 	// by this rule.
-	return filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(&graph.Output{}, &unit.SourceUnit{Type: r.UnitsType})))
+	return filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(&graph.Output{}, &unit.SourceUnit{Key: unit.Key{Type: r.UnitsType}})))
 }
 
 func (r *GraphMultiUnitsRule) Targets() map[string]*unit.SourceUnit {
@@ -150,7 +145,13 @@ func (r *GraphMultiUnitsRule) Recipes() []string {
 	for _, u := range r.Units {
 		unitFiles = append(unitFiles, filepath.ToSlash(filepath.Join(r.dataDir, plan.SourceUnitDataFilename(unit.SourceUnit{}, u))))
 	}
+
+	// Use `find` command + `xargs` because otherwise the arguments list can become too long.
+	var findCmd = "find -L"
+	if runtime.GOOS == "windows" {
+		findCmd = "/usr/bin/find"
+	}
 	return []string{
-		fmt.Sprintf("%s internal emit-unit-data %s | %s tool %q %q | %s internal normalize-graph-data --unit-type %q --dir . --multi --data-dir %s", safeCommand, strings.Join(unitFiles, " "), safeCommand, r.Tool.Toolchain, r.Tool.Subcmd, safeCommand, r.UnitsType, filepath.ToSlash(r.dataDir)),
+		fmt.Sprintf(`%s %s -name "*%s.unit.json" | xargs %s internal emit-unit-data  | %s tool %q %q | %s internal normalize-graph-data --unit-type %q --dir . --multi --data-dir %s`, findCmd, filepath.ToSlash(r.dataDir), r.UnitsType, safeCommand, safeCommand, r.Tool.Toolchain, r.Tool.Subcmd, safeCommand, r.UnitsType, filepath.ToSlash(r.dataDir)),
 	}
 }

@@ -25,6 +25,7 @@ type Stores struct {
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	GlobalDefs         GlobalDefs
+	GlobalDeps         GlobalDeps
 	GlobalRefs         GlobalRefs
 	Graph              srcstore.MockMultiRepoStore
 	Orgs               Orgs
@@ -46,6 +47,7 @@ func (s *Stores) Stores() store.Stores {
 		Directory:          &s.Directory,
 		ExternalAuthTokens: &s.ExternalAuthTokens,
 		GlobalDefs:         &s.GlobalDefs,
+		GlobalDeps:         &s.GlobalDeps,
 		GlobalRefs:         &s.GlobalRefs,
 		Graph:              &s.Graph,
 		Orgs:               &s.Orgs,

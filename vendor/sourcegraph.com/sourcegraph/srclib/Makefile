@@ -24,7 +24,7 @@ install: srclib
 srclib: ${GOBIN}/${EXE}
 
 ${GOBIN}/${EXE}: $(shell /usr/bin/find . -type f -and -name '*.go')
-	GO15VENDOREXPERIMENT=1 go install ./cmd/srclib
+	go install ./cmd/srclib
 
 govendor:
 	go get github.com/kardianos/govendor
@@ -32,13 +32,10 @@ govendor:
 
 release: upload-release check-release
 
-SELFUPDATE_TMPDIR=.tmp-selfupdate
 upload-release:
 	@bash -c 'if [[ "$(V)" == "" ]]; then echo Must specify version: make release V=x.y.z; exit 1; fi'
-	go get github.com/laher/goxc github.com/sqs/go-selfupdate
+	go get github.com/laher/goxc
 	goxc -q -pv="$(V)"
-	go-selfupdate -o="$(SELFUPDATE_TMPDIR)" -cmd=srclib "release/$(V)" "$(V)"
-	aws s3 sync --acl public-read "$(SELFUPDATE_TMPDIR)" s3://srclib-release/srclib
 	git tag v$(V)
 	git push --tags
 

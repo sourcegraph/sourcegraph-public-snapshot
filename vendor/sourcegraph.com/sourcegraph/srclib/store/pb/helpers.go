@@ -28,14 +28,10 @@ type client struct {
 }
 
 func (c *client) Import(repo, commitID string, u *unit.SourceUnit, data graph.Output) error {
-	rsUnit, err := unit.NewRepoSourceUnit(u)
-	if err != nil {
-		return err
-	}
-	_, err = c.u.Import(c.ctx, &ImportOp{
+	_, err := c.u.Import(c.ctx, &ImportOp{
 		Repo:     repo,
 		CommitID: commitID,
-		Unit:     rsUnit,
+		Unit:     u,
 		Data:     &data,
 	})
 	return err
@@ -61,14 +57,10 @@ func Server(s MultiRepoImporterIndexer) MultiRepoImporterServer { return &server
 type server struct{ u MultiRepoImporterIndexer }
 
 func (s *server) Import(ctx context.Context, op *ImportOp) (*pbtypes.Void, error) {
-	unit, err := op.Unit.SourceUnit()
-	if err != nil {
-		return nil, err
-	}
 	if op.Data == nil {
 		op.Data = &graph.Output{}
 	}
-	if err := s.u.Import(op.Repo, op.CommitID, unit, *op.Data); err != nil {
+	if err := s.u.Import(op.Repo, op.CommitID, op.Unit, *op.Data); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil

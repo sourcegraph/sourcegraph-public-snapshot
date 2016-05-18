@@ -59,7 +59,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	mustUpdate := func(repo, unitName, unitType string, refs []*graph.Ref) {
 		op := &pb.ImportOp{
 			Repo: repo,
-			Unit: &unit.RepoSourceUnit{Unit: unitName, UnitType: unitType},
+			Unit: &unit.SourceUnit{Key: unit.Key{Name: unitName, Type: unitType}},
 			Data: &graph.Output{
 				Refs: refs,
 			},
@@ -208,7 +208,7 @@ func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, nRe
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
 		op := &pb.ImportOp{
 			Repo: pkg,
-			Unit: &unit.RepoSourceUnit{Unit: pkg, UnitType: "GoPackage"},
+			Unit: &unit.SourceUnit{Key: unit.Key{Name: pkg, Type: "GoPackage"}},
 			Data: &graph.Output{
 				Refs: refs,
 			},

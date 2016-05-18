@@ -14,7 +14,7 @@ import (
 // found that can perform op on the source unit type, it is returned. If zero or
 // more than 1 are found, then an error is returned. TODO(sqs): extend this to
 // choose the "best" tool when multiple tools would suffice.
-func ChooseTool(op, unitType string) (*srclib.ToolRef, error) {
+var ChooseTool = func(op, unitType string) (*srclib.ToolRef, error) {
 	tcs, err := List()
 	if err != nil {
 		return nil, err

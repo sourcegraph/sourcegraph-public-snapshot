@@ -33,11 +33,14 @@ func Main() error {
 	log.SetPrefix("")
 	log.SetOutput(colorable.Stderr)
 
-	cli := flags.NewNamedParser(srclib.CommandName, flags.Default)
+	cli := flags.NewNamedParser(srclib.CommandName, flags.Default ^ flags.PrintErrors)
 	cli.LongDescription = "srclib builds projects, analyzes source code, and queries Sourcegraph."
 	cli.AddGroup("Global options", "", &GlobalOpt)
 	AddCommands(cli.Command)
 
 	_, err := cli.Parse()
+	if err != nil {
+		colorable.Println(err)
+	}
 	return err
 }

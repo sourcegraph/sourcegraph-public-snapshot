@@ -1182,9 +1182,10 @@
 			"revisionTime": "2015-05-22T20:05:23-07:00"
 		},
 		{
+			"checksumSHA1": "2piN+w2hfsW2WyIMjNKfGFKs+bE=",
 			"path": "sourcegraph.com/sourcegraph/srclib",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-docker/dockerfiledef",
@@ -1194,20 +1195,20 @@
 		{
 			"checksumSHA1": "pyXMmaVIhnvBmmgpbcxF3/Xi2AE=",
 			"path": "sourcegraph.com/sourcegraph/srclib-go/depresolve",
-			"revision": "489ff1b60bf87d85359296a1bb756cabfe5e6475",
-			"revisionTime": "2016-05-18T02:46:51Z"
+			"revision": "43b890f06fcdf278e7cd57099bee7e0510bfb63e",
+			"revisionTime": "2016-05-23T07:33:25Z"
 		},
 		{
 			"checksumSHA1": "yrklc6tNTVHOEAE1WShWDnfSAD4=",
 			"path": "sourcegraph.com/sourcegraph/srclib-go/gog/definfo",
-			"revision": "489ff1b60bf87d85359296a1bb756cabfe5e6475",
-			"revisionTime": "2016-05-18T02:46:51Z"
+			"revision": "43b890f06fcdf278e7cd57099bee7e0510bfb63e",
+			"revisionTime": "2016-05-23T07:33:25Z"
 		},
 		{
 			"checksumSHA1": "sAmLsjAFmJxhhhiY6cHZK7wKzMQ=",
 			"path": "sourcegraph.com/sourcegraph/srclib-go/golang_def",
-			"revision": "489ff1b60bf87d85359296a1bb756cabfe5e6475",
-			"revisionTime": "2016-05-18T02:46:51Z"
+			"revision": "43b890f06fcdf278e7cd57099bee7e0510bfb63e",
+			"revisionTime": "2016-05-23T07:33:25Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-haskell/haskell",
@@ -1221,8 +1222,8 @@
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-python/python",
-			"revision": "36d1771e1a1d04b2f6a643cd7ba2edb8e4817f7a",
-			"revisionTime": "2016-03-04T18:10:02-08:00"
+			"revision": "cd107aabfcec75e4f9758577778bbee32b9ece40",
+			"revisionTime": "2016-05-23T05:47:58Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-ruby/ruby_def",
@@ -1235,99 +1236,118 @@
 			"revisionTime": "2014-12-10T21:02:51-08:00"
 		},
 		{
+			"checksumSHA1": "50qafmhTyHoz2X+UbQeqJKcELjw=",
 			"path": "sourcegraph.com/sourcegraph/srclib/ann",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "6Gr29dGzABWc6eUncFUs7LMVDVY=",
 			"path": "sourcegraph.com/sourcegraph/srclib/buildstore",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "kRDitKKfQvG0WXpVvREZMv9PyDk=",
 			"path": "sourcegraph.com/sourcegraph/srclib/cli",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "kvnyBbEvqJqDFaiSJ6Hxc24jatw=",
 			"path": "sourcegraph.com/sourcegraph/srclib/config",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "YgOvbeh6dThFvXuv/6ilRrpTAkY=",
 			"path": "sourcegraph.com/sourcegraph/srclib/cvg",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "vUECzhjLYS4ERgLkmb5MNIhRVEw=",
 			"path": "sourcegraph.com/sourcegraph/srclib/dep",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "HtQlMBtlxD6UuZTAOhPS2UiwobQ=",
 			"path": "sourcegraph.com/sourcegraph/srclib/flagutil",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "hqOnCIZ9I6jSDSB2hb7pNq8Lyok=",
 			"path": "sourcegraph.com/sourcegraph/srclib/gendata",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "IlhJpzgSvjk9dQXGcZARbjn3D/I=",
 			"path": "sourcegraph.com/sourcegraph/srclib/graph",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "uQFo/qfTbZeoksMwgU/WOq2on0o=",
 			"path": "sourcegraph.com/sourcegraph/srclib/grapher",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "4bz5pt5eM29kurcWK2WpjlHqRAo=",
 			"path": "sourcegraph.com/sourcegraph/srclib/plan",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "7g7NhakKdVaZuhVqti/Vpuo5las=",
 			"path": "sourcegraph.com/sourcegraph/srclib/scan",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "Ya3QI4cPVkYEpWzJneYBT/55VbM=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "Wcga6D9y/GoKviaX9tpvBPZ4DdE=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pb",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "l35Md5Upf6nXt5S9VUpImmHyGkQ=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store/pbio",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "l92oSpD/BquNpqY2uqk4o0XCcEM=",
 			"path": "sourcegraph.com/sourcegraph/srclib/store/phtable",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "/kQ2M+FpVNUNpe6dW3IulQDwSh8=",
 			"path": "sourcegraph.com/sourcegraph/srclib/toolchain",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "4d2m9PwaX1/gm9RbgWAJ5fGOBCM=",
 			"path": "sourcegraph.com/sourcegraph/srclib/unit",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
+			"checksumSHA1": "sX55Z0+7/lbGcM2XgxpFylHQCIc=",
 			"path": "sourcegraph.com/sourcegraph/srclib/util",
-			"revision": "06ed0ce42989ae42a0fd903832d8c757ca93084c",
-			"revisionTime": "2016-04-12T11:36:41-07:00"
+			"revision": "8f96106a6de1c449d54450e16555d8786f52f8e8",
+			"revisionTime": "2016-05-23T07:25:00Z"
 		},
 		{
 			"path": "sourcegraph.com/sqs/pbtypes",

@@ -25,13 +25,9 @@ func makeDepRules(c *config.Tree, dataDir string, existing []makex.Rule) ([]make
 	const op = depresolveOp
 	var rules []makex.Rule
 	for _, u := range c.SourceUnits {
-		toolRef := u.Ops[op]
-		if toolRef == nil {
-			choice, err := toolchain.ChooseTool(depresolveOp, u.Type)
-			if err != nil {
-				return nil, err
-			}
-			toolRef = choice
+		toolRef, err := toolchain.ChooseTool(depresolveOp, u.Type)
+		if err != nil {
+			return nil, err
 		}
 
 		rules = append(rules, &ResolveDepsRule{dataDir, u, toolRef})

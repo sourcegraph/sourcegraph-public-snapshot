@@ -26,6 +26,7 @@ type Stores struct {
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	GlobalDefs         GlobalDefs
+	GlobalDeps         GlobalDeps
 	GlobalRefs         GlobalRefs
 	Graph              srcstore.MultiRepoStoreImporterIndexer
 	Orgs               Orgs
@@ -48,6 +49,7 @@ const (
 	_DirectoryKey
 	_ExternalAuthTokensKey
 	_GlobalDefsKey
+	_GlobalDepsKey
 	_GlobalRefsKey
 	_GraphKey
 	_OrgsKey
@@ -82,6 +84,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.GlobalDefs != nil {
 		ctx = WithGlobalDefs(ctx, s.GlobalDefs)
+	}
+	if s.GlobalDeps != nil {
+		ctx = WithGlobalDeps(ctx, s.GlobalDeps)
 	}
 	if s.GlobalRefs != nil {
 		ctx = WithGlobalRefs(ctx, s.GlobalRefs)
@@ -210,6 +215,20 @@ func GlobalDefsFromContext(ctx context.Context) GlobalDefs {
 	s, ok := ctx.Value(_GlobalDefsKey).(GlobalDefs)
 	if !ok || s == nil {
 		panic("no GlobalDefs set in context")
+	}
+	return s
+}
+
+// WithGlobalDeps returns a copy of parent with the given GlobalDeps store.
+func WithGlobalDeps(parent context.Context, s GlobalDeps) context.Context {
+	return context.WithValue(parent, _GlobalDepsKey, s)
+}
+
+// GlobalDepsFromContext gets the context's GlobalDeps store. If the store is not present, it panics.
+func GlobalDepsFromContext(ctx context.Context) GlobalDeps {
+	s, ok := ctx.Value(_GlobalDepsKey).(GlobalDeps)
+	if !ok || s == nil {
+		panic("no GlobalDeps set in context")
 	}
 	return s
 }

@@ -7,6 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
 type GlobalDefs struct {
@@ -41,3 +42,18 @@ func (s *GlobalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 func (s *GlobalRefs) Update(ctx context.Context, op *pb.ImportOp) error { return s.Update_(ctx, op) }
 
 var _ store.GlobalRefs = (*GlobalRefs)(nil)
+
+type GlobalDeps struct {
+	Upsert_  func(ctx context.Context, resolutions []*unit.Resolution) error
+	Resolve_ func(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
+}
+
+func (s *GlobalDeps) Upsert(ctx context.Context, resolutions []*unit.Resolution) error {
+	return s.Upsert_(ctx, resolutions)
+}
+
+func (s *GlobalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, error) {
+	return s.Resolve_(ctx, raw)
+}
+
+var _ store.GlobalDeps = (*GlobalDeps)(nil)

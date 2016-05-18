@@ -46,6 +46,7 @@ type codeFileDatum struct {
 	NumDefs      int
 	NumRefsValid int
 	Language     string
+	Seen         bool
 }
 
 type CoverageCmd struct {
@@ -119,6 +120,12 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 
 		ext := strings.ToLower(filepath.Ext(path))
 		if lang, isCodeFile := extToLang[ext]; isCodeFile {
+
+			// omitting special files (auto-generated, temporary, ...)
+			if shouldIgnoreFile(path, lang) {
+				return nil
+			}
+
 			b, err := ioutil.ReadFile(path)
 			if err != nil {
 				return err
@@ -161,13 +168,16 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 		}
 		data = append(data, item)
 
+		for _, file := range sourceUnit.Files {
+			if datum, exists := codeFileData[file]; exists {
+				datum.Seen = true
+			}
+		}
+
 		for _, def := range item.Defs {
 			defKeys[def.DefKey] = struct{}{}
 		}
 
-		for _, ref := range item.Refs {
-			ref.SetFromDefKey(ref.DefKey())
-		}
 		return nil
 	}
 
@@ -194,7 +204,7 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 			if datum, exists := codeFileData[ref.File]; exists {
 				datum.NumRefs++
 
-				if ref.DefRepo != "" {
+				if ref.DefUnitType == "URL" || ref.DefRepo != "" {
 					validRefs = append(validRefs, ref)
 					datum.NumRefsValid++
 				} else if _, defExists := defKeys[ref.DefKey()]; defExists {
@@ -225,56 +235,74 @@ func coverage(repo *Repo) (map[string]*cvg.Coverage, error) {
 
 	// Compute coverage from per-file data
 	type langStats struct {
-		numFiles        int
-		numIndexedFiles int
-		numDefs         int
-		numRefs         int
-		numRefsValid    int
-		uncoveredFiles  []string
-		loc             int
+		numFiles          int
+		numIndexedFiles   int
+		numDefs           int
+		numRefs           int
+		numRefsValid      int
+		uncoveredFiles    []string
+		undiscoveredFiles []string
+		loc               int
 	}
 	stats := make(map[string]*langStats)
 	for file, datum := range codeFileData {
 		if _, exist := stats[datum.Language]; !exist {
 			stats[datum.Language] = &langStats{}
 		}
-		if shouldIgnoreFile(file) {
-			continue
-		}
 
 		s := stats[datum.Language]
-		s.numFiles++
 		s.loc += datum.LoC
 		s.numDefs += datum.NumDefs
 		s.numRefs += datum.NumRefs
 		s.numRefsValid += datum.NumRefsValid
-		density := float64(datum.NumDefs+datum.NumRefsValid) / float64(datum.LoC)
-		if density > fileTokThresh {
-			s.numIndexedFiles++
-		} else {
-			if GlobalOpt.Verbose {
-				log.Printf("Uncovered file %s - density: %f, defs: %d, refs: %d, lines of code: %d",
-					file, density, datum.NumDefs, datum.NumRefsValid, datum.LoC)
+		if datum.Seen {
+			// this file is listed in the source unit and found by the scanner
+			s.numFiles++
+			density := float64(datum.NumDefs+datum.NumRefsValid) / float64(datum.LoC)
+			if density > fileTokThresh {
+				s.numIndexedFiles++
+			} else {
+				if GlobalOpt.Verbose {
+					log.Printf("Uncovered file %s - density: %f, defs: %d, refs: %d, lines of code: %d",
+						file, density, datum.NumDefs, datum.NumRefsValid, datum.LoC)
+				}
+				s.uncoveredFiles = append(s.uncoveredFiles, file)
 			}
-			s.uncoveredFiles = append(s.uncoveredFiles, file)
+		} else {
+			// this file is not listed in the source unit but found by the scanner
+			if GlobalOpt.Verbose {
+				log.Printf("Undiscovered file %s", file)
+			}
+			s.undiscoveredFiles = append(s.undiscoveredFiles, file)
 		}
 	}
 
 	cov := make(map[string]*cvg.Coverage)
 	for lang, s := range stats {
 		cov[lang] = &cvg.Coverage{
-			FileScore:      divideSentinel(float64(s.numIndexedFiles), float64(s.numFiles), -1),
-			RefScore:       divideSentinel(float64(s.numRefsValid), float64(s.numRefs), -1),
-			TokDensity:     divideSentinel(float64(s.numDefs+s.numRefs), float64(s.loc), -1),
-			UncoveredFiles: s.uncoveredFiles,
+			FileScore:         divideSentinel(float64(s.numIndexedFiles), float64(s.numFiles), -1),
+			RefScore:          divideSentinel(float64(s.numRefsValid), float64(s.numRefs), -1),
+			TokDensity:        divideSentinel(float64(s.numDefs+s.numRefs), float64(s.loc), -1),
+			UncoveredFiles:    s.uncoveredFiles,
+			UndiscoveredFiles: s.undiscoveredFiles,
 		}
 	}
 	return cov, nil
 }
 
-func shouldIgnoreFile(filename string) bool {
-	if filepath.Base(filename) == "doc.go" {
-		return true
+// shouldIgnoreFile returns true if file denoted by the given path should be
+// ignored when scanning for files
+func shouldIgnoreFile(filename, language string) bool {
+	basename := filepath.Base(filename)
+	switch {
+	case language == "Go":
+		return basename == "doc.go"
+	case language == "Java":
+		// ignoring Andoid auto-generated stuff
+		return basename == "R.java" || basename == "BuildConfig.java"
+	case language == "JavaScript":
+		// ignoring everything in the node_modules directory
+		return strings.HasPrefix(filename, "node_modules/")
 	}
 	return false
 }
@@ -292,14 +320,14 @@ func divideSentinel(x, y, sentinel float64) float64 {
 // - do not look like comments
 func numLines(data []byte) int {
 
-	data = stripComments(data)
+	data = stripCode(data)
 
 	len := len(data)
 	if len == 0 {
 		return 0
 	}
 
-	count := 1
+	count := 0
 	start := 0
 
 	pos := bytes.IndexByte(data[start:], '\n')
@@ -311,12 +339,15 @@ func numLines(data []byte) int {
 		start += pos + 1
 		pos = bytes.IndexByte(data[start:], '\n')
 	}
+	if start < len && isNotBlank(data[start:]) {
+		count++
+	}
 
 	return count
 }
 
-// stripComments strips single line (//) and multi line (/* */) comments from the data
-func stripComments(data []byte) []byte {
+// stripCode strips all but idents from the data
+func stripCode(data []byte) []byte {
 
 	ret := make([]byte, 0, len(data))
 	s := &scanner.Scanner{}
@@ -329,7 +360,15 @@ func stripComments(data []byte) []byte {
 	tok := s.Scan()
 	for tok != scanner.EOF {
 		pos := s.Pos()
-		if tok == scanner.Comment {
+		// there may be cases when Go scanner is inaccurate for some languages
+		// but it's ok because the purpose of this method is to strip eerything
+		// that doesn't look like ident so it probably won't be recognized by
+		// toolchain as a ref or def span. Of course there may be exceptions
+		// such as C++ operators, Groovy's GStrings, Python comments and so on,
+		// but we think that removing Go-style idents from source code gives
+		// pretty accurate resutls when counting number of lines that may contain
+		// ref/def spans
+		if tok != scanner.Ident {
 			ret = append(ret, data[offset:pos.Offset-len(s.TokenText())]...)
 		} else {
 			ret = append(ret, data[offset:pos.Offset]...)

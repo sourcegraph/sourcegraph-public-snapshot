@@ -255,10 +255,10 @@ ON COMMIT DROP;`
 				r.DefRepo = op.Repo
 			}
 			if r.DefUnit == "" {
-				r.DefUnit = op.Unit.Unit
+				r.DefUnit = op.Unit.Name
 			}
 			if r.DefUnitType == "" {
-				r.DefUnitType = op.Unit.UnitType
+				r.DefUnitType = op.Unit.Type
 			}
 			// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
 			// doesn't add significant value; yet it adds up to a lot of space in the db,

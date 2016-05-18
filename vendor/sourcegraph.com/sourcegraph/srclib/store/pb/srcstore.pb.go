@@ -37,10 +37,10 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type ImportOp struct {
-	Repo     string               `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
-	CommitID string               `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
-	Unit     *unit.RepoSourceUnit `protobuf:"bytes,3,opt,name=Unit" json:"Unit,omitempty"`
-	Data     *graph3.Output       `protobuf:"bytes,4,opt,name=Data" json:"Data,omitempty"`
+	Repo     string           `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
+	CommitID string           `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
+	Unit     *unit.SourceUnit `protobuf:"bytes,3,opt,name=Unit" json:"Unit,omitempty"`
+	Data     *graph3.Output   `protobuf:"bytes,4,opt,name=Data" json:"Data,omitempty"`
 }
 
 func (m *ImportOp) Reset()         { *m = ImportOp{} }
@@ -504,7 +504,7 @@ func (m *ImportOp) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Unit == nil {
-				m.Unit = &unit.RepoSourceUnit{}
+				m.Unit = &unit.SourceUnit{}
 			}
 			if err := m.Unit.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err

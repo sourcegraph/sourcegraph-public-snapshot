@@ -3,7 +3,6 @@ package python
 import (
 	"log"
 
-	"sourcegraph.com/sourcegraph/srclib"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
@@ -32,12 +31,16 @@ func (p *pkgInfo) SourceUnit() *unit.SourceUnit {
 		repoURI = ""
 	}
 	return &unit.SourceUnit{
-		Name:         p.ProjectName,
-		Type:         DistPackageSourceUnitType,
-		Repo:         repoURI,
-		Dir:          p.RootDir,
-		Dependencies: nil, // nil, because scanner does not resolve dependencies
-		Ops:          map[string]*srclib.ToolRef{"depresolve": nil, "graph": nil},
+		Key: unit.Key{
+			Name: p.ProjectName,
+			Type: DistPackageSourceUnitType,
+			Repo: repoURI,
+		},
+		Info: unit.Info{
+			Dir:          p.RootDir,
+			Dependencies: nil, // nil, because scanner does not resolve dependencies
+			Ops:          map[string][]byte{"depresolve": nil, "graph": nil},
+		},
 	}
 }
 
@@ -56,8 +59,10 @@ type requirement struct {
 
 func (r *requirement) SourceUnit() *unit.SourceUnit {
 	return &unit.SourceUnit{
-		Name: r.ProjectName,
-		Type: DistPackageSourceUnitType,
-		Repo: graph.MakeURI(r.RepoURL),
+		Key: unit.Key{
+			Name: r.ProjectName,
+			Type: DistPackageSourceUnitType,
+			Repo: graph.MakeURI(r.RepoURL),
+		},
 	}
 }

@@ -25,12 +25,6 @@ func runCmdStderr(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-// getProgramPath returns path to toolchain (assuming that exe file is located in .bin, path is <path-to-.bin>/..
-func getProgramPath() (string, error) {
-	path := filepath.Join(filepath.Dir(os.Args[0]), "..")
-	return filepath.Abs(path)
-}
-
 // getVENVBinPath returns toolchains Python virtualenv path.
 func getVENVBinPath() (string, error) {
 	path, err := getProgramPath()
@@ -38,6 +32,12 @@ func getVENVBinPath() (string, error) {
 		return "", err
 	}
 	return filepath.Abs(filepath.Join(path, ".env", getEnvBinDir()))
+}
+
+// getProgramPath returns path to toolchain (assuming that exe file is located in .bin, path is <path-to-.bin>/..
+func getProgramPath() (string, error) {
+	path := filepath.Join(filepath.Dir(os.Args[0]), "..")
+	return filepath.Abs(path)
 }
 
 // Returns binaries directory of virtualenv which may be different on Windows and Unix

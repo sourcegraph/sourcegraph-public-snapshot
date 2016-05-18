@@ -4,6 +4,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
 // GlobalDefs defines the interface for searching global defs.
@@ -60,4 +61,9 @@ type RepoUnit struct {
 	Repo     sourcegraph.RepoSpec
 	Unit     string
 	UnitType string
+}
+
+type GlobalDeps interface {
+	Upsert(ctx context.Context, resolutions []*unit.Resolution) error
+	Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
 }

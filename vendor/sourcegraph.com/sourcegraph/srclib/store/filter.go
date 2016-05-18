@@ -397,11 +397,11 @@ func ByUnitKey(key unit.Key) interface {
 	if key.CommitID == "" {
 		panic("key.CommitID: empty")
 	}
-	if key.UnitType == "" {
-		panic("key.UnitType: empty")
+	if key.Type == "" {
+		panic("key.Type: empty")
 	}
-	if key.Unit == "" {
-		panic("key.Unit: empty")
+	if key.Name == "" {
+		panic("key.Name: empty")
 	}
 	return byUnitKeyFilter{key}
 }
@@ -414,15 +414,15 @@ func (f byUnitKeyFilter) ByCommitIDs() []string { return []string{f.key.CommitID
 func (f byUnitKeyFilter) ByUnits() []unit.ID2   { return []unit.ID2{f.key.ID2()} }
 func (f byUnitKeyFilter) SelectDef(def *graph.Def) bool {
 	return (def.Repo == "" || def.Repo == f.key.Repo) && (def.CommitID == "" || def.CommitID == f.key.CommitID) &&
-		(def.UnitType == "" || def.UnitType == f.key.UnitType) && (def.Unit == "" || def.Unit == f.key.Unit)
+		(def.UnitType == "" || def.UnitType == f.key.Type) && (def.Unit == "" || def.Unit == f.key.Name)
 }
 func (f byUnitKeyFilter) SelectRef(ref *graph.Ref) bool {
 	return (ref.Repo == "" || ref.Repo == f.key.Repo) && (ref.CommitID == "" || ref.CommitID == f.key.CommitID) &&
-		(ref.UnitType == "" || ref.UnitType == f.key.UnitType) && (ref.Unit == "" || ref.Unit == f.key.Unit)
+		(ref.UnitType == "" || ref.UnitType == f.key.Type) && (ref.Unit == "" || ref.Unit == f.key.Name)
 }
 func (f byUnitKeyFilter) SelectUnit(unit *unit.SourceUnit) bool {
 	return (unit.Repo == "" || unit.Repo == f.key.Repo) && (unit.CommitID == "" || unit.CommitID == f.key.CommitID) &&
-		(unit.Type == "" || unit.Type == f.key.UnitType) && (unit.Name == "" || unit.Name == f.key.Unit)
+		(unit.Type == "" || unit.Type == f.key.Type) && (unit.Name == "" || unit.Name == f.key.Name)
 }
 
 // ByDefKey returns a filter by a def key. It panics if the def path

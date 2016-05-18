@@ -32,7 +32,7 @@ func TestGlobalDefs(t *testing.T) {
 	}
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
-	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Name: "a/b/u", Type: "t"})
+	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Key: unit.Key{Name: "a/b/u", Type: "t"}})
 	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
