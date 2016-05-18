@@ -293,3 +293,8 @@ ON COMMIT DROP;`
 		return nil
 	})
 }
+
+func (g *globalRefsNew) StatRefresh(ctx context.Context) error {
+	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
+	return err
+}

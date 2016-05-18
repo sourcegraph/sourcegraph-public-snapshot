@@ -3,8 +3,11 @@
 package localstore
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -102,4 +105,87 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 			t.Errorf("got %+v, want %+v", got.RepoRefs, test.Result)
 		}
 	}
+}
+
+func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
+	ctx, _, done := testContext()
+	defer done()
+	get := func() error {
+		_, err := g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: "github.com/golang/go", Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
+		return err
+	}
+	if err := get(); err != nil {
+		b.Log("Loading data into GlobalRefs")
+		//nRepos = 16962
+		//nRefs = 168199 / 16962
+		nRepos := 10000
+		nRefs := 10
+		globalRefsUpdate(b, g, ctx, nRepos, nRefs)
+		type CanRefresh interface {
+			StatRefresh(context.Context) error
+		}
+		if x, ok := g.(CanRefresh); ok {
+			b.Log("Refreshing")
+			x.StatRefresh(ctx)
+		}
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		err := get()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	// defer done() can be expensive
+	b.StopTimer()
+}
+
+func benchmarkGlobalRefsUpdate(b *testing.B, g store.GlobalRefs) {
+	ctx, _, done := testContext()
+	defer done()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		globalRefsUpdate(b, g, ctx, 1, 100)
+	}
+	// defer done() can be expensive
+	b.StopTimer()
+}
+
+func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, nRepos, nRefs int) {
+	for i := 0; i < nRepos; i++ {
+		refs := make([]*graph.Ref, nRefs)
+		for j := 0; j < nRefs; j++ {
+			file := fmt.Sprintf("foo/bar/baz%d.go", j/3)
+			refs[j] = &graph.Ref{DefRepo: "github.com/golang/go", DefUnit: "fmt", DefUnitType: "GoPackage", DefPath: "Errorf", File: file}
+		}
+		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
+		op := &pb.ImportOp{
+			Repo: pkg,
+			Unit: &unit.RepoSourceUnit{Unit: pkg, UnitType: "GoPackage"},
+			Data: &graph.Output{
+				Refs: refs,
+			},
+		}
+		if err := g.Update(ctx, op); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkGlobalRefsGet(b *testing.B) {
+	benchmarkGlobalRefsGet(b, &globalRefs{})
+}
+
+func BenchmarkGlobalRefsNewGet(b *testing.B) {
+	benchmarkGlobalRefsGet(b, &globalRefsNew{})
+}
+
+func BenchmarkGlobalRefsUpdate(b *testing.B) {
+	benchmarkGlobalRefsUpdate(b, &globalRefs{})
+}
+
+func BenchmarkGlobalRefsNewUpdate(b *testing.B) {
+	benchmarkGlobalRefsUpdate(b, &globalRefsNew{})
 }
