@@ -213,6 +213,9 @@ func (g *globalRefsNew) Update(ctx context.Context, op *pb.ImportOp) error {
 		return nil
 	}
 
+	// Perf optimization: Local cache of def_key_id's to avoid psql roundtrip
+	defKeyIDCache := map[sourcegraph.DefSpec]int64{}
+
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
 	def_key_id bigint,
 	repo TEXT,
@@ -261,18 +264,24 @@ ON COMMIT DROP;`
 				continue
 			}
 
-			// Optimistically get the def key id, otherwise fallback to insertion
-			defKeyID, err := tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
-			if defKeyID == 0 || err != nil {
-				if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					return err
-				}
+			defKeyIDKey := sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+			defKeyID, ok := defKeyIDCache[defKeyIDKey]
+			if !ok {
+				// Optimistically get the def key id, otherwise fallback to insertion
+				var err error
 				defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
-				if err != nil {
-					return err
-				} else if defKeyID == 0 {
-					return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+				if defKeyID == 0 || err != nil {
+					if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+						return err
+					}
+					defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+					if err != nil {
+						return err
+					} else if defKeyID == 0 {
+						return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+					}
 				}
+				defKeyIDCache[defKeyIDKey] = defKeyID
 			}
 
 			if _, err := tx.Exec(tmpInsertSQL, defKeyID, op.Repo, r.File); err != nil {
