@@ -58,12 +58,24 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 		op.Opt = &sourcegraph.DefListRefLocationsOptions{}
 	}
 
+	// Optimization: All our SQL operations rely on the defKeyID. Fetch
+	// it once, instead of once per query
+	defKeyID, err := graphDBH(ctx).SelectInt(
+		"SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4",
+		op.Def.Repo, op.Def.UnitType, op.Def.Unit, op.Def.Path)
+	if err != nil {
+		return nil, err
+	} else if defKeyID == 0 {
+		// DefKey was not found
+		return &sourcegraph.RefLocationsList{}, nil
+	}
+
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
 	var totalRepos int64
 	statsDone := make(chan error)
 	go func() {
 		var err error
-		totalRepos, err = g.getRefStats(ctx, op)
+		totalRepos, err = g.getRefStats(ctx, defKeyID)
 		statsDone <- err
 	}()
 
@@ -75,7 +87,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 	}
 
 	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
-	innerSelectSQL += ` WHERE def_key_id=(SELECT id FROM def_keys WHERE repo=` + arg(op.Def.Repo) + ` AND unit_type=` + arg(op.Def.UnitType) + ` AND unit=` + arg(op.Def.Unit) + ` AND path=` + arg(op.Def.Path) + `)`
+	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID)
 	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
 	if len(op.Opt.Repos) > 0 {
 		repoBindVars := make([]string, len(op.Opt.Repos))
@@ -184,24 +196,16 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 // getRefStats fetches global ref aggregation stats pagination and display
 // purposes.
-func (g *globalRefsNew) getRefStats(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (int64, error) {
-	var args []interface{}
-	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
-		args = append(args, a)
-		return v
-	}
-	where := `def_key_id=(SELECT id FROM def_keys WHERE repo=` + arg(op.Def.Repo) + ` AND unit_type=` + arg(op.Def.UnitType) + ` AND unit=` + arg(op.Def.Unit) + ` AND path=` + arg(op.Def.Path) + `)`
-
+func (g *globalRefsNew) getRefStats(ctx context.Context, defKeyID int64) (int64, error) {
 	// Our strategy is to defer to the potentially stale materialized view
 	// if there are a large number of distinct repos. Otherwise we can
 	// calculate the exact value since it should be fast to do
-	count, err := graphDBH(ctx).SelectInt("SELECT repos FROM global_ref_stats WHERE "+where, args...)
+	count, err := graphDBH(ctx).SelectInt("SELECT repos FROM global_ref_stats WHERE def_key_id=$1", defKeyID)
 	if err == nil && count > 1000 {
 		return count, nil
 	}
 
-	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE "+where, args...)
+	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
 func (g *globalRefsNew) Update(ctx context.Context, op *pb.ImportOp) error {

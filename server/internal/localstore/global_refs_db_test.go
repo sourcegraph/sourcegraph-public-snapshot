@@ -91,6 +91,11 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
 			},
 		},
+		// Missing defspec should not return an error
+		{
+			sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
+			nil,
+		},
 	}
 	for _, test := range testCases {
 		got, err := g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: test.Query})
@@ -116,8 +121,6 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 	}
 	if err := get(); err != nil {
 		b.Log("Loading data into GlobalRefs")
-		//nRepos = 16962
-		//nRefs = 168199 / 16962
 		nRepos := 10000
 		nRefs := 10
 		globalRefsUpdate(b, g, ctx, nRepos, nRefs)
