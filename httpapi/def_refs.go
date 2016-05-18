@@ -101,12 +101,11 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// HACK: We want to show the local refs as the first results on the first
-	// page, but obtaining these via an ordered query from postgres is too
-	// slow. Instead, we grab all the local refs from the graph store and
-	// insert them at the top if there not there.
+	// TEMPORARY FIX: refs are not available for the current repo because the HEAD commit
+	// of the default branch of the repo hasn't been built yet after the switch to pgsql
+	// global refs store. Fallback to fetching local repo refs from graph store.
 	//
-	// TODO Remove this once graph DB is optimized to query to local refs.
+	// TODO(slimsag): remove this kludge after migration is complete for all existing repos.
 	containsDefRepo := false
 	for _, refs := range refLocations.RepoRefs {
 		if refs.Repo == def.Repo {
@@ -117,16 +116,11 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 	if (len(refLocations.RepoRefs) == 0 || !containsDefRepo) && opt.PageOrDefault() == 1 {
 		// Scope the local repo ref search to the def's commit ID.
 		defSpec.CommitID = def.CommitID
-		// Show all of the local refs on the first page.
-		localOpts := sourcegraph.ListOptions{
-			Page:    1,
-			PerPage: 10000,
-		}
 		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
 			Def: defSpec,
 			Opt: &sourcegraph.DefListRefsOptions{
 				Repo:        defSpec.Repo,
-				ListOptions: localOpts,
+				ListOptions: opt.ListOptions,
 			},
 		})
 		if err != nil {
@@ -152,15 +146,6 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 			refLocations.RepoRefs = append(refLocations.RepoRefs, localRefs)
 			lastIdx := len(refLocations.RepoRefs) - 1
 			refLocations.RepoRefs[0], refLocations.RepoRefs[lastIdx] = refLocations.RepoRefs[lastIdx], refLocations.RepoRefs[0]
-		}
-	} else if containsDefRepo && opt.PageOrDefault() != 1 {
-		// On subsequent pages, we need to remove local refs, otherwise these
-		// pages might contain duplicates from above.
-		for i := len(refLocations.RepoRefs) - 1; i >= 0; i-- {
-			refs := refLocations.RepoRefs[i]
-			if refs.Repo == def.Repo {
-				refLocations.RepoRefs = append(refLocations.RepoRefs[:i], refLocations.RepoRefs[i+1:]...)
-			}
 		}
 	}
 
