@@ -32,6 +32,7 @@ class DefInfo extends Container {
 		super(props);
 		this.state = {
 			currPage: 1,
+			nextPageLoading: false,
 		};
 		this._onNextPage = this._onNextPage.bind(this);
 	}
@@ -58,6 +59,9 @@ class DefInfo extends Container {
 		state.refLocations = state.def ? DefStore.getRefLocations({
 			repo: state.repo, rev: state.rev, def: state.def, repos: [],
 		}) : null;
+		if (state.refLocations && state.refLocations.PagesFetched >= state.currPage) {
+			state.nextPageLoading = false;
+		}
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -76,7 +80,7 @@ class DefInfo extends Container {
 
 	_onNextPage() {
 		let nextPage = this.state.currPage + 1;
-		this.setState({currPage: nextPage});
+		this.setState({currPage: nextPage, nextPageLoading: true});
 	}
 
 	render() {
@@ -162,7 +166,7 @@ class DefInfo extends Container {
 					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
 					!refLocs.StreamTerminated &&
 					<div styleName="pagination">
-						<Button color="blue" onClick={this._onNextPage}>View More</Button>
+						<Button color="blue" loading={this.state.nextPageLoading} onClick={this._onNextPage}>View More</Button>
 					</div>
 				}
 			</div>
