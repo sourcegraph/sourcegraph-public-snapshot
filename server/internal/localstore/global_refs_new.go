@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 
@@ -54,8 +55,9 @@ func init() {
 type globalRefsNew struct{}
 
 func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	if op.Opt == nil {
-		op.Opt = &sourcegraph.DefListRefLocationsOptions{}
+	opt := op.Opt
+	if opt == nil {
+		opt = &sourcegraph.DefListRefLocationsOptions{}
 	}
 
 	// Optimization: All our SQL operations rely on the defKeyID. Fetch
@@ -88,10 +90,10 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
 	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID)
-	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(op.Opt.PerPageOrDefault()), arg(op.Opt.Offset()))
-	if len(op.Opt.Repos) > 0 {
-		repoBindVars := make([]string, len(op.Opt.Repos))
-		for i, r := range op.Opt.Repos {
+	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
+	if len(opt.Repos) > 0 {
+		repoBindVars := make([]string, len(opt.Repos))
+		for i, r := range opt.Repos {
 			repoBindVars[i] = arg(r)
 		}
 		innerSelectSQL += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
@@ -243,15 +245,18 @@ ON COMMIT DROP;`
 		}
 
 		// Insert refs into temporary table
-		for _, r := range op.Data.Refs {
+		var r graph.Ref
+		for _, rp := range op.Data.Refs {
 			// Ignore broken refs.
-			if r.DefPath == "" {
+			if rp.DefPath == "" {
 				continue
 			}
 			// Ignore def refs.
-			if r.Def {
+			if rp.Def {
 				continue
 			}
+			// Avoid modify pointer
+			r = *rp
 			if r.DefRepo == "" {
 				r.DefRepo = op.Repo
 			}
