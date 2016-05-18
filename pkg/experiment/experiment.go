@@ -6,6 +6,8 @@ package experiment
 import (
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -50,10 +52,33 @@ func (p *Perf) StartA() (done func()) {
 	}
 }
 
+// We use a summary instead of a histogram since we are not sure on what
+// buckets to set, nor is aggregation that important
+var perfDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "experiment",
+	Name:      "perf_duration_seconds",
+	Help:      "Perf experiment timing results.",
+}, []string{"name", "version"})
+var perfFaster = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "experiment",
+	Name:      "perf_faster",
+	Help:      "Perf experiment faster counts.",
+}, []string{"name", "version"})
+
+func init() {
+	prometheus.MustRegister(perfDuration)
+	prometheus.MustRegister(perfFaster)
+}
+
 func defaultPerfReport(name string, aDur, bDur time.Duration) {
 	faster := "a"
 	if bDur < aDur {
 		faster = "b"
 	}
 	log15.Debug("experiment", "name", name, "faster", faster, "aDur", aDur, "bDur", bDur)
+	perfDuration.WithLabelValues(name, "a").Observe(aDur.Seconds())
+	perfDuration.WithLabelValues(name, "b").Observe(bDur.Seconds())
+	perfFaster.WithLabelValues(name, faster).Inc()
 }
