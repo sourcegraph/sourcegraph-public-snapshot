@@ -25,7 +25,9 @@ import {urlToTree} from "sourcegraph/tree/routes";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
+import {abs, rel} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
+import {matchPattern} from "react-router/lib/PatternUtils";
 
 import {Input, Loader, RepoLink} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
@@ -561,9 +563,24 @@ class TreeSearch extends Container {
 		return {items: sections, count: idx - offset};
 	}
 
+	// _encodeDefPath returns the same given defURL but with it's def. path part encoded.
+	_encodeDefPath(defURL: string) : string {
+		let pattern = abs["defFull"](rel.repo, rel.unitType, rel.unit, rel.path);
+		const {paramValues} = matchPattern(pattern, defURL);
+		if (paramValues.length !== 4) {
+			return defURL;
+		}
+		return abs["defFull"](paramValues[0], paramValues[1], paramValues[2], encodeURIComponent(paramValues[3]));
+	}
+
 	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
 		let defURL = urlToDef(def, rev);
+		let ext = def.File.split(".").pop();
+		if (ext === "css") {
+			// URL encodes the def. path part of defURL, because it might contain special characters(Eg. "#", ".").
+			defURL = this._encodeDefPath(defURL);
+		}
 		let key = `${prefix}:${defURL}`;
 		return (
 				<Link styleName={selected ? "list-item-selected" : "list-item"}

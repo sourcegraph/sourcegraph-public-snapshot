@@ -3,7 +3,7 @@
 import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
-export type RouteName = "styleguide" | "dashboard" | "tools" | "myRepos" | "tour" | "def" | "defInfo" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds" | "coverage" | "adminCoverage";
+export type RouteName = "styleguide" | "dashboard" | "tools" | "myRepos" | "tour" | "def" | "defInfo" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds" | "coverage" | "adminCoverage" | "defFull" | "unitType" | "unit" | "path";
 
 export const rel: {[key: RouteName]: string} = {
 	styleguide: "styleguide",
@@ -26,7 +26,7 @@ export const rel: {[key: RouteName]: string} = {
 	coverage: "coverage",
 };
 
-export const abs: {[key: RouteName]: string} = {
+export const abs: {[key: RouteName]: any} = {
 	styleguide: rel.styleguide,
 	dashboard: rel.dashboard,
 	tools: rel.tools,
@@ -46,6 +46,10 @@ export const abs: {[key: RouteName]: string} = {
 	blob: `${rel.repo}/-/${rel.blob}`,
 	build: `${rel.repo}/-/${rel.build}`,
 	builds: `${rel.repo}/-/${rel.builds}`,
+	unitType: "*",
+	unit: "*",
+	path: "*",
+	defFull: (repo, unitType, unit, path : string) => (`${repo}/-/def/${unitType}/${unit}/-/${path}`),
 };
 
 const routeNamesByPattern: {[key: string]: RouteName} = {};
