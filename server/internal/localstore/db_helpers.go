@@ -3,6 +3,8 @@ package localstore
 import (
 	"time"
 
+	"github.com/lib/pq"
+
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -20,4 +22,13 @@ func tm(ts *pbtypes.Timestamp) *time.Time {
 	}
 	tm := ts.Time()
 	return &tm
+}
+
+func isPQErrorCode(err error, code string) bool {
+	errp, ok := err.(*pq.Error)
+	return ok && errp.Code == pq.ErrorCode(code)
+}
+
+func isPQErrorUniqueViolation(err error) bool {
+	return isPQErrorCode(err, "23505")
 }

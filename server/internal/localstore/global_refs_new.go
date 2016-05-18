@@ -280,13 +280,14 @@ ON COMMIT DROP;`
 				var err error
 				defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
 				if defKeyID == 0 || err != nil {
-					if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); !isPQErrorUniqueViolation(err) {
 						return err
 					}
 					defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
 					if err != nil {
 						return err
-					} else if defKeyID == 0 {
+					}
+					if defKeyID == 0 {
 						return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
 					}
 				}

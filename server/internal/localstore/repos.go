@@ -373,9 +373,9 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	var r dbRepo
 	r.fromRepo(newRepo)
 	err := appDBH(ctx).Insert(&r)
-	if err, ok := err.(*pq.Error); ok && err.Code == pq.ErrorCode("23505") { // unique_violation of repo primary key (URI) constraint.
-		if err.Constraint != "repo_pkey" {
-			log15.Warn("Expected unique_violation of repo_pkey constraint, but it was something else; did it change?", "constraint", err.Constraint, "err", err)
+	if isPQErrorUniqueViolation(err) {
+		if c := err.(*pq.Error).Constraint; c != "repo_pkey" {
+			log15.Warn("Expected unique_violation of repo_pkey constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
 		return &store.RepoExistError{URI: newRepo.URI}
 	}
