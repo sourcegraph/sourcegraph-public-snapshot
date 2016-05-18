@@ -280,7 +280,7 @@ ON COMMIT DROP;`
 				var err error
 				defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
 				if defKeyID == 0 || err != nil {
-					if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); !isPQErrorUniqueViolation(err) {
+					if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
 						return err
 					}
 					defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
