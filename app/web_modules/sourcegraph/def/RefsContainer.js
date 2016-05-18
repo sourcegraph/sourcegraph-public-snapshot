@@ -49,7 +49,7 @@ export default class RefsContainer extends Container {
 		super(props);
 		this.state = {
 			shownFiles: new Set(),
-			initExpaneded: false, // Keep track of when we've auto-expanded snippets.
+			initExpanded: false, // Keep track of when we've auto-expanded snippets.
 		};
 		this.rangesMemo = {}; // optimization: cache the line range that should be displayed for each ref
 
