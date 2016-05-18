@@ -92,4 +92,5 @@
 .label {
 	font-weight: bold;
 	user-select: none;
+	cursor: pointer;
 }
