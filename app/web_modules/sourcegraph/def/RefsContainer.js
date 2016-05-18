@@ -246,6 +246,8 @@ export default class RefsContainer extends Container {
 	}
 
 	render() {
+		if (this.state.fileLocations && this.state.fileLocations.length === 0) return null;
+
 		if (this.state.refLocations && this.state.refLocations.Error) {
 			return (
 				<Header
