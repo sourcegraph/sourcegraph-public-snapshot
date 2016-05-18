@@ -99,8 +99,8 @@ class DefInfo extends Container {
 		}
 
 		let title = trimRepo(this.state.repo);
-		if (defTitleOK(this.state.defObj)) {
-			title = `${defTitle(this.state.defObj)} · ${trimRepo(this.state.repo)}`;
+		if (defTitleOK(def)) {
+			title = `${defTitle(def)} · ${trimRepo(this.state.repo)}`;
 		}
 
 		return (
@@ -113,12 +113,12 @@ class DefInfo extends Container {
 						]} /> :
 					<Helmet title={title} />
 				}
-				{this.state.defObj &&
+				{def &&
 					<h1 styleName="def-header">
-						<Link title="View definition in code" styleName="back-icon" to={urlToDef(this.state.defObj, this.state.rev)}>&laquo;</Link>
+						<Link title="View definition in code" styleName="back-icon" to={urlToDef(def, this.state.rev)}>&laquo;</Link>
 						&nbsp;
-						<Link to={urlToDef(this.state.defObj, this.state.rev)}>
-							<code styleName="def-title">{qualifiedNameAndType(this.state.defObj, {unqualifiedNameClass: styles.def})}</code>
+						<Link to={urlToDef(def, this.state.rev)}>
+							<code styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 						</Link>
 					</h1>
 				}
