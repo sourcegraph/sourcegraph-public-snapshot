@@ -37,14 +37,22 @@ func ResolveImportPath(importPath string) (*dep.ResolvedTarget, error) {
 	// and to avoid hitting GitHub rate limit. It does not follow the same pattern
 	// as the general google.golang.org/... case below.
 	case importPath == "google.golang.org/grpc" || strings.HasPrefix(importPath, "google.golang.org/grpc/"):
-		target.ToRepoCloneURL = "https://" + strings.Replace(importPath, "google.golang.org/grpc", "github.com/grpc/grpc-go", 1) + ".git"
+		target.ToRepoCloneURL = "https://github.com/grpc/grpc-go"
 		target.ToUnit = strings.Replace(importPath, "google.golang.org/grpc", "github.com/grpc/grpc-go", 1)
 
-	// Special-case google.golang.org/... (e.g., /appengine) import
-	// paths for performance and to avoid hitting GitHub rate limit.
-	case strings.HasPrefix(importPath, "google.golang.org/"):
-		target.ToRepoCloneURL = "https://" + strings.Replace(importPath, "google.golang.org/", "github.com/golang/", 1) + ".git"
-		target.ToUnit = strings.Replace(importPath, "google.golang.org/", "github.com/golang/", 1)
+	// Special-case google.golang.org/cloud/...
+	// The canonical import path is hosted on https://code.googlesource.com/gocloud,
+	// but sourcegraph.com uses its github.com mirror
+	case importPath == "google.golang.org/cloud" || strings.HasPrefix(importPath, "google.golang.org/cloud/"):
+		target.ToRepoCloneURL = "https://github.com/GoogleCloudPlatform/gcloud-golang"
+		target.ToUnit = strings.Replace(importPath, "google.golang.org/cloud", "github.com/GoogleCloudPlatform/gcloud-golang", 1)
+
+	// Special-case google.golang.org/api/...
+	// The canonical import path is hosted on https://code.googlesource.com/google-api-go-client
+	// but sourcegraph.com uses its github.com mirror
+	case importPath == "google.golang.org/api" || strings.HasPrefix(importPath, "google.golang.org/api/"):
+		target.ToRepoCloneURL = "https://github.com/google/google-api-go-client"
+		target.ToUnit = strings.Replace(importPath, "google.golang.org/api", "github.com/google/google-api-go-client", 1)
 
 	// Special-case code.google.com/p/... import paths for performance.
 	case strings.HasPrefix(importPath, "code.google.com/p/"):
@@ -65,7 +73,6 @@ func ResolveImportPath(importPath string) (*dep.ResolvedTarget, error) {
 
 	// Try to resolve everything else
 	default:
-		log.Printf("Resolving Go dep: %s", importPath)
 		repoRoot, err := vcs.RepoRootForImportPath(string(importPath), false)
 		if err == nil {
 			target.ToRepoCloneURL = repoRoot.Repo
@@ -87,7 +94,7 @@ func standardRepoHostImportPathToCloneURL(importPath string) (string, error) {
 	if len(parts) < 3 {
 		return "", fmt.Errorf("import path expected to have at least 3 parts, but didn't: %q", importPath)
 	}
-	return "https://" + strings.Join(parts[:3], "/") + ".git", nil
+	return "https://" + strings.Join(parts[:3], "/"), nil
 }
 
 // replaceImportPathRepoRoot modifies the given importPath by replacing the
