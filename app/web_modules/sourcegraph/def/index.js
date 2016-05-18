@@ -51,23 +51,6 @@ export function defPath(def: Def): string {
 	return `${def.UnitType}/${def.Unit}/-/${def.Path}`;
 }
 
-// defTitleOK reports if it's safe to call defTitle with def.
-export function defTitleOK(def: Def): bool {
-	return def && def.Unit && def.Name;
-}
-
-// defTitle returns the last '/'-separated element of unit, a dot, and the def name.
-// defTitle is safe to call if and only if defTitleOK returns true for def.
-// E.g., for def unit "encoding/json" and def name "NewEncoder", it returns "json.NewEncoder".
-export function defTitle(def: Def): string {
-	let unit = def.Unit;
-	let i = unit.lastIndexOf("/");
-	if (i !== -1) {
-		unit = unit.substring(i + 1);
-	}
-	return `${unit}.${def.Name}`;
-}
-
 export type RefLocationsKey = {
 	repo: string;
 	rev: ?string;

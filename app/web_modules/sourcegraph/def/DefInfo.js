@@ -20,7 +20,7 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
-import {defTitle, defTitleOK} from "sourcegraph/def";
+import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
 class DefInfo extends Container {
 	static contextTypes = {

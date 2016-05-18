@@ -9,7 +9,7 @@ import CSSModules from "react-css-modules";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 import {trimRepo} from "sourcegraph/repo";
-import {defTitle, defTitleOK} from "sourcegraph/def";
+import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
 class RefLocationsList extends React.Component {
 	static propTypes = {
