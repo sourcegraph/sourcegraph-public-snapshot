@@ -72,6 +72,13 @@ func SecureHeader(next http.Handler) http.Handler {
 	})
 }
 
+func NoCacheByDefault(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("cache-control", "no-cache")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // EnsureHostname ensures that the URL hostname is whatever is in SG_URL.
 func EnsureHostname(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

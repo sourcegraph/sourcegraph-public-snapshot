@@ -323,7 +323,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", appURL)
 	}
 
-	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP}
+	mw := []handlerutil.Middleware{httpctx.Base(clientCtx), middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
 	if c.RedirectToHTTPS {
 		mw = append(mw, middleware.RedirectToHTTPS)
 	}
