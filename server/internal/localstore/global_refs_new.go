@@ -202,8 +202,11 @@ func (g *globalRefsNew) getRefStats(ctx context.Context, defKeyID int64) (int64,
 	// Our strategy is to defer to the potentially stale materialized view
 	// if there are a large number of distinct repos. Otherwise we can
 	// calculate the exact value since it should be fast to do
-	count, err := graphDBH(ctx).SelectInt("SELECT repos FROM global_ref_stats WHERE def_key_id=$1", defKeyID)
-	if err == nil && count > 1000 {
+	count, err := graphDBH(ctx).SelectInt("SELECT repos FROM global_refs_stats WHERE def_key_id=$1", defKeyID)
+	if err != nil {
+		return 0, err
+	}
+	if count > 1000 {
 		return count, nil
 	}
 
