@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
@@ -270,6 +271,10 @@ ON COMMIT DROP;`
 			}
 			// Ignore def refs.
 			if rp.Def {
+				continue
+			}
+			// Ignore vendored refs.
+			if filelang.IsVendored(r.File, false) {
 				continue
 			}
 			// Avoid modify pointer
