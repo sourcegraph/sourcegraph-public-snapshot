@@ -1,4 +1,4 @@
-package cli
+package middleware
 
 import (
 	"fmt"
@@ -33,7 +33,7 @@ type goImportMetaTag struct {
 // goImportMetaTagTemplate is an HTML template for rendering a blank page with a go-import meta tag.
 var goImportMetaTagTemplate = template.Must(template.New("").Parse(`<html><head><meta name="go-import" content="{{.ImportPrefix}} {{.VCS}} {{.RepoRoot}}"></head><body></body></html>`))
 
-// sourcegraphComGoGetHandler is middleware for serving go-import meta tags for requests with ?go-get=1 query
+// SourcegraphComGoGetHandler is middleware for serving go-import meta tags for requests with ?go-get=1 query
 // on sourcegraph.com.
 //
 // It implements the following mapping:
@@ -42,7 +42,7 @@ var goImportMetaTagTemplate = template.Must(template.New("").Parse(`<html><head>
 // 2. Otherwise, if the username (first path element) is "sourcegraph", consider it to be a vanity
 //    import path pointing to github.com/sourcegraph/<repo> as the clone URL.
 // 3. All other requests are served with 404 Not Found.
-func sourcegraphComGoGetHandler(next http.Handler) http.Handler {
+func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Query().Get("go-get") != "1" {
 			next.ServeHTTP(w, req)
@@ -60,7 +60,7 @@ func sourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		ctx := httpctx.FromRequest(req)
 		cl, err := sourcegraph.NewClientFromContext(ctx)
 		if err != nil {
-			log.Println("sourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
+			log.Println("SourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 		}
 		pathElements := strings.Split(req.URL.Path[1:], "/")
@@ -83,7 +83,7 @@ func sourcegraphComGoGetHandler(next http.Handler) http.Handler {
 				// TODO: Distinguish between other known/expected errors vs unexpected errors,
 				//       and treat unexpected errors appropriately. Doing this requires Repos.Get
 				//       method to be documented to specify which known error types it can return.
-				log.Println("sourcegraphComGoGetHandler: cl.Repos.Get:", err)
+				log.Println("SourcegraphComGoGetHandler: cl.Repos.Get:", err)
 				http.Error(w, "error getting repository", http.StatusInternalServerError)
 				return
 			}

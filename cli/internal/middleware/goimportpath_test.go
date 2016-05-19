@@ -1,4 +1,4 @@
-package cli
+package middleware_test
 
 import (
 	"net/http"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
@@ -79,7 +80,7 @@ func TestGoImportPath(t *testing.T) {
 		}
 		httpctx.SetForRequest(req, mock.Ctx)
 
-		sourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
+		middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
 		if got, want := rw.Code, test.wantStatus; got != want {
 			t.Errorf("%s:\ngot  %#v\nwant %#v", test.path, got, want)
@@ -112,7 +113,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	}
 	httpctx.SetForRequest(req, mock.Ctx)
 
-	sourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
+	middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
 	got := attemptedRepoURIs
 	want := []string{"alpha", "alpha/beta", "alpha/beta/gamma"}
