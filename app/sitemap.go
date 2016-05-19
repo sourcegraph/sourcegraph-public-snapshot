@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -58,6 +59,22 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 					LastMod: lastMod,
 				})
 			}
+		}
+	}
+
+	// TODO: remove these static sitemaps once we have proper sitemap generation! These just cover
+	// def info pages.
+	{
+		lastMod, err := time.Parse(time.UnixDate, "Thu May 19 14:05:56 MST 2016")
+		if err != nil {
+			panic(err)
+		}
+		indices := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+		for _, index := range indices {
+			si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
+				Loc:     fmt.Sprintf("https://storage.googleapis.com/static-sitemaps/sitemap_%d.xml.gz", index),
+				LastMod: &lastMod,
+			})
 		}
 	}
 
