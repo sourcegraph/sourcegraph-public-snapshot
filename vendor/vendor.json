@@ -835,6 +835,12 @@
 			"revisionTime": "2015-09-17T12:39:42+02:00"
 		},
 		{
+			"checksumSHA1": "EXXAM9hs2jsOgED5aJBfAe5HWvI=",
+			"path": "github.com/temoto/robotstxt-go",
+			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",
+			"revisionTime": "2015-06-26T09:08:21Z"
+		},
+		{
 			"checksumSHA1": "B/fgM+aJcQX6XX9Zz7VFs41vBLE=",
 			"path": "github.com/tsenart/vegeta/lib",
 			"revision": "166e3050f5a8b2f6d3d2cb03e7baa430f019395d",
