@@ -56,7 +56,7 @@ func AddConfigHandler(mux *http.ServeMux) {
 		}
 
 		w.Header().Set("content-type", "application/json; charset=utf-8")
-		w.Header().Set("cache-control", "max-age=300, public")
+		w.Header().Set("cache-control", "private, max-age=300")
 		data, err := json.MarshalIndent(config, "", "  ")
 		if err != nil {
 			http.Error(w, "", http.StatusInternalServerError)

@@ -72,7 +72,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Cache-Control", "max-age=900")
+	w.Header().Set("Cache-Control", "private, max-age=900")
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	w.Write(siXML)
 	return nil
@@ -176,7 +176,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Cache-Control", "max-age=900")
+	w.Header().Set("Cache-Control", "private, max-age=900")
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	w.Write(sitemapXML)
 	return nil

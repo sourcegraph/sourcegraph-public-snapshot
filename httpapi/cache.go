@@ -47,7 +47,7 @@ var (
 //	  return err
 //	}
 func writeCacheHeaders(w http.ResponseWriter, r *http.Request, lastMod time.Time, maxAge time.Duration) (clientCached bool, err error) {
-	w.Header().Set("cache-control", fmt.Sprintf("public, max-age=%d", maxAge/time.Second))
+	w.Header().Set("cache-control", fmt.Sprintf("private, max-age=%d", maxAge/time.Second))
 
 	if lastMod.IsZero() {
 		return false, nil

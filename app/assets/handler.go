@@ -60,7 +60,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		assetHandler = proxy
 	} else {
 		// Production: serve assets directly from bundled assets
-		assetHandler = AssetFS(longTermCache)
+		assetHandler = AssetFS()
 	}
 
 	// Fonts are fetched from /font/... paths, not
