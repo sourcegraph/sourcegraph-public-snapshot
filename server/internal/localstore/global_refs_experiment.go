@@ -13,7 +13,9 @@ type globalRefsExperiment struct {
 	A, B store.GlobalRefs
 }
 
-var globalRefsExp = &globalRefsExperiment{A: &globalRefs{}, B: &globalRefsNew{}}
+// TODO(keegancsmith) We now default to the new implementation, delete the
+// experiment once it has proven itself.
+var globalRefsExp = &globalRefsExperiment{A: &globalRefsNew{}, B: &globalRefs{}}
 
 func (g *globalRefsExperiment) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	e := experiment.Perf{
