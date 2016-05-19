@@ -23,6 +23,8 @@ func TestGoImportPath(t *testing.T) {
 		switch repo.URI {
 		case "sourcegraph/sourcegraph": // Hosted repo.
 			return &sourcegraph.Repo{}, nil
+		case "sourcegraph/srclib-go": // Mirror repo.
+			return &sourcegraph.Repo{Mirror: true}, nil
 		default:
 			return nil, &store.RepoNotFoundError{Repo: repo.URI}
 		}
@@ -43,6 +45,11 @@ func TestGoImportPath(t *testing.T) {
 			path:       "/sourcegraph/srclib/ann",
 			wantStatus: http.StatusOK,
 			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/srclib git https://github.com/sourcegraph/srclib">`,
+		},
+		{
+			path:       "/sourcegraph/srclib-go",
+			wantStatus: http.StatusOK,
+			wantBody:   `<meta name="go-import" content="sourcegraph.com/sourcegraph/srclib-go git https://github.com/sourcegraph/srclib-go">`,
 		},
 		{
 			path:       "/sourcegraph/doesntexist/foobar",

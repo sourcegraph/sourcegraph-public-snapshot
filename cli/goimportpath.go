@@ -72,10 +72,12 @@ func sourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		for i := 1; i <= len(pathElements); i++ {
 			repoPath := strings.Join(pathElements[:i], "/")
 
-			_, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
+			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
 				URI: repoPath,
 			})
-			if errcode.HTTP(err) == http.StatusNotFound {
+			if err == nil && repo.Mirror {
+				continue
+			} else if errcode.HTTP(err) == http.StatusNotFound {
 				continue
 			} else if err != nil {
 				// TODO: Distinguish between other known/expected errors vs unexpected errors,
