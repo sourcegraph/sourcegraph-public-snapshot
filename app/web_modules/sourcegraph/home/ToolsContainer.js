@@ -125,7 +125,7 @@ class ToolsContainer extends React.Component {
 					<div styleName="text-box">
 						<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/GoogleChromeAsset.svg`}></img>
 						<div styleName="title">Installed</div>
-						<div styleName="subtitle">You are all set to jump to definitions and search code on Github</div>
+						<div styleName="subtitle">You are all set to jump to definitions and search code on GitHub.</div>
 					</div>
 				</div>
 			</div>);
@@ -147,7 +147,7 @@ class ToolsContainer extends React.Component {
 									<div styleName="text-box">
 										<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SearchAssetBlue.svg`}></img>
 										<div styleName="title">Search the global code graph</div>
-										<div styleName="subtitle">Enter a function or definition to see its usage across all repositories</div>
+										<div styleName="subtitle">Enter a function or definition to see its usage across all repositories.</div>
 									</div>
 								</Link>
 							</div>
