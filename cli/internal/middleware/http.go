@@ -74,7 +74,7 @@ func SecureHeader(next http.Handler) http.Handler {
 
 func NoCacheByDefault(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("cache-control", "no-cache")
+		w.Header().Set("cache-control", "no-cache, max-age=0")
 		next.ServeHTTP(w, r)
 	})
 }
