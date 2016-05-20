@@ -57,7 +57,7 @@ describe("withResolvedRepoRev", () => {
 		it("should redirect for resolved local repos with different canonical name", () => {
 			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Result: {Repo: {URI: "renamedRepo"}}}));
 			let calledReplace = false;
-			render(<C params={{splat: "repo"}} />, {
+			render(<C params={{splat: "repo"}} location={{pathname: "sg.com/alias"}} />, {
 				router: {replace: () => calledReplace = true},
 			});
 			expect(calledReplace).to.be(true);
@@ -65,7 +65,7 @@ describe("withResolvedRepoRev", () => {
 		it("should redirect for resolved remote repos with different canonical name", () => {
 			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {Result: {RemoteRepo: {Owner: "renamedUser", Name: "renamedRepo"}}}));
 			let calledReplace = false;
-			render(<C params={{splat: "github.com/user/repo"}} />, {
+			render(<C params={{splat: "github.com/user/repo"}}location={{pathname: "sg.com/alias"}} />, {
 				router: {replace: () => calledReplace = true},
 			});
 			expect(calledReplace).to.be(true);
