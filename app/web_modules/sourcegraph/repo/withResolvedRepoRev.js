@@ -10,7 +10,6 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
-import {urlToRepo} from "sourcegraph/repo/routes";
 import {rel} from "sourcegraph/app/routePatterns";
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
@@ -89,7 +88,8 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 					}
 
 					if (nextState.repo !== canonicalPath) {
-						this.context.router.replace(urlToRepo(canonicalPath));
+						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
+						this.context.router.replace(canonicalURL);
 						return;
 					}
 
@@ -97,7 +97,8 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 				} else if (nextState.repoResolution.Result.Repo) {
 					let canonicalPath = nextState.repoResolution.Result.Repo.URI;
 					if (nextState.repo !== canonicalPath) {
-						this.context.router.replace(urlToRepo(canonicalPath));
+						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
+						this.context.router.replace(canonicalURL);
 						return;
 					}
 
