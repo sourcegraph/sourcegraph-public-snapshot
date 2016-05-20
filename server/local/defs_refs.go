@@ -3,8 +3,6 @@ package local
 import (
 	"path"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -92,12 +90,5 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 }
 
 func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	refLocations, err := store.GlobalRefsFromContext(ctx).Get(ctx, op)
-	if err != nil {
-		// Temporarily log and ignore error in querying the global ref store.
-		// TODO: fail with error here once the rollout of global ref store is complete.
-		log15.Error("error fetching ref locations", "def", op.Def, "error", err)
-		return &sourcegraph.RefLocationsList{}, nil
-	}
-	return refLocations, nil
+	return store.GlobalRefsFromContext(ctx).Get(ctx, op)
 }
