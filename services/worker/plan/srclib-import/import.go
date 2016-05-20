@@ -59,6 +59,9 @@ func putZip(url, zipPath string) error {
 	if err != nil {
 		return err
 	}
+	if appdash := resp.Header.Get("X-Appdash-Trace"); appdash != "" {
+		log.Println("X-Appdash-Trace:", appdash)
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("bad status code %d", resp.StatusCode)

@@ -158,7 +158,7 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 		Build: droneyaml.Build{
 			Container: droneyaml.Container{
 				// The hash is the final line of docker push output
-				Image: "sourcegraph/srclib-import@sha256:19d2918264ac24a928c06f3226aad3bf6babc8a8181dcf1cdc5a200c186006cd",
+				Image: "sourcegraph/srclib-import@sha256:1c3ae80a7fb7401e8a9b0ebea7ede2b21e25f7735cab64d9912e506216de93fe",
 				Environment: droneyaml.MapEqualSlice([]string{
 					"SOURCEGRAPH_IMPORT_URL=" + importURL.String(),
 				}),
