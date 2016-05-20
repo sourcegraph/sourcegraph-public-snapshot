@@ -570,7 +570,8 @@ class TreeSearch extends Container {
 		if (paramValues.length !== 4) {
 			return defURL;
 		}
-		return "/" + abs["defFull"](paramValues[0], paramValues[1], paramValues[2], encodeURIComponent(paramValues[3]));
+		let url = abs["defFull"](paramValues[0], paramValues[1], paramValues[2], encodeURIComponent(paramValues[3]));
+		return `/${url}`;
 	}
 
 	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
