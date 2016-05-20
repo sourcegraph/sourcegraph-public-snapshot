@@ -46,7 +46,7 @@ func init() {
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`CREATE INDEX global_refs_new_def_key_id ON global_refs_new USING btree (def_key_id);`,
 		`CREATE INDEX global_refs_new_repo ON global_refs_new USING btree (repo);`,
-		`CREATE MATERIALIZED VIEW global_refs_stats AS SELECT def_key_id, count(distinct repo) as repos FROM global_refs_new GROUP BY def_key_id;`,
+		`CREATE MATERIALIZED VIEW global_refs_stats AS SELECT def_key_id, count(distinct repo) AS repos, sum(count) AS refs FROM global_refs_new GROUP BY def_key_id;`,
 		`CREATE UNIQUE INDEX ON global_refs_stats (def_key_id);`,
 	)
 	GraphSchema.DropSQL = append(GraphSchema.DropSQL,
