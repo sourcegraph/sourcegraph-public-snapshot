@@ -16,7 +16,7 @@ ADD $TOOLCHAIN_URL /toolchain/t
 RUN (cd /toolchain && tar xfz t && rm t && mv * t) || true
 RUN mkdir -p $SRCLIBPATH/sourcegraph.com/sourcegraph && mv /toolchain/t $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-css
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-css
-RUN make
+RUN make clean && make
 
 # Install srclib binary (assumes this has been built on the Docker host)
 ADD ./srclib /bin/srclib
