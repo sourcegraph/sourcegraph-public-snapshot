@@ -1,39 +1,74 @@
-# Sourcegraph: Code Intelligence for teams
+# Sourcegraph: fast, semantic code search & cross-reference engine
 
-Sourcegraph is a **Git repository service** with Code Intelligence. You
-can [use Sourcegraph on Sourcegraph.com](https://sourcegraph.com) for free.
+<img src="https://sourcegraph.com/.assets/v/15693_2016-05-20_6613734/img/Homepage/how-ref.gif" align="right" width="300">
 
-Sourcegraph gives your team the power to build better software with:
+We're building [Sourcegraph](https://sourcegraph.com) to keep you in
+flow while coding.
 
-* **Code Intelligence:** Understand code more quickly with language-aware jump-to-definition and tooltips. (Go and Java only, more languages coming soon.)
-* **Live usage examples:** See how any function, class, etc., is currently being used across your codebases. As a wise developer once said, "The right example is worth a thousand words of documentation."
-* **Smart search:** Find code quickly by function name, full text, etc.
-* **Hackable source code:** [Sourcegraph's source code](https://sourcegraph.com/sourcegraph/sourcegraph) is publicly available under the [Fair Source License](https://fair.io).
+Try Sourcegraph:
 
-## Under the hood
+* [:mag_right: Search globally for functions, types, packages, etc.](https://sourcegraph.com/?q=http.NewRequest)
+* [:zap: Browse and jump around code like an IDE](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
+* [:earth_africa: See how a function/type/package is used everywhere](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
 
-Sourcegraph is built on several components:
+...all in your web browser. It just works. (Unless you do crazy stuff with your build tooling.)
 
-* [srclib](https://srclib.org), a multi-language, hackable source code
-  analysis toolchain
-* The [Go](http://golang.org) programming language
-* [gRPC](http://grpc.io), an HTTP2-based RPC protocol that uses
-  Protocol Buffer service definitions
-* [React](https://facebook.github.io/react/), a JavaScript library for
-  building UIs.
-* [Sourcegraph.com](https://sourcegraph.com), a public instance of
-  Sourcegraph that provides information about open-source projects to
-  your local Sourcegraph.
+It works across repositories and at large scale, with 2,000,000,000+
+nodes in the public code index (and growing).
 
-## Contributing to Sourcegraph
+Tons of devs use Sourcegraph all day, every day—worldwide and inside
+large, well-known companies.
 
-Want to make Sourcegraph better? Great! Check out
-[CONTRIBUTING.md](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/CONTRIBUTING.md). We
-welcome all types of contributions--code, documentation, assets,
-community support, and user feedback.
 
-Our [developer README](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/docs/dev.md)
-is a good place to start.
+### Supported languages
+
+* Go
+
+*Coming soon: Java, JavaScript, Python, C#, TypeScript, PHP, Objective-C, Scala, CSS, etc.*
+
+
+
+## Getting started
+
+* [**:white_check_mark: Sign up for Sourcegraph.com**](https://sourcegraph.com/)
+  for public and (your/your company's) private GitHub code
+* [:white_check_mark: Install the Sourcegraph Chrome extension](https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack)
+  to seamlessly add these features to GitHub.com
+
+Our hosted service Sourcegraph.com is always free for open-source
+projects. Teams get search, browsing, and cross-references for free on
+private code. New, paid features are coming soon
+([join the beta](mailto:support@sourcegraph.com)).
+
+You can also:
+
+* Browse the code that powers the site
+  [on Sourcegraph](https://sourcegraph.com/sourcegraph/sourcegraph) or
+  on GitHub
+* Deploy Sourcegraph on your own servers (paid;
+  [contact us](mailto:support@sourcegraph.com) about Sourcegraph
+  Enterprise)
+
+
+## Questions Sourcegraph answers for you
+
+* [How do I call this function?](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
+* [Who else uses this package?](https://sourcegraph.com/github.com/gorilla/mux/-/info/GoPackage/github.com/gorilla/mux/-/NewRouter)
+* [Where in the world is this type defined?](https://sourcegraph.com/github.com/gorilla/mux?q=Router)
+
+
+## Contributing
+
+We welcome all types of contributions: bug reports, code,
+documentation, and feedback. We will compensate you for certain
+contributions (bug fixes, or enhancements on our roadmap) if you
+contact us and receive preapproval. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for more information.
+
+(Love to contribute full-time?
+[Join our team](https://sourcegraph.com/careers/) and work with others
+who share your passion for software development.)
+
 
 ## Security
 
@@ -44,6 +79,9 @@ creating an issue.
 
 [Read our complete security policy.](https://sourcegraph.com/security)
 
+
 ## License
 
-[Fair Source License](https://fair.io)
+Sourcegraph is licensed as [Fair Source 15 (v0.9)](https://fair.io),
+not open source. Charging companies that get value from Sourcegraph
+lets us build a sustainable business.

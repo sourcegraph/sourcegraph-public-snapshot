@@ -6,13 +6,6 @@ package. This document describes conventions for writing these tests.
 
 ## Running tests
 
-PhantomJS is required for browser tests. Install with `npm install -g
-phantomjs`. You may have to prefix that with `sudo`. Afterwards,
-`phantomjs` should be in your `$PATH`.
-
-By default, you also need to be running the webpack dev server (`cd
-app && npm start` in a separate window).
-
 The Makefile defines 4 test targets:
 
 * `make test`: runs all tests, including integration tests. This can

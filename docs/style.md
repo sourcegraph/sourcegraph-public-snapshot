@@ -1,3 +1,5 @@
+# Sourcegraph style guide
+
 This file documents the style used in Sourcegraph's code and product.
 
 For all things not covered in this document, defer to
@@ -12,8 +14,8 @@ comments, and user interface text.
 * Phrases in headers and titles are capitalized like sentences ("Add
   repository"), not headlines ("Add Repository").
 * Use descriptive link text, such as "Need to
-  [view your repositories](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/docs/style.md#)?" Don't use "here" as link text, as in
-  "Need to view your repositories? [Click here.](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/docs/style.md#)"
+  [view your repositories](#)?" Don't use "here" as link text, as in
+  "Need to view your repositories? [Click here.](#)"
 
 ## Terms
 
@@ -56,9 +58,9 @@ pointer or document it.
 
 ## Changesets
 
-When you have a CS that adds one new constant or other kind of declaration in a list that
+When you have a PR that adds one new constant or other kind of declaration in a list that
 gofmt will automatically reindent, and if it changes the indentation, just add it in another
 block (separated with newlines). That way code reviewers don't have to wonder if you changed
 anything else in the block, and other people who might be working on the same code don't have
-to worry about lots of merge conflicts. Then as a separate commit on master, once the CS has
+to worry about lots of merge conflicts. Then as a separate commit on master, once the PR has
 been merged, you can delete the extraneous newlines and add it in its proper place.
