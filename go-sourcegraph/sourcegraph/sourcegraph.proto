@@ -203,6 +203,10 @@ message RepoStatus {
 	pbtypes.Timestamp UpdatedAt = 7 [(gogoproto.nullable) = false];
 }
 
+message RepoStatusList {
+	repeated RepoStatus RepoStatuses = 1;
+}
+
 message RepoStatusesCreateOp {
 	RepoRevSpec Repo = 1 [(gogoproto.nullable) = false];
 	RepoStatus Status = 2 [(gogoproto.nullable) = false];
@@ -215,6 +219,9 @@ message RepoList {
 service RepoStatuses {
 	// GetCombined fetches the combined repository status for the given commit.
 	rpc GetCombined(RepoRevSpec) returns (CombinedStatus);
+
+	// GetCoverage fetches the coverage data for all repositories.
+	rpc GetCoverage(pbtypes.Void) returns (RepoStatusList);
 
 	// Create creates a repository status for the given commit.
 	rpc Create(RepoStatusesCreateOp) returns (RepoStatus);

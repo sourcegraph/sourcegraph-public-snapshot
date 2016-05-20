@@ -26,6 +26,7 @@ const (
 	BlackHole        = "blackhole"
 	Builds           = "builds"
 	BuildTaskLog     = "build.task.log"
+	Coverage         = "coverage"
 	Def              = "def"
 	DefRefs          = "def.refs"
 	DefRefLocations  = "def.ref.locations"
@@ -50,7 +51,6 @@ const (
 	Repos            = "repos"
 	RemoteRepos      = "repos.remote"
 	SrclibImport     = "srclib.import"
-	SrclibCoverage   = "srclib.coverage"
 	SrclibDataVer    = "srclib.data-version"
 	User             = "user"
 	UserEmails       = "user.emails"
@@ -76,6 +76,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
 	base.Path("/builds").Methods("GET").Name(Builds)
+	base.Path("/coverage").Methods("GET").Name(Coverage)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
@@ -117,7 +118,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/defs").Methods("GET").Name(Defs)
 
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
-	repoRev.Path("/srclib-coverage").Methods("PUT").Name(SrclibCoverage)
 	repoRev.Path("/srclib-data-version").Methods("GET").Name(SrclibDataVer)
 
 	// Old paths we used to support. Explicitly handle them to avoid bad

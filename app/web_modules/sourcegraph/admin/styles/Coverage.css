@@ -1,0 +1,16 @@
+.container {
+	display: flex;
+	flex-wrap: wrap;
+	margin-top: 20px;
+}
+
+.graph {
+	min-width: 300px;
+	margin: 20px;
+}
+
+.title {
+	text-align: center;
+	font-weight: bold;
+	font-size: 20px;
+}

@@ -1285,6 +1285,36 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, v1 *sourcegraph.Re
 	return rv, nil
 }
 
+func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.RepoStatusList, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in RepoStatuses.GetCoverage: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.RepoStatusesOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "RepoStatuses")
+	}
+
+	rv, err := innerSvc.GetCoverage(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 func (s wrappedRepoStatuses) Create(ctx context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (returnedResult *sourcegraph.RepoStatus, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
