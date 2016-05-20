@@ -12,6 +12,7 @@ func init() {
 	graph.RegisterMakeDefFormatter("basic-php", newBasicFormatter("PHP"))
 	graph.RegisterMakeDefFormatter("basic-objc", newBasicFormatter("Objective-C"))
 	graph.RegisterMakeDefFormatter("TypeScriptModule", newBasicFormatter("TypeScript"))
+	graph.RegisterMakeDefFormatter("CommonJSPackage", newBasicFormatter("JavaScript"))
 	graph.RegisterMakeDefFormatter("myunittype", newBasicFormatter("Generic")) // for quick lang prototypes
 }
 
