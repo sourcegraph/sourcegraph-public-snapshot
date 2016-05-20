@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
@@ -59,12 +58,16 @@ func init() {
 type globalRefsNew struct{}
 
 func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+	trackedRepo := util.GetTrackedRepo(op.Def.Repo)
+	observe := func(part string, start time.Time) {
+		globalRefsDuration.WithLabelValues(trackedRepo, part).Observe(time.Since(start).Seconds())
+	}
+	defer observe("total", time.Now())
+
 	opt := op.Opt
 	if opt == nil {
 		opt = &sourcegraph.DefListRefLocationsOptions{}
 	}
-
-	trackedRepo := util.GetTrackedRepo(op.Def.Repo)
 
 	// Optimization: All our SQL operations rely on the defKeyID. Fetch
 	// it once, instead of once per query
@@ -72,26 +75,26 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 	defKeyID, err := graphDBH(ctx).SelectInt(
 		"SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4",
 		op.Def.Repo, op.Def.UnitType, op.Def.Unit, op.Def.Path)
+	observe("def_keys", start)
+	start = time.Now()
 	if err != nil {
 		return nil, err
 	} else if defKeyID == 0 {
 		// DefKey was not found
 		return &sourcegraph.RefLocationsList{}, nil
 	}
-	globalRefsDefKeyDuration.WithLabelValues(trackedRepo).Observe(time.Since(start).Seconds())
 
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
 	var totalRepos int64
 	statsDone := make(chan error)
 	go func() {
 		var err error
-		start := time.Now()
+		statsStart := time.Now()
 		totalRepos, err = g.getRefStats(ctx, defKeyID)
-		globalRefsStatsDuration.WithLabelValues(trackedRepo).Observe(time.Since(start).Seconds())
+		observe("stats", statsStart)
 		statsDone <- err
 	}()
 
-	start = time.Now()
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := gorp.PostgresDialect{}.BindVar(len(args))
@@ -160,7 +163,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 		repoRefs[0], repoRefs[defRepoIdx] = repoRefs[defRepoIdx], repoRefs[0]
 	}
 
-	globalRefsLocationDuration.WithLabelValues(trackedRepo).Observe(time.Since(start).Seconds())
+	observe("locations", start)
 	start = time.Now()
 
 	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
@@ -196,7 +199,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 		}
 		filteredRepoRefs = append(filteredRepoRefs, r)
 	}
-	globalRefsAccessDuration.WithLabelValues(trackedRepo).Observe(time.Since(start).Seconds())
+	observe("access", start)
 
 	select {
 	case err := <-statsDone:
@@ -342,38 +345,13 @@ func (g *globalRefsNew) StatRefresh(ctx context.Context) error {
 
 // TODO(keegancsmith) Remove. This is very granular instrumentation which we
 // only need temporarily. Generally we should just rely on appdash.
-var globalRefsDefKeyDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",
-	Name:      "def_key_duration_seconds",
-	Help:      "Duration for querying the DB for the def_key id",
-	Buckets:   statsutil.UserLatencyBuckets,
-}, []string{"repo"})
-var globalRefsLocationDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "global_refs",
-	Name:      "location_duration_seconds",
-	Help:      "Duration for querying the DB for locations",
-	Buckets:   statsutil.UserLatencyBuckets,
-}, []string{"repo"})
-var globalRefsStatsDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "global_refs",
-	Name:      "stats_duration_seconds",
-	Help:      "Duration for querying the DB for ref stats",
-	Buckets:   statsutil.UserLatencyBuckets,
-}, []string{"repo"})
-var globalRefsAccessDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "global_refs",
-	Name:      "access_duration_seconds",
-	Help:      "Duration for querying github for read access to repos",
-	Buckets:   statsutil.UserLatencyBuckets,
-}, []string{"repo"})
+	Name:      "duration_seconds",
+	Help:      "Duration for querying global_refs_new",
+}, []string{"repo", "part"})
 
 func init() {
-	prometheus.MustRegister(globalRefsDefKeyDuration)
-	prometheus.MustRegister(globalRefsLocationDuration)
-	prometheus.MustRegister(globalRefsStatsDuration)
-	prometheus.MustRegister(globalRefsAccessDuration)
+	prometheus.MustRegister(globalRefsDuration)
 }
