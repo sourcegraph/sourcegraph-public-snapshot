@@ -214,7 +214,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Filter trace logs
-	log.Println(globalOpt.TraceThreshold)
 	logHandler = log15.FilterHandler(loghandlers.Trace(globalOpt.Trace, globalOpt.TraceThreshold), logHandler)
 
 	// Filter log output by level.
