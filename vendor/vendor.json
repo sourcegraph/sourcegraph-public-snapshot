@@ -19,11 +19,6 @@
 			"revisionTime": "2016-02-07T20:52:08-05:00"
 		},
 		{
-			"path": "github.com/PuerkitoBio/goquery",
-			"revision": "269246d9e7d42d74e1cf929336d128d2ef53e7a5",
-			"revisionTime": "2015-03-28T09:30:56-04:00"
-		},
-		{
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "446d1c146faa8ed3f4218f056fcd165f6bcfda81",
 			"revisionTime": "2015-12-04T09:14:43-05:00"
@@ -42,11 +37,6 @@
 			"path": "github.com/alexsaveliev/go-colorable-wrapper",
 			"revision": "99a0af7e4f8cb31ba0cbecd070648a1f3f7c4c33",
 			"revisionTime": "2015-11-25T20:49:59+02:00"
-		},
-		{
-			"path": "github.com/andybalholm/cascadia",
-			"revision": "3ad29d1ad1c4f2023e355603324348cf1f4b2d48",
-			"revisionTime": "2015-07-30T10:44:59-07:00"
 		},
 		{
 			"path": "github.com/beorn7/perks/quantile",
@@ -168,27 +158,6 @@
 			"revisionTime": "2014-07-29T21:48:43-07:00"
 		},
 		{
-			"checksumSHA1": "RyxjBqJbUAWaMbKzIpgrfArCl5A=",
-			"path": "github.com/gengo/grpc-gateway/internal",
-			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
-			"revisionTime": "2015-06-19T05:51:51Z"
-		},
-		{
-			"path": "github.com/gengo/grpc-gateway/protoc-gen-grpc-gateway/descriptor",
-			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
-			"revisionTime": "2015-06-19T14:51:51+09:00"
-		},
-		{
-			"path": "github.com/gengo/grpc-gateway/protoc-gen-grpc-gateway/httprule",
-			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
-			"revisionTime": "2015-06-19T14:51:51+09:00"
-		},
-		{
-			"path": "github.com/gengo/grpc-gateway/third_party/googleapis/google/api",
-			"revision": "8ac6df966068de084034d6535c2792367c1e1f28",
-			"revisionTime": "2015-06-19T14:51:51+09:00"
-		},
-		{
 			"path": "github.com/getsentry/raven-go",
 			"revision": "3fd636ed242c26c0f55bc9ee1fe47e1d6d2d77f7",
 			"revisionTime": "2014-12-04T08:02:52-08:00"
@@ -210,12 +179,6 @@
 			"path": "github.com/golang/gddo/gosrc",
 			"revision": "56fdb27532ffe5f8f0d2c7c8b1f0b4d1da481f10",
 			"revisionTime": "2016-04-20T02:17:25Z"
-		},
-		{
-			"checksumSHA1": "URsJa4y/sUUw/STmbeYx9EKqaYE=",
-			"path": "github.com/golang/glog",
-			"revision": "44145f04b68cf362d9c4df2182967c2275eaefed",
-			"revisionTime": "2014-09-23T20:47:00Z"
 		},
 		{
 			"path": "github.com/golang/groupcache/lru",
@@ -265,12 +228,6 @@
 			"path": "github.com/gorilla/schema",
 			"revision": "ddf016c1034e9cfd3eb5b276f626c8f04d765f6f",
 			"revisionTime": "2016-02-26T13:51:49-08:00"
-		},
-		{
-			"checksumSHA1": "UluBK/KntetOAdusj9Qamt8sFFg=",
-			"path": "github.com/gorilla/websocket",
-			"revision": "1f512fc3f05332ba7117626cdfb4e07474e58e60",
-			"revisionTime": "2016-04-28T16:34:18Z"
 		},
 		{
 			"path": "github.com/howeyc/gopass",
@@ -575,44 +532,14 @@
 			"revisionTime": "2015-10-11T12:25:29+02:00"
 		},
 		{
-			"checksumSHA1": "B70RlXzd+TYXerzISy/f/+TQQXw=",
-			"path": "github.com/mediocregopher/radix.v2",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
-		},
-		{
-			"checksumSHA1": "jHSOP6ZfonCkLaFYjSGcunmTab8=",
-			"path": "github.com/mediocregopher/radix.v2/cluster",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
-		},
-		{
 			"checksumSHA1": "8ZSsHmBOqTGuBju5jVDV77qGYGo=",
 			"path": "github.com/mediocregopher/radix.v2/pool",
 			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
 			"revisionTime": "2016-04-15T23:49:38Z"
 		},
 		{
-			"checksumSHA1": "pTBkvagxF8ocdzm7QC9p18uOm7A=",
-			"path": "github.com/mediocregopher/radix.v2/pubsub",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
-		},
-		{
 			"checksumSHA1": "16UHP9YVwZhtTmWawN1dVPdohvE=",
 			"path": "github.com/mediocregopher/radix.v2/redis",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
-		},
-		{
-			"checksumSHA1": "6n2MLgtxGAW+WTlSM6lpso7ttzA=",
-			"path": "github.com/mediocregopher/radix.v2/sentinel",
-			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
-			"revisionTime": "2016-04-15T23:49:38Z"
-		},
-		{
-			"checksumSHA1": "3trAeUc1o4KayhTfaE3zt3Tc4ak=",
-			"path": "github.com/mediocregopher/radix.v2/util",
 			"revision": "74e50e64194d2d2f4836212451c28b127f9d7fa1",
 			"revisionTime": "2016-04-15T23:49:38Z"
 		},
@@ -735,11 +662,6 @@
 			"path": "github.com/shurcooL/go/gists/gist6445065",
 			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
 			"revisionTime": "2016-03-21T03:10:21-07:00"
-		},
-		{
-			"path": "github.com/shurcooL/go/vfs/godocfs/godocfs",
-			"revision": "63a73a4c0e73b3ff6787385a066483dbe90add26",
-			"revisionTime": "2016-02-18T21:16:50-08:00"
 		},
 		{
 			"path": "github.com/shurcooL/httpfs/filter",
@@ -910,11 +832,6 @@
 			"path": "golang.org/x/net/internal/timeseries",
 			"revision": "e7da8edaa52631091740908acaf2c2d4c9b3ce90",
 			"revisionTime": "2016-03-05T22:47:48Z"
-		},
-		{
-			"path": "golang.org/x/net/publicsuffix",
-			"revision": "c2528b2dd8352441850638a8bb678c2ad056fd3e",
-			"revisionTime": "2015-09-26T06:14:36+02:00"
 		},
 		{
 			"path": "golang.org/x/net/trace",
