@@ -24,7 +24,7 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 // default branch is used.
 func resolveRepoRev(ctx context.Context, repo sourcegraph.RepoSpec, rev string) (vcs.CommitID, error) {
 	if rev == "" {
-		repo, err := (&repos{}).Get(ctx, &repo)
+		repo, err := svc.Repos(ctx).Get(ctx, &repo)
 		if err != nil {
 			return "", err
 		}

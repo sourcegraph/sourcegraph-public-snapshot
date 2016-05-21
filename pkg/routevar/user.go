@@ -11,10 +11,10 @@ import (
 
 var (
 	// User captures UserSpec strings in URL routes.
-	User = `{User:` + NamedToNonCapturingGroups(UserPattern) + `}`
+	User = `{User:` + namedToNonCapturingGroups(UserPattern) + `}`
 
 	// Person captures PersonSpec strings in URL routes.
-	Person = `{Person:` + NamedToNonCapturingGroups(UserPattern) + `}`
+	Person = `{Person:` + namedToNonCapturingGroups(UserPattern) + `}`
 )
 
 // UserPattern is the regexp pattern that matches UserSpec strings:

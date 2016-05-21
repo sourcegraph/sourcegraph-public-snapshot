@@ -63,8 +63,8 @@ func TestRepoRevSpec_IsAbs(t *testing.T) {
 	tests := map[string]bool{
 		"":  false,
 		"a": false,
-		strings.Repeat("x", 40):               false,
-		strings.Repeat("0123456789abcdef", 4): true,
+		strings.Repeat("x", 40):                    false,
+		"0123456789abcdef0123456789abcdef01234567": true,
 	}
 	for id, want := range tests {
 		if got := (RepoRevSpec{CommitID: id}).IsAbs(); got != want {

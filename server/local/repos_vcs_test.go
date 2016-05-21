@@ -116,7 +116,7 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 	})
 
 	_, err := resolveRepoRev(ctx, sourcegraph.RepoSpec{URI: "r"}, strings.Repeat("a", 40))
-	if err != want {
+	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
 	if *calledGet {
@@ -140,7 +140,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 
 	mockRepo := vcstest.MockRepository{}
 	mockRepo.ResolveRevision_ = func(spec string) (vcs.CommitID, error) {
-		if spec != "master" {
+		if spec != "v" {
 			t.Fatalf("call to ResolveRevision with unexpected argument spec=%s", spec)
 		}
 		return wantCommits[0].ID, nil

@@ -1,6 +1,7 @@
 package local
 
 import (
+	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -13,20 +14,26 @@ import (
 	srclibstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
+const (
+	c1 = "1111111111111111111111111111111111111111"
+	c2 = "2222222222222222222222222222222222222222"
+	c3 = "3333333333333333333333333333333333333333"
+)
+
 func TestReposService_GetSrclibDataVersionForPath_exact(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
 
-	calledVersions := mockstore.GraphMockVersions(&mock.stores.Graph, &srclibstore.Version{Repo: "r", CommitID: "c"})
+	calledVersions := mockstore.GraphMockVersions(&mock.stores.Graph, &srclibstore.Version{Repo: "r", CommitID: strings.Repeat("c", 40)})
 
 	dataVer, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (sourcegraph.SrclibDataVersion{CommitID: "c"}); *dataVer != want {
+	if want := (sourcegraph.SrclibDataVersion{CommitID: strings.Repeat("c", 40)}); *dataVer != want {
 		t.Fatalf("got %+v, want %+v", *dataVer, want)
 	}
 	if !*calledVersions {
@@ -35,11 +42,11 @@ func TestReposService_GetSrclibDataVersionForPath_exact(t *testing.T) {
 }
 
 func TestReposService_GetSrclibDataVersionForPath_lookback_versionNewerThanLastCommitThatChangedFile(t *testing.T) {
-	testReposService_GetSrclibDataVersionForPath_lookback(t, "c2", 1)
+	testReposService_GetSrclibDataVersionForPath_lookback(t, c2, 1)
 }
 
 func TestReposService_GetSrclibDataVersionForPath_lookback_versionSameAsLastCommitThatChangedFile(t *testing.T) {
-	testReposService_GetSrclibDataVersionForPath_lookback(t, "c3", 2)
+	testReposService_GetSrclibDataVersionForPath_lookback(t, c3, 2)
 }
 
 func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, versionCommitID string, commitsBehind int32) {
@@ -52,15 +59,15 @@ func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, version
 		if op.Opt.Path != "" {
 			// Return the last commit that changed the file "p".
 			calledListCommitsWithPath = true
-			return &sourcegraph.CommitList{Commits: []*vcs.Commit{{ID: "c3"}}}, nil
+			return &sourcegraph.CommitList{Commits: []*vcs.Commit{{ID: c3}}}, nil
 		}
 		// Return all commits between c3 and v (inclusive).
 		calledListCommitsNoPath = true
-		return &sourcegraph.CommitList{Commits: []*vcs.Commit{{ID: "c1"}, {ID: "c2"}, {ID: "c3"}}}, nil
+		return &sourcegraph.CommitList{Commits: []*vcs.Commit{{ID: c1}, {ID: c2}, {ID: c3}}}, nil
 	}
 
 	dataVer, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c1"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: c1},
 		Path:    "p",
 	})
 	if err != nil {
@@ -88,7 +95,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsNoCommits(t 
 	calledListCommits := mock.servers.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
@@ -110,7 +117,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundWrongVersionsNoCommits
 	calledListCommits := mock.servers.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
@@ -132,7 +139,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsWrongCommits
 	calledListCommits := mock.servers.Repos.MockListCommits(t, "x")
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {

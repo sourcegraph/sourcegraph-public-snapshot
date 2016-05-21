@@ -12,7 +12,7 @@ func pairs(m map[string]string) []string {
 	return pairs
 }
 
-func TestNamedToNonCapturingGroups(t *testing.T) {
+func TestnamedToNonCapturingGroups(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
@@ -23,7 +23,7 @@ func TestNamedToNonCapturingGroups(t *testing.T) {
 		{`(?P<foo>qux(?P<baz>bar))`, `(?:qux(?:bar))`},
 	}
 	for _, test := range tests {
-		got := NamedToNonCapturingGroups(test.input)
+		got := namedToNonCapturingGroups(test.input)
 		if got != test.want {
 			t.Errorf("%q: got %q, want %q", test.input, got, test.want)
 		}

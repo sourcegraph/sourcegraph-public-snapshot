@@ -2,11 +2,11 @@ package routevar
 
 import "regexp"
 
-// NamedToNonCapturingGroups converts named capturing groups
+// namedToNonCapturingGroups converts named capturing groups
 // `(?P<myname>...)` to non-capturing groups `(?:...)` for use in mux
 // route declarations (which assume that the route patterns do not
 // have any capturing groups).
-func NamedToNonCapturingGroups(pat string) string {
+func namedToNonCapturingGroups(pat string) string {
 	return namedCaptureGroup.ReplaceAllLiteralString(pat, `(?:`)
 }
 

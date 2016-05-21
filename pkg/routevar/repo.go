@@ -26,10 +26,10 @@ type TreeEntry struct {
 }
 
 var (
-	Repo = `{Repo:` + NamedToNonCapturingGroups(RepoPattern) + `}`
-	Rev  = `{Rev:` + NamedToNonCapturingGroups(RevPattern) + `}`
+	Repo = `{Repo:` + namedToNonCapturingGroups(RepoPattern) + `}`
+	Rev  = `{Rev:` + namedToNonCapturingGroups(RevPattern) + `}`
 
-	RepoRevSuffix = `{Rev:` + NamedToNonCapturingGroups(`(?:@`+RevPattern+`)?`) + `}`
+	RepoRevSuffix = `{Rev:` + namedToNonCapturingGroups(`(?:@`+RevPattern+`)?`) + `}`
 )
 
 const (
