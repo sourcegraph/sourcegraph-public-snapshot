@@ -69,7 +69,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			panic(err)
 		}
-		indices := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
+		indices := []int{0, 1, 2, 3, 4, 5, 6}
 		for _, index := range indices {
 			si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
 				Loc:     fmt.Sprintf("https://storage.googleapis.com/static-sitemaps/sitemap_%d.xml.gz", index),
