@@ -2,3 +2,6 @@
 /app/vendor/**/* -diff
 /grapher/javascript/node_modules/**/* -diff
 # /Godeps/_workspace/**/* -diff
+/go-sourcegraph/sourcegraph/sourcegraph.pb.go -diff
+
+
