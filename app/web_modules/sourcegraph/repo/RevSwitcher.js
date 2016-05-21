@@ -138,7 +138,7 @@ class RevSwitcher extends Component {
 				<Link to={this._revSwitcherURL(name)} title={commitID}
 					styleName={isCurrent ? "item-content-current" : "item-content"}
 					onClick={this._closeDropdown}>
-					<CheckIcon styleName={isCurrent ? "icon" : "icon-hidden"} /> <span styleName="item-name">{abbrevRev(name)}</span>
+					<CheckIcon styleName={isCurrent ? "icon" : "icon-hidden"} /> {name && <span styleName="item-name">{abbrevRev(name)}</span>}
 					{isCurrent && commitsBehind ? <span styleName="detail">{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index</span> : null}
 					{isCurrent && unindexed ? <span styleName="detail">not indexed</span> : null}
 				</Link>
@@ -180,6 +180,41 @@ class RevSwitcher extends Component {
 
 	// _onKeydown causes ESC to close the menu.
 	_onKeydown(ev) {
+		if (event.defaultPrevented) {
+			return;
+		}
+
+		// Don't trigger if there's a modifier key or if the cursor is focused
+		// in an input field.
+		const tag = ev.target.tagName;
+		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) && typeof document !== "undefined" && tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+			// Global hotkeys.
+			let handled = false;
+			if (ev.keyCode === 89 /* y */) {
+				// Make the URL absolute by adding the absolute 40-char commit ID
+				// as the rev.
+				if (this.state.commitID) {
+					handled = true;
+					this.context.router.push(this._revSwitcherURL(this.state.commitID));
+				}
+			} else if (ev.keyCode === 85 /* u */) {
+				// Remove the rev from the URL entirely.
+				handled = true;
+				this.context.router.push(this._revSwitcherURL(null));
+			} else if (ev.keyCode === 73 /* i */) {
+				// Set the rev to be the repository's default branch.
+				if (this.state.repoObj.DefaultBranch) {
+					handled = true;
+					this.context.router.push(this._revSwitcherURL(this.state.repoObj.DefaultBranch));
+				}
+			}
+			if (handled) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				return;
+			}
+		}
+
 		if (!this.state.open) return;
 		if (ev.keyCode === 27 /* ESC */) {
 			this.setState({open: false});
@@ -247,7 +282,7 @@ class RevSwitcher extends Component {
 					<div role="presentation" styleName="divider"></div>
 					<ul styleName="list-section">
 						{/* Show the current one at the top if it wouldn't otherwise be shown. */}
-						{!currentItem && !this.state.query && this._item(this.state.rev, this.state.commitID)}
+						{this.state.rev && !currentItem && !this.state.query && this._item(this.state.rev, this.state.commitID)}
 						<li role="presentation" styleName="dropdown-header">Branches</li>
 						{branches}
 						<li role="presentation" styleName="divider"></li>
