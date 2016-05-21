@@ -2,6 +2,8 @@ import React from "react";
 import Container from "sourcegraph/Container";
 import "sourcegraph/repo/RepoBackend";
 import RepoStore from "sourcegraph/repo/RepoStore";
+import "sourcegraph/tree/TreeBackend";
+import TreeStore from "sourcegraph/tree/TreeStore";
 import RevSwitcher from "sourcegraph/repo/RevSwitcher";
 
 // RevSwitcherContainer is for standalone RevSwitchers that need to
@@ -11,14 +13,22 @@ class RevSwitcherContainer extends Container {
 		Object.assign(state, props);
 		state.branches = RepoStore.branches;
 		state.tags = RepoStore.tags;
+		state.srclibDataVersions = TreeStore.srclibDataVersions;
 	}
 
-	stores() { return [RepoStore]; }
+	stores() { return [RepoStore, TreeStore]; }
 
 	render() {
 		let childProps = this.props;
 		delete childProps.repoStore;
-		return <RevSwitcher branches={this.state.branches} tags={this.state.tags} {...childProps} />;
+		delete childProps.treeStore;
+		return (
+			<RevSwitcher
+				branches={this.state.branches}
+				tags={this.state.tags}
+				srclibDataVersions={this.state.srclibDataVersions}
+				{...childProps} />
+			);
 	}
 }
 

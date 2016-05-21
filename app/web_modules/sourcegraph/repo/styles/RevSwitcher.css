@@ -1,0 +1,94 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+@value menu "sourcegraph/components/styles/menu.css";
+
+.wrapper {
+	position: relative;
+	display: inline-block;
+	composes: pl1 from base;
+	font-size: 1rem;
+
+	/* vertically align with rest of NavContext */
+	margin-top: 11px;
+}
+.toggle {
+	cursor: pointer;
+	composes: light-silver from colors;
+}
+.toggle:hover {
+	color: black;
+}
+
+.dropdown-menu {
+	position: absolute;
+	width: 22rem;
+	composes: container from menu;
+}
+.dropdown-menu-open {
+	composes: dropdown-menu;
+	display: block;
+}
+.dropdown-menu-closed {
+	display: none;
+}
+
+.item { composes: item from menu; }
+.item-content { composes: item-content from menu; }
+.item-current { composes: item from menu; }
+.item-content-current {
+	composes: item-content-current from menu;
+}
+.item-content-current .item-name {
+	font-weight: bold;
+}
+
+.search-section {
+	composes: item-content from menu;
+	composes: mb1 from base;
+}
+.input {
+	width: 100%;
+}
+
+.divider {
+	composes: item from menu;
+}
+.list-section {
+	max-height: 360px;
+	composes: ma0 ph0 from base;
+}
+.dropdown-header {
+	font-weight: bold;
+	composes: gray from colors;
+	text-transform: uppercase;
+	composes: item-content from menu;
+	composes: mt3 from base;
+	cursor: default !important;
+	user-select: none;
+}
+.disabled {
+	composes: gray from colors;
+	pointer-events: none;
+	cursor: default !important;
+	composes: item-content from menu;
+	user-select: none;
+}
+.detail {
+	opacity: 0.6;
+	composes: ml4 from base;
+	font-size: 0.9rem;
+}
+
+
+.icon {
+	vertical-align: middle;
+	user-select: none;
+	composes: pr1 from base;
+}
+.icon-hidden {
+	composes: icon;
+	opacity: 0;
+}

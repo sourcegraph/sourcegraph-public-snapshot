@@ -3,21 +3,26 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
-.menu {
+.container {
 	composes: ph0 pv2 ma0 br3 ba from base;
 	composes: bg-white b--moon-gray from colors;
-	overflow: hidden;
+	overflow: scroll;
 	min-width: 12rem;
 	list-style-type: none;
 }
-.item {}
+.item {
+	list-style-type: none;
+}
 .item-content {
 	display: block;
-	composes: pv2 ph3 from base;
+	composes: pv1 ph3 from base;
 	composes: dark-gray from colors;
 	cursor: pointer;
 }
 @value c_blue from colors;
+.item-content-current {
+	composes: item-content;
+}
 .item:hover .item-content {
 	background-color: c_blue;
 	color: white;

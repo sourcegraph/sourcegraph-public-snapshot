@@ -7,7 +7,7 @@ import styles from "./styles/menu.css";
 
 function Menu(props, context) {
 	return (
-		<ol styleName="menu">
+		<ol styleName="container">
 			{React.Children.map(props.children, (ch) => (
 				<li key={ch} styleName="item">{React.cloneElement(ch, {styleName: "item-content"})}</li>
 			))}

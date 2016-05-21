@@ -11,6 +11,7 @@ export const TriangleDownIcon = iconWrapper(require("react-icons/lib/go/triangle
 export const TriangleLeftIcon = iconWrapper(require("react-icons/lib/go/triangle-left"));
 export const TriangleRightIcon = iconWrapper(require("react-icons/lib/go/triangle-right"));
 export const PencilIcon = iconWrapper(require("react-icons/lib/go/pencil"));
+export const CheckIcon = iconWrapper(require("react-icons/lib/go/check"));
 
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon styleName="foo" />

@@ -7,6 +7,7 @@ import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
+import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
 import EventLogger from "sourcegraph/util/EventLogger";
 
 const RepoBackend = {
@@ -113,13 +114,13 @@ const RepoBackend = {
 				let branches = RepoStore.branches.list(action.repo);
 				if (branches === null) {
 					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches`)
+						RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches?IncludeCommit=true&PerPage=1000`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, [], true));
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, data.Branches || [])))
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, sortBranches(data.Branches) || [])))
 					);
 				}
 				break;
@@ -130,13 +131,13 @@ const RepoBackend = {
 				let tags = RepoStore.tags.list(action.repo);
 				if (tags === null) {
 					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags`)
+						RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags?PerPage=1000`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, [], true));
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, data.Tags || [])))
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, sortTags(data.Tags) || [])))
 					);
 				}
 				break;

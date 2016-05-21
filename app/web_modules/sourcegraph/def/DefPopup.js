@@ -66,7 +66,7 @@ class DefPopup extends Container {
 				</header>
 
 				{!refLocs && <span styleName="loading">Loading...</span>}
-				{refLocs && refLocs.length === 0 && <i>No usages found</i>}
+				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && <i>No usages found</i>}
 				{<RefLocationsList def={def} refLocations={refLocs} showMax={3} repo={this.state.repo} rev={this.state.rev} path={this.state.path} location={this.state.location} />}
 
 				{<header className={s.sectionTitle}>Authors</header>}
