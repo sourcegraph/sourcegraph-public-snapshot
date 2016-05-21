@@ -18,7 +18,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/executil"
 )
 
@@ -31,26 +30,26 @@ func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {
 	}
 
 	// Make sure the repo has been cloned to vcsstore.
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repoURI}, Rev: repo.DefaultBranch}
-	getCommitWithRefreshAndRetry(t, ctx, repoRevSpec)
+	resolveRevWithRefreshAndRetry(t, ctx, repo.RepoSpec(), repo.DefaultBranch)
 }
 
-// getCommitWithRefreshAndRetry tries to get a repository commit. If
-// it doesn't exist, it triggers a refresh of the repo's VCS data and
-// then retries (until maxGetCommitVCSRefreshWait has elapsed).
-func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) *vcs.Commit {
+// resolveRevWithRefreshAndRetry tries to resolve a rev spec to a
+// commit ID. If it doesn't exist, it triggers a refresh of the repo's
+// VCS data and then retries (until maxGetCommitVCSRefreshWait has
+// elapsed).
+func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo sourcegraph.RepoSpec, rev string) string {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	wait := time.Second * 9 * ciFactor
 
 	timeout := time.After(wait)
 	done := make(chan struct{})
-	var commit *vcs.Commit
+	var res *sourcegraph.ResolvedRev
 	var err error
 	go func() {
 		refreshTriggered := false
 		for {
-			commit, err = cl.Repos.GetCommit(ctx, &repoRevSpec)
+			res, err = cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: rev})
 
 			// Keep retrying if it's a NotFound, but stop trying if we succeeded, or if it's some other
 			// error.
@@ -59,11 +58,11 @@ func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec
 			}
 
 			if !refreshTriggered {
-				if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repoRevSpec.RepoSpec}); err != nil {
-					err = fmt.Errorf("failed to trigger VCS refresh for repo %s: %s", repoRevSpec.URI, err)
+				if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); err != nil {
+					err = fmt.Errorf("failed to trigger VCS refresh for repo %s: %s", repo.URI, err)
 					break
 				}
-				t.Logf("repo %s revision %s not on remote; triggered refresh of VCS data, waiting %s", repoRevSpec.URI, repoRevSpec.Rev, wait)
+				t.Logf("repo %s revision %s not on remote; triggered refresh of VCS data, waiting %s", repo.URI, rev, wait)
 				refreshTriggered = true
 			}
 			time.Sleep(time.Second)
@@ -75,9 +74,9 @@ func getCommitWithRefreshAndRetry(t *testing.T, ctx context.Context, repoRevSpec
 		if err != nil {
 			t.Fatal(err)
 		}
-		return commit
+		return res.CommitID
 	case <-timeout:
-		t.Fatalf("repo %s revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repoRevSpec.URI, repoRevSpec.Rev, wait)
+		t.Fatalf("repo %s revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repo.URI, rev, wait)
 		panic("unreachable")
 	}
 }
@@ -136,14 +135,14 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 	}
 
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
-	commit, err := cl.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: repo.URI},
-		Rev:      "master",
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: sourcegraph.RepoSpec{URI: repo.URI},
+		Rev:  "master",
 	})
 	if err != nil {
 		return nil, "", nil, err
 	}
-	return repo, string(commit.ID), done, nil
+	return repo, res.CommitID, done, nil
 }
 
 // PushRepo pushes sample commits to the remote specified.

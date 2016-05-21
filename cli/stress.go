@@ -253,9 +253,17 @@ func (c *stressCmd) fetchFiles(ctx context.Context) error {
 	c.files = make(map[string]string, len(c.repos))
 	if c.File == "" {
 		for _, repo := range c.repos {
+			res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+				Repo: repo.RepoSpec(),
+				Rev:  repo.DefaultBranch,
+			})
+			if err != nil {
+				return err
+			}
+
 			tree, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 				Entry: sourcegraph.TreeEntrySpec{
-					RepoRev: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), Rev: repo.DefaultBranch},
+					RepoRev: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), CommitID: res.CommitID},
 					Path:    ".",
 				},
 			})

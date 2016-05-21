@@ -58,8 +58,8 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		opt = &sourcegraph.GetFileOptions{}
 	}
 
-	if err := resolveRepoRev(ctx, &entrySpec.RepoRev); err != nil {
-		return nil, err
+	if !isAbsCommitID(entrySpec.RepoRev.CommitID) {
+		return nil, errNotAbsCommitID
 	}
 
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, entrySpec.RepoRev.URI)
@@ -111,8 +111,8 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*sourcegraph.RepoTreeListResult, error) {
 	repoRevSpec := op.Rev
 
-	if err := resolveRepoRev(ctx, &repoRevSpec); err != nil {
-		return nil, err
+	if !isAbsCommitID(repoRevSpec.CommitID) {
+		return nil, errNotAbsCommitID
 	}
 
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRevSpec.URI)
@@ -148,11 +148,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 	}
 
 	if !isAbsCommitID(repoRev.CommitID) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required (got %q)", repoRev.CommitID)
-	}
-
-	if repoRev.Rev == "" {
-		repoRev.Rev = repoRev.CommitID
+		return nil, errNotAbsCommitID
 	}
 
 	origN, origOffset := opt.SearchOptions.N, opt.SearchOptions.Offset

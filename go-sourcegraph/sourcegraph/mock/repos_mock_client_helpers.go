@@ -117,14 +117,14 @@ func (s *ReposClient) MockListCommits(t *testing.T, wantCommitIDs ...vcs.CommitI
 	return
 }
 
-func (s *ReposClient) MockGetCommit_ByID_NoCheck(t *testing.T, commitID vcs.CommitID) (called *bool) {
+func (s *ReposClient) MockResolveRev_NoCheck(t *testing.T, commitID vcs.CommitID) (called *bool) {
 	var once sync.Once
 	called = new(bool)
-	s.GetCommit_ = func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
+	s.ResolveRev_ = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 		once.Do(func() {
 			*called = true
 		})
-		return &vcs.Commit{ID: commitID}, nil
+		return &sourcegraph.ResolvedRev{CommitID: string(commitID)}, nil
 	}
 	return
 }

@@ -27,13 +27,13 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	vars := mux.Vars(r)
-	repoRev, err := routevar.ToRepoRevSpec(vars)
+	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(vars))
 	if err != nil {
 		return err
 	}
 
 	entrySpec := sourcegraph.TreeEntrySpec{
-		RepoRev: repoRev,
+		RepoRev: *repoRev,
 		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
 	}
 
@@ -80,13 +80,14 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
-	repoRev, err := routevar.ToRepoRevSpec(mux.Vars(r))
+	ctx, cl := handlerutil.Client(r)
+
+	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
-	treeList, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRev})
+	treeList, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: *repoRev})
 	if err != nil {
 		return err
 	}
@@ -97,7 +98,9 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
-	repoRev, err := routevar.ToRepoRevSpec(mux.Vars(r))
+	ctx, cl := handlerutil.Client(r)
+
+	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -107,9 +110,8 @@ func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	ctx, cl := handlerutil.Client(r)
 	treeSearch, err := cl.RepoTree.Search(ctx, &sourcegraph.RepoTreeSearchOp{
-		Rev: repoRev,
+		Rev: *repoRev,
 		Opt: &opt,
 	})
 	if err != nil {

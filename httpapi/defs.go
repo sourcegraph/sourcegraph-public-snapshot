@@ -3,8 +3,11 @@ package httpapi
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -47,4 +50,22 @@ func serveDefs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return writeJSON(w, defs)
+}
+
+func resolveDef(ctx context.Context, def routevar.DefAtRev) (*sourcegraph.DefSpec, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: def.RepoSpec, Rev: def.Rev})
+	if err != nil {
+		return nil, err
+	}
+	return &sourcegraph.DefSpec{
+		Repo:     def.RepoSpec.URI,
+		CommitID: res.CommitID,
+		UnitType: def.UnitType,
+		Unit:     def.Unit,
+		Path:     def.Path,
+	}, nil
 }

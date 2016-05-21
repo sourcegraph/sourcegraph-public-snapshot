@@ -21,8 +21,8 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return nil, err
 	}
 
-	if err := resolveRepoRev(ctx, &entry.RepoRev); err != nil {
-		return nil, err
+	if !isAbsCommitID(entry.RepoRev.CommitID) {
+		return nil, errNotAbsCommitID
 	}
 
 	// First, try to find an exact match.

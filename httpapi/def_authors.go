@@ -17,13 +17,13 @@ func serveDefAuthors(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	defSpec, err := routevar.ToDefSpec(mux.Vars(r))
+	defSpec, err := resolveDef(ctx, routevar.ToDefAtRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
 
 	authors, err := cl.Defs.ListAuthors(ctx, &sourcegraph.DefsListAuthorsOp{
-		Def: defSpec,
+		Def: *defSpec,
 		Opt: &opt,
 	})
 	if err != nil {

@@ -120,24 +120,24 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	// branch. This isn't needed for the fs backend because it initializes an
 	// empty repository first and then proceeds to just updateRepo, thus skipping
 	// this clone phase entirely.
-	commit, err := svc.Repos(ctx).GetCommit(elevatedActor(ctx), &sourcegraph.RepoRevSpec{
-		RepoSpec: repo.RepoSpec(),
-		Rev:      repo.DefaultBranch,
+	res, err := svc.Repos(ctx).ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
+		Repo: repo.RepoSpec(),
+		Rev:  repo.DefaultBranch,
 	})
 	if err != nil {
 		return err
 	}
 	_, err = svc.Builds(ctx).Create(elevatedActor(ctx), &sourcegraph.BuildsCreateOp{
 		Repo:     repo.RepoSpec(),
-		CommitID: string(commit.ID),
+		CommitID: res.CommitID,
 		Branch:   repo.DefaultBranch,
 		Config:   sourcegraph.BuildConfig{Queue: true},
 	})
 	if err != nil {
-		log15.Warn("cloneRepo: failed to create build", "err", err, "repo", repo.URI, "commit", commit.ID, "branch", repo.DefaultBranch)
+		log15.Warn("cloneRepo: failed to create build", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
 		return nil
 	}
-	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", commit.ID)
+	log15.Debug("cloneRepo: build created", "repo", repo.URI, "branch", repo.DefaultBranch, "commit", res.CommitID)
 	return nil
 }
 

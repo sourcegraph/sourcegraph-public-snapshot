@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"log"
-	"strings"
 
 	"github.com/golang/groupcache/lru"
 	"github.com/rogpeppe/rog-go/parallel"
@@ -108,10 +107,6 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 		// There is most likely a merge conflict here, so we update the
 		// delta to contain the actual merge base used in this diff A...B
 		d.Base.CommitID = string(id)
-		if strings.HasPrefix(d.Base.CommitID, d.Base.Rev) {
-			// If the Revision is not a branch, but the commit ID, clear it.
-			d.Base.Rev = ""
-		}
 		d.BaseCommit = nil
 		d, err = s.fillDelta(ctx, d)
 		if err != nil {

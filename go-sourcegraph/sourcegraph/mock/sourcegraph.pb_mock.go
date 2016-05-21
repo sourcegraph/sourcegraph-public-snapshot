@@ -61,6 +61,7 @@ type ReposClient struct {
 	Delete_                      func(ctx context.Context, in *sourcegraph.RepoSpec) (*pbtypes.Void, error)
 	GetConfig_                   func(ctx context.Context, in *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
 	GetCommit_                   func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ResolveRev_                  func(ctx context.Context, in *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
 	ListCommits_                 func(ctx context.Context, in *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
 	ListBranches_                func(ctx context.Context, in *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
 	ListTags_                    func(ctx context.Context, in *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
@@ -106,6 +107,10 @@ func (s *ReposClient) GetConfig(ctx context.Context, in *sourcegraph.RepoSpec, o
 
 func (s *ReposClient) GetCommit(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*vcs.Commit, error) {
 	return s.GetCommit_(ctx, in)
+}
+
+func (s *ReposClient) ResolveRev(ctx context.Context, in *sourcegraph.ReposResolveRevOp, opts ...grpc.CallOption) (*sourcegraph.ResolvedRev, error) {
+	return s.ResolveRev_(ctx, in)
 }
 
 func (s *ReposClient) ListCommits(ctx context.Context, in *sourcegraph.ReposListCommitsOp, opts ...grpc.CallOption) (*sourcegraph.CommitList, error) {
@@ -156,6 +161,7 @@ type ReposServer struct {
 	Delete_                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*pbtypes.Void, error)
 	GetConfig_                   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
 	GetCommit_                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ResolveRev_                  func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
 	ListCommits_                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
 	ListBranches_                func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
 	ListTags_                    func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
@@ -201,6 +207,10 @@ func (s *ReposServer) GetConfig(v0 context.Context, v1 *sourcegraph.RepoSpec) (*
 
 func (s *ReposServer) GetCommit(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	return s.GetCommit_(v0, v1)
+}
+
+func (s *ReposServer) ResolveRev(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+	return s.ResolveRev_(v0, v1)
 }
 
 func (s *ReposServer) ListCommits(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {

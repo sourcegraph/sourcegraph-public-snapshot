@@ -787,6 +787,19 @@ func (s wrappedRepos) GetCommit(ctx context.Context, param *sourcegraph.RepoRevS
 	return
 }
 
+func (s wrappedRepos) ResolveRev(ctx context.Context, param *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "ResolveRev", param)
+	defer func() {
+		trace.After(ctx, "Repos", "ResolveRev", param, err, time.Since(start))
+	}()
+	res, err = local.Services.Repos.ResolveRev(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ResolveRev returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedRepos) ListCommits(ctx context.Context, param *sourcegraph.ReposListCommitsOp) (res *sourcegraph.CommitList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListCommits", param)

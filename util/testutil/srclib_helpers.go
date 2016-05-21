@@ -22,12 +22,14 @@ func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	if len(commitID) != 40 {
-		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repo}, Rev: commitID}
-		commit, err := cl.Repos.GetCommit(ctx, repoRev)
+		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+			Repo: sourcegraph.RepoSpec{URI: repo},
+			Rev:  commitID,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		commitID = string(commit.ID)
+		commitID = res.CommitID
 	}
 
 	const n = 6 // hardcoded (must be same as the number of units srclib-sample produces)

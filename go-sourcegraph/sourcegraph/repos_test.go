@@ -3,6 +3,7 @@ package sourcegraph
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -54,6 +55,20 @@ func TestReposCreateOp_JSON(t *testing.T) {
 		}
 		if !reflect.DeepEqual(test, got) {
 			t.Errorf("%v != %v", test, got)
+		}
+	}
+}
+
+func TestRepoRevSpec_IsAbs(t *testing.T) {
+	tests := map[string]bool{
+		"":  false,
+		"a": false,
+		strings.Repeat("x", 40):               false,
+		strings.Repeat("0123456789abcdef", 4): true,
+	}
+	for id, want := range tests {
+		if got := (RepoRevSpec{CommitID: id}).IsAbs(); got != want {
+			t.Errorf("%s: got %v, want %v", id, got, want)
 		}
 	}
 }

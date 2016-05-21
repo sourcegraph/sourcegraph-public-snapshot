@@ -24,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/platform"
@@ -35,7 +34,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -245,85 +243,6 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 	return &pbtypes.Void{}, nil
 }
 
-// resolveRepoRev resolves repoRev to an absolute commit ID (by
-// consulting its VCS data). If no rev is specified, the repo's
-// default branch is used.
-func resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
-	// Resolve revs like "master===commitid".
-	if repoRev.CommitID == "" {
-		repoRev.Rev, repoRev.CommitID = routevar.ParseResolvedRev(repoRev.Rev)
-	}
-
-	if err := resolveRepoRevBranch(ctx, repoRev); err != nil {
-		return err
-	}
-
-	if repoRev.CommitID == "" {
-		vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
-		if err != nil {
-			return err
-		}
-		commitID, err := vcsrepo.ResolveRevision(repoRev.Rev)
-		if err != nil {
-			// attempt to reclone repo if its VCS repository doesn't exist
-			if _, notExist := err.(vcs.RepoNotExistError); notExist {
-				if _, innerErr := svc.MirrorRepos(ctx).RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: repoRev.URI}}); innerErr != nil {
-					return err
-				}
-			}
-			commitID, err = vcsrepo.ResolveRevision(repoRev.Rev)
-			if err != nil {
-				return err
-			}
-		}
-		repoRev.CommitID = string(commitID)
-	}
-
-	return nil
-}
-
-func resolveRepoRevBranch(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
-	if repoRev.CommitID == "" && repoRev.Rev == "" {
-		// Get default branch.
-		defBr, err := defaultBranch(ctx, repoRev.URI)
-		if err != nil {
-			return err
-		}
-		repoRev.Rev = defBr
-	}
-
-	const srclibRevTag = "^{srclib}" // REV^{srclib} refers to the newest srclib version from REV
-	if strings.HasSuffix(repoRev.Rev, srclibRevTag) {
-		origRev := repoRev.Rev
-		repoRev.Rev = strings.TrimSuffix(repoRev.Rev, srclibRevTag)
-		dataVer, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
-		if err == nil {
-			// TODO(sqs): check this
-			repoRev.CommitID = dataVer.CommitID
-		} else if errcode.GRPC(err) == codes.NotFound {
-			// Ignore NotFound as otherwise the user might not even be
-			// able to access the repository homepage.
-			log15.Warn("Failed to resolve to commit with srclib Code Intelligence data; will proceed by resolving to commit with no Code Intelligence data instead", "rev", origRev, "fallback", repoRev.Rev, "error", err)
-		} else if err != nil {
-			return grpc.Errorf(errcode.GRPC(err), "while resolving rev %q: %s", repoRev.Rev, err)
-		}
-	}
-
-	return nil
-}
-
-func defaultBranch(ctx context.Context, repoURI string) (string, error) {
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
-	if err != nil {
-		return "", err
-	}
-
-	if repo.DefaultBranch == "" {
-		return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repoURI)
-	}
-	return repo.DefaultBranch, nil
-}
-
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
 	repoConfigsStore := store.RepoConfigsFromContext(ctx)
 
@@ -383,8 +302,8 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		return nil, grpc.Errorf(codes.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
 	}
 
-	if err := resolveRepoRev(ctx, repoRev); err != nil {
-		return nil, err
+	if !isAbsCommitID(repoRev.CommitID) {
+		return nil, errNotAbsCommitID
 	}
 
 	// Consult the commit status "cache" for a cached inventory result.

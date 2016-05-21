@@ -42,7 +42,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	ctx, mock := testContext()
 	var cloned, built bool
 	mock.servers.Repos.MockGet(t, "r")
-	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "deadbeef")
+	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
@@ -76,7 +76,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	ctx, mock := testContext()
 	var built bool
 	mock.servers.Repos.MockGet(t, "r")
-	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "deadbeef")
+	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}

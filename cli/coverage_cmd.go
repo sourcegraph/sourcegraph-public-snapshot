@@ -211,7 +211,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 
 // repoRevKey returns the cache key for a repo@rev
 func repoRevKey(repoRev *sourcegraph.RepoRevSpec) string {
-	return fmt.Sprintf("%s@%s", repoRev.RepoSpec.URI, repoRev.Rev)
+	return fmt.Sprintf("%s@%s", repoRev.RepoSpec.URI, repoRev.CommitID)
 }
 
 // repoCommitKey returns the cache key for a repo@commit
@@ -310,15 +310,18 @@ var rel = router.New(nil)
 func parseAnnotationURL(annUrl string) (*sourcegraph.RepoRevSpec, *sourcegraph.DefSpec, error) {
 	var match mux.RouteMatch
 	if rel.Match(&http.Request{Method: "GET", URL: &url.URL{Path: fmt.Sprintf("/%s%s", "repos", annUrl)}}, &match) {
-		repoRev, err := routevar.ToRepoRevSpec(match.Vars)
-		if err != nil {
-			return nil, nil, err
-		}
-		def, err := routevar.ToDefSpec(match.Vars)
-		if err != nil {
-			return nil, nil, err
-		}
-		return &repoRev, &def, nil
+		repoRev := routevar.ToRepoRev(match.Vars)
+		def := routevar.ToDefAtRev(match.Vars)
+		return &sourcegraph.RepoRevSpec{
+				RepoSpec: repoRev.RepoSpec,
+				CommitID: repoRev.Rev,
+			}, &sourcegraph.DefSpec{
+				Repo:     def.RepoSpec.URI,
+				CommitID: def.Rev,
+				UnitType: def.UnitType,
+				Unit:     def.Unit,
+				Path:     def.Path,
+			}, nil
 	} else {
 		return nil, nil, fmt.Errorf("error parsing mux vars for annotation url %s", annUrl)
 	}
@@ -433,7 +436,11 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 		return nil, err
 	}
 
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: repo.DefaultBranch}
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoSpec, Rev: repo.DefaultBranch})
+	if err != nil {
+		return nil, err
+	}
+	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: res.CommitID}
 	// dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: repoRevSpec})
 	// if err != nil {
 	// 	return nil, err

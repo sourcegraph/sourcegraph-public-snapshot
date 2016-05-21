@@ -1,38 +1,31 @@
 package routevar
 
-import (
-	"strings"
+import "strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-)
+// Delta is like sourcegraph.DeltaSpec, but it allows non-absolute
+// commit IDs.
+type Delta struct {
+	Base RepoRev
+	Head RepoRev
+}
 
 // DeltaRouteVars returns the route variables for generating URLs to
-// the delta specified by this DeltaSpec.
-func DeltaRouteVars(s sourcegraph.DeltaSpec) map[string]string {
+// the delta specified by this Delta.
+func DeltaRouteVars(s Delta) map[string]string {
 	m := RepoRevRouteVars(s.Base)
-	if rev := ResolvedRevString(s.Head); rev != "" {
-		if !strings.HasPrefix(rev, "@") {
-			rev = "@" + rev
-		}
-		m["DeltaHeadRev"] = rev
-	}
+	m["DeltaHeadRev"] = "@" + s.Head.Rev
 	return m
 }
 
-// ToDeltaSpec marshals a map containing route variables for a
+// ToDelta marshals a map containing route variables for a
 // DeltaSpec and returns the equivalent DeltaSpec struct.
-func ToDeltaSpec(routeVars map[string]string) (sourcegraph.DeltaSpec, error) {
-	s := sourcegraph.DeltaSpec{}
-
-	rr, err := ToRepoRevSpec(routeVars)
-	if err != nil {
-		return sourcegraph.DeltaSpec{}, err
+func ToDelta(routeVars map[string]string) Delta {
+	repoRev := ToRepoRev(routeVars)
+	return Delta{
+		Base: repoRev,
+		Head: RepoRev{
+			RepoSpec: repoRev.RepoSpec,
+			Rev:      strings.TrimPrefix(routeVars["DeltaHeadRev"], "@"),
+		},
 	}
-	s.Base = rr
-
-	dhr := strings.TrimPrefix(routeVars["DeltaHeadRev"], "@")
-	rev, commitID := ParseResolvedRev(dhr)
-	s.Head = sourcegraph.RepoRevSpec{RepoSpec: rr.RepoSpec, Rev: rev, CommitID: commitID}
-
-	return s, nil
 }

@@ -9,17 +9,14 @@ import (
 	"strings"
 
 	"github.com/golang/groupcache/lru"
-	"github.com/rogpeppe/rog-go/parallel"
 	"github.com/ryanuber/go-glob"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
@@ -34,42 +31,6 @@ func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesO
 		return nil, err
 	}
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.ListFiles", ds.Head.URI); err != nil {
-		return nil, err
-	}
-
-	// Make sure we've fully resolved the RepoRevSpecs. If we haven't,
-	// then they will need to be re-resolved in each call to
-	// RepoTree.Get that we issue, which will seriously degrade
-	// performance.
-	resolveAndCacheRepoRevAndBranchExistence := func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
-		if repoRev.Resolved() {
-			// The repo rev appears resolved already -- but it might have been
-			// deleted, thus making any URLs we would emit for Rev instead of CommitID
-			// invalid. Check if the rev/branch was deleted:
-			//
-			// TODO(slimsag): write a test exactly for this case.
-			unresolvedRev := *repoRev
-			unresolvedRev.CommitID = ""
-			if err := resolveRepoRev(ctx, &unresolvedRev); errcode.GRPC(err) == codes.NotFound {
-				// Rev no longer exists, so fallback to the CommitID instead. This is a
-				// last-ditch effort to ensure tokenized source displays well in diffs
-				// that are very old / have had one or more of their revs/branches
-				// deleted.
-				repoRev.Rev = repoRev.CommitID
-			} else if err != nil {
-				return err
-			}
-		}
-		return resolveRepoRev(ctx, repoRev)
-	}
-	par := parallel.NewRun(2)
-	par.Do(func() error {
-		return resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Base)
-	})
-	par.Do(func() error {
-		return resolveAndCacheRepoRevAndBranchExistence(ctx, &ds.Head)
-	})
-	if err := par.Wait(); err != nil {
 		return nil, err
 	}
 

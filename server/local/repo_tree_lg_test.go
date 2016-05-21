@@ -26,7 +26,7 @@ func TestRepoTree_Search_lg(t *testing.T) {
 	}
 	defer done()
 
-	repoRev := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "myrepo"}, Rev: "master", CommitID: commitID}
+	repoRev := sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "myrepo"}, CommitID: commitID}
 	_, err = a.Client.RepoTree.Search(ctx, &sourcegraph.RepoTreeSearchOp{
 		Rev: repoRev,
 		Opt: &sourcegraph.RepoTreeSearchOptions{

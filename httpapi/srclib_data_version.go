@@ -13,7 +13,7 @@ import (
 func serveSrclibDataVersion(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRev, err := routevar.ToRepoRevSpec(mux.Vars(r))
+	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func serveSrclibDataVersion(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: repoRev,
+		RepoRev: *repoRev,
 		Path:    opt.Path,
 	})
 	if err != nil {

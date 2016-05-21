@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"github.com/gorilla/mux"
@@ -22,14 +20,8 @@ func addOldDefRedirectRoute(genURLRouter *Router, matchRouter *mux.Router) {
 	matchRouter.Path("/" + routevar.Repo + revSuffixNoDots + `/.{UnitType:(?:GoPackage|JavaPackage|JavaArtifact|CommonJSPackage)}/{rawUnit:.*}.def{Path:(?:(?:/(?:[^/.][^/]*/)*(?:[^/.][^/]*))|)}`).Methods("GET").Name(OldDefRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v := mux.Vars(r)
 		fixDefVars(v)
-		defSpec, err := routevar.ToDefSpec(v)
-		if err != nil {
-			log15.Error("Invalid def URL in oldDefRedirect", "err", err, "url", r.URL.String(), "routeVars", v)
-			http.Error(w, "invalid def URL", http.StatusNotFound)
-			return
-		}
-
-		http.Redirect(w, r, genURLRouter.URLToDef(defSpec.DefKey()).String(), http.StatusMovedPermanently)
+		def := routevar.ToDefAtRev(v)
+		http.Redirect(w, r, genURLRouter.URLToDef(def).String(), http.StatusMovedPermanently)
 	})
 }
 

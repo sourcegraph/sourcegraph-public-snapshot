@@ -22,18 +22,17 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 
 	var calledGetLock sync.Mutex
 	var calledGet int
-	mock.servers.Repos.MockGetCommit_ByID_NoCheck(t, "c")
 	mock.servers.Repos.GetCommit_ = func(ctx context.Context, repoRevSpec *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		calledGetLock.Lock()
 		calledGet++
 		calledGetLock.Unlock()
-		if repoRevSpec != nil && repoRevSpec.Rev == "head" {
+		if repoRevSpec != nil && repoRevSpec.CommitID == "head" {
 			return nil, wantErr
 		}
 		return &vcs.Commit{}, nil
 	}
 	ds := new(sourcegraph.DeltaSpec)
-	ds.Head.Rev = "head"
+	ds.Head.CommitID = "head"
 	delta, err := s.Get(ctx, ds)
 	if err.Error() != wantErr.Error() {
 		t.Errorf("got error %v, want %v", err, wantErr)
@@ -49,10 +48,8 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 func TestDeltasCacheKeyDeterministic(t *testing.T) {
 	spec := new(sourcegraph.DeltaSpec)
 	spec.Base.URI = "base"
-	spec.Base.Rev = "base-rev"
 	spec.Base.CommitID = "base-commit"
 	spec.Head.URI = "head"
-	spec.Head.Rev = "head-rev"
 	spec.Head.CommitID = "head-commit"
 	k := deltasCacheKey(spec)
 	for i := 0; i < 100; i++ {

@@ -17,8 +17,8 @@ func TestDeltasService_ListFiles(t *testing.T) {
 	ctx, _ := testContext()
 
 	ds := sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, Rev: "baserev", CommitID: "basecommit"},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, Rev: "headrev", CommitID: "headcommit"},
+		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, CommitID: "basecommit"},
+		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, CommitID: "headcommit"},
 	}
 
 	fdiffs := []*diff.FileDiff{
@@ -69,8 +69,8 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 	ctx, _ := testContext()
 
 	ds := sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, Rev: "baserev", CommitID: "basecommit"},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, Rev: "headrev", CommitID: "headcommit"},
+		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, CommitID: "basecommit"},
+		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, CommitID: "headcommit"},
 	}
 
 	fdiffs := []*diff.FileDiff{
@@ -119,10 +119,8 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 func TestDeltasListFilesCacheKeyDeterministic(t *testing.T) {
 	op := new(sourcegraph.DeltasListFilesOp)
 	op.Ds.Base.URI = "base"
-	op.Ds.Base.Rev = "base-rev"
 	op.Ds.Base.CommitID = "base-commit"
 	op.Ds.Head.URI = "head"
-	op.Ds.Head.Rev = "head-rev"
 	op.Ds.Head.CommitID = "head-commit"
 	op.Opt = new(sourcegraph.DeltaListFilesOptions)
 	op.Opt.Filter = "filter"

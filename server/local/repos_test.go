@@ -6,11 +6,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"strings"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/platform"
 )
 
@@ -59,107 +55,6 @@ func TestReposService_List(t *testing.T) {
 	}
 	if !reflect.DeepEqual(repos, wantRepos) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)
-	}
-}
-
-func TestReposService_resolveRepoRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
-	ctx, mock := testContext()
-
-	wantRepoRev := &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		Rev:      "b",
-		CommitID: strings.Repeat("a", 40),
-	}
-
-	calledGet := mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{URI: "r", DefaultBranch: "b"})
-	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
-		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
-			calledVCSRepoResolveRevision = true
-			return vcs.CommitID(wantRepoRev.CommitID), nil
-		},
-	})
-
-	repoRev := &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		// (no rev/branch specified)
-	}
-	if err := resolveRepoRev(ctx, repoRev); err != nil {
-		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
-	}
-	if !calledVCSRepoResolveRevision {
-		t.Error("!calledVCSRepoResolveRevision")
-	}
-	if !reflect.DeepEqual(repoRev, wantRepoRev) {
-		t.Errorf("got %+v, want %+v", repoRev, wantRepoRev)
-	}
-}
-
-func TestReposService_resolveRepoRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
-	ctx, mock := testContext()
-
-	wantRepoRev := &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		Rev:      "b",
-		CommitID: strings.Repeat("a", 40),
-	}
-
-	calledGet := mock.stores.Repos.MockGet(t, "r")
-	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
-		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
-			calledVCSRepoResolveRevision = true
-			return vcs.CommitID(wantRepoRev.CommitID), nil
-		},
-	})
-
-	repoRev := &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		Rev:      "b",
-		// (no commit ID specified)
-	}
-	if err := resolveRepoRev(ctx, repoRev); err != nil {
-		t.Fatal(err)
-	}
-	if *calledGet {
-		t.Error("calledGet needlessly")
-	}
-	if !calledVCSRepoResolveRevision {
-		t.Error("!calledVCSRepoResolveRevision")
-	}
-	if !reflect.DeepEqual(repoRev, wantRepoRev) {
-		t.Errorf("got %+v, want %+v", repoRev, wantRepoRev)
-	}
-}
-
-func TestReposService_resolveRepoRev_revSpecIsAlreadyResolved_noop(t *testing.T) {
-	ctx, mock := testContext()
-
-	calledGet := mock.stores.Repos.MockGet(t, "r")
-	// TODO(nodb-ctx): check that the VCS opener is never used
-
-	wantRepoRev := &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		Rev:      "b",
-		CommitID: strings.Repeat("a", 40),
-	}
-
-	repoRev := &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: "r"},
-		Rev:      "b",
-		CommitID: strings.Repeat("a", 40),
-	}
-	if err := resolveRepoRev(ctx, repoRev); err != nil {
-		t.Fatal(err)
-	}
-	if *calledGet {
-		t.Error("calledGet needlessly")
-	}
-	if !reflect.DeepEqual(repoRev, wantRepoRev) {
-		t.Errorf("got %+v, want %+v", repoRev, wantRepoRev)
 	}
 }
 

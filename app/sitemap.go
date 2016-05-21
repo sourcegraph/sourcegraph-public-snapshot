@@ -125,7 +125,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 				pri = defHiPriority
 			}
 
-			url := conf.AppURL(ctx).ResolveReference(router.Rel.URLToDef(def.DefKey)).String()
+			url := conf.AppURL(ctx).ResolveReference(router.Rel.URLToDefKey(def.DefKey)).String()
 			if len(url) > 1000 {
 				// Google rejects long URLs >2000 chars, but let's limit
 				// them to 1000 just to be safe/sane.

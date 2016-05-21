@@ -15,11 +15,7 @@ import (
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repo, err := routevar.ToRepoSpec(mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
+	repo := routevar.ToRepoSpec(mux.Vars(r))
 	var opt sourcegraph.RepoListCommitsOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err

@@ -95,11 +95,7 @@ func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon,
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
 func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoSpec sourcegraph.RepoSpec, err error) {
-	origRepoSpec, err := routevar.ToRepoSpec(vars)
-	if err != nil {
-		return nil, sourcegraph.RepoSpec{}, err
-	}
-
+	origRepoSpec := routevar.ToRepoSpec(vars)
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, sourcegraph.RepoSpec{}, err
@@ -124,9 +120,13 @@ func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Rep
 // route vars. The provided defaultBranch is used if no rev is
 // specified in the URL.
 func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) (sourcegraph.RepoRevSpec, error) {
-	repoRev, err := routevar.ToRepoRevSpec(vars)
-	if err != nil {
-		return sourcegraph.RepoRevSpec{}, err
+	repoRev := routevar.ToRepoRev(vars)
+	if repoRev.Rev == "" {
+		repoRev.Rev = defaultRev
+
+		if repoRev.Rev == "" {
+			log15.Warn("getRepoRev: no rev specified and repo has no default rev", "repo", repoRev.URI)
+		}
 	}
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)
@@ -134,28 +134,15 @@ func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) 
 		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	commit, err := cl.Repos.GetCommit(ctx, &repoRev)
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: repoRev.RepoSpec,
+		Rev:  repoRev.Rev,
+	})
 	if err != nil {
-		return repoRev, err
-	}
-	repoRev.CommitID = string(commit.ID)
-
-	if repoRev.Rev == "" {
-		repoRev.Rev = defaultRev
-
-		if defaultRev == "" {
-			log15.Warn("GetRepoRev: no rev specified and repo has no default branch", "repo", repoRev.URI)
-		}
+		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	if repoRev.Rev == "" {
-		panic("empty Rev on repo " + repoRev.URI)
-	}
-	if repoRev.CommitID == "" {
-		panic("empty CommitID on repo " + repoRev.URI + " rev " + repoRev.Rev)
-	}
-
-	return repoRev, nil
+	return sourcegraph.RepoRevSpec{RepoSpec: repoRev.RepoSpec, CommitID: res.CommitID}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
@@ -177,7 +164,7 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 // originally requested repo URI).
 func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI string) error {
 	origVars := mux.Vars(r)
-	origVars["Repo"] = routevar.RepoSpecString(sourcegraph.RepoSpec{URI: newRepoURI})
+	origVars["Repo"] = newRepoURI
 
 	destURL, err := mux.CurrentRoute(r).URLPath(router_util.MapToArray(origVars)...)
 	if err != nil {
@@ -212,21 +199,14 @@ func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySp
 // dc.Def.DefKey will be set to the def specification based on the
 // request when getting actual def fails.
 func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, err error) {
-	repoRev, err := routevar.ToRepoRevSpec(vars)
-	if err != nil {
-		return nil, err
-	}
-
-	defSpec, err := routevar.ToDefSpec(vars)
-	if err != nil {
-		return dc, err
-	}
+	repoRev := routevar.ToRepoRev(vars)
+	defSpec := routevar.ToDefAtRev(vars)
 
 	// If we fail to get a def, return the best known information to the caller.
 	dc = &sourcegraph.Def{
 		Def: graph.Def{
 			DefKey: graph.DefKey{
-				Repo:     defSpec.Repo,
+				Repo:     defSpec.RepoSpec.URI,
 				Unit:     defSpec.Unit,
 				UnitType: defSpec.UnitType,
 				Path:     defSpec.Path,
@@ -239,13 +219,28 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		return
 	}
 
-	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: repoRev})
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: repoRev.RepoSpec,
+		Rev:  repoRev.Rev,
+	})
+	if err != nil {
+		return
+	}
+	absRepoRev := sourcegraph.RepoRevSpec{
+		RepoSpec: repoRev.RepoSpec,
+		CommitID: res.CommitID,
+	}
+
+	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: absRepoRev})
 	if err != nil {
 		return dc, err
 	}
-	defSpec.CommitID = resolvedRev.CommitID
+	dc.Def.DefKey.CommitID = resolvedRev.CommitID
 
-	dc, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{Def: defSpec, Opt: opt})
+	dc, err = cl.Defs.Get(ctx, &sourcegraph.DefsGetOp{
+		Def: sourcegraph.NewDefSpecFromDefKey(dc.Def.DefKey),
+		Opt: opt,
+	})
 	if err != nil {
 		return dc, err
 	}
@@ -267,7 +262,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	// unannotated file, so this is consistent with that behavior as
 	// well.
 	defResolvedRev, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: repoRev, // use originally requested rev, not already resolved last-srclib-version
+		RepoRev: absRepoRev, // use originally requested rev, not already resolved last-srclib-version
 		Path:    dc.File,
 	})
 	if err != nil {

@@ -73,11 +73,7 @@ func (r *dbRepoStatus) toRepoStatus() *sourcegraph.RepoStatus {
 
 func (r *dbRepoStatus) fromRepoStatus(repoRev *sourcegraph.RepoRevSpec, r2 *sourcegraph.RepoStatus) {
 	r.Repo = repoRev.URI
-	if repoRev.CommitID != "" {
-		r.Rev = repoRev.CommitID
-	} else {
-		r.Rev = repoRev.Rev
-	}
+	r.Rev = repoRev.CommitID
 	r.State = r2.State
 	r.TargetURL = r2.TargetURL
 	r.Description = r2.Description
@@ -105,19 +101,14 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.Repo
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoStatuses.GetCombined", repoRev.URI); err != nil {
 		return nil, err
 	}
-	var rev string
-	if repoRev.CommitID != "" {
-		rev = repoRev.CommitID
-	} else {
-		rev = repoRev.Rev
-	}
+	rev := repoRev.CommitID
 
 	var dbRepoStatuses []*dbRepoStatus
 	if _, err := appDBH(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 ORDER BY created_at ASC;`, repoRev.URI, rev); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.CombinedStatus{
-		Rev:      repoRev.Rev,
+		Rev:      repoRev.CommitID,
 		CommitID: repoRev.CommitID,
 		Statuses: toRepoStatuses(dbRepoStatuses),
 	}, nil
@@ -162,7 +153,7 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 			// (roughly one per day, not guaranteed). If a row already exists, prepend
 			// the next coverage stat to the previous.
 			prevStatus := dbRepoStatus{}
-			if err := appDBH(ctx).SelectOne(&prevStatus, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 AND context=$3;`, repoRev.URI, repoRev.Rev, "coverage"); err != nil {
+			if err := appDBH(ctx).SelectOne(&prevStatus, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 AND context=$3;`, repoRev.URI, repoRev.CommitID, "coverage"); err != nil {
 				return err
 			}
 

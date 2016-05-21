@@ -33,7 +33,7 @@ func TestSrclibImport(t *testing.T) {
 	}
 
 	calledReposGet := mock.Repos.MockGet(t, wantRepo)
-	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, wantCommitID)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, wantCommitID)
 	mock.Search.RefreshIndex_ = func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
 		return nil, nil
 	}
@@ -118,8 +118,8 @@ func TestSrclibImport(t *testing.T) {
 	if !*calledReposGet {
 		t.Error("!calledReposGet")
 	}
-	if !*calledReposGetCommit {
-		t.Error("!calledReposGetCommit")
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
 	}
 }
 
@@ -127,7 +127,7 @@ func TestSrclibImport_empty(t *testing.T) {
 	c, mock := newTest()
 
 	calledReposGet := mock.Repos.MockGet(t, "r")
-	calledReposGetCommit := mock.Repos.MockGetCommit_ByID_NoCheck(t, "c")
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 
 	// POST an empty zip archive.
 	req, _ := http.NewRequest("PUT", "/repos/r@v/-/srclib-import", nil)
@@ -144,7 +144,7 @@ func TestSrclibImport_empty(t *testing.T) {
 	if !*calledReposGet {
 		t.Error("!calledReposGet")
 	}
-	if !*calledReposGetCommit {
-		t.Error("!calledReposGetCommit")
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
 	}
 }

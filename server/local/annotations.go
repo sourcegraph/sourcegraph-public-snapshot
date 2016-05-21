@@ -35,8 +35,8 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 		fileRange = *opt.Range
 	}
 
-	if err := resolveRepoRev(ctx, &opt.Entry.RepoRev); err != nil {
-		return nil, err
+	if !isAbsCommitID(opt.Entry.RepoRev.CommitID) {
+		return nil, errNotAbsCommitID
 	}
 
 	entry, err := svc.RepoTree(ctx).Get(ctx, &sourcegraph.RepoTreeGetOp{
@@ -182,7 +182,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 	for i, ref := range refs {
 		def := ref.DefKey()
 		if def.Repo == opt.Entry.RepoRev.URI {
-			def.CommitID = opt.Entry.RepoRev.Rev
+			def.CommitID = opt.Entry.RepoRev.CommitID
 		}
 
 		var u string
@@ -192,7 +192,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 			// or standard library definitions.
 			u = def.Path
 		} else {
-			u = approuter.Rel.URLToDef(def).String()
+			u = approuter.Rel.URLToDefKey(def).String()
 		}
 
 		anns[i] = &sourcegraph.Annotation{

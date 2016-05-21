@@ -25,13 +25,23 @@ func (r *Router) URLToRepoTreeEntry(repo, rev, path string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s%s/-/tree/%s", repo, revStr(rev), path)}
 }
 
-func (r *Router) URLToDef(key graph.DefKey) *url.URL {
+func (r *Router) URLToDef(def routevar.DefAtRev) *url.URL {
+	return r.urlToDef(def.RepoSpec.URI, revStr(def.Rev), def.UnitType,
+		routevar.DefKeyPathToURLPath(def.Unit),
+		routevar.DefKeyPathToURLPath(def.Path),
+	)
+}
+
+func (r *Router) URLToDefKey(def graph.DefKey) *url.URL {
+	return r.urlToDef(def.Repo, revStr(def.CommitID), def.UnitType,
+		routevar.DefKeyPathToURLPath(def.Unit),
+		routevar.DefKeyPathToURLPath(def.Path),
+	)
+}
+
+func (r *Router) urlToDef(repo, rev, unitType, unit, path string) *url.URL {
 	return &url.URL{
-		Path: fmt.Sprintf("/%s%s/-/def/%s/%s/-/%s",
-			key.Repo, revStr(key.CommitID), key.UnitType,
-			routevar.DefKeyPathToURLPath(key.Unit),
-			routevar.DefKeyPathToURLPath(key.Path),
-		),
+		Path: fmt.Sprintf("/%s%s/-/def/%s/%s/-/%s", repo, rev, unitType, unit, path),
 	}
 }
 

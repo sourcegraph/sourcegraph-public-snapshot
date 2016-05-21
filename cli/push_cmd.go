@@ -46,7 +46,7 @@ func (c *pushCmd) Execute(args []string) error {
 	}
 
 	repoSpec := sourcegraph.RepoSpec{URI: c.Repo}
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, Rev: commitID}
+	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: commitID}
 
 	appURL, err := getRemoteAppURL(cliContext)
 	if err != nil {
@@ -57,7 +57,7 @@ func (c *pushCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(repoRevSpec.URI, repoRevSpec.Rev)))
+	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(repoRevSpec.URI, repoRevSpec.CommitID)))
 
 	return nil
 }

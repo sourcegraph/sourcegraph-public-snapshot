@@ -1,10 +1,14 @@
 package routevar
 
-import (
-	"strings"
+import "strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-)
+// DefAtRev refers to a def at a non-absolute commit ID (unlike
+// DefSpec/DefKey, which require the CommitID field to have an
+// absolute commit ID).
+type DefAtRev struct {
+	RepoRev
+	Unit, UnitType, Path string
+}
 
 // Def captures def paths in URL routes.
 const Def = "{UnitType}/{Unit:.+?}/-/{Path:.*?}"
@@ -23,33 +27,21 @@ func DefKeyPathToURLPath(s string) string {
 	return s
 }
 
-func DefRouteVars(s sourcegraph.DefSpec) map[string]string {
-	rev := s.CommitID
-	if !strings.HasPrefix(s.CommitID, "@") && rev != "" {
-		rev = "@" + rev
-	}
-	return map[string]string{
-		"Repo":     s.Repo,
-		"Rev":      rev,
-		"UnitType": s.UnitType,
-		"Unit":     DefKeyPathToURLPath(s.Unit),
-		"Path":     DefKeyPathToURLPath(pathEscape(s.Path)),
-	}
+func DefRouteVars(s DefAtRev) map[string]string {
+	m := RepoRevRouteVars(s.RepoRev)
+	m["UnitType"] = s.UnitType
+	m["Unit"] = s.Unit
+	m["Path"] = s.Path
+	return m
 }
 
-func ToDefSpec(routeVars map[string]string) (sourcegraph.DefSpec, error) {
-	repoRev, err := ToRepoRevSpec(routeVars)
-	if err != nil {
-		return sourcegraph.DefSpec{}, err
-	}
-
-	return sourcegraph.DefSpec{
-		Repo:     repoRev.URI,
-		CommitID: ResolvedRevString(repoRev),
+func ToDefAtRev(routeVars map[string]string) DefAtRev {
+	return DefAtRev{
+		RepoRev:  ToRepoRev(routeVars),
 		UnitType: routeVars["UnitType"],
 		Unit:     defURLPathToKeyPath(routeVars["Unit"]),
 		Path:     defURLPathToKeyPath(pathUnescape(routeVars["Path"])),
-	}, nil
+	}
 }
 
 // pathEscape is a limited version of url.QueryEscape that only escapes '?'.

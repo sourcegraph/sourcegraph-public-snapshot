@@ -32,10 +32,21 @@ func (r *Repo) RepoSpec() RepoSpec {
 // IsZero reports whether s.URI is the zero value.
 func (s RepoSpec) IsZero() bool { return s.URI == "" }
 
-// Resolved reports whether the revspec has been fully resolved to an
-// absolute (40-char) commit ID.
-func (s RepoRevSpec) Resolved() bool {
-	return s.Rev != "" && len(s.CommitID) == 40
+// IsAbs returns whether s.CommitID is a valid absolute commit ID (40
+// characters and hexadecimal). It is not a guarantee that s.CommitID
+// refers to an existing commit ID in the repository, or that it is
+// even a commit ID (it could be a Git oid referring to another
+// object, such as a blob).
+func (s RepoRevSpec) IsAbs() bool {
+	if len(s.CommitID) != 40 {
+		return false
+	}
+	for _, c := range s.CommitID {
+		if c < '0' || c > 'f' {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *RepoResolution) UnmarshalJSON(data []byte) error {

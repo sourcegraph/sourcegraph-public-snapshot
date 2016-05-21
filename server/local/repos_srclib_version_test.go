@@ -20,7 +20,7 @@ func TestReposService_GetSrclibDataVersionForPath_exact(t *testing.T) {
 	calledVersions := mockstore.GraphMockVersions(&mock.stores.Graph, &srclibstore.Version{Repo: "r", CommitID: "c"})
 
 	dataVer, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v", CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
 		Path:    "p",
 	})
 	if err != nil {
@@ -60,7 +60,7 @@ func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, version
 	}
 
 	dataVer, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v", CommitID: "c1"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c1"},
 		Path:    "p",
 	})
 	if err != nil {
@@ -88,7 +88,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsNoCommits(t 
 	calledListCommits := mock.servers.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v", CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
@@ -110,7 +110,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundWrongVersionsNoCommits
 	calledListCommits := mock.servers.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v", CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
@@ -132,7 +132,7 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsWrongCommits
 	calledListCommits := mock.servers.Repos.MockListCommits(t, "x")
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v", CommitID: "c"},
+		RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, CommitID: "c"},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {

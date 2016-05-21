@@ -142,39 +142,16 @@ message RepoListOptions {
 	ListOptions ListOptions = 11 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
-// RepoRevSpec specifies a repository at a specific commit (or revision specifier,
-// such as a branch, which is resolved on the server side to a specific commit).
-//
-// Filling in CommitID is an optional optimization. It avoids the need for another
-// resolution of Rev. If CommitID is filled in, the "Rev" route variable becomes
-// "Rev===CommitID" (e.g., "master===af4cd6"). Handlers can parse this string to
-// retrieve the pre-resolved commit ID (e.g., "af4cd6") and still return data that
-// constructs URLs using the unresolved revspec (e.g., "master").
-//
-// Why is it important/useful to pass the resolved commit ID instead of just using
-// a revspec everywhere? Consider this case. Your application wants to make a bunch
-// of requests for resources relating to "master"; for example, it wants to
-// retrieve a source file foo.go at master and all of the definitions and
-// references contained in the file. This may consist of dozens of API calls. If
-// each API call specified just "master", there would be 2 problems: (1) each API
-// call would have to re-resolve "master" to its actual commit ID, which takes a
-// lot of extra work; and (2) if the "master" ref changed during the API calls (if
-// someone pushed in the middle of the API call, for example), then your
-// application would receive data from 2 different commits. The solution is for
-// your application to resolve the revspec once and pass both the original revspec
-// and the resolved commit ID in all API calls it makes.
-//
-// And why do we want to preserve the unresolved revspec? In this case, your app
-// wants to let the user continue browsing "master". If the API data all referred
-// to a specific commit ID, then the user would cease browsing master the next time
-// she clicked a link on your app. Preserving the revspec gives the user a choice
-// whether to use the absolute commit ID or the revspec (similar to how GitHub lets
-// you canonicalize a URL with 'y' but does not default to using the canonical
-// URL).
+// RepoRevSpec specifies a repository at a specific commit.
 message RepoRevSpec {
 	RepoSpec RepoSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
-	string Rev = 2;
-	string CommitID = 3;
+
+	// CommitID is the 40-character SHA-1 of the Git commit ID.
+	//
+	// Revision specifiers are not allowed here. To resolve a revision
+	// specifier (such as a branch name or "master~7"), call
+	// Repos.GetCommit.
+	string CommitID = 2;
 }
 
 // RepoSpec specifies a repository.
@@ -265,6 +242,11 @@ service Repos {
 
 	// TODO(sqs!nodb-ctx): move these to a "VCS" service (not Repos)
 	rpc GetCommit(RepoRevSpec) returns (vcs.Commit);
+
+	// ResolveRev resolves a VCS revision specifier (e.g., a branch or
+	// "master~7") to its underlying commit ID.
+	rpc ResolveRev(ReposResolveRevOp) returns (ResolvedRev);
+	
 	// ListCommits returns the list of commits that span between the revisions
 	// specified in the given DeltaSpec. By default, it will return 1 page of
 	// commits with a maximum of DefaultPerPage entries. To retrieve all commits
@@ -303,6 +285,23 @@ service Repos {
 
 	rpc ReceivePack(ReceivePackOp) returns (Packet);
 	rpc UploadPack(UploadPackOp) returns (Packet);
+}
+
+// ReposResolveRevOp specifies a Repos.ResolveRev operation.
+message ReposResolveRevOp {
+	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+
+	// Rev is a VCS revision specifier, such as a branch or
+	// "master~7".
+	string rev = 2;
+}
+
+// ResolvedRev is the result of resolving a VCS revision specifier to
+// an absolute commit ID.
+message ResolvedRev {
+	// CommitID is the 40-character absolute SHA-1 hex digest of the
+	// commit's Git oid.
+	string CommitID = 1;
 }
 
 message ReceivePackOp {

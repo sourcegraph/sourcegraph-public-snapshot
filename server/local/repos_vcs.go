@@ -2,17 +2,64 @@ package local
 
 import (
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
+
+func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+	commitID, err := resolveRepoRev(ctx, op.Repo, op.Rev)
+	if err != nil {
+		return nil, err
+	}
+	return &sourcegraph.ResolvedRev{CommitID: string(commitID)}, nil
+}
+
+// resolveRepoRev resolves the repo's rev to an absolute commit ID (by
+// consulting its VCS data). If no rev is specified, the repo's
+// default branch is used.
+func resolveRepoRev(ctx context.Context, repo sourcegraph.RepoSpec, rev string) (vcs.CommitID, error) {
+	if rev == "" {
+		repo, err := (&repos{}).Get(ctx, &repo)
+		if err != nil {
+			return "", err
+		}
+
+		if repo.DefaultBranch == "" {
+			return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repo.URI)
+		}
+		rev = repo.DefaultBranch
+	}
+
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
+	if err != nil {
+		return "", err
+	}
+	commitID, err := vcsrepo.ResolveRevision(rev)
+	if err != nil {
+		// attempt to reclone repo if its VCS repository doesn't exist
+		if _, notExist := err.(vcs.RepoNotExistError); notExist {
+			if _, innerErr := svc.MirrorRepos(ctx).RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); innerErr != nil {
+				return "", err
+			}
+		}
+		commitID, err = vcsrepo.ResolveRevision(rev)
+		if err != nil {
+			return "", err
+		}
+	}
+	return commitID, nil
+}
 
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
 
-	if err := resolveRepoRev(ctx, repoRev); err != nil {
-		return nil, err
+	if !isAbsCommitID(repoRev.CommitID) {
+		return nil, errNotAbsCommitID
 	}
 
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
@@ -33,11 +80,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		op.Opt.PerPage = 20
 	}
 	if op.Opt.Head == "" {
-		defBr, err := defaultBranch(ctx, op.Repo.URI)
-		if err != nil {
-			return nil, err
-		}
-		op.Opt.Head = defBr
+		return nil, grpc.Errorf(codes.InvalidArgument, "Head (revision specifier) is required")
 	}
 
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo.URI)
@@ -137,3 +180,13 @@ func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCom
 }
 
 func isAbsCommitID(commitID string) bool { return len(commitID) == 40 }
+
+func makeErrNotAbsCommitID(prefix string) error {
+	str := "absolute commit ID required (40 hex chars)"
+	if prefix != "" {
+		str = prefix + ": " + str
+	}
+	return grpc.Errorf(codes.InvalidArgument, str)
+}
+
+var errNotAbsCommitID = makeErrNotAbsCommitID("")
