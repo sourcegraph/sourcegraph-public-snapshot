@@ -197,13 +197,17 @@ class RepoMain extends React.Component {
 			);
 		}
 
+		let description = null;
+		if (this.props.repoObj && this.props.repoObj.Description && this.props.repoObj.Description.length > 159) {
+			description = this.props.repoObj.Description.substr(0, 159).concat("…");
+		}
 		return (
 			<div>
-				{this.props.repoObj && this.props.repoObj.Description ?
+				{description ?
 					<Helmet
 						title={trimRepo(this.props.repo)}
 						meta={[
-							{name: "description", content: this.props.repoObj.Description},
+							{name: "description", content: description},
 						]}
 						link={[
 							{rel: "canonical", href: this.canonicalURL()},

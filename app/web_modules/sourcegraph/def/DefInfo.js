@@ -106,17 +106,26 @@ class DefInfo extends Container {
 		}
 
 		let title = trimRepo(this.state.repo);
+		let description_title = trimRepo(this.state.repo);
 		if (defTitleOK(def)) {
 			title = `${defTitle(def)} · ${trimRepo(this.state.repo)}`;
+			description_title = `${defTitle(def)} in ${trimRepo(this.state.repo)}`;
 		}
-
+		let description = `Code and usage examples for ${description_title}.`;
+		if (def && def.Docs && def.Docs.length && def.Docs[0].Data) {
+			description = description.concat(" ").concat(def.Docs[0].Data);
+		}
+		if (description.length > 159) {
+			description = description.substring(0, 159).concat("…");
+		}
 		return (
+
 			<div styleName="container">
-				{def && def.Docs && def.Docs.length && def.Docs[0].Data ?
+				{description ?
 					<Helmet
 						title={title}
 						meta={[
-							{name: "description", content: def.Docs[0].Data},
+							{name: "description", content: description},
 						]} /> :
 					<Helmet title={title} />
 				}
