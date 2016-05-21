@@ -23,7 +23,7 @@ import type {Def} from "sourcegraph/def";
 // have any rev in their URLs, which enables us to cache them by commit ID (i.e.,
 // the response does not change based on which branch/rev it was fetched for).
 function updateThisRepoAnnotationsRev(repo: string, rev: ?string, anns: Array<Annotation>) {
-	if (!rev) return anns;
+	if (!rev || !anns) return anns;
 
 	const prefix = `/${repo}/-/`;
 	const repl = `/${repo}@${rev}/-/`;

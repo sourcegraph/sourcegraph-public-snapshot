@@ -21,7 +21,6 @@ func TestRepoTree(t *testing.T) {
 
 	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	calledGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
 	calledAnnotationsList := mock.Annotations.MockList(t, nil)
 
 	var entry *sourcegraph.TreeEntry
@@ -37,9 +36,6 @@ func TestRepoTree(t *testing.T) {
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
 	}
-	if !*calledGetSrclibDataVersionForPath {
-		t.Error("!calledGetSrclibDataVersionForPath")
-	}
 	if !*calledAnnotationsList {
 		t.Error("!calledAnnotationsList")
 	}
@@ -50,7 +46,6 @@ func TestRepoTree_notFound(t *testing.T) {
 
 	calledGet := mock.RepoTree.MockGet_NotFound(t)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
-	calledGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
 
 	resp, err := c.Get("/repos/r/-/tree/f")
 	if err != nil {
@@ -64,8 +59,5 @@ func TestRepoTree_notFound(t *testing.T) {
 	}
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
-	}
-	if !*calledGetSrclibDataVersionForPath {
-		t.Error("!calledGetSrclibDataVersionForPath")
 	}
 }

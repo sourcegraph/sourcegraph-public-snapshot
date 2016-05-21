@@ -8,9 +8,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
@@ -36,14 +33,6 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
 		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
-	}
-
-	resolvedRev, _, err := handlerutil.ResolveSrclibDataVersion(ctx, entrySpec, origRepoRev.Rev)
-	if err != nil && grpc.Code(err) != codes.NotFound {
-		return err
-	}
-	if resolvedRev.CommitID != "" {
-		entrySpec.RepoRev.CommitID = resolvedRev.CommitID
 	}
 
 	var opt sourcegraph.RepoTreeGetOptions

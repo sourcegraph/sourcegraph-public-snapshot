@@ -32,25 +32,25 @@ export class DefFetched {
 
 export class WantDefAuthors {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	def: string;
 
-	constructor(repo: string, rev: ?string, def: string) {
+	constructor(repo: string, commitID: string, def: string) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.def = def;
 	}
 }
 
 export class DefAuthorsFetched {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	def: string;
 	authors: Object;
 
-	constructor(repo: string, rev: ?string, def: string, authors: Object) {
+	constructor(repo: string, commitID: string, def: string, authors: Object) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.def = def;
 		this.authors = authors;
 	}
@@ -58,14 +58,14 @@ export class DefAuthorsFetched {
 
 export class WantDefs {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	query: string;
 	filePathPrefix: ?string;
 	overlay: boolean;
 
-	constructor(repo: string, rev: ?string, query: string, filePathPrefix?: string, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix?: string, overlay: boolean) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.query = query;
 		this.filePathPrefix = filePathPrefix || null;
 		this.overlay = overlay; // For metrics purposes
@@ -74,15 +74,15 @@ export class WantDefs {
 
 export class DefsFetched {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	query: string;
 	defs: Array<Def>;
 	filePathPrefix: ?string;
 	overlay: boolean;
 
-	constructor(repo: string, rev: ?string, query: string, filePathPrefix: ?string, defs: Array<Def>, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: ?string, defs: Array<Def>, overlay: boolean) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.query = query;
 		this.filePathPrefix = filePathPrefix;
 		this.defs = defs;
@@ -92,13 +92,13 @@ export class DefsFetched {
 
 export class SelectDef {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	def: string;
 	eventName: string;
 
-	constructor(repo: string, rev: ?string, def: string) {
+	constructor(repo: string, commitID: string, def: string) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.def = def;
 		this.eventName = "SelectDef";
 	}
@@ -130,7 +130,7 @@ export class WantRefLocations {
 		if (q) {
 			q = `?${q}`;
 		}
-		return `/.api/repos/${this.resource.repo}${this.resource.rev ? `@${this.resource.rev}` : ""}/-/def/${this.resource.def}/-/ref-locations${q}`;
+		return `/.api/repos/${this.resource.repo}${this.resource.commitID ? `@${this.resource.commitID}` : ""}/-/def/${this.resource.def}/-/ref-locations${q}`;
 	}
 }
 
@@ -146,14 +146,14 @@ export class RefLocationsFetched {
 
 export class WantRefs {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	def: string;
 	refRepo: string; // return refs from files in this repo
 	refFile: ?string; // only return refs in this file
 
-	constructor(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.def = def;
 		this.refRepo = refRepo;
 		this.refFile = refFile || null;
@@ -162,15 +162,15 @@ export class WantRefs {
 
 export class RefsFetched {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	def: string;
 	refRepo: string;
 	refFile: ?string;
 	refs: Array<Ref>;
 
-	constructor(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string, refs: Array<Ref>) {
+	constructor(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string, refs: Array<Ref>) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.def = def;
 		this.refRepo = refRepo;
 		this.refFile = refFile || null;

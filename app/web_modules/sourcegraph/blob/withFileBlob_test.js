@@ -20,19 +20,19 @@ describe("withFileBlob", () => {
 		render(<C repo="r" rev="v" {...props} />);
 	});
 
-	it("should render when the blob and rev exist", () => {
+	it("should render when the blob and commitID exist", () => {
 		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {CommitID: "c"}));
 		render(<C repo="r" rev="v" commitID="c" {...props} />);
 	});
 
 	it("should render when the blob does not exist", () => {
 		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Error: true}));
-		render(<C repo="r" rev="v" {...props} />);
+		render(<C repo="r" rev="v" commitID="c" {...props} />);
 	});
 	it("should redirect to the tree URL when the blob is a tree", (done) => {
 		BlobStore.directDispatch(new BlobActions.FileFetched("r", "v", "f", {Entries: [], CommitID: "c"}));
 		let calledReplace = false;
-		render(<C repo="r" rev="v" path="f" {...props} />, {
+		render(<C repo="r" commitID="v" path="f" {...props} />, {
 			router: {replace: () => calledReplace = true},
 		});
 		setTimeout(() => {

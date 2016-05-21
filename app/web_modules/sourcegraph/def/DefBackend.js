@@ -31,31 +31,31 @@ const DefBackend = {
 
 		case DefActions.WantDefAuthors:
 			{
-				let authors = DefStore.authors.get(action.repo, action.rev, action.def);
+				let authors = DefStore.authors.get(action.repo, action.commitID, action.def);
 				if (authors === null) {
-					DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/authors`)
+					DefBackend.fetch(`/.api/repos/${action.repo}${action.commitID ? `@${action.commitID}` : ""}/-/def/${action.def}/-/authors`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => {
 								console.error(err);
 								return {Error: true};
 							})
-							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefAuthorsFetched(action.repo, action.rev, action.def, data)));
+							.then((data) => Dispatcher.Stores.dispatch(new DefActions.DefAuthorsFetched(action.repo, action.commitID, action.def, data)));
 				}
 				break;
 			}
 
 		case DefActions.WantDefs:
 			{
-				let defs = DefStore.defs.list(action.repo, action.rev, action.query, action.filePathPrefix);
+				let defs = DefStore.defs.list(action.repo, action.commitID, action.query, action.filePathPrefix);
 				if (defs === null) {
 					trackPromise(
-						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.rev)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}&FilePathPrefix=${action.filePathPrefix ? encodeURIComponent(action.filePathPrefix) : ""}`)
+						DefBackend.fetch(`/.api/defs?RepoRevs=${encodeURIComponent(action.repo)}@${encodeURIComponent(action.commitID)}&Nonlocal=true&Query=${encodeURIComponent(action.query)}&FilePathPrefix=${action.filePathPrefix ? encodeURIComponent(action.filePathPrefix) : ""}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.rev, action.query, action.filePathPrefix, data, action.overlay));
+								Dispatcher.Stores.dispatch(new DefActions.DefsFetched(action.repo, action.commitID, action.query, action.filePathPrefix, data, action.overlay));
 							})
 					);
 				}
@@ -85,9 +85,9 @@ const DefBackend = {
 
 		case DefActions.WantRefs:
 			{
-				let refs = DefStore.refs.get(action.repo, action.rev, action.def, action.refRepo, action.refFile);
+				let refs = DefStore.refs.get(action.repo, action.commitID, action.def, action.refRepo, action.refFile);
 				if (refs === null) {
-					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${action.def}/-/refs?Repo=${encodeURIComponent(action.refRepo)}`;
+					let url = `/.api/repos/${action.repo}${action.commitID ? `@${action.commitID}` : ""}/-/def/${action.def}/-/refs?Repo=${encodeURIComponent(action.refRepo)}`;
 					if (action.refFile) url += `&Files=${encodeURIComponent(action.refFile)}`;
 					trackPromise(
 						DefBackend.fetch(url)
@@ -95,7 +95,7 @@ const DefBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.rev, action.def, action.refRepo, action.refFile, data));
+								Dispatcher.Stores.dispatch(new DefActions.RefsFetched(action.repo, action.commitID, action.def, action.refRepo, action.refFile, data));
 							})
 					);
 				}

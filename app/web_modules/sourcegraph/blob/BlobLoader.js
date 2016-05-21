@@ -4,7 +4,11 @@ import React from "react";
 import type {Element} from "react";
 import Container from "sourcegraph/Container";
 import BlobStore from "sourcegraph/blob/BlobStore";
+import "sourcegraph/blob/BlobBackend";
 import DefStore from "sourcegraph/def/DefStore";
+import "sourcegraph/def/DefBackend";
+import TreeStore from "sourcegraph/tree/TreeStore";
+import "sourcegraph/tree/TreeBackend";
 import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import withFileBlob from "sourcegraph/blob/withFileBlob";
 import withAnnotations from "sourcegraph/blob/withAnnotations";
@@ -91,7 +95,7 @@ function blobLoader(Component) {
 		// since we've imported it anyway if we are here.
 		//
 		// TODO(sqs): dont require using all stores, take them from the helpers store fields
-		stores() { return [DefStore, BlobStore]; }
+		stores() { return [DefStore, BlobStore, TreeStore]; }
 
 		render() {
 			if (this._helpers) {

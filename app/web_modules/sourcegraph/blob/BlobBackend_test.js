@@ -13,33 +13,33 @@ import immediateSyncPromise from "sourcegraph/util/immediateSyncPromise";
 describe("BlobBackend", () => {
 	it("should handle WantFile", () => {
 		BlobBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/repos/aRepo@aRev/-/tree/aPath?ContentsAsString=true");
+			expect(url).to.be("/.api/repos/aRepo@aCommitID/-/tree/aPath?ContentsAsString=true");
 			return immediateSyncPromise({
 				status: 200,
 				json: () => "someFile",
 			});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aPath"));
+			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aCommitID", "aPath"));
 		})).to.eql([
 			new RepoActions.RepoCloning("aRepo", false),
-			new BlobActions.FileFetched("aRepo", "aRev", "aPath", "someFile"),
+			new BlobActions.FileFetched("aRepo", "aCommitID", "aPath", "someFile"),
 		]);
 	});
 	it("should handle WantFile with IncludedAnnotations", () => {
 		BlobBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/repos/aRepo@aRev/-/tree/aPath?ContentsAsString=true");
+			expect(url).to.be("/.api/repos/aRepo@c/-/tree/aPath?ContentsAsString=true");
 			return immediateSyncPromise({
 				status: 200,
 				json: () => ({CommitID: "c", IncludedAnnotations: {Annotations: []}}),
 			});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aPath"));
+			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "c", "aPath"));
 		})).to.eql([
 			new RepoActions.RepoCloning("aRepo", false),
 			new BlobActions.AnnotationsFetched("aRepo", "c", "aPath", 0, 0, {Annotations: []}),
-			new BlobActions.FileFetched("aRepo", "aRev", "aPath", {CommitID: "c"}),
+			new BlobActions.FileFetched("aRepo", "c", "aPath", {CommitID: "c"}),
 		]);
 	});
 });

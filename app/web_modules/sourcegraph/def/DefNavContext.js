@@ -3,6 +3,7 @@ import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
+import TreeStore from "sourcegraph/tree/TreeStore";
 
 import {urlToTree} from "sourcegraph/tree/routes";
 import breadcrumb from "sourcegraph/util/breadcrumb";
@@ -14,17 +15,20 @@ class DefNavContext extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
+		commitID: React.PropTypes.string.isRequired,
 		params: React.PropTypes.object.isRequired,
 	}
 
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev;
+
+		const srclibDataVersion = props.commitID ? TreeStore.srclibDataVersions.get(state.repo, props.commitID) : null;
 		const defPath = props.params.splat[1];
-		state.defPos = state.rev ? DefStore.defs.getPos(state.repo, state.rev, defPath) : null;
+		state.defPos = srclibDataVersion && srclibDataVersion.CommitID ? DefStore.defs.getPos(state.repo, srclibDataVersion.CommitID, defPath) : null;
 	}
 
-	stores() { return [DefStore]; }
+	stores() { return [DefStore, TreeStore]; }
 
 	render() {
 		if (!this.state.defPos || this.state.defPos.Error) return null;

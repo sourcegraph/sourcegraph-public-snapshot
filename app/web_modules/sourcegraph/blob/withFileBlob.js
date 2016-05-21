@@ -37,17 +37,13 @@ export default function withFileBlob(Component) {
 			state.path = props.route.path.startsWith(rel.blob) ? props.params.splat[1] : props.path;
 			if (!state.path) state.path = null;
 
-			// For defs, props.commitID is set to the resolved commit ID (if any);
-			// for files, it is null, and the rev from the URL is all we can fetch by.
-			state.fileRev = props.commitID || state.rev;
-			state.blob = state.path ? BlobStore.files.get(state.repo, state.fileRev, state.path) : null;
-			if (!state.commitID) state.commitID = state.blob && !state.blob.Error ? state.blob.CommitID : null;
+			state.blob = state.path && state.commitID ? BlobStore.files.get(state.repo, state.commitID, state.path) : null;
 		}
 
 		onStateTransition(prevState, nextState) {
 			// Handle change in params OR lost file contents (due to auth change, etc.).
-			if (nextState.path && !nextState.blob && (prevState.repo !== nextState.repo || prevState.fileRev !== nextState.fileRev || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
-				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.fileRev, nextState.path));
+			if (nextState.path && nextState.commitID && !nextState.blob && (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
+				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.commitID, nextState.path));
 			}
 
 			if (nextState.blob && prevState.blob !== nextState.blob) {

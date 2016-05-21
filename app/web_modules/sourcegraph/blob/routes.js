@@ -14,6 +14,7 @@ export const routes = [
 					repoNavContext: require("sourcegraph/blob/RepoNavContext").default,
 				}, [
 					require("sourcegraph/blob/lineColBoundToHash").default,
+					require("sourcegraph/blob/withLastSrclibDataVersion").default,
 				]);
 			});
 		},

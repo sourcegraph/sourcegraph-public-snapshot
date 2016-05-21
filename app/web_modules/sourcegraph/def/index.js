@@ -53,7 +53,7 @@ export function defPath(def: Def): string {
 
 export type RefLocationsKey = {
 	repo: string;
-	rev: ?string;
+	commitID: string;
 	def: string;
 	page?: number;
 	perPage?: number;

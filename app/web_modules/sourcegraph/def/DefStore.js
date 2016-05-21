@@ -66,21 +66,21 @@ export class DefStore extends Store {
 				return this.pos[defKey(repo, rev, def)] || null;
 			},
 
-			list(repo: string, rev: string, query: string, filePathPrefix: ?string) {
-				return this.content[defsListKeyFor(repo, rev, query, filePathPrefix)] || null;
+			list(repo: string, commitID: string, query: string, filePathPrefix: ?string) {
+				return this.content[defsListKeyFor(repo, commitID, query, filePathPrefix)] || null;
 			},
 		});
 		this.authors = deepFreeze({
 			content: data && data.authors ? data.authors.content : {},
-			get(repo: string, rev: ?string, def: string): ?Object {
-				return this.content[defKey(repo, rev, def)] || null;
+			get(repo: string, commitID: string, def: string): ?Object {
+				return this.content[defKey(repo, commitID, def)] || null;
 			},
 		});
 		this.highlightedDef = null;
 		this.refs = deepFreeze({
 			content: data && data.refs ? data.refs.content : {},
-			get(repo: string, rev: ?string, def: string, refRepo: string, refFile: ?string) {
-				return this.content[refsKeyFor(repo, rev, def, refRepo, refFile)] || null;
+			get(repo: string, commitID: string, def: string, refRepo: string, refFile: ?string) {
+				return this.content[refsKeyFor(repo, commitID, def, refRepo, refFile)] || null;
 			},
 		});
 		this.refLocations_ = deepFreeze(data && data.refLocations ? data.refLocations.content : {});
@@ -108,7 +108,7 @@ export class DefStore extends Store {
 		case DefActions.DefAuthorsFetched:
 			this.authors = deepFreeze(Object.assign({}, this.authors, {
 				content: Object.assign({}, this.authors.content, {
-					[defKey(action.repo, action.rev, action.def)]: action.authors,
+					[defKey(action.repo, action.commitID, action.def)]: action.authors,
 				}),
 			}));
 			break;
@@ -118,11 +118,11 @@ export class DefStore extends Store {
 				// Store the list of defs AND each def individually so we can
 				// perform more operations quickly.
 				let data = {
-					[defsListKeyFor(action.repo, action.rev, action.query, action.filePathPrefix)]: action.defs,
+					[defsListKeyFor(action.repo, action.commitID, action.query, action.filePathPrefix)]: action.defs,
 				};
 				if (action.defs && action.defs.Defs) {
 					action.defs.Defs.forEach((d) => {
-						data[defKey(d.Repo, action.rev, defPath(d))] = d;
+						data[defKey(d.Repo, action.commitID, defPath(d))] = d;
 					});
 				}
 				this.defs = deepFreeze(Object.assign({}, this.defs, {
@@ -143,12 +143,12 @@ export class DefStore extends Store {
 					action.annotations.Annotations.forEach((ann) => {
 						if (ann.Def && ann.URL) {
 							// All of these defs must be defined in the current repo
-							// and rev (since that's what Def means), so we don't need to
+							// and commitID (since that's what Def means), so we don't need to
 							// call the slower def/index.js routeParams to parse out the
 							// def path.
 							const def = fastParseDefPath(ann.URL);
 							if (def) {
-								defPos[defKey(action.repo, action.rev, def)] = {
+								defPos[defKey(action.repo, action.commitID, def)] = {
 									File: action.path,
 									// This is just the range for the def's name, not the whole
 									// def, but it's better than nothing. The whole def range
@@ -235,7 +235,7 @@ export class DefStore extends Store {
 		case DefActions.RefsFetched:
 			this.refs = deepFreeze(Object.assign({}, this.refs, {
 				content: Object.assign({}, this.refs.content, {
-					[refsKeyFor(action.repo, action.rev, action.def, action.refRepo, action.refFile)]: action.refs,
+					[refsKeyFor(action.repo, action.commitID, action.def, action.refRepo, action.refFile)]: action.refs,
 				}),
 			}));
 			break;

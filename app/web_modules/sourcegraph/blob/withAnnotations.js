@@ -27,18 +27,23 @@ export default function withAnnotations(Component) {
 			Object.assign(state, props);
 
 			state.anns = state.path && state.commitID ? BlobStore.annotations.get(state.repo, state.commitID, state.path, 0, 0) : null;
-			const contentLenth = state.blob && !state.blob.Error ? state.blob.ContentsString.length : 0;
-			state.skipAnns = contentLenth >= 40*2500; // ~ 2500 lines, avg. 40 chars per line
+			const contentLength = state.blob && !state.blob.Error ? state.blob.ContentsString.length : 0;
+			state.skipAnns = contentLength >= 40*2500; // ~ 2500 lines, avg. 40 chars per line
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (!nextState.anns && nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path)) {
-				if (nextState.commitID && !nextState.skipAnns) {
+			if (!nextState.anns && nextState.path && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.commitID !== nextState.commitID || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
+				if (nextState.commitID && !nextState.skipAnns && nextState.blob) {
 					// Require that the rev has been resolved to a commit ID to fetch,
 					// so that we reuse that resolution on the client (which ensures
 					// consistency and frees the server from performing repetitive
 					// resolutions). Also require that the file isn't above line count
 					// threshold for fetching annotations.
+					//
+					// Also wait until the file has fetched the blob (or gotten an error)
+					// because the server usually includes the annotations in the blob
+					// response. This means we rarely will have to actually reach this
+					// line and trigger another network fetch to get the annotations.
 					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.repo, nextState.commitID, nextState.path, 0, 0));
 				}
 			}

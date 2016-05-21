@@ -6,11 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"golang.org/x/net/context"
@@ -138,24 +133,13 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		return nil, err
 	}
 
-	dataVer, err := svc.Repos(ctx).GetSrclibDataVersionForPath(ctx, &opt.Entry)
-	if grpc.Code(err) == codes.NotFound {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	if dataVer.CommitID != opt.Entry.RepoRev.CommitID {
-		log15.Warn("Annotations.listRefs: commit ID in argument did not match the last srclib version; for best performance, avoid duplicate work by pre-resolving the last srclib version for the commit before calling Annotations.List.", "resolved", dataVer.CommitID, "requested", opt.Entry.RepoRev.CommitID)
-	}
-
 	if opt.Entry.Path == "" {
 		return nil, fmt.Errorf("listRefs: no file path specified for file in %v", opt.Entry.RepoRev)
 	}
 
 	filters := []srcstore.RefFilter{
 		srcstore.ByRepos(opt.Entry.RepoRev.URI),
-		srcstore.ByCommitIDs(dataVer.CommitID),
+		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
 		srcstore.ByFiles(true, opt.Entry.Path),
 	}
 	if opt.Range != nil {

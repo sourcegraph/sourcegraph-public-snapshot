@@ -16,9 +16,9 @@ const BlobBackend = {
 		switch (action.constructor) {
 		case BlobActions.WantFile:
 			{
-				let file = BlobStore.files.get(action.repo, action.rev, action.path);
+				let file = BlobStore.files.get(action.repo, action.commitID, action.path);
 				if (file === null) {
-					let url = `/.api/repos/${action.repo}@${action.rev}/-/tree/${action.path}?ContentsAsString=true`;
+					let url = `/.api/repos/${action.repo}@${action.commitID}/-/tree/${action.path}?ContentsAsString=true`;
 					trackPromise(
 						BlobBackend.fetch(url)
 							.then(updateRepoCloning(action.repo))
@@ -32,9 +32,9 @@ const BlobBackend = {
 									if (anns.Annotations) {
 										anns.Annotations = prepareAnnotations(anns.Annotations);
 									}
-									Dispatcher.Stores.dispatch(new BlobActions.AnnotationsFetched(action.repo, data.CommitID, action.path, 0, 0, anns));
+									Dispatcher.Stores.dispatch(new BlobActions.AnnotationsFetched(action.repo, action.commitID, action.path, 0, 0, anns));
 								}
-								Dispatcher.Stores.dispatch(new BlobActions.FileFetched(action.repo, action.rev, action.path, data));
+								Dispatcher.Stores.dispatch(new BlobActions.FileFetched(action.repo, action.commitID, action.path, data));
 							})
 					);
 				}

@@ -64,7 +64,7 @@ class DefInfo extends Container {
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
 
 		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, rev: state.rev, def: state.def, repos: [],
+			repo: state.repo, commitID: state.commitID, def: state.def, repos: [],
 		}) : null;
 		if (state.refLocations && state.refLocations.PagesFetched >= state.currPage) {
 			state.nextPageLoading = false;
@@ -74,7 +74,7 @@ class DefInfo extends Container {
 	onStateTransition(prevState, nextState) {
 		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, rev: nextState.rev, def: nextState.def, repos: [], page: nextState.currPage,
+				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def, repos: [], page: nextState.currPage,
 			}));
 		}
 

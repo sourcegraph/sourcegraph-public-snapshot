@@ -14,11 +14,10 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 export default ({
 	reconcileState(state, props) {
 		state.def = props.params ? props.params.splat[1] : null;
-		state.defObj = state.def ? DefStore.defs.get(state.repo, state.rev, state.def) : null;
-		state.commitID = state.defObj && !state.defObj.Error ? state.defObj.CommitID : null;
-		state.refLocations = state.def ? DefStore.getRefLocations({
+		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;
+		state.refLocations = state.def && state.commitID ? DefStore.getRefLocations({
 			repo: state.repo,
-			rev: state.rev,
+			commitID: state.commitID,
 			def: state.def,
 			repos: [],
 		}) : null;
@@ -26,13 +25,13 @@ export default ({
 
 	onStateTransition(prevState, nextState) {
 		// Handle change in params OR lost def data (due to auth change, etc.).
-		if (nextState.def && (nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def || (!nextState.defObj && nextState.defObj !== prevState.defObj) || (!nextState.refLocations && nextState.refLocations !== prevState.refLocations))) {
+		if (nextState.commitID && nextState.def && (nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID || nextState.def !== prevState.def || (!nextState.defObj && nextState.defObj !== prevState.defObj) || (!nextState.refLocations && nextState.refLocations !== prevState.refLocations))) {
 			if (!nextState.defObj) {
-				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.rev, nextState.def));
+				Dispatcher.Backends.dispatch(new DefActions.WantDef(nextState.repo, nextState.commitID, nextState.def));
 			}
 			if (!nextState.refLocations) {
 				Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-					repo: nextState.repo, rev: nextState.rev, def: nextState.def, repos: [], page: 1,
+					repo: nextState.repo, commitID: nextState.commitID, def: nextState.def, repos: [], page: 1,
 				}));
 			}
 		}

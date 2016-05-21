@@ -42,6 +42,7 @@ export const routes: Array<Route> = [
 					main: require("sourcegraph/blob/BlobLoader").default,
 					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
 				}, [
+					require("sourcegraph/blob/withLastSrclibDataVersion").default,
 					require("sourcegraph/def/withDefAndRefLocations").default,
 					require("sourcegraph/def/blobWithDefBox").default,
 				]);

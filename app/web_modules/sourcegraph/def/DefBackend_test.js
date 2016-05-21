@@ -34,12 +34,12 @@ describe("DefBackend", () => {
 
 	it("should handle WantDefs", () => {
 		DefBackend.fetch = function(url, options) {
-			expect(url).to.be("/.api/defs?RepoRevs=myrepo@myrev&Nonlocal=true&Query=myquery&FilePathPrefix=foo%2F");
+			expect(url).to.be("/.api/defs?RepoRevs=myrepo@mycommitID&Nonlocal=true&Query=myquery&FilePathPrefix=foo%2F");
 			return immediateSyncPromise({status: 200, json: () => ({Defs: ["someDefData"]})});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			DefBackend.__onDispatch(new DefActions.WantDefs("myrepo", "myrev", "myquery", "foo/"));
-		})).to.eql([new DefActions.DefsFetched("myrepo", "myrev", "myquery", "foo/", {Defs: ["someDefData"]})]);
+			DefBackend.__onDispatch(new DefActions.WantDefs("myrepo", "mycommitID", "myquery", "foo/"));
+		})).to.eql([new DefActions.DefsFetched("myrepo", "mycommitID", "myquery", "foo/", {Defs: ["someDefData"]})]);
 	});
 
 	it("should handle WantRefLocations", () => {
@@ -49,11 +49,11 @@ describe("DefBackend", () => {
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			DefBackend.__onDispatch(new DefActions.WantRefLocations({
-				repo: "r", rev: "v", def: "d", repos: [],
+				repo: "r", commitID: "v", def: "d", repos: [],
 			}));
 		})).to.eql([new DefActions.RefLocationsFetched(
 			new DefActions.WantRefLocations({
-				repo: "r", rev: "v", def: "d", repos: [],
+				repo: "r", commitID: "v", def: "d", repos: [],
 			}), "someRefData")]);
 	});
 

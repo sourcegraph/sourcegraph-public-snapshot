@@ -89,12 +89,12 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 				}
 			}
 			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.repoObj !== nextState.repoObj) {
-				if (nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
+				if (!nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev));
 				}
 			}
 			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.repoObj !== nextState.repoObj) {
-				if (nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
+				if (!nextState.inventory && nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
 				}
 			}

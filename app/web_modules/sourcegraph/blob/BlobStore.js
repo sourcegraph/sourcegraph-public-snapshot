@@ -21,8 +21,8 @@ export class BlobStore extends Store {
 	reset(data?: {files: any, annotations: any}) {
 		this.files = deepFreeze({
 			content: data && data.files ? data.files.content : {},
-			get(repo, rev, path) {
-				return this.content[keyFor(repo, rev, path)] || null;
+			get(repo, commitID, path) {
+				return this.content[keyFor(repo, commitID, path)] || null;
 			},
 		});
 
@@ -41,13 +41,10 @@ export class BlobStore extends Store {
 
 	__onDispatch(action: BlobActions.FileFetched | BlobActions.AnnotationsFetched) {
 		if (action instanceof BlobActions.FileFetched) {
-			const data = {[keyFor(action.repo, action.rev, action.path)]: action.file};
-			if (action.file && !action.file.Error) {
-				// Store keyed on commit ID as well.
-				data[keyFor(action.repo, action.file.CommitID, action.path)] = action.file;
-			}
 			this.files = deepFreeze(Object.assign({}, this.files, {
-				content: {...this.files.content, ...data},
+				content: {...this.files.content,
+					[keyFor(action.repo, action.commitID, action.path)]: action.file,
+				},
 			}));
 		} else if (action instanceof BlobActions.AnnotationsFetched) {
 			this.annotations = deepFreeze(Object.assign({}, this.annotations, {
