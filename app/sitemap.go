@@ -19,48 +19,7 @@ import (
 )
 
 func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
-	start := time.Now()
-	ctx, cl := handlerutil.Client(r)
-
-	// get top repos
 	var si sitemap.Index
-	const (
-		maxPages = 50
-		maxRepos = 350
-	)
-	for page := 1; page < maxPages && time.Since(start) < time.Second*20 || len(si.Sitemaps) < maxRepos; page++ {
-		repos, err := cl.Repos.List(ctx, &sourcegraph.RepoListOptions{
-			NoFork:    true,
-			Sort:      "updated",
-			Type:      "public",
-			Direction: "desc",
-			ListOptions: sourcegraph.ListOptions{
-				Page:    int32(page),
-				PerPage: 1000,
-			},
-		})
-		if err != nil {
-			return err
-		}
-		if len(repos.Repos) == 0 {
-			break
-		}
-
-		// Only take Go, Java, and Python repos for now, since we support those best.
-		for _, repo := range repos.Repos {
-			if repo.Language == "Java" || repo.Language == "Go" || repo.Language == "Python" {
-				var lastMod *time.Time
-				if repo.UpdatedAt != nil && repo.UpdatedAt.Time().IsZero() {
-					tmp := repo.UpdatedAt.Time()
-					lastMod = &tmp
-				}
-				si.Sitemaps = append(si.Sitemaps, sitemap.Sitemap{
-					Loc:     conf.AppURL(ctx).ResolveReference(router.Rel.URLToRepoSitemap(repo.URI)).String(),
-					LastMod: lastMod,
-				})
-			}
-		}
-	}
 
 	// TODO: remove these static sitemaps once we have proper sitemap generation! These just cover
 	// def info pages.
