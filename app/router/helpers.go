@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
@@ -29,8 +29,8 @@ func (r *Router) URLToDef(key graph.DefKey) *url.URL {
 	return &url.URL{
 		Path: fmt.Sprintf("/%s%s/-/def/%s/%s/-/%s",
 			key.Repo, revStr(key.CommitID), key.UnitType,
-			sourcegraph.DefKeyPathToURLPath(key.Unit),
-			sourcegraph.DefKeyPathToURLPath(key.Path),
+			routevar.DefKeyPathToURLPath(key.Unit),
+			routevar.DefKeyPathToURLPath(key.Path),
 		),
 	}
 }

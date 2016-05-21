@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -16,7 +17,7 @@ func serveDefAuthors(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	defSpec, err := sourcegraph.UnmarshalDefSpec(mux.Vars(r))
+	defSpec, err := routevar.ToDefSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}

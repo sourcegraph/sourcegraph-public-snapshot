@@ -1,9 +1,11 @@
-package sourcegraph
+package routevar
 
 import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 
 	"github.com/kr/pretty"
 )
@@ -15,13 +17,13 @@ const (
 
 func TestDeltas(t *testing.T) {
 	tests := []struct {
-		spec          DeltaSpec
+		spec          sourcegraph.DeltaSpec
 		wantRouteVars map[string]string
 	}{
 		{
-			spec: DeltaSpec{
-				Base: RepoRevSpec{RepoSpec: RepoSpec{URI: "samerepo"}, Rev: "baserev", CommitID: baseCommit},
-				Head: RepoRevSpec{RepoSpec: RepoSpec{URI: "samerepo"}, Rev: "headrev", CommitID: headCommit},
+			spec: sourcegraph.DeltaSpec{
+				Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "samerepo"}, Rev: "baserev", CommitID: baseCommit},
+				Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "samerepo"}, Rev: "headrev", CommitID: headCommit},
 			},
 			wantRouteVars: map[string]string{
 				"Repo":         "samerepo",
@@ -31,14 +33,14 @@ func TestDeltas(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		vars := test.spec.RouteVars()
+		vars := DeltaRouteVars(test.spec)
 		if !reflect.DeepEqual(vars, test.wantRouteVars) {
 			t.Errorf("got route vars != want\n\n%s", strings.Join(pretty.Diff(vars, test.wantRouteVars), "\n"))
 		}
 
-		spec, err := UnmarshalDeltaSpec(vars)
+		spec, err := ToDeltaSpec(vars)
 		if err != nil {
-			t.Errorf("UnmarshalDeltaSpec(%+v): %s", vars, err)
+			t.Errorf("ToDeltaSpec(%+v): %s", vars, err)
 			continue
 		}
 		if !reflect.DeepEqual(spec, test.spec) {

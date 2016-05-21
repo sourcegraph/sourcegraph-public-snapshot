@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
@@ -26,7 +27,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	vars := mux.Vars(r)
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
+	repoRev, err := routevar.ToRepoRevSpec(vars)
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	repoRev, err := routevar.ToRepoRevSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -96,7 +97,7 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	repoRev, err := routevar.ToRepoRevSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}

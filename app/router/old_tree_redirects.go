@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"github.com/gorilla/mux"
 )

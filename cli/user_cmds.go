@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -151,7 +152,7 @@ type userGetCmd struct {
 func (c *userGetCmd) Execute(args []string) error {
 	cl := cliClient
 
-	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
+	userSpec, err := routevar.ParseUserSpec(c.Args.User)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ type userUpdateCmd struct {
 func (c *userUpdateCmd) Execute(args []string) error {
 	cl := cliClient
 
-	userSpec, err := sourcegraph.ParseUserSpec(c.Args.User)
+	userSpec, err := routevar.ParseUserSpec(c.Args.User)
 	if err != nil {
 		return err
 	}

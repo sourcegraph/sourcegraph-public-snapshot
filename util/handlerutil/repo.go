@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/htmlutil"
@@ -94,7 +95,7 @@ func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon,
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
 func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoSpec sourcegraph.RepoSpec, err error) {
-	origRepoSpec, err := sourcegraph.UnmarshalRepoSpec(vars)
+	origRepoSpec, err := routevar.ToRepoSpec(vars)
 	if err != nil {
 		return nil, sourcegraph.RepoSpec{}, err
 	}
@@ -123,7 +124,7 @@ func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Rep
 // route vars. The provided defaultBranch is used if no rev is
 // specified in the URL.
 func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) (sourcegraph.RepoRevSpec, error) {
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
+	repoRev, err := routevar.ToRepoRevSpec(vars)
 	if err != nil {
 		return sourcegraph.RepoRevSpec{}, err
 	}
@@ -176,7 +177,7 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 // originally requested repo URI).
 func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI string) error {
 	origVars := mux.Vars(r)
-	origVars["Repo"] = (sourcegraph.RepoSpec{URI: newRepoURI}).SpecString()
+	origVars["Repo"] = routevar.RepoSpecString(sourcegraph.RepoSpec{URI: newRepoURI})
 
 	destURL, err := mux.CurrentRoute(r).URLPath(router_util.MapToArray(origVars)...)
 	if err != nil {
@@ -211,12 +212,12 @@ func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySp
 // dc.Def.DefKey will be set to the def specification based on the
 // request when getting actual def fails.
 func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, err error) {
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(vars)
+	repoRev, err := routevar.ToRepoRevSpec(vars)
 	if err != nil {
 		return nil, err
 	}
 
-	defSpec, err := sourcegraph.UnmarshalDefSpec(vars)
+	defSpec, err := routevar.ToDefSpec(vars)
 	if err != nil {
 		return dc, err
 	}

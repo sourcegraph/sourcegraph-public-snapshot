@@ -6,13 +6,14 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 func serveSrclibDataVersion(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRev, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	repoRev, err := routevar.ToRepoRevSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}

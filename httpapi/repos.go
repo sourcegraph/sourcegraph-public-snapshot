@@ -11,6 +11,7 @@ import (
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,7 +26,7 @@ import (
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	repoSpec, err := routevar.ToRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -54,7 +55,7 @@ type repoResolution struct {
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	repoSpec, err := routevar.ToRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -85,7 +86,7 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRevSpec, err := sourcegraph.UnmarshalRepoRevSpec(mux.Vars(r))
+	repoRevSpec, err := routevar.ToRepoRevSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}

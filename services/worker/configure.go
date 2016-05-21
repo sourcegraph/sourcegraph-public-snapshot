@@ -17,6 +17,7 @@ import (
 	httpapirouter "sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/builder"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -214,7 +215,7 @@ func getAppURL(ctx context.Context) (*url.URL, error) {
 // getSrclibImportURL constructs the srclib import URL to POST srclib
 // data to, after the srclib build steps complete.
 func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
-	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, repoRev.RouteVars())
+	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, routevar.RepoRevRouteVars(repoRev))
 	if err != nil {
 		return nil, err
 	}

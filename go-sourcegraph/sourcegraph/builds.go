@@ -2,18 +2,6 @@ package sourcegraph
 
 import "fmt"
 
-func (s *BuildSpec) RouteVars() map[string]string {
-	m := s.Repo.RouteVars()
-	m["Build"] = fmt.Sprintf("%d", s.ID)
-	return m
-}
-
-func (s *TaskSpec) RouteVars() map[string]string {
-	v := s.Build.RouteVars()
-	v["Task"] = fmt.Sprintf("%d", s.ID)
-	return v
-}
-
 func (b *Build) Spec() BuildSpec {
 	return BuildSpec{
 		Repo: RepoSpec{URI: b.Repo},

@@ -8,8 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	gitrouter "sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 const (
@@ -64,7 +63,7 @@ func New(base *mux.Router) *Router {
 	base.PathPrefix("/").Methods("GET").Name("ui")
 
 	repoPath := `/` + routevar.Repo
-	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/sitemap.xml").Methods("GET").Name(RepoSitemap)
 
 	return &Router{*base}

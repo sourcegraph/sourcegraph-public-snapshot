@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 	"sourcegraph.com/sqs/pbtypes"
@@ -14,7 +15,7 @@ import (
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repo, err := sourcegraph.UnmarshalRepoSpec(mux.Vars(r))
+	repo, err := routevar.ToRepoSpec(mux.Vars(r))
 	if err != nil {
 		return err
 	}

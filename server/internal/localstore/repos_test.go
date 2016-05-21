@@ -27,9 +27,7 @@ func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegr
 func TestRepos_List_byOwner_empty(t *testing.T) {
 	var s repos
 
-	testUserSpec := sourcegraph.UserSpec{Login: "alice"}
-
-	repos, err := s.List(context.Background(), &sourcegraph.RepoListOptions{Owner: testUserSpec.SpecString()})
+	repos, err := s.List(context.Background(), &sourcegraph.RepoListOptions{Owner: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}

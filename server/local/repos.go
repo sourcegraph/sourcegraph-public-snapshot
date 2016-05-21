@@ -23,8 +23,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/platform"
@@ -251,7 +251,7 @@ func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtype
 func resolveRepoRev(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) error {
 	// Resolve revs like "master===commitid".
 	if repoRev.CommitID == "" {
-		repoRev.Rev, repoRev.CommitID = spec.ParseResolvedRev(repoRev.Rev)
+		repoRev.Rev, repoRev.CommitID = routevar.ParseResolvedRev(repoRev.Rev)
 	}
 
 	if err := resolveRepoRevBranch(ctx, repoRev); err != nil {

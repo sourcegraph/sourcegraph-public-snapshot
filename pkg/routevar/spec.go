@@ -1,11 +1,6 @@
-package spec
+package routevar
 
 import "fmt"
-
-const (
-	hostComponent = `[a-zA-Z-]+`
-	host          = `(?:(?:` + hostComponent + `\.)*` + hostComponent + `)`
-)
 
 // InvalidError occurs when a spec string is invalid.
 type InvalidError struct {

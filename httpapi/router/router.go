@@ -9,8 +9,7 @@ import (
 	"net/url"
 
 	"github.com/gorilla/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/spec"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 const (
@@ -95,8 +94,8 @@ func New(base *mux.Router) *mux.Router {
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
-	repo := base.PathPrefix(repoPath + "/" + spec.RepoPathDelim + "/").Subrouter()
-	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + spec.RepoPathDelim + "/").Subrouter()
+	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
+	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repo.Path("/branches").Methods("GET").Name(RepoBranches)

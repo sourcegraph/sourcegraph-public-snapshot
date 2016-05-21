@@ -23,6 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker/plan"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
 )
@@ -309,17 +310,15 @@ var rel = router.New(nil)
 func parseAnnotationURL(annUrl string) (*sourcegraph.RepoRevSpec, *sourcegraph.DefSpec, error) {
 	var match mux.RouteMatch
 	if rel.Match(&http.Request{Method: "GET", URL: &url.URL{Path: fmt.Sprintf("/%s%s", "repos", annUrl)}}, &match) {
-		repoRev, err := sourcegraph.UnmarshalRepoRevSpec(match.Vars)
+		repoRev, err := routevar.ToRepoRevSpec(match.Vars)
 		if err != nil {
 			return nil, nil, err
 		}
-
-		defSpec, err := sourcegraph.UnmarshalDefSpec(match.Vars)
+		def, err := routevar.ToDefSpec(match.Vars)
 		if err != nil {
 			return nil, nil, err
 		}
-
-		return &repoRev, &defSpec, nil
+		return &repoRev, &def, nil
 	} else {
 		return nil, nil, fmt.Errorf("error parsing mux vars for annotation url %s", annUrl)
 	}
