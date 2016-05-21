@@ -25,24 +25,9 @@ func robotsTxtHelper(w io.Writer, allowRobots bool, sitemapUrl string) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
-		fmt.Fprintln(&buf, "Disallow: /*/*")
-
-		// Top level exceptions
-		// Not great, but as long as we host things at sourcegraph.com/sourcegraph/sourcegraph, we will need to special case .com/legal/ etc.
-		fmt.Fprintln(&buf, "Allow: /blog*")
-		fmt.Fprintln(&buf, "Allow: /blog/*/*") // special case, because blog posts whose URLs end in / are valid
-		fmt.Fprintln(&buf, "Allow: /careers*")
-		fmt.Fprintln(&buf, "Allow: /about*")
-		fmt.Fprintln(&buf, "Allow: /security*")
-		fmt.Fprintln(&buf, "Allow: /privacy*")
-		fmt.Fprintln(&buf, "Allow: /legal*")
-		fmt.Fprintln(&buf, "Allow: /pricing*")
-
-		fmt.Fprintln(&buf, "Allow: /*/*/*/-/info")
-		fmt.Fprintln(&buf, "Allow: /*/*/-/info")
-
-		fmt.Fprintln(&buf, "Disallow: /*/*/*@*/-/info")
-		fmt.Fprintln(&buf, "Disallow: /*/*@*/-/info")
+		// Disallow URLs with revisions
+		fmt.Fprintln(&buf, "Disallow: /*/*/*@*/")
+		fmt.Fprintln(&buf, "Disallow: /*/*@*/")
 
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
