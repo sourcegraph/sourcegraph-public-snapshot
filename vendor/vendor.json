@@ -753,12 +753,6 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "zz5IEQLvTJ6Z6kJFAYe0uvp6zf8=",
-			"path": "github.com/sourcegraph/srclib-css/css_def",
-			"revision": "23f03594d99f6b802a42f647a99b64cf2b30ea8f",
-			"revisionTime": "2016-05-14T21:36:32Z"
-		},
-		{
 			"path": "github.com/sqs/fileset",
 			"revision": "012a6d31cbc4d10f3148918e0a37cd333db58a34",
 			"revisionTime": "2016-02-08T20:00:02-08:00"
