@@ -15,7 +15,7 @@ import (
 )
 
 func TestConfigureSrclib(t *testing.T) {
-	if err := configureSrclib(&inventory.Inventory{}, &droneyaml.Config{}, []matrix.Axis{{}}, nil, nil); err != nil {
+	if err := configureSrclib(&inventory.Inventory{}, &droneyaml.Config{}, []matrix.Axis{{}}, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -28,7 +28,6 @@ func TestConfigureSrclib_withLangs(t *testing.T) {
 		},
 		&config,
 		[]matrix.Axis{{}},
-		nil,
 		nil,
 	)
 	if err != nil {
