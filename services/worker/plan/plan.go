@@ -15,7 +15,7 @@ import (
 //
 // Create should execute very quickly and must not make any server API
 // calls, since it can be run locally.
-func Create(configYAML string, droneYMLFileExists bool, inv *inventory.Inventory, srclibImportURL, srclibCoverageURL *url.URL) (string, []matrix.Axis, error) {
+func Create(configYAML string, droneYMLFileExists bool, inv *inventory.Inventory, srclibImportURL *url.URL) (string, []matrix.Axis, error) {
 	config, err := droneyaml.Parse([]byte(configYAML))
 	if err != nil {
 		return "", nil, err
@@ -35,7 +35,7 @@ func Create(configYAML string, droneYMLFileExists bool, inv *inventory.Inventory
 	}
 
 	// Add the srclib analysis steps to the CI test plan.
-	if err := configureSrclib(inv, config, axes, srclibImportURL, srclibCoverageURL); err != nil {
+	if err := configureSrclib(inv, config, axes, srclibImportURL); err != nil {
 		return "", nil, err
 	}
 

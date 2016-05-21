@@ -145,13 +145,6 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 	}
 	b.SrclibImportURL = srclibImportURL
 
-	// SrclibCoverageURL
-	srclibCoverageURL, err := getSrclibCoverageURL(ctx, repoRev, *containerAppURL)
-	if err != nil {
-		return nil, err
-	}
-	b.SrclibCoverageURL = srclibCoverageURL
-
 	// Inventory
 	b.Inventory = func(ctx context.Context) (*inventory.Inventory, error) {
 		return cl.Repos.GetInventory(ctx, &repoRev)
@@ -228,16 +221,6 @@ func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, co
 	srclibImportURL.Path = "/.api" + srclibImportURL.Path
 
 	return containerAppURL.ResolveReference(srclibImportURL), nil
-}
-
-func getSrclibCoverageURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
-	srclibCoverageURL, err := httpapirouter.URL(httpapirouter.SrclibCoverage, repoRev.RouteVars())
-	if err != nil {
-		return nil, err
-	}
-	srclibCoverageURL.Path = "/.api" + srclibCoverageURL.Path
-
-	return containerAppURL.ResolveReference(srclibCoverageURL), nil
 }
 
 // parseCloneURL parses any valid HTTP or SSH git repo URL and normalizes it

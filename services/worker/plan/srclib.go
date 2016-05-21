@@ -12,7 +12,7 @@ import (
 
 // configureSrclib modifies the Drone config to run srclib analysis
 // during the CI build.
-func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []matrix.Axis, srclibImportURL, srclibCoverageURL *url.URL) error {
+func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []matrix.Axis, srclibImportURL *url.URL) error {
 	var srclibExplicitlyConfigured bool
 	for _, step := range config.Build {
 		// Rough heuristic for now: does the Docker image name contain
@@ -66,12 +66,6 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	// srclib analyzer already (or one was explicitly configured).
 	if srclibImportURL != nil && usingSrclib {
 		if err := insertSrclibBuild(config, axes, srclibImportStep(srclibImportURL)); err != nil {
-			return err
-		}
-	}
-
-	if srclibCoverageURL != nil && usingSrclib {
-		if err := insertSrclibBuild(config, axes, srclibCoverageStep(srclibCoverageURL)); err != nil {
 			return err
 		}
 	}
@@ -170,40 +164,6 @@ func srclibImportStep(importURL *url.URL) droneyaml.BuildItem {
 				`srclib-import $SOURCEGRAPH_IMPORT_URL /tmp/srclib-cache.zip`,
 				"echo Done importing",
 			},
-		},
-	}
-}
-
-func srclibCoverageStep(coverageURL *url.URL) droneyaml.BuildItem {
-	return droneyaml.BuildItem{
-		Key: "Graph metrics",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image: droneSrclibGoImage, // just use the version of srclib in the srclib-go image
-				Environment: droneyaml.MapEqualSlice([]string{
-					"SOURCEGRAPH_COVERAGE_URL=" + coverageURL.String(),
-				}),
-			},
-			Commands: []string{
-				"echo Generating srclib coverage stats",
-				"srclib coverage > /tmp/srclib-coverage.json",
-				"cat /tmp/srclib-coverage.json",
-				"echo Publishing srclib coverage stats",
-				`cat /tmp/srclib-coverage.json | /usr/bin/curl \
-				--silent --show-error \
-				--netrc \
-				--max-time 300 \
-				--no-keepalive \
-				--retry 3 \
-				--retry-delay 2 \
-				-XPUT \
-				-H 'Content-Type: application/json' \
-				-H 'Content-Transfer-Encoding: binary' \
-				--data-binary @- \
-				$SOURCEGRAPH_COVERAGE_URL`,
-				"echo Done publishing",
-			},
-			AllowFailure: true, // This step failing is not critical to user operations, so do not block the build
 		},
 	}
 }

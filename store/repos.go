@@ -52,6 +52,7 @@ type RepoConfigs interface {
 // per-commit status message.
 type RepoStatuses interface {
 	GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
+	GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error)
 	Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error
 }
 

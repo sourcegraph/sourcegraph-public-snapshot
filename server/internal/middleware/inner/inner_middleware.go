@@ -601,6 +601,19 @@ func (s wrappedRepoStatuses) GetCombined(ctx context.Context, param *sourcegraph
 	return
 }
 
+func (s wrappedRepoStatuses) GetCoverage(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.RepoStatusList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "RepoStatuses", "GetCoverage", param)
+	defer func() {
+		trace.After(ctx, "RepoStatuses", "GetCoverage", param, err, time.Since(start))
+	}()
+	res, err = local.Services.RepoStatuses.GetCoverage(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "RepoStatuses.GetCoverage returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedRepoStatuses) Create(ctx context.Context, param *sourcegraph.RepoStatusesCreateOp) (res *sourcegraph.RepoStatus, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "RepoStatuses", "Create", param)

@@ -1,0 +1,1 @@
+var version = "0.6.4"; export * from "../index"; export {version};

@@ -19,6 +19,17 @@ const globalBuilds: Route = {
 	},
 };
 
+const coverage: Route = {
+	path: rel.coverage,
+	getComponents: (location, callback) => {
+		require.ensure([], (require) => {
+			callback(null, {
+				main: require("sourcegraph/admin/CoverageDashboard").default,
+			});
+		});
+	},
+};
+
 export const routes: Array<Route> = [
 	{
 		path: rel.admin,
@@ -26,6 +37,7 @@ export const routes: Array<Route> = [
 			require.ensure([], (require) => {
 				callback(null, [
 					globalBuilds,
+					coverage,
 				]);
 			});
 		},

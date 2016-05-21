@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"encoding/json"
 	"time"
 
 	"golang.org/x/net/context"
@@ -30,6 +31,28 @@ type dbRepoStatus struct {
 	Context     string
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   *time.Time `db:"updated_at"`
+}
+
+type dbFileCoverage struct {
+	Path     string
+	Language string
+	Idents   int
+	Refs     int
+	Defs     int
+}
+
+type dbSrclibVersion struct {
+	Language string
+	Version  string
+}
+
+type dbRepoCoverage struct {
+	Repo           string
+	Files          []*dbFileCoverage
+	Summary        []*dbFileCoverage
+	SrclibVersions []*dbSrclibVersion
+	Day            string
+	Duration       float64
 }
 
 func (r *dbRepoStatus) toRepoStatus() *sourcegraph.RepoStatus {
@@ -100,24 +123,71 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.Repo
 	}, nil
 }
 
+func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error) {
+	if err := accesscontrol.VerifyUserHasAdminAccess(ctx, "RepoStatuses.GetCoverage"); err != nil {
+		return nil, err
+	}
+
+	var dbRepoStatuses []*dbRepoStatus
+	if _, err := appDBH(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE context=$1`, "coverage"); err != nil {
+		return nil, err
+	}
+
+	list := sourcegraph.RepoStatusList{}
+	for _, status := range dbRepoStatuses {
+		list.RepoStatuses = append(list.RepoStatuses, status.toRepoStatus())
+	}
+	return &list, nil
+}
+
 func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", repoRev.URI); err != nil {
 		return err
 	}
 
-	var dbRepoStatus dbRepoStatus
-	dbRepoStatus.fromRepoStatus(&repoRev, status)
-	if dbRepoStatus.CreatedAt.Unix() == 0 {
-		dbRepoStatus.CreatedAt = time.Now()
+	var dbrs dbRepoStatus
+	dbrs.fromRepoStatus(&repoRev, status)
+	if dbrs.CreatedAt.Unix() == 0 {
+		dbrs.CreatedAt = time.Now()
 	}
 
 	// Upsert the status. Note that this is correct, because repo
 	// statuses cannot be deleted. It is more robust to write it this
 	// way than with inline SQL (which would have to be manually
 	// updated if the fields of RepoStatus changed).
-	err := appDBH(ctx).Insert(&dbRepoStatus)
+	err := appDBH(ctx).Insert(&dbrs)
 	if err != nil {
-		_, err := appDBH(ctx).Update(&dbRepoStatus)
+		if dbrs.Context == "coverage" {
+			// Repo coverage is stored as a JSON encoded array of dbRepoCoverage
+			// (roughly one per day, not guaranteed). If a row already exists, prepend
+			// the next coverage stat to the previous.
+			prevStatus := dbRepoStatus{}
+			if err := appDBH(ctx).SelectOne(&prevStatus, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 AND context=$3;`, repoRev.URI, repoRev.Rev, "coverage"); err != nil {
+				return err
+			}
+
+			var cvg []dbRepoCoverage
+			if err := json.Unmarshal([]byte(prevStatus.Description), &cvg); err != nil {
+				return err
+			}
+			var nextCvg []dbRepoCoverage
+			if err := json.Unmarshal([]byte(dbrs.Description), &nextCvg); err != nil {
+				return err
+			}
+
+			cvg = append(nextCvg, cvg...)
+			if len(cvg) > 30 {
+				cvg = cvg[:30] // cap # of entries at ~1 month
+			}
+			nextDescription, err := json.Marshal(&cvg)
+			if err != nil {
+				return err
+			}
+
+			dbrs.Description = string(nextDescription)
+		}
+
+		_, err := appDBH(ctx).Update(&dbrs)
 		return err
 	}
 	return err

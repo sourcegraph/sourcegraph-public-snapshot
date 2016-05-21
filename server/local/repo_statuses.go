@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 var RepoStatuses sourcegraph.RepoStatusesServer = &repoStatuses{}
@@ -19,6 +20,10 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repoRev *sourcegraph.Rep
 		return nil, fmt.Errorf("nil repo rev")
 	}
 	return store.RepoStatusesFromContext(ctx).GetCombined(ctx, *repoRev)
+}
+
+func (s *repoStatuses) GetCoverage(ctx context.Context, _ *pbtypes.Void) (*sourcegraph.RepoStatusList, error) {
+	return store.RepoStatusesFromContext(ctx).GetCoverage(ctx)
 }
 
 func (s *repoStatuses) Create(ctx context.Context, op *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {

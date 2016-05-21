@@ -51,11 +51,16 @@ var _ store.RepoConfigs = (*RepoConfigs)(nil)
 
 type RepoStatuses struct {
 	GetCombined_ func(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
+	GetCoverage_ func(ctx context.Context) (*sourcegraph.RepoStatusList, error)
 	Create_      func(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error
 }
 
 func (s *RepoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
 	return s.GetCombined_(ctx, repoRev)
+}
+
+func (s *RepoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error) {
+	return s.GetCoverage_(ctx)
 }
 
 func (s *RepoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error {

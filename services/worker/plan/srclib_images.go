@@ -1,5 +1,10 @@
 package plan
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Drone Docker images for running each toolchain. Remove the sha256 version when
 // developing to make it easier to test out changes to a given toolchain. E.g.,
 // `droneSrclibGoImage = "sourcegraph/srclib-go"`.
@@ -11,3 +16,31 @@ var (
 	droneSrclibCSharpImage     = "sourcegraph/srclib-csharp@sha256:20850a4beeaf56e3b398b714294371b5e77f8139b903b0e07218e2964dad9afa"
 	droneSrclibCSSImage        = "sourcegraph/srclib-css@sha256:7d619b5ceac0198b7f1911f2f535eda3e037b1489c52293090e6000093346987"
 )
+
+func versionHash(image string) (string, error) {
+	split := strings.Split(image, "@sha256:")
+	if len(split) != 2 {
+		return "", fmt.Errorf("cannot parse version hash from toolchain image %s", image)
+	}
+
+	return split[1], nil
+}
+
+func SrclibVersion(lang string) (string, error) {
+	switch lang {
+	case "Go":
+		return versionHash(droneSrclibGoImage)
+	case "JavaScript":
+		return versionHash(droneSrclibJavaScriptImage)
+	case "Java":
+		return versionHash(droneSrclibJavaImage)
+	case "TypeScript":
+		return versionHash(droneSrclibTypeScriptImage)
+	case "C#":
+		return versionHash(droneSrclibCSharpImage)
+	case "CSS":
+		return versionHash(droneSrclibCSSImage)
+	}
+
+	return "", fmt.Errorf("no srclib image found for %s", lang)
+}

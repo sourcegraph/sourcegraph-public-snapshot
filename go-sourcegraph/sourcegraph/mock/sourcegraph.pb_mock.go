@@ -13,11 +13,16 @@ import (
 
 type RepoStatusesClient struct {
 	GetCombined_ func(ctx context.Context, in *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
+	GetCoverage_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.RepoStatusList, error)
 	Create_      func(ctx context.Context, in *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error)
 }
 
 func (s *RepoStatusesClient) GetCombined(ctx context.Context, in *sourcegraph.RepoRevSpec, opts ...grpc.CallOption) (*sourcegraph.CombinedStatus, error) {
 	return s.GetCombined_(ctx, in)
+}
+
+func (s *RepoStatusesClient) GetCoverage(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.RepoStatusList, error) {
+	return s.GetCoverage_(ctx, in)
 }
 
 func (s *RepoStatusesClient) Create(ctx context.Context, in *sourcegraph.RepoStatusesCreateOp, opts ...grpc.CallOption) (*sourcegraph.RepoStatus, error) {
@@ -28,11 +33,16 @@ var _ sourcegraph.RepoStatusesClient = (*RepoStatusesClient)(nil)
 
 type RepoStatusesServer struct {
 	GetCombined_ func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
+	GetCoverage_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.RepoStatusList, error)
 	Create_      func(v0 context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error)
 }
 
 func (s *RepoStatusesServer) GetCombined(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
 	return s.GetCombined_(v0, v1)
+}
+
+func (s *RepoStatusesServer) GetCoverage(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.RepoStatusList, error) {
+	return s.GetCoverage_(v0, v1)
 }
 
 func (s *RepoStatusesServer) Create(v0 context.Context, v1 *sourcegraph.RepoStatusesCreateOp) (*sourcegraph.RepoStatus, error) {
