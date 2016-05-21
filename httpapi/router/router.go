@@ -44,6 +44,7 @@ const (
 	RepoBuildTasks   = "build.tasks"
 	RepoBuildsCreate = "repo.builds.create"
 	RepoCommits      = "repo.commits"
+	RepoResolveRev   = "repo.resolve-rev"
 	RepoTags         = "repo.tags"
 	RepoTreeList     = "repo.tree-list"
 	RepoTreeSearch   = "repo-tree.search"
@@ -101,6 +102,7 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/branches").Methods("GET").Name(RepoBranches)
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
+	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)

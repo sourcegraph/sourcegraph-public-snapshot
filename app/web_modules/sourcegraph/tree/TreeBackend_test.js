@@ -26,18 +26,18 @@ describe("TreeBackend", () => {
 
 	it("should handle WantFileList", () => {
 		const repo = "aRepo";
-		const rev = "aRev";
-		let expectedURI = `/.api/repos/${repo}@${rev}/-/tree-list`;
+		const commitID = "aCommitID";
+		let expectedURI = `/.api/repos/${repo}@${commitID}/-/tree-list`;
 
 		TreeBackend.fetch = function(url, options) {
 			expect(url).to.be(expectedURI);
 			return immediateSyncPromise({status: 200, json: () => ({Files: ["a", "b"]})});
 		};
 		expect(Dispatcher.Stores.catchDispatched(() => {
-			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, rev));
+			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, commitID));
 		})).to.eql([
 			new RepoActions.RepoCloning(repo, false),
-			new TreeActions.FileListFetched(repo, rev, {Files: ["a", "b"]}),
+			new TreeActions.FileListFetched(repo, commitID, {Files: ["a", "b"]}),
 		]);
 	});
 });

@@ -47,8 +47,15 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		if len(opt.Files) == 1 {
 			path = opt.Files[0]
 		}
+
+		repo := sourcegraph.RepoSpec{URI: opt.Repo}
+		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: ""})
+		if err != nil {
+			return err
+		}
+
 		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: opt.Repo}},
+			RepoRev: sourcegraph.RepoRevSpec{RepoSpec: repo, CommitID: res.CommitID},
 			Path:    path,
 		})
 		if err != nil {

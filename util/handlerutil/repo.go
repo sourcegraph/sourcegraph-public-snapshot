@@ -178,10 +178,21 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 // ResolveSrclibDataVersion calls Repos.GetSrclibDataVersionForPath on
 // the given entry spec. If a srclib data version exists,
 // entry.RepoRev.CommitID is set to the version's commit ID.
-func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySpec) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
+//
+// If the rev requested by the user (userInputRev) is empty, then it
+// performs a lenient resolution: it behaves as though entry.Path is
+// also empty and returns the latest build on the default branch for
+// the repository, even if the requested file has changed more
+// recently. This is because in this case we assume the user cares
+// more about seeing srclib defs/refs than any exact version.
+func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySpec, userInputRev string) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return sourcegraph.RepoRevSpec{}, nil, err
+	}
+
+	if userInputRev == "" {
+		entry.Path = ""
 	}
 
 	dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &entry)
@@ -231,7 +242,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		CommitID: res.CommitID,
 	}
 
-	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: absRepoRev})
+	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: absRepoRev}, repoRev.Rev)
 	if err != nil {
 		return dc, err
 	}
@@ -245,33 +256,39 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		return dc, err
 	}
 
-	// Now that we have the def, we can check if its file has been
-	// changed AFTER the resolved srclib-last-version. If so, then we
-	// can't actually display this def, because we'd only be able to
-	// show it on an older version of the file (which would mean that
-	// users would see file data from an older commit when looking at
-	// a newer commit's def--that is BAD).
-	//
-	// Right now, the best course of action is to 404. This is a
-	// fairly rare case that should be remedied as soon as the next
-	// build completes. The alternative would be to display a warning
-	// saying "this file is N commits behind the requested commit,"
-	// but that adds a lot of complexity to the code and to the UI (as
-	// we have seen in the past). If a user's looking at a file that
-	// was changed since the last srclib version, they also see an
-	// unannotated file, so this is consistent with that behavior as
-	// well.
-	defResolvedRev, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: absRepoRev, // use originally requested rev, not already resolved last-srclib-version
-		Path:    dc.File,
-	})
-	if err != nil {
-		return dc, err
-	}
-	if defResolvedRev.CommitID != resolvedRev.CommitID {
-		return dc, &errcode.HTTPErr{
-			Status: http.StatusNotFound,
-			Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, dc.File, resolvedRev.CommitID, repoRev.Rev),
+	if repoRev.Rev != "" {
+		// Check if the def's file has been changed AFTER the resolved
+		// srclib-last-version AND the user specified a rev in the URL. If
+		// so, then we can't actually display this def, because we'd only
+		// be able to show it on an older version of the file (which would
+		// mean that users would see file data from an older commit when
+		// looking at a newer commit's def--that is BAD).
+		//
+		// Right now, the best course of action is to 404. This is a
+		// fairly rare case that should be remedied as soon as the next
+		// build completes. The alternative would be to display a warning
+		// saying "this file is N commits behind the requested commit,"
+		// but that adds a lot of complexity to the code and to the UI (as
+		// we have seen in the past). If a user's looking at a file that
+		// was changed since the last srclib version, they also see an
+		// unannotated file, so this is consistent with that behavior as
+		// well.
+		//
+		// If the user didn't specify a rev in the URL, then they probably
+		// care more about seeing the def than seeing the exact version,
+		// so we only perform this strict check if they did.
+		defResolvedRev, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
+			RepoRev: absRepoRev, // use originally requested rev, not already resolved last-srclib-version
+			Path:    dc.File,
+		})
+		if err != nil {
+			return dc, err
+		}
+		if defResolvedRev.CommitID != resolvedRev.CommitID {
+			return dc, &errcode.HTTPErr{
+				Status: http.StatusNotFound,
+				Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, dc.File, resolvedRev.CommitID, repoRev.Rev),
+			}
 		}
 	}
 

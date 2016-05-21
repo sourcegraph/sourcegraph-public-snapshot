@@ -4,13 +4,10 @@ import React from "react";
 
 import Container from "sourcegraph/Container";
 import RepoStore from "sourcegraph/repo/RepoStore";
-import TreeStore from "sourcegraph/tree/TreeStore";
 import "sourcegraph/repo/RepoBackend";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
-import {rel} from "sourcegraph/app/routePatterns";
 
 // withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
 // from the route params. If isMainComponent is true, then it also dispatches
@@ -31,7 +28,7 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 		};
 
 		stores() {
-			return [RepoStore, TreeStore];
+			return [RepoStore];
 		}
 
 		reconcileState(state, props) {
@@ -39,29 +36,14 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 
 			const repoSplat = repoParam(props.params.splat);
 			state.repo = repoPath(repoSplat);
-			state.rev = repoRev(repoSplat);
+			state.rev = repoRev(repoSplat); // the original rev from the URL
 
 			state.repoResolution = RepoStore.resolutions.get(state.repo);
 			state.repoObj = RepoStore.repos.get(state.repo);
-			if (!state.rev) {
-				state.branch = state.repoObj && state.repoObj.DefaultBranch || null;
-				let version = TreeStore.srclibDataVersions.get(state.repo, state.branch);
-				// If a revision is not provided, it needs to be resolved. The way we
-				// do this depends on the route:
-				//
-				// - For def/* routes, resolve to the latest built commit, so URLs to a
-				// def without a revision won't result in a 404 if the default branch
-				// is not built.
-				// - For all other routes, resolve to the default branch to show the
-				// latest content.
-				let paths = this.props.routes ? this.props.routes.map((r) => r.path) : [];
-				if (paths.indexOf(rel.def) !== -1 || paths.some((p) => p && p.startsWith(`${rel.def}/-/`))) {
-					state.rev = version ? version.CommitID : null;
-				} else {
-					state.rev = state.repoObj && state.repoObj.DefaultBranch ? state.repoObj.DefaultBranch : null;
-				}
-			}
-			state.inventory = RepoStore.inventory.get(state.repo, state.rev);
+
+			state.resolvedRev = state.repoObj && !state.repoObj.Error ? RepoStore.resolvedRevs.get(state.repo, state.rev) : null;
+			state.commitID = state.resolvedRev && !state.resolvedRev.Error ? state.resolvedRev.CommitID : null;
+			state.inventory = state.commitID ? RepoStore.inventory.get(state.repo, state.commitID) : null;
 			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
@@ -106,13 +88,15 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 				}
 			}
-			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev) {
-				if (nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning && nextState.rev) {
-					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.rev));
+			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.repoObj !== nextState.repoObj) {
+				if (nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
+					Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev));
 				}
 			}
-			if (!nextState.rev && nextState.branch) {
-				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.branch));
+			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.repoObj !== nextState.repoObj) {
+				if (nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
+					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
+				}
 			}
 		}
 

@@ -11,7 +11,7 @@ function keyFor(repo, rev) {
 }
 
 export class RepoStore extends Store {
-	reset(data?: {repos: any, resolutions: any, branches: any, tags: any}) {
+	reset(data?: {repos: any, resolvedRevs: any, resolutions: any, branches: any, tags: any}) {
 		this.repos = deepFreeze({
 			content: data && data.repos ? data.repos.content : {},
 			get(repo) {
@@ -22,6 +22,12 @@ export class RepoStore extends Store {
 				return this.cloning[keyFor(repo)] || false;
 			},
 		});
+		this.resolvedRevs = deepFreeze({
+			content: data && data.resolvedRevs ? data.resolvedRevs.content : {},
+			get(repo, rev) {
+				return this.content[keyFor(repo, rev)] || null;
+			},
+		});
 		this.resolutions = deepFreeze({
 			content: data && data.resolutions ? data.resolutions.content : {},
 			get(repo) {
@@ -30,8 +36,8 @@ export class RepoStore extends Store {
 		});
 		this.inventory = deepFreeze({
 			content: data && data.inventory ? data.inventory.content : {},
-			get(repo, rev) {
-				return this.content[keyFor(repo, rev)] || null;
+			get(repo, commitID) {
+				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
 		this.branches = deepFreeze({
@@ -55,6 +61,7 @@ export class RepoStore extends Store {
 	toJSON(): any {
 		return {
 			repos: this.repos,
+			resolvedRevs: this.resolvedRevs,
 			resolutions: this.resolutions,
 			branches: this.branches,
 			tags: this.tags,
@@ -63,6 +70,16 @@ export class RepoStore extends Store {
 	}
 
 	__onDispatch(action) {
+		if (action instanceof RepoActions.ResolvedRev) {
+			this.resolvedRevs = deepFreeze({...this.resolvedRevs,
+				content: {...this.resolvedRevs.content,
+					[keyFor(action.repo, action.rev)]: action.commitID,
+				},
+			});
+			this.__emitChange();
+			return;
+		}
+
 		switch (action.constructor) {
 
 		case RepoActions.FetchedRepo:
@@ -76,7 +93,7 @@ export class RepoStore extends Store {
 		case RepoActions.FetchedInventory:
 			this.inventory = deepFreeze(Object.assign({}, this.inventory, {
 				content: Object.assign({}, this.inventory.content, {
-					[keyFor(action.repo, action.rev)]: action.inventory,
+					[keyFor(action.repo, action.commitID)]: action.inventory,
 				}),
 			}));
 			break;

@@ -21,6 +21,8 @@ class RepoMain extends React.Component {
 		location: React.PropTypes.object,
 		repo: React.PropTypes.string,
 		rev: React.PropTypes.string,
+		commitID: React.PropTypes.string,
+		resolvedRev: React.PropTypes.object,
 		repoResolution: React.PropTypes.object,
 		repoObj: React.PropTypes.object,
 		main: React.PropTypes.element,
@@ -153,13 +155,22 @@ class RepoMain extends React.Component {
 			);
 		}
 
-		if (!this.props.repo || !this.props.rev) return null;
+		if (!this.props.repo) return null;
 
 		if (this.props.isCloning) {
 			return (
 				<Header
 					title="Cloning this repository"
 					subtitle="Refresh this page in a minute." />
+			);
+		}
+
+		if (this.props.resolvedRev && this.props.resolvedRev.Error) {
+			const err2 = this.props.resolvedRev.Error;
+			const msg = `Revision is not available.`;
+			return (
+				<Header title={`${httpStatusCode(err2)}`}
+					subtitle={msg} />
 			);
 		}
 
@@ -192,6 +203,7 @@ class RepoMain extends React.Component {
 							<TreeSearch
 								repo={this.props.repo}
 								rev={this.props.rev}
+								commitID={this.props.commitID}
 								overlay={true}
 								path={this.state.treeSearchPath}
 								query={this.state.treeSearchQuery}

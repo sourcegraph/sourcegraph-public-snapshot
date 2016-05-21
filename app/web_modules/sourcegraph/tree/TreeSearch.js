@@ -67,7 +67,8 @@ function pathDir(path: string): string {
 class TreeSearch extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string,
+		commitID: React.PropTypes.string.isRequired,
 		path: React.PropTypes.string.isRequired,
 		onSelectPath: React.PropTypes.func.isRequired,
 		onChangeQuery: React.PropTypes.func.isRequired,
@@ -80,7 +81,8 @@ class TreeSearch extends Container {
 
 	props: {
 		repo: string;
-		rev: string;
+		rev: ?string;
+		commitID: string;
 		path: string;
 		overlay: boolean;
 		prefetch: ?boolean;
@@ -154,15 +156,15 @@ class TreeSearch extends Container {
 			state.query = state.query.slice(0, MAX_QUERY_LENGTH);
 		}
 
-		state.fileTree = TreeStore.fileTree.get(state.repo, state.rev);
-		state.fileList = TreeStore.fileLists.get(state.repo, state.rev);
+		state.fileTree = TreeStore.fileTree.get(state.repo, state.commitID);
+		state.fileList = TreeStore.fileLists.get(state.repo, state.commitID);
 
 		// Limit defs to the current directory unless we're querying. That
 		// should be global to be consistent with file list behavior (for which
 		// searches are global).
 		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
 
-		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.rev);
+		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.commitID);
 
 		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
 
@@ -171,9 +173,11 @@ class TreeSearch extends Container {
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
-		if (prefetch || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev) {
-			Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.rev));
-			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.rev));
+		if (prefetch || nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID) {
+			if (nextState.commitID) {
+				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID));
+				Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
+			}
 		}
 
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
@@ -511,14 +515,9 @@ class TreeSearch extends Container {
 		const defs = this.state.matchingDefs.Defs.filter(this._symbolFilter);
 		let list = [],
 			limit = defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : defs.length;
-
-		// If the build is behind, link to the last built commit to avoid links resulting in 404s.
-		let defRev = this.state.srclibDataVersion && this.state.srclibDataVersion.CommitsBehind ?
-			this.state.srclibDataVersion.CommitID : this.state.rev;
-
 		for (let i = 0; i < limit; i++) {
 			let def = defs[i];
-			list.push(this._defToLink(def, defRev, offset + i, "i"));
+			list.push(this._defToLink(def, this.state.rev, offset + i, "i"));
 		}
 
 		return list;

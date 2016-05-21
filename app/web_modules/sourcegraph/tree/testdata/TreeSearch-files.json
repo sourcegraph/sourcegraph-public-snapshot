@@ -290,12 +290,12 @@
 		{
 			"$constructor": "WantSrclibDataVersion",
 			"repo": "repo",
-			"rev": "rev"
+			"commitID": "c"
 		},
 		{
 			"$constructor": "WantFileList",
 			"repo": "repo",
-			"rev": "rev"
+			"commitID": "c"
 		}
 	]
 }

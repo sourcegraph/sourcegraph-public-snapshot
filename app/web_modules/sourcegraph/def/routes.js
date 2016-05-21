@@ -50,15 +50,13 @@ export const routes: Array<Route> = [
 	},
 ];
 
-function defParams(def: Def, rev: ?string): Object {
-	rev = rev === null ? def.CommitID : rev;
-	const revPart = rev ? `@${rev || def.CommitID}` : "";
+function defParams(def: Def, rev?: ?string): Object {
+	const revPart = rev ? `@${rev}` : "";
 	return {splat: [`${def.Repo}${revPart}`, defPath(def)]};
 }
 
-// urlToDef returns a URL to the given def at the optional revision.
-export function urlToDef(def: Def, rev: ?string): string {
-	rev = rev === null ? def.CommitID : rev;
+// urlToDef returns a URL to the given def at the given revision.
+export function urlToDef(def: Def, rev?: ?string): string {
 	if ((def.File === null || def.Kind === "package")) {
 		// The def's File field refers to a directory (e.g., in the
 		// case of a Go package). We can't show a dir in this view,
@@ -71,8 +69,8 @@ export function urlToDef(def: Def, rev: ?string): string {
 	return urlTo("def", defParams(def, rev));
 }
 
-// urlToDefInfo returns a URL to the given def's info at the optional revision.
-export function urlToDefInfo(def: Def, rev: ?string): string {
+// urlToDefInfo returns a URL to the given def's info at the given revision.
+export function urlToDefInfo(def: Def, rev?: ?string): string {
 	if ((def.File === null || def.Kind === "package")) {
 		// The def's File field refers to a directory (e.g., in the
 		// case of a Go package). We can't show a dir in this view,
@@ -86,6 +84,7 @@ export function urlToDefInfo(def: Def, rev: ?string): string {
 }
 
 // urlToRepoDef returns a URL to the given repositories def at the given revision.
-export function urlToRepoDef(repo: string, rev: string, def: string): string {
-	return urlTo("def", {splat: [`${repo}@${rev}`, def]});
+export function urlToRepoDef(repo: string, rev: ?string, def: string): string {
+	const revPart = rev ? `@${rev}` : "";
+	return urlTo("def", {splat: [`${repo}${revPart}`, def]});
 }

@@ -24,7 +24,7 @@ import type {Def} from "sourcegraph/def";
 class DefContainer extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string,
 		def: React.PropTypes.string.isRequired,
 		defObj: React.PropTypes.object.isRequired,
 	};
@@ -37,13 +37,15 @@ class DefContainer extends Container {
 		repo: string;
 		showDef: boolean;
 		mouseover: boolean;
-		rev: string;
+		rev: ?string;
+		commitID: ?string;
 		defObj: Def;
 		activeDef: ?Object;
 	} = {
 		repo: "",
-		rev: "",
 		showDef: false,
+		commitID: null,
+		rev: null,
 		mouseover: false,
 		defObj: {DefStart: null, DefEnd: null},
 		activeDef: null,
@@ -54,6 +56,7 @@ class DefContainer extends Container {
 		state.rev = props.rev || null;
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
+		state.commitID = state.defObj && !state.defObj.Error ? state.defObj.CommitID : null;
 		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
 		if (state.mouseover) {
@@ -66,16 +69,16 @@ class DefContainer extends Container {
 			}
 		}
 
-		state.defFile = state.defObj && !state.defObj.Error ? BlobStore.files.get(state.defObj.Repo, state.rev, state.defObj.File) : null;
-		state.defAnns = state.defObj && !state.defObj.Error ? BlobStore.annotations.get(state.defObj.Repo, state.rev, state.defObj.CommitID, state.defObj.File): null;
+		state.defFile = state.defObj && !state.defObj.Error ? BlobStore.files.get(state.defObj.Repo, state.commitID, state.defObj.File) : null;
+		state.defAnns = state.defObj && !state.defObj.Error ? BlobStore.annotations.get(state.defObj.Repo, state.commitID, state.defObj.File): null;
 	}
 
 	onStateTransition(prevState, nextState) {
-		const defPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.defObj !== nextState.defObj;
-		const initialLoad = !prevState.repo && !prevState.rev && !prevState.def && !prevState.defObj;
+		const defPropsUpdated = prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.def !== nextState.def || prevState.defObj !== nextState.defObj;
+		const initialLoad = !prevState.repo && !prevState.commitID && !prevState.def && !prevState.defObj;
 		if ((defPropsUpdated && !initialLoad) || (nextState.mouseover && !prevState.mouseover && defPropsUpdated)) {
-			Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.defObj.Repo, nextState.rev, nextState.defObj.File));
-			Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.defObj.Repo, nextState.rev, nextState.defObj.CommitID, nextState.defObj.File));
+			Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.defObj.Repo, nextState.commitID, nextState.defObj.File));
+			Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.defObj.Repo, nextState.commitID, nextState.defObj.File));
 		}
 	}
 

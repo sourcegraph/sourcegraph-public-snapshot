@@ -71,9 +71,9 @@
 		{
 			"$constructor": "WantAnnotations",
 			"repo": "br",
-			"rev": "bv",
-			"commitID": "",
-			"path": "a"
+			"commitID": "bv",
+			"path": "",
+			"startByte": "a"
 		}
 	]
 }

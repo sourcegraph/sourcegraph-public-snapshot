@@ -23,7 +23,7 @@ export default function withFileBlob(Component) {
 
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
-			rev: React.PropTypes.string.isRequired,
+			rev: React.PropTypes.string,
 			commitID: React.PropTypes.string,
 			params: React.PropTypes.object.isRequired,
 		};
@@ -39,15 +39,15 @@ export default function withFileBlob(Component) {
 
 			// For defs, props.commitID is set to the resolved commit ID (if any);
 			// for files, it is null, and the rev from the URL is all we can fetch by.
-			const fileRev = props.commitID || state.rev;
-			state.blob = state.path ? BlobStore.files.get(state.repo, fileRev, state.path) : null;
-			if (!props.commitID) state.commitID = state.blob && !state.blob.Error ? state.blob.CommitID : null;
+			state.fileRev = props.commitID || state.rev;
+			state.blob = state.path ? BlobStore.files.get(state.repo, state.fileRev, state.path) : null;
+			if (!state.commitID) state.commitID = state.blob && !state.blob.Error ? state.blob.CommitID : null;
 		}
 
 		onStateTransition(prevState, nextState) {
 			// Handle change in params OR lost file contents (due to auth change, etc.).
-			if (nextState.path && !nextState.blob && (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
-				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.rev, nextState.path));
+			if (nextState.path && !nextState.blob && (prevState.repo !== nextState.repo || prevState.fileRev !== nextState.fileRev || prevState.path !== nextState.path || prevState.blob !== nextState.blob)) {
+				Dispatcher.Backends.dispatch(new BlobActions.WantFile(nextState.repo, nextState.fileRev, nextState.path));
 			}
 
 			if (nextState.blob && prevState.blob !== nextState.blob) {

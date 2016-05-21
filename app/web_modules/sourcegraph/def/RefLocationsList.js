@@ -19,7 +19,7 @@ class RefLocationsList extends React.Component {
 
 		// Current repo and path info, so that they can be highlighted.
 		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string,
 		path: React.PropTypes.string,
 
 		location: React.PropTypes.object.isRequired,

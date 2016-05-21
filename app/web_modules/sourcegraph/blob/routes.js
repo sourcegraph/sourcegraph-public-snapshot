@@ -21,7 +21,7 @@ export const routes = [
 ];
 
 // urlToBlob generates the URL to a file. To get a dir's URL, use urlToTree.
-export function urlToBlob(repo: string, rev: string, path: string | string[]): string {
+export function urlToBlob(repo: string, rev: ?string, path: string | string[]): string {
 	const pathStr = typeof path === "string" ? path : path.join("/");
 	return urlTo("blob", {splat: [makeRepoRev(repo, rev), pathStr]});
 }

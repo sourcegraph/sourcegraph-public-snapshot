@@ -12,6 +12,28 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
+func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
+	ctx, cl := handlerutil.Client(r)
+
+	repoRev := routevar.ToRepoRev(mux.Vars(r))
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: repoRev.RepoSpec,
+		Rev:  repoRev.Rev,
+	})
+	if err != nil {
+		return err
+	}
+
+	var cacheControl string
+	if len(repoRev.Rev) == 40 {
+		cacheControl = "private, max-age=600"
+	} else {
+		cacheControl = "private, max-age=15"
+	}
+	w.Header().Set("cache-control", cacheControl)
+	return writeJSON(w, res)
+}
+
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 

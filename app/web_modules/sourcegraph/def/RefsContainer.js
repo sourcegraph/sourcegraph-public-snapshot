@@ -28,10 +28,11 @@ const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above
 
 export default class RefsContainer extends Container {
 	static propTypes = {
-		repo: React.PropTypes.string,
+		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
-		def: React.PropTypes.string,
-		defObj: React.PropTypes.object,
+		commitID: React.PropTypes.string.isRequired,
+		def: React.PropTypes.string.isRequired,
+		defObj: React.PropTypes.object.isRequired,
 		repoRefs: React.PropTypes.shape({
 			Repo: React.PropTypes.string,
 			Files: React.PropTypes.array,
@@ -55,7 +56,6 @@ export default class RefsContainer extends Container {
 
 		// optimization: these memos reduce the amount of component state which must be copied in reconcileState
 		this.filesByName = {};
-		this.entrySpecsByName = {};
 		this.ranges = {};
 		this.anns = {};
 		this._toggleFile = this._toggleFile.bind(this);
@@ -85,17 +85,16 @@ export default class RefsContainer extends Container {
 
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
+		state.commitID = props.commitID || null;
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
 		state.refRepo = props.repoRefs.Repo || null;
+		state.refRev = state.refRepo === state.repo ? state.rev : null;
 		state.repoRefLocations = props.repoRefs || null;
 		if (state.repoRefLocations) {
 			state.fileLocations = state.repoRefLocations.Files;
-			// optimization: initialize entrySpecs to show file links before refs are resolved
-			// hardcode "master" revision until refs are fetched
-			state.fileLocations.forEach((file) => this.entrySpecsByName[file.Path] = {RepoRev: {URI: state.refRepo, Rev: "master"}, Path: file.Path});
 			// TODO state.fileLocations = state.fileLocations.sort((a, b) => b.Count - a.Count); // flatten
 		}
 
@@ -142,9 +141,7 @@ export default class RefsContainer extends Container {
 		if (state.refs && !state.refs.Error) {
 			for (let ref of state.refs || []) {
 				if (!ref) continue;
-				let refRev = ref.Repo === state.repo ? state.rev : ref.CommitID;
-				if (this.entrySpecsByName[ref.File]) this.entrySpecsByName[ref.File].RepoRev.Rev = refRev; // update entry specs revision to be the appropriate ref revision
-
+				let refRev = ref.Repo === state.repo ? state.commitID : ref.CommitID;
 				if (!this.filesByName[ref.File]) {
 					let file = BlobStore.files.get(ref.Repo, refRev, ref.File);
 					if (file) {
@@ -167,7 +164,7 @@ export default class RefsContainer extends Container {
 					}
 				}
 				if (!this.anns[ref.File]) {
-					let anns = BlobStore.annotations.get(ref.Repo, refRev, ref.CommitID, ref.File);
+					let anns = BlobStore.annotations.get(ref.Repo, ref.CommitID, ref.File);
 					if (anns) {
 						// Pass through Error to this.anns (i.e., proceed even if anns.Error is truthy).
 						state.forceComponentUpdate = true;
@@ -183,7 +180,7 @@ export default class RefsContainer extends Container {
 		// when the component is mounted will cause unnecessary re-render cycles across components.
 		// Instead, lazily fetch ref data on mouseover.
 		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
-		const initialLoad = !prevState.repo && !prevState.rev && !prevState.def && !prevState.refRepo;
+		const initialLoad = !prevState.repo && !prevState.rev && !prevState.commitID && !prevState.def && !prevState.refRepo;
 		if ((initialLoad && nextState.prefetch) || (refPropsUpdated && !initialLoad) || (nextState.mouseover && !prevState.mouseover)) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));
 		}
@@ -195,33 +192,33 @@ export default class RefsContainer extends Container {
 
 		if (nextState.refs && !nextState.refs.Error && (nextState.refs !== prevState.refs || nextState.shownFiles !== prevState.shownFiles)) {
 			for (let ref of nextState.refs) {
-				let refRev = ref.Repo === nextState.repo ? nextState.rev : ref.CommitID;
+				let refRev = ref.Repo === nextState.repo ? nextState.commitID : ref.CommitID;
 				if (nextState.shownFiles.has(ref.File)) {
 					Dispatcher.Backends.dispatch(new BlobActions.WantFile(ref.Repo, refRev, ref.File));
-					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, refRev, ref.CommitID, ref.File));
+					Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(ref.Repo, ref.CommitID, ref.File));
 				}
 			}
 		}
 	}
 
-	renderFileHeader(entrySpec, count, i) {
+	renderFileHeader(repo, rev, path, count, i) {
 		let pathBreadcrumb = breadcrumb(
-			entrySpec.Path,
+			path,
 			(j) => <span key={j} className={styles.sep}> / </span>,
-			(path, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
+			(_, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
 		);
 		return (
-			<div key={entrySpec.Path} className={styles.filename} onClick={(e) => {
+			<div key={path} className={styles.filename} onClick={(e) => {
 				if (e.button !== 0) return; // only expand on main button click
-				this._toggleFile(entrySpec.Path);
+				this._toggleFile(path);
 			}}>
-				{this.state.shownFiles.has(entrySpec.Path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
+				{this.state.shownFiles.has(path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
 				<div className={styles.pathContainer}>
 					{pathBreadcrumb}
 					<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
 				</div>
 				<Link className={styles.viewFile}
-					to={urlToBlob(entrySpec.RepoRev.URI, entrySpec.RepoRev.Rev, entrySpec.Path)}>
+					to={urlToBlob(repo, rev, path)}>
 					<span className={styles.pageLink}>View</span>
 				</Link>
 			</div>
@@ -271,32 +268,29 @@ export default class RefsContainer extends Container {
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
 							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
-							let entrySpec = this.entrySpecsByName[loc.Path];
-							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(entrySpec, loc.Count, i);
+							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
 
 							let file = this.filesByName ? this.filesByName[loc.Path] : null;
 							if (!file) {
-								return <div key={i}>{this.renderFileHeader(entrySpec, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
+								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
 							}
 							if (file.Error) {
-								return <div key={i}>{this.renderFileHeader(entrySpec, loc.Count, i)}<p>Error loading code</p></div>;
+								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p>Error loading code</p></div>;
 							}
-							let path = entrySpec.Path;
-							let repoRev = entrySpec.RepoRev;
 							return (
 								<div key={i}>
-									{this.renderFileHeader(entrySpec, loc.Count, i)}
+									{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}
 									<Blob
 										repo={this.state.refRepo}
-										rev={repoRev.Rev}
-										path={path}
+										rev={this.state.refRev}
+										path={loc.Path}
 										contents={file.ContentsString}
-										annotations={this.anns[path] || null}
+										annotations={this.anns[loc.Path] || null}
 										skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
 										activeDef={this.state.activeDef}
 										activeDefNoRev={this.state.activeDef ? urlToDef(def, "") : null}
 										lineNumbers={true}
-										displayRanges={this.ranges[path] || null}
+										displayRanges={this.ranges[loc.Path] || null}
 										highlightedDef={this.state.highlightedDef || null}
 										highlightedDefObj={this.state.highlightedDefObj || null} />
 								</div>

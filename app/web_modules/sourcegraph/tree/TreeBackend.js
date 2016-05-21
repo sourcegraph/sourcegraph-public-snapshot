@@ -27,15 +27,15 @@ const TreeBackend = {
 
 		case TreeActions.WantFileList:
 			{
-				let fileList = TreeStore.fileLists.get(action.repo, action.rev);
+				let fileList = TreeStore.fileLists.get(action.repo, action.commitID);
 				if (fileList === null) {
 					trackPromise(
-						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/tree-list`)
+						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/tree-list`)
 							.then(updateRepoCloning(action.repo))
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.rev, data)))
+							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FileListFetched(action.repo, action.commitID, data)))
 					);
 				}
 				break;
@@ -43,10 +43,10 @@ const TreeBackend = {
 
 		case TreeActions.WantSrclibDataVersion:
 			{
-				let version = TreeStore.srclibDataVersions.get(action.repo, action.rev, action.path);
+				let version = TreeStore.srclibDataVersions.get(action.repo, action.commitID, action.path);
 				if (version === null) {
 					trackPromise(
-						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
+						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
 							.then((resp) => {
 								if (resp.status === 404) {
 									return Object.assign({}, resp, {json: () => ({})});
@@ -57,7 +57,7 @@ const TreeBackend = {
 							})
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.rev, action.path, data)))
+							.then((data) => Dispatcher.Stores.dispatch(new TreeActions.FetchedSrclibDataVersion(action.repo, action.commitID, action.path, data)))
 					);
 				}
 				break;

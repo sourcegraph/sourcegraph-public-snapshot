@@ -10,7 +10,8 @@ export default function withTree(Component) {
 	class WithTree extends React.Component {
 		static propTypes = {
 			repo: React.PropTypes.string.isRequired,
-			rev: React.PropTypes.string.isRequired,
+			rev: React.PropTypes.string,
+			commitID: React.PropTypes.string,
 			params: React.PropTypes.object.isRequired,
 		};
 

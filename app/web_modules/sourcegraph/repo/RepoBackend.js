@@ -6,6 +6,7 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {trackPromise} from "sourcegraph/app/status";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
+import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import EventLogger from "sourcegraph/util/EventLogger";
 
 const RepoBackend = {
@@ -46,6 +47,25 @@ const RepoBackend = {
 									// Optimistically included by httpapi.serveRepoResolve.
 									Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data.IncludedRepo));
 								}
+							})
+					);
+				}
+				break;
+			}
+
+		case RepoActions.WantResolveRev:
+			{
+				let commitID = RepoStore.resolvedRevs.get(action.repo, action.rev);
+				if (commitID === null) {
+					const revPart = action.rev ? `@${action.rev}` : "";
+					trackPromise(
+						RepoBackend.fetch(`/.api/repos/${action.repo}${revPart}/-/rev`)
+							.then(updateRepoCloning(action.repo))
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => {
+								Dispatcher.Stores.dispatch(new RepoActions.ResolvedRev(action.repo, action.rev, data));
 							})
 					);
 				}
@@ -124,14 +144,14 @@ const RepoBackend = {
 
 		case RepoActions.WantInventory:
 			{
-				let inventory = RepoStore.inventory.get(action.repo, action.rev);
+				let inventory = RepoStore.inventory.get(action.repo, action.commitID);
 				if (inventory === null) {
 					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}@${action.rev}/-/inventory`)
+						RepoBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/inventory`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
-							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.rev, data)))
+							.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.commitID, data)))
 					);
 				}
 				break;

@@ -12,6 +12,7 @@ class TreeMain extends React.Component {
 		location: React.PropTypes.object,
 		repo: React.PropTypes.string,
 		rev: React.PropTypes.string,
+		commitID: React.PropTypes.string,
 		route: React.PropTypes.object,
 		routeParams: React.PropTypes.object.isRequired,
 	};
@@ -29,11 +30,14 @@ class TreeMain extends React.Component {
 	}
 
 	render() {
+		if (!this.props.commitID) return null;
+
 		return (
 			<div styleName="tree-container">
 				<TreeSearch
 					repo={this.props.repo}
 					rev={this.props.rev}
+					commitID={this.props.commitID}
 					path={treeParam(this.props.routeParams.splat)}
 					query={this.props.location.query.q || ""}
 					location={this.props.location}

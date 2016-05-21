@@ -16,32 +16,32 @@ export class CommitFetched {
 }
 
 export class WantFileList {
-	constructor(repo, rev) {
+	constructor(repo, commitID) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 	}
 }
 
 export class FileListFetched {
-	constructor(repo, rev, fileList) {
+	constructor(repo, commitID, fileList) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.fileList = fileList;
 	}
 }
 
 export class WantSrclibDataVersion {
-	constructor(repo, rev, pathOrNull) {
+	constructor(repo, commitID, pathOrNull) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.path = pathOrNull || null;
 	}
 }
 
 export class FetchedSrclibDataVersion {
-	constructor(repo, rev, pathOrNull, versionOrNull) {
+	constructor(repo, commitID, pathOrNull, versionOrNull) {
 		this.repo = repo;
-		this.rev = rev;
+		this.commitID = commitID;
 		this.path = pathOrNull || null;
 		this.version = versionOrNull || null;
 	}

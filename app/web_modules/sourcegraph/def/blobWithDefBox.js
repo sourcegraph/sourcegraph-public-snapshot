@@ -13,11 +13,15 @@ export default ({
 		state.path = defPos && !defPos.Error ? defPos.File : null;
 		state.startByte = defPos && !defPos.Error ? defPos.DefStart : null;
 		state.endByte = defPos && !defPos.Error ? defPos.DefEnd : null;
+
+		const def = DefStore.defs.get(state.repo, state.rev, state.def);
+		state.commitID = def && !def.Error ? def.CommitID : null;
 	},
 
 	renderProps(state) {
 		return state.defObj && !state.defObj.Error ? {
 			children: <DefPopup
+				rev={state.rev}
 				def={state.defObj}
 				refLocations={state.refLocations}
 				path={state.path}

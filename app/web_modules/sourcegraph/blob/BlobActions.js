@@ -2,10 +2,10 @@
 
 export class WantFile {
 	repo: string;
-	rev: string;
+	rev: ?string;
 	path: string;
 
-	constructor(repo: string, rev: string, path: string) {
+	constructor(repo: string, rev: ?string, path: string) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
@@ -14,12 +14,12 @@ export class WantFile {
 
 export class FileFetched {
 	repo: string;
-	rev: string;
+	rev: ?string;
 	path: string;
 	file: any;
 	eventName: string;
 
-	constructor(repo: string, rev: string, path: string, file: any) {
+	constructor(repo: string, rev: ?string, path: string, file: any) {
 		this.repo = repo;
 		this.rev = rev;
 		this.path = path;
@@ -30,15 +30,13 @@ export class FileFetched {
 
 export class WantAnnotations {
 	repo: string;
-	rev: string;
 	commitID: string;
 	path: string;
 	startByte: ?number;
 	endByte: ?number;
 
-	constructor(repo: string, rev: string, commitID: string, path: string, startByte: ?number, endByte: ?number) {
+	constructor(repo: string, commitID: string, path: string, startByte: ?number, endByte: ?number) {
 		this.repo = repo;
-		this.rev = rev;
 		this.commitID = commitID;
 		this.path = path;
 		this.startByte = startByte;
@@ -48,16 +46,14 @@ export class WantAnnotations {
 
 export class AnnotationsFetched {
 	repo: string;
-	rev: string;
 	commitID: string;
 	path: string;
 	startByte: ?number;
 	endByte: ?number;
 	annotations: any;
 
-	constructor(repo: string, rev: string, commitID: string, path: string, startByte: ?number, endByte: ?number, annotations: any) {
+	constructor(repo: string, commitID: string, path: string, startByte: ?number, endByte: ?number, annotations: any) {
 		this.repo = repo;
-		this.rev = rev;
 		this.commitID = commitID;
 		this.path = path;
 		this.startByte = startByte;

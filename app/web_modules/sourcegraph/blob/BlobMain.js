@@ -30,6 +30,7 @@ export default class BlobMain extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
+		commitID: React.PropTypes.string,
 		path: React.PropTypes.string,
 		blob: React.PropTypes.object,
 		anns: React.PropTypes.object,
@@ -68,6 +69,7 @@ export default class BlobMain extends Container {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev || null;
+		state.commitID = props.commitID || null;
 		state.path = props.path || null;
 		state.blob = props.blob || null;
 		state.anns = props.anns || null;
@@ -159,6 +161,7 @@ export default class BlobMain extends Container {
 					<BlobToolbar
 						repo={this.state.repo}
 						rev={this.state.rev}
+						commitID={this.state.commitID}
 						path={this.state.path} />
 					{(!this.state.blob || (this.state.blob && !this.state.blob.Error && !this.state.skipAnns && !this.state.anns)) && <BlobContentPlaceholder />}
 					{this.state.blob && !this.state.blob.Error && typeof this.state.blob.ContentsString !== "undefined" && (this.state.skipAnns || (this.state.anns && !this.state.anns.Error)) &&

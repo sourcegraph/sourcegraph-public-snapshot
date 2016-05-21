@@ -28,6 +28,13 @@ class DefInfo extends Container {
 		features: React.PropTypes.object.isRequired,
 	};
 
+	static propTypes = {
+		repo: React.PropTypes.string,
+		def: React.PropTypes.string.isRequired,
+		commitID: React.PropTypes.string,
+		rev: React.PropTypes.string,
+	};
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -152,6 +159,7 @@ class DefInfo extends Container {
 								key={i}
 								repo={this.props.repo}
 								rev={this.props.rev}
+								commitID={this.props.commitID}
 								def={this.props.def}
 								defObj={this.props.defObj}
 								repoRefs={repoRefs}

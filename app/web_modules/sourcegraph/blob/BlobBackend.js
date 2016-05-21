@@ -18,7 +18,7 @@ const BlobBackend = {
 			{
 				let file = BlobStore.files.get(action.repo, action.rev, action.path);
 				if (file === null) {
-					let url = `/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/tree/${action.path}?ContentsAsString=true`;
+					let url = `/.api/repos/${action.repo}@${action.rev}/-/tree/${action.path}?ContentsAsString=true`;
 					trackPromise(
 						BlobBackend.fetch(url)
 							.then(updateRepoCloning(action.repo))
@@ -32,7 +32,7 @@ const BlobBackend = {
 									if (anns.Annotations) {
 										anns.Annotations = prepareAnnotations(anns.Annotations);
 									}
-									Dispatcher.Stores.dispatch(new BlobActions.AnnotationsFetched(action.repo, action.rev, data.CommitID, action.path, 0, 0, anns));
+									Dispatcher.Stores.dispatch(new BlobActions.AnnotationsFetched(action.repo, data.CommitID, action.path, 0, 0, anns));
 								}
 								Dispatcher.Stores.dispatch(new BlobActions.FileFetched(action.repo, action.rev, action.path, data));
 							})
@@ -43,9 +43,9 @@ const BlobBackend = {
 
 		case BlobActions.WantAnnotations:
 			{
-				let anns = BlobStore.annotations.get(action.repo, action.rev, action.commitID, action.path, action.startByte, action.endByte);
+				let anns = BlobStore.annotations.get(action.repo, action.commitID, action.path, action.startByte, action.endByte);
 				if (anns === null) {
-					let url = `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.Rev=${action.rev}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
+					let url = `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
 					trackPromise(
 						BlobBackend.fetch(url)
 							.then(checkStatus)
@@ -55,7 +55,7 @@ const BlobBackend = {
 								if (!data.Error && data.Annotations) data.Annotations = prepareAnnotations(data.Annotations);
 								Dispatcher.Stores.dispatch(
 									new BlobActions.AnnotationsFetched(
-										action.repo, action.rev, action.commitID, action.path,
+										action.repo, action.commitID, action.path,
 										action.startByte, action.endByte, data));
 							})
 					);

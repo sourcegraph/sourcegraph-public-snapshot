@@ -13,9 +13,14 @@ describe("RepoMain", () => {
 		expect(o).to.contain("is not available");
 	});
 
+	it("should show an error page if the rev failed to resolve/load", () => {
+		const o = renderToString(<RepoMain repo="r" rev="v" resolvedRev={{Error: {}}} />);
+		expect(o).to.contain("Revision is not available");
+	});
+
 	describe("repo creation", () => {
 		it("should trigger WantCreateRepo for just-resolved remote repos", () => {
-			const res = render(<RepoMain repo="r" repoResolution={{Result: {RemoteRepo: {GitHubID: 123}}}} />);
+			const res = render(<RepoMain repo="r" repoResolution={{Result: {RemoteRepo: {GitHubID: 123}}}} location={{pathname: "/r", state: {}}} />);
 			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {GitHubID: 123})]);
 		});
 	});

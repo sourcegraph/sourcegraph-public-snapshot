@@ -181,10 +181,6 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 	anns := make([]*sourcegraph.Annotation, len(refs))
 	for i, ref := range refs {
 		def := ref.DefKey()
-		if def.Repo == opt.Entry.RepoRev.URI {
-			def.CommitID = opt.Entry.RepoRev.CommitID
-		}
-
 		var u string
 		if strings.HasPrefix(def.Path, "https://") || strings.HasPrefix(def.Path, "http://") {
 			// If the ref's def path is an absolute URL, set the annotation's URL to be that.

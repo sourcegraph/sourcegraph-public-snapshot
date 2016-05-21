@@ -38,7 +38,7 @@ describe("BlobBackend", () => {
 			BlobBackend.__onDispatch(new BlobActions.WantFile("aRepo", "aRev", "aPath"));
 		})).to.eql([
 			new RepoActions.RepoCloning("aRepo", false),
-			new BlobActions.AnnotationsFetched("aRepo", "aRev", "c", "aPath", 0, 0, {Annotations: []}),
+			new BlobActions.AnnotationsFetched("aRepo", "c", "aPath", 0, 0, {Annotations: []}),
 			new BlobActions.FileFetched("aRepo", "aRev", "aPath", {CommitID: "c"}),
 		]);
 	});

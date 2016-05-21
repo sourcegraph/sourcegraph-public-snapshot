@@ -10,11 +10,11 @@ describe("TreeStore", () => {
 	});
 
 	it("should handle FileListFetched", () => {
-		TreeStore.directDispatch(new TreeActions.FileListFetched("aRepo", "aRev", {Files: ["someResults"]}));
-		expect(TreeStore.fileLists.get("aRepo", "aRev")).to.have.property("Files");
+		TreeStore.directDispatch(new TreeActions.FileListFetched("aRepo", "aCommitID", {Files: ["someResults"]}));
+		expect(TreeStore.fileLists.get("aRepo", "aCommitID")).to.have.property("Files");
 	});
 
 	it("should not crash on special directory names", () => {
-		TreeStore.directDispatch(new TreeActions.FileListFetched("aRepo", "aRev", {Files: ["constructor/file.txt"]}));
+		TreeStore.directDispatch(new TreeActions.FileListFetched("aRepo", "aCommitID", {Files: ["constructor/file.txt"]}));
 	});
 });

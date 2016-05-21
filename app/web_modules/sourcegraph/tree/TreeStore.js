@@ -20,20 +20,20 @@ export class TreeStore extends Store {
 		});
 		this.fileLists = deepFreeze({
 			content: data && data.fileLists ? data.fileLists.content : {},
-			get(repo, rev) {
-				return this.content[keyFor(repo, rev)] || null;
+			get(repo, commitID) {
+				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
 		this.fileTree = deepFreeze({
 			content: data && data.fileTree ? data.fileTree.content : {},
-			get(repo, rev) {
-				return this.content[keyFor(repo, rev)] || null;
+			get(repo, commitID) {
+				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
 		this.srclibDataVersions = deepFreeze({
 			content: data && data.srclibDataVersions ? data.srclibDataVersions.content : {},
-			get(repo, rev, path) {
-				return this.content[keyFor(repo, rev, path)] || null;
+			get(repo, commitID, path) {
+				return this.content[keyFor(repo, commitID, path)] || null;
 			},
 		});
 	}
@@ -77,12 +77,12 @@ export class TreeStore extends Store {
 				}
 				this.fileLists = deepFreeze(Object.assign({}, this.fileLists, {
 					content: Object.assign({}, this.fileLists.content, {
-						[keyFor(action.repo, action.rev)]: action.fileList,
+						[keyFor(action.repo, action.commitID)]: action.fileList,
 					}),
 				}));
 				this.fileTree = deepFreeze(Object.assign({}, this.fileTree, {
 					content: Object.assign({}, this.fileTree.content, {
-						[keyFor(action.repo, action.rev)]: fileTree,
+						[keyFor(action.repo, action.commitID)]: fileTree,
 					}),
 				}));
 				break;
@@ -91,7 +91,7 @@ export class TreeStore extends Store {
 		case TreeActions.FetchedSrclibDataVersion:
 			this.srclibDataVersions = deepFreeze(Object.assign({}, this.srclibDataVersions, {
 				content: Object.assign({}, this.srclibDataVersions.content, {
-					[keyFor(action.repo, action.rev, action.path)]: action.version,
+					[keyFor(action.repo, action.commitID, action.path)]: action.version,
 				}),
 			}));
 			break;

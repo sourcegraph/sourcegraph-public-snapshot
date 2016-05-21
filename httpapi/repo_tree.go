@@ -27,7 +27,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	vars := mux.Vars(r)
-	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(vars))
+	origRepoRev := routevar.ToRepoRev(vars)
+	repoRev, err := resolveRepoRev(ctx, origRepoRev)
 	if err != nil {
 		return err
 	}
@@ -37,7 +38,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
 	}
 
-	resolvedRev, _, err := handlerutil.ResolveSrclibDataVersion(ctx, entrySpec)
+	resolvedRev, _, err := handlerutil.ResolveSrclibDataVersion(ctx, entrySpec, origRepoRev.Rev)
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}

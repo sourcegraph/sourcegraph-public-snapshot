@@ -14,8 +14,31 @@ import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
+import type {Annotation} from "sourcegraph/blob/Annotations";
 import s from "sourcegraph/blob/styles/Blob.css";
 import type {Def} from "sourcegraph/def";
+
+// updateThisRepoAnnotationsRev is a hack to update the URL/URLs fields of all
+// annotations to point to rev. The annotations returned by the server do not
+// have any rev in their URLs, which enables us to cache them by commit ID (i.e.,
+// the response does not change based on which branch/rev it was fetched for).
+function updateThisRepoAnnotationsRev(repo: string, rev: ?string, anns: Array<Annotation>) {
+	if (!rev) return anns;
+
+	const prefix = `/${repo}/-/`;
+	const repl = `/${repo}@${rev}/-/`;
+	const withRev = (url: string): string => {
+		if (url.startsWith(prefix)) return `${repl}${url.slice(prefix.length)}`;
+		return url;
+	};
+	return anns.map((ann) => (
+		(ann.URL || ann.URLs) ? {
+			...ann,
+			URL: ann.URL ? withRev(ann.URL) : undefined, // eslint-disable-line no-undefined
+			URLs: ann.URLs ? ann.URLs.map(withRev) : undefined, // eslint-disable-line no-undefined
+		} : ann
+	));
+}
 
 class Blob extends Component {
 	static propTypes = {
@@ -41,7 +64,7 @@ class Blob extends Component {
 		// For linking line numbers to the file they came from (e.g., in
 		// ref snippets).
 		repo: React.PropTypes.string.isRequired,
-		rev: React.PropTypes.string.isRequired,
+		rev: React.PropTypes.string,
 		path: React.PropTypes.string.isRequired,
 
 		// contentsOffsetLine indicates that the contents string does not
@@ -182,6 +205,10 @@ class Blob extends Component {
 		}
 
 		if (updateAnns) {
+			state.annotations = state.annotations ? {
+				...state.annotations,
+				Annotations: updateThisRepoAnnotationsRev(state.repo, state.rev, state.annotations.Annotations),
+			} : null;
 			state.lineAnns = state.lineStartBytes && state.annotations && state.annotations.Annotations ? annotationsByLine(state.lineStartBytes, state.annotations.Annotations, state.lines) : null;
 		}
 

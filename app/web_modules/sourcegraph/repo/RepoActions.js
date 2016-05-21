@@ -11,17 +11,32 @@ export class FetchedRepo {
 	}
 }
 
-export class WantInventory {
+export class WantResolveRev {
 	constructor(repo, rev) {
 		this.repo = repo;
 		this.rev = rev;
 	}
 }
 
-export class FetchedInventory {
-	constructor(repo, rev, inventory) {
+export class ResolvedRev {
+	constructor(repo, rev, commitID) {
 		this.repo = repo;
 		this.rev = rev;
+		this.commitID = commitID;
+	}
+}
+
+export class WantInventory {
+	constructor(repo, commitID) {
+		this.repo = repo;
+		this.commitID = commitID;
+	}
+}
+
+export class FetchedInventory {
+	constructor(repo, commitID, inventory) {
+		this.repo = repo;
+		this.commitID = commitID;
 		this.inventory = inventory;
 	}
 }

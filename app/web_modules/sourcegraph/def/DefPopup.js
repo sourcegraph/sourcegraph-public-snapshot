@@ -17,6 +17,7 @@ import {urlToDefInfo} from "sourcegraph/def/routes";
 class DefPopup extends Container {
 	static propTypes = {
 		def: React.PropTypes.object.isRequired,
+		rev: React.PropTypes.string,
 		refLocations: React.PropTypes.object,
 		path: React.PropTypes.string.isRequired,
 		location: React.PropTypes.object.isRequired,
@@ -30,16 +31,17 @@ class DefPopup extends Container {
 		Object.assign(state, props);
 		state.defObj = props.def;
 		state.repo = props.def ? props.def.Repo : null;
-		state.rev = props.def ? props.def.CommitID : null;
+		state.rev = props.rev || null;
+		state.commitID = props.def ? props.def.CommitID : null;
 		state.def = props.def ? defPath(props.def) : null;
 
-		state.authors = DefStore.authors.get(state.repo, state.rev, state.def);
+		state.authors = DefStore.authors.get(state.repo, state.commitID, state.def);
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def) {
+		if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.def !== nextState.def) {
 			if (this.context.features.Authors) {
-				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.rev, nextState.def));
+				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.commitID, nextState.def));
 			}
 		}
 	}

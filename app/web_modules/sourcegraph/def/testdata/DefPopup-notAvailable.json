@@ -13,7 +13,7 @@
 								"key": ".0",
 								"props": {
 									"className": "",
-									"to": "/r@c/-/info/undefined/undefined/-/undefined",
+									"to": "/r/-/info/undefined/undefined/-/undefined",
 									"children": [
 										{
 											"type": "span",
@@ -47,7 +47,7 @@
 								"key": ".1",
 								"props": {
 									"className": "",
-									"to": "/r@c/-/info/undefined/undefined/-/undefined",
+									"to": "/r/-/info/undefined/undefined/-/undefined",
 									"children": [
 										"»"
 									],
@@ -101,8 +101,7 @@
 							}
 						},
 						"showMax": 3,
-						"repo": "r",
-						"rev": "c"
+						"repo": "r"
 					}
 				},
 				{
