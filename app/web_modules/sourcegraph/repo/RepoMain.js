@@ -109,7 +109,7 @@ class RepoMain extends React.Component {
 		if (context.userAgentIsBot) {
 			return;
 		}
-		
+
 		if (build && build.Error && build.Error.response && build.Error.response.status === 404) {
 			// No build exists, so create one.
 			Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(repo, this.props.commitID, guessBranchName(this.props.rev), null));
