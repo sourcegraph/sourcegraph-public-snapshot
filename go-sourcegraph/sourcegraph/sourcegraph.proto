@@ -1338,11 +1338,21 @@ message Def {
 	graph.Def Def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 	pbtypes.HTML DocHTML = 2;
 	graph.DefFormatStrings FmtStrings = 3;
+
+	// StartLine and EndLine are populated if
+	// DefGetOptions.ComputeLineRange is true.
+	uint32 StartLine = 4;
+	uint32 EndLine = 5;
 }
 
 // DefGetOptions specifies options for DefsService.Get.
 message DefGetOptions {
 	bool Doc = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+
+	// ComputeLineRange is whether the server should compute the start
+	// and end line numbers (1-indexed). This incurs additional cost,
+	// so it's not always desired.
+	bool ComputeLineRange = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
 // DefListOptions specifies options for DefsService.List.

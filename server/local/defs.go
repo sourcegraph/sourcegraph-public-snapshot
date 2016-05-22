@@ -1,8 +1,11 @@
 package local
 
 import (
+	"fmt"
 	"log"
 	"path"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -48,8 +51,52 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 			def.DocHTML = htmlutil.SanitizeForPB(def.Docs[0].Data)
 		}
 	}
+	if op.Opt.ComputeLineRange {
+		startLine, endLine, err := computeLineRange(ctx, sourcegraph.TreeEntrySpec{
+			RepoRev: sourcegraph.RepoRevSpec{
+				RepoSpec: sourcegraph.RepoSpec{URI: defSpec.Repo},
+				CommitID: defSpec.CommitID,
+			},
+			Path: def.File,
+		}, def.DefStart, def.DefEnd)
+		if err != nil {
+			log15.Warn("Defs.Get: failed to compute line range.", "err", err, "repo", defSpec.Repo, "commitID", defSpec.CommitID, "file", def.File)
+		}
+		def.StartLine = startLine
+		def.EndLine = endLine
+	}
 	populateDefFormatStrings(def)
 	return def, nil
+}
+
+func computeLineRange(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, startByte, endByte uint32) (startLine, endLine uint32, err error) {
+	entry, err := (&repoTree{}).Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: entrySpec,
+	})
+	if err != nil {
+		return
+	}
+
+	const max = 1024 * 1024 // 1 MB max size
+	if len(entry.Contents) > max {
+		err = fmt.Errorf("file exceeds max size (%d bytes)", max)
+		return
+	}
+
+	line := uint32(1)
+	for i, c := range entry.Contents {
+		if uint32(i) == startByte {
+			startLine = line
+		}
+		if uint32(i) == endByte {
+			endLine = line
+			break
+		}
+		if c == '\n' {
+			line++
+		}
+	}
+	return
 }
 
 // get returns the def with the given def key (and no additional
