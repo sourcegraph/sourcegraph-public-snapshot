@@ -4,7 +4,7 @@
 
 ```
 server
-├── app <-- React/Redux applicaiton providing definition-based code search
+├── app <-- React/Redux application providing definition-based code search
 ├── chrome
 │   └── extension
 │       └── background
