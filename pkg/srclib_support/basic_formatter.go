@@ -9,6 +9,7 @@ import (
 // Registers def formatter for defs made by basic toolchains (PHP, ObjC) and
 // TypeScript toolchain
 func init() {
+	graph.RegisterMakeDefFormatter("basic-css", newBasicFormatter("CSS"))
 	graph.RegisterMakeDefFormatter("basic-php", newBasicFormatter("PHP"))
 	graph.RegisterMakeDefFormatter("basic-objc", newBasicFormatter("Objective-C"))
 	graph.RegisterMakeDefFormatter("TypeScriptModule", newBasicFormatter("TypeScript"))
