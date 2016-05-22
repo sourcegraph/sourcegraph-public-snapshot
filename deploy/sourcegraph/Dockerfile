@@ -1,7 +1,8 @@
 FROM alpine:3.2
 MAINTAINER Sourcegraph Team <support@sourcegraph.com>
 
-RUN echo '@edge http://nl.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories
+RUN echo 'http://repos.lax-noc.com/alpine/v3.2/main' > /etc/apk/repositories
+RUN echo '@edge http://repos.lax-noc.com/alpine/edge/main' >> /etc/apk/repositories
 
 RUN apk add --update --update-cache \
   openssh \
