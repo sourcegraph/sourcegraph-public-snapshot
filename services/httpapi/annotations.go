@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 func serveAnnotations(w http.ResponseWriter, r *http.Request) error {

@@ -30,8 +30,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	appdashcli "sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	appdashcli "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
 	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
 
@@ -495,7 +495,7 @@ func bareEnvConfig() []string {
 // occurrence). Note that you should delete srclib-sample's .git and
 // testdata dirs and NOT check them into the sourcegraph repo.
 func SrclibSampleToolchain(buildDocker bool) (dir, srclibpath, dockerImage string) {
-	p, err := build.Default.Import("sourcegraph.com/sourcegraph/sourcegraph/util/testutil", "", build.FindOnly)
+	p, err := build.Default.Import("sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil", "", build.FindOnly)
 	if err != nil {
 		log.Fatal("Couldn't find testutil package (while getting SRCLIBPATH for test app):", err)
 	}

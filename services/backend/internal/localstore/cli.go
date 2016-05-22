@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 )
 
 func init() {

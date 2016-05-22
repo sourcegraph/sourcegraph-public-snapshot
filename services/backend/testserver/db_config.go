@@ -9,9 +9,9 @@ import (
 
 	"gopkg.in/gorp.v1"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testdb"
 )
 
 // dbConfig is embedded in TestServer.

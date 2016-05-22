@@ -11,8 +11,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/textutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/timeutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/textutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/timeutil"
 )
 
 func init() {

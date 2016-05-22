@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 type DefSearchResult struct {

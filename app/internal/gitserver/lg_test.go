@@ -9,8 +9,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 func TestGitServerWithAnonymousReaders(t *testing.T) {

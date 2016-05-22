@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil/srclibtest"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil/srclibtest"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 

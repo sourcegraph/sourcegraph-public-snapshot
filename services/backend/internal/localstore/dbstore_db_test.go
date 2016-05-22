@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testdb"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
 )
 
 func init() {

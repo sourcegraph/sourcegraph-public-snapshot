@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"reflect"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/schema"

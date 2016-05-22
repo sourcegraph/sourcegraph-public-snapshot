@@ -24,7 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/expvarutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/expvarutil"
 )
 
 func initStressTest(g *flags.Command) {

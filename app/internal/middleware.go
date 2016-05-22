@@ -1,6 +1,6 @@
 package internal
 
-import "sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 
 // Middleware is a list of HTTP middleware to apply to app HTTP
 // requests.

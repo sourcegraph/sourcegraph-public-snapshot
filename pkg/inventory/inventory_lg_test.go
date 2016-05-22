@@ -9,8 +9,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 func TestBuildRepo_serverside_hosted_lg(t *testing.T) {

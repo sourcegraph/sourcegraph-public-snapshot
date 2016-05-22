@@ -3,7 +3,7 @@ package localstore
 import (
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 type contextKey int

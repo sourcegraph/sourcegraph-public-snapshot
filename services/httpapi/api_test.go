@@ -2,9 +2,9 @@ package httpapi
 
 import (
 	"github.com/gorilla/mux"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 )
 
 func init() {

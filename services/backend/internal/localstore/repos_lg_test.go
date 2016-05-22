@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 // TestRepos_CreateStartsBuild_lg tests that creating a mirror repository

@@ -7,11 +7,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/oauth2util"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 // A ContextFunc is called before a method executes and lets you customize its context.

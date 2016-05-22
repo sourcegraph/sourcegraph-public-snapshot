@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"gopkg.in/gorp.v1"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 )
 
 func TestIsPQErrorUniqueViolation(t *testing.T) {

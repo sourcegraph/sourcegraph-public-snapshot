@@ -8,7 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/graphstoreutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/graphstoreutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 

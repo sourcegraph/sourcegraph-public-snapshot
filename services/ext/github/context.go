@@ -6,10 +6,10 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 )
 
 func init() {

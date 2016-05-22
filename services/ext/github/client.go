@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
 )
 
 var rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{

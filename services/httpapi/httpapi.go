@@ -17,11 +17,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
 )
 
 // NewHandler returns a new API handler that uses the provided API

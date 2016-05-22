@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/fileutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/fileutil"
 )
 
 var (

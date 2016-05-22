@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
 )
 
 func TestRepoTree_Search_lg(t *testing.T) {

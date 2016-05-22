@@ -9,7 +9,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/expvarutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/expvarutil"
 )
 
 func startDebugServer(addr string) {

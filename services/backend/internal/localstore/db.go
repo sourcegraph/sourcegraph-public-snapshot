@@ -11,7 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/gorp.v1"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 )
 
 var (
