@@ -106,12 +106,14 @@ class InjectApp extends React.Component {
 		return {user, repo, rev, path};
 	}
 
-	viewingGoBlob(path) {
+	supportsAnnotatingFile(path) {
 		if (!path) return false;
 
 		const pathParts = path.split("/");
-		const lang = pathParts[pathParts.length - 1].split(".")[1] || null;
-		return window.location.href.split("/")[5] === "blob" && document.querySelector(".file") && lang && lang.toLowerCase() === "go";
+		let lang = pathParts[pathParts.length - 1].split(".")[1] || null;
+		lang = lang ? lang.toLowerCase() : null;
+		const supportedLang = lang === "go" || lang === "java";
+		return window.location.href.split("/")[5] === "blob" && document.querySelector(".file") && supportedLang;
 	}
 
 	// refreshState is called whenever this component is mounted or
@@ -131,7 +133,7 @@ class InjectApp extends React.Component {
 
 		this.props.actions.setRepoRev(repo, rev);
 		this.props.actions.setPath(path);
-		if (repo && rev && this.viewingGoBlob(path)) {
+		if (repo && rev && this.supportsAnnotatingFile(path)) {
 			this.props.actions.getAnnotations(repo, rev, path);
 		}
 
