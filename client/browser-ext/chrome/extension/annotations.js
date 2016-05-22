@@ -128,10 +128,13 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 
 	// if there is a match
 	if (!annotating && matchDetails) {
-		const url = urlToDef(matchDetails.URL);
+		// Handle non-GitHub defs by going to Sourcegraph.
+		const defIsOnGitHub = matchDetails.URL && matchDetails.URL.includes("github.com/");
+
+		const url = defIsOnGitHub ? urlToDef(matchDetails.URL) : `https://sourcegraph.com${matchDetails.URL}`;
 		if (!url) return c;
 
-		const insert = `<a href="${url}" data-sourcegraph-ref data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
+		const insert = `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
 		
 		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
