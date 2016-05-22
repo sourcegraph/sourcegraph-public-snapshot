@@ -252,7 +252,7 @@ class InjectApp extends React.Component {
 		let fileElem = document.querySelector(".file .blob-wrapper");
 		if (fileElem) {
 			if (document.querySelector(".vis-private") && !this.props.accessToken) {
-				console.error("Sourcegraph chrome extension will not work on private code until you login on Sourcegraph.com");
+				console.error("To use the Sourcegraph Chrome extension on private code, sign in at https://sourcegraph.com and add your repositories.");
 			} else {
 				addAnnotations(json);
 			}
