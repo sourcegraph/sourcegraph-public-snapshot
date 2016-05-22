@@ -15,9 +15,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/envutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/envutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/appdashctx"
 )
 
 func init() {

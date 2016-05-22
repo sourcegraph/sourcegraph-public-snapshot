@@ -14,12 +14,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/httpapi/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided

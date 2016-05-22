@@ -15,7 +15,7 @@ package svc
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 

@@ -7,10 +7,10 @@ import (
 	"net/url"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
 
 func TestGitServerWithAnonymousReaders(t *testing.T) {

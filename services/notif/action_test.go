@@ -3,7 +3,7 @@ package notif
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 func TestGenerateMessage(t *testing.T) {

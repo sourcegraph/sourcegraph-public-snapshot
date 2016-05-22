@@ -21,13 +21,13 @@ import (
 	appauth "sourcegraph.com/sourcegraph/sourcegraph/app/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var (

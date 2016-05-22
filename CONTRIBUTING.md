@@ -7,7 +7,7 @@ developers to make getting your contribution into Sourcegraph easier.
 ## Getting started
 
 - Clone the repo from https://sourcegraph.com/sourcegraph/sourcegraph
-- Read the README.dev.md for build instructions
+- Read the docs/dev.md for build instructions
 
 ## Contacting us
 
@@ -41,7 +41,7 @@ Thanks for your contributions!
 
 ### Code style
 
-See our [README.style.md](README.style.md) for more information.
+See our [docs/style.md](docs/style.md) for more information.
 
 ### Commit message format
 

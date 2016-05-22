@@ -15,12 +15,12 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sqs/pbtypes"
 )
 

@@ -9,8 +9,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 )
 
 func init() {

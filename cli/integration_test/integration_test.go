@@ -16,7 +16,7 @@ import (
 	"os"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
 
 // h is the host:port address of the test server.

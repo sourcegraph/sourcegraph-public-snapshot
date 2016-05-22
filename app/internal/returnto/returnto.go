@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/util/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 // ParamName is the URL query param name for the "return-to" URL.

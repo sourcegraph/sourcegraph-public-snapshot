@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
 
 func TestWorker_BuildRepo_noSrclib_pass(t *testing.T) {

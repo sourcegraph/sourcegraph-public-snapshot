@@ -11,7 +11,7 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
 
 	// Server
-	_ "sourcegraph.com/sourcegraph/sourcegraph/server/cmd"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cmd"
 
 	// Events
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/events"
@@ -22,8 +22,8 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/papertrail"
 
 	// Misc.
+	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil/cli"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/wellknown"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/cli"
 )
 
 func main() {

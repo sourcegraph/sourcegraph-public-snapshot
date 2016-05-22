@@ -11,9 +11,9 @@ import (
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 )
 
 type execRequest struct {
@@ -172,7 +172,7 @@ func init() {
 }
 
 func observeExec(req *execRequest, start time.Time, status string) {
-	repo := util.GetTrackedRepo(req.Repo)
+	repo := repotrackutil.GetTrackedRepo(req.Repo)
 	cmd := ""
 	if len(req.Args) > 0 {
 		cmd = req.Args[0]

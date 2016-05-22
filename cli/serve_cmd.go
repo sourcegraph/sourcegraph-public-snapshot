@@ -30,31 +30,31 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/go-flags"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/httpapi"
-	"sourcegraph.com/sourcegraph/sourcegraph/httpapi/router"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
-	"sourcegraph.com/sourcegraph/sourcegraph/server"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -358,7 +358,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	c.initializeEventListeners(clientCtx, idKey, appURL)
 
 	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
-		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		grpcSrv := server.New(server.Config(serverCtxFunc))
 
 		// Handler that sends traffic to either Web or gRPC depending
 		// on content-type
@@ -389,7 +389,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		go func() { log.Fatal(srv.Serve(anyListener)) }()
 
 		// gRPC
-		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		grpcSrv := server.New(server.Config(serverCtxFunc))
 		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
 
 		go func() {

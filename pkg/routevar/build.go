@@ -3,7 +3,7 @@ package routevar
 import (
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 func BuildRouteVars(s sourcegraph.BuildSpec) map[string]string {

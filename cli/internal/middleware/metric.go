@@ -9,10 +9,10 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -56,7 +56,7 @@ func Metrics(next http.Handler) http.Handler {
 			"route":  name,
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(code),
-			"repo":   util.GetTrackedRepo(r.URL.Path),
+			"repo":   repotrackutil.GetTrackedRepo(r.URL.Path),
 		}
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
