@@ -4,7 +4,8 @@ import {Link} from "react-router";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import TreeStore from "sourcegraph/tree/TreeStore";
-
+import Dispatcher from "sourcegraph/Dispatcher";
+import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {urlToTree} from "sourcegraph/tree/routes";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
@@ -22,10 +23,23 @@ class DefNavContext extends Container {
 	reconcileState(state, props) {
 		state.repo = props.repo;
 		state.rev = props.rev;
+		state.commitID = props.commitID;
 
-		const srclibDataVersion = props.commitID ? TreeStore.srclibDataVersions.get(state.repo, props.commitID) : null;
+		state.srclibDataVersion = props.commitID ? TreeStore.srclibDataVersions.get(state.repo, props.commitID) : null;
+
 		const defPath = props.params.splat[1];
-		state.defPos = srclibDataVersion && srclibDataVersion.CommitID ? DefStore.defs.getPos(state.repo, srclibDataVersion.CommitID, defPath) : null;
+		state.defPos = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.getPos(state.repo, state.srclibDataVersion.CommitID, defPath) : null;
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || (!nextState.srclibDataVersion && prevState.srclibDataVersion !== nextState.srclibDataVersion)) {
+			if (nextState.commitID && !nextState.srclibDataVersion) {
+				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID));
+			}
+		}
+
+		// Rely on the main page's components to get the def, which populates the
+		// defPos (if it isn't already populated).
 	}
 
 	stores() { return [DefStore, TreeStore]; }
