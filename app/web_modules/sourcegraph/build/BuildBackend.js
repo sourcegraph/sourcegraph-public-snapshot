@@ -77,7 +77,7 @@ const BuildBackend = {
 						.catch((err) => ({Error: err}))
 						.then((data) => {
 							Dispatcher.Stores.dispatch(new BuildActions.BuildFetched(action.repo, data.ID, data));
-							if (!data.Error) {
+							if (!data.Error && action.redirectAfterCreation) {
 								browserHistory.push(urlToBuild(action.repo, data.ID));
 							}
 						})

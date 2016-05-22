@@ -6,6 +6,7 @@ import RepoMain from "sourcegraph/repo/RepoMain";
 import {renderToString} from "sourcegraph/util/componentTestUtils";
 import {render} from "sourcegraph/util/renderTestUtils";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as BuildActions from "sourcegraph/build/BuildActions";
 
 describe("RepoMain", () => {
 	it("should show an error page if the repo failed to load", () => {
@@ -22,6 +23,13 @@ describe("RepoMain", () => {
 		it("should trigger WantCreateRepo for just-resolved remote repos", () => {
 			const res = render(<RepoMain repo="r" repoResolution={{Result: {RemoteRepo: {GitHubID: 123}}}} location={{pathname: "/r", state: {}}} />);
 			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {GitHubID: 123})]);
+		});
+	});
+
+	describe("build creation", () => {
+		it("should trigger CreateBuild when there is no build", () => {
+			const res = render(<RepoMain repo="r" commitID="c" rev="v" build={{Error: {response: {status: 404}}}} location={{pathname: "/r", state: {}}} />);
+			expect(res.actions).to.eql([new BuildActions.CreateBuild("r", "c", "v", null)]);
 		});
 	});
 });

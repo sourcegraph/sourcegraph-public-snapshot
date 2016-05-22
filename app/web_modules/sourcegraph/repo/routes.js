@@ -13,9 +13,10 @@ const common = {
 		require.ensure([], (require) => {
 			if (!_components) {
 				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
+				const withRepoBuild = require("sourcegraph/build/withRepoBuild").default;
 				_components = {
 					navContext: withResolvedRepoRev(require("sourcegraph/repo/NavContext").default, false),
-					main: withResolvedRepoRev(require("sourcegraph/repo/RepoMain").default, true),
+					main: withResolvedRepoRev(withRepoBuild(require("sourcegraph/repo/RepoMain").default), true),
 				};
 			}
 			callback(null, _components);

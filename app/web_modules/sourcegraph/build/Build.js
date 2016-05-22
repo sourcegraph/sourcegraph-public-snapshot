@@ -48,3 +48,10 @@ export function elapsed(buildOrTask) {
 		</div>
 	);
 }
+
+// E.g., extract "master" from "master~10".
+export function guessBranchName(rev) {
+	if (!rev) return null;
+	if (rev.length === 40) return null;
+	return rev.replace(/[~^].*$/, "");
+}

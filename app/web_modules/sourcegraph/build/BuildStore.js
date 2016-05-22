@@ -38,7 +38,14 @@ export class BuildStore extends Store {
 			get(repo, build) {
 				return this.content[keyFor(repo, build)] || null;
 			},
+
+			// listNewestByCommitID returns the latest builds for the given repo
+			// and commit ID. If you used WantNewestBuildForCommit, this may
+			// only be 1 build. After the fetch completes (regardless of success),
+			// listNewestByCommitID always returns a non-null value (an empty array
+			// if there are no builds).
 			listNewestByCommitID(repo, commitID) {
+				if (!this._fetchedForCommit[keyFor(repo, commitID)]) return null;
 				const builds = Object.values(this.content).filter((b) =>
 					b.Repo === repo && b.CommitID === commitID
 				);

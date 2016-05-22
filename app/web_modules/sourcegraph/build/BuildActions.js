@@ -47,11 +47,12 @@ export class BuildsFetched {
 }
 
 export class CreateBuild {
-	constructor(repo, commitID, branch, tag) {
+	constructor(repo, commitID, branch, tag, redirectAfterCreation) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.branch = branch;
 		this.tag = tag;
+		this.redirectAfterCreation = redirectAfterCreation; // HACK
 	}
 }
 

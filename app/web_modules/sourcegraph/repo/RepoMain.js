@@ -7,10 +7,13 @@ import Modal, {setLocationModalState} from "sourcegraph/components/Modal";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Repo.css";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as BuildActions from "sourcegraph/build/BuildActions";
+import "sourcegraph/build/BuildBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import context from "sourcegraph/app/context";
+import {guessBranchName} from "sourcegraph/build/Build";
 
 import Header from "sourcegraph/components/Header";
 
@@ -24,6 +27,7 @@ class RepoMain extends React.Component {
 		commitID: React.PropTypes.string,
 		resolvedRev: React.PropTypes.object,
 		repoResolution: React.PropTypes.object,
+		build: React.PropTypes.object,
 		repoObj: React.PropTypes.object,
 		main: React.PropTypes.element,
 		isCloning: React.PropTypes.bool,
@@ -47,6 +51,7 @@ class RepoMain extends React.Component {
 		this._dismissTreeSearchModal = this._dismissTreeSearchModal.bind(this);
 
 		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
+		this._buildUpdated(this.props.repo, this.props.build);
 	}
 
 	state: {
@@ -70,6 +75,12 @@ class RepoMain extends React.Component {
 		if (this.props.repoResolution !== nextProps.repoResolution) {
 			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
 		}
+
+		if (this.props.build !== nextProps.build && !this.props.build) {
+			// Check for !this.props.build to avoid a loop where
+			// after we create a build, this gets triggered again.
+			this._buildUpdated(nextProps.repo, nextProps.build);
+		}
 	}
 
 	componentWillUnmount() {
@@ -90,6 +101,13 @@ class RepoMain extends React.Component {
 			}
 
 			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.Result.RemoteRepo));
+		}
+	}
+
+	_buildUpdated(repo: string, build: Object) {
+		if (build && build.Error && build.Error.response && build.Error.response.status === 404) {
+			// No build exists, so create one.
+			Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(repo, this.props.commitID, guessBranchName(this.props.rev), null));
 		}
 	}
 

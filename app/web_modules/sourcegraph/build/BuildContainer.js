@@ -95,7 +95,7 @@ class BuildContainer extends Container {
 				<div styleName="actions">
 					<Link to={urlToBuilds(this.state.repo)}><Button size="large" outline={true}>View All Builds</Button></Link>
 					{this.context.user && this.context.user.Admin && <Button style={{marginLeft: "1.5rem"}} size="small" outline={true} onClick={() => {
-						Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.build.Repo, this.state.build.CommitID, this.state.build.Branch, this.state.build.Tag));
+						Dispatcher.Backends.dispatch(new BuildActions.CreateBuild(this.state.build.Repo, this.state.build.CommitID, this.state.build.Branch, this.state.build.Tag, true));
 					}}>Rebuild</Button>}
 				</div>
 				<BuildHeader build={this.state.build} commit={this.state.commit} />
