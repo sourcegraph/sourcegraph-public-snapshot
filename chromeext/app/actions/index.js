@@ -69,7 +69,7 @@ export function getAnnotations(repo, rev, path) {
 			rev = json.CommitID;
 			if (state.annotations.content[keyFor(repo, rev, path)]) return Promise.resolve(); // nothing to do; already have annotations
 			dispatch({type: types.WANT_ANNOTATIONS, repo, rev, path});
-			return fetch(`https://sourcegraph.com/.api/annotations?Entry.RepoRev.URI=${encodeURIComponent(repo)}&Entry.RepoRev.Rev=${encodeURIComponent(rev)}&Entry.RepoRev.CommitID=&Entry.Path=${encodeURIComponent(path)}&Range.StartByte=0&Range.EndByte=0`)
+			return fetch(`https://sourcegraph.com/.api/annotations?Entry.RepoRev.URI=${encodeURIComponent(repo)}&Entry.RepoRev.CommitID=${encodeURIComponent(rev)}&Entry.Path=${encodeURIComponent(path)}&Range.StartByte=0&Range.EndByte=0`)
 				.then((json) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, json}))
 				.catch((err) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, err}));
 		});
