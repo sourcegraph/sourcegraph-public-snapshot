@@ -4,7 +4,7 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph/mock"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -30,7 +30,7 @@ type mocks struct {
 }
 
 type mockServers struct {
-	// TODO(sqs): move this to go-sourcegraph
+	// TODO(sqs): move this to ./api/sourcegraph
 	Accounts     mock.AccountsServer
 	Auth         mock.AuthServer
 	Builds       mock.BuildsServer

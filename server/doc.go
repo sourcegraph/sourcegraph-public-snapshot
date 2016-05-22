@@ -11,7 +11,7 @@ Config func.
 
 SERVERS VS. STORES
 
-The public API service interfaces are defined in go-sourcegraph's
+The public API service interfaces are defined in ./api/sourcegraph's
 package sourcegraph (in the file sourcegraph.proto). The server
 package contains multiple implementations of these services
 interfaces. The primary implementations are in server/local;

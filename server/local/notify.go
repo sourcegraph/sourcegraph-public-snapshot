@@ -5,7 +5,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
 	"sourcegraph.com/sqs/pbtypes"
 )

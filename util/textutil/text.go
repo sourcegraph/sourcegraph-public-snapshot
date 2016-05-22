@@ -6,7 +6,7 @@ import (
 	"html"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 
 	"github.com/microcosm-cc/bluemonday"
 )

@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 func TestSchemaMatches(t *testing.T) {

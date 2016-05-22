@@ -2,8 +2,8 @@ package httptestutil
 
 import (
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph/mock"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 )
 
 type MockClients struct {
@@ -12,7 +12,7 @@ type MockClients struct {
 	// handlers.
 	Ctx context.Context
 
-	// TODO(sqs): move this to go-sourcegraph
+	// TODO(sqs): move this to ./api/sourcegraph
 	Annotations  mock.AnnotationsClient
 	Accounts     mock.AccountsClient
 	Auth         mock.AuthClient

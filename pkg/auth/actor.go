@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 // Actor represents an agent that accesses resources. It can represent

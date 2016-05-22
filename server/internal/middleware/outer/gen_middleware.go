@@ -10,7 +10,7 @@ import (
 
 func main() {
 	svcs := []string{
-		"../../../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
+		"../../../../api/sourcegraph/sourcegraph.pb.go",
 		"../../../../vendor/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
 	}
 	gen.Generate("outer_middleware.go", tmpl, svcs, nil, "")
@@ -39,7 +39,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sqs/pbtypes"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )

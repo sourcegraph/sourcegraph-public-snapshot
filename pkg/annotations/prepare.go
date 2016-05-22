@@ -3,7 +3,7 @@ package annotations
 import (
 	"sort"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 // Prepare should be called on annotations intended for the client to

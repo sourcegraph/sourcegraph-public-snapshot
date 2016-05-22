@@ -10,7 +10,7 @@ import (
 
 func main() {
 	svcs := []string{
-		"../../go-sourcegraph/sourcegraph/sourcegraph.pb.go",
+		"../../api/sourcegraph/sourcegraph.pb.go",
 		"../../vendor/sourcegraph.com/sourcegraph/srclib/store/pb/srcstore.pb.go",
 	}
 	gen.Generate("context.go", tmpl, svcs, nil, "")
@@ -33,7 +33,7 @@ package svc
 import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 
