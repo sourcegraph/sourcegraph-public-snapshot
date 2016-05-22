@@ -11,7 +11,7 @@ import (
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
 
 	// Server
-	_ "sourcegraph.com/sourcegraph/sourcegraph/server/cmd"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cmd"
 
 	// Events
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/events"

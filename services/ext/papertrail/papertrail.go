@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 
 	"github.com/sourcegraph/go-papertrail/papertrail"
 	"golang.org/x/net/context"

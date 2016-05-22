@@ -15,7 +15,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/httptestutil"
 
 	"sync"

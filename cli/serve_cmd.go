@@ -44,7 +44,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
-	"sourcegraph.com/sourcegraph/sourcegraph/server"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
@@ -358,7 +358,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	c.initializeEventListeners(clientCtx, idKey, appURL)
 
 	serveHTTPS := func(l net.Listener, srv *http.Server, addr string) {
-		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		grpcSrv := server.New(server.Config(serverCtxFunc))
 
 		// Handler that sends traffic to either Web or gRPC depending
 		// on content-type
@@ -389,7 +389,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		go func() { log.Fatal(srv.Serve(anyListener)) }()
 
 		// gRPC
-		grpcSrv := server.NewServer(server.Config(serverCtxFunc))
+		grpcSrv := server.New(server.Config(serverCtxFunc))
 		go func() { log.Fatal(grpcSrv.Serve(grpcListener)) }()
 
 		go func() {

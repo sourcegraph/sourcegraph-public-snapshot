@@ -12,7 +12,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/appdash"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/traceutil/appdashctx"
 )
