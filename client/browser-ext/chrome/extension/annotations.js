@@ -204,11 +204,9 @@ function addPopover(el) {
 			.then((json) => {
 				let html;
 				if (json.Data) {
-					if (json.DocHTML){
-						html = `<div><div class=${styles.popoverTitle}>${json.Kind} <b style="color:#4078C0">${json.Name}</b>${json.FmtStrings.Type.ScopeQualified}</div><div>${json.DocHTML.__html}</div><div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
-					} else {
-						html = `<div><div class=${styles.popoverTitle}>${json.Kind} <b style="color:#4078C0">${json.Name}</b>${json.FmtStrings.Type.ScopeQualified}</div><div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
-					}
+					const f = json.FmtStrings;
+					const doc = json.DocHTML ? `<div>${json.DocHTML.__html}</div>` : "";
+					html = `<div><div class=${styles.popoverTitle}>${f.DefKeyword || ""}${f.DefKeyword ? " " : ""}<b style="color:#4078C0">${f.Name.Unqualified}</b>${f.NameAndTypeSeparator || ""}${f.Type.ScopeQualified === f.DefKeyword ? "" : f.Type.ScopeQualified}</div>${doc}<div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
 				}
 				popoverCache[url] = html;
 				cb(html);
