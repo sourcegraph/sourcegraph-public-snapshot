@@ -4,7 +4,7 @@ This directory contains all of the Sourcegraph E2E page tests which are tested
 from an end user's perspective (i.e. from within an actual web browser) using
 [Selenium](http://www.seleniumhq.org/).
 
-- These tests should be run locally as you would any other Go tests (see `README.dev.md`).
+- These tests should be run locally as you would any other Go tests (see `docs/dev.md`).
 - These tests are run automatically against sourcegraph.com and, in the event of
   a regression in the deployed version, a rollback will occur automatically.
 

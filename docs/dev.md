@@ -118,7 +118,7 @@ To run a specific package's tests:
 go test ./util/textutil
 ```
 
-Learn more at [README.tests.md](README.tests.md).
+Learn more at [docs/testing.md](docs/testing.md).
 
 ## godep
 
@@ -208,7 +208,7 @@ README.md for instructions on how to install them.
 The Sourcegraph repository enforces some code standards via `make
 test`, which is also run in CI.
 
-Read more about our style in [README.style.md](README.style.md).
+Read more about our style in [docs/style.md](docs/style.md).
 
 ## Windows notes
 

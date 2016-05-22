@@ -32,7 +32,7 @@ Want to make Sourcegraph better? Great! Check out
 welcome all types of contributions--code, documentation, assets,
 community support, and user feedback.
 
-Our [developer README](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/README.dev.md)
+Our [developer README](https://sourcegraph.com/sourcegraph/sourcegraph@master/-/blob/docs/dev.md)
 is a good place to start.
 
 ## Security
