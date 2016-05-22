@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store"
@@ -90,7 +90,7 @@ func (s *instrumentedGraphStore) opObserve(method, repo string, start time.Time,
 		isError = "true"
 	}
 	if repo != "" {
-		repo = util.GetTrackedRepo(repo)
+		repo = repotrackutil.GetTrackedRepo(repo)
 	}
 	opDuration.WithLabelValues(s.name, method, repo, isError).Observe(time.Since(start).Seconds())
 }

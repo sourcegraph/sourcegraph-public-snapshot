@@ -10,7 +10,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 )
 
 const (
@@ -41,7 +41,7 @@ func init() {
 // Enqueue queues a mirror repo for refresh. If asUser is not nil, that user's
 // auth token will be used for performing the fetch from the remote host.
 func Enqueue(repoSpec sourcegraph.RepoSpec, asUser *sourcegraph.UserSpec) {
-	enqueueCounter.WithLabelValues(util.GetTrackedRepo(repoSpec.String())).Inc()
+	enqueueCounter.WithLabelValues(repotrackutil.GetTrackedRepo(repoSpec.String())).Inc()
 	RepoUpdater.enqueue(&repoUpdateOp{RepoSpec: repoSpec, AsUser: asUser})
 }
 
@@ -92,7 +92,7 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 
 	select {
 	case ru.queue <- op:
-		acceptedCounter.WithLabelValues(util.GetTrackedRepo(op.RepoSpec.String())).Inc()
+		acceptedCounter.WithLabelValues(repotrackutil.GetTrackedRepo(op.RepoSpec.String())).Inc()
 		ru.recent[op.RepoSpec] = now
 	default:
 		// Skip since queue is full.

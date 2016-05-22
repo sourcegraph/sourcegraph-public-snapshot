@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/statsutil"
 	"sourcegraph.com/sqs/pbtypes"
@@ -298,7 +298,7 @@ func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueN
 }
 
 func observeNewBuild(b *sourcegraph.Build) {
-	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Repo)}
+	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(b.Repo)}
 	buildsCreate.With(labels).Inc()
 }
 
@@ -319,14 +319,14 @@ func observeFinishedBuild(b *sourcegraph.Build) {
 	duration := b.EndedAt.Time().Sub(b.StartedAt.Time())
 	labels := prometheus.Labels{
 		"state": state,
-		"repo":  util.GetTrackedRepo(b.Repo),
+		"repo":  repotrackutil.GetTrackedRepo(b.Repo),
 	}
 	buildsDuration.With(labels).Observe(duration.Seconds())
 	buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 }
 
 func observeDequeuedBuild(b *sourcegraph.BuildJob) {
-	labels := prometheus.Labels{"repo": util.GetTrackedRepo(b.Spec.Repo.URI)}
+	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(b.Spec.Repo.URI)}
 	buildsDequeue.With(labels).Inc()
 }
 

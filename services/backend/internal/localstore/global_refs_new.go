@@ -14,8 +14,8 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/util"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/dbutil"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -58,7 +58,7 @@ func init() {
 type globalRefsNew struct{}
 
 func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	trackedRepo := util.GetTrackedRepo(op.Def.Repo)
+	trackedRepo := repotrackutil.GetTrackedRepo(op.Def.Repo)
 	observe := func(part string, start time.Time) {
 		globalRefsDuration.WithLabelValues(trackedRepo, part).Observe(time.Since(start).Seconds())
 	}
