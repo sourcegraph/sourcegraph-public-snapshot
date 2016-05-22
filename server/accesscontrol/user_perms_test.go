@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"golang.org/x/net/context"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 func TestVerifyAccess(t *testing.T) {

@@ -3,8 +3,8 @@ package localstore
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 // directory is a DB-backed implementation of the Directory store.

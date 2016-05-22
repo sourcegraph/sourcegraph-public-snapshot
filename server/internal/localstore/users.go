@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func init() {

@@ -9,9 +9,9 @@ import (
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc/metadata"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/accesstoken"
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/accesstoken"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
 )
 
 func TestGRPCMiddlewareExpiredToken(t *testing.T) {

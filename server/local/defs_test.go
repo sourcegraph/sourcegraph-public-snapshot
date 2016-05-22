@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/store"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store/mockstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 )
 
 func TestDefsService_List_Repos(t *testing.T) {

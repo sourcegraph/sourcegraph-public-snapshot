@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/platform"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/platform"
 )
 
 func TestReposService_Get(t *testing.T) {

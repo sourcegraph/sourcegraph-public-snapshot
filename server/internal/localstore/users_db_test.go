@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func newCreateUserFunc(ctx context.Context) func(user sourcegraph.User, email sourcegraph.EmailAddr) (*sourcegraph.UserSpec, error) {

@@ -1,8 +1,8 @@
 package local
 
 import (
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"

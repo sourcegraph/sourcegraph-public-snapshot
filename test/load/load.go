@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/e2etest/e2etestuser"
+	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 
 	vegeta "github.com/tsenart/vegeta/lib"
 

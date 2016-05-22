@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 // TestAccounts_Create_ok tests the behavior of Accounts.Create when

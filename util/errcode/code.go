@@ -7,8 +7,8 @@ import (
 
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 
 	"github.com/gorilla/schema"
 	"github.com/sourcegraph/go-github/github"

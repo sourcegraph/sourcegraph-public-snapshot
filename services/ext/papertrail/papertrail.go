@@ -5,8 +5,8 @@ import (
 	"os"
 	"strconv"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 
 	"github.com/sourcegraph/go-papertrail/papertrail"
 	"golang.org/x/net/context"

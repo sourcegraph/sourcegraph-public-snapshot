@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/authutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/testserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/executil"
 	"sourcegraph.com/sourcegraph/sourcegraph/util/testutil"

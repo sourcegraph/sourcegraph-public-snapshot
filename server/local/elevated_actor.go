@@ -2,7 +2,7 @@ package local
 
 import (
 	"golang.org/x/net/context"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/auth"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 // elevatedActor returns an actor with admin access to the stores.

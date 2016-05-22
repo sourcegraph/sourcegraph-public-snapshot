@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {

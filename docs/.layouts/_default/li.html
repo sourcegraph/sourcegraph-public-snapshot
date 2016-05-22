@@ -1,5 +1,0 @@
-<li>
-	<a href="{{ .Permalink }}">{{ .Title }}</a>
-	{{ with .Description }}<span>--- {{.}}</span>{{end}}
-	{{if not .Date.IsZero}}<div class="meta">{{ .Date.Format "Mon, Jan 2, 2006" }}</div>{{end}}
-</li>

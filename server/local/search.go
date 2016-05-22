@@ -3,12 +3,12 @@ package local
 import (
 	"strings"
 
-	srch "sourcegraph.com/sourcegraph/sourcegraph/search"
+	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 var Search sourcegraph.SearchServer = &search{}

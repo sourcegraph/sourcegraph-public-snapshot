@@ -2,8 +2,8 @@ package localstore
 
 import (
 	"golang.org/x/net/context"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/server/serverctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/store"
 )
 
 func init() {

@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "sourcegraph.com/sourcegraph/sourcegraph/conf/env"
+	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 )
 
 func init() {
