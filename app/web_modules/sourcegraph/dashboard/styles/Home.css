@@ -55,7 +55,7 @@
 }
 
 .h1 {
-	composes: tc f1-ns f2 fw6 from typography;
+	composes: tc f1-ns f2 fw5 from typography;
 	composes: mt3 mv0 center from base;
 	width: 100%;
 	max-width: 740px;
