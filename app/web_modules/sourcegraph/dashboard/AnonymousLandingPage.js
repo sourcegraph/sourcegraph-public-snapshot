@@ -5,8 +5,6 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
-import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
-
 
 class AnonymousLandingPage extends Component {
 	static contextTypes = {
@@ -33,13 +31,8 @@ class AnonymousLandingPage extends Component {
 							<div styleName="hero-body">
 								<p style={{display: "none"}}>Search, browse code like an IDE, and see live usage examples.</p>
 								<p>Search for a function/type/package &amp; see how other developers use it, across all public and (your) private code.</p>
-								<LocationStateToggleLink href="/join"
-									modalName="signup" location={location}
-									onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal", {source: "homepage-maincontent"})}
-									className={base.mr4}>
-									<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
-								</LocationStateToggleLink>
-								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
+								<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
+								<Link styleName="try-it" to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
 							</div>
 						</div>
 					</div>

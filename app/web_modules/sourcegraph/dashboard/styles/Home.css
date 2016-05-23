@@ -45,15 +45,24 @@
 	max-width: 1200px;
 }
 
+.alt-cta {
+	display: inline-block;
+	white-space: nowrap;
+}
+.try-it {
+	composes: ph3 from base;
+	composes: alt-cta;
+}
+
 .h1 {
-	composes: tc f1 from typography;
+	composes: tc f1-ns f2 fw6 from typography;
 	composes: mt3 mv0 center from base;
 	width: 100%;
 	max-width: 740px;
 }
 
 .h2 {
-	composes: f3 fw5 from typography;
+	composes: f3-ns f4 fw5 from typography;
 	composes: cool-mid-gray from colors;
 	composes: mv3 center from base;
 	width: 100%;
@@ -241,6 +250,7 @@
 .bottom-link {
 	composes: ml3 pa1 from base;
 	composes: bottom-text;
+	composes: alt-cta;
 }
 .bottom-link:hover {
 	color: white;
