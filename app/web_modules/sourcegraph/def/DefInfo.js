@@ -26,6 +26,7 @@ class DefInfo extends Container {
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		features: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	static propTypes = {
@@ -88,6 +89,7 @@ class DefInfo extends Container {
 	_onNextPage() {
 		let nextPage = this.state.currPage + 1;
 		this.setState({currPage: nextPage, nextPageLoading: true});
+		this.context.eventLogger.logEvent("RefsPaginatorClicked", {page: nextPage});
 	}
 
 	render() {
