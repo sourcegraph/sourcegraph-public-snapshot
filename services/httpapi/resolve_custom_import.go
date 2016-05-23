@@ -51,7 +51,7 @@ func serveResolveCustomImportsInfo(w http.ResponseWriter, r *http.Request) error
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("repo, pkg, and def must be specified in query string")}
 	}
 
-	return writeJSON(w, resolvedPath{Path: fmt.Sprintf("/%s/-/def/GoPackage/%s/-/%s/-/info", repo, pkg, def)})
+	return writeJSON(w, resolvedPath{Path: fmt.Sprintf("/%s/-/info/GoPackage/%s/-/%s", repo, pkg, def)})
 }
 
 // serveResolveCustomImportsInfo returns the def/ref info path after resolving custom import paths
@@ -80,6 +80,11 @@ func serveResolveCustomImportsTree(w http.ResponseWriter, r *http.Request) error
 
 	if repo == "" || pkg == "" {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("repo, pkg, and path must be specified in query string")}
+	}
+
+	if path == "" {
+		// if pkg == repo, thus path == "", the Path returned from this API should be the pathname to the repo
+		return writeJSON(w, resolvedPath{Path: fmt.Sprintf("/%s", repo)})
 	}
 
 	return writeJSON(w, resolvedPath{Path: fmt.Sprintf("/%s/-/tree%s", repo, path)})
