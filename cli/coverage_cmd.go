@@ -441,16 +441,6 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 		return nil, err
 	}
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: res.CommitID}
-	// dataVer, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: repoRevSpec})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if dataVer.CommitID == "" {
-	// 	return nil, fmt.Errorf("missing srclib data version for %s@%s", repoURI, repo.DefaultBranch)
-	// }
-
-	// c.PutSrclibDataVersion(repoRevKey(&repoRevSpec), dataVer.CommitID)
-	// repoRevSpec.CommitID = dataVer.CommitID
 
 	tree, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
 	if err != nil {
