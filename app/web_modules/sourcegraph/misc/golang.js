@@ -35,7 +35,7 @@ export const route: Route = {
 						...nextRouterState.location,
 						pathname: data.Path,
 						query: {
-							utm_source: "sgedge",
+							utm_source: "sourcegrapheditor",
 						},
 					});
 					callback();
@@ -48,7 +48,7 @@ export const route: Route = {
 						...nextRouterState.location,
 						pathname: data.Path,
 						query: {
-							utm_source: "sgedge",
+							utm_source: "sourcegrapheditor",
 						},
 					});
 					callback();
