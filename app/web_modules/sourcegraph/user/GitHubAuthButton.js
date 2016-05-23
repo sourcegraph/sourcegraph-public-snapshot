@@ -11,7 +11,7 @@ function GitHubAuthButton(props, {eventLogger}) {
 	return (
 		<a href={props.url ? props.url : urlToGitHubOAuth} styleName="github"
 			onClick={() => eventLogger.logEvent("InitiateGitHubOAuth2Flow")} {...props}>
-			<Button type="button" formNoValidate={true} color="blue" block={true}>
+			<Button type="button" outline={Boolean(props.outline)} formNoValidate={true} color={props.color || "blue"} block={true}>
 				<GitHubIcon />&nbsp; {props.children}
 			</Button>
 		</a>
@@ -19,6 +19,8 @@ function GitHubAuthButton(props, {eventLogger}) {
 }
 GitHubAuthButton.propTypes = {
 	url: React.PropTypes.string,
+	color: React.PropTypes.string,
+	outline: React.PropTypes.bool,
 	children: React.PropTypes.oneOfType([
 		React.PropTypes.arrayOf(React.PropTypes.element),
 		React.PropTypes.element,

@@ -10,16 +10,27 @@
 	composes: mt4 from base;
 }
 
+@value container-max-width 600px;
+
 .container {
 	composes: containerFixed from layout;
 	composes: col-12-ns col-11 from grid;
 	composes: center from base;
+	max-width: container-max-width;
 }
 
 .container-with-globe {
 	composes: container;
-	composes: mv6 from base;
+	composes: mt5 mb3 from base;
 	background: url('../../../../assets/img/world-illo.svg') no-repeat top center;
+	min-height: 262px; /* height of world-illo.svg */
+}
+.hero {
+	composes: pt4 ph2 from base;
+	composes: tc from typography;
+}
+.hero-body {
+	composes: f4 from typography;
 }
 
 .bg {
@@ -35,16 +46,16 @@
 }
 
 .h1 {
-	composes: f1 fw4 tc from typography;
-	composes: center mv5 from base;
+	composes: tc f1 from typography;
+	composes: mt3 mv0 center from base;
 	width: 100%;
 	max-width: 740px;
 }
 
 .h2 {
-	composes: f2 fw4 tc from typography;
+	composes: f3 fw5 from typography;
 	composes: cool-mid-gray from colors;
-	composes: mt5 mb6 center from base;
+	composes: mv3 center from base;
 	width: 100%;
 	max-width: 620px;
 }
@@ -61,13 +72,13 @@
 @value line-width: 175px;
 
 .short-purple-line {
-	composes: ba bw3 mt5 from base;
+	composes: ba bw3 mv3 from base;
 	composes: b--purple from colors;
 	width: line-width;
 }
 
 .short-blue-line {
-	composes: ba bw3 mt4 from base;
+	composes: ba bw3 mv3 from base;
 	composes: b--blue from colors;
 	width: line-width;
 }
@@ -113,34 +124,38 @@
 	composes: col-8-ns from grid;
 	z-index: 20;
 	position: relative;
-	margin-bottom: -20px;
+	margin-bottom: -30px;
 }
 
 .responsive-container {
 	composes: col-9 from grid;
- 	composes: pt2 pb6 center from base;
+ 	composes: center from base;
+	max-width: container-max-width;
 }
 
 .lead {
 	composes: f4 tc from typography;
 	composes: cool-mid-gray from colors;
-	composes: mt5 mb5 from base;
+	composes: mv4 from base;
 }
 
 .box-purple-gradient {
-	composes: pv6 from base;
 	background-image: url('../../../../assets/img/world-illo-faded.svg'), linear-gradient(#8E2DFC, #B114F7);
 	background-repeat: no-repeat;
 	background-position: 110% 30%;
 }
 
-.text-white {
-	composes: white from colors;
+.box-demo {
+	composes: box-purple-gradient;
+	composes: pv5 mv5 from base;
 }
-
-.header-white {
-	composes: f2 from typography;
-	composes: white from colors;
+.demo-container {
+	composes: responsive-container;
+}
+.demo-animation {
+	composes: bg-light-purple from colors;
+	composes: br2 from base;
+	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
 }
 
 .header-5 {
@@ -172,6 +187,14 @@
 	display: inline-block;
 }
 
+.language-container {
+	composes: responsive-container;
+	composes: pb5 from base;
+}
+.language-header {
+	composes: h1;
+	composes: pv4 from base;
+}
 .language {
 	composes: f2 from typography;
 	composes: cool-gray-8 from colors;
@@ -192,35 +215,34 @@
 	composes: col-ns col-5-ns from grid;
 }
 
-.img-left-4 {
-	composes: col-ns col-6-ns from grid;
-	composes: bg-light-purple from colors;
-	composes: br2 from base;
-	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
-}
-
 .how-img {
 	composes: br3 br--top from base;
 	display: block;
 	width: 100%;
+	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
 }
 
-.question {
-		composes: ml3 from base;
-		padding-top: 16px;
+.box-bottom {
+	composes: box-purple-gradient;
+	composes: pv6 from base;
 }
-
-.question-mark {
-	composes: bg-purple white from colors;
-	composes: br100 ma3 fl from base;
-	composes: tc v-btm f4 from typography;
-	width: 32px;
-	height: 32px;
-	padding-top: 4px;
-	box-sizing: border-box;
+.bottom-container {
+	composes: responsive-container;
+	composes: pb2 center from base;
+	composes: tc from typography;
 }
-
-.content-right-5 {
-	composes: col-ns col-5-ns col-right-ns from grid;
-	composes: mt4 from base;
+.bottom-header {
+	composes: f3 from typography;
+	composes: white from colors;
+}
+.bottom-text {
+	composes: white from colors;
+}
+.bottom-link {
+	composes: ml3 pa1 from base;
+	composes: bottom-text;
+}
+.bottom-link:hover {
+	color: white;
+	opacity: 0.8;
 }
