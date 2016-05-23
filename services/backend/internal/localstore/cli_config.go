@@ -12,6 +12,7 @@ func init() {
 			Accounts:           &accounts{},
 			Builds:             &builds{},
 			BuildLogs:          &buildLogs{},
+			Channel:            &channel{},
 			Directory:          &directory{},
 			ExternalAuthTokens: &externalAuthTokens{},
 			GlobalDefs:         &globalDefs{},

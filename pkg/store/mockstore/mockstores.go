@@ -21,6 +21,7 @@ type Stores struct {
 	Accounts           Accounts
 	BuildLogs          BuildLogs
 	Builds             Builds
+	Channel            Channel
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	GlobalDefs         GlobalDefs
@@ -41,6 +42,7 @@ func (s *Stores) Stores() store.Stores {
 		Accounts:           &s.Accounts,
 		BuildLogs:          &s.BuildLogs,
 		Builds:             &s.Builds,
+		Channel:            &s.Channel,
 		Directory:          &s.Directory,
 		ExternalAuthTokens: &s.ExternalAuthTokens,
 		GlobalDefs:         &s.GlobalDefs,

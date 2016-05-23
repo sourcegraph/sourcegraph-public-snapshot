@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"golang.org/x/net/context"
+
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -32,6 +34,8 @@ func HTTP(err error) int {
 		return http.StatusNotFound
 	case store.ErrNoExternalAuthToken:
 		return http.StatusUnauthorized
+	case context.DeadlineExceeded:
+		return http.StatusRequestTimeout
 	}
 
 	if (vcs.IsRepoNotExist(err) && err.(vcs.RepoNotExistError).CloneInProgress) || strings.Contains(err.Error(), vcs.RepoNotExistError{CloneInProgress: true}.Error()) {

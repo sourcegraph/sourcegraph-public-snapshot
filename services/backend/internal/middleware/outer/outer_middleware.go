@@ -34,6 +34,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Annotations:       wrappedAnnotations{ctxFunc, services},
 		Auth:              wrappedAuth{ctxFunc, services},
 		Builds:            wrappedBuilds{ctxFunc, services},
+		Channel:           wrappedChannel{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
 		Deltas:            wrappedDeltas{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
@@ -758,6 +759,41 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, v1 *sourcegraph.BuildsDe
 	}
 
 	rv, err := innerSvc.DequeueNext(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+type wrappedChannel struct {
+	ctxFunc  ContextFunc
+	services svc.Services
+}
+
+func (s wrappedChannel) Send(ctx context.Context, v1 *sourcegraph.ChannelSendOp) (returnedResult *sourcegraph.ChannelSendResult, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Channel.Send: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.ChannelOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Channel")
+	}
+
+	rv, err := innerSvc.Send(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

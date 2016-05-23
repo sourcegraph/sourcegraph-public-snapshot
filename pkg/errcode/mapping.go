@@ -39,6 +39,7 @@ var grpcToHTTPMap = map[codes.Code]int{
 	codes.OK:                 http.StatusOK,
 	codes.Unknown:            http.StatusInternalServerError,
 	codes.InvalidArgument:    http.StatusBadRequest,
+	codes.DeadlineExceeded:   http.StatusRequestTimeout,
 	codes.NotFound:           http.StatusNotFound,
 	codes.AlreadyExists:      http.StatusConflict,
 	codes.PermissionDenied:   http.StatusForbidden,

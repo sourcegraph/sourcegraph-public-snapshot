@@ -121,3 +121,30 @@
 	max-width: 340px;
 	min-width: 300px;
 }
+
+.channel {
+	display: inline-block;
+	composes: pv1 ph2 br2 ba from base;
+	composes: f4 from typography;
+	text-transform: uppercase;
+}
+
+.channel-closed {
+	composes: channel;
+	composes: white bg-gray from colors;
+}
+
+.channel-open {
+	composes: channel;
+	composes: white bg-green-8 b--green from colors;
+}
+
+.channel-connecting {
+	composes: channel;
+	composes: white bg-blue-8 b--blue from colors;
+}
+
+.channel-error {
+	composes: channel;
+	composes: white bg-red-8 b--red from colors;
+}

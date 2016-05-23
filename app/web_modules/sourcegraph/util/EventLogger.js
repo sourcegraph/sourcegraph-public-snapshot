@@ -350,10 +350,14 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 		_logView(routes: Array<Route>, location: Location) {
 			let eventProps = {
 				referred_by_chrome_ext: false,
+				referred_by_sourcegraph_editor: false,
 				url: location.pathname,
 			};
 			if (location.query && location.query["utm_source"] === "chromeext") {
 				eventProps.referred_by_chrome_ext = true;
+			}
+			if (location.query && location.query["utm_source"] === "sourcegrapheditor") {
+				eventProps.referred_by_sourcegraph_editor = true;
 			}
 
 			const viewName = getViewName(routes);

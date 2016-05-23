@@ -840,3 +840,49 @@ func (s *SearchServer) RefreshIndex(v0 context.Context, v1 *sourcegraph.SearchRe
 }
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)
+
+type ChannelClient struct {
+	Listen_ func(ctx context.Context, in *sourcegraph.ChannelListenOp) (sourcegraph.Channel_ListenClient, error)
+	Send_   func(ctx context.Context, in *sourcegraph.ChannelSendOp) (*sourcegraph.ChannelSendResult, error)
+}
+
+func (s *ChannelClient) Listen(ctx context.Context, in *sourcegraph.ChannelListenOp, opts ...grpc.CallOption) (sourcegraph.Channel_ListenClient, error) {
+	return s.Listen_(ctx, in)
+}
+
+func (s *ChannelClient) Send(ctx context.Context, in *sourcegraph.ChannelSendOp, opts ...grpc.CallOption) (*sourcegraph.ChannelSendResult, error) {
+	return s.Send_(ctx, in)
+}
+
+var _ sourcegraph.ChannelClient = (*ChannelClient)(nil)
+
+type Channel_ListenClient struct {
+	Recv_ func() (*sourcegraph.ChannelAction, error)
+}
+
+func (s *Channel_ListenClient) Recv() (*sourcegraph.ChannelAction, error) { return s.Recv_() }
+
+var _ sourcegraph.Channel_ListenClient = (*Channel_ListenClient)(nil)
+
+type ChannelServer struct {
+	Listen_ func(v0 *sourcegraph.ChannelListenOp, v1 sourcegraph.Channel_ListenServer) error
+	Send_   func(v0 context.Context, v1 *sourcegraph.ChannelSendOp) (*sourcegraph.ChannelSendResult, error)
+}
+
+func (s *ChannelServer) Listen(v0 *sourcegraph.ChannelListenOp, v1 sourcegraph.Channel_ListenServer) error {
+	return s.Listen_(v0, v1)
+}
+
+func (s *ChannelServer) Send(v0 context.Context, v1 *sourcegraph.ChannelSendOp) (*sourcegraph.ChannelSendResult, error) {
+	return s.Send_(v0, v1)
+}
+
+var _ sourcegraph.ChannelServer = (*ChannelServer)(nil)
+
+type Channel_ListenServer struct {
+	Send_ func(v0 *sourcegraph.ChannelAction) error
+}
+
+func (s *Channel_ListenServer) Send(v0 *sourcegraph.ChannelAction) error { return s.Send_(v0) }
+
+var _ sourcegraph.Channel_ListenServer = (*Channel_ListenServer)(nil)

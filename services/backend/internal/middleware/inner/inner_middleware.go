@@ -42,6 +42,8 @@ func Services() svc.Services {
 
 		Builds: wrappedBuilds{},
 
+		Channel: wrappedChannel{},
+
 		Defs: wrappedDefs{},
 
 		Deltas: wrappedDeltas{},
@@ -373,6 +375,21 @@ func (s wrappedBuilds) DequeueNext(ctx context.Context, param *sourcegraph.Build
 	res, err = backend.Services.Builds.DequeueNext(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Builds.DequeueNext returned nil, nil")
+	}
+	return
+}
+
+type wrappedChannel struct{}
+
+func (s wrappedChannel) Send(ctx context.Context, param *sourcegraph.ChannelSendOp) (res *sourcegraph.ChannelSendResult, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Channel", "Send", param)
+	defer func() {
+		trace.After(ctx, "Channel", "Send", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Channel.Send(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Channel.Send returned nil, nil")
 	}
 	return
 }

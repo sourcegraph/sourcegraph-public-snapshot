@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/format"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"log"
 	"os"
@@ -34,13 +35,18 @@ type Method struct {
 
 func typeName(e ast.Expr, pkg string, thisPkg string) string {
 	var typ string
-	switch x := e.(*ast.StarExpr).X.(type) {
+	switch x := e.(type) {
 	case *ast.Ident:
 		typ = x.Name
+
 	case *ast.SelectorExpr:
 		pkg = x.X.(*ast.Ident).Name
 		typ = x.Sel.Name
-	default:
+
+	case *ast.StarExpr:
+		return typeName(x.X, pkg, thisPkg)
+	}
+	if typ == "" {
 		panic("unexpected type")
 	}
 	if pkg == "pbtypes1" {
@@ -83,16 +89,27 @@ func Generate(outFile string, tmpl *template.Template, files []string, filter fu
 		}
 
 		for _, iface := range ifaces {
+			if strings.Contains(iface.Name.Name, "_") {
+				// Skip Abc_XyzServer interfaces for streaming
+				// methods.
+				continue
+			}
 			l := iface.Type.(*ast.InterfaceType).Methods.List
-			methods := make([]*Method, len(l))
-			for i, m := range l {
+			methods := make([]*Method, 0, len(l))
+			for _, m := range l {
 				t := m.Type.(*ast.FuncType)
-				methods[i] = &Method{
+
+				// Skip streaming methods.
+				if arg0Type := typeName(t.Params.List[0].Type, astFile.Name.Name, thisPkg); arg0Type != "context.Context" {
+					continue
+				}
+
+				methods = append(methods, &Method{
 					Name:       m.Names[0].Name,
 					Type:       t,
 					ParamType:  typeName(t.Params.List[1].Type, astFile.Name.Name, thisPkg),
 					ResultType: typeName(t.Results.List[0].Type, astFile.Name.Name, thisPkg),
-				}
+				})
 			}
 
 			svc := &Service{
@@ -129,4 +146,15 @@ func Generate(outFile string, tmpl *template.Template, files []string, filter fu
 	if _, err := f.Write(src); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func astString(fset *token.FileSet, x ast.Expr) string {
+	if x == nil {
+		return ""
+	}
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, fset, x); err != nil {
+		panic(err)
+	}
+	return buf.String()
 }

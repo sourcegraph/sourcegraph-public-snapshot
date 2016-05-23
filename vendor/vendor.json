@@ -230,6 +230,12 @@
 			"revisionTime": "2016-02-26T13:51:49-08:00"
 		},
 		{
+			"checksumSHA1": "UluBK/KntetOAdusj9Qamt8sFFg=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "1f512fc3f05332ba7117626cdfb4e07474e58e60",
+			"revisionTime": "2016-04-28T16:34:18Z"
+		},
+		{
 			"path": "github.com/howeyc/gopass",
 			"revision": "66487b23f2880ba32e185121d2cd51a338ea069a",
 			"revisionTime": "2016-03-03T14:01:16-06:00"

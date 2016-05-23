@@ -13,7 +13,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
 
-function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, eventLogger}) {
+function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
 	return (
 		<nav styleName={signedIn || location.pathname !== "/" ? "navbar" : ""} role="navigation">
@@ -73,6 +73,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 
 			{(signedIn || location.pathname !== "/") &&
 				<div styleName="actions">
+					{channelStatus && <div styleName="action"><div styleName={`channel-${channelStatus}`}>{channelStatus}</div></div>}
 					{user && <div style={{display: "inline-flex", alignItems: "center"}}>
 						<Link styleName="action" to="/repositories">Repositories</Link>
 						<Link styleName="action" to="/tools">Tools</Link>
@@ -111,6 +112,7 @@ function GlobalNav({navContext, location}, {user, siteConfig, signedIn, router, 
 GlobalNav.propTypes = {
 	navContext: React.PropTypes.element,
 	location: React.PropTypes.object.isRequired,
+	channelStatus: React.PropTypes.string,
 };
 GlobalNav.contextTypes = {
 	siteConfig: React.PropTypes.object.isRequired,

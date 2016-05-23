@@ -10,6 +10,7 @@ type Client struct {
 	Annotations  AnnotationsClient
 	Auth         AuthClient
 	Builds       BuildsClient
+	Channel      ChannelClient
 	Defs         DefsClient
 	Deltas       DeltasClient
 	Meta         MetaClient
@@ -38,6 +39,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 	c.Annotations = NewAnnotationsClient(conn)
 	c.Auth = NewAuthClient(conn)
 	c.Builds = NewBuildsClient(conn)
+	c.Channel = NewChannelClient(conn)
 	c.Defs = NewDefsClient(conn)
 	c.Deltas = NewDeltasClient(conn)
 	c.Meta = NewMetaClient(conn)

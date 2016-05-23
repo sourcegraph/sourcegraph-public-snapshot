@@ -2067,3 +2067,70 @@ service Search {
 	// should be executed regularly to keep the indexes up-to-date.
 	rpc RefreshIndex(SearchRefreshIndexOp) returns (pbtypes.Void);
 }
+
+// Channel manages a realtime communication channel between a client
+// and the Sourcegraph server.
+//
+// Any client can start listening on any channel, and any client can
+// send a message on any channel.
+//
+// It is currently used by editor plugins to cause the user's browser
+// to navigate in sync with the token under the cursor in the user's
+// editor.
+service Channel {
+	// Listen starts listening to a stream of actions for the given
+	// channel.
+	rpc Listen(ChannelListenOp) returns (stream ChannelAction);
+
+
+	// Send sends an action to all listeners on the given channel.
+	rpc Send(ChannelSendOp) returns (ChannelSendResult);
+}
+
+// ChannelListenOp is provided to a Channel.Listen call to initiate listening.
+message ChannelListenOp {
+	// Channel is the channel name to start listening for actions on.
+	//
+	// TODO(sqs): figure out how to separate channels, not rely on
+	// clients to create strong/secure channel names, and prevent
+	// guessing channels to snoop on other people's activity.
+	string Channel = 1;
+}
+
+// A ChannelAction is an action sent to all listeners on a given channel.
+message ChannelAction {
+	// Error is the Error that is occuring client-side
+	string Error = 1;
+
+	// Fix is the Fix for the Error
+	string Fix = 2;
+
+	// Package is a the package of the token under the cursor
+	string Package = 3;
+
+	// Repo is the repo that the package belongs to
+	string Repo = 4;
+
+	// Def is the definition 
+	string Def = 5;
+}
+
+// ChannelSendResult is provided to a Channel.Send call to send an action
+// to all listeners on a given channel.
+message ChannelSendOp {
+	// Channel is the channel name whose listeners should receive this
+	// action.
+	string Channel = 1;
+
+	// Action is the action to send.
+	ChannelAction Action = 2 [(gogoproto.nullable) = false];
+
+	// CheckForListeners is whether the Channel.Send call should wait to see
+	// if there are any listeners on the channel.
+	bool CheckForListeners = 3;
+}
+
+// ChannelSendResult describes the result of a Channel.Send call.
+message ChannelSendResult {
+	// No fields.
+}

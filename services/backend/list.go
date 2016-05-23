@@ -22,6 +22,7 @@ var Services = svc.Services{
 	Annotations:       Annotations,
 	Auth:              Auth,
 	Builds:            Builds,
+	Channel:           Channel,
 	Defs:              Defs,
 	Deltas:            Deltas,
 	Meta:              Meta,

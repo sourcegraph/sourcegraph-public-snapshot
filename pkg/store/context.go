@@ -22,6 +22,7 @@ type Stores struct {
 	Accounts           Accounts
 	BuildLogs          BuildLogs
 	Builds             Builds
+	Channel            Channel
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	GlobalDefs         GlobalDefs
@@ -43,6 +44,7 @@ const (
 	_AccountsKey contextKey = iota
 	_BuildLogsKey
 	_BuildsKey
+	_ChannelKey
 	_DirectoryKey
 	_ExternalAuthTokensKey
 	_GlobalDefsKey
@@ -68,6 +70,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Builds != nil {
 		ctx = WithBuilds(ctx, s.Builds)
+	}
+	if s.Channel != nil {
+		ctx = WithChannel(ctx, s.Channel)
 	}
 	if s.Directory != nil {
 		ctx = WithDirectory(ctx, s.Directory)
@@ -149,6 +154,20 @@ func BuildsFromContext(ctx context.Context) Builds {
 	s, ok := ctx.Value(_BuildsKey).(Builds)
 	if !ok || s == nil {
 		panic("no Builds set in context")
+	}
+	return s
+}
+
+// WithChannel returns a copy of parent with the given Channel store.
+func WithChannel(parent context.Context, s Channel) context.Context {
+	return context.WithValue(parent, _ChannelKey, s)
+}
+
+// ChannelFromContext gets the context's Channel store. If the store is not present, it panics.
+func ChannelFromContext(ctx context.Context) Channel {
+	s, ok := ctx.Value(_ChannelKey).(Channel)
+	if !ok || s == nil {
+		panic("no Channel set in context")
 	}
 	return s
 }

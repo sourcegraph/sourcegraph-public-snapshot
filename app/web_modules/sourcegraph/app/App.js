@@ -16,6 +16,7 @@ import {withFeaturesContext} from "sourcegraph/app/features";
 import {withSiteConfigContext} from "sourcegraph/app/siteConfig";
 import {withUserContext} from "sourcegraph/app/user";
 import {withAppdashRouteStateRecording} from "sourcegraph/app/appdash";
+import withChannelListener from "sourcegraph/channel/withChannelListener";
 
 const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.arrayOf(React.PropTypes.element),
@@ -30,7 +31,7 @@ function App(props, {signedIn}) {
 	return (
 		<div styleName={styleName}>
 			<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-			<GlobalNav navContext={props.navContext} location={props.location} />
+			<GlobalNav navContext={props.navContext} location={props.location} channelStatus={props.channelStatus}/>
 			<div styleName="main-content">{props.main}</div>
 			<Footer />
 		</div>
@@ -40,6 +41,7 @@ App.propTypes = {
 	main: reactElement,
 	navContext: reactElement,
 	location: React.PropTypes.object.isRequired,
+	channelStatus: React.PropTypes.string,
 };
 
 App.contextTypes = {
@@ -51,10 +53,12 @@ export const rootRoute: Route = {
 	component: withEventLoggerContext(EventLogger,
 		withViewEventsLogged(
 			withAppdashRouteStateRecording(
-				withSiteConfigContext(
-					withUserContext(
-						withFeaturesContext(
-							CSSModules(App, styles)
+				withChannelListener(
+					withSiteConfigContext(
+						withUserContext(
+							withFeaturesContext(
+								CSSModules(App, styles)
+							)
 						)
 					)
 				)
@@ -71,6 +75,8 @@ export const rootRoute: Route = {
 			callback(null, [
 				...require("sourcegraph/styleguide").routes,
 				...require("sourcegraph/home").routes,
+				...require("sourcegraph/channel").routes,
+				require("sourcegraph/misc/golang").route,
 				...require("sourcegraph/admin/routes").routes,
 				...require("sourcegraph/user").routes,
 				...require("sourcegraph/repo/routes").routes,
