@@ -20,7 +20,7 @@ development environment. Here's what you need:
 If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
 
-### Optional
+### Optional (but highly recommended)
 
 - [GitHub](https://github.com/settings/applications/new): Register
   your local instance of Sourcegraph as a GitHub OAuth application to
@@ -97,6 +97,13 @@ permanent for every shell session by adding the following line to your
 ulimit -n 10000
 ```
 
+You can also compile and install `src` directly:
+```
+go install ./cmd/src
+src -h
+```
+
+
 ## Test
 
 To run all tests:
@@ -120,48 +127,10 @@ go test ./util/textutil
 
 Learn more at [docs/testing.md](docs/testing.md).
 
-## godep
+## govendor
 
 The Sourcegraph repository uses
-[godep](https://github.com/tools/godep) to manage Go dependencies.
-
-The /vendor/ folder is used by Go 1.6, so `godep` is not needed for building or running tests.
-It's only used for updating and adding/removing dependencies to /vendor/ folder.
-
-```
-# Compile and install a new "src" to your PATH:
-go install ./cmd/src
-
-# Run some tests
-go test ./app/...
-
-# Run all tests
-go test $(go list ./... | grep -v /vendor)
-
-# Run some exectest-tagged tests (these tests invoke "src", so we must
-# first compile the latest "src" for them to invoke):
-go install ./cmd/src && go test -tags 'buildtest exectest' ./sgx
-```
-
-Also, keep in mind that after you update dependencies, you must re-run
-codegen (see the Codegen section for more info). Here's a one-liner
-for updating `go-sourcegraph` (the most commonly updated dependency):
-
-```
-godep update sourcegraph.com/sourcegraph/sourcegraph/go-sourcegraph/... && go generate ./...
-```
-
-When you add a new package dependency, you need to run `godep save
-./...` to add it. Note that this requires all dependencies to exist in
-your system GOPATH; to make that so, run `godep restore ./...`
-first. If any repos fail to clone, place them manually in the
-directories underneath your GOPATH where `godep` is expecting
-them. (With almost a hundred dependency repos, sometimes ephemeral
-errors cause clone failures.)
-
-Many people find `godep` confusing at first. It can be finnicky when
-running `godep update` and `godep save`. Ask someone if you run into
-issues with those.
+[govendor](https://github.com/kardianos/govendor) to manage Go dependencies.
 
 ## Codegen
 
@@ -181,7 +150,7 @@ Then run:
 make generate
 ```
 
-Note that you should always run this after you run `godep update` to
+Note that you should always run this after you run `govendor sync` to
 update dependencies.
 
 Also, sometimes there are erroneous diffs. This occurs for a few
@@ -198,10 +167,6 @@ we need to address):
 If you think a diff is erroneous, don't commit it. Add a tech debt
 item to the issue tracker and assign the person who you think is
 responsible (or ask).
-
-Finally, `go-sourcegraph` also uses many codegen tools. See its
-README.md for instructions on how to install them.
-
 
 ## Code standards
 
