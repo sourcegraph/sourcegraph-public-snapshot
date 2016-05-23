@@ -24,6 +24,9 @@ export const rel: {[key: RouteName]: string} = {
 	build: "builds/:id",
 	builds: "builds",
 	coverage: "coverage",
+	unitType: "*",
+	unit: "*",
+	path: "*",
 };
 
 export const abs: {[key: RouteName]: any} = {
@@ -46,9 +49,6 @@ export const abs: {[key: RouteName]: any} = {
 	blob: `${rel.repo}/-/${rel.blob}`,
 	build: `${rel.repo}/-/${rel.build}`,
 	builds: `${rel.repo}/-/${rel.builds}`,
-	unitType: "*",
-	unit: "*",
-	path: "*",
 	defFull: (repo, unitType, unit, path : string) => (`${repo}/-/def/${unitType}/${unit}/-/${path}`),
 };
 

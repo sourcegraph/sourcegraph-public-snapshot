@@ -42,6 +42,7 @@ const GLOBAL_DEFS_LIMIT = 3;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
 const MAX_QUERY_LENGTH = 32;
+const SRCLIB_CSS_UNITTYPE = "basic-css";
 
 function pathSplit(path: string): string[] {
 	if (path === "") throw new Error("invalid empty path");
@@ -567,7 +568,7 @@ class TreeSearch extends Container {
 	_encodeDefPath(defURL: string) : string {
 		let pattern = abs["defFull"](rel.repo, rel.unitType, rel.unit, rel.path);
 		const {paramValues} = matchPattern(pattern, defURL);
-		if (paramValues.length !== 4) {
+		if (!paramValues || paramValues.length !== 4) {
 			return defURL;
 		}
 		let url = abs["defFull"](paramValues[0], paramValues[1], paramValues[2], encodeURIComponent(paramValues[3]));
@@ -577,8 +578,7 @@ class TreeSearch extends Container {
 	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
 		let defURL = urlToDef(def, rev);
-		let ext = def.File.split(".").pop();
-		if (ext === "css") {
+		if (def.UnitType === SRCLIB_CSS_UNITTYPE) {
 			// URL encodes the def. path part of defURL, because it might contain special characters(Eg. "#", ".").
 			defURL = this._encodeDefPath(defURL);
 		}
