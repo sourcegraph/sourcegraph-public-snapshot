@@ -44,6 +44,7 @@ export default class RefsContainer extends Container {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -238,6 +239,7 @@ export default class RefsContainer extends Container {
 			newOpenFiles.delete(path);
 		} else {
 			newOpenFiles.add(path);
+			this.context.eventLogger.logEvent("RefsFileExpanded");
 		}
 		this.setState({shownFiles: newOpenFiles});
 	}
