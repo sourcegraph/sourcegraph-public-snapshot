@@ -29,8 +29,7 @@ class AnonymousLandingPage extends Component {
 							</h1>
 							<hr styleName="short-purple-line" />
 							<div styleName="hero-body">
-								<p style={{display: "none"}}>Search, browse code like an IDE, and see live usage examples.</p>
-								<p>Search for a function/type/package &amp; see how other developers use it, across all public and (your) private code.</p>
+								<p>Search for a function, type, or package, and see how other developers use it, across all public and (your) private code.</p>
 								<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
 								<Link styleName="try-it" to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
 							</div>
