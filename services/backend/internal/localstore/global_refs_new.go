@@ -105,15 +105,19 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 	// Force op.Def.Repo results to be first on the first page
 	var dbRefResult []*dbRefLocationsResult
+	dbRefResultDone := make(chan error, 1)
 	if opt.PageOrDefault() == 1 && len(opt.Repos) == 0 {
-		args := []interface{}{defKeyID, op.Def.Repo, opt.PerPageOrDefault()}
-		inner := "SELECT repo, file, count FROM global_refs_new WHERE def_key_id=$1 AND repo=$2 LIMIT $3"
-		sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + inner + ") res ORDER BY count DESC"
-		if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
-			return nil, err
-		}
-		observe("locationsrepo", start)
-		start = time.Now()
+		go func() {
+			start = time.Now()
+			args := []interface{}{defKeyID, op.Def.Repo, opt.PerPageOrDefault()}
+			inner := "SELECT repo, file, count FROM global_refs_new WHERE def_key_id=$1 AND repo=$2 LIMIT $3"
+			sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + inner + ") res ORDER BY count DESC"
+			_, err := graphDBH(ctx).Select(&dbRefResult, sql, args...)
+			observe("locationsrepo", start)
+			dbRefResultDone <- err
+		}()
+	} else {
+		dbRefResultDone <- nil
 	}
 
 	var args []interface{}
@@ -141,6 +145,10 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 	var dbRefResultMore []*dbRefLocationsResult
 	if _, err := graphDBH(ctx).Select(&dbRefResultMore, sql, args...); err != nil {
+		return nil, err
+	}
+	err = <-dbRefResultDone
+	if err != nil {
 		return nil, err
 	}
 	dbRefResult = append(dbRefResult, dbRefResultMore...)
