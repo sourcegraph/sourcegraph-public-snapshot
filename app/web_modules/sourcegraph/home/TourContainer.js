@@ -99,7 +99,7 @@ class TourContainer extends React.Component {
 								</p>
 							</ChecklistItem>
 							<ChecklistItem complete={this.context.githubToken !== null} className={base.mb5} actionText="Connect" actionOnClick={this._connectGitHubClicked.bind(this)}>
-								<Heading level="4">Connect with Github</Heading>
+								<Heading level="4">Connect with GitHub</Heading>
 								<p className={base.mt2} styleName="cool-mid-gray">
 									Connecting your account with GitHub puts Sourcegraph’s code intelligence to work on your private repositories.
 								</p>
