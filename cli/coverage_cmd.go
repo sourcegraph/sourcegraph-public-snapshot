@@ -40,6 +40,7 @@ func init() {
 
 	cache = &coverageCache{
 		DefsCache:              make(map[string]*defIndex),
+		ResolvedRevCache:       make(map[string]string),
 		SrclibDataVersionCache: make(map[string]string),
 	}
 }
@@ -106,6 +107,8 @@ func (idx *defIndex) put(key string, def *sourcegraph.Def) {
 type coverageCache struct {
 	DefsCacheMu            sync.Mutex
 	DefsCache              map[string]*defIndex // key is repo@commit
+	ResolvedRevMu          sync.Mutex
+	ResolvedRevCache       map[string]string // repo => commit
 	SrclibDataVersionMu    sync.Mutex
 	SrclibDataVersionCache map[string]string // repo@rev => commit
 
@@ -161,6 +164,30 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 	return dataVer
 }
 
+// getResolvedRev returns (or fetches) the absolute commit ID for the default branch
+// for a particular repo; it is threadsafe
+func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Context, repoSpec *sourcegraph.RepoSpec) (string, error) {
+	c.ResolvedRevMu.Lock()
+	defer c.ResolvedRevMu.Unlock()
+
+	if commitID, ok := c.ResolvedRevCache[repoSpec.URI]; ok {
+		return commitID, nil
+	}
+
+	repo, err := cl.Repos.Get(ctx, repoSpec)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: *repoSpec, Rev: repo.DefaultBranch})
+	if err != nil {
+		return "", err
+	}
+
+	c.ResolvedRevCache[repoSpec.URI] = res.CommitID
+	return res.CommitID, nil
+}
+
 // fetchAndIndexDefs fetches (and indexes) all of the defs for a repo@rev, then caches the result.
 // If the cache already contains data for repo@rev, it is returned immediately.
 func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec) *defIndex {
@@ -173,7 +200,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 	c.FetchDefsMu.Lock()
 	defer c.FetchDefsMu.Unlock()
 
-	rr := repoCommitKey(repoRev) // repo@commit
+	rr := repoRevKey(repoRev)
 	if idx := c.getDefIndex(rr); idx != nil {
 		return idx
 	}
@@ -209,13 +236,8 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 	return &idx
 }
 
-// repoRevKey returns the cache key for a repo@rev
+// repoRevKey returns the cache key for a repo@commit
 func repoRevKey(repoRev *sourcegraph.RepoRevSpec) string {
-	return fmt.Sprintf("%s@%s", repoRev.RepoSpec.URI, repoRev.CommitID)
-}
-
-// repoCommitKey returns the cache key for a repo@commit
-func repoCommitKey(repoRev *sourcegraph.RepoRevSpec) string {
 	return fmt.Sprintf("%s@%s", repoRev.RepoSpec.URI, repoRev.CommitID)
 }
 
@@ -408,6 +430,15 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		if err != nil {
 			return nil, err
 		}
+		if annRepoRev.CommitID == "" {
+			commitID, err := cache.getResolvedRev(cl, ctx, &annRepoRev.RepoSpec)
+			if err != nil || commitID == "" {
+				// The ref cannot be resolved to a def (e.g. the def repo doesn't exist);
+				// this is a normal condition for the coverage script so swallow the error and continue.
+				continue
+			}
+			annRepoRev.CommitID = commitID
+		}
 
 		defIdx := cache.fetchAndIndexDefs(cl, ctx, annRepoRev)
 		if defIdx == nil {
@@ -431,16 +462,11 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 	start := time.Now()
 
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
-	repo, err := cl.Repos.Get(ctx, &repoSpec)
+	commitID, err := cache.getResolvedRev(cl, ctx, &repoSpec)
 	if err != nil {
 		return nil, err
 	}
-
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoSpec, Rev: repo.DefaultBranch})
-	if err != nil {
-		return nil, err
-	}
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: res.CommitID}
+	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: commitID}
 
 	tree, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
 	if err != nil {
@@ -479,7 +505,6 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 		return nil, fmt.Errorf("coverage errors: %s", err)
 	}
 
-	fmt.Println("wooooooo we are done", len(repoCvg.Files))
 	summaryByLang := make(map[string]*fileCoverage)
 	for _, cv := range repoCvg.Files {
 		if _, ok := summaryByLang[cv.Language]; !ok {
