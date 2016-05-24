@@ -86,7 +86,7 @@ func (s *javaTokenizer) Next() *Token {
 			return nil
 		}
 		if r != scanner.Ident {
-		    continue
+			continue
 		}
 		text := s.scanner.TokenText()
 		if s.isKeyword(text) {
