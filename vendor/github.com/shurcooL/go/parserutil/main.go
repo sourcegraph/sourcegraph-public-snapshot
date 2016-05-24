@@ -1,5 +1,5 @@
-// Package gist5707298 offers convenience functions for parsing Go code to AST.
-package gist5707298
+// Package parserutil offers convenience functions for parsing Go code to AST.
+package parserutil
 
 import (
 	"go/ast"
@@ -8,7 +8,8 @@ import (
 )
 
 // ParseStmt is a convenience function for obtaining the AST of a statement x.
-// The position information recorded in the AST is undefined.
+// The position information recorded in the AST is undefined. The filename used
+// in error messages is the empty string.
 func ParseStmt(x string) (ast.Stmt, error) {
 	file, err := parser.ParseFile(token.NewFileSet(), "", "package p;func _(){\n//line :1\n"+x+"\n;}", 0)
 	if err != nil {
@@ -18,7 +19,8 @@ func ParseStmt(x string) (ast.Stmt, error) {
 }
 
 // ParseDecl is a convenience function for obtaining the AST of a declaration x.
-// The position information recorded in the AST is undefined.
+// The position information recorded in the AST is undefined. The filename used
+// in error messages is the empty string.
 func ParseDecl(x string) (ast.Decl, error) {
 	file, err := parser.ParseFile(token.NewFileSet(), "", "package p\n//line :1\n"+x+"\n", 0)
 	if err != nil {

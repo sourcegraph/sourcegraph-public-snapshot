@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/shurcooL/go/gists/gist6418290"
+	"github.com/shurcooL/go/reflectsource"
 )
 
 // Dump dumps goons to stdout.
@@ -25,22 +25,24 @@ func Fdump(w io.Writer, a ...interface{}) (n int, err error) {
 
 // DumpExpr dumps goon expressions to stdout.
 //
-// E.g.,
-//	somethingImportant := 5
-//	DumpExpr(somethingImportant)
+// E.g., this:
+//
+// 	somethingImportant := 5
+// 	DumpExpr(somethingImportant)
 //
 // Will print:
-//	somethingImportant = (int)(5)
+//
+// 	somethingImportant = (int)(5)
 func DumpExpr(a ...interface{}) (n int, err error) {
-	return os.Stdout.Write(bdumpNamed(gist6418290.GetParentArgExprAllAsString(), a...))
+	return os.Stdout.Write(bdumpNamed(reflectsource.GetParentArgExprAllAsString(), a...))
 }
 
 // SdumpExpr dumps goon expressions to a string.
 func SdumpExpr(a ...interface{}) string {
-	return string(bdumpNamed(gist6418290.GetParentArgExprAllAsString(), a...))
+	return string(bdumpNamed(reflectsource.GetParentArgExprAllAsString(), a...))
 }
 
 // FdumpExpr dumps goon expressions to a writer.
 func FdumpExpr(w io.Writer, a ...interface{}) (n int, err error) {
-	return w.Write(bdumpNamed(gist6418290.GetParentArgExprAllAsString(), a...))
+	return w.Write(bdumpNamed(reflectsource.GetParentArgExprAllAsString(), a...))
 }

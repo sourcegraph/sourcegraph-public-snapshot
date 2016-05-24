@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shurcooL/go/gists/gist6418462"
+	"github.com/shurcooL/go/reflectsource"
 )
 
 var config = struct {
@@ -260,7 +260,7 @@ func (d *dumpState) dump(v reflect.Value) {
 		printHexPtr(d.w, uintptr(v.Uint()))
 
 	case reflect.Func:
-		d.w.Write([]byte(gist6418462.GetFuncValueSourceAsString(v)))
+		d.w.Write([]byte(reflectsource.GetFuncValueSourceAsString(v)))
 
 	case reflect.UnsafePointer, reflect.Chan:
 		printHexPtr(d.w, v.Pointer())

@@ -19,7 +19,7 @@ func importPathToDir(importPath string) string {
 }
 
 // assets is a virtual filesystem that contains static files served by Sourcegraph app.
-var Assets = filter.New(
+var Assets = filter.Skip(
 	http.Dir(importPathToDir("sourcegraph.com/sourcegraph/sourcegraph/app/assets")),
 	filter.FilesWithExtensions(".go", ".html"),
 )

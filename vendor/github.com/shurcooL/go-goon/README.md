@@ -68,4 +68,4 @@ go-goon source was based on the existing source of [go-spew](https://github.com/
 License
 -------
 
--	[MIT License](http://opensource.org/licenses/mit-license.php)
+-	[MIT License](https://opensource.org/licenses/mit-license.php)

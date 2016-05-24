@@ -1,12 +1,10 @@
-// Package gist6445065 offers funcs to perform deep-search via reflect to find instances that satisfy given query.
-package gist6445065
+// Package reflectfind offers funcs to perform deep-search via reflect to find instances that satisfy given query.
+package reflectfind
 
-import (
-	"reflect"
-)
+import "reflect"
 
-// FindFirst finds the first instances of i that satisfies query within d.
-func FindFirst(d interface{}, query func(i interface{}) bool) interface{} {
+// First finds the first instances of i that satisfies query within d.
+func First(d interface{}, query func(i interface{}) bool) interface{} {
 	s := state{Visited: make(map[uintptr]struct{})}
 	return s.findFirst(reflect.ValueOf(d), query)
 }
@@ -60,8 +58,8 @@ func (s *state) findFirst(v reflect.Value, query func(i interface{}) bool) inter
 	return nil
 }
 
-// FindAll finds all instances of i that satisfy query within d.
-func FindAll(d interface{}, query func(i interface{}) bool) map[interface{}]struct{} {
+// All finds all instances of i that satisfy query within d.
+func All(d interface{}, query func(i interface{}) bool) map[interface{}]struct{} {
 	s := stateAll{state: state{Visited: make(map[uintptr]struct{})}, Found: make(map[interface{}]struct{})}
 	s.findAll(reflect.ValueOf(d), query)
 	return s.Found

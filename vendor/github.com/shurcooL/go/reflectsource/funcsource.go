@@ -1,5 +1,4 @@
-// Package gist6418462 implements functionality to get a string containing source code of provided func.
-package gist6418462
+package reflectsource
 
 import (
 	"fmt"
@@ -10,9 +9,8 @@ import (
 	"reflect"
 	"runtime"
 
-	. "github.com/shurcooL/go/gists/gist5639599"
-	. "github.com/shurcooL/go/gists/gist6433744"
-	. "github.com/shurcooL/go/gists/gist6445065"
+	"github.com/shurcooL/go/printerutil"
+	"github.com/shurcooL/go/reflectfind"
 )
 
 // GetSourceAsString returns the source of the func f.
@@ -45,7 +43,7 @@ func GetFuncValueSourceAsString(fv reflect.Value) string {
 		if err != nil {
 			return "<file not found>"
 		}
-		startIndex, endIndex = GetLineStartEndIndicies(b, line-1)
+		startIndex, endIndex = getLineStartEndIndicies(b, line-1)
 	}
 
 	fs := token.NewFileSet()
@@ -62,7 +60,7 @@ func GetFuncValueSourceAsString(fv reflect.Value) string {
 		}
 		return false
 	}
-	funcAst := FindFirst(fileAst, query)
+	funcAst := reflectfind.First(fileAst, query)
 
 	// If func literal wasn't found, try again looking for func declaration
 	if funcAst == nil {
@@ -73,12 +71,12 @@ func GetFuncValueSourceAsString(fv reflect.Value) string {
 			}
 			return false
 		}
-		funcAst = FindFirst(fileAst, query)
+		funcAst = reflectfind.First(fileAst, query)
 	}
 
 	if funcAst == nil {
 		return fmt.Sprintf("<func src not found at %v:%v>", file, line)
 	}
 
-	return SprintAst(fs, funcAst)
+	return printerutil.SprintAst(fs, funcAst)
 }

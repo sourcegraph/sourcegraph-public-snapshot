@@ -1,4 +1,4 @@
-// Package filter offers an http.FileSystem wrapper with the ability to ignore files.
+// Package filter offers an http.FileSystem wrapper with the ability to keep or skip files.
 package filter
 
 import (
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Func is a filtering function which is provided two arguments,
+// Func is a selection function which is provided two arguments,
 // its '/'-separated rooted absolute path (i.e., it always begins with "/"),
 // and the os.FileInfo of the considered file.
 //
@@ -18,22 +18,34 @@ import (
 // then the value of path will be "/dir/a".
 type Func func(path string, fi os.FileInfo) bool
 
-// New creates a filesystem that contains everything in source, except files for which
-// ignore returns true.
-func New(source http.FileSystem, ignore Func) http.FileSystem {
-	return &filterFS{source: source, ignore: ignore}
+// Keep returns a filesystem that contains only those entries in source for which
+// keep returns true.
+func Keep(source http.FileSystem, keep Func) http.FileSystem {
+	return &filterFS{source: source, keep: keep}
+}
+
+// Skip returns a filesystem that contains everything in source, except entries
+// for which skip returns true.
+func Skip(source http.FileSystem, skip Func) http.FileSystem {
+	keep := func(path string, fi os.FileInfo) bool {
+		return !skip(path, fi)
+	}
+	return &filterFS{source: source, keep: keep}
+}
+
+// New returns a filesystem that contains everything in source, except entries
+// for which skip returns true.
+//
+// Deprecated: Use Skip instead, it does the same thing and has a better name.
+//
+// TODO: Remove this after a few days/weeks after migrating all users of old API to new API.
+func New(source http.FileSystem, skip Func) http.FileSystem {
+	return Skip(source, skip)
 }
 
 type filterFS struct {
 	source http.FileSystem
-	ignore Func // Skip files that ignore returns true for.
-}
-
-// clean turns a potentially relative path into an absolute one.
-//
-// This is needed to normalize path parameter for ignore func.
-func (fs *filterFS) clean(path string) string {
-	return pathpkg.Clean("/" + path)
+	keep   Func // Keep entries that keep returns true for.
 }
 
 func (fs *filterFS) Open(path string) (http.File, error) {
@@ -48,7 +60,7 @@ func (fs *filterFS) Open(path string) (http.File, error) {
 		return nil, err
 	}
 
-	if fs.ignore(fs.clean(path), fi) {
+	if !fs.keep(clean(path), fi) {
 		// Skip.
 		f.Close()
 		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
@@ -66,7 +78,7 @@ func (fs *filterFS) Open(path string) (http.File, error) {
 
 	var entries []os.FileInfo
 	for _, fi := range fis {
-		if fs.ignore(fs.clean(pathpkg.Join(path, fi.Name())), fi) {
+		if !fs.keep(clean(pathpkg.Join(path, fi.Name())), fi) {
 			// Skip.
 			continue
 		}
@@ -78,6 +90,13 @@ func (fs *filterFS) Open(path string) (http.File, error) {
 		entries: entries,
 		modTime: fi.ModTime(),
 	}, nil
+}
+
+// clean turns a potentially relative path into an absolute one.
+//
+// This is needed to normalize path parameter for selection function.
+func clean(path string) string {
+	return pathpkg.Clean("/" + path)
 }
 
 // dir is an opened dir instance.

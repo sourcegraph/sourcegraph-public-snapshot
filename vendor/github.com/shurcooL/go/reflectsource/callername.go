@@ -1,5 +1,4 @@
-// Package gist6418290 implements ability to get name of caller funcs and parameters.
-package gist6418290
+package reflectsource
 
 import (
 	"bytes"
@@ -9,12 +8,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/shurcooL/go/gists/gist5639599"
-	"github.com/shurcooL/go/gists/gist5707298"
-	"github.com/shurcooL/go/gists/gist6445065"
+	"github.com/shurcooL/go/parserutil"
+	"github.com/shurcooL/go/printerutil"
+	"github.com/shurcooL/go/reflectfind"
 )
 
-// Gets the parent func as a string.
+// GetParentFuncAsString gets the parent func as a string.
 func GetParentFuncAsString() string {
 	// TODO: Replace use of debug.Stack() with direct use of runtime package...
 	// TODO: Use runtime.FuncForPC(runtime.Caller()).Name() to get func name if source code not found.
@@ -33,7 +32,7 @@ func GetParentFuncAsString() string {
 	return funcName + funcArgs
 }
 
-// Gets the parent func with its args as a string.
+// GetParentFuncArgsAsString gets the parent func with its args as a string.
 func GetParentFuncArgsAsString(args ...interface{}) string {
 	// TODO: Replace use of debug.Stack() with direct use of runtime package...
 	// TODO: Use runtime.FuncForPC(runtime.Caller()).Name() to get func name if source code not found.
@@ -58,7 +57,7 @@ func GetParentFuncArgsAsString(args ...interface{}) string {
 	return funcName + funcArgs
 }
 
-// Gets the expression as a string.
+// GetExprAsString gets the expression as a string.
 func GetExprAsString(_ interface{}) string {
 	return GetParentArgExprAsString(0)
 }
@@ -81,7 +80,7 @@ func getParent2ArgExprAllAsAst() []ast.Expr {
 
 	str := getLine(stack, 7)
 	str = str[strings.Index(str, ": ")+len(": "):]
-	p, err := gist5707298.ParseStmt(str)
+	p, err := parserutil.ParseStmt(str)
 	if err != nil {
 		return nil
 	}
@@ -94,12 +93,12 @@ func getParent2ArgExprAllAsAst() []ast.Expr {
 	}
 
 	query := func(i interface{}) bool {
-		if c, ok := i.(*ast.CallExpr); ok && nil != gist6445065.FindFirst(c.Fun, innerQuery) {
+		if c, ok := i.(*ast.CallExpr); ok && nil != reflectfind.First(c.Fun, innerQuery) {
 			return true
 		}
 		return false
 	}
-	callExpr, _ := gist6445065.FindFirst(p, query).(*ast.CallExpr)
+	callExpr, _ := reflectfind.First(p, query).(*ast.CallExpr)
 
 	if callExpr == nil {
 		return nil
@@ -107,7 +106,7 @@ func getParent2ArgExprAllAsAst() []ast.Expr {
 	return callExpr.Args
 }
 
-// Gets the argIndex argument expression of parent func call as a string.
+// GetParentArgExprAsString gets the argIndex argument expression of parent func call as a string.
 func GetParentArgExprAsString(argIndex uint32) string {
 	args := getParent2ArgExprAllAsAst()
 	if args == nil {
@@ -117,10 +116,10 @@ func GetParentArgExprAsString(argIndex uint32) string {
 		return "<out of range>"
 	}
 
-	return gist5639599.SprintAstBare(args[argIndex])
+	return printerutil.SprintAstBare(args[argIndex])
 }
 
-// Gets all argument expressions of parent func call as a string.
+// GetParentArgExprAllAsString gets all argument expressions of parent func call as a string.
 func GetParentArgExprAllAsString() []string {
 	args := getParent2ArgExprAllAsAst()
 	if args == nil {
@@ -129,7 +128,7 @@ func GetParentArgExprAllAsString() []string {
 
 	out := make([]string, len(args))
 	for i := range args {
-		out[i] = gist5639599.SprintAstBare(args[i])
+		out[i] = printerutil.SprintAstBare(args[i])
 	}
 	return out
 }

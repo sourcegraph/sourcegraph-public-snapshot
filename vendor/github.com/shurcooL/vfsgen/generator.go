@@ -278,10 +278,11 @@ var {{.VariableName}} = func() http.FileSystem {
 
 
 {{define "CompressedFileInfo-Before"}}		{{quote .Path}}: &_vfsgen_compressedFileInfo{
-			name:              {{quote .Name}},
-			modTime:           mustUnmarshalTextTime({{quoteBytes .ModTime.MarshalText}}),
+			name:             {{quote .Name}},
+			modTime:          mustUnmarshalTextTime({{quoteBytes .ModTime.MarshalText}}),
+			uncompressedSize: {{.UncompressedSize}},
+{{/* This blank line separating compressedContent is neccessary to prevent potential gofmt issues. See issue #19. */}}
 			compressedContent: []byte("{{end}}{{define "CompressedFileInfo-After"}}"),
-			uncompressedSize:  {{.UncompressedSize}},
 		},
 {{end}}
 

@@ -628,66 +628,58 @@
 			"revisionTime": "2016-02-03T07:44:56-05:00"
 		},
 		{
-			"checksumSHA1": "kIbo93q6KJ10XGajiHU6DvZYt1Q=",
+			"checksumSHA1": "6zfHoy5pQ9ARu8kEaOf0mivfqEY=",
 			"path": "github.com/shurcooL/go-goon",
-			"revision": "ba57724c4f5117dc5ec4fabac854b2b073eac5e4",
-			"revisionTime": "2015-11-06T22:35:47-08:00"
+			"revision": "be9d6f45ee9e21422b3a4e7e7a8f4e930a1f1b3a",
+			"revisionTime": "2016-03-26T22:10:52Z"
 		},
 		{
-			"checksumSHA1": "5nZBKSAK4Nu+YusQvSS+mi1bjgE=",
-			"path": "github.com/shurcooL/go/gists/gist5639599",
-			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
-			"revisionTime": "2016-03-21T03:10:21-07:00"
+			"checksumSHA1": "yTs6sl/aqAk8o5rXfU1j6RRJmrI=",
+			"path": "github.com/shurcooL/go/parserutil",
+			"revision": "d91785730c631d73db6eaa6ca2992dc1818831e7",
+			"revisionTime": "2016-03-27T04:21:48Z"
 		},
 		{
-			"checksumSHA1": "Cc0xHwrRrzovkhTcy1UwKifEAOY=",
-			"path": "github.com/shurcooL/go/gists/gist5707298",
-			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
-			"revisionTime": "2016-03-21T03:10:21-07:00"
+			"checksumSHA1": "5rstWtvfK2TcC92RFOq72xlzmXg=",
+			"path": "github.com/shurcooL/go/printerutil",
+			"revision": "d91785730c631d73db6eaa6ca2992dc1818831e7",
+			"revisionTime": "2016-03-27T04:21:48Z"
 		},
 		{
-			"checksumSHA1": "IU3r+hSBtSIVxsEc2FPOkcJyYjw=",
-			"path": "github.com/shurcooL/go/gists/gist6418290",
-			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
-			"revisionTime": "2016-03-21T03:10:21-07:00"
+			"checksumSHA1": "KZPGEMLUjs0QkDXXUybswv1o8+A=",
+			"path": "github.com/shurcooL/go/reflectfind",
+			"revision": "d91785730c631d73db6eaa6ca2992dc1818831e7",
+			"revisionTime": "2016-03-27T04:21:48Z"
 		},
 		{
-			"checksumSHA1": "7x+H6HLWLA3QKLP8feebteNl5G0=",
-			"path": "github.com/shurcooL/go/gists/gist6418462",
-			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
-			"revisionTime": "2016-03-21T03:10:21-07:00"
+			"checksumSHA1": "z/jwkKAwg751U7Yqy7IJDyHRVZA=",
+			"path": "github.com/shurcooL/go/reflectsource",
+			"revision": "d91785730c631d73db6eaa6ca2992dc1818831e7",
+			"revisionTime": "2016-03-27T04:21:48Z"
 		},
 		{
-			"checksumSHA1": "OY63nb1PbhoL3EFF8uN8nlz4IoA=",
-			"path": "github.com/shurcooL/go/gists/gist6433744",
-			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
-			"revisionTime": "2016-03-21T03:10:21-07:00"
-		},
-		{
-			"checksumSHA1": "yiJBOpWGwamd3UldKP79YU0dO08=",
-			"path": "github.com/shurcooL/go/gists/gist6445065",
-			"revision": "4353f6636791fafb97ea6a538fef5302b4e67bbb",
-			"revisionTime": "2016-03-21T03:10:21-07:00"
-		},
-		{
+			"checksumSHA1": "zSisiGDBLWirv0udeUbOlHtNDqs=",
 			"path": "github.com/shurcooL/httpfs/filter",
-			"revision": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e",
-			"revisionTime": "2016-01-18T22:47:14-08:00"
+			"revision": "0808ddb1746fb84c8536bdc9a45a1847fc6545a5",
+			"revisionTime": "2016-05-24T09:02:50Z"
 		},
 		{
+			"checksumSHA1": "zj809F+O3rYY0E3oxMfTH2N3ucE=",
 			"path": "github.com/shurcooL/httpfs/vfsutil",
-			"revision": "32702f40e3a90d60ddcdd141dd895b5e2f9f311e",
-			"revisionTime": "2016-01-18T22:47:14-08:00"
+			"revision": "0808ddb1746fb84c8536bdc9a45a1847fc6545a5",
+			"revisionTime": "2016-05-24T09:02:50Z"
 		},
 		{
+			"checksumSHA1": "XXTR/ftEYSqQn4+Y7wNfiJJmq9U=",
 			"path": "github.com/shurcooL/sanitized_anchor_name",
 			"revision": "10ef21a441db47d8b13ebcc5fd2310f636973c77",
-			"revisionTime": "2015-10-27T17:19:15-07:00"
+			"revisionTime": "2015-10-28T00:19:15Z"
 		},
 		{
+			"checksumSHA1": "XDYAcMOVIRZ3cmXCCljPKuzm2ho=",
 			"path": "github.com/shurcooL/vfsgen",
-			"revision": "6e5fb4d6aad9620b57c54f045c7d738a64ff7563",
-			"revisionTime": "2016-02-12T22:09:50-08:00"
+			"revision": "d61b62f6a1aa40a19aa6ae98c5ca0975b090ab27",
+			"revisionTime": "2016-04-11T05:01:38Z"
 		},
 		{
 			"path": "github.com/smartystreets/mafsa",
