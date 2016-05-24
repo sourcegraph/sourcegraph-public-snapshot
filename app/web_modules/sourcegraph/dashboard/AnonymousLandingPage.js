@@ -1,7 +1,9 @@
 import React from "react";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
+import Button from "sourcegraph/components/Button";
 import CSSModules from "react-css-modules";
+import Logo from "sourcegraph/components/Logo";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
@@ -44,6 +46,43 @@ class AnonymousLandingPage extends Component {
 					</div>
 				</div>
 				<div styleName="container-lg">
+					<div styleName="content-block">
+						<div styleName="img-left">
+							<Link to="/github.com/golang/go@0cc710dca63b79ed2dd6ce9375502e76e5fc0484/-/tree/src/testing?q=testing" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>
+								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-sourcegraph.png`} styleName="img" width="460" />
+							</Link>
+						</div>
+						<div styleName="content-right">
+							<div styleName="content">
+								<Logo width="32px" className={base.mt4} />
+								<h3 styleName="h3">Search public and (your) private code</h3>
+								<p>Connect your GitHub account to Sourcegraph to start searching, browsing, and cross-referencing your code, with IDE-like capabilities in your browser. Free for public and private projects.</p>
+							</div>
+							<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
+							<Link styleName="try-it" to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
+						</div>
+					</div>
+
+					<div styleName="content-block">
+						<div styleName="img-right">
+							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" target="new">
+								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-github.png`} styleName="img" width="460" />
+							</a>
+						</div>
+						<div styleName="content-left">
+							<div styleName="content">
+								<img src={`${siteConfig.assetsRoot}/img/symbols/branch.svg`} className={base.mt3} />
+								<h3 styleName="h3">Chrome extension for GitHub</h3>
+								<p>Browse GitHub like an IDE, with jump-to-definition links, semantic code search, and documentation tooltips. <em>Support for other browsers is coming soon.</em></p>
+							</div>
+							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" target="new">
+								<Button color="blue" onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
+									Install the Chrome extension
+								</Button>
+							</a>
+						</div>
+					</div>
+
 					<div styleName="box-white">
 						<div styleName="language-container">
 							<h1 styleName="language-header">Language support</h1>
