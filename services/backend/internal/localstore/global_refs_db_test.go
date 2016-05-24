@@ -95,6 +95,42 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
 			},
 		},
+		"repo": {
+			&sourcegraph.DefsListRefLocationsOp{
+				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Opt: &sourcegraph.DefListRefLocationsOptions{
+					Repos: []string{"a/b"},
+				},
+			},
+			[]*sourcegraph.DefRepoRef{
+				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
+			},
+		},
+		"pagination_first": {
+			&sourcegraph.DefsListRefLocationsOp{
+				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Opt: &sourcegraph.DefListRefLocationsOptions{
+					ListOptions: sourcegraph.ListOptions{
+						Page: 1,
+					},
+				},
+			},
+			[]*sourcegraph.DefRepoRef{
+				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
+				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
+			},
+		},
+		"pagination_empty": {
+			&sourcegraph.DefsListRefLocationsOp{
+				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Opt: &sourcegraph.DefListRefLocationsOptions{
+					ListOptions: sourcegraph.ListOptions{
+						Page: 100,
+					},
+				},
+			},
+			nil,
+		},
 		// Missing defspec should not return an error
 		"empty": {
 			&sourcegraph.DefsListRefLocationsOp{

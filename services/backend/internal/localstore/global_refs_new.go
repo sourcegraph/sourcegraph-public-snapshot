@@ -104,7 +104,6 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
 	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID)
-	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
 	if len(opt.Repos) > 0 {
 		repoBindVars := make([]string, len(opt.Repos))
 		for i, r := range opt.Repos {
@@ -112,6 +111,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 		}
 		innerSelectSQL += " AND repo in (" + strings.Join(repoBindVars, ",") + ")"
 	}
+	innerSelectSQL += fmt.Sprintf(" LIMIT %s OFFSET %s", arg(opt.PerPageOrDefault()), arg(opt.Offset()))
 
 	sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + innerSelectSQL + ") res"
 	orderBySQL := " ORDER BY repo_count DESC, count DESC"
