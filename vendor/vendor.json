@@ -64,6 +64,18 @@
 			"revisionTime": "2016-04-29T08:01:25Z"
 		},
 		{
+			"checksumSHA1": "9AX1Qo5TlMveGCqhyBTla7zN5z0=",
+			"path": "github.com/chris-ramon/douceur/css",
+			"revision": "c0a5b8aea4ffb106eb8992cbab4d4bb1bad3467c",
+			"revisionTime": "2016-05-11T08:54:35Z"
+		},
+		{
+			"checksumSHA1": "aSaQE7tdF2u4gYwuDY1XHMSDTQc=",
+			"path": "github.com/chris-ramon/douceur/parser",
+			"revision": "c0a5b8aea4ffb106eb8992cbab4d4bb1bad3467c",
+			"revisionTime": "2016-05-11T08:54:35Z"
+		},
+		{
 			"path": "github.com/cznic/mathutil",
 			"revision": "38a5fe05cd94d69433fd1c928417834c604f281d",
 			"revisionTime": "2016-01-19T17:31:16+01:00"
@@ -235,6 +247,12 @@
 			"path": "github.com/gorilla/context",
 			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
 			"revisionTime": "2016-05-25T20:33:19Z"
+		},
+		{
+			"checksumSHA1": "UNlILKZlAiLwYYwj70y+Q8n13D0=",
+			"path": "github.com/gorilla/css/scanner",
+			"revision": "a80e24ada2699166544311f07c26ef37eaf64012",
+			"revisionTime": "2015-03-17T22:22:38Z"
 		},
 		{
 			"path": "github.com/gorilla/mux",
