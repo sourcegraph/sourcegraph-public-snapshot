@@ -1228,11 +1228,6 @@
 			"revisionTime": "2016-03-16T16:11:07-07:00"
 		},
 		{
-			"path": "sourcegraph.com/sourcegraph/srclib-javascript/javascript_def",
-			"revision": "38cb738a5c5b00e89aba23e1d34c166e11460100",
-			"revisionTime": "2016-02-24T10:22:00-08:00"
-		},
-		{
 			"path": "sourcegraph.com/sourcegraph/srclib-python/python",
 			"revision": "36d1771e1a1d04b2f6a643cd7ba2edb8e4817f7a",
 			"revisionTime": "2016-03-04T18:10:02-08:00"
