@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sort"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -121,6 +123,7 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	if (len(refLocations.RepoRefs) == 0 || !containsDefRepo) && opt.PageOrDefault() == 1 {
+		log15.Debug("Missing local refs on DefInfo", "def", defSpec.String(), "lenRepoRefs", len(refLocations.RepoRefs))
 		// Scope the local repo ref search to the def's commit ID.
 		defSpec.CommitID = def.CommitID
 		refs, err := cl.Defs.ListRefs(ctx, &sourcegraph.DefsListRefsOp{
