@@ -6,9 +6,6 @@ import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
-import CSSModules from "react-css-modules";
-import styles from "./styles/UserRepos.css";
-
 class UserReposContainer extends Container {
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
@@ -40,14 +37,8 @@ class UserReposContainer extends Container {
 	stores() { return [DashboardStore]; }
 
 	render() {
-		return (<div>
-				<div styleName="container">
-					<div styleName="repos">
-						<DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} />
-					</div>
-				</div>
-			</div>);
+		return <DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} />;
 	}
 }
 
-export default CSSModules(UserReposContainer, styles);
+export default UserReposContainer;

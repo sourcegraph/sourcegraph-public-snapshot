@@ -21,6 +21,16 @@ export const repos = {
 	},
 };
 
+export const tour = {
+	getComponent: (location, callback) => {
+		require.ensure([], (require) => {
+			callback(null, {
+				main: require("sourcegraph/home/TourContainer").default,
+			});
+		});
+	},
+};
+
 export const routes: Array<Route> = [
 	{
 		...tools,
@@ -29,5 +39,9 @@ export const routes: Array<Route> = [
 	{
 		...repos,
 		path: rel.myRepos,
+	},
+	{
+		...tour,
+		path: rel.tour,
 	},
 ];

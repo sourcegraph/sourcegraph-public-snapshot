@@ -1,0 +1,44 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+@value media-sm from vars;
+
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+.center {	composes: tc from typography; }
+.relative { position: relative; }
+
+.rocket {
+	position: absolute;
+	left: 8rem;
+	top: -13px;
+}
+
+.bg {
+	composes: bg-white bg-pale-blue-gradient from colors;
+	flex: 1;
+}
+
+/*  216 231 242  */
+.container-fixed {
+	composes: center from base;
+	width: 100%;
+}
+.outer { max-width: 800px; }
+.inner { max-width: 620px; }
+
+.header-container { display: flex; }
+.heading-container { flex: 2 1 auto; }
+
+.stepper-container {
+	flex: 1 2 35%;
+	align-self: center;
+	composes: hidden-s from base;
+}
+
+@media screen and media-sm {
+	.heading-container { text-align: center; }
+}

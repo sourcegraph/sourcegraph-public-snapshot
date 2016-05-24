@@ -2,144 +2,35 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
+@value layout "sourcegraph/components/styles/_layout.css";
 
-.container {
-	display: flex;
-	flex: 1 1 auto;
-	composes: center from base;
-	justify-content: center;
-	height: 100%;
+.container-fixed { composes: containerFixed from layout; }
+.bg-white-50 { composes: bg-white-50 from colors; }
+.mid-gray { composes: cool-mid-gray from colors; }
+.cool-pale-gray {	composes: cool-pale-gray from colors; }
+.inline-block { display: inline-block; }
+.tc { composes: tc from typography; }
+.br3 { composes: br3 from base; }
+
+.max-width-500 { max-width: 500px; }
+
+.bg {
+	composes: bg-pale-blue-gradient from colors;
+	flex: 1;
 }
 
-.anon-section {
-	composes: col-9-ns from grid;
-	composes: mt4 ph3 center from base;
-	text-align: center;
-}
+.repositories {	margin-top: -20px; }
 
-.anon-title {
-	composes: header-center-padded from typography;
-	composes: pt5 pb3 center from base;
-	max-width: 500px;
-}
-
-.anon-title-left {
-	composes: f1 from typography;
-	composes: pt2 pb3 left from base;
-	text-align: left;
-}
-
-.anon-header-sub {
-	composes: section-header from typography;
-	composes: pb4 from base;
-}
-
-.logomark-wide {
-	max-width: 100%;
-}
-
-.cta-box {
-	composes: pt2 center from base;
-	composes: heavy-text tc from typography;
-}
-
-.cta-headline {
-	composes: pb4 from base;
-	composes: f3 mid-gray from typography;
-}
-
-.cta-subline {
-	composes: col-9-ns from grid;
-	composes: pt5 center from base;
-	composes: subheader from typography;
-}
-
-.cta-link {
-	composes: ma3 from base;
-	composes: gray from colors;
-	cursor: pointer;
-}
-
-.repos {
-	composes: col-9-ns from grid;
-	composes: mt4 center from base;
-}
-
-.header {
+.item {
 	display: flex;
 	flex-direction: row;
-	justify-content: space-between;
-	composes: mt4 from base;
+	flex-wrap: nowrap;
+	justify-content: flex-start;
 }
 
-.cta {
-	display: flex;
-	composes: b from typography;
-	composes: pa4 from base;
-	justify-content: center;
+.button {
+	composes: tr from typography;
+	flex: 0 0 150px;
 }
 
-.filter {
-	align-self: flex-end;
-  	composes: ma3 from base;  	
- }
-
-.suggestion-header {
-	composes: section-header from typography;
-}
-
-.suggestion-subheader {
-	composes: f4 fw2 from typography;
-	composes: pt3 pl5 pr5 from base;
-	text-align: center;
-}
-
-.suggestion {
-	composes: f4 from typography;
-	composes: pa2 from base;
-	composes: moon-gray from colors;
-	text-align: center;
-	cursor: pointer;
-}
-
-.list-section-header {
-	composes: ph3 pt4 pb2 from base;
-	composes: subsection-header from typography;
-	display: inline-block;
-}
-
-.list {
-	composes: pb3 from base;
-}
-
-.list-item {
-	composes: pa3 mh3 bt from base;
-	composes: b--black-20 from colors;
-}
-.list-item-loading {
-	composes: pa3 mh3 bt from base;
-	composes: f4 fw2 from typography;
-	composes: gray from colors;
-}
-
-.description {
-	composes: normal-text from typography;
-	composes: mv3 from base;
-}
-
-.container-vertical-padding {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	composes: pt3 pb2 from base;
-}
-
-.uri {
-	composes: pv2 from base;
-	composes: fw5 f2 from typography;
-	composes: dark-gray from colors;
-}
-
-.uri-container {
-	composes: mv0 from base;
-}
+.content { flex: 1 1 auto; }

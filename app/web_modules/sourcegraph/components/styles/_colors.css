@@ -118,6 +118,7 @@
 .cool-gray-2 { color: c_cool-gray-2; }
 .cool-gray-1 { color: c_cool-gray-1; }
 .cool-mid-gray { color: c_cool-mid-gray; }
+.cool-pale-gray { color: c_cool-pale-gray; }
 
 .black { color: black; }
 .dark-gray { color: c_dark-gray; }
@@ -168,7 +169,7 @@
 	background-image: linear-gradient(-180deg, c_blue 0%, c_blue-text 100%);
 }
 .bg-pale-blue-gradient {
-	background-image: linear-gradient(-1deg, c_cool-pale-gray 0%, white 100%);
+	background-image: linear-gradient(0deg, c_cool-pale-gray 0%, #F1F5F7 80%);
 }
 
 .bg-green { background-color: c_green; }
@@ -229,6 +230,9 @@
 .bg-white-05 { background-color: c_white-05; }
 .bg-white-025 { background-color: c_white-025; }
 .bg-white-0125 { background-color: c_white-0125; }
+.bg-pale-white-gradient {
+	background-image: linear-gradient(-1deg, c_near-white 0%, white 100%);
+}
 .bg-black-90 { background-color: c_black-90; }
 .bg-black-80 { background-color: c_black-80; }
 .bg-black-70 { background-color: c_black-70; }
@@ -275,6 +279,7 @@
 .b--purple-1 { border-color: c_purple-1; }
 .b--light-purple { border-color: c_light-purple; }
 .b--cool-gray { border-color: c_cool-gray; }
+.b--cool-gray-2 { border-color: c_cool-gray-2; }
 .b--cool-gray-5 { border-color: c_cool-gray-5; }
 .b--cool-gray-8 { border-color: c_cool-gray-8; }
 .b--cool-mid-gray { border-color: c_cool-mid-gray; }

@@ -7,8 +7,6 @@ import base from "./styles/_base.css";
 import Icon from "./Icon";
 import Button from "./Button";
 
-// @TODO(chexee): Favor separate classes over class concatenation
-
 class ChecklistItem extends React.Component {
 	static propTypes = {
 		className: React.PropTypes.string,
@@ -26,9 +24,9 @@ class ChecklistItem extends React.Component {
 					{complete && <Icon icon="check-green" width="50%" styleName="check" />}
 				</div>
 				<div styleName={`content${complete ? "-complete" : ""}`}>{children}</div>
-				{actionText && !complete && <span>
+				{actionText && !complete && <div styleName="buttonContainer">
 					<Button color="green" onClick={actionOnClick} className={base.ph2}>{actionText}</Button>
-				</span>}
+				</div>}
 			</div>
 		);
 	}

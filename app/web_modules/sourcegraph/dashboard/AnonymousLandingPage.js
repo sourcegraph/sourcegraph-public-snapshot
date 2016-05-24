@@ -112,7 +112,7 @@ class AnonymousLandingPage extends Component {
 					<div styleName="bottom-container">
 						<h2 styleName="bottom-header">We&nbsp;built&nbsp;Sourcegraph&nbsp;to keep&nbsp;you&nbsp;in&nbsp;flow while&nbsp;coding.</h2>
 						<p styleName="bottom-text">Start saving time and sharpening your skills. Join tons of other developers who use Sourcegraph, around the world and in large, well-known companies.</p>
-						<GitHubAuthButton color="purple" outline="true" style={{display: "inline-block", marginTop: "15px", fontSize: "1.6rem"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
+						<GitHubAuthButton color="purple" outline={true} style={{display: "inline-block", marginTop: "15px", fontSize: "1.6rem"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
 						<a target="_blank"
 							styleName="bottom-link"
 							href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"

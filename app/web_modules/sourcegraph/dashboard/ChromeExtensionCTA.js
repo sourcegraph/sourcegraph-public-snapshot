@@ -1,8 +1,6 @@
 import React from "react";
 
-import CSSModules from "react-css-modules";
 import Button from "sourcegraph/components/Button";
-import styles from "./styles/Dashboard.css";
 import EventLogger from "sourcegraph/util/EventLogger";
 
 /* See: https://developer.chrome.com/webstore/inline_installation */
@@ -52,4 +50,4 @@ ChromeExtensionCTA.propTypes = {
 	onFail: React.PropTypes.func,
 };
 
-export default CSSModules(ChromeExtensionCTA, styles);
+export default ChromeExtensionCTA;

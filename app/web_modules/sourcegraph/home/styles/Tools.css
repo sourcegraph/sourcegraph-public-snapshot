@@ -4,7 +4,41 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 
 .container {
+	composes: center pb6 from base;
+	composes: bg-white bg-pale-blue-gradient from colors; 
+	min-height: 100vh;
+	width: 100%;
+}
+
+.container-fixed {
+	composes: center pt5 pb5 from base;
+	width: 100%;
+	max-width: 600px;
+}
+
+.panel-container {
+	display: flex;
 	composes: center from base;
+	width: 100%;
+	flex-direction: row;
+	justify-content: center;
+	flex-wrap: wrap;
+	margin-top: -40px;
+}
+
+.panel-item {
+	display: flex;
+	composes: pl4 pr4 pb5 from base;
+	align-content: center;
+	text-align: center;
+	max-width: 310px;
+}
+
+.button-container {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	composes: pt3 pb4 from base;
 }
 
 .anon-section {
@@ -84,8 +118,8 @@
 }
 
 .img {
-	width: 100px;
-	height: 100px;
+	min-width: 60px;
+	height: 60px;
 	align-self: center;
-	composes: pa3 from base;
+	composes: pl3 pr3 pt4 pb3 from base;
 }

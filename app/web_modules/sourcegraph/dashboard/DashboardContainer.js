@@ -19,9 +19,7 @@ class DashboardContainer extends React.Component {
 			<div>
 				<Helmet title="Home" />
 				{!this.context.signedIn && <AnonymousLandingPage location={this.props.location}/>}
-				{this.context.signedIn && <div styleName="container">
-					<HomeSearchContainer location={this.props.location}/>
-				</div>}
+				{this.context.signedIn && <HomeSearchContainer location={this.props.location}/>}
 			</div>
 		);
 	}

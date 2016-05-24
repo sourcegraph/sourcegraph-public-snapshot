@@ -8,7 +8,7 @@ class Hero extends React.Component {
 	static propTypes = {
 		className: React.PropTypes.string,
 		pattern: React.PropTypes.string,
-		color: React.PropTypes.string,
+		color: React.PropTypes.string, // white, purple, blue, green, dark
 		children: React.PropTypes.any,
 	};
 

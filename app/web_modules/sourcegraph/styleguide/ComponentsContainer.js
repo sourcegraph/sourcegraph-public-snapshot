@@ -4,7 +4,7 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Stepper, ChecklistItem, Tabs} from "sourcegraph/components";
+import {Heading, Panel, Stepper, ChecklistItem, TabItem} from "sourcegraph/components";
 import ComponentCard from "./ComponentCard";
 
 class ComponentsContainer extends React.Component {
@@ -50,7 +50,12 @@ class ComponentsContainer extends React.Component {
 					<ComponentCard>
 						<Heading level="3" className={base.mb4}>Tabs</Heading>
 						<Panel className={base.pa5}>
-							<Tabs	links={[["Components", "#"], ["Colors", "#"], ["Constants", "#"], ["Layout", "#"], ["Typography", "#"]]} active={1} color="blue" />
+							<div>
+								<TabItem active={true}>Components</TabItem>
+								<TabItem>Colors</TabItem>
+								<TabItem>Typography</TabItem>
+								<TabItem>Layout</TabItem>
+							</div>
 						</Panel>
 					</ComponentCard>
 					<ComponentCard>
@@ -91,4 +96,3 @@ class ComponentsContainer extends React.Component {
 }
 
 export default CSSModules(ComponentsContainer, styles, {allowMultiple: true});
-

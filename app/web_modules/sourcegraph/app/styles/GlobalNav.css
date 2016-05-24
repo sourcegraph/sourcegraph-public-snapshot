@@ -6,8 +6,14 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value link "sourcegraph/components/styles/link.css";
 
-@value navbarHeight 50px;
 @value media-sm from vars;
+
+.tl { composes: tl from typography; }
+.flex { display: flex; }
+.flex-fill { flex: 1 1 100%; }
+.flex-center {align-items: center;}
+.flex-end {justify-content: flex-end;}
+.block {display: block;}
 
 /* Logged out nav */
 
@@ -39,10 +45,14 @@
 	composes: fr from base;
 }
 
+.username {	padding-top: 10px; }
+
 .logged-out-nav-item {
 	composes: link-subtle from link;
 	composes: pa2 ml2 from base;
 }
+
+.login-signup-links {	composes: tr from typography; }
 
 /* Logged in navigation */
 
@@ -52,15 +62,12 @@
 }
 
 .navbar {
+	composes: bb cf from base;
+	composes: bg-white b--cool-gray-2 from colors;
 	display: flex;
 	align-items: center;
 	flex-wrap: nowrap;
-	composes: bb from base;
-	border-color: #efefef;
-	background-color: #fafafa;
 	z-index: 100;
-
-	height: navbarHeight;
 	position: fixed;
 	top: 0;
 	width: 100%;
@@ -79,7 +86,7 @@
 	flex: 1 1 auto;
 	align-items: center;
 	composes: pv1 ph2 from base;
-	composes: f3 from typography;
+	composes: f4 from typography;
 }
 
 .context {
@@ -104,14 +111,7 @@
 	white-space: nowrap;
 	cursor: pointer;
 }
-.action-username {
-	composes: action;
-	composes: pt1 ph3 from base;
-}
 
-.username {
-	composes: b from typography;
-}
 
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";

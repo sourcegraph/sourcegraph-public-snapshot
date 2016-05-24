@@ -575,14 +575,14 @@
 }
 
 @media screen and (max-width: 48em) {
-	.hidden-s { display: none; }
+	.hidden-s { display: none !important; }
 }
 @media screen and (min-width: 48em) {
-	.hidden-ns { display: none; }
+	.hidden-ns { display: none !important; }
 }
 @media screen and (min-width: 48em) and (max-width: 64em) {
-	.hidden-m { display: none; }
+	.hidden-m { display: none !important; }
 }
 @media screen and (min-width: 64em) {
-	.hidden-l { display: none; }
+	.hidden-l { display: none !important; }
 }

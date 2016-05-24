@@ -4,8 +4,7 @@ import React from "react";
 import {Link} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import Logo from "sourcegraph/components/Logo";
-import {Avatar, Popover, Menu, Button} from "sourcegraph/components";
+import {Avatar, Popover, Menu, Button, TabItem, Logo} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
@@ -15,6 +14,7 @@ import {SignupForm} from "sourcegraph/user/Signup";
 
 function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
+
 	return (
 		<nav styleName={signedIn || location.pathname !== "/" ? "navbar" : ""} role="navigation">
 
@@ -72,14 +72,26 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 			{(signedIn || location.pathname !== "/") && <div styleName="context-container">{navContext}</div>}
 
 			{(signedIn || location.pathname !== "/") &&
-				<div styleName="actions">
-					{channelStatus && <div styleName="action"><div styleName={`channel-${channelStatus}`}>{channelStatus}</div></div>}
-					{user && <div style={{display: "inline-flex", alignItems: "center"}}>
-						<Link styleName="action" to="/repositories">Repositories</Link>
-						<Link styleName="action" to="/tools">Tools</Link>
-						<div styleName="action-username">
+				<div styleName="flex-fill">
+					{user && <div styleName="flex flex-end">
+						{!navContext && <div styleName="flex-fill tl" className={base.bn}>
+							<Link to="/tour">
+								<TabItem active={location.pathname === "/tour"} icon="tour">Tour</TabItem>
+							</Link>
+							<Link to="/repositories">
+								<TabItem active={location.pathname === "/repositories"} icon="repository">My Repositories</TabItem>
+							</Link>
+							<Link to="/tools">
+								<TabItem hideMobile={true} active={location.pathname === "/tools"} icon="tools">Tools</TabItem>
+							</Link>
+							<Link to="/">
+								<TabItem active={location.pathname === "/"} icon="search">Search</TabItem>
+							</Link>
+						</div>}
+						<div styleName="flex" className={`${base.pv2} ${base.ph3}`}>
+						{channelStatus && <div styleName="action"><div styleName={`channel-${channelStatus}`}>{channelStatus}</div></div>}
 							<Popover left={true}>
-								{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <span>{user.Login}</span>}
+								{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} styleName="block" className={base.pt2} /> : <div styleName="username">{user.Login}</div>}
 								<Menu>
 									<Link to="/">Home</Link>
 									<LogoutLink outline={true} size="small" block={true} />
@@ -88,7 +100,8 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 						</div>
 					</div>}
 					{!signedIn &&
-						<div>
+						<div styleName="login-signup-links" className={base.pv2}>
+							{channelStatus && <div styleName="action"><div styleName={`channel-${channelStatus}`}>{channelStatus}</div></div>}
 							<div styleName="action">
 								<LocationStateToggleLink href="/login" modalName="login" location={location}
 									onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
@@ -122,4 +135,4 @@ GlobalNav.contextTypes = {
 	eventLogger: React.PropTypes.object.isRequired,
 };
 
-export default CSSModules(GlobalNav, styles);
+export default CSSModules(GlobalNav, styles, {allowMultiple: true});

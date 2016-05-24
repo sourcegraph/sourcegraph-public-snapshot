@@ -10,7 +10,6 @@
 	display: flex;
 	flex-direction: row;
 	flex-wrap: nowrap;
-	justify-content: flex-start;
 }
 
 .check-container {
@@ -39,6 +38,13 @@
 .content-complete {
 	composes: content;
 	opacity: 0.6;
+}
+
+.buttonContainer {
+	flex: 1 1 auto;
+	justify-content: center;
+	align-self: center;
+	text-align: right;
 }
 
 @media media-sm {
