@@ -3,8 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"go/scanner"
-	"go/token"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,6 +21,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
@@ -356,18 +355,15 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 
 	// TODO(rothfels): add other language support.
 	switch lang {
-	case "Go":
-		if !strings.HasSuffix(path, ".go") {
-			return nil, nil
-		}
+	// TODO(alexsaveliev): support CSS the same way as the other languages
 	case "CSS":
 		if !strings.HasSuffix(path, ".css") {
 			return nil, nil
 		}
 		return getCSSFileCoverage(cl, ctx, repoRev, path, lang)
-	default:
-		return nil, nil
 	}
+
+	tokenizer := coverageutil.Lookup(lang, path)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
@@ -395,27 +391,22 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 	for _, ann := range anns.Annotations {
 		// require URL (i.e. don't count syntax highlighting annotations)
 		if ann.URL != "" || len(ann.URLs) > 0 {
-			annsByStartByte[ann.StartByte+1] = ann // off by one
+			annsByStartByte[ann.StartByte] = ann
 		}
 	}
 
-	scanner := &scanner.Scanner{}
-	fset := token.NewFileSet()
-	file := fset.AddFile(``, fset.Base(), len(entry.Contents))
-	scanner.Init(file, entry.Contents, nil /* no error handler */, 0)
+	tokenizer.Init(entry.Contents)
+	defer tokenizer.Done()
 
 	refAnnotations := make([]*sourcegraph.Annotation, 0)
 	for {
-		pos, tok, _ := scanner.Scan()
-		if tok == token.EOF {
+		tok := tokenizer.Next()
+		if tok == nil {
 			break
-		}
-		if tok != token.IDENT {
-			continue
 		}
 
 		fileCvg.Idents += 1
-		if ann, ok := annsByStartByte[uint32(pos)]; ok {
+		if ann, ok := annsByStartByte[tok.Offset]; ok {
 			fileCvg.Refs += 1
 			refAnnotations = append(refAnnotations, ann)
 		}
