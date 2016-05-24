@@ -218,11 +218,6 @@ class RepoMain extends React.Component {
 							{rel: "canonical", href: this.canonicalURL()},
 						]} />
 				}
-				<Helmet
-					meta={[
-						{name: "robots", content: "noindex"},
-					]
-				}/>
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
 					<Modal onDismiss={this._dismissTreeSearchModal}>

@@ -152,11 +152,6 @@ export default class BlobMain extends Container {
 		return (
 			<div className={Style.container}>
 				{pathParts && <Helmet title={`${pathParts[pathParts.length - 1]} | ${trimRepo(this.state.repo)}`} />}
-				<Helmet
-					meta={[
-						{name: "robots", content: "noindex"},
-					]
-				}/>
 				<div className={Style.blobAndToolbar}>
 					<BlobToolbar
 						repo={this.state.repo}
