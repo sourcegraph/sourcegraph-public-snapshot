@@ -9,6 +9,16 @@ import child_process from "child_process";
 let noJSON = undefined; // eslint-disable-line no-undefined
 
 export default function(expected, filename, component, context) {
+	// If fs is available, verify that expected matches the contents of filename.
+	// If they don't match, it could be because the expected or filename arguemnts
+	// are incorrectly specified. They should point to the same thing.
+	if (fs.readFileSync) {
+		let expectedOnDisk = fs.readFileSync(filename, {encoding: "utf-8"});
+		if (JSON.stringify(expected, null, "\t") !== expectedOnDisk) {
+			throw new Error(`autotest 'expected' argument doesn't match contents of ${filename} file, are you sure the first 2 arguments are correct?`);
+		}
+	}
+
 	let renderer = TestUtils.createRenderer();
 	let dispatchedToStores, dispatchedToBackends;
 	dispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
