@@ -277,7 +277,15 @@ export default class RefsContainer extends Container {
 								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
 							}
 							if (file.Error) {
-								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p>Error loading code</p></div>;
+								let msg;
+								switch (file.Error.response.status) {
+								case 413:
+									msg = "Sorry, this file is too large to display.";
+									break;
+								default:
+									msg = "File is not available.";
+								}
+								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{msg}</p></div>;
 							}
 							return (
 								<div key={i}>

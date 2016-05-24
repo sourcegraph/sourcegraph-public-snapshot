@@ -141,10 +141,18 @@ export default class BlobMain extends Container {
 
 	render() {
 		if (this.state.blob && this.state.blob.Error) {
+			let msg;
+			switch (this.state.blob.Error.response.status) {
+			case 413:
+				msg = "Sorry, this file is too large to display.";
+				break;
+			default:
+				msg = "File is not available.";
+			}
 			return (
 				<Header
 					title={`${httpStatusCode(this.state.blob.Error)}`}
-					subtitle={`File is not available.`} />
+					subtitle={msg} />
 			);
 		}
 
