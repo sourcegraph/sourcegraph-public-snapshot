@@ -59,17 +59,28 @@
 					}
 				},
 				{
-					"type": "header",
+					"type": "",
 					"key": ".1",
 					"props": {
+						"to": "/r/-/info/undefined/undefined/-/undefined",
 						"children": [
-							"Used in",
 							{
-								"type": "span",
-								"key": ".1",
-								"props": {}
+								"type": "header",
+								"props": {
+									"children": [
+										"Used in",
+										{
+											"type": "span",
+											"key": ".1",
+											"props": {}
+										}
+									]
+								}
 							}
-						]
+						],
+						"onlyActiveOnIndex": false,
+						"className": "",
+						"style": {}
 					}
 				},
 				{

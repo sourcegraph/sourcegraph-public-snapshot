@@ -58,12 +58,14 @@ class DefPopup extends Container {
 					<Link className={s.boxTitle} to={urlToDefInfo(this.state.defObj, this.state.rev)}><span styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: s.defName})}</span></Link>
 					<Link className={s.boxIcon} to={urlToDefInfo(this.state.defObj, this.state.rev)}>&raquo;</Link>
 				</header>
-				<header className={s.sectionTitle}>Used in
-					<span>
-					{refLocs && refLocs.TotalRepos && ` ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
-					{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs && ` ${refLocs.RepoRefs.length}+ repositories`}
-					</span>
-				</header>
+				<Link to={urlToDefInfo(this.state.defObj, this.state.rev)}>
+					<header className={s.sectionTitle}>Used in
+						<span>
+						{refLocs && refLocs.TotalRepos && ` ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`}
+						{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs && ` ${refLocs.RepoRefs.length}+ repositories`}
+						</span>
+					</header>
+				</Link>
 
 				{!refLocs && <span styleName="loading">Loading...</span>}
 				{refLocs && (!refLocs.RepoRefs || refLocs.RepoRefs.length === 0) && <i>No usages found</i>}
