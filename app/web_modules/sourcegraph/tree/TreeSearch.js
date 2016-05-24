@@ -238,8 +238,7 @@ class TreeSearch extends Container {
 							dirLevel = dirLevel.Dirs[dirKey];
 						} else {
 							if (!dirLevel.Dirs[dirKey] && !dirLevel.Files[part]) {
-								// TODO(sqs): show an error page
-								console.error(`Invalid path: ${part}`);
+								err = {response: {status: 404}};
 							}
 							break;
 						}

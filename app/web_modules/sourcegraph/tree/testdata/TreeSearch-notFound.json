@@ -1,0 +1,21 @@
+{
+	"renderOutput": {
+		"type": "WrappedComponent",
+		"props": {
+			"title": "404",
+			"subtitle": "Directory \"p1/notfound\" not found."
+		}
+	},
+	"dispatched": [
+		{
+			"$constructor": "WantSrclibDataVersion",
+			"repo": "repo",
+			"commitID": "c"
+		},
+		{
+			"$constructor": "WantFileList",
+			"repo": "repo",
+			"commitID": "c"
+		}
+	]
+}
