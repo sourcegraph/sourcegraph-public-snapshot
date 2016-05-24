@@ -74,40 +74,46 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	// Updates should be idempotent.
 	mustUpdate("a/b", "a/b/p", "t", testRefs2)
 
-	testCases := []struct {
-		Query  sourcegraph.DefSpec
+	testCases := map[string]struct {
+		Op     *sourcegraph.DefsListRefLocationsOp
 		Result []*sourcegraph.DefRepoRef
 	}{
-		{
-			sourcegraph.DefSpec{Repo: "a/b", Unit: "a/b/u", UnitType: "t", Path: "A/R"},
+		"simple1": {
+			&sourcegraph.DefsListRefLocationsOp{
+				Def: sourcegraph.DefSpec{Repo: "a/b", Unit: "a/b/u", UnitType: "t", Path: "A/R"},
+			},
 			[]*sourcegraph.DefRepoRef{
 				{Repo: "a/b", Count: 3, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 2}, {Path: "a/b/p/t.go", Count: 1}}},
 			},
 		},
-		{
-			sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+		"simple2": {
+			&sourcegraph.DefsListRefLocationsOp{
+				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+			},
 			[]*sourcegraph.DefRepoRef{
 				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
 				{Repo: "a/b", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 1}}},
 			},
 		},
 		// Missing defspec should not return an error
-		{
-			sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
+		"empty": {
+			&sourcegraph.DefsListRefLocationsOp{
+				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
+			},
 			nil,
 		},
 	}
-	for _, test := range testCases {
-		got, err := g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: test.Query})
+	for tn, test := range testCases {
+		got, err := g.Get(ctx, test.Op)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got == nil {
-			t.Errorf("got nil result from GlobalRefs.Get")
+			t.Errorf("%s: got nil result from GlobalRefs.Get", tn)
 			continue
 		}
 		if !reflect.DeepEqual(got.RepoRefs, test.Result) {
-			t.Errorf("got %+v, want %+v", got.RepoRefs, test.Result)
+			t.Errorf("%s: got %+v, want %+v", tn, got.RepoRefs, test.Result)
 		}
 	}
 }
