@@ -95,6 +95,27 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 		statsDone <- err
 	}()
 
+	// dbRefLocationsResult holds the result of the SELECT query for fetching global refs.
+	type dbRefLocationsResult struct {
+		Repo      string
+		RepoCount int `db:"repo_count"`
+		File      string
+		Count     int
+	}
+
+	// Force op.Def.Repo results to be first on the first page
+	var dbRefResult []*dbRefLocationsResult
+	if opt.PageOrDefault() == 1 && len(opt.Repos) == 0 {
+		args := []interface{}{defKeyID, op.Def.Repo, opt.PerPageOrDefault()}
+		inner := "SELECT repo, file, count FROM global_refs_new WHERE def_key_id=$1 AND repo=$2 LIMIT $3"
+		sql := "SELECT repo, SUM(count) OVER(PARTITION BY repo) AS repo_count, file, count FROM (" + inner + ") res ORDER BY count DESC"
+		if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
+			return nil, err
+		}
+		observe("locationsrepo", start)
+		start = time.Now()
+	}
+
 	var args []interface{}
 	arg := func(a interface{}) string {
 		v := gorp.PostgresDialect{}.BindVar(len(args))
@@ -103,7 +124,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 	}
 
 	innerSelectSQL := `SELECT repo, file, count FROM global_refs_new`
-	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID)
+	innerSelectSQL += ` WHERE def_key_id=` + arg(defKeyID) + ` AND repo != ` + arg(op.Def.Repo)
 	if len(opt.Repos) > 0 {
 		repoBindVars := make([]string, len(opt.Repos))
 		for i, r := range opt.Repos {
@@ -118,17 +139,11 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 	sql += orderBySQL
 
-	// dbRefLocationsResult holds the result of the SELECT query for fetching global refs.
-	type dbRefLocationsResult struct {
-		Repo      string
-		RepoCount int `db:"repo_count"`
-		File      string
-		Count     int
-	}
-	var dbRefResult []*dbRefLocationsResult
-	if _, err := graphDBH(ctx).Select(&dbRefResult, sql, args...); err != nil {
+	var dbRefResultMore []*dbRefLocationsResult
+	if _, err := graphDBH(ctx).Select(&dbRefResultMore, sql, args...); err != nil {
 		return nil, err
 	}
+	dbRefResult = append(dbRefResult, dbRefResultMore...)
 
 	// repoRefs holds the ordered list of repos referencing this def. The list is sorted by
 	// decreasing ref counts per repo, and the file list in each individual DefRepoRef is
