@@ -12,6 +12,11 @@
 .tc { composes: tc from typography; }
 .br3 { composes: br3 from base; }
 
+.flex-fill {
+	display: flex;
+	flex: 1;
+}
+
 .max-width-500 { max-width: 500px; }
 
 .bg {

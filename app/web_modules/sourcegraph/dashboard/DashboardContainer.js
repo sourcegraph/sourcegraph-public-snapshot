@@ -16,7 +16,7 @@ class DashboardContainer extends React.Component {
 
 	render() {
 		return (
-			<div>
+			<div styleName="flex-fill">
 				<Helmet title="Home" />
 				{!this.context.signedIn && <AnonymousLandingPage location={this.props.location}/>}
 				{this.context.signedIn && <HomeSearchContainer location={this.props.location}/>}

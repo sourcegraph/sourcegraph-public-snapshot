@@ -22,7 +22,7 @@ class AnonymousLandingPage extends Component {
 	render() {
 		const {siteConfig, eventLogger} = this.context;
 		return (
-			<div styleName="home">
+			<div styleName="flex-fill" className={base.t4}>
 				<div styleName="container-with-globe">
 					<div styleName="row">
 						<div styleName="hero">

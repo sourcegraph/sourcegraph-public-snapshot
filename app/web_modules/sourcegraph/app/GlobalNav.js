@@ -85,7 +85,9 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 								<TabItem hideMobile={true} active={location.pathname === "/tools"} icon="tools">Tools</TabItem>
 							</Link>
 							<Link to="/">
-								<TabItem active={location.pathname === "/"} icon="search">Search</TabItem>
+								<TabItem active={location.pathname === "/"} icon="search">
+									<span styleName="hidden-s">Code</span> Search
+								</TabItem>
 							</Link>
 						</div>}
 						<div styleName="flex" className={`${base.pv2} ${base.ph3}`}>

@@ -15,10 +15,11 @@ import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import type {Def} from "sourcegraph/def";
 
-import {Input} from "sourcegraph/components";
+import {Input, Icon} from "sourcegraph/components";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
+import base from "sourcegraph/components/styles/_base.css";
 
 export const RESULTS_LIMIT = 20;
 
@@ -212,11 +213,11 @@ class GlobalSearch extends Container {
 	}
 
 	_results(): Array<any> {
-		if (!this.state.query) return [<div styleName="list-item list-item-empty" key="_nosymbol"></div>];
+		if (!this.state.query) return [<div styleName="result" key="_nosymbol"></div>];
 
-		const noResultsItem = <div styleName="list-item list-item-empty" key="_nosymbol">No results found</div>;
+		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Sorry, we couldn't find anything.</div>;
 		if (!this.state.matchingDefs) {
-			return [<div key="1" styleName="list-item list-item-empty">Loading...</div>];
+			return [<div key="1" styleName="tc f4" className={base.pv5}>Loading results...</div>];
 		}
 
 		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [noResultsItem];
@@ -239,18 +240,28 @@ class GlobalSearch extends Container {
 				});
 			}
 
+			const firstLineDocString = firstLine(docstring);
 			list.push(
-				<Link styleName={selected ? "list-item-selected" : "list-item"}
+				<Link styleName={selected ? "block result-selected" : "block result"}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}
 					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: defURL})}>
-					<div styleName="search-result-main"><code>{qualifiedNameAndType(def)}</code></div>
-					<div styleName="search-result-info">
-						<span styleName="search-result-repo">{def.Repo}</span>
+					<div styleName="cool-gray flex-container" className={base.pt4}>
+						<div styleName="flex-icon hidden-s">
+							<Icon icon="doc-code" width="32px" />
+						</div>
+						<div styleName="flex bottom-border" className={base.pb3}>
+							<code styleName="f4 block" className={base.mb2}>
+								{qualifiedNameAndType(def)}
+							</code>
+							<p>
+								from {def.Repo}
+								<span styleName="cool-mid-gray">{firstLineDocString ? ` – ${firstLineDocString}` : ""}</span>
+							</p>
+						</div>
 					</div>
-					<div styleName="search-result-doc">{firstLine(docstring)}</div>
 				</Link>
 			);
 		}
@@ -259,21 +270,19 @@ class GlobalSearch extends Container {
 	}
 
 	render() {
-		return (<div styleName="container">
-			<div styleName="search-section">
-				<div styleName="input-container">
-					<Input type="text"
-						block={true}
-						onFocus={() => this.setState({focused: true})}
-						onBlur={() => this.setState({focused: false})}
-						onInput={this._handleInput}
-						autoFocus={true}
-						defaultValue={this.state.query}
-						placeholder="Search for symbols, functions and definitions..."
-						domRef={(e) => this._queryInput = e} />
-				</div>
+		return (<div styleName="center flex">
+			<div styleName="search-input relative">
+				<Input type="text"
+					block={true}
+					onFocus={() => this.setState({focused: true})}
+					onBlur={() => this.setState({focused: false})}
+					onInput={this._handleInput}
+					autoFocus={true}
+					defaultValue={this.state.query}
+					placeholder="Search for symbols, functions and definitions..."
+					domRef={(e) => this._queryInput = e} />
 			</div>
-			<div styleName="search-results">
+			<div>
 				{this._results()}
 			</div>
 		</div>);

@@ -1,103 +1,80 @@
+@value vars "sourcegraph/components/styles/_vars.css";
 @value base "sourcegraph/components/styles/_base.css";
-@value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
-.container {
-	display: flex;
-	flex-direction: column;
-	composes: center from base;
+@value c_cool-gray from colors;
+@value c_cool-mid-gray from colors;
+@value c_cool-pale-gray from colors;
+@value font-size-3 from vars;
+@value font-size-4 from vars;
+@value font-size-5 from vars;
+@value media-sm from vars;
+
+.block { display: block; }
+.hidden-s { composes: hidden-s from base; }
+.relative { position: relative; }
+
+.f4 { composes: f4 from typography; }
+.tc { composes: tc from typography; }
+.cool-gray { composes: cool-gray from colors; }
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+
+.flex-container { display: flex; }
+.flex { flex: 1 1; }
+.flex-icon {
+	composes: tc from typography;
+	flex: 0 0 80px;
 }
 
-.search-section {
+.center { composes: center from base; }
+
+.bottom-border {
+	composes: bb from base;
+	composes: b--cool-pale-gray from colors;
 }
 
-.logo {
-	composes: ma4 from base;
+/* TODO(chexee): Better input components */
+.search-input input {
+	background-color: white;
+	background-image: url('../../../../assets/img/symbols/search-gray.svg');
+	background-repeat: no-repeat;
+	background-size: 32px auto;
+	background-position: 16px;
+	border: 0;
+	border-bottom: 4px c_cool-pale-gray solid;
+	border-radius: 0;
+	color: c_cool-gray;
+	font-size: font-size-3;
+	padding: 16px;
+	text-indent: 48px;
+	transition: all 550ms cubic-bezier(0.175, 0.885, 0.320, 1);
 }
 
-.search-title {
-	composes: header-center from typography;
-	composes: pt3 pb4 from base;
+.search-input input::placeholder {
+	color: c_cool-mid-gray;
+	text-overflow: ellipsis;
 }
+.search-input input[placeholder] { text-overflow: ellipsis; }
 
-.search-results {
-	composes: col-12 from grid;
-}
-
-.header {
-	display: flex;
-	flex-wrap: wrap;
-	composes: mt4 from base;
-}
-
-.list-item {
-	composes: pa2 from base;
-	composes: sans-serif from typography;
-	composes: b--black-20 from colors;
-}
-
-.input-container {
-	composes: mv3 from base;
-	composes: sans-serif f3 from typography;
-	display: flex;
-}
-
-.list-item {
-	display: block;
-	composes: pt3 pb3 from base;
-	composes: col-12 from grid;
-	composes: blue b--black-20 from colors;
-	composes: sans-serif f3 from typography;
-	word-wrap: break-word;
+.result {
 	cursor: pointer;
+	display: block;
+	margin: -1px 0;
 }
 
-.search-result-main {
-	font-size: 1.25rem;
-}
-
-@value c_mid-gray from colors;
-@value c_dark-gray from colors;
-
-.search-result-info {
-	color: c_mid-gray;
-	font-size: 0.9rem;
-	line-height: 1.7rem;
-	padding-top: 0.8rem;
-	padding-bottom: 0.25rem;
-}
-
-.search-result-ref-count {
-	color: c_dark-gray !important;
-	padding-top: 0.5em;
-	font-weight: bold;
-	font-size: 0.9em;
-}
-
-.search-result-repo {
-	font-size: 1.2em;
-}
-
-.search-result-file {
-	font-size: 1.2em;
-}
-
-.search-result-doc {
-	color: c_dark-gray;
-	font-size: 1.25rem;
-	padding-top: 1rem;
-}
-
-@value c_mid-gray from colors;
-.list-item-empty {
-	color: c_mid-gray;
-	text-align: center;
-}
-
-@value c_dark-blue from colors;
-.list-item-selected {
-	composes: list-item;
+.result-selected {
+	composes: result;
 	composes: bg-blue-1 from colors;
-	color: c_dark-blue !important;
+}
+
+@media media-sm {
+	.search-input input {
+		font-size: font-size-4;
+		background-image: none;
+		padding: 6px;
+		text-indent: 0;
+	}
+	.f4 { font-size: font-size-5;	}
+	.result, .result-selected { composes: ph2 from base; }
 }

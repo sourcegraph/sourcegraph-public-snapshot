@@ -2,50 +2,15 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
+@value layout "sourcegraph/components/styles/_layout.css";
 
-.container {
-	composes: center from base;
+.tc { composes: tc from typography; }
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+.inline-block { display: inline-block; }
+
+.bg {
+	composes: bg-pale-blue-gradient from colors;
+	flex: 1;
 }
 
-.anon-section {
-	composes: col-9-ns from grid;
-	composes: mt4 ph3 center from base;
-	text-align: center;
-}
-
-.anon-title {
-	composes: f1 b from typography;
-	composes: pt5 pb3 center from base;
-	max-width: 800px;
-}
-
-.anon-title-left {
-	composes: f1 from typography;
-	composes: pt2 pb3 left from base;
-	text-align: left;
-}
-
-.suggestion-header {
-	composes: section-header from typography;
-}
-
-.suggestion-subheader {
-	composes: f4 fw1 from typography;
-	composes: pt3 pl5 pr5 from base;
-	text-align: center;
-}
-
-.suggestion {
-	composes: f4 from typography;
-	composes: pa2 from base;
-	composes: moon-gray from colors;
-	text-align: center;
-	cursor: pointer;
-}
-
-.cta {
-	display: flex;
-	composes: b from typography;
-	composes: pa4 from base;
-	justify-content: center;
-}
+.container-fixed { composes: containerFixed from layout; }

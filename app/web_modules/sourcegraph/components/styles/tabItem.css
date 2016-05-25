@@ -11,7 +11,7 @@
 .hide { display: none; }
 
 .tab {
-	composes: ph3 mh2 pb3 from base;
+	composes: ph2 mh2 pb3 from base;
 	padding-top: 12px;
 	display: inline-block;
 	margin-bottom: -1px;

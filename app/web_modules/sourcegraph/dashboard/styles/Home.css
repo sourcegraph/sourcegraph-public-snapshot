@@ -6,11 +6,10 @@
 @value button "sourcegraph/components/styles/button.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-.home {
-	composes: mt4 from base;
-}
 
 @value container-max-width 600px;
+
+.flex-fill { flex: 1 }
 
 .container {
 	composes: containerFixed from layout;

@@ -60,6 +60,7 @@ class ToolsContainer extends React.Component {
 	}
 
 	render() {
+		const {showChromeExtensionCTA, showSourcegraphLiveCTA} = this.state;
 		return (
 			<div styleName="container">
 				<Hero color="purple" pattern="objects">
@@ -75,11 +76,11 @@ class ToolsContainer extends React.Component {
 						<Panel hoverLevel="high">
 							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/GoogleChromeAsset.svg`}></img>
 							<Heading align="center" level="4" className={base.ph4}>Sourcegraph for Chrome</Heading>
-							<p style={{color: "rgba(119, 147, 174, 1)"}} className={base.ph4}>
+							<p styleName="cool-mid-gray" className={base.ph4}>
 								Smart search and instant documentation on GitHub.
 							</p>
 							<div styleName="button-container">
-								<Button onClick={this._installChromeExtensionClicked.bind(this)} outline={this.state.showChromeExtensionCTA} color="purple">{this.state.showChromeExtensionCTA ? "Install" : "Installed"}</Button>
+								<Button onClick={this._installChromeExtensionClicked.bind(this)} outline={showChromeExtensionCTA} color={showChromeExtensionCTA ? "purple" : "disabled"}>{showChromeExtensionCTA ? "Install" : "Installed"}</Button>
 							</div>
 						</Panel>
 					</div>
@@ -87,11 +88,13 @@ class ToolsContainer extends React.Component {
 						<Panel hoverLevel="high">
 							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SublimeTextLogo.svg`}></img>
 							<Heading align="center" level="4" className={base.ph4}>Sourcegraph for Sublime Text</Heading>
-							<p style={{color: "rgba(119, 147, 174, 1)"}} className={base.ph4}>
+							<p styleName="cool-mid-gray" className={base.ph4}>
 								View examples instantly as you write code.
 							</p>
 							<div styleName="button-container">
-								<Button onClick={this._installSourcegraphLiveClicked.bind(this)} outline={this.state.showSourcegraphLiveCTA} color="purple">{this.state.showSourcegraphLiveCTA ? "Install" : "Installed"}</Button>
+								<Button onClick={this._installSourcegraphLiveClicked.bind(this)} outline={showSourcegraphLiveCTA} color={showSourcegraphLiveCTA ? "purple" : "disabled"}>
+									{showSourcegraphLiveCTA ? "Install" : "Installed"}
+								</Button>
 							</div>
 						</Panel>
 					</div>

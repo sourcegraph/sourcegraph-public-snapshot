@@ -162,8 +162,8 @@
 /* Solid */
 
 .solid {
-    composes: btn;
-    composes: white from colors;
+	composes: btn;
+	composes: white from colors;
 	border-style: solid;
 	border-width: 2px;
 }
@@ -176,6 +176,18 @@
 .solid-default:hover {
     background: c_cool-gray;
     border-color: c_cool-gray;
+}
+
+.solid-disabled {
+	composes: solid;
+	composes: bg-cool-pale-gray b--cool-pale-gray from colors;
+	color: c_cool-gray-5;
+	cursor: not-allowed;
+}
+.solid-disabled:hover {
+	background: c_cool-pale-gray;
+	border-color: c_cool-pale-gray;
+	color: c_cool-gray-5;
 }
 
 .solid-blue {

@@ -3,9 +3,11 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+
 .container {
 	composes: center pb6 from base;
-	composes: bg-white bg-pale-blue-gradient from colors; 
+	composes: bg-white bg-pale-blue-gradient from colors;
 	min-height: 100vh;
 	width: 100%;
 }
@@ -81,7 +83,7 @@
 	flex: 1 1 0;
 	composes: ph3 pt2 pb2 ba br3 from base;
 	border-color: #eee;
-	cursor: pointer;	
+	cursor: pointer;
 	box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 	transition: box-shadow 0.1s linear;
 }

@@ -4,7 +4,7 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Stepper, ChecklistItem, TabItem} from "sourcegraph/components";
+import {Heading, Panel, Stepper, ChecklistItem, TabItem, Button} from "sourcegraph/components";
 import ComponentCard from "./ComponentCard";
 
 class ComponentsContainer extends React.Component {
@@ -46,6 +46,9 @@ class ComponentsContainer extends React.Component {
 								</pre>
 							</div>
 						</Panel>
+					</ComponentCard>
+					<ComponentCard>
+						<Panel className={base.pa5}><Button color="disabled">Disabled button</Button></Panel>
 					</ComponentCard>
 					<ComponentCard>
 						<Heading level="3" className={base.mb4}>Tabs</Heading>
