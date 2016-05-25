@@ -75,25 +75,16 @@ func (e *internalError) Error() string {
 	return e.err.Error()
 }
 
-// Fatalf implements the TestingT and the selenium.TestingT interface. Because
-// unlike the testing package we are a single process, we instead cause a
-// panic (which is caught by the test executor).
+// Fatalf implements the TestingT and the selenium.TestingT interface.
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
 	currentURL, _ := t.WebDriver.CurrentURL()
 	fmtStr = fmtStr + " (on page %s)"
 	v = append(v, currentURL)
-	if t.testingT == nil {
-		panic(fmt.Sprintf(fmtStr, v...))
-	}
 	t.testingT.Fatalf(fmtStr, v...)
 }
 
-// Logf implements TestingT. It uses t.testingT if it is non-nil, otherwise
-// uses a normal log.Printf
+// Logf implements TestingT
 func (t *T) Logf(fmtStr string, v ...interface{}) {
-	if t.testingT == nil {
-		log.Printf(fmtStr, v...)
-	}
 	t.testingT.Logf(fmtStr, v...)
 }
 
@@ -556,6 +547,7 @@ func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 		TestLogin: e2etestuser.Prefix + test.Name,
 		TestEmail: e2etestuser.Prefix + test.Name + "@sourcegraph.com",
 		WebDriver: wd,
+		testingT:  defaultTestingT{},
 		tr:        t,
 	}
 	ctx.WebDriverT = ctx.WebDriver.T(ctx)
@@ -796,4 +788,15 @@ Flags:
 	}
 
 	tr.run()
+}
+
+type defaultTestingT struct{}
+
+// FatalF causes a panic (which is caught by the test executor).
+func (t defaultTestingT) Fatalf(fmtStr string, v ...interface{}) {
+	panic(fmt.Sprintf(fmtStr, v...))
+}
+
+func (t defaultTestingT) Logf(fmtStr string, v ...interface{}) {
+	log.Printf(fmtStr, v...)
 }
