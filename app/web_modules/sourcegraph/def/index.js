@@ -48,7 +48,14 @@ export function fastParseDefPath(url: string): ?string {
 }
 
 export function defPath(def: Def): string {
-	return `${def.UnitType}/${def.Unit}/-/${def.Path}`;
+	return `${def.UnitType}/${def.Unit}/-/${encodeDefPath(def.Path)}`;
+}
+
+export function encodeDefPath(path: string): string {
+	if (path && path !== "") {
+		return path.replace("#", encodeURIComponent("#"));
+	}
+	return path;
 }
 
 export type RefLocationsKey = {

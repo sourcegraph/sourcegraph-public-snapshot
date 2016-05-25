@@ -7,6 +7,7 @@ import {defaultFetch, checkStatus} from "sourcegraph/util/xhr";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {trackPromise} from "sourcegraph/app/status";
+import {encodeDefPath} from "sourcegraph/def";
 
 const DefBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -18,7 +19,7 @@ const DefBackend = {
 				let def = DefStore.defs.get(action.repo, action.rev, action.def);
 				if (def === null) {
 					trackPromise(
-						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${encodeURIComponent(action.def)}`)
+						DefBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/def/${encodeDefPath(action.def)}`)
 							.then(updateRepoCloning(action.repo))
 							.then(checkStatus)
 							.then((resp) => resp.json())
