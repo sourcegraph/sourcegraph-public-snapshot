@@ -422,7 +422,13 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		} else {
 			continue
 		}
-
+		uStruct, err := url.Parse(u)
+		if err != nil {
+			return nil, err
+		}
+		if uStruct.IsAbs() {
+			continue
+		}
 		annRepoRev, annDefSpec, err := parseAnnotationURL(u)
 		if err != nil {
 			return nil, err
