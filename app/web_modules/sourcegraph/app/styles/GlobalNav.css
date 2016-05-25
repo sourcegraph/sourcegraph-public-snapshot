@@ -134,7 +134,7 @@
 	composes: white bg-gray from colors;
 }
 
-.channel-open {
+.channel-connected {
 	composes: channel;
 	composes: white bg-green-8 b--green from colors;
 }

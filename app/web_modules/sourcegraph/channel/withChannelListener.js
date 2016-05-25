@@ -1,7 +1,7 @@
 
 import React from "react";
 
-export type ChannelStatus = ?("open" | "connecting" | "error");
+export type ChannelStatus = ?("connected" | "connecting" | "error");
 
 // MAX_FAILURES is the maximum number of connection attempts to make before
 // stopping.
@@ -94,7 +94,7 @@ export default function withChannelListener(Component) {
 			const l = window.location;
 			this._ws = new WebSocket(`${l.protocol === "https:" ? "wss://" : "ws://"}${l.host}/.api/channel/${encodeURIComponent(this.state.channelName)}`);
 			this._ws.onopen = (ev) => {
-				this.setState({status: "open", failures: 0});
+				this.setState({status: "connected", failures: 0});
 			};
 			this._ws.onmessage = (ev) => {
 				this._handleAction(JSON.parse(ev.data));

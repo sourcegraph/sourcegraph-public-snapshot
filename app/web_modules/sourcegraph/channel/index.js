@@ -2,6 +2,7 @@
 import React from "react";
 import Header from "sourcegraph/components/Header";
 import type {Route} from "react-router";
+import styles from "./styles/index.css";
 
 class Channel extends React.Component {
 	static propTypes = {
@@ -44,8 +45,11 @@ class Channel extends React.Component {
 	render() {
 		if (this.props.location.state && this.props.location.state.error && this.props.location.state.fix) {
 			return (
+				<div className={styles.error}>
 				<Header title={this.props.location.state.error}
 					subtitle={this.props.location.state.fix} />
+				<a href="https://github.com/sourcegraph/sourcegraph-sublime" className={styles.readme}>Sourcegraph Sublime README</a>
+				</div>
 			);
 		}
 

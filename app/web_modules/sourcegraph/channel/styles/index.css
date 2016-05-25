@@ -1,0 +1,17 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+.error {
+	composes: col-10 from grid;
+	composes: center from base;
+	text-align: center;
+}
+
+.readme {
+	display: inline-block;
+	composes: pv1 ph2 br2 ba from base;
+	composes: f4 from typography;
+	composes: white bg-green-8 b--green from colors;
+}
