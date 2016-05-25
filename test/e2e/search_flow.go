@@ -6,12 +6,12 @@ func init() {
 	Register(&Test{
 		Name:        "search_flow",
 		Description: "fetch gorilla/mux repository, search for RouteMatch and check the result link",
-		Func:        TestSearchFlow,
+		Func:        testSearchFlow,
 		Quarantined: true,
 	})
 }
 
-func TestSearchFlow(t *T) error {
+func testSearchFlow(t *T) error {
 	wd := t.WebDriver
 
 	err := wd.Get(t.Endpoint("/github.com/gorilla/mux"))
@@ -22,7 +22,7 @@ func TestSearchFlow(t *T) error {
 	searchInput := t.WaitForElement(selenium.ById, "search-input")
 	searchInput.SendKeys("RouteMatch")
 
-	t.WaitForElement(selenium.ByLinkText, "type RouteMatch struct", MatchAttribute("href", `/github\.com/gorilla/mux@[^/]+/-/def/GoPackage/github.com/gorilla/mux/-/RouteMatch`))
+	t.WaitForElement(selenium.ByLinkText, "type RouteMatch struct", MatchAttribute("href", `/github\.com/gorilla/mux(@[^/]+)?/-/def/GoPackage/github.com/gorilla/mux/-/RouteMatch`))
 
 	return nil
 }

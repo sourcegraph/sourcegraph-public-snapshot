@@ -24,7 +24,7 @@ func testRepoFlow(t *T) error {
 	}
 
 	// Check that the "mux.go" codefile link appears.
-	muxLink := t.WaitForElement(selenium.ByLinkText, "mux.go", MatchAttribute("href", `/github\.com/gorilla/mux@master/-/blob/mux.go`))
+	muxLink := t.WaitForElement(selenium.ByLinkText, "mux.go", MatchAttribute("href", `/github\.com/gorilla/mux/-/blob/mux.go`))
 
 	isDisplayed, err := muxLink.IsDisplayed()
 	if err != nil {
@@ -46,7 +46,7 @@ func testRepoFlow(t *T) error {
 
 	muxLink.Click()
 
-	t.WaitForRedirect(t.Endpoint("/github.com/gorilla/mux@master/-/blob/mux.go"), "wait for mux.go code file to load")
+	t.WaitForRedirect(t.Endpoint("/github.com/gorilla/mux/-/blob/mux.go"), "wait for mux.go code file to load")
 
 	// Wait for the "Router" ref link to appear.
 	routerLink := t.WaitForElement(selenium.ByLinkText, "Router")
@@ -58,7 +58,7 @@ func testRepoFlow(t *T) error {
 	routerLink.Click()      // Click the element.
 
 	t.WaitForRedirect(
-		t.Endpoint("/github.com/gorilla/mux@master/-/def/GoPackage/github.com/gorilla/mux/-/Router"),
+		t.Endpoint("/github.com/gorilla/mux/-/def/GoPackage/github.com/gorilla/mux/-/Router"),
 		"wait for Router def to load",
 	)
 	return nil

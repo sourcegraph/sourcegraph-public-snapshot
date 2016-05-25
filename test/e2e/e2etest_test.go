@@ -24,6 +24,10 @@ func TestRepoFlow(t *testing.T) {
 	runE2E(t, "repo_flow")
 }
 
+func TestSearchFlow(t *testing.T) {
+	runE2E(t, "search_flow")
+}
+
 var skipMsg string
 
 func TestMain(m *testing.M) {

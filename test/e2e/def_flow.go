@@ -25,12 +25,12 @@ func testDefFlow(t *T) error {
 	// TODO(keegancsmith) Find a reliable way to tell if the code view has loaded
 
 	// Check that the def link appears
-	defLink := t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go@[^/]+/-/def/GoPackage/net/http/-/Header/Get`))
+	defLink := t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go/-/def/GoPackage/net/http/-/Header/Get`))
 	if err = defLink.Click(); err != nil {
 		return err
 	}
 
-	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go@[^/]+/-/info/GoPackage/net/http/-/Header/Get`))
+	defLink = t.WaitForElement(selenium.ByLinkText, "(Header).Get(key string) string", MatchAttribute("href", `/github\.com/golang/go/-/info/GoPackage/net/http/-/Header/Get`))
 	if err = defLink.Click(); err != nil {
 		return err
 	}
