@@ -73,6 +73,9 @@ func (e *internalError) Error() string {
 // package we are a single process, we instead cause a panic (which is caught
 // by the test executor).
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
+	currentURL, _ := t.WebDriver.CurrentURL()
+	fmtStr = fmtStr + " (on page %s)"
+	v = append(v, currentURL)
 	if t.testingT == nil {
 		panic(fmt.Sprintf(fmtStr, v...))
 	}
