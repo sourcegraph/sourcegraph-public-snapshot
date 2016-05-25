@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"testing"
+
+	"sourcegraph.com/sourcegraph/go-selenium"
 )
 
 func TestDefFlow(t *testing.T) {
@@ -29,6 +31,9 @@ func TestMain(m *testing.M) {
 	err := parseEnv()
 	if err != nil {
 		skipMsg = "parseEnv: " + err.Error()
+	}
+	if !testing.Verbose() {
+		selenium.Log = nil
 	}
 	os.Exit(m.Run())
 }
