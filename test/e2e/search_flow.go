@@ -7,7 +7,6 @@ func init() {
 		Name:        "search_flow",
 		Description: "fetch gorilla/mux repository, search for RouteMatch and check the result link",
 		Func:        testSearchFlow,
-		Quarantined: true,
 	})
 }
 
