@@ -3,11 +3,9 @@ package localstore
 import (
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rogpeppe/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
 
@@ -189,41 +187,6 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 	observe("locations", start)
 	start = time.Now()
 
-	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
-	// of GitHub Repos.Get calls in the accesscontrol check below.
-	// TODO: remove this limit once we properly cache GitHub API responses.
-	if len(repoRefs) > 100 {
-		repoRefs = repoRefs[:100]
-	}
-
-	// Filter out repos that the user does not have access to.
-	hasAccess := make([]bool, len(repoRefs))
-	par := parallel.NewRun(30)
-	var mu sync.Mutex
-	for i_, r_ := range repoRefs {
-		i, r := i_, r_
-		par.Do(func() error {
-			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
-				mu.Lock()
-				hasAccess[i] = true
-				mu.Unlock()
-			}
-			return nil
-		})
-	}
-	if err := par.Wait(); err != nil {
-		return nil, err
-	}
-
-	var filteredRepoRefs []*sourcegraph.DefRepoRef
-	for i, r := range repoRefs {
-		if !hasAccess[i] {
-			continue
-		}
-		filteredRepoRefs = append(filteredRepoRefs, r)
-	}
-	observe("access", start)
-
 	select {
 	case err := <-statsDone:
 		if err != nil {
@@ -232,7 +195,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 	}
 
 	return &sourcegraph.RefLocationsList{
-		RepoRefs:   filteredRepoRefs,
+		RepoRefs:   repoRefs,
 		TotalRepos: int32(totalRepos),
 	}, nil
 }

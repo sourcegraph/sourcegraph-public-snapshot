@@ -2,12 +2,18 @@ package backend
 
 import (
 	"path"
+	"sync"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -90,5 +96,61 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 }
 
 func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
-	return store.GlobalRefsFromContext(ctx).Get(ctx, op)
+	refLocs, err := store.GlobalRefsFromContext(ctx).Get(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// For the rest of the function we are just filtering out results
+	start := time.Now()
+	defer func() {
+		trackedRepo := repotrackutil.GetTrackedRepo(op.Def.Repo)
+		defAccessDuration.WithLabelValues(trackedRepo).Observe(time.Since(start).Seconds())
+	}()
+
+	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
+	// of GitHub Repos.Get calls in the accesscontrol check below.
+	// TODO: remove this limit once we properly cache GitHub API responses.
+	repoRefs := refLocs.RepoRefs
+	if len(repoRefs) > 100 {
+		repoRefs = repoRefs[:100]
+	}
+
+	// Filter out repos that the user does not have access to.
+	hasAccess := make([]bool, len(repoRefs))
+	par := parallel.NewRun(30)
+	var mu sync.Mutex
+	for i_, r_ := range repoRefs {
+		i, r := i_, r_
+		par.Do(func() error {
+			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
+				mu.Lock()
+				hasAccess[i] = true
+				mu.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
+	}
+
+	refLocs.RepoRefs = make([]*sourcegraph.DefRepoRef, 0, len(repoRefs))
+	for i, r := range repoRefs {
+		if hasAccess[i] {
+			refLocs.RepoRefs = append(refLocs.RepoRefs, r)
+		}
+	}
+	return refLocs, nil
+}
+
+var defAccessDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "list_ref_locations_access_duration_seconds",
+	Help:      "Duration for doing access checks on Def.ListRefLocations",
+}, []string{"repo"})
+
+func init() {
+	prometheus.MustRegister(defAccessDuration)
 }
