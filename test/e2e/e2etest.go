@@ -56,9 +56,15 @@ type T struct {
 	WebDriver selenium.WebDriver
 
 	// testingT provides a Fatalf implementation
-	testingT selenium.TestingT
+	testingT TestingT
 
 	tr *testRunner
+}
+
+// Minimal interface for what testing.T provides
+type TestingT interface {
+	Fatalf(fmt string, v ...interface{})
+	Logf(fmt string, v ...interface{})
 }
 
 type internalError struct {
@@ -69,9 +75,9 @@ func (e *internalError) Error() string {
 	return e.err.Error()
 }
 
-// Fatalf implements the selenium.TestingT interface. Because unlike the testing
-// package we are a single process, we instead cause a panic (which is caught
-// by the test executor).
+// Fatalf implements the TestingT and the selenium.TestingT interface. Because
+// unlike the testing package we are a single process, we instead cause a
+// panic (which is caught by the test executor).
 func (t *T) Fatalf(fmtStr string, v ...interface{}) {
 	currentURL, _ := t.WebDriver.CurrentURL()
 	fmtStr = fmtStr + " (on page %s)"
@@ -80,6 +86,15 @@ func (t *T) Fatalf(fmtStr string, v ...interface{}) {
 		panic(fmt.Sprintf(fmtStr, v...))
 	}
 	t.testingT.Fatalf(fmtStr, v...)
+}
+
+// Logf implements TestingT. It uses t.testingT if it is non-nil, otherwise
+// uses a normal log.Printf
+func (t *T) Logf(fmtStr string, v ...interface{}) {
+	if t.testingT == nil {
+		log.Printf(fmtStr, v...)
+	}
+	t.testingT.Logf(fmtStr, v...)
 }
 
 // Endpoint returns an absolute URL given one relative to the target instance
@@ -132,6 +147,7 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 			if err != nil {
 				return false
 			}
+			t.Logf("WaitForElement: %d matches for (%s, %q)", len(elements), by, value)
 			f := And(filters...)
 			for _, e := range elements {
 				if f(e) {
@@ -139,6 +155,7 @@ func (t *T) WaitForElement(by, value string, filters ...ElementFilter) selenium.
 					return true
 				}
 			}
+			t.Logf("WaitForElement: failed to find filter match")
 			return false
 		},
 		fmt.Sprintf("Wait for element to appear: %s %q", by, value),
