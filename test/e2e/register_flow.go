@@ -103,6 +103,6 @@ func testRegisterFlow(t *T) error {
 	submit.Click()
 
 	// Wait for redirect to Sourcegraph homepage.
-	t.WaitForRedirect(t.Endpoint("/"), "wait for redirect to homepage after register")
+	t.WaitForRedirect(t.Endpoint("/tour"), "wait for redirect to tour after register")
 	return nil
 }
