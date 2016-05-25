@@ -271,6 +271,12 @@
 			"revisionTime": "2016-04-25T20:12:06Z"
 		},
 		{
+			"checksumSHA1": "gVatezeV8qLmo11qHLrCJt5iMRE=",
+			"path": "github.com/influxdata/influxdb/client/v2",
+			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
+			"revisionTime": "2016-04-25T20:12:06Z"
+		},
+		{
 			"checksumSHA1": "rFPsYs3FA9q5oUH2cOMVNq1zyFY=",
 			"path": "github.com/influxdata/influxdb/cluster",
 			"revision": "9a3a52a37c2c589f3b7d23e331ae885e5f0a6ca4",
