@@ -94,3 +94,9 @@
 	user-select: none;
 	cursor: pointer;
 }
+
+.fileError {
+	composes: pt2 pb2 pl2 pr2 from base;
+	composes: bg-blue-1 from colors;
+	margin-top: 0;
+}

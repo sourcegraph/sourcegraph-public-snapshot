@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"path"
 	"strings"
@@ -8,9 +9,11 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/cznic/mathutil"
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
@@ -43,6 +46,19 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{Entry: entrySpec, Opt: &opt})
 	if err != nil {
 		return err
+	}
+
+	// Limit the size of files we return to prevent certain parts of the
+	// UI (like DefInfo.js) from becoming unresponsive in the browser.
+	//
+	// TODO support displaying file ranges on the front-end instead.
+	const maxFileSize = 512 * 1024
+	size := mathutil.Max(len(entry.Contents), len(entry.ContentsString))
+	if entry.Type == sourcegraph.FileEntry && size > maxFileSize {
+		return &errcode.HTTPErr{
+			Status: http.StatusRequestEntityTooLarge,
+			Err:    errors.New("file too large (size=" + string(size) + ")"),
+		}
 	}
 
 	res := treeEntry{TreeEntry: *entry}
