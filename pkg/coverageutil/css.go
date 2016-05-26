@@ -8,15 +8,17 @@ import (
 type cssTokenizer struct {
 	tokens      []*Token
 	index       int
-	lineOffsets []int
+	lineOffsets [][]int
 }
 
 // Initializes CSS parser
 func (s *cssTokenizer) Init(src []byte) {
-	css, err := parser.Parse(string(src))
+
+	text := string(src)
+	css, err := parser.Parse(text)
 	s.tokens = make([]*Token, 0)
 	s.index = 0
-	s.calcLineOffsets(src)
+	s.calcLineOffsets(text)
 
 	if err != nil {
 		return
@@ -26,7 +28,7 @@ func (s *cssTokenizer) Init(src []byte) {
 			s.tokens = append(s.tokens, &Token{s.byteOffset(sel.Line, sel.Column), sel.Value})
 		}
 		for _, decl := range r.Declarations {
-			s.tokens = append(s.tokens, &Token{s.byteOffset(decl.Line, decl.Column), decl.Value})
+			s.tokens = append(s.tokens, &Token{s.byteOffset(decl.Line, decl.Column), decl.Property})
 		}
 	}
 }
@@ -36,7 +38,7 @@ func (s *cssTokenizer) Done() {
 
 // Next returns next token (selector or declaration)
 func (s *cssTokenizer) Next() *Token {
-	if s.index > len(s.tokens) {
+	if s.index >= len(s.tokens) {
 		return nil
 	}
 	ret := s.tokens[s.index]
@@ -44,21 +46,25 @@ func (s *cssTokenizer) Next() *Token {
 	return ret
 }
 
-// calcLineOffsets calculates line offsets table
-// Ith table item represents byte offset of line I in the source code
-func (s *cssTokenizer) calcLineOffsets(src []byte) {
-	s.lineOffsets = make([]int, 0)
-	s.lineOffsets = append(s.lineOffsets, 0)
+// calcLineOffsets calculates line offsets table.
+// Table item (L,C) points to byte offset of rune located at the line L and column C
+func (s *cssTokenizer) calcLineOffsets(src string) {
+	s.lineOffsets = make([][]int, 0)
+	line := make([]int, 0)
 	for i, ch := range src {
 		if ch == '\n' {
-			s.lineOffsets = append(s.lineOffsets, i+1)
+			s.lineOffsets = append(s.lineOffsets, line)
+			line = make([]int, 0)
+		} else {
+			line = append(line, i)
 		}
 	}
+	s.lineOffsets = append(s.lineOffsets, line)
 }
 
 // byteOffset returns byte-base offset of token located at (L, C)
 func (s *cssTokenizer) byteOffset(line, column int) uint32 {
-	return uint32(s.lineOffsets[line-1] + column - 1)
+	return uint32(s.lineOffsets[line-1][column-1])
 }
 
 func init() {
