@@ -1,0 +1,39 @@
+{
+	/*
+	This is where debugging information goes. To see debugging information in the
+	Sublime Console, set the "VERBOSE_LOGGING" setting to true.
+	*/
+	"SG_LOG_FILE": "/tmp/sourcegraph-sublime.log",
+
+	/*
+	This setting allows you to use channels on a local version of Sourcegraph.
+	*/
+	"SG_BASE_URL": "https://sourcegraph.com",
+	"SG_SEND_URL": "https://grpc.sourcegraph.com",
+
+	/*
+	This setting toggles the auto-updating feature for the Sourcegraph channel in your browser
+	when you click on a definition in Go. If it is set to false, then you can access your
+	Sourcegraph channel by clicking [ctrl+alt+j] when hovering over a definition.
+	*/
+	"AUTO": false,
+
+	/*
+	This setting gives logs output from Sourcegraph Sublime to the
+	Sublime Console, which can be helping when troubleshooting Sourcegraph Sublime.
+
+	No logging: 0
+	Only log symbols identified by godef: 1
+	Log network calls: 2
+	Log all debugging information: 3
+	
+	*/
+	"LOG_LEVEL": 0,
+
+	/*
+	This setting looks for valid Go symbols if your cursor is near parentheses, which
+	makes the UX better when using auto-complete. Set to false if you want to only
+	use Sourcegraph Sublime for symbols directly under the cursor.
+	*/
+	"ENABLE_LOOKBACK": true,
+}
