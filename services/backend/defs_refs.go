@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -123,7 +124,17 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 	for i_, r_ := range repoRefs {
 		i, r := i_, r_
 		par.Do(func() error {
-			if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalRefs.Get", r.Repo); err == nil {
+			// TODO(keegancsmith) once forks are removed from
+			// global_refs, we should just check
+			// accesscontrol.VerifyUserHasReadAccess
+			repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: r.Repo})
+			if c := grpc.Code(err); c == codes.Unauthenticated || c == codes.PermissionDenied {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if !repo.Fork {
 				mu.Lock()
 				hasAccess[i] = true
 				mu.Unlock()
