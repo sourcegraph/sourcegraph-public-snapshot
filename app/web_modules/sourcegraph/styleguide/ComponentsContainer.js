@@ -79,15 +79,15 @@ class ComponentsContainer extends React.Component {
 						<Heading level="3" className={base.mb4}>Checklist Items</Heading>
 						<Panel className={base.pa5}>
 							<ChecklistItem complete={true} className={base.mb5}>
-								<Heading level="4">Connect with GitHub</Heading>
+								<Heading level="4">Connect with FooBar</Heading>
 								<p className={base.mt2}>
-									Connecting your account with GitHub puts Sourcegraph’s code intelligence to work on your private repositories.
+									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
 								</p>
 							</ChecklistItem>
 							<ChecklistItem actionText="Install" actionOnClick={function() { alert("Boo"); }}>
-								<Heading level="4">Connect with GitHub</Heading>
+								<Heading level="4">Connect with FooBar</Heading>
 								<p className={base.mt2}>
-									Connecting your account with GitHub puts Sourcegraph’s code intelligence to work on your private repositories.
+									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
 								</p>
 							</ChecklistItem>
 						</Panel>
