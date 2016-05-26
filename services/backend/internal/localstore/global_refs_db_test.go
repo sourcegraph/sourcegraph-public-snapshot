@@ -16,20 +16,9 @@ import (
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
-func TestGlobalRefs(t *testing.T) {
-	t.Parallel()
-	testGlobalRefs(t, &globalRefs{})
-}
-
 func TestGlobalRefsNew(t *testing.T) {
 	t.Parallel()
 	testGlobalRefs(t, &globalRefsNew{})
-}
-
-func TestGlobalRefsExperiment(t *testing.T) {
-	// Can't run in parallel since it will collide with the other
-	// GlobalRefs tests
-	testGlobalRefs(t, globalRefsExp)
 }
 
 func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
@@ -219,16 +208,8 @@ func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, nRe
 	}
 }
 
-func BenchmarkGlobalRefsGet(b *testing.B) {
-	benchmarkGlobalRefsGet(b, &globalRefs{})
-}
-
 func BenchmarkGlobalRefsNewGet(b *testing.B) {
 	benchmarkGlobalRefsGet(b, &globalRefsNew{})
-}
-
-func BenchmarkGlobalRefsUpdate(b *testing.B) {
-	benchmarkGlobalRefsUpdate(b, &globalRefs{})
 }
 
 func BenchmarkGlobalRefsNewUpdate(b *testing.B) {
