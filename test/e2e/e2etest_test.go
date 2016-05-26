@@ -28,6 +28,10 @@ func TestSearchFlow(t *testing.T) {
 	runE2E(t, "search_flow")
 }
 
+func TestChannelFlow(t *testing.T) {
+	runE2E(t, "channel_flow")
+}
+
 var skipMsg string
 
 func TestMain(m *testing.M) {
