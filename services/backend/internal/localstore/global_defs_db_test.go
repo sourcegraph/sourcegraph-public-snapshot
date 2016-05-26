@@ -40,7 +40,15 @@ func TestGlobalDefs(t *testing.T) {
 			},
 		}, nil
 	}
-	g.Update(ctx, store.GlobalDefUpdateOp{[]store.RepoUnit{{Repo: sourcegraph.RepoSpec{"a/b"}}}})
+	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: sourcegraph.RepoSpec{URI: "a/b"}}}}
+	err := g.Update(ctx, op)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = g.RefreshRefCounts(ctx, op)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	testCases := []struct {
 		Query   []string

@@ -355,22 +355,16 @@ func (g *globalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpd
 	}
 
 	for _, repoUnit := range repoUnits {
-		var args []interface{}
-		arg := func(a interface{}) string {
-			v := gorp.PostgresDialect{}.BindVar(len(args))
-			args = append(args, a)
-			return v
-		}
-
 		updateSQL := `UPDATE global_defs d
 SET ref_ct = refs.ref_ct
-FROM (SELECT def_repo, def_unit_type, def_unit, def_path, sum(count) ref_ct
-      FROM global_refs
-      WHERE def_repo=` + arg(repoUnit.Repo.URI) + ` AND def_unit_type=` + arg(repoUnit.UnitType) + ` AND def_unit=` + arg(repoUnit.Unit) + `
+FROM (SELECT def_keys.repo def_repo, def_keys.unit_type def_unit_type, def_keys.unit def_unit, def_keys.path def_path, sum(global_refs_new.count) ref_ct
+      FROM global_refs_new
+      INNER JOIN def_keys
+      ON global_refs_new.def_key_id = def_keys.id
+      WHERE def_keys.repo=$1 AND def_keys.unit_type=$2 AND def_keys.unit=$3
       GROUP BY def_repo, def_unit_type, def_unit, def_path) refs
 WHERE repo=def_repo AND unit_type=refs.def_unit_type AND unit=refs.def_unit AND path=refs.def_path;`
-
-		_, err := graphDBH(ctx).Exec(updateSQL, args...)
+		_, err := graphDBH(ctx).Exec(updateSQL, repoUnit.Repo.URI, repoUnit.UnitType, repoUnit.Unit)
 		if err != nil {
 			return err
 		}
