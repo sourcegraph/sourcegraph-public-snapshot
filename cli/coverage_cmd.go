@@ -12,7 +12,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	cssParser "github.com/chris-ramon/douceur/parser"
 	"github.com/gorilla/mux"
 	"github.com/rogpeppe/rog-go/parallel"
 	"golang.org/x/net/context"
@@ -354,14 +353,6 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 	fileCvg := &fileCoverage{Path: path, Language: lang}
 
 	// TODO(rothfels): add other language support.
-	switch lang {
-	// TODO(alexsaveliev): support CSS the same way as the other languages
-	case "CSS":
-		if !strings.HasSuffix(path, ".css") {
-			return nil, nil
-		}
-		return getCSSFileCoverage(cl, ctx, repoRev, path, lang)
-	}
 
 	tokenizer := coverageutil.Lookup(lang, path)
 
@@ -580,105 +571,4 @@ func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) 
 	}
 
 	return nil
-}
-
-func getCSSFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string) (*fileCoverage, error) {
-	fileCvg := &fileCoverage{Path: path, Language: lang}
-	entrySpec := sourcegraph.TreeEntrySpec{
-		RepoRev: *repoRev,
-		Path:    path,
-	}
-	treeGetOp := sourcegraph.RepoTreeGetOptions{}
-	treeGetOp.EntireFile = true
-	entry, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: entrySpec,
-		Opt:   &treeGetOp,
-	})
-	if err != nil {
-		return nil, err
-	}
-	anns, err := cl.Annotations.List(ctx, &sourcegraph.AnnotationsListOptions{
-		Entry: entrySpec,
-		Range: &sourcegraph.FileRange{StartByte: 0, EndByte: 0},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	annsByStartByte := make(map[uint32]*sourcegraph.Annotation)
-	for _, ann := range anns.Annotations {
-		// require URL (i.e. don't count syntax highlighting annotations)
-		if ann.URL != "" || len(ann.URLs) > 0 {
-			annsByStartByte[ann.StartByte] = ann
-		}
-	}
-	data := string(entry.Contents)
-	stylesheet, err := cssParser.Parse(data)
-	if err != nil {
-		return nil, err
-	}
-	for _, r := range stylesheet.Rules {
-		for _, s := range r.Selectors {
-			defStart, _ := findOffsets(data, s.Line, s.Column, s.Value)
-			if defStart == 0 {
-				defStart = 1
-			}
-			fileCvg.Idents += 1
-			if _, ok := annsByStartByte[uint32(defStart)]; ok {
-				fileCvg.Refs += 1
-			}
-		}
-		for _, d := range r.Declarations {
-			fileCvg.Idents += 1
-			s, _ := findOffsets(data, d.Line, d.Column, d.Property)
-			if _, ok := annsByStartByte[uint32(s)]; ok {
-				fileCvg.Refs += 1
-			}
-		}
-	}
-	for _, ann := range anns.Annotations {
-		if isExternalAnnURL(*ann) {
-			fileCvg.Refs += 1
-		}
-	}
-	log15.Info("computed CSS coverage", "path", path, "idents", fileCvg.Idents, "refs", fileCvg.Refs, "defs", fileCvg.Defs)
-	return fileCvg, nil
-}
-
-// isExternalLinkAnn checks if given url is an external URL.
-func isExternalAnnURL(ann sourcegraph.Annotation) bool {
-	if strings.HasPrefix(ann.URL, "https://developer.mozilla.org") || strings.HasPrefix(ann.URL, "http://developer.mozilla.org") {
-		return true
-	}
-	return false
-}
-
-// TODO (chris): Replace `findOffsets` with an array of byte/rune offsets lookup strategy.
-// See: https://github.com/sourcegraph/srclib-css/pull/1#discussion_r61206972
-// findOffsets discovers the start & end offset of given token on fileText, uses the given line & column as input
-// to discover the start offset which is used to calculate the end offset.
-// Returns (-1, -1) if offsets were not found.
-func findOffsets(fileText string, line, column int, token string) (start, end int) {
-
-	// we count our current line and column position.
-	currentCol := 1
-	currentLine := 1
-
-	for offset, ch := range fileText {
-		// see if we found where we wanted to go to.
-		if currentLine == line && currentCol == column {
-			end = offset + len([]byte(token))
-			return offset, end
-		}
-
-		// line break - increment the line counter and reset the column.
-		if ch == '\n' {
-			currentLine++
-			currentCol = 1
-		} else {
-			currentCol++
-		}
-	}
-
-	return -1, -1 // not found.
 }
