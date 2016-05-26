@@ -1,0 +1,22 @@
+machine:
+  pre:
+    - pyenv local 3.5.1
+    - virtualenv venv
+  python:
+    version: 3.5.1
+  services:
+    - docker
+
+dependencies:
+  pre:
+    - go get github.com/luttig/sg-live-plugin-tests/...
+    - go get -u github.com/sqs/godefinfo
+
+test:
+  override:
+    - echo $GOPATH
+    - echo $GOROOT
+    - echo $PATH
+    - go version
+    - python sourcegraph_lib_tests.py
+    - docker run -it luttig/sg-zsh python3 /root/sourcegraph-sublime/sourcegraph_lib_tests.py
