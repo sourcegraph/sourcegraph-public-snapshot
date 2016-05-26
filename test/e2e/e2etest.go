@@ -92,9 +92,14 @@ func (t *T) Logf(fmtStr string, v ...interface{}) {
 // root. For example, if t.Target == "https://sourcegraph.com", Endpoint("/login")
 // will return "https://sourcegraph.com/login"
 func (t *T) Endpoint(e string) string {
-	u := *t.Target
-	u.Path = path.Join(u.Path, e)
-	return u.String()
+	// Manually join the URL components in order to retain query parameters,
+	// etc. that might be specified in e. This works as long as e is an
+	// absolute path (aka e starts with a slash).
+	u := t.Target.String()
+	if strings.HasSuffix(u, "/") {
+		u = strings.TrimSuffix(u, "/")
+	}
+	return u + e
 }
 
 // GRPCClient returns a new authenticated Sourcegraph gRPC client. It uses the

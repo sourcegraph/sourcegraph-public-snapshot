@@ -57,7 +57,7 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	t.WaitForRedirect("https://sourcegraph.com/github.com/gorilla/mux?utm_source=sourcegrapheditor", "wait for redirect to gorilla/mux repo")
+	t.WaitForRedirect(t.Endpoint("/github.com/gorilla/mux?utm_source=sourcegrapheditor"), "wait for redirect to gorilla/mux repo")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
 
 	// Test that the page changes to the definfo page of http.Post after POST request
@@ -77,7 +77,7 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	t.WaitForRedirect("https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/Post?utm_source=sourcegrapheditor", "wait for redirect to homepage after sign-in")
+	t.WaitForRedirect(t.Endpoint("/github.com/golang/go/-/info/GoPackage/net/http/-/Post?utm_source=sourcegrapheditor"), "wait for redirect to homepage after sign-in")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
 
 	return nil
