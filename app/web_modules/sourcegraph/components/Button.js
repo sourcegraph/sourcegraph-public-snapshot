@@ -18,6 +18,10 @@ class Button extends Component {
 		onClick: React.PropTypes.func,
 	};
 
+	static defaultProps = {
+		color: "default",
+	};
+
 	constructor(props) {
 		super(props);
 	}
@@ -27,16 +31,18 @@ class Button extends Component {
 	}
 
 	render() {
-		let style = `${this.state.outline ? "outline-" : "solid-"}${this.state.color ? this.state.color : "default"}`;
-		if (this.state.disabled || this.state.loading) style = `${style} disabled`;
-		if (this.state.block) style = `${style} block`;
-		style = `${style} ${this.state.size ? this.state.size : ""}`;
+		const {color, outline, disabled, block, size, loading, children, onClick} = this.state;
+
+		let style = `${outline ? "outline-" : "solid-"}${color}`;
+		if (disabled || loading) style = `${style} disabled`;
+		if (block) style = `${style} block`;
+		style = `${style} ${size ? size : ""}`;
 
 		return (
 			<button {...this.props} styleName={style}
-				onClick={this.state.onClick}>
-				{this.state.loading && <Loader stretch={Boolean(this.state.block)} />}
-				{!this.state.loading && this.state.children}
+				onClick={onClick}>
+				{loading && <Loader stretch={Boolean(block)} {...this.props}/>}
+				{!loading && children}
 			</button>
 		);
 	}

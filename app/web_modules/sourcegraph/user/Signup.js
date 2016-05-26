@@ -71,7 +71,7 @@ export class SignupForm extends Container {
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
 				<h1 styleName="title">Sign up for Sourcegraph</h1>
 				{!this.state.githubError && [
-					<GitHubAuthButton tabIndex="1" key="1">Continue with GitHub</GitHubAuthButton>,
+					<GitHubAuthButton tabIndex="1" key="1" block="true">Continue with GitHub</GitHubAuthButton>,
 					<p key="2" styleName="divider">or</p>,
 				]}
 				{this.state.githubError === "username-or-email-taken" && <div styleName="error">Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}

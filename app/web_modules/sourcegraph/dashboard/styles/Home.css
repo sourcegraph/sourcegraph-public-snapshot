@@ -11,6 +11,8 @@
 
 .flex-fill { flex: 1 }
 
+.tc { composes: tc from typography; }
+
 .container {
 	composes: containerFixed from layout;
 	composes: col-12-ns col-11 from grid;

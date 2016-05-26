@@ -1,9 +1,8 @@
 import React from "react";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
-import Button from "sourcegraph/components/Button";
 import CSSModules from "react-css-modules";
-import Logo from "sourcegraph/components/Logo";
+import {Logo, Button, Heading} from "sourcegraph/components";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
@@ -24,18 +23,18 @@ class AnonymousLandingPage extends Component {
 		return (
 			<div styleName="flex-fill" className={base.t4}>
 				<div styleName="container-with-globe">
-					<div styleName="row">
-						<div styleName="hero">
-							<h1 styleName="h1">
-								<strong styleName="text-purple">Global code search &amp; cross&#8209;references</strong>
-							</h1>
-							<hr styleName="short-purple-line" />
-							<div styleName="hero-body">
-								<p>Search for a function, type, or package, and see how other developers use it, globally. Free for public and private projects.</p>
-								<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
-								<Link styleName="try-it" to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
-							</div>
-						</div>
+					<div styleName="row tc">
+						<Heading level="1" underline="purple" color="purple">
+							Global code search &amp; cross&#8209;references
+						</Heading>
+						<p styleName="lead" className={base.mt4}>Search for a function, type, or package, and see how other developers use it, globally. Free for public and private projects.</p>
+
+						<p className={base.mt4}>
+							<GitHubAuthButton className={base.mr3}>
+								<strong>Continue with GitHub</strong>
+							</GitHubAuthButton>
+							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
+						</p>
 					</div>
 				</div>
 				<div styleName="box-demo">
@@ -166,4 +165,4 @@ class AnonymousLandingPage extends Component {
 	}
 }
 
-export default CSSModules(AnonymousLandingPage, styles);
+export default CSSModules(AnonymousLandingPage, styles, {allowMultiple: true});
