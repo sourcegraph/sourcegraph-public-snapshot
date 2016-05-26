@@ -1,0 +1,59 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value menu "sourcegraph/components/styles/menu.css";
+
+.wrapper {
+	display: inline-block;
+	float: right;
+	line-height: 1.45;
+	margin-top: 18px;
+	cursor: pointer;
+}
+
+.dropdown-menu {
+	position: absolute;
+	width: 10rem;
+}
+
+.icon {
+	composes: gray from colors;
+	font-size: 1.5rem;
+}
+
+.triangle-down {
+	padding-left: 5px;
+}
+
+.dropdown-menu-open {
+	composes: container from menu;
+	display: block;
+}
+
+.dropdown-menu-closed {
+	display: none;
+}
+
+.list-section {
+	max-height: 360px;
+	composes: ma0 ph0 from base;
+}
+
+.item { composes: item from menu; }
+.item-content { composes: item-content from menu; }
+.item-current { composes: item from menu; }
+.item-content-current {
+	composes: item-content-current from menu;
+}
+.item-content-current .item-name {
+	font-weight: bold;
+}
+
+.item-icon {
+	vertical-align: middle;
+	user-select: none;
+	composes: pr1 from base;
+}
+.item-icon-hidden {
+	composes: icon;
+	opacity: 0;
+}

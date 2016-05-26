@@ -17,3 +17,4 @@ export {default as Icon} from "./Icon";
 export {default as ChecklistItem} from "./ChecklistItem";
 export {default as Emoji} from "./Emoji";
 export {default as TabItem} from "./TabItem";
+export {default as Dropdown} from "./Dropdown";

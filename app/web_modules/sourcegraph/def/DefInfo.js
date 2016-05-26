@@ -21,6 +21,9 @@ import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
+import "whatwg-fetch";
+import {GlobeIcon} from "sourcegraph/components/Icons";
+import {Dropdown} from "sourcegraph/components";
 
 class DefInfo extends Container {
 	static contextTypes = {
@@ -43,6 +46,12 @@ class DefInfo extends Container {
 			nextPageLoading: false,
 		};
 		this._onNextPage = this._onNextPage.bind(this);
+		this._onTranslateDefInfo = this._onTranslateDefInfo.bind(this);
+
+		this.state = {
+			currentLang: localStorage.getItem("defInfoCurrentLang"),
+			translations: {},
+		};
 	}
 
 	stores() {
@@ -84,6 +93,42 @@ class DefInfo extends Container {
 				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
 			}
 		}
+	}
+
+	_onTranslateDefInfo(val) {
+		let $this = this;
+		let def = $this.state.defObj;
+		let apiKey = "AIzaSyCKati7PcEa2fqyuoDDwd1ujXiBVOddwf4";
+		let targetLang = val;
+
+		if ($this.state.translations[targetLang]) {
+			// Toggle when target language is same as the current one,
+			// otherwise change the current language and force to show the result.
+			if ($this.state.currentLang === targetLang) {
+				$this.setState({showTranslatedString: !$this.state.showTranslatedString});
+			} else {
+				$this.setState({
+					currentLang: targetLang,
+					translatedString: $this.state.translations[targetLang],
+					showTranslatedString: true,
+				});
+			}
+
+		} else {
+			// Fetch translation result when does not exist with given target language
+			fetch(`https://www.googleapis.com/language/translate/v2?key=${apiKey}&target=${targetLang}&q=${encodeURIComponent(def.DocHTML.__html)}`)
+				.then((response) => response.json())
+				.then(function(json) {
+					let translation = json.data.translations[0].translatedText;
+					$this.setState({
+						currentLang: targetLang,
+						translations: {...$this.state.translations, [targetLang]: translation},
+						showTranslatedString: true,
+					});
+				});
+		}
+
+		localStorage.setItem("defInfoCurrentLang", targetLang);
 	}
 
 	_onNextPage() {
@@ -143,7 +188,32 @@ class DefInfo extends Container {
 				<hr/>
 				<div>
 					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
-					{def && def.DocHTML && <div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>}
+					{def && def.DocHTML &&
+						<div styleName="description-wrapper">
+							<Dropdown
+								icon={<GlobeIcon styleName="icon" />}
+								title="Translate"
+								initialValue={this.state.currentLang}
+								onMenuClick={(val) => this._onTranslateDefInfo(val)}
+								onItemClick={(val) => this._onTranslateDefInfo(val)}
+								items={[
+									{name: "English", value: "en"},
+									{name: "简体中文", value: "zh-CN"},
+									{name: "繁體中文", value: "zh-TW"},
+									{name: "日本語", value: "ja"},
+									{name: "Français", value: "fr"},
+									{name: "Español", value: "es"},
+									{name: "Русский", value: "ru"},
+									{name: "Italiano", value: "it"},
+								]} />
+
+							{this.state.showTranslatedString &&
+								<div styleName="description" dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
+							}
+							{this.state.showTranslatedString && <hr/>}
+							<div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>
+						</div>
+					}
 					{/* TODO DocHTML will not be set if the this def was loaded via the
 						serveDefs endpoint instead of the serveDef endpoint. In this case
 						we'll fallback to displaying plain text. We should be able to

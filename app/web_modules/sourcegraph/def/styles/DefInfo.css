@@ -39,6 +39,10 @@
 	composes: pt3 pb1 from base;
 }
 
+.description-wrapper {
+	padding-top: 10px;
+}
+
 .description {
 	composes: normal-text from typography;
 }
