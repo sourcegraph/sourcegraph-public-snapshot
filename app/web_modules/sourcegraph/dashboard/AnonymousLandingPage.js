@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import {Logo, Button, Heading} from "sourcegraph/components";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 
 class AnonymousLandingPage extends Component {
 	static contextTypes = {

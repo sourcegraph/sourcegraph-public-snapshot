@@ -2,10 +2,9 @@
 
 import React from "react";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
-import {GitHubIcon} from "sourcegraph/components/Icons";
-import CSSModules from "react-css-modules";
+import {GitHubIcon} from "./Icons";
+import type from "./styles/_typography.css";
 import {Button} from "sourcegraph/components";
-import style from "sourcegraph/user/styles/accountForm.css";
 
 class GitHubAuthButton extends React.Component {
 	static propTypes = {
@@ -26,19 +25,20 @@ class GitHubAuthButton extends React.Component {
 		color: "blue",
 		outline: false,
 		block: false,
+		url: urlToGitHubOAuth,
 	};
 
 	render() {
+		const {url, outline, color, block, children} = this.props;
 		return (
-			<a href={this.props.url ? this.props.url : urlToGitHubOAuth} styleName="github"
+			<a href={url}
 				onClick={() => this.context.eventLogger.logEvent("InitiateGitHubOAuth2Flow")} {...this.props}>
-				<Button type="button" outline={this.props.outline} formNoValidate={true} color={this.props.color} block={this.props.block}>
-					<GitHubIcon />&nbsp; {this.props.children}
+				<Button type="button" outline={outline} formNoValidate={true} color={color} block={block}>
+					<GitHubIcon className={type.f4} />&nbsp; {children}
 				</Button>
 			</a>
 		);
 	}
 }
 
-
-export default CSSModules(GitHubAuthButton, style);
+export default GitHubAuthButton;

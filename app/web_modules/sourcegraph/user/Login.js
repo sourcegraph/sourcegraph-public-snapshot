@@ -4,12 +4,12 @@ import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Input} from "sourcegraph/components";
+import {Button, Input, Heading} from "sourcegraph/components";
 import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import CSSModules from "react-css-modules";
 import style from "sourcegraph/user/styles/accountForm.css";
 
@@ -64,7 +64,7 @@ export class LoginForm extends Container {
 	render() {
 		return (
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
-				<h1 styleName="title">Sign in to Sourcegraph</h1>
+				<Heading level="3" align="center" underline="orange">Sign in to Sourcegraph</Heading>
 				{this.state.githubError && <div styleName="error">Sorry, signing in via GitHub didn't work. (Check your organization's GitHub 3rd-party application settings.) Try <Link to="/join?github-error=from-login">creating a separate Sourcegraph account</Link>.</div>}
 				<GitHubAuthButton tabIndex="1" block={true}>Continue with GitHub</GitHubAuthButton>
 				<p styleName="divider">or</p>

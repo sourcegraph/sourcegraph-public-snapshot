@@ -19,11 +19,11 @@
 }
 
 .modal {
-	composes: center mv6 br2 from base;
+	composes: center mv6 br2 pa4 from base;
 	composes: bg-white from colors;
 	composes: modal-shadow;
 	max-width: 700px; /* TODO: use rem */
-	min-width: 300px; /* TODO: use rem */
+	min-width: 320px; /* TODO: use rem */
 	z-index: 101; /* TODO: extract z-index into module */
 	max-height: 75%;
 	overflow-y: auto;
@@ -32,7 +32,7 @@
 @media screen and (max-width: 40em) {
 	.modal {
 		width: 100vw;
-		margin-top: 5em;
+		margin-top: 0;
 		max-width: none !important;
 		max-height: none !important;
 	}
