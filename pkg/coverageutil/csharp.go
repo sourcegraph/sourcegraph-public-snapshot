@@ -84,7 +84,7 @@ func (s *csharpScanner) consumeNumericSuffix() {
 	}
 }
 
-// newCsharpScanner initializes and return new scanner for JavaScript language
+// newCsharpScanner initializes and return new scanner for C# language
 func newCsharpScanner() *csharpScanner {
 	s := &csharpScanner{&scanner.Scanner{}}
 	s.Error = func(s *scanner.Scanner, msg string) {}
@@ -186,7 +186,7 @@ func (s *csharpTokenizer) Init(src []byte) {
 func (s *csharpTokenizer) Done() {
 }
 
-// Next returns idents that are not Java keywords
+// Next returns idents that are not C# keywords
 func (s *csharpTokenizer) Next() *Token {
 	for {
 		r := s.scanner.Scan()
