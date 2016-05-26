@@ -27,6 +27,9 @@ message Key {
 	string CommitID = 2;
 
 	// Version is the unresolved source unit version (e.g., "v1.2.3").
+	// When empty, it indicates that no version is specified for the
+	// source unit. Currently, this field is unused, but can still be
+	// set for the sake of posterity.
 	string Version = 3;
 
 	// Type is the type of source unit this represents, such as "GoPackage".

@@ -15,7 +15,7 @@ endif
 
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: default install srclib release upload-release check-release
+.PHONY: default install srclib release upload-release check-release test
 
 default: govendor install
 
@@ -48,3 +48,6 @@ check-release:
 	/tmp/srclib-$(V) version
 	echo; echo
 	@echo Released srclib $(V)
+
+test:
+	go test -race -v $(go list ./... | grep -v /vendor/)

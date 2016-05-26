@@ -47,6 +47,9 @@ type Key struct {
 	// should be left blank, to be filled in by the `srclib` tool.
 	CommitID string `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
 	// Version is the unresolved source unit version (e.g., "v1.2.3").
+	// When empty, it indicates that no version is specified for the
+	// source unit. Currently, this field is unused, but can still be
+	// set for the sake of posterity.
 	Version string `protobuf:"bytes,3,opt,name=Version,proto3" json:"Version,omitempty"`
 	// Type is the type of source unit this represents, such as "GoPackage".
 	Type string `protobuf:"bytes,4,opt,name=Type,proto3" json:"Type,omitempty"`

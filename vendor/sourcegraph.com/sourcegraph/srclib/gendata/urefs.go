@@ -42,7 +42,7 @@ func (c *URefsRepoCmd) Execute(args []string) error {
 	for _, unitName := range unitNames {
 		ut := &unit.SourceUnit{
 			Key: unit.Key{
-				Name:     fmt.Sprintf(unitName),
+				Name:     unitName,
 				Type:     "GoPackage",
 				Repo:     c.Repo,
 				CommitID: c.CommitID,

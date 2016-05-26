@@ -110,6 +110,9 @@ func (v SourceUnits) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 
 // sourceUnit is the struct for JSON serialization used to preserve
 // backcompat with the old SourceUnit JSON serialization format
+//
+// DEPRECATED: this should be removed after all srclib toolchain
+// Docker images have been updated to the new source unit schema.
 type sourceUnit struct {
 	Name         string
 	Type         string

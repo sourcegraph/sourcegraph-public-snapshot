@@ -36,7 +36,7 @@ func (c *SimpleRepoCmd) Execute(args []string) error {
 	for _, unitName := range unitNames {
 		units = append(units, &unit.SourceUnit{
 			Key: unit.Key{
-				Name:     fmt.Sprintf(unitName),
+				Name:     unitName,
 				Type:     "GoPackage",
 				Repo:     c.Repo,
 				CommitID: c.CommitID,
