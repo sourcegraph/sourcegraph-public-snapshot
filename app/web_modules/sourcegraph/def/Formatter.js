@@ -3,7 +3,10 @@
 import React from "react";
 import type {Def} from "sourcegraph/def/index";
 
+type Qual = "DepQualified" | "ScopeQualified";
+
 export type DefFormatOptions = {
+	nameQual?: Qual;
 	nameClass?: string;
 	unqualifiedNameClass?: string;
 }
@@ -11,9 +14,10 @@ export type DefFormatOptions = {
 export function qualifiedNameAndType(def, opts: ?DefFormatOptions) {
 	if (!def) throw new Error("def is null");
 	if (!def.FmtStrings) return "(unknown def)";
+	const qual: Qual = opts && opts.nameQual ? opts.nameQual : "ScopeQualified";
 	const f = def.FmtStrings;
 
-	let name = f.Name.ScopeQualified;
+	let name = f.Name[qual];
 	if (f.Name.Unqualified && name) {
 		let parts = name.split(f.Name.Unqualified);
 		name = [

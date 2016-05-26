@@ -254,7 +254,7 @@ class GlobalSearch extends Container {
 						</div>
 						<div styleName="flex bottom-border" className={base.pb3}>
 							<code styleName="f4 block" className={base.mb2}>
-								{qualifiedNameAndType(def)}
+								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
 							<p>
 								from {def.Repo}
