@@ -22,7 +22,7 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import "whatwg-fetch";
-import {GlobeIcon} from "sourcegraph/components/Icons";
+import {GlobeIcon, LanguageIcon} from "sourcegraph/components/Icons";
 import {Dropdown} from "sourcegraph/components";
 
 class DefInfo extends Container {
@@ -208,9 +208,14 @@ class DefInfo extends Container {
 								]} />
 
 							{this.state.showTranslatedString &&
-								<div styleName="description" dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
+								<div>
+									<LanguageIcon styleName="icon" />
+									<div styleName="description" dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
+								</div>
 							}
-							{this.state.showTranslatedString && <hr/>}
+							{this.state.showTranslatedString &&
+								<hr/>
+							}
 							<div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>
 						</div>
 					}
