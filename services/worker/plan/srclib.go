@@ -48,8 +48,8 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 
 	if len(unsupported) > 0 {
 		b := buildLogMsg(
-			fmt.Sprintf("Code Intelligence does not yet support %s", strings.Join(unsupported, ", ")),
-			fmt.Sprintf("Sourcegraph Code Intelligence does not yet support the following languages detected in this repository:\n%s\n", strings.Join(unsupported, "\n")),
+			fmt.Sprintf("Sourcegraph does not yet support %s", strings.Join(unsupported, ", ")),
+			fmt.Sprintf("Sourcegraph does not yet support the following languages detected in this repository:\n%s\n", strings.Join(unsupported, "\n")),
 		)
 		if err := insertSrclibBuild(config, axes, b); err != nil {
 			return err
@@ -57,7 +57,7 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	}
 
 	if !usingSrclib {
-		if err := insertSrclibBuild(config, axes, buildLogMsg("Code Intelligence did not find any supported programming languages", "no supported programming languages were auto-detected for Sourcegraph Code Intelligence")); err != nil {
+		if err := insertSrclibBuild(config, axes, buildLogMsg("Sourcegraph did not find any supported programming languages", "No supported programming languages were auto-detected.")); err != nil {
 			return err
 		}
 	}

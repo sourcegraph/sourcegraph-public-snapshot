@@ -1224,7 +1224,7 @@ type BuildTask struct {
 	// task (in the same build) with the given ID. A ParentID of zero
 	// means that this is a top-level task.
 	ParentID uint64 `protobuf:"varint,3,opt,name=ParentID,proto3" json:"ParentID,omitempty"`
-	// Label describes the task (e.g., Code Intelligence).
+	// Label describes the task (e.g., "Go build").
 	Label string `protobuf:"bytes,4,opt,name=Label,proto3" json:"Label,omitempty"`
 	// CreatedAt is when this task was initially created.
 	CreatedAt pbtypes.Timestamp `protobuf:"bytes,5,opt,name=CreatedAt" json:"CreatedAt"`

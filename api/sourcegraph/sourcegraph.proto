@@ -730,7 +730,7 @@ message BuildTask {
 	// means that this is a top-level task.
 	uint64 ParentID = 3;
 
-	// Label describes the task (e.g., Code Intelligence).
+	// Label describes the task (e.g., "Go build").
 	string Label = 4;
 
 	// CreatedAt is when this task was initially created.

@@ -44,7 +44,7 @@ class OnboardingModals extends Component {
 				header: "Start using Sourcegraph",
 				onClick: this.clickHandler.bind(this),
 				subheader: "Welcome!",
-				body: "Let’s quickly walk through how Sourcegraph's code intelligence can help you while writing code. Do you want to use it on your private code, or on open-source code?",
+				body: "Let’s quickly walk through how Sourcegraph can help you while writing code. Do you want to use it on your private code, or on open-source code?",
 				hasNext: true,
 				primaryCTA: this._onboardSelectionCTA.bind(this),
 			},
@@ -69,7 +69,7 @@ class OnboardingModals extends Component {
 			"open-source-3": {
 				header: "Almost Done!",
 				subheader: "Sourcegraph pairs perfectly with GitHub",
-				body: this.state.gitHubAuthed ? "Since you've connected GitHub, you can use Sourcegraph on your own repositories for live usage examples and intelligent code browsing." : "GitHub integration combined with code intelligence is going to keep you in the flow as a developer. Continue with GitHub so you can give Code Intelligence a test drive on your own code.",
+				body: this.state.gitHubAuthed ? "Since you've connected GitHub, you can use Sourcegraph on your own repositories for live usage examples and intelligent code browsing." : "Sourcegraph's GitHub integration is going to keep you in the flow as a developer. Continue with GitHub so you can give Code Intelligence a test drive on your own code.",
 				hasNext: true,
 				onClick: this.clickHandler.bind(this),
 				primaryCTA: this.state.gitHubAuthed ? this._skipCTA.bind(this, "Continue", "open-source-4", "ContinueCTAClicked") : this._gitHubCTA.bind(this, "open-source-4"),
@@ -77,7 +77,7 @@ class OnboardingModals extends Component {
 			},
 			"open-source-4": {
 				header: "Navigate the Graph!",
-				subheader: "You're all set to experience code intelligence anywhere!",
+				subheader: "You're all set to experience Sourcegraph anywhere!",
 				body: "Check out usage and examples across all repositories.",
 				hasNext: false,
 				onClick: this.clickHandler.bind(this),
@@ -88,7 +88,7 @@ class OnboardingModals extends Component {
 				header: this.state.gitHubAuthed ? "You're connected!" : "Got GitHub?",
 				onClick: this.clickHandler.bind(this, "private-repo-2"),
 				subheader: this.state.gitHubAuthed ? "Sourcegraph pairs perfectly with GitHub" : "We built the tools you need to stay in developer flow",
-				body: this.state.gitHubAuthed ? "You're building the perfect experience! Since you've connected GitHub, you'll be able to use Sourcegraph on your own repositories for live usage examples and intelligent code browsing!" : "Before we can get you started with Code Intelligence on your own repositories, you'll need to continue with GitHub.",
+				body: this.state.gitHubAuthed ? "You're building the perfect experience! Since you've connected GitHub, you'll be able to use Sourcegraph on your own repositories for live usage examples and intelligent code browsing!" : "Before we can get you started with Sourcegraph on your own repositories, you'll need to continue with GitHub.",
 				hasNext: true,
 				primaryCTA: this.state.gitHubAuthed ? this._skipCTA.bind(this, "Let's get started", this.state.canShowChromeExtensionCTA ? "private-repo-2" : "private-repo-3", "ContinueCTAClicked") : this._gitHubCTA.bind(this, "private-repo-2"),
 				secondaryCTA: !this.state.gitHubAuthed ? this._skipCTA.bind(this, "Skip", this.state.canShowChromeExtensionCTA ? "private-repo-2" : "private-repo-3", "SkipCTAClicked") : null,
@@ -146,7 +146,7 @@ class OnboardingModals extends Component {
 			<div>
 				<div styleName="option" onClick={this.clickHandler.bind(this, "private-repo-1", "PersonalRepoPathClicked")}>
 					<p styleName="title">Personal Projects</p>
-					<p styleName="subtitle">I want to see Code Intelligence on my personal repositories</p>
+					<p styleName="subtitle">I want to use Sourcegraph on my personal repositories</p>
 				</div>
 				<div styleName="option" onClick={this.clickHandler.bind(this, "open-source-1", "OpenSourcePathClicked")}>
 					<p styleName="title">Open Source</p>

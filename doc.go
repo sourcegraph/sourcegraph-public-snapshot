@@ -1,7 +1,6 @@
 // Package sourcegraph is the top-level package for Sourcegraph, the
-// Code Intelligence platform for teams.
+// fast, semantic code search & cross-reference engine.
 //
-// See the README.md file
-// (https://sourcegraph.com/sourcegraph/sourcegraph/-/blob/README.md) for more
+// See https://sourcegraph.com and the README.md file for more
 // information.
 package sourcegraph

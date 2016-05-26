@@ -180,7 +180,7 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 
 	var planLabel string
 	if b.DroneYMLFileExists {
-		planLabel = "Add srclib Code Intelligence indexing steps to existing .drone.yml"
+		planLabel = "Add srclib indexing steps to existing .drone.yml"
 	} else {
 		planLabel = "Infer build & test configuration"
 	}
@@ -224,7 +224,7 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 
 				w := state.Log()
 				if b.DroneYMLFileExists {
-					fmt.Fprintln(w, "# Using .drone.yml file with srclib Code Intelligence indexing steps added.")
+					fmt.Fprintln(w, "# Using .drone.yml file with srclib indexing steps added.")
 				} else {
 					fmt.Fprintln(w, "# Because this repository has no .drone.yml file, Sourcegraph attempted to infer this repository's build and test configuration.")
 					fmt.Fprintln(w, "#")
