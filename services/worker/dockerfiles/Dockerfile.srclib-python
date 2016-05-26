@@ -4,37 +4,21 @@
 #
 # Dependencies
 #
-FROM python:2.7-slim
-
-# Adding Golang based on
-# https://github.com/docker-library/golang/blob/1eab0db63794152b4516dbcb70270eb9dced4cbd/1.5/Dockerfile
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	make \
-	curl \
-	git \
-    && rm -rf /var/lib/apt/lists/*
-ENV GOLANG_VERSION 1.6
-ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA256 5470eac05d273c74ff8bac7bef5bad0b5abbd1c4052efbdbc8db45332e836b0b
-RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
-    && echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
-    && tar -C /usr/local -xzf golang.tar.gz \
-    && rm golang.tar.gz
-
-ENV PATH /usr/local/go/bin:$PATH
+FROM python:3.5.1-slim
+RUN apt-get update
+RUN apt-get install -qq make git tar
+RUN pip3.5 install virtualenv
 
 #
 # Install srclib-python executable
 #
-ENV GOPATH /srclib/toolchains
-ENV PATH $PATH:$GOPATH/bin
-ENV SRCLIBPATH $GOPATH/src
+ENV SRCLIBPATH /srclib/toolchains
 ARG TOOLCHAIN_URL
 ADD $TOOLCHAIN_URL /toolchain/t
 RUN (cd /toolchain && tar xfz t && rm t && mv * /toolchain/t) || true
 RUN mkdir -p $SRCLIBPATH/sourcegraph.com/sourcegraph && mv /toolchain/t $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
 WORKDIR $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-python
-RUN make
+RUN make install
 
 #
 # Install srclib binary (assumes this has been built on the Docker host)
@@ -42,5 +26,4 @@ RUN make
 ADD ./srclib /bin/srclib
 
 # Run environment
-ENV GOPATH /drone
 ENTRYPOINT srclib config && srclib make
