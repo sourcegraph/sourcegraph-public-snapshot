@@ -60,7 +60,7 @@ class DashboardRepos extends React.Component {
 					{this.context.signedIn &&
 						<Hero pattern="objects" color="dark" className={base.pv6}>
 							<Heading level="2" color="white">My Repositories</Heading>
-							<p styleName="cool-pale-gray">Browse and lookup examples in your own code.</p>
+							<p styleName="cool-pale-gray">Search, browse and cross-reference your own code.</p>
 							<Input type="text"
 								placeholder="Filter repositories..."
 								domRef={(e) => this._filterInput = e}
@@ -81,7 +81,7 @@ class DashboardRepos extends React.Component {
 								<div styleName="max-width-500" className={base.center}>
 									<Icon icon="github" width="120" className={base.mb4} />
 									<Heading level="4" className={base.mb4}>
-										Uh oh! You'll need to connect your GitHub account to browse your private code with Sourcegraph
+										Uh-oh! You'll need to connect your GitHub account to browse your private code with Sourcegraph.
 									</Heading>
 									<GitHubAuthButton styleName="inline-block">Connect with GitHub</GitHubAuthButton>
 								</div>

@@ -65,9 +65,9 @@ class ToolsContainer extends React.Component {
 			<div styleName="container">
 				<Hero color="purple" pattern="objects">
 					<div styleName="container-fixed">
-						<Heading level="1" color="white" underline="white">Get code intelligence in every part of your workflow</Heading>
+						<Heading level="1" color="white" underline="white">Get Sourcegraph everywhere you code</Heading>
 						<p style={{maxWidth: "560px"}} className={base.center}>
-							Add Sourcegraph to everywhere you write code.
+							Add Sourcegraph's instant coding assistance to your workflow.
 						</p>
 					</div>
 				</Hero>
@@ -77,7 +77,7 @@ class ToolsContainer extends React.Component {
 							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/GoogleChromeAsset.svg`}></img>
 							<Heading align="center" level="4" className={base.ph4}>Sourcegraph for Chrome</Heading>
 							<p styleName="cool-mid-gray" className={base.ph4}>
-								Smart search and instant documentation on GitHub.
+								Jump-to-definition, smart search, and instant documentation on GitHub.
 							</p>
 							<div styleName="button-container">
 								<Button onClick={this._installChromeExtensionClicked.bind(this)} outline={showChromeExtensionCTA} color={showChromeExtensionCTA ? "purple" : "disabled"}>{showChromeExtensionCTA ? "Install" : "Installed"}</Button>
@@ -89,7 +89,7 @@ class ToolsContainer extends React.Component {
 							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SublimeTextLogo.svg`}></img>
 							<Heading align="center" level="4" className={base.ph4}>Sourcegraph for Sublime Text</Heading>
 							<p styleName="cool-mid-gray" className={base.ph4}>
-								View examples instantly as you write code.
+								Live usage examples for Go code, as you type.
 							</p>
 							<div styleName="button-container">
 								<Button onClick={this._installSourcegraphLiveClicked.bind(this)} outline={showSourcegraphLiveCTA} color={showSourcegraphLiveCTA ? "purple" : "disabled"}>

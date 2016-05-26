@@ -101,13 +101,13 @@ class TourContainer extends React.Component {
 							<ChecklistItem complete={this.context.githubToken !== null} className={base.mb5} actionText="Connect" actionOnClick={this._connectGitHubClicked.bind(this)}>
 								<Heading level="4">Connect with GitHub</Heading>
 								<p className={base.mt2} styleName="cool-mid-gray">
-									Connecting your account with GitHub puts Sourcegraph’s code intelligence to work on your private repositories.
+									Use Sourcegraph on your private repositories.
 								</p>
 							</ChecklistItem>
 							<ChecklistItem complete={!this.state.showChromeExtensionCTA} className={base.mb5} actionText="Install" actionOnClick={this._installChromeExtensionClicked.bind(this)}>
 								<Heading level="4">Install a browser extension</Heading>
 								<p className={base.mt2} styleName="cool-mid-gray">
-									Browse GitHub like an IDE, with jump-to-definition links, semantic code search, and documentation tooltips.
+									Browse GitHub like an IDE, with jump-to-definition links, semantic code search, and instant documentation.
 								</p>
 							</ChecklistItem>
 							<ChecklistItem complete={!this.state.showSourcegraphLiveCTA} actionText="Install" actionOnClick={this._installSourcegraphLiveClicked.bind(this)}>
