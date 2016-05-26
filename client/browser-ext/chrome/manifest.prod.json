@@ -17,7 +17,7 @@
     "128": "img/icon-128.png"
   },
   "content_scripts": [{
-    "matches": ["https://github.com/*", "https://www.github.com/*", "https://sourcegraph.com/*", "https://www.sourcegraph.com/*"],
+    "matches": ["https://github.com/*", "https://sourcegraph.com/*"],
     "run_at": "document_end",
     "js": ["js/inject.bundle.js"]
   }],
