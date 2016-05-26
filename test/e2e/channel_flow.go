@@ -11,7 +11,7 @@ import (
 func init() {
 	Register(&Test{
 		Name:        "channel_flow",
-		Description: "Registers a brand new user account via the join page.",
+		Description: "Creates a new channel and navigates to two pages via a websocket connection and 2 POST requests",
 		Func:        testChannelFlow,
 	})
 }
@@ -19,7 +19,7 @@ func init() {
 func testChannelFlow(t *T) error {
 	wd := t.WebDriver
 
-	err := wd.Get(t.Endpoint("/-/channel/e2etest-asdfasdfasdfasdfasdfasdfasdfasdf"))
+	err := wd.Get(t.Endpoint("/-/channel/e2etest"))
 	if err != nil {
 		return err
 	}
@@ -47,16 +47,18 @@ func testChannelFlow(t *T) error {
 		Package: "github.com/gorilla/mux",
 	}, CheckForListeners: true}
 	body := new(bytes.Buffer)
-	json.NewEncoder(body).Encode(u)
-
-	_, err = http.Post("https://grpc.sourcegraph.com/.api/channel/e2etest-asdfasdfasdfasdfasdfasdfasdfasdf", "application/json; charset=utf-8", body)
+	err = json.NewEncoder(body).Encode(u)
 	if err != nil {
 		return err
 	}
 
+	_, err = http.Post("https://grpc.sourcegraph.com/.api/channel/e2etest", "application/json; charset=utf-8", body)
+	if err != nil {
+		return err
+	}
+
+	t.WaitForRedirect("https://sourcegraph.com/github.com/gorilla/mux?utm_source=sourcegrapheditor", "wait for redirect to gorilla/mux repo")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
-	// Check that the "mux.go" codefile link appears.
-	t.WaitForElement(selenium.ByLinkText, "mux.go", MatchAttribute("href", `/github\.com/gorilla/mux/-/blob/mux.go`))
 
 	// Test that the page changes to the definfo page of http.Post after POST request
 	u = &Request{Action: Action{
@@ -65,19 +67,18 @@ func testChannelFlow(t *T) error {
 		Def:     "Post",
 	}, CheckForListeners: true}
 	body = new(bytes.Buffer)
-	json.NewEncoder(body).Encode(u)
-
-	_, err = http.Post("https://grpc.sourcegraph.com/.api/channel/e2etest-asdfasdfasdfasdfasdfasdfasdfasdf", "application/json; charset=utf-8", body)
+	err = json.NewEncoder(body).Encode(u)
 	if err != nil {
 		return err
 	}
 
+	_, err = http.Post("https://grpc.sourcegraph.com/.api/channel/e2etest", "application/json; charset=utf-8", body)
+	if err != nil {
+		return err
+	}
+
+	t.WaitForRedirect("https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/Post?utm_source=sourcegrapheditor", "wait for redirect to homepage after sign-in")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
-	// check that the definfo page has loaded
-	t.WaitForElement(selenium.ByLinkText, "View")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Post issues a POST to the specified URL.')]")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'bradfitz')]")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Used in')]")
 
 	return nil
 }
