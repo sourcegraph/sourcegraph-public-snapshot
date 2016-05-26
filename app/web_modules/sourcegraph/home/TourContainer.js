@@ -107,13 +107,13 @@ class TourContainer extends React.Component {
 							<ChecklistItem complete={!this.state.showChromeExtensionCTA} className={base.mb5} actionText="Install" actionOnClick={this._installChromeExtensionClicked.bind(this)}>
 								<Heading level="4">Install a browser extension</Heading>
 								<p className={base.mt2} styleName="cool-mid-gray">
-									Browse and search GitHub with tooltip documentation and search by function and symbol.
+									Browse GitHub like an IDE, with jump-to-definition links, semantic code search, and documentation tooltips.
 								</p>
 							</ChecklistItem>
 							<ChecklistItem complete={!this.state.showSourcegraphLiveCTA} actionText="Install" actionOnClick={this._installSourcegraphLiveClicked.bind(this)}>
 								<Heading level="4">Add Sourcegraph to your editor</Heading>
 								<p className={base.mt2} styleName="cool-mid-gray">
-									Look up code examples from across the web as you write code.
+									See global cross-references and live usage examples for Go code, as you type. For Sublime Text 3.
 								</p>
 							</ChecklistItem>
 						</div>
