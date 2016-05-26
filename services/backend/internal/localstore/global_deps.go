@@ -120,7 +120,7 @@ func (g *globalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, er
 	whereSQL := strings.Join(whereClauses, " AND ")
 
 	var res_ []*resolution
-	_, err := graphDBH(ctx).Select(&res_, fmt.Sprintf(`SELECT * FROM global_deps WHERE %s`, whereSQL))
+	_, err := graphDBH(ctx).Select(&res_, fmt.Sprintf(`SELECT * FROM global_deps WHERE %s`, whereSQL), args...)
 	if err != nil {
 		return nil, err
 	}
