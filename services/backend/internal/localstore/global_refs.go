@@ -52,10 +52,10 @@ func init() {
 	)
 }
 
-// globalRefsNew is a DB-backed implementation of the GlobalRefs store.
-type globalRefsNew struct{}
+// globalRefs is a DB-backed implementation of the GlobalRefs store.
+type globalRefs struct{}
 
-func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
+func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	trackedRepo := repotrackutil.GetTrackedRepo(op.Def.Repo)
 	observe := func(part string, start time.Time) {
 		globalRefsDuration.WithLabelValues(trackedRepo, part).Observe(time.Since(start).Seconds())
@@ -202,7 +202,7 @@ func (g *globalRefsNew) Get(ctx context.Context, op *sourcegraph.DefsListRefLoca
 
 // getRefStats fetches global ref aggregation stats pagination and display
 // purposes.
-func (g *globalRefsNew) getRefStats(ctx context.Context, defKeyID int64) (int64, error) {
+func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, error) {
 	// Our strategy is to defer to the potentially stale materialized view
 	// if there are a large number of distinct repos. Otherwise we can
 	// calculate the exact value since it should be fast to do
@@ -217,7 +217,7 @@ func (g *globalRefsNew) getRefStats(ctx context.Context, defKeyID int64) (int64,
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-func (g *globalRefsNew) Update(ctx context.Context, op *pb.ImportOp) error {
+func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
 		return err
 	}
@@ -324,7 +324,7 @@ ON COMMIT DROP;`
 	})
 }
 
-func (g *globalRefsNew) StatRefresh(ctx context.Context) error {
+func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
 	return err
 }
