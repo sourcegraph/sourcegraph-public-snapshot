@@ -1,12 +1,11 @@
 import React from "react";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
-import Button from "sourcegraph/components/Button";
 import CSSModules from "react-css-modules";
-import Logo from "sourcegraph/components/Logo";
+import {Logo, Button, Heading} from "sourcegraph/components";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 
 class AnonymousLandingPage extends Component {
 	static contextTypes = {
@@ -22,28 +21,24 @@ class AnonymousLandingPage extends Component {
 	render() {
 		const {siteConfig, eventLogger} = this.context;
 		return (
-			<div styleName="flex-fill" className={base.t4}>
-				<div styleName="container-with-globe">
-					<div styleName="row">
-						<div styleName="hero">
-							<h1 styleName="h1">
-								<strong styleName="text-purple">Global code search &amp; cross&#8209;references</strong>
-							</h1>
-							<hr styleName="short-purple-line" />
-							<div styleName="hero-body">
-								<p>Search for a function, type, or package, and see how other developers use it, globally. Free for public and private projects.</p>
-								<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
-								<Link styleName="try-it" to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
-							</div>
+			<div styleName="flex-fill" style={{marginTop: "-2.3rem"}}>
+				<div styleName="box-purple-gradient screenshot-container tc" className={base.pt5}>
+					<div styleName="container">
+						<div styleName="row tc">
+							<Heading level="1" underline="white" color="white">
+								Global code search &amp; cross&#8209;references
+							</Heading>
+							<p styleName="lead white" className={base.mt2}>Search for a function, type, or package, and see how other developers use it, globally. Free for public and private projects.</p>
+
+							<p styleName="white" className={base.mt4}>
+								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
+									<strong>Sign up with GitHub</strong>
+								</GitHubAuthButton>
+								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")} styleName="white">Try it on a popular codebase</Link>
+							</p>
 						</div>
 					</div>
-				</div>
-				<div styleName="box-demo">
-					<div styleName="demo-container">
-						<div styleName="demo-animation">
-							<img src={`${siteConfig.assetsRoot}/img/Homepage/how-ref.gif`} styleName="how-img" />
-						</div>
-					</div>
+					<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-heros.png`} width="100%" styleName="hero-screenshot"/>
 				</div>
 				<div styleName="container-lg">
 					<div styleName="content-block">
@@ -55,11 +50,11 @@ class AnonymousLandingPage extends Component {
 						<div styleName="content-right">
 							<div styleName="content">
 								<Logo width="32px" className={base.mt4} />
-								<h3 styleName="h3">Search public and (your) private code</h3>
+								<h3 styleName="h3">Search by function, type, or package – globally</h3>
 								<p>Connect your GitHub account to Sourcegraph to start searching, browsing, and cross-referencing your code, with IDE-like capabilities in your browser. Free for public and private projects.</p>
 							</div>
-							<GitHubAuthButton style={{display: "inline-block"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
-							<Link styleName="try-it" to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
+							<GitHubAuthButton className={base.mr3}><strong>Continue with GitHub</strong></GitHubAuthButton>
+							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
 						</div>
 					</div>
 
@@ -85,17 +80,14 @@ class AnonymousLandingPage extends Component {
 
 					<div styleName="box-white">
 						<div styleName="language-container">
-							<h1 styleName="language-header">Language support</h1>
-							<hr styleName="short-blue-line" />
-							<p styleName="lead">Powered by <a href="https://srclib.org/" target="new">srclib</a>, a hackable code analysis library.</p>
+							<Heading level="1" underline="blue" align="center">Language support</Heading>
+							<p styleName="lead tc">Powered by <a href="https://srclib.org/" target="new">srclib</a>, a hackable code analysis library.</p>
 
-							<div styleName="language">
+							<div styleName="language" className={base.mt5}>
 								Go
 								<span styleName="label-blue">75,311 projects</span>
 							</div>
-							<h5 styleName="header-5">Top Go Projects</h5>
-
-							<div styleName="row">
+							<div styleName="row" className={base.mt4}>
 								<div styleName="featured-project">
 									<Link to="/github.com/golang/go">
 										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
@@ -126,7 +118,7 @@ class AnonymousLandingPage extends Component {
 
 							</div>
 
-							<h5 styleName="header-5">Coming soon</h5>
+							<h5 styleName="header-5" className={base.mt6}>Coming soon</h5>
 
 							<div styleName="row">
 								<div styleName="language-2">
@@ -147,17 +139,24 @@ class AnonymousLandingPage extends Component {
 
 				</div>
 
-				<div styleName="box-bottom">
+				<div styleName="box-purple-gradient" className={`${base.pt6} ${base.pb5}`}>
 					<div styleName="bottom-container">
-						<h2 styleName="bottom-header">We&nbsp;built&nbsp;Sourcegraph&nbsp;to keep&nbsp;you&nbsp;in&nbsp;flow while&nbsp;coding.</h2>
-						<p styleName="bottom-text">Start saving time and sharpening your skills. Join tons of other developers who use Sourcegraph, around the world and in large, well-known companies.</p>
-						<GitHubAuthButton color="purple" outline={true} style={{display: "inline-block", marginTop: "15px", fontSize: "1.6rem"}}><strong>Continue with GitHub</strong></GitHubAuthButton>
-						<a target="_blank"
-							styleName="bottom-link"
-							href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
-							onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
-							Just install the Chrome extension
-						</a>
+						<Heading level="3" color="white" className={base.mb3}>
+							We built Sourcegraph to keep you in flow while coding
+						</Heading>
+						<p styleName="lead white">
+							Start saving time and sharpening your skills. Join tons of other developers who use Sourcegraph, around the world and in large, well-known companies.
+						</p>
+						<p className={base.mt4}>
+							<GitHubAuthButton color="purple" outline={true} className={base.mr3}>
+								<strong>Sign up with GitHub</strong>
+							</GitHubAuthButton>
+							<a target="_blank" styleName="white"
+								href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
+								onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
+								Just install the Chrome extension
+							</a>
+						</p>
 					</div>
 				</div>
 
@@ -166,4 +165,4 @@ class AnonymousLandingPage extends Component {
 	}
 }
 
-export default CSSModules(AnonymousLandingPage, styles);
+export default CSSModules(AnonymousLandingPage, styles, {allowMultiple: true});

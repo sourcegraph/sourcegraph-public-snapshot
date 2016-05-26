@@ -6,10 +6,13 @@
 @value button "sourcegraph/components/styles/button.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
+@value container-max-width 660px;
 
-@value container-max-width 600px;
+/*TODO(@chexee): Refactor a lot of this to be less semantic*/
 
 .flex-fill { flex: 1 }
+.tc { composes: tc from typography; }
+.white { composes: white from typography; }
 
 .container {
 	composes: containerFixed from layout;
@@ -23,20 +26,6 @@
 	max-width: calc(0.9 * container-max-width);
 }
 
-.container-with-globe {
-	composes: container;
-	composes: mt5 mb3 from base;
-	background: url('../../../../assets/img/world-illo.svg') no-repeat top center;
-	min-height: 262px; /* height of world-illo.svg */
-}
-.hero {
-	composes: pt4 ph2 from base;
-	composes: tc from typography;
-}
-.hero-body {
-	composes: f4 from typography;
-}
-
 .bg {
 	position: absolute;
 	z-index: 0;
@@ -47,15 +36,6 @@
 	composes: col-12-ns col-11 from grid;
 	composes: center from base;
 	max-width: 1200px;
-}
-
-.alt-cta {
-	display: inline-block;
-	white-space: nowrap;
-}
-.try-it {
-	composes: ph3 from base;
-	composes: alt-cta;
 }
 
 .h1 {
@@ -88,12 +68,6 @@
 .short-purple-line {
 	composes: ba bw3 mv3 from base;
 	composes: b--purple from colors;
-	width: line-width;
-}
-
-.short-blue-line {
-	composes: ba bw3 mv3 from base;
-	composes: b--blue from colors;
 	width: line-width;
 }
 
@@ -147,11 +121,7 @@
 	max-width: container-max-width;
 }
 
-.lead {
-	composes: f4 tc from typography;
-	composes: cool-mid-gray from colors;
-	composes: mv4 from base;
-}
+.lead { composes: f4 from typography; }
 
 .box-purple-gradient {
 	background-image: url('../../../../assets/img/world-illo-faded.svg'), linear-gradient(#8E2DFC, #B114F7);
@@ -159,23 +129,19 @@
 	background-position: 110% 30%;
 }
 
-.box-demo {
-	composes: box-purple-gradient;
-	composes: pv5 mv5 from base;
-}
-.demo-container {
-	composes: responsive-container;
-}
-.demo-animation {
-	composes: bg-light-purple from colors;
-	composes: br2 from base;
-	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
-}
-
 .header-5 {
-	composes: f5 tracked from typography;
+	composes: f5 tracked tc from typography;
 	composes: cool-mid-gray from colors;
 	text-transform: uppercase;
+}
+
+.screenshot-container {
+	line-height: 0;
+}
+
+.hero-screenshot {
+	max-width: 1440px;
+	width: 90%;
 }
 
 .row {
@@ -203,12 +169,9 @@
 
 .language-container {
 	composes: responsive-container;
-	composes: pb5 from base;
+	composes: pb5 pv5 from base;
 }
-.language-header {
-	composes: h1;
-	composes: pv4 from base;
-}
+
 .language {
 	composes: f2 from typography;
 	composes: cool-gray-8 from colors;
@@ -236,10 +199,6 @@
 	box-shadow: 0px 3px 7px 0px rgba(0,0,0,0.06);
 }
 
-.box-bottom {
-	composes: box-purple-gradient;
-	composes: pv6 from base;
-}
 .bottom-container {
 	composes: responsive-container;
 	composes: pb2 center from base;
@@ -252,12 +211,8 @@
 .bottom-text {
 	composes: white from colors;
 }
-.bottom-link {
-	composes: ml3 pa1 from base;
-	composes: bottom-text;
-	composes: alt-cta;
-}
-.bottom-link:hover {
+
+a.white:hover {
 	color: white;
 	opacity: 0.8;
 }

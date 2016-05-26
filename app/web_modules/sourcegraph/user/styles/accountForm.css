@@ -9,11 +9,6 @@
 	composes: pa2 mv5 center from base;
 }
 
-.title {
-	composes: header-center from typography;
-	composes: pa0 ma0 mb3 from base;
-}
-
 .label-link { composes: label-link from form; }
 .mid-text { composes: mid-text from form; }
 .sub-text { composes: sub-text from form; }
@@ -21,13 +16,6 @@
 .success { composes: success from form; }
 .form {	composes: stacked from form; }
 
-.github {
-	display: block;
-	composes: mb3 from base;
-}
-.github svg {
-	font-size: 1.3em;
-}
 .divider {
 	text-align: center;
 	composes: mv2 from base;

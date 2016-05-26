@@ -113,14 +113,12 @@
 	cursor: pointer;
 }
 
-
+/* TODO: Abstract this – styles should be contained in their components */
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
-	composes: f5 from typography;
-	composes: pa3 from base;
 	composes: col-10 from grid;
 	max-width: 340px;
-	min-width: 300px;
+	min-width: 320px;
 }
 
 .channel {

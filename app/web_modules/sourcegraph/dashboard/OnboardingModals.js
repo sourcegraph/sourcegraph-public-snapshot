@@ -7,7 +7,7 @@ import {Button} from "sourcegraph/components";
 import ChromeExtensionCTA from "./LiteChromeExtensionCTA";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {urlToDefInfo} from "sourcegraph/def/routes";
 
 class OnboardingModals extends Component {

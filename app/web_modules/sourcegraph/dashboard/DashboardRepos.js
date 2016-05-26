@@ -6,7 +6,7 @@ import styles from "./styles/Dashboard.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Input, Panel, Hero, Heading, Button, Icon} from "sourcegraph/components";
 import debounce from "lodash/function/debounce";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 
 class DashboardRepos extends React.Component {
 	static contextTypes = {

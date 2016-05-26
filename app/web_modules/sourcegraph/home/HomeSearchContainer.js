@@ -2,7 +2,7 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/HomeSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 import {Link} from "react-router";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";

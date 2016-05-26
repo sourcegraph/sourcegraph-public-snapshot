@@ -4,11 +4,11 @@ import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Input} from "sourcegraph/components";
+import {Button, Input, Heading} from "sourcegraph/components";
 
 import * as UserActions from "sourcegraph/user/UserActions";
 import UserStore from "sourcegraph/user/UserStore";
-import GitHubAuthButton from "sourcegraph/user/GitHubAuthButton";
+import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import "sourcegraph/user/UserBackend"; // for side effects
 import redirectIfLoggedIn from "sourcegraph/user/redirectIfLoggedIn";
 import CSSModules from "react-css-modules";
@@ -69,9 +69,9 @@ export class SignupForm extends Container {
 	render() {
 		return (
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
-				<h1 styleName="title">Sign up for Sourcegraph</h1>
+				<Heading level="3" align="center" underline="orange">Sign up for Sourcegraph</Heading>
 				{!this.state.githubError && [
-					<GitHubAuthButton tabIndex="1" key="1">Continue with GitHub</GitHubAuthButton>,
+					<GitHubAuthButton tabIndex="1" key="1" block={true}>Continue with GitHub</GitHubAuthButton>,
 					<p key="2" styleName="divider">or</p>,
 				]}
 				{this.state.githubError === "username-or-email-taken" && <div styleName="error">Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}
