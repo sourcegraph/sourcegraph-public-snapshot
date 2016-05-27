@@ -10,9 +10,9 @@ option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
 // A FileDiff represents a unified diff for a single file.
-// 
+//
 // A file unified diff has a header that resembles the following:
-// 
+//
 //   --- oldname	2009-10-11 15:12:20.000000000 -0700
 //   +++ newname	2009-10-11 15:12:30.000000000 -0700
 message FileDiff {

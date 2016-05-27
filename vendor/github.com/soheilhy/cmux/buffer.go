@@ -1,57 +1,49 @@
 package cmux
 
-import "io"
+import (
+	"bytes"
+	"io"
+)
 
-var _ io.ReadWriter = (*buffer)(nil)
-
-type buffer struct {
-	read int
-	data []byte
+// bufferedReader is an optimized implementation of io.Reader that behaves like
+// ```
+// io.MultiReader(bytes.NewReader(buffer.Bytes()), io.TeeReader(source, buffer))
+// ```
+// without allocating.
+type bufferedReader struct {
+	source     io.Reader
+	buffer     bytes.Buffer
+	bufferRead int
+	bufferSize int
+	sniffing   bool
+	lastErr    error
 }
 
-// From the io.Reader documentation:
-//
-// When Read encounters an error or end-of-file condition after
-// successfully reading n > 0 bytes, it returns the number of
-// bytes read.  It may return the (non-nil) error from the same call
-// or return the error (and n == 0) from a subsequent call.
-// An instance of this general case is that a Reader returning
-// a non-zero number of bytes at the end of the input stream may
-// return either err == EOF or err == nil.  The next Read should
-// return 0, EOF.
-//
-// This function implements the latter behaviour, returning the
-// (non-nil) error from the same call.
-func (b *buffer) Read(p []byte) (int, error) {
-	var err error
-	n := copy(p, b.data[b.read:])
-	b.read += n
-	if b.read == len(b.data) {
-		err = io.EOF
+func (s *bufferedReader) Read(p []byte) (int, error) {
+	if s.bufferSize > s.bufferRead {
+		// If we have already read something from the buffer before, we return the
+		// same data and the last error if any. We need to immediately return,
+		// otherwise we may block for ever, if we try to be smart and call
+		// source.Read() seeking a little bit of more data.
+		bn := copy(p, s.buffer.Bytes()[s.bufferRead:s.bufferSize])
+		s.bufferRead += bn
+		return bn, s.lastErr
 	}
-	return n, err
+
+	// If there is nothing more to return in the sniffed buffer, read from the
+	// source.
+	sn, sErr := s.source.Read(p)
+	if sn > 0 && s.sniffing {
+		s.lastErr = sErr
+		if wn, wErr := s.buffer.Write(p[:sn]); wErr != nil {
+			return wn, wErr
+		}
+	}
+	return sn, sErr
 }
 
-func (b *buffer) Len() int {
-	return len(b.data) - b.read
-}
-
-func (b *buffer) resetRead() {
-	b.read = 0
-}
-
-// From the io.Writer documentation:
-//
-// Write writes len(p) bytes from p to the underlying data stream.
-// It returns the number of bytes written from p (0 <= n <= len(p))
-// and any error encountered that caused the write to stop early.
-// Write must return a non-nil error if it returns n < len(p).
-// Write must not modify the slice data, even temporarily.
-//
-// Implementations must not retain p.
-//
-// In a previous incarnation, this implementation retained the incoming slice.
-func (b *buffer) Write(p []byte) (int, error) {
-	b.data = append(b.data, p...)
-	return len(p), nil
+func (s *bufferedReader) reset(snif bool) {
+	s.sniffing = snif
+	s.bufferRead = 0
+	s.bufferSize = s.buffer.Len()
 }

@@ -45,6 +45,7 @@
     "postcss-loader": "0.8.1",
     "postcss-modules-values": "1.1.1",
     "raw-loader": "0.5.1",
+    "react-addons-perf": "^15.1.0",
     "react-addons-test-utils": "^15.0.1",
     "style-loader": "0.12.3",
     "webpack": "1.12.13",
@@ -66,7 +67,6 @@
     "react-router": "^2.0.1",
     "recharts": "^0.10.5",
     "split": "^1.0.0",
-    "url": "^0.11.0",
     "utf8": "2.1.1"
   },
   "scripts": {

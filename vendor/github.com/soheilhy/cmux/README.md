@@ -67,3 +67,10 @@ would not be set in your handlers.
 when it's accepted. For example, one connection can be either gRPC or REST, but
 not both. That is, we assume that a client connection is either used for gRPC
 or REST.
+
+* *Java gRPC Clients*: Java gRPC client blocks until it receives a SETTINGS
+frame from the server. If you are using the Java client to connect to a cmux'ed
+gRPC server please match with writers:
+```go
+grpcl := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+```

@@ -1,0 +1,38 @@
+[
+	{
+		"caption": "Sourcegraph: Default Settings",
+		"command": "open_file",
+		"args": {
+			"file": "${packages}/sourcegraph-sublime/Sourcegraph.sublime-settings"
+		}
+	},
+	{
+		"caption": "Sourcegraph: User Settings",
+		"command": "open_file",
+		"args": {
+			"file": "${packages}/User/Sourcegraph.sublime-settings"
+		}
+	},
+	{
+		"caption": "Sourcegraph: Read Me",
+		"command": "open_file",
+		"args": {
+			"file": "${packages}/sourcegraph-sublime/README.md"
+		}
+	},
+	{
+		"caption": "Sourcegraph: License (MIT)",
+		"command": "open_file",
+		"args": {
+			"file": "${packages}/sourcegraph-sublime/LICENSE.md"
+		}
+	},
+	{
+		"caption": "Sourcegraph: Open New Channel",
+		"command": "sg_open_channel"
+	},
+	{
+		"caption": "Sourcegraph: Define Current Symbol",
+		"command": "sg_manual_process"
+	}
+]

@@ -60,7 +60,7 @@ func (a *Token) Equal(b *Token) bool {
 }
 
 const (
-	RUNE_CHAR              string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-,/@$*()+=><:;&^%~|"
+	RUNE_CHAR              string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-,/@$*()+=><:;&^%~|!?[]{}"
 	RUNE_SPACE             string = " \t\r\n"
 	RUNE_ESCAPING_QUOTE    string = "\""
 	RUNE_NONESCAPING_QUOTE string = "'"
@@ -347,7 +347,7 @@ SCAN:
 						err = errors.New("EOF found when expecting closing quote.")
 						break SCAN
 					}
-				case RUNETOKEN_CHAR, RUNETOKEN_SPACE, RUNETOKEN_NONESCAPING_QUOTE, RUNETOKEN_COMMENT:
+				case RUNETOKEN_CHAR, RUNETOKEN_UNKNOWN, RUNETOKEN_SPACE, RUNETOKEN_NONESCAPING_QUOTE, RUNETOKEN_COMMENT:
 					{
 						value = append(value, nextRune)
 					}
@@ -373,7 +373,7 @@ SCAN:
 						err = errors.New("EOF found when expecting closing quote.")
 						break SCAN
 					}
-				case RUNETOKEN_CHAR, RUNETOKEN_SPACE, RUNETOKEN_ESCAPING_QUOTE, RUNETOKEN_ESCAPE, RUNETOKEN_COMMENT:
+				case RUNETOKEN_CHAR, RUNETOKEN_UNKNOWN, RUNETOKEN_SPACE, RUNETOKEN_ESCAPING_QUOTE, RUNETOKEN_ESCAPE, RUNETOKEN_COMMENT:
 					{
 						value = append(value, nextRune)
 					}
@@ -394,7 +394,7 @@ SCAN:
 					{
 						break SCAN
 					}
-				case RUNETOKEN_CHAR, RUNETOKEN_ESCAPING_QUOTE, RUNETOKEN_ESCAPE, RUNETOKEN_COMMENT, RUNETOKEN_NONESCAPING_QUOTE:
+				case RUNETOKEN_CHAR, RUNETOKEN_UNKNOWN, RUNETOKEN_ESCAPING_QUOTE, RUNETOKEN_ESCAPE, RUNETOKEN_COMMENT, RUNETOKEN_NONESCAPING_QUOTE:
 					{
 						value = append(value, nextRune)
 					}

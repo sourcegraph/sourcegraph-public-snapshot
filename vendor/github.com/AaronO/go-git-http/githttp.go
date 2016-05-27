@@ -95,7 +95,6 @@ func (g *GitHttp) serviceRpc(hr HandlerReq) error {
 	if err != nil {
 		return err
 	}
-	defer stdin.Close()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -115,6 +114,7 @@ func (g *GitHttp) serviceRpc(hr HandlerReq) error {
 
 	// Copy input to git binary
 	io.Copy(stdin, rpcReader)
+	stdin.Close()
 
 	// Write git binary's output to http response
 	io.Copy(w, gitReader)
@@ -137,8 +137,9 @@ func (g *GitHttp) serviceRpc(hr HandlerReq) error {
 		g.event(e)
 	}
 
-	// May be nil if all is good
-	return mainError
+	// Because a response was already written,
+	// the header cannot be changed
+	return nil
 }
 
 func (g *GitHttp) getInfoRefs(hr HandlerReq) error {

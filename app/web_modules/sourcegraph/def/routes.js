@@ -22,18 +22,6 @@ export const routes: Array<Route> = [
 		},
 	},
 	{
-		path: `${rel.def}/-/info`, // backwards compatibility redirect
-		onEnter: (nextState, replace) => {
-			replace(nextState.location.pathname.substr(0, nextState.location.pathname.length - "/-/info".length).replace("/-/def/", "/-/info/"));
-		},
-	},
-	{
-		path: `${rel.def}/-/refs`, // backwards compatibility redirect
-		onEnter: (nextState, replace) => {
-			replace(nextState.location.pathname.substr(0, nextState.location.pathname.length - "/-/refs".length).replace("/-/def/", "/-/info/"));
-		},
-	},
-	{
 		path: rel.def,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
@@ -88,4 +76,11 @@ export function urlToDefInfo(def: Def, rev?: ?string): string {
 export function urlToRepoDef(repo: string, rev: ?string, def: string): string {
 	const revPart = rev ? `@${rev}` : "";
 	return urlTo("def", {splat: [`${repo}${revPart}`, def]});
+}
+
+// fastURLToRepoDef is a faster version of urlToRepoDef that hardcodes the route
+// construction. It is brittle to route structure changes, but it is acceptable to
+// use (to improve perf) it if you need to call it a lot.
+export function fastURLToRepoDef(repo: string, rev: ?string, def: string): string {
+	return `/${repo}${rev ? `@${rev}` : ""}/-/def/${def}`;
 }

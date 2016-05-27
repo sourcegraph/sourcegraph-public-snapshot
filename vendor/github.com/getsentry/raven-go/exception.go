@@ -20,7 +20,7 @@ func NewException(err error, stacktrace *Stacktrace) *Exception {
 	return ex
 }
 
-// http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html#sentry.interfaces.Exception
+// https://docs.getsentry.com/hosted/clientdev/interfaces/#failure-interfaces
 type Exception struct {
 	// Required
 	Value string `json:"value"`
@@ -31,7 +31,7 @@ type Exception struct {
 	Stacktrace *Stacktrace `json:"stacktrace,omitempty"`
 }
 
-func (e *Exception) Class() string { return "sentry.interfaces.Exception" }
+func (e *Exception) Class() string { return "exception" }
 
 func (e *Exception) Culprit() string {
 	if e.Stacktrace == nil {

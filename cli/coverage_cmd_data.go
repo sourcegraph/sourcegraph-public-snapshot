@@ -1123,4 +1123,16 @@ var langRepos_ = map[string][]string{
 		"github.com/gameplay3d/GamePlay",
 		"github.com/peterbraden/node-opencv",
 	},
+	"CSS": []string{
+		"github.com/daneden/animate.css",
+		"github.com/google/material-design-icons",
+		"github.com/FezVrasta/bootstrap-material-design",
+		"github.com/numbbbbb/the-swift-programming-language-in-chinese",
+		"github.com/sahat/hackathon-starter",
+		"github.com/IanLunn/Hover",
+		"github.com/twbs/ratchet",
+		"github.com/dhg/Skeleton",
+		"github.com/tobiasahlin/SpinKit",
+		"github.com/h5bp/Effeckt.css",
+	},
 }

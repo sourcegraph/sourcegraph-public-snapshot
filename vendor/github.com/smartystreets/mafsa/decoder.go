@@ -3,6 +3,8 @@ package mafsa
 import (
 	"encoding/binary"
 	"errors"
+	"io"
+	"io/ioutil"
 )
 
 // Decoder is a type which can decode a byte slice into a MinTree.
@@ -18,6 +20,18 @@ type Decoder struct {
 // Decode transforms the binary serialization of a MA-FSA into a
 // new MinTree (a read-only MA-FSA).
 func (d *Decoder) Decode(data []byte) (*MinTree, error) {
+	tree := newMinTree()
+	return tree, d.decodeMinTree(tree, data)
+}
+
+// ReadFrom reads the binary serialization of a MA-FSA into a
+// new MinTree (a read-only MA-FSA) from a io.Reader.
+func (d *Decoder) ReadFrom(r io.Reader) (*MinTree, error) {
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
 	tree := newMinTree()
 	return tree, d.decodeMinTree(tree, data)
 }

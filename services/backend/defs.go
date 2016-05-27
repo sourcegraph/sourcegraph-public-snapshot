@@ -165,10 +165,23 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		return nil, err
 	}
 
-	var defs []*sourcegraph.Def
+	// Optimization; since the caller may request a large page limit (see note below)
+	// initialize return slice with correct length.
+	var numEntries int
+	if len(defs0) < opt.Offset()+opt.Limit() {
+		numEntries = len(defs0) - opt.Offset()
+	} else {
+		numEntries = opt.Limit()
+	}
+	if numEntries < 0 {
+		numEntries = 0 // for last (or non-existent) pages
+	}
+
+	// NOTE: pagination is broken because the ordering of defs0 is non-deterministic.
+	defs := make([]*sourcegraph.Def, numEntries)
 	for i, def0 := range defs0 {
 		if i >= opt.Offset() && i < (opt.Offset()+opt.Limit()) {
-			defs = append(defs, &sourcegraph.Def{Def: *def0})
+			defs[i-opt.Offset()] = &sourcegraph.Def{Def: *def0}
 		}
 	}
 	// End kludge

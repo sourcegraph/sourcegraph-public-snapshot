@@ -315,7 +315,8 @@ func installToolchains(langs []toolchainInstaller) error {
 }
 
 func installGoToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-go"
+
+	const toolchainName = "srclib-go"
 
 	// Identify if Go is installed already or not.
 	if _, err := exec.LookPath("go"); isExecErrNotFound(err) {
@@ -334,24 +335,24 @@ run this command again.`)
 
 	// Go-based toolchains should be cloned into GOPATH/src/TOOLCHAIN
 	// otherwise govendor refuses to work if source code is located outside of GOPATH
-	gopathDir = filepath.Join(gopathDir, "src", toolchain)
+	gopathDir = filepath.Join(gopathDir, "src", toolchainFQN(toolchainName))
 	if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
 		return err
 	}
 
 	log.Println("Downloading Go toolchain")
-	if err := cloneToolchain(gopathDir, toolchain); err != nil {
+	if err := cloneToolchain(gopathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
 	// making parent directory of toolchain in SRCLIBPATH
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
 		return err
 	}
 
 	// Adding symlink SRCLIBPATH/TOOLCHAIN that points to GOPATH/src/TOOLCHAIN
-	err := symlink(gopathDir, srclibpathDir)
+	err = symlink(gopathDir, srclibpathDir)
 	if err != nil {
 		return err
 	}
@@ -365,10 +366,10 @@ run this command again.`)
 }
 
 func installRubyToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-ruby"
+	const toolchainName = "srclib-ruby"
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
 		return err
 	}
 
@@ -384,7 +385,7 @@ func installRubyToolchain() error {
 	}
 
 	log.Println("Downloading Ruby toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	if err := cloneToolchain(srclibpathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
@@ -397,9 +398,12 @@ func installRubyToolchain() error {
 }
 
 func installJavaScriptToolchain() error {
-	const toolchain = "github.com/sourcegraph/srclib-javascript"
+	const toolchainName = "srclib-javascript"
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
+		return err
+	}
 
 	if _, err := exec.LookPath("node"); isExecErrNotFound(err) {
 		return errors.New("no `node` in PATH (do you have Node.js installed properly?)")
@@ -409,7 +413,7 @@ func installJavaScriptToolchain() error {
 	}
 
 	log.Println("Downloading JavaScript toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	if err := cloneToolchain(srclibpathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
@@ -422,9 +426,12 @@ func installJavaScriptToolchain() error {
 }
 
 func installTypeScriptToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-typescript"
+	const toolchainName = "srclib-typescript"
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
+		return err
+	}
 
 	if _, err := exec.LookPath("node"); isExecErrNotFound(err) {
 		return errors.New("no `node` in PATH (do you have Node.js installed properly?)")
@@ -438,7 +445,7 @@ func installTypeScriptToolchain() error {
 	}
 
 	log.Println("Downloading TypeScript toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	if err := cloneToolchain(srclibpathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
@@ -451,7 +458,7 @@ func installTypeScriptToolchain() error {
 }
 
 func installPythonToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-python"
+	const toolchainName = "srclib-python"
 
 	requiredCmds := map[string]string{
 		"go":         "visit https://golang.org/doc/install",
@@ -470,24 +477,23 @@ func installPythonToolchain() error {
 
 	// Go-based toolchains should be cloned into GOPATH/src/TOOLCHAIN
 	// otherwise govendor refuses to work if source code is located outside of GOPATH
-	gopathDir = filepath.Join(gopathDir, "src", toolchain)
+	gopathDir = filepath.Join(gopathDir, "src", toolchainFQN(toolchainName))
 	if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
 		return err
 	}
 
 	log.Println("Downloading Python toolchain")
-	if err := cloneToolchain(gopathDir, toolchain); err != nil {
+	if err := cloneToolchain(gopathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
-	// making parent directory of toolchain in SRCLIBPATH
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
 		return err
 	}
 
 	// Adding symlink SRCLIBPATH/TOOLCHAIN that points to GOPATH/src/TOOLCHAIN
-	err := symlink(gopathDir, srclibpathDir)
+	err = symlink(gopathDir, srclibpathDir)
 	if err != nil {
 		return err
 	}
@@ -501,7 +507,7 @@ func installPythonToolchain() error {
 }
 
 func installJavaToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-java"
+	const toolchainName = "srclib-java"
 
 	reqCmds := []string{"java", "gradle"}
 	for _, cmd := range reqCmds {
@@ -515,13 +521,13 @@ Refusing to install Java toolchain because %s is not installed or is not on the 
 		}
 	}
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
 		return err
 	}
 
 	log.Println("Downloading Java toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	if err := cloneToolchain(srclibpathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
@@ -534,7 +540,7 @@ Refusing to install Java toolchain because %s is not installed or is not on the 
 }
 
 func installCSharpToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-csharp"
+	const toolchainName = "srclib-csharp"
 
 	requiredCmds := map[string]string{
 		"dnx": "see http://docs.asp.net/en/latest/getting-started/installing-on-linux.html for details",
@@ -546,13 +552,13 @@ func installCSharpToolchain() error {
 		}
 	}
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
 		return err
 	}
 
 	log.Println("Downloading C# toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	if err := cloneToolchain(srclibpathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
@@ -566,7 +572,7 @@ func installCSharpToolchain() error {
 }
 
 func installBasicToolchain() error {
-	const toolchain = "sourcegraph.com/sourcegraph/srclib-basic"
+	const toolchainName = "srclib-basic"
 
 	reqCmds := []string{"java"}
 	for _, cmd := range reqCmds {
@@ -580,13 +586,13 @@ Refusing to install Basic toolchain because %s is not installed or is not on the
 		}
 	}
 
-	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchain) // toolchain dir under SRCLIBPATH
-	if err := os.MkdirAll(filepath.Dir(srclibpathDir), 0700); err != nil {
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
 		return err
 	}
 
 	log.Println("Downloading Basic toolchain in", srclibpathDir)
-	if err := cloneToolchain(srclibpathDir, toolchain); err != nil {
+	if err := cloneToolchain(srclibpathDir, toolchainCloneURI(toolchainName)); err != nil {
 		return err
 	}
 
@@ -598,25 +604,28 @@ Refusing to install Basic toolchain because %s is not installed or is not on the
 	return nil
 }
 
-func cloneToolchain(dest, toolchain string) error {
-	if fi, err := os.Stat(dest); os.IsNotExist(err) {
-		// Clone
-		if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
-			return err
-		}
+func cloneToolchain(destDir, cloneURI string) error {
 
-		cmd := exec.Command("git", "clone", "https://"+toolchain)
-		cmd.Dir = filepath.Dir(dest)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
-	} else if err != nil {
+	switch fi, err := os.Stat(destDir); {
+	case err != nil && !os.IsNotExist(err):
 		return err
-	} else if !fi.Mode().IsDir() {
-		return fmt.Errorf("not a directory: %s", dest)
+	case err == nil && !fi.Mode().IsDir():
+		return fmt.Errorf("not a directory: %s", destDir)
+	case err == nil && fi.Mode().IsDir():
+		log.Printf("Toolchain directory %q already exists, using existing version.", destDir)
+		return nil
 	}
-	log.Printf("Toolchain directory %q already exists, using existing version.", dest)
-	return nil
+
+	// Clone
+	if err := os.MkdirAll(filepath.Dir(destDir), 0700); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("git", "clone", cloneURI)
+	cmd.Dir = filepath.Dir(destDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func isExecErrNotFound(err error) bool {
@@ -662,4 +671,21 @@ func symlink(source, target string) error {
 	} else {
 		return err
 	}
+}
+
+// prepareParentDir makes parent directory for a given toolchain under SRCLIBPATH and returns SRCLIBPATH/FULL-PATH-TO-TOOLCHAIN
+func prepareParentDir(toolchainName string) (string, error) {
+	// toolchain dir under SRCLIBPATH
+	srclibpathDir := filepath.Join(filepath.SplitList(srclib.Path)[0], toolchainFQN(toolchainName))
+	return srclibpathDir, os.MkdirAll(filepath.Dir(srclibpathDir), 0700)
+}
+
+// toolchainFQN returns fully qualified toolchain name
+func toolchainFQN(toolchainName string) string {
+	return "sourcegraph.com/sourcegraph/" + toolchainName
+}
+
+// toolchainCloneURI returns clone URI for a given toolchain
+func toolchainCloneURI(toolchainName string) string {
+	return "https://github.com/sourcegraph/" + toolchainName
 }

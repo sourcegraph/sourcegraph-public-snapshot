@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	influxDBClient "github.com/influxdata/influxdb/client"
+	influxDBClient "github.com/influxdata/influxdb/client/v2"
 	influxDBServer "github.com/influxdata/influxdb/cmd/influxd/run"
 	influxDBModels "github.com/influxdata/influxdb/models"
 	influxDBErrors "github.com/influxdata/influxdb/services/meta"
@@ -52,9 +52,9 @@ type pointFields map[string]interface{}
 
 type InfluxDBStore struct {
 	config       *InfluxDBConfig
-	con          *influxDBClient.Client // InfluxDB client connection.
-	dbName       string                 // InfluxDB database name for this store.
-	clientTarget *url.URL               // HTTP URL that the client should connect to,
+	con          influxDBClient.Client // InfluxDB client connection.
+	dbName       string                // InfluxDB database name for this store.
+	clientTarget *url.URL              // HTTP URL that the client should connect to,
 
 	// When set to `testMode` - `testDBName` will be dropped and created, so newly database is ready for tests.
 	server        *influxDBServer.Server // InfluxDB API server.
@@ -62,20 +62,12 @@ type InfluxDBStore struct {
 
 	batchMu         sync.Mutex
 	batchSizeBytes  int
-	batch           []influxDBClient.Point
+	batch           []*influxDBClient.Point
 	flusherStopChan chan struct{}
 	log             *log.Logger
 }
 
 func (in *InfluxDBStore) Collect(id SpanID, anns ...Annotation) error {
-	// trace_id, span_id & parent_id are mostly used as part of the "where" part on queries so
-	// to have performant queries these are set as tags(InfluxDB indexes tags).
-	tags := map[string]string{
-		"trace_id":  id.Trace.String(),
-		"span_id":   id.Span.String(),
-		"parent_id": id.Parent.String(),
-	}
-
 	// Find the start and end time of the span.
 	var events []Event
 	if err := UnmarshalEvents(anns, &events); err != nil {
@@ -98,14 +90,18 @@ func (in *InfluxDBStore) Collect(id SpanID, anns ...Annotation) error {
 	}
 
 	// Annotations `anns` are set as fields(InfluxDB does not index fields).
-	fields := make(map[string]interface{}, len(anns))
+	fields := make(map[string]interface{}, len(anns)+3)
+	fields["trace_id"] = id.Trace.String()
+	fields["span_id"] = id.Span.String()
+	fields["parent_id"] = id.Parent.String()
 	for _, ann := range anns {
 		fields[ann.Key] = string(ann.Value)
 	}
 
 	// If we have span name and duration, set them as a tag and field.
+	var tags map[string]string
 	if foundItems == 2 {
-		tags["name"] = name
+		tags = map[string]string{"name": name}
 		fields["duration"] = float64(duration) / float64(time.Second)
 	}
 
@@ -122,11 +118,14 @@ func (in *InfluxDBStore) Collect(id SpanID, anns ...Annotation) error {
 		tags[k] = strings.Replace(v, "\n", " ", -1)
 	}
 
-	p := &influxDBClient.Point{
-		Measurement: spanMeasurementName,
-		Tags:        tags,
-		Fields:      fields,
-		Time:        time.Now().UTC(),
+	p, err := influxDBClient.NewPoint(
+		spanMeasurementName,
+		tags,
+		fields,
+		time.Now(),
+	)
+	if err != nil {
+		return err
 	}
 	pointSizeBytes := pointMemoryUsage(reflect.ValueOf(p))
 
@@ -141,7 +140,7 @@ func (in *InfluxDBStore) Collect(id SpanID, anns ...Annotation) error {
 		return ErrQueueDropped
 	}
 	in.batchSizeBytes += pointSizeBytes
-	in.batch = append(in.batch, *p)
+	in.batch = append(in.batch, p)
 	return nil
 }
 
@@ -160,12 +159,14 @@ func (in *InfluxDBStore) flush() error {
 	}
 
 	// Write the batch to InfluxDB.
-	bps := influxDBClient.BatchPoints{
-		Points:   batch,
+	bp, err := influxDBClient.NewBatchPoints(influxDBClient.BatchPointsConfig{
 		Database: in.dbName,
+	})
+	if err != nil {
+		return err
 	}
-	_, writeErr := in.con.Write(bps)
-	return writeErr
+	bp.AddPoints(batch)
+	return in.con.Write(bp)
 }
 
 // flusher constantly flushes batches to InfluxDB at an interval.
@@ -192,9 +193,6 @@ func (in *InfluxDBStore) Trace(id ID) (*Trace, error) {
 	result, err := in.executeOneQuery(q)
 	if err != nil {
 		return nil, err
-	}
-	if result.Err != nil {
-		return nil, result.Err
 	}
 	if len(result.Series) == 0 {
 		return nil, ErrTraceNotFound
@@ -360,9 +358,6 @@ func (in *InfluxDBStore) Traces(opts TracesOpts) ([]*Trace, error) {
 	if err != nil {
 		return nil, err
 	}
-	if rootSpansResult.Err != nil {
-		return nil, rootSpansResult.Err
-	}
 	if len(rootSpansResult.Series) == 0 {
 		return traces, nil
 	}
@@ -411,24 +406,25 @@ func (in *InfluxDBStore) Traces(opts TracesOpts) ([]*Trace, error) {
 
 	// Cache to keep track all trace children of root traces to be returned.
 	children := make(map[ID][]*Trace, 0) // Span.ID.Trace -> []*Trace
+	if len(childrenSpansResult.Series) > 0 {
+		childrenSpans, err := spansFromRow(childrenSpansResult.Series[0])
+		if err != nil {
+			return nil, err
+		}
 
-	childrenSpans, err := spansFromRow(childrenSpansResult.Series[0])
-	if err != nil {
-		return nil, err
-	}
-
-	// Iterates over `childrenSpans` to fill `children` cache.
-	for _, span := range childrenSpans {
-		trace, present := tracesCache[span.ID.Trace]
-		if !present { // Root trace not added.
-			return nil, errors.New("parent not found")
-		} else { // Root trace already added, append `child` to `children` for later usage.
-			child := &Trace{Span: *span}
-			t, found := children[trace.ID.Trace]
-			if !found {
-				children[trace.ID.Trace] = []*Trace{child}
-			} else {
-				children[trace.ID.Trace] = append(t, child)
+		// Iterates over `childrenSpans` to fill `children` cache.
+		for _, span := range childrenSpans {
+			trace, present := tracesCache[span.ID.Trace]
+			if !present { // Root trace not added.
+				return nil, errors.New("parent not found")
+			} else { // Root trace already added, append `child` to `children` for later usage.
+				child := &Trace{Span: *span}
+				t, found := children[trace.ID.Trace]
+				if !found {
+					children[trace.ID.Trace] = []*Trace{child}
+				} else {
+					children[trace.ID.Trace] = append(t, child)
+				}
 			}
 		}
 	}
@@ -572,8 +568,8 @@ func (in *InfluxDBStore) init(server *influxDBServer.Server) error {
 	in.server = server
 	// TODO: Upgrade to client v2, see: github.com/influxdata/influxdb/blob/master/client/v2/client.go
 	// We're currently using v1.
-	con, err := influxDBClient.NewClient(influxDBClient.Config{
-		URL:      *in.clientTarget,
+	con, err := influxDBClient.NewHTTPClient(influxDBClient.HTTPConfig{
+		Addr:     in.clientTarget.String(),
 		Username: in.config.AdminUser.Username,
 		Password: in.config.AdminUser.Password,
 	})
@@ -916,7 +912,7 @@ func NewInfluxDBStore(config *InfluxDBConfig) (*InfluxDBStore, error) {
 
 	httpdAddr := config.Server.HTTPD.BindAddress
 	if httpdAddr == "" {
-		httpdAddr = fmt.Sprintf("%s:%d", influxDBClient.DefaultHost, influxDBClient.DefaultPort)
+		httpdAddr = "http://localhost:8086"
 	}
 	clientTarget, err := url.Parse("http://" + httpdAddr)
 	if err != nil {

@@ -27,11 +27,6 @@ type builds struct{}
 
 var _ sourcegraph.BuildsServer = (*builds)(nil)
 
-var frozenRepos = map[string]struct{}{
-	"github.com/dotnet/coreclr":            struct{}{},
-	"github.com/Microsoft/referencesource": struct{}{},
-}
-
 func (s *builds) Get(ctx context.Context, build *sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
 	return store.BuildsFromContext(ctx).Get(ctx, *build)
 }
@@ -67,11 +62,6 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)
 	if err != nil {
 		return nil, err
-	}
-
-	// HACK: prevent repos with manually graphed and pushed data from updates that spoil them
-	if _, isFrozen := frozenRepos[repo.URI]; isFrozen {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is frozen", repo.URI)
 	}
 
 	if repo.Blocked {

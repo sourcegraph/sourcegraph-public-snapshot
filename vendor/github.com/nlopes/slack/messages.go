@@ -71,6 +71,9 @@ type Msg struct {
 	// https://api.slack.com/rtm
 	ReplyTo int    `json:"reply_to,omitempty"`
 	Team    string `json:"team,omitempty"`
+
+	// reactions
+	Reactions []ItemReaction `json:"reactions,omitempty"`
 }
 
 // Icon is used for bot messages

@@ -36,13 +36,15 @@ func PrintFileDiff(d *FileDiff) ([]byte, error) {
 		}
 	}
 
-	if d.OrigName != "" || d.OrigTime != nil || d.NewName != "" || d.NewTime != nil {
-		if err := printFileHeader(&buf, "--- ", d.OrigName, timePtr(d.OrigTime)); err != nil {
-			return nil, err
-		}
-		if err := printFileHeader(&buf, "+++ ", d.NewName, timePtr(d.NewTime)); err != nil {
-			return nil, err
-		}
+	if d.Hunks == nil {
+		return buf.Bytes(), nil
+	}
+
+	if err := printFileHeader(&buf, "--- ", d.OrigName, timePtr(d.OrigTime)); err != nil {
+		return nil, err
+	}
+	if err := printFileHeader(&buf, "+++ ", d.NewName, timePtr(d.NewTime)); err != nil {
+		return nil, err
 	}
 
 	ph, err := PrintHunks(d.Hunks)

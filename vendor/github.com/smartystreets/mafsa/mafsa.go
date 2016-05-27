@@ -1,6 +1,6 @@
 package mafsa
 
-import "io/ioutil"
+import "os"
 
 // New constructs a new, empty MA-FSA that can be filled with data.
 func New() *BuildTree {
@@ -14,12 +14,11 @@ func New() *BuildTree {
 // Load loads an existing MA-FSA from a file specified by filename.
 // It returns a read-only MA-FSA, or an error if loading failed.
 func Load(filename string) (*MinTree, error) {
-	data, err := ioutil.ReadFile(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-
-	mtree, err := new(Decoder).Decode(data)
+	mtree, err := new(Decoder).ReadFrom(f)
 	if err != nil {
 		return nil, err
 	}

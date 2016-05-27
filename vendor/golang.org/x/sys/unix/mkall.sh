@@ -212,6 +212,17 @@ linux_ppc64le)
 	mksysnum="./mksysnum_linux.pl $unistd_h"
 	mktypes="GOARCH=$GOARCH go tool cgo -godefs"
 	;;
+linux_s390x)
+	GOOSARCH_in=syscall_linux_s390x.go
+	unistd_h=/usr/include/asm/unistd.h
+	mkerrors="$mkerrors -m64"
+	mksysnum="./mksysnum_linux.pl $unistd_h"
+	# Let the type of C char be signed to make the bare sys
+	# API more consistent between platforms.
+	# This is a deliberate departure from the way the syscall
+	# package generates its version of the types file.
+	mktypes="GOARCH=$GOARCH go tool cgo -godefs -- -fsigned-char"
+	;;
 netbsd_386)
 	mkerrors="$mkerrors -m32"
 	mksyscall="./mksyscall.pl -l32 -netbsd"
@@ -269,6 +280,6 @@ esac
 	if [ -n "$mksysnum" ]; then echo "$mksysnum |gofmt >zsysnum_$GOOSARCH.go"; fi
 	if [ -n "$mktypes" ]; then
 		echo "echo // +build $GOARCH,$GOOS > ztypes_$GOOSARCH.go";
-		echo "$mktypes types_$GOOS.go | gofmt >>ztypes_$GOOSARCH.go";
+		echo "$mktypes types_$GOOS.go | go run mkpost.go >>ztypes_$GOOSARCH.go";
 	fi
 ) | $run

@@ -145,10 +145,29 @@ func EncodeWithSigner(header *Header, c *ClaimSet, sg Signer) (string, error) {
 func Encode(header *Header, c *ClaimSet, key *rsa.PrivateKey) (string, error) {
 	sg := func(data []byte) (sig []byte, err error) {
 		h := sha256.New()
-		h.Write([]byte(data))
+		h.Write(data)
 		return rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, h.Sum(nil))
 	}
 	return EncodeWithSigner(header, c, sg)
+}
+
+// Verify tests whether the provided JWT token's signature was produced by the private key
+// associated with the supplied public key.
+func Verify(token string, key *rsa.PublicKey) error {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return errors.New("jws: invalid token received, token must have 3 parts")
+	}
+
+	signedContent := parts[0] + "." + parts[1]
+	signatureString, err := base64Decode(parts[2])
+	if err != nil {
+		return err
+	}
+
+	h := sha256.New()
+	h.Write([]byte(signedContent))
+	return rsa.VerifyPKCS1v15(key, crypto.SHA256, h.Sum(nil), []byte(signatureString))
 }
 
 // base64Encode returns and Base64url encoded version of the input string with any

@@ -3,16 +3,15 @@
 import React from "react";
 import {Link} from "react-router";
 import utf8 from "utf8";
-import * as urllib from "url";
 
 import {annotate} from "sourcegraph/blob/Annotations";
-import type {Annotation} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
 import Component from "sourcegraph/Component";
 import Dispatcher from "sourcegraph/Dispatcher";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
+import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
 import "sourcegraph/components/styles/code.css";
 
@@ -35,6 +34,19 @@ function fromUtf8(contents) {
 	return contents.map((e) =>
 		typeof e !== "string" ? e : utf8.decode(e)
 	);
+}
+
+// fastInsertRevIntoDefURL accepts a revisionless def URL (urlNoRev) and
+// its repo (as a hint for the string replace algorithm), and it adds
+// the given revision (rev) to the URL. It is a special fastpath version
+// because it is called very frequently during rendering of BlobLine.
+function fastInsertRevIntoDefURL(urlNoRev: string, repo: string, rev: string): string {
+	if (!rev) return urlNoRev;
+
+	const prefix = `/${repo}/-/`;
+	const repl = `/${repo}@${rev}/-/`;
+	if (urlNoRev.startsWith(prefix)) return `${repl}${urlNoRev.slice(prefix.length)}`;
+	return urlNoRev;
 }
 
 class BlobLine extends Component {
@@ -60,8 +72,8 @@ class BlobLine extends Component {
 		// Filter to improve perf.
 		state.highlightedDef = state.ownAnnURLs && state.ownAnnURLs[props.highlightedDef] ? props.highlightedDef : null;
 		state.highlightedDefObj = state.highlightedDef ? props.highlightedDefObj : null;
-		state.activeDef = state.ownAnnURLs && state.ownAnnURLs[props.activeDef] ? props.activeDef : null;
-		state.activeDefNoRev = state.ownAnnURLs && state.ownAnnURLs[props.activeDefNoRev] ? props.activeDefNoRev : null;
+		const activeDefURL = fastURLToRepoDef(props.activeDefRepo || state.repo, null, props.activeDef);
+		state.activeDefURL = activeDefURL && state.ownAnnURLs && state.ownAnnURLs[activeDefURL] ? activeDefURL : null;
 
 		state.lineNumber = props.lineNumber || null;
 		state.oldLineNumber = props.oldLineNumber || null;
@@ -83,35 +95,33 @@ class BlobLine extends Component {
 		});
 	}
 
-	_isExternalLinkAnn(ann: Annotation): bool {
-		if (!ann.URL) return false;
-		let u = urllib.parse(ann.URL);
-		if (u.protocol === "http:" || u.protocol === "https:") {
-			if (u.hostname === "nodejs.org" || u.hostname === "developer.mozilla.org") {
-				return true;
-			}
-		}
-		return false;
+	_isExternalLink(url: string): bool {
+		return (/^https?:\/\/(nodejs\.org|developer\.mozilla\.org)/).test(url);
 	}
 
 	_annotate() {
-		const hasURL = (ann, url) => url && (ann.URL ? ann.URL === url : ann.URLs.includes(url));
 		let i = 0;
 		return fromUtf8(annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
 			i++;
 
+			const annURLs = (ann.URL ? [ann.URL] : ann.URLs) || null;
+
+			// annRevURLs are the ann's URLs with the correct revision added. The raw
+			// ann.URL/ann.URLs values, if they are def URLs, never contain revs.
+			let annRevURLs = annURLs ? annURLs.map((url) => fastInsertRevIntoDefURL(url, this.state.repo, this.state.rev)) : null;
+
 			// If ann.URL is an absolute URL with scheme http or https, create an anchor with a link to the URL (e.g., an
 			// external URL to Mozilla's CSS reference documentation site.
-			if (this._isExternalLinkAnn(ann)) {
-				let isHighlighted = hasURL(ann, this.state.highlightedDef);
+			if (annURLs && this._isExternalLink(annURLs[0])) {
+				let isHighlighted = this.state.highlightedDef === annURLs[0];
 				return (
 					<a
 						className={classNames(ann.Class, {
 							[s.highlightedAnn]: isHighlighted && (!this.state.highlightedDefObj || !this.state.highlightedDefObj.Error),
 						})}
 						target="_blank"
-						href={ann.URL}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL))}
+						href={annURLs[0]}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0]))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						key={i}>
 						{simpleContentsString(content)}
@@ -121,8 +131,8 @@ class BlobLine extends Component {
 
 			// ensure there are no links inside content to make ReactJS happy
 			// otherwise incorrect DOM is built (a > .. > a)
-			if ((ann.URL || ann.URLs) && !this._hasLink(content)) {
-				let isHighlighted = hasURL(ann, this.state.highlightedDef);
+			if (annURLs && annRevURLs && !this._hasLink(content)) {
+				let isHighlighted = annURLs.includes(this.state.highlightedDef);
 				return (
 					<Link
 						className={classNames(ann.Class, {
@@ -131,10 +141,10 @@ class BlobLine extends Component {
 							// disabledAnn is an ann that you can't click on (possibly a broken ref).
 							[s.disabledAnn]: isHighlighted && (this.state.highlightedDefObj && this.state.highlightedDefObj.Error),
 
-							[s.activeAnn]: hasURL(ann, this.state.activeDef) || hasURL(ann, this.state.activeDefNoRev),
+							[s.activeAnn]: annURLs.includes(this.state.activeDefURL),
 						})}
-						to={ann.URL || ann.URLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(ann.URL || ann.URLs[0]))}
+						to={annRevURLs[0]}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0]))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
@@ -209,7 +219,6 @@ BlobLine.propTypes = {
 	newLineNumber: React.PropTypes.number,
 
 	activeDef: React.PropTypes.string, // the def that the page is about
-	activeDefNoRev: React.PropTypes.string, // activeDef without an "@rev" (if any)
 
 	// startByte is the byte position of the first byte of contents. It is
 	// required if annotations are specified, so that the annotations can

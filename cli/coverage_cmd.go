@@ -3,8 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"go/scanner"
-	"go/token"
 	"log"
 	"net/http"
 	"net/url"
@@ -22,6 +20,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
@@ -42,13 +41,15 @@ func init() {
 		DefsCache:              make(map[string]*defIndex),
 		ResolvedRevCache:       make(map[string]string),
 		SrclibDataVersionCache: make(map[string]string),
+		FetchDefsMus:           make(map[string]*sync.Mutex),
 	}
 }
 
 type coverageCmd struct {
 	Repo    string `long:"repo" description:"repo URI"`
 	Lang    string `long:"lang" description:"coverage language"`
-	Refresh bool   `long:"refresh" description:"refresh the coverage information or compute it if it doesn't exist yet"`
+	Refresh bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
+	Dry     bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
 }
 
 // fileCoverage contains coverage data for a single file
@@ -112,14 +113,28 @@ type coverageCache struct {
 	SrclibDataVersionMu    sync.Mutex
 	SrclibDataVersionCache map[string]string // repo@rev => commit
 
-	// FetchDefsMu allows at most one goroutine to fetch defs;
-	// otherwise multiple goroutines may make calls to fetch defs
-	// for a given repository and overwork the server.
-	FetchDefsMu sync.Mutex
+	// FetchDefsMus allows at most one goroutine to fetch defs per repo@commit.
+	// Map access is guarded by FetchDefsMu.
+	FetchDefsMu  sync.Mutex
+	FetchDefsMus map[string]*sync.Mutex
 }
 
 // cache is a global instance of coverageCache
 var cache *coverageCache
+
+// getFetchDefsMu acquires a lock to fetch defs for a repo@commit; it is threadsafe
+func (c *coverageCache) getFetchDefsMu(key string) *sync.Mutex {
+	c.FetchDefsMu.Lock()
+	defer c.FetchDefsMu.Unlock()
+
+	mu, ok := c.FetchDefsMus[key]
+	if !ok {
+		mu = &sync.Mutex{}
+		c.FetchDefsMus[key] = mu
+	}
+
+	return mu
+}
 
 // getDefIndex is a threadsafe accessor function for cached def data
 func (c *coverageCache) getDefIndex(key string) *defIndex {
@@ -197,10 +212,12 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		return nil
 	}
 
-	c.FetchDefsMu.Lock()
-	defer c.FetchDefsMu.Unlock()
-
 	rr := repoRevKey(repoRev)
+
+	fetchMu := c.getFetchDefsMu(rr)
+	fetchMu.Lock()
+	defer fetchMu.Unlock()
+
 	if idx := c.getDefIndex(rr); idx != nil {
 		return idx
 	}
@@ -295,7 +312,7 @@ func (c *coverageCmd) Execute(args []string) error {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, cliContext, repo, lang)
+				cov, err := getCoverage(cl, cliContext, repo, lang, c.Dry)
 				if err != nil {
 					return fmt.Errorf("error getting coverage for %s: %s", repo, err)
 				}
@@ -354,14 +371,8 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 	fileCvg := &fileCoverage{Path: path, Language: lang}
 
 	// TODO(rothfels): add other language support.
-	switch lang {
-	case "Go":
-		if !strings.HasSuffix(path, ".go") {
-			return nil, nil
-		}
-	default:
-		return nil, nil
-	}
+
+	tokenizer := coverageutil.Lookup(lang, path)
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
@@ -389,27 +400,22 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 	for _, ann := range anns.Annotations {
 		// require URL (i.e. don't count syntax highlighting annotations)
 		if ann.URL != "" || len(ann.URLs) > 0 {
-			annsByStartByte[ann.StartByte+1] = ann // off by one
+			annsByStartByte[ann.StartByte] = ann
 		}
 	}
 
-	scanner := &scanner.Scanner{}
-	fset := token.NewFileSet()
-	file := fset.AddFile(``, fset.Base(), len(entry.Contents))
-	scanner.Init(file, entry.Contents, nil /* no error handler */, 0)
+	tokenizer.Init(entry.Contents)
+	defer tokenizer.Done()
 
 	refAnnotations := make([]*sourcegraph.Annotation, 0)
 	for {
-		pos, tok, _ := scanner.Scan()
-		if tok == token.EOF {
+		tok := tokenizer.Next()
+		if tok == nil {
 			break
-		}
-		if tok != token.IDENT {
-			continue
 		}
 
 		fileCvg.Idents += 1
-		if ann, ok := annsByStartByte[uint32(pos)]; ok {
+		if ann, ok := annsByStartByte[tok.Offset]; ok {
 			fileCvg.Refs += 1
 			refAnnotations = append(refAnnotations, ann)
 		}
@@ -425,7 +431,13 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		} else {
 			continue
 		}
-
+		uStruct, err := url.Parse(u)
+		if err != nil {
+			return nil, err
+		}
+		if uStruct.IsAbs() {
+			continue
+		}
 		annRepoRev, annDefSpec, err := parseAnnotationURL(u)
 		if err != nil {
 			return nil, err
@@ -454,7 +466,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 }
 
 // getCoverage computes coverage data for the given repository
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang string) (*repoCoverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang string, dryRun bool) (*repoCoverage, error) {
 	if err := ensureRepoExists(cl, ctx, repoURI); err != nil {
 		return nil, err
 	}
@@ -532,6 +544,10 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 	repoCvg.SrclibVersions = srclibVersions
 	repoCvg.Duration = time.Since(start).Seconds()
 	log15.Info("coverage duration", "seconds", repoCvg.Duration)
+
+	if dryRun {
+		return &repoCvg, nil
+	}
 
 	covJSON, err := json.Marshal([]repoCoverage{repoCvg})
 	if err != nil {

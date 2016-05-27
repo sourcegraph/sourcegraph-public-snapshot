@@ -23,7 +23,7 @@ type codings map[string]float64
 const DEFAULT_QVALUE = 1.0
 
 var gzipWriterPool = sync.Pool{
-	New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed); return w },
+	New: func() interface{} { return gzip.NewWriter(nil) },
 }
 
 // GzipResponseWriter provides an http.ResponseWriter interface, which gzips
@@ -36,6 +36,10 @@ type GzipResponseWriter struct {
 
 // Write appends data to the gzip writer.
 func (w GzipResponseWriter) Write(b []byte) (int, error) {
+	if _, ok := w.Header()["Content-Type"]; !ok {
+		// If content type is not set, infer it from the uncompressed body.
+		w.Header().Set("Content-Type", http.DetectContentType(b))
+	}
 	return w.gw.Write(b)
 }
 

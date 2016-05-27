@@ -1,0 +1,10 @@
+[
+    {
+		"keys": ["ctrl+alt+o"],
+		"command": "sg_open_channel"
+	},
+	{
+		"keys": ["ctrl+alt+j"],
+		"command": "sg_manual_process"
+	}
+]
