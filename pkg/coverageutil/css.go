@@ -64,6 +64,10 @@ func (s *cssTokenizer) calcLineOffsets(src string) {
 
 // byteOffset returns byte-base offset of token located at (L, C)
 func (s *cssTokenizer) byteOffset(line, column int) uint32 {
+	// TODO(alexsaveliev) CSS parser sometimes returns incorrect locations
+	if line > len(s.lineOffsets) || column > len(s.lineOffsets[line-1]) {
+		return 0
+	}
 	return uint32(s.lineOffsets[line-1][column-1])
 }
 

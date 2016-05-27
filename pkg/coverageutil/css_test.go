@@ -17,7 +17,17 @@ func TestCSS(testing *testing.T) {
 			"td { content: \"©\"; color: red }\n tr {font-size:11px;}",
 			[]Token{{0, "td"}, {5, "content"}, {20, "color"}, {34, "tr"}, {38, "font-size"}},
 		},
+		// TODO(alexsaveliev) remove/rewrite when sourcegraph/srclib-css#6 will be fixed.
+		// Please note that while it's expected behavior to generate {0, "c"} token
+		// {1, "b} is still wrong and should be fixed in sourcegraph/srclib-css#6
+		// After the fix, expected output is {0, "a"}, {3, "b"}, and {6, "c"}
+		{
+			"Wrong offsets",
+			"a,\nb,\nc {}",
+			[]Token{{0, "a"}, {1, "b"}, {0, "c"}},
+		},
 		// TODO(alexsaveliev) uncomment when parser will not include comments into decls and selectors
+		// See sourcegraph/srclib-css#5
 		//
 		//		{
 		//			"Comments",
