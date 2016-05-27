@@ -14,31 +14,8 @@ import fileLines from "sourcegraph/util/fileLines";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {computeLineStartBytes} from "sourcegraph/blob/lineFromByte";
 import annotationsByLine from "sourcegraph/blob/annotationsByLine";
-import type {Annotation} from "sourcegraph/blob/Annotations";
 import s from "sourcegraph/blob/styles/Blob.css";
 import type {Def} from "sourcegraph/def";
-
-// updateThisRepoAnnotationsRev is a hack to update the URL/URLs fields of all
-// annotations to point to rev. The annotations returned by the server do not
-// have any rev in their URLs, which enables us to cache them by commit ID (i.e.,
-// the response does not change based on which branch/rev it was fetched for).
-function updateThisRepoAnnotationsRev(repo: string, rev: ?string, anns: Array<Annotation>) {
-	if (!rev || !anns) return anns;
-
-	const prefix = `/${repo}/-/`;
-	const repl = `/${repo}@${rev}/-/`;
-	const withRev = (url: string): string => {
-		if (url.startsWith(prefix)) return `${repl}${url.slice(prefix.length)}`;
-		return url;
-	};
-	return anns.map((ann) => (
-		(ann.URL || ann.URLs) ? {
-			...ann,
-			URL: ann.URL ? withRev(ann.URL) : undefined, // eslint-disable-line no-undefined
-			URLs: ann.URLs ? ann.URLs.map(withRev) : undefined, // eslint-disable-line no-undefined
-		} : ann
-	));
-}
 
 class Blob extends Component {
 	static propTypes = {
@@ -58,8 +35,12 @@ class Blob extends Component {
 		scrollToStartLine: React.PropTypes.bool,
 		highlightedDef: React.PropTypes.string,
 		highlightedDefObj: React.PropTypes.object,
+
+		// activeDef is the def ID ("UnitType/Unit/-/Path") only of the currently
+		// active def (i.e., the subject of the current DefInfo page). It should
+		// not be the whole def URL path (it should not include the repo and rev).
 		activeDef: React.PropTypes.string,
-		activeDefNoRev: React.PropTypes.string,
+		activeDefRepo: React.PropTypes.string,
 
 		// For linking line numbers to the file they came from (e.g., in
 		// ref snippets).
@@ -111,7 +92,7 @@ class Blob extends Component {
 		endByte: ?number;
 		lineStartBytes: number[];
 		activeDef: ?string;
-		activeDefNoRev: ?string;
+		activeDefRepo: ?string;
 		highlightedDef: ?string;
 		contentsOffsetLine: number;
 		expandedRanges: Range[];
@@ -122,7 +103,7 @@ class Blob extends Component {
 		rev: "",
 		path: "",
 		activeDef: null,
-		activeDefNoRev: null,
+		activeDefRepo: null,
 		highlightSelectedLines: false,
 		highlightedDef: null,
 		highlightedDefObj: null,
@@ -180,7 +161,7 @@ class Blob extends Component {
 		state.highlightedDef = props.highlightedDef || null;
 		state.highlightedDefObj = props.highlightedDefObj || null;
 		state.activeDef = props.activeDef || null;
-		state.activeDefNoRev = props.activeDefNoRev || null;
+		state.activeDefRepo = props.activeDefRepo || null;
 		state.highlightSelectedLines = Boolean(props.highlightSelectedLines);
 		state.dispatchSelections = Boolean(props.dispatchSelections);
 		state.displayRanges = props.displayRanges ? this._consolidateRanges(props.displayRanges.concat(state.expandedRanges)) : null;
@@ -205,10 +186,6 @@ class Blob extends Component {
 		}
 
 		if (updateAnns) {
-			state.annotations = state.annotations ? {
-				...state.annotations,
-				Annotations: updateThisRepoAnnotationsRev(state.repo, state.rev, state.annotations.Annotations),
-			} : null;
 			state.lineAnns = state.lineStartBytes && state.annotations && state.annotations.Annotations ? annotationsByLine(state.lineStartBytes, state.annotations.Annotations, state.lines) : null;
 		}
 
@@ -418,7 +395,7 @@ class Blob extends Component {
 					highlightedDef={this.state.highlightedDef}
 					highlightedDefObj={this.state.highlightedDefObj}
 					activeDef={this.state.activeDef}
-					activeDefNoRev={this.state.activeDefNoRev}
+					activeDefRepo={this.state.activeDefRepo}
 					key={i} />
 			);
 			renderedLines += 1;
