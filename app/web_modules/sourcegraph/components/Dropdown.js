@@ -3,6 +3,8 @@ import {TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
 import CSSModules from "react-css-modules";
 import styles from "./styles/dropdown.css";
 
+// This component is a minimal Dropdown component with some code copied from
+// RevSwitcher.
 class Dropdown extends React.Component {
 	static propTypes = {
 		icon: React.PropTypes.element,
@@ -40,6 +42,7 @@ class Dropdown extends React.Component {
 		}
 	}
 
+	// _onToggleDropdown specifically only handles triganle icon click event.
 	_onToggleDropdown(ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
@@ -70,7 +73,7 @@ class Dropdown extends React.Component {
 			<div styleName="wrapper"
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
-				<span styleName="triangle-down" onClick={this._onToggleDropdown}><TriangleDownIcon /></span>
+				<span styleName="toggle" onClick={this._onToggleDropdown}><TriangleDownIcon /></span>
 				<div styleName="dropdown-menu">
 					<div role="menu"
 						styleName={this.state.open ? "dropdown-menu-open" : "dropdown-menu-closed"}>

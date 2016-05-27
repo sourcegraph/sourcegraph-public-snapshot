@@ -20,8 +20,12 @@
 	font-size: 1.5rem;
 }
 
-.triangle-down {
+.toggle {
 	padding-left: 5px;
+	composes: light-silver from colors;
+}
+.toggle:hover {
+	color: black;
 }
 
 .dropdown-menu-open {
