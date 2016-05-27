@@ -67,7 +67,6 @@
     "react-router": "^2.0.1",
     "recharts": "^0.10.5",
     "split": "^1.0.0",
-    "url": "^0.11.0",
     "utf8": "2.1.1"
   },
   "scripts": {

@@ -3,7 +3,6 @@
 import React from "react";
 import {Link} from "react-router";
 import utf8 from "utf8";
-import * as urllib from "url";
 
 import {annotate} from "sourcegraph/blob/Annotations";
 import classNames from "classnames";
@@ -97,13 +96,7 @@ class BlobLine extends Component {
 	}
 
 	_isExternalLink(url: string): bool {
-		let u = urllib.parse(url);
-		if (u.protocol === "http:" || u.protocol === "https:") {
-			if (u.hostname === "nodejs.org" || u.hostname === "developer.mozilla.org") {
-				return true;
-			}
-		}
-		return false;
+		return (/^https?:\/\/(nodejs\.org|developer\.mozilla\.org)/).test(url);
 	}
 
 	_annotate() {
