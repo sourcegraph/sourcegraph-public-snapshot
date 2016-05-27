@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 
@@ -225,6 +226,38 @@ func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
 		return nil
 	}
 
+	refs := make([]*graph.Ref, 0, len(op.Data.Refs))
+	for _, r := range op.Data.Refs {
+		// Ignore broken refs.
+		if r.DefPath == "" {
+			continue
+		}
+		// Ignore def refs.
+		if r.Def {
+			continue
+		}
+		// Ignore vendored refs.
+		if filelang.IsVendored(r.File, false) {
+			continue
+		}
+		if r.DefRepo == "" {
+			r.DefRepo = op.Repo
+		}
+		if r.DefUnit == "" {
+			r.DefUnit = op.Unit.Name
+		}
+		if r.DefUnitType == "" {
+			r.DefUnitType = op.Unit.Type
+		}
+		// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
+		// doesn't add significant value; yet it adds up to a lot of space in the db,
+		// and queries for refs of builtin defs take long to finish.
+		if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
+			continue
+		}
+		refs = append(refs, r)
+	}
+
 	// Perf optimization: Local cache of def_key_id's to avoid psql roundtrip
 	defKeyIDCache := map[sourcegraph.DefSpec]int64{}
 
@@ -251,35 +284,7 @@ ON COMMIT DROP;`
 		}
 
 		// Insert refs into temporary table
-		for _, r := range op.Data.Refs {
-			// Ignore broken refs.
-			if r.DefPath == "" {
-				continue
-			}
-			// Ignore def refs.
-			if r.Def {
-				continue
-			}
-			// Ignore vendored refs.
-			if filelang.IsVendored(r.File, false) {
-				continue
-			}
-			if r.DefRepo == "" {
-				r.DefRepo = op.Repo
-			}
-			if r.DefUnit == "" {
-				r.DefUnit = op.Unit.Name
-			}
-			if r.DefUnitType == "" {
-				r.DefUnitType = op.Unit.Type
-			}
-			// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
-			// doesn't add significant value; yet it adds up to a lot of space in the db,
-			// and queries for refs of builtin defs take long to finish.
-			if r.DefUnitType == "GoPackage" && r.DefRepo == "github.com/golang/go" && r.DefUnit == "builtin" {
-				continue
-			}
-
+		for _, r := range refs {
 			defKeyIDKey := sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
 			defKeyID, ok := defKeyIDCache[defKeyIDKey]
 			if !ok {
