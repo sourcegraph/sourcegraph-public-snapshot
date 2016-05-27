@@ -38,26 +38,25 @@ class CoverageDashbaord extends Container {
 
 		state.coverage = CoverageStore.coverage;
 		if (state.coverage && !state.coverage.Error && !state.processedCoverage) {
-			// This computation may be fairly expensive; make sure we only do it once.
-
-			let cvgByLangByDay = {}; // holds summation of all repo coverage data
+			let cvgByLangByDay = {};
 			state.coverage.forEach((cvg) => {
-				if (!cvg.Summary) return;
-				cvg.Summary.forEach((summary) => {
-					if (!cvgByLangByDay[summary.Language]) cvgByLangByDay[summary.Language] = {};
-					if (!cvgByLangByDay[summary.Language][cvg.Day]) cvgByLangByDay[summary.Language][cvg.Day] = {Idents: 0, Refs: 0, Defs: 0, Sources: []};
-					cvgByLangByDay[summary.Language][cvg.Day].Idents += summary.Idents;
-					cvgByLangByDay[summary.Language][cvg.Day].Refs += summary.Refs;
-					cvgByLangByDay[summary.Language][cvg.Day].Defs += summary.Defs;
-					cvgByLangByDay[summary.Language][cvg.Day].Sources.push(cvg);
-				});
+				if (!cvgByLangByDay[cvg.Language]) cvgByLangByDay[cvg.Language] = {};
+				if (!cvgByLangByDay[cvg.Language][cvg.Day]) cvgByLangByDay[cvg.Language][cvg.Day] = {Idents: 0, Refs: 0, Defs: 0, Sources: []};
+				cvgByLangByDay[cvg.Language][cvg.Day].Sources.push(cvg);
+				if (cvg.Summary) {
+					cvgByLangByDay[cvg.Language][cvg.Day].Idents += cvg.Summary.Idents;
+					cvgByLangByDay[cvg.Language][cvg.Day].Refs += cvg.Summary.Refs;
+					cvgByLangByDay[cvg.Language][cvg.Day].Defs += cvg.Summary.Defs;
+				}
 			});
 
 			state.data = {};
 			Object.keys(cvgByLangByDay).forEach((lang) => {
 				const langData = Object.keys(cvgByLangByDay[lang]).map((day) => {
 					const dayObj = cvgByLangByDay[lang][day];
-					return {Day: day, Refs: dayObj.Refs / dayObj.Idents, Defs: dayObj.Defs / dayObj.Idents, Sources: dayObj.Sources};
+					const refScore = dayObj.Idents === 0 ? 0 : dayObj.Refs / dayObj.Idents;
+					const defScore = dayObj.Idents === 0 ? 0 : dayObj.Defs / dayObj.Idents;
+					return {Day: day, Refs: refScore, Defs: defScore, Sources: dayObj.Sources};
 				});
 				state.data[lang] = langData.sort((a, b) => {
 					if (a.Day < b.Day) return -1;

@@ -23,16 +23,13 @@ class CoverageDrilldown extends Container {
 			Defs: React.PropTypes.number.isRequired,
 			Sources: React.PropTypes.arrayOf(React.PropTypes.shape({
 				Repo: React.PropTypes.string.isRequired,
-				SrclibVersions: React.PropTypes.arrayOf(React.PropTypes.shape({
-					Language: React.PropTypes.string.isRequired,
-					Version: React.PropTypes.string.isRequired,
-				})).isRequired,
-				Summary: React.PropTypes.arrayOf(React.PropTypes.shape({
+				Language: React.PropTypes.string.isRequired,
+				SrclibVersion: React.PropTypes.string,
+				Summary: React.PropTypes.shape({
 					Idents: React.PropTypes.number.isRequired,
 					Refs: React.PropTypes.number.isRequired,
 					Defs: React.PropTypes.number.isRequired,
-					Language: React.PropTypes.string.isRequired,
-				})).isRequired,
+				}),
 			})).isRequired,
 		})).isRequired,
 		onDismiss: React.PropTypes.func.isRequired,
@@ -78,10 +75,12 @@ class CoverageDrilldown extends Container {
 	}
 
 	refScore(summary) {
+		if (summary.Idents === 0) return 0;
 		return summary.Refs / summary.Idents;
 	}
 
 	defScore(summary) {
+		if (summary.Idents === 0) return 0;
 		return summary.Defs / summary.Idents;
 	}
 
@@ -110,16 +109,14 @@ class CoverageDrilldown extends Container {
 		const datum = this.props.data[this.state.idx];
 		let srclibVersions = {};
 		datum.Sources.forEach((source) => {
-			source.SrclibVersions
-				.filter((ver) => ver.Language === this.props.language)
-				.forEach((ver) => srclibVersions[ver.Version] = true);
+			if (source.SrclibVersion) srclibVersions[source.SrclibVersion] = true;
 		});
 
 		const prevDatum = this.state.idx === 0 ? null : this.props.data[this.state.idx - 1];
 		let prevSummaryIndex = {};
 		if (prevDatum) {
 			prevDatum.Sources.forEach((source) => {
-				prevSummaryIndex[source.Repo] = source.Summary[0]; // assume summary is for the current language
+				prevSummaryIndex[source.Repo] = source.Summary;
 			});
 		}
 
@@ -148,27 +145,27 @@ class CoverageDrilldown extends Container {
 					</thead>
 					<tbody>
 						{datum.Sources.map((source, i) => {
-							const summary = source.Summary[0]; // assume summary is for the current language
+							const summary = source.Summary;
 							const builds = this.state.buildLists.get(source.Repo, this.buildsQuery);
 							const prevSummary = prevSummaryIndex[source.Repo];
-							const refDelta = prevSummary ? this.refDelta(prevSummary, summary) : "";
-							const defDelta = prevSummary ? this.defDelta(prevSummary, summary) : "";
+							const refDelta = prevSummary && summary ? this.refDelta(prevSummary, summary) : "";
+							const defDelta = prevSummary && summary ? this.defDelta(prevSummary, summary) : "";
 							return (
 								<tr key={i}>
 									<td styleName="data">
-										{builds && <Link to={urlToBuilds(source.Repo)}>
+										{builds && builds.length > 0 && <Link to={urlToBuilds(source.Repo)}>
 											<Label color={buildClass(builds[0])} styleName="build-label">{buildStatus(builds[0])}</Label>
 											</Link>
 										}
 										{source.Repo}
 									</td>
-									<td styleName="data">{summary.Idents}</td>
+									<td styleName="data">{summary ? summary.Idents : "---"}</td>
 									<td styleName="data">
-										{Math.round(this.refScore(summary) * 100)}
+										{summary ? Math.round(this.refScore(summary) * 100) : "---"}
 										<span styleName={this.deltaStyle(refDelta)}>{refDelta}</span>
 									</td>
 									<td styleName="data">
-										{Math.round(this.defScore(summary) * 100)}
+										{summary ? Math.round(this.defScore(summary) * 100) : "---"}
 										<span styleName={this.deltaStyle(defDelta)}>{defDelta}</span>
 									</td>
 								</tr>

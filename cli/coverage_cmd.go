@@ -52,30 +52,23 @@ type coverageCmd struct {
 	Dry     bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
 }
 
-// fileCoverage contains coverage data for a single file
+// fileCoverage contains coverage data for a single file or repository
 type fileCoverage struct {
-	Path     string // the file path
-	Language string // the language name
-	Idents   int    // # of identifiers in the file
-	Refs     int    // # of refs in the file (i.e. annotations)
-	Defs     int    // # of annotations (URLs) which resolve to real defs
-}
-
-// srclibVersion contains the current version of a language toolchain
-// at the time of running the script
-type srclibVersion struct {
-	Language string
-	Version  string
+	Path   string // the file path (optional)
+	Idents int    // # of identifiers in the file
+	Refs   int    // # of refs in the file (i.e. annotations)
+	Defs   int    // # of annotations (URLs) which resolve to real defs
 }
 
 // repoCoverage contains the coverage data for a single repo
 type repoCoverage struct {
-	Repo           string
-	Files          []*fileCoverage
-	Summary        []*fileCoverage // summation over Files, per language
-	SrclibVersions []*srclibVersion
-	Day            string
-	Duration       float64 // time to compute coverage (in seconds)
+	Repo          string
+	Language      string
+	Files         []*fileCoverage
+	Summary       *fileCoverage
+	SrclibVersion string
+	Day           string
+	Duration      float64 // time to compute coverage (in seconds)
 }
 
 // defIndex contains all of the defs for a particular repo@commit
@@ -368,11 +361,14 @@ func parseAnnotationURL(annUrl string) (*sourcegraph.RepoRevSpec, *sourcegraph.D
 
 // getFileCoverage computes the coverage data for a single file in a repository
 func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string) (*fileCoverage, error) {
-	fileCvg := &fileCoverage{Path: path, Language: lang}
+	fileCvg := &fileCoverage{Path: path}
 
-	// TODO(rothfels): add other language support.
-
-	tokenizer := coverageutil.Lookup(lang, path)
+	var tokenizer coverageutil.Tokenizer
+	if t := coverageutil.Lookup(lang, path); t != nil {
+		tokenizer = *t
+	} else {
+		return nil, nil
+	}
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
@@ -416,8 +412,11 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 
 		fileCvg.Idents += 1
 		if ann, ok := annsByStartByte[tok.Offset]; ok {
-			fileCvg.Refs += 1
-			refAnnotations = append(refAnnotations, ann)
+			if ann.EndByte == tok.Offset+uint32(len([]byte(tok.Text))) {
+				// ref counts exact matches only
+				fileCvg.Refs += 1
+				refAnnotations = append(refAnnotations, ann)
+			}
 		}
 	}
 
@@ -461,7 +460,6 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		}
 	}
 
-	log15.Info("computed coverage", "path", path, "idents", fileCvg.Idents, "refs", fileCvg.Refs, "defs", fileCvg.Defs)
 	return fileCvg, nil
 }
 
@@ -473,75 +471,69 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 
 	start := time.Now()
 
+	repoCvg := repoCoverage{Repo: repoURI, Day: start.Format("01-02"), Language: lang}
 	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
 	commitID, err := cache.getResolvedRev(cl, ctx, &repoSpec)
 	if err != nil {
 		return nil, err
 	}
+
 	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: commitID}
-
-	tree, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
-	if err != nil {
-		return nil, err
-	}
-
-	p := parallel.NewRun(10)
-	var repoCvgMu sync.Mutex
-	repoCvg := repoCoverage{Repo: repoURI, Day: start.Format("01-02")}
-	for _, path := range tree.Files {
-		path := path
-		p.Do(func() error {
-			fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, path, lang)
-			if err != nil {
-				return err
-			}
-			if fileCvg != nil {
-				// fileCvg may be nil for files which are ignored / not indexed
-				repoCvgMu.Lock()
-				repoCvg.Files = append(repoCvg.Files, fileCvg)
-				repoCvgMu.Unlock()
-			}
-
-			return nil
-		})
-	}
-
-	if err := p.Wait(); err != nil {
-		if errs, ok := err.(parallel.Errors); ok {
-			var errMsgs []string
-			for _, e := range errs {
-				errMsgs = append(errMsgs, e.Error())
-			}
-			err = fmt.Errorf("\n%s", strings.Join(errMsgs, "\n"))
-		}
-		return nil, fmt.Errorf("coverage errors: %s", err)
-	}
-
-	summaryByLang := make(map[string]*fileCoverage)
-	for _, cv := range repoCvg.Files {
-		if _, ok := summaryByLang[cv.Language]; !ok {
-			summaryByLang[cv.Language] = &fileCoverage{Language: cv.Language}
-		}
-		summaryByLang[cv.Language].Idents += cv.Idents
-		summaryByLang[cv.Language].Refs += cv.Refs
-		summaryByLang[cv.Language].Defs += cv.Defs
-	}
-
-	summary := make([]*fileCoverage, 0)
-	srclibVersions := make([]*srclibVersion, 0)
-	for lang, cv := range summaryByLang {
-		summary = append(summary, cv)
-		v, err := plan.SrclibVersion(lang)
+	dataVer := cache.getSrclibDataVersion(cl, ctx, &repoRevSpec)
+	if dataVer != "" {
+		repoRevSpec.CommitID = dataVer
+		tree, err := cl.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{Rev: repoRevSpec})
 		if err != nil {
-			log15.Warn("missing srclib version", "err", err, "lang", lang)
+			return nil, err
 		}
-		srclibVersions = append(srclibVersions, &srclibVersion{Language: lang, Version: v})
 
-		log15.Info("coverage summary", "lang", lang, "repo", repoURI, "idents", cv.Idents, "refs", cv.Refs, "defs", cv.Defs)
+		p := parallel.NewRun(10)
+		var repoCvgMu sync.Mutex
+		for _, path := range tree.Files {
+			path := path
+			p.Do(func() error {
+				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, path, lang)
+				if err != nil {
+					return err
+				}
+				if fileCvg != nil {
+					// fileCvg may be nil for files which are ignored / not indexed
+					repoCvgMu.Lock()
+					repoCvg.Files = append(repoCvg.Files, fileCvg)
+					repoCvgMu.Unlock()
+				}
+
+				return nil
+			})
+		}
+
+		if err := p.Wait(); err != nil {
+			if errs, ok := err.(parallel.Errors); ok {
+				var errMsgs []string
+				for _, e := range errs {
+					errMsgs = append(errMsgs, e.Error())
+				}
+				log15.Error("error computing coverage", "repo", repoURI, "err", fmt.Sprintf("\n%s", strings.Join(errMsgs, "\n")))
+			}
+		}
+	} else {
+		log15.Warn("missing srclib data version", "repo", repoURI, "rev", commitID)
 	}
 
-	repoCvg.Summary = summary
-	repoCvg.SrclibVersions = srclibVersions
+	repoCvg.Summary = &fileCoverage{}
+	for _, cv := range repoCvg.Files {
+		repoCvg.Summary.Idents += cv.Idents
+		repoCvg.Summary.Refs += cv.Refs
+		repoCvg.Summary.Defs += cv.Defs
+	}
+	log15.Info("coverage summary", "lang", lang, "repo", repoURI, "idents", repoCvg.Summary.Idents, "refs", repoCvg.Summary.Refs, "defs", repoCvg.Summary.Defs)
+
+	if planVer, err := plan.SrclibVersion(lang); err != nil {
+		log15.Warn("missing plan srclib version", "err", err, "lang", lang)
+	} else {
+		repoCvg.SrclibVersion = planVer
+	}
+
 	repoCvg.Duration = time.Since(start).Seconds()
 	log15.Info("coverage duration", "seconds", repoCvg.Duration)
 

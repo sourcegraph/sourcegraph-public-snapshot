@@ -1,6 +1,6 @@
 package cli
 
-var langs_ = []string{"Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++"}
+var langs_ = []string{"Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++", "CSS"}
 var langRepos_ = map[string][]string{
 	"Go": []string{
 		"sourcegraph/sourcegraph",

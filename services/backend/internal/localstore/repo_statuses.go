@@ -36,25 +36,20 @@ type dbRepoStatus struct {
 }
 
 type dbFileCoverage struct {
-	Path     string
-	Language string
-	Idents   int
-	Refs     int
-	Defs     int
-}
-
-type dbSrclibVersion struct {
-	Language string
-	Version  string
+	Path   string
+	Idents int
+	Refs   int
+	Defs   int
 }
 
 type dbRepoCoverage struct {
-	Repo           string
-	Files          []*dbFileCoverage
-	Summary        []*dbFileCoverage
-	SrclibVersions []*dbSrclibVersion
-	Day            string
-	Duration       float64
+	Repo          string
+	Language      string
+	Files         []*dbFileCoverage
+	Summary       *dbFileCoverage
+	SrclibVersion string
+	Day           string
+	Duration      float64
 }
 
 func (r *dbRepoStatus) toRepoStatus() *sourcegraph.RepoStatus {
@@ -134,13 +129,27 @@ func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatus
 }
 
 func checkCoverageRegression(prev, next *dbRepoCoverage) {
-	ps := prev.Summary[0] // one summary (language)
-	ns := next.Summary[0] // one summary (language)
-	if (ps.Refs/ps.Idents) > (ns.Refs/ns.Idents) || (ps.Defs/ps.Idents) > (ns.Defs/ns.Idents) {
+	ps := prev.Summary
+	ns := next.Summary
+
+	refScore := func(cvg *dbFileCoverage) float64 {
+		if cvg == nil || cvg.Idents == 0 {
+			return 0
+		}
+		return float64(ps.Refs) / float64(ps.Idents)
+	}
+	defScore := func(cvg *dbFileCoverage) float64 {
+		if cvg == nil || cvg.Idents == 0 {
+			return 0
+		}
+		return float64(ps.Defs) / float64(ps.Idents)
+	}
+
+	if refScore(ps) > refScore(ns) || defScore(ps) > defScore(ns) {
 		slack.PostMessage(slack.PostOpts{
 			Msg: fmt.Sprintf(`Coverage for %s (lang=%s) has regressed.
-Before: idents(%d), refs(%d), defs(%d)
-After: idents(%d), refs(%d), defs(%d)`, prev.Repo, ps.Language, ps.Idents, ps.Refs, ps.Defs, ns.Idents, ns.Refs, ns.Defs),
+Before: refScore(%d), defScore(%d)
+After: refScore(%d), defScore(%d)`, prev.Repo, prev.Language, refScore(ps), defScore(ps), refScore(ns), defScore(ns)),
 			IconEmoji: ":warning:",
 			Channel:   "global-graph",
 		})
