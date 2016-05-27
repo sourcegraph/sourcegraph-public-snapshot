@@ -106,7 +106,19 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// Best-effort global search re-index, don't block import
 	go func() {
-		_, err := cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
+		_, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+			Repo:                &sourcegraph.RepoSpec{URI: repoRev.URI},
+			RefreshRefLocations: true,
+		})
+		if err != nil {
+			log15.Error("def indexing failed", "repo", repoRev.URI, "commit", repoRev.CommitID, "err", err)
+			// No point running search indexing, since it depends on ref indexing
+			return
+		} else {
+			log15.Info("def indexing succeeded", "repo", repoRev.URI, "commit", repoRev.CommitID)
+		}
+
+		_, err = cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
 			Repos:         []*sourcegraph.RepoSpec{{repoRev.URI}},
 			RefreshCounts: true,
 			RefreshSearch: true,

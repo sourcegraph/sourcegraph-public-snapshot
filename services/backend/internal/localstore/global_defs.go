@@ -218,27 +218,16 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 	}
 
 	for _, repoUnit := range repoUnits {
-		var defs []*graph.Def
-		var commitID string
-		{
-			var err error
-			vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoUnit.Repo.URI)
-			if err != nil {
-				return err
-			}
-			// TODO(beyang): change this to ResolveRevision(repo.DefaultBranch)
-			c, err := vcsrepo.ResolveRevision("HEAD")
-			if err != nil {
-				return err
-			}
-			commitID = string(c)
-			defs, err = store.GraphFromContext(ctx).Defs(
-				sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: commitID}),
-				sstore.ByUnits(unit.ID2{Type: repoUnit.UnitType, Name: repoUnit.Unit}),
-			)
-			if err != nil {
-				return err
-			}
+		commitID, err := resolveRevisionDefaultBranch(ctx, repoUnit.Repo)
+		if err != nil {
+			return err
+		}
+		defs, err := store.GraphFromContext(ctx).Defs(
+			sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: commitID}),
+			sstore.ByUnits(unit.ID2{Type: repoUnit.UnitType, Name: repoUnit.Unit}),
+		)
+		if err != nil {
+			return err
 		}
 
 		type upsert struct {
@@ -395,4 +384,17 @@ func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUni
 		}
 	}
 	return resolved, nil
+}
+
+func resolveRevisionDefaultBranch(ctx context.Context, repo sourcegraph.RepoSpec) (string, error) {
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
+	if err != nil {
+		return "", err
+	}
+	// TODO(beyang): change this to ResolveRevision(repo.DefaultBranch)
+	c, err := vcsrepo.ResolveRevision("HEAD")
+	if err != nil {
+		return "", err
+	}
+	return string(c), nil
 }

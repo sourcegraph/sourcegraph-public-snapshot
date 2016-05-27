@@ -151,7 +151,12 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 }
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "def.RefresIndex is not yet implemented")
+	if op.RefreshRefLocations {
+		if err := store.GlobalRefsFromContext(ctx).Update(ctx, *op.Repo); err != nil {
+			return nil, err
+		}
+	}
+	return &pbtypes.Void{}, nil
 }
 
 var defAccessDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{

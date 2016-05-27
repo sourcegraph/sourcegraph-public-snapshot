@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
@@ -32,14 +31,16 @@ var _ store.GlobalDefs = (*GlobalDefs)(nil)
 
 type GlobalRefs struct {
 	Get_    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	Update_ func(ctx context.Context, op *pb.ImportOp) error
+	Update_ func(ctx context.Context, repo sourcegraph.RepoSpec) error
 }
 
 func (s *GlobalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	return s.Get_(ctx, op)
 }
 
-func (s *GlobalRefs) Update(ctx context.Context, op *pb.ImportOp) error { return s.Update_(ctx, op) }
+func (s *GlobalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) error {
+	return s.Update_(ctx, repo)
+}
 
 var _ store.GlobalRefs = (*GlobalRefs)(nil)
 

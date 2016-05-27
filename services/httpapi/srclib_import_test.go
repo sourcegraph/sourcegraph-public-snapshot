@@ -31,7 +31,10 @@ func TestSrclibImport(t *testing.T) {
 		"a/b/t.graph.json": graph.Output{Defs: []*graph.Def{{DefKey: graph.DefKey{Path: "p"}, Name: "n", File: "f"}}},
 	}
 
-	calledReposGet := mock.Repos.MockGet(t, wantRepo)
+	calledReposGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
+		URI:  wantRepo,
+		Fork: true, // specify fork to prevent background index refreshes
+	})
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, wantCommitID)
 	mock.Search.RefreshIndex_ = func(ctx context.Context, in *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
 		return nil, nil

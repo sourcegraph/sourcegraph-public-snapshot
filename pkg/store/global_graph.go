@@ -3,7 +3,6 @@ package store
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
@@ -33,9 +32,10 @@ type GlobalRefs interface {
 	// that refer the given def.
 	Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 
-	// Update takes the graph output of a source unit and updates the set of refs in
-	// the global ref store that originate from this source unit.
-	Update(ctx context.Context, op *pb.ImportOp) error
+	// Update takes the graph output of a repo at the latest commit and
+	// updates the set of refs in the global ref store that originate from
+	// it.
+	Update(ctx context.Context, repo sourcegraph.RepoSpec) error
 }
 
 type GlobalDefSearchOp struct {

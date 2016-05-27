@@ -14,9 +14,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
+	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 func init() {
@@ -217,21 +218,24 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
+func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", repo.URI); err != nil {
 		return err
 	}
 
-	if op.Data == nil {
-		return nil
+	commitID, err := resolveRevisionDefaultBranch(ctx, repo)
+	if err != nil {
+		return err
+	}
+	allRefs, err := store.GraphFromContext(ctx).Refs(
+		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: commitID}),
+	)
+	if err != nil {
+		return err
 	}
 
-	refs := make([]*graph.Ref, 0, len(op.Data.Refs))
-	for _, r := range op.Data.Refs {
-		// Ignore broken refs.
-		if r.DefPath == "" {
-			continue
-		}
+	refs := make([]*graph.Ref, 0, len(allRefs))
+	for _, r := range allRefs {
 		// Ignore def refs.
 		if r.Def {
 			continue
@@ -240,14 +244,11 @@ func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
 		if filelang.IsVendored(r.File, false) {
 			continue
 		}
-		if r.DefRepo == "" {
-			r.DefRepo = op.Repo
-		}
-		if r.DefUnit == "" {
-			r.DefUnit = op.Unit.Name
-		}
-		if r.DefUnitType == "" {
-			r.DefUnitType = op.Unit.Type
+		// This is a sign that something went wrong in the srclib
+		// stage. Rather not index at all. Alerting on this error
+		// should be handled upstream.
+		if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
+			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo.URI, commitID, r)
 		}
 		// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
 		// doesn't add significant value; yet it adds up to a lot of space in the db,
@@ -303,7 +304,7 @@ func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
 )
 ON COMMIT DROP;`
 	tmpInsertSQL := `INSERT INTO global_refs_tmp(def_key_id, repo, file, count) VALUES($1, $2, $3, 1);`
-	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1 AND file IN (SELECT file FROM global_refs_tmp GROUP BY file);`
+	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1;`
 	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, count, updated_at)
 	SELECT def_key_id, repo, file, sum(count) as count, now() as updated_at
 	FROM global_refs_tmp
@@ -318,13 +319,13 @@ ON COMMIT DROP;`
 		// Insert refs into temporary table
 		for _, r := range refs {
 			defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-			if _, err := tx.Exec(tmpInsertSQL, defKeyID, op.Repo, r.File); err != nil {
+			if _, err := tx.Exec(tmpInsertSQL, defKeyID, repo.URI, r.File); err != nil {
 				return err
 			}
 		}
 
 		// Purge all existing ref data for files in this source unit.
-		if _, err := tx.Exec(finalDeleteSQL, op.Repo); err != nil {
+		if _, err := tx.Exec(finalDeleteSQL, repo.URI); err != nil {
 			return err
 		}
 

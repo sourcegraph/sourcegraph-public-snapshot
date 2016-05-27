@@ -3,6 +3,7 @@
 package localstore
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -11,9 +12,10 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/srclib/graph"
-	"sourcegraph.com/sourcegraph/srclib/store/pb"
-	"sourcegraph.com/sourcegraph/srclib/unit"
+	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 func TestGlobalRefs(t *testing.T) {
@@ -22,7 +24,7 @@ func TestGlobalRefs(t *testing.T) {
 }
 
 func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
-	ctx, _, done := testContext()
+	ctx, mocks, done := testContext()
 	defer done()
 
 	testRefs1 := []*graph.Ref{
@@ -40,28 +42,50 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		{DefPath: "B/S", DefRepo: "x/y", DefUnit: "x/y/c", File: "a/b/p/t.go"}, // different repo
 	}
 	testRefs3 := []*graph.Ref{
-		{DefPath: "", DefRepo: "", DefUnit: "", File: "x/y/c/v.go"},         // package ref
+		{DefPath: ".", DefRepo: "", DefUnit: "", File: "x/y/c/v.go"},        // package ref
 		{DefPath: "A/R", DefRepo: "", DefUnit: "x/y/c", File: "x/y/c/v.go"}, // same unit
 		{DefPath: "B/T", DefRepo: "", DefUnit: "x/y/d", File: "x/y/c/v.go"}, // same repo, different unit
 	}
 
-	mustUpdate := func(repo, unitName, unitType string, refs []*graph.Ref) {
-		op := &pb.ImportOp{
-			Repo: repo,
-			Unit: &unit.SourceUnit{Key: unit.Key{Name: unitName, Type: unitType}},
-			Data: &graph.Output{
-				Refs: refs,
-			},
+	allRefs := map[string][]*graph.Ref{}
+	addRefs := func(repo, unitName, unitType string, refs []*graph.Ref) {
+		repoRefs, ok := allRefs[repo]
+		if !ok {
+			repoRefs = []*graph.Ref{}
 		}
-		if err := g.Update(ctx, op); err != nil {
-			t.Fatal(err)
+		for _, rp := range refs {
+			r := *rp
+			if r.DefRepo == "" {
+				r.DefRepo = repo
+			}
+			if r.DefUnit == "" {
+				r.DefUnit = unitName
+			}
+			if r.DefUnitType == "" {
+				r.DefUnitType = unitType
+			}
+			r.Repo = repo
+			r.Unit = unitName
+			r.UnitType = unitType
+			repoRefs = append(repoRefs, &r)
+		}
+		allRefs[repo] = repoRefs
+	}
+	addRefs("a/b", "a/b/u", "t", testRefs1)
+	addRefs("a/b", "a/b/p", "t", testRefs2)
+	addRefs("x/y", "x/y/c", "t", testRefs3)
+	mockRefs(mocks, allRefs)
+	for repo := range allRefs {
+		err := g.Update(ctx, sourcegraph.RepoSpec{URI: repo})
+		if err != nil {
+			t.Fatalf("could not update %s: %s", repo, err)
 		}
 	}
-	mustUpdate("a/b", "a/b/u", "t", testRefs1)
-	mustUpdate("a/b", "a/b/p", "t", testRefs2)
-	mustUpdate("x/y", "x/y/c", "t", testRefs3)
 	// Updates should be idempotent.
-	mustUpdate("a/b", "a/b/p", "t", testRefs2)
+	err := g.Update(ctx, sourcegraph.RepoSpec{URI: "a/b"})
+	if err != nil {
+		t.Fatalf("could not idempotent update a/b: %s", err)
+	}
 
 	testCases := map[string]struct {
 		Op     *sourcegraph.DefsListRefLocationsOp
@@ -144,7 +168,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 }
 
 func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
-	ctx, _, done := testContext()
+	ctx, mocks, done := testContext()
 	defer done()
 	get := func() error {
 		_, err := g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: "github.com/golang/go", Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
@@ -154,7 +178,7 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 		b.Log("Loading data into GlobalRefs")
 		nRepos := 10000
 		nRefs := 10
-		globalRefsUpdate(b, g, ctx, nRepos, nRefs)
+		globalRefsUpdate(b, g, ctx, mocks, nRepos, nRefs)
 		type CanRefresh interface {
 			StatRefresh(context.Context) error
 		}
@@ -177,32 +201,45 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 }
 
 func benchmarkGlobalRefsUpdate(b *testing.B, g store.GlobalRefs) {
-	ctx, _, done := testContext()
+	ctx, mocks, done := testContext()
 	defer done()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		globalRefsUpdate(b, g, ctx, 1, 100)
+		globalRefsUpdate(b, g, ctx, mocks, 1, 100)
 	}
 	// defer done() can be expensive
 	b.StopTimer()
 }
 
-func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, nRepos, nRefs int) {
+func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, mocks *mocks, nRepos, nRefs int) {
+	allRefs := map[string][]*graph.Ref{}
 	for i := 0; i < nRepos; i++ {
+		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
 		refs := make([]*graph.Ref, nRefs)
 		for j := 0; j < nRefs; j++ {
 			file := fmt.Sprintf("foo/bar/baz%d.go", j/3)
-			refs[j] = &graph.Ref{DefRepo: "github.com/golang/go", DefUnit: "fmt", DefUnitType: "GoPackage", DefPath: "Errorf", File: file}
+			refs[j] = &graph.Ref{
+				DefRepo:     "github.com/golang/go",
+				DefUnit:     "fmt",
+				DefUnitType: "GoPackage",
+				DefPath:     "Errorf",
+				File:        file,
+				Repo:        pkg,
+				UnitType:    "GoPackage",
+				Unit:        pkg,
+			}
 		}
+		repoRefs, ok := allRefs[pkg]
+		if !ok {
+			repoRefs = []*graph.Ref{}
+		}
+		repoRefs = append(repoRefs, refs...)
+		allRefs[pkg] = repoRefs
+	}
+	mockRefs(mocks, allRefs)
+	for i := 0; i < nRepos; i++ {
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
-		op := &pb.ImportOp{
-			Repo: pkg,
-			Unit: &unit.SourceUnit{Key: unit.Key{Name: pkg, Type: "GoPackage"}},
-			Data: &graph.Output{
-				Refs: refs,
-			},
-		}
-		if err := g.Update(ctx, op); err != nil {
+		if err := g.Update(ctx, sourcegraph.RepoSpec{URI: pkg}); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -214,4 +251,27 @@ func BenchmarkGlobalRefsGet(b *testing.B) {
 
 func BenchmarkGlobalRefsUpdate(b *testing.B) {
 	benchmarkGlobalRefsUpdate(b, &globalRefs{})
+}
+
+func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
+	mocks.Stores.Graph.Refs_ = func(f ...sstore.RefFilter) ([]*graph.Ref, error) {
+		if len(f) != 1 {
+			return nil, errors.New("mockRefs: Expected only 1 filter")
+		}
+		type byRepos interface {
+			ByRepos() []string
+		}
+		repos := f[0].(byRepos).ByRepos()
+		if len(repos) != 1 {
+			return nil, errors.New("mockRefs: Expected only 1 repo")
+		}
+		return allRefs[repos[0]], nil
+	}
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+		return sgtest.MockRepository{
+			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
+				return "aaaa", nil
+			},
+		}, nil
+	}
 }

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"golang.org/x/net/context"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
@@ -72,30 +71,6 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 	gstore := store.GraphFromContext(ctx)
 	if _, err := pb.Server(gstore).Import(ctx, op); err != nil {
 		return nil, err
-	}
-
-	// If this build is for the head commit of the default branch of the repo,
-	// update the global ref index.
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, op.Repo)
-	if err != nil {
-		return nil, err
-	}
-	commitID, err := vcsrepo.ResolveRevision("HEAD")
-	if err != nil {
-		return nil, err
-	}
-	if string(commitID) == op.CommitID {
-		// Currently the global graph stores hold data for only the HEAD commit of the default
-		// branch of the repo. We keep the commitID field empty to signify that
-		// the data is always pointing to the HEAD commit of the default branch (which
-		// is the default behavior on our app for empty repoRevSpecs).
-
-		op.CommitID = ""
-		if err := store.GlobalRefsFromContext(ctx).Update(ctx, op); err != nil {
-			// Temporarily log and ignore error in updating the global ref store.
-			// TODO: fail with error here once the rollout of global ref store is complete.
-			log15.Error("error updating global ref store", "repo", op.Repo, "error", err)
-		}
 	}
 
 	return &pbtypes.Void{}, nil
