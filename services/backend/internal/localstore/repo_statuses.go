@@ -133,7 +133,7 @@ func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatus
 	return &list, nil
 }
 
-func alertCoverageRegression(prev, next *dbRepoCoverage) {
+func checkCoverageRegression(prev, next *dbRepoCoverage) {
 	ps := prev.Summary[0] // one summary (language)
 	ns := next.Summary[0] // one summary (language)
 	if (ps.Refs/ps.Idents) > (ns.Refs/ns.Idents) || (ps.Defs/ps.Idents) > (ns.Defs/ns.Idents) {
@@ -190,7 +190,7 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 				prev := cvg[0]
 				next := nextCvg[0]
 
-				alertCoverageRegression(&prev, &next)
+				checkCoverageRegression(&prev, &next)
 
 				if prev.Day != next.Day {
 					cvg = append(nextCvg, cvg...) // keep most recent day first; don't double track days

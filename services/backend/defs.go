@@ -166,7 +166,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	}
 
 	// Optimization; since the caller may request a large page limit (see note below)
-	// initialize return slice with correct length.services/worker/plan/srclib.go
+	// initialize return slice with correct length.
 	var numEntries int
 	if len(defs0) < opt.Offset()+opt.Limit() {
 		numEntries = len(defs0) - opt.Offset()
