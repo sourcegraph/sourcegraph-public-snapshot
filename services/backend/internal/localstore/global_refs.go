@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
 
@@ -252,22 +251,19 @@ ON COMMIT DROP;`
 		}
 
 		// Insert refs into temporary table
-		var r graph.Ref
-		for _, rp := range op.Data.Refs {
+		for _, r := range op.Data.Refs {
 			// Ignore broken refs.
-			if rp.DefPath == "" {
+			if r.DefPath == "" {
 				continue
 			}
 			// Ignore def refs.
-			if rp.Def {
+			if r.Def {
 				continue
 			}
 			// Ignore vendored refs.
 			if filelang.IsVendored(r.File, false) {
 				continue
 			}
-			// Avoid modify pointer
-			r = *rp
 			if r.DefRepo == "" {
 				r.DefRepo = op.Repo
 			}
