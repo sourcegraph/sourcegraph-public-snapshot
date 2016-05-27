@@ -104,6 +104,7 @@ func (api *Client) GetUserInfo(user string) (*User, error) {
 func (api *Client) GetUsers() ([]User, error) {
 	values := url.Values{
 		"token": {api.config.token},
+		"presence": {"1"},
 	}
 	response, err := userRequest("users.list", values, api.debug)
 	if err != nil {

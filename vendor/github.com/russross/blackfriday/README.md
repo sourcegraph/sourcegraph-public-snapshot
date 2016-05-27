@@ -1,4 +1,4 @@
-Blackfriday [![Build Status](https://travis-ci.org/russross/blackfriday.svg?branch=master)](https://travis-ci.org/russross/blackfriday)
+Blackfriday [![Build Status](https://travis-ci.org/russross/blackfriday.svg?branch=master)](https://travis-ci.org/russross/blackfriday) [![GoDoc](https://godoc.org/github.com/russross/blackfriday?status.svg)](https://godoc.org/github.com/russross/blackfriday)
 ===========
 
 Blackfriday is a [Markdown][1] processor implemented in [Go][2]. It
@@ -114,7 +114,7 @@ All features of Sundown are supported, including:
     know and send me the input that does it.
 
     NOTE: "safety" in this context means *runtime safety only*. In order to
-    protect yourself agains JavaScript injection in untrusted content, see
+    protect yourself against JavaScript injection in untrusted content, see
     [this example](https://github.com/russross/blackfriday#sanitize-untrusted-content).
 
 *   **Fast processing**. It is fast enough to render on-demand in

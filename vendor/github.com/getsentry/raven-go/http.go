@@ -1,8 +1,12 @@
 package raven
 
 import (
+	"errors"
+	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"strings"
 )
 
@@ -18,11 +22,11 @@ func NewHttp(req *http.Request) *Http {
 		URL:     proto + "://" + req.Host + req.URL.Path,
 		Headers: make(map[string]string, len(req.Header)),
 	}
-	if addr := strings.SplitN(req.RemoteAddr, ":", 2); len(addr) == 2 {
-		h.Env = map[string]string{"REMOTE_ADDR": addr[0], "REMOTE_PORT": addr[1]}
+	if addr, port, err := net.SplitHostPort(req.RemoteAddr); err == nil {
+		h.Env = map[string]string{"REMOTE_ADDR": addr, "REMOTE_PORT": port}
 	}
 	for k, v := range req.Header {
-		h.Headers[k] = strings.Join(v, "; ")
+		h.Headers[k] = strings.Join(v, ",")
 	}
 	return h
 }
@@ -40,7 +44,7 @@ func sanitizeQuery(query url.Values) url.Values {
 	return query
 }
 
-// http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html#sentry.interfaces.Http
+// https://docs.getsentry.com/hosted/clientdev/interfaces/#context-interfaces
 type Http struct {
 	// Required
 	URL    string `json:"url"`
@@ -56,4 +60,25 @@ type Http struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-func (h *Http) Class() string { return "sentry.interfaces.Http" }
+func (h *Http) Class() string { return "request" }
+
+// Recovery handler to wrap the stdlib net/http Mux.
+// Example:
+//	http.HandleFunc("/", raven.RecoveryHandler(func(w http.ResponseWriter, r *http.Request) {
+//		...
+//	}))
+func RecoveryHandler(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rval := recover(); rval != nil {
+				debug.PrintStack()
+				rvalStr := fmt.Sprint(rval)
+				packet := NewPacket(rvalStr, NewException(errors.New(rvalStr), NewStacktrace(2, 3, nil)), NewHttp(r))
+				Capture(packet, nil)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}()
+
+		handler(w, r)
+	}
+}

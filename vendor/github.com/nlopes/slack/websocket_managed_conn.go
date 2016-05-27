@@ -86,7 +86,7 @@ func (rtm *RTM) connect(connectionCount int) (*Info, *websocket.Conn, error) {
 			return info, conn, nil
 		}
 		// check for fatal errors - currently only invalid_auth
-		if sErr, ok := err.(*WebError); ok && sErr.Error() == "invalid_auth" {
+		if sErr, ok := err.(*WebError); ok && (sErr.Error() == "invalid_auth" || sErr.Error() == "account_inactive") {
 			rtm.IncomingEvents <- RTMEvent{"invalid_auth", &InvalidAuthEvent{}}
 			return nil, nil, sErr
 		}

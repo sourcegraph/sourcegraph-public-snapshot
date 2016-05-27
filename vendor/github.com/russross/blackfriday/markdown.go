@@ -635,6 +635,9 @@ func scanLinkRef(p *parser, data []byte, i int) (linkOffset, linkEnd, titleOffse
 		i++
 	}
 	linkOffset = i
+	if i == len(data) {
+		return
+	}
 	for i < len(data) && data[i] != ' ' && data[i] != '\t' && data[i] != '\n' && data[i] != '\r' {
 		i++
 	}

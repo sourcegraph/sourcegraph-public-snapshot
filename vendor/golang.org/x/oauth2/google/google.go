@@ -37,9 +37,10 @@ const JWTTokenURL = "https://accounts.google.com/o/oauth2/token"
 
 // ConfigFromJSON uses a Google Developers Console client_credentials.json
 // file to construct a config.
-// client_credentials.json can be downloadable from https://console.developers.google.com,
-// under "APIs & Auth" > "Credentials". Download the Web application credentials in the
-// JSON format and provide the contents of the file as jsonKey.
+// client_credentials.json can be downloaded from
+// https://console.developers.google.com, under "Credentials". Download the Web
+// application credentials in the JSON format and provide the contents of the
+// file as jsonKey.
 func ConfigFromJSON(jsonKey []byte, scope ...string) (*oauth2.Config, error) {
 	type cred struct {
 		ClientID     string   `json:"client_id"`
@@ -81,8 +82,8 @@ func ConfigFromJSON(jsonKey []byte, scope ...string) (*oauth2.Config, error) {
 
 // JWTConfigFromJSON uses a Google Developers service account JSON key file to read
 // the credentials that authorize and authenticate the requests.
-// Create a service account on "Credentials" page under "APIs & Auth" for your
-// project at https://console.developers.google.com to download a JSON key file.
+// Create a service account on "Credentials" for your project at
+// https://console.developers.google.com to download a JSON key file.
 func JWTConfigFromJSON(jsonKey []byte, scope ...string) (*jwt.Config, error) {
 	var key struct {
 		Email      string `json:"client_email"`

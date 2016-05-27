@@ -10,6 +10,7 @@ import (
 const (
 	// Add here the defaults in the siten
 	DEFAULT_FILES_USER    = ""
+	DEFAULT_FILES_CHANNEL = ""
 	DEFAULT_FILES_TS_FROM = 0
 	DEFAULT_FILES_TS_TO   = -1
 	DEFAULT_FILES_TYPES   = "all"
@@ -99,6 +100,7 @@ type FileUploadParameters struct {
 // GetFilesParameters contains all the parameters necessary (including the optional ones) for a GetFiles() request
 type GetFilesParameters struct {
 	User          string
+	Channel       string
 	TimestampFrom JSONTime
 	TimestampTo   JSONTime
 	Types         string
@@ -119,6 +121,7 @@ type fileResponseFull struct {
 func NewGetFilesParameters() GetFilesParameters {
 	return GetFilesParameters{
 		User:          DEFAULT_FILES_USER,
+		Channel:       DEFAULT_FILES_CHANNEL,
 		TimestampFrom: DEFAULT_FILES_TS_FROM,
 		TimestampTo:   DEFAULT_FILES_TS_TO,
 		Types:         DEFAULT_FILES_TYPES,
@@ -161,6 +164,9 @@ func (api *Client) GetFiles(params GetFilesParameters) ([]File, *Paging, error) 
 	}
 	if params.User != DEFAULT_FILES_USER {
 		values.Add("user", params.User)
+	}
+	if params.Channel != DEFAULT_FILES_CHANNEL {
+		values.Add("channel", params.Channel)
 	}
 	// XXX: this is broken. fix it with a proper unix timestamp
 	if params.TimestampFrom != DEFAULT_FILES_TS_FROM {

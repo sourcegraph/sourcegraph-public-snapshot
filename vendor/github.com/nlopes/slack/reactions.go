@@ -90,7 +90,6 @@ type listReactionsResponseFull struct {
 		Channel string
 		M       struct {
 			*Message
-			Reactions []ItemReaction
 		} `json:"message"`
 		F struct {
 			*File

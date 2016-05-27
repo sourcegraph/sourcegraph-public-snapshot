@@ -1,7 +1,9 @@
 package mafsa
 
 import (
+	"bytes"
 	"encoding/binary"
+	"io"
 	"sort"
 )
 
@@ -43,6 +45,21 @@ func (e *Encoder) Encode(t *BuildTree) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+// WriteTo encodes and saves the BuildTree to a io.Writer.
+func (e *Encoder) WriteTo(wr io.Writer, t *BuildTree) error {
+	bs, err := e.Encode(t)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(wr, bytes.NewReader(bs))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // encodeEdges encodes the edges going out of node into bytes which are appended

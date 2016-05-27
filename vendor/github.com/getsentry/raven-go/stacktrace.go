@@ -15,18 +15,18 @@ import (
 	"sync"
 )
 
-// http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html#sentry.interfaces.Stacktrace
+// https://docs.getsentry.com/hosted/clientdev/interfaces/#failure-interfaces
 type Stacktrace struct {
 	// Required
 	Frames []*StacktraceFrame `json:"frames"`
 }
 
-func (s *Stacktrace) Class() string { return "sentry.interfaces.Stacktrace" }
+func (s *Stacktrace) Class() string { return "stacktrace" }
 
 func (s *Stacktrace) Culprit() string {
 	for i := len(s.Frames) - 1; i >= 0; i-- {
 		frame := s.Frames[i]
-		if *frame.InApp == true && frame.Module != "" && frame.Function != "" {
+		if frame.InApp == true && frame.Module != "" && frame.Function != "" {
 			return frame.Module + "." + frame.Function
 		}
 	}
@@ -46,7 +46,7 @@ type StacktraceFrame struct {
 	ContextLine  string   `json:"context_line,omitempty"`
 	PreContext   []string `json:"pre_context,omitempty"`
 	PostContext  []string `json:"post_context,omitempty"`
-	InApp        *bool    `json:"in_app,omitempty"`
+	InApp        bool     `json:"in_app"`
 }
 
 // Intialize and populate a new stacktrace, skipping skip frames.
@@ -64,7 +64,18 @@ func NewStacktrace(skip int, context int, appPackagePrefixes []string) *Stacktra
 		if !ok {
 			break
 		}
-		frames = append(frames, NewStacktraceFrame(pc, file, line, context, appPackagePrefixes))
+		frame := NewStacktraceFrame(pc, file, line, context, appPackagePrefixes)
+		if frame != nil {
+			frames = append(frames, frame)
+		}
+	}
+	// If there are no frames, the entire stacktrace is nil
+	if len(frames) == 0 {
+		return nil
+	}
+	// Optimize the path where there's only 1 frame
+	if len(frames) == 1 {
+		return &Stacktrace{frames}
 	}
 	// Sentry wants the frames with the oldest first, so reverse them
 	for i, j := 0, len(frames)-1; i < j; i, j = i+1, j-1 {
@@ -82,14 +93,21 @@ func NewStacktrace(skip int, context int, appPackagePrefixes []string) *Stacktra
 // appPackagePrefixes is a list of prefixes used to check whether a package should
 // be considered "in app".
 func NewStacktraceFrame(pc uintptr, file string, line, context int, appPackagePrefixes []string) *StacktraceFrame {
-	frame := &StacktraceFrame{AbsolutePath: file, Filename: trimPath(file), Lineno: line, InApp: new(bool)}
+	frame := &StacktraceFrame{AbsolutePath: file, Filename: trimPath(file), Lineno: line, InApp: false}
 	frame.Module, frame.Function = functionName(pc)
+
+	// `runtime.goexit` is effectively a placeholder that comes from
+	// runtime/asm_amd64.s and is meaningless.
+	if frame.Module == "runtime" && frame.Function == "goexit" {
+		return nil
+	}
+
 	if frame.Module == "main" {
-		*frame.InApp = true
+		frame.InApp = true
 	} else {
 		for _, prefix := range appPackagePrefixes {
 			if strings.HasPrefix(frame.Module, prefix) && !strings.Contains(frame.Module, "vendor") && !strings.Contains(frame.Module, "third_party") {
-				*frame.InApp = true
+				frame.InApp = true
 			}
 		}
 	}
@@ -176,10 +194,6 @@ var trimPaths []string
 // Try to trim the GOROOT or GOPATH prefix off of a filename
 func trimPath(filename string) string {
 	for _, prefix := range trimPaths {
-		if prefix[len(prefix)-1] != filepath.Separator {
-			prefix += string(filepath.Separator)
-		}
-
 		if trimmed := strings.TrimPrefix(filename, prefix); len(trimmed) < len(filename) {
 			return trimmed
 		}
@@ -188,5 +202,12 @@ func trimPath(filename string) string {
 }
 
 func init() {
-	trimPaths = build.Default.SrcDirs()
+	// Collect all source directories, and make sure they
+	// end in a trailing "separator"
+	for _, prefix := range build.Default.SrcDirs() {
+		if prefix[len(prefix)-1] != filepath.Separator {
+			prefix += string(filepath.Separator)
+		}
+		trimPaths = append(trimPaths, prefix)
+	}
 }

@@ -1,5 +1,27 @@
 ## `jwt-go` Version History
 
+#### 2.6.0
+
+This will likely be the last backwards compatible release before 3.0.0.
+
+* Exposed inner error within ValidationError
+* Fixed validation errors when using UseJSONNumber flag
+* Added several unit tests
+
+#### 2.5.0
+
+* Added support for signing method none.  You shouldn't use this.  The API tries to make this clear.
+* Updated/fixed some documentation
+* Added more helpful error message when trying to parse tokens that begin with `BEARER `
+
+#### 2.4.0
+
+* Added new type, Parser, to allow for configuration of various parsing parameters
+	* You can now specify a list of valid signing methods.  Anything outside this set will be rejected.
+	* You can now opt to use the `json.Number` type instead of `float64` when parsing token JSON
+* Added support for [Travis CI](https://travis-ci.org/dgrijalva/jwt-go)
+* Fixed some bugs with ECDSA parsing
+
 #### 2.3.0
 
 * Added support for ECDSA signing methods
