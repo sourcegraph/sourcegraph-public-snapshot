@@ -13,17 +13,17 @@
 	animation: sk-bouncedelay 1.4s infinite ease-in-out both;
 }
 
-.loader-1 {
+.loader1 {
 	composes: loader-label;
 	animation-delay: -0.32s;
 }
 
-.loader-2 {
+.loader2 {
 	composes: loader-label;
 	animation-delay: -0.16s;
 }
 
-.loader-3 {
+.loader3 {
 	composes: loader-label;
 }
 
