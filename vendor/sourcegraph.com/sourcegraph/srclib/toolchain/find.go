@@ -152,16 +152,10 @@ func newInfo(toolchainPath, dir, configFile string) (*Info, error) {
 	prog := filepath.Join(".bin", filepath.Base(toolchainPath))
 	if runtime.GOOS == "windows" {
 		prog = winExe(dir, prog)
-	}
-
-	if runtime.GOOS != "windows" {
-		fi, err := os.Stat(filepath.Join(dir, prog))
-		if os.IsNotExist(err) {
-			prog = ""
-		} else {
-			if fi.Mode().Perm()&0111 == 0 {
-				return nil, fmt.Errorf("installed toolchain program %q is not executable (+x)", prog)
-			}
+	} else {
+		cmdName := filepath.Join(dir, prog)
+		if err := checkRegularExecutableFile(cmdName); err != nil {
+			return nil, err
 		}
 	}
 
@@ -171,6 +165,24 @@ func newInfo(toolchainPath, dir, configFile string) (*Info, error) {
 		ConfigFile: configFile,
 		Program:    prog,
 	}, nil
+}
+
+// checkRegularExecutableFile verifies that the file pointed to by name is a regular executable file.
+func checkRegularExecutableFile(name string) error {
+	switch info, err := os.Stat(name); {
+	case os.IsNotExist(err):
+		return fmt.Errorf("toolchain %s does not exist (should be a regular executable file)", name)
+	case err != nil:
+		return fmt.Errorf("toolchain %s caused %s (should be a regular executable file)", name, err)
+	case info.IsDir():
+		return fmt.Errorf("toolchain %s is a directory (should be a regular executable file)", name)
+	case !info.Mode().IsRegular():
+		return fmt.Errorf("toolchain %s is not a regular file (should be a regular executable file)", name)
+	case info.Mode().Perm()&0111 == 0:
+		return fmt.Errorf("toolchain %s is not executable (should be a regular executable file)", name)
+	default:
+		return nil
+	}
 }
 
 // lookInPaths returns all files in paths (a colon-separated list of

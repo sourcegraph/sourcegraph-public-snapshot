@@ -84,14 +84,14 @@ func sortedOutput(o *graph.Output) *graph.Output {
 // NormalizeData sorts data and performs other postprocessing.
 func NormalizeData(unitType, dir string, o *graph.Output) error {
 	for _, ref := range o.Refs {
-		if ref.DefRepo != "" {
+		if ref.DefRepo != "" && ref.DefRepo != unit.UnitRepoUnresolved {
 			uri, err := graph.TryMakeURI(string(ref.DefRepo))
 			if err != nil {
 				return err
 			}
 			ref.DefRepo = uri
 		}
-		if ref.Repo != "" {
+		if ref.Repo != "" && ref.DefRepo != unit.UnitRepoUnresolved {
 			uri, err := graph.TryMakeURI(string(ref.Repo))
 			if err != nil {
 				return err

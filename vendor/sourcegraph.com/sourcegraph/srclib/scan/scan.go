@@ -60,7 +60,7 @@ func ScanMulti(scanners [][]string, opt Options, treeConfig map[string]interface
 func Scan(scanner []string, opt Options, treeConfig map[string]interface{}) ([]*unit.SourceUnit, error) {
 	args, err := flagutil.MarshalArgs(&opt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("marshalling arguments for the scanner failed with: %s", err)
 	}
 
 	var errw bytes.Buffer
@@ -74,14 +74,14 @@ func Scan(scanner []string, opt Options, treeConfig map[string]interface{}) ([]*
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connecting to the STDIN of the scanner failed with: %s", err)
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connecting to the STDOUT of the scanner failed with: %s", err)
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("starting the scanner failed with: %s", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
@@ -93,22 +93,22 @@ func Scan(scanner []string, opt Options, treeConfig map[string]interface{}) ([]*
 	w := bufio.NewWriter(stdin)
 	if err := json.NewEncoder(w).Encode(treeConfig); err != nil {
 		w.Flush()
-		return nil, err
+		return nil, fmt.Errorf("writing the STDIN of the scanner failed with: %s", err)
 	}
 	if err := w.Flush(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("flushing the STDIN of the scanner failed with: %s", err)
 	}
 	if err := stdin.Close(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("closing the STDIN of the scanner failed with: %s", err)
 	}
 
 	// Read on stdout into the list of source units.
 	var units []*unit.SourceUnit
 	if err := json.NewDecoder(stdout).Decode(&units); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing the STDOUT of the scanner failed with: %s", err)
 	}
 	if err := cmd.Wait(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("waiting on the scanner failed with: %s", err)
 	}
 
 	return units, nil

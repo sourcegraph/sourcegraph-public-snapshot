@@ -25,6 +25,7 @@ $(TOOLCHAINS): srclib
 srclib:
 	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/srclib master | awk '{ print $$1 }'))
 	@if [ -z "$$DEV" ]; then \
+		echo "Building srclib from commit ${COMMIT}" ; \
 		docker build --build-arg URL=https://github.com/sourcegraph/srclib/tarball/${COMMIT} -t sourcegraph/srclib . ; \
 	else \
 		rm -rf .cache/srclib; \
