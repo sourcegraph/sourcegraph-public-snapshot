@@ -258,8 +258,42 @@ func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
 		refs = append(refs, r)
 	}
 
-	// Perf optimization: Local cache of def_key_id's to avoid psql roundtrip
-	defKeyIDCache := map[sourcegraph.DefSpec]int64{}
+	// Get all defKeyIDs outside of the transaction, since doing it inside
+	// of the transaction can lead to conflicts with other imports
+	defKeyIDs := map[sourcegraph.DefSpec]int64{}
+	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
+	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
+	for _, r := range refs {
+		defKeyIDKey := sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+		defKeyID, ok := defKeyIDs[defKeyIDKey]
+		if ok {
+			continue
+		}
+
+		// Optimistically get the def key id, otherwise fallback to insertion
+		defKeyID, err := graphDBH(ctx).SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		if err != nil {
+			return err
+		}
+		if defKeyID != 0 {
+			defKeyIDs[defKeyIDKey] = defKeyID
+			continue
+		}
+
+		if _, err = graphDBH(ctx).Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
+			return err
+		}
+
+		defKeyID, err = graphDBH(ctx).SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		if err != nil {
+			return err
+		}
+		if defKeyID == 0 {
+			return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		}
+
+		defKeyIDs[defKeyIDKey] = defKeyID
+	}
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
 	def_key_id bigint,
@@ -268,8 +302,6 @@ func (g *globalRefs) Update(ctx context.Context, op *pb.ImportOp) error {
 	count integer
 )
 ON COMMIT DROP;`
-	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
-	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
 	tmpInsertSQL := `INSERT INTO global_refs_tmp(def_key_id, repo, file, count) VALUES($1, $2, $3, 1);`
 	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1 AND file IN (SELECT file FROM global_refs_tmp GROUP BY file);`
 	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, count, updated_at)
@@ -285,27 +317,7 @@ ON COMMIT DROP;`
 
 		// Insert refs into temporary table
 		for _, r := range refs {
-			defKeyIDKey := sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
-			defKeyID, ok := defKeyIDCache[defKeyIDKey]
-			if !ok {
-				// Optimistically get the def key id, otherwise fallback to insertion
-				var err error
-				defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
-				if defKeyID == 0 || err != nil {
-					if _, err = tx.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
-						return err
-					}
-					defKeyID, err = tx.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
-					if err != nil {
-						return err
-					}
-					if defKeyID == 0 {
-						return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
-					}
-				}
-				defKeyIDCache[defKeyIDKey] = defKeyID
-			}
-
+			defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
 			if _, err := tx.Exec(tmpInsertSQL, defKeyID, op.Repo, r.File); err != nil {
 				return err
 			}
