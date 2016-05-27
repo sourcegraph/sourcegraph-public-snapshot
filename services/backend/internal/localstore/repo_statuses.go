@@ -2,7 +2,10 @@ package localstore
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
+
+	"github.com/sourcegraph/analytics/slack"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -131,6 +134,20 @@ func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatus
 	return &list, nil
 }
 
+func alertCoverageRegression(prev, next *dbRepoCoverage) {
+	ps := prev.Summary[0] // one summary (language)
+	ns := next.Summary[0] // one summary (language)
+	if (ps.Refs/ps.Idents) > (ns.Refs/ns.Idents) || (ps.Defs/ps.Idents) > (ns.Defs/ns.Idents) {
+		slack.PostMessage(slack.PostOpts{
+			Msg: fmt.Sprintf(`Coverage for %s (lang=%s) has regressed.
+Before: idents(%d), refs(%d), defs(%d)
+After: idents(%d), refs(%d), defs(%d)`, prev.Repo, ps.Language, ps.Idents, ps.Refs, ps.Defs, ns.Idents, ns.Refs, ns.Defs),
+			IconEmoji: ":warning:",
+			Channel:   "global-graph",
+		})
+	}
+}
+
 func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", repoRev.URI); err != nil {
 		return err
@@ -161,12 +178,28 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 			if err := json.Unmarshal([]byte(prevStatus.Description), &cvg); err != nil {
 				return err
 			}
-			var nextCvg []dbRepoCoverage
+
+			var nextCvg []dbRepoCoverage // should be length 1
 			if err := json.Unmarshal([]byte(dbrs.Description), &nextCvg); err != nil {
 				return err
 			}
+			if len(nextCvg) != 1 {
+				return fmt.Errorf("must add one coverage stat at a time per repo") // invariant
+			}
 
-			cvg = append(nextCvg, cvg...)
+			if len(cvg) > 0 { // sanity check
+				prev := cvg[0]
+				next := nextCvg[0]
+
+				alertCoverageRegression(&prev, &next)
+
+				if prev.Day != next.Day {
+					cvg = append(nextCvg, cvg...) // keep most recent day first; don't double track days
+				}
+			} else {
+				cvg = nextCvg
+			}
+
 			if len(cvg) > 30 {
 				cvg = cvg[:30] // cap # of entries at ~1 month
 			}

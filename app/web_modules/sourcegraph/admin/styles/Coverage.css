@@ -1,3 +1,8 @@
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+
 .container {
 	display: flex;
 	flex-wrap: wrap;
@@ -10,7 +15,91 @@
 }
 
 .title {
-	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	font-weight: bold;
 	font-size: 20px;
+	cursor: pointer;
+}
+
+.icon {
+	margin-left: 10px;
+	font-size: 14px;
+}
+
+.drilldown {
+	composes: containerFixed from layout;
+}
+
+.drilldown-header {
+	margin-top: 0px;
+}
+
+.srclib-version {
+	composes: light-silver from colors;
+	composes: ml3 from base;
+	font-size: 10px;
+	font-style: italic;
+}
+
+.drilldown-dismiss {
+	float: right;
+}
+
+.day {
+	font-weight: bold;
+}
+
+.day-chooser {
+	composes: mh3 from base;
+}
+
+.table {
+	composes: mt4 from base;
+	composes: col-12 from grid;
+}
+
+.repo {
+	composes: col-4 from grid;
+}
+
+.idents {
+	composes: col-2 from grid;
+}
+
+.refs {
+	composes: col-2 from grid;
+}
+
+.defs {
+	composes: col-2 from grid;
+}
+
+.delta {
+	font-size: 10px;
+	composes: ml2 from base;
+}
+
+.delta-increase {
+	composes: delta;
+	composes: green from colors;
+}
+
+.delta-decrease {
+	composes: delta;
+	composes: red from colors;
+}
+
+.build-label {
+	composes: mr2 from base;
+	font-size: 10px;
+	display: inline-block;
+	float: left;
+}
+
+.data {
+	composes: pa3 bt from base;
+	composes: b--black-20 from colors;
+	text-align: center;
 }
