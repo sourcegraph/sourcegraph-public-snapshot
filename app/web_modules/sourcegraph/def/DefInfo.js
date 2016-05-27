@@ -34,6 +34,7 @@ class DefInfo extends Container {
 
 	static propTypes = {
 		repo: React.PropTypes.string,
+		repoObj: React.PropTypes.object,
 		def: React.PropTypes.string.isRequired,
 		commitID: React.PropTypes.string,
 		rev: React.PropTypes.string,
@@ -194,6 +195,7 @@ class DefInfo extends Container {
 								icon={<GlobeIcon styleName="icon" />}
 								title="Translate"
 								initialValue={this.state.currentLang}
+								disabled={this.repoObj ? this.state.repoObj.Private : false}
 								onMenuClick={(val) => this._onTranslateDefInfo(val)}
 								onItemClick={(val) => this._onTranslateDefInfo(val)}
 								items={[

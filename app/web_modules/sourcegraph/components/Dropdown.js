@@ -11,6 +11,7 @@ class Dropdown extends React.Component {
 		title: React.PropTypes.string.isRequired,
 		initialValue: React.PropTypes.string.isRequired,
 		alwaysOpenMenu: React.PropTypes.bool, // Use initialValue to judge when false
+		disabled: React.PropTypes.bool,
 		items: React.PropTypes.arrayOf(React.PropTypes.shape({
 			name: React.PropTypes.string,
 			value: React.PropTypes.string,
@@ -44,6 +45,7 @@ class Dropdown extends React.Component {
 
 	// _onToggleDropdown specifically only handles triganle icon click event.
 	_onToggleDropdown(ev) {
+		if (this.props.disabled) return;
 		ev.preventDefault();
 		ev.stopPropagation();
 		this.setState({open: !this.state.open});
@@ -56,6 +58,7 @@ class Dropdown extends React.Component {
 	}
 
 	getMenuClickCallback(val) {
+		if (this.props.disabled) return () => null;
 		if (this.props.alwaysOpenMenu || !this.props.initialValue) {
 			return () => this.setState({open: !this.state.open});
 		}
@@ -70,7 +73,7 @@ class Dropdown extends React.Component {
 
 	render() {
 		return (
-			<div styleName="wrapper"
+			<div styleName={this.props.disabled ? "wrapper-disabled" : "wrapper"}
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
 				<span styleName="toggle" onClick={this._onToggleDropdown}><TriangleDownIcon /></span>

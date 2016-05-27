@@ -10,6 +10,11 @@
 	cursor: pointer;
 }
 
+.wrapper-disabled {
+	composes: wrapper;
+	cursor: not-allowed;
+}
+
 .dropdown-menu {
 	position: absolute;
 	width: 10rem;
