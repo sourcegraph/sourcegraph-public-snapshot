@@ -34,7 +34,7 @@ class AnonymousLandingPage extends Component {
 								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
 									<strong>Sign up with GitHub</strong>
 								</GitHubAuthButton>
-								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")} styleName="white">Try it on a popular codebase</Link>
+								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")} styleName="white">Or try it on open-source code &nbsp;&#x276f;</Link>
 							</p>
 						</div>
 					</div>
@@ -54,7 +54,7 @@ class AnonymousLandingPage extends Component {
 								<p>Connect your GitHub account to Sourcegraph to start searching, browsing, and cross-referencing your code, with IDE-like capabilities in your browser. Free for public and private projects.</p>
 							</div>
 							<GitHubAuthButton className={base.mr3}><strong>Continue with GitHub</strong></GitHubAuthButton>
-							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Try it on a popular codebase</Link>
+							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>Or try it on open-source code &nbsp;&#x276f;</Link>
 						</div>
 					</div>
 
@@ -154,7 +154,7 @@ class AnonymousLandingPage extends Component {
 							<a target="_blank" styleName="white"
 								href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
 								onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
-								Just install the Chrome extension
+								Just install the Chrome extension &nbsp;&#x276f;
 							</a>
 						</p>
 					</div>
