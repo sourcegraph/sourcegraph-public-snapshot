@@ -195,7 +195,7 @@ class DefInfo extends Container {
 								icon={<GlobeIcon styleName="icon" />}
 								title="Translate"
 								initialValue={this.state.currentLang}
-								disabled={this.repoObj ? this.state.repoObj.Private : false}
+								disabled={this.state.repoObj ? this.state.repoObj.Private : false}
 								onMenuClick={(val) => this._onTranslateDefInfo(val)}
 								onItemClick={(val) => this._onTranslateDefInfo(val)}
 								items={[
