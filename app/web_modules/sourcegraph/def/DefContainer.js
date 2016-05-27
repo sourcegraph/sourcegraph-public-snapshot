@@ -11,7 +11,7 @@ import DefTooltip from "sourcegraph/def/DefTooltip";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import {routeParams as defRouteParams} from "sourcegraph/def";
-import {urlToDef, urlToRepoDef} from "sourcegraph/def/routes";
+import {urlToRepoDef} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import styles from "./styles/Refs.css";
@@ -128,7 +128,6 @@ class DefContainer extends Container {
 					contents={contents}
 					annotations={this.state.defAnns || null}
 					activeDef={this.state.activeDef}
-					activeDefNoRev={this.state.activeDef ? urlToDef(def, "") : null}
 					lineNumbers={true}
 					displayRanges={defRange || null}
 					highlightedDef={this.state.highlightedDef || null}
