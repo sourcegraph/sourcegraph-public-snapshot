@@ -11,7 +11,6 @@ import DefTooltip from "sourcegraph/def/DefTooltip";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import {routeParams as defRouteParams} from "sourcegraph/def";
-import {urlToRepoDef} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import styles from "./styles/Refs.css";
@@ -39,16 +38,16 @@ class DefContainer extends Container {
 		mouseover: boolean;
 		rev: ?string;
 		commitID: ?string;
+		def: string;
 		defObj: Def;
-		activeDef: ?Object;
 	} = {
 		repo: "",
 		showDef: false,
 		commitID: null,
 		rev: null,
 		mouseover: false,
+		def: "",
 		defObj: {DefStart: null, DefEnd: null},
-		activeDef: null,
 	};
 
 	reconcileState(state, props) {
@@ -57,7 +56,6 @@ class DefContainer extends Container {
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
 		state.commitID = state.defObj && !state.defObj.Error ? state.defObj.CommitID : null;
-		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
 		if (state.mouseover) {
 			state.highlightedDef = DefStore.highlightedDef;
@@ -127,7 +125,7 @@ class DefContainer extends Container {
 					path={deffile}
 					contents={contents}
 					annotations={this.state.defAnns || null}
-					activeDef={this.state.activeDef}
+					activeDef={this.state.def}
 					lineNumbers={true}
 					displayRanges={defRange || null}
 					highlightedDef={this.state.highlightedDef || null}

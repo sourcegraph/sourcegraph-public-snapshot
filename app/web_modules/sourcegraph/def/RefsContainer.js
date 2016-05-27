@@ -14,7 +14,6 @@ import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {routeParams as defRouteParams} from "sourcegraph/def";
-import {urlToRepoDef} from "sourcegraph/def/routes";
 import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import Header from "sourcegraph/components/Header";
@@ -89,7 +88,6 @@ export default class RefsContainer extends Container {
 		state.commitID = props.commitID || null;
 		state.def = props.def || null;
 		state.defObj = props.defObj || null;
-		state.activeDef = state.def ? urlToRepoDef(state.repo, state.rev, state.def) : state.def;
 
 		state.refRepo = props.repoRefs.Repo || null;
 		state.refRev = state.refRepo === state.repo ? state.rev : null;
@@ -295,7 +293,8 @@ export default class RefsContainer extends Container {
 										contents={file.ContentsString}
 										annotations={this.anns[loc.Path] || null}
 										skipAnns={file.ContentsString && file.ContentsString.length >= 40*2500}
-										activeDef={this.state.activeDef}
+										activeDefRepo={this.state.repo}
+										activeDef={this.state.def}
 										lineNumbers={true}
 										displayRanges={this.ranges[loc.Path] || null}
 										highlightedDef={this.state.highlightedDef || null}
