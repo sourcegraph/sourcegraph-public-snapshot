@@ -19,7 +19,8 @@
 									"autoFocus": true,
 									"defaultValue": "",
 									"placeholder": "Jump to symbols or files...",
-									"maxLength": 32
+									"maxLength": 32,
+									"spellCheck": false
 								}
 							}
 						]

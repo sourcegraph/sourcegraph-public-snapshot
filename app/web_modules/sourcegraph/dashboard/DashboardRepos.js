@@ -64,6 +64,7 @@ class DashboardRepos extends React.Component {
 							<Input type="text"
 								placeholder="Filter repositories..."
 								domRef={(e) => this._filterInput = e}
+								spellCheck={false}
 								onChange={this._handleFilter} />
 						</Hero>
 					}

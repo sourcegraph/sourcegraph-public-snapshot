@@ -633,6 +633,7 @@ class TreeSearch extends Container {
 						defaultValue={this.state.query}
 						placeholder="Jump to symbols or files..."
 						maxLength={MAX_QUERY_LENGTH}
+						spellCheck={false}
 						domRef={(e) => this._queryInput = e} />
 				</div>
 				<div styleName="list-header">

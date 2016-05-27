@@ -280,6 +280,7 @@ class GlobalSearch extends Container {
 					autoFocus={true}
 					defaultValue={this.state.query}
 					placeholder="Search for symbols, functions and definitions..."
+					spellCheck={false}
 					domRef={(e) => this._queryInput = e} />
 			</div>
 			<div>
