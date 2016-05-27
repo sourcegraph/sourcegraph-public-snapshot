@@ -20,7 +20,7 @@ class Footer extends React.Component {
 						</Link>
 					</li>
 					<li styleName="item"><a styleName="link" href="/blog/">Blog</a></li>
-					<li styleName="item"><a styleName="link" href="/about/">About</a></li>
+					<li styleName="item"><Link styleName="link" to="/about">About</Link></li>
 					<li styleName="item"><a styleName="link" href="/careers/">Careers</a></li>
 				</ul>
 				<ul styleName="right-box">

@@ -37,8 +37,8 @@ large, well-known companies.
 
 Our hosted service Sourcegraph.com is always free for open-source
 projects. Teams get search, browsing, and cross-references for free on
-private code. New, paid features are coming soon
-([join the beta](mailto:support@sourcegraph.com)).
+private code. New, paid features will be released publicly in the
+future ([contact us for more info](mailto:support@sourcegraph.com)).
 
 You can also:
 

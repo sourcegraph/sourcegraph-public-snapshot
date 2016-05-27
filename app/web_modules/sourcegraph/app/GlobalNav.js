@@ -46,7 +46,7 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 					<Link to="/" styleName="header-logo"><Logo width="220px" type="logotype" /></Link>
 					<nav styleName="logged-out-nav">
 						<a href="/blog" styleName="logged-out-nav-item">Blog</a>
-						<a href="/about" styleName="logged-out-nav-item">About</a>
+						<Link to="/about" styleName="logged-out-nav-item">About</Link>
 						<LocationStateToggleLink href="/login"
 							modalName="login"
 							location={location}
