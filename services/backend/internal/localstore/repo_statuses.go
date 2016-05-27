@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/analytics/slack"
-
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
