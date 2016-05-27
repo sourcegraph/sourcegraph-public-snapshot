@@ -7,6 +7,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import {Input, Panel, Hero, Heading, Button, Icon} from "sourcegraph/components";
 import debounce from "lodash/function/debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 
 class DashboardRepos extends React.Component {
 	static contextTypes = {
@@ -52,6 +53,24 @@ class DashboardRepos extends React.Component {
 		return this.context && this.context.githubToken;
 	}
 
+	_canLinkPrivateGithub() {
+		return this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email")));
+	}
+
+	renderPrivateGitHub() {
+		return (
+			<Panel hover={true} className={`${base.mb4} ${base.pa4}`} styleName="item">
+				<div styleName="privateRepos">
+					<Heading level="3">
+						Add your private repositories
+					</Heading>
+					<p className={base.pb2}>Use Sourcegraph on your private repositories</p>
+					<GitHubAuthButton url={urlToPrivateGitHubOAuth} styleName="inline-block">Connect your repositories</GitHubAuthButton>
+				</div>
+			</Panel>
+		);
+	}
+
 	render() {
 		let repos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
 
@@ -91,6 +110,7 @@ class DashboardRepos extends React.Component {
 
 
 						<div styleName="repositories">
+							{this._canLinkPrivateGithub() && this.renderPrivateGitHub()}
 							{repos.length > 0 && repos.map((repo, i) =>
 								<Panel hover={true} key={i} className={`${base.mb4} ${base.pa4}`} styleName="item">
 									<div styleName="content">
