@@ -617,6 +617,7 @@ type DefsClient struct {
 	ListRefs_         func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(ctx context.Context, in *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 	ListAuthors_      func(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
+	RefreshIndex_     func(ctx context.Context, in *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
 }
 
 func (s *DefsClient) Get(ctx context.Context, in *sourcegraph.DefsGetOp, opts ...grpc.CallOption) (*sourcegraph.Def, error) {
@@ -639,6 +640,10 @@ func (s *DefsClient) ListAuthors(ctx context.Context, in *sourcegraph.DefsListAu
 	return s.ListAuthors_(ctx, in)
 }
 
+func (s *DefsClient) RefreshIndex(ctx context.Context, in *sourcegraph.DefsRefreshIndexOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.RefreshIndex_(ctx, in)
+}
+
 var _ sourcegraph.DefsClient = (*DefsClient)(nil)
 
 type DefsServer struct {
@@ -647,6 +652,7 @@ type DefsServer struct {
 	ListRefs_         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
 	ListAuthors_      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
+	RefreshIndex_     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
 }
 
 func (s *DefsServer) Get(v0 context.Context, v1 *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
@@ -667,6 +673,10 @@ func (s *DefsServer) ListRefLocations(v0 context.Context, v1 *sourcegraph.DefsLi
 
 func (s *DefsServer) ListAuthors(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error) {
 	return s.ListAuthors_(v0, v1)
+}
+
+func (s *DefsServer) RefreshIndex(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+	return s.RefreshIndex_(v0, v1)
 }
 
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)

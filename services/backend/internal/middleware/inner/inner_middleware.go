@@ -461,6 +461,19 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsLis
 	return
 }
 
+func (s wrappedDefs) RefreshIndex(ctx context.Context, param *sourcegraph.DefsRefreshIndexOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Defs", "RefreshIndex", param)
+	defer func() {
+		trace.After(ctx, "Defs", "RefreshIndex", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Defs.RefreshIndex(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.RefreshIndex returned nil, nil")
+	}
+	return
+}
+
 type wrappedDeltas struct{}
 
 func (s wrappedDeltas) Get(ctx context.Context, param *sourcegraph.DeltaSpec) (res *sourcegraph.Delta, err error) {

@@ -956,6 +956,36 @@ func (s wrappedDefs) ListAuthors(ctx context.Context, v1 *sourcegraph.DefsListAu
 	return rv, nil
 }
 
+func (s wrappedDefs) RefreshIndex(ctx context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Defs.RefreshIndex: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.DefsOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Defs")
+	}
+
+	rv, err := innerSvc.RefreshIndex(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
 type wrappedDeltas struct {
 	ctxFunc  ContextFunc
 	services svc.Services

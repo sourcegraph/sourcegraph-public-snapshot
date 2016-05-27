@@ -1694,6 +1694,16 @@ message FileRange {
 	int64 EndByte = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 }
 
+message DefsRefreshIndexOp {
+	// Repo is the repo whose graph data is to be re-indexed
+	// for global ref locations.
+	RepoSpec Repo = 1;
+
+	// RefreshRefLocations refreshes the global ref locations index for
+	// the specified repository.
+	bool RefreshRefLocations = 2;
+}
+
 // DefsService communicates with the def- and graph-related endpoints in the
 // Sourcegraph API.
 service Defs {
@@ -1711,6 +1721,12 @@ service Defs {
 
 	// ListAuthors lists people who committed parts of def's definition.
 	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);
+
+    	// RefreshIndex updates the precomputed indexes used for answering
+	// ListRefLocations queries. The indexes are built from the current
+	// snapshot of the code graph. This operation is idempotent, and
+	// should be executed regularly to keep the indexes up-to-date.
+	rpc RefreshIndex(DefsRefreshIndexOp) returns (pbtypes.Void);
 }
 
 message AuthorshipInfo {

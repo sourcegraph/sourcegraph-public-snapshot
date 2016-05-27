@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
+	"sourcegraph.com/sqs/pbtypes"
 )
 
 func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error) {
@@ -147,6 +148,10 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 		}
 	}
 	return refLocs, nil
+}
+
+func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
+	return nil, grpc.Errorf(codes.Unimplemented, "def.RefresIndex is not yet implemented")
 }
 
 var defAccessDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
