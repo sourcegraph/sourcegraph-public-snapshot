@@ -45,6 +45,7 @@
     "postcss-loader": "0.8.1",
     "postcss-modules-values": "1.1.1",
     "raw-loader": "0.5.1",
+    "react-addons-perf": "^15.1.0",
     "react-addons-test-utils": "^15.0.1",
     "style-loader": "0.12.3",
     "webpack": "1.12.13",
