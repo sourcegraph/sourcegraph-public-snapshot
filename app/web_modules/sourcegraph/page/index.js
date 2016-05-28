@@ -24,4 +24,14 @@ export const routes: Array<Route> = [
 			});
 		},
 	},
+	{
+		path: rel.security,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/page/SecurityPage").default,
+				});
+			});
+		},
+	},
 ];
