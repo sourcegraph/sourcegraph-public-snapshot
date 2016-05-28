@@ -117,7 +117,7 @@ export class SignupForm extends Container {
 						required={true} />
 				</label>
 				<p styleName="mid-text">
-					By creating an account, you agree to our <a href="/privacy">privacy policy</a> and <a href="/legal">terms</a>.
+					By creating an account, you agree to our <a href="/-/privacy" target="_blank">privacy policy</a> and <a href="/-/terms" target="_blank">terms</a>.
 				</p>
 				<Button
 					color={this.state.githubError ? "blue" : "default"}

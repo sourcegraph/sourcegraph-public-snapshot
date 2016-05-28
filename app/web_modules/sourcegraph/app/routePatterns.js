@@ -22,6 +22,8 @@ export type RouteName = "styleguide" |
 	"about" |
 	"contact" |
 	"security" |
+	"terms" |
+	"privacy" |
 	"admin" |
 	"adminBuilds" |
 	"coverage" |
@@ -31,6 +33,8 @@ export const rel: {[key: RouteName]: string} = {
 	about: "about",
 	contact: "contact",
 	security: "security",
+	terms: "-/terms",
+	privacy: "-/privacy",
 	styleguide: "styleguide",
 	dashboard: "",
 	tools: "tools",

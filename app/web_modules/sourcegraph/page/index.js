@@ -34,4 +34,24 @@ export const routes: Array<Route> = [
 			});
 		},
 	},
+	{
+		path: rel.terms,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/page/TermsPage").default,
+				});
+			});
+		},
+	},
+	{
+		path: rel.privacy,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/page/PrivacyPage").default,
+				});
+			});
+		},
+	},
 ];
