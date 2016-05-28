@@ -15,7 +15,7 @@ var (
 	droneSrclibTypeScriptImage = "sourcegraph/srclib-typescript@sha256:39adfea4bdaea50be63431fe8c85c174a6a83d34db1196ac0bb171cb79cc88d6"
 	droneSrclibCSharpImage     = "sourcegraph/srclib-csharp@sha256:229d04cd742830d25f5fb8b51c5bdcf83fef446c645b7e3e5a29ce5fb4188747"
 	droneSrclibCSSImage        = "sourcegraph/srclib-css@sha256:c8b71da5d2211adb4a4c44ceef1ca4e19d2db42fa769a7aeeaed56d3cd6040ff"
-	droneSrclibPythonImage     = "sourcegraph/srclib-python@sha256:d4b9feb2821be79e8d1541692e25a9b70556abb99c3df4716f51fea1d3cf2a7f"
+	droneSrclibPythonImage     = "sourcegraph/srclib-python@sha256:d32fedb52419027a02bf5edb43ce5f7c1dc6de9d501d14b9ce56ab64e2386ed5"
 )
 
 func versionHash(image string) (string, error) {
