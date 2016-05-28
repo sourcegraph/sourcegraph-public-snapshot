@@ -20,6 +20,7 @@ export type RouteName = "styleguide" |
 	"forgot" |
 	"reset" |
 	"about" |
+	"contact" |
 	"admin" |
 	"adminBuilds" |
 	"coverage" |
@@ -27,6 +28,7 @@ export type RouteName = "styleguide" |
 
 export const rel: {[key: RouteName]: string} = {
 	about: "about",
+	contact: "contact",
 	styleguide: "styleguide",
 	dashboard: "",
 	tools: "tools",
