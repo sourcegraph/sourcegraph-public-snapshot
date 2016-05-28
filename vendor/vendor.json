@@ -58,12 +58,6 @@
 			"revisionTime": "2014-06-25T23:47:03Z"
 		},
 		{
-			"checksumSHA1": "r1CX8/M/ipvntOfH0rT9jOQ6fdM=",
-			"path": "github.com/cloudfoundry-incubator/candiedyaml",
-			"revision": "99c3df83b51532e3615f851d8c2dbb638f5313bf",
-			"revisionTime": "2016-04-29T08:01:25Z"
-		},
-		{
 			"checksumSHA1": "9AX1Qo5TlMveGCqhyBTla7zN5z0=",
 			"path": "github.com/chris-ramon/douceur/css",
 			"revision": "c0a5b8aea4ffb106eb8992cbab4d4bb1bad3467c",
@@ -74,6 +68,12 @@
 			"path": "github.com/chris-ramon/douceur/parser",
 			"revision": "c0a5b8aea4ffb106eb8992cbab4d4bb1bad3467c",
 			"revisionTime": "2016-05-11T08:54:35Z"
+		},
+		{
+			"checksumSHA1": "r1CX8/M/ipvntOfH0rT9jOQ6fdM=",
+			"path": "github.com/cloudfoundry-incubator/candiedyaml",
+			"revision": "99c3df83b51532e3615f851d8c2dbb638f5313bf",
+			"revisionTime": "2016-04-29T08:01:25Z"
 		},
 		{
 			"path": "github.com/cznic/mathutil",
@@ -1423,7 +1423,7 @@
 			"revisionTime": "2016-05-27T00:12:40Z"
 		},
 		{
-			"checksumSHA1": "EESoX33WnRTuXNMkGhPXZNasiS0=",
+			"checksumSHA1": "MAuewH5ndxNl42eFeLFheK75z9c=",
 			"path": "sourcegraph.com/sourcegraph/srclib/unit",
 			"revision": "e159fa527ac7706bea3624c734271eca9d8a9bcc",
 			"revisionTime": "2016-05-27T00:12:40Z"
