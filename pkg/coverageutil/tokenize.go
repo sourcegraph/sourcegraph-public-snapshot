@@ -60,15 +60,16 @@ func register(fn lookup) {
 // Lookup return tokenizer that can handle source code
 // written in `lang` and located in the file `path`.
 // It asks all the lookups registered if they can produce a tokenizer
-// and returns noop if there is no match
-func Lookup(lang, path string) Tokenizer {
+// and returns nil if there is no match
+func Lookup(lang, path string) *Tokenizer {
 	for _, fn := range registry {
 		factory := fn(lang, path)
 		if factory != nil {
-			return factory()
+			tokenizer := factory()
+			return &tokenizer
 		}
 	}
-	return noop
+	return nil
 }
 
 // newExtensionBasedLookup adds new tokenizer lookup function that

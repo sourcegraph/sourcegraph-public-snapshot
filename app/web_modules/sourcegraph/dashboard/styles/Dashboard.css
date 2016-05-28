@@ -39,3 +39,8 @@
 }
 
 .content { flex: 1 1 auto; }
+
+.privateRepos {
+ 	text-align: center;
+ 	flex: 1 1 auto;	
+}
