@@ -6,10 +6,12 @@ import styles from "./Page.css";
 import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import Helmet from "react-helmet";
 
 function AboutPage(props, {signedIn}): React$Element {
 	return (
 		<div>
+			<Helmet title="About" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<div styleName="container">
 					<Heading level="3" color="white">Sourcegraph is how developers discover and understand code.</Heading>

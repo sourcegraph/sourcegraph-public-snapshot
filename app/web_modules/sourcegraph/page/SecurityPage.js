@@ -5,10 +5,12 @@ import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
 import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
+import Helmet from "react-helmet";
 
 function SecurityPage(props, {signedIn}): React$Element {
 	return (
 		<div>
+			<Helmet title="Security" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div styleName="container">
 					<Heading level="3" color="white">Sourcegraph Security</Heading>
