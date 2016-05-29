@@ -3,10 +3,10 @@ Sourcegraph Sublime
 
   Thank you for installing Sourcegraph for Sublime!
 
-  To begin using Sourcegraph for Sublime, open any Go file and select a symbol, then press ctrl + alt + j.
+  To begin using Sourcegraph for Sublime, open any Go file and select a symbol.
 
 
 
-  To toggle browser auto-opening, please visit https://github.com/sourcegraph/sourcegraph-sublime#auto-process-selection.
+  To toggle browser auto-opening, please visit https://github.com/sourcegraph/sourcegraph-sublime#auto.
   
   For more details about usage, please visit: https://github.com/sourcegraph/sourcegraph-sublime.
