@@ -16,7 +16,7 @@ class DefNavContext extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
 		rev: React.PropTypes.string,
-		commitID: React.PropTypes.string.isRequired,
+		commitID: React.PropTypes.string,
 		params: React.PropTypes.object.isRequired,
 	}
 
