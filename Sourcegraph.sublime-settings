@@ -16,7 +16,7 @@
 	when you click on a definition in Go. If it is set to false, then you can access your
 	Sourcegraph channel by clicking [ctrl+alt+j] when hovering over a definition.
 	*/
-	"AUTO": false,
+	"AUTO": true,
 
 	/*
 	This setting gives logs output from Sourcegraph Sublime to the

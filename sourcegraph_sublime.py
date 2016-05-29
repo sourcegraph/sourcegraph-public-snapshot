@@ -96,12 +96,6 @@ def process_selection(view):
 	SG_LIB_INSTANCE.on_selection_modified_handler(args)
 
 
-class SgOpenChannelCommand(sublime_plugin.TextCommand):
-	def run(self, edit):
-		SG_LIB_INSTANCE.open_channel(hard_refresh=True)
-		process_selection(self.view)
-
-
 class SgOpenLogCommand(sublime_plugin.WindowCommand):
 	def run(self):
 		self.window.open_file(sourcegraph_lib.SG_LOG_FILE)

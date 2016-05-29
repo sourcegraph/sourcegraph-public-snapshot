@@ -138,6 +138,8 @@ class Sourcegraph(object):
 		log_output('[settings] env: %s' % str(self.settings.ENV))
 
 	def on_selection_modified_handler(self, lookup_args):
+		if lookup_args.filename is None or not lookup_args.filename.endswith('go'):
+			return None
 		validate_output = validate_settings(self.settings)
 		if validate_output:
 			self.send_curl_request(ExportedParams(Error=validate_output.title, Fix=validate_output.description))
@@ -149,8 +151,6 @@ class Sourcegraph(object):
 			self.send_curl_request(ExportedParams(Error=ERR_SYMBOL_NOT_FOUND(lookup_args.selected_token).title, Fix=ERR_SYMBOL_NOT_FOUND(lookup_args.selected_token).description))
 
 	def get_sourcegraph_request(self, filename, cursor_offset, preceding_selection, selected_token):
-		if filename is None or not filename.endswith('go'):
-			return None
 		if self.settings.ENV.get('GOPATH') == '':
 			return ExportedParams(Error=ERR_GOPATH_UNDEFINED.title, Fix=ERR_GOPATH_UNDEFINED.description)
 
@@ -215,6 +215,10 @@ class Sourcegraph(object):
 				self.send_curl_request_network(post_url, json_arguments)
 				time.sleep(2)
 				self.IS_OPENING_CHANNEL = False
+		except URLError as err:
+			log_output('[network] Bad POST URL: %s' % str(err))
+		except Exception as err:
+			log_output('[network] Unexpected exception: %s' % str(err))
 
 	def open_channel_os(self):
 		get_channel()

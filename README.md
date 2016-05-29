@@ -15,20 +15,20 @@ To install Sourcegraph for Sublime, clone `sourcegraph-sublime` into your Sublim
 OSX:
 
 ```shell
-git clone ssh://git@github.com/sourcegraph/sourcegraph-sublime ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/sourcegraph-sublime
+git clone https://github.com/sourcegraph/sourcegraph-sublime.git ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/sourcegraph-sublime
 ```
 
 Linux:
 
 ```shell
-git clone ssh://git@github.com/sourcegraph/sourcegraph-sublime ~/.config/sublime-text-3/Packages/sourcegraph-sublime
+git clone https://github.com/sourcegraph/sourcegraph-sublime.git ~/.config/sublime-text-3/Packages/sourcegraph-sublime
 ```
 
 Windows:
 
 ```shell
 cd %APPDATA%\Sublime Text 3\Packages
-git clone ssh://git@github.com/sourcegraph/sourcegraph-sublime
+git clone https://github.com/sourcegraph/sourcegraph-sublime.git
 ```
 
 
@@ -57,7 +57,7 @@ Sourcegraph for Sublime searches your shell to find `GOBIN`, the full path of yo
 
 ### Auto
 
-When the `AUTO` flag is enabled, Sourcegraph automatically opens a live channel and shows references for your Go code as you type. If you want to enable this feature, set the `AUTO` flag to `true` in your settings file. If you set it to `false`, you must press <kbd>ctrl</kbd><kbd>alt</kbd><kbd>j</kbd> to update your Sourcegraph channel.
+When the `AUTO` flag is enabled, Sourcegraph automatically opens a live channel and shows references for your Go code as you type. If you want to disable this feature, set the `AUTO` flag to `false` in your settings file. If you set it to `false`, you must press <kbd>ctrl</kbd><kbd>alt</kbd><kbd>j</kbd> to update your Sourcegraph channel.
 
 ```yml
 {
