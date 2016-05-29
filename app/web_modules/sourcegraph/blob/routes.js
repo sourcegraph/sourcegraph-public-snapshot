@@ -7,6 +7,7 @@ import {makeRepoRev} from "sourcegraph/repo";
 export const routes = [
 	{
 		path: rel.blob,
+		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location: Location, callback: Function) => {
 			require.ensure([], (require) => {
 				callback(null, {

@@ -23,6 +23,7 @@ export const routes: Array<Route> = [
 	},
 	{
 		path: rel.def,
+		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;

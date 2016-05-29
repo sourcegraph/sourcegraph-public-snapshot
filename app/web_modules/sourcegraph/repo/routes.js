@@ -47,6 +47,7 @@ export const routes: Array<Route> = [
 		path: rel.repo,
 		disableTreeSearchOverlay: true,
 		indexRoute: {
+			keepScrollPositionOnRouteChangeKey: "tree",
 			getComponents: (location, callback) => {
 				require.ensure([], (require) => {
 					require("sourcegraph/tree/routes").routes[0].getComponents(location, callback);
