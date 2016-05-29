@@ -11,10 +11,10 @@ import styles from "./styles/GlobalNav.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
+import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
 
-function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, signedIn, router, eventLogger}) {
+function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
-
 	return (
 		<nav styleName={signedIn || location.pathname !== "/" ? "navbar" : ""} role="navigation">
 
@@ -92,7 +92,8 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 							</Link>
 						</div>}
 						<div styleName="flex" className={`${base.pv2} ${base.ph3}`}>
-						{channelStatus && <div styleName="action"><div styleName={`channel-${channelStatus}`}>{channelStatus}</div></div>}
+						{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
+							{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
 							<Popover left={true}>
 								{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} styleName="block" className={base.pt2} /> : <div styleName="username">{user.Login}</div>}
 								<Menu>
@@ -104,7 +105,8 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 					</div>}
 					{!signedIn &&
 						<div styleName="login-signup-links" className={base.pv2}>
-							{channelStatus && <div styleName="action"><div styleName={`channel-${channelStatus}`}>{channelStatus}</div></div>}
+							{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
+							{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
 							<div styleName="action">
 								<LocationStateToggleLink href="/login" modalName="login" location={location}
 									onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
@@ -128,7 +130,7 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 GlobalNav.propTypes = {
 	navContext: React.PropTypes.element,
 	location: React.PropTypes.object.isRequired,
-	channelStatus: React.PropTypes.string,
+	channelStatusCode: React.PropTypes.number,
 };
 GlobalNav.contextTypes = {
 	siteConfig: React.PropTypes.object.isRequired,

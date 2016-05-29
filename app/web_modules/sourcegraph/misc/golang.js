@@ -23,7 +23,7 @@ GoLookup.propTypes = {
 export const route: Route = {
 	path: "-/golang",
 	onEnter: (nextRouterState: RouterState, replace: Function, callback: Function) => {
-		let {repo, pkg, def} = nextRouterState.location.query;
+		let {repo, pkg, def, editor_type} = nextRouterState.location.query;
 		if (/\.(com|org|net|in)\//.test(repo)) {
 			repo = repo.split("/").slice(0, 3).join("/");
 		}
@@ -36,6 +36,7 @@ export const route: Route = {
 						pathname: data.Path,
 						query: {
 							utm_source: "sourcegrapheditor",
+							editor_type: editor_type,
 						},
 					});
 					callback();
@@ -49,6 +50,7 @@ export const route: Route = {
 						pathname: data.Path,
 						query: {
 							utm_source: "sourcegrapheditor",
+							editor_type: editor_type,
 						},
 					});
 					callback();
