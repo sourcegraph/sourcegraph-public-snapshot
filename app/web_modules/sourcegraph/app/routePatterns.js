@@ -71,6 +71,7 @@ export function getViewName(routes: Array<Route>): ?string {
 }
 
 export function getRouteParams(pattern: string, pathname: string): ?{[key: string]: string | string[]} {
+	if (pathname.charAt(0) !== "/") pathname = `/${pathname}`;
 	const {paramNames, paramValues} = matchPattern(pattern, pathname);
 
 	if (paramValues !== null) {

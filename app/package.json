@@ -64,7 +64,7 @@
     "react-dom": "^15.0.1",
     "react-helmet": "^3.0.1",
     "react-icons": "^1.0.6",
-    "react-router": "^2.0.1",
+    "react-router": "^2.4.1",
     "recharts": "^0.10.5",
     "split": "^1.0.0",
     "utf8": "2.1.1"

@@ -14,7 +14,7 @@ const defaultParseQueryString = parse
 
 function isNestedObject(object) {
   for (const p in object)
-    if (object.hasOwnProperty(p) &&
+    if (Object.prototype.hasOwnProperty.call(object, p) &&
         typeof object[p] === 'object' &&
         !Array.isArray(object[p]) &&
         object[p] !== null)

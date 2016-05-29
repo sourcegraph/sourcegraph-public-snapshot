@@ -11,7 +11,6 @@
 							{
 								"type": "",
 								"props": {
-									"className": "",
 									"to": "/r@v/-/blob/p#L42",
 									"data-line": 42,
 									"onlyActiveOnIndex": false,
