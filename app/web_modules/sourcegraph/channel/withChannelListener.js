@@ -116,7 +116,7 @@ export default function withChannelListener(Component) {
 		}
 
 		_handleAction(action) {
-			if (action && action.Error && action.Fix && !action.URL && !action.Tree) {
+			if (action && action.Error && action.Fix && !action.URL) {
 				this.context.router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
 					state: {
