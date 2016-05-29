@@ -45,14 +45,11 @@ class DefInfo extends Container {
 		this.state = {
 			currPage: 1,
 			nextPageLoading: false,
-		};
-		this._onNextPage = this._onNextPage.bind(this);
-		this._onTranslateDefInfo = this._onTranslateDefInfo.bind(this);
-
-		this.state = {
 			currentLang: localStorage.getItem("defInfoCurrentLang"),
 			translations: {},
 		};
+		this._onNextPage = this._onNextPage.bind(this);
+		this._onTranslateDefInfo = this._onTranslateDefInfo.bind(this);
 	}
 
 	stores() {
