@@ -24,10 +24,8 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	// establish channel initialization page
+	// wait for channel initialization page
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Click on a symbol in your editor to get started!')]")
-	// check that the "connected" status appears
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
 
 	type Action struct {
 		Repo    string `json:"Repo,omitempty"`
@@ -58,7 +56,6 @@ func testChannelFlow(t *T) error {
 	}
 
 	t.WaitForRedirect(t.Endpoint("/github.com/gorilla/mux?utm_source=sourcegrapheditor"), "wait for redirect to gorilla/mux repo")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
 
 	// Test that the page changes to the definfo page of http.Post after POST request
 	u = &Request{Action: Action{
@@ -77,8 +74,7 @@ func testChannelFlow(t *T) error {
 		return err
 	}
 
-	t.WaitForRedirect(t.Endpoint("/github.com/golang/go/-/info/GoPackage/net/http/-/Post?utm_source=sourcegrapheditor"), "wait for redirect to homepage after sign-in")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'connected')]")
+	t.WaitForRedirect(t.Endpoint("/github.com/golang/go/-/info/GoPackage/net/http/-/Post?utm_source=sourcegrapheditor"), "wait for redirect to http.Post definfo page")
 
 	return nil
 }
