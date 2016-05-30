@@ -21,6 +21,7 @@ class Footer extends React.Component {
 					</li>
 					<li styleName="item"><a styleName="link" href="https://text.sourcegraph.com">Blog</a></li>
 					<li styleName="item"><Link styleName="link" to="/about">About</Link></li>
+					<li styleName="item"><Link styleName="link" to="/pricing">Pricing</Link></li>
 					<li styleName="item"><a styleName="link" href="https://boards.greenhouse.io/sourcegraph" target="_blank">We're hiring</a></li>
 				</ul>
 				<ul styleName="right-box">

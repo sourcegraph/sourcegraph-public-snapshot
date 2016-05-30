@@ -10,9 +10,17 @@
 	composes: ph4 from base;
 	max-width: 640px;
 }
+.container-wide {
+	composes: container;
+	max-width: 820px !important;
+}
 .content {
 	composes: container;
 	composes: pv4 from base;
+}
+.content-wide {
+	composes: content;
+	composes: container-wide;
 }
 .p {
 	composes: mt3 mb3 from base;
@@ -31,4 +39,89 @@
 .h5 {
 	composes: h;
 	margin-bottom: -15px;
+}
+.subtitle {
+	font-weight: normal;
+	font-size: 1.75rem;
+}
+.icon {
+	vertical-align: middle;
+	user-select: none;
+	composes: f4 from typography;
+	composes: pr1 from base;
+}
+.footer {
+	composes: mt6 from base;
+	composes: tc from typography;
+}
+
+/* Pricing */
+.plans {
+	display: flex;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+.plan {
+	min-width: 150px;
+}
+.plan-box {
+
+}
+@media screen and (min-width: 48em) {
+	.plan {
+		flex: 1 1 30%;
+		max-width: 275px;
+		composes: mh3 from base;
+	}
+	.plan-box {
+		composes: mb5 from base;
+		margin-right: 0 !important; /* cancel media query composed rule below */
+	}
+}
+@media screen and (max-width: 48em) {
+	.plan {
+		flex: 1 0 100%;
+		display: flex;
+		margin-bottom: 75px;
+	}
+	.plan-box {
+		composes: mr4 from base;
+		margin-bottom: 0 !important; /* cancel media query composed rule above */
+		flex: 0 0 200px;
+	}
+}
+.plan-panel {
+	composes: pt3 pb2 ph4 mb2 br3 from base;
+	composes: tc from typography;
+	min-height: 210px;
+}
+.currency {
+	composes: f3 from typography;
+	font-style: italic;
+	vertical-align: 2rem;
+	font-weight: normal;
+	opacity: 0.85;
+}
+.amount {
+	font-size: 4.5rem;
+}
+.plan-cta {
+	composes: fw6 from typography;
+}
+.plan-cta-noop {
+	cursor: default;
+}
+.details {
+	font-size: 1.35rem; /* f4 was slightly too big */
+	composes: pl1 pr1 from base;
+}
+.details-list {
+	composes: mt0 from base;
+	padding-left: 1.6rem; /* bullets flush with left */
+}
+.details-list li {
+	margin-bottom: 1.1rem;
+}
+.details-cumulative {
+	font-weight: normal;
 }

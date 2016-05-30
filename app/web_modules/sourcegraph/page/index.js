@@ -35,6 +35,16 @@ export const routes: Array<Route> = [
 		},
 	},
 	{
+		path: rel.pricing,
+		getComponents: (location, callback) => {
+			require.ensure([], (require) => {
+				callback(null, {
+					main: require("sourcegraph/page/PricingPage").default,
+				});
+			});
+		},
+	},
+	{
 		path: rel.terms,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
