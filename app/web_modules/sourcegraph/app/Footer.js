@@ -19,7 +19,7 @@ class Footer extends React.Component {
 							<Logo width="16px" styleName="logo-mark" />
 						</Link>
 					</li>
-					<li styleName="item"><a styleName="link" href="/blog/">Blog</a></li>
+					<li styleName="item"><a styleName="link" href="https://text.sourcegraph.com">Blog</a></li>
 					<li styleName="item"><Link styleName="link" to="/about">About</Link></li>
 					<li styleName="item"><a styleName="link" href="https://boards.greenhouse.io/sourcegraph" target="_blank">We're hiring</a></li>
 				</ul>
