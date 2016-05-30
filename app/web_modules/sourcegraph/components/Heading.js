@@ -9,7 +9,7 @@ class Heading extends React.Component {
 		className: React.PropTypes.string,
 		children: React.PropTypes.any,
 		level: React.PropTypes.string, //  1 is the largest
-		underline: React.PropTypes.string, // blue, purple, white, orange
+		underline: React.PropTypes.string, // blue, purple, white, orange, green
 		color: React.PropTypes.string, // purple, blue, green, orange, cool-mid-gray
 		align: React.PropTypes.string, // left, right, center
 	};
