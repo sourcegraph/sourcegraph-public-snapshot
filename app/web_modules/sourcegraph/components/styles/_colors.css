@@ -24,11 +24,11 @@
 @value c_orange-1 rgba(249, 99, 22, .2);
 @value c_dark-orange rgba(230, 70, 0, 1);
 
-@value c_green rgba(13, 206, 183, 1);
-@value c_green-text rgba(10, 166, 148, 1);
-@value c_green-8 rgba(13, 206, 183, .8);
-@value c_green-5 rgba(13, 206, 183, .5);
-@value c_green-2 rgba(13, 206, 183, .2);
+@value c_green rgba(13, 181, 161, 1);
+@value c_green-text rgba(13, 156, 138, 1);
+@value c_green-8 rgba(13, 181, 161, .8);
+@value c_green-5 rgba(13, 181, 161, .5);
+@value c_green-2 rgba(13, 181, 161, .2);
 @value c_dark-green rgba(5, 128, 128, 100);
 
 @value c_yellow #FFC770;
