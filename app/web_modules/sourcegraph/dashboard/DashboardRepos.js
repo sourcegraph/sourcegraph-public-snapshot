@@ -89,11 +89,11 @@ class DashboardRepos extends React.Component {
 					}
 					<div styleName="container-fixed" className={base.pb4}>
 						{this._hasGithubToken() && repos.length === 0 && (!this._filterInput || !this._filterInput.value) &&
-							<Panel className={base.pa5} styleName="tc">Loading...</Panel>
+							<Panel hoverLevel="low" className={base.pa5} styleName="tc">Loading...</Panel>
 						}
 
 						{this._hasGithubToken() && this._filterInput && this._filterInput.value && repos.length === 0 &&
-							<Panel className={base.pa4}>No matching repositories</Panel>
+							<Panel hoverLevel="low" className={base.pa4}>No matching repositories</Panel>
 						}
 
 						{!this._hasGithubToken() &&
@@ -112,7 +112,7 @@ class DashboardRepos extends React.Component {
 						<div styleName="repositories">
 							{this._canLinkPrivateGithub() && this.renderPrivateGitHub()}
 							{repos.length > 0 && repos.map((repo, i) =>
-								<Panel hover={true} key={i} className={`${base.mb4} ${base.pa4}`} styleName="item">
+								<Panel hover={true} hoverLevel="low" key={i} className={`${base.mb4} ${base.pa4}`} styleName="item">
 									<div styleName="content">
 										<Heading level="3" color="cool-mid-gray">
 											<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />

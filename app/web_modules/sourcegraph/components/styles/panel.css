@@ -2,9 +2,8 @@
 @value colors "./_colors.css";
 @value c_black-05, c_black-10 from colors;
 
-.panel {
-	composes: bg-white from colors;
-}
+.panel {}
+
 
 .low { box-shadow: 0 2px 5px 1px c_black-05; }
 .high { box-shadow: 0 2px 25px 0 c_black-10; }
@@ -20,3 +19,26 @@
 	box-shadow: 0 2px 15px 4px c_black-05;
 	transform: scale(1.02, 1.02);
 }
+
+.no-color {
+	composes: bg-white from colors;
+}
+.color {
+	composes: ba bw2 br2 from base;
+}
+.foreground-color {
+	composes: bg-white from colors;
+}
+.inverse-color {
+	composes: white from colors;
+}
+.blue { composes: foreground-color; composes: blue b--blue from colors; }
+.green { composes: foreground-color; composes: green b--green from colors; }
+.white { composes: foreground-color; composes: white b--white from colors; }
+.purple { composes: foreground-color; composes: purple b--purple from colors; }
+.orange { composes: foreground-color; composes: orange b--orange from colors; }
+.inverse-blue { composes: inverse-color; composes: bg-blue b--blue from colors; }
+.inverse-green { composes: inverse-color; composes: bg-green b--green from colors; }
+.inverse-white { composes: inverse-color; composes: bg-white b--white from colors; }
+.inverse-purple { composes: inverse-color; composes: bg-purple b--purple from colors; }
+.inverse-orange { composes: inverse-color; composes: bg-orange b--orange from colors; }

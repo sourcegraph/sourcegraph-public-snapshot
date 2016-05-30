@@ -8,21 +8,24 @@ class Panel extends React.Component {
 	static propTypes = {
 		className: React.PropTypes.string,
 		children: React.PropTypes.any,
-		hoverLevel: React.PropTypes.string, // high, low
+		color: React.PropTypes.string, // blue, white, purple, green, orange, (empty)
+		inverse: React.PropTypes.bool, // light text on color background
+		hoverLevel: React.PropTypes.string, // high, low, (empty)
 		hover: React.PropTypes.bool,
 	};
 
 	static defaultProps = {
-		hoverLevel: "low",
 		hover: false,
 	};
 
 	render() {
-		const {children, hover, hoverLevel, className} = this.props;
+		const {children, color, inverse, hover, hoverLevel, className} = this.props;
+
+		const colorClass = color ? `color ${inverse ? "inverse-" : ""}${color}` : "no-color";
 
 		return (
 			<div className={className}
-				styleName={`panel ${hoverLevel} ${hover ? `${hoverLevel}-hover hover` : ""}`
+				styleName={`panel ${colorClass} ${hoverLevel || ""} ${hover ? `${hoverLevel}-hover hover` : ""}`
 			}>
 				{children}
 			</div>

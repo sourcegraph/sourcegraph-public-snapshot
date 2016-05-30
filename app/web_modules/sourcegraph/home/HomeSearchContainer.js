@@ -41,7 +41,7 @@ class HomeSearchContainer extends React.Component {
 		return (
 			<div styleName="bg">
 				<div styleName="container-fixed" className={base.mt5}>
-					<Panel className={`${base.mb4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
+					<Panel hoverLevel="low" className={`${base.mb4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
 						<GlobalSearch query={this.props.location.query.q || ""}/>
 					</Panel>
 					{!this.props.location.query.q && <div>
