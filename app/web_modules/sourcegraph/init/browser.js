@@ -3,11 +3,13 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "sourcegraph/util/actionLogger";
 import "sourcegraph/app/appdash";
-import {Router, browserHistory as history, match} from "react-router";
+import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
+import useScroll from "react-router-scroll";
 import {rootRoute} from "sourcegraph/app/App";
 import {reset as resetStores} from "sourcegraph/init/stores";
 import * as context from "sourcegraph/app/context";
 import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
+import shouldUpdateScroll from "sourcegraph/app/shouldUpdateScroll";
 
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
@@ -49,7 +51,7 @@ function matchWithRedirectHandling(recursed) {
 			return;
 		}
 
-		setTimeout(() => ReactDOM.render(<Router {...renderProps} />, document.getElementById("main")));
+		setTimeout(() => ReactDOM.render(<Router {...renderProps} render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />, document.getElementById("main")));
 	});
 }
 
