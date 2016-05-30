@@ -89,7 +89,9 @@ You might wonder why we don't fall back to hash history; the problem is that URL
 Hash history uses the hash (`#`) portion of the URL, creating routes that look like `example.com/#/some/path`.
 
 #### Should I use `hashHistory`?
-Hash history works without configuring your server, so if you're just getting started, go ahead and use it. But, we don't recommend using it in production, every web app should aspire to use `browserHistory`.
+Hash history works without configuring your server, so if you're just getting started, go ahead and use it. In general, though, production web applications should use `browserHistory` for the cleaner URLs, and for support for server-side rendering, which is impossible with `hashHistory`.
+
+Additionally, as mentioned above, some older browsers do not support the HTML5 History API. If it's important to you to not use full page reloads for navigation on those older browsers, then you will also need to use `hashHistory`.
 
 #### What is that `?_k=ckuvup` junk in the URL?
 When a history transitions around your app with `push` or `replace`, it can store "location state" that doesn't show up in the URL on the new location, think of it a little bit like post data in an HTML form.
@@ -99,7 +101,7 @@ The DOM API that hash history uses to transition around is simply `window.locati
 ### `createMemoryHistory`
 Memory history doesn't manipulate or read from the address bar. This is how we implement server rendering. It's also useful for testing and other rendering environments (like React Native).
 
-Its a bit different than the other two histories because you have to
+It's a bit different than the other two histories because you have to
 create one, it is this way to facilitate testing:
 
 ```js
@@ -132,3 +134,42 @@ render(
   document.getElementById('app')
 )
 ```
+
+## Customize your history further
+
+If you'd like to further customize the history options or use other
+enhancers from
+[history](https://github.com/mjackson/history/) you can use
+`useRouterHistory`.
+
+Be aware that `useRouterHistory` already pre-enhances your history
+factory with the [useQueries](https://github.com/mjackson/history/blob/master/docs/QuerySupport.md) and [useBasename](https://github.com/mjackson/history/blob/master/docs/BasenameSupport.md) enhancers from `history`.
+
+### Examples:
+
+Defining a basename:
+
+```js
+import { useRouterHistory } from 'react-router'
+import { createHistory } from 'history'
+
+const history = useRouterHistory(createHistory)({
+  basename: '/base-path'
+})
+```
+
+Using the
+[useBeforeUnload](https://github.com/mjackson/history/blob/master/docs/ConfirmingNavigation.md)
+enhancer:
+
+```js
+import { useRouterHistory } from 'react-router'
+import { createHistory, useBeforeUnload } from 'history'
+
+const history = useRouterHistory(useBeforeUnload(createHistory))()
+
+history.listenBeforeUnload(function () {
+  return 'Are you sure you want to leave this page?'
+})
+```
+

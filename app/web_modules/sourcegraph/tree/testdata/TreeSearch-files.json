@@ -206,7 +206,6 @@
 													"p1"
 												],
 												"onlyActiveOnIndex": false,
-												"className": "",
 												"style": {}
 											}
 										},
@@ -230,7 +229,6 @@
 													"p2"
 												],
 												"onlyActiveOnIndex": false,
-												"className": "",
 												"style": {}
 											}
 										}
@@ -256,7 +254,6 @@
 										".."
 									],
 									"onlyActiveOnIndex": false,
-									"className": "",
 									"style": {}
 								}
 							},
@@ -277,7 +274,6 @@
 										"f3"
 									],
 									"onlyActiveOnIndex": false,
-									"className": "",
 									"style": {}
 								}
 							}
