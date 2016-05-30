@@ -1,6 +1,7 @@
 // @flow
 
 import React from "react";
+import {Link} from "react-router";
 import {Hero, Heading} from "sourcegraph/components";
 import styles from "./Page.css";
 import base from "sourcegraph/components/styles/_base.css";
@@ -18,11 +19,11 @@ function AboutPage(props, {signedIn}): React$Element {
 					</div>
 			</Hero>
 			<div styleName="content">
-				<p styleName="p">Remember the last time you were <em>in flow</em> while coding? You accomplished a lot and felt great.</p>
+				<p styleName="p">Remember the last time you were <em>in flow</em> while coding? You got a ton done and felt great.</p>
 				<p styleName="p">But staying in flow is hard. While coding, you often need to dig through Q&amp;A forums, decipher documentation, trace through code, or interrupt a teammate. Even a 2-minute context switch breaks your flow.</p>
-				<p styleName="p">Sourcegraph helps you find these answers in seconds, not minutes.</p>
+				<p styleName="p">Sourcegraph helps you find answers in seconds, not minutes.</p>
 				<Heading level="4" underline="blue" className={styles.h5}>How it works</Heading>
-				<p styleName="p">Sourcegraph is a fast, semantic code search and cross-reference engine on the web. You can search for any function, type, or package, and see how other developers use it, globally. It's free for public and private projects, and new, paid features will be released publicly in the future.</p>
+				<p styleName="p">Sourcegraph is a fast, semantic code search and cross-reference engine. Search for any function, type, or package, and see how other developers use it, globally. It's free for public and private projects, and <Link to="/pricing">paid plans</Link> are available.</p>
 
 				<p styleName="p">
 					You can <a href="https://sourcegraph.com/sourcegraph/sourcegraph">see the code that powers Sourcegraph</a>, released publicly as <a href="https://fair.io/">Fair Source</a>.

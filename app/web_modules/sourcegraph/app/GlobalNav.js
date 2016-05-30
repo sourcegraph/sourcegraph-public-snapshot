@@ -47,6 +47,7 @@ function GlobalNav({navContext, location, channelStatus}, {user, siteConfig, sig
 					<nav styleName="logged-out-nav">
 						<a href="https://text.sourcegraph.com" styleName="logged-out-nav-item">Blog</a>
 						<Link to="/about" styleName="logged-out-nav-item">About</Link>
+						<Link to="/pricing" styleName="logged-out-nav-item">Pricing</Link>
 						<LocationStateToggleLink href="/login"
 							modalName="login"
 							location={location}

@@ -6,7 +6,6 @@ import styles from "./Page.css";
 import {Link} from "react-router";
 import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
-import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 
@@ -42,8 +41,8 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 							</Heading>
 							<ul styleName="details-list">
 								<li>Semantic search, browsing, and cross-references across unlimited GitHub repositories</li>
-								<li>Single branch, latest commit only for private projects</li>
-								<li>All branches, all commits for public projects</li>
+								<li>Single branch, latest commit for private projects</li>
+								<li>All branches, all recent commits for public projects</li>
 								<li>Automatic usage examples</li>
 								<li>Web browser &amp; editor integrations</li>
 							</ul>
@@ -55,7 +54,7 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 							<Panel color="green" inverse={true} hover={false} className={styles["plan-panel"] || ""}>
 								<Heading level="3" color="white" align="center">Standard</Heading>
 								<Heading level="1" color="white" align="center"><span styleName="currency">$</span><span styleName="amount">50</span></Heading>
-								<p>per&nbsp;active&nbsp;user per&nbsp;month, first&nbsp;15&nbsp;users&nbsp;free</p>
+								<p>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
 								onClick={(v) => v && eventLogger.logEvent("ClickPricingCTA", {plan: "standard"})}>
@@ -80,7 +79,7 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 							<Panel color="blue" inverse={true} hover={false} className={styles["plan-panel"] || ""}>
 								<Heading level="3" color="white" align="center">Enterprise</Heading>
 								<Heading level="1" color="white" align="center"><span styleName="currency">$</span><span styleName="amount">100</span></Heading>
-								<p>per&nbsp;active&nbsp;user per&nbsp;month, first&nbsp;15&nbsp;users&nbsp;free</p>
+								<p>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
 								onClick={(v) => v && eventLogger.logEvent("ClickPricingCTA", {plan: "free"})}>
@@ -95,7 +94,7 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 							<ul styleName="details-list">
 								<li>Unlimited API integrations</li>
 								<li>99.99% guaranteed uptime SLA</li>
-								<li>24/7 support with 5-hour response time</li>
+								<li>24/7 support</li>
 								<li>Option to run Sourcegraph in your own network</li>
 							</ul>
 						</div>

@@ -34,7 +34,6 @@ function ContactPage(props, {signedIn}): React$Element {
 					<li>GitHub: <a href="https://github.com/srcgraph" target="_blank">github.com/sourcegraph</a></li>
 					<li>Facebook: <a href="https://facebook.com/sourcegraph" target="_blank">Sourcegraph Facebook page</a></li>
 					<li>YouTube: <a href="https://www.youtube.com/channel/UCOy2N25-AHqE43XupT9mwZQ/videos" target="_blank">Sourcegraph YouTube channel</a></li>
-					<li>Meetup: <a href="https://meetup.com/Sourcegraph-Hacker-Meetup/" target="_blank">Sourcegraph Hacker Meetup</a></li>
 				</ul>
 
 				<Heading level="4" underline="blue" className={styles.h5}>Other inquiries</Heading>
