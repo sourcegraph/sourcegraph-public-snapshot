@@ -10,5 +10,4 @@ import (
 	// Import these packages for their side effects of registering
 	// route handlers.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/oauth2client"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/static"
 )
