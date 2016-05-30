@@ -63,11 +63,19 @@ class ComponentsContainer extends React.Component {
 					</ComponentCard>
 					<ComponentCard>
 						<Heading level="3" className={base.mb4}>Panels</Heading>
-						<Panel hoverLevel="low" hover={false} className={base.pa5}>
+						<Panel hoverLevel="low" className={base.pa5}>
 							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 						</Panel>
 						<br />
 						<Panel hoverLevel="high" hover={true} className={base.pa5}>
+							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
+						</Panel>
+						<br/>
+						<Panel color="blue" className={base.pa5}>
+							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
+						</Panel>
+						<br/>
+						<Panel color="blue" inverse={true} className={base.pa5}>
 							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 						</Panel>
 					</ComponentCard>

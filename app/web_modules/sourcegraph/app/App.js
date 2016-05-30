@@ -73,6 +73,7 @@ export const rootRoute: Route = {
 	getChildRoutes: (location, callback) => {
 		require.ensure([], (require) => {
 			callback(null, [
+				...require("sourcegraph/page").routes,
 				...require("sourcegraph/styleguide").routes,
 				...require("sourcegraph/home").routes,
 				...require("sourcegraph/channel").routes,

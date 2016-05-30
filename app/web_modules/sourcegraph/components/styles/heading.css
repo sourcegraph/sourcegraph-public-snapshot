@@ -12,6 +12,7 @@
 }
 
 .blue { composes: blue from colors; }
+.green { composes: green from colors; }
 .white { composes: white from colors; }
 .purple { composes: purple from colors; }
 .orange { composes: orange from colors; }
@@ -24,6 +25,7 @@
 	width: 5rem;
 }
 .l-blue { composes: b--blue from colors; }
+.l-green { composes: b--green from colors; }
 .l-purple {	composes: b--purple from colors; }
 .l-white {composes: b--white from colors; }
 .l-orange {	composes: b--orange from colors; }

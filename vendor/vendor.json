@@ -980,12 +980,6 @@
 			"revisionTime": "2016-05-12T04:39:32Z"
 		},
 		{
-			"checksumSHA1": "M0+edpqV5XKITjw84PJehptYsTQ=",
-			"path": "golang.org/x/tools/godoc/vfs/httpfs",
-			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
-			"revisionTime": "2016-05-12T04:39:32Z"
-		},
-		{
 			"checksumSHA1": "Qwc7VecyIh84Ol8n9J9DUwZQtII=",
 			"path": "golang.org/x/tools/godoc/vfs/mapfs",
 			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",

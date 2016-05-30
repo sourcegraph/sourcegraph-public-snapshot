@@ -3,9 +3,40 @@
 import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
-export type RouteName = "styleguide" | "dashboard" | "tools" | "myRepos" | "tour" | "def" | "defInfo" | "repo" | "tree" | "blob" | "build" | "builds" | "login" | "signup" | "forgot" | "reset" | "admin" | "adminBuilds" | "coverage" | "adminCoverage";
+export type RouteName = "styleguide" |
+	"dashboard" |
+	"tools" |
+	"myRepos" |
+	"tour" |
+	"def" |
+	"defInfo" |
+	"repo" |
+	"tree" |
+	"blob" |
+	"build" |
+	"builds" |
+	"login" |
+	"signup" |
+	"forgot" |
+	"reset" |
+	"about" |
+	"contact" |
+	"security" |
+	"pricing" |
+	"terms" |
+	"privacy" |
+	"admin" |
+	"adminBuilds" |
+	"coverage" |
+	"adminCoverage";
 
 export const rel: {[key: RouteName]: string} = {
+	about: "about",
+	contact: "contact",
+	security: "security",
+	pricing: "pricing",
+	terms: "-/terms",
+	privacy: "-/privacy",
 	styleguide: "styleguide",
 	dashboard: "",
 	tools: "tools",

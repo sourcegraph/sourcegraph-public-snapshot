@@ -29,4 +29,3 @@ class Hero extends React.Component {
 
 
 export default CSSModules(Hero, styles, {allowMultiple: true});
-
