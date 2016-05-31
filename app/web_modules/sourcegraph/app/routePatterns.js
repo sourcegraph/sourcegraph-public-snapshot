@@ -58,6 +58,12 @@ export const rel: {[key: RouteName]: string} = {
 };
 
 export const abs: {[key: RouteName]: string} = {
+	about: rel.about,
+	contact: rel.contact,
+	security: rel.security,
+	pricing: rel.pricing,
+	terms: rel.terms,
+	privacy: rel.privacy,
 	styleguide: rel.styleguide,
 	dashboard: rel.dashboard,
 	tools: rel.tools,
