@@ -1300,11 +1300,6 @@
 			"revisionTime": "2016-03-16T16:11:07-07:00"
 		},
 		{
-			"path": "sourcegraph.com/sourcegraph/srclib-python/python",
-			"revision": "cd107aabfcec75e4f9758577778bbee32b9ece40",
-			"revisionTime": "2016-05-23T05:47:58Z"
-		},
-		{
 			"path": "sourcegraph.com/sourcegraph/srclib-ruby/ruby_def",
 			"revision": "46b6d0baaea7bff01a470fbb6bbbd8cce29fd54a",
 			"revisionTime": "2015-11-03T20:51:35-08:00"

@@ -9,7 +9,6 @@ import (
 	_ "sourcegraph.com/sourcegraph/srclib-go/golang_def"
 	_ "sourcegraph.com/sourcegraph/srclib-haskell/haskell"
 	_ "sourcegraph.com/sourcegraph/srclib-java/java_def"
-	_ "sourcegraph.com/sourcegraph/srclib-python/python"
 	_ "sourcegraph.com/sourcegraph/srclib-ruby/ruby_def"
 
 	// Used by tests only, but tests spawn a separate sgx process that
