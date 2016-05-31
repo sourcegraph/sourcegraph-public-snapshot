@@ -10,9 +10,8 @@ Sourcegraph easier.
 
 ### Community and contact information
 
-- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 - [Pull requests](https://github.com/sourcegraph/sourcegraph/pulls)
-- Email: [support@sourcegraph.com](mailto:support@sourcegraph.com)
+- Support and bug report email: [support@sourcegraph.com](mailto:support@sourcegraph.com)
 
 ## Getting started
 
@@ -26,8 +25,8 @@ Sourcegraph easier.
 
 ## Reporting bugs and creating issues
 
-You can report bugs in the
-[Sourcegraph issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
+You can report bugs by emailing
+[support@sourcegraph.com](mailto:support@sourcegraph.com).
 
 Please include the following information in your bug reports, if
 possible:
@@ -59,7 +58,7 @@ To submit a pull request:
 * We'll review the change and merge it if it looks good.
 
 If you're not sure whether we'd accept a change, you can
-[file an issue](https://github.com/sourcegraph/sourcegraph/issues) to
+[email support@sourcegraph.com](mailto:support@sourcegraph.com) to
 discuss it beforehand.
 
 We will compensate you for certain contributions, if you receive
