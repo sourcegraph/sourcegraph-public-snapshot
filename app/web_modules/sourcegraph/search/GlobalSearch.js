@@ -185,7 +185,9 @@ class GlobalSearch extends Container {
 			return;
 		}
 		const def = this.state.matchingDefs.Defs[i];
-		this._navigateTo(urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def));
+		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
+		this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
+		this._navigateTo(url);
 	}
 
 	_selectItem(i: number): void {
