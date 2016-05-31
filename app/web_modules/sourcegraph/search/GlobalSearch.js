@@ -27,9 +27,13 @@ export const RESULTS_LIMIT = 20;
 // Tech debt: this duplicates a lot of code with TreeSearch and we
 // should consider merging them at some point.
 class GlobalSearch extends Container {
+	static propTypes = {
+		location: React.PropTypes.object.isRequired,
+		query: React.PropTypes.string.isRequired,
+	};
+
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
-		siteConfig: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 

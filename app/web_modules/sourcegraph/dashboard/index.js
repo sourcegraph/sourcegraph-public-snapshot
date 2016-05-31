@@ -15,7 +15,7 @@ export const dashboard = {
 export const routes: Array<Route> = [
 	{
 		...dashboard,
-		path: rel.dashboard,
+		path: rel.home,
 	},
 ];
 

@@ -4,7 +4,8 @@ import type {Route} from "react-router";
 import {matchPattern} from "react-router/lib/PatternUtils";
 
 export type RouteName = "styleguide" |
-	"dashboard" |
+	"search" |
+	"home" |
 	"tools" |
 	"myRepos" |
 	"tour" |
@@ -31,6 +32,7 @@ export type RouteName = "styleguide" |
 	"adminCoverage";
 
 export const rel: {[key: RouteName]: string} = {
+	search: "search",
 	about: "about",
 	contact: "contact",
 	security: "security",
@@ -38,7 +40,7 @@ export const rel: {[key: RouteName]: string} = {
 	terms: "-/terms",
 	privacy: "-/privacy",
 	styleguide: "styleguide",
-	dashboard: "",
+	home: "",
 	tools: "tools",
 	myRepos: "repositories",
 	tour: "tour",
@@ -58,6 +60,7 @@ export const rel: {[key: RouteName]: string} = {
 };
 
 export const abs: {[key: RouteName]: string} = {
+	search: rel.search,
 	about: rel.about,
 	contact: rel.contact,
 	security: rel.security,
@@ -65,7 +68,7 @@ export const abs: {[key: RouteName]: string} = {
 	terms: rel.terms,
 	privacy: rel.privacy,
 	styleguide: rel.styleguide,
-	dashboard: rel.dashboard,
+	home: rel.home,
 	tools: rel.tools,
 	myRepos: rel.myRepos,
 	tour: rel.tour,

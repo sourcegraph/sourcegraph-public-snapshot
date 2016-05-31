@@ -79,6 +79,7 @@ export const rootRoute: Route = {
 				...require("sourcegraph/channel").routes,
 				require("sourcegraph/misc/golang").route,
 				...require("sourcegraph/admin/routes").routes,
+				...require("sourcegraph/search/routes").routes,
 				...require("sourcegraph/user").routes,
 				...require("sourcegraph/repo/routes").routes,
 			]);

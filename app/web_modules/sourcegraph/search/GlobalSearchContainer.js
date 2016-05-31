@@ -1,6 +1,6 @@
 import React from "react";
 import CSSModules from "react-css-modules";
-import styles from "./styles/HomeSearch.css";
+import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {urlToGitHubOAuth, urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
@@ -9,7 +9,7 @@ import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import {EventLocation} from "sourcegraph/util/EventLogger";
 import {Panel} from "sourcegraph/components";
 
-class HomeSearchContainer extends React.Component {
+class GlobalSearchContainer extends React.Component {
 
 	static propTypes = {
 		location: React.PropTypes.object.isRequired,
@@ -27,10 +27,11 @@ class HomeSearchContainer extends React.Component {
 	renderCTAButtons() {
 		return (
 			<div className={base.mt4} styleName="inline-block">
-				{!this.context.githubToken &&
+				{!this.context.signedIn && <GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: false})}>Sign in with GitHub</GitHubAuthButton>}
+				{this.context.signedIn && !this.context.githubToken &&
 					<GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: true})}>Link GitHub account</GitHubAuthButton>
 				}
-				{this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) &&
+				{this.context.signedIn && this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) &&
 					<GitHubAuthButton href={urlToPrivateGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>Use with private repositories</GitHubAuthButton>
 				}
 			</div>
@@ -42,7 +43,7 @@ class HomeSearchContainer extends React.Component {
 			<div styleName="bg">
 				<div styleName="container-fixed" className={base.mt5}>
 					<Panel hoverLevel="low" className={`${base.mb4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
-						<GlobalSearch query={this.props.location.query.q || ""}/>
+						<GlobalSearch query={this.props.location.query.q || ""} location={this.props.location} />
 					</Panel>
 					{!this.props.location.query.q && <div>
 					{this.context.githubToken && <div styleName="tc" className={base.mv3}>
@@ -61,4 +62,4 @@ class HomeSearchContainer extends React.Component {
 	}
 }
 
-export default CSSModules(HomeSearchContainer, styles);
+export default CSSModules(GlobalSearchContainer, styles);
