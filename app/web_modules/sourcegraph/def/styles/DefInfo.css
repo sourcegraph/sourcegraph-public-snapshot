@@ -60,6 +60,10 @@
 	justify-content: center;
 }
 
+.translation-widget {
+	composes: pl4 pb3 from base;
+}
+
 @media screen and (max-width: 48em) {
 	.def-header, .description, .section-label {
 		margin-left: 10px;

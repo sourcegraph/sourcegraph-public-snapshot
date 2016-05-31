@@ -189,6 +189,7 @@ class DefInfo extends Container {
 					{def && def.DocHTML &&
 						<div styleName="description-wrapper">
 							<Dropdown
+								styleName="translation-widget"
 								icon={<GlobeIcon styleName="icon" />}
 								title="Translate"
 								initialValue={this.state.currentLang}

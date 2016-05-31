@@ -18,6 +18,7 @@ class Dropdown extends React.Component {
 		})).isRequired,
 		onMenuClick: React.PropTypes.func,
 		onItemClick: React.PropTypes.func,
+		className: React.PropTypes.string,
 	};
 
 	constructor(props) {
@@ -73,7 +74,7 @@ class Dropdown extends React.Component {
 
 	render() {
 		return (
-			<div styleName={this.props.disabled ? "wrapper-disabled" : "wrapper"}
+			<div styleName={this.props.disabled ? "wrapper-disabled" : "wrapper"} className={this.props.className}
 				ref={(e) => this._wrapper = e}>
 				<span onClick={this.getMenuClickCallback(this.state.selectedValue)}>{this.props.icon} {this.props.title}</span>
 				<span styleName="toggle" onClick={this._onToggleDropdown}><TriangleDownIcon /></span>
