@@ -3,7 +3,7 @@ import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Dashboard.css";
 import AnonymousLandingPage from "./AnonymousLandingPage";
-import HomeSearchContainer from "sourcegraph/home/HomeSearchContainer";
+import {urlToSearch} from "sourcegraph/search/routes";
 
 class DashboardContainer extends React.Component {
 	static propTypes = {
@@ -12,14 +12,26 @@ class DashboardContainer extends React.Component {
 
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
+		router: React.PropTypes.object.isRequired,
 	};
+
+	componentWillMount() {
+		if (this.context.signedIn) {
+			this.context.router.replace(urlToSearch());
+		}
+	}
+
+	componentWillReceiveProps(nextProps, nextContext) {
+		if (nextContext.signedIn) {
+			this.context.router.replace(urlToSearch());
+		}
+	}
 
 	render() {
 		return (
 			<div styleName="flex-fill">
 				<Helmet title="Home" />
-				{!this.context.signedIn && <AnonymousLandingPage location={this.props.location}/>}
-				{this.context.signedIn && <HomeSearchContainer location={this.props.location}/>}
+				<AnonymousLandingPage location={this.props.location}/>
 			</div>
 		);
 	}

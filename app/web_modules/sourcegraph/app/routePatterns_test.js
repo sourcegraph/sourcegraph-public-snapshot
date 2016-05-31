@@ -5,7 +5,7 @@ import expect from "expect.js";
 
 describe("routePatterns", () => {
 	let tests = {
-		dashboard: {
+		home: {
 			"": {},
 		},
 		repo: {

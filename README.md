@@ -7,7 +7,7 @@ flow while coding.
 
 Try Sourcegraph:
 
-* [:mag_right: Search globally for functions, types, packages, etc.](https://sourcegraph.com/?q=http.NewRequest)
+* [:mag_right: Search globally for functions, types, packages, etc.](https://sourcegraph.com/search?q=http.NewRequest)
 * [:zap: Browse and jump around code like an IDE](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
 * [:earth_africa: See how a function/type/package is used everywhere](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
 

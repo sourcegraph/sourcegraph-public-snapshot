@@ -1,6 +1,7 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 
 @value c_cool-gray from colors;
@@ -20,12 +21,21 @@
 .cool-gray { composes: cool-gray from colors; }
 .cool-mid-gray { composes: cool-mid-gray from colors; }
 
+.inline-block { display: inline-block; }
+
 .flex-container { display: flex; }
 .flex { flex: 1 1; }
 .flex-icon {
 	composes: tc from typography;
 	flex: 0 0 80px;
 }
+
+.bg {
+	composes: bg-pale-blue-gradient from colors;
+	flex: 1;
+}
+
+.container-fixed { composes: containerFixed from layout; }
 
 .center { composes: center from base; }
 
