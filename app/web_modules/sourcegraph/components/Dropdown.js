@@ -9,7 +9,7 @@ class Dropdown extends React.Component {
 	static propTypes = {
 		icon: React.PropTypes.element,
 		title: React.PropTypes.string.isRequired,
-		initialValue: React.PropTypes.string.isRequired,
+		initialValue: React.PropTypes.string,
 		alwaysOpenMenu: React.PropTypes.bool, // Use initialValue to judge when false
 		disabled: React.PropTypes.bool,
 		items: React.PropTypes.arrayOf(React.PropTypes.shape({
