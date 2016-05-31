@@ -387,12 +387,15 @@ func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUni
 }
 
 func resolveRevisionDefaultBranch(ctx context.Context, repo sourcegraph.RepoSpec) (string, error) {
+	r, err := store.ReposFromContext(ctx).Get(ctx, repo.URI)
+	if err != nil {
+		return "", err
+	}
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
 	if err != nil {
 		return "", err
 	}
-	// TODO(beyang): change this to ResolveRevision(repo.DefaultBranch)
-	c, err := vcsrepo.ResolveRevision("HEAD")
+	c, err := vcsrepo.ResolveRevision(r.DefaultBranch)
 	if err != nil {
 		return "", err
 	}

@@ -267,6 +267,9 @@ func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
 		}
 		return allRefs[repos[0]], nil
 	}
+	mocks.Repos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		return &sourcegraph.Repo{}, nil
+	}
 	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {

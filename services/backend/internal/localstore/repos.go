@@ -153,6 +153,13 @@ func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) 
 		}
 	}
 
+	// TODO(keegancsmith) remove once we are storing all github metadata
+	// in table https://app.asana.com/0/37478073567611/138332225969208
+	if repo.DefaultBranch == "" {
+		log15.Debug("Repo missing DefaultBranch", "repo", uri)
+		repo.DefaultBranch = "master"
+	}
+
 	setCloneURLField(ctx, repo)
 	return repo, nil
 }
