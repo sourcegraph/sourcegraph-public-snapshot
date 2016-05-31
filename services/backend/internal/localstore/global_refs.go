@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
 
@@ -348,10 +349,9 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 	def_key_id bigint,
 	repo TEXT,
 	file TEXT,
-	count integer
+	count integer default 1
 )
 ON COMMIT DROP;`
-	tmpInsertSQL := `INSERT INTO global_refs_tmp(def_key_id, repo, file, count) VALUES($1, $2, $3, 1);`
 	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1;`
 	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, count, updated_at)
 	SELECT def_key_id, repo, file, sum(count) as count, now() as updated_at
@@ -364,12 +364,23 @@ ON COMMIT DROP;`
 			return err
 		}
 
+		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+		if err != nil {
+			return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
+		}
+
 		// Insert refs into temporary table
 		for _, r := range refs {
 			defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-			if _, err := tx.Exec(tmpInsertSQL, defKeyID, repo.URI, r.File); err != nil {
-				return err
+			if _, err := stmt.Exec(defKeyID, repo.URI, r.File); err != nil {
+				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
 			}
+		}
+
+		// We need to do an empty Exec() to flush any remaining
+		// inserts that are in the drivers buffer
+		if _, err = stmt.Exec(); err != nil {
+			return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
 		}
 
 		// Purge all existing ref data for files in this source unit.
