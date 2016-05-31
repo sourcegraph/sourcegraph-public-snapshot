@@ -83,15 +83,16 @@
 		flex: 1 0 100%;
 		display: flex;
 		margin-bottom: 75px;
+		margin-left: 0 !important; /* cancel media query composed rule above */
 	}
 	.plan-box {
 		composes: mr4 from base;
 		margin-bottom: 0 !important; /* cancel media query composed rule above */
-		flex: 0 0 200px;
+		flex: 0 0 150px;
 	}
 }
 .plan-panel {
-	composes: pt3 pb2 ph4 mb2 br3 from base;
+	composes: pt3 pb2 ph3 mb2 br3 from base;
 	composes: tc from typography;
 	min-height: 210px;
 }
@@ -112,7 +113,7 @@
 	cursor: default;
 }
 .details {
-	font-size: 1.35rem; /* f4 was slightly too big */
+	font-size: 1.3rem; /* f4 was slightly too big */
 	composes: pl1 pr1 from base;
 }
 .details-list {
