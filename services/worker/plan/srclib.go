@@ -129,16 +129,16 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
-	"CSS": {
-		Key: "CSS (indexing)",
-		Build: droneyaml.Build{
-			Container: droneyaml.Container{
-				Image: droneSrclibCSSImage,
-			},
-			Commands:     srclibBuildCommands,
-			AllowFailure: true,
-		},
-	},
+	//"CSS": {
+	//Key: "CSS (indexing)",
+	//Build: droneyaml.Build{
+	//Container: droneyaml.Container{
+	//Image: droneSrclibCSSImage,
+	//},
+	//Commands:     srclibBuildCommands,
+	//AllowFailure: true,
+	//},
+	//},
 	"Python": {
 		Key: "Python (indexing)",
 		Build: droneyaml.Build{
