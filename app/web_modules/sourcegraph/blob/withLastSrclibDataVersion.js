@@ -5,6 +5,7 @@ import "sourcegraph/tree/TreeBackend";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import Dispatcher from "sourcegraph/Dispatcher";
 import type {Helper} from "sourcegraph/blob/BlobLoader";
+import {rel} from "sourcegraph/app/routePatterns";
 
 // withLastSrclibDataVersion sets the commitID property for all
 // children to be that of the last srclib data version, not the
@@ -18,12 +19,17 @@ import type {Helper} from "sourcegraph/blob/BlobLoader";
 // this sets).
 export default ({
 	reconcileState(state, props) {
+		// If a blob, then the path is statically known. Otherwise, reuse
+		// the state.path set after the def loads (that is taken from def.File).
+		state.path = props.route && props.route.path && props.route.path.startsWith(rel.blob) ? props.params.splat[1] : state.path;
+		if (!state.path) state.path = null;
+
 		// If we specify the path, then srclib-data-version resolution
 		// is stricter: if the named file has changed since the last
 		// build, resolution will fail. We only want this behavior when
 		// the URL contains an explicit revision (such as a branch or commit).
-		state.srclibDataVersionPath = props.rev ? state.path : null;
-		state.srclibDataVersion = TreeStore.srclibDataVersions.get(props.repo, props.commitID);
+		state.srclibDataVersionPath = state.path && props.rev ? state.path : null;
+		state.srclibDataVersion = TreeStore.srclibDataVersions.get(props.repo, props.commitID, state.srclibDataVersionPath);
 
 		// Set state.commitID to null until we know which commit ID to use (either
 		// the srclib-last-version commit ID, or if there is no recent srclib data,
