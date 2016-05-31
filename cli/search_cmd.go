@@ -31,7 +31,16 @@ type searchCmd struct {
 func (c *searchCmd) Execute(args []string) error {
 	cl := cliClient
 	if c.Refresh != "" {
-		_, err := cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
+		log.Printf("Def.RefreshIndex")
+		_, err := cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
+			Repo:                &sourcegraph.RepoSpec{URI: c.Refresh},
+			RefreshRefLocations: true,
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("Search.RefreshIndex")
+		_, err = cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
 			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.Refresh}},
 			RefreshCounts: true,
 			RefreshSearch: true,
@@ -39,8 +48,10 @@ func (c *searchCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
+		log.Printf("refresh complete")
 		return nil
 	} else if c.RefreshCounts != "" {
+		log.Printf("Search.RefreshIndex (counts only)")
 		_, err := cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
 			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.RefreshCounts}},
 			RefreshCounts: true,
@@ -48,6 +59,7 @@ func (c *searchCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
+		log.Printf("refresh complete")
 		return nil
 	}
 
