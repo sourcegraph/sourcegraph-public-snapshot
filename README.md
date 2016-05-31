@@ -35,11 +35,6 @@ large, well-known companies.
 * [:white_check_mark: Install the Sourcegraph Chrome extension](https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack)
   to seamlessly add these features to GitHub.com
 
-Our hosted service Sourcegraph.com is always free for open-source
-projects. Teams get search, browsing, and cross-references for free on
-private code. New, paid features will be released publicly in the
-future ([contact us for more info](mailto:support@sourcegraph.com)).
-
 You can also:
 
 * Browse the code that powers the site
