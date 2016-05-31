@@ -59,7 +59,7 @@ class DashboardRepos extends React.Component {
 
 	renderPrivateGitHub() {
 		return (
-			<Panel hover={true} className={`${base.mb4} ${base.pa4}`} styleName="item">
+			<Panel hover={true} hoverLevel="low" className={`${base.mb4} ${base.pa4}`} styleName="item">
 				<div styleName="privateRepos">
 					<Heading level="3">
 						Add your private repositories
