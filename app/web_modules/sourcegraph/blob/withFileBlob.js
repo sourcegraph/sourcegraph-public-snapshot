@@ -7,7 +7,6 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import BlobStore from "sourcegraph/blob/BlobStore";
 import "sourcegraph/blob/BlobBackend";
-import {rel} from "sourcegraph/app/routePatterns";
 import {urlToTree} from "sourcegraph/tree/routes";
 
 // withFileBlob wraps Component and passes it a "blob" property containing
@@ -34,9 +33,6 @@ export default function withFileBlob(Component) {
 
 		reconcileState(state, props) {
 			Object.assign(state, props);
-			state.path = props.route.path.startsWith(rel.blob) ? props.params.splat[1] : props.path;
-			if (!state.path) state.path = null;
-
 			state.blob = state.path && state.commitID ? BlobStore.files.get(state.repo, state.commitID, state.path) : null;
 		}
 
