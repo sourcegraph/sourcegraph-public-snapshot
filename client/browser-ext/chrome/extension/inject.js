@@ -126,7 +126,7 @@ class InjectApp extends React.Component {
 			}
 		}
 	}
-	
+
 	parseURL(loc = window.location) {
 		// TODO: this method has problems handling branch revisions with "/" character.
 		const urlsplit = loc.pathname.slice(1).split("/");
@@ -408,10 +408,10 @@ function pjaxGoTo(url, sameRepo) {
 		window.location.href = url;
 		return;
 	}
-	
+
 	const e = document.createElement("a");
 	e.href = url;
-	if (sameRepo) e.dataset.pjax = "#js-repo-pjax-container"; 
+	if (sameRepo) e.dataset.pjax = "#js-repo-pjax-container";
 	if (sameRepo) e.classList.add("js-navigation-open");
 	document.body.appendChild(e);
 	e.click();

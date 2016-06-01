@@ -135,7 +135,7 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 		if (!url) return c;
 
 		const insert = `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
-		
+
 		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
 			return `${insert}</a>`;
