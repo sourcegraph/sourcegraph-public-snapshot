@@ -58,16 +58,16 @@
 			"revisionTime": "2014-06-25T23:47:03Z"
 		},
 		{
-			"checksumSHA1": "9AX1Qo5TlMveGCqhyBTla7zN5z0=",
+			"checksumSHA1": "ulHAt7P7SYMC2g3ThlXNzVN9Z/k=",
 			"path": "github.com/chris-ramon/douceur/css",
-			"revision": "c0a5b8aea4ffb106eb8992cbab4d4bb1bad3467c",
-			"revisionTime": "2016-05-11T08:54:35Z"
+			"revision": "8fb95984c34738e277513d254dfa4e6bfc39f29a",
+			"revisionTime": "2016-05-31T16:43:54Z"
 		},
 		{
-			"checksumSHA1": "aSaQE7tdF2u4gYwuDY1XHMSDTQc=",
+			"checksumSHA1": "RbWaDh535llZY3nt+Rl6LI8WOis=",
 			"path": "github.com/chris-ramon/douceur/parser",
-			"revision": "c0a5b8aea4ffb106eb8992cbab4d4bb1bad3467c",
-			"revisionTime": "2016-05-11T08:54:35Z"
+			"revision": "8fb95984c34738e277513d254dfa4e6bfc39f29a",
+			"revisionTime": "2016-05-31T16:43:54Z"
 		},
 		{
 			"checksumSHA1": "r1CX8/M/ipvntOfH0rT9jOQ6fdM=",

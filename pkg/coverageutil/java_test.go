@@ -14,8 +14,18 @@ func TestJava(testing *testing.T) {
 	tests := []*test{
 		{
 			"keywords and UTF-8",
-			"package /* © */ main; 1000",
-			[]Token{{17, "main"}},
+			"package /* © */ main; class A {}",
+			[]Token{{29, "A"}},
+		},
+		{
+			"packages and imports",
+			"package foo.bar.baz.qux; import foo.bar.*; import static X.Y.Z; import org.apache.commons.X;",
+			[]Token{},
+		},
+		{
+			"numeric literals",
+			"123 123l 123L 12_3 12_3l 0xB 0XA 0b0000 0B1L -2.5E2f",
+			[]Token{},
 		},
 	}
 	tokenizer := &javaTokenizer{}
@@ -31,7 +41,7 @@ func TestJava(testing *testing.T) {
 			actual = append(actual, tok)
 		}
 		if len(actual) != len(t.expected) {
-			testing.Fatalf("%s: Expected %d tokens, got %d instead", t.name, len(t.expected), len(actual))
+			testing.Fatalf("%s: Expected %d tokens, got %d instead %v", t.name, len(t.expected), len(actual), actual)
 		}
 		for i, tok := range actual {
 			if tok.Offset != t.expected[i].Offset || tok.Text != t.expected[i].Text {

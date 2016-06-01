@@ -18,7 +18,7 @@ func TestGo(testing *testing.T) {
 			[]Token{{8, "main"}},
 		},
 	}
-	tokenizer := &javaTokenizer{}
+	tokenizer := &goTokenizer{}
 	for _, t := range tests {
 		tokenizer.Init([]byte(t.source))
 		defer tokenizer.Done()

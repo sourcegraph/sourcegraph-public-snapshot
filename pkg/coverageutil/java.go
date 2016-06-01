@@ -2,6 +2,8 @@ package coverageutil
 
 import (
 	"bytes"
+	"strings"
+	"unicode"
 
 	"text/scanner"
 )
@@ -81,6 +83,18 @@ func (s *javaTokenizer) Done() {
 // Next returns idents that are not Java keywords
 func (s *javaTokenizer) Next() *Token {
 	for {
+		ch := s.scanner.Peek()
+		if ch >= '0' && ch <= '9' {
+			s.consumeNumericLiteral()
+			continue
+		} else if unicode.IsSpace(ch) {
+			// consuming spaces
+			for unicode.IsSpace(ch) {
+				s.scanner.Next()
+				ch = s.scanner.Peek()
+			}
+			continue
+		}
 		r := s.scanner.Scan()
 		if r == scanner.EOF {
 			return nil
@@ -90,6 +104,13 @@ func (s *javaTokenizer) Next() *Token {
 		}
 		text := s.scanner.TokenText()
 		if s.isKeyword(text) {
+			// consume package or import qualifiers
+			if text == "package" || text == "import" {
+				ch = s.scanner.Next()
+				for ch >= 0 && ch != ';' {
+					ch = s.scanner.Next()
+				}
+			}
 			continue
 		}
 		p := s.scanner.Pos()
@@ -101,6 +122,14 @@ func (s *javaTokenizer) Next() *Token {
 func (s *javaTokenizer) isKeyword(ident string) bool {
 	_, ok := javaKeywords[ident]
 	return ok
+}
+
+func (s *javaTokenizer) consumeNumericLiteral() {
+	ch := s.scanner.Peek()
+	for strings.ContainsRune("0123456789xXlLdDfFbBaAcCeE_+-.", ch) {
+		s.scanner.Next()
+		ch = s.scanner.Peek()
+	}
 }
 
 func init() {
