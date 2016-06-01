@@ -39,7 +39,6 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					</div>
 				</LocationStateModal>
 			}
-
 			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
 				<Link to="/">
 					<Logo styleName={`logo flex-fixed ${signedIn ? "logomark" : ""}`}
@@ -67,6 +66,8 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<Link to="/pricing" styleName="logged-out-nav-item">Pricing</Link>
 					<a href="https://text.sourcegraph.com" styleName="logged-out-nav-item">Blog</a>
 				</div>}
+				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
+				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
 
 				{user && <div styleName="flex flex-fixed" className={`${base.pv2} ${base.ph3}`}>
 					<Popover left={true}>
@@ -85,8 +86,6 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 
 				{!signedIn &&
 					<div styleName="tr" className={base.pv2}>
-						{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
-						{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
