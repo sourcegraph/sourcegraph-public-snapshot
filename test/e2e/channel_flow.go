@@ -13,6 +13,7 @@ func init() {
 		Name:        "channel_flow",
 		Description: "Creates a new channel and navigates to two pages via a websocket connection and 2 POST requests",
 		Func:        testChannelFlow,
+		Quarantined: true,
 	})
 }
 
