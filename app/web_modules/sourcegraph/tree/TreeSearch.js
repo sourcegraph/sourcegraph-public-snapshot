@@ -616,7 +616,7 @@ class TreeSearch extends Container {
 			return (
 				<Header
 					title={`${code}`}
-					subtitle={code === 404 ? `Directory "${this.state.path}" not found.` : "Directory is not available."} />
+					subtitle={code === 404 ? `Directory not found.` : "Directory is not available."} />
 			);
 		}
 
