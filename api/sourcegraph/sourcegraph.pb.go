@@ -2869,7 +2869,7 @@ type ChannelAction struct {
 	Repo string `protobuf:"bytes,4,opt,name=Repo,proto3" json:"Repo,omitempty"`
 	// Def is the definition
 	Def string `protobuf:"bytes,5,opt,name=Def,proto3" json:"Def,omitempty"`
-	// Status is the status code, 1 for successful lookup, 2 for symbol not found
+	// Status is the status code, 1 for successful lookup, 0 for editor doesn't recognize symbol
 	Status int32 `protobuf:"varint,6,opt,name=Status,proto3" json:"Status"`
 	// VersionMajor and VersionMinor are the plugin versions, i.e. 'Major:0' 'Minor:1' is 0.1
 	VersionMajor int32 `protobuf:"varint,7,opt,name=VersionMajor,proto3" json:"VersionMajor"`

@@ -2132,7 +2132,7 @@ message ChannelAction {
 	// Def is the definition
 	string Def = 5;
 
-	// Status is the status code, 1 for successful lookup, 2 for symbol not found
+	// Status is the status code, 1 for successful lookup, 0 for editor doesn't recognize symbol
 	int32 Status = 6 [(gogoproto.jsontag) = "Status"];
 
 	// VersionMajor and VersionMinor are the plugin versions, i.e. 'Major:0' 'Minor:1' is 0.1

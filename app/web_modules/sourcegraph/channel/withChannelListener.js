@@ -125,7 +125,7 @@ export default function withChannelListener(Component) {
 					pathname: `/-/channel/${this.state.channelName}-error`,
 					state: {
 						...this.props.location.state,
-						error: "There is an update for Sourcegraph on your editor",
+						error: "There is an update for Sourcegraph for your editor",
 						fix: "Make sure you pull the latest version of Sourcegraph for your editor.",
 					},
 				});
@@ -147,7 +147,7 @@ export default function withChannelListener(Component) {
 					pathname: `/-/channel/${this.state.channelName}-error`,
 					state: {
 						...this.props.location.state,
-						error: "There is an update for Sourcegraph on your editor",
+						error: "There is an update for Sourcegraph for your editor",
 						fix: "Make sure you pull the latest version of Sourcegraph for your editor.",
 					},
 				});

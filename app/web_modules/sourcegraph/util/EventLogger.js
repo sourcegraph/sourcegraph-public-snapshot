@@ -349,12 +349,21 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 
 		_logView(routes: Array<Route>, location: Location) {
 			let eventProps = {
-				referred_by_chrome_ext: false,
 				url: location.pathname,
 			};
+			// TODO:matt remove this once all plugins are switched to new version
+			// This is temporarily here for backwards compat
 			if (location.query && location.query["utm_source"] === "chromeext") {
-				eventProps.referred_by_chrome_ext = true;
-			} else if (location.query && location.query["utm_source"] === "sourcegrapheditor" && location.query["editor_type"]) {
+				eventProps = {
+					referred_by_browser_ext: "chrome",
+					url: location.pathname,
+				};
+			} else if (location.query && location.query["utm_source"] === "browser-ext" && location.query["browser_type"]) {
+				eventProps = {
+					referred_by_browser_ext: location.query["browser_type"],
+					url: location.pathname,
+				};
+			} else if (location.query && location.query["utm_source"] === "sourcegraph-editor" && location.query["editor_type"]) {
 				eventProps = {
 					url: location.pathname,
 					referred_by_sourcegraph_editor: location.query["editor_type"],

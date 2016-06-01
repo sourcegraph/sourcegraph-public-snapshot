@@ -35,7 +35,7 @@ export const route: Route = {
 						...nextRouterState.location,
 						pathname: data.Path,
 						query: {
-							utm_source: "sourcegrapheditor",
+							utm_source: "sourcegraph-editor",
 							editor_type: editor_type,
 						},
 					});
@@ -49,7 +49,7 @@ export const route: Route = {
 						...nextRouterState.location,
 						pathname: data.Path,
 						query: {
-							utm_source: "sourcegrapheditor",
+							utm_source: "sourcegraph-editor",
 							editor_type: editor_type,
 						},
 					});
