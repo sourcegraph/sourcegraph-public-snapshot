@@ -135,6 +135,11 @@ export default class RefsContainer extends Container {
 				state.highlightedDefObj = null;
 			}
 		}
+		if (state.mouseout) {
+			// Clear DefTooltip so it doesn't hang around.
+			state.highlightedDef = null;
+			state.highlightedDefObj = null;
+		}
 
 		state.forceComponentUpdate = false;
 		if (state.refs && !state.refs.Error) {
@@ -255,8 +260,8 @@ export default class RefsContainer extends Container {
 
 		return (
 			<div className={styles.container}
-				onMouseOver={() => this.setState({mouseover: true})}
-				onMouseOut={() => this.setState({mouseover: false})}>
+				onMouseOver={() => this.setState({mouseover: true, mouseout: false})}
+				onMouseOut={() => this.setState({mouseover: false, mouseout: true})}>
 				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
