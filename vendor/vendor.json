@@ -1221,6 +1221,12 @@
 			"revisionTime": "2016-06-01T01:15:29Z"
 		},
 		{
+			"checksumSHA1": "/tWZ3jZTZAqhlTnxexo/5w9WymU=",
+			"path": "sourcegraph.com/sourcegraph/appdash/x/influxdbstore",
+			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
+			"revisionTime": "2016-06-01T01:15:29Z"
+		},
+		{
 			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",
 			"path": "sourcegraph.com/sourcegraph/gen-mocks",
 			"revision": "f796f89ae7a552c8c2ff5bf21c23f1cc78231820",
