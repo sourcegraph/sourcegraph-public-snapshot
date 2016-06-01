@@ -15,6 +15,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/traceapp"
+	"sourcegraph.com/sourcegraph/appdash/x/influxdbstore"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
@@ -96,7 +97,7 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	}
 
 	// Create a default InfluxDB configuration.
-	conf, err := appdash.NewInfluxDBConfig()
+	conf, err := influxdbstore.NewConfig()
 	if err != nil {
 		return fmt.Errorf("failed to create influxdb config, error: %v", err)
 	}
@@ -180,7 +181,7 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 
 	serve := func() {
 		log15.Info("InfluxDB server starting", "logoutput", logOutputName)
-		store, err := appdash.NewInfluxDBStore(conf)
+		store, err := influxdbstore.New(conf)
 		if err != nil {
 			log.Fatalf("failed to create influxdb store, error: %v", err)
 		}
