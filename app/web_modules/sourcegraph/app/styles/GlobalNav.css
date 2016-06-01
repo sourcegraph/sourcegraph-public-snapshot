@@ -7,27 +7,21 @@
 @value link "sourcegraph/components/styles/link.css";
 
 @value media-sm from vars;
+@value navbarHeight: 48px;
 
 .tl { composes: tl from typography; }
+.tr {	composes: tr from typography; }
 .flex { display: flex; }
 .flex-fill { flex: 1 1 100%; }
-.flex-center {align-items: center;}
-.flex-end {justify-content: flex-end;}
-.block {display: block;}
+.flex-item-auto { flex: 1 1 auto; }
+.flex-fixed { flex: 0 0 auto; }
+.flex-center { align-items: center; }
+.flex-end { justify-content: flex-end; }
+.flex-start { justify-content: flex-start; }
+.block { display: block; }
 .hidden-s { composes: hidden-s from base; }
 
-/* Logged out nav */
-
-.header-logo {
-	composes: fl from base;
-}
-
 @media media-sm {
-	/* Composes don't work within media queries */
-	.header-logo {
-		float: none;
-		margin: auto;
-	}
 	.logged-out-nav {
 		float: none;
 		display: block;
@@ -36,30 +30,11 @@
 	}
 }
 
-.logged-out-header {
-	composes: containerFixed from layout;
-	composes: center mt4 ph3 from base;
-	composes: tc from typography;
-}
-
-.logged-out-nav {
-	composes: fr from base;
-}
-
 .username {	padding-top: 10px; }
 
 .logged-out-nav-item {
 	composes: link-subtle from link;
 	composes: pa2 ml2 from base;
-}
-
-.login-signup-links {	composes: tr from typography; }
-
-/* Logged in navigation */
-
-.navbar + * {
-	/* Account for navbar's position: fixed. */
-	padding-top: navbarHeight;
 }
 
 .navbar {
@@ -74,40 +49,19 @@
 	width: 100%;
 }
 
-.logo {
-	composes: mt2 mh3 from base;
+.navbar + * {
+	/* Account for navbar's position: fixed. */
+	padding-top: navbarHeight;
 }
 
-.logo:hover {
+.logo { composes: mt2 mh3 from base; }
+.logomark:hover {
 	animation: spin 0.5s ease-in-out 1;
 }
 @keyframes spin { 50% { transform: rotate(180deg) scale(1.2) } 100% { transform: rotate(180deg) scale(1)} }
 
-.context-container {
-	flex: 1 1 auto;
-	align-items: center;
-	composes: pv1 ph2 from base;
-	composes: f4 from typography;
-}
-
-.context {
-	display: flex;
-	align-content: center;
-
-	/* Collapse and add ellipsis if too long. Make sure we can show the logo and avatar. */
-	white-space: nowrap;
-	max-width: calc(100vw - 230px);
-}
-
-.actions {
-	display: inline-flex;
-	align-items: center;
-	composes: ml3 pv2 from base;
-	white-space: nowrap;
-	flex: 0 0 auto;
-}
 .action {
-	composes: mr3 from base;
+	composes: ml3 from base;
 	display: inline-block;
 	white-space: nowrap;
 	cursor: pointer;

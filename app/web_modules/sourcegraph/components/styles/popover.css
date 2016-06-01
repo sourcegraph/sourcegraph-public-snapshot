@@ -1,34 +1,46 @@
 @value base "./_base.css";
 @value colors "./_colors.css";
 
-@value c_black-20 from colors;
+@value c_cool-gray-2 from colors;
 
 .container {
 	position: relative;
 	cursor: pointer;
 }
 
-.shadow {
-	box-shadow: 2px 2px 7px 0px c_black-20;
-}
-
 .popover {
-	composes: shadow;
-	composes: ma2 br3 from base;
+	composes: shadow-gray from colors;
+	composes: br3 from base;
 	display: flex;
 	flex: 1 1 auto;
 	min-width: 100px;
 	cursor: initial;
 	position: absolute;
-	top: 100%;
+	top: 97%;
+}
+
+/* Triangle pointer */
+.popover:before {
+	content: "";
+	background: white;
+	border-left: 1px c_cool-gray-2 solid;
+	border-top: 1px c_cool-gray-2 solid;
+	display: block;
+	height: 8px;
+	position: absolute;
+	right: 16px;
+	top: -5px;
+	transform: rotate(45deg) skew(-10deg, -10deg);
+	width: 8px;
+	z-index: 101;
 }
 
 .popover-left {
 	composes: popover;
-	right: 0;
+	right: -8px;
 }
 
 .popover-right {
 	composes: popover;
-	left: 0;
+	left: -8px;
 }
