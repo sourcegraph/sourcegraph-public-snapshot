@@ -371,17 +371,21 @@ class TreeSearch extends Container {
 		const i = this._normalizedSelectionIndex();
 		if (i < this._numSymbolResults()) {
 			// Def result
+			if (!this.state.matchingDefs || !this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0) return;
 			const def = this.state.matchingDefs.Defs.filter(this._symbolFilter)[i];
 			this._navigateTo(urlToDef(def));
 		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
 			// XDef result
+			if (!this.state.xdefs || !this.state.xdefs.Defs || this.state.xdefs.Defs.length === 0) return;
 			let d = i - this._numSymbolResults();
 			const def = this.state.xdefs.Defs[d];
 			this._navigateTo(urlToDef(def));
 		} else {
 			// File or dir result
+			if (!this.state.fileResults) return;
 			let d = i - (this._numSymbolResults() + this._numXDefResults());
 			let result = this.state.fileResults[d];
+			if (!result) return;
 			if (result.isDirectory) {
 				this.state.onSelectPath(result.path);
 			} else {

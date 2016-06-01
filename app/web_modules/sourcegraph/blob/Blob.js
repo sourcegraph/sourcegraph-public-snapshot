@@ -313,6 +313,7 @@ class Blob extends Component {
 	}
 
 	_updateVisibleLines() {
+		if (!this.refs.table) { return; }
 		let rect = this.refs.table.getBoundingClientRect();
 		let lineCount = this.state.lines.length;
 		if (this.state.displayRanges) {
