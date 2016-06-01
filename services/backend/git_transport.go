@@ -28,7 +28,7 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 		// Ignore the error if it is because the repo didn't exist. This comes
 		// about when we are implicitly mirroring repos and the metadata is
 		// not stored in the database. This is only OK for read access.
-		if _, ok := err.(*store.RepoNotFoundError); !ok {
+		if grpc.Code(err) != codes.NotFound {
 			return nil, err
 		}
 	}

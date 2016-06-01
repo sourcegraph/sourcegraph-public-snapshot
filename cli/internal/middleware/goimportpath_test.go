@@ -8,13 +8,15 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestGoImportPath(t *testing.T) {
@@ -27,7 +29,7 @@ func TestGoImportPath(t *testing.T) {
 		case "sourcegraph/srclib-go": // Mirror repo.
 			return &sourcegraph.Repo{Mirror: true}, nil
 		default:
-			return nil, &store.RepoNotFoundError{Repo: repo.URI}
+			return nil, grpc.Errorf(codes.NotFound, "repo not found: %s", repo.URI)
 		}
 	}
 	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "https", Host: "sourcegraph.com", Path: "/"})
@@ -102,7 +104,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	var attemptedRepoURIs []string
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		attemptedRepoURIs = append(attemptedRepoURIs, repo.URI)
-		return nil, &store.RepoNotFoundError{Repo: repo.URI}
+		return nil, grpc.Errorf(codes.NotFound, "repo not found: %s", repo.URI)
 	}
 
 	rw := httptest.NewRecorder()
