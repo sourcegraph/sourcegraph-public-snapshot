@@ -17,12 +17,12 @@ func TestCsharp(testing *testing.T) {
 		{
 			"multiline strings",
 			"\"abc\ndef\"a 'a'",
-			[]Token{{9, "a"}},
+			[]Token{{9, 2, "a"}},
 		},
 		{
 			"identifiers",
 			"_a = 2;",
-			[]Token{{0, "_a"}},
+			[]Token{{0, 1, "_a"}},
 		},
 		{
 			"numeric suffixes",
@@ -40,14 +40,14 @@ func TestCsharp(testing *testing.T) {
 				break
 			}
 			text := csharpScanner.TokenText()
-			actual = append(actual, Token{uint32(csharpScanner.Pos().Offset - len([]byte(text))), text})
+			actual = append(actual, Token{uint32(csharpScanner.Pos().Offset - len([]byte(text))), csharpScanner.Line, text})
 		}
 		if len(actual) != len(t.expected) {
 			testing.Fatalf("%s: Expected %d tokens, got %d instead", t.name, len(t.expected), len(actual))
 		}
 		for i, tok := range actual {
-			if tok.Offset != t.expected[i].Offset || tok.Text != t.expected[i].Text {
-				testing.Errorf("%s: Expected %d (%s), got %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Text, tok.Offset, tok.Text)
+			if tok.Offset != t.expected[i].Offset || tok.Line != t.expected[i].Line || tok.Text != t.expected[i].Text {
+				testing.Errorf("%s: Expected %d %d (%s), got %d %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Line, t.expected[i].Text, tok.Offset, tok.Line, tok.Text)
 			}
 		}
 	}

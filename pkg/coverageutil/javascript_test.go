@@ -17,17 +17,17 @@ func TestJavaScript(testing *testing.T) {
 		{
 			"backticks and single quotes",
 			"`back\ntick`\nconsole.log('hi')",
-			[]Token{{12, "console"}, {20, "log"}},
+			[]Token{{12, 3, "console"}, {20, 3, "log"}},
 		},
 		{
 			"double quotes and Unicode code points",
 			"a \"\\u{2F804}\" b",
-			[]Token{{0, "a"}, {14, "b"}},
+			[]Token{{0, 1, "a"}, {14, 1, "b"}},
 		},
 		{
 			"identifiers",
 			"$ = 1; _a = 2;",
-			[]Token{{0, "$"}, {7, "_a"}},
+			[]Token{{0, 1, "$"}, {7, 1, "_a"}},
 		},
 		{
 			"numeric literals",
@@ -37,7 +37,7 @@ func TestJavaScript(testing *testing.T) {
 		{
 			"regular expressions",
 			"/abc/ /abc/d a / b",
-			[]Token{{13, "a"}, {17, "b"}},
+			[]Token{{13, 1, "a"}, {17, 1, "b"}},
 		},
 	}
 	jsScanner := newJavascriptScanner()
@@ -50,14 +50,14 @@ func TestJavaScript(testing *testing.T) {
 				break
 			}
 			text := jsScanner.TokenText()
-			actual = append(actual, Token{uint32(jsScanner.Pos().Offset - len([]byte(text))), text})
+			actual = append(actual, Token{uint32(jsScanner.Pos().Offset - len([]byte(text))), jsScanner.Line, text})
 		}
 		if len(actual) != len(t.expected) {
 			testing.Fatalf("%s: Expected %d tokens, got %d instead", t.name, len(t.expected), len(actual))
 		}
 		for i, tok := range actual {
-			if tok.Offset != t.expected[i].Offset || tok.Text != t.expected[i].Text {
-				testing.Errorf("%s: Expected %d (%s), got %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Text, tok.Offset, tok.Text)
+			if tok.Offset != t.expected[i].Offset || tok.Line != t.expected[i].Line || tok.Text != t.expected[i].Text {
+				testing.Errorf("%s: Expected %d %d (%s), got %d %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Line, t.expected[i].Text, tok.Offset, tok.Line, tok.Text)
 			}
 		}
 	}

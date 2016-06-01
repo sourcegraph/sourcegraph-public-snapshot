@@ -15,7 +15,7 @@ func TestCSS(testing *testing.T) {
 		{
 			"UTF-8",
 			"td { content: \"©\"; color: red }\n tr {font-size:11px;}",
-			[]Token{{0, "td"}, {5, "content"}, {20, "color"}, {34, "tr"}, {38, "font-size"}},
+			[]Token{{0, 1, "td"}, {5, 1, "content"}, {20, 1, "color"}, {34, 2, "tr"}, {38, 2, "font-size"}},
 		},
 		// TODO(alexsaveliev) remove/rewrite when sourcegraph/srclib-css#6 will be fixed.
 		// Please note that while it's expected behavior to generate {0, "c"} token
@@ -24,7 +24,7 @@ func TestCSS(testing *testing.T) {
 		{
 			"Wrong offsets",
 			"a,\nb,\nc {}",
-			[]Token{{0, "a"}, {1, "b"}, {0, "c"}},
+			[]Token{{0, 1, "a"}, {1, 1, "b"}, {0, 1, "c"}},
 		},
 		// TODO(alexsaveliev) uncomment when parser will not include comments into decls and selectors
 		// See sourcegraph/srclib-css#5
@@ -51,8 +51,8 @@ func TestCSS(testing *testing.T) {
 			testing.Fatalf("%s: Expected %d tokens, got %d instead", t.name, len(t.expected), len(actual))
 		}
 		for i, tok := range actual {
-			if tok.Offset != t.expected[i].Offset || tok.Text != t.expected[i].Text {
-				testing.Errorf("%s: Expected %d (%s), got %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Text, tok.Offset, tok.Text)
+			if tok.Offset != t.expected[i].Offset || tok.Line != t.expected[i].Line || tok.Text != t.expected[i].Text {
+				testing.Errorf("%s: Expected %d %d (%s), got %d %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Line, t.expected[i].Text, tok.Offset, tok.Line, tok.Text)
 			}
 		}
 	}
