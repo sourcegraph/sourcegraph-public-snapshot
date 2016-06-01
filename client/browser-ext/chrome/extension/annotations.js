@@ -130,11 +130,11 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	if (!annotating && matchDetails) {
 		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
-			return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext" target="tab" class=${styles.sgdef}>${c}</a>`;
+			return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=browser-ext&browser_type=chrome" target="tab" class=${styles.sgdef}>${c}</a>`;
 		}
 
 		annotating = true;
-		return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext" target="tab" class=${styles.sgdef}>${c}`;
+		return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=browser-ext&browser_type=chrome" target="tab" class=${styles.sgdef}>${c}`;
 	}
 
 	// if we reach the end, close the tag.
@@ -161,7 +161,7 @@ function addPopover(el) {
 		if (activeTarget !== t) {
 			activeTarget = t;
 			let url = activeTarget.href.split("https://sourcegraph.com")[1]
-			url = url.split("?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext")[0]
+			url = url.split("?utm_source=browser-ext&browser_type=chrome")[0]
 			url = `https://sourcegraph.com/.api/repos${url}`;
 			fetchPopoverData(url, function(html) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);

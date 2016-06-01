@@ -246,7 +246,7 @@ service Repos {
 	// ResolveRev resolves a VCS revision specifier (e.g., a branch or
 	// "master~7") to its underlying commit ID.
 	rpc ResolveRev(ReposResolveRevOp) returns (ResolvedRev);
-	
+
 	// ListCommits returns the list of commits that span between the revisions
 	// specified in the given DeltaSpec. By default, it will return 1 page of
 	// commits with a maximum of DefaultPerPage entries. To retrieve all commits
@@ -2115,10 +2115,12 @@ message ChannelListenOp {
 
 // A ChannelAction is an action sent to all listeners on a given channel.
 message ChannelAction {
-	// Error is the Error that is occuring client-side
+	// Error is the title of the error that is occuring client-side
+	// Not used in latest version, since these errors shown editor side, potentially used in future
 	string Error = 1;
 
-	// Fix is the Fix for the Error
+	// Fix is the Fix for the Error occurring client-side
+	// Not used in latest version, since these errors shown editor side, potentially used in future
 	string Fix = 2;
 
 	// Package is a the package of the token under the cursor
@@ -2127,8 +2129,18 @@ message ChannelAction {
 	// Repo is the repo that the package belongs to
 	string Repo = 4;
 
-	// Def is the definition 
+	// Def is the definition
 	string Def = 5;
+
+	// Status is the status code, 1 for successful lookup, 0 for editor doesn't recognize symbol
+	int32 Status = 6 [(gogoproto.jsontag) = "Status"];
+
+	// VersionMajor and VersionMinor are the plugin versions, i.e. 'Major:0' 'Minor:1' is 0.1
+	int32 VersionMajor = 7 [(gogoproto.jsontag) = "VersionMajor"];
+	int32 VersionMinor = 8 [(gogoproto.jsontag) = "VersionMinor"];
+
+	// Editor type is the type of editor, i.e. 'sublime'
+	string EditorType = 9;
 }
 
 // ChannelSendResult is provided to a Channel.Send call to send an action
