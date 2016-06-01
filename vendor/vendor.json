@@ -1174,11 +1174,10 @@
 			"revisionTime": "2016-03-01T20:40:22Z"
 		},
 		{
-			"checksumSHA1": "yo2iI9RDxkMm6U6kjHjmDmxcJMU=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash",
+			"checksumSHA1": "+dB2Ktuve3Uzx3n2LXpAwk4UCXY=",
 			"path": "sourcegraph.com/sourcegraph/appdash",
-			"revision": "b2b5aaacda822a245282b29cf5ef58555cab9573",
-			"revisionTime": "2016-05-24T23:39:10Z"
+			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
+			"revisionTime": "2016-06-01T01:15:29Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/appdash-data",
@@ -1187,35 +1186,30 @@
 		},
 		{
 			"checksumSHA1": "ZeYUSbD7p6GJvvPf0t91NU1LMKc=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/httptrace",
 			"path": "sourcegraph.com/sourcegraph/appdash/httptrace",
 			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
 			"revisionTime": "2016-06-01T01:15:29Z"
 		},
 		{
 			"checksumSHA1": "JYGXK0rF/LoIg8jGrOlaO9OqPbI=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/internal/wire",
 			"path": "sourcegraph.com/sourcegraph/appdash/internal/wire",
 			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
 			"revisionTime": "2016-06-01T01:15:29Z"
 		},
 		{
 			"checksumSHA1": "DbYAyk4lKSOp6kv7cyvHLm/OoLU=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/sqltrace",
 			"path": "sourcegraph.com/sourcegraph/appdash/sqltrace",
 			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
 			"revisionTime": "2016-06-01T01:15:29Z"
 		},
 		{
 			"checksumSHA1": "RBgld2k488YKnGmhOoBuvmRzMB4=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/traceapp",
 			"path": "sourcegraph.com/sourcegraph/appdash/traceapp",
 			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
 			"revisionTime": "2016-06-01T01:15:29Z"
 		},
 		{
 			"checksumSHA1": "dHwcL1aZyP4ad+dYmHjtQZaz9MA=",
-			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
 			"path": "sourcegraph.com/sourcegraph/appdash/traceapp/tmpl",
 			"revision": "c7ed4c4910327214f2d299cf3dfe84862c205579",
 			"revisionTime": "2016-06-01T01:15:29Z"

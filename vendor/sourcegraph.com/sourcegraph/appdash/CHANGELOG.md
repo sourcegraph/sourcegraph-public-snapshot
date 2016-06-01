@@ -1,5 +1,9 @@
 # Changelog
 
+- May 26, 2016 - **Action Required!**
+  - [#171](https://github.com/sourcegraph/appdash/pull/171) Fixed an index out of bounds panic when viewing the /traces page.
+  - [#171](https://github.com/sourcegraph/appdash/pull/171) InfluxDBStore uses a less memory intensive DB schema (users will need to `rm -rf ~/.influxdb` to remove the old DB).
+  - [#171](https://github.com/sourcegraph/appdash/pull/171) InfluxDBStore now uses InfluxDB client v2.
 - Apr 29, 2016 - **Breaking Change!**
   - [#162](https://github.com/sourcegraph/appdash/pull/162) `traceapp.New` now requires a base URL parameter for compatability with HTTPS in trace permalinks.
 - Apr 26, 2016
