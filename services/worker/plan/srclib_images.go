@@ -41,6 +41,8 @@ func SrclibVersion(lang string) (string, error) {
 		return versionHash(droneSrclibCSharpImage)
 	case "CSS":
 		return versionHash(droneSrclibCSSImage)
+	case "Python":
+		return versionHash(droneSrclibPythonImage)
 	}
 
 	return "", fmt.Errorf("no srclib image found for %s", lang)
