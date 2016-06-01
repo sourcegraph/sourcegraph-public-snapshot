@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
@@ -36,14 +37,17 @@ type dbRepoStatus struct {
 }
 
 type dbFileCoverage struct {
-	Path   string
-	Idents int
-	Refs   int
-	Defs   int
+	Path             string
+	Idents           int
+	Refs             int
+	Defs             int
+	UnresolvedIdents []*coverageutil.Token
+	UnresolvedRefs   []*coverageutil.Token
 }
 
 type dbRepoCoverage struct {
 	Repo          string
+	Rev           string
 	Language      string
 	Files         []*dbFileCoverage
 	Summary       *dbFileCoverage
@@ -201,8 +205,12 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 
 				checkCoverageRegression(&prev, &next)
 
+				cvg[0].Files = nil // keep granular per-file data only for the most recent day
 				if prev.Day != next.Day {
 					cvg = append(nextCvg, cvg...) // keep most recent day first; don't double track days
+				} else {
+					// overwrite prev day with new stat
+					cvg[0] = next
 				}
 			} else {
 				cvg = nextCvg

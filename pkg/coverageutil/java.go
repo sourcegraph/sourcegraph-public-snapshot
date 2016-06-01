@@ -93,7 +93,7 @@ func (s *javaTokenizer) Next() *Token {
 			continue
 		}
 		p := s.scanner.Pos()
-		return &Token{uint32(p.Offset - len([]byte(text))), text}
+		return &Token{uint32(p.Offset - len([]byte(text))), p.Line, text}
 	}
 }
 

@@ -3,13 +3,15 @@ import {Link} from "react-router";
 
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
-import {Button, Label} from "sourcegraph/components";
-import {CloseIcon, TriangleLeftIcon, TriangleRightIcon} from "sourcegraph/components/Icons";
+import {Button, Label, Modal} from "sourcegraph/components";
+import {CloseIcon, TriangleLeftIcon, TriangleRightIcon, MagnifyingGlassIcon, FileIcon} from "sourcegraph/components/Icons";
 
 import BuildStore from "sourcegraph/build/BuildStore";
 import * as BuildActions from "sourcegraph/build/BuildActions";
 import {buildStatus, buildClass} from "sourcegraph/build/Build";
 import {urlToBuilds} from "sourcegraph/build/routes";
+import {urlToRepoRev} from "sourcegraph/repo/routes";
+import {urlToBlob} from "sourcegraph/blob/routes";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Coverage.css";
@@ -17,12 +19,14 @@ import styles from "./styles/Coverage.css";
 class CoverageDrilldown extends Container {
 	static propTypes = {
 		language: React.PropTypes.string.isRequired,
+		location: React.PropTypes.object.isRequired,
 		data: React.PropTypes.arrayOf(React.PropTypes.shape({
 			Day: React.PropTypes.string.isRequired,
 			Refs: React.PropTypes.number.isRequired,
 			Defs: React.PropTypes.number.isRequired,
 			Sources: React.PropTypes.arrayOf(React.PropTypes.shape({
 				Repo: React.PropTypes.string.isRequired,
+				Rev: React.PropTypes.string,
 				Language: React.PropTypes.string.isRequired,
 				SrclibVersion: React.PropTypes.string,
 				Summary: React.PropTypes.shape({
@@ -30,10 +34,30 @@ class CoverageDrilldown extends Container {
 					Refs: React.PropTypes.number.isRequired,
 					Defs: React.PropTypes.number.isRequired,
 				}),
+				Files: React.PropTypes.arrayOf(React.PropTypes.shape({
+					Path: React.PropTypes.string.isRequired,
+					Idents: React.PropTypes.number.isRequired,
+					Refs: React.PropTypes.number.isRequired,
+					Defs: React.PropTypes.number.isRequired,
+					UnresolvedIdents: React.PropTypes.arrayOf(React.PropTypes.shape({
+						Offset: React.PropTypes.number.isRequired,
+						Line: React.PropTypes.number.isRequired,
+						Text: React.PropTypes.string.isRequired,
+					})),
+					UnresolvedRefs: React.PropTypes.arrayOf(React.PropTypes.shape({
+						Offset: React.PropTypes.number.isRequired,
+						Line: React.PropTypes.number.isRequired,
+						Text: React.PropTypes.string.isRequired,
+					})),
+				})),
 			})).isRequired,
 		})).isRequired,
 		onDismiss: React.PropTypes.func.isRequired,
-	}
+	};
+
+	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
+	};
 
 	constructor(props) {
 		super(props);
@@ -41,6 +65,34 @@ class CoverageDrilldown extends Container {
 			idx: props.data.length - 1, // most recent day
 		};
 		this.buildsQuery = "?Direction=desc&Ended=true&Sort=updated_at";
+		this.getRepoDrilldown = this.getRepoDrilldown.bind(this);
+	}
+
+	componentDidMount() {
+		super.componentDidMount();
+
+		// Instiantiate repo drilldown modal, if necessary.
+		if (this.props.location.query.repo) {
+			const repo = decodeURIComponent(this.props.location.query.repo);
+			const lastDay = this.props.data[this.props.data.length - 1];
+			for (const source of lastDay.Sources) {
+				if (source.Repo === repo) {
+					return this._drilldown(source);
+				}
+			}
+		}
+	}
+
+	_drilldown(source) {
+		let drilldownFiles;
+		if (source) {
+			// Sort files by increasing ref score.
+			// To sort a deeploy frozen array, we must first create a copy of the array.
+			drilldownFiles = source.Files.map((f) => Object.assign({}, f)).sort((a, b) => this.refScore(a) - this.refScore(b));
+		}
+		this.setState({drilldown: source || null, drilldownFiles: drilldownFiles || null}, () => {
+			this.context.router.replace({...this.props.location, query: {lang: this.props.language, repo: source && source.Repo || undefined}}); // eslint-disable-line no-undefined
+		});
 	}
 
 	stores() { return [BuildStore]; }
@@ -84,6 +136,10 @@ class CoverageDrilldown extends Container {
 		return summary.Defs / summary.Idents;
 	}
 
+	formatScore(score) {
+		return Math.round(score * 100);
+	}
+
 	formatDelta(delta) {
 		if (delta) {
 			return `${delta > 0 ? "+" : ""}${delta * 100}`.substring(0, 5);
@@ -103,6 +159,42 @@ class CoverageDrilldown extends Container {
 		if (delta.indexOf("+") === 0) return "delta-increase";
 		if (delta.indexOf("-") === 0) return "delta-decrease";
 		return "";
+	}
+
+	getRepoDrilldown(files) {
+		return this.state.drilldownFiles.map((file, i) => {
+			const blobURL = urlToBlob(this.state.drilldown.Repo, this.state.drilldown.Rev, file.Path);
+			return (<div key={i}>
+				<div styleName="file-drilldown-row">
+					<div styleName={`file-drilldown-header${this.refScore(file) <= 0.5 ? "-uncovered" : ""}`} onClick={() => {
+						if (this.state.drilldownFile === i) return this.setState({drilldownFile: null});
+						this.setState({drilldownFile: i});
+					}}>
+						<div styleName="filepath">{file.Path}</div>
+						<div styleName="file-stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.refScore(file))}%) Defs (${this.formatScore(this.defScore(file))}%)`}</div>
+					</div>
+					<Link styleName="file-link" to={blobURL}>
+						<FileIcon />
+					</Link>
+				</div>
+				{this.state.drilldownFile === i && <div styleName="unresolved-tokens">
+					<div styleName="unresolved-idents">
+						<div styleName="unresolved-header">Unresolved idents</div>
+						{file.UnresolvedIdents && file.UnresolvedIdents.map((ident, j) => <div key={j}>
+							<Link to={`${blobURL}#L${ident.Line}`}>{ident.Line}</Link>
+							{` : ${ident.Text}`}
+						</div>)}
+					</div>
+					<div styleName="unresolved-refs">
+						<div styleName="unresolved-header">Unresolved refs</div>
+						{file.UnresolvedRefs && file.UnresolvedRefs.map((ref, j) => <div key={j}>
+							<Link to={`${blobURL}#L${ref.Line}`}>{ref.Line}</Link>
+							{` : ${ref.Text}`}
+						</div>)}
+					</div>
+				</div>}
+			</div>);
+		});
 	}
 
 	render() {
@@ -158,14 +250,17 @@ class CoverageDrilldown extends Container {
 											</Link>
 										}
 										{source.Repo}
+										{this.state.idx === this.props.data.length - 1 &&
+											<div styleName="repo-drilldown-icon" size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
+										}
 									</td>
 									<td styleName="data">{summary ? summary.Idents : "---"}</td>
 									<td styleName="data">
-										{summary ? Math.round(this.refScore(summary) * 100) : "---"}
+										{summary ? this.formatScore(this.refScore(summary)) : "---"}
 										<span styleName={this.deltaStyle(refDelta)}>{refDelta}</span>
 									</td>
 									<td styleName="data">
-										{summary ? Math.round(this.defScore(summary) * 100) : "---"}
+										{summary ? this.formatScore(this.defScore(summary)) : "---"}
 										<span styleName={this.deltaStyle(defDelta)}>{defDelta}</span>
 									</td>
 								</tr>
@@ -173,6 +268,16 @@ class CoverageDrilldown extends Container {
 						})}
 					</tbody>
 				</table>
+				{this.state.drilldown && <Modal onDismiss={() => this._drilldown(null)}>
+					<div styleName="repo-drilldown-modal">
+						<h3>
+							<Link to={urlToRepoRev(this.state.drilldown.Repo, this.state.drilldown.Rev)}>
+								{this.state.drilldown.Repo}@{this.state.drilldown.Rev}
+							</Link>
+						</h3>
+						{this.getRepoDrilldown()}
+					</div>
+				</Modal>}
 			</div>
 		);
 	}
