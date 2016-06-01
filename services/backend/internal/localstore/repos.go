@@ -30,9 +30,10 @@ import (
 var skipFS = false // used by tests
 
 func init() {
-	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(false, "URI")
+	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(true, "ID")
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
+		"CREATE UNIQUE INDEX repo_uri_unique ON repo(uri);",
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
 		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
 		`ALTER TABLE repo ALTER COLUMN vcs SET NOT NULL;`,
@@ -47,6 +48,7 @@ func init() {
 
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
+	ID            int32
 	URI           string
 	Origin        string // DEPRECATED: will be removed in a future commit
 	Owner         string
@@ -70,6 +72,7 @@ type dbRepo struct {
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
+		ID:            r.ID,
 		URI:           r.URI,
 		Owner:         r.Owner,
 		Name:          r.Name,
@@ -103,6 +106,7 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 }
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
+	r.ID = r2.ID
 	r.URI = r2.URI
 	r.Owner = r2.Owner
 	r.Name = r2.Name
@@ -459,9 +463,10 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 	}
 	sort := opt.Sort
 	if sort == "" {
-		sort = "uri"
+		sort = "id"
 	}
 	sortKeyToCol := map[string]string{
+		"id":      "repo.id",
 		"uri":     "repo.uri",
 		"path":    "repo.uri",
 		"name":    "repo.name",
@@ -524,8 +529,8 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	r.fromRepo(newRepo)
 	err := appDBH(ctx).Insert(&r)
 	if isPQErrorUniqueViolation(err) {
-		if c := err.(*pq.Error).Constraint; c != "repo_pkey" {
-			log15.Warn("Expected unique_violation of repo_pkey constraint, but it was something else; did it change?", "constraint", c, "err", err)
+		if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
+			log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
 		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
 	}

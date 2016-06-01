@@ -62,6 +62,9 @@ message RepoConfig {
 
 // Repo represents a source code repository.
 message Repo {
+	// ID is the unique numeric ID for this repository.
+	int32 ID = 18;
+
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	string URI = 1;
