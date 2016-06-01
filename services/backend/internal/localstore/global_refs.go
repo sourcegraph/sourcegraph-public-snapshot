@@ -3,9 +3,11 @@ package localstore
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
 
@@ -16,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -80,7 +83,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return nil, err
 	} else if defKeyID == 0 {
 		// DefKey was not found
-		return &sourcegraph.RefLocationsList{}, nil
+		return &sourcegraph.RefLocationsList{RepoRefs: []*sourcegraph.DefRepoRef{}}, nil
 	}
 
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
@@ -188,6 +191,9 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	observe("locations", start)
 	start = time.Now()
 
+	repoRefs, err = filterVisibleRepos(ctx, repoRefs)
+	observe("access", start)
+
 	select {
 	case err := <-statsDone:
 		if err != nil {
@@ -199,6 +205,48 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		RepoRefs:   repoRefs,
 		TotalRepos: int32(totalRepos),
 	}, nil
+}
+
+// filterVisibleRepos ensures all the defs we return we have access to
+func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef) ([]*sourcegraph.DefRepoRef, error) {
+	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
+	// of GitHub Repos.Get calls in the accesscontrol check below.
+	// TODO: remove this limit once we properly cache GitHub API responses.
+	if len(repoRefs) > 100 {
+		repoRefs = repoRefs[:100]
+	}
+
+	// Filter out repos that the user does not have access to.
+	hasAccess := make([]bool, len(repoRefs))
+	par := parallel.NewRun(30)
+	var mu sync.Mutex
+	for i_, r_ := range repoRefs {
+		i, r := i_, r_
+		par.Do(func() error {
+			// TODO(keegancsmith) once forks are removed from
+			// global_refs, we should just check
+			// accesscontrol.VerifyUserHasReadAccess
+			// https://app.asana.com/0/138665145800110/137848642885286
+			repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: r.Repo})
+			if err == nil && !repo.Fork {
+				mu.Lock()
+				hasAccess[i] = true
+				mu.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
+	}
+
+	filtered := make([]*sourcegraph.DefRepoRef, 0, len(repoRefs))
+	for i, r := range repoRefs {
+		if hasAccess[i] {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered, nil
 }
 
 // getRefStats fetches global ref aggregation stats pagination and display

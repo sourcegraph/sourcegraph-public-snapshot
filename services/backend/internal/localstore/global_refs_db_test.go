@@ -11,9 +11,11 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/mock"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	sgtest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -26,6 +28,15 @@ func TestGlobalRefs(t *testing.T) {
 func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	ctx, mocks, done := testContext()
 	defer done()
+
+	// TODO(keegancsmith) remove once we don't need to speak to the repo
+	// service https://app.asana.com/0/138665145800110/137848642885286
+	mockReposS := &mock.ReposServer{
+		Get_: func(_ context.Context, r *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+			return &sourcegraph.Repo{URI: r.URI}, nil
+		},
+	}
+	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
 
 	testRefs1 := []*graph.Ref{
 		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},              // package ref
@@ -142,14 +153,14 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 					},
 				},
 			},
-			nil,
+			[]*sourcegraph.DefRepoRef{},
 		},
 		// Missing defspec should not return an error
 		"empty": {
 			&sourcegraph.DefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
 			},
-			nil,
+			[]*sourcegraph.DefRepoRef{},
 		},
 	}
 	for tn, test := range testCases {
