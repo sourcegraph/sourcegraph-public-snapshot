@@ -295,10 +295,10 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) error {
+func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
 	// We run this here just to ensure we have a version row to lock (if
 	// missing it does an insert)
-	_, err := g.version(graphDBH(ctx), repo)
+	_, err := g.version(graphDBH(ctx), *op.Repo)
 	if err != nil {
 		return err
 	}
@@ -306,11 +306,12 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 	// Do everything in one transaction, to ensure we don't have
 	// concurrent updates to repo
 	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-		return g.update(ctx, tx, repo)
+		return g.update(ctx, tx, op)
 	})
 }
 
-func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, repo sourcegraph.RepoSpec) error {
+func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *sourcegraph.DefsRefreshIndexOp) error {
+	repo := *op.Repo
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", repo.URI); err != nil {
 		return err
 	}
