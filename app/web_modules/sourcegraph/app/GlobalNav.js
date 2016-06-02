@@ -73,8 +73,9 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<Popover left={true}>
 						{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} styleName="block" className={base.pt2} /> : <div styleName="username">{user.Login}</div>}
 						<Menu>
-							<a href="/careers" role="menu-item">We're hiring</a>
+							<Link to="/about" role="menu-item">About</Link>
 							<Link to="/contact" role="menu-item">Contact</Link>
+							<a href="/careers" role="menu-item">We're hiring</a>
 							<Link to="/security" role="menu-item">Security</Link>
 							<Link to="/-/privacy" role="menu-item">Privacy</Link>
 							<Link to="/-/terms" role="menu-item">Terms</Link>
