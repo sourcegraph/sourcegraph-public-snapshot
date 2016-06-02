@@ -73,8 +73,17 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	if err != nil {
 		return nil, err
 	}
-	for _, r := range results.Results {
+	for _, r := range results.DefResults {
 		populateDefFormatStrings(&r.Def)
+	}
+
+	if !op.Opt.IncludeRepos {
+		return results, nil
+	}
+
+	results.RepoResults, err = store.ReposFromContext(ctx).Search(ctx, op.Query)
+	if err != nil {
+		return nil, err
 	}
 	return results, nil
 }

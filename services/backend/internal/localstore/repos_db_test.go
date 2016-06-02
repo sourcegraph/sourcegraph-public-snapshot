@@ -261,6 +261,52 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 
 }
 
+func TestRepos_Search(t *testing.T) {
+	t.Parallel()
+
+	ctx, _, done := testContext()
+	defer done()
+
+	s := repos{}
+	// Add some repos.
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "sourcegraph/srclib", Owner: "sourcegraph", Name: "srclib"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "sourcegraph/srclib-go", Owner: "sourcegraph", Name: "srclib-go"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "someone/srclib", Owner: "someone", Name: "srclib", Fork: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{"srclib", []string{"sourcegraph/srclib"}},
+		{"srcli", []string{"sourcegraph/srclib", "sourcegraph/srclib-go"}},
+		{"source src", []string{"sourcegraph/srclib", "sourcegraph/srclib-go"}},
+		{"source/src", nil},
+		{"sourcegraph/srclib", []string{"sourcegraph/srclib"}},
+		{"sourcegraph/srcli", []string{"sourcegraph/srclib", "sourcegraph/srclib-go"}},
+		{"source graph srclib", nil},
+	}
+	for _, test := range tests {
+		results, err := s.Search(ctx, test.query)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		repos := make([]*sourcegraph.Repo, 0, len(results))
+		for _, r := range results {
+			repos = append(repos, r.Repo)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
+		}
+	}
+}
+
 func TestRepos_Create(t *testing.T) {
 	t.Parallel()
 	ctx, _, done := testContext()

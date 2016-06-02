@@ -214,10 +214,13 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, gitHubID int) (*sourceg
 	// GitHub is quite easy and (with HTTP caching) performant.
 	ts := pbtypes.NewTimestamp(time.Now())
 	return &sourcegraph.Repo{
+		Owner:        ghrepo.Owner,
 		Name:         ghrepo.Name,
 		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
 		HTTPCloneURL: ghrepo.HTTPCloneURL,
+		Description:  ghrepo.Description,
 		Mirror:       true,
+		Fork:         ghrepo.Fork,
 		CreatedAt:    &ts,
 
 		// KLUDGE: set this to be true to avoid accidentally treating

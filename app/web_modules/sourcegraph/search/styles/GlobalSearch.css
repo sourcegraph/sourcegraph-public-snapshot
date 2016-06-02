@@ -67,6 +67,10 @@
 }
 .search-input input[placeholder] { text-overflow: ellipsis; }
 
+.bold {
+	font-weight: bold;
+}
+
 .result {
 	cursor: pointer;
 	display: block;

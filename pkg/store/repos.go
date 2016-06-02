@@ -19,6 +19,9 @@ type Repos interface {
 	// List repositories.
 	List(context.Context, *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 
+	// Search repositories.
+	Search(context.Context, string) ([]*sourcegraph.RepoSearchResult, error)
+
 	// Create a repository.
 	Create(context.Context, *sourcegraph.Repo) error
 

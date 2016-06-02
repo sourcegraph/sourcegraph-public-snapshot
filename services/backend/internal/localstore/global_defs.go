@@ -116,6 +116,8 @@ type dbGlobalSearchResult struct {
 // globalDefs is a DB-backed implementation of the GlobalDefs store.
 type globalDefs struct{}
 
+var _ store.GlobalDefs = (*globalDefs)(nil)
+
 func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*sourcegraph.SearchResultsList, error) {
 	var args []interface{}
 	arg := func(v interface{}) string {
@@ -190,19 +192,19 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	}
 
 	// Critical permissions check. DO NOT REMOVE.
-	var results []*sourcegraph.SearchResult
+	var results []*sourcegraph.DefSearchResult
 	for _, d := range dbSearchResults {
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalDefs.Search", d.Repo); err != nil {
 			continue
 		}
 		def := fromDBDef(&d.dbGlobalDef)
-		results = append(results, &sourcegraph.SearchResult{
+		results = append(results, &sourcegraph.DefSearchResult{
 			Def:      *def,
 			RefCount: int32(d.RefCount),
 			Score:    float32(d.Score),
 		})
 	}
-	return &sourcegraph.SearchResultsList{Results: results}, nil
+	return &sourcegraph.SearchResultsList{DefResults: results}, nil
 }
 
 func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) error {
