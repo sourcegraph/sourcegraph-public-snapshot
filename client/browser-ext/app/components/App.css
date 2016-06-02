@@ -146,3 +146,18 @@ tr:hover .octicon-chevron-right {
 .sgdef {
 	color: inherit !important;
 }
+
+.def-info {
+}
+.def-info a {
+	display: block;
+	padding: 1.3px 4px;
+	font-size: 0.9em;
+	color: #9f8314;
+}
+.def-info a:hover {
+	color: #333;
+}
+.def-info a:before {
+	content: attr(data-content);
+}

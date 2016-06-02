@@ -14,6 +14,7 @@ function parseKey(key) {
 		repo: getValue(1),
 		rev: getValue(2),
 		path: getValue(3),
+		defPath: getValue(3),
 		query: getValue(4),
 	};
 }
@@ -21,6 +22,12 @@ function parseKey(key) {
 export function getExpiredSrclibDataVersion(data) {
 	return Object.keys(data.timestamps)
 		.filter((key) => data.timestamps[key] && (Date.now() - data.timestamps[key]) > (1000 * 60 * 15)) // expire every 15min
+		.map(parseKey);
+}
+
+export function getExpiredDef(data) {
+	return Object.keys(data.timestamps)
+		.filter((key) => data.timestamps[key] && (Date.now() - data.timestamps[key]) > (1000 * 60 * 24)) // expire every day
 		.map(parseKey);
 }
 
