@@ -33,13 +33,7 @@
 # at src/google/protobuf/descriptor.proto
 regenerate:
 	echo WARNING! THIS RULE IS PROBABLY NOT RIGHT FOR YOUR INSTALLATION
-	cd $(HOME)/src/protobuf/src && \
-	protoc --go_out=. ./google/protobuf/descriptor.proto && \
-	sed -i 's,^package google_protobuf,package descriptor,' google/protobuf/descriptor.pb.go && \
-	cp ./google/protobuf/descriptor.pb.go $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go/descriptor/descriptor.pb.go
-
-restore:
-	cp descriptor.pb.golden descriptor.pb.go
-
-preserve:
-	cp descriptor.pb.go descriptor.pb.golden
+	protoc --go_out=. -I$(HOME)/src/protobuf/src $(HOME)/src/protobuf/src/google/protobuf/descriptor.proto && \
+		sed 's,^package google_protobuf,package descriptor,' google/protobuf/descriptor.pb.go > \
+		$(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go/descriptor/descriptor.pb.go && \
+		rm -f google/protobuf/descriptor.pb.go

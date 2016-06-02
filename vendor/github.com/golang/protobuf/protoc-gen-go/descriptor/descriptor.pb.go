@@ -3,7 +3,7 @@
 // DO NOT EDIT!
 
 /*
-Package google_protobuf is a generated protocol buffer package.
+Package descriptor is a generated protocol buffer package.
 
 It is generated from these files:
 	google/protobuf/descriptor.proto
@@ -31,11 +31,17 @@ It has these top-level messages:
 package descriptor
 
 import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
 import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 type FieldDescriptorProto_Type int32
 
@@ -124,6 +130,7 @@ func (x *FieldDescriptorProto_Type) UnmarshalJSON(data []byte) error {
 	*x = FieldDescriptorProto_Type(value)
 	return nil
 }
+func (FieldDescriptorProto_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{3, 0} }
 
 type FieldDescriptorProto_Label int32
 
@@ -160,6 +167,9 @@ func (x *FieldDescriptorProto_Label) UnmarshalJSON(data []byte) error {
 	}
 	*x = FieldDescriptorProto_Label(value)
 	return nil
+}
+func (FieldDescriptorProto_Label) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{3, 1}
 }
 
 // Generated classes can be optimized for speed or code size.
@@ -199,6 +209,7 @@ func (x *FileOptions_OptimizeMode) UnmarshalJSON(data []byte) error {
 	*x = FileOptions_OptimizeMode(value)
 	return nil
 }
+func (FileOptions_OptimizeMode) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{9, 0} }
 
 type FieldOptions_CType int32
 
@@ -236,6 +247,47 @@ func (x *FieldOptions_CType) UnmarshalJSON(data []byte) error {
 	*x = FieldOptions_CType(value)
 	return nil
 }
+func (FieldOptions_CType) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{11, 0} }
+
+type FieldOptions_JSType int32
+
+const (
+	// Use the default type.
+	FieldOptions_JS_NORMAL FieldOptions_JSType = 0
+	// Use JavaScript strings.
+	FieldOptions_JS_STRING FieldOptions_JSType = 1
+	// Use JavaScript numbers.
+	FieldOptions_JS_NUMBER FieldOptions_JSType = 2
+)
+
+var FieldOptions_JSType_name = map[int32]string{
+	0: "JS_NORMAL",
+	1: "JS_STRING",
+	2: "JS_NUMBER",
+}
+var FieldOptions_JSType_value = map[string]int32{
+	"JS_NORMAL": 0,
+	"JS_STRING": 1,
+	"JS_NUMBER": 2,
+}
+
+func (x FieldOptions_JSType) Enum() *FieldOptions_JSType {
+	p := new(FieldOptions_JSType)
+	*p = x
+	return p
+}
+func (x FieldOptions_JSType) String() string {
+	return proto.EnumName(FieldOptions_JSType_name, int32(x))
+}
+func (x *FieldOptions_JSType) UnmarshalJSON(data []byte) error {
+	value, err := proto.UnmarshalJSONEnum(FieldOptions_JSType_value, data, "FieldOptions_JSType")
+	if err != nil {
+		return err
+	}
+	*x = FieldOptions_JSType(value)
+	return nil
+}
+func (FieldOptions_JSType) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{11, 1} }
 
 // The protocol compiler can output a FileDescriptorSet containing the .proto
 // files it parses.
@@ -244,9 +296,10 @@ type FileDescriptorSet struct {
 	XXX_unrecognized []byte                 `json:"-"`
 }
 
-func (m *FileDescriptorSet) Reset()         { *m = FileDescriptorSet{} }
-func (m *FileDescriptorSet) String() string { return proto.CompactTextString(m) }
-func (*FileDescriptorSet) ProtoMessage()    {}
+func (m *FileDescriptorSet) Reset()                    { *m = FileDescriptorSet{} }
+func (m *FileDescriptorSet) String() string            { return proto.CompactTextString(m) }
+func (*FileDescriptorSet) ProtoMessage()               {}
+func (*FileDescriptorSet) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 func (m *FileDescriptorSet) GetFile() []*FileDescriptorProto {
 	if m != nil {
@@ -262,13 +315,13 @@ type FileDescriptorProto struct {
 	// Names of files imported by this file.
 	Dependency []string `protobuf:"bytes,3,rep,name=dependency" json:"dependency,omitempty"`
 	// Indexes of the public imported files in the dependency list above.
-	PublicDependency []int32 `protobuf:"varint,10,rep,name=public_dependency" json:"public_dependency,omitempty"`
+	PublicDependency []int32 `protobuf:"varint,10,rep,name=public_dependency,json=publicDependency" json:"public_dependency,omitempty"`
 	// Indexes of the weak imported files in the dependency list.
 	// For Google-internal migration only. Do not use.
-	WeakDependency []int32 `protobuf:"varint,11,rep,name=weak_dependency" json:"weak_dependency,omitempty"`
+	WeakDependency []int32 `protobuf:"varint,11,rep,name=weak_dependency,json=weakDependency" json:"weak_dependency,omitempty"`
 	// All top-level definitions in this file.
-	MessageType []*DescriptorProto        `protobuf:"bytes,4,rep,name=message_type" json:"message_type,omitempty"`
-	EnumType    []*EnumDescriptorProto    `protobuf:"bytes,5,rep,name=enum_type" json:"enum_type,omitempty"`
+	MessageType []*DescriptorProto        `protobuf:"bytes,4,rep,name=message_type,json=messageType" json:"message_type,omitempty"`
+	EnumType    []*EnumDescriptorProto    `protobuf:"bytes,5,rep,name=enum_type,json=enumType" json:"enum_type,omitempty"`
 	Service     []*ServiceDescriptorProto `protobuf:"bytes,6,rep,name=service" json:"service,omitempty"`
 	Extension   []*FieldDescriptorProto   `protobuf:"bytes,7,rep,name=extension" json:"extension,omitempty"`
 	Options     *FileOptions              `protobuf:"bytes,8,opt,name=options" json:"options,omitempty"`
@@ -276,16 +329,17 @@ type FileDescriptorProto struct {
 	// You may safely remove this entire field without harming runtime
 	// functionality of the descriptors -- the information is needed only by
 	// development tools.
-	SourceCodeInfo *SourceCodeInfo `protobuf:"bytes,9,opt,name=source_code_info" json:"source_code_info,omitempty"`
+	SourceCodeInfo *SourceCodeInfo `protobuf:"bytes,9,opt,name=source_code_info,json=sourceCodeInfo" json:"source_code_info,omitempty"`
 	// The syntax of the proto file.
 	// The supported values are "proto2" and "proto3".
 	Syntax           *string `protobuf:"bytes,12,opt,name=syntax" json:"syntax,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (m *FileDescriptorProto) Reset()         { *m = FileDescriptorProto{} }
-func (m *FileDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*FileDescriptorProto) ProtoMessage()    {}
+func (m *FileDescriptorProto) Reset()                    { *m = FileDescriptorProto{} }
+func (m *FileDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*FileDescriptorProto) ProtoMessage()               {}
+func (*FileDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *FileDescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -373,20 +427,25 @@ func (m *FileDescriptorProto) GetSyntax() string {
 
 // Describes a message type.
 type DescriptorProto struct {
-	Name             *string                           `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Field            []*FieldDescriptorProto           `protobuf:"bytes,2,rep,name=field" json:"field,omitempty"`
-	Extension        []*FieldDescriptorProto           `protobuf:"bytes,6,rep,name=extension" json:"extension,omitempty"`
-	NestedType       []*DescriptorProto                `protobuf:"bytes,3,rep,name=nested_type" json:"nested_type,omitempty"`
-	EnumType         []*EnumDescriptorProto            `protobuf:"bytes,4,rep,name=enum_type" json:"enum_type,omitempty"`
-	ExtensionRange   []*DescriptorProto_ExtensionRange `protobuf:"bytes,5,rep,name=extension_range" json:"extension_range,omitempty"`
-	OneofDecl        []*OneofDescriptorProto           `protobuf:"bytes,8,rep,name=oneof_decl" json:"oneof_decl,omitempty"`
-	Options          *MessageOptions                   `protobuf:"bytes,7,opt,name=options" json:"options,omitempty"`
-	XXX_unrecognized []byte                            `json:"-"`
+	Name           *string                           `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Field          []*FieldDescriptorProto           `protobuf:"bytes,2,rep,name=field" json:"field,omitempty"`
+	Extension      []*FieldDescriptorProto           `protobuf:"bytes,6,rep,name=extension" json:"extension,omitempty"`
+	NestedType     []*DescriptorProto                `protobuf:"bytes,3,rep,name=nested_type,json=nestedType" json:"nested_type,omitempty"`
+	EnumType       []*EnumDescriptorProto            `protobuf:"bytes,4,rep,name=enum_type,json=enumType" json:"enum_type,omitempty"`
+	ExtensionRange []*DescriptorProto_ExtensionRange `protobuf:"bytes,5,rep,name=extension_range,json=extensionRange" json:"extension_range,omitempty"`
+	OneofDecl      []*OneofDescriptorProto           `protobuf:"bytes,8,rep,name=oneof_decl,json=oneofDecl" json:"oneof_decl,omitempty"`
+	Options        *MessageOptions                   `protobuf:"bytes,7,opt,name=options" json:"options,omitempty"`
+	ReservedRange  []*DescriptorProto_ReservedRange  `protobuf:"bytes,9,rep,name=reserved_range,json=reservedRange" json:"reserved_range,omitempty"`
+	// Reserved field names, which may not be used by fields in the same message.
+	// A given name may only be reserved once.
+	ReservedName     []string `protobuf:"bytes,10,rep,name=reserved_name,json=reservedName" json:"reserved_name,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *DescriptorProto) Reset()         { *m = DescriptorProto{} }
-func (m *DescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*DescriptorProto) ProtoMessage()    {}
+func (m *DescriptorProto) Reset()                    { *m = DescriptorProto{} }
+func (m *DescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*DescriptorProto) ProtoMessage()               {}
+func (*DescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 func (m *DescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -444,6 +503,20 @@ func (m *DescriptorProto) GetOptions() *MessageOptions {
 	return nil
 }
 
+func (m *DescriptorProto) GetReservedRange() []*DescriptorProto_ReservedRange {
+	if m != nil {
+		return m.ReservedRange
+	}
+	return nil
+}
+
+func (m *DescriptorProto) GetReservedName() []string {
+	if m != nil {
+		return m.ReservedName
+	}
+	return nil
+}
+
 type DescriptorProto_ExtensionRange struct {
 	Start            *int32 `protobuf:"varint,1,opt,name=start" json:"start,omitempty"`
 	End              *int32 `protobuf:"varint,2,opt,name=end" json:"end,omitempty"`
@@ -453,6 +526,9 @@ type DescriptorProto_ExtensionRange struct {
 func (m *DescriptorProto_ExtensionRange) Reset()         { *m = DescriptorProto_ExtensionRange{} }
 func (m *DescriptorProto_ExtensionRange) String() string { return proto.CompactTextString(m) }
 func (*DescriptorProto_ExtensionRange) ProtoMessage()    {}
+func (*DescriptorProto_ExtensionRange) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{2, 0}
+}
 
 func (m *DescriptorProto_ExtensionRange) GetStart() int32 {
 	if m != nil && m.Start != nil {
@@ -462,6 +538,36 @@ func (m *DescriptorProto_ExtensionRange) GetStart() int32 {
 }
 
 func (m *DescriptorProto_ExtensionRange) GetEnd() int32 {
+	if m != nil && m.End != nil {
+		return *m.End
+	}
+	return 0
+}
+
+// Range of reserved tag numbers. Reserved tag numbers may not be used by
+// fields or extension ranges in the same message. Reserved ranges may
+// not overlap.
+type DescriptorProto_ReservedRange struct {
+	Start            *int32 `protobuf:"varint,1,opt,name=start" json:"start,omitempty"`
+	End              *int32 `protobuf:"varint,2,opt,name=end" json:"end,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *DescriptorProto_ReservedRange) Reset()         { *m = DescriptorProto_ReservedRange{} }
+func (m *DescriptorProto_ReservedRange) String() string { return proto.CompactTextString(m) }
+func (*DescriptorProto_ReservedRange) ProtoMessage()    {}
+func (*DescriptorProto_ReservedRange) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{2, 1}
+}
+
+func (m *DescriptorProto_ReservedRange) GetStart() int32 {
+	if m != nil && m.Start != nil {
+		return *m.Start
+	}
+	return 0
+}
+
+func (m *DescriptorProto_ReservedRange) GetEnd() int32 {
 	if m != nil && m.End != nil {
 		return *m.End
 	}
@@ -481,7 +587,7 @@ type FieldDescriptorProto struct {
 	// rules are used to find the type (i.e. first the nested types within this
 	// message are searched, then within the parent, on up to the root
 	// namespace).
-	TypeName *string `protobuf:"bytes,6,opt,name=type_name" json:"type_name,omitempty"`
+	TypeName *string `protobuf:"bytes,6,opt,name=type_name,json=typeName" json:"type_name,omitempty"`
 	// For extensions, this is the name of the type being extended.  It is
 	// resolved in the same manner as type_name.
 	Extendee *string `protobuf:"bytes,2,opt,name=extendee" json:"extendee,omitempty"`
@@ -490,19 +596,23 @@ type FieldDescriptorProto struct {
 	// For strings, contains the default text contents (not escaped in any way).
 	// For bytes, contains the C escaped value.  All bytes >= 128 are escaped.
 	// TODO(kenton):  Base-64 encode?
-	DefaultValue *string `protobuf:"bytes,7,opt,name=default_value" json:"default_value,omitempty"`
+	DefaultValue *string `protobuf:"bytes,7,opt,name=default_value,json=defaultValue" json:"default_value,omitempty"`
 	// If set, gives the index of a oneof in the containing type's oneof_decl
-	// list.  This field is a member of that oneof.  Extensions of a oneof should
-	// not set this since the oneof to which they belong will be inferred based
-	// on the extension range containing the extension's field number.
-	OneofIndex       *int32        `protobuf:"varint,9,opt,name=oneof_index" json:"oneof_index,omitempty"`
+	// list.  This field is a member of that oneof.
+	OneofIndex *int32 `protobuf:"varint,9,opt,name=oneof_index,json=oneofIndex" json:"oneof_index,omitempty"`
+	// JSON name of this field. The value is set by protocol compiler. If the
+	// user has set a "json_name" option on this field, that option's value
+	// will be used. Otherwise, it's deduced from the field's name by converting
+	// it to camelCase.
+	JsonName         *string       `protobuf:"bytes,10,opt,name=json_name,json=jsonName" json:"json_name,omitempty"`
 	Options          *FieldOptions `protobuf:"bytes,8,opt,name=options" json:"options,omitempty"`
 	XXX_unrecognized []byte        `json:"-"`
 }
 
-func (m *FieldDescriptorProto) Reset()         { *m = FieldDescriptorProto{} }
-func (m *FieldDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*FieldDescriptorProto) ProtoMessage()    {}
+func (m *FieldDescriptorProto) Reset()                    { *m = FieldDescriptorProto{} }
+func (m *FieldDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*FieldDescriptorProto) ProtoMessage()               {}
+func (*FieldDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 func (m *FieldDescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -560,6 +670,13 @@ func (m *FieldDescriptorProto) GetOneofIndex() int32 {
 	return 0
 }
 
+func (m *FieldDescriptorProto) GetJsonName() string {
+	if m != nil && m.JsonName != nil {
+		return *m.JsonName
+	}
+	return ""
+}
+
 func (m *FieldDescriptorProto) GetOptions() *FieldOptions {
 	if m != nil {
 		return m.Options
@@ -573,9 +690,10 @@ type OneofDescriptorProto struct {
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (m *OneofDescriptorProto) Reset()         { *m = OneofDescriptorProto{} }
-func (m *OneofDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*OneofDescriptorProto) ProtoMessage()    {}
+func (m *OneofDescriptorProto) Reset()                    { *m = OneofDescriptorProto{} }
+func (m *OneofDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*OneofDescriptorProto) ProtoMessage()               {}
+func (*OneofDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
 func (m *OneofDescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -592,9 +710,10 @@ type EnumDescriptorProto struct {
 	XXX_unrecognized []byte                      `json:"-"`
 }
 
-func (m *EnumDescriptorProto) Reset()         { *m = EnumDescriptorProto{} }
-func (m *EnumDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*EnumDescriptorProto) ProtoMessage()    {}
+func (m *EnumDescriptorProto) Reset()                    { *m = EnumDescriptorProto{} }
+func (m *EnumDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*EnumDescriptorProto) ProtoMessage()               {}
+func (*EnumDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
 func (m *EnumDescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -625,9 +744,10 @@ type EnumValueDescriptorProto struct {
 	XXX_unrecognized []byte            `json:"-"`
 }
 
-func (m *EnumValueDescriptorProto) Reset()         { *m = EnumValueDescriptorProto{} }
-func (m *EnumValueDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*EnumValueDescriptorProto) ProtoMessage()    {}
+func (m *EnumValueDescriptorProto) Reset()                    { *m = EnumValueDescriptorProto{} }
+func (m *EnumValueDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*EnumValueDescriptorProto) ProtoMessage()               {}
+func (*EnumValueDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
 
 func (m *EnumValueDescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -658,9 +778,10 @@ type ServiceDescriptorProto struct {
 	XXX_unrecognized []byte                   `json:"-"`
 }
 
-func (m *ServiceDescriptorProto) Reset()         { *m = ServiceDescriptorProto{} }
-func (m *ServiceDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*ServiceDescriptorProto) ProtoMessage()    {}
+func (m *ServiceDescriptorProto) Reset()                    { *m = ServiceDescriptorProto{} }
+func (m *ServiceDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*ServiceDescriptorProto) ProtoMessage()               {}
+func (*ServiceDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
 
 func (m *ServiceDescriptorProto) GetName() string {
 	if m != nil && m.Name != nil {
@@ -688,19 +809,20 @@ type MethodDescriptorProto struct {
 	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Input and output type names.  These are resolved in the same way as
 	// FieldDescriptorProto.type_name, but must refer to a message type.
-	InputType  *string        `protobuf:"bytes,2,opt,name=input_type" json:"input_type,omitempty"`
-	OutputType *string        `protobuf:"bytes,3,opt,name=output_type" json:"output_type,omitempty"`
+	InputType  *string        `protobuf:"bytes,2,opt,name=input_type,json=inputType" json:"input_type,omitempty"`
+	OutputType *string        `protobuf:"bytes,3,opt,name=output_type,json=outputType" json:"output_type,omitempty"`
 	Options    *MethodOptions `protobuf:"bytes,4,opt,name=options" json:"options,omitempty"`
 	// Identifies if client streams multiple client messages
-	ClientStreaming *bool `protobuf:"varint,5,opt,name=client_streaming,def=0" json:"client_streaming,omitempty"`
+	ClientStreaming *bool `protobuf:"varint,5,opt,name=client_streaming,json=clientStreaming,def=0" json:"client_streaming,omitempty"`
 	// Identifies if server streams multiple server messages
-	ServerStreaming  *bool  `protobuf:"varint,6,opt,name=server_streaming,def=0" json:"server_streaming,omitempty"`
+	ServerStreaming  *bool  `protobuf:"varint,6,opt,name=server_streaming,json=serverStreaming,def=0" json:"server_streaming,omitempty"`
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *MethodDescriptorProto) Reset()         { *m = MethodDescriptorProto{} }
-func (m *MethodDescriptorProto) String() string { return proto.CompactTextString(m) }
-func (*MethodDescriptorProto) ProtoMessage()    {}
+func (m *MethodDescriptorProto) Reset()                    { *m = MethodDescriptorProto{} }
+func (m *MethodDescriptorProto) String() string            { return proto.CompactTextString(m) }
+func (*MethodDescriptorProto) ProtoMessage()               {}
+func (*MethodDescriptorProto) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
 
 const Default_MethodDescriptorProto_ClientStreaming bool = false
 const Default_MethodDescriptorProto_ServerStreaming bool = false
@@ -752,23 +874,25 @@ type FileOptions struct {
 	// placed.  By default, the proto package is used, but this is often
 	// inappropriate because proto packages do not normally start with backwards
 	// domain names.
-	JavaPackage *string `protobuf:"bytes,1,opt,name=java_package" json:"java_package,omitempty"`
+	JavaPackage *string `protobuf:"bytes,1,opt,name=java_package,json=javaPackage" json:"java_package,omitempty"`
 	// If set, all the classes from the .proto file are wrapped in a single
 	// outer class with the given name.  This applies to both Proto1
 	// (equivalent to the old "--one_java_file" option) and Proto2 (where
 	// a .proto always translates to a single class, but you may want to
 	// explicitly choose the class name).
-	JavaOuterClassname *string `protobuf:"bytes,8,opt,name=java_outer_classname" json:"java_outer_classname,omitempty"`
+	JavaOuterClassname *string `protobuf:"bytes,8,opt,name=java_outer_classname,json=javaOuterClassname" json:"java_outer_classname,omitempty"`
 	// If set true, then the Java code generator will generate a separate .java
 	// file for each top-level message, enum, and service defined in the .proto
 	// file.  Thus, these types will *not* be nested inside the outer class
 	// named by java_outer_classname.  However, the outer class will still be
 	// generated to contain the file's getDescriptor() method as well as any
 	// top-level extensions defined in the file.
-	JavaMultipleFiles *bool `protobuf:"varint,10,opt,name=java_multiple_files,def=0" json:"java_multiple_files,omitempty"`
+	JavaMultipleFiles *bool `protobuf:"varint,10,opt,name=java_multiple_files,json=javaMultipleFiles,def=0" json:"java_multiple_files,omitempty"`
 	// If set true, then the Java code generator will generate equals() and
 	// hashCode() methods for all messages defined in the .proto file.
-	// - In the full runtime, this is purely a speed optimization, as the
+	// This increases generated code size, potentially substantially for large
+	// protos, which may harm a memory-constrained application.
+	// - In the full runtime this is a speed optimization, as the
 	// AbstractMessage base class includes reflection-based implementations of
 	// these methods.
 	// - In the lite runtime, setting this option changes the semantics of
@@ -776,21 +900,21 @@ type FileOptions struct {
 	// the generated methods compute their results based on field values rather
 	// than object identity. (Implementations should not assume that hashcodes
 	// will be consistent across runtimes or versions of the protocol compiler.)
-	JavaGenerateEqualsAndHash *bool `protobuf:"varint,20,opt,name=java_generate_equals_and_hash,def=0" json:"java_generate_equals_and_hash,omitempty"`
+	JavaGenerateEqualsAndHash *bool `protobuf:"varint,20,opt,name=java_generate_equals_and_hash,json=javaGenerateEqualsAndHash,def=0" json:"java_generate_equals_and_hash,omitempty"`
 	// If set true, then the Java2 code generator will generate code that
 	// throws an exception whenever an attempt is made to assign a non-UTF-8
 	// byte sequence to a string field.
 	// Message reflection will do the same.
 	// However, an extension field still accepts non-UTF-8 byte sequences.
 	// This option has no effect on when used with the lite runtime.
-	JavaStringCheckUtf8 *bool                     `protobuf:"varint,27,opt,name=java_string_check_utf8,def=0" json:"java_string_check_utf8,omitempty"`
-	OptimizeFor         *FileOptions_OptimizeMode `protobuf:"varint,9,opt,name=optimize_for,enum=google.protobuf.FileOptions_OptimizeMode,def=1" json:"optimize_for,omitempty"`
+	JavaStringCheckUtf8 *bool                     `protobuf:"varint,27,opt,name=java_string_check_utf8,json=javaStringCheckUtf8,def=0" json:"java_string_check_utf8,omitempty"`
+	OptimizeFor         *FileOptions_OptimizeMode `protobuf:"varint,9,opt,name=optimize_for,json=optimizeFor,enum=google.protobuf.FileOptions_OptimizeMode,def=1" json:"optimize_for,omitempty"`
 	// Sets the Go package where structs generated from this .proto will be
 	// placed. If omitted, the Go package will be derived from the following:
 	//   - The basename of the package import path, if provided.
 	//   - Otherwise, the package statement in the .proto file, if present.
 	//   - Otherwise, the basename of the .proto file, without extension.
-	GoPackage *string `protobuf:"bytes,11,opt,name=go_package" json:"go_package,omitempty"`
+	GoPackage *string `protobuf:"bytes,11,opt,name=go_package,json=goPackage" json:"go_package,omitempty"`
 	// Should generic services be generated in each language?  "Generic" services
 	// are not specific to any particular RPC system.  They are generated by the
 	// main code generators in each language (without additional plugins).
@@ -801,9 +925,9 @@ type FileOptions struct {
 	// that generate code specific to your particular RPC system.  Therefore,
 	// these default to false.  Old code which depends on generic services should
 	// explicitly set them to true.
-	CcGenericServices   *bool `protobuf:"varint,16,opt,name=cc_generic_services,def=0" json:"cc_generic_services,omitempty"`
-	JavaGenericServices *bool `protobuf:"varint,17,opt,name=java_generic_services,def=0" json:"java_generic_services,omitempty"`
-	PyGenericServices   *bool `protobuf:"varint,18,opt,name=py_generic_services,def=0" json:"py_generic_services,omitempty"`
+	CcGenericServices   *bool `protobuf:"varint,16,opt,name=cc_generic_services,json=ccGenericServices,def=0" json:"cc_generic_services,omitempty"`
+	JavaGenericServices *bool `protobuf:"varint,17,opt,name=java_generic_services,json=javaGenericServices,def=0" json:"java_generic_services,omitempty"`
+	PyGenericServices   *bool `protobuf:"varint,18,opt,name=py_generic_services,json=pyGenericServices,def=0" json:"py_generic_services,omitempty"`
 	// Is this file deprecated?
 	// Depending on the target platform, this can emit Deprecated annotations
 	// for everything in the file, or it will be completely ignored; in the very
@@ -811,16 +935,25 @@ type FileOptions struct {
 	Deprecated *bool `protobuf:"varint,23,opt,name=deprecated,def=0" json:"deprecated,omitempty"`
 	// Enables the use of arenas for the proto messages in this file. This applies
 	// only to generated classes for C++.
-	CcEnableArenas *bool `protobuf:"varint,31,opt,name=cc_enable_arenas,def=0" json:"cc_enable_arenas,omitempty"`
+	CcEnableArenas *bool `protobuf:"varint,31,opt,name=cc_enable_arenas,json=ccEnableArenas,def=0" json:"cc_enable_arenas,omitempty"`
+	// Sets the objective c class prefix which is prepended to all objective c
+	// generated classes from this .proto. There is no default.
+	ObjcClassPrefix *string `protobuf:"bytes,36,opt,name=objc_class_prefix,json=objcClassPrefix" json:"objc_class_prefix,omitempty"`
+	// Namespace for generated classes; defaults to the package.
+	CsharpNamespace *string `protobuf:"bytes,37,opt,name=csharp_namespace,json=csharpNamespace" json:"csharp_namespace,omitempty"`
+	// Whether the nano proto compiler should generate in the deprecated non-nano
+	// suffixed package.
+	JavananoUseDeprecatedPackage *bool `protobuf:"varint,38,opt,name=javanano_use_deprecated_package,json=javananoUseDeprecatedPackage" json:"javanano_use_deprecated_package,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *FileOptions) Reset()         { *m = FileOptions{} }
-func (m *FileOptions) String() string { return proto.CompactTextString(m) }
-func (*FileOptions) ProtoMessage()    {}
+func (m *FileOptions) Reset()                    { *m = FileOptions{} }
+func (m *FileOptions) String() string            { return proto.CompactTextString(m) }
+func (*FileOptions) ProtoMessage()               {}
+func (*FileOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
 
 var extRange_FileOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -930,6 +1063,27 @@ func (m *FileOptions) GetCcEnableArenas() bool {
 	return Default_FileOptions_CcEnableArenas
 }
 
+func (m *FileOptions) GetObjcClassPrefix() string {
+	if m != nil && m.ObjcClassPrefix != nil {
+		return *m.ObjcClassPrefix
+	}
+	return ""
+}
+
+func (m *FileOptions) GetCsharpNamespace() string {
+	if m != nil && m.CsharpNamespace != nil {
+		return *m.CsharpNamespace
+	}
+	return ""
+}
+
+func (m *FileOptions) GetJavananoUseDeprecatedPackage() bool {
+	if m != nil && m.JavananoUseDeprecatedPackage != nil {
+		return *m.JavananoUseDeprecatedPackage
+	}
+	return false
+}
+
 func (m *FileOptions) GetUninterpretedOption() []*UninterpretedOption {
 	if m != nil {
 		return m.UninterpretedOption
@@ -956,11 +1110,11 @@ type MessageOptions struct {
 	//
 	// Because this is an option, the above two restrictions are not enforced by
 	// the protocol compiler.
-	MessageSetWireFormat *bool `protobuf:"varint,1,opt,name=message_set_wire_format,def=0" json:"message_set_wire_format,omitempty"`
+	MessageSetWireFormat *bool `protobuf:"varint,1,opt,name=message_set_wire_format,json=messageSetWireFormat,def=0" json:"message_set_wire_format,omitempty"`
 	// Disables the generation of the standard "descriptor()" accessor, which can
 	// conflict with a field of the same name.  This is meant to make migration
 	// from proto1 easier; new code should avoid fields named "descriptor".
-	NoStandardDescriptorAccessor *bool `protobuf:"varint,2,opt,name=no_standard_descriptor_accessor,def=0" json:"no_standard_descriptor_accessor,omitempty"`
+	NoStandardDescriptorAccessor *bool `protobuf:"varint,2,opt,name=no_standard_descriptor_accessor,json=noStandardDescriptorAccessor,def=0" json:"no_standard_descriptor_accessor,omitempty"`
 	// Is this message deprecated?
 	// Depending on the target platform, this can emit Deprecated annotations
 	// for the message, or it will be completely ignored; in the very least,
@@ -987,16 +1141,17 @@ type MessageOptions struct {
 	// NOTE: Do not set the option in .proto files. Always use the maps syntax
 	// instead. The option should only be implicitly set by the proto compiler
 	// parser.
-	MapEntry *bool `protobuf:"varint,7,opt,name=map_entry" json:"map_entry,omitempty"`
+	MapEntry *bool `protobuf:"varint,7,opt,name=map_entry,json=mapEntry" json:"map_entry,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *MessageOptions) Reset()         { *m = MessageOptions{} }
-func (m *MessageOptions) String() string { return proto.CompactTextString(m) }
-func (*MessageOptions) ProtoMessage()    {}
+func (m *MessageOptions) Reset()                    { *m = MessageOptions{} }
+func (m *MessageOptions) String() string            { return proto.CompactTextString(m) }
+func (*MessageOptions) ProtoMessage()               {}
+func (*MessageOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
 
 var extRange_MessageOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -1060,8 +1215,19 @@ type FieldOptions struct {
 	// The packed option can be enabled for repeated primitive fields to enable
 	// a more efficient representation on the wire. Rather than repeatedly
 	// writing the tag and type for each element, the entire array is encoded as
-	// a single length-delimited blob.
+	// a single length-delimited blob. In proto3, only explicit setting it to
+	// false will avoid using packed encoding.
 	Packed *bool `protobuf:"varint,2,opt,name=packed" json:"packed,omitempty"`
+	// The jstype option determines the JavaScript type used for values of the
+	// field.  The option is permitted only for 64 bit integral and fixed types
+	// (int64, uint64, sint64, fixed64, sfixed64).  By default these types are
+	// represented as JavaScript strings.  This avoids loss of precision that can
+	// happen when a large value is converted to a floating point JavaScript
+	// numbers.  Specifying JS_NUMBER for the jstype causes the generated
+	// JavaScript code to use the JavaScript "number" type instead of strings.
+	// This option is an enum to permit additional types to be added,
+	// e.g. goog.math.Integer.
+	Jstype *FieldOptions_JSType `protobuf:"varint,6,opt,name=jstype,enum=google.protobuf.FieldOptions_JSType,def=0" json:"jstype,omitempty"`
 	// Should this field be parsed lazily?  Lazy applies only to message-type
 	// fields.  It means that when the outer message is initially parsed, the
 	// inner message's contents will not be parsed but instead stored in encoded
@@ -1099,14 +1265,15 @@ type FieldOptions struct {
 	// For Google-internal migration only. Do not use.
 	Weak *bool `protobuf:"varint,10,opt,name=weak,def=0" json:"weak,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *FieldOptions) Reset()         { *m = FieldOptions{} }
-func (m *FieldOptions) String() string { return proto.CompactTextString(m) }
-func (*FieldOptions) ProtoMessage()    {}
+func (m *FieldOptions) Reset()                    { *m = FieldOptions{} }
+func (m *FieldOptions) String() string            { return proto.CompactTextString(m) }
+func (*FieldOptions) ProtoMessage()               {}
+func (*FieldOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
 
 var extRange_FieldOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -1123,6 +1290,7 @@ func (m *FieldOptions) ExtensionMap() map[int32]proto.Extension {
 }
 
 const Default_FieldOptions_Ctype FieldOptions_CType = FieldOptions_STRING
+const Default_FieldOptions_Jstype FieldOptions_JSType = FieldOptions_JS_NORMAL
 const Default_FieldOptions_Lazy bool = false
 const Default_FieldOptions_Deprecated bool = false
 const Default_FieldOptions_Weak bool = false
@@ -1139,6 +1307,13 @@ func (m *FieldOptions) GetPacked() bool {
 		return *m.Packed
 	}
 	return false
+}
+
+func (m *FieldOptions) GetJstype() FieldOptions_JSType {
+	if m != nil && m.Jstype != nil {
+		return *m.Jstype
+	}
+	return Default_FieldOptions_Jstype
 }
 
 func (m *FieldOptions) GetLazy() bool {
@@ -1172,21 +1347,22 @@ func (m *FieldOptions) GetUninterpretedOption() []*UninterpretedOption {
 type EnumOptions struct {
 	// Set this option to true to allow mapping different tag names to the same
 	// value.
-	AllowAlias *bool `protobuf:"varint,2,opt,name=allow_alias" json:"allow_alias,omitempty"`
+	AllowAlias *bool `protobuf:"varint,2,opt,name=allow_alias,json=allowAlias" json:"allow_alias,omitempty"`
 	// Is this enum deprecated?
 	// Depending on the target platform, this can emit Deprecated annotations
 	// for the enum, or it will be completely ignored; in the very least, this
 	// is a formalization for deprecating enums.
 	Deprecated *bool `protobuf:"varint,3,opt,name=deprecated,def=0" json:"deprecated,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *EnumOptions) Reset()         { *m = EnumOptions{} }
-func (m *EnumOptions) String() string { return proto.CompactTextString(m) }
-func (*EnumOptions) ProtoMessage()    {}
+func (m *EnumOptions) Reset()                    { *m = EnumOptions{} }
+func (m *EnumOptions) String() string            { return proto.CompactTextString(m) }
+func (*EnumOptions) ProtoMessage()               {}
+func (*EnumOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
 
 var extRange_EnumOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -1232,14 +1408,15 @@ type EnumValueOptions struct {
 	// this is a formalization for deprecating enum values.
 	Deprecated *bool `protobuf:"varint,1,opt,name=deprecated,def=0" json:"deprecated,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *EnumValueOptions) Reset()         { *m = EnumValueOptions{} }
-func (m *EnumValueOptions) String() string { return proto.CompactTextString(m) }
-func (*EnumValueOptions) ProtoMessage()    {}
+func (m *EnumValueOptions) Reset()                    { *m = EnumValueOptions{} }
+func (m *EnumValueOptions) String() string            { return proto.CompactTextString(m) }
+func (*EnumValueOptions) ProtoMessage()               {}
+func (*EnumValueOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
 
 var extRange_EnumValueOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -1278,14 +1455,15 @@ type ServiceOptions struct {
 	// this is a formalization for deprecating services.
 	Deprecated *bool `protobuf:"varint,33,opt,name=deprecated,def=0" json:"deprecated,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *ServiceOptions) Reset()         { *m = ServiceOptions{} }
-func (m *ServiceOptions) String() string { return proto.CompactTextString(m) }
-func (*ServiceOptions) ProtoMessage()    {}
+func (m *ServiceOptions) Reset()                    { *m = ServiceOptions{} }
+func (m *ServiceOptions) String() string            { return proto.CompactTextString(m) }
+func (*ServiceOptions) ProtoMessage()               {}
+func (*ServiceOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
 
 var extRange_ServiceOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -1324,14 +1502,15 @@ type MethodOptions struct {
 	// this is a formalization for deprecating methods.
 	Deprecated *bool `protobuf:"varint,33,opt,name=deprecated,def=0" json:"deprecated,omitempty"`
 	// The parser stores options it doesn't recognize here. See above.
-	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option" json:"uninterpreted_option,omitempty"`
+	UninterpretedOption []*UninterpretedOption    `protobuf:"bytes,999,rep,name=uninterpreted_option,json=uninterpretedOption" json:"uninterpreted_option,omitempty"`
 	XXX_extensions      map[int32]proto.Extension `json:"-"`
 	XXX_unrecognized    []byte                    `json:"-"`
 }
 
-func (m *MethodOptions) Reset()         { *m = MethodOptions{} }
-func (m *MethodOptions) String() string { return proto.CompactTextString(m) }
-func (*MethodOptions) ProtoMessage()    {}
+func (m *MethodOptions) Reset()                    { *m = MethodOptions{} }
+func (m *MethodOptions) String() string            { return proto.CompactTextString(m) }
+func (*MethodOptions) ProtoMessage()               {}
+func (*MethodOptions) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
 
 var extRange_MethodOptions = []proto.ExtensionRange{
 	{1000, 536870911},
@@ -1373,18 +1552,19 @@ type UninterpretedOption struct {
 	Name []*UninterpretedOption_NamePart `protobuf:"bytes,2,rep,name=name" json:"name,omitempty"`
 	// The value of the uninterpreted option, in whatever type the tokenizer
 	// identified it as during parsing. Exactly one of these should be set.
-	IdentifierValue  *string  `protobuf:"bytes,3,opt,name=identifier_value" json:"identifier_value,omitempty"`
-	PositiveIntValue *uint64  `protobuf:"varint,4,opt,name=positive_int_value" json:"positive_int_value,omitempty"`
-	NegativeIntValue *int64   `protobuf:"varint,5,opt,name=negative_int_value" json:"negative_int_value,omitempty"`
-	DoubleValue      *float64 `protobuf:"fixed64,6,opt,name=double_value" json:"double_value,omitempty"`
-	StringValue      []byte   `protobuf:"bytes,7,opt,name=string_value" json:"string_value,omitempty"`
-	AggregateValue   *string  `protobuf:"bytes,8,opt,name=aggregate_value" json:"aggregate_value,omitempty"`
+	IdentifierValue  *string  `protobuf:"bytes,3,opt,name=identifier_value,json=identifierValue" json:"identifier_value,omitempty"`
+	PositiveIntValue *uint64  `protobuf:"varint,4,opt,name=positive_int_value,json=positiveIntValue" json:"positive_int_value,omitempty"`
+	NegativeIntValue *int64   `protobuf:"varint,5,opt,name=negative_int_value,json=negativeIntValue" json:"negative_int_value,omitempty"`
+	DoubleValue      *float64 `protobuf:"fixed64,6,opt,name=double_value,json=doubleValue" json:"double_value,omitempty"`
+	StringValue      []byte   `protobuf:"bytes,7,opt,name=string_value,json=stringValue" json:"string_value,omitempty"`
+	AggregateValue   *string  `protobuf:"bytes,8,opt,name=aggregate_value,json=aggregateValue" json:"aggregate_value,omitempty"`
 	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *UninterpretedOption) Reset()         { *m = UninterpretedOption{} }
-func (m *UninterpretedOption) String() string { return proto.CompactTextString(m) }
-func (*UninterpretedOption) ProtoMessage()    {}
+func (m *UninterpretedOption) Reset()                    { *m = UninterpretedOption{} }
+func (m *UninterpretedOption) String() string            { return proto.CompactTextString(m) }
+func (*UninterpretedOption) ProtoMessage()               {}
+func (*UninterpretedOption) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{16} }
 
 func (m *UninterpretedOption) GetName() []*UninterpretedOption_NamePart {
 	if m != nil {
@@ -1441,14 +1621,17 @@ func (m *UninterpretedOption) GetAggregateValue() string {
 // E.g.,{ ["foo", false], ["bar.baz", true], ["qux", false] } represents
 // "foo.(bar.baz).qux".
 type UninterpretedOption_NamePart struct {
-	NamePart         *string `protobuf:"bytes,1,req,name=name_part" json:"name_part,omitempty"`
-	IsExtension      *bool   `protobuf:"varint,2,req,name=is_extension" json:"is_extension,omitempty"`
+	NamePart         *string `protobuf:"bytes,1,req,name=name_part,json=namePart" json:"name_part,omitempty"`
+	IsExtension      *bool   `protobuf:"varint,2,req,name=is_extension,json=isExtension" json:"is_extension,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *UninterpretedOption_NamePart) Reset()         { *m = UninterpretedOption_NamePart{} }
 func (m *UninterpretedOption_NamePart) String() string { return proto.CompactTextString(m) }
 func (*UninterpretedOption_NamePart) ProtoMessage()    {}
+func (*UninterpretedOption_NamePart) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{16, 0}
+}
 
 func (m *UninterpretedOption_NamePart) GetNamePart() string {
 	if m != nil && m.NamePart != nil {
@@ -1514,9 +1697,10 @@ type SourceCodeInfo struct {
 	XXX_unrecognized []byte                     `json:"-"`
 }
 
-func (m *SourceCodeInfo) Reset()         { *m = SourceCodeInfo{} }
-func (m *SourceCodeInfo) String() string { return proto.CompactTextString(m) }
-func (*SourceCodeInfo) ProtoMessage()    {}
+func (m *SourceCodeInfo) Reset()                    { *m = SourceCodeInfo{} }
+func (m *SourceCodeInfo) String() string            { return proto.CompactTextString(m) }
+func (*SourceCodeInfo) ProtoMessage()               {}
+func (*SourceCodeInfo) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{17} }
 
 func (m *SourceCodeInfo) GetLocation() []*SourceCodeInfo_Location {
 	if m != nil {
@@ -1563,6 +1747,11 @@ type SourceCodeInfo_Location struct {
 	// A series of line comments appearing on consecutive lines, with no other
 	// tokens appearing on those lines, will be treated as a single comment.
 	//
+	// leading_detached_comments will keep paragraphs of comments that appear
+	// before (but not connected to) the current element. Each paragraph,
+	// separated by empty lines, will be one comment element in the repeated
+	// field.
+	//
 	// Only the comment content is provided; comment markers (e.g. //) are
 	// stripped out.  For block comments, leading whitespace and an asterisk
 	// will be stripped from the beginning of each line other than the first.
@@ -1583,6 +1772,12 @@ type SourceCodeInfo_Location struct {
 	//   // Another line attached to qux.
 	//   optional double qux = 4;
 	//
+	//   // Detached comment for corge. This is not leading or trailing comments
+	//   // to qux or corge because there are blank lines separating it from
+	//   // both.
+	//
+	//   // Detached comment for corge paragraph 2.
+	//
 	//   optional string corge = 5;
 	//   /* Block comment attached
 	//    * to corge.  Leading asterisks
@@ -1590,14 +1785,18 @@ type SourceCodeInfo_Location struct {
 	//   /* Block comment attached to
 	//    * grault. */
 	//   optional int32 grault = 6;
-	LeadingComments  *string `protobuf:"bytes,3,opt,name=leading_comments" json:"leading_comments,omitempty"`
-	TrailingComments *string `protobuf:"bytes,4,opt,name=trailing_comments" json:"trailing_comments,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	//
+	//   // ignored detached comments.
+	LeadingComments         *string  `protobuf:"bytes,3,opt,name=leading_comments,json=leadingComments" json:"leading_comments,omitempty"`
+	TrailingComments        *string  `protobuf:"bytes,4,opt,name=trailing_comments,json=trailingComments" json:"trailing_comments,omitempty"`
+	LeadingDetachedComments []string `protobuf:"bytes,6,rep,name=leading_detached_comments,json=leadingDetachedComments" json:"leading_detached_comments,omitempty"`
+	XXX_unrecognized        []byte   `json:"-"`
 }
 
-func (m *SourceCodeInfo_Location) Reset()         { *m = SourceCodeInfo_Location{} }
-func (m *SourceCodeInfo_Location) String() string { return proto.CompactTextString(m) }
-func (*SourceCodeInfo_Location) ProtoMessage()    {}
+func (m *SourceCodeInfo_Location) Reset()                    { *m = SourceCodeInfo_Location{} }
+func (m *SourceCodeInfo_Location) String() string            { return proto.CompactTextString(m) }
+func (*SourceCodeInfo_Location) ProtoMessage()               {}
+func (*SourceCodeInfo_Location) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{17, 0} }
 
 func (m *SourceCodeInfo_Location) GetPath() []int32 {
 	if m != nil {
@@ -1627,9 +1826,181 @@ func (m *SourceCodeInfo_Location) GetTrailingComments() string {
 	return ""
 }
 
+func (m *SourceCodeInfo_Location) GetLeadingDetachedComments() []string {
+	if m != nil {
+		return m.LeadingDetachedComments
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterType((*FileDescriptorSet)(nil), "google.protobuf.FileDescriptorSet")
+	proto.RegisterType((*FileDescriptorProto)(nil), "google.protobuf.FileDescriptorProto")
+	proto.RegisterType((*DescriptorProto)(nil), "google.protobuf.DescriptorProto")
+	proto.RegisterType((*DescriptorProto_ExtensionRange)(nil), "google.protobuf.DescriptorProto.ExtensionRange")
+	proto.RegisterType((*DescriptorProto_ReservedRange)(nil), "google.protobuf.DescriptorProto.ReservedRange")
+	proto.RegisterType((*FieldDescriptorProto)(nil), "google.protobuf.FieldDescriptorProto")
+	proto.RegisterType((*OneofDescriptorProto)(nil), "google.protobuf.OneofDescriptorProto")
+	proto.RegisterType((*EnumDescriptorProto)(nil), "google.protobuf.EnumDescriptorProto")
+	proto.RegisterType((*EnumValueDescriptorProto)(nil), "google.protobuf.EnumValueDescriptorProto")
+	proto.RegisterType((*ServiceDescriptorProto)(nil), "google.protobuf.ServiceDescriptorProto")
+	proto.RegisterType((*MethodDescriptorProto)(nil), "google.protobuf.MethodDescriptorProto")
+	proto.RegisterType((*FileOptions)(nil), "google.protobuf.FileOptions")
+	proto.RegisterType((*MessageOptions)(nil), "google.protobuf.MessageOptions")
+	proto.RegisterType((*FieldOptions)(nil), "google.protobuf.FieldOptions")
+	proto.RegisterType((*EnumOptions)(nil), "google.protobuf.EnumOptions")
+	proto.RegisterType((*EnumValueOptions)(nil), "google.protobuf.EnumValueOptions")
+	proto.RegisterType((*ServiceOptions)(nil), "google.protobuf.ServiceOptions")
+	proto.RegisterType((*MethodOptions)(nil), "google.protobuf.MethodOptions")
+	proto.RegisterType((*UninterpretedOption)(nil), "google.protobuf.UninterpretedOption")
+	proto.RegisterType((*UninterpretedOption_NamePart)(nil), "google.protobuf.UninterpretedOption.NamePart")
+	proto.RegisterType((*SourceCodeInfo)(nil), "google.protobuf.SourceCodeInfo")
+	proto.RegisterType((*SourceCodeInfo_Location)(nil), "google.protobuf.SourceCodeInfo.Location")
 	proto.RegisterEnum("google.protobuf.FieldDescriptorProto_Type", FieldDescriptorProto_Type_name, FieldDescriptorProto_Type_value)
 	proto.RegisterEnum("google.protobuf.FieldDescriptorProto_Label", FieldDescriptorProto_Label_name, FieldDescriptorProto_Label_value)
 	proto.RegisterEnum("google.protobuf.FileOptions_OptimizeMode", FileOptions_OptimizeMode_name, FileOptions_OptimizeMode_value)
 	proto.RegisterEnum("google.protobuf.FieldOptions_CType", FieldOptions_CType_name, FieldOptions_CType_value)
+	proto.RegisterEnum("google.protobuf.FieldOptions_JSType", FieldOptions_JSType_name, FieldOptions_JSType_value)
+}
+
+var fileDescriptor0 = []byte{
+	// 2199 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xcc, 0x58, 0x4f, 0x73, 0xdb, 0xd6,
+	0x11, 0x2f, 0xff, 0x8a, 0x5c, 0x52, 0x24, 0xf4, 0xa4, 0xd8, 0xb4, 0x62, 0x47, 0x36, 0x63, 0xc7,
+	0x8e, 0xd3, 0x52, 0x19, 0xb7, 0x49, 0x5c, 0xa5, 0x93, 0x0e, 0x45, 0xc2, 0x0a, 0x3d, 0x94, 0xc8,
+	0x82, 0x64, 0xeb, 0xe4, 0x82, 0x81, 0xc0, 0x47, 0x0a, 0x36, 0x08, 0xb0, 0x00, 0x68, 0x5b, 0x39,
+	0x75, 0xa6, 0xa7, 0x7e, 0x83, 0x4e, 0xdb, 0xe9, 0x21, 0x97, 0xcc, 0xf4, 0x03, 0xf4, 0xd0, 0x7b,
+	0xaf, 0x3d, 0xf4, 0xdc, 0x63, 0x67, 0xda, 0x6f, 0xd0, 0x6b, 0xf7, 0xbd, 0x07, 0x80, 0x00, 0x09,
+	0xc5, 0x6a, 0x66, 0x52, 0x47, 0x17, 0xf1, 0xed, 0xfe, 0x76, 0xb1, 0x6f, 0xdf, 0xef, 0xed, 0x2e,
+	0x00, 0x37, 0xa7, 0xb6, 0x3d, 0x35, 0xe9, 0xfe, 0xdc, 0xb1, 0x3d, 0xfb, 0x74, 0x31, 0xd9, 0x1f,
+	0x53, 0x57, 0x77, 0x8c, 0xb9, 0x67, 0x3b, 0x0d, 0x2e, 0x23, 0x55, 0x81, 0x68, 0x04, 0x88, 0xfa,
+	0x31, 0x6c, 0x3d, 0x32, 0x4c, 0xda, 0x0e, 0x81, 0x03, 0xea, 0x91, 0x87, 0x90, 0x9d, 0xa0, 0xb0,
+	0x96, 0xba, 0x99, 0xb9, 0x57, 0x7a, 0x70, 0xbb, 0xb1, 0x62, 0xd4, 0x88, 0x5b, 0xf4, 0x99, 0x58,
+	0xe1, 0x16, 0xf5, 0x7f, 0x66, 0x61, 0x3b, 0x41, 0x4b, 0x08, 0x64, 0x2d, 0x6d, 0xc6, 0x3c, 0xa6,
+	0xee, 0x15, 0x15, 0xfe, 0x9b, 0xd4, 0x60, 0x63, 0xae, 0xe9, 0xcf, 0xb4, 0x29, 0xad, 0xa5, 0xb9,
+	0x38, 0x58, 0x92, 0xb7, 0x00, 0xc6, 0x74, 0x4e, 0xad, 0x31, 0xb5, 0xf4, 0xf3, 0x5a, 0x06, 0xa3,
+	0x28, 0x2a, 0x11, 0x09, 0x79, 0x0f, 0xb6, 0xe6, 0x8b, 0x53, 0xd3, 0xd0, 0xd5, 0x08, 0x0c, 0x10,
+	0x96, 0x53, 0x24, 0xa1, 0x68, 0x2f, 0xc1, 0x77, 0xa1, 0xfa, 0x82, 0x6a, 0xcf, 0xa2, 0xd0, 0x12,
+	0x87, 0x56, 0x98, 0x38, 0x02, 0x6c, 0x41, 0x79, 0x46, 0x5d, 0x17, 0x03, 0x50, 0xbd, 0xf3, 0x39,
+	0xad, 0x65, 0xf9, 0xee, 0x6f, 0xae, 0xed, 0x7e, 0x75, 0xe7, 0x25, 0xdf, 0x6a, 0x88, 0x46, 0xa4,
+	0x09, 0x45, 0x6a, 0x2d, 0x66, 0xc2, 0x43, 0xee, 0x82, 0xfc, 0xc9, 0x88, 0x58, 0xf5, 0x52, 0x60,
+	0x66, 0xbe, 0x8b, 0x0d, 0x97, 0x3a, 0xcf, 0x0d, 0x9d, 0xd6, 0xf2, 0xdc, 0xc1, 0xdd, 0x35, 0x07,
+	0x03, 0xa1, 0x5f, 0xf5, 0x11, 0xd8, 0xe1, 0x56, 0x8a, 0xf4, 0xa5, 0x47, 0x2d, 0xd7, 0xb0, 0xad,
+	0xda, 0x06, 0x77, 0x72, 0x27, 0xe1, 0x14, 0xa9, 0x39, 0x5e, 0x75, 0xb1, 0xb4, 0x23, 0x1f, 0xc2,
+	0x86, 0x3d, 0xf7, 0xf0, 0x97, 0x5b, 0x2b, 0xe0, 0xf9, 0x94, 0x1e, 0x5c, 0x4f, 0x24, 0x42, 0x4f,
+	0x60, 0x94, 0x00, 0x4c, 0x3a, 0x20, 0xb9, 0xf6, 0xc2, 0xd1, 0xa9, 0xaa, 0xdb, 0x63, 0xaa, 0x1a,
+	0xd6, 0xc4, 0xae, 0x15, 0xb9, 0x83, 0xbd, 0xf5, 0x8d, 0x70, 0x60, 0x0b, 0x71, 0x1d, 0x84, 0x29,
+	0x15, 0x37, 0xb6, 0x26, 0x57, 0x20, 0xef, 0x9e, 0x5b, 0x9e, 0xf6, 0xb2, 0x56, 0xe6, 0x0c, 0xf1,
+	0x57, 0xf5, 0xff, 0xe4, 0xa0, 0x7a, 0x19, 0x8a, 0x7d, 0x0c, 0xb9, 0x09, 0xdb, 0x25, 0x12, 0xec,
+	0x7f, 0xc8, 0x81, 0xb0, 0x89, 0x27, 0x31, 0xff, 0x0d, 0x93, 0xd8, 0x84, 0x92, 0x45, 0x5d, 0x8f,
+	0x8e, 0x05, 0x23, 0x32, 0x97, 0xe4, 0x14, 0x08, 0xa3, 0x75, 0x4a, 0x65, 0xbf, 0x11, 0xa5, 0x9e,
+	0x40, 0x35, 0x0c, 0x49, 0x75, 0x34, 0x6b, 0x1a, 0x70, 0x73, 0xff, 0x55, 0x91, 0x34, 0xe4, 0xc0,
+	0x4e, 0x61, 0x66, 0x4a, 0x85, 0xc6, 0xd6, 0xa4, 0x0d, 0x60, 0x5b, 0xd4, 0x9e, 0xe0, 0xf5, 0xd2,
+	0x4d, 0xe4, 0x49, 0x72, 0x96, 0x7a, 0x0c, 0xb2, 0x96, 0x25, 0x5b, 0x48, 0x75, 0x93, 0xfc, 0x78,
+	0x49, 0xb5, 0x8d, 0x0b, 0x98, 0x72, 0x2c, 0x2e, 0xd9, 0x1a, 0xdb, 0x46, 0x50, 0x71, 0x28, 0xe3,
+	0x3d, 0xa6, 0x58, 0xec, 0xac, 0xc8, 0x83, 0x68, 0xbc, 0x72, 0x67, 0x8a, 0x6f, 0x26, 0x36, 0xb6,
+	0xe9, 0x44, 0x97, 0xe4, 0x6d, 0x08, 0x05, 0x2a, 0xa7, 0x15, 0xf0, 0x2a, 0x54, 0x0e, 0x84, 0x27,
+	0x28, 0xdb, 0x7d, 0x08, 0x95, 0x78, 0x7a, 0xc8, 0x0e, 0xe4, 0x5c, 0x4f, 0x73, 0x3c, 0xce, 0xc2,
+	0x9c, 0x22, 0x16, 0x44, 0x82, 0x0c, 0x16, 0x19, 0x5e, 0xe5, 0x72, 0x0a, 0xfb, 0xb9, 0xfb, 0x11,
+	0x6c, 0xc6, 0x1e, 0x7f, 0x59, 0xc3, 0xfa, 0x6f, 0xf3, 0xb0, 0x93, 0xc4, 0xb9, 0x44, 0xfa, 0xe3,
+	0xf5, 0x41, 0x06, 0x9c, 0x52, 0x07, 0x79, 0xc7, 0x3c, 0xf8, 0x2b, 0x64, 0x54, 0xce, 0xd4, 0x4e,
+	0xa9, 0x89, 0x6c, 0x4a, 0xdd, 0xab, 0x3c, 0x78, 0xef, 0x52, 0xac, 0x6e, 0x74, 0x99, 0x89, 0x22,
+	0x2c, 0xc9, 0x27, 0x90, 0xf5, 0x4b, 0x1c, 0xf3, 0x70, 0xff, 0x72, 0x1e, 0x18, 0x17, 0x15, 0x6e,
+	0x47, 0xde, 0x84, 0x22, 0xfb, 0x2f, 0x72, 0x9b, 0xe7, 0x31, 0x17, 0x98, 0x80, 0xe5, 0x95, 0xec,
+	0x42, 0x81, 0xd3, 0x6c, 0x4c, 0x83, 0xd6, 0x10, 0xae, 0xd9, 0xc1, 0x8c, 0xe9, 0x44, 0x5b, 0x98,
+	0x9e, 0xfa, 0x5c, 0x33, 0x17, 0x94, 0x13, 0x06, 0x0f, 0xc6, 0x17, 0xfe, 0x9c, 0xc9, 0xc8, 0x1e,
+	0x94, 0x04, 0x2b, 0x0d, 0xb4, 0x79, 0xc9, 0xab, 0x4f, 0x4e, 0x11, 0x44, 0xed, 0x30, 0x09, 0x7b,
+	0xfc, 0x53, 0x17, 0xef, 0x82, 0x7f, 0xb4, 0xfc, 0x11, 0x4c, 0xc0, 0x1f, 0xff, 0xd1, 0x6a, 0xe1,
+	0xbb, 0x91, 0xbc, 0xbd, 0x55, 0x2e, 0xd6, 0xff, 0x9c, 0x86, 0x2c, 0xbf, 0x6f, 0x55, 0x28, 0x0d,
+	0x3f, 0xeb, 0xcb, 0x6a, 0xbb, 0x37, 0x3a, 0xec, 0xca, 0x52, 0x8a, 0x54, 0x00, 0xb8, 0xe0, 0x51,
+	0xb7, 0xd7, 0x1c, 0x4a, 0xe9, 0x70, 0xdd, 0x39, 0x19, 0x7e, 0xf8, 0x23, 0x29, 0x13, 0x1a, 0x8c,
+	0x84, 0x20, 0x1b, 0x05, 0xfc, 0xf0, 0x81, 0x94, 0x43, 0x26, 0x94, 0x85, 0x83, 0xce, 0x13, 0xb9,
+	0x8d, 0x88, 0x7c, 0x5c, 0x82, 0x98, 0x0d, 0xb2, 0x09, 0x45, 0x2e, 0x39, 0xec, 0xf5, 0xba, 0x52,
+	0x21, 0xf4, 0x39, 0x18, 0x2a, 0x9d, 0x93, 0x23, 0xa9, 0x18, 0xfa, 0x3c, 0x52, 0x7a, 0xa3, 0xbe,
+	0x04, 0xa1, 0x87, 0x63, 0x79, 0x30, 0x68, 0x1e, 0xc9, 0x52, 0x29, 0x44, 0x1c, 0x7e, 0x36, 0x94,
+	0x07, 0x52, 0x39, 0x16, 0x16, 0x3e, 0x62, 0x33, 0x7c, 0x84, 0x7c, 0x32, 0x3a, 0x96, 0x2a, 0x64,
+	0x0b, 0x36, 0xc5, 0x23, 0x82, 0x20, 0xaa, 0x2b, 0x22, 0x8c, 0x54, 0x5a, 0x06, 0x22, 0xbc, 0x6c,
+	0xc5, 0x04, 0x88, 0x20, 0xf5, 0x16, 0xe4, 0x38, 0xbb, 0x90, 0xc5, 0x95, 0x6e, 0xf3, 0x50, 0xee,
+	0xaa, 0xbd, 0xfe, 0xb0, 0xd3, 0x3b, 0x69, 0x76, 0x31, 0x77, 0xa1, 0x4c, 0x91, 0x7f, 0x36, 0xea,
+	0x28, 0x72, 0x1b, 0xf3, 0x17, 0x91, 0xf5, 0xe5, 0xe6, 0x10, 0x65, 0x99, 0xfa, 0x7d, 0xd8, 0x49,
+	0xaa, 0x33, 0x49, 0x37, 0xa3, 0xfe, 0x65, 0x0a, 0xb6, 0x13, 0x4a, 0x66, 0xe2, 0x2d, 0xfa, 0x29,
+	0xe4, 0x04, 0xd3, 0x44, 0x13, 0x79, 0x37, 0xb1, 0xf6, 0x72, 0xde, 0xad, 0x35, 0x12, 0x6e, 0x17,
+	0x6d, 0xa4, 0x99, 0x0b, 0x1a, 0x29, 0x73, 0xb1, 0x46, 0xa7, 0x5f, 0xa7, 0xa0, 0x76, 0x91, 0xef,
+	0x57, 0xdc, 0xf7, 0x74, 0xec, 0xbe, 0x7f, 0xbc, 0x1a, 0xc0, 0xad, 0x8b, 0xf7, 0xb0, 0x16, 0xc5,
+	0x57, 0x29, 0xb8, 0x92, 0x3c, 0x6f, 0x24, 0xc6, 0xf0, 0x09, 0xe4, 0x67, 0xd4, 0x3b, 0xb3, 0x83,
+	0x9e, 0xfb, 0x4e, 0x42, 0x25, 0x67, 0xea, 0xd5, 0x5c, 0xf9, 0x56, 0xd1, 0x56, 0x90, 0xb9, 0x68,
+	0x68, 0x10, 0xd1, 0xac, 0x45, 0xfa, 0x9b, 0x34, 0xbc, 0x91, 0xe8, 0x3c, 0x31, 0xd0, 0x1b, 0x00,
+	0x86, 0x35, 0x5f, 0x78, 0xa2, 0xaf, 0x8a, 0x32, 0x53, 0xe4, 0x12, 0x7e, 0x85, 0x59, 0x09, 0x59,
+	0x78, 0xa1, 0x3e, 0xc3, 0xf5, 0x20, 0x44, 0x1c, 0xf0, 0x70, 0x19, 0x68, 0x96, 0x07, 0xfa, 0xd6,
+	0x05, 0x3b, 0x5d, 0x6b, 0x59, 0xef, 0x83, 0xa4, 0x9b, 0x06, 0xb5, 0x3c, 0xd5, 0xf5, 0x1c, 0xaa,
+	0xcd, 0x0c, 0x6b, 0xca, 0xeb, 0x68, 0xe1, 0x20, 0x37, 0xd1, 0x4c, 0x97, 0x2a, 0x55, 0xa1, 0x1e,
+	0x04, 0x5a, 0x66, 0xc1, 0x9b, 0x85, 0x13, 0xb1, 0xc8, 0xc7, 0x2c, 0x84, 0x3a, 0xb4, 0xa8, 0xff,
+	0x7d, 0x03, 0x4a, 0x91, 0xe9, 0x8c, 0xdc, 0x82, 0xf2, 0x53, 0xed, 0xb9, 0xa6, 0x06, 0x13, 0xb7,
+	0xc8, 0x44, 0x89, 0xc9, 0xfa, 0xfe, 0xd4, 0xfd, 0x3e, 0xec, 0x70, 0x08, 0xee, 0x11, 0x1f, 0xa4,
+	0x9b, 0x9a, 0xeb, 0xf2, 0xa4, 0x15, 0x38, 0x94, 0x30, 0x5d, 0x8f, 0xa9, 0x5a, 0x81, 0x86, 0x7c,
+	0x00, 0xdb, 0xdc, 0x62, 0x86, 0x85, 0xd7, 0x98, 0x9b, 0x54, 0x65, 0xef, 0x00, 0x2e, 0xaf, 0xa7,
+	0x61, 0x64, 0x5b, 0x0c, 0x71, 0xec, 0x03, 0x58, 0x44, 0x2e, 0x39, 0x82, 0x1b, 0xdc, 0x6c, 0x4a,
+	0x2d, 0xea, 0x68, 0x1e, 0x55, 0xe9, 0x2f, 0x17, 0x88, 0x55, 0x35, 0x6b, 0xac, 0x9e, 0x69, 0xee,
+	0x59, 0x6d, 0x27, 0xea, 0xe0, 0x1a, 0xc3, 0x1e, 0xf9, 0x50, 0x99, 0x23, 0x9b, 0xd6, 0xf8, 0x53,
+	0xc4, 0x91, 0x03, 0xb8, 0xc2, 0x1d, 0x61, 0x52, 0x70, 0xcf, 0xaa, 0x7e, 0x46, 0xf5, 0x67, 0xea,
+	0xc2, 0x9b, 0x3c, 0xac, 0xbd, 0x19, 0xf5, 0xc0, 0x83, 0x1c, 0x70, 0x4c, 0x8b, 0x41, 0x46, 0x88,
+	0x20, 0x03, 0x28, 0xb3, 0xf3, 0x98, 0x19, 0x5f, 0x60, 0xd8, 0xb6, 0xc3, 0x7b, 0x44, 0x25, 0xe1,
+	0x72, 0x47, 0x92, 0xd8, 0xe8, 0xf9, 0x06, 0xc7, 0x38, 0x9f, 0x1e, 0xe4, 0x06, 0x7d, 0x59, 0x6e,
+	0x2b, 0xa5, 0xc0, 0xcb, 0x23, 0xdb, 0x61, 0x9c, 0x9a, 0xda, 0x61, 0x8e, 0x4b, 0x82, 0x53, 0x53,
+	0x3b, 0xc8, 0x30, 0xe6, 0x4b, 0xd7, 0xc5, 0xb6, 0xf1, 0xdd, 0xc5, 0x1f, 0xd6, 0xdd, 0x9a, 0x14,
+	0xcb, 0x97, 0xae, 0x1f, 0x09, 0x80, 0x4f, 0x73, 0x17, 0xaf, 0xc4, 0x1b, 0xcb, 0x7c, 0x45, 0x0d,
+	0xb7, 0xd6, 0x76, 0xb9, 0x6a, 0x8a, 0x4f, 0x9c, 0x9f, 0xaf, 0x1b, 0x92, 0xd8, 0x13, 0xe7, 0xe7,
+	0xab, 0x66, 0x77, 0xf8, 0x0b, 0x98, 0x43, 0x75, 0x4c, 0xf9, 0xb8, 0x76, 0x35, 0x8a, 0x8e, 0x28,
+	0xc8, 0x3e, 0x12, 0x59, 0x57, 0xa9, 0xa5, 0x9d, 0xe2, 0xd9, 0x6b, 0x0e, 0xfe, 0x70, 0x6b, 0x7b,
+	0x51, 0x70, 0x45, 0xd7, 0x65, 0xae, 0x6d, 0x72, 0x25, 0xb9, 0x0f, 0x5b, 0xf6, 0xe9, 0x53, 0x5d,
+	0x90, 0x4b, 0x45, 0x3f, 0x13, 0xe3, 0x65, 0xed, 0x36, 0x4f, 0x53, 0x95, 0x29, 0x38, 0xb5, 0xfa,
+	0x5c, 0x4c, 0xde, 0x45, 0xe7, 0xee, 0x99, 0xe6, 0xcc, 0x79, 0x93, 0x76, 0x31, 0xa9, 0xb4, 0x76,
+	0x47, 0x40, 0x85, 0xfc, 0x24, 0x10, 0x13, 0x19, 0xf6, 0xd8, 0xe6, 0x2d, 0xcd, 0xb2, 0xd5, 0x85,
+	0x4b, 0xd5, 0x65, 0x88, 0xe1, 0x59, 0xbc, 0xc3, 0xc2, 0x52, 0xae, 0x07, 0xb0, 0x91, 0x8b, 0xc5,
+	0x2c, 0x00, 0x05, 0xc7, 0xf3, 0x04, 0x76, 0x16, 0x96, 0x61, 0x21, 0xc5, 0x51, 0xc3, 0x8c, 0xc5,
+	0x85, 0xad, 0xfd, 0x6b, 0xe3, 0x82, 0xa1, 0x7b, 0x14, 0x45, 0x0b, 0x92, 0x28, 0xdb, 0x8b, 0x75,
+	0x61, 0xfd, 0x00, 0xca, 0x51, 0xee, 0x90, 0x22, 0x08, 0xf6, 0x60, 0x77, 0xc3, 0x8e, 0xda, 0xea,
+	0xb5, 0x59, 0x2f, 0xfc, 0x5c, 0xc6, 0xc6, 0x86, 0x3d, 0xb9, 0xdb, 0x19, 0xca, 0xaa, 0x32, 0x3a,
+	0x19, 0x76, 0x8e, 0x65, 0x29, 0x73, 0xbf, 0x58, 0xf8, 0xf7, 0x86, 0xf4, 0x2b, 0xfc, 0x4b, 0xd7,
+	0xff, 0x9a, 0x86, 0x4a, 0x7c, 0x0e, 0x26, 0x3f, 0x81, 0xab, 0xc1, 0x4b, 0xab, 0x4b, 0x3d, 0xf5,
+	0x85, 0xe1, 0x70, 0x3a, 0xcf, 0x34, 0x31, 0x49, 0x86, 0x27, 0xb1, 0xe3, 0xa3, 0xf0, 0xf5, 0xfe,
+	0x17, 0x88, 0x79, 0xc4, 0x21, 0xa4, 0x0b, 0x7b, 0x98, 0x32, 0x9c, 0x35, 0xad, 0xb1, 0xe6, 0x8c,
+	0xd5, 0xe5, 0xe7, 0x02, 0x55, 0xd3, 0x91, 0x07, 0xae, 0x2d, 0x3a, 0x49, 0xe8, 0xe5, 0xba, 0x65,
+	0x0f, 0x7c, 0xf0, 0xb2, 0xc4, 0x36, 0x7d, 0xe8, 0x0a, 0x6b, 0x32, 0x17, 0xb1, 0x06, 0x67, 0xaf,
+	0x99, 0x36, 0x47, 0xda, 0x78, 0xce, 0x39, 0x9f, 0xde, 0x0a, 0x4a, 0x01, 0x05, 0x32, 0x5b, 0x7f,
+	0x7b, 0x67, 0x10, 0xcd, 0xe3, 0x3f, 0x32, 0x50, 0x8e, 0x4e, 0x70, 0x6c, 0x20, 0xd6, 0x79, 0x99,
+	0x4f, 0xf1, 0x2a, 0xf0, 0xf6, 0xd7, 0xce, 0x7b, 0x8d, 0x16, 0xab, 0xff, 0x07, 0x79, 0x31, 0x57,
+	0x29, 0xc2, 0x92, 0xf5, 0x5e, 0xc6, 0x35, 0x2a, 0xa6, 0xf5, 0x82, 0xe2, 0xaf, 0xb0, 0xd8, 0xe5,
+	0x9f, 0xba, 0xdc, 0x77, 0x9e, 0xfb, 0xbe, 0xfd, 0xf5, 0xbe, 0x1f, 0x0f, 0xb8, 0xf3, 0xe2, 0xe3,
+	0x81, 0x7a, 0xd2, 0x53, 0x8e, 0x9b, 0x5d, 0xc5, 0x37, 0x27, 0xd7, 0x20, 0x6b, 0x6a, 0x5f, 0x9c,
+	0xc7, 0x3b, 0x05, 0x17, 0x5d, 0x36, 0xf1, 0xe8, 0x81, 0x7d, 0xf2, 0x88, 0xd7, 0x67, 0x2e, 0xfa,
+	0x16, 0xa9, 0xbf, 0x0f, 0x39, 0x9e, 0x2f, 0x02, 0xe0, 0x67, 0x4c, 0xfa, 0x1e, 0x29, 0x40, 0xb6,
+	0xd5, 0x53, 0x18, 0xfd, 0x91, 0xef, 0x42, 0xaa, 0xf6, 0x3b, 0x72, 0x0b, 0x6f, 0x40, 0xfd, 0x03,
+	0xc8, 0x8b, 0x24, 0xb0, 0xab, 0x11, 0xa6, 0x01, 0x8d, 0xc4, 0xd2, 0xf7, 0x91, 0x0a, 0xb4, 0xa3,
+	0xe3, 0x43, 0x59, 0x91, 0xd2, 0xd1, 0xe3, 0xfd, 0x4b, 0x0a, 0x4a, 0x91, 0x81, 0x8a, 0xb5, 0x72,
+	0xcd, 0x34, 0xed, 0x17, 0xaa, 0x66, 0x1a, 0x58, 0xa1, 0xc4, 0xf9, 0x00, 0x17, 0x35, 0x99, 0xe4,
+	0xb2, 0xf9, 0xfb, 0xbf, 0x70, 0xf3, 0x8f, 0x29, 0x90, 0x56, 0x87, 0xb1, 0x95, 0x00, 0x53, 0xaf,
+	0x35, 0xc0, 0x3f, 0xa4, 0xa0, 0x12, 0x9f, 0xc0, 0x56, 0xc2, 0xbb, 0xf5, 0x5a, 0xc3, 0xfb, 0x7d,
+	0x0a, 0x36, 0x63, 0x73, 0xd7, 0x77, 0x2a, 0xba, 0xdf, 0x65, 0x60, 0x3b, 0xc1, 0x0e, 0x0b, 0x90,
+	0x18, 0x50, 0xc5, 0xcc, 0xfc, 0x83, 0xcb, 0x3c, 0xab, 0xc1, 0xfa, 0x5f, 0x5f, 0x73, 0x3c, 0x7f,
+	0x9e, 0xc5, 0x7e, 0x69, 0x8c, 0xb1, 0xa8, 0x1a, 0x13, 0x03, 0xc7, 0x37, 0xf1, 0xc6, 0x22, 0xa6,
+	0xd6, 0xea, 0x52, 0x2e, 0x5e, 0x8f, 0xbf, 0x0f, 0x64, 0x6e, 0xbb, 0x86, 0x67, 0x3c, 0x67, 0x9f,
+	0xe7, 0x82, 0x17, 0x69, 0x36, 0xc5, 0x66, 0x15, 0x29, 0xd0, 0x74, 0x2c, 0x2f, 0x44, 0x5b, 0x74,
+	0xaa, 0xad, 0xa0, 0x59, 0x19, 0xca, 0x28, 0x52, 0xa0, 0x09, 0xd1, 0x38, 0x68, 0x8e, 0xed, 0x05,
+	0x1b, 0x08, 0x04, 0x8e, 0x55, 0xbd, 0x94, 0x52, 0x12, 0xb2, 0x10, 0xe2, 0x4f, 0x6c, 0xcb, 0x37,
+	0xf8, 0xb2, 0x52, 0x12, 0x32, 0x01, 0xb9, 0x0b, 0x55, 0x6d, 0x3a, 0x75, 0x98, 0xf3, 0xc0, 0x91,
+	0x18, 0x43, 0x2b, 0xa1, 0x98, 0x03, 0x77, 0x1f, 0x43, 0x21, 0xc8, 0x03, 0x6b, 0x2c, 0x2c, 0x13,
+	0xd8, 0xf3, 0xf9, 0x77, 0x94, 0x34, 0x7b, 0xa9, 0xb7, 0x02, 0x25, 0x3e, 0xd4, 0x70, 0xd5, 0xe5,
+	0x07, 0xbd, 0x34, 0xea, 0x0b, 0x4a, 0xc9, 0x70, 0xc3, 0x2f, 0x38, 0xf5, 0xaf, 0xb0, 0xbd, 0xc6,
+	0x3f, 0x48, 0x92, 0x36, 0x14, 0x4c, 0x1b, 0xf9, 0xc1, 0x2c, 0xc4, 0xd7, 0xf0, 0x7b, 0xaf, 0xf8,
+	0x86, 0xd9, 0xe8, 0xfa, 0x78, 0x25, 0xb4, 0xdc, 0xfd, 0x5b, 0x0a, 0x0a, 0x81, 0x18, 0x1b, 0x45,
+	0x76, 0xae, 0x79, 0x67, 0xdc, 0x5d, 0xee, 0x30, 0x2d, 0xa5, 0x14, 0xbe, 0x66, 0x72, 0x9c, 0x66,
+	0x2c, 0x4e, 0x01, 0x5f, 0xce, 0xd6, 0xec, 0x5c, 0x4d, 0xaa, 0x8d, 0xf9, 0x80, 0x6b, 0xcf, 0x66,
+	0x78, 0x92, 0x6e, 0x70, 0xae, 0xbe, 0xbc, 0xe5, 0x8b, 0xd9, 0x77, 0x71, 0xcf, 0xd1, 0x0c, 0x33,
+	0x86, 0xcd, 0x72, 0xac, 0x14, 0x28, 0x42, 0xf0, 0x01, 0x5c, 0x0b, 0xfc, 0x8e, 0xa9, 0xa7, 0xe1,
+	0xf0, 0x3c, 0x5e, 0x1a, 0xe5, 0xf9, 0xd7, 0xae, 0xab, 0x3e, 0xa0, 0xed, 0xeb, 0x03, 0xdb, 0xc3,
+	0x27, 0x38, 0xc8, 0xda, 0xb3, 0xd5, 0x4c, 0x1c, 0x4a, 0x2b, 0xef, 0x5d, 0xee, 0xa7, 0xa9, 0xcf,
+	0x61, 0x39, 0x54, 0x7c, 0x99, 0xce, 0x1c, 0xf5, 0x0f, 0xff, 0x94, 0xde, 0x3d, 0x12, 0x76, 0xfd,
+	0x20, 0x83, 0x0a, 0x9d, 0x98, 0x54, 0x67, 0xd9, 0xf9, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xc3,
+	0xe8, 0xdf, 0x9c, 0xc3, 0x18, 0x00, 0x00,
 }

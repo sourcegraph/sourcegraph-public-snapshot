@@ -213,22 +213,22 @@
 			"revisionTime": "2016-05-16T00:07:52Z"
 		},
 		{
-			"checksumSHA1": "1zj5gynHhExBBCsTVBkxFi+aX3c=",
+			"checksumSHA1": "4BxT1r53xaajIzWop5H+lm9eVwM=",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
-			"revisionTime": "2015-04-30T09:19:26+10:00"
+			"revision": "3b06fc7a4cad73efce5fe6217ab6c33e7231ab4a",
+			"revisionTime": "2016-06-01T15:17:05Z"
 		},
 		{
-			"checksumSHA1": "P//dYFK3RlzMvp7ynyBMQAt/Me0=",
+			"checksumSHA1": "+cT5a/FtqhkUAnVuajBTUAS2iHU=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
-			"revisionTime": "2015-04-29T23:19:26Z"
+			"revision": "3b06fc7a4cad73efce5fe6217ab6c33e7231ab4a",
+			"revisionTime": "2016-06-01T15:17:05Z"
 		},
 		{
-			"checksumSHA1": "Wm56G/87eo9K54xCvaUF3NlnlnE=",
+			"checksumSHA1": "lL9MtmdY1ZH4qsIe+6WPMev28f4=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
-			"revision": "efd7476481382c195beb33acd8ec2f1527167fb4",
-			"revisionTime": "2015-04-29T23:19:26Z"
+			"revision": "3b06fc7a4cad73efce5fe6217ab6c33e7231ab4a",
+			"revisionTime": "2016-06-01T15:17:05Z"
 		},
 		{
 			"checksumSHA1": "Bj/WIqAUSis+R94Ia0Ay2F4wDYY=",
