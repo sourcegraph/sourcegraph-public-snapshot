@@ -1,31 +1,30 @@
-# Sourcegraph: fast, semantic code search & cross-reference engine
+# Sourcegraph: fast, global, semantic code search & cross-reference engine
 
-<img src="https://sourcegraph.com/.assets/v/15693_2016-05-20_6613734/img/Homepage/how-ref.gif" align="right" width="300">
+[<img src="./app/assets/img/Homepage/screenshot-heros.png" align="center">](https://sourcegraph.com)
 
-We're building [Sourcegraph](https://sourcegraph.com) to keep you in
-flow while coding.
+Remember the last time you were in flow while coding? You got a ton done and felt great.
 
-Try Sourcegraph:
+But staying in flow is hard. While coding, you often waste minutes digging for examples in Q&A forums, finding documentation, deciphering code, or interrupting teammates.
 
-* [:mag_right: Search globally for functions, types, packages, etc.](https://sourcegraph.com/search?q=http.NewRequest)
-* [:zap: Browse and jump around code like an IDE](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
-* [:earth_africa: See how a function/type/package is used everywhere](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
+[Sourcegraph](https://sourcegraph.com) helps you find the answers you need in seconds, not minutes—so you stay in flow, get more done, and feel great.
 
-...all in your web browser. It just works. (Unless you do crazy stuff with your build tooling.)
+##### Try Sourcegraph:
 
-It works across repositories and at large scale, with 2,000,000,000+
-nodes in the public code index (and growing).
+* [:mag_right: Instantly jump to any function/type/package in any repository — ***global, semantic code search***](https://sourcegraph.com/search?q=http.NewRequest)
+* [:earth_africa: See where/how a function/type/package is used, across all repositories — ***live usage examples & global cross-refs***](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
+* [:zap: Navigate and jump around code like an IDE](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
 
-Tons of devs use Sourcegraph all day, every day—worldwide and inside
-large, well-known companies.
+...all in your web browser at sourcegraph.com. No installation or signup required. *It just works*, for both open-source code and your private projects (unless you do crazy stuff with your build tooling).
+
+It's cross-repository and massively scalable, with 2,000,000,000+ nodes in the public code index (and growing). Tons of devs use Sourcegraph to discover and understand code every day—worldwide and inside large, well-known companies.
 
 
 ### Supported languages
 
-* Go
+* **Go** — [try it](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
+* **Java** — [try it](https://sourcegraph.com/github.com/square/okhttp/-/def/JavaArtifact/com.squareup.okhttp3/okhttp/-/okhttp3/Request:type/Builder:type/method:java.lang.String:okhttp3.RequestBody)
 
-*Coming soon: Java, JavaScript, Python, C#, TypeScript, PHP, Objective-C, Scala, CSS, etc.*
-
+*Coming soon: JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.* ([email us](mailto:support@sourcegraph.com) to get early beta access to these languages for your team or project)
 
 
 ## Getting started
@@ -33,14 +32,14 @@ large, well-known companies.
 * [**:white_check_mark: Sign up for Sourcegraph.com**](https://sourcegraph.com/)
   for public and (your/your company's) private GitHub code
 * [:white_check_mark: Install the Sourcegraph Chrome extension](https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack)
-  to seamlessly add these features to GitHub.com
+  for seamless jump-to-def and doc tooltips when you're on GitHub.com
 
 You can also:
 
-* Browse the code that powers the site
+* Browse the code that powers Sourcegraph
   [on Sourcegraph](https://sourcegraph.com/sourcegraph/sourcegraph) or
   on GitHub
-* Deploy Sourcegraph on your own servers (paid;
+* Run Sourcegraph on your own servers (paid;
   [contact us](https://sourcegraph.com/contact) about Sourcegraph
   Enterprise)
 
@@ -60,7 +59,7 @@ contributions (bug fixes, or enhancements on our roadmap) if you
 contact us and receive preapproval. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for more information.
 
-(Love to contribute full-time?
+(Want to contribute full-time?
 [Join our team](https://boards.greenhouse.io/sourcegraph) and work
 with others who share your passion for software development.)
 
@@ -77,6 +76,7 @@ creating an issue.
 
 ## License
 
-Sourcegraph is licensed as [Fair Source 15 (v0.9)](https://fair.io),
-not open source. Charging companies that get value from Sourcegraph
-lets us build a sustainable business.
+Sourcegraph's code is public and licensed as
+[Fair Source 15 (v0.9)](https://fair.io), not open source. Charging
+companies that get value from Sourcegraph lets us build a sustainable
+business.
