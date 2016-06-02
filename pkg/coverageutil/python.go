@@ -134,13 +134,13 @@ func (s *pythonScanner) isStringPrefix(prefix string) bool {
 // newPythonScanner initializes and return new scanner for Python language
 func newPythonScanner() *pythonScanner {
 	s := &pythonScanner{&scanner.Scanner{}}
-	s.Error = func(s *scanner.Scanner, msg string) {}
 	return s
 }
 
 // pythonTokenizer produces tokens from Python source code
 type pythonTokenizer struct {
 	scanner *pythonScanner
+	errors  []string
 }
 
 // list of Python keywords
@@ -186,11 +186,19 @@ var pythonKeywords = map[string]bool{
 
 // Initializes text scanner that extracts only idents
 func (s *pythonTokenizer) Init(src []byte) {
+	s.errors = make([]string, 0)
 	s.scanner = newPythonScanner()
 	s.scanner.Init(bytes.NewReader(src))
+	s.scanner.Error = func(scanner *scanner.Scanner, msg string) {
+		s.errors = append(s.errors, msg)
+	}
 }
 
 func (s *pythonTokenizer) Done() {
+}
+
+func (s *pythonTokenizer) Errors() []string {
+	return s.errors
 }
 
 // Next returns idents that are not Java keywords

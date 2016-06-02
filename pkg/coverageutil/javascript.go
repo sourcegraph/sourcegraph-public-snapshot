@@ -142,7 +142,6 @@ func (s *javascriptScanner) consumeRegexp() rune {
 // newJavascriptScanner initializes and return new scanner for JavaScript language
 func newJavascriptScanner() *javascriptScanner {
 	s := &javascriptScanner{&scanner.Scanner{}}
-	s.Error = func(s *scanner.Scanner, msg string) {}
 	s.IsIdentRune = func(ch rune, i int) bool {
 		return ch == '_' || ch == '$' || ch == '$' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
 	}
@@ -152,6 +151,7 @@ func newJavascriptScanner() *javascriptScanner {
 // javascriptTokenizer produces tokens from JavaScript source code
 type javascriptTokenizer struct {
 	scanner *javascriptScanner
+	errors  []string
 }
 
 // list of JavaScript keywords
@@ -224,11 +224,19 @@ var javascriptKeywords = map[string]bool{
 
 // Initializes text scanner that extracts only idents
 func (s *javascriptTokenizer) Init(src []byte) {
+	s.errors = make([]string, 0)
 	s.scanner = newJavascriptScanner()
 	s.scanner.Init(bytes.NewReader(src))
+	s.scanner.Error = func(scanner *scanner.Scanner, msg string) {
+		s.errors = append(s.errors, msg)
+	}
 }
 
 func (s *javascriptTokenizer) Done() {
+}
+
+func (s *javascriptTokenizer) Errors() []string {
+	return s.errors
 }
 
 // Next returns idents that are not Java keywords

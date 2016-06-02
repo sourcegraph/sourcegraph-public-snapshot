@@ -87,13 +87,13 @@ func (s *csharpScanner) consumeNumericSuffix() {
 // newCsharpScanner initializes and return new scanner for C# language
 func newCsharpScanner() *csharpScanner {
 	s := &csharpScanner{&scanner.Scanner{}}
-	s.Error = func(s *scanner.Scanner, msg string) {}
 	return s
 }
 
 // csharpTokenizer produces tokens from C# source code
 type csharpTokenizer struct {
 	scanner *csharpScanner
+	errors  []string
 }
 
 // list of C# keywords
@@ -179,11 +179,19 @@ var csharpKeywords = map[string]bool{
 
 // Initializes text scanner that extracts only idents
 func (s *csharpTokenizer) Init(src []byte) {
+	s.errors = make([]string, 0)
 	s.scanner = newCsharpScanner()
 	s.scanner.Init(bytes.NewReader(src))
+	s.scanner.Error = func(scanner *scanner.Scanner, msg string) {
+		s.errors = append(s.errors, msg)
+	}
 }
 
 func (s *csharpTokenizer) Done() {
+}
+
+func (s *csharpTokenizer) Errors() []string {
+	return s.errors
 }
 
 // Next returns idents that are not C# keywords

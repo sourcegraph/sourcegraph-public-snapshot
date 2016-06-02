@@ -428,6 +428,10 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			log15.Warn("no ref for", "path", path, "at", tok.Offset, "ident", tok.Text)
 		}
 	}
+	errors := tokenizer.Errors()
+	if len(errors) > 0 {
+		log15.Warn("parse errors", "path", path, "errors", errors)
+	}
 
 	for _, ann := range refAnnotations {
 		// Verify if the annotation (ref) resolves to a def.
