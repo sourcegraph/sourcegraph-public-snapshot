@@ -7,12 +7,14 @@ export class WantResults {
 	repos: ?Array<string>;
 	notRepos: ?Array<string>;
 	limit: ?number;
+	includeRepos: ?bool;
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, includeRepos: ?bool) {
 		this.query = query;
 		this.repos = repos;
 		this.notRepos = notRepos;
 		this.limit = limit;
+		this.includeRepos = includeRepos;
 	}
 }
 
@@ -21,13 +23,15 @@ export class ResultsFetched {
 	repos: ?Array<string>;
 	notRepos: ?Array<string>;
 	limit: ?number;
+	includeRepos: ?bool;
 	defs: Array<Def>;
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, defs: Array<Def>) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, includeRepos: ?bool, defs: Array<Def>) {
 		this.query = query;
 		this.limit = limit;
 		this.repos = repos;
 		this.notRepos = notRepos;
+		this.includeRepos = includeRepos;
 		this.defs = defs;
 	}
 }

@@ -66,13 +66,17 @@ message Repo {
 	// URL. E.g., "github.com/user/repo".
 	string URI = 1;
 
+	// Owner is the repository owner (user or organizatin) of the repository. (For
+	// example, for "github.com/user/repo", the owner is "user".)
+	string Owner = 2;
+
 	// Name is the base name (the final path component) of the repository, typically
 	// the name of the directory that the repository would be cloned into. (For
 	// example, for git://example.com/foo.git, the name is "foo".)
-	string Name = 2;
+	string Name = 3;
 
 	// Description is a brief description of the repository.
-	string Description = 3;
+	string Description = 4;
 
 	// HTTPCloneURL is the HTTPS clone URL of the repository (or the HTTP clone URL, if
 	// no HTTPS clone URL is available).
@@ -2033,6 +2037,9 @@ message SearchOptions {
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+
+	// IncludeRepos indicates whether to include repository search results.
+	bool IncludeRepos = 4;
 }
 
 // SearchOp holds the options for global search for a given query.
@@ -2044,8 +2051,14 @@ message SearchOp {
 	SearchOptions Opt = 2;
 }
 
-// SearchResult holds a result of a global def search.
-message SearchResult {
+// RepoSearchResult holds a result of a global repo search.
+message RepoSearchResult {
+	// Repo represents a source code repository.
+	Repo Repo = 1;
+}
+
+// DefSearchResult holds a result of a global def search.
+message DefSearchResult {
 	// Def is the def matching the search query.
 	Def Def = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 
@@ -2058,8 +2071,10 @@ message SearchResult {
 
 // SearchResultsList is a list of results to a global search.
 message SearchResultsList {
-	// Results is the list of search results
-	repeated SearchResult Results = 1;
+	// RepoResults is the list of repo search results
+	repeated RepoSearchResult RepoResults = 1;
+	// DefResults is the list of def search results
+	repeated DefSearchResult DefResults = 2;
 }
 
 message SearchRefreshIndexOp {

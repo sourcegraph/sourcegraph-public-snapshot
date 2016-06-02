@@ -81,12 +81,12 @@ func (c *searchCmd) Execute(args []string) error {
 		return err
 	}
 
-	if len(results.Results) == 0 {
+	if len(results.DefResults) == 0 {
 		log.Printf("No results found.\n")
 		return nil
 	}
 
-	for _, r := range results.Results {
+	for _, r := range results.DefResults {
 		name, link := parseDef(&r.Def)
 		log.Printf("%6.2f "+bold("%s")+" <%s>\n", r.Score, name, link)
 	}

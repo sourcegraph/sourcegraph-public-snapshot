@@ -31,6 +31,16 @@ const (
 	minimalClientKey contextKey = iota
 )
 
+// NewContextWithMockClient creates a new mock client for testing purpose.
+func NewContextWithMockClient(ctx context.Context, isAuthedUser bool, userClient *github.Client, appClient *github.Client, mockRepos githubRepos) context.Context {
+	return newContext(ctx, &minimalClient{
+		repos:             mockRepos,
+		orgs:              userClient.Organizations,
+		appAuthorizations: appClient.Authorizations,
+		isAuthedUser:      isAuthedUser,
+	})
+}
+
 // NewContextWithClient creates a new child context with the specified
 // GitHub clients. The userClient is authenticated as the user (or no
 // user if there is none), and appClient is authenticated using the

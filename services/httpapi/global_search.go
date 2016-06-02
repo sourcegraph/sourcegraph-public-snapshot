@@ -8,6 +8,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
+type RepoSearchResult struct {
+	*sourcegraph.Repo
+}
+
 type DefSearchResult struct {
 	sourcegraph.Def
 	RefCount int32
@@ -18,10 +22,11 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	var params struct {
-		Query    string
-		Repos    []string
-		NotRepos []string
-		Limit    int32
+		Query        string
+		Repos        []string
+		NotRepos     []string
+		Limit        int32
+		IncludeRepos bool
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
 		return err
@@ -34,9 +39,10 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	op := &sourcegraph.SearchOp{
 		Query: params.Query,
 		Opt: &sourcegraph.SearchOptions{
-			Repos:       params.Repos,
-			NotRepos:    params.NotRepos,
-			ListOptions: sourcegraph.ListOptions{PerPage: params.Limit},
+			Repos:        params.Repos,
+			NotRepos:     params.NotRepos,
+			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
+			IncludeRepos: params.IncludeRepos,
 		},
 	}
 
@@ -45,8 +51,15 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	repos := make([]*RepoSearchResult, 0, len(results.RepoResults))
+	for _, r := range results.RepoResults {
+		repos = append(repos, &RepoSearchResult{
+			Repo: r.Repo,
+		})
+	}
+
 	var defs []*DefSearchResult
-	for _, r := range results.Results {
+	for _, r := range results.DefResults {
 		r.Def.CommitID = "master" // HACK
 		defs = append(defs, &DefSearchResult{
 			Def:      r.Def,
@@ -56,8 +69,10 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return json.NewEncoder(w).Encode(struct {
-		Defs []*DefSearchResult
+		Repos []*RepoSearchResult
+		Defs  []*DefSearchResult
 	}{
-		Defs: defs,
+		Repos: repos,
+		Defs:  defs,
 	})
 }
