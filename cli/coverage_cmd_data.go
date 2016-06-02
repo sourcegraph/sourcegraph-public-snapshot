@@ -1138,7 +1138,8 @@ var langRepos_ = map[string][]string{
 	"JSON": []string{
 		"github.com/Microsoft/TypeScript",
 		"github.com/ggilmore/srclib-json",
-		"github.com/TryGhost/Ghost",
-		"github.com/jspm/registry",
+		"github.com/arunoda/meteor-up",
+		"github.com/palantir/tslint",
+		"github.com/Microsoft/vscode-extension-vscode",
 	},
 }
