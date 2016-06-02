@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -196,6 +197,11 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	repoRefs, err = filterVisibleRepos(ctx, repoRefs)
 	observe("access", start)
 
+	// Return Files in a consistent order
+	for _, r := range repoRefs {
+		sort.Sort(defFileRefByScore(r.Files))
+	}
+
 	select {
 	case err := <-statsDone:
 		if err != nil {
@@ -249,6 +255,20 @@ func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef)
 		}
 	}
 	return filtered, nil
+}
+
+type defFileRefByScore []*sourcegraph.DefFileRef
+
+func (v defFileRefByScore) Len() int      { return len(v) }
+func (v defFileRefByScore) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v defFileRefByScore) Less(i, j int) bool {
+	if v[i].Score != v[j].Score {
+		return v[i].Score > v[j].Score
+	}
+	if v[i].Count != v[j].Count {
+		return v[i].Count > v[j].Count
+	}
+	return v[i].Path < v[j].Path
 }
 
 // getRefStats fetches global ref aggregation stats pagination and display
