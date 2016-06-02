@@ -22,7 +22,6 @@ const (
 
 	Annotations              = "annotations"
 	AuthInfo                 = "auth-info"
-	BlackHole                = "blackhole"
 	Builds                   = "builds"
 	BuildTaskLog             = "build.task.log"
 	ChannelListen            = "channel.listen"
@@ -124,10 +123,6 @@ func New(base *mux.Router) *mux.Router {
 
 	repoRev.Path("/srclib-import").Methods("PUT").Name(SrclibImport)
 	repoRev.Path("/srclib-data-version").Methods("GET").Name(SrclibDataVer)
-
-	// Old paths we used to support. Explicitly handle them to avoid bad
-	// signal in no route logs
-	base.Path("/ext/github/webhook").Methods("GET", "POST").Name(BlackHole)
 
 	defPath := "/def/" + routevar.Def
 	def := repoRev.PathPrefix(defPath + "/-/").Subrouter()

@@ -3,6 +3,7 @@ package traceapp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -20,6 +21,12 @@ type dashboardRow struct {
 
 // serverDashboard serves the dashboard page.
 func (a *App) serveDashboard(w http.ResponseWriter, r *http.Request) error {
+	if a.Aggregator == nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Dashboard is disabled.")
+		return nil
+	}
+
 	uData, err := a.Router.URLTo(DashboardDataRoute)
 	if err != nil {
 		return err
@@ -27,14 +34,22 @@ func (a *App) serveDashboard(w http.ResponseWriter, r *http.Request) error {
 
 	return a.renderTemplate(w, r, "dashboard.html", http.StatusOK, &struct {
 		TemplateCommon
-		DataURL string
+		DataURL       string
+		HaveDashboard bool
 	}{
-		DataURL: uData.String(),
+		DataURL:       uData.String(),
+		HaveDashboard: a.Aggregator != nil,
 	})
 }
 
 // serveDashboardData serves the JSON data requested by the dashboards table.
 func (a *App) serveDashboardData(w http.ResponseWriter, r *http.Request) error {
+	if a.Aggregator == nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Dashboard is disabled.")
+		return nil
+	}
+
 	// Parse the query for the start & end timeline durations.
 	var (
 		query      = r.URL.Query()

@@ -32,8 +32,8 @@ func testTokenizer(testing *testing.T, tokenizer Tokenizer, tests []*test) {
 			testing.Fatalf("%s: Expected %d tokens, got %d instead", t.name, len(t.expected), len(actual))
 		}
 		for i, tok := range actual {
-			if tok.Offset != t.expected[i].Offset || tok.Text != t.expected[i].Text {
-				testing.Errorf("%s: Expected %d (%s), got %d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Text, tok.Offset, tok.Text)
+			if tok.Offset != t.expected[i].Offset || tok.Line != t.expected[i].Line || tok.Text != t.expected[i].Text {
+				testing.Errorf("%s: Expected %d,%d (%s), got %d,%d (%s) instead", t.name, t.expected[i].Offset, t.expected[i].Line, t.expected[i].Text, tok.Offset, tok.Line, tok.Text)
 			}
 		}
 	}

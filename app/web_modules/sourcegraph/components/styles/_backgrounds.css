@@ -3,7 +3,7 @@
 }
 
 .bg-pattern-objects-fade {
-	/*background-image: url('../../../../assets/img/backgrounds/pattern-fade.png');*/
+	background-image: url('../../../../assets/img/backgrounds/pattern-fade.svg');
 	background-size: 290px 214px;
 	background-repeat: repeat-x;
 }

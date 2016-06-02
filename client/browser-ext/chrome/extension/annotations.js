@@ -128,13 +128,21 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 
 	// if there is a match
 	if (!annotating && matchDetails) {
+		// Handle non-GitHub defs by going to Sourcegraph.
+		const defIsOnGitHub = matchDetails.URL && matchDetails.URL.includes("github.com/");
+
+		const url = defIsOnGitHub ? urlToDef(matchDetails.URL) : `https://sourcegraph.com${matchDetails.URL}`;
+		if (!url) return c;
+
+		const insert = `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
+
 		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
-			return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext" target="tab" class=${styles.sgdef}>${c}</a>`;
+			return `${insert}</a>`;
 		}
 
 		annotating = true;
-		return `<a href="https://sourcegraph.com${matchDetails.URL}?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext" target="tab" class=${styles.sgdef}>${c}`;
+		return insert;
 	}
 
 	// if we reach the end, close the tag.
@@ -146,7 +154,20 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	return c;
 }
 
+function urlToDef(origURL) {
+	if (!origURL) return null;
+	const parts = origURL.split("/-/");
+	if (parts.length < 2) return null;
+	const repo = parts[0]; // remove leading slash
+	const def = parts.slice(1).join("/-/").replace("def/", "");
+	if (repo.startsWith("/github.com/")) {
+		return `https:/${repo}#sourcegraph&def=${def}`;
+	}
+	return `https://github.com/#sourcegraph&repo=${repo}&def=${def}`;
+}
+
 let popoverCache = {};
+export const defCache = {};
 function addPopover(el) {
 	let activeTarget, popover;
 
@@ -160,10 +181,9 @@ function addPopover(el) {
 		if (!t) return;
 		if (activeTarget !== t) {
 			activeTarget = t;
-			let url = activeTarget.href.split("https://sourcegraph.com")[1]
-			url = url.split("?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext")[0]
-			url = `https://sourcegraph.com/.api/repos${url}`;
-			fetchPopoverData(url, function(html) {
+			let url = activeTarget.dataset.src.split("https://sourcegraph.com")[1]
+			url = `https://sourcegraph.com/.api/repos${url}?ComputeLineRange=true&Doc=true`;
+			fetchPopoverData(url, function(html, data) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
 			});
 		}
@@ -199,20 +219,19 @@ function addPopover(el) {
 	}
 
 	function fetchPopoverData(url, cb) {
-		if (popoverCache[url]) return cb(popoverCache[url]);
+		if (popoverCache[url]) return cb(popoverCache[url], defCache[url]);
 		fetch(url)
 			.then((json) => {
+				defCache[url] = json;
 				let html;
 				if (json.Data) {
-					if (json.DocHTML){
-						html = `<div><div class=${styles.popoverTitle}>${json.Kind} <b style="color:#4078C0">${json.Name}</b>${json.FmtStrings.Type.ScopeQualified}</div><div>${json.DocHTML.__html}</div><div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
-					} else {
-						html = `<div><div class=${styles.popoverTitle}>${json.Kind} <b style="color:#4078C0">${json.Name}</b>${json.FmtStrings.Type.ScopeQualified}</div><div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
-					}
+					const f = json.FmtStrings;
+					const doc = json.DocHTML ? `<div>${json.DocHTML.__html}</div>` : "";
+					html = `<div><div class=${styles.popoverTitle}>${f.DefKeyword || ""}${f.DefKeyword ? " " : ""}<b style="color:#4078C0">${f.Name.Unqualified}</b>${f.NameAndTypeSeparator || ""}${f.Type.ScopeQualified === f.DefKeyword ? "" : f.Type.ScopeQualified}</div>${doc}<div class=${styles.popoverRepo}>${json.Repo}</div></div>`;
 				}
 				popoverCache[url] = html;
-				cb(html);
+				cb(html, json);
 			})
-			.catch((err) => console.log("Error getting definition info.") && cb(null));
+			.catch((err) => console.log("Error getting definition info.") && cb(null, null));
 	}
 }

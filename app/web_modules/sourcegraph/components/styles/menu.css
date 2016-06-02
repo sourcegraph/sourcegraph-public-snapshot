@@ -1,29 +1,34 @@
 @value base "sourcegraph/components/styles/_base.css";
-@value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
-@value typography "sourcegraph/components/styles/_typography.css";
+
+@value c_blue-1, c_cool-gray, c_cool-pale-gray-5 from colors;
 
 .container {
 	composes: ph0 pv2 ma0 br3 ba from base;
-	composes: bg-white b--moon-gray from colors;
-	overflow: scroll;
+	composes: bg-white b--cool-gray-2 from colors;
+	overflow: auto;
 	min-width: 12rem;
-	list-style-type: none;
+	max-height: 800px;
+	z-index: 100;
 }
+
 .item {
-	list-style-type: none;
-}
-.item-content {
-	display: block;
-	composes: pv1 ph3 from base;
-	composes: dark-gray from colors;
+	composes: ph3 from base;
 	cursor: pointer;
 }
-@value c_blue from colors;
-.item-content-current {
-	composes: item-content;
+
+.item a {
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+	color: c_cool-gray;
+	display: block;
 }
-.item:hover .item-content {
-	background-color: c_blue;
-	color: white;
+
+.item:hover,
+.item:hover a {
+	color: c_cool-gray;
 }
+
+.item:hover {	background-color: c_cool-pale-gray-5; }
+
+.inactive {	composes: pv2 ph3 from base; }

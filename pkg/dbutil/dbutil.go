@@ -1,7 +1,9 @@
 package dbutil
 
 import (
+	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -92,4 +94,18 @@ func UnbindQuery(query string, args ...interface{}) string {
 		query = strings.Replace(query, fmt.Sprintf("$%d", i+1), fmt.Sprintf("%v", arg), -1)
 	}
 	return query
+}
+
+// Prepare is a convenience method around calling tx.Prepare. See
+// sql.(*DB).Prepare. Usually a SqlExecutor will have this method, but the
+// common interface we pass in does not declare it.
+func Prepare(tx gorp.SqlExecutor, query string) (*sql.Stmt, error) {
+	type Preparer interface {
+		Prepare(string) (*sql.Stmt, error)
+	}
+	ptx, ok := tx.(Preparer)
+	if !ok {
+		return nil, errors.New("dbutil.Prepare tx does not support Prepare")
+	}
+	return ptx.Prepare(query)
 }

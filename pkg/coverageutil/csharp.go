@@ -229,7 +229,7 @@ var csharpKeywords = map[string]bool{
 	"value":      true,
 	"var":        true,
 	"where":      true,
-	"yield ":     true,
+	"yield":      true,
 }
 
 // Initializes text scanner that extracts only idents
@@ -267,7 +267,7 @@ func (s *csharpTokenizer) Next() *Token {
 			continue
 		}
 		p := s.scanner.Pos()
-		return &Token{uint32(p.Offset - len([]byte(text))), text}
+		return &Token{uint32(p.Offset - len([]byte(text))), p.Line, text}
 	}
 }
 

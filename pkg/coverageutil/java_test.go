@@ -12,7 +12,7 @@ func TestJava(testing *testing.T) {
 			{
 				"keywords and UTF-8",
 				"package /* © */ main; class A {}",
-				[]Token{{29, "A"}},
+				[]Token{{29, 1, "A"}},
 			},
 			{
 				"packages and imports",
@@ -27,7 +27,7 @@ func TestJava(testing *testing.T) {
 			{
 				"escape sequences",
 				"\"\\0\" '\\00' '\\'' abc",
-				[]Token{{16, "abc"}},
+				[]Token{{16, 1, "abc"}},
 			},
 		})
 }

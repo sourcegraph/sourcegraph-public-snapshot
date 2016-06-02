@@ -36,7 +36,7 @@ type EventUnmarshaler interface {
 	UnmarshalEvent(Annotations) (Event, error)
 }
 
-const schemaPrefix = "_schema:"
+const SchemaPrefix = "_schema:"
 
 // MarshalEvent marshals an event into annotations.
 func MarshalEvent(e Event) (Annotations, error) {
@@ -46,7 +46,7 @@ func MarshalEvent(e Event) (Annotations, error) {
 		if err != nil {
 			return nil, err
 		}
-		as = append(as, Annotation{Key: schemaPrefix + e.Schema()})
+		as = append(as, Annotation{Key: SchemaPrefix + e.Schema()})
 		return as, nil
 	}
 
@@ -54,7 +54,7 @@ func MarshalEvent(e Event) (Annotations, error) {
 	flattenValue("", reflect.ValueOf(e), func(k, v string) {
 		as = append(as, Annotation{Key: k, Value: []byte(v)})
 	})
-	as = append(as, Annotation{Key: schemaPrefix + e.Schema()})
+	as = append(as, Annotation{Key: SchemaPrefix + e.Schema()})
 	return as, nil
 }
 
@@ -122,7 +122,7 @@ func RegisterEvent(e Event) {
 var registeredEvents = map[string]Event{} // event schema -> event type
 
 func init() {
-	RegisterEvent(spanName{})
+	RegisterEvent(SpanNameEvent{})
 	RegisterEvent(logEvent{})
 	RegisterEvent(msgEvent{})
 	RegisterEvent(timespanEvent{})
@@ -148,14 +148,14 @@ func UnmarshalEvents(anns Annotations, events *[]Event) error {
 	return nil
 }
 
-// A spanName event sets a span's name.
-type spanName struct{ Name string }
+// A SpanNameEvent event sets a span's name.
+type SpanNameEvent struct{ Name string }
 
-func (spanName) Schema() string { return "name" }
+func (SpanNameEvent) Schema() string { return "name" }
 
 // SpanName returns an Event containing a human readable Span name.
 func SpanName(name string) Event {
-	return spanName{Name: name}
+	return SpanNameEvent{Name: name}
 }
 
 // Msg returns an Event that contains only a human-readable message.

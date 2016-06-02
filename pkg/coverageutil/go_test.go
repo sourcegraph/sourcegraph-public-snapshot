@@ -12,7 +12,7 @@ func TestGo(testing *testing.T) {
 			{
 				"keywords",
 				"package main",
-				[]Token{{8, "main"}},
+				[]Token{{8, 1, "main"}},
 			},
 		})
 }

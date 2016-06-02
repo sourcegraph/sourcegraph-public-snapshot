@@ -35,9 +35,10 @@ var templates = [][]string{
 
 // TemplateCommon is data that is passed to (and available to) all templates.
 type TemplateCommon struct {
-	CurrentRoute string
-	CurrentURI   *url.URL
-	BaseURL      *url.URL
+	CurrentRoute  string
+	CurrentURI    *url.URL
+	BaseURL       *url.URL
+	HaveDashboard bool
 }
 
 func (a *App) renderTemplate(w http.ResponseWriter, r *http.Request, name string, status int, data interface{}) error {
@@ -62,9 +63,10 @@ func (a *App) renderTemplate(w http.ResponseWriter, r *http.Request, name string
 	if data != nil {
 		// Set TemplateCommon values.
 		reflect.ValueOf(data).Elem().FieldByName("TemplateCommon").Set(reflect.ValueOf(TemplateCommon{
-			CurrentRoute: mux.CurrentRoute(r).GetName(),
-			CurrentURI:   r.URL,
-			BaseURL:      a.baseURL,
+			CurrentRoute:  mux.CurrentRoute(r).GetName(),
+			CurrentURI:    r.URL,
+			BaseURL:       a.baseURL,
+			HaveDashboard: a.Aggregator != nil,
 		}))
 	}
 

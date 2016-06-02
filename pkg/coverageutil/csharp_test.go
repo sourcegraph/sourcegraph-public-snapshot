@@ -11,12 +11,12 @@ func TestCsharp(testing *testing.T) {
 			{
 				"multiline strings",
 				"\"abc\ndef\"a 'a'",
-				[]Token{{9, "a"}},
+				[]Token{{9, 2, "a"}},
 			},
 			{
 				"identifiers",
 				"_a = 2;",
-				[]Token{{0, "_a"}},
+				[]Token{{0, 1, "_a"}},
 			},
 			{
 				"numeric suffixes",
@@ -26,7 +26,7 @@ func TestCsharp(testing *testing.T) {
 			{
 				"verbatim strings",
 				"@\"a\"\" b\" c",
-				[]Token{{9, "c"}},
+				[]Token{{9, 1, "c"}},
 			},
 		})
 }

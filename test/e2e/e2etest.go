@@ -376,7 +376,7 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 
 				// This error should not be bubbled up! That will cause the parallel.Run to short circuit,
 				// but we want all tests to run regardless.
-				err, screenshot := t.runTest(test, wouldAttemptAgain)
+				err, screenshot := t.runTest(test)
 				if _, ok := err.(*internalError); ok {
 					t.log.Printf("[warning] [%v] unable to establish a session: %v\n", test.Name, err)
 					t.slackMessage(typeWarning, fmt.Sprintf("Test %v failed due to inability to establish a connection: %v", test.Name, err), "")
@@ -391,19 +391,19 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 						msg := fmt.Sprintf("[warning] [attempt %v failed] [%v] [%v]: %v\n", attempt, test.Name, unitTime, err)
 						t.log.Printf(msg)
 						t.slackMessage(typeWarning, msg, "")
-						testCounter.WithLabelValues(test.Name, "retry").Inc()
-
-						// When running without Slack support, write the screenshot to a file
-						// instead.
-						if t.slack == nil {
-							if e := ioutil.WriteFile(test.Name+".png", screenshot, 0666); e != nil {
-								t.log.Printf("[warning] [attempt %v] [%v]: could not save screenshot: %v\n", attempt, test.Name, e)
-							}
+						if err := t.slackFileUpload(typeWarning, screenshot, test.Name+".png"); err != nil {
+							t.log.Println("could not upload screenshot to Slack", test.Name, err)
 						}
+						testCounter.WithLabelValues(test.Name, "retry").Inc()
 						continue
 					}
 
-					if !test.Quarantined {
+					failureType := typeNormal
+					if test.Quarantined {
+						failureType = typeWarning
+					}
+
+					if failureType == typeNormal {
 						failuresMu.Lock()
 						failures++
 						failuresMu.Unlock()
@@ -412,12 +412,8 @@ func (t *testRunner) runTests(logSuccess bool) bool {
 					t.log.Printf("[failure] [%v] [%v]: %v\n", test.Name, unitTime, err)
 					testCounter.WithLabelValues(test.Name, "failure").Inc()
 
-					// When running without Slack support, write the screenshot to a file
-					// instead.
-					if t.slack == nil {
-						if e := ioutil.WriteFile(test.Name+".png", screenshot, 0666); e != nil {
-							t.log.Printf("[failure] [%v]: could not save screenshot: %v\n", test.Name, e)
-						}
+					if err := t.slackFileUpload(failureType, screenshot, test.Name+".png"); err != nil {
+						t.log.Println("could not upload screenshot to Slack", test.Name, err)
 					}
 					return nil
 				}
@@ -496,7 +492,7 @@ func (t *testRunner) sendAlert() error {
 // warningChannel specifies whether or not the screenshot should be uploaded to
 // the warning Slack channel in the event of an error. Otherwise, it is
 // uploaded to the normal (failure) channel.
-func (t *testRunner) runTest(test *Test, warningChannel bool) (err error, screenshot []byte) {
+func (t *testRunner) runTest(test *Test) (err error, screenshot []byte) {
 	wd, err := t.newWebDriver()
 	if err != nil {
 		return &internalError{err: err}, nil
@@ -523,10 +519,7 @@ func (t *testRunner) runTest(test *Test, warningChannel bool) (err error, screen
 			screenshot, err2 = wd.Screenshot()
 			if err2 != nil {
 				t.log.Println("could not capture screenshot for", test.Name, err2)
-			} else if t.slack != nil {
-				if err2 = t.slackFileUpload(screenshot, test.Name+".png", warningChannel); err2 != nil {
-					t.log.Println("could not upload screenshot to Slack", test.Name, err2)
-				}
+				screenshot = nil
 			}
 		}
 		wd.Quit()
@@ -562,7 +555,10 @@ func (t *testRunner) newT(test *Test, wd selenium.WebDriver) *T {
 // slackFileUpload implements slack multipart file upload.
 //
 // TODO(slimsag): upstream this type of change to github.com/nlopes/slack.
-func (t *testRunner) slackFileUpload(f []byte, title string, warningChannel bool) error {
+func (t *testRunner) slackFileUpload(messageType int, f []byte, title string) error {
+	if t.slack == nil {
+		return ioutil.WriteFile(title, f, 0666)
+	}
 	b := &bytes.Buffer{}
 	w := multipart.NewWriter(b)
 	fw, err := w.CreateFormFile("file", title)
@@ -578,7 +574,7 @@ func (t *testRunner) slackFileUpload(f []byte, title string, warningChannel bool
 
 	// Write additional fields.
 	channel := t.slackChannel.ID
-	if warningChannel {
+	if messageType == typeWarning {
 		if t.slackWarningChannel == nil {
 			return nil
 		}

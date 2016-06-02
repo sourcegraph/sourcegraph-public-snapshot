@@ -66,6 +66,11 @@ class DefContainer extends Container {
 				state.highlightedDefObj = null;
 			}
 		}
+		if (state.mouseout) {
+			// Clear DefTooltip so it doesn't hang around.
+			state.highlightedDef = null;
+			state.highlightedDefObj = null;
+		}
 
 		state.defFile = state.defObj && !state.defObj.Error ? BlobStore.files.get(state.defObj.Repo, state.commitID, state.defObj.File) : null;
 		state.defAnns = state.defObj && !state.defObj.Error ? BlobStore.annotations.get(state.defObj.Repo, state.commitID, state.defObj.File): null;
@@ -115,8 +120,8 @@ class DefContainer extends Container {
 		let contents = this.state.defFile && !this.state.defFile.Error ? this.state.defFile.ContentsString : null;
 		return (
 			<div className={styles.container}
-				onMouseOver={() => this.setState({mouseover: true})}
-				onMouseOut={() => this.setState({mouseover: false})}>
+				onMouseOver={() => this.setState({mouseover: true, mouseout: false})}
+				onMouseOut={() => this.setState({mouseover: false, mouseout: true})}>
 				{this.renderFileHeader(def, beginningLine)}
 				{this.state.showDef && this.state.defFile && this.state.defFile.Error && <p>Error loading code</p>}
 				{this.state.showDef && this.state.defFile && !this.state.defFile.Error && <Blob

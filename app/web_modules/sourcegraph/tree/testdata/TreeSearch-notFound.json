@@ -3,7 +3,7 @@
 		"type": "WrappedComponent",
 		"props": {
 			"title": "404",
-			"subtitle": "Directory \"p1/notfound\" not found."
+			"subtitle": "Directory not found."
 		}
 	},
 	"dispatched": [

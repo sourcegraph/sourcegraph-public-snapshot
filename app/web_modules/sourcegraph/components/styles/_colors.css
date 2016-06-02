@@ -44,10 +44,15 @@
 @value c_cool-gray-5 rgba(52, 74, 102, .5);
 @value c_cool-gray-2 rgba(52, 74, 102, .2);
 @value c_cool-gray-1 rgba(52, 74, 102, .1);
-@value c_cool-dark-gray rgba(26, 48, 77, 1);
 
 @value c_cool-mid-gray rgba(119, 147, 174, 1);
 @value c_cool-pale-gray rgba(213, 229, 242, 1);
+@value c_cool-pale-gray-8 rgba(213, 229, 242, 0.8);
+@value c_cool-pale-gray-5 rgba(213, 229, 242, 0.5);
+@value c_cool-pale-gray-2 rgba(213, 229, 242, 0.2);
+@value c_cool-pale-gray-1 rgba(213, 229, 242, 0.1);
+
+@value c_cool-dark-gray rgba(26, 48, 77, 1);
 
 @value c_dark-gray #333;
 @value c_mid-gray #555;
@@ -207,6 +212,11 @@
 .bg-cool-gray-2 { background-color: c_cool-gray-2; }
 .bg-cool-gray-1 { background-color: c_cool-gray-1; }
 
+.bg-cool-pale-gray { background-color: c_cool-pale-gray; }
+.bg-cool-pale-gray-8 { background-color: c_cool-pale-gray-8; }
+.bg-cool-pale-gray-2 { background-color: c_cool-pale-gray-2; }
+.bg-cool-pale-gray-1 { background-color: c_cool-pale-gray-1; }
+
 .bg-black { background-color: black; }
 .bg-dark-gray { background-color: c_dark-gray; }
 .bg-mid-gray { background-color: c_mid-gray; }
@@ -319,3 +329,5 @@
 .b--black-025 { border-color: c_black-025; }
 .b--black-0125 { border-color: c_black-0125; }
 .b--transparent { border-color: transparent; }
+
+.shadow-gray { box-shadow: 0px 1px 6px 0px c_cool-gray-1; }

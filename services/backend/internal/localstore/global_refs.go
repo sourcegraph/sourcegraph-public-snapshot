@@ -2,12 +2,17 @@ package localstore
 
 import (
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rogpeppe/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -16,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -51,6 +57,13 @@ func init() {
 	GraphSchema.DropSQL = append(GraphSchema.DropSQL,
 		`DROP MATERIALIZED VIEW IF EXISTS global_refs_stats;`,
 	)
+
+	type dbGlobalRefVersion struct {
+		Repo      string     `db:"repo"`
+		CommitID  string     `db:"commit_id"`
+		UpdatedAt *time.Time `db:"updated_at"`
+	}
+	GraphSchema.Map.AddTableWithName(dbGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
 }
 
 // globalRefs is a DB-backed implementation of the GlobalRefs store.
@@ -80,7 +93,7 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		return nil, err
 	} else if defKeyID == 0 {
 		// DefKey was not found
-		return &sourcegraph.RefLocationsList{}, nil
+		return &sourcegraph.RefLocationsList{RepoRefs: []*sourcegraph.DefRepoRef{}}, nil
 	}
 
 	// Optimization: fetch ref stats in parallel to fetching ref locations.
@@ -188,6 +201,14 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	observe("locations", start)
 	start = time.Now()
 
+	repoRefs, err = filterVisibleRepos(ctx, repoRefs)
+	observe("access", start)
+
+	// Return Files in a consistent order
+	for _, r := range repoRefs {
+		sort.Sort(defFileRefByScore(r.Files))
+	}
+
 	select {
 	case err := <-statsDone:
 		if err != nil {
@@ -199,6 +220,62 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 		RepoRefs:   repoRefs,
 		TotalRepos: int32(totalRepos),
 	}, nil
+}
+
+// filterVisibleRepos ensures all the defs we return we have access to
+func filterVisibleRepos(ctx context.Context, repoRefs []*sourcegraph.DefRepoRef) ([]*sourcegraph.DefRepoRef, error) {
+	// HACK: set hard limit on # of repos returned for one def, to avoid making excessive number
+	// of GitHub Repos.Get calls in the accesscontrol check below.
+	// TODO: remove this limit once we properly cache GitHub API responses.
+	if len(repoRefs) > 100 {
+		repoRefs = repoRefs[:100]
+	}
+
+	// Filter out repos that the user does not have access to.
+	hasAccess := make([]bool, len(repoRefs))
+	par := parallel.NewRun(30)
+	var mu sync.Mutex
+	for i_, r_ := range repoRefs {
+		i, r := i_, r_
+		par.Do(func() error {
+			// TODO(keegancsmith) once forks are removed from
+			// global_refs, we should just check
+			// accesscontrol.VerifyUserHasReadAccess
+			// https://app.asana.com/0/138665145800110/137848642885286
+			repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: r.Repo})
+			if err == nil && !repo.Fork {
+				mu.Lock()
+				hasAccess[i] = true
+				mu.Unlock()
+			}
+			return nil
+		})
+	}
+	if err := par.Wait(); err != nil {
+		return nil, err
+	}
+
+	filtered := make([]*sourcegraph.DefRepoRef, 0, len(repoRefs))
+	for i, r := range repoRefs {
+		if hasAccess[i] {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered, nil
+}
+
+type defFileRefByScore []*sourcegraph.DefFileRef
+
+func (v defFileRefByScore) Len() int      { return len(v) }
+func (v defFileRefByScore) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v defFileRefByScore) Less(i, j int) bool {
+	if v[i].Score != v[j].Score {
+		return v[i].Score > v[j].Score
+	}
+	if v[i].Count != v[j].Count {
+		return v[i].Count > v[j].Count
+	}
+	return v[i].Path < v[j].Path
 }
 
 // getRefStats fetches global ref aggregation stats pagination and display
@@ -218,7 +295,23 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 	return graphDBH(ctx).SelectInt("SELECT COUNT(DISTINCT repo) AS Repos FROM global_refs_new WHERE def_key_id=$1", defKeyID)
 }
 
-func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) error {
+func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+	// We run this here just to ensure we have a version row to lock (if
+	// missing it does an insert)
+	_, err := g.version(graphDBH(ctx), *op.Repo)
+	if err != nil {
+		return err
+	}
+
+	// Do everything in one transaction, to ensure we don't have
+	// concurrent updates to repo
+	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+		return g.update(ctx, tx, op)
+	})
+}
+
+func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *sourcegraph.DefsRefreshIndexOp) error {
+	repo := *op.Repo
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", repo.URI); err != nil {
 		return err
 	}
@@ -227,6 +320,23 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 	if err != nil {
 		return err
 	}
+	oldCommitID, err := g.version(tx, repo)
+	if err != nil {
+		return err
+	}
+	if commitID == oldCommitID {
+		if !op.Force {
+			log15.Debug("GlobalRefs.Update has already indexed commit", "repo", repo.URI, "commitID", commitID)
+			return nil
+		}
+		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo.URI, "commitID", commitID)
+	}
+
+	// Update and lock version row
+	if err := g.versionUpdate(tx, repo, commitID); err != nil {
+		return err
+	}
+
 	allRefs, err := store.GraphFromContext(ctx).Refs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: commitID}),
 	)
@@ -259,8 +369,14 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 		refs = append(refs, r)
 	}
 
+	log15.Debug("GlobalRefs.Update", "repo", repo.URI, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
+
 	// Get all defKeyIDs outside of the transaction, since doing it inside
 	// of the transaction can lead to conflicts with other imports
+	//
+	// NOTE: we are using graphDBH(ctx) on purpose, we want to do these
+	// updates outside of the transaction since other repo updates could
+	// be creating the same def_keys.
 	defKeyIDs := map[sourcegraph.DefSpec]int64{}
 	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
 	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
@@ -300,42 +416,77 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 	def_key_id bigint,
 	repo TEXT,
 	file TEXT,
-	count integer
+	count integer default 1
 )
 ON COMMIT DROP;`
-	tmpInsertSQL := `INSERT INTO global_refs_tmp(def_key_id, repo, file, count) VALUES($1, $2, $3, 1);`
 	finalDeleteSQL := `DELETE FROM global_refs_new WHERE repo=$1;`
 	finalInsertSQL := `INSERT INTO global_refs_new(def_key_id, repo, file, count, updated_at)
 	SELECT def_key_id, repo, file, sum(count) as count, now() as updated_at
 	FROM global_refs_tmp
 	GROUP BY def_key_id, repo, file;`
 
-	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-		// Create a temporary table to load all new ref data.
-		if _, err := tx.Exec(tmpCreateSQL); err != nil {
-			return err
-		}
+	// Create a temporary table to load all new ref data.
+	if _, err := tx.Exec(tmpCreateSQL); err != nil {
+		return err
+	}
 
-		// Insert refs into temporary table
-		for _, r := range refs {
-			defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-			if _, err := tx.Exec(tmpInsertSQL, defKeyID, repo.URI, r.File); err != nil {
-				return err
-			}
-		}
+	stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+	if err != nil {
+		return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
+	}
 
-		// Purge all existing ref data for files in this source unit.
-		if _, err := tx.Exec(finalDeleteSQL, repo.URI); err != nil {
-			return err
+	// Insert refs into temporary table
+	for _, r := range refs {
+		defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
+		if _, err := stmt.Exec(defKeyID, repo.URI, r.File); err != nil {
+			return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
 		}
+	}
 
-		// Insert refs into global refs table
-		if _, err := tx.Exec(finalInsertSQL); err != nil {
-			return err
+	// We need to do an empty Exec() to flush any remaining
+	// inserts that are in the drivers buffer
+	if _, err = stmt.Exec(); err != nil {
+		return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
+	}
+
+	// Purge all existing ref data for files in this source unit.
+	if _, err := tx.Exec(finalDeleteSQL, repo.URI); err != nil {
+		return err
+	}
+
+	// Insert refs into global refs table
+	if _, err := tx.Exec(finalInsertSQL); err != nil {
+		return err
+	}
+
+	// Update version row again, to have a more relevant timestamp
+	if err := g.versionUpdate(tx, repo, commitID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// version returns the commit_id that global_refs has indexed for repo
+func (g *globalRefs) version(tx gorp.SqlExecutor, repo sourcegraph.RepoSpec) (string, error) {
+	commitID, err := tx.SelectNullStr("SELECT commit_id FROM global_refs_version WHERE repo=$1 FOR UPDATE", repo.URI)
+	if err != nil {
+		return "", err
+	}
+	// Insert a value into the table so we just have to run an UPDATE + can lock the row.
+	if !commitID.Valid {
+		_, err = tx.Exec("INSERT INTO global_refs_version VALUES ($1, '', now())", repo.URI)
+		if err != nil {
+			return "", err
 		}
+	}
+	return commitID.String, nil
+}
 
-		return nil
-	})
+// versionUpdate will update the version for repo to commitID in the transaction tx
+func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repo sourcegraph.RepoSpec, commitID string) error {
+	_, err := tx.Exec("UPDATE global_refs_version SET commit_id=$1, updated_at=now() WHERE repo=$2;", commitID, repo.URI)
+	return err
 }
 
 func (g *globalRefs) StatRefresh(ctx context.Context) error {
@@ -343,8 +494,6 @@ func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	return err
 }
 
-// TODO(keegancsmith) Remove. This is very granular instrumentation which we
-// only need temporarily. Generally we should just rely on appdash.
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",

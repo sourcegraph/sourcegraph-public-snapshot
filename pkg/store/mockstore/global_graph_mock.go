@@ -31,15 +31,15 @@ var _ store.GlobalDefs = (*GlobalDefs)(nil)
 
 type GlobalRefs struct {
 	Get_    func(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	Update_ func(ctx context.Context, repo sourcegraph.RepoSpec) error
+	Update_ func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
 }
 
 func (s *GlobalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error) {
 	return s.Get_(ctx, op)
 }
 
-func (s *GlobalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) error {
-	return s.Update_(ctx, repo)
+func (s *GlobalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+	return s.Update_(ctx, op)
 }
 
 var _ store.GlobalRefs = (*GlobalRefs)(nil)

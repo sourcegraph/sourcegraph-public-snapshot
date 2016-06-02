@@ -11,17 +11,17 @@ func TestJavaScript(testing *testing.T) {
 			{
 				"backticks and single quotes",
 				"`back\ntick`\nconsole.log('hi')",
-				[]Token{{12, "console"}, {20, "log"}},
+				[]Token{{12, 3, "console"}, {20, 3, "log"}},
 			},
 			{
 				"double quotes and Unicode code points",
 				"a \"\\u{2F804}\" b",
-				[]Token{{0, "a"}, {14, "b"}},
+				[]Token{{0, 1, "a"}, {14, 1, "b"}},
 			},
 			{
 				"identifiers",
 				"$ = 1; _a = 2;",
-				[]Token{{0, "$"}, {7, "_a"}},
+				[]Token{{0, 1, "$"}, {7, 1, "_a"}},
 			},
 			{
 				"numeric literals",
@@ -31,7 +31,7 @@ func TestJavaScript(testing *testing.T) {
 			{
 				"regular expressions and comments",
 				"/abc/ /abc/d a / b //abcdef\nccc",
-				[]Token{{13, "a"}, {17, "b"}, {28, "ccc"}},
+				[]Token{{13, 1, "a"}, {17, 1, "b"}, {28, 2, "ccc"}},
 			},
 		})
 }

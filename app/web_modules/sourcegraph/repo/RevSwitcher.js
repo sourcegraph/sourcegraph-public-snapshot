@@ -8,8 +8,9 @@ import * as TreeActions from "sourcegraph/tree/TreeActions";
 import Component from "sourcegraph/Component";
 import {Link} from "react-router";
 import styles from "./styles/RevSwitcher.css";
+
 import {TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
-import Input from "sourcegraph/components/Input";
+import {Input, Menu, Heading} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import {urlWithRev} from "sourcegraph/repo/routes";
 
@@ -133,16 +134,14 @@ class RevSwitcher extends Component {
 		const commitsBehind = this.state.srclibDataVersion && !this.state.srclibDataVersion.Error ? this.state.srclibDataVersion.CommitsBehind : 0;
 
 		return (
-			<li key={`r${name}.${commitID}`}
-				styleName={isCurrent ? "item-current" : "item"}>
+			<div key={`r${name}.${commitID}`} role="menu-item">
 				<Link to={this._revSwitcherURL(name)} title={commitID}
-					styleName={isCurrent ? "item-content-current" : "item-content"}
 					onClick={this._closeDropdown}>
-					<CheckIcon styleName={isCurrent ? "icon" : "icon-hidden"} /> {name && <span styleName="item-name">{abbrevRev(name)}</span>}
+					<CheckIcon styleName={isCurrent ? "icon" : "icon-hidden"} /> {name && <span>{abbrevRev(name)}</span>}
 					{isCurrent && commitsBehind ? <span styleName="detail">{commitsBehind} commit{commitsBehind !== 1 && "s"} ahead of index</span> : null}
 					{isCurrent && unindexed ? <span styleName="detail">not indexed</span> : null}
 				</Link>
-			</li>
+			</div>
 		);
 	}
 
@@ -269,26 +268,22 @@ class RevSwitcher extends Component {
 					onClick={this._onToggleDropdown}>
 					<TriangleDownIcon />
 				</span>
-				<div role="menu"
-					styleName={this.state.open ? "dropdown-menu-open" : "dropdown-menu-closed"}>
-					<div styleName="search-section">
-						<Input block={true}
-							domRef={(e) => this._input = e}
-							type="text"
-							styleName="input"
-							placeholder="Find branch or tag"
-							onChange={this._onChangeQuery}/>
-					</div>
-					<div role="presentation" styleName="divider"></div>
-					<ul styleName="list-section">
-						{/* Show the current one at the top if it wouldn't otherwise be shown. */}
+				<div styleName={this.state.open ? "dropdown-menu open" : "dropdown-menu closed"}>
+					<Menu>
+						<div>
+							<Input block={true}
+								domRef={(e) => this._input = e}
+								type="text"
+								styleName="input"
+								placeholder="Find branch or tag"
+								onChange={this._onChangeQuery}/>
+						</div>
 						{this.state.rev && !currentItem && !this.state.query && this._item(this.state.rev, this.state.commitID)}
-						<li role="presentation" styleName="dropdown-header">Branches</li>
+						<Heading level="5">Branches</Heading>
 						{branches}
-						<li role="presentation" styleName="divider"></li>
-						<li role="presentation" styleName="dropdown-header">Tags</li>
+						<Heading level="5">Tags</Heading>
 						{tags}
-					</ul>
+					</Menu>
 				</div>
 			</div>
 		);
@@ -301,4 +296,4 @@ function abbrevRev(rev) {
 	return rev;
 }
 
-export default CSSModules(RevSwitcher, styles);
+export default CSSModules(RevSwitcher, styles, {allowMultiple: true});

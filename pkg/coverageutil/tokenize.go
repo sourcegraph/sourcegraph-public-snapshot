@@ -12,6 +12,8 @@ import (
 type Token struct {
 	// Byte offset
 	Offset uint32
+	// Line number
+	Line int
 	// Token text
 	Text string
 }

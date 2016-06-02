@@ -62,6 +62,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		if err != nil {
 			log.Println("SourcegraphComGoGetHandler: sourcegraph.NewClientFromContext:", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
 		}
 		pathElements := strings.Split(req.URL.Path[1:], "/")
 
