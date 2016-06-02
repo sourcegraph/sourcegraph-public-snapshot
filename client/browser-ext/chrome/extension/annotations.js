@@ -132,14 +132,10 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 		const url = defIsOnGitHub ? urlToDef(matchDetails.URL) : `https://sourcegraph.com${matchDetails.URL}`;
 		if (!url) return c;
 
-		const insert = annsByStartByte[byteCount].className ? `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}><span class="${annsByStartByte[byteCount].className}">${c}`
-		: `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
+		const insert = `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
 
 		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
-			if annsByStartByte[byteCount].className {
-				return `${insert}</span></a>`
-			}
 			return `${insert}</a>`;
 		}
 

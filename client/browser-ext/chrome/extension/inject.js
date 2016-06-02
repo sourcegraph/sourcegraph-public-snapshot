@@ -173,8 +173,16 @@ class InjectApp extends React.Component {
 		this.addSearchButton();
 
 		let {user, repo, rev, path, defPath} = this.parseURL();
+		// This scrapes the latest commit ID and updates rev to the latest commit so we are never injecting
+		// outdated annotations.
+		let latestRev = document.getElementsByClassName("js-permalink-shortcut")[0].href.split("/")[6]
+		if (rev !== latestRev) rev = latestRev;
+
 		const repoName = repo;
-		if (repo) repo = `github.com/${user}/${repo}`;
+		if (repo) {
+			repo = `github.com/${user}/${repo}`;
+			this.props.actions.refreshVCS(repo);
+		}
 		if (path) {
 			// Strip hash (e.g. line location) from path.
 			const hashLoc = path.indexOf("#");
