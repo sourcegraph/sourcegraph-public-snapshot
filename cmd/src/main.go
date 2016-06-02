@@ -1,5 +1,5 @@
 // src is the Sourcegraph server and API client program.
-package main
+package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/src"
 
 import (
 	"os"
