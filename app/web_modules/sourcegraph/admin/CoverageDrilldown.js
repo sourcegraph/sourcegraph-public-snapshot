@@ -249,7 +249,7 @@ class CoverageDrilldown extends Container {
 											<Label color={buildClass(builds[0])} styleName="build-label">{buildStatus(builds[0])}</Label>
 											</Link>
 										}
-										{source.Repo}
+										<Link to={urlToRepoRev(source.Repo, source.Rev)}>{source.Repo}</Link>
 										{this.state.idx === this.props.data.length - 1 &&
 											<div styleName="repo-drilldown-icon" size="small" outline={true} onClick={() => this._drilldown(source)}><MagnifyingGlassIcon /></div>
 										}
