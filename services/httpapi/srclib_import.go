@@ -13,6 +13,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
@@ -22,6 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 	"sourcegraph.com/sourcegraph/srclib/store/pb"
 )
@@ -71,6 +73,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	if _, err := f.Seek(0, os.SEEK_SET); err != nil {
 		return err
 	}
+	importSizeBytes.WithLabelValues(repotrackutil.GetTrackedRepo(repo.URI)).Observe(float64(contentLength))
 
 	if contentLength == 0 {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("no data in request body")}
@@ -163,3 +166,14 @@ func (fs absolutePathVFS) ReadDir(path string) ([]os.FileInfo, error) {
 	return fs.FileSystem.ReadDir(fs.abs(path))
 }
 func (fs absolutePathVFS) String() string { return fmt.Sprintf("abs(%s)", fs.FileSystem) }
+
+var importSizeBytes = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "srclib_import",
+	Name:      "content_length_bytes",
+	Help:      "Size of the request body (a zipfile) for srclib import in bytes",
+}, []string{"repo"})
+
+func init() {
+	prometheus.MustRegister(importSizeBytes)
+}

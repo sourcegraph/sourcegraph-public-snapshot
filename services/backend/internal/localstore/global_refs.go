@@ -11,6 +11,7 @@ import (
 	"github.com/rogpeppe/rog-go/parallel"
 
 	"gopkg.in/gorp.v1"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -308,6 +309,8 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 		refs = append(refs, r)
 	}
 
+	log15.Debug("GlobalRefs.Update", "repo", repo.URI, "commitID", commitID, "numRefs", len(refs))
+
 	// Get all defKeyIDs outside of the transaction, since doing it inside
 	// of the transaction can lead to conflicts with other imports
 	defKeyIDs := map[sourcegraph.DefSpec]int64{}
@@ -402,8 +405,6 @@ func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	return err
 }
 
-// TODO(keegancsmith) Remove. This is very granular instrumentation which we
-// only need temporarily. Generally we should just rely on appdash.
 var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",
