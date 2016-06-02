@@ -2,6 +2,8 @@ package coverageutil
 
 import (
 	"bytes"
+	"path/filepath"
+	"strings"
 	"text/scanner"
 	"unicode"
 )
@@ -242,5 +244,25 @@ func init() {
 	var factory = func() Tokenizer {
 		return &javascriptTokenizer{}
 	}
-	newExtensionBasedLookup("JavaScript", []string{".js"}, factory)
+
+	register(func(lang, path string) tokenizerFactory {
+		if lang != "JavaScript" {
+			return nil
+		}
+		if !strings.HasSuffix(path, ".js") {
+			return nil
+		}
+		if strings.HasSuffix(path, ".min.js") {
+			return nil
+		}
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			// fallback
+			abs = path
+		}
+		if strings.Contains(filepath.ToSlash(abs), "/node_modules/") {
+			return nil
+		}
+		return factory
+	})
 }
