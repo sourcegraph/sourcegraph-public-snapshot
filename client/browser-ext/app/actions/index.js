@@ -27,9 +27,6 @@ export function setQuery(query) {
 function fetchSrclibDataVersion(dispatch, currJson, repo, rev, path) {
 	let promise;
 	// TODO: handle inflight / errored fetches of srclibDataVersion.
-	// TODO: This doesn't make sense.  If currJson.CommitID is true, i.e. we have a valid
-	// srclibDataVersion even if it is outdated, we will never check and fetch to see if it has
-	// been updated in Sourcegraph.
 	if (currJson) {
 		if (currJson.CommitID) {
 			promise = Promise.resolve(currJson);
