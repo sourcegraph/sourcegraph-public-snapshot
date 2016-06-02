@@ -3,6 +3,9 @@
 package localstore
 
 import (
+	"bytes"
+	"io/ioutil"
+	"net/http"
 	"reflect"
 	"sort"
 	"testing"
@@ -13,9 +16,11 @@ import (
 
 	"golang.org/x/net/context"
 
+	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -261,35 +266,69 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 
 }
 
-func TestRepos_Search(t *testing.T) {
-	t.Parallel()
+type mockGitHubRepos struct {
+	Get_     func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error)
+	GetByID_ func(id int) (*gogithub.Repository, *gogithub.Response, error)
+	List_    func(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error)
+}
 
+func (s mockGitHubRepos) Get(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
+	return s.Get_(owner, repo)
+}
+
+func (s mockGitHubRepos) GetByID(id int) (*gogithub.Repository, *gogithub.Response, error) {
+	return s.GetByID_(id)
+}
+
+func (s mockGitHubRepos) List(user string, opt *gogithub.RepositoryListOptions) ([]gogithub.Repository, *gogithub.Response, error) {
+	return s.List_(user, opt)
+}
+
+func TestRepos_Search(t *testing.T) {
 	ctx, _, done := testContext()
 	defer done()
 
+	var calledGet bool
+	client := gogithub.NewClient(&http.Client{})
+	ctx = github.NewContextWithMockClient(ctx, true, client, client, mockGitHubRepos{
+		Get_: func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
+			calledGet = true
+			return &gogithub.Repository{
+				ID:       gogithub.Int(123),
+				Name:     gogithub.String("repo"),
+				FullName: gogithub.String("owner/repo"),
+				Owner:    &gogithub.User{ID: gogithub.Int(1)},
+				CloneURL: gogithub.String("https://github.com/owner/repo.git"),
+				Private:  gogithub.Bool(false),
+			}, nil, nil
+		}})
+
+	testRepos := []*sourcegraph.Repo{
+		{URI: "github.com/sourcegraph/srclib", Owner: "sourcegraph", Name: "srclib", Mirror: true},
+		{URI: "github.com/sourcegraph/srclib-go", Owner: "sourcegraph", Name: "srclib-go", Mirror: true},
+		{URI: "github.com/someone/srclib", Owner: "someone", Name: "srclib", Fork: true, Mirror: true},
+	}
+
 	s := repos{}
 	// Add some repos.
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "sourcegraph/srclib", Owner: "sourcegraph", Name: "srclib"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "sourcegraph/srclib-go", Owner: "sourcegraph", Name: "srclib-go"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Create(ctx, &sourcegraph.Repo{URI: "someone/srclib", Owner: "someone", Name: "srclib", Fork: true}); err != nil {
-		t.Fatal(err)
+	for _, r := range testRepos {
+		if err := s.Create(ctx, r); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	tests := []struct {
 		query string
 		want  []string
 	}{
-		{"srclib", []string{"sourcegraph/srclib"}},
-		{"srcli", []string{"sourcegraph/srclib", "sourcegraph/srclib-go"}},
-		{"source src", []string{"sourcegraph/srclib", "sourcegraph/srclib-go"}},
+		{"srclib", []string{"github.com/sourcegraph/srclib"}},
+		{"srcli", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
+		{"source src", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
 		{"source/src", nil},
-		{"sourcegraph/srclib", []string{"sourcegraph/srclib"}},
-		{"sourcegraph/srcli", []string{"sourcegraph/srclib", "sourcegraph/srclib-go"}},
-		{"source graph srclib", nil},
+		{"sourcegraph/srclib", []string{"github.com/sourcegraph/srclib"}},
+		{"sourcegraph/srcli", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
+		{"github.com/sourcegraph/srclib", []string{"github.com/sourcegraph/srclib", "github.com/sourcegraph/srclib-go"}},
+		{"github.com sourcegraph srclib", nil},
 	}
 	for _, test := range tests {
 		results, err := s.Search(ctx, test.query)
@@ -304,6 +343,57 @@ func TestRepos_Search(t *testing.T) {
 		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
+	}
+	if !calledGet {
+		t.Error("!calledGet")
+	}
+}
+
+func TestRepos_Search_PrivateRepo(t *testing.T) {
+	ctx, _, done := testContext()
+	defer done()
+
+	var calledGet bool
+	client := gogithub.NewClient(&http.Client{})
+	ctx = github.NewContextWithMockClient(ctx, false, client, client, mockGitHubRepos{
+		Get_: func(owner, repo string) (*gogithub.Repository, *gogithub.Response, error) {
+			calledGet = true
+			resp := &http.Response{
+				StatusCode: http.StatusNotFound,
+				Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+				Request:    &http.Request{},
+			}
+			return nil, &gogithub.Response{Response: resp}, gogithub.CheckResponse(resp)
+		}})
+
+	s := repos{}
+	if err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/sourcegraph/private-test", Owner: "sourcegraph", Name: "private-test", Mirror: true}); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{"private-test", nil},
+		{"sourcegraph/private-test", nil},
+		{"github.com/sourcegraph/private-test", nil},
+	}
+	for _, test := range tests {
+		results, err := s.Search(ctx, test.query)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		repos := make([]*sourcegraph.Repo, 0, len(results))
+		for _, r := range results {
+			repos = append(repos, r.Repo)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
+		}
+	}
+	if !calledGet {
+		t.Error("!calledGet")
 	}
 }
 
