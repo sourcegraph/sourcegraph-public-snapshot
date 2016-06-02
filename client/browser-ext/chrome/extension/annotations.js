@@ -70,16 +70,14 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 
 		for (let j = 0; j < children.length; j++) {
 			let childNodeChars; // the "inner-stuff" of the code cell
-
+			if (children[j].className) {
+				if (annsByStartByte[startByte]) {
+					annsByStartByte[startByte].className = children[j].className;
+				}
+			}
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
-				if (children[j].children.length > 1) {
-					// HACK: combine children spans, e.g. for a quoted token
-					// there may be 3 spans, one for each quote and one
-					// for the token iteself
-					children[j].innerHTML = _.escape(children[j].innerText);
-				}
 				childNodeChars = _.unescape(children[j].outerHTML).split("");
 			}
 
@@ -134,10 +132,14 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 		const url = defIsOnGitHub ? urlToDef(matchDetails.URL) : `https://sourcegraph.com${matchDetails.URL}`;
 		if (!url) return c;
 
-		const insert = `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
+		const insert = annsByStartByte[byteCount].className ? `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}><span class="${annsByStartByte[byteCount].className}">${c}`
+		: `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${matchDetails.URL}" class=${styles.sgdef}>${c}`;
 
 		// off-by-one case
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
+			if annsByStartByte[byteCount].className {
+				return `${insert}</span></a>`
+			}
 			return `${insert}</a>`;
 		}
 
