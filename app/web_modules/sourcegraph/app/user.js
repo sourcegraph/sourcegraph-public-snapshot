@@ -16,11 +16,11 @@ type childContext = {user: ?User, signedIn: bool, githubToken: ?Object};
 export const getChildContext = (state: any): childContext => ({
 	user: state.user && !state.user.Error ? state.user : null,
 
-	// signedIn is true initially if there's an access token. But if the authInfo
-	// is empty, then it means that the access token is expired or invalid. At that
+	// signedIn is true initially if there's an access token. But if the authInfo or user
+	// is empty, then it means that the token is expired or invalid, or the user is deleted. At that
 	// point, we need to set signedIn to false so that, e.g., the "log out" link appears.
 	// Otherwise the user is unable to log out so they can re-log in to refresh their creds.
-	signedIn: Boolean(state.accessToken && (!state.authInfo || state.authInfo.UID)),
+	signedIn: Boolean(state.accessToken && (!state.authInfo || state.authInfo.UID) && (!state.user || state.user.UID)),
 
 	githubToken: state.githubToken || null,
 });
@@ -65,6 +65,11 @@ export function withUserContext(Component: ReactClass): ReactClass {
 				if (nextState.authInfo && !nextState.user && !nextState.authInfo.Error && nextState.authInfo.UID) {
 					Dispatcher.Backends.dispatch(new UserActions.WantUser(nextState.authInfo.UID));
 				}
+			}
+
+			// Log out if the user is deleted.
+			if (nextState.user && nextState.user.Error && nextState.user.Error.response && nextState.user.Error.response.status === 404 && nextState.user !== prevState.user) {
+				Dispatcher.Backends.dispatch(new UserActions.SubmitLogout());
 			}
 		}
 
