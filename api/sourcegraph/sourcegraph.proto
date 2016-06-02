@@ -1702,6 +1702,10 @@ message DefsRefreshIndexOp {
 	// RefreshRefLocations refreshes the global ref locations index for
 	// the specified repository.
 	bool RefreshRefLocations = 2;
+
+	// Force ensures we reindex, even if we have already indexed the latest
+	// commit for repo
+	bool Force = 3;
 }
 
 // DefsService communicates with the def- and graph-related endpoints in the

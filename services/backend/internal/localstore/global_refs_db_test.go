@@ -269,7 +269,15 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	}
 	check("first-again", "first")
 
-	// Update what the latest commit is, that should cause us to index second
+	// Force a reindex should show the new data
+	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: &sourcegraph.RepoSpec{URI: repo}, Force: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	check("second", "second")
+
+	// Update what the latest commit is, that should cause us to index third
+	genRefs("third")
 	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
@@ -281,7 +289,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	check("second", "second")
+	check("third", "third")
 }
 
 // TestGlobalRefs_version checks that we are getting the locking semantics we

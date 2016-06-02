@@ -325,8 +325,11 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 		return err
 	}
 	if commitID == oldCommitID {
-		log15.Debug("GlobalRefs.Update has already indexed commit", "repo", repo.URI, "commitID", commitID)
-		return nil
+		if !op.Force {
+			log15.Debug("GlobalRefs.Update has already indexed commit", "repo", repo.URI, "commitID", commitID)
+			return nil
+		}
+		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo.URI, "commitID", commitID)
 	}
 
 	// Update and lock version row
