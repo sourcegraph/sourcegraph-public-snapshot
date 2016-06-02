@@ -57,6 +57,13 @@ func init() {
 	GraphSchema.DropSQL = append(GraphSchema.DropSQL,
 		`DROP MATERIALIZED VIEW IF EXISTS global_refs_stats;`,
 	)
+
+	type dbGlobalRefVersion struct {
+		Repo      string     `db:"repo"`
+		CommitID  string     `db:"commit_id"`
+		UpdatedAt *time.Time `db:"updated_at"`
+	}
+	GraphSchema.Map.AddTableWithName(dbGlobalRefVersion{}, "global_refs_version").SetKeys(false, "repo")
 }
 
 // globalRefs is a DB-backed implementation of the GlobalRefs store.
@@ -289,6 +296,21 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 }
 
 func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) error {
+	// We run this here just to ensure we have a version row to lock (if
+	// missing it does an insert)
+	_, err := g.version(graphDBH(ctx), repo)
+	if err != nil {
+		return err
+	}
+
+	// Do everything in one transaction, to ensure we don't have
+	// concurrent updates to repo
+	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+		return g.update(ctx, tx, repo)
+	})
+}
+
+func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, repo sourcegraph.RepoSpec) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", repo.URI); err != nil {
 		return err
 	}
@@ -297,6 +319,20 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 	if err != nil {
 		return err
 	}
+	oldCommitID, err := g.version(tx, repo)
+	if err != nil {
+		return err
+	}
+	if commitID == oldCommitID {
+		log15.Debug("GlobalRefs.Update has already indexed commit", "repo", repo.URI, "commitID", commitID)
+		return nil
+	}
+
+	// Update and lock version row
+	if err := g.versionUpdate(tx, repo, commitID); err != nil {
+		return err
+	}
+
 	allRefs, err := store.GraphFromContext(ctx).Refs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: commitID}),
 	)
@@ -329,10 +365,14 @@ func (g *globalRefs) Update(ctx context.Context, repo sourcegraph.RepoSpec) erro
 		refs = append(refs, r)
 	}
 
-	log15.Debug("GlobalRefs.Update", "repo", repo.URI, "commitID", commitID, "numRefs", len(refs))
+	log15.Debug("GlobalRefs.Update", "repo", repo.URI, "commitID", commitID, "oldCommitID", oldCommitID, "numRefs", len(refs))
 
 	// Get all defKeyIDs outside of the transaction, since doing it inside
 	// of the transaction can lead to conflicts with other imports
+	//
+	// NOTE: we are using graphDBH(ctx) on purpose, we want to do these
+	// updates outside of the transaction since other repo updates could
+	// be creating the same def_keys.
 	defKeyIDs := map[sourcegraph.DefSpec]int64{}
 	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
 	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
@@ -381,43 +421,68 @@ ON COMMIT DROP;`
 	FROM global_refs_tmp
 	GROUP BY def_key_id, repo, file;`
 
-	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-		// Create a temporary table to load all new ref data.
-		if _, err := tx.Exec(tmpCreateSQL); err != nil {
-			return err
-		}
+	// Create a temporary table to load all new ref data.
+	if _, err := tx.Exec(tmpCreateSQL); err != nil {
+		return err
+	}
 
-		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+	stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+	if err != nil {
+		return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
+	}
+
+	// Insert refs into temporary table
+	for _, r := range refs {
+		defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
+		if _, err := stmt.Exec(defKeyID, repo.URI, r.File); err != nil {
+			return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
+		}
+	}
+
+	// We need to do an empty Exec() to flush any remaining
+	// inserts that are in the drivers buffer
+	if _, err = stmt.Exec(); err != nil {
+		return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
+	}
+
+	// Purge all existing ref data for files in this source unit.
+	if _, err := tx.Exec(finalDeleteSQL, repo.URI); err != nil {
+		return err
+	}
+
+	// Insert refs into global refs table
+	if _, err := tx.Exec(finalInsertSQL); err != nil {
+		return err
+	}
+
+	// Update version row again, to have a more relevant timestamp
+	if err := g.versionUpdate(tx, repo, commitID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// version returns the commit_id that global_refs has indexed for repo
+func (g *globalRefs) version(tx gorp.SqlExecutor, repo sourcegraph.RepoSpec) (string, error) {
+	commitID, err := tx.SelectNullStr("SELECT commit_id FROM global_refs_version WHERE repo=$1 FOR UPDATE", repo.URI)
+	if err != nil {
+		return "", err
+	}
+	// Insert a value into the table so we just have to run an UPDATE + can lock the row.
+	if !commitID.Valid {
+		_, err = tx.Exec("INSERT INTO global_refs_version VALUES ($1, '', now())", repo.URI)
 		if err != nil {
-			return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
+			return "", err
 		}
+	}
+	return commitID.String, nil
+}
 
-		// Insert refs into temporary table
-		for _, r := range refs {
-			defKeyID := defKeyIDs[sourcegraph.DefSpec{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-			if _, err := stmt.Exec(defKeyID, repo.URI, r.File); err != nil {
-				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
-			}
-		}
-
-		// We need to do an empty Exec() to flush any remaining
-		// inserts that are in the drivers buffer
-		if _, err = stmt.Exec(); err != nil {
-			return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
-		}
-
-		// Purge all existing ref data for files in this source unit.
-		if _, err := tx.Exec(finalDeleteSQL, repo.URI); err != nil {
-			return err
-		}
-
-		// Insert refs into global refs table
-		if _, err := tx.Exec(finalInsertSQL); err != nil {
-			return err
-		}
-
-		return nil
-	})
+// versionUpdate will update the version for repo to commitID in the transaction tx
+func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repo sourcegraph.RepoSpec, commitID string) error {
+	_, err := tx.Exec("UPDATE global_refs_version SET commit_id=$1, updated_at=now() WHERE repo=$2;", commitID, repo.URI)
+	return err
 }
 
 func (g *globalRefs) StatRefresh(ctx context.Context) error {
