@@ -15,6 +15,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/appdash"
 	"sourcegraph.com/sourcegraph/appdash/traceapp"
+	"sourcegraph.com/sourcegraph/appdash/x/influxdbstore"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
@@ -64,6 +65,8 @@ type ServerConfig struct {
 	LogDebug      bool   `long:"appdash.log-debug" description:"enable appdash debug logging" env:"SRC_APPDASH_LOG_DEBUG"`
 	LogTrace      bool   `long:"appdash.log-trace" description:"enable appdash trace logging" env:"SRC_APPDASH_LOG_TRACE"`
 
+	LimitStore int `long:"appdash.limit-store" description:"keep only N traces stored in-memory (if zero, use InfluxDB instead)" default:"50000" env:"SRC_APPDASH_LIMIT_STORE"`
+
 	// InfluxDB-specific configuration settings.
 	InfluxLogDir       string `long:"appdash.influx-log-dir" description:"InfluxDB log directory" default:"$SGPATH" ENV:"SRC_APPDASH_INFLUX_LOG_DIR"`
 	InfluxAddr         string `long:"appdash.influx-addr" description:"InfluxDB cluster-wide communication service bind address" default:":8088" env:"SRC_APPDASH_INFLUX_ADDR"`
@@ -73,14 +76,6 @@ type ServerConfig struct {
 	InfluxHTTPDAddr    string `long:"appdash.influx-httpd-addr" description:"InfluxDB HTTPD service bind address" default:":8086" env:"SRC_APPDASH_INFLUX_HTTPD_ADDR"`
 	InfluxOpenTSDBAddr string `long:"appdash.influx-opentsdb-addr" description:"InfluxDB OpenTSDB service bind address" default:":4242" env:"SRC_APPDASH_INFLUX_OPENTSDB_ADDR"`
 	InfluxUDPAddr      string `long:"appdash.influx-udp-addr" description:"InfluxDB UDP service bind address" default:"" env:"SRC_APPDASH_INFLUX_UDP_ADDR"`
-
-	// Deprecated flags, to be removed soon!
-	//
-	// TODO(slimsag): Remove these after May 19, 2016.
-	NSlowest        int `long:"appdash.n-slowest" description:"deprecated; has no effect" default:"5" env:"SRC_APPDASH_N_SLOWEST"`
-	MaxRate         int `long:"appdash.max-rate" description:"deprecated; has no effect" default:"4096" env:"SRC_APPDASH_MAX_RATE"`
-	KeepMax         int `long:"appdash.keep-max" description:"deprecated; has no effect" default:"2000" env:"SRC_APPDASH_KEEP_MAX"`
-	MinRecentTraces int `long:"appdash.min-recent-traces" description:"deprecated; has no effect" default:"5" env:"SRC_APPDASH_MIN_RECENT_TRACES"`
 }
 
 // configureAndStart starts Appdash servers per the configuration and
@@ -96,7 +91,7 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	}
 
 	// Create a default InfluxDB configuration.
-	conf, err := appdash.NewInfluxDBConfig()
+	conf, err := influxdbstore.NewConfig()
 	if err != nil {
 		return fmt.Errorf("failed to create influxdb config, error: %v", err)
 	}
@@ -179,12 +174,34 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 	clientFlags.TLS = collectorUseTLS
 
 	serve := func() {
-		log15.Info("InfluxDB server starting", "logoutput", logOutputName)
-		store, err := appdash.NewInfluxDBStore(conf)
-		if err != nil {
-			log.Fatalf("failed to create influxdb store, error: %v", err)
+		var (
+			store      appdash.Store
+			queryer    appdash.Queryer
+			aggregator appdash.Aggregator
+		)
+		if f.LimitStore == 0 {
+			log15.Info("InfluxDB server starting", "logoutput", logOutputName)
+			influxStore, err := influxdbstore.New(conf)
+			if err != nil {
+				log.Fatalf("failed to create influxdb store, error: %v", err)
+			}
+			defer func() {
+				if err := influxStore.Close(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+
+			store = influxStore
+			aggregator = influxStore
+			log15.Info("InfluxDB server started")
+		} else {
+			memStore := appdash.NewMemoryStore()
+			queryer = memStore
+			store = &appdash.LimitStore{
+				Max:         f.LimitStore,
+				DeleteStore: memStore,
+			}
 		}
-		log15.Info("InfluxDB server started")
 
 		cs := appdash.NewServer(l, appdash.NewLocalCollector(store))
 		cs.Debug = f.LogDebug
@@ -202,8 +219,8 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 			log.Fatalln(err)
 		}
 		app.Store = store
-		app.Queryer = store
-		app.Aggregator = store
+		app.Queryer = queryer
+		app.Aggregator = aggregator
 
 		// Setup basic authentication if desired.
 		h := http.Handler(app)
@@ -217,9 +234,6 @@ func (f *ServerConfig) configureAndStart(serveInGoroutine bool) error {
 			log.Fatal(http.ListenAndServeTLS(f.HTTPAddr, f.TLSCertFile, f.TLSKeyFile, h))
 		} else {
 			log.Fatal(http.ListenAndServe(f.HTTPAddr, h))
-		}
-		if err := store.Close(); err != nil {
-			log.Fatal(err)
 		}
 	}
 	if serveInGoroutine {

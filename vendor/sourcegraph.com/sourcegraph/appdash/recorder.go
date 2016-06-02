@@ -49,7 +49,7 @@ func (r *Recorder) Child() *Recorder {
 
 // Name sets the name of this span.
 func (r *Recorder) Name(name string) {
-	r.Event(spanName{name})
+	r.Event(SpanNameEvent{name})
 }
 
 // Msg records a Msg event (an event with a human-readable message) on
