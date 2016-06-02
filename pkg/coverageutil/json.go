@@ -7,8 +7,10 @@ import (
 )
 
 type jsonTokenizer struct {
-	bytes   []byte
-	tokens  []sgjson.TokenInfo
+	bytes  []byte
+	tokens []sgjson.TokenInfo
+
+	//index of the next unread token in tokens
 	pointer int
 }
 
@@ -55,6 +57,7 @@ func (jt *jsonTokenizer) Next() *Token {
 	out := &Token{}
 	out.Offset = uint32(info.Start)
 	out.Text = string(jt.bytes[info.Start:info.Endp])
+	out.Line = info.Line
 
 	return out
 }
