@@ -60,3 +60,10 @@ func (jt *jsonTokenizer) Next() *Token {
 }
 
 func (jt *jsonTokenizer) Done() {}
+
+func init() {
+	var factory = func() Tokenizer {
+		return &jsonTokenizer{}
+	}
+	newExtensionBasedLookup("JSON", []string{".json"}, factory)
+}
