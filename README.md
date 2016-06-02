@@ -41,7 +41,7 @@ You can also:
   [on Sourcegraph](https://sourcegraph.com/sourcegraph/sourcegraph) or
   on GitHub
 * Deploy Sourcegraph on your own servers (paid;
-  [contact us](mailto:support@sourcegraph.com) about Sourcegraph
+  [contact us](https://sourcegraph.com/contact) about Sourcegraph
   Enterprise)
 
 
@@ -49,7 +49,7 @@ You can also:
 
 * [How do I call this function?](https://sourcegraph.com/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest)
 * [Who else uses this package?](https://sourcegraph.com/github.com/gorilla/mux/-/info/GoPackage/github.com/gorilla/mux/-/NewRouter)
-* [Where in the world is this type defined?](https://sourcegraph.com/github.com/gorilla/mux?q=Router)
+* [Where in the world is this type defined?](https://sourcegraph.com/search?q=websocket.Upgrader)
 
 
 ## Contributing
