@@ -159,6 +159,17 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
+
+	"JSON": {
+		Key: "JSON (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: droneSrclibJSONImage,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
 }
 
 var srclibBuildCommands = []string{"srclib config", "srclib make"}

@@ -1136,8 +1136,9 @@ var langRepos_ = map[string][]string{
 		"github.com/h5bp/Effeckt.css",
 	},
 	"JSON": []string{
-		"github.com/nodejs/node",
+		"github.com/Microsoft/TypeScript",
 		"github.com/ggilmore/srclib-json",
 		"github.com/TryGhost/Ghost",
+		"github.com/jspm/registry",
 	},
 }
