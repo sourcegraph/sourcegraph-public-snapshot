@@ -181,10 +181,10 @@ html {
 	margin-left: 10px;
 	width: 35px;
 	height: 3px;
-	opacity: .9;
 	background-color: c_orange;
 }
 
+/* @TODO(chexee): deprecate these in favor of the react component */
 
 .header-center {
 	composes: header tc;
@@ -196,7 +196,6 @@ html {
 	margin-left: auto;
 	width: 35px;
 	height: 3px;
-	opacity: .9;
 	background-color: c_orange;
 }
 
@@ -224,7 +223,6 @@ html {
 	margin-right: auto;
 	width: 35px;
 	height: 3px;
-	opacity: .9;
 	background-color: c_orange;
 }
 
