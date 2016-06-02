@@ -23,5 +23,10 @@ func TestCsharp(testing *testing.T) {
 				"1L 2uL 0.1E10F 0.1E-20d .1E30M",
 				[]Token{},
 			},
+			{
+				"verbatim strings",
+				"@\"a\"\" b\" c",
+				[]Token{{9, "c"}},
+			},
 		})
 }

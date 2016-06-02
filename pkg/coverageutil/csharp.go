@@ -40,8 +40,18 @@ func (s *csharpScanner) scan() rune {
 	case ch == '"':
 		{
 			// C# strings
-			s.consumeString(ch)
+			s.consumeString()
 			return s.scan()
+		}
+	case ch == '@':
+		{
+			s.Next()
+			ch = s.Peek()
+			if ch == '"' {
+				// verbatim strings
+				s.consumeVerbatimString()
+				return s.scan()
+			}
 		}
 	case unicode.IsSpace(ch):
 		{
@@ -57,10 +67,10 @@ func (s *csharpScanner) scan() rune {
 }
 
 // consumeString consumes all the runes till the closing quote mark
-func (s *csharpScanner) consumeString(quote rune) rune {
+func (s *csharpScanner) consumeString() rune {
 	s.Next()
 	ch := s.Next()
-	for ch != quote {
+	for ch != '"' {
 		switch {
 		case ch < 0:
 			return ch
@@ -68,6 +78,28 @@ func (s *csharpScanner) consumeString(quote rune) rune {
 			{
 				// skip backslash and the following rune
 				s.Next()
+			}
+		}
+		ch = s.Next()
+	}
+	return ch
+}
+
+// consumeVerbatimString consumes C# verbatim strings
+func (s *csharpScanner) consumeVerbatimString() rune {
+	s.Next()
+	ch := s.Next()
+L:
+	for {
+		switch {
+		case ch < 0:
+			return ch
+		case ch == '"':
+			{
+				ch = s.Next()
+				if ch != '"' {
+					break L
+				}
 			}
 		}
 		ch = s.Next()
@@ -175,6 +207,29 @@ var csharpKeywords = map[string]bool{
 	"void":       true,
 	"volatile":   true,
 	"while":      true,
+	"add":        true,
+	"alias":      true,
+	"ascending":  true,
+	"async":      true,
+	"await":      true,
+	"descending": true,
+	"dynamic":    true,
+	"from":       true,
+	"get":        true,
+	"global":     true,
+	"group":      true,
+	"into":       true,
+	"join":       true,
+	"let":        true,
+	"orderby":    true,
+	"partial":    true,
+	"remove":     true,
+	"select":     true,
+	"set":        true,
+	"value":      true,
+	"var":        true,
+	"where":      true,
+	"yield ":     true,
 }
 
 // Initializes text scanner that extracts only idents
@@ -203,6 +258,12 @@ func (s *csharpTokenizer) Next() *Token {
 		}
 		text := s.scanner.TokenText()
 		if s.isKeyword(text) {
+			if text == "using" {
+				ch := s.scanner.Next()
+				for ch >= 0 && ch != ';' {
+					ch = s.scanner.Next()
+				}
+			}
 			continue
 		}
 		p := s.scanner.Pos()
