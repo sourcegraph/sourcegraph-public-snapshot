@@ -88,3 +88,7 @@
 	.f4 { font-size: font-size-5;	}
 	.result, .result-selected { composes: ph2 from base; }
 }
+
+code.block {
+	word-break: break-all;
+}

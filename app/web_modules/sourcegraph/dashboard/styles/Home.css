@@ -7,12 +7,14 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 
 @value container-max-width 660px;
+@value media-sm from vars;
 
 /*TODO(@chexee): Refactor a lot of this to be less semantic*/
 
 .flex-fill { flex: 1 }
 .tc { composes: tc from typography; }
 .white { composes: white from typography; }
+.hidden-s { composes: hidden-s from base; }
 
 .container {
 	composes: containerFixed from layout;
@@ -215,4 +217,10 @@
 a.white:hover {
 	color: white;
 	opacity: 0.8;
+}
+
+@media media-sm {
+	.block-sm { display: block }
+	.ma0-sm {	margin: 0 }
+	.mv4-sm { composes: mv4 from base; }
 }

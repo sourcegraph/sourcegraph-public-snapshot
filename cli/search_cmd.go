@@ -35,6 +35,7 @@ func (c *searchCmd) Execute(args []string) error {
 		_, err := cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
 			Repo:                &sourcegraph.RepoSpec{URI: c.Refresh},
 			RefreshRefLocations: true,
+			Force:               true,
 		})
 		if err != nil {
 			return err

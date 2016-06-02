@@ -2,6 +2,7 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
 
 .container {
 	display: flex;
@@ -102,4 +103,62 @@
 	composes: pa3 bt from base;
 	composes: b--black-20 from colors;
 	text-align: center;
+}
+
+.repo-drilldown-icon {
+	float: right;
+	cursor: pointer;
+}
+
+.repo-drilldown-modal {
+	composes: col-9 from grid;
+	composes: modal from "sourcegraph/components/styles/modal.css";
+}
+
+.file-drilldown-row {
+	display: flex;
+	align-items: center;
+}
+
+.file-drilldown-header {
+	cursor: pointer;
+	flex: 1 1 auto;
+	composes: pv2 bt from base;
+	composes: b--black-20 from colors;
+}
+
+.file-drilldown-header-uncovered {
+	composes: file-drilldown-header;
+	composes: red from colors;
+}
+
+.filepath {
+	composes: f4 from typography;
+}
+
+.file-stats {
+	composes: f5 from typography;
+}
+
+.file-link {
+	composes: f4 from typography;
+}
+
+.unresolved-tokens {
+	display: flex;
+	composes: mb3 from base;
+}
+
+.unresolved-idents {
+	flex: 1;
+}
+
+.unresolved-refs {
+	flex: 1;
+}
+
+.unresolved-header {
+	composes: b tc from typography;
+	composes: mt3 from base;
+	text-transform: uppercase;
 }

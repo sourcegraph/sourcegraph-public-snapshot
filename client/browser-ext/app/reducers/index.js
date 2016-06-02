@@ -38,6 +38,15 @@ const path = function(state = null, action) {
 	}
 }
 
+const defPath = function(state = null, action) {
+	switch (action.type) {
+	case ActionTypes.SET_DEF_PATH:
+		return action.defPath ? action.defPath : null;
+	default:
+		return state;
+	}
+}
+
 const query = function(state = "", action) {
 	switch (action.type) {
 	case ActionTypes.SET_QUERY:
@@ -89,6 +98,50 @@ const srclibDataVersion = function(state = {content: {}, fetches: {}, timestamps
 		return state;
 	}
 }
+
+const def = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
+	switch (action.type) {
+	case ActionTypes.WANT_DEF:
+		return {
+			...state,
+			fetches: {
+				...state.fetches,
+				[keyFor(action.repo, action.rev, action.defPath)]: true,
+			}
+		};
+	case ActionTypes.FETCHED_DEF:
+		return {
+			...state,
+			fetches: {
+				...state.fetches,
+				[keyFor(action.repo, action.rev, action.defPath)]: action.err ? action.err : false,
+			},
+			content: {
+				...state.content,
+				[keyFor(action.repo, action.rev, action.defPath)]: action.json ? action.json : null,
+			},
+			timestamps: {
+				...state.timestamps,
+				[keyFor(action.repo, action.rev, action.defPath)]: action.json ? Date.now() : null,
+			}
+		};
+	case ActionTypes.EXPIRE_DEF:
+		return {
+			...state,
+			content: {
+				...state.content,
+				[keyFor(action.repo, action.rev, action.defPath)]: null,
+			},
+			timestamps: {
+				...state.timestamps,
+				[keyFor(action.repo, action.rev, action.defPath)]: null,
+			}
+		};
+	default:
+		return state;
+	}
+}
+
 
 const defs = function(state = {content: {}, fetches: {}, timestamps: {}}, action) {
 	switch (action.type) {
@@ -176,4 +229,4 @@ const annotations = function(state = {content: {}, fetches: {}, timestamps: {}},
 	}
 }
 
-export default combineReducers({accessToken, repo, rev, path, query, srclibDataVersion, defs, annotations});
+export default combineReducers({accessToken, repo, rev, path, defPath, query, srclibDataVersion, def, defs, annotations});

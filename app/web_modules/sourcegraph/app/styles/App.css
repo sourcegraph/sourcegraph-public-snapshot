@@ -18,10 +18,14 @@ the entire viewport height.
 	overflow: auto;
 }
 .main-content {
-	composes: mt5 from base;
 	display: flex;
 	flex-direction: column;
 	flex: 1 0 auto;
+}
+
+.breadcrumb {
+	composes: bb ph3 pv2 from base;
+	composes: b--cool-gray-2 bg-cool-pale-gray-2 from colors;
 }
 
 /*

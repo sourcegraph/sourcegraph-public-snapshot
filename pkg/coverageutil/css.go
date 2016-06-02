@@ -25,10 +25,10 @@ func (s *cssTokenizer) Init(src []byte) {
 	}
 	for _, r := range css.Rules {
 		for _, sel := range r.Selectors {
-			s.tokens = append(s.tokens, &Token{s.byteOffset(sel.Line, sel.Column), sel.Value})
+			s.tokens = append(s.tokens, &Token{s.byteOffset(sel.Line, sel.Column), sel.Line, sel.Value})
 		}
 		for _, decl := range r.Declarations {
-			s.tokens = append(s.tokens, &Token{s.byteOffset(decl.Line, decl.Column), decl.Property})
+			s.tokens = append(s.tokens, &Token{s.byteOffset(decl.Line, decl.Column), decl.Line, decl.Property})
 		}
 	}
 }

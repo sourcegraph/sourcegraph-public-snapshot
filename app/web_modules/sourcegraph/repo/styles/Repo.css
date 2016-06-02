@@ -7,9 +7,6 @@
 
 @value media-sm from vars;
 
-.nav {
-	composes: context from GlobalNav;
-}
 .nav > span {
 	display: inline-block;
 	flex: 0 0 auto;
@@ -17,6 +14,8 @@
 .repoName {
 	composes: b db mr3 from base;
 }
+
+.repo-nav-context { display: inline-block; }
 
 /* Hide filename on narrow screens. */
 @media screen and media-sm {

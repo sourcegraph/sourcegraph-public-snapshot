@@ -206,8 +206,8 @@ func (as Annotations) String() string {
 func (as Annotations) schemas() []string {
 	var schemas []string
 	for _, a := range as {
-		if strings.HasPrefix(a.Key, schemaPrefix) {
-			schemas = append(schemas, a.Key[len(schemaPrefix):])
+		if strings.HasPrefix(a.Key, SchemaPrefix) {
+			schemas = append(schemas, a.Key[len(SchemaPrefix):])
 		}
 	}
 	return schemas

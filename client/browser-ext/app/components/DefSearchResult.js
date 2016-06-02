@@ -24,7 +24,7 @@ export default class DefSearchResult extends React.Component {
 					</svg>
 				</td>
 				<td>
-					<a href={this.props.href + "?utm_source=chromeext&utm_medium=chromeext&utm_campaign=chromeext"}>{this.props.qualifiedNameAndType}</a>
+					<a href={this.props.href + "?utm_source=browser-ext&browser_type=chrome"}>{this.props.qualifiedNameAndType}</a>
 				</td>
 			</tr>
 		);

@@ -92,6 +92,7 @@ class CoverageDashbaord extends Container {
 				{this.state.data && this.state.drilldown &&
 					<CoverageDrilldown
 						data={this.state.data[this.state.drilldown]}
+						location={this.state.location}
 						language={this.state.drilldown}
 						onDismiss={() => this._drilldown(null)} />}
 			</div>

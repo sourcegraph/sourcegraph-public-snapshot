@@ -168,8 +168,10 @@ class RepoMain extends React.Component {
 			let msg;
 			if (err.response && err.response.status === 401) {
 				msg = `Sign in to add repositories.`;
+			} else if (err.response && err.response.status === 404) {
+				msg = `Repository not found.`;
 			} else {
-				msg = `Repository "${this.props.repo}" is not available.`;
+				msg = `Repository is not available.`;
 			}
 			return (
 				<Header

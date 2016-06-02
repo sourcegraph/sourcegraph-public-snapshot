@@ -63,7 +63,6 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.Annotations).Handler(handler(serveAnnotations))
 	m.Get(apirouter.AuthInfo).Handler(handler(serveAuthInfo))
-	m.Get(apirouter.BlackHole).Handler(handler(serveBlackHole))
 	m.Get(apirouter.Builds).Handler(handler(serveBuilds))
 	m.Get(apirouter.BuildTaskLog).Handler(handler(serveBuildTaskLog))
 	m.Get(apirouter.ChannelListen).HandlerFunc(serveChannelListen)

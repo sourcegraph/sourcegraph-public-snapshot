@@ -1,6 +1,7 @@
 import * as types from "../constants/ActionTypes";
 import {keyFor} from "../reducers/helpers";
 import fetch, {useAccessToken} from "./xhr";
+import {defCache} from "../../chrome/extension/annotations";
 
 export function setAccessToken(token) {
 	useAccessToken(token); // for future fetches
@@ -13,6 +14,10 @@ export function setRepoRev(repo, rev) {
 
 export function setPath(path) {
 	return {type: types.SET_PATH, path};
+}
+
+export function setDefPath(defPath) {
+	return {type: types.SET_DEF_PATH, defPath};
 }
 
 export function setQuery(query) {
@@ -35,6 +40,31 @@ function fetchSrclibDataVersion(dispatch, currJson, repo, rev, path) {
 			.catch((err) => { dispatch({type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, err}); throw err; });
 	}
 	return promise;
+}
+
+export function getDef(repo, rev, defPath) {
+	return function (dispatch, getState) {
+		const state = getState();
+		if (state.def.content[keyFor(repo, rev, defPath)]) return Promise.resolve(); // nothing to do; already have def
+
+		// HACK: share def data with annotations.js. This violates the redux
+		// boundaries but it means that in many cases you can click on a ref
+		// and immediately go there instead of going via the repo homepage.
+		//
+		// NOTE: Need to keep this in sync with the defCache key structure.
+		const cacheKey = `https://sourcegraph.com/.api/repos/${repo}/-/def/${defPath}?ComputeLineRange=true&Doc=true`;
+		if (defCache[cacheKey]) {
+			// Dispatch FETCHED_DEF so it gets added to the normal def.content
+			// for next time.
+			dispatch({type: types.FETCHED_DEF, repo, rev, defPath, json: defCache[cacheKey]})
+			return Promise.resolve();
+		}
+
+		dispatch({type: types.WANT_DEF, repo, rev, defPath})
+		return fetch(`https://sourcegraph.com/.api/repos/${repo}@${rev}/-/def/${defPath}?ComputeLineRange=true`)
+			.then((json) => dispatch({type: types.FETCHED_DEF, repo, rev, defPath, json}))
+			.catch((err) => dispatch({type: types.FETCHED_DEF, repo, rev, defPath, err}));
+	}
 }
 
 export function getDefs(repo, rev, path, query) {
@@ -82,6 +112,10 @@ export function expireAnnotations(repo, rev, path) {
 
 export function expireSrclibDataVersion(repo, rev, path) {
 	return {type: types.EXPIRE_SRCLIB_DATA_VERSION, repo, rev, path};
+}
+
+export function expireDef(repo, rev, defPath) {
+	return {type: types.EXPIRE_DEF, repo, rev, defPath};
 }
 
 export function expireDefs(repo, rev, path, query) {

@@ -2,6 +2,7 @@
 import React from "react";
 
 export type ChannelStatus = ?("connected" | "connecting" | "error");
+export type ChannelStatusCode = ?(0 | 1);
 
 // MAX_FAILURES is the maximum number of connection attempts to make before
 // stopping.
@@ -35,10 +36,12 @@ export default function withChannelListener(Component) {
 		state: {
 			channelName: ?string;
 			status: ChannelStatus;
+			statusCode: ChannelStatusCode;
 			failures: number;
 		} = {
 			channelName: null,
 			status: null,
+			statusCode: null,
 			failures: 0,
 		};
 
@@ -94,7 +97,7 @@ export default function withChannelListener(Component) {
 			const l = window.location;
 			this._ws = new WebSocket(`${l.protocol === "https:" ? "wss://" : "ws://"}${l.host}/.api/channel/${encodeURIComponent(this.state.channelName)}`);
 			this._ws.onopen = (ev) => {
-				this.setState({status: "connected", failures: 0});
+				this.setState({status: "connected", failures: 0, statusCode: 1});
 			};
 			this._ws.onmessage = (ev) => {
 				this._handleAction(JSON.parse(ev.data));
@@ -116,7 +119,19 @@ export default function withChannelListener(Component) {
 		}
 
 		_handleAction(action) {
-			if (action && action.Error && action.Fix && !action.URL) {
+			// TODO:matt Remove special case while we switch to version numbers
+			if (action && (action.VersionMajor === 0 && action.VersionMinor === 0)) {
+				this.context.router.push({
+					pathname: `/-/channel/${this.state.channelName}-error`,
+					state: {
+						...this.props.location.state,
+						error: "There is an update for Sourcegraph for your editor",
+						fix: "Make sure you pull the latest version of Sourcegraph for your editor.",
+					},
+				});
+			} else if (action && typeof action.Status !== "undefined" && action.Status === 0) {
+				this.setState({statusCode: 0});
+			} else if (action && action.Error && action.Fix && !action.URL) {
 				this.context.router.push({
 					pathname: `/-/channel/${this.state.channelName}-error`,
 					state: {
@@ -125,11 +140,23 @@ export default function withChannelListener(Component) {
 						fix: action.Fix,
 					},
 				});
-			} else if (action && action.Package && action.Repo) {
+			// TODO:matt, right documentation about how to force plugin upgrades using version numbers
+			// Right now, we are checking to make sure version is >= 0.1
+			} else if (action && (action.VersionMajor < 0 && action.VersionMinor <1)) {
+				this.context.router.push({
+					pathname: `/-/channel/${this.state.channelName}-error`,
+					state: {
+						...this.props.location.state,
+						error: "There is an update for Sourcegraph for your editor",
+						fix: "Make sure you pull the latest version of Sourcegraph for your editor.",
+					},
+				});
+			} else if (action && action.Package && action.Repo && action.Status && action.Status === 1 && action.EditorType) {
+				this.setState({statusCode: 1});
 				let def = action.Def ? action.Def : "";
 				this.context.router.replace({
 					pathname: "/-/golang",
-					search: `?def=${def}&pkg=${action.Package}&repo=${action.Repo}`,
+					search: `?def=${def}&pkg=${action.Package}&repo=${action.Repo}&editor_type=${action.EditorType}`,
 					state: {
 						...this.props.location.state,
 						error: null,
@@ -140,7 +167,7 @@ export default function withChannelListener(Component) {
 		}
 
 		render() {
-			return <Component {...this.props} {...this.state} channelStatus={this.state.status} />;
+			return <Component {...this.props} {...this.state} channelStatusCode={this.state.statusCode} />;
 		}
 	}
 
