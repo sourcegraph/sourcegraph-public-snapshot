@@ -100,10 +100,23 @@ func (s *javascriptScanner) consumeRegexp() rune {
 	// leading /
 	s.Next()
 	ch := s.Peek()
-	if unicode.IsSpace(ch) {
-		// division
-		return ch
+
+	switch {
+	case unicode.IsSpace(ch):
+		{
+			// division
+			return ch
+		}
+	case ch == '/':
+		{
+			// comment
+			for ch >= 0 && ch != '\n' {
+				ch = s.Next()
+			}
+			return ch
+		}
 	}
+
 	ch = s.Next()
 	for ch != '/' {
 		switch {

@@ -35,9 +35,9 @@ func TestJavaScript(testing *testing.T) {
 			[]Token{},
 		},
 		{
-			"regular expressions",
-			"/abc/ /abc/d a / b",
-			[]Token{{13, "a"}, {17, "b"}},
+			"regular expressions and comments",
+			"/abc/ /abc/d a / b //abcdef\nccc",
+			[]Token{{13, "a"}, {17, "b"}, {28, "ccc"}},
 		},
 	}
 	jsScanner := newJavascriptScanner()
