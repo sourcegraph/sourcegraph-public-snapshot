@@ -1,8 +1,8 @@
 {
-  "version": "1.1.9",
-  "name": "Sourcegraph browser extension for GitHub",
+  "version": "1.1.10",
+  "name": "Sourcegraph for GitHub",
   "manifest_version": 2,
-  "description": "Sourcegraph browser extension for GitHub",
+  "description": "Sourcegraph for GitHub",
   "browser_action": {
     "default_title": "Sourcegraph"
   },
