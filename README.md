@@ -16,7 +16,7 @@ But staying in flow is hard. While coding, you often waste minutes digging for e
 
 ...all in your web browser at sourcegraph.com. No installation or signup required. *It just works*, for both open-source code and your private projects (unless you do crazy stuff with your build tooling).
 
-It's cross-repository and massively scalable, with 2,000,000,000+ nodes in the public code index (and growing). Tons of devs use Sourcegraph to discover and understand code every day—worldwide and inside large, well-known companies.
+It's cross-repository and scalable, with 2,000,000,000+ nodes in the public code index (and growing).
 
 
 ### Supported languages
