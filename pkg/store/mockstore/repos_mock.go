@@ -13,6 +13,7 @@ import (
 type Repos struct {
 	Get_    func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List_   func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
+	Search_ func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
 	Create_ func(v0 context.Context, v1 *sourcegraph.Repo) error
 	Update_ func(v0 context.Context, v1 store.RepoUpdate) error
 	Delete_ func(ctx context.Context, repo string) error
@@ -24,6 +25,10 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
 func (s *Repos) List(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
 	return s.List_(v0, v1)
+}
+
+func (s *Repos) Search(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error) {
+	return s.Search_(v0, v1)
 }
 
 func (s *Repos) Create(v0 context.Context, v1 *sourcegraph.Repo) error { return s.Create_(v0, v1) }

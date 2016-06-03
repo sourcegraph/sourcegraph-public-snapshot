@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
@@ -47,6 +48,7 @@ func init() {
 type dbRepo struct {
 	URI           string
 	Origin        string // DEPRECATED: will be removed in a future commit
+	Owner         string
 	Name          string
 	Description   string
 	VCS           string
@@ -68,6 +70,7 @@ type dbRepo struct {
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
 		URI:           r.URI,
+		Owner:         r.Owner,
 		Name:          r.Name,
 		Description:   r.Description,
 		HTTPCloneURL:  r.HTTPCloneURL,
@@ -100,6 +103,7 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.URI = r2.URI
+	r.Owner = r2.Owner
 	r.Name = r2.Name
 	r.Description = r2.Description
 	r.HTTPCloneURL = r2.HTTPCloneURL
@@ -227,6 +231,139 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 	}
 
 	return repos, nil
+}
+
+type priorityRepo struct {
+	priority int
+	*sourcegraph.Repo
+}
+
+type priorityRepoList struct {
+	repos []*priorityRepo
+}
+
+func (repos *priorityRepoList) Len() int {
+	return len(repos.repos)
+}
+
+func (repos *priorityRepoList) Swap(i, j int) {
+	repos.repos[i], repos.repos[j] = repos.repos[j], repos.repos[i]
+}
+
+func (repos *priorityRepoList) Less(i, j int) bool {
+	return repos.repos[i].priority > repos.repos[j].priority
+}
+
+func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSearchResult, error) {
+	query = strings.TrimSpace(query)
+
+	// Does not perform search with one character because the range is too broad.
+	if len(query) < 2 {
+		return []*sourcegraph.RepoSearchResult{}, nil
+	}
+
+	var exactArgs, fuzzArgs []interface{}
+	exactArg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(exactArgs))
+		exactArgs = append(exactArgs, a)
+		return v
+	}
+	fuzzArg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(fuzzArgs))
+		fuzzArgs = append(fuzzArgs, a)
+		return v
+	}
+
+	// Perform exact match search first when possible,
+	// do fuzz match search next if no exact match results found.
+	performExactMatch := true
+	baseSQL := "SELECT repo.* FROM repo WHERE fork=false AND"
+	exactSQL, fuzzSQL := baseSQL, baseSQL
+
+	// Values used for determine results' priority.
+	var owner, name string
+
+	// Slashes indicate the user knows exactly what they're looking for.
+	if strings.Contains(query, "/") {
+		fuzzSQL += fmt.Sprintf(" uri LIKE %s", fuzzArg("%"+query+"%"))
+
+		fields := strings.Split(query, "/")
+		if len(fields) == 2 {
+			exactSQL += fmt.Sprintf(" owner = %s AND name = %s", exactArg(fields[0]), exactArg(fields[1]))
+			owner, name = fields[0], fields[1]
+		} else {
+			performExactMatch = false
+		}
+
+	} else {
+		fields := strings.Fields(query)
+		if len(fields) == 1 {
+			// Only one keyword, which could either be the owner or repo name.
+			exactSQL += fmt.Sprintf(" (owner = %s OR name = %s)", exactArg(query), exactArg(query))
+			fuzzSQL += fmt.Sprintf(" (owner LIKE %s OR name LIKE %s)", fuzzArg(query+"%"), fuzzArg(query+"%"))
+			owner, name = query, query
+
+		} else if len(fields) == 2 {
+			// Two keywords. The first could be owners, the second could be repo name.
+			exactSQL += fmt.Sprintf(" owner = %s AND name = %s", exactArg(fields[0]), exactArg(fields[1]))
+			fuzzSQL += fmt.Sprintf(" owner LIKE %s AND name LIKE %s", fuzzArg(fields[0]+"%"), fuzzArg(fields[1]+"%"))
+			owner, name = fields[0], fields[1]
+
+		} else {
+			// Three keywords are too much.
+			return []*sourcegraph.RepoSearchResult{}, nil
+		}
+	}
+
+	exactSQL += " LIMIT 3"
+	fuzzSQL += " LIMIT 3"
+
+	var exactRepos, repos []*sourcegraph.Repo
+	var err error
+	if performExactMatch {
+		exactRepos, err = s.query(ctx, exactSQL, exactArgs...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(exactRepos) > 0 {
+		repos = exactRepos
+	} else {
+		repos, err = s.query(ctx, fuzzSQL, fuzzArgs...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	priorityRepos := make([]*priorityRepo, 0, len(repos))
+	for _, repo := range repos {
+		prepo := &priorityRepo{
+			Repo: repo,
+		}
+		if repo.Owner == owner && repo.Name == name {
+			prepo.priority = 2
+		} else if repo.Owner == owner || repo.Name == name {
+			prepo.priority = 1
+		}
+		setCloneURLField(ctx, repo)
+		priorityRepos = append(priorityRepos, prepo)
+	}
+
+	sort.Sort(&priorityRepoList{repos: priorityRepos})
+
+	// Critical permissions check. DO NOT REMOVE.
+	var results []*sourcegraph.RepoSearchResult
+	for _, prepo := range priorityRepos {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Search", prepo.URI); err != nil {
+			continue
+		}
+		results = append(results, &sourcegraph.RepoSearchResult{
+			Repo: prepo.Repo,
+		})
+	}
+
+	return results, nil
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")

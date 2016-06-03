@@ -20,6 +20,8 @@ class CoverageDrilldown extends Container {
 	static propTypes = {
 		language: React.PropTypes.string.isRequired,
 		location: React.PropTypes.object.isRequired,
+		refScore: React.PropTypes.func.isRequired,
+		defScore: React.PropTypes.func.isRequired,
 		data: React.PropTypes.arrayOf(React.PropTypes.shape({
 			Day: React.PropTypes.string.isRequired,
 			Refs: React.PropTypes.number.isRequired,
@@ -88,7 +90,7 @@ class CoverageDrilldown extends Container {
 		if (source) {
 			// Sort files by increasing ref score.
 			// To sort a deeploy frozen array, we must first create a copy of the array.
-			drilldownFiles = source.Files.map((f) => Object.assign({}, f)).sort((a, b) => this.refScore(a) - this.refScore(b));
+			drilldownFiles = source.Files.map((f) => Object.assign({}, f)).sort((a, b) => this.props.refScore(a) - this.props.refScore(b));
 		}
 		this.setState({drilldown: source || null, drilldownFiles: drilldownFiles || null}, () => {
 			this.context.router.replace({...this.props.location, query: {lang: this.props.language, repo: source && source.Repo || undefined}}); // eslint-disable-line no-undefined
@@ -126,16 +128,6 @@ class CoverageDrilldown extends Container {
 		this.setState({idx: idx});
 	}
 
-	refScore(summary) {
-		if (summary.Idents === 0) return 0;
-		return summary.Refs / summary.Idents;
-	}
-
-	defScore(summary) {
-		if (summary.Idents === 0) return 0;
-		return summary.Defs / summary.Idents;
-	}
-
 	formatScore(score) {
 		return Math.round(score * 100);
 	}
@@ -148,11 +140,11 @@ class CoverageDrilldown extends Container {
 	}
 
 	refDelta(prevSummary, nextSummary) {
-		return this.formatDelta(this.refScore(nextSummary) - this.refScore(prevSummary));
+		return this.formatDelta(this.props.refScore(nextSummary) - this.props.refScore(prevSummary));
 	}
 
 	defDelta(prevSummary, nextSummary) {
-		return this.formatDelta(this.defScore(nextSummary) - this.defScore(prevSummary));
+		return this.formatDelta(this.props.defScore(nextSummary) - this.props.defScore(prevSummary));
 	}
 
 	deltaStyle(delta) {
@@ -166,12 +158,12 @@ class CoverageDrilldown extends Container {
 			const blobURL = urlToBlob(this.state.drilldown.Repo, this.state.drilldown.Rev, file.Path);
 			return (<div key={i}>
 				<div styleName="file-drilldown-row">
-					<div styleName={`file-drilldown-header${this.refScore(file) <= 0.5 ? "-uncovered" : ""}`} onClick={() => {
+					<div styleName={`file-drilldown-header${this.props.refScore(file) <= 0.5 ? "-uncovered" : ""}`} onClick={() => {
 						if (this.state.drilldownFile === i) return this.setState({drilldownFile: null});
 						this.setState({drilldownFile: i});
 					}}>
 						<div styleName="filepath">{file.Path}</div>
-						<div styleName="file-stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.refScore(file))}%) Defs (${this.formatScore(this.defScore(file))}%)`}</div>
+						<div styleName="file-stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
 					</div>
 					<Link styleName="file-link" to={blobURL}>
 						<FileIcon />
@@ -256,11 +248,11 @@ class CoverageDrilldown extends Container {
 									</td>
 									<td styleName="data">{summary ? summary.Idents : "---"}</td>
 									<td styleName="data">
-										{summary ? this.formatScore(this.refScore(summary)) : "---"}
+										{summary ? this.formatScore(this.props.refScore(summary)) : "---"}
 										<span styleName={this.deltaStyle(refDelta)}>{refDelta}</span>
 									</td>
 									<td styleName="data">
-										{summary ? this.formatScore(this.defScore(summary)) : "---"}
+										{summary ? this.formatScore(this.props.defScore(summary)) : "---"}
 										<span styleName={this.deltaStyle(defDelta)}>{defDelta}</span>
 									</td>
 								</tr>

@@ -3,6 +3,7 @@
 import {abs, getRouteParams} from "sourcegraph/app/routePatterns";
 import {repoPath, repoRev, repoParam} from "sourcegraph/repo";
 
+export type Repo = Object;
 export type Def = Object;
 export type DefKey = {
 	Repo: string;

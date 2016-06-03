@@ -3,7 +3,7 @@
 // DO NOT EDIT!
 
 /*
-Package google_protobuf_compiler is a generated protocol buffer package.
+Package plugin_go is a generated protocol buffer package.
 
 It is generated from these files:
 	google/protobuf/compiler/plugin.proto
@@ -12,22 +12,28 @@ It has these top-level messages:
 	CodeGeneratorRequest
 	CodeGeneratorResponse
 */
-package google_protobuf_compiler
+package plugin_go
 
 import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 // An encoded CodeGeneratorRequest is written to the plugin's stdin.
 type CodeGeneratorRequest struct {
 	// The .proto files that were explicitly listed on the command-line.  The
 	// code generator should generate code only for these files.  Each file's
 	// descriptor will be included in proto_file, below.
-	FileToGenerate []string `protobuf:"bytes,1,rep,name=file_to_generate" json:"file_to_generate,omitempty"`
+	FileToGenerate []string `protobuf:"bytes,1,rep,name=file_to_generate,json=fileToGenerate" json:"file_to_generate,omitempty"`
 	// The generator parameter passed on the command-line.
 	Parameter *string `protobuf:"bytes,2,opt,name=parameter" json:"parameter,omitempty"`
 	// FileDescriptorProtos for all files in files_to_generate and everything
@@ -41,13 +47,14 @@ type CodeGeneratorRequest struct {
 	// the entire set into memory at once.  However, as of this writing, this
 	// is not similarly optimized on protoc's end -- it will store all fields in
 	// memory at once before sending them to the plugin.
-	ProtoFile        []*google_protobuf.FileDescriptorProto `protobuf:"bytes,15,rep,name=proto_file" json:"proto_file,omitempty"`
+	ProtoFile        []*google_protobuf.FileDescriptorProto `protobuf:"bytes,15,rep,name=proto_file,json=protoFile" json:"proto_file,omitempty"`
 	XXX_unrecognized []byte                                 `json:"-"`
 }
 
-func (m *CodeGeneratorRequest) Reset()         { *m = CodeGeneratorRequest{} }
-func (m *CodeGeneratorRequest) String() string { return proto.CompactTextString(m) }
-func (*CodeGeneratorRequest) ProtoMessage()    {}
+func (m *CodeGeneratorRequest) Reset()                    { *m = CodeGeneratorRequest{} }
+func (m *CodeGeneratorRequest) String() string            { return proto.CompactTextString(m) }
+func (*CodeGeneratorRequest) ProtoMessage()               {}
+func (*CodeGeneratorRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 func (m *CodeGeneratorRequest) GetFileToGenerate() []string {
 	if m != nil {
@@ -85,9 +92,10 @@ type CodeGeneratorResponse struct {
 	XXX_unrecognized []byte                        `json:"-"`
 }
 
-func (m *CodeGeneratorResponse) Reset()         { *m = CodeGeneratorResponse{} }
-func (m *CodeGeneratorResponse) String() string { return proto.CompactTextString(m) }
-func (*CodeGeneratorResponse) ProtoMessage()    {}
+func (m *CodeGeneratorResponse) Reset()                    { *m = CodeGeneratorResponse{} }
+func (m *CodeGeneratorResponse) String() string            { return proto.CompactTextString(m) }
+func (*CodeGeneratorResponse) ProtoMessage()               {}
+func (*CodeGeneratorResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *CodeGeneratorResponse) GetError() string {
 	if m != nil && m.Error != nil {
@@ -154,15 +162,16 @@ type CodeGeneratorResponse_File struct {
 	// command line.
 	//
 	// If |insertion_point| is present, |name| must also be present.
-	InsertionPoint *string `protobuf:"bytes,2,opt,name=insertion_point" json:"insertion_point,omitempty"`
+	InsertionPoint *string `protobuf:"bytes,2,opt,name=insertion_point,json=insertionPoint" json:"insertion_point,omitempty"`
 	// The file contents.
 	Content          *string `protobuf:"bytes,15,opt,name=content" json:"content,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (m *CodeGeneratorResponse_File) Reset()         { *m = CodeGeneratorResponse_File{} }
-func (m *CodeGeneratorResponse_File) String() string { return proto.CompactTextString(m) }
-func (*CodeGeneratorResponse_File) ProtoMessage()    {}
+func (m *CodeGeneratorResponse_File) Reset()                    { *m = CodeGeneratorResponse_File{} }
+func (m *CodeGeneratorResponse_File) String() string            { return proto.CompactTextString(m) }
+func (*CodeGeneratorResponse_File) ProtoMessage()               {}
+func (*CodeGeneratorResponse_File) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
 
 func (m *CodeGeneratorResponse_File) GetName() string {
 	if m != nil && m.Name != nil {
@@ -186,4 +195,31 @@ func (m *CodeGeneratorResponse_File) GetContent() string {
 }
 
 func init() {
+	proto.RegisterType((*CodeGeneratorRequest)(nil), "google.protobuf.compiler.CodeGeneratorRequest")
+	proto.RegisterType((*CodeGeneratorResponse)(nil), "google.protobuf.compiler.CodeGeneratorResponse")
+	proto.RegisterType((*CodeGeneratorResponse_File)(nil), "google.protobuf.compiler.CodeGeneratorResponse.File")
+}
+
+var fileDescriptor0 = []byte{
+	// 311 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x91, 0xd1, 0x4a, 0xfb, 0x30,
+	0x14, 0xc6, 0xe9, 0xff, 0x3f, 0x91, 0x1d, 0x65, 0x93, 0x30, 0xa1, 0x8c, 0x5d, 0x94, 0xa1, 0xb8,
+	0xab, 0x14, 0x44, 0xf0, 0x7e, 0x13, 0xf5, 0xb2, 0x14, 0xaf, 0x04, 0x29, 0xb5, 0x3b, 0x2b, 0x81,
+	0x2e, 0x27, 0xa6, 0xe9, 0x13, 0xf9, 0x4e, 0x3e, 0x8f, 0x49, 0xda, 0x4e, 0x29, 0xee, 0xaa, 0x3d,
+	0xdf, 0xf9, 0xe5, 0x3b, 0x5f, 0x72, 0xe0, 0xba, 0x24, 0x2a, 0x2b, 0x8c, 0x95, 0x26, 0x43, 0xef,
+	0xcd, 0x2e, 0x2e, 0x68, 0xaf, 0x44, 0x85, 0x3a, 0x56, 0x55, 0x53, 0x0a, 0xc9, 0x7d, 0x83, 0x85,
+	0x2d, 0xc6, 0x7b, 0x8c, 0xf7, 0xd8, 0x3c, 0x1a, 0x1a, 0x6c, 0xb1, 0x2e, 0xb4, 0x50, 0x86, 0x74,
+	0x4b, 0x2f, 0x3f, 0x03, 0x98, 0x6d, 0x68, 0x8b, 0x4f, 0x28, 0x51, 0xe7, 0x56, 0x4f, 0xf1, 0xa3,
+	0xc1, 0xda, 0xb0, 0x15, 0x5c, 0xec, 0xac, 0x47, 0x66, 0x28, 0x2b, 0xdb, 0x1e, 0x86, 0x41, 0xf4,
+	0x7f, 0x35, 0x4e, 0x27, 0x4e, 0x7f, 0xa1, 0xee, 0x04, 0xb2, 0x05, 0x8c, 0x55, 0xae, 0xf3, 0x3d,
+	0x1a, 0xd4, 0xe1, 0xbf, 0x28, 0xb0, 0xc8, 0x8f, 0xc0, 0x36, 0x00, 0x7e, 0x52, 0xe6, 0x4e, 0x85,
+	0x53, 0xeb, 0x70, 0x76, 0x7b, 0xc5, 0x87, 0x89, 0x1f, 0x6d, 0xf3, 0xe1, 0x90, 0x2d, 0x71, 0xb2,
+	0x35, 0x71, 0x1f, 0xd7, 0x59, 0x7e, 0x05, 0x70, 0x39, 0x48, 0x59, 0x2b, 0x92, 0x35, 0xb2, 0x19,
+	0x9c, 0xa0, 0xd6, 0xa4, 0x6d, 0x36, 0x37, 0xb8, 0x2d, 0xd8, 0x33, 0x8c, 0x7e, 0x8d, 0xbb, 0xe3,
+	0xc7, 0x1e, 0x88, 0xff, 0x69, 0xea, 0xd3, 0xa4, 0xde, 0x61, 0xfe, 0x06, 0x23, 0x57, 0x31, 0x06,
+	0x23, 0x69, 0x6f, 0xd4, 0x8d, 0xf1, 0xff, 0xec, 0x06, 0xa6, 0xc2, 0xe2, 0xda, 0x08, 0x92, 0x99,
+	0x22, 0x21, 0x4d, 0x77, 0xfd, 0xc9, 0x41, 0x4e, 0x9c, 0xca, 0x42, 0x38, 0x2d, 0x48, 0x1a, 0xb4,
+	0xc0, 0xd4, 0x03, 0x7d, 0xb9, 0xbe, 0x87, 0x85, 0xcd, 0x72, 0x34, 0xdf, 0xfa, 0x3c, 0xf1, 0x8b,
+	0xf6, 0x0f, 0x52, 0xbf, 0x8e, 0xdb, 0xb5, 0x67, 0x25, 0x7d, 0x07, 0x00, 0x00, 0xff, 0xff, 0x83,
+	0x7b, 0x5c, 0x7c, 0x1b, 0x02, 0x00, 0x00,
 }

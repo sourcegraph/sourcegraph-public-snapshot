@@ -24,6 +24,20 @@
 	cursor: pointer;
 }
 
+.quantiles {
+	text-align: center;
+}
+
+.quantile {
+	composes: f6 from typography;
+	composes: pr3 from base;
+}
+
+.quantile-header {
+	composes: quantile;
+	font-weight: bold
+}
+
 .icon {
 	margin-left: 10px;
 	font-size: 14px;

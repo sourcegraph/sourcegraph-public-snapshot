@@ -13,7 +13,7 @@ import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
-import type {Def} from "sourcegraph/def";
+import type {Repo, Def} from "sourcegraph/def";
 
 import {Input, Icon} from "sourcegraph/components";
 
@@ -42,7 +42,7 @@ class GlobalSearch extends Container {
 
 		this.state = {
 			query: "",
-			matchingDefs: {Defs: []},
+			matchingResults: {Repos: [], Defs: []},
 			selectionIndex: 0,
 			focused: false,
 		};
@@ -62,7 +62,10 @@ class GlobalSearch extends Container {
 
 	state: {
 		query: string;
-		matchingDefs: {Defs: Array<Def>};
+		matchingResults: {
+			Repos: Array<Repo>,
+			Defs: Array<Def>
+		};
 		focused: boolean;
 		selectionIndex: number;
 	};
@@ -85,18 +88,19 @@ class GlobalSearch extends Container {
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
-
-		state.matchingDefs = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT);
+		state.matchingResults = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT, this.props.location.query.includeRepos);
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT));
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT, this.props.location.query.includeRepos));
 		}
 	}
 
 	_onChangeQuery(query: string) {
-		this.context.router.replace({...this.props.location, query: {q: query || undefined}}); // eslint-disable-line no-undefined
+		this.context.router.replace({...this.props.location, query: {
+			q: query || undefined, // eslint-disable-line no-undefined
+			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
 		this.setState({query: query});
 		this.context.eventLogger.logEvent("GlobalSearchInitiated", {globalSearchQuery: query});
 	}
@@ -171,8 +175,18 @@ class GlobalSearch extends Container {
 	}
 
 	_numResults(): number {
-		if (!this.state.matchingDefs || !this.state.matchingDefs.Defs) return 0;
-		return Math.min(this.state.matchingDefs.Defs.length, RESULTS_LIMIT);
+		if (!this.state.matchingResults ||
+			(!this.state.matchingResults.Defs && !this.state.matchingResults.Repos)) return 0;
+
+		let count = 0;
+		if (this.state.matchingResults.Defs) {
+			count = Math.min(this.state.matchingResults.Defs.length, RESULTS_LIMIT);
+		}
+
+		if (this.state.matchingResults.Repos) {
+			count += this.state.matchingResults.Repos.length;
+		}
+		return count;
 	}
 
 	_normalizedSelectionIndex(): number {
@@ -184,7 +198,20 @@ class GlobalSearch extends Container {
 		if (i === -1) {
 			return;
 		}
-		const def = this.state.matchingDefs.Defs[i];
+
+		let offset = 0;
+		if (this.state.matchingResults.Repos) {
+			if (i < this.state.matchingResults.Repos.length) {
+				const url = `/${this.state.matchingResults.Repos[i].URI}`;
+				this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
+				this._navigateTo(url);
+				return;
+			}
+
+			offset = this.state.matchingResults.Repos.length;
+		}
+
+		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 		this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
 		this._navigateTo(url);
@@ -222,17 +249,54 @@ class GlobalSearch extends Container {
 		if (!this.state.query) return [<div styleName="result" key="_nosymbol"></div>];
 
 		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Sorry, we couldn't find anything.</div>;
-		if (!this.state.matchingDefs) {
+		if (!this.state.matchingResults) {
 			return [<div key="1" styleName="tc f4" className={base.pv5}>Loading results...</div>];
 		}
 
-		if (this.state.matchingDefs && (!this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0)) return [noResultsItem];
+		if (this.state.matchingResults &&
+			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
+			(!this.state.matchingResults.Repos || this.state.matchingResults.Repos.length === 0)) return [noResultsItem];
 
-		let list = [],
-			limit = this.state.matchingDefs.Defs.length > RESULTS_LIMIT ? RESULTS_LIMIT : this.state.matchingDefs.Defs.length;
+		let list = [], numDefs = 0,
+			numRepos = this.state.matchingResults.Repos ? this.state.matchingResults.Repos.length : 0;
 
-		for (let i = 0; i < limit; i++) {
-			let def = this.state.matchingDefs.Defs[i];
+		if (this.state.matchingResults.Defs) {
+			numDefs = this.state.matchingResults.Defs.length > RESULTS_LIMIT ? RESULTS_LIMIT : this.state.matchingResults.Defs.length;
+		}
+
+		for (let i = 0; i < numRepos; i++) {
+			let repo = this.state.matchingResults.Repos[i];
+			const selected = this._normalizedSelectionIndex() === i;
+
+			const firstLineDocString = firstLine(repo.Description);
+			list.push(
+				<Link styleName={selected ? "block result-selected" : "block result"}
+					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
+					ref={selected ? this._setSelectedItem : null}
+					to={repo.URI}
+					key={repo.URI}
+					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: repo.URI})}>
+					<div styleName="cool-gray flex-container" className={base.pt4}>
+						<div styleName="flex-icon hidden-s">
+							<Icon icon="repository-gray" width="32px" />
+						</div>
+						<div styleName="flex bottom-border" className={base.pb3}>
+							<code styleName="f4 block" className={base.mb2}>
+								Repository
+								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
+							</code>
+							<p>
+								from {repo.URI}
+								<span styleName="cool-mid-gray">{firstLineDocString ? ` – ${firstLineDocString}` : ""}</span>
+							</p>
+						</div>
+					</div>
+				</Link>
+			);
+		}
+
+		for (let i = numRepos; i < numRepos + numDefs; i++) {
+			let def = this.state.matchingResults.Defs[i - numRepos];
 			let defURL = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
 			const selected = this._normalizedSelectionIndex() === i;

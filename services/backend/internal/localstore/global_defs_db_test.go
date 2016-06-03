@@ -55,18 +55,18 @@ func TestGlobalDefs(t *testing.T) {
 
 	testCases := []struct {
 		Query   []string
-		Results []*sourcegraph.SearchResult
+		Results []*sourcegraph.DefSearchResult
 	}{
 		{
 			[]string{"abc"},
-			[]*sourcegraph.SearchResult{
+			[]*sourcegraph.DefSearchResult{
 				{Def: sourcegraph.Def{Def: *testDefs1[1]}},
 				{Def: sourcegraph.Def{Def: *testDefs1[0]}},
 			},
 		},
 		{
 			[]string{"pqr"},
-			[]*sourcegraph.SearchResult{
+			[]*sourcegraph.DefSearchResult{
 				{Def: sourcegraph.Def{Def: *testDefs1[2]}},
 			},
 		},
@@ -83,17 +83,17 @@ func TestGlobalDefs(t *testing.T) {
 		}
 
 		// strip score
-		for _, res := range got.Results {
+		for _, res := range got.DefResults {
 			res.Score = 0
 		}
 
-		if !verifyResultsMatch(got.Results, test.Results) {
-			t.Errorf("got %+v, want %+v", got.Results, test.Results)
+		if !verifyResultsMatch(got.DefResults, test.Results) {
+			t.Errorf("got %+v, want %+v", got.DefResults, test.Results)
 		}
 	}
 }
 
-func verifyResultsMatch(got, want []*sourcegraph.SearchResult) bool {
+func verifyResultsMatch(got, want []*sourcegraph.DefSearchResult) bool {
 	if len(got) != len(want) {
 		return false
 	}

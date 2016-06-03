@@ -3,6 +3,7 @@
 package coverageutil
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -17,6 +18,10 @@ type Token struct {
 	Text string
 }
 
+func (t Token) String() string {
+	return fmt.Sprintf("(%d '%s')", t.Offset, t.Text)
+}
+
 // Tokenizer produces tokens from source code.
 type Tokenizer interface {
 	// Init initializes tokenizer using given data
@@ -26,6 +31,8 @@ type Tokenizer interface {
 	Next() *Token
 	// Done deallocates tokenizer's resources if needed
 	Done()
+	// Errors returns list of encountered errors
+	Errors() []string
 }
 
 // NOOP tokenizer
@@ -39,6 +46,10 @@ func (noop *noopTokenizer) Next() *Token {
 }
 
 func (noop *noopTokenizer) Done() {
+}
+
+func (noop *noopTokenizer) Errors() []string {
+	return nil
 }
 
 // singleton
