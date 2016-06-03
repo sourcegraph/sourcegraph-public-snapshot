@@ -316,7 +316,7 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 		return err
 	}
 
-	commitID, err := resolveRevisionDefaultBranch(ctx, repo)
+	commitID, err := resolveRevisionDefaultBranch(ctx, repo.URI)
 	if err != nil {
 		return err
 	}

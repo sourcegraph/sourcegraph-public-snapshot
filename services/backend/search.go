@@ -94,7 +94,7 @@ func (s *search) RefreshIndex(ctx context.Context, op *sourcegraph.SearchRefresh
 	// of the GlobalRefs table for all defs in the given repos.
 	var updateOp store.GlobalDefUpdateOp
 	for _, r := range op.Repos {
-		updateOp.RepoUnits = append(updateOp.RepoUnits, store.RepoUnit{Repo: sourcegraph.RepoSpec{r.URI}})
+		updateOp.RepoUnits = append(updateOp.RepoUnits, store.RepoUnit{Repo: r.URI})
 	}
 
 	if op.RefreshSearch {
