@@ -86,6 +86,11 @@ export class EventLogger {
 		}
 
 		this.userAgentIsBot = Boolean(context.userAgentIsBot);
+
+		// Opt out of Amplitude events if the user agent is a bot.
+		if (this.userAgentIsBot) {
+			this._amplitude.setOptOut(true);
+		}
 	}
 
 	// User data from the previous call to _updateUser.
@@ -158,10 +163,6 @@ export class EventLogger {
 
 	// records events for the current user, if user agent is not bot
 	logEvent(eventName, eventProperties) {
-		if (this.userAgentIsBot) {
-			// Filter out bot or test user agents.
-			return;
-		}
 		if (typeof window !== "undefined" && window.localStorage["event-log"]) {
 			console.debug("%cEVENT %s", "color: #aaa", eventName, eventProperties);
 		}
@@ -183,7 +184,7 @@ export class EventLogger {
 
 	// records intercom events for the current user
 	logIntercomEvent(eventName, eventProperties) {
-		if (this._intercom) this._intercom("trackEvent", eventName, eventProperties);
+		if (this._intercom && !this.userAgentIsBot) this._intercom("trackEvent", eventName, eventProperties);
 	}
 
 	__onDispatch(action) {
