@@ -10,22 +10,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoPath, err := getRepoPath(r)
-	if err != nil {
-		return err
-	}
-
 	var opt sourcegraph.BuildListOptions
-	err = schemaDecoder.Decode(&opt, r.URL.Query())
-	opt.Repo = repoPath
-	if err != nil {
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
+	opt.Repo = routevar.ToRepo(mux.Vars(r))
 
 	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
