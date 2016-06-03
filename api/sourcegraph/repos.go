@@ -24,11 +24,6 @@ func (r *Repo) CloneURL() *url.URL {
 	return u
 }
 
-// RepoSpec returns the RepoSpec that specifies r.
-func (r *Repo) RepoSpec() RepoSpec {
-	return RepoSpec{URI: r.URI}
-}
-
 // IsZero reports whether s.URI is the zero value.
 func (s RepoSpec) IsZero() bool { return s.URI == "" }
 

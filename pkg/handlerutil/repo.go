@@ -86,8 +86,7 @@ func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon,
 		return
 	}
 
-	repoSpec := rc.Repo.RepoSpec()
-	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &repoSpec)
+	rc.RepoConfig, err = cl.Repos.GetConfig(ctx, &sourcegraph.RepoSpec{URI: rc.Repo.URI})
 	return
 }
 
