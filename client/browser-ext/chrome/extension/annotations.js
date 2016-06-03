@@ -74,8 +74,23 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
-				if (children[j].children.length > 1 && children[j].children[0].className === "pl-pds") {
-					children[j].innerHTML = _.escape(children[j].innerText);
+				// Quotation marks on GitHub are given their own span tags.
+				// This messes up anns for go imports. We handle this
+				// by combining all the child span tags when we see child spans
+				// with "pl-pds", the class for quotes, and there aren't any other
+				// tags between them (tags in between needed for highlighting).
+				if (children[j].children.length > 1) {
+					let goImport = true;
+					for (let k = 0; k < children[j].children.length; k++) {
+						if(children[j].children[k].className !== "pl-pds") {
+
+							goImport = false
+							break;
+						}
+					}
+					if (goImport) {
+						children[j].innerHTML = _.escape(children[j].innerText);
+					}
 				}
 				childNodeChars = (children[j].outerHTML).split("");
 			}
