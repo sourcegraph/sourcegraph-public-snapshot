@@ -2,8 +2,8 @@ package main
 
 import "path/filepath"
 
-//Predicates.go contains predicates that check a given file path
-//to see if it is a JSON file that we recognize and support.
+// Predicates.go contains predicates that check a given file path
+// to see if it is a JSON file that we recognize and support.
 
 func npmPrecicate(path string) bool {
 	file := filepath.Base(path)
