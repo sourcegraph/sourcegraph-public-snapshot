@@ -70,15 +70,14 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 
 		for (let j = 0; j < children.length; j++) {
 			let childNodeChars; // the "inner-stuff" of the code cell
-			if (children[j].className) {
-				if (annsByStartByte[startByte]) {
-					annsByStartByte[startByte].className = children[j].className;
-				}
-			}
+
 			if (children[j].nodeType === Node.TEXT_NODE){
 				childNodeChars = children[j].nodeValue.split("");
 			} else {
-				childNodeChars = _.unescape(children[j].outerHTML).split("");
+				if (children[j].children.length > 1 && children[j].children[0].className === "pl-pds") {
+					children[j].innerHTML = _.escape(children[j].innerText);
+				}
+				childNodeChars = (children[j].outerHTML).split("");
 			}
 
 			let consumingSpan = false;
@@ -89,14 +88,21 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 				if (childNodeChars[k] === "<" && (childNodeChars.slice(k, k+5).join("") === "<span" || childNodeChars.slice(k, k+6).join("") === "</span")) {
 					consumingSpan = true;
 				}
-
 				if (!consumingSpan){
-					output += next(childNodeChars[k], startByte, annsByStartByte, annsByEndByte)
-					startByte += utf8.encode(childNodeChars[k]).length
-				}
-				else {
+					// Case to handle if < or > appears, so that we don't "consume" or make span tags in the code disappear
+					// This will not break if "&lt;" or "&gt;" appear because chars are escaped.
+					if (childNodeChars[k] === "&" && (((childNodeChars.slice(k, k+4).join("")) === ("&gt;")) || (childNodeChars.slice(k, k+4).join("") === ("&lt;")))) {
+						output += next(childNodeChars.slice(k, k+4).join(""), startByte, annsByStartByte, annsByEndByte);
+						k += childNodeChars.slice(k, k+4).join("").length-1;
+						startByte += utf8.encode(childNodeChars[k]).length;
+					}
+					else {
+						output += next(childNodeChars[k], startByte, annsByStartByte, annsByEndByte);
+						startByte += utf8.encode(childNodeChars[k]).length;
+					}
+				} else {
 					// when we are consuming the <span> element, don't increment startByte
-					output += childNodeChars[k]
+					output += childNodeChars[k];
 				}
 
 				if (childNodeChars[k] === ">" && consumingSpan) {
@@ -121,8 +127,6 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 // into itself or wraps the character in a starting/ending anchor tag
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	let matchDetails = annsByStartByte[byteCount];
-
-	c = _.escape(c); // IMPORTANT: escape all markup injected in HTML
 
 	// if there is a match
 	if (!annotating && matchDetails) {

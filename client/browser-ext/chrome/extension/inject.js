@@ -108,7 +108,7 @@ class InjectApp extends React.Component {
 	}
 
 	_clickRef(ev) {
-		if (typeof ev.target.dataset.sourcegraphRef !== "undefined") {
+		if (typeof ev.target.dataset.sourcegraphRef !== "undefined" || (ev.target.parentNode && typeof ev.target.parentNode.dataset.sourcegraphRef !== "undefined")) {
 			let urlProps = this.parseURL({pathname: ev.target.pathname, hash: ev.target.hash});
 			urlProps.repo = `github.com/${urlProps.user}/${urlProps.repo}`;
 
