@@ -23,7 +23,7 @@ func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
 
 	if len(commitID) != 40 {
 		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-			Repo: sourcegraph.RepoSpec{URI: repo},
+			Repo: repo,
 			Rev:  commitID,
 		})
 		if err != nil {

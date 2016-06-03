@@ -254,7 +254,7 @@ func (c *stressCmd) fetchFiles(ctx context.Context) error {
 	if c.File == "" {
 		for _, repo := range c.repos {
 			res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-				Repo: repo.RepoSpec(),
+				Repo: repo.URI,
 				Rev:  repo.DefaultBranch,
 			})
 			if err != nil {

@@ -52,7 +52,7 @@ func (s RepoRevSpec) IsAbs() bool {
 func (r *RepoResolution) UnmarshalJSON(data []byte) error {
 	var m struct {
 		Result struct {
-			Repo       *RepoSpec
+			Repo       string
 			RemoteRepo *RemoteRepo
 		}
 	}
@@ -60,7 +60,7 @@ func (r *RepoResolution) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch {
-	case m.Result.Repo != nil:
+	case m.Result.Repo != "":
 		*r = RepoResolution{Result: &RepoResolution_Repo{Repo: m.Result.Repo}}
 	case m.Result.RemoteRepo != nil:
 		*r = RepoResolution{Result: &RepoResolution_RemoteRepo{RemoteRepo: m.Result.RemoteRepo}}

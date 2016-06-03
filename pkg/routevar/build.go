@@ -7,7 +7,7 @@ import (
 )
 
 func BuildRouteVars(s sourcegraph.BuildSpec) map[string]string {
-	m := RepoRouteVars(s.Repo.URI)
+	m := RepoRouteVars(s.Repo)
 	m["Build"] = fmt.Sprintf("%d", s.ID)
 	return m
 }

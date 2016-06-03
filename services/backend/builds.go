@@ -59,7 +59,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, grpc.Errorf(codes.InvalidArgument, "Builds.Create requires full commit ID")
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &op.Repo)
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	}
 
 	if op.Branch != "" && op.Tag != "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of Branch and Tag may be specified when creating a build (repo %s commit %q)", op.Repo.URI, op.CommitID)
+		return nil, grpc.Errorf(codes.InvalidArgument, "at most one of Branch and Tag may be specified when creating a build (repo %s commit %q)", op.Repo, op.CommitID)
 	}
 
 	b := &sourcegraph.Build{
@@ -316,7 +316,7 @@ func observeFinishedBuild(b *sourcegraph.Build) {
 }
 
 func observeDequeuedBuild(b *sourcegraph.BuildJob) {
-	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(b.Spec.Repo.URI)}
+	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(b.Spec.Repo)}
 	buildsDequeue.With(labels).Inc()
 }
 

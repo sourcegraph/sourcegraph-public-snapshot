@@ -17,7 +17,7 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 
 	repoRev := routevar.ToRepoRev(mux.Vars(r))
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: sourcegraph.RepoSpec{URI: repoRev.Repo},
+		Repo: repoRev.Repo,
 		Rev:  repoRev.Rev,
 	})
 	if err != nil {
@@ -43,7 +43,7 @@ func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{Repo: sourcegraph.RepoSpec{URI: repo}, Opt: &opt})
+	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{Repo: repo, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoupdater.Enqueue(sourcegraph.RepoSpec{URI: repoPath}, authInfo.UserSpec())
+	repoupdater.Enqueue(repoPath, authInfo.UserSpec())
 	w.WriteHeader(http.StatusAccepted)
 	return nil
 }
@@ -96,7 +96,7 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: sourcegraph.RepoSpec{URI: repoPath}, Opt: &opt})
+	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoPath, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: sourcegraph.RepoSpec{URI: repoPath}, Opt: &opt})
+	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoPath, Opt: &opt})
 	if err != nil {
 		return err
 	}

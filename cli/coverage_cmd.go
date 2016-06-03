@@ -193,7 +193,7 @@ func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Conte
 		return "", err
 	}
 
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: sourcegraph.RepoSpec{URI: repoPath}, Rev: repo.DefaultBranch})
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoPath, Rev: repo.DefaultBranch})
 	if err != nil {
 		return "", err
 	}

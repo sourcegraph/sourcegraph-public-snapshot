@@ -78,17 +78,17 @@ func serveBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 	return writePlainLogEntries(w, entries)
 }
 
-func getRepoSpec(r *http.Request) (*sourcegraph.RepoSpec, error) {
+func getRepoPath(r *http.Request) (string, error) {
 	v := mux.Vars(r)
 	repo := v["Repo"]
 	if repo == "" {
-		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest}
+		return "", &errcode.HTTPErr{Status: http.StatusBadRequest}
 	}
-	return &sourcegraph.RepoSpec{URI: repo}, nil
+	return repo, nil
 }
 
 func getBuildSpec(r *http.Request) (*sourcegraph.BuildSpec, error) {
-	repoSpec, err := getRepoSpec(r)
+	repoPath, err := getRepoPath(r)
 	if err != nil {
 		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
@@ -99,7 +99,7 @@ func getBuildSpec(r *http.Request) (*sourcegraph.BuildSpec, error) {
 		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return &sourcegraph.BuildSpec{
-		Repo: *repoSpec,
+		Repo: repoPath,
 		ID:   build,
 	}, nil
 }

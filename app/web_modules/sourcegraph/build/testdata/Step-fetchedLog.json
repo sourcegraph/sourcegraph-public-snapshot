@@ -45,7 +45,9 @@
 	"dispatched": [
 		{
 			"$constructor": "WantLog",
-			"repo": "aRepo",
+			"repo": {
+				"URI": "aRepo"
+			},
 			"buildID": 123,
 			"taskID": 456
 		}

@@ -25,7 +25,7 @@ import (
 // commit ID. If it doesn't exist, it triggers a refresh of the repo's
 // VCS data and then retries (until maxGetCommitVCSRefreshWait has
 // elapsed).
-func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo sourcegraph.RepoSpec, rev string) string {
+func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo, rev string) string {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	wait := time.Second * 9 * ciFactor
@@ -47,10 +47,10 @@ func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo sourc
 
 			if !refreshTriggered {
 				if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); err != nil {
-					err = fmt.Errorf("failed to trigger VCS refresh for repo %s: %s", repo.URI, err)
+					err = fmt.Errorf("failed to trigger VCS refresh for repo %s: %s", repo, err)
 					break
 				}
-				t.Logf("repo %s revision %s not on remote; triggered refresh of VCS data, waiting %s", repo.URI, rev, wait)
+				t.Logf("repo %s revision %s not on remote; triggered refresh of VCS data, waiting %s", repo, rev, wait)
 				refreshTriggered = true
 			}
 			time.Sleep(time.Second)
@@ -64,7 +64,7 @@ func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo sourc
 		}
 		return res.CommitID
 	case <-timeout:
-		t.Fatalf("repo %s revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repo.URI, rev, wait)
+		t.Fatalf("repo %s revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repo, rev, wait)
 		panic("unreachable")
 	}
 }
@@ -124,7 +124,7 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: sourcegraph.RepoSpec{URI: repo.URI},
+		Repo: repo.URI,
 		Rev:  "master",
 	})
 	if err != nil {

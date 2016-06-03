@@ -159,7 +159,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		if actor := authpkg.ActorFromContext(ctx); actor.UID != 0 {
 			asUser = &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login}
 		}
-		repoupdater.Enqueue(repo.RepoSpec(), asUser)
+		repoupdater.Enqueue(repo.URI, asUser)
 	}
 
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
@@ -236,7 +236,7 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sou
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
-	return s.Get(ctx, &op.Repo)
+	return s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
@@ -270,7 +270,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 		}
 	}
 
-	conf, err := store.Get(ctx, op.Repo.URI)
+	conf, err := store.Get(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 	}
 	sort.Strings(conf.Apps)
 
-	if err := store.Update(ctx, op.Repo.URI, *conf); err != nil {
+	if err := store.Update(ctx, op.Repo, *conf); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil

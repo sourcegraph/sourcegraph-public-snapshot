@@ -31,7 +31,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 	}
 
 	repoRev := sourcegraph.RepoRevSpec{
-		Repo:     build.Spec.Repo.URI,
+		Repo:     build.Spec.Repo,
 		CommitID: build.CommitID,
 	}
 	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
@@ -92,7 +92,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 	}
 
 	b.Payload.Repo = &plugin.Repo{
-		FullName:  build.Spec.Repo.URI,
+		FullName:  build.Spec.Repo,
 		Clone:     containerCloneURL.String(),
 		Link:      repoLink,
 		IsPrivate: true,

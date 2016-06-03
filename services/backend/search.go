@@ -93,8 +93,8 @@ func (s *search) RefreshIndex(ctx context.Context, op *sourcegraph.SearchRefresh
 	// for every def. This will pre-compute the ref counts based on the current state
 	// of the GlobalRefs table for all defs in the given repos.
 	var updateOp store.GlobalDefUpdateOp
-	for _, r := range op.Repos {
-		updateOp.RepoUnits = append(updateOp.RepoUnits, store.RepoUnit{Repo: r.URI})
+	for _, repo := range op.Repos {
+		updateOp.RepoUnits = append(updateOp.RepoUnits, store.RepoUnit{Repo: repo})
 	}
 
 	if op.RefreshSearch {

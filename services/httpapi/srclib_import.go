@@ -110,7 +110,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	// Best-effort global search re-index, don't block import
 	go func() {
 		_, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-			Repo:                &sourcegraph.RepoSpec{URI: repoRev.Repo},
+			Repo:                repoRev.Repo,
 			RefreshRefLocations: true,
 		})
 		if err != nil {
@@ -122,7 +122,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 
 		_, err = cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []*sourcegraph.RepoSpec{{repoRev.Repo}},
+			Repos:         []string{repoRev.Repo},
 			RefreshCounts: true,
 			RefreshSearch: true,
 		})

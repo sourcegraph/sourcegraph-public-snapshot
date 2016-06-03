@@ -84,7 +84,7 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	case "receive-pack":
 		var err error
 		pkt, err = c.ReceivePack(ctx, &sourcegraph.ReceivePackOp{
-			Repo:          sourcegraph.RepoSpec{URI: repo},
+			Repo:          repo,
 			AdvertiseRefs: true,
 		})
 		if err != nil {
@@ -93,7 +93,7 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	case "upload-pack":
 		var err error
 		pkt, err = c.UploadPack(ctx, &sourcegraph.UploadPackOp{
-			Repo:          sourcegraph.RepoSpec{URI: repo},
+			Repo:          repo,
 			AdvertiseRefs: true,
 		})
 		if err != nil {
@@ -127,7 +127,7 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	pkt, err := c.ReceivePack(ctx, &sourcegraph.ReceivePackOp{
-		Repo: sourcegraph.RepoSpec{URI: repo},
+		Repo: repo,
 		Data: body,
 	})
 	if err != nil {
@@ -155,7 +155,7 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	pkt, err := c.UploadPack(ctx, &sourcegraph.UploadPackOp{
-		Repo: sourcegraph.RepoSpec{URI: repo},
+		Repo: repo,
 		Data: body,
 	})
 	if err != nil {

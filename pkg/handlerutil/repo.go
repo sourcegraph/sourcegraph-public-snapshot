@@ -135,7 +135,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) 
 	}
 
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: sourcegraph.RepoSpec{URI: repoRev.Repo},
+		Repo: repoRev.Repo,
 		Rev:  repoRev.Rev,
 	})
 	if err != nil {
@@ -233,7 +233,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	}
 
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: sourcegraph.RepoSpec{URI: repoRev.Repo},
+		Repo: repoRev.Repo,
 		Rev:  repoRev.Rev,
 	})
 	if err != nil {

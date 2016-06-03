@@ -301,7 +301,7 @@ func (c *repoUpdateCmd) Execute(args []string) error {
 	cl := cliClient
 
 	repo, err := cl.Repos.Update(cliContext, &sourcegraph.ReposUpdateOp{
-		Repo:        sourcegraph.RepoSpec{URI: c.Args.URI},
+		Repo:        c.Args.URI,
 		Description: c.Description,
 		Language:    c.Language,
 	})
@@ -378,7 +378,7 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 		rev = repo.DefaultBranch
 	}
 	res, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-		Repo: repoSpec,
+		Repo: repoURI,
 		Rev:  rev,
 	})
 	if err != nil {
@@ -402,7 +402,7 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	}
 	if c.Force || len(builds.Builds) == 0 {
 		b, err := cl.Builds.Create(cliContext, &sourcegraph.BuildsCreateOp{
-			Repo:     sourcegraph.RepoSpec{URI: repoRevSpec.Repo},
+			Repo:     repoRevSpec.Repo,
 			CommitID: repoRevSpec.CommitID,
 			Config:   sourcegraph.BuildConfig{Queue: true},
 		})
@@ -434,7 +434,7 @@ func (c *repoRefreshVCSCmd) Execute(args []string) error {
 		}
 
 		preRes, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.RepoSpec(),
+			Repo: repo.URI,
 			Rev:  repo.DefaultBranch,
 		})
 		if err != nil {
@@ -448,12 +448,12 @@ func (c *repoRefreshVCSCmd) Execute(args []string) error {
 			return err
 		}
 
-		if _, err := cl.MirrorRepos.RefreshVCS(cliContext, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo.RepoSpec()}); err != nil {
+		if _, err := cl.MirrorRepos.RefreshVCS(cliContext, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo.URI}); err != nil {
 			return err
 		}
 
 		postRes, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.RepoSpec(),
+			Repo: repo.URI,
 			Rev:  repo.DefaultBranch,
 		})
 		if err != nil {
@@ -487,7 +487,7 @@ type repoInventoryCmd struct {
 func (c *repoInventoryCmd) Execute(args []string) error {
 	cl := cliClient
 
-	repo := sourcegraph.RepoSpec{URI: c.Args.Repo}
+	repo := c.Args.Repo
 	res, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
 		Repo: repo,
 		Rev:  c.Rev,
@@ -497,7 +497,7 @@ func (c *repoInventoryCmd) Execute(args []string) error {
 	}
 
 	inv, err := cl.Repos.GetInventory(cliContext, &sourcegraph.RepoRevSpec{
-		Repo:     repo.URI,
+		Repo:     repo,
 		CommitID: res.CommitID,
 	})
 	if err != nil {

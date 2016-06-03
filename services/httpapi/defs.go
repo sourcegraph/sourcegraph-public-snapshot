@@ -57,7 +57,7 @@ func resolveDef(ctx context.Context, def routevar.DefAtRev) (*sourcegraph.DefSpe
 	if err != nil {
 		return nil, err
 	}
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: sourcegraph.RepoSpec{URI: def.Repo}, Rev: def.Rev})
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: def.Repo, Rev: def.Rev})
 	if err != nil {
 		return nil, err
 	}

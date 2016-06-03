@@ -74,12 +74,12 @@ func writeCacheHeaders(w http.ResponseWriter, r *http.Request, lastMod time.Time
 // "repohost.com/foo").
 func getLastModForRepoRevs(r *http.Request, repoRevs []string) (time.Time, error) {
 	if len(repoRevs) == 1 {
-		repoURI, commitID := sourcegraph.ParseRepoAndCommitID(repoRevs[0])
+		repoPath, commitID := sourcegraph.ParseRepoAndCommitID(repoRevs[0])
 		if commitID != "" {
 			// TODO(sqs): perf can be improved by adding cache headers in
 			// the case where multiple repo URIs are specified (currently
 			// this logic is only if 1 repo is specified).
-			lastMod, err := getRepoLastBuildTime(r, sourcegraph.RepoSpec{URI: repoURI}, commitID)
+			lastMod, err := getRepoLastBuildTime(r, repoPath, commitID)
 			if err != nil {
 				return time.Time{}, err
 			}

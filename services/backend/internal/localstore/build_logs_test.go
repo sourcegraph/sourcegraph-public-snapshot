@@ -13,7 +13,7 @@ import (
 
 func logStr(e *sourcegraph.LogEntries) string { return strings.Join(e.Entries, "\n") }
 
-var task = sourcegraph.TaskSpec{Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "r"}, ID: 123}, ID: 456}
+var task = sourcegraph.TaskSpec{Build: sourcegraph.BuildSpec{Repo: "r", ID: 123}, ID: 456}
 
 func writeBuildLog(ctx context.Context, t *testing.T, task sourcegraph.TaskSpec, data string) {
 	if err := ioutil.WriteFile(logFilePath(task), []byte(data), 0600); err != nil {

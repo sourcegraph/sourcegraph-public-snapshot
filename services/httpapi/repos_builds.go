@@ -15,14 +15,14 @@ import (
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec, err := getRepoSpec(r)
+	repoPath, err := getRepoPath(r)
 	if err != nil {
 		return err
 	}
 
 	var opt sourcegraph.BuildListOptions
 	err = schemaDecoder.Decode(&opt, r.URL.Query())
-	opt.Repo = repoSpec.URI
+	opt.Repo = repoPath
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	op.Repo = sourcegraph.RepoSpec{URI: repoPath}
+	op.Repo = repoPath
 	build, err := cl.Builds.Create(ctx, &op)
 	if err != nil {
 		return err

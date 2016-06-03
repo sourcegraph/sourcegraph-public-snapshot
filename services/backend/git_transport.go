@@ -24,7 +24,7 @@ import (
 const emptyGitCommitID = "0000000000000000000000000000000000000000"
 
 func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*sourcegraph.Packet, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.UploadPack", op.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GitTransport.UploadPack", op.Repo); err != nil {
 		// Ignore the error if it is because the repo didn't exist. This comes
 		// about when we are implicitly mirroring repos and the metadata is
 		// not stored in the database. This is only OK for read access.
@@ -34,7 +34,7 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 	}
 
 	store := store.RepoVCSFromContext(ctx)
-	t, err := store.OpenGitTransport(ctx, op.Repo.URI)
+	t, err := store.OpenGitTransport(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 		return nil, err
 	}
 
-	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, op.Repo.URI)
+	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -85,24 +85,24 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 	return &sourcegraph.Packet{Data: data}, nil
 }
 
-func verifyRepoWriteAccess(ctx context.Context, repoSpec sourcegraph.RepoSpec) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repoSpec.URI); err != nil {
+func verifyRepoWriteAccess(ctx context.Context, repoPath string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repoPath); err != nil {
 		return err
 	}
-	repo, err := svc.Repos(ctx).Get(ctx, &repoSpec)
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 	if err != nil {
 		return err
 	}
 	if !repo.IsSystemOfRecord() {
-		return grpc.Errorf(codes.FailedPrecondition, "repo is not writeable %v", repoSpec.URI)
+		return grpc.Errorf(codes.FailedPrecondition, "repo is not writeable %v", repoPath)
 	}
 	return nil
 }
 
-func updateRepoPushedAt(ctx context.Context, repo sourcegraph.RepoSpec) error {
+func updateRepoPushedAt(ctx context.Context, repoPath string) error {
 	now := time.Now()
 	return store.ReposFromContext(ctx).Update(ctx, store.RepoUpdate{
-		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo},
+		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repoPath},
 		PushedAt:      &now,
 		// Note: No need to update the UpdatedAt field, since it
 		// should track significant updates to repo metadata, not just

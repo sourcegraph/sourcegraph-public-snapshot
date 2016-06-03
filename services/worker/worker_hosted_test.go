@@ -100,7 +100,7 @@ func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Co
 		a.Close()
 	}
 
-	buildSpec := sourcegraph.BuildSpec{Repo: repo.RepoSpec(), ID: 1}
+	buildSpec := sourcegraph.BuildSpec{Repo: repo.URI, ID: 1}
 
 	// Get log for a single task.
 	getTaskLog := func(task sourcegraph.TaskSpec) (string, error) {

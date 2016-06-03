@@ -528,36 +528,36 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 }
 
 func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
 		return err
 	}
 	if op.Description != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.Language != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.DefaultBranch != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 
 	if op.UpdatedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.PushedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo)
 		if err != nil {
 			return err
 		}

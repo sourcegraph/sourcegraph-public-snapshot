@@ -45,7 +45,7 @@ const BlobBackend = {
 			{
 				let anns = BlobStore.annotations.get(action.repo, action.commitID, action.path, action.startByte, action.endByte);
 				if (anns === null) {
-					let url = `/.api/annotations?Entry.RepoRev.URI=${action.repo}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
+					let url = `/.api/annotations?Entry.RepoRev.Repo=${action.repo}&Entry.RepoRev.CommitID=${action.commitID}&Entry.Path=${action.path}&Range.StartByte=${action.startByte || 0}&Range.EndByte=${action.endByte || 0}`;
 					trackPromise(
 						BlobBackend.fetch(url)
 							.then(checkStatus)

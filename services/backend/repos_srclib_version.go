@@ -73,7 +73,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	var base string
 	if entry.Path != "" {
 		lastPathCommit, err := svc.Repos(ctx).ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-			Repo: sourcegraph.RepoSpec{URI: entry.RepoRev.Repo},
+			Repo: entry.RepoRev.Repo,
 			Opt: &sourcegraph.RepoListCommitsOptions{
 				Head:        entry.RepoRev.CommitID,
 				Path:        entry.Path,
@@ -103,7 +103,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	// List the recent commits that we'll use to check for builds.
 	candidateCommits, err := svc.Repos(ctx).ListCommits(ctx,
 		&sourcegraph.ReposListCommitsOp{
-			Repo: sourcegraph.RepoSpec{URI: entry.RepoRev.Repo},
+			Repo: entry.RepoRev.Repo,
 			Opt: &sourcegraph.RepoListCommitsOptions{
 				Head: entry.RepoRev.CommitID,
 				Base: base,

@@ -117,9 +117,7 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Delete the repo.
-	_, err = pgsqlServer.Client.Repos.Delete(pgsqlCtx, &sourcegraph.RepoSpec{
-		URI: repo,
-	})
+	_, err = pgsqlServer.Client.Repos.Delete(pgsqlCtx, &sourcegraph.RepoSpec{URI: repo})
 	if err != nil {
 		t.Fatal(err)
 	}
