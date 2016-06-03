@@ -1763,11 +1763,31 @@ service Defs {
 	// ListAuthors lists people who committed parts of def's definition.
 	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);
 
-    	// RefreshIndex updates the precomputed indexes used for answering
+	// RefreshIndex updates the precomputed indexes used for answering
 	// ListRefLocations queries. The indexes are built from the current
 	// snapshot of the code graph. This operation is idempotent, and
 	// should be executed regularly to keep the indexes up-to-date.
 	rpc RefreshIndex(DefsRefreshIndexOp) returns (pbtypes.Void);
+}
+
+message AsyncRefreshIndexesOp {
+	// Repo will have all of its indexes refreshed.
+	int32 Repo = 1;
+
+	// Source helps tie back async jobs to their source.
+	string Source = 2;
+
+	// Force will ensure all indexes are refreshed, even if the index
+	// already includes the latest commit.
+	bool Force = 3;
+}
+
+// AsyncService provides services which are usually triggered by frontend
+// actions, but do not block responses
+service Async {
+	// RefreshIndexes refreshes indexes we keep on a repo (GlobalRefs,
+	// GlobalDefs, etc)
+	rpc RefreshIndexes(AsyncRefreshIndexesOp) returns (pbtypes.Void);
 }
 
 message AuthorshipInfo {

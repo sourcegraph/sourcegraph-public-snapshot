@@ -38,6 +38,8 @@ func Services() svc.Services {
 
 		Annotations: wrappedAnnotations{},
 
+		Async: wrappedAsync{},
+
 		Auth: wrappedAuth{},
 
 		Builds: wrappedBuilds{},
@@ -189,6 +191,21 @@ func (s wrappedAnnotations) List(ctx context.Context, param *sourcegraph.Annotat
 	res, err = backend.Services.Annotations.List(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Annotations.List returned nil, nil")
+	}
+	return
+}
+
+type wrappedAsync struct{}
+
+func (s wrappedAsync) RefreshIndexes(ctx context.Context, param *sourcegraph.AsyncRefreshIndexesOp) (res *pbtypes.Void, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Async", "RefreshIndexes", param)
+	defer func() {
+		trace.After(ctx, "Async", "RefreshIndexes", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Async.RefreshIndexes(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Async.RefreshIndexes returned nil, nil")
 	}
 	return
 }

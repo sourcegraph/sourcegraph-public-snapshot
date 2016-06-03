@@ -25,6 +25,7 @@ const (
 	_MultiRepoImporterKey contextKey = iota
 	_AccountsKey          contextKey = iota
 	_AnnotationsKey       contextKey = iota
+	_AsyncKey             contextKey = iota
 	_AuthKey              contextKey = iota
 	_BuildsKey            contextKey = iota
 	_ChannelKey           contextKey = iota
@@ -47,6 +48,7 @@ type Services struct {
 	MultiRepoImporter pb.MultiRepoImporterServer
 	Accounts          sourcegraph.AccountsServer
 	Annotations       sourcegraph.AnnotationsServer
+	Async             sourcegraph.AsyncServer
 	Auth              sourcegraph.AuthServer
 	Builds            sourcegraph.BuildsServer
 	Channel           sourcegraph.ChannelServer
@@ -77,6 +79,10 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Annotations != nil {
 		sourcegraph.RegisterAnnotationsServer(s, svcs.Annotations)
+	}
+
+	if svcs.Async != nil {
+		sourcegraph.RegisterAsyncServer(s, svcs.Async)
 	}
 
 	if svcs.Auth != nil {
@@ -154,6 +160,10 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Annotations != nil {
 		ctx = WithAnnotations(ctx, s.Annotations)
+	}
+
+	if s.Async != nil {
+		ctx = WithAsync(ctx, s.Async)
 	}
 
 	if s.Auth != nil {
@@ -282,6 +292,29 @@ func Annotations(ctx context.Context) sourcegraph.AnnotationsServer {
 // AnnotationsOrNil returns the context's Annotations service if present, or else nil.
 func AnnotationsOrNil(ctx context.Context) sourcegraph.AnnotationsServer {
 	s, ok := ctx.Value(_AnnotationsKey).(sourcegraph.AnnotationsServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithAsync returns a copy of parent that uses the given Async service.
+func WithAsync(ctx context.Context, s sourcegraph.AsyncServer) context.Context {
+	return context.WithValue(ctx, _AsyncKey, s)
+}
+
+// Async gets the context's Async service. If the service is not present, it panics.
+func Async(ctx context.Context) sourcegraph.AsyncServer {
+	s, ok := ctx.Value(_AsyncKey).(sourcegraph.AsyncServer)
+	if !ok || s == nil {
+		panic("no Async set in context")
+	}
+	return s
+}
+
+// AsyncOrNil returns the context's Async service if present, or else nil.
+func AsyncOrNil(ctx context.Context) sourcegraph.AsyncServer {
+	s, ok := ctx.Value(_AsyncKey).(sourcegraph.AsyncServer)
 	if ok {
 		return s
 	}

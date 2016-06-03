@@ -32,6 +32,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		MultiRepoImporter: wrappedMultiRepoImporter{ctxFunc, services},
 		Accounts:          wrappedAccounts{ctxFunc, services},
 		Annotations:       wrappedAnnotations{ctxFunc, services},
+		Async:             wrappedAsync{ctxFunc, services},
 		Auth:              wrappedAuth{ctxFunc, services},
 		Builds:            wrappedBuilds{ctxFunc, services},
 		Channel:           wrappedChannel{ctxFunc, services},
@@ -329,6 +330,41 @@ func (s wrappedAnnotations) List(ctx context.Context, v1 *sourcegraph.Annotation
 	}
 
 	rv, err := innerSvc.List(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+type wrappedAsync struct {
+	ctxFunc  ContextFunc
+	services svc.Services
+}
+
+func (s wrappedAsync) RefreshIndexes(ctx context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (returnedResult *pbtypes.Void, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Async.RefreshIndexes: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.AsyncOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Async")
+	}
+
+	rv, err := innerSvc.RefreshIndexes(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

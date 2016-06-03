@@ -691,6 +691,26 @@ func (s *DefsServer) RefreshIndex(v0 context.Context, v1 *sourcegraph.DefsRefres
 
 var _ sourcegraph.DefsServer = (*DefsServer)(nil)
 
+type AsyncClient struct {
+	RefreshIndexes_ func(ctx context.Context, in *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error)
+}
+
+func (s *AsyncClient) RefreshIndexes(ctx context.Context, in *sourcegraph.AsyncRefreshIndexesOp, opts ...grpc.CallOption) (*pbtypes.Void, error) {
+	return s.RefreshIndexes_(ctx, in)
+}
+
+var _ sourcegraph.AsyncClient = (*AsyncClient)(nil)
+
+type AsyncServer struct {
+	RefreshIndexes_ func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error)
+}
+
+func (s *AsyncServer) RefreshIndexes(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
+	return s.RefreshIndexes_(v0, v1)
+}
+
+var _ sourcegraph.AsyncServer = (*AsyncServer)(nil)
+
 type DeltasClient struct {
 	Get_       func(ctx context.Context, in *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error)
 	ListFiles_ func(ctx context.Context, in *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error)
