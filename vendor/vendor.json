@@ -493,6 +493,12 @@
 			"revisionTime": "2015-12-04T15:23:49Z"
 		},
 		{
+			"checksumSHA1": "oGaGPSUL5y9XlpafEzXEZDh5IPM=",
+			"path": "github.com/jessevdk/go-flags",
+			"revision": "b9b882a3990882b05e02765f5df2cd3ad02874ee",
+			"revisionTime": "2016-05-28T08:24:54Z"
+		},
+		{
 			"checksumSHA1": "IXVypCQsDOlWf8dqyFogbOsRdvM=",
 			"path": "github.com/jpillora/backoff",
 			"revision": "0496a6c14df020789376f4d4a261273d5ddb36ec",
@@ -769,6 +775,18 @@
 			"path": "github.com/sourcegraph/sitemap",
 			"revision": "5d2a42ccab8dc0079484263b326b9a3191d5bee8",
 			"revisionTime": "2013-09-12T23:55:21-07:00"
+		},
+		{
+			"checksumSHA1": "ii32HKYj0iWaJ51Qc7H+hBqc0t4=",
+			"path": "github.com/sourcegraph/srclib-json",
+			"revision": "43fac712af137f95ad5afac7ca958c280b60a598",
+			"revisionTime": "2016-06-03T02:21:18Z"
+		},
+		{
+			"checksumSHA1": "sIR/BqHJcwZBjK+ooDxvoqy1EI0=",
+			"path": "github.com/sourcegraph/srclib-json-tokenizer/sgjson",
+			"revision": "ed3fe49b5b3af987e1f652e2e00c54e69efa7f3c",
+			"revisionTime": "2016-06-02T22:56:54Z"
 		},
 		{
 			"path": "github.com/sqs/fileset",
