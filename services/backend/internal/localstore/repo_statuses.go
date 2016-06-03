@@ -216,8 +216,8 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 				cvg = nextCvg
 			}
 
-			if len(cvg) > 30 {
-				cvg = cvg[:30] // cap # of entries at ~1 month
+			if len(cvg) > 7 {
+				cvg = cvg[:7] // cap # of entries at 7 days
 			}
 			nextDescription, err := json.Marshal(&cvg)
 			if err != nil {
