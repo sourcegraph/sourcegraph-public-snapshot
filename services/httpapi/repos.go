@@ -223,7 +223,7 @@ func resolveRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph
 		return nil, err
 	}
 	return &sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo},
+		Repo:     repoRev.Repo,
 		CommitID: res.CommitID,
 	}, nil
 }

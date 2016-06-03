@@ -263,7 +263,7 @@ func (c *stressCmd) fetchFiles(ctx context.Context) error {
 
 			tree, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 				Entry: sourcegraph.TreeEntrySpec{
-					RepoRev: sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec(), CommitID: res.CommitID},
+					RepoRev: sourcegraph.RepoRevSpec{Repo: repo.URI, CommitID: res.CommitID},
 					Path:    ".",
 				},
 			})

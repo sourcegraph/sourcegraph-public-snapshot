@@ -45,8 +45,7 @@ func (c *pushCmd) Execute(args []string) error {
 		commitID = c.CommitID
 	}
 
-	repoSpec := sourcegraph.RepoSpec{URI: c.Repo}
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: commitID}
+	repoRevSpec := sourcegraph.RepoRevSpec{Repo: c.Repo, CommitID: commitID}
 
 	appURL, err := getRemoteAppURL(cliContext)
 	if err != nil {
@@ -57,7 +56,7 @@ func (c *pushCmd) Execute(args []string) error {
 		return err
 	}
 
-	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(repoRevSpec.URI, repoRevSpec.CommitID)))
+	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(repoRevSpec.Repo, repoRevSpec.CommitID)))
 
 	return nil
 }
@@ -74,7 +73,7 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 	repoRevSpec.CommitID = string(commit.ID)
 
 	if globalOpt.Verbose {
-		log.Printf("Pushing srclib data for %s@%s to server at %s...", repoRevSpec.URI, repoRevSpec.CommitID, sourcegraph.GRPCEndpoint(ctx))
+		log.Printf("Pushing srclib data for %s@%s to server at %s...", repoRevSpec.Repo, repoRevSpec.CommitID, sourcegraph.GRPCEndpoint(ctx))
 	}
 
 	// Perform the import.
@@ -82,11 +81,11 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 
 	bdfs, err := srclib.GetBuildDataFS(repoRevSpec.CommitID)
 	if err != nil {
-		return fmt.Errorf("getting local build data FS for %s@%s: %s", repoRevSpec.URI, repoRevSpec.CommitID, err)
+		return fmt.Errorf("getting local build data FS for %s@%s: %s", repoRevSpec.Repo, repoRevSpec.CommitID, err)
 	}
 
 	importOpt := srclib.ImportOpt{
-		Repo:     repoRevSpec.URI,
+		Repo:     repoRevSpec.Repo,
 		CommitID: repoRevSpec.CommitID,
 		Verbose:  globalOpt.Verbose,
 	}

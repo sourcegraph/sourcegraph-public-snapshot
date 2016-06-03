@@ -172,7 +172,7 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 	}
 	event := payload.Event
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
-		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: payload.Repo, CommitID: event.Commit}
+		repoRev := &sourcegraph.RepoRevSpec{Repo: payload.Repo.URI, CommitID: event.Commit}
 		// Trigger a call to Repos.GetInventory so the inventory is
 		// cached for subsequent calls.
 		inv, err := cl.Repos.GetInventory(ctx, repoRev)
@@ -183,7 +183,7 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 
 		// If this push is to the default branch, update the repo's
 		// Language field with the primary language.
-		repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
 		if err != nil {
 			log15.Warn("inventoryHook: call to Repos.Get failed", "err", err, "repoRev", repoRev)
 			return

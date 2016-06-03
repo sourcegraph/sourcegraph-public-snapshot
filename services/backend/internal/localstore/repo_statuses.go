@@ -73,7 +73,7 @@ func (r *dbRepoStatus) toRepoStatus() *sourcegraph.RepoStatus {
 }
 
 func (r *dbRepoStatus) fromRepoStatus(repoRev *sourcegraph.RepoRevSpec, r2 *sourcegraph.RepoStatus) {
-	r.Repo = repoRev.URI
+	r.Repo = repoRev.Repo
 	r.Rev = repoRev.CommitID
 	r.State = r2.State
 	r.TargetURL = r2.TargetURL
@@ -99,13 +99,13 @@ type repoStatuses struct{}
 var _ store.RepoStatuses = (*repoStatuses)(nil)
 
 func (s *repoStatuses) GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoStatuses.GetCombined", repoRev.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoStatuses.GetCombined", repoRev.Repo); err != nil {
 		return nil, err
 	}
 	rev := repoRev.CommitID
 
 	var dbRepoStatuses []*dbRepoStatus
-	if _, err := appDBH(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 ORDER BY created_at ASC;`, repoRev.URI, rev); err != nil {
+	if _, err := appDBH(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 ORDER BY created_at ASC;`, repoRev.Repo, rev); err != nil {
 		return nil, err
 	}
 	return &sourcegraph.CombinedStatus{
@@ -161,7 +161,7 @@ After: refScore(%d), defScore(%d)`, prev.Repo, prev.Language, refScore(ps), defS
 }
 
 func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", repoRev.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoStatuses.Create", repoRev.Repo); err != nil {
 		return err
 	}
 
@@ -182,7 +182,7 @@ func (s *repoStatuses) Create(ctx context.Context, repoRev sourcegraph.RepoRevSp
 			// (roughly one per day, not guaranteed). If a row already exists, prepend
 			// the next coverage stat to the previous.
 			prevStatus := dbRepoStatus{}
-			if err := appDBH(ctx).SelectOne(&prevStatus, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 AND context=$3;`, repoRev.URI, repoRev.CommitID, "coverage"); err != nil {
+			if err := appDBH(ctx).SelectOne(&prevStatus, `SELECT * FROM repo_status WHERE repo=$1 AND rev=$2 AND context=$3;`, repoRev.Repo, repoRev.CommitID, "coverage"); err != nil {
 				return err
 			}
 

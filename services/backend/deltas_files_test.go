@@ -17,8 +17,8 @@ func TestDeltasService_ListFiles(t *testing.T) {
 	ctx, _ := testContext()
 
 	ds := sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, CommitID: "basecommit"},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, CommitID: "headcommit"},
+		Base: sourcegraph.RepoRevSpec{Repo: "baserepo", CommitID: "basecommit"},
+		Head: sourcegraph.RepoRevSpec{Repo: "headrepo", CommitID: "headcommit"},
 	}
 
 	fdiffs := []*diff.FileDiff{
@@ -69,8 +69,8 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 	ctx, _ := testContext()
 
 	ds := sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "baserepo"}, CommitID: "basecommit"},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: "headrepo"}, CommitID: "headcommit"},
+		Base: sourcegraph.RepoRevSpec{Repo: "baserepo", CommitID: "basecommit"},
+		Head: sourcegraph.RepoRevSpec{Repo: "headrepo", CommitID: "headcommit"},
 	}
 
 	fdiffs := []*diff.FileDiff{
@@ -118,9 +118,9 @@ func TestDeltasService_ListFiles_Escaped(t *testing.T) {
 
 func TestDeltasListFilesCacheKeyDeterministic(t *testing.T) {
 	op := new(sourcegraph.DeltasListFilesOp)
-	op.Ds.Base.URI = "base"
+	op.Ds.Base.Repo = "base"
 	op.Ds.Base.CommitID = "base-commit"
-	op.Ds.Head.URI = "head"
+	op.Ds.Head.Repo = "head"
 	op.Ds.Head.CommitID = "head-commit"
 	op.Opt = new(sourcegraph.DeltaListFilesOptions)
 	op.Opt.Filter = "filter"
@@ -146,7 +146,7 @@ func TestDeltaListFilesCache(t *testing.T) {
 	files.Stats.Changed = 1111
 
 	op := new(sourcegraph.DeltasListFilesOp)
-	op.Ds.Base.URI = "theop"
+	op.Ds.Base.Repo = "theop"
 	cache.Add(op, files)
 	hit, ok := cache.Get(op)
 	if !ok {
@@ -158,7 +158,7 @@ func TestDeltaListFilesCache(t *testing.T) {
 
 	// Test eviction.
 	other := new(sourcegraph.DeltasListFilesOp)
-	other.Ds.Base.URI = "theother"
+	other.Ds.Base.Repo = "theother"
 	cache.Add(other, files)
 	_, ok = cache.Get(op)
 	if ok {

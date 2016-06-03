@@ -53,10 +53,8 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 	}
 	if op.Opt.ComputeLineRange {
 		startLine, endLine, err := computeLineRange(ctx, sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{
-				RepoSpec: sourcegraph.RepoSpec{URI: defSpec.Repo},
-				CommitID: defSpec.CommitID,
-			},
+			RepoRev: sourcegraph.RepoRevSpec{Repo: defSpec.Repo, CommitID: defSpec.CommitID},
+
 			Path: def.File,
 		}, def.DefStart, def.DefEnd)
 		if err != nil {

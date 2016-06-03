@@ -57,7 +57,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{RepoSpec: repo, CommitID: res.CommitID},
+			RepoRev: sourcegraph.RepoRevSpec{Repo: repo.URI, CommitID: res.CommitID},
 			Path:    path,
 		})
 		if err != nil {

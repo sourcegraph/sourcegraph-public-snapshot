@@ -48,7 +48,7 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 	}
 
 	vc = &RepoRevCommon{}
-	vc.RepoRevSpec.RepoSpec = rc.Repo.RepoSpec()
+	vc.RepoRevSpec.Repo = rc.Repo.URI
 
 	vc.RepoRevSpec, err = getRepoRev(ctx, vars, rc.Repo.DefaultBranch)
 	if err != nil {
@@ -142,7 +142,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) 
 		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	return sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo}, CommitID: res.CommitID}, nil
+	return sourcegraph.RepoRevSpec{Repo: repoRev.Repo, CommitID: res.CommitID}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
@@ -154,7 +154,7 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 	if err != nil {
 		return repo, repoRevSpec, err
 	}
-	repoRevSpec.URI = repoPath
+	repoRevSpec.Repo = repoPath
 
 	repoRevSpec, err = getRepoRev(ctx, vars, repo.DefaultBranch)
 	return repo, repoRevSpec, err
@@ -240,7 +240,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 		return
 	}
 	absRepoRev := sourcegraph.RepoRevSpec{
-		RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo},
+		Repo:     repoRev.Repo,
 		CommitID: res.CommitID,
 	}
 

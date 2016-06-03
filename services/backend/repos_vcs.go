@@ -62,7 +62,7 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}

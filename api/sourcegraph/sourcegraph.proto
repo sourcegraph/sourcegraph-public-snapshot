@@ -148,7 +148,7 @@ message RepoListOptions {
 
 // RepoRevSpec specifies a repository at a specific commit.
 message RepoRevSpec {
-	RepoSpec RepoSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	string Repo = 1;
 
 	// CommitID is the 40-character SHA-1 of the Git commit ID.
 	//

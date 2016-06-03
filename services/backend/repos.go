@@ -316,7 +316,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	// after a git push). Just using the memory cache would mean that
 	// each server process would have to recompute this result.
 	const statusContext = "cache:repo.inventory"
-	statusRev := sourcegraph.RepoRevSpec{RepoSpec: repoRev.RepoSpec, CommitID: repoRev.CommitID}
+	statusRev := sourcegraph.RepoRevSpec{Repo: repoRev.Repo, CommitID: repoRev.CommitID}
 	statuses, err := svc.RepoStatuses(ctx).GetCombined(ctx, &statusRev)
 	if err != nil {
 		return nil, err
@@ -346,14 +346,14 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
 	})
 	if err != nil {
-		log15.Warn("Failed to update RepoStatuses cache", "err", err, "Repo URI", repoRev.RepoSpec.URI)
+		log15.Warn("Failed to update RepoStatuses cache", "err", err, "Repo URI", repoRev.Repo)
 	}
 
 	return inv, nil
 }
 
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}

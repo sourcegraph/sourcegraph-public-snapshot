@@ -129,7 +129,7 @@ func selectAppropriateLexer(path string) syntaxhighlight.Lexer {
 }
 
 func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.AnnotationsListOptions, entry *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.listRefs", opt.Entry.RepoRev.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.listRefs", opt.Entry.RepoRev.Repo); err != nil {
 		return nil, err
 	}
 
@@ -138,7 +138,7 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 	}
 
 	filters := []srcstore.RefFilter{
-		srcstore.ByRepos(opt.Entry.RepoRev.URI),
+		srcstore.ByRepos(opt.Entry.RepoRev.Repo),
 		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
 		srcstore.ByFiles(true, opt.Entry.Path),
 	}
