@@ -44,7 +44,7 @@ const TreeBackend = {
 		case TreeActions.WantSrclibDataVersion:
 			{
 				let version = TreeStore.srclibDataVersions.get(action.repo, action.commitID, action.path);
-				if (version === null) {
+				if (version === null || action.force) {
 					trackPromise(
 						TreeBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/srclib-data-version?Path=${action.path ? encodeURIComponent(action.path) : ""}`)
 							.then((resp) => {

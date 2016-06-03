@@ -57,7 +57,7 @@ const RepoBackend = {
 		case RepoActions.WantResolveRev:
 			{
 				let commitID = RepoStore.resolvedRevs.get(action.repo, action.rev);
-				if (commitID === null) {
+				if (commitID === null || action.force) {
 					const revPart = action.rev ? `@${action.rev}` : "";
 					trackPromise(
 						RepoBackend.fetch(`/.api/repos/${action.repo}${revPart}/-/rev`)

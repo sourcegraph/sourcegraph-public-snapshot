@@ -12,9 +12,10 @@ export class FetchedRepo {
 }
 
 export class WantResolveRev {
-	constructor(repo, rev) {
+	constructor(repo, rev, force) {
 		this.repo = repo;
 		this.rev = rev;
+		this.force = force;
 	}
 }
 

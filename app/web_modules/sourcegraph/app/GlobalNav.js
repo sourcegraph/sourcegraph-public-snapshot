@@ -86,7 +86,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 				</div>}
 
 				{!signedIn &&
-					<div styleName="tr" className={base.pv2}>
+					<div styleName="tr" className={`${base.pv2} ${base.pr2}`}>
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
