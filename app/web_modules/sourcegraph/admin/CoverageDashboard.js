@@ -41,12 +41,11 @@ class CoverageDashbaord extends Container {
 			let cvgByLangByDay = {};
 			state.coverage.forEach((cvg) => {
 				if (!cvgByLangByDay[cvg.Language]) cvgByLangByDay[cvg.Language] = {};
-				if (!cvgByLangByDay[cvg.Language][cvg.Day]) cvgByLangByDay[cvg.Language][cvg.Day] = {Idents: 0, Refs: 0, Defs: 0, Sources: []};
+				if (!cvgByLangByDay[cvg.Language][cvg.Day]) cvgByLangByDay[cvg.Language][cvg.Day] = {RefScores: [], DefScores: [], Sources: []};
 				cvgByLangByDay[cvg.Language][cvg.Day].Sources.push(cvg);
 				if (cvg.Summary) {
-					cvgByLangByDay[cvg.Language][cvg.Day].Idents += cvg.Summary.Idents;
-					cvgByLangByDay[cvg.Language][cvg.Day].Refs += cvg.Summary.Refs;
-					cvgByLangByDay[cvg.Language][cvg.Day].Defs += cvg.Summary.Defs;
+					cvgByLangByDay[cvg.Language][cvg.Day].RefScores.push(this.refScore(cvg.Summary));
+					cvgByLangByDay[cvg.Language][cvg.Day].DefScores.push(this.defScore(cvg.Summary));
 				}
 			});
 
@@ -54,9 +53,27 @@ class CoverageDashbaord extends Container {
 			Object.keys(cvgByLangByDay).forEach((lang) => {
 				const langData = Object.keys(cvgByLangByDay[lang]).map((day) => {
 					const dayObj = cvgByLangByDay[lang][day];
-					const refScore = dayObj.Idents === 0 ? 0 : dayObj.Refs / dayObj.Idents;
-					const defScore = dayObj.Idents === 0 ? 0 : dayObj.Defs / dayObj.Idents;
-					return {Day: day, Refs: refScore, Defs: defScore, Sources: dayObj.Sources};
+					dayObj.RefScores.sort((a, b) => a - b);
+					dayObj.DefScores.sort((a, b) => a - b);
+
+					const nRefScores = dayObj.RefScores.length;
+					const nDefScores = dayObj.RefScores.length;
+
+					const refAvg = nRefScores === 0 ? 0 : dayObj.RefScores.reduce((memo, val) => memo + val, 0) / nRefScores;
+					const refQuantiles = [
+						dayObj.RefScores[Math.floor(nRefScores / 4)],
+						dayObj.RefScores[Math.floor(nRefScores / 2)],
+						dayObj.RefScores[Math.floor(nRefScores * 3 / 4)],
+					];
+
+					const defAvg = nDefScores === 0 ? 0 : dayObj.DefScores.reduce((memo, val) => memo + val, 0) / nDefScores;
+					const defQuantiles = [
+						dayObj.DefScores[Math.floor(nDefScores / 4)],
+						dayObj.DefScores[Math.floor(nDefScores / 2)],
+						dayObj.DefScores[Math.floor(nDefScores * 3 / 4)],
+					];
+
+					return {Day: day, Refs: refAvg, RefQs: refQuantiles, Defs: defAvg, DefQs: defQuantiles, Sources: dayObj.Sources};
 				});
 				state.data[lang] = langData.sort((a, b) => {
 					if (a.Day < b.Day) return -1;
@@ -75,23 +92,48 @@ class CoverageDashbaord extends Container {
 		}
 	}
 
+	refScore(summary) {
+		if (summary.Idents === 0) return 0;
+		return summary.Refs / summary.Idents;
+	}
+
+	defScore(summary) {
+		if (summary.Idents === 0) return 0;
+		return summary.Defs / summary.Idents;
+	}
+
 	stores() { return [CoverageStore]; }
 
 	render() {
 		return (
 			<div styleName="container">
-				{this.state.data && !this.state.drilldown && Object.keys(this.state.data).map((lang, i) =>
-					<div styleName="graph" key={i}>
+				{this.state.data && !this.state.drilldown && Object.keys(this.state.data).map((lang, i) => {
+					const data = this.state.data[lang];
+					return (<div styleName="graph" key={i}>
 						<div styleName="title" onClick={() => this._drilldown(lang)}>
 							{lang}
 							<MagnifyingGlassIcon styleName="icon" />
 						</div>
+						<div styleName="quantiles">
+							<span styleName="quantile-header">Ref Quantiles: </span>
+							{/* show quantile data for most recent day only */}
+							{data[data.length - 1].RefQs.map((q, j) =>
+								<span styleName="quantile" key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
+						</div>
+						<div styleName="quantiles">
+							<span styleName="quantile-header">Def Quantiles: </span>
+							{/* show quantile data for most recent day only */}
+							{data[data.length - 1].DefQs.map((q, j) =>
+								<span styleName="quantile" key={j}>{`${Math.round(q * 100)}% (p=${0.25 * (j+1)})`}</span>)}
+						</div>
 						<CoverageGraph data={this.state.data[lang]} target={langTargets[lang]} />
-					</div>
-				)}
+					</div>);
+				})}
 				{this.state.data && this.state.drilldown &&
 					<CoverageDrilldown
 						data={this.state.data[this.state.drilldown]}
+						refScore={this.refScore}
+						defScore={this.defScore}
 						location={this.state.location}
 						language={this.state.drilldown}
 						onDismiss={() => this._drilldown(null)} />}
