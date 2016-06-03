@@ -16,7 +16,7 @@ var (
 	droneSrclibCSharpImage     = "sourcegraph/srclib-csharp@sha256:e5c112fc5ccb0551a09289cd732b00d038c4bc366f853e552826e36bcd903507"
 	droneSrclibCSSImage        = "sourcegraph/srclib-css@sha256:5dea2ffe7183d2fb3f3f3d6a43790189f1c9a82ef46d8d605d87a99830ca9fbd"
 	droneSrclibPythonImage     = "sourcegraph/srclib-python@sha256:c15cb9f11f63e1cfd3b3ca7b9e188bb74fae2faf5a90c38700490187068d88d1"
-	droneSrclibJSONImage       = "sourcegraph/srclib-json"
+	droneSrclibJSONImage       = "sourcegraph/srclib-json@sha256:8c57b51ad1f0047540106d63fac2d924d0278ae421a470a3067c390ae6edb1fc"
 )
 
 func versionHash(image string) (string, error) {
@@ -45,7 +45,7 @@ func SrclibVersion(lang string) (string, error) {
 	case "Python":
 		return versionHash(droneSrclibPythonImage)
 	case "JSON":
-		return droneSrclibJSONImage, nil
+		return versionHash(droneSrclibJSONImage)
 	}
 	return "", fmt.Errorf("no srclib image found for %s", lang)
 }

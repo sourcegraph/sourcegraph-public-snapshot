@@ -2,23 +2,29 @@ package coverageutil
 
 import "testing"
 
-type test struct {
+type testJSON struct {
 	descr    string
 	text     string
 	expected []Token
 }
 
-var tests = []test{
-	test{
+var tests = []testJSON{
+	testJSON{
 		descr: "test array literal",
 		text:  `[3, "three", true, null]`,
 		expected: []Token{
-			Token{1, `3`}, Token{5, `three`}, Token{13, `true`}, Token{19, `null`}}},
-	test{
+			Token{1, 1, `3`}, Token{5, 1, `three`}, Token{13, 1, `true`}, Token{19, 1, `null`}}},
+	testJSON{
 		descr: "test object",
 		text:  `{"obj": [{"a": 1}]}`,
 		expected: []Token{
-			Token{2, `obj`}, Token{11, `a`}, Token{15, `1`}}},
+			Token{2, 1, `obj`}, Token{11, 1, `a`}, Token{15, 1, `1`}}},
+
+	testJSON{
+		descr: "test line break",
+		text:  `{"obj": [{"a":` + "\n" + ` 1}]}`,
+		expected: []Token{
+			Token{2, 1, `obj`}, Token{11, 1, `a`}, Token{16, 2, `1`}}},
 }
 
 func TestJSON(t *testing.T) {
@@ -47,6 +53,21 @@ func TestJSON(t *testing.T) {
 			}
 		}
 
+	}
+
+}
+
+func TestJSONError(t *testing.T) {
+	broken := `{}}`
+	tokenizer := jsonTokenizer{}
+	tokenizer.Init([]byte(broken))
+
+	if tokenizer.Next() != nil {
+		t.Fatalf("Expected an error when trying to parse unbalanced JSON: %s", broken)
+	}
+
+	if len(tokenizer.Errors()) == 0 {
+		t.Fatalf("Expected a non-zero number of errors returned when trying to parse unbalanced JSON: %s", broken)
 	}
 
 }

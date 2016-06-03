@@ -9,6 +9,7 @@ import (
 type jsonTokenizer struct {
 	bytes  []byte
 	tokens []sgjson.TokenInfo
+	errors []string
 
 	//index of the next unread token in tokens
 	pointer int
@@ -19,30 +20,32 @@ func (jt *jsonTokenizer) Init(src []byte) {
 	dec.UseNumber()
 	unfiltered, err := dec.Tokenize()
 
-	if err != nil {
-		return
-	}
-
 	var filtered []sgjson.TokenInfo
 
-	for _, t := range unfiltered {
-		switch t.Token.(type) {
+	if err != nil {
+		jt.errors = append(jt.errors, err.Error())
 
-		//skip delimiters
-		case sgjson.Delim:
-			continue
+	} else {
 
-		//remove beginning and ending quotation marks
-		case string:
-			t.Start++
-			t.Endp--
+		for _, t := range unfiltered {
+			switch t.Token.(type) {
+
+			//skip delimiters
+			case sgjson.Delim:
+				continue
+
+			//remove beginning and ending quotation marks
+			case string:
+				t.Start++
+				t.Endp--
+			}
+
+			filtered = append(filtered, t)
 		}
-
-		filtered = append(filtered, t)
+		jt.bytes = src
+		jt.tokens = filtered
+		jt.pointer = 0
 	}
-	jt.bytes = src
-	jt.tokens = filtered
-	jt.pointer = 0
 }
 
 func (jt *jsonTokenizer) Next() *Token {
@@ -60,6 +63,10 @@ func (jt *jsonTokenizer) Next() *Token {
 	out.Line = info.Line
 
 	return out
+}
+
+func (jt *jsonTokenizer) Errors() []string {
+	return jt.errors
 }
 
 func (jt *jsonTokenizer) Done() {}
