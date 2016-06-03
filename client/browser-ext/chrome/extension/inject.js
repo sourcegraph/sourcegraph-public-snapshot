@@ -133,7 +133,7 @@ class InjectApp extends React.Component {
 		let user = urlsplit[0];
 		let repo = urlsplit[1]
 		// We scrape the current branch and set rev to it so we stay on the same branch when doing jump-to-def
-		let currBranch = document.getElementsByClassName('select-menu-button js-menu-target css-truncate')[0].title
+		let currBranch = document.getElementsByClassName('select-menu-button js-menu-target css-truncate')[0] ? document.getElementsByClassName('select-menu-button js-menu-target css-truncate')[0].title : "master"
 		let rev = currBranch
 		if (urlsplit[3] !== null && (urlsplit[2] === "tree" || urlsplit[2] === "blob")) { // what about "commit"
 			rev = urlsplit[3];
@@ -178,9 +178,9 @@ class InjectApp extends React.Component {
 		// This scrapes the latest commit ID and updates rev to the latest commit so we are never injecting
 		// outdated annotations.  If there is a new commit, srclib-data-version will return a 404, but the
 		// refresh endpoint will update the version and the annotations will be up to date once the new build succeeds
-		let latestRev = document.getElementsByClassName("js-permalink-shortcut")[0].href.split("/")[6]
+		let latestRev = document.getElementsByClassName("js-permalink-shortcut")[0] ? document.getElementsByClassName("js-permalink-shortcut")[0].href.split("/")[6] : rev
 		// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
-		let currBranch = document.getElementsByClassName('select-menu-button js-menu-target css-truncate')[0].title
+		let currBranch = document.getElementsByClassName('select-menu-button js-menu-target css-truncate')[0] ? document.getElementsByClassName('select-menu-button js-menu-target css-truncate')[0].title : "master"
 		if (rev !== latestRev) rev = latestRev;
 		if (currBranch !== "master") rev = currBranch;
 		const repoName = repo;
