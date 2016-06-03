@@ -29,7 +29,7 @@ func TestRefreshVCS(t *testing.T) {
 		return nil, errors.New("mock")
 	}
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: "r"}})
+	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: "r"})
 	if !updatedEverything {
 		t.Error("Did not call UpdateEverything")
 	}
@@ -60,7 +60,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 		return nil, errors.New("mock")
 	}
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: "r"}})
+	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: "r"})
 	if !cloned {
 		t.Error("RefreshVCS did not clone missing repo")
 	}
@@ -93,7 +93,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 		return nil, errors.New("mock")
 	}
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: sourcegraph.RepoSpec{URI: "r"}})
+	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: "r"})
 	if !built {
 		t.Error("RefreshVCS did not build repo")
 	}

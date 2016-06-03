@@ -53,10 +53,8 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 	}
 	if op.Opt.ComputeLineRange {
 		startLine, endLine, err := computeLineRange(ctx, sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{
-				RepoSpec: sourcegraph.RepoSpec{URI: defSpec.Repo},
-				CommitID: defSpec.CommitID,
-			},
+			RepoRev: sourcegraph.RepoRevSpec{Repo: defSpec.Repo, CommitID: defSpec.CommitID},
+
 			Path: def.File,
 		}, def.DefStart, def.DefEnd)
 		if err != nil {
@@ -125,20 +123,20 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 	origRepoRevs := opt.RepoRevs
 	opt.RepoRevs = nil
 	for _, repoRev := range origRepoRevs {
-		repoURI, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
+		repoPath, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 
 		// Dealias. This call also verifies that the repo is visible to the current user.
-		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
+		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 		if err != nil {
 			log.Printf("Warning: dropping repo rev %q from defs list because repo or repo alias was not found: %s.", repoRev, err)
 			continue
 		}
-		repoURI = rA.URI
+		repoPath = rA.URI
 
 		// Determine the commit ID to use, if it wasn't specified or
 		// if it's a non-commit-ID revspec.
 		if !isAbsCommitID(commitID) {
-			return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required for repo %q to list defs (got %q)", repoURI, commitID)
+			return nil, grpc.Errorf(codes.InvalidArgument, "absolute commit ID required for repo %q to list defs (got %q)", repoPath, commitID)
 		}
 
 		// The repo exists and the commit ID is valid, so include it

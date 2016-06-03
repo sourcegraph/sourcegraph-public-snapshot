@@ -47,9 +47,9 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 
 func TestDeltasCacheKeyDeterministic(t *testing.T) {
 	spec := new(sourcegraph.DeltaSpec)
-	spec.Base.URI = "base"
+	spec.Base.Repo = "base"
 	spec.Base.CommitID = "base-commit"
-	spec.Head.URI = "head"
+	spec.Head.Repo = "head"
 	spec.Head.CommitID = "head-commit"
 	k := deltasCacheKey(spec)
 	for i := 0; i < 100; i++ {
@@ -84,7 +84,7 @@ func TestDeltasCacheInvalid(t *testing.T) {
 func TestDeltasCache(t *testing.T) {
 	cache := newDeltasCache(1)
 	delta := new(sourcegraph.Delta)
-	delta.Head.URI = "thedelta"
+	delta.Head.Repo = "thedelta"
 
 	spec := new(sourcegraph.DeltaSpec)
 	spec.Base.CommitID = "base-commit"
@@ -94,8 +94,8 @@ func TestDeltasCache(t *testing.T) {
 	if !ok {
 		t.Error("Delta not cached")
 	}
-	if hit.Head.URI != "thedelta" {
-		t.Errorf("Cache hit was %q", hit.Head.URI)
+	if hit.Head.Repo != "thedelta" {
+		t.Errorf("Cache hit was %q", hit.Head.Repo)
 	}
 
 	// Test eviction.

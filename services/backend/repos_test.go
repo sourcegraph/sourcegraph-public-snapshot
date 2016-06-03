@@ -101,7 +101,7 @@ func TestReposService_ConfigureApp_Enable(t *testing.T) {
 	}
 
 	_, err := s.ConfigureApp(ctx, &sourcegraph.RepoConfigureAppOp{
-		Repo:   sourcegraph.RepoSpec{URI: "r"},
+		Repo:   "r",
 		App:    "b",
 		Enable: true,
 	})
@@ -137,7 +137,7 @@ func TestReposService_ConfigureApp_Disable(t *testing.T) {
 	}
 
 	_, err := s.ConfigureApp(ctx, &sourcegraph.RepoConfigureAppOp{
-		Repo:   sourcegraph.RepoSpec{URI: "r"},
+		Repo:   "r",
 		App:    "b",
 		Enable: false,
 	})

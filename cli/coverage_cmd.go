@@ -180,25 +180,25 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 
 // getResolvedRev returns (or fetches) the absolute commit ID for the default branch
 // for a particular repo; it is threadsafe
-func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Context, repoSpec *sourcegraph.RepoSpec) (string, error) {
+func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Context, repoPath string) (string, error) {
 	c.ResolvedRevMu.Lock()
 	defer c.ResolvedRevMu.Unlock()
 
-	if commitID, ok := c.ResolvedRevCache[repoSpec.URI]; ok {
+	if commitID, ok := c.ResolvedRevCache[repoPath]; ok {
 		return commitID, nil
 	}
 
-	repo, err := cl.Repos.Get(ctx, repoSpec)
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 	if err != nil {
 		return "", err
 	}
 
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: *repoSpec, Rev: repo.DefaultBranch})
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoPath, Rev: repo.DefaultBranch})
 	if err != nil {
 		return "", err
 	}
 
-	c.ResolvedRevCache[repoSpec.URI] = res.CommitID
+	c.ResolvedRevCache[repoPath] = res.CommitID
 	return res.CommitID, nil
 }
 
@@ -254,7 +254,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 
 // repoRevKey returns the cache key for a repo@commit
 func repoRevKey(repoRev *sourcegraph.RepoRevSpec) string {
-	return fmt.Sprintf("%s@%s", repoRev.RepoSpec.URI, repoRev.CommitID)
+	return fmt.Sprintf("%s@%s", repoRev.Repo, repoRev.CommitID)
 }
 
 // defKey returns the cache key for a def
@@ -352,10 +352,10 @@ func parseAnnotationURL(annUrl string) (*sourcegraph.RepoRevSpec, *sourcegraph.D
 		repoRev := routevar.ToRepoRev(match.Vars)
 		def := routevar.ToDefAtRev(match.Vars)
 		return &sourcegraph.RepoRevSpec{
-				RepoSpec: repoRev.RepoSpec,
+				Repo:     repoRev.Repo,
 				CommitID: repoRev.Rev,
 			}, &sourcegraph.DefSpec{
-				Repo:     def.RepoSpec.URI,
+				Repo:     def.Repo,
 				CommitID: def.Rev,
 				UnitType: def.UnitType,
 				Unit:     def.Unit,
@@ -473,7 +473,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			return nil, err
 		}
 		if annRepoRev.CommitID == "" {
-			commitID, err := cache.getResolvedRev(cl, ctx, &annRepoRev.RepoSpec)
+			commitID, err := cache.getResolvedRev(cl, ctx, annRepoRev.Repo)
 			if err != nil || commitID == "" {
 				// The ref cannot be resolved to a def (e.g. the def repo doesn't exist);
 				// this is a normal condition for the coverage script so swallow the error and continue.
@@ -507,21 +507,20 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 }
 
 // getCoverage computes coverage data for the given repository
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang string, dryRun, progress, reportRefs, reportDefs bool) (*repoCoverage, error) {
-	if err := ensureRepoExists(cl, ctx, repoURI); err != nil {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang string, dryRun, progress, reportRefs, reportDefs bool) (*repoCoverage, error) {
+	if err := ensureRepoExists(cl, ctx, repoPath); err != nil {
 		return nil, err
 	}
 
 	start := time.Now()
 
-	repoCvg := repoCoverage{Repo: repoURI, Day: start.Format("01-02"), Language: lang}
-	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
-	commitID, err := cache.getResolvedRev(cl, ctx, &repoSpec)
+	repoCvg := repoCoverage{Repo: repoPath, Day: start.Format("01-02"), Language: lang}
+	commitID, err := cache.getResolvedRev(cl, ctx, repoPath)
 	if err != nil {
 		return nil, err
 	}
 
-	repoRevSpec := sourcegraph.RepoRevSpec{RepoSpec: repoSpec, CommitID: commitID}
+	repoRevSpec := sourcegraph.RepoRevSpec{Repo: repoPath, CommitID: commitID}
 	dataVer := cache.getSrclibDataVersion(cl, ctx, &repoRevSpec)
 	if dataVer != "" {
 		repoRevSpec.CommitID = dataVer
@@ -561,11 +560,11 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 				for _, e := range errs {
 					errMsgs = append(errMsgs, e.Error())
 				}
-				log15.Error("error computing coverage", "repo", repoURI, "err", fmt.Sprintf("\n%s", strings.Join(errMsgs, "\n")))
+				log15.Error("error computing coverage", "repo", repoPath, "err", fmt.Sprintf("\n%s", strings.Join(errMsgs, "\n")))
 			}
 		}
 	} else {
-		log15.Warn("missing srclib data version", "repo", repoURI, "rev", commitID)
+		log15.Warn("missing srclib data version", "repo", repoPath, "rev", commitID)
 	}
 
 	repoCvg.Summary = &fileCoverage{}
@@ -576,7 +575,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 	}
 	log15.Info("coverage summary",
 		"lang", lang,
-		"repo", repoURI,
+		"repo", repoPath,
 		"idents", repoCvg.Summary.Idents,
 		"refs", repoCvg.Summary.Refs,
 		"defs", repoCvg.Summary.Defs,

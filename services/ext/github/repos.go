@@ -3,6 +3,9 @@ package github
 import (
 	"fmt"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -50,7 +52,7 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 	owner, repoName, err := githubutil.SplitRepoURI(repo)
 	if err != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
-		return nil, &store.RepoNotFoundError{Repo: repo}
+		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 	}
 
 	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)

@@ -73,9 +73,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		for i := 1; i <= len(pathElements); i++ {
 			repoPath := strings.Join(pathElements[:i], "/")
 
-			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{
-				URI: repoPath,
-			})
+			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 			if err == nil && repo.Mirror {
 				continue
 			} else if errcode.HTTP(err) == http.StatusNotFound {

@@ -109,10 +109,10 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 
 	s := builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 10, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"}, // test order
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "b"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "a"},
+		{ID: 10, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"}, // test order
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "a"},
 	}
 	s.mustCreateTasks(ctx, t, tasks)
 	ts, err := s.ListBuildTasks(ctx, tasks[0].Spec().Build, nil)
@@ -254,10 +254,10 @@ func TestBuilds_CreateTasks(t *testing.T) {
 
 	s := &builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
-		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: "x/z", ID: 1}, Label: "b"},
 	}
 	tsk, err := s.CreateTasks(ctx, tasks)
 	if err != nil {
@@ -279,7 +279,7 @@ func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
 	defer done()
 
 	s := &builds{}
-	build := sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}
+	build := sourcegraph.BuildSpec{Repo: "x/z", ID: 1}
 
 	for i := 1; i < 4; i++ {
 		tasks, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{{Build: build}})
@@ -302,10 +302,10 @@ func TestBuilds_UpdateTask(t *testing.T) {
 
 	s := &builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 3, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "b"},
-		{ID: 4, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "x/z"}, ID: 1}, Label: "b"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: "x/z", ID: 1}, Label: "b"},
 	}
 	s.mustCreateTasks(ctx, t, tasks)
 	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
@@ -330,9 +330,9 @@ func TestBuilds_GetTask(t *testing.T) {
 
 	s := &builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "b"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: "a/b"}, ID: 2}, Label: "a"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "a"},
 	}
 	s.mustCreateTasks(ctx, t, tasks)
 	for _, tsk := range tasks {

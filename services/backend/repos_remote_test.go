@@ -26,7 +26,7 @@ func TestRepos_Resolve_local(t *testing.T) {
 
 	want := &sourcegraph.RepoResolution{
 		Result: &sourcegraph.RepoResolution_Repo{
-			Repo: &sourcegraph.RepoSpec{URI: "r"},
+			Repo: "r",
 		},
 	}
 	if !reflect.DeepEqual(res, want) {

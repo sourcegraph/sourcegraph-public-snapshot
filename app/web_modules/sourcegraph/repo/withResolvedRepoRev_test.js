@@ -36,7 +36,7 @@ describe("withResolvedRepoRev", () => {
 			expect(res.actions).to.eql([new RepoActions.WantResolveRepo("r")]);
 		});
 		it("should trigger WantRepo for resolved local repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {Repo: {URI: "r"}}}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {Repo: "r"}}));
 			let calledReplace = false;
 			const res = render(<C params={{splat: "r"}} />, {
 				router: {replace: () => calledReplace = true},

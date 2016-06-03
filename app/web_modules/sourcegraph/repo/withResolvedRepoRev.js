@@ -77,7 +77,7 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 
 					// If it's a remote repo, do nothing; RepoMain should clone the repository.
 				} else if (nextState.repoResolution.Result.Repo) {
-					let canonicalPath = nextState.repoResolution.Result.Repo.URI;
+					let canonicalPath = nextState.repoResolution.Result.Repo;
 					if (nextState.repo !== canonicalPath) {
 						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
 						this.context.router.replace(canonicalURL);

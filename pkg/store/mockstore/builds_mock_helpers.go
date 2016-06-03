@@ -21,7 +21,7 @@ func (s *Builds) MockGet(t *testing.T, wantBuild sourcegraph.BuildSpec) (called 
 			t.Errorf("got build %q, want %q", build, wantBuild)
 			return nil, grpc.Errorf(codes.NotFound, "build %s not found", build.IDString())
 		}
-		return &sourcegraph.Build{ID: build.ID, Repo: build.Repo.URI}, nil
+		return &sourcegraph.Build{ID: build.ID, Repo: build.Repo}, nil
 	}
 	return
 }
@@ -45,7 +45,7 @@ func (s *Builds) MockList(t *testing.T, wantBuilds ...sourcegraph.BuildSpec) (ca
 		*called = true
 		builds := make([]*sourcegraph.Build, len(wantBuilds))
 		for i, build := range wantBuilds {
-			builds[i] = &sourcegraph.Build{ID: build.ID, Repo: build.Repo.URI, CreatedAt: pbtypes.NewTimestamp(time.Unix(int64(len(wantBuilds)-1-i), 0))}
+			builds[i] = &sourcegraph.Build{ID: build.ID, Repo: build.Repo, CreatedAt: pbtypes.NewTimestamp(time.Unix(int64(len(wantBuilds)-1-i), 0))}
 		}
 		builds = store.SortAndPaginateBuilds(builds, opt)
 		return builds, nil

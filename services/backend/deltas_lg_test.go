@@ -25,10 +25,9 @@ func TestDeltas_lg(t *testing.T) {
 	}
 	defer done()
 
-	repo := sourcegraph.RepoSpec{URI: "myrepo"}
 	deltaSpec := &sourcegraph.DeltaSpec{
-		Base: sourcegraph.RepoRevSpec{RepoSpec: repo, CommitID: commitID},
-		Head: sourcegraph.RepoRevSpec{RepoSpec: repo, CommitID: commitID},
+		Base: sourcegraph.RepoRevSpec{Repo: "myrepo", CommitID: commitID},
+		Head: sourcegraph.RepoRevSpec{Repo: "myrepo", CommitID: commitID},
 	}
 	delta, err := a.Client.Deltas.Get(ctx, deltaSpec)
 	if err != nil {

@@ -66,7 +66,7 @@ type buildsGetCmd struct {
 func (c *buildsGetCmd) Execute(args []string) error {
 	cl := cliClient
 	opt := &sourcegraph.BuildSpec{
-		Repo: sourcegraph.RepoSpec{URI: c.Args.Repo},
+		Repo: c.Args.Repo,
 		ID:   c.Args.ID,
 	}
 	build, err := cl.Builds.Get(cliContext, opt)

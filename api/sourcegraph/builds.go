@@ -4,7 +4,7 @@ import "fmt"
 
 func (b *Build) Spec() BuildSpec {
 	return BuildSpec{
-		Repo: RepoSpec{URI: b.Repo},
+		Repo: b.Repo,
 		ID:   b.ID,
 	}
 }
@@ -18,7 +18,7 @@ func (b *Build) BranchOrTag() string {
 
 // IDString returns a succinct string that uniquely identifies this build.
 func (b BuildSpec) IDString() string {
-	return fmt.Sprintf("%s#%d", b.Repo.URI, b.ID)
+	return fmt.Sprintf("%s#%d", b.Repo, b.ID)
 }
 
 // Build task ops.

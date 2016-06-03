@@ -95,7 +95,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	remoteStore := newSrclibStoreClient(ctx, pb.NewMultiRepoImporterClient(cl.Conn))
 
 	importOpt := srclib.ImportOpt{
-		Repo:     repoRev.URI,
+		Repo:     repoRev.Repo,
 		CommitID: repoRev.CommitID,
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
@@ -110,26 +110,26 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	// Best-effort global search re-index, don't block import
 	go func() {
 		_, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-			Repo:                &sourcegraph.RepoSpec{URI: repoRev.URI},
+			Repo:                repoRev.Repo,
 			RefreshRefLocations: true,
 		})
 		if err != nil {
-			log15.Error("def indexing failed", "repo", repoRev.URI, "commit", repoRev.CommitID, "err", err)
+			log15.Error("def indexing failed", "repo", repoRev.Repo, "commit", repoRev.CommitID, "err", err)
 			// No point running search indexing, since it depends on ref indexing
 			return
 		} else {
-			log15.Info("def indexing succeeded", "repo", repoRev.URI, "commit", repoRev.CommitID)
+			log15.Info("def indexing succeeded", "repo", repoRev.Repo, "commit", repoRev.CommitID)
 		}
 
 		_, err = cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []*sourcegraph.RepoSpec{{repoRev.URI}},
+			Repos:         []string{repoRev.Repo},
 			RefreshCounts: true,
 			RefreshSearch: true,
 		})
 		if err != nil {
-			log15.Error("search indexing failed", "repo", repoRev.URI, "commit", repoRev.CommitID, "err", err)
+			log15.Error("search indexing failed", "repo", repoRev.Repo, "commit", repoRev.CommitID, "err", err)
 		} else {
-			log15.Info("search indexing succeeded", "repo", repoRev.URI, "commit", repoRev.CommitID)
+			log15.Info("search indexing succeeded", "repo", repoRev.Repo, "commit", repoRev.CommitID)
 		}
 	}()
 

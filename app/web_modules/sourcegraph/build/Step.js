@@ -42,7 +42,7 @@ class Step extends Component {
 
 	_updateLog() {
 		if (this.state && this.state.task !== null) {
-			Dispatcher.Backends.dispatch(new BuildActions.WantLog(this.state.task.Build.Repo.URI, this.state.task.Build.ID, this.state.task.ID));
+			Dispatcher.Backends.dispatch(new BuildActions.WantLog(this.state.task.Build.Repo, this.state.task.Build.ID, this.state.task.ID));
 			if (this.state.task.EndedAt) {
 				this._stopUpdateLog();
 			}
@@ -64,7 +64,7 @@ class Step extends Component {
 
 		// Keep the log up to date by refreshing it as new entries
 		// are added.
-		let log = props.logs.get(state.task.Build.Repo.URI, state.task.Build.ID, state.task.ID);
+		let log = props.logs.get(state.task.Build.Repo, state.task.Build.ID, state.task.ID);
 		if (log !== null) {
 			state.log = log;
 		}
@@ -72,7 +72,7 @@ class Step extends Component {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.task !== nextState.task) {
-			Dispatcher.Backends.dispatch(new BuildActions.WantLog(nextState.task.Build.Repo.URI, nextState.task.Build.ID, nextState.task.ID));
+			Dispatcher.Backends.dispatch(new BuildActions.WantLog(nextState.task.Build.Repo, nextState.task.Build.ID, nextState.task.ID));
 		}
 	}
 

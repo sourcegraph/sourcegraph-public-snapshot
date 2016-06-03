@@ -39,7 +39,7 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 
 	// Check inventory.
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
-	inv, err := cl.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{RepoSpec: repo.RepoSpec()})
+	inv, err := cl.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.URI})
 	if err != nil {
 		t.Fatal(err)
 	}

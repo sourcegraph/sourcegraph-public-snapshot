@@ -10,22 +10,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec, err := getRepoSpec(r)
-	if err != nil {
-		return err
-	}
-
 	var opt sourcegraph.BuildListOptions
-	err = schemaDecoder.Decode(&opt, r.URL.Query())
-	opt.Repo = repoSpec.URI
-	if err != nil {
+	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
+	opt.Repo = routevar.ToRepo(mux.Vars(r))
 
 	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
@@ -64,12 +59,12 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, repoPath, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	op.Repo = repoSpec
+	op.Repo = repoPath
 	build, err := cl.Builds.Create(ctx, &op)
 	if err != nil {
 		return err

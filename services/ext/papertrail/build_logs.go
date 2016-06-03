@@ -22,7 +22,7 @@ type buildLogs struct{}
 var _ store.BuildLogs = (*buildLogs)(nil)
 
 func (s *buildLogs) Get(ctx context.Context, task sourcegraph.TaskSpec, minID string, minTime, maxTime time.Time) (*sourcegraph.LogEntries, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "BuildLogs.Get", task.Build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "BuildLogs.Get", task.Build.Repo); err != nil {
 		return nil, err
 	}
 	pOpt := papertrail.SearchOptions{

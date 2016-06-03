@@ -157,7 +157,7 @@ type dbBuildTask struct {
 func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
 	return &sourcegraph.BuildTask{
 		ID:        t.ID,
-		Build:     sourcegraph.BuildSpec{Repo: sourcegraph.RepoSpec{URI: t.Repo}, ID: t.BuildID},
+		Build:     sourcegraph.BuildSpec{Repo: t.Repo, ID: t.BuildID},
 		ParentID:  t.ParentID,
 		Label:     t.Label,
 		CreatedAt: pbtypes.NewTimestamp(t.CreatedAt),
@@ -172,7 +172,7 @@ func (t *dbBuildTask) toBuildTask() *sourcegraph.BuildTask {
 
 func (t *dbBuildTask) fromBuildTask(t2 *sourcegraph.BuildTask) {
 	t.ID = t2.ID
-	t.Repo = t2.Build.Repo.URI
+	t.Repo = t2.Build.Repo
 	t.BuildID = t2.Build.ID
 	t.ParentID = t2.ParentID
 	t.Label = t2.Label
@@ -199,12 +199,12 @@ type builds struct{}
 var _ store.Builds = (*builds)(nil)
 
 func (s *builds) Get(ctx context.Context, buildSpec sourcegraph.BuildSpec) (*sourcegraph.Build, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Get", buildSpec.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.Get", buildSpec.Repo); err != nil {
 		return nil, err
 	}
 
 	var build dbBuild
-	err := appDBH(ctx).SelectOne(&build, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo.URI)
+	err := appDBH(ctx).SelectOne(&build, `SELECT * FROM repo_build WHERE id=$1 AND repo=$2 LIMIT 1;`, buildSpec.ID, buildSpec.Repo)
 	if err == sql.ErrNoRows {
 		return nil, grpc.Errorf(codes.NotFound, "build %s not found", buildSpec.IDString())
 	} else if err != nil {
@@ -347,7 +347,7 @@ func (s *builds) Create(ctx context.Context, newBuild *sourcegraph.Build) (*sour
 }
 
 func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info sourcegraph.BuildUpdate) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Update", build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.Update", build.Repo); err != nil {
 		return err
 	}
 	var args []interface{}
@@ -381,7 +381,7 @@ func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 	updates = append(updates, "killed="+arg(info.Killed))
 
 	if len(updates) != 0 {
-		sql := fmt.Sprintf(`UPDATE repo_build SET %s WHERE id=%s AND repo=%s`, strings.Join(updates, ", "), arg(build.ID), arg(build.Repo.URI))
+		sql := fmt.Sprintf(`UPDATE repo_build SET %s WHERE id=%s AND repo=%s`, strings.Join(updates, ", "), arg(build.ID), arg(build.Repo))
 
 		if _, err := appDBH(ctx).Exec(sql, args...); err != nil {
 			return err
@@ -394,12 +394,12 @@ func (s *builds) Update(ctx context.Context, build sourcegraph.BuildSpec, info s
 func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error) {
 	var repo string
 	for _, task := range tasks {
-		if task.Build.Repo.URI != repo {
-			if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.CreateTasks", task.Build.Repo.URI); err != nil {
+		if task.Build.Repo != repo {
+			if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.CreateTasks", task.Build.Repo); err != nil {
 				return nil, err
 			}
 			// Cache the last repo URI that was checked for write access.
-			repo = task.Build.Repo.URI
+			repo = task.Build.Repo
 		}
 	}
 	created := make([]*dbBuildTask, len(tasks))
@@ -429,7 +429,7 @@ func (s *builds) CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask
 }
 
 func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.UpdateTask", task.Build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Builds.UpdateTask", task.Build.Repo); err != nil {
 		return err
 	}
 	var args []interface{}
@@ -459,7 +459,7 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	}
 
 	if len(updates) != 0 {
-		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID) + ` AND repo=` + arg(task.Build.Repo.URI) + ` AND build_id=` + arg(task.Build.ID)
+		sql := `UPDATE repo_build_task SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(task.ID) + ` AND repo=` + arg(task.Build.Repo) + ` AND build_id=` + arg(task.Build.ID)
 		startTime := time.Now()
 		_, err := appDBH(ctx).Exec(sql, args...)
 		log15.Debug("TRACE task", "op", "update", "sql", sql, "args", args, "err", err, "duration", time.Now().Sub(startTime))
@@ -472,7 +472,7 @@ func (s *builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 }
 
 func (s *builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.ListBuildTasks", build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.ListBuildTasks", build.Repo); err != nil {
 		return nil, err
 	}
 	if opt == nil {
@@ -485,7 +485,7 @@ func (s *builds) ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec
 		return gorp.PostgresDialect{}.BindVar(len(args) - 1)
 	}
 
-	conds := []string{"build_id=" + arg(build.ID), "repo=" + arg(build.Repo.URI)}
+	conds := []string{"build_id=" + arg(build.ID), "repo=" + arg(build.Repo)}
 	condsSQL := strings.Join(conds, " AND ")
 
 	sql := `-- Builds.ListBuildTasks
@@ -544,13 +544,13 @@ func newBuildJob(ctx context.Context, b *sourcegraph.Build) (*sourcegraph.BuildJ
 }
 
 func (s *builds) GetTask(ctx context.Context, taskSpec sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTask", taskSpec.Build.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.GetTask", taskSpec.Build.Repo); err != nil {
 		return nil, err
 	}
 
 	var task dbBuildTask
 	query := `SELECT * FROM repo_build_task WHERE repo=$1 AND build_id=$2 AND id=$3;`
-	if err := appDBH(ctx).SelectOne(&task, query, taskSpec.Build.Repo.URI, taskSpec.Build.ID, taskSpec.ID); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&task, query, taskSpec.Build.Repo, taskSpec.Build.ID, taskSpec.ID); err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err

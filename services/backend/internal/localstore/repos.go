@@ -171,8 +171,9 @@ func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	repo, err := s.getBySQL(ctx, "uri=$1", uri)
 	if err != nil {
-		if e, ok := err.(*store.RepoNotFoundError); ok {
-			e.Repo = uri
+		if grpc.Code(err) == codes.NotFound {
+			// Overwrite with error message containing repo URI.
+			err = grpc.Errorf(codes.NotFound, "%s: %s", err, uri)
 		}
 	}
 	return repo, err
@@ -184,7 +185,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
 	var repo dbRepo
 	if err := appDBH(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, &store.RepoNotFoundError{Repo: "(unknown)"} // can't nicely serialize args
+		return nil, grpc.Errorf(codes.NotFound, "repo not found") // can't nicely serialize args
 	} else if err != nil {
 		return nil, err
 	}
@@ -501,7 +502,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	}
 
 	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
-		return &store.RepoExistError{URI: repo.URI}
+		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", repo.URI)
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
@@ -521,42 +522,42 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		if c := err.(*pq.Error).Constraint; c != "repo_pkey" {
 			log15.Warn("Expected unique_violation of repo_pkey constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
-		return &store.RepoExistError{URI: newRepo.URI}
+		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
 	}
 	return err
 }
 
 func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
 		return err
 	}
 	if op.Description != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.Language != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.DefaultBranch != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 
 	if op.UpdatedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.PushedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo.URI)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo)
 		if err != nil {
 			return err
 		}
