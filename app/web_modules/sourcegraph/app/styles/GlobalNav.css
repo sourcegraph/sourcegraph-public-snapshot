@@ -47,6 +47,7 @@
 	position: fixed;
 	top: 0;
 	width: 100%;
+	height: navbarHeight;
 }
 
 .navbar + * {
@@ -118,5 +119,3 @@
 	composes: icon;
 	composes: white bg-blue-8 b--blue from colors;
 }
-
-
