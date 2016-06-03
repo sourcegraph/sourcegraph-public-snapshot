@@ -7,13 +7,15 @@ export class WantResults {
 	repos: ?Array<string>;
 	notRepos: ?Array<string>;
 	limit: ?number;
+	prefixMatch: ?bool;
 	includeRepos: ?bool;
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, includeRepos: ?bool) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, prefixMatch: ?bool, includeRepos: ?bool) {
 		this.query = query;
 		this.repos = repos;
 		this.notRepos = notRepos;
 		this.limit = limit;
+		this.prefixMatch = prefixMatch;
 		this.includeRepos = includeRepos;
 	}
 }
@@ -23,14 +25,16 @@ export class ResultsFetched {
 	repos: ?Array<string>;
 	notRepos: ?Array<string>;
 	limit: ?number;
+	prefixMatch: ?bool;
 	includeRepos: ?bool;
 	defs: Array<Def>;
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, includeRepos: ?bool, defs: Array<Def>) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, prefixMatch: ?bool, includeRepos: ?bool, defs: Array<Def>) {
 		this.query = query;
 		this.limit = limit;
 		this.repos = repos;
 		this.notRepos = notRepos;
+		this.prefixMatch = prefixMatch;
 		this.includeRepos = includeRepos;
 		this.defs = defs;
 	}

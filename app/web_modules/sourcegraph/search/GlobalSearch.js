@@ -88,18 +88,21 @@ class GlobalSearch extends Container {
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
-		state.matchingResults = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT, this.props.location.query.includeRepos);
+		state.matchingResults = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT,
+			this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT, this.props.location.query.includeRepos));
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT,
+			this.props.location.query.prefixMatch, this.props.location.query.includeRepos));
 		}
 	}
 
 	_onChangeQuery(query: string) {
 		this.context.router.replace({...this.props.location, query: {
 			q: query || undefined, // eslint-disable-line no-undefined
+			prefixMatch: this.props.location.query.prefixMatch || undefined, // eslint-disable-line no-undefined
 			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
 		this.setState({query: query});
 		this.context.eventLogger.logEvent("GlobalSearchInitiated", {globalSearchQuery: query});

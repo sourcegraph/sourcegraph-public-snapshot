@@ -26,6 +26,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Repos        []string
 		NotRepos     []string
 		Limit        int32
+		PrefixMatch  bool
 		IncludeRepos bool
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
@@ -42,6 +43,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 			Repos:        params.Repos,
 			NotRepos:     params.NotRepos,
 			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
+			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,
 		},
 	}

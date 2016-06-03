@@ -146,7 +146,7 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		scoreSQL = `ref_ct score`
 	}
 	selectSQL := `SELECT repo, commit_id, unit_type, unit, path, name, kind, file, data, doc, ref_ct, ` + scoreSQL + ` FROM global_defs`
-	var whereSQL string
+	var whereSQL, prefixSQL string
 	{
 		var wheres []string
 		if len(op.Opt.Repos) > 0 {
@@ -172,14 +172,21 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 
 		if len(op.TokQuery) == 1 { // special-case single token queries for performance
 			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
-		} else {
-			if bowQuery != "" {
-				wheres = append(wheres, "bow != ''")
+
+			// Skip matching for too less characters.
+			if op.Opt.PrefixMatch && len(op.TokQuery[0]) > 2 {
+				prefixSQL = ` OR to_tsquery('english', ` + arg(op.TokQuery[0]+":*") + `) @@ to_tsvector('english', bow)`
+			}
+		} else if bowQuery != "" {
+			wheres = append(wheres, "bow != ''")
+			if op.Opt.PrefixMatch {
+				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery+":*")+`) @@ to_tsvector('english', bow)`)
+			} else {
 				wheres = append(wheres, `to_tsquery('english', `+arg(bowQuery)+`) @@ to_tsvector('english', bow)`)
 			}
 		}
 
-		whereSQL = fmt.Sprint(`WHERE (` + strings.Join(wheres, ") AND (") + `)`)
+		whereSQL = fmt.Sprint(`WHERE (`+strings.Join(wheres, ") AND (")+`)`) + prefixSQL
 	}
 	orderSQL := `ORDER BY score DESC`
 	limitSQL := `LIMIT ` + arg(op.Opt.PerPageOrDefault())

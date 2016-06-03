@@ -19,7 +19,7 @@ const SearchBackend = {
 					break;
 				}
 
-				let results = SearchStore.results.get(action.query, action.repos, action.notRepos, action.limit, action.includeRepos);
+				let results = SearchStore.results.get(action.query, action.repos, action.notRepos, action.limit, action.prefixMatch, action.includeRepos);
 				if (results === null) {
 					let limit = action.limit || RESULTS_LIMIT;
 
@@ -31,6 +31,9 @@ const SearchBackend = {
 					if (action.notRepos) {
 						q.push(`NotRepos=${encodeURIComponent(action.notRepos)}`);
 					}
+					if (action.prefixMatch) {
+						q.push(`PrefixMatch=${encodeURIComponent(action.prefixMatch)}`);
+					}
 					if (action.includeRepos) {
 						q.push(`IncludeRepos=${encodeURIComponent(action.includeRepos)}`);
 					}
@@ -40,7 +43,7 @@ const SearchBackend = {
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched(action.query, action.repos, action.notRepos, action.limit, action.includeRepos, data));
+								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched(action.query, action.repos, action.notRepos, action.limit, action.prefixMatch, action.includeRepos, data));
 							})
 					);
 				}
