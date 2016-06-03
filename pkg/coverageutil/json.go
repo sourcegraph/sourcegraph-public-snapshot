@@ -11,58 +11,48 @@ type jsonTokenizer struct {
 	tokens []sgjson.TokenInfo
 	errors []string
 
-	//index of the next unread token in tokens
+	// index of the next unread token in tokens
 	pointer int
 }
 
 func (jt *jsonTokenizer) Init(src []byte) {
+	jt.bytes = src
+	jt.tokens = make([]sgjson.TokenInfo, 0)
+	jt.errors = make([]string, 0)
+	jt.pointer = 0
 	dec := sgjson.NewDecoder(bytes.NewReader(src))
 	dec.UseNumber()
 	unfiltered, err := dec.Tokenize()
-
-	var filtered []sgjson.TokenInfo
-
 	if err != nil {
 		jt.errors = append(jt.errors, err.Error())
-
 	} else {
-
+		var filtered []sgjson.TokenInfo
 		for _, t := range unfiltered {
 			switch t.Token.(type) {
-
-			//skip delimiters
-			case sgjson.Delim:
+			case sgjson.Delim: // skip delimiters
 				continue
-
-			//remove beginning and ending quotation marks
-			case string:
+			case string: // remove beginning and ending quotation marks
 				t.Start++
 				t.Endp--
 			}
-
 			filtered = append(filtered, t)
 		}
-		jt.bytes = src
 		jt.tokens = filtered
-		jt.pointer = 0
 	}
 }
 
 func (jt *jsonTokenizer) Next() *Token {
-	//error in tokenizing or out of tokens
+	// error in tokenizing or out of tokens
 	if jt.pointer >= len(jt.tokens) {
 		return nil
 	}
-
 	info := jt.tokens[jt.pointer]
 	jt.pointer++
-
-	out := &Token{}
-	out.Offset = uint32(info.Start)
-	out.Text = string(jt.bytes[info.Start:info.Endp])
-	out.Line = info.Line
-
-	return out
+	return &Token{
+		Offset: uint32(info.Start),
+		Line:   info.Line,
+		Text:   string(jt.bytes[info.Start:info.Endp]),
+	}
 }
 
 func (jt *jsonTokenizer) Errors() []string {
@@ -72,7 +62,7 @@ func (jt *jsonTokenizer) Errors() []string {
 func (jt *jsonTokenizer) Done() {}
 
 func init() {
-	var factory = func() Tokenizer {
+	factory := func() Tokenizer {
 		return &jsonTokenizer{}
 	}
 	newExtensionBasedLookup("JSON", []string{".json"}, factory)
