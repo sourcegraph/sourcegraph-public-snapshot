@@ -21,18 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/executil"
 )
 
-func EnsureRepoExists(t *testing.T, ctx context.Context, repoURI string) {
-	cl, _ := sourcegraph.NewClientFromContext(ctx)
-
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoURI})
-	if err != nil {
-		t.Fatalf("repo %s does not exist: %s", repoURI, err)
-	}
-
-	// Make sure the repo has been cloned to vcsstore.
-	resolveRevWithRefreshAndRetry(t, ctx, repo.RepoSpec(), repo.DefaultBranch)
-}
-
 // resolveRevWithRefreshAndRetry tries to resolve a rev spec to a
 // commit ID. If it doesn't exist, it triggers a refresh of the repo's
 // VCS data and then retries (until maxGetCommitVCSRefreshWait has
