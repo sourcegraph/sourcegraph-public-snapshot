@@ -1136,10 +1136,11 @@ var langRepos_ = map[string][]string{
 		"github.com/h5bp/Effeckt.css",
 	},
 	"JSON": []string{
-		"github.com/Microsoft/TypeScript",
+		"github.com/mikedeboer/node-github",
 		"github.com/ggilmore/srclib-json",
 		"github.com/arunoda/meteor-up",
-		"github.com/palantir/tslint",
-		"github.com/Microsoft/vscode-extension-vscode",
+		"github.com/TypeStrong/learn-typescript",
+		"github.com/TelescopeJS/Telescope",
+		"github.com/basarat/typescript-book",
 	},
 }
