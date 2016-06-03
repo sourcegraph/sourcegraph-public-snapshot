@@ -55,7 +55,7 @@ describe("withResolvedRepoRev", () => {
 		});
 
 		it("should redirect for resolved local repos with different canonical name", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Result: {Repo: {URI: "renamedRepo"}}}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Result: {Repo: "renamedRepo"}}));
 			let calledReplace = false;
 			render(<C params={{splat: "repo"}} location={{pathname: "sg.com/alias"}} />, {
 				router: {replace: () => calledReplace = true},
