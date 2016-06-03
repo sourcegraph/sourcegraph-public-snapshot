@@ -56,9 +56,7 @@ export default function withDef(Component) {
 		render() {
 			if (this.state.isCloning) {
 				return (
-					<Header
-						title="Cloning this repository"
-						subtitle="Refresh this page in a minute." />
+					<Header title="Cloning this repository" loading={true} />
 				);
 			}
 

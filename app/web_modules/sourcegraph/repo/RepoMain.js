@@ -184,9 +184,7 @@ class RepoMain extends React.Component {
 
 		if (this.props.isCloning) {
 			return (
-				<Header
-					title="Cloning this repository"
-					subtitle="Refresh this page in a minute." />
+				<Header title="Cloning this repository" loading={true} />
 			);
 		}
 

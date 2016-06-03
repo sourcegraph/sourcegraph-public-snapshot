@@ -141,6 +141,7 @@ class TreeSearch extends Container {
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
+		if (this._srclibBuildingInterval) clearInterval(this._srclibBuildingInterval);
 	}
 
 	stores(): Array<Object> { return [TreeStore, DefStore, SearchStore]; }
@@ -178,6 +179,21 @@ class TreeSearch extends Container {
 				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID));
 				Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
 			}
+		}
+
+		// If there is no srclib version, i.e. the repository has not been
+		// built at least once, then poll against the server for an update
+		// periodically.
+		const noSrclibVersion = !nextState.srclibDataVersion || Object.keys(nextState.srclibDataVersion).length === 0;
+		if (noSrclibVersion && nextState.commitID && !this._srclibBuildingInterval) {
+			const pollRate = 500;
+			this._srclibBuildingInterval = setInterval(() => {
+				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID, null, true));
+				Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
+			}, pollRate);
+		} else if (!noSrclibVersion && this._srclibBuildingInterval) {
+			clearInterval(this._srclibBuildingInterval);
+			this._srclibBuildingInterval = null;
 		}
 
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {

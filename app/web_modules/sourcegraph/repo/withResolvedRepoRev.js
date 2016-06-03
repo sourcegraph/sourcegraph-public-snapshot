@@ -31,6 +31,11 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 			return [RepoStore];
 		}
 
+		componentWillUnmount() {
+			if (super.componentWillUnmount) super.componentWillUnmount();
+			if (this._cloningInterval) clearInterval(this._cloningInterval);
+		}
+
 		reconcileState(state, props) {
 			Object.assign(state, props);
 
@@ -97,6 +102,33 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 				if (!nextState.inventory && nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
 				}
+			}
+
+			// If the repository is cloning, poll against the server for an
+			// update periodically.
+			if (isMainComponent && nextState.isCloning && !this._cloningInterval && !this._cloningTimeout) {
+				// If the cloning would be quick, we don't want to flicker the
+				// loading screen, so display the screen for at least 1s.
+				const displayForAtLeast = 500;
+				const pollInterval = 500;
+				const maxAttempts = 10000 / pollInterval; // 10s / 20 times
+
+				this._cloningTimeout = true;
+				let attempt = 0;
+				setTimeout(() => {
+					attempt++;
+					if (attempt > maxAttempts) {
+						clearInterval(this._cloningInterval);
+						this._cloningInterval = null;
+					}
+					this._cloningTimeout = false;
+					this._cloningInterval = setInterval(() => {
+						Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
+					}, pollInterval);
+				}, displayForAtLeast);
+			} else if (!nextState.isCloning && this._cloningInterval) {
+				clearInterval(this._cloningInterval);
+				this._cloningInterval = null;
 			}
 		}
 
