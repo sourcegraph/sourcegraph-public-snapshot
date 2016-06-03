@@ -315,6 +315,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 		}
 	}
 
+	exactSQL += " LIMIT 3"
 	fuzzSQL += " LIMIT 3"
 
 	var exactRepos, repos []*sourcegraph.Repo
