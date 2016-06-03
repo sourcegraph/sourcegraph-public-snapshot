@@ -31,10 +31,11 @@ export class FileListFetched {
 }
 
 export class WantSrclibDataVersion {
-	constructor(repo, commitID, pathOrNull) {
+	constructor(repo, commitID, pathOrNull, force) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.path = pathOrNull || null;
+		this.force = force;
 	}
 }
 

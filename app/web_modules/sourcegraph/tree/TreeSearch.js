@@ -181,17 +181,16 @@ class TreeSearch extends Container {
 			}
 		}
 
-		// If there is no srclib version, i.e. the repository has not been
-		// built at least once, then poll against the server for an update
-		// periodically.
-		const noSrclibVersion = !nextState.srclibDataVersion || Object.keys(nextState.srclibDataVersion).length === 0;
-		if (noSrclibVersion && nextState.commitID && !this._srclibBuildingInterval) {
-			const pollRate = 500;
+		// If there was previously a response from the server but no srclib
+		// data version, i.e., if the repository has not been built recently
+		// then poll against the server for an update periodically.
+		const pollSrclibVersion = nextState.srclibDataVersion && !nextState.srclibDataVersion.CommitID;
+		if (pollSrclibVersion && nextState.commitID && !this._srclibBuildingInterval) {
+			const pollInterval = 500;
 			this._srclibBuildingInterval = setInterval(() => {
 				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID, null, true));
-				Dispatcher.Backends.dispatch(new TreeActions.WantFileList(nextState.repo, nextState.commitID));
-			}, pollRate);
-		} else if (!noSrclibVersion && this._srclibBuildingInterval) {
+			}, pollInterval);
+		} else if (!pollSrclibVersion && this._srclibBuildingInterval) {
 			clearInterval(this._srclibBuildingInterval);
 			this._srclibBuildingInterval = null;
 		}
