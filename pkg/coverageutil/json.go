@@ -3,7 +3,7 @@ package coverageutil
 import (
 	"bytes"
 
-	"github.com/ggilmore/srclib-json-tokenizer/sgjson"
+	"github.com/sourcegraph/srclib-json-tokenizer/sgjson"
 )
 
 type jsonTokenizer struct {
