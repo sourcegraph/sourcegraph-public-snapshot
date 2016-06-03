@@ -499,6 +499,10 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 
 	}
 
+	// TEMPORARY: nillify unresolved idents / refs, to reduce storage impact.
+	fileCvg.UnresolvedIdents = nil
+	fileCvg.UnresolvedRefs = nil
+
 	return fileCvg, nil
 }
 
