@@ -523,6 +523,12 @@
 			"revisionTime": "2015-12-22T15:32:29Z"
 		},
 		{
+			"checksumSHA1": "Pb4qv7AUBXgaYLGIeGDOPyViPSY=",
+			"path": "github.com/keegancsmith/que-go",
+			"revision": "42b56573d1f4a95a6c40b201f1e602ca26e83d5c",
+			"revisionTime": "2016-06-03T13:59:37Z"
+		},
+		{
 			"path": "github.com/keegancsmith/tmpfriend",
 			"revision": "8cd4ff81b86b4b424d900910cefa16ff016acfea",
 			"revisionTime": "2016-01-12T00:40:12+02:00"
