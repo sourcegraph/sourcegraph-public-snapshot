@@ -31,6 +31,7 @@ type Stores struct {
 	Graph              srcstore.MockMultiRepoStore
 	Orgs               Orgs
 	Password           Password
+	Queue              Queue
 	RepoConfigs        RepoConfigs
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
@@ -53,6 +54,7 @@ func (s *Stores) Stores() store.Stores {
 		Graph:              &s.Graph,
 		Orgs:               &s.Orgs,
 		Password:           &s.Password,
+		Queue:              &s.Queue,
 		RepoConfigs:        &s.RepoConfigs,
 		RepoStatuses:       &s.RepoStatuses,
 		RepoVCS:            &s.RepoVCS,

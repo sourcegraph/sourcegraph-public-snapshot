@@ -32,6 +32,7 @@ type Stores struct {
 	Graph              srcstore.MultiRepoStoreImporterIndexer
 	Orgs               Orgs
 	Password           Password
+	Queue              Queue
 	RepoConfigs        RepoConfigs
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
@@ -55,6 +56,7 @@ const (
 	_GraphKey
 	_OrgsKey
 	_PasswordKey
+	_QueueKey
 	_RepoConfigsKey
 	_RepoStatusesKey
 	_RepoVCSKey
@@ -102,6 +104,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.Password != nil {
 		ctx = WithPassword(ctx, s.Password)
+	}
+	if s.Queue != nil {
+		ctx = WithQueue(ctx, s.Queue)
 	}
 	if s.RepoConfigs != nil {
 		ctx = WithRepoConfigs(ctx, s.RepoConfigs)
@@ -299,6 +304,20 @@ func PasswordFromContext(ctx context.Context) Password {
 	s, ok := ctx.Value(_PasswordKey).(Password)
 	if !ok || s == nil {
 		panic("no Password set in context")
+	}
+	return s
+}
+
+// WithQueue returns a copy of parent with the given Queue store.
+func WithQueue(parent context.Context, s Queue) context.Context {
+	return context.WithValue(parent, _QueueKey, s)
+}
+
+// QueueFromContext gets the context's Queue store. If the store is not present, it panics.
+func QueueFromContext(ctx context.Context) Queue {
+	s, ok := ctx.Value(_QueueKey).(Queue)
+	if !ok || s == nil {
+		panic("no Queue set in context")
 	}
 	return s
 }
