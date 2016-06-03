@@ -43,7 +43,7 @@ func TestGlobalDefs(t *testing.T) {
 			},
 		}, nil
 	}
-	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: sourcegraph.RepoSpec{URI: "a/b"}}}}
+	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: "a/b"}}}
 	err := g.Update(ctx, op)
 	if err != nil {
 		t.Fatal(err)

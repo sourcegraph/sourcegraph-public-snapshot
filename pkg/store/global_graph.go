@@ -58,7 +58,7 @@ type GlobalDefUpdateOp struct {
 }
 
 type RepoUnit struct {
-	Repo     sourcegraph.RepoSpec
+	Repo     string
 	Unit     string
 	UnitType string
 }

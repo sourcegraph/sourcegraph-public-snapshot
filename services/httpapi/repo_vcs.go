@@ -17,7 +17,7 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 
 	repoRev := routevar.ToRepoRev(mux.Vars(r))
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repoRev.RepoSpec,
+		Repo: repoRev.Repo,
 		Rev:  repoRev.Rev,
 	})
 	if err != nil {
@@ -37,7 +37,7 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 func serveRepoCommits(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repo := routevar.ToRepoSpec(mux.Vars(r))
+	repo := routevar.ToRepo(mux.Vars(r))
 	var opt sourcegraph.RepoListCommitsOptions
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
@@ -67,7 +67,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, repoPath, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	repoupdater.Enqueue(repoSpec, authInfo.UserSpec())
+	repoupdater.Enqueue(repoPath, authInfo.UserSpec())
 	w.WriteHeader(http.StatusAccepted)
 	return nil
 }
@@ -91,12 +91,12 @@ func serveRepoBranches(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, repoPath, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoSpec, Opt: &opt})
+	branches, err := cl.Repos.ListBranches(ctx, &sourcegraph.ReposListBranchesOp{Repo: repoPath, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -112,12 +112,12 @@ func serveRepoTags(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, repoPath, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoSpec, Opt: &opt})
+	tags, err := cl.Repos.ListTags(ctx, &sourcegraph.ReposListTagsOp{Repo: repoPath, Opt: &opt})
 	if err != nil {
 		return err
 	}

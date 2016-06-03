@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-
 	"github.com/gorilla/mux"
 )
 
@@ -180,8 +178,8 @@ func TestRepoRevSpec(t *testing.T) {
 		spec      RepoRev
 		routeVars map[string]string
 	}{
-		{RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "a.com/x"}, Rev: "r"}, map[string]string{"Repo": "a.com/x", "Rev": "@r"}},
-		{RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "x"}, Rev: "r"}, map[string]string{"Repo": "x", "Rev": "@r"}},
+		{RepoRev{Repo: "a.com/x", Rev: "r"}, map[string]string{"Repo": "a.com/x", "Rev": "@r"}},
+		{RepoRev{Repo: "x", Rev: "r"}, map[string]string{"Repo": "x", "Rev": "@r"}},
 	}
 
 	for _, test := range tests {

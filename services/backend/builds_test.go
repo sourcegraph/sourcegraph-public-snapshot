@@ -15,9 +15,9 @@ func TestBuildsService_Get(t *testing.T) {
 
 	wantBuild := &sourcegraph.Build{ID: 1, Repo: "r"}
 
-	calledGet := mock.stores.Builds.MockGet(t, sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
+	calledGet := mock.stores.Builds.MockGet(t, sourcegraph.BuildSpec{ID: 1, Repo: "r"})
 
-	build, err := s.Get(ctx, &sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
+	build, err := s.Get(ctx, &sourcegraph.BuildSpec{ID: 1, Repo: "r"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestBuildsService_List(t *testing.T) {
 
 	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{ID: 1, Repo: "r"}}}
 
-	calledList := mock.stores.Builds.MockList(t, sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}})
+	calledList := mock.stores.Builds.MockList(t, sourcegraph.BuildSpec{ID: 1, Repo: "r"})
 
 	builds, err := s.List(ctx, nil)
 	if err != nil {
@@ -123,9 +123,9 @@ func TestBuildsService_List_pagination(t *testing.T) {
 
 	for label, test := range tests {
 		calledList := mock.stores.Builds.MockList(t,
-			sourcegraph.BuildSpec{ID: 1, Repo: sourcegraph.RepoSpec{URI: "r"}},
-			sourcegraph.BuildSpec{ID: 12, Repo: sourcegraph.RepoSpec{URI: "r"}},
-			sourcegraph.BuildSpec{ID: 123, Repo: sourcegraph.RepoSpec{URI: "r"}},
+			sourcegraph.BuildSpec{ID: 1, Repo: "r"},
+			sourcegraph.BuildSpec{ID: 12, Repo: "r"},
+			sourcegraph.BuildSpec{ID: 123, Repo: "r"},
 		)
 
 		opt := test.opt

@@ -143,7 +143,6 @@ class GlobalSearch extends Container {
 			break;
 
 		case 39: // ArrowRight
-			this._onSelection();
 			this._temporarilyIgnoreMouseSelection();
 
 			// Allow default (cursor movement in <input>)

@@ -209,7 +209,7 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 
 func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) error {
 	for _, repoUnit := range op.RepoUnits {
-		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repoUnit.Repo.URI); err != nil {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.Update", repoUnit.Repo); err != nil {
 			return err
 		}
 	}
@@ -225,7 +225,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			return err
 		}
 		defs, err := store.GraphFromContext(ctx).Defs(
-			sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo.URI, CommitID: commitID}),
+			sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo, CommitID: commitID}),
 			sstore.ByUnits(unit.ID2{Type: repoUnit.UnitType, Name: repoUnit.Unit}),
 		)
 		if err != nil {
@@ -252,7 +252,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			}
 
 			if d.Repo == "" {
-				d.Repo = repoUnit.Repo.URI
+				d.Repo = repoUnit.Repo
 			}
 
 			var docstring string
@@ -320,7 +320,7 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 
 			// Delete old entries
 			if _, err := tx.Exec(`DELETE FROM global_defs WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND commit_id!=$4`,
-				repoUnit.Repo.URI, repoUnit.UnitType, repoUnit.Unit, commitID); err != nil {
+				repoUnit.Repo, repoUnit.UnitType, repoUnit.Unit, commitID); err != nil {
 				return err
 			}
 			return nil
@@ -335,7 +335,7 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 
 func (g *globalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpdateOp) error {
 	for _, r := range op.RepoUnits {
-		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.RefreshRefCounts", r.Repo.URI); err != nil {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalDefs.RefreshRefCounts", r.Repo); err != nil {
 			return err
 		}
 	}
@@ -355,7 +355,7 @@ FROM (SELECT def_keys.repo def_repo, def_keys.unit_type def_unit_type, def_keys.
       WHERE def_keys.repo=$1 AND def_keys.unit_type=$2 AND def_keys.unit=$3
       GROUP BY def_repo, def_unit_type, def_unit, def_path) refs
 WHERE repo=def_repo AND unit_type=refs.def_unit_type AND unit=refs.def_unit AND path=refs.def_path;`
-		_, err := graphDBH(ctx).Exec(updateSQL, repoUnit.Repo.URI, repoUnit.UnitType, repoUnit.Unit)
+		_, err := graphDBH(ctx).Exec(updateSQL, repoUnit.Repo, repoUnit.UnitType, repoUnit.Unit)
 		if err != nil {
 			return err
 		}
@@ -373,7 +373,7 @@ func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUni
 			continue
 		}
 
-		units_, err := store.GraphFromContext(ctx).Units(sstore.ByRepos(repoUnit.Repo.URI))
+		units_, err := store.GraphFromContext(ctx).Units(sstore.ByRepos(repoUnit.Repo))
 		if err != nil {
 			return nil, err
 		}
@@ -388,12 +388,12 @@ func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUni
 	return resolved, nil
 }
 
-func resolveRevisionDefaultBranch(ctx context.Context, repo sourcegraph.RepoSpec) (string, error) {
-	r, err := store.ReposFromContext(ctx).Get(ctx, repo.URI)
+func resolveRevisionDefaultBranch(ctx context.Context, repo string) (string, error) {
+	r, err := store.ReposFromContext(ctx).Get(ctx, repo)
 	if err != nil {
 		return "", err
 	}
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
 	if err != nil {
 		return "", err
 	}

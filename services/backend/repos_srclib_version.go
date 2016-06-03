@@ -17,7 +17,7 @@ import (
 )
 
 func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetSrclibDataVersionForPath", entry.RepoRev.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.GetSrclibDataVersionForPath", entry.RepoRev.Repo); err != nil {
 		return nil, err
 	}
 
@@ -27,7 +27,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 
 	// First, try to find an exact match.
 	vers, err := store.GraphFromContext(ctx).Versions(
-		srclibstore.ByRepoCommitIDs(srclibstore.Version{Repo: entry.RepoRev.URI, CommitID: entry.RepoRev.CommitID}),
+		srclibstore.ByRepoCommitIDs(srclibstore.Version{Repo: entry.RepoRev.Repo, CommitID: entry.RepoRev.CommitID}),
 	)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	var base string
 	if entry.Path != "" {
 		lastPathCommit, err := svc.Repos(ctx).ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-			Repo: entry.RepoRev.RepoSpec,
+			Repo: entry.RepoRev.Repo,
 			Opt: &sourcegraph.RepoListCommitsOptions{
 				Head:        entry.RepoRev.CommitID,
 				Path:        entry.Path,
@@ -103,7 +103,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 	// List the recent commits that we'll use to check for builds.
 	candidateCommits, err := svc.Repos(ctx).ListCommits(ctx,
 		&sourcegraph.ReposListCommitsOp{
-			Repo: entry.RepoRev.RepoSpec,
+			Repo: entry.RepoRev.Repo,
 			Opt: &sourcegraph.RepoListCommitsOptions{
 				Head: entry.RepoRev.CommitID,
 				Base: base,
@@ -135,7 +135,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 
 	// Get all srclib built data versions.
 	vers, err := store.GraphFromContext(ctx).Versions(
-		srclibstore.ByRepos(entry.RepoRev.URI),
+		srclibstore.ByRepos(entry.RepoRev.Repo),
 		srclibstore.ByCommitIDs(candidateCommitIDs...),
 	)
 	if err != nil {

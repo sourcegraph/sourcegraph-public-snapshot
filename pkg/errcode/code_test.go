@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestHTTP(t *testing.T) {
@@ -22,7 +21,6 @@ func TestHTTP(t *testing.T) {
 		{grpc.Errorf(codes.OK, ""), http.StatusOK},
 		{grpc.Errorf(codes.Unknown, ""), http.StatusInternalServerError},
 		{nil, http.StatusOK},
-		{&store.RepoNotFoundError{}, http.StatusNotFound},
 		{errors.New(""), http.StatusInternalServerError},
 	}
 	for _, test := range tests {
@@ -44,7 +42,6 @@ func TestGRPC(t *testing.T) {
 		{grpc.Errorf(codes.NotFound, ""), codes.NotFound},
 		{grpc.Errorf(codes.OK, ""), codes.OK},
 		{nil, codes.OK},
-		{&store.RepoNotFoundError{}, codes.NotFound},
 		{errors.New(""), codes.Unknown},
 	}
 	for _, test := range tests {

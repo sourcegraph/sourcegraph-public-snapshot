@@ -90,7 +90,7 @@ func (c *repoConfigAppCmd) Execute(args []string) error {
 	}
 
 	_, err = cl.Repos.ConfigureApp(cliContext, &sourcegraph.RepoConfigureAppOp{
-		Repo:   repo.RepoSpec(),
+		Repo:   repo.URI,
 		App:    c.Args.App,
 		Enable: c.Enable,
 	})

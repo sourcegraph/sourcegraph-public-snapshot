@@ -57,10 +57,6 @@ func HTTP(err error) int {
 		return http.StatusBadRequest
 	case schema.MultiError:
 		return http.StatusBadRequest
-	case *store.RepoNotFoundError:
-		return http.StatusNotFound
-	case *store.RepoExistError:
-		return http.StatusConflict
 	case *store.UserNotFoundError:
 		return http.StatusNotFound
 	case *store.AccountAlreadyExistsError:

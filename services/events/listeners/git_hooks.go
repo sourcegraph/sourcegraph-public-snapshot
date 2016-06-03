@@ -56,9 +56,9 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		log15.Warn("postPushHook error", "error", err)
 	}
 
-	repo, err := cl.Repos.Get(ctx, &payload.Repo)
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: payload.Repo})
 	if err != nil {
-		log15.Warn("postPushHook error fetching repo", "repo", payload.Repo.URI, "error", err)
+		log15.Warn("postPushHook error fetching repo", "repo", payload.Repo, "error", err)
 	}
 	// Don't emit notifications for mirror repositories.
 	if repo.Mirror {
@@ -97,7 +97,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 
 	// See how many commits were pushed.
 	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: repo.RepoSpec(),
+		Repo: repo.URI,
 		Opt: &sourcegraph.RepoListCommitsOptions{
 			Head:        event.Commit,
 			Base:        event.Last,
@@ -153,10 +153,10 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 			Config:   sourcegraph.BuildConfig{Queue: true},
 		})
 		if err != nil {
-			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo.URI, "commit", event.Commit, "branch", event.Branch, "tag", event.Tag)
+			log15.Warn("postPushHook: failed to create build", "err", err, "repo", repo, "commit", event.Commit, "branch", event.Branch, "tag", event.Tag)
 			return
 		}
-		log15.Debug("postPushHook: build created", "repo", repo.URI, "branch", event.Branch, "tag", event.Tag, "commit", event.Commit, "event type", event.Type)
+		log15.Debug("postPushHook: build created", "repo", repo, "branch", event.Branch, "tag", event.Tag, "commit", event.Commit, "event type", event.Type)
 	}
 }
 
@@ -172,7 +172,7 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 	}
 	event := payload.Event
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
-		repoRev := &sourcegraph.RepoRevSpec{RepoSpec: payload.Repo, CommitID: event.Commit}
+		repoRev := &sourcegraph.RepoRevSpec{Repo: payload.Repo, CommitID: event.Commit}
 		// Trigger a call to Repos.GetInventory so the inventory is
 		// cached for subsequent calls.
 		inv, err := cl.Repos.GetInventory(ctx, repoRev)
@@ -183,14 +183,14 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 
 		// If this push is to the default branch, update the repo's
 		// Language field with the primary language.
-		repo, err := cl.Repos.Get(ctx, &repoRev.RepoSpec)
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
 		if err != nil {
 			log15.Warn("inventoryHook: call to Repos.Get failed", "err", err, "repoRev", repoRev)
 			return
 		}
 		if event.Branch == repo.DefaultBranch {
 			lang := inv.PrimaryProgrammingLanguage()
-			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.RepoSpec(), Language: lang}); err != nil {
+			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.URI, Language: lang}); err != nil {
 				log15.Warn("inventoryHook: call to Repos.Update to set language failed", "err", err, "repoRev", repoRev, "language", lang)
 			}
 		}

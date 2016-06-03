@@ -41,10 +41,10 @@ type deltas struct {
 var _ sourcegraph.DeltasServer = (*deltas)(nil)
 
 func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegraph.Delta, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.Get", ds.Base.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.Get", ds.Base.Repo); err != nil {
 		return nil, err
 	}
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.Get", ds.Head.URI); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Deltas.Get", ds.Head.Repo); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func (s *deltas) Get(ctx context.Context, ds *sourcegraph.DeltaSpec) (*sourcegra
 }
 
 func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegraph.Delta, error) {
-	if d.Base.RepoSpec.URI != d.Head.RepoSpec.URI {
+	if d.Base.Repo != d.Head.Repo {
 		return d, errors.New("base and head repo must be identical")
 	}
 
@@ -93,7 +93,7 @@ func (s *deltas) fillDelta(ctx context.Context, d *sourcegraph.Delta) (*sourcegr
 	}
 
 	// Try to compute merge-base.
-	vcsBaseRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.Base.RepoSpec.URI)
+	vcsBaseRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, d.Base.Repo)
 	if err != nil {
 		return d, err
 	}

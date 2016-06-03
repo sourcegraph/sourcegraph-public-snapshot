@@ -42,7 +42,7 @@ func TestRepoResolve_IncludedRepo(t *testing.T) {
 	want := &repoResolution{
 		Data: sourcegraph.RepoResolution{
 			Result: &sourcegraph.RepoResolution_Repo{
-				Repo: &sourcegraph.RepoSpec{URI: "r"},
+				Repo: "r",
 			},
 		},
 		IncludedRepo: &sourcegraph.Repo{URI: "r"},
@@ -72,7 +72,7 @@ func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
 	want := &repoResolution{
 		Data: sourcegraph.RepoResolution{
 			Result: &sourcegraph.RepoResolution_Repo{
-				Repo: &sourcegraph.RepoSpec{URI: "r"},
+				Repo: "r",
 			},
 		},
 	}

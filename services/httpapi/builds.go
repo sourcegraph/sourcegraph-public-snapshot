@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
@@ -78,28 +79,14 @@ func serveBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 	return writePlainLogEntries(w, entries)
 }
 
-func getRepoSpec(r *http.Request) (*sourcegraph.RepoSpec, error) {
-	v := mux.Vars(r)
-	repo := v["Repo"]
-	if repo == "" {
-		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest}
-	}
-	return &sourcegraph.RepoSpec{URI: repo}, nil
-}
-
 func getBuildSpec(r *http.Request) (*sourcegraph.BuildSpec, error) {
-	repoSpec, err := getRepoSpec(r)
-	if err != nil {
-		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
-	}
-
 	v := mux.Vars(r)
 	build, err := strconv.ParseUint(v["Build"], 10, 64)
 	if err != nil {
 		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 	return &sourcegraph.BuildSpec{
-		Repo: *repoSpec,
+		Repo: routevar.ToRepo(mux.Vars(r)),
 		ID:   build,
 	}, nil
 }

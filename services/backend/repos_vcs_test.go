@@ -28,7 +28,7 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 	})
 
 	// (no rev/branch specified)
-	commitID, err := resolveRepoRev(ctx, sourcegraph.RepoSpec{URI: "r"}, "")
+	commitID, err := resolveRepoRev(ctx, "r", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 		},
 	})
 
-	commitID, err := resolveRepoRev(ctx, sourcegraph.RepoSpec{URI: "r"}, "b")
+	commitID, err := resolveRepoRev(ctx, "r", "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 		},
 	})
 
-	commitID, err := resolveRepoRev(ctx, sourcegraph.RepoSpec{URI: "r"}, strings.Repeat("a", 40))
+	commitID, err := resolveRepoRev(ctx, "r", strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 		},
 	})
 
-	_, err := resolveRepoRev(ctx, sourcegraph.RepoSpec{URI: "r"}, strings.Repeat("a", 40))
+	_, err := resolveRepoRev(ctx, "r", strings.Repeat("a", 40))
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
@@ -156,7 +156,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 	}
 
 	commitList, err := s.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: sourcegraph.RepoSpec{URI: "r"},
+		Repo: "r",
 		Opt:  &sourcegraph.RepoListCommitsOptions{Head: "v"},
 	})
 	if err != nil {

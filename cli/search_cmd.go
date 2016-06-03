@@ -33,7 +33,7 @@ func (c *searchCmd) Execute(args []string) error {
 	if c.Refresh != "" {
 		log.Printf("Def.RefreshIndex")
 		_, err := cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
-			Repo:                &sourcegraph.RepoSpec{URI: c.Refresh},
+			Repo:                c.Refresh,
 			RefreshRefLocations: true,
 			Force:               true,
 		})
@@ -42,7 +42,7 @@ func (c *searchCmd) Execute(args []string) error {
 		}
 		log.Printf("Search.RefreshIndex")
 		_, err = cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.Refresh}},
+			Repos:         []string{c.Refresh},
 			RefreshCounts: true,
 			RefreshSearch: true,
 		})
@@ -54,7 +54,7 @@ func (c *searchCmd) Execute(args []string) error {
 	} else if c.RefreshCounts != "" {
 		log.Printf("Search.RefreshIndex (counts only)")
 		_, err := cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []*sourcegraph.RepoSpec{&sourcegraph.RepoSpec{URI: c.RefreshCounts}},
+			Repos:         []string{c.RefreshCounts},
 			RefreshCounts: true,
 		})
 		if err != nil {

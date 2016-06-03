@@ -24,8 +24,8 @@ func ToDelta(routeVars map[string]string) Delta {
 	return Delta{
 		Base: repoRev,
 		Head: RepoRev{
-			RepoSpec: repoRev.RepoSpec,
-			Rev:      strings.TrimPrefix(routeVars["DeltaHeadRev"], "@"),
+			Repo: repoRev.Repo,
+			Rev:  strings.TrimPrefix(routeVars["DeltaHeadRev"], "@"),
 		},
 	}
 }

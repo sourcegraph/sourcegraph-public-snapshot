@@ -58,7 +58,7 @@ func (s *ReposClient) MockResolve_Local(t *testing.T, wantPath string) (called *
 			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
 		}
 		return &sourcegraph.RepoResolution{
-			Result: &sourcegraph.RepoResolution_Repo{Repo: &sourcegraph.RepoSpec{URI: op.Path}},
+			Result: &sourcegraph.RepoResolution_Repo{Repo: op.Path},
 		}, nil
 	}
 	return

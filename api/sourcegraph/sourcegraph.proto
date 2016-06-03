@@ -148,7 +148,7 @@ message RepoListOptions {
 
 // RepoRevSpec specifies a repository at a specific commit.
 message RepoRevSpec {
-	RepoSpec RepoSpec = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	string Repo = 1;
 
 	// CommitID is the 40-character SHA-1 of the Git commit ID.
 	//
@@ -293,7 +293,7 @@ service Repos {
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
 message ReposResolveRevOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	string repo = 1;
 
 	// Rev is a VCS revision specifier, such as a branch or
 	// "master~7".
@@ -309,13 +309,13 @@ message ResolvedRev {
 }
 
 message ReceivePackOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	string repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
 
 message UploadPackOp {
-	RepoSpec repo = 1 [(gogoproto.nullable) = false];
+	string repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
@@ -335,7 +335,7 @@ message RepoResolution {
 	oneof result {
 		// Repo refers to a local repo (either a locally hosted repo,
 		// or a locally added mirror).
-		RepoSpec Repo = 1;
+		string Repo = 1;
 
 		// RemoteRepo represents a repo that exists on a remote
 		// service (such as GitHub) but has no corresponding repo
@@ -362,7 +362,7 @@ message SrclibDataVersion {
 
 message RepoConfigureAppOp {
 	// Repo is the repository whose applications are being configured.
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 
 	// App is the app ID to enable or disable.
 	string App = 2;
@@ -408,7 +408,7 @@ message ReposCreateOp {
 // ReposUpdateOp is an operation to update a repository's metadata.
 message ReposUpdateOp {
 	// Repo is the repository to update.
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 
 	// Description is the new description of the repository. If empty,
 	// the description is not changed.
@@ -423,7 +423,7 @@ message ReposUpdateOp {
 };
 
 message ReposListCommitsOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 	RepoListCommitsOptions Opt = 2;
 }
 
@@ -440,7 +440,7 @@ message CommitList {
 }
 
 message ReposListBranchesOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 	RepoListBranchesOptions Opt = 2;
 }
 
@@ -457,12 +457,12 @@ message BranchList {
 }
 
 message ReposListTagsOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 	RepoListTagsOptions Opt = 2;
 }
 
 message ReposListCommittersOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 	RepoListCommittersOptions Opt = 2;
 }
 
@@ -488,7 +488,7 @@ message TagList {
 message MirrorReposRefreshVCSOp {
 	reserved 2;
 
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 
 	// AsUser is the user whose auth token will be used for refreshing this
 	// mirror repo. This can be used when refreshing a private repo mirror.
@@ -708,7 +708,7 @@ message BuildListOptions {
 // A BuildSpec uniquely identifies a build.
 message BuildSpec {
 	// Repo is the repository associated with the build.
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
@@ -789,7 +789,7 @@ message BuildList {
 }
 
 message BuildsCreateOp {
-	RepoSpec Repo = 1 [(gogoproto.nullable) = false];
+	string Repo = 1;
 
 	// CommitID is the full commit ID of the commit to build. It is
 	// required.
@@ -1701,7 +1701,7 @@ message FileRange {
 message DefsRefreshIndexOp {
 	// Repo is the repo whose graph data is to be re-indexed
 	// for global ref locations.
-	RepoSpec Repo = 1;
+	string Repo = 1;
 
 	// RefreshRefLocations refreshes the global ref locations index for
 	// the specified repository.
@@ -2080,7 +2080,7 @@ message SearchResultsList {
 message SearchRefreshIndexOp {
 	// Repos is the list of repos whose graph data is to be re-indexed
 	// for global search.
-	repeated RepoSpec Repos = 1;
+	repeated string Repos = 1;
 
 	// RefreshCounts refreshes the global xref counts for the specified
 	// repositories.

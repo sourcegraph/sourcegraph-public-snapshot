@@ -28,8 +28,8 @@ import (
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec := routevar.ToRepoSpec(mux.Vars(r))
-	repo, err := cl.Repos.Get(ctx, &repoSpec)
+	repoPath := routevar.ToRepo(mux.Vars(r))
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 	if err != nil {
 		return err
 	}
@@ -53,8 +53,8 @@ type repoResolution struct {
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec := routevar.ToRepoSpec(mux.Vars(r))
-	res0, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	repoPath := routevar.ToRepo(mux.Vars(r))
+	res0, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
 	if err != nil {
 		return err
 	}
@@ -65,12 +65,12 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	// if the operation resolved to a local repo. Clients will almost
 	// always need the local repo in this case, so including it saves
 	// a round-trip.
-	if repoSpec := res0.GetRepo(); repoSpec != nil {
-		repo, err := cl.Repos.Get(ctx, repoSpec)
+	if repoPath := res0.GetRepo(); repoPath != "" {
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 		if err == nil {
 			res.IncludedRepo = repo
 		} else {
-			log15.Warn("Error optimistically including repo in serveRepoResolve", "repo", repoSpec, "err", err)
+			log15.Warn("Error optimistically including repo in serveRepoResolve", "repo", repoPath, "err", err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 // specified repository and commitID. For performance reasons, commitID is
 // assumed to be canonical (and is not resolved); if not 40 characters, an error is
 // returned.
-func getRepoLastBuildTime(r *http.Request, repoSpec sourcegraph.RepoSpec, commitID string) (time.Time, error) {
+func getRepoLastBuildTime(r *http.Request, repo, commitID string) (time.Time, error) {
 	if len(commitID) != 40 {
 		return time.Time{}, errors.New("refusing (for performance reasons) to get the last build time for non-canonical repository commit ID")
 	}
@@ -195,7 +195,7 @@ func getRepoLastBuildTime(r *http.Request, repoSpec sourcegraph.RepoSpec, commit
 	ctx, cl := handlerutil.Client(r)
 
 	builds, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
-		Repo:        repoSpec.URI,
+		Repo:        repo,
 		CommitID:    commitID,
 		Ended:       true,
 		Succeeded:   true,
@@ -218,12 +218,12 @@ func resolveRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph
 	if err != nil {
 		return nil, err
 	}
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoRev.RepoSpec, Rev: repoRev.Rev})
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoRev.Repo, Rev: repoRev.Rev})
 	if err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RepoRevSpec{
-		RepoSpec: repoRev.RepoSpec,
+		Repo:     repoRev.Repo,
 		CommitID: res.CommitID,
 	}, nil
 }

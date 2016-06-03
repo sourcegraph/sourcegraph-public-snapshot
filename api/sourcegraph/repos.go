@@ -24,11 +24,6 @@ func (r *Repo) CloneURL() *url.URL {
 	return u
 }
 
-// RepoSpec returns the RepoSpec that specifies r.
-func (r *Repo) RepoSpec() RepoSpec {
-	return RepoSpec{URI: r.URI}
-}
-
 // IsZero reports whether s.URI is the zero value.
 func (s RepoSpec) IsZero() bool { return s.URI == "" }
 
@@ -52,7 +47,7 @@ func (s RepoRevSpec) IsAbs() bool {
 func (r *RepoResolution) UnmarshalJSON(data []byte) error {
 	var m struct {
 		Result struct {
-			Repo       *RepoSpec
+			Repo       string
 			RemoteRepo *RemoteRepo
 		}
 	}
@@ -60,7 +55,7 @@ func (r *RepoResolution) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch {
-	case m.Result.Repo != nil:
+	case m.Result.Repo != "":
 		*r = RepoResolution{Result: &RepoResolution_Repo{Repo: m.Result.Repo}}
 	case m.Result.RemoteRepo != nil:
 		*r = RepoResolution{Result: &RepoResolution_RemoteRepo{RemoteRepo: m.Result.RemoteRepo}}
