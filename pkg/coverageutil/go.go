@@ -8,17 +8,25 @@ import (
 type goTokenizer struct {
 	scanner *scanner.Scanner
 	fset    *token.FileSet
+	errors  []string
 }
 
 // Initializes Go scanner
 func (s *goTokenizer) Init(src []byte) {
+	s.errors = make([]string, 0)
 	s.scanner = &scanner.Scanner{}
 	s.fset = token.NewFileSet()
 	file := s.fset.AddFile("", s.fset.Base(), len(src))
-	s.scanner.Init(file, src, nil, 0)
+	s.scanner.Init(file, src, func(pos token.Position, msg string) {
+		s.errors = append(s.errors, msg)
+	}, 0)
 }
 
 func (s *goTokenizer) Done() {
+}
+
+func (s *goTokenizer) Errors() []string {
+	return s.errors
 }
 
 func (s *goTokenizer) Next() *Token {

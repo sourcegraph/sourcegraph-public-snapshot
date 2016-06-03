@@ -9,18 +9,21 @@ type cssTokenizer struct {
 	tokens      []*Token
 	index       int
 	lineOffsets [][]int
+	errors      []string
 }
 
 // Initializes CSS parser
 func (s *cssTokenizer) Init(src []byte) {
 
 	text := string(src)
+	s.errors = make([]string, 0)
 	css, err := parser.Parse(text)
 	s.tokens = make([]*Token, 0)
 	s.index = 0
 	s.calcLineOffsets(text)
 
 	if err != nil {
+		s.errors = append(s.errors, err.Error())
 		return
 	}
 	for _, r := range css.Rules {
@@ -34,6 +37,10 @@ func (s *cssTokenizer) Init(src []byte) {
 }
 
 func (s *cssTokenizer) Done() {
+}
+
+func (s *cssTokenizer) Errors() []string {
+	return s.errors
 }
 
 // Next returns next token (selector or declaration)

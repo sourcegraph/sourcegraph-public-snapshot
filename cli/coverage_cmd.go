@@ -46,10 +46,13 @@ func init() {
 }
 
 type coverageCmd struct {
-	Repo    string `long:"repo" description:"repo URI"`
-	Lang    string `long:"lang" description:"coverage language"`
-	Refresh bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
-	Dry     bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
+	Repo       string `long:"repo" description:"repo URI"`
+	Lang       string `long:"lang" description:"coverage language"`
+	Refresh    bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
+	Dry        bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
+	Progress   bool   `long:"progress" description:"show progress"`
+	ReportRefs bool   `long:"refs" description:"report issues with references"`
+	ReportDefs bool   `long:"defs" description:"report issues with definitions"`
 }
 
 // fileCoverage contains coverage data for a single file or repository
@@ -302,13 +305,14 @@ func (c *coverageCmd) Execute(args []string) error {
 	var mu sync.Mutex
 
 	for _, lang := range langs {
+
 		lang := lang
 		repos := langRepos[lang]
 		for _, repo := range repos {
 			repo := repo
 
 			p.Do(func() error {
-				cov, err := getCoverage(cl, cliContext, repo, lang, c.Dry)
+				cov, err := getCoverage(cl, cliContext, repo, lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs)
 				if err != nil {
 					return fmt.Errorf("error getting coverage for %s: %s", repo, err)
 				}
@@ -369,7 +373,8 @@ type annToken struct {
 }
 
 // getFileCoverage computes the coverage data for a single file in a repository
-func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string) (*fileCoverage, error) {
+func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
+
 	fileCvg := &fileCoverage{Path: path}
 
 	var tokenizer coverageutil.Tokenizer
@@ -427,11 +432,19 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 				fileCvg.Refs += 1
 				refAnnotations = append(refAnnotations, &annToken{Annotation: ann, Token: tok})
 				hasRef = true
+			} else if reportRefs {
+				log15.Warn("spans not match", "path", path, "at", tok.Offset, "ident", tok.Text)
 			}
+		} else if reportRefs {
+			log15.Warn("no ref for", "path", path, "at", tok.Offset, "ident", tok.Text)
 		}
 		if !hasRef {
 			fileCvg.UnresolvedIdents = append(fileCvg.UnresolvedIdents, tok)
 		}
+	}
+	errors := tokenizer.Errors()
+	if len(errors) > 0 {
+		log15.Warn("parse errors", "path", path, "errors", errors)
 	}
 
 	for _, annToken := range refAnnotations {
@@ -479,14 +492,18 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			fileCvg.Defs += 1
 		} else {
 			fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
+			if reportDefs {
+				log15.Warn("no def", "path", path, "at", ann.StartByte, "key", u)
+			}
 		}
+
 	}
 
 	return fileCvg, nil
 }
 
 // getCoverage computes coverage data for the given repository
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang string, dryRun bool) (*repoCoverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang string, dryRun, progress, reportRefs, reportDefs bool) (*repoCoverage, error) {
 	if err := ensureRepoExists(cl, ctx, repoURI); err != nil {
 		return nil, err
 	}
@@ -514,8 +531,12 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 		var repoCvgMu sync.Mutex
 		for _, path := range tree.Files {
 			path := path
+
 			p.Do(func() error {
-				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, path, lang)
+				if progress {
+					log15.Info("processing", path, lang)
+				}
+				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, path, lang, reportRefs, reportDefs)
 				if err != nil {
 					return err
 				}
@@ -549,7 +570,14 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoURI, lang stri
 		repoCvg.Summary.Refs += cv.Refs
 		repoCvg.Summary.Defs += cv.Defs
 	}
-	log15.Info("coverage summary", "lang", lang, "repo", repoURI, "idents", repoCvg.Summary.Idents, "refs", repoCvg.Summary.Refs, "defs", repoCvg.Summary.Defs)
+	log15.Info("coverage summary",
+		"lang", lang,
+		"repo", repoURI,
+		"idents", repoCvg.Summary.Idents,
+		"refs", repoCvg.Summary.Refs,
+		"defs", repoCvg.Summary.Defs,
+		"refs%", percent(repoCvg.Summary.Refs, repoCvg.Summary.Idents),
+		"defs%", percent(repoCvg.Summary.Defs, repoCvg.Summary.Refs))
 
 	if planVer, err := plan.SrclibVersion(lang); err != nil {
 		log15.Warn("missing plan srclib version", "err", err, "lang", lang)
@@ -608,4 +636,12 @@ func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) 
 	}
 
 	return nil
+}
+
+// percent computes percentage safely
+func percent(a, b int) int {
+	if b == 0 {
+		return 0
+	}
+	return a * 100.0 / b
 }
