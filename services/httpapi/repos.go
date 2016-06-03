@@ -28,8 +28,8 @@ import (
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec := routevar.ToRepoSpec(mux.Vars(r))
-	repo, err := cl.Repos.Get(ctx, &repoSpec)
+	repoPath := routevar.ToRepo(mux.Vars(r))
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 	if err != nil {
 		return err
 	}
@@ -53,8 +53,8 @@ type repoResolution struct {
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoSpec := routevar.ToRepoSpec(mux.Vars(r))
-	res0, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoSpec.URI})
+	repoPath := routevar.ToRepo(mux.Vars(r))
+	res0, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
 	if err != nil {
 		return err
 	}
@@ -218,12 +218,12 @@ func resolveRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph
 	if err != nil {
 		return nil, err
 	}
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoRev.RepoSpec, Rev: repoRev.Rev})
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: sourcegraph.RepoSpec{URI: repoRev.Repo}, Rev: repoRev.Rev})
 	if err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RepoRevSpec{
-		RepoSpec: repoRev.RepoSpec,
+		RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo},
 		CommitID: res.CommitID,
 	}, nil
 }

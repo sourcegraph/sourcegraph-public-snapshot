@@ -64,12 +64,12 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	_, repoSpec, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, repoPath, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	op.Repo = repoSpec
+	op.Repo = sourcegraph.RepoSpec{URI: repoPath}
 	build, err := cl.Builds.Create(ctx, &op)
 	if err != nil {
 		return err

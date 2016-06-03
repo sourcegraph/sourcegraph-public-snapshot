@@ -3,8 +3,6 @@ package routevar
 import (
 	"reflect"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
 func TestDefRouteVars(t *testing.T) {
@@ -13,15 +11,15 @@ func TestDefRouteVars(t *testing.T) {
 		routeVars map[string]string
 	}{
 		{
-			DefAtRev{RepoRev: RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: ""}, UnitType: "t", Unit: "u", Path: "p"},
+			DefAtRev{RepoRev: RepoRev{Repo: "r", Rev: ""}, UnitType: "t", Unit: "u", Path: "p"},
 			map[string]string{"Repo": "r", "Rev": "", "UnitType": "t", "Unit": "u", "Path": "p"},
 		},
 		{
-			DefAtRev{RepoRev: RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v"}, UnitType: "t", Unit: "u", Path: "p"},
+			DefAtRev{RepoRev: RepoRev{Repo: "r", Rev: "v"}, UnitType: "t", Unit: "u", Path: "p"},
 			map[string]string{"Repo": "r", "Rev": "@v", "UnitType": "t", "Unit": "u", "Path": "p"},
 		},
 		{
-			DefAtRev{RepoRev: RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "r"}, Rev: "v"}, UnitType: "t", Unit: "u1/u2/u3", Path: "p1/p2/p3"},
+			DefAtRev{RepoRev: RepoRev{Repo: "r", Rev: "v"}, UnitType: "t", Unit: "u1/u2/u3", Path: "p1/p2/p3"},
 			map[string]string{"Repo": "r", "Rev": "@v", "UnitType": "t", "Unit": "u1/u2/u3", "Path": "p1/p2/p3"},
 		},
 	}

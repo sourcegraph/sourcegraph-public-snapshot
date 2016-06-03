@@ -5,8 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-
 	"github.com/kr/pretty"
 )
 
@@ -17,8 +15,8 @@ func TestDeltas(t *testing.T) {
 	}{
 		{
 			delta: Delta{
-				Base: RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "samerepo"}, Rev: "base-rev"},
-				Head: RepoRev{RepoSpec: sourcegraph.RepoSpec{URI: "samerepo"}, Rev: "head-rev"},
+				Base: RepoRev{Repo: "samerepo", Rev: "base-rev"},
+				Head: RepoRev{Repo: "samerepo", Rev: "head-rev"},
 			},
 			wantRouteVars: map[string]string{
 				"Repo":         "samerepo",

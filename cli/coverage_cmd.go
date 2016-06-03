@@ -352,10 +352,10 @@ func parseAnnotationURL(annUrl string) (*sourcegraph.RepoRevSpec, *sourcegraph.D
 		repoRev := routevar.ToRepoRev(match.Vars)
 		def := routevar.ToDefAtRev(match.Vars)
 		return &sourcegraph.RepoRevSpec{
-				RepoSpec: repoRev.RepoSpec,
+				RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo},
 				CommitID: repoRev.Rev,
 			}, &sourcegraph.DefSpec{
-				Repo:     def.RepoSpec.URI,
+				Repo:     def.Repo,
 				CommitID: def.Rev,
 				UnitType: def.UnitType,
 				Unit:     def.Unit,

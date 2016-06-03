@@ -26,7 +26,7 @@ func (r *Router) URLToRepoTreeEntry(repo, rev, path string) *url.URL {
 }
 
 func (r *Router) URLToDef(def routevar.DefAtRev) *url.URL {
-	return r.urlToDef(def.RepoSpec.URI, revStr(def.Rev), def.UnitType,
+	return r.urlToDef(def.Repo, revStr(def.Rev), def.UnitType,
 		routevar.DefKeyPathToURLPath(def.Unit),
 		routevar.DefKeyPathToURLPath(def.Path),
 	)

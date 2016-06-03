@@ -214,7 +214,7 @@ func getAppURL(ctx context.Context) (*url.URL, error) {
 // getSrclibImportURL constructs the srclib import URL to POST srclib
 // data to, after the srclib build steps complete.
 func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
-	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, routevar.RepoRevRouteVars(routevar.RepoRev{RepoSpec: repoRev.RepoSpec, Rev: repoRev.CommitID}))
+	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, routevar.RepoRevRouteVars(routevar.RepoRev{Repo: repoRev.RepoSpec.URI, Rev: repoRev.CommitID}))
 	if err != nil {
 		return nil, err
 	}

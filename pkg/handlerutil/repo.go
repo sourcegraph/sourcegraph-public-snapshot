@@ -94,26 +94,26 @@ func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon,
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
-func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoSpec sourcegraph.RepoSpec, err error) {
-	origRepoSpec := routevar.ToRepoSpec(vars)
+func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoPath string, err error) {
+	origRepoPath := routevar.ToRepo(vars)
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
-		return nil, sourcegraph.RepoSpec{}, err
+		return nil, "", err
 	}
 
-	repoSpec = origRepoSpec
-	repo, err = cl.Repos.Get(ctx, &repoSpec)
+	repoPath = origRepoPath
+	repo, err = cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
 	if err != nil {
-		return nil, origRepoSpec, err
+		return nil, origRepoPath, err
 	}
-	repoSpec = repo.RepoSpec()
+	repoPath = repo.URI
 
 	// Check for redirect.
-	if origRepoSpec.URI != "" && origRepoSpec.URI != repoSpec.URI {
-		return nil, repoSpec, &URLMovedError{repoSpec.URI}
+	if origRepoPath != "" && origRepoPath != repoPath {
+		return nil, repoPath, &URLMovedError{repoPath}
 	}
 
-	return repo, repoSpec, nil
+	return repo, repoPath, nil
 }
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the
@@ -125,7 +125,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) 
 		repoRev.Rev = defaultRev
 
 		if repoRev.Rev == "" {
-			log15.Warn("getRepoRev: no rev specified and repo has no default rev", "repo", repoRev.URI)
+			log15.Warn("getRepoRev: no rev specified and repo has no default rev", "repo", repoRev.Repo)
 		}
 	}
 
@@ -135,24 +135,26 @@ func getRepoRev(ctx context.Context, vars map[string]string, defaultRev string) 
 	}
 
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repoRev.RepoSpec,
+		Repo: sourcegraph.RepoSpec{URI: repoRev.Repo},
 		Rev:  repoRev.Rev,
 	})
 	if err != nil {
 		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	return sourcegraph.RepoRevSpec{RepoSpec: repoRev.RepoSpec, CommitID: res.CommitID}, nil
+	return sourcegraph.RepoRevSpec{RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo}, CommitID: res.CommitID}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
 func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, err error) {
-	repo, repoRevSpec.RepoSpec, err = GetRepo(ctx, vars)
+	var repoPath string
+	repo, repoPath, err = GetRepo(ctx, vars)
 	if err != nil {
 		return repo, repoRevSpec, err
 	}
+	repoRevSpec.URI = repoPath
 
 	repoRevSpec, err = getRepoRev(ctx, vars, repo.DefaultBranch)
 	return repo, repoRevSpec, err
@@ -217,7 +219,7 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	dc = &sourcegraph.Def{
 		Def: graph.Def{
 			DefKey: graph.DefKey{
-				Repo:     defSpec.RepoSpec.URI,
+				Repo:     defSpec.Repo,
 				Unit:     defSpec.Unit,
 				UnitType: defSpec.UnitType,
 				Path:     defSpec.Path,
@@ -231,14 +233,14 @@ func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.
 	}
 
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repoRev.RepoSpec,
+		Repo: sourcegraph.RepoSpec{URI: repoRev.Repo},
 		Rev:  repoRev.Rev,
 	})
 	if err != nil {
 		return
 	}
 	absRepoRev := sourcegraph.RepoRevSpec{
-		RepoSpec: repoRev.RepoSpec,
+		RepoSpec: sourcegraph.RepoSpec{URI: repoRev.Repo},
 		CommitID: res.CommitID,
 	}
 
