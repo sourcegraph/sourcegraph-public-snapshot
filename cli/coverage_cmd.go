@@ -57,12 +57,10 @@ type coverageCmd struct {
 
 // fileCoverage contains coverage data for a single file or repository
 type fileCoverage struct {
-	Path             string // the file path (optional)
-	Idents           int    // # of identifiers in the file
-	Refs             int    // # of refs in the file (i.e. annotations)
-	Defs             int    // # of annotations (URLs) which resolve to real defs
-	UnresolvedIdents []*coverageutil.Token
-	UnresolvedRefs   []*coverageutil.Token
+	Path   string // the file path (optional)
+	Idents int    // # of identifiers in the file
+	Refs   int    // # of refs in the file (i.e. annotations)
+	Defs   int    // # of annotations (URLs) which resolve to real defs
 }
 
 // repoCoverage contains the coverage data for a single repo
@@ -374,7 +372,6 @@ type annToken struct {
 
 // getFileCoverage computes the coverage data for a single file in a repository
 func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
-
 	fileCvg := &fileCoverage{Path: path}
 
 	var tokenizer coverageutil.Tokenizer
@@ -425,21 +422,16 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		}
 
 		fileCvg.Idents += 1
-		var hasRef bool
 		if ann, ok := annsByStartByte[tok.Offset]; ok {
 			if ann.EndByte == tok.Offset+uint32(len([]byte(tok.Text))) {
 				// ref counts exact matches only
 				fileCvg.Refs += 1
 				refAnnotations = append(refAnnotations, &annToken{Annotation: ann, Token: tok})
-				hasRef = true
 			} else if reportRefs {
-				log15.Warn("spans not match", "path", path, "at", tok.Offset, "ident", tok.Text)
+				log15.Warn("spans not match", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 			}
 		} else if reportRefs {
-			log15.Warn("no ref for", "path", path, "at", tok.Offset, "ident", tok.Text)
-		}
-		if !hasRef {
-			fileCvg.UnresolvedIdents = append(fileCvg.UnresolvedIdents, tok)
+			log15.Warn("no ref for", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 		}
 	}
 	errors := tokenizer.Errors()
@@ -477,7 +469,6 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			if err != nil || commitID == "" {
 				// The ref cannot be resolved to a def (e.g. the def repo doesn't exist);
 				// this is a normal condition for the coverage script so swallow the error and continue.
-				fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
 				continue
 			}
 			annRepoRev.CommitID = commitID
@@ -485,23 +476,17 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 
 		defIdx := cache.fetchAndIndexDefs(cl, ctx, annRepoRev)
 		if defIdx == nil {
-			fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
 			continue
 		}
 		if def := defIdx.get(defKey(annDefSpec)); def != nil {
 			fileCvg.Defs += 1
 		} else {
-			fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
 			if reportDefs {
-				log15.Warn("no def", "path", path, "at", ann.StartByte, "key", u)
+				log15.Warn("no def", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", ann.StartByte, "line", tok.Line, "ident", tok.Text, "key", u)
 			}
 		}
 
 	}
-
-	// TEMPORARY: nillify unresolved idents / refs, to reduce storage impact.
-	fileCvg.UnresolvedIdents = nil
-	fileCvg.UnresolvedRefs = nil
 
 	return fileCvg, nil
 }
@@ -609,6 +594,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 	}
 
 	if _, err = cl.RepoStatuses.Create(ctx, &statusUpdate); err != nil {
+		log15.Error("save coverage stats", "err", err)
 		return nil, err
 	}
 

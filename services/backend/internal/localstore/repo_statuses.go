@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/coverageutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/slack"
@@ -37,12 +36,10 @@ type dbRepoStatus struct {
 }
 
 type dbFileCoverage struct {
-	Path             string
-	Idents           int
-	Refs             int
-	Defs             int
-	UnresolvedIdents []*coverageutil.Token
-	UnresolvedRefs   []*coverageutil.Token
+	Path   string
+	Idents int
+	Refs   int
+	Defs   int
 }
 
 type dbRepoCoverage struct {
