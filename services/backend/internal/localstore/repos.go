@@ -17,6 +17,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -149,9 +150,13 @@ func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) 
 		return nil, err
 	}
 
-	// Access controls for GitHub repos are handled by making a call
-	// in the request path to the GitHub API as the actor, not by us.
-	if !strings.HasPrefix(uri, "github.com/") {
+	// Avoid an infinite loop (since
+	// accesscontrol.VerifyUserHasReadAccess calls (*repos).Get).
+	if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+		if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", uri); err != nil {
+			return nil, err
+		}
+	} else {
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
 			return nil, err
 		}

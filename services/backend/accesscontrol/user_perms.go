@@ -58,6 +58,30 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 	return VerifyUserHasAdminAccess(ctx, method)
 }
 
+// VerifyActorHasGitHubRepoAccess delegate permissions check to GitHub
+// for GitHub mirrored repos. The repo string MUST be of the form
+// "github.com/USER/REPO"; it MUST begin with "github.com/" if it is a
+// GitHub repository whose access permissions should be delegated to
+// GitHub.
+//
+// TODO: move to a security model that is more robust, readable, has
+// better separation when dealing with multiple configurations, actor
+// types, resource types and actions.
+func VerifyActorHasGitHubRepoAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
+	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
+		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+			_, err := (&github.Repos{}).Get(ctx, repo)
+			if err != nil {
+				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
+				// so that git clients will try again, providing authentication information.
+				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
+				return grpc.Errorf(codes.Unauthenticated, "operation (%s) denied: not authenticated/authorized by GitHub API", method)
+			}
+		}
+	}
+	return nil
+}
+
 // VerifyActorHasReadAccess checks if the given actor is authorized to make
 // read requests to this server.
 //
@@ -68,22 +92,9 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // VerifyUserHasAdminAccess should be used to authorize a user for
 // gRPC operations.
 func VerifyActorHasReadAccess(ctx context.Context, actor auth.Actor, method, repo string) error {
-	// TODO: move to a security model that is more robust, readable, has better separation
-	// when dealing with multiple configurations, actor types, resource types and actions.
-	//
-	// Delegate permissions check to GitHub for GitHub mirrored repos.
-	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
-		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
-			_, err := (&github.Repos{}).Get(ctx, repo)
-			if err != nil {
-				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
-				// so that git clients will try again, providing authentication information.
-				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
-				return grpc.Errorf(codes.Unauthenticated, "read operation (%s) denied: not authenticated/authorized by GitHub API", method)
-			}
-		}
+	if err := VerifyActorHasGitHubRepoAccess(ctx, actor, method, repo); err != nil {
+		return err
 	}
-
 	return nil
 }
 
@@ -117,21 +128,10 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor auth.Actor, method, re
 		return grpc.Errorf(codes.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
 	}
 
-	// TODO: move to a security model that is more robust, readable, has better separation
-	// when dealing with multiple configurations, actor types, resource types and actions.
-	//
-	// Delegate permissions check to GitHub for GitHub mirrored repos.
-	if strings.HasPrefix(strings.ToLower(repo), "github.com/") {
-		if !VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
-			_, err := (&github.Repos{}).Get(ctx, repo)
-			if err != nil {
-				// We don't know if the error is unauthenticated or unauthorized, so return unauthenticated
-				// so that git clients will try again, providing authentication information.
-				// If we return codes.PermissionDenied here, then git clients won't even try to supply authentication info.
-				return grpc.Errorf(codes.Unauthenticated, "write operation (%s) denied: not authenticated/authorized by GitHub API", method)
-			}
-		}
+	if err := VerifyActorHasGitHubRepoAccess(ctx, actor, method, repo); err != nil {
+		return err
 	}
+
 	return nil
 }
 
