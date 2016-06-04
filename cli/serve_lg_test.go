@@ -1,5 +1,3 @@
-// +build exectest
-
 package cli_test
 
 import (
@@ -26,11 +24,19 @@ import (
 
 // Test that spawning one server works (the simple case).
 func TestServer(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	testServer(t)
 }
 
 // Test that spawning one TLS server works.
 func TestServerTLS(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	defer func() {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = false
@@ -70,6 +76,10 @@ var numServersSerialParallel = flag.Int("test.servers", 3, "number of servers to
 // This is more a test of testserver.Server than package sgx, but it uses
 // testServer, so it is convenient to put it here.
 func TestManyServers_Serial(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	for i := 0; i < *numServersSerialParallel; i++ {
 		t.Logf("serial server %d starting...", i)
 		testServer(t)
@@ -83,6 +93,10 @@ func TestManyServers_Serial(t *testing.T) {
 // This is more a test of testserver.Server than package sgx, but it uses
 // testServer, so it is convenient to put it here.
 func TestManyServers_Parallel(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	if os.Getenv("CI") != "" {
 		// Failing on Travis CI
 		t.Skip()

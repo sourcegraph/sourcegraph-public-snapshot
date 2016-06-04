@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -10,6 +8,10 @@ import (
 )
 
 func TestIsPQErrorUniqueViolation(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 	dbutil.Transact(appDBH(ctx), func(tx gorp.SqlExecutor) error {

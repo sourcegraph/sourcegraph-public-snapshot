@@ -1,5 +1,3 @@
-// +build exectest
-
 // Package integration_test starts a single test server during the duration of all tests,
 // allowing there to be many quick integration checks for easily checkable things that can otherwise regress.
 //
@@ -52,6 +50,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestRobotsTxt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	client := &http.Client{
 		CheckRedirect: func(*http.Request, []*http.Request) error { return errors.New("no redirects expected") },
 	}
@@ -79,6 +81,10 @@ func TestRobotsTxt(t *testing.T) {
 }
 
 func TestFavicon(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	resp, err := http.Get(u("/favicon.ico"))
 	if err != nil {
 		t.Fatal(err)

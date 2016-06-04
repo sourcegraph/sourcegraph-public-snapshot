@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (

@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -19,6 +17,10 @@ import (
 )
 
 func TestGlobalDefs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var g globalDefs
@@ -94,6 +96,10 @@ func TestGlobalDefs(t *testing.T) {
 }
 
 func TestGlobalDefs_PrefixMatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var g globalDefs

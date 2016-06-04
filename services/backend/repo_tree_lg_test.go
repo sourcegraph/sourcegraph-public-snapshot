@@ -1,5 +1,3 @@
-// +build exectest
-
 package backend_test
 
 import (
@@ -12,6 +10,10 @@ import (
 )
 
 func TestRepoTree_Search_lg(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()

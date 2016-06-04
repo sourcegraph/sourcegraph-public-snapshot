@@ -1,5 +1,3 @@
-// +build exectest,pgsqltest
-
 package localstore_test
 
 import (
@@ -14,6 +12,10 @@ import (
 // TestRepos_CreateStartsBuild_lg tests that creating a mirror repository
 // properly enqueues a new build for that repo.
 func TestRepos_CreateStartsBuild_lg(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Skip("flaky")
 	t.Parallel()
 
@@ -75,6 +77,10 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 // repository does remove the filesystem-stored git repository (which acts as
 // a working directory for git ops).
 func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	// Start a server to act as our repository host for mirroring.

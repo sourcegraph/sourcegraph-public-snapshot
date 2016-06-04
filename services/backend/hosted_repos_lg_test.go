@@ -1,5 +1,3 @@
-// +build exectest
-
 package backend_test
 
 import (
@@ -13,6 +11,10 @@ import (
 var httpClient = &httptestutil.Client{}
 
 func TestHostedRepo_CreateCloneAndView(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	a, ctx := testserver.NewUnstartedServer()
 	if err := a.Start(); err != nil {
 		t.Fatal(err)

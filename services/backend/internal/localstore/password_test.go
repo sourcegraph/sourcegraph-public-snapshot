@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -19,6 +17,10 @@ func nextUID() int32 {
 // TestPasswords_CheckUIDPassword_valid tests the behavior of
 // Passwords.CheckUIDPassword when called with valid credentials.
 func TestPasswords_CheckUIDPassword_valid(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -37,6 +39,10 @@ func TestPasswords_CheckUIDPassword_valid(t *testing.T) {
 // TestPasswords_CheckUIDPassword_invalid tests the behavior of
 // Passwords.CheckUIDPassword when called with invalid credentials.
 func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -55,6 +61,10 @@ func TestPasswords_CheckUIDPassword_invalid(t *testing.T) {
 // TestPasswords_CheckUIDPassword_empty tests the behavior of
 // Passwords.CheckUIDPassword when called with empty credentials.
 func TestPasswords_CheckUIDPassword_empty(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -73,6 +83,10 @@ func TestPasswords_CheckUIDPassword_empty(t *testing.T) {
 // TestPasswords_CheckUIDPassword_noneSet tests the behavior of
 // Passwords.CheckUIDPassword when there is no password set.
 func TestPasswords_CheckUIDPassword_noneSet(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -88,6 +102,10 @@ func TestPasswords_CheckUIDPassword_noneSet(t *testing.T) {
 // Passwords.CheckUIDPassword when there is no password set for the
 // given user (but other users have passwords).
 func TestPasswords_CheckUIDPassword_noneSetForUser(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -106,6 +124,10 @@ func TestPasswords_CheckUIDPassword_noneSetForUser(t *testing.T) {
 
 // TestPasswords_SetPassword_ok tests changing the password.
 func TestPasswords_SetPassword_ok(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -139,6 +161,10 @@ func TestPasswords_SetPassword_ok(t *testing.T) {
 // TestPasswords_SetPassword_empty tests changing the password to an
 // empty password.
 func TestPasswords_SetPassword_empty(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -158,6 +184,10 @@ func TestPasswords_SetPassword_empty(t *testing.T) {
 // TestPasswords_SetPassword_setToEmpty tests changing the password FROM a
 // valid password to an empty password.
 func TestPasswords_SetPassword_setToEmpty(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()

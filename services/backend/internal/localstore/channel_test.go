@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -14,6 +12,10 @@ import (
 // TestChannel_Notify_noListeners tests the behavior of Channel.Notify when
 // there are no listeners.
 func TestChannel_Notify_noListeners(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -32,6 +34,10 @@ func TestChannel_Notify_noListeners(t *testing.T) {
 // TestChannel_single tests the behavior of the Channel store when
 // there is a single channel.
 func TestChannel_single(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -81,6 +87,10 @@ func TestChannel_single(t *testing.T) {
 }
 
 func TestChannel_multi(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
