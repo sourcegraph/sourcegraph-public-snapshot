@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -42,6 +40,10 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 // TestBuilds_Get tests that the behavior of Builds.Get indirectly via the
 // assertBuildExists method.
 func TestBuilds_Get(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -55,6 +57,10 @@ func TestBuilds_Get(t *testing.T) {
 
 // TestBuilds_List verifies the correct functioning of the Builds.List method.
 func TestBuilds_List(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -79,6 +85,10 @@ func TestBuilds_List(t *testing.T) {
 // TestBuilds_List_byRepoAndCommitID verifies the correct functioning of
 // the Builds.List method when filtering by a repo and commit ID.
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
@@ -102,6 +112,10 @@ func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
 // TestBuilds_ListBuildTasks verifies the correct functioning of the
 // Builds.ListBuildTasks method.
 func TestBuilds_ListBuildTasks(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -128,6 +142,10 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 // TestBuilds_Create tests the behavior of Builds.Create and that it correctly
 // creates the passed in build.
 func TestBuilds_Create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -148,6 +166,10 @@ func TestBuilds_Create(t *testing.T) {
 // TestBuilds_Create_New verifies that passing a Build with ID == 0 to
 // Builds.Create will generate an ID for it.
 func TestBuilds_Create_New(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
@@ -169,6 +191,10 @@ func TestBuilds_Create_New(t *testing.T) {
 // ID == 0 to Builds.Create will generate an ID for it that
 // is greater than all other builds' IDs.
 func TestBuilds_Create_SequentialID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
@@ -192,6 +218,10 @@ func TestBuilds_Create_SequentialID(t *testing.T) {
 // by inserting a build, Updating it and verifying that it exists in its new
 // form.
 func TestBuilds_Update(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -223,6 +253,10 @@ func TestBuilds_Update(t *testing.T) {
 // TestBuilds_Update_builderConfig tests that updating BuilderConfig only updates
 // the BuilderConfig without affecting other fields.
 func TestBuilds_Update_builderConfig(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -247,6 +281,10 @@ func TestBuilds_Update_builderConfig(t *testing.T) {
 // Builds.CreateTasks correctly creates these tasks in the store. The existence
 // is asserted using the assertTaskExists method.
 func TestBuilds_CreateTasks(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -275,6 +313,10 @@ func TestBuilds_CreateTasks(t *testing.T) {
 // with unset IDs, IDs are generated such that they are sequential in
 // the build.
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
@@ -295,6 +337,10 @@ func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
 // TestBuilds_UpdateTask verifies the correct functioning of the
 // Builds.UpdateTask method.
 func TestBuilds_UpdateTask(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -323,6 +369,10 @@ func TestBuilds_UpdateTask(t *testing.T) {
 }
 
 func TestBuilds_GetTask(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -341,6 +391,10 @@ func TestBuilds_GetTask(t *testing.T) {
 }
 
 func TestBuilds_DequeueNext(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -413,6 +467,10 @@ func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build)
 // build. It may not always trigger the race condition, but if it even does
 // once, it is very important that we fix it.
 func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()

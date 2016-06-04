@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -10,6 +8,10 @@ import (
 )
 
 func TestUsers_ListEmails(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var as accounts

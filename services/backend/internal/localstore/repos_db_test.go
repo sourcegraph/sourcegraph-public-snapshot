@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -34,6 +32,10 @@ func repoURIs(repos []*sourcegraph.Repo) []string {
 }
 
 func TestRepos_List(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s repos
@@ -52,6 +54,10 @@ func TestRepos_List(t *testing.T) {
 }
 
 func TestRepos_List_type(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	r1 := &sourcegraph.Repo{URI: "r1", Private: true}
@@ -94,6 +100,10 @@ func TestRepos_List_type(t *testing.T) {
 // TestRepos_List_query tests the behavior of Repos.List when called with
 // a query.
 func TestRepos_List_query(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -133,6 +143,10 @@ func TestRepos_List_query(t *testing.T) {
 // TestRepos_List_URIs tests the behavior of Repos.List when called with
 // URIs.
 func TestRepos_List_URIs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -185,6 +199,10 @@ func (r *RepoGetterMockUnauthorizedRepo) Get(ctx context.Context, uri string) (*
 }
 
 func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	repoGetter = &RepoGetterMockPublicRepo{}
 
 	ctx, _, done := testContext()
@@ -222,6 +240,10 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 }
 
 func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	repoGetter = &RepoGetterMockPrivateRepo{}
 
 	ctx, _, done := testContext()
@@ -244,6 +266,10 @@ func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 }
 
 func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	repoGetter = &RepoGetterMockUnauthorizedRepo{}
 
 	ctx, _, done := testContext()
@@ -285,6 +311,10 @@ func (s mockGitHubRepos) List(user string, opt *gogithub.RepositoryListOptions) 
 }
 
 func TestRepos_Search(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
@@ -350,6 +380,10 @@ func TestRepos_Search(t *testing.T) {
 }
 
 func TestRepos_Search_PrivateRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
@@ -398,6 +432,10 @@ func TestRepos_Search_PrivateRepo(t *testing.T) {
 }
 
 func TestRepos_Create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -424,6 +462,10 @@ func TestRepos_Create(t *testing.T) {
 }
 
 func TestRepos_Create_dupe(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -446,6 +488,10 @@ func TestRepos_Create_dupe(t *testing.T) {
 // TestRepos_Update_Description tests the behavior of Repos.Update to
 // update a repo's description.
 func TestRepos_Update_Description(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -478,6 +524,10 @@ func TestRepos_Update_Description(t *testing.T) {
 }
 
 func TestRepos_Update_UpdatedAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -515,6 +565,10 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 }
 
 func TestRepos_Update_PushedAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()

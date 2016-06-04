@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -26,11 +24,19 @@ import (
 )
 
 func TestGlobalRefs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	testGlobalRefs(t, &globalRefs{})
 }
 
 func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, mocks, done := testContext()
 	defer done()
 
@@ -184,6 +190,10 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 }
 
 func TestGlobalRefsUpdate(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	g := &globalRefs{}
@@ -295,6 +305,10 @@ func TestGlobalRefsUpdate(t *testing.T) {
 // TestGlobalRefs_version checks that we are getting the locking semantics we
 // want on the global_refs_version table
 func TestGlobalRefs_version(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	g := &globalRefs{}

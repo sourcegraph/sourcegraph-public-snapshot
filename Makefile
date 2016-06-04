@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install lgtest mdtest serve-dep serve-metrics-dev smoke smtest src test libvfsgen
+.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install serve-dep serve-metrics-dev smoke src test libvfsgen
 
 PRIVATE_HASH := 87ff6253d35505c92cb3190e422f64ec61cc227f
 
@@ -109,29 +109,11 @@ drop-test-dbs:
 app/assets/bundle.js: app-dep
 	cd app && npm run build
 
-# GOFLAGS is all test build tags (use smtest/mdtest/lgtest targets to
-# execute common subsets of tests).
-GOFLAGS ?= -tags 'exectest pgsqltest nettest githubtest buildtest'
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
-test: check app/assets/bundle.js
+test: check src app/assets/bundle.js
 	cd app && npm test
-	$(MAKE) go-test
-
-go-test: src
-	go test -race ${GOFLAGS} ${TESTPKGS} ${TESTFLAGS}
-
-smtest:
-	$(MAKE) go-test GOFLAGS=""
-
-mdtest:
-	$(MAKE) go-test GOFLAGS="-tags 'exectest pgsqltest nettest buildtest'"
-
-lgtest: go-test
-
-compile-test:
-	$(MAKE) lgtest TESTFLAGS='-test.run=^$$$$'
-
+	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint
 	cd app && node ./node_modules/.bin/eslint --max-warnings=0 script web_modules

@@ -1,5 +1,3 @@
-// +build buildtest,exectest
-
 package backend_test
 
 import (
@@ -18,6 +16,10 @@ import (
 )
 
 func TestSrclibPush(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()

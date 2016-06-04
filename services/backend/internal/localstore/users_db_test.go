@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -41,6 +39,10 @@ func userLogins(users []*sourcegraph.User) []string {
 // called with the login of a user that exists (i.e., the successful
 // outcome).
 func TestUsers_Get_existingByLogin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -62,6 +64,10 @@ func TestUsers_Get_existingByLogin(t *testing.T) {
 // TestUsers_Get_existingByUID tests the behavior of Users.Get when called
 // with the UID of a user that exists (i.e., the successful outcome).
 func TestUsers_Get_existingByUID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -85,6 +91,10 @@ func TestUsers_Get_existingByUID(t *testing.T) {
 // called with both the login and UID of a user that exists (i.e., the
 // successful outcome).
 func TestUsers_Get_existingByBoth(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -111,6 +121,10 @@ func TestUsers_Get_existingByBoth(t *testing.T) {
 // when called with both a login and UID, but when those do not both
 // refer to the same user.
 func TestUsers_Get_existingByBothConflict(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -145,6 +159,10 @@ func TestUsers_Get_existingByBothConflict(t *testing.T) {
 // Users.Get when called with both a login and UID, but only one of
 // those points to an existing user.
 func TestUsers_Get_existingByBothOnlyOneExist(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -169,6 +187,10 @@ func TestUsers_Get_existingByBothOnlyOneExist(t *testing.T) {
 // TestUsers_Get_nonexistentLogin tests the behavior of Users.Get when
 // called with a login of a user that does not exist.
 func TestUsers_Get_nonexistentLogin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -186,6 +208,10 @@ func TestUsers_Get_nonexistentLogin(t *testing.T) {
 // TestUsers_Get_nonexistentUID tests the behavior of Users.Get when
 // called with a UID of a user that does not exist.
 func TestUsers_Get_nonexistentUID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -202,6 +228,10 @@ func TestUsers_Get_nonexistentUID(t *testing.T) {
 
 // TestUsers_List_ok tests the behavior of Users.List.
 func TestUsers_List_ok(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -231,6 +261,10 @@ func TestUsers_List_ok(t *testing.T) {
 // TestUsers_List_query tests the behavior of Users.List when called with
 // a query.
 func TestUsers_List_query(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()

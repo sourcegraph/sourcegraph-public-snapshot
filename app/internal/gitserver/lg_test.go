@@ -1,5 +1,3 @@
-// +build exectest
-
 package gitserver_test
 
 import (
@@ -14,6 +12,10 @@ import (
 )
 
 func TestGitServer(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	var tests = []interface{}{
 		// Clone test.
 		gitCloneTest{false, false, []string{}, false},
