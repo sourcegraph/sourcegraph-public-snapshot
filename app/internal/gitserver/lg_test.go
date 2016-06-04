@@ -105,7 +105,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 		case gitCloneTest:
 			err := testutil.CloneRepo(t, remoteURL(test.authenticated), "", test.args, test.emptyFetch)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
-				t.Errorf("FAILED: %s : %v", test.String(), err)
+				t.Errorf("FAIL: %s : %v", test.String(), err)
 			}
 		case gitPushTest:
 			user := &sourcegraph.User{UID: acct.UID, Login: login, Write: test.canWrite, Admin: test.isAdmin}
@@ -120,7 +120,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 
 			err = testutil.PushRepo(t, ctx, remoteURL(test.authenticated), authedCloneURL, map[string]string{"unique.txt": test.String()}, false)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
-				t.Errorf("FAILED: %s : %v", test.String(), err)
+				t.Errorf("FAIL: %s : %v", test.String(), err)
 			}
 		default:
 			t.Errorf("Invalid test type: %T", it)
