@@ -194,7 +194,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	cmd.Dir = dir
 	prepGitCommand(cmd)
-	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 	logCmdOutut(t, cmd, out)
 	if err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -206,7 +206,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files
 		cmd = exec.Command("git", "push", pushURL, "master:tmpbranch")
 		cmd.Env = env
 		cmd.Dir = dir
-		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 		logCmdOutut(t, cmd, out)
 		if err != nil {
 			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -216,7 +216,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files
 		cmd = exec.Command("git", "push", pushURL, ":tmpbranch")
 		cmd.Env = env
 		cmd.Dir = dir
-		out, err = executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		out, err = executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 		logCmdOutut(t, cmd, out)
 		if err != nil {
 			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -244,7 +244,7 @@ func CloneRepo(t *testing.T, cloneURL, dir string, args []string, emptyFetch boo
 	cmd.Stdin = bytes.NewReader([]byte("\n"))
 	cmd.Dir = dir
 	prepGitCommand(cmd)
-	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 	logCmdOutut(t, cmd, out)
 	if err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -255,7 +255,7 @@ func CloneRepo(t *testing.T, cloneURL, dir string, args []string, emptyFetch boo
 		cmd.Env = env
 		cmd.Stdin = bytes.NewReader([]byte("\n"))
 		cmd.Dir = filepath.Join(dir, "testrepo")
-		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 		logCmdOutut(t, cmd, out)
 		if err != nil {
 			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
