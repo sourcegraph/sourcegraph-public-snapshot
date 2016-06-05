@@ -22,20 +22,20 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 // resolveRepoRev resolves the repo's rev to an absolute commit ID (by
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
-func resolveRepoRev(ctx context.Context, repoPath, rev string) (vcs.CommitID, error) {
-	repoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
+	repoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repo})
 	if err != nil {
 		return "", err
 	}
 
 	if rev == "" {
 		if repoObj.DefaultBranch == "" {
-			return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repoPath)
+			return "", grpc.Errorf(codes.FailedPrecondition, "repo %s has no default branch", repo)
 		}
 		rev = repoObj.DefaultBranch
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -43,7 +43,7 @@ func resolveRepoRev(ctx context.Context, repoPath, rev string) (vcs.CommitID, er
 	if err != nil {
 		// attempt to reclone repo if its VCS repository doesn't exist
 		if _, notExist := err.(vcs.RepoNotExistError); notExist {
-			if _, innerErr := svc.MirrorRepos(ctx).RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repoPath}); innerErr != nil {
+			if _, innerErr := svc.MirrorRepos(ctx).RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); innerErr != nil {
 				return "", err
 			}
 		}
@@ -58,16 +58,11 @@ func resolveRepoRev(ctx context.Context, repoPath, rev string) (vcs.CommitID, er
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
 
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
-	if err != nil {
-		return nil, err
-	}
-
 	if !isAbsCommitID(repoRev.CommitID) {
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +73,7 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
 	log15.Debug("svc.local.repos.ListCommits", "op", op)
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +133,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 }
 
 func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error) {
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +156,7 @@ func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranc
 }
 
 func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error) {
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +175,7 @@ func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (
 }
 
 func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error) {
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		return nil, err
 	}

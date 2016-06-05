@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"reflect"
+	"strconv"
 	"time"
 
 	"golang.org/x/net/context"
@@ -26,10 +28,9 @@ import (
 )
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	ctx, cl := handlerutil.Client(r)
+	ctx, _ := handlerutil.Client(r)
 
-	repoPath := routevar.ToRepo(mux.Vars(r))
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+	repo, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -70,8 +71,8 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	// if the operation resolved to a local repo. Clients will almost
 	// always need the local repo in this case, so including it saves
 	// a round-trip.
-	if res0.Repo != "" {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: res0.Repo})
+	if res0.Repo != 0 {
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res0.Repo})
 		if err == nil {
 			res.IncludedRepo = repo
 		} else {
@@ -85,7 +86,7 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -192,15 +193,20 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 // specified repository and commitID. For performance reasons, commitID is
 // assumed to be canonical (and is not resolved); if not 40 characters, an error is
 // returned.
-func getRepoLastBuildTime(r *http.Request, repo, commitID string) (time.Time, error) {
+func getRepoLastBuildTime(r *http.Request, repoPath string, commitID string) (time.Time, error) {
 	if len(commitID) != 40 {
 		return time.Time{}, errors.New("refusing (for performance reasons) to get the last build time for non-canonical repository commit ID")
 	}
 
 	ctx, cl := handlerutil.Client(r)
 
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+	if err != nil {
+		return time.Time{}, err
+	}
+
 	builds, err := cl.Builds.List(ctx, &sourcegraph.BuildListOptions{
-		Repo:        repo,
+		Repo:        res.Repo,
 		CommitID:    commitID,
 		Ended:       true,
 		Succeeded:   true,
@@ -218,17 +224,66 @@ func getRepoLastBuildTime(r *http.Request, repo, commitID string) (time.Time, er
 	return time.Time{}, nil
 }
 
-func resolveRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph.RepoRevSpec, error) {
+func resolveLocalRepo(ctx context.Context, repoPath string) (int32, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+	if err != nil {
+		return 0, err
+	}
+	return res.Repo, nil
+}
+
+func resolveLocalRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph.RepoRevSpec, error) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoRev.Repo, Rev: repoRev.Rev})
+	repo, err := resolveLocalRepo(ctx, repoRev.Repo)
+	if err != nil {
+		return nil, err
+	}
+	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: repoRev.Rev})
 	if err != nil {
 		return nil, err
 	}
 	return &sourcegraph.RepoRevSpec{
-		Repo:     repoRev.Repo,
+		Repo:     repo,
 		CommitID: res.CommitID,
 	}, nil
+}
+
+func resolveLocalRepos(ctx context.Context, repoPaths []string) ([]int32, error) {
+	repoIDs := make([]int32, 0, len(repoPaths))
+	for _, repoPath := range repoPaths {
+		repoID, err := resolveLocalRepo(ctx, repoPath)
+		if err != nil {
+			return nil, err
+		}
+		repoIDs = append(repoIDs, repoID)
+	}
+	return repoIDs, nil
+}
+
+// repoIDOrPath is a type used purely for documentation purposes to
+// indicate that this URL query parameter can be either a string (repo
+// path) or number (repo ID).
+type repoIDOrPath string
+
+func init() {
+	schemaDecoder.RegisterConverter(repoIDOrPath(""), func(s string) reflect.Value { return reflect.ValueOf(s) })
+}
+
+// getRepoID gets the repo ID from an interface{} type that can be
+// either an int32 or a string. Typically callers decode the URL query
+// string's "Repo" or "repo" field into an interface{} value and then
+// pass it to getRepoID. This way, they can accept either the numeric
+// repo ID or the repo path, which presents a nicer API to consumers.
+func getRepoID(ctx context.Context, v repoIDOrPath) (int32, error) {
+	if n, err := strconv.Atoi(string(v)); err == nil {
+		return int32(n), nil
+	}
+	return handlerutil.GetRepoID(ctx, map[string]string{"Repo": string(v)})
 }

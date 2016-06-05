@@ -20,9 +20,10 @@ import (
 func TestRepo(t *testing.T) {
 	c, mock := newTest()
 
-	wantRepo := &sourcegraph.Repo{URI: "r/r"}
+	wantRepo := &sourcegraph.Repo{ID: 1}
 
-	calledGet := mock.Repos.MockGet(t, "r/r")
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r/r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
 
 	var repo *sourcegraph.Repo
 	if err := c.GetJSON("/repos/r/r", &repo); err != nil {
@@ -30,6 +31,9 @@ func TestRepo(t *testing.T) {
 	}
 	if !reflect.DeepEqual(repo, wantRepo) {
 		t.Errorf("got %+v, want %+v", repo, wantRepo)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
@@ -40,12 +44,12 @@ func TestRepoResolve_IncludedRepo(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data:         sourcegraph.RepoResolution{Repo: "r"},
-		IncludedRepo: &sourcegraph.Repo{URI: "r"},
+		Data:         sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "r"},
+		IncludedRepo: &sourcegraph.Repo{ID: 1},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Local(t, "r")
-	calledGet := mock.Repos.MockGet(t, "r")
+	calledResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
 
 	var res *repoResolution
 	if err := c.GetJSON("/repos/r/-/resolve", &res); err != nil {
@@ -66,10 +70,10 @@ func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data: sourcegraph.RepoResolution{Repo: "r"},
+		Data: sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "r"},
 	}
 
-	calledResolve := mock.Repos.MockResolve_Local(t, "r")
+	calledResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	var calledReposGet bool
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		calledReposGet = true
@@ -137,7 +141,9 @@ func TestRepo_caching_notModified(t *testing.T) {
 	mtime := time.Now().UTC()
 	ts := pbtypes.NewTimestamp(mtime)
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r/r", 1)
 	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
+		ID:        1,
 		URI:       "r/r",
 		UpdatedAt: &ts,
 	})
@@ -152,6 +158,9 @@ func TestRepo_caching_notModified(t *testing.T) {
 	if want := http.StatusNotModified; resp.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp.StatusCode, want)
 	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
 	if !*calledGet {
 		t.Error("!calledGet")
 	}
@@ -165,7 +174,9 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	mtime := time.Now().UTC()
 	ts := pbtypes.NewTimestamp(mtime)
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r/r", 1)
 	calledGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
+		ID:        1,
 		URI:       "r/r",
 		UpdatedAt: &ts,
 	})
@@ -179,6 +190,9 @@ func TestRepo_caching_modifiedSince(t *testing.T) {
 	}
 	if want := http.StatusOK; resp.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")

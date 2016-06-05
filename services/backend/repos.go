@@ -47,11 +47,7 @@ type repos struct{}
 var _ sourcegraph.ReposServer = (*repos)(nil)
 
 func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-	if repoSpec.URI == "" {
-		return nil, errEmptyRepoURI
-	}
-
-	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, repoSpec.URI)
+	repo, err := store.ReposFromContext(ctx).Get(ctx, repoSpec.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +141,13 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		return nil, grpc.Errorf(codes.Unimplemented, "repo creation operation not supported")
 	}
 
-	if err := store.ReposFromContext(ctx).Create(ctx, repo); err != nil {
+	repoID, err := store.ReposFromContext(ctx).Create(ctx, repo)
+	if err != nil {
 		return nil, err
 	}
+	repo.ID = repoID
 
-	repo, err = s.Get(ctx, &sourcegraph.RepoSpec{URI: repo.URI})
+	repo, err = s.Get(ctx, &sourcegraph.RepoSpec{ID: repo.ID})
 	if err != nil {
 		return
 	}
@@ -159,7 +157,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 		if actor := authpkg.ActorFromContext(ctx); actor.UID != 0 {
 			asUser = &sourcegraph.UserSpec{UID: int32(actor.UID), Login: actor.Login}
 		}
-		repoupdater.Enqueue(repo.URI, asUser)
+		repoupdater.Enqueue(repo.ID, asUser)
 	}
 
 	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
@@ -231,41 +229,24 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, gitHubID int) (*sourceg
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
-	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Repo)
-	if err != nil {
-		return nil, err
-	}
-
 	ts := time.Now()
-	update := store.RepoUpdate{Repo: repo.ID, ReposUpdateOp: op, UpdatedAt: &ts}
+	update := store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
 
-	return s.Get(ctx, &sourcegraph.RepoSpec{URI: repo.URI})
+	return s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	repoObj, err := s.Get(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := store.ReposFromContext(ctx).Delete(ctx, repoObj.ID); err != nil {
+	if err := store.ReposFromContext(ctx).Delete(ctx, repo.ID); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
-	repoObj, err := s.Get(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	repoConfigsStore := store.RepoConfigsFromContext(ctx)
-
-	conf, err := repoConfigsStore.Get(ctx, repoObj.ID)
+	conf, err := store.RepoConfigsFromContext(ctx).Get(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -276,11 +257,6 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 }
 
 func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
-	repoObj, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
-	if err != nil {
-		return nil, err
-	}
-
 	store := store.RepoConfigsFromContext(ctx)
 
 	if op.Enable {
@@ -291,7 +267,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 		}
 	}
 
-	conf, err := store.Get(ctx, repoObj.ID)
+	conf, err := store.Get(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +291,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 	}
 	sort.Strings(conf.Apps)
 
-	if err := store.Update(ctx, repoObj.ID, *conf); err != nil {
+	if err := store.Update(ctx, op.Repo, *conf); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
@@ -337,8 +313,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	// after a git push). Just using the memory cache would mean that
 	// each server process would have to recompute this result.
 	const statusContext = "cache:repo.inventory"
-	statusRev := sourcegraph.RepoRevSpec{Repo: repoRev.Repo, CommitID: repoRev.CommitID}
-	statuses, err := svc.RepoStatuses(ctx).GetCombined(ctx, &statusRev)
+	statuses, err := svc.RepoStatuses(ctx).GetCombined(ctx, repoRev)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +322,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		if err := json.Unmarshal([]byte(status.Description), &inv); err == nil {
 			return &inv, nil
 		}
-		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", statusRev, "err", err)
+		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", repoRev, "err", err)
 	}
 
 	// Not found in the cache, so compute it.
@@ -363,7 +338,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	}
 
 	_, err = svc.RepoStatuses(ctx).Create(ctx, &sourcegraph.RepoStatusesCreateOp{
-		Repo:   statusRev,
+		Repo:   *repoRev,
 		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
 	})
 	if err != nil {
@@ -374,12 +349,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	repoObj, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}

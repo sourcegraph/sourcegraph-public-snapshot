@@ -31,7 +31,7 @@ func (s *DefsClient) MockGet(t *testing.T, wantDef sourcegraph.DefSpec) (called 
 			t.Errorf("got def %+v, want %+v", def, wantDef)
 			return nil, grpc.Errorf(codes.NotFound, "def %v not found", wantDef)
 		}
-		return &sourcegraph.Def{Def: graph.Def{DefKey: def.DefKey()}}, nil
+		return &sourcegraph.Def{Def: graph.Def{DefKey: def.DefKey("r")}}, nil
 	}
 	return
 }
@@ -41,8 +41,8 @@ func (s *DefsClient) MockGet_Return(t *testing.T, wantDef *sourcegraph.Def) (cal
 	s.Get_ = func(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph.Def, error) {
 		*called = true
 		def := op.Def
-		if def != wantDef.DefSpec() {
-			t.Errorf("got def %+v, want %+v", def, wantDef.DefSpec())
+		if def != wantDef.DefSpec(def.Repo) {
+			t.Errorf("got def %+v, want %+v", def, wantDef.DefSpec(def.Repo))
 			return nil, grpc.Errorf(codes.NotFound, "def %v not found", wantDef.DefKey)
 		}
 		return wantDef, nil

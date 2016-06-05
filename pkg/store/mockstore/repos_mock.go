@@ -15,7 +15,7 @@ type Repos struct {
 	GetByURI_ func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List_     func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
 	Search_   func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
-	Create_   func(v0 context.Context, v1 *sourcegraph.Repo) error
+	Create_   func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
 	Update_   func(v0 context.Context, v1 store.RepoUpdate) error
 	Delete_   func(ctx context.Context, repo int32) error
 }
@@ -36,7 +36,9 @@ func (s *Repos) Search(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearch
 	return s.Search_(v0, v1)
 }
 
-func (s *Repos) Create(v0 context.Context, v1 *sourcegraph.Repo) error { return s.Create_(v0, v1) }
+func (s *Repos) Create(v0 context.Context, v1 *sourcegraph.Repo) (int32, error) {
+	return s.Create_(v0, v1)
+}
 
 func (s *Repos) Update(v0 context.Context, v1 store.RepoUpdate) error { return s.Update_(v0, v1) }
 

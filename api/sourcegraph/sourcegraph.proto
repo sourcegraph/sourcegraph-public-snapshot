@@ -151,7 +151,7 @@ message RepoListOptions {
 
 // RepoRevSpec specifies a repository at a specific commit.
 message RepoRevSpec {
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// CommitID is the 40-character SHA-1 of the Git commit ID.
 	//
@@ -163,7 +163,7 @@ message RepoRevSpec {
 
 // RepoSpec specifies a repository.
 message RepoSpec {
-	string URI = 1;
+	int32 ID = 1;
 }
 
 // RepoStatus is the status of the repository at a specific rev (in a single
@@ -299,7 +299,7 @@ service Repos {
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
 message ReposResolveRevOp {
-	string repo = 1;
+	int32 repo = 1;
 
 	// Rev is a VCS revision specifier, such as a branch or
 	// "master~7".
@@ -315,13 +315,13 @@ message ResolvedRev {
 }
 
 message ReceivePackOp {
-	string repo = 1;
+	int32 repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
 
 message UploadPackOp {
-	string repo = 1;
+	int32 repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
@@ -347,9 +347,9 @@ message RepoResolveOp {
 // RepoResolution is the result of resolving a repo using
 // Repos.Resolve.
 message RepoResolution {
-	// Repo is the URI of the local repo (either a locally hosted repo,
+	// ID is the ID of the local repo (either a locally hosted repo,
 	// or a locally added mirror).
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// CanonicalPath is the canonical repo path of the local repo
 	// (with the canonical casing, etc.). Clients should generally
@@ -380,7 +380,7 @@ message SrclibDataVersion {
 
 message RepoConfigureAppOp {
 	// Repo is the repository whose applications are being configured.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// App is the app ID to enable or disable.
 	string App = 2;
@@ -426,7 +426,7 @@ message ReposCreateOp {
 // ReposUpdateOp is an operation to update a repository's metadata.
 message ReposUpdateOp {
 	// Repo is the repository to update.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// Description is the new description of the repository. If empty,
 	// the description is not changed.
@@ -441,7 +441,7 @@ message ReposUpdateOp {
 };
 
 message ReposListCommitsOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListCommitsOptions Opt = 2;
 }
 
@@ -458,7 +458,7 @@ message CommitList {
 }
 
 message ReposListBranchesOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListBranchesOptions Opt = 2;
 }
 
@@ -475,12 +475,12 @@ message BranchList {
 }
 
 message ReposListTagsOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListTagsOptions Opt = 2;
 }
 
 message ReposListCommittersOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListCommittersOptions Opt = 2;
 }
 
@@ -506,7 +506,7 @@ message TagList {
 message MirrorReposRefreshVCSOp {
 	reserved 2;
 
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// AsUser is the user whose auth token will be used for refreshing this
 	// mirror repo. This can be used when refreshing a private repo mirror.
@@ -605,8 +605,8 @@ service MirrorRepos {
 // behavior. As we encounter new requirements for the build system, they may
 // evolve.
 message Build {
-	// Repo is the URI of the repository this build is for.
-	string Repo = 1;
+	// Repo is the repository this build is for.
+	int32 Repo = 1;
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
@@ -716,7 +716,7 @@ message BuildListOptions {
 	bool Succeeded = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool Failed = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool Purged = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string Repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 Repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string CommitID = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Sort = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Direction = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
@@ -726,7 +726,7 @@ message BuildListOptions {
 // A BuildSpec uniquely identifies a build.
 message BuildSpec {
 	// Repo is the repository associated with the build.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
@@ -807,7 +807,7 @@ message BuildList {
 }
 
 message BuildsCreateOp {
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// CommitID is the full commit ID of the commit to build. It is
 	// required.
@@ -1401,6 +1401,8 @@ message DefListOptions {
 	// RepoRevs constrains the results to a set of repository revisions (given by their
 	// URIs plus an optional "@" and a revision specifier). For example,
 	// "repo.com/foo@revspec".
+	//
+	// TODO(repo-key): Make this use repo IDs, not URIs.
 	repeated string RepoRevs = 6 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
 
 	string UnitType = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
@@ -1438,7 +1440,7 @@ message DefListOptions {
 
 // DefListRefsOptions configures the scope of ref search for a def.
 message DefListRefsOptions {
-	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string CommitID = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	repeated string Files = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -1446,7 +1448,7 @@ message DefListRefsOptions {
 
 // DefSpec specifies a def.
 message DefSpec {
-	string Repo = 1;
+	int32 Repo = 1;
 	string CommitID = 2;
 	string UnitType = 3;
 	string Unit = 4;
@@ -1478,7 +1480,7 @@ message RefList {
 message DefListRefLocationsOptions {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched for references.
-	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated int32 Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ListOptions specifies options for paginating
 	// the result.
@@ -1719,7 +1721,7 @@ message FileRange {
 message DefsRefreshIndexOp {
 	// Repo is the repo whose graph data is to be re-indexed
 	// for global ref locations.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// RefreshRefLocations refreshes the global ref locations index for
 	// the specified repository.
@@ -2046,11 +2048,11 @@ message AnnotationsListOptions {
 message SearchOptions {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched.
-	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated int32 Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// NotRepos is the list of repos from which to exclude results.
 	// If empty, then no repositories are excluded.
-	repeated string NotRepos = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated int32 NotRepos = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ListOptions specifies options for paginating
 	// the result.
@@ -2101,7 +2103,7 @@ message SearchResultsList {
 message SearchRefreshIndexOp {
 	// Repos is the list of repos whose graph data is to be re-indexed
 	// for global search.
-	repeated string Repos = 1;
+	repeated int32 Repos = 1;
 
 	// RefreshCounts refreshes the global xref counts for the specified
 	// repositories.

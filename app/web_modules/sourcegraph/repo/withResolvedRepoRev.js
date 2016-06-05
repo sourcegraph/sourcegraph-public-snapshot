@@ -44,6 +44,7 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 			state.rev = repoRev(repoSplat); // the original rev from the URL
 
 			state.repoResolution = RepoStore.resolutions.get(state.repo);
+			state.repoID = state.repoResolution && !state.repoResolution.Error && state.repoResolution.Repo ? state.repoResolution.Repo : null;
 			state.repoObj = RepoStore.repos.get(state.repo);
 
 			state.resolvedRev = state.repoObj && !state.repoObj.Error ? RepoStore.resolvedRevs.get(state.repo, state.rev) : null;

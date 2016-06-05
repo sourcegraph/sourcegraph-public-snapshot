@@ -36,7 +36,7 @@ describe("withResolvedRepoRev", () => {
 			expect(res.actions).to.eql([new RepoActions.WantResolveRepo("r")]);
 		});
 		it("should trigger WantRepo for resolved local repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Repo: "r", CanonicalPath: "r"}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Repo: 1, CanonicalPath: "r"}));
 			let calledReplace = false;
 			const res = render(<C params={{splat: "r"}} />, {
 				router: {replace: () => calledReplace = true},
@@ -55,7 +55,7 @@ describe("withResolvedRepoRev", () => {
 		});
 
 		it("should redirect for resolved local repos with different canonical name", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Repo: "renamedRepo", CanonicalPath: "renamedRepo"}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Repo: 1, CanonicalPath: "renamedRepo"}));
 			let calledReplace = false;
 			render(<C params={{splat: "repo"}} location={{pathname: "sg.com/alias"}} />, {
 				router: {replace: () => calledReplace = true},

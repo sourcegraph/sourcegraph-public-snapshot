@@ -46,6 +46,7 @@ func TestDefs_caching_notModified(t *testing.T) {
 	mtime := time.Now().UTC()
 	mtimeTS := pbtypes.NewTimestamp(mtime)
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	calledList := mock.Defs.MockList(t)
 	mock.Builds.List_ = func(ctx context.Context, op *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
 		return &sourcegraph.BuildList{Builds: []*sourcegraph.Build{
@@ -53,7 +54,7 @@ func TestDefs_caching_notModified(t *testing.T) {
 		}}, nil
 	}
 
-	req, _ := http.NewRequest("GET", "/defs?RepoRevs=r/r@"+strings.Repeat("a", 40), nil)
+	req, _ := http.NewRequest("GET", "/defs?RepoRevs=r@"+strings.Repeat("a", 40), nil)
 	req.Header.Set("if-modified-since", mtime.Add(2*time.Second).Format(http.TimeFormat))
 
 	resp, err := c.Do(req)
@@ -62,6 +63,9 @@ func TestDefs_caching_notModified(t *testing.T) {
 	}
 	if want := http.StatusNotModified; resp.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if *calledList {
 		t.Error("Defs.List was called, but it should not have been (because the client's cache already holds the newest data)")
@@ -76,6 +80,7 @@ func TestDefs_caching_modifiedSince(t *testing.T) {
 	mtime := time.Now().UTC()
 	mtimeTS := pbtypes.NewTimestamp(mtime)
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	mock.Builds.List_ = func(ctx context.Context, op *sourcegraph.BuildListOptions) (*sourcegraph.BuildList, error) {
 		return &sourcegraph.BuildList{Builds: []*sourcegraph.Build{
 			{EndedAt: &mtimeTS},
@@ -83,7 +88,7 @@ func TestDefs_caching_modifiedSince(t *testing.T) {
 	}
 	calledList := mock.Defs.MockList(t)
 
-	req, _ := http.NewRequest("GET", "/defs?RepoRevs=r/r@"+strings.Repeat("a", 40), nil)
+	req, _ := http.NewRequest("GET", "/defs?RepoRevs=r@"+strings.Repeat("a", 40), nil)
 	req.Header.Set("if-modified-since", mtime.Add(-2*time.Second).Format(http.TimeFormat))
 
 	resp, err := c.Do(req)
@@ -92,6 +97,9 @@ func TestDefs_caching_modifiedSince(t *testing.T) {
 	}
 	if want := http.StatusOK; resp.StatusCode != want {
 		t.Errorf("got HTTP status %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !*calledList {
 		t.Error("!calledList")

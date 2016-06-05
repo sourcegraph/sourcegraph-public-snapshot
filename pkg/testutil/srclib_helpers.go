@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -18,7 +19,7 @@ import (
 // per-source-unit import step and the index step run correctly. If
 // you just checked that specific defs exist, then the index creation
 // could fail (or have a bug) without you realizing it.
-func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
+func CheckImport(t *testing.T, ctx context.Context, repo int32, repoPath string, commitID string) {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	if len(commitID) != 40 {
@@ -62,7 +63,7 @@ func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
 	for _, defSpec := range sampleDefs {
 		query := defSpec.Path + "x" // "x" suffix prevents undesired prefix matches
 		defs, err := cl.Defs.List(ctx, &sourcegraph.DefListOptions{
-			RepoRevs: []string{repo + "@" + commitID},
+			RepoRevs: []string{fmt.Sprintf("%s@%s", repoPath, commitID)},
 			Query:    query,
 		})
 		if err != nil {
@@ -87,8 +88,8 @@ func CheckImport(t *testing.T, ctx context.Context, repo, commitID string) {
 		if name, want := def.Name, defSpec.Path+"x"; name != want {
 			t.Errorf("got def name %q, want %q", name, want)
 		}
-		if !reflect.DeepEqual(def.DefSpec(), defSpec) {
-			t.Errorf("got def %#v, want %#v", def.DefSpec(), defSpec)
+		if !reflect.DeepEqual(def.DefSpec(repo), defSpec) {
+			t.Errorf("got def %#v, want %#v", def.DefSpec(repo), defSpec)
 		}
 	}
 }

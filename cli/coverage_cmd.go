@@ -192,7 +192,7 @@ func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Conte
 	}
 
 	if repoRev.Rev == "" {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: res.Repo})
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
 		if err != nil {
 			return sourcegraph.RepoRevSpec{}, err
 		}
@@ -226,7 +226,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		return idx
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
 	if err != nil {
 		log15.Error("Error getting repo to list defs.", "err", err, "repo", repoRev.Repo)
 		return nil
@@ -255,7 +255,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 
 	idx := defIndex{Index: make(map[sourcegraph.DefSpec]*sourcegraph.Def)}
 	for _, def := range defs {
-		defSpec := def.DefSpec()
+		defSpec := def.DefSpec(repoRev.Repo)
 		idx.put(defSpec, def)
 	}
 

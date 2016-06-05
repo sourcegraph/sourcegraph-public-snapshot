@@ -28,7 +28,7 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 	})
 
 	// (no rev/branch specified)
-	commitID, err := resolveRepoRev(ctx, "r", "")
+	commitID, err := resolveRepoRev(ctx, 1, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,16 +48,16 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := mock.servers.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 0, vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
 		},
 	})
 
-	commitID, err := resolveRepoRev(ctx, "r", "b")
+	commitID, err := resolveRepoRev(ctx, 1, "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,16 +77,16 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := mock.servers.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 0, vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
 		},
 	})
 
-	commitID, err := resolveRepoRev(ctx, "r", strings.Repeat("a", 40))
+	commitID, err := resolveRepoRev(ctx, 1, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,16 +106,16 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 
 	want := errors.New("x")
 
-	calledGet := mock.servers.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, 0, vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")
 		},
 	})
 
-	_, err := resolveRepoRev(ctx, "r", strings.Repeat("a", 40))
+	_, err := resolveRepoRev(ctx, 1, strings.Repeat("a", 40))
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
@@ -138,7 +138,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
 
-	calledGet := mock.servers.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, 1)
 	mockRepo := vcstest.MockRepository{}
 	mockRepo.ResolveRevision_ = func(spec string) (vcs.CommitID, error) {
 		if spec != "v" {
@@ -157,7 +157,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 	}
 
 	commitList, err := s.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: "r",
+		Repo: 1,
 		Opt:  &sourcegraph.RepoListCommitsOptions{Head: "v"},
 	})
 	if err != nil {

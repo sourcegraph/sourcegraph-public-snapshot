@@ -24,7 +24,7 @@ func TestRepos_Resolve_local(t *testing.T) {
 		t.Error("!calledReposGet")
 	}
 
-	want := &sourcegraph.RepoResolution{Repo: "r", CanonicalPath: "r"}
+	want := &sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "r"}
 	if !reflect.DeepEqual(res, want) {
 		t.Errorf("got %#v, want %#v", res, want)
 	}

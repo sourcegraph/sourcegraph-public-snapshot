@@ -72,7 +72,11 @@ func trimGitService(name string) string {
 
 func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	repo := routevar.ToRepo(mux.Vars(r))
+
+	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
+	if err != nil {
+		return err
+	}
 
 	service := trimGitService(r.URL.Query().Get("service"))
 
@@ -117,7 +121,10 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
-	repo := routevar.ToRepo(mux.Vars(r))
+	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
+	if err != nil {
+		return err
+	}
 
 	body, err := readBody(r.Body, r.Header.Get("content-encoding"))
 	if err != nil {
@@ -145,7 +152,10 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
-	repo := routevar.ToRepo(mux.Vars(r))
+	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
+	if err != nil {
+		return err
+	}
 
 	body, err := readBody(r.Body, r.Header.Get("content-encoding"))
 	if err != nil {
@@ -175,11 +185,12 @@ func getRepoID(ctx context.Context, repoPath string) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	repo, err := c.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+
+	res, err := c.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
 	if err != nil {
 		return 0, err
 	}
-	return repo.ID, nil
+	return res.Repo, nil
 }
 
 func noCache(w http.ResponseWriter) {

@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // emptyGitCommitID is used in githttp.Event objects in the Last (or
@@ -33,12 +32,7 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 		}
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, repo.ID)
+	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -51,16 +45,11 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 }
 
 func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) (*sourcegraph.Packet, error) {
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
-	if err != nil {
+	if err := verifyRepoWriteAccess(ctx, op.Repo); err != nil {
 		return nil, err
 	}
 
-	if err := verifyRepoWriteAccess(ctx, repo.ID); err != nil {
-		return nil, err
-	}
-
-	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, repo.ID)
+	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +60,8 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 	}
 	gitEvents = collapseDuplicateEvents(gitEvents)
 	payload := events.GitPayload{
-		Actor:   authpkg.ActorFromContext(ctx).UserSpec(),
-		Repo:    repo.ID,
-		RepoURI: repo.URI,
+		Actor: authpkg.ActorFromContext(ctx).UserSpec(),
+		Repo:  op.Repo,
 	}
 	for _, e := range gitEvents {
 		payload.Event = e
@@ -88,7 +76,7 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 
 	eventsutil.LogGitPush(ctx)
 
-	if err := updateRepoPushedAt(ctx, repo.ID); err != nil {
+	if err := updateRepoPushedAt(ctx, op.Repo); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +88,7 @@ func verifyRepoWriteAccess(ctx context.Context, repoID int32) error {
 	if err != nil {
 		return err
 	}
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repo.ID); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repoID); err != nil {
 		return err
 	}
 	if !repo.IsSystemOfRecord() {
@@ -112,8 +100,7 @@ func verifyRepoWriteAccess(ctx context.Context, repoID int32) error {
 func updateRepoPushedAt(ctx context.Context, repo int32) error {
 	now := time.Now()
 	return store.ReposFromContext(ctx).Update(ctx, store.RepoUpdate{
-		Repo:          repo,
-		ReposUpdateOp: &sourcegraph.ReposUpdateOp{},
+		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo},
 		PushedAt:      &now,
 		// Note: No need to update the UpdatedAt field, since it
 		// should track significant updates to repo metadata, not just

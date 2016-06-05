@@ -42,7 +42,7 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 
 	// Create a mirror repo against the fs-backed instance.
 	repo := "myrepo/name"
-	_, err = pgsqlServer.Client.Repos.Create(pgsqlCtx, &sourcegraph.ReposCreateOp{
+	repoObj, err := pgsqlServer.Client.Repos.Create(pgsqlCtx, &sourcegraph.ReposCreateOp{
 		Op: &sourcegraph.ReposCreateOp_New{
 			New: &sourcegraph.ReposCreateOp_NewRepo{
 				URI:      repo,
@@ -59,7 +59,7 @@ func TestRepos_CreateStartsBuild_lg(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		builds, err := pgsqlServer.Client.Builds.List(pgsqlCtx, &sourcegraph.BuildListOptions{
 			Succeeded:   true,
-			Repo:        repo,
+			Repo:        repoObj.ID,
 			CommitID:    commitID,
 			ListOptions: sourcegraph.ListOptions{PerPage: 10},
 		})
@@ -106,7 +106,7 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 
 	// Create a mirror repo against the fs-backed instance.
 	repo := "myrepo/name"
-	_, err = pgsqlServer.Client.Repos.Create(pgsqlCtx, &sourcegraph.ReposCreateOp{
+	repoObj, err := pgsqlServer.Client.Repos.Create(pgsqlCtx, &sourcegraph.ReposCreateOp{
 		Op: &sourcegraph.ReposCreateOp_New{
 			New: &sourcegraph.ReposCreateOp_NewRepo{
 				URI:      repo,
@@ -123,7 +123,7 @@ func TestRepos_CreateDeleteWorks_lg(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Delete the repo.
-	_, err = pgsqlServer.Client.Repos.Delete(pgsqlCtx, &sourcegraph.RepoSpec{URI: repo})
+	_, err = pgsqlServer.Client.Repos.Delete(pgsqlCtx, &sourcegraph.RepoSpec{ID: repoObj.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

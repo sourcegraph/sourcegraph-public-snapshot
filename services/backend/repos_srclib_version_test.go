@@ -24,10 +24,11 @@ func TestReposService_GetSrclibDataVersionForPath_exact(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
 
+	calledReposGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := mockstore.GraphMockVersions(&mock.stores.Graph, &srclibstore.Version{Repo: "r", CommitID: strings.Repeat("c", 40)})
 
 	dataVer, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{Repo: "r", CommitID: strings.Repeat("c", 40)},
+		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if err != nil {
@@ -35,6 +36,9 @@ func TestReposService_GetSrclibDataVersionForPath_exact(t *testing.T) {
 	}
 	if want := (sourcegraph.SrclibDataVersion{CommitID: strings.Repeat("c", 40)}); *dataVer != want {
 		t.Fatalf("got %+v, want %+v", *dataVer, want)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
 	}
 	if !*calledVersions {
 		t.Error("!calledVersions")
@@ -53,6 +57,7 @@ func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, version
 	var s repos
 	ctx, mock := testContext()
 
+	calledReposGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := mockstore.GraphMockVersionsFiltered(&mock.stores.Graph, &srclibstore.Version{Repo: "r", CommitID: versionCommitID})
 	var calledListCommitsWithPath, calledListCommitsNoPath bool
 	mock.servers.Repos.ListCommits_ = func(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
@@ -67,7 +72,7 @@ func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, version
 	}
 
 	dataVer, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{Repo: "r", CommitID: c1},
+		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: c1},
 		Path:    "p",
 	})
 	if err != nil {
@@ -75,6 +80,9 @@ func testReposService_GetSrclibDataVersionForPath_lookback(t *testing.T, version
 	}
 	if want := (sourcegraph.SrclibDataVersion{CommitID: versionCommitID, CommitsBehind: commitsBehind}); *dataVer != want {
 		t.Fatalf("got %+v, want %+v", *dataVer, want)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
 	}
 	if !*calledVersions {
 		t.Error("!calledVersions")
@@ -91,15 +99,19 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsNoCommits(t 
 	var s repos
 	ctx, mock := testContext()
 
+	calledReposGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := mockstore.GraphMockVersions(&mock.stores.Graph)
 	calledListCommits := mock.servers.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{Repo: "r", CommitID: strings.Repeat("c", 40)},
+		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
 		t.Fatalf("got error %v, want NotFound", err)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
 	}
 	if !*calledVersions {
 		t.Error("!calledVersions")
@@ -113,15 +125,19 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundWrongVersionsNoCommits
 	var s repos
 	ctx, mock := testContext()
 
+	calledReposGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := mockstore.GraphMockVersionsFiltered(&mock.stores.Graph, &srclibstore.Version{Repo: "r", CommitID: "x"})
 	calledListCommits := mock.servers.Repos.MockListCommits(t)
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{Repo: "r", CommitID: strings.Repeat("c", 40)},
+		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
 		t.Fatalf("got error %v, want NotFound", err)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
 	}
 	if !*calledVersions {
 		t.Error("!calledVersions")
@@ -135,15 +151,19 @@ func TestReposService_GetSrclibDataVersionForPath_notFoundNoVersionsWrongCommits
 	var s repos
 	ctx, mock := testContext()
 
+	calledReposGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
 	calledVersions := mockstore.GraphMockVersions(&mock.stores.Graph)
 	calledListCommits := mock.servers.Repos.MockListCommits(t, "x")
 
 	_, err := s.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{Repo: "r", CommitID: strings.Repeat("c", 40)},
+		RepoRev: sourcegraph.RepoRevSpec{Repo: 1, CommitID: strings.Repeat("c", 40)},
 		Path:    "p",
 	})
 	if grpc.Code(err) != codes.NotFound {
 		t.Fatalf("got error %v, want NotFound", err)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
 	}
 	if !*calledVersions {
 		t.Error("!calledVersions")

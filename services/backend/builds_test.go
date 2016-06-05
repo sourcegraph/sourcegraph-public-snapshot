@@ -13,11 +13,11 @@ func TestBuildsService_Get(t *testing.T) {
 	var s builds
 	ctx, mock := testContext()
 
-	wantBuild := &sourcegraph.Build{ID: 1, Repo: "r"}
+	wantBuild := &sourcegraph.Build{ID: 1, Repo: 1}
 
-	calledGet := mock.stores.Builds.MockGet(t, sourcegraph.BuildSpec{ID: 1, Repo: "r"})
+	calledGet := mock.stores.Builds.MockGet(t, sourcegraph.BuildSpec{ID: 1, Repo: 1})
 
-	build, err := s.Get(ctx, &sourcegraph.BuildSpec{ID: 1, Repo: "r"})
+	build, err := s.Get(ctx, &sourcegraph.BuildSpec{ID: 1, Repo: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,9 +33,9 @@ func TestBuildsService_List(t *testing.T) {
 	var s builds
 	ctx, mock := testContext()
 
-	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{ID: 1, Repo: "r"}}}
+	wantBuilds := &sourcegraph.BuildList{Builds: []*sourcegraph.Build{{ID: 1, Repo: 1}}}
 
-	calledList := mock.stores.Builds.MockList(t, sourcegraph.BuildSpec{ID: 1, Repo: "r"})
+	calledList := mock.stores.Builds.MockList(t, sourcegraph.BuildSpec{ID: 1, Repo: 1})
 
 	builds, err := s.List(ctx, nil)
 	if err != nil {
@@ -54,9 +54,9 @@ func TestBuildsService_List_pagination(t *testing.T) {
 	ctx, mock := testContext()
 
 	var buildList = []*sourcegraph.Build{
-		{ID: 1, Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(2, 0))},
-		{ID: 12, Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(1, 0))},
-		{ID: 123, Repo: "r", CreatedAt: pbtypes.NewTimestamp(time.Unix(0, 0))},
+		{ID: 1, Repo: 1, CreatedAt: pbtypes.NewTimestamp(time.Unix(2, 0))},
+		{ID: 12, Repo: 1, CreatedAt: pbtypes.NewTimestamp(time.Unix(1, 0))},
+		{ID: 123, Repo: 1, CreatedAt: pbtypes.NewTimestamp(time.Unix(0, 0))},
 	}
 
 	tests := map[string]struct {
@@ -123,9 +123,9 @@ func TestBuildsService_List_pagination(t *testing.T) {
 
 	for label, test := range tests {
 		calledList := mock.stores.Builds.MockList(t,
-			sourcegraph.BuildSpec{ID: 1, Repo: "r"},
-			sourcegraph.BuildSpec{ID: 12, Repo: "r"},
-			sourcegraph.BuildSpec{ID: 123, Repo: "r"},
+			sourcegraph.BuildSpec{ID: 1, Repo: 1},
+			sourcegraph.BuildSpec{ID: 12, Repo: 1},
+			sourcegraph.BuildSpec{ID: 123, Repo: 1},
 		)
 
 		opt := test.opt

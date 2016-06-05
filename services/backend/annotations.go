@@ -137,8 +137,13 @@ func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.Annotations
 		return nil, fmt.Errorf("listRefs: no file path specified for file in %v", opt.Entry.RepoRev)
 	}
 
+	repo, err := (&repos{}).Get(ctx, &sourcegraph.RepoSpec{ID: opt.Entry.RepoRev.Repo})
+	if err != nil {
+		return nil, err
+	}
+
 	filters := []srcstore.RefFilter{
-		srcstore.ByRepos(opt.Entry.RepoRev.Repo),
+		srcstore.ByRepos(repo.URI),
 		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
 		srcstore.ByFiles(true, opt.Entry.Path),
 	}

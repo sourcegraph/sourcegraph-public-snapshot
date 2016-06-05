@@ -20,9 +20,9 @@ func TestReposService_Get(t *testing.T) {
 		HTMLURL: "http://example.com/r",
 	}
 
-	calledGet := mock.stores.Repos.MockGetByURI(t, "r", 1)
+	calledGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
 
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: "r"})
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestReposService_GetConfig(t *testing.T) {
 	mock.stores.Repos.MockGetByURI(t, "r", 1)
 	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, 1, wantRepoConfig)
 
-	conf, err := s.GetConfig(ctx, &sourcegraph.RepoSpec{URI: "r"})
+	conf, err := s.GetConfig(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestReposService_ConfigureApp_Enable(t *testing.T) {
 	}
 
 	_, err := s.ConfigureApp(ctx, &sourcegraph.RepoConfigureAppOp{
-		Repo:   "r",
+		Repo:   1,
 		App:    "b",
 		Enable: true,
 	})
@@ -141,7 +141,7 @@ func TestReposService_ConfigureApp_Disable(t *testing.T) {
 	}
 
 	_, err := s.ConfigureApp(ctx, &sourcegraph.RepoConfigureAppOp{
-		Repo:   "r",
+		Repo:   1,
 		App:    "b",
 		Enable: false,
 	})

@@ -63,12 +63,7 @@ func (s *repoTree) getFromVCS(ctx context.Context, entrySpec sourcegraph.TreeEnt
 		return nil, errNotAbsCommitID
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: entrySpec.RepoRev.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, entrySpec.RepoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +116,7 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, errNotAbsCommitID
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoRevSpec.Repo})
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repoRevSpec.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +148,7 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		return nil, grpc.Errorf(codes.InvalidArgument, "opt and opt.Query must be set")
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,19 @@ func (s *Repos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 	return
 }
 
+func (s *Repos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) (called *bool) {
+	called = new(bool)
+	s.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
+		*called = true
+		if repo != wantRepo {
+			t.Errorf("got repo %d, want %d", repo, wantRepo)
+			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
+		}
+		return &sourcegraph.Repo{ID: repo, URI: repoPath}, nil
+	}
+	return
+}
+
 func (s *Repos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called *bool) {
 	called = new(bool)
 	s.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {

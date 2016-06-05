@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sqs/pbtypes"
@@ -23,11 +24,12 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}
 
 	// Restrict the ref search to a single repo and commit for performance.
-	var repo, commitID string
+	var repo int32
+	var commitID string
 	switch {
-	case opt.Repo != "":
+	case opt.Repo != 0:
 		repo = opt.Repo
-	case defSpec.Repo != "":
+	case defSpec.Repo != 0:
 		repo = defSpec.Repo
 	default:
 		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: Repo must be specified")
@@ -40,18 +42,24 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	default:
 		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID must be specified")
 	}
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", repo); err != nil {
+
+	repoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repo})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", repoObj.ID); err != nil {
 		return nil, err
 	}
 
 	repoFilters := []srcstore.RefFilter{
-		srcstore.ByRepos(repo),
+		srcstore.ByRepos(repoObj.URI),
 		srcstore.ByCommitIDs(commitID),
 	}
 
 	refFilters := []srcstore.RefFilter{
 		srcstore.ByRefDef(graph.RefDefKey{
-			DefRepo:     defSpec.Repo,
+			DefRepo:     repoObj.URI,
 			DefUnitType: defSpec.UnitType,
 			DefUnit:     defSpec.Unit,
 			DefPath:     defSpec.Path,

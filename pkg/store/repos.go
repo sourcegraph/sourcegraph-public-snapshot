@@ -24,8 +24,8 @@ type Repos interface {
 	// Search repositories.
 	Search(context.Context, string) ([]*sourcegraph.RepoSearchResult, error)
 
-	// Create a repository.
-	Create(context.Context, *sourcegraph.Repo) error
+	// Create a repository and return its ID.
+	Create(context.Context, *sourcegraph.Repo) (int32, error)
 
 	// Update a repository.
 	Update(context.Context, RepoUpdate) error
@@ -40,8 +40,6 @@ type Repos interface {
 // The ReposUpdateOp.Repo field must be filled in to specify the repo
 // that will be updated.
 type RepoUpdate struct {
-	Repo int32 // ID of the repo to update (ignores the ReposUpdateOp.Repo embedded field)
-
 	*sourcegraph.ReposUpdateOp
 
 	UpdatedAt *time.Time

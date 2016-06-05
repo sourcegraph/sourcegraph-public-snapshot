@@ -243,7 +243,7 @@ func (c *stressCmd) fetchRepos(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: res.Repo})
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
 		if err != nil {
 			return err
 		}
@@ -258,7 +258,7 @@ func (c *stressCmd) fetchFiles(ctx context.Context) error {
 	if c.File == "" {
 		for _, repo := range c.repos {
 			res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-				Repo: repo.URI,
+				Repo: repo.ID,
 				Rev:  repo.DefaultBranch,
 			})
 			if err != nil {
@@ -267,7 +267,7 @@ func (c *stressCmd) fetchFiles(ctx context.Context) error {
 
 			tree, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 				Entry: sourcegraph.TreeEntrySpec{
-					RepoRev: sourcegraph.RepoRevSpec{Repo: repo.URI, CommitID: res.CommitID},
+					RepoRev: sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: res.CommitID},
 					Path:    ".",
 				},
 			})

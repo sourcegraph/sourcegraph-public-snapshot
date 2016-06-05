@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
@@ -20,7 +19,12 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
 		return err
 	}
-	opt.Repo = routevar.ToRepo(mux.Vars(r))
+
+	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
+	if err != nil {
+		return err
+	}
+	opt.Repo = repo
 
 	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
@@ -37,7 +41,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 func serveRepoBuild(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	buildSpec, err := getBuildSpec(r)
+	buildSpec, err := getBuildSpec(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -59,12 +63,12 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
 
-	_, repoPath, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
+	op.Repo = repo
 
-	op.Repo = repoPath
 	build, err := cl.Builds.Create(ctx, &op)
 	if err != nil {
 		return err

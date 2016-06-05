@@ -37,11 +37,20 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		params.Limit = 100
 	}
 
+	paramsRepos, err := resolveLocalRepos(ctx, params.Repos)
+	if err != nil {
+		return err
+	}
+	paramsNotRepos, err := resolveLocalRepos(ctx, params.NotRepos)
+	if err != nil {
+		return err
+	}
+
 	op := &sourcegraph.SearchOp{
 		Query: params.Query,
 		Opt: &sourcegraph.SearchOptions{
-			Repos:        params.Repos,
-			NotRepos:     params.NotRepos,
+			Repos:        paramsRepos,
+			NotRepos:     paramsNotRepos,
 			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
 			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,

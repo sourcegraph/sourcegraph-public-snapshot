@@ -227,12 +227,12 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 	}
 
 	for _, repoUnit := range repoUnits {
-		commitID, err := resolveRevisionDefaultBranch(ctx, repoUnit.Repo)
+		repoPath, commitID, err := resolveRevisionDefaultBranch(ctx, repoUnit.Repo)
 		if err != nil {
 			return err
 		}
 		defs, err := store.GraphFromContext(ctx).Defs(
-			sstore.ByRepoCommitIDs(sstore.Version{Repo: repoUnit.Repo, CommitID: commitID}),
+			sstore.ByRepoCommitIDs(sstore.Version{Repo: repoPath, CommitID: commitID}),
 			sstore.ByUnits(unit.ID2{Type: repoUnit.UnitType, Name: repoUnit.Unit}),
 		)
 		if err != nil {
@@ -259,7 +259,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			}
 
 			if d.Repo == "" {
-				d.Repo = repoUnit.Repo
+				d.Repo = repoPath
 			}
 
 			var docstring string
@@ -327,7 +327,7 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 
 			// Delete old entries
 			if _, err := tx.Exec(`DELETE FROM global_defs WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND commit_id!=$4`,
-				repoUnit.Repo, repoUnit.UnitType, repoUnit.Unit, commitID); err != nil {
+				repoUnit.RepoURI, repoUnit.UnitType, repoUnit.Unit, commitID); err != nil {
 				return err
 			}
 			return nil
@@ -362,7 +362,7 @@ FROM (SELECT def_keys.repo def_repo, def_keys.unit_type def_unit_type, def_keys.
       WHERE def_keys.repo=$1 AND def_keys.unit_type=$2 AND def_keys.unit=$3
       GROUP BY def_repo, def_unit_type, def_unit, def_path) refs
 WHERE repo=def_repo AND unit_type=refs.def_unit_type AND unit=refs.def_unit AND path=refs.def_path;`
-		_, err := graphDBH(ctx).Exec(updateSQL, repoUnit.Repo, repoUnit.UnitType, repoUnit.Unit)
+		_, err := graphDBH(ctx).Exec(updateSQL, repoUnit.RepoURI, repoUnit.UnitType, repoUnit.Unit)
 		if err != nil {
 			return err
 		}
@@ -370,43 +370,56 @@ WHERE repo=def_repo AND unit_type=refs.def_unit_type AND unit=refs.def_unit AND 
 	return nil
 }
 
+type resolvedRepoUnit struct {
+	store.RepoUnit
+	RepoURI string
+}
+
 // resolveUnits resolves RepoUnits without a source unit specified to
 // their underlying source units
-func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUnit) ([]store.RepoUnit, error) {
-	resolved := make([]store.RepoUnit, 0)
+func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUnit) ([]resolvedRepoUnit, error) {
+	var resolved []resolvedRepoUnit
 	for _, repoUnit := range repoUnits {
+		repo, err := store.ReposFromContext(ctx).Get(ctx, repoUnit.Repo)
+		if err != nil {
+			return nil, err
+		}
+
 		if repoUnit.Unit != "" {
-			resolved = append(resolved, repoUnit)
+			resolved = append(resolved, resolvedRepoUnit{RepoUnit: repoUnit, RepoURI: repo.URI})
 			continue
 		}
 
-		units_, err := store.GraphFromContext(ctx).Units(sstore.ByRepos(repoUnit.Repo))
+		units_, err := store.GraphFromContext(ctx).Units(sstore.ByRepos(repo.URI))
 		if err != nil {
 			return nil, err
 		}
 		for _, u := range units_ {
-			resolved = append(resolved, store.RepoUnit{
-				Repo:     repoUnit.Repo,
-				Unit:     u.Name,
-				UnitType: u.Type,
+			resolved = append(resolved, resolvedRepoUnit{
+				RepoUnit: store.RepoUnit{
+					Repo:     repoUnit.Repo,
+					Unit:     u.Name,
+					UnitType: u.Type,
+				},
+				RepoURI: repo.URI,
 			})
 		}
 	}
 	return resolved, nil
 }
 
-func resolveRevisionDefaultBranch(ctx context.Context, repo string) (string, error) {
-	repoObj, err := store.ReposFromContext(ctx).GetByURI(ctx, repo)
+func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, commitID string, err error) {
+	repoObj, err := store.ReposFromContext(ctx).Get(ctx, repo)
 	if err != nil {
-		return "", err
+		return
 	}
 	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
 	if err != nil {
-		return "", err
+		return
 	}
 	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
 	if err != nil {
-		return "", err
+		return
 	}
-	return string(c), nil
+	return repoObj.URI, string(c), nil
 }

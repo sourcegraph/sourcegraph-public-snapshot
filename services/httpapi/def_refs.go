@@ -15,19 +15,30 @@ import (
 func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	var opt sourcegraph.DefListRefsOptions
-	if err := schemaDecoder.Decode(&opt, r.URL.Query()); err != nil {
+	var tmp struct {
+		Repo repoIDOrPath
+		sourcegraph.DefListRefsOptions
+	}
+	if err := schemaDecoder.Decode(&tmp, r.URL.Query()); err != nil {
 		return err
 	}
+	opt := tmp.DefListRefsOptions
+	if tmp.Repo != "" {
+		var err error
+		opt.Repo, err = getRepoID(ctx, tmp.Repo)
+		if err != nil {
+			return err
+		}
+	}
 
-	dc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
 
 	def := dc.Def
 	defSpec := sourcegraph.DefSpec{
-		Repo:     def.Repo,
+		Repo:     repo.ID,
 		CommitID: def.CommitID,
 		Unit:     def.Unit,
 		UnitType: def.UnitType,
@@ -37,7 +48,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 	if opt.ListOptions.PerPage == 0 && opt.ListOptions.PageOrDefault() == 1 {
 		opt.ListOptions.PerPage = 10000
 	}
-	if opt.Repo == "" {
+	if opt.Repo == 0 {
 		opt.Repo = defSpec.Repo
 	}
 	// Restrict search for external repo refs to the last built commit on the default branch
@@ -50,14 +61,13 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 			path = opt.Files[0]
 		}
 
-		repo := opt.Repo
-		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: ""})
+		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: ""})
 		if err != nil {
 			return err
 		}
 
 		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{Repo: repo, CommitID: res.CommitID},
+			RepoRev: sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: res.CommitID},
 			Path:    path,
 		})
 		if err != nil {
@@ -85,14 +95,14 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	dc, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
+	dc, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), nil)
 	if err != nil {
 		return err
 	}
 
 	def := dc.Def
 	defSpec := sourcegraph.DefSpec{
-		Repo:     def.Repo,
+		Repo:     repo.ID,
 		Unit:     def.Unit,
 		UnitType: def.UnitType,
 		Path:     def.Path,
@@ -148,7 +158,7 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 			fl := sortByRefCount(refsPerFile)
 
 			localRefs := &sourcegraph.DefRepoRef{
-				Repo:  defSpec.Repo,
+				Repo:  repo.URI,
 				Count: totalCount,
 				Files: fl,
 			}

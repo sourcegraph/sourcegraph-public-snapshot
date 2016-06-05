@@ -71,7 +71,7 @@ func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
 			// Sleep a tiny bit longer than MirrorUpdateRate to avoid our
 			// enqueue being no-op / hitting "was recently updated".
 			time.Sleep(appconf.Flags.MirrorRepoUpdateRate + (200 * time.Millisecond))
-			Enqueue(repo.URI, nil)
+			Enqueue(repo.ID, nil)
 			hasMirror = true
 		}
 	}

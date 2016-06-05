@@ -513,18 +513,18 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 	return toRepos(repos), nil
 }
 
-func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
+func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, error) {
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
 		if !newRepo.Mirror {
-			return grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
+			return 0, grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
 		}
 		// Anyone can create GitHub mirrors.
 	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
-		return err
+		return 0, err
 	}
 
 	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
-		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", repo.URI)
+		return 0, grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", repo.URI)
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
@@ -533,7 +533,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	// A mirrored repo is automatically cloned by the repo updater instead of here.
 	if !newRepo.Mirror && !skipFS {
 		if err := gitserver.Init(newRepo.URI); err != nil && err != vcs.ErrRepoExist {
-			return err
+			return 0, err
 		}
 	}
 
@@ -544,9 +544,9 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 		if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
 			log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
-		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
+		return 0, grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
 	}
-	return err
+	return r.ID, err
 }
 
 func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
