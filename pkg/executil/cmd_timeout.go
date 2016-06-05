@@ -33,9 +33,6 @@ func CmdCombinedOutputWithTimeout(timeout time.Duration, cmd *exec.Cmd) ([]byte,
 	select {
 	case <-time.After(timeout):
 		cmd.Process.Kill()
-
-		// Sleep to avoid data race.
-		time.Sleep(time.Millisecond * 100)
 		return b.Bytes(), ErrCmdTimeout
 	case err := <-c:
 		return b.Bytes(), err
