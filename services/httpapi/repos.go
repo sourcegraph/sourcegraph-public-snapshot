@@ -53,8 +53,13 @@ type repoResolution struct {
 func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoPath := routevar.ToRepo(mux.Vars(r))
-	res0, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+	var op sourcegraph.RepoResolveOp
+	if err := schemaDecoder.Decode(&op, r.URL.Query()); err != nil {
+		return err
+	}
+	op.Path = routevar.ToRepo(mux.Vars(r))
+
+	res0, err := cl.Repos.Resolve(ctx, &op)
 	if err != nil {
 		return err
 	}
@@ -65,12 +70,12 @@ func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
 	// if the operation resolved to a local repo. Clients will almost
 	// always need the local repo in this case, so including it saves
 	// a round-trip.
-	if repoPath := res0.GetRepo(); repoPath != "" {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+	if res0.Repo != "" {
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: res0.Repo})
 		if err == nil {
 			res.IncludedRepo = repo
 		} else {
-			log15.Warn("Error optimistically including repo in serveRepoResolve", "repo", repoPath, "err", err)
+			log15.Warn("Error optimistically including repo in serveRepoResolve", "repo", res0.Repo, "err", err)
 		}
 	}
 

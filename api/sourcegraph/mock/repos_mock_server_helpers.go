@@ -45,9 +45,7 @@ func (s *ReposServer) MockResolve_Local(t *testing.T, wantPath string) (called *
 			t.Errorf("got repo %q, want %q", op.Path, wantPath)
 			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
 		}
-		return &sourcegraph.RepoResolution{
-			Result: &sourcegraph.RepoResolution_Repo{Repo: op.Path},
-		}, nil
+		return &sourcegraph.RepoResolution{Repo: op.Path}, nil
 	}
 	return
 }
@@ -60,9 +58,7 @@ func (s *ReposServer) MockResolve_Remote(t *testing.T, wantPath string, resolved
 			t.Errorf("got repo %q, want %q", op.Path, wantPath)
 			return nil, grpc.Errorf(codes.NotFound, "repo path %s resolution failed", wantPath)
 		}
-		return &sourcegraph.RepoResolution{
-			Result: &sourcegraph.RepoResolution_RemoteRepo{RemoteRepo: resolved},
-		}, nil
+		return &sourcegraph.RepoResolution{RemoteRepo: resolved}, nil
 	}
 	return
 }

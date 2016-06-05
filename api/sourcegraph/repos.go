@@ -44,25 +44,6 @@ func (s RepoRevSpec) IsAbs() bool {
 	return true
 }
 
-func (r *RepoResolution) UnmarshalJSON(data []byte) error {
-	var m struct {
-		Result struct {
-			Repo       string
-			RemoteRepo *RemoteRepo
-		}
-	}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return err
-	}
-	switch {
-	case m.Result.Repo != "":
-		*r = RepoResolution{Result: &RepoResolution_Repo{Repo: m.Result.Repo}}
-	case m.Result.RemoteRepo != nil:
-		*r = RepoResolution{Result: &RepoResolution_RemoteRepo{RemoteRepo: m.Result.RemoteRepo}}
-	}
-	return nil
-}
-
 func (r *ReposCreateOp) UnmarshalJSON(data []byte) error {
 	var m struct {
 		Op struct {

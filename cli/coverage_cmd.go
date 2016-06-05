@@ -603,12 +603,12 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 
 func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) error {
 	// Resolve repo path, and create local mirror for remote repo if needed.
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo})
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return err
 	}
 
-	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+	if remoteRepo := res.RemoteRepo; remoteRepo != nil {
 		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repo {
 			// Repo path is invalid, possibly because repo has been renamed.
 			return fmt.Errorf("repo %s redirects to %s; update dashboard with correct repo path", repo, actualURI)

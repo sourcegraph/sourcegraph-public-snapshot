@@ -40,11 +40,7 @@ func TestRepoResolve_IncludedRepo(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data: sourcegraph.RepoResolution{
-			Result: &sourcegraph.RepoResolution_Repo{
-				Repo: "r",
-			},
-		},
+		Data:         sourcegraph.RepoResolution{Repo: "r"},
 		IncludedRepo: &sourcegraph.Repo{URI: "r"},
 	}
 
@@ -70,11 +66,7 @@ func TestRepoResolve_IncludedRepo_ignoreErr(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data: sourcegraph.RepoResolution{
-			Result: &sourcegraph.RepoResolution_Repo{
-				Repo: "r",
-			},
-		},
+		Data: sourcegraph.RepoResolution{Repo: "r"},
 	}
 
 	calledResolve := mock.Repos.MockResolve_Local(t, "r")
@@ -103,11 +95,7 @@ func TestRepoResolve_Remote(t *testing.T) {
 	c, mock := newTest()
 
 	want := &repoResolution{
-		Data: sourcegraph.RepoResolution{
-			Result: &sourcegraph.RepoResolution_RemoteRepo{
-				RemoteRepo: &sourcegraph.RemoteRepo{Name: "r"},
-			},
-		},
+		Data: sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.RemoteRepo{Name: "r"}},
 	}
 
 	calledResolve := mock.Repos.MockResolve_Remote(t, "r", &sourcegraph.RemoteRepo{Name: "r"})

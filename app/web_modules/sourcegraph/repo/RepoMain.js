@@ -94,13 +94,13 @@ class RepoMain extends React.Component {
 		// Create the repo if we don't have repoObj (the result of creating a repo) yet,
 		// and this repo was just resolved to a remote repo (which must be explicitly created,
 		// as we do right here).
-		if (!this.props.repoObj && repo && resolution && !resolution.Error && resolution.Result.RemoteRepo) {
+		if (!this.props.repoObj && repo && resolution && !resolution.Error && !resolution.Repo && resolution.RemoteRepo) {
 			// Don't create the repo if user agent is bot.
 			if (context.userAgentIsBot) {
 				return;
 			}
 
-			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.Result.RemoteRepo));
+			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.RemoteRepo));
 		}
 	}
 

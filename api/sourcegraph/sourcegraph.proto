@@ -214,15 +214,18 @@ service Repos {
 	// Get fetches a repository.
 	rpc Get(RepoSpec) returns (Repo);
 
-	// Resolve will first try to look up the specified repo using
-	// Repos.Get locally, returning a Repo if found. If no local repo
-	// is found, it will look it up on GitHub and return a RemoteRepo
-	// if found.
+	// Resolve looks up a repo from its "path", which is a
+	// slash-separated string (e.g., "github.com/user/repo"). Resolve
+	// may have to consult external sources (such as GitHub) to
+	// resolve a path. It returns the repo's ID if it has been created
+	// on Sourcegraph, plus additional metadata about the repository
+	// that was determined during the resolution operation.
 	//
 	// Example use case: The app calls Resolve to support navigating
 	// directly to "https://sourcegraph.com/github.com/my/repo" when
-	// that has not been created yet. It will transparently call
-	// Repos.Create if it gets a RemoteRepo back from Repos.Resolve.
+	// that has not been created yet. It calls Resolve with
+	// "github.com/my/repo". It will transparently call Repos.Create
+	// if it gets a RemoteRepo back from Resolve.
 	rpc Resolve(RepoResolveOp) returns (RepoResolution);
 
 	// List repositories.
@@ -327,21 +330,27 @@ message Packet {
 message RepoResolveOp {
 	// Path is some repo path, such as "github.com/user/repo".
 	string path = 1;
+
+	// Remote controls the behavior when Resolve locates a remote
+	// repository that is not (yet) associated with an existing local
+	// repository. If Remote is false (the default), then a NotFound
+	// error is returned in that case. If Remote is true, then no
+	// error is returned; the RepoResolution's Repo field will be
+	// empty, but some metadata about the remote repository may be
+	// provided.
+	bool remote = 2;
 }
 
 // RepoResolution is the result of resolving a repo using
 // Repos.Resolve.
 message RepoResolution {
-	oneof result {
-		// Repo refers to a local repo (either a locally hosted repo,
-		// or a locally added mirror).
-		string Repo = 1;
+	// Repo is the URI of the local repo (either a locally hosted repo,
+	// or a locally added mirror).
+	string Repo = 1;
 
-		// RemoteRepo represents a repo that exists on a remote
-		// service (such as GitHub) but has no corresponding repo
-		// mirror created (yet) on this server.
-		RemoteRepo RemoteRepo = 2;
-	}
+	// RemoteRepo holds metadata about the repo that exists on a
+	// remote service (such as GitHub).
+	RemoteRepo RemoteRepo = 2;
 }
 
 // ReposListRemoteOptions specifies options for Repos.ListRemote.
