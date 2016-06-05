@@ -202,6 +202,9 @@ func (g *globalRefs) Get(ctx context.Context, op *sourcegraph.DefsListRefLocatio
 	start = time.Now()
 
 	repoRefs, err = filterVisibleRepos(ctx, repoRefs)
+	if err != nil {
+		return nil, err
+	}
 	observe("access", start)
 
 	// Return Files in a consistent order
