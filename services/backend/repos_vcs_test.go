@@ -18,9 +18,9 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{URI: "r", DefaultBranch: "b"})
+	calledGet := mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r", DefaultBranch: "b"})
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -48,9 +48,9 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := mock.stores.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, "r")
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 0, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -61,8 +61,8 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *calledGet {
-		t.Error("calledGet needlessly")
+	if !*calledGet {
+		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -77,9 +77,9 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := mock.stores.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, "r")
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 0, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -90,8 +90,8 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *calledGet {
-		t.Error("calledGet needlessly")
+	if !*calledGet {
+		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -106,9 +106,9 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 
 	want := errors.New("x")
 
-	calledGet := mock.stores.Repos.MockGet(t, "r")
+	calledGet := mock.servers.Repos.MockGet(t, "r")
 	var calledVCSRepoResolveRevision bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 0, vcstest.MockRepository{
 		ResolveRevision_: func(rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")
@@ -119,8 +119,8 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
-	if *calledGet {
-		t.Error("calledGet needlessly")
+	if !*calledGet {
+		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -138,6 +138,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()
 
+	calledGet := mock.servers.Repos.MockGet(t, "r")
 	mockRepo := vcstest.MockRepository{}
 	mockRepo.ResolveRevision_ = func(spec string) (vcs.CommitID, error) {
 		if spec != "v" {
@@ -151,7 +152,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 		}
 		return wantCommits, uint(len(wantCommits)), nil
 	}
-	mock.stores.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mock.stores.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 
@@ -165,5 +166,8 @@ func Test_Repos_ListCommits(t *testing.T) {
 
 	if !reflect.DeepEqual(wantCommits, commitList.Commits) {
 		t.Errorf("want %+v, got %+v", wantCommits, commitList.Commits)
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
 	}
 }

@@ -20,7 +20,7 @@ var getGitHubRepo = (&github.Repos{}).Get
 
 func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
 	// First, look up locally.
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Path)
+	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Path)
 	if err == nil {
 		return &sourcegraph.RepoResolution{Repo: repo.URI, CanonicalPath: repo.URI}, nil
 	} else if errcode.GRPC(err) == codes.NotFound {
@@ -29,7 +29,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 		if err == nil {
 			// If canonical location differs, try looking up locally at canonical location.
 			if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
-				if repo, err := store.ReposFromContext(ctx).Get(ctx, canonicalPath); err == nil {
+				if repo, err := store.ReposFromContext(ctx).GetByURI(ctx, canonicalPath); err == nil {
 					return &sourcegraph.RepoResolution{Repo: repo.URI, CanonicalPath: repo.URI}, nil
 				}
 			}

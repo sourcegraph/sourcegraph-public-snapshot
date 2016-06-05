@@ -396,15 +396,15 @@ func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUni
 }
 
 func resolveRevisionDefaultBranch(ctx context.Context, repo string) (string, error) {
-	r, err := store.ReposFromContext(ctx).Get(ctx, repo)
+	repoObj, err := store.ReposFromContext(ctx).GetByURI(ctx, repo)
 	if err != nil {
 		return "", err
 	}
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
 	if err != nil {
 		return "", err
 	}
-	c, err := vcsrepo.ResolveRevision(r.DefaultBranch)
+	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
 	if err != nil {
 		return "", err
 	}

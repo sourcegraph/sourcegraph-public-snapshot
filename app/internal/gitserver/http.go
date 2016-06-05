@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
@@ -166,6 +168,18 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 	noCache(w)
 	_, err = w.Write(pkt.Data)
 	return err
+}
+
+func getRepoID(ctx context.Context, repoPath string) (int32, error) {
+	c, err := client(ctx)
+	if err != nil {
+		return 0, err
+	}
+	repo, err := c.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+	if err != nil {
+		return 0, err
+	}
+	return repo.ID, nil
 }
 
 func noCache(w http.ResponseWriter) {

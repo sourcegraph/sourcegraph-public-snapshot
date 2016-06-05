@@ -35,10 +35,10 @@ func TestGlobalDefs(t *testing.T) {
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
 	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Key: unit.Key{Name: "a/b/u", Type: "t"}})
-	mocks.Repos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mocks.Repos.GetByURI_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil
@@ -113,10 +113,10 @@ func TestGlobalDefs_PrefixMatch(t *testing.T) {
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
 	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Key: unit.Key{Name: "a/b/u", Type: "t"}})
-	mocks.Repos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mocks.Repos.GetByURI_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil

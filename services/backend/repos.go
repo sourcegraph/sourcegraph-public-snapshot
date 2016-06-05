@@ -51,7 +51,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 		return nil, errEmptyRepoURI
 	}
 
-	repo, err := store.ReposFromContext(ctx).Get(ctx, repoSpec.URI)
+	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, repoSpec.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 	//
 	// Special grants are given to drone workers to fetch repo metadata
 	// when configuring a build.
-	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repoSpec.URI)
+	hasGrant := accesscontrol.VerifyScopeHasAccess(ctx, authpkg.ActorFromContext(ctx).Scope, "Repos.Get", repo.ID)
 	if !hasGrant {
 		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
 			return nil, err
@@ -231,25 +231,41 @@ func (s *repos) newRepoFromGitHubID(ctx context.Context, gitHubID int) (*sourceg
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error) {
+	repo, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Repo)
+	if err != nil {
+		return nil, err
+	}
+
 	ts := time.Now()
-	update := store.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
+	update := store.RepoUpdate{Repo: repo.ID, ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := store.ReposFromContext(ctx).Update(ctx, update); err != nil {
 		return nil, err
 	}
-	return s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+
+	return s.Get(ctx, &sourcegraph.RepoSpec{URI: repo.URI})
 }
 
 func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (*pbtypes.Void, error) {
-	if err := store.ReposFromContext(ctx).Delete(ctx, repo.URI); err != nil {
+	repoObj, err := s.Get(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := store.ReposFromContext(ctx).Delete(ctx, repoObj.ID); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error) {
+	repoObj, err := s.Get(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
 	repoConfigsStore := store.RepoConfigsFromContext(ctx)
 
-	conf, err := repoConfigsStore.Get(ctx, repo.URI)
+	conf, err := repoConfigsStore.Get(ctx, repoObj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -260,6 +276,11 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (*sou
 }
 
 func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureAppOp) (*pbtypes.Void, error) {
+	repoObj, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	if err != nil {
+		return nil, err
+	}
+
 	store := store.RepoConfigsFromContext(ctx)
 
 	if op.Enable {
@@ -270,7 +291,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 		}
 	}
 
-	conf, err := store.Get(ctx, op.Repo)
+	conf, err := store.Get(ctx, repoObj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +315,7 @@ func (s *repos) ConfigureApp(ctx context.Context, op *sourcegraph.RepoConfigureA
 	}
 	sort.Strings(conf.Apps)
 
-	if err := store.Update(ctx, op.Repo, *conf); err != nil {
+	if err := store.Update(ctx, repoObj.ID, *conf); err != nil {
 		return nil, err
 	}
 	return &pbtypes.Void{}, nil
@@ -353,7 +374,12 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
+	repoObj, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoObj.ID)
 	if err != nil {
 		return nil, err
 	}

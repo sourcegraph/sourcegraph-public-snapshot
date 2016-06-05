@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 func (s *deltas) ListFiles(ctx context.Context, op *sourcegraph.DeltasListFilesOp) (*sourcegraph.DeltaFiles, error) {
@@ -103,7 +104,12 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 	ds = delta.DeltaSpec()
 
-	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.Base.Repo)
+	baseRepo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: ds.Base.Repo})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, baseRepo.ID)
 	if err != nil {
 		return nil, nil, err
 	}

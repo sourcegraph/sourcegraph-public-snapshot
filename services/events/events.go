@@ -13,7 +13,8 @@ const GitDeleteBranchEvent EventID = "git.delete"
 
 type GitPayload struct {
 	Actor       sourcegraph.UserSpec
-	Repo        string
+	Repo        int32
+	RepoURI     string
 	IgnoreBuild bool
 	Event       githttp.Event
 }

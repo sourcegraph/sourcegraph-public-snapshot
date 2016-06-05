@@ -13,7 +13,10 @@ import (
 // repositories.
 type Repos interface {
 	// Get a repository.
-	Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+
+	// GetByURI a repository by its URI.
+	GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
 	// List repositories.
 	List(context.Context, *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
@@ -28,7 +31,7 @@ type Repos interface {
 	Update(context.Context, RepoUpdate) error
 
 	// Delete a repository.
-	Delete(ctx context.Context, repo string) error
+	Delete(ctx context.Context, repo int32) error
 }
 
 // RepoUpdate represents an update to specific fields of a repo. Only
@@ -37,6 +40,8 @@ type Repos interface {
 // The ReposUpdateOp.Repo field must be filled in to specify the repo
 // that will be updated.
 type RepoUpdate struct {
+	Repo int32 // ID of the repo to update (ignores the ReposUpdateOp.Repo embedded field)
+
 	*sourcegraph.ReposUpdateOp
 
 	UpdatedAt *time.Time
@@ -46,22 +51,22 @@ type RepoUpdate struct {
 // RepoConfigs is the interface for storing Sourcegraph-specific repo
 // config.
 type RepoConfigs interface {
-	Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error)
-	Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error
+	Get(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error)
+	Update(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error
 }
 
 // RepoStatuses defines the interface for stores that deal with
 // per-commit status message.
 type RepoStatuses interface {
-	GetCombined(ctx context.Context, repoRev sourcegraph.RepoRevSpec) (*sourcegraph.CombinedStatus, error)
+	GetCombined(ctx context.Context, repo int32, commitID string) (*sourcegraph.CombinedStatus, error)
 	GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error)
-	Create(ctx context.Context, repoRev sourcegraph.RepoRevSpec, status *sourcegraph.RepoStatus) error
+	Create(ctx context.Context, repo int32, commitID string, status *sourcegraph.RepoStatus) error
 }
 
 type RepoVCS interface {
-	Open(ctx context.Context, repo string) (vcs.Repository, error)
-	Clone(ctx context.Context, repo string, info *CloneInfo) error
-	OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error)
+	Open(ctx context.Context, repo int32) (vcs.Repository, error)
+	Clone(ctx context.Context, repo int32, info *CloneInfo) error
+	OpenGitTransport(ctx context.Context, repo int32) (gitproto.Transport, error)
 }
 
 // CloneInfo is the information needed to clone a repository.

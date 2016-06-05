@@ -31,7 +31,11 @@ func TestDeltasService_Get_returnsPartialInfo(t *testing.T) {
 		}
 		return &vcs.Commit{}, nil
 	}
+	mock.servers.Repos.MockGet(t, "r")
+
 	ds := new(sourcegraph.DeltaSpec)
+	ds.Base.Repo = "r"
+	ds.Head.Repo = "r"
 	ds.Head.CommitID = "head"
 	delta, err := s.Get(ctx, ds)
 	if err.Error() != wantErr.Error() {

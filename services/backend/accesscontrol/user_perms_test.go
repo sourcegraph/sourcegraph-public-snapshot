@@ -37,7 +37,7 @@ func TestVerifyAccess(t *testing.T) {
 	uid = 1
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
 		t.Fatalf("user %v should have write access; got: %v\n", uid, err)
 	}
 	if err := VerifyUserHasAdminAccess(ctx, "Repos.Create"); err != nil {
@@ -48,7 +48,7 @@ func TestVerifyAccess(t *testing.T) {
 	uid = 2
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
 		t.Fatalf("user %v should have write access; got: %v\n", uid, err)
 	}
 	if err := VerifyUserHasAdminAccess(ctx, "Repos.Create"); err == nil {
@@ -59,13 +59,13 @@ func TestVerifyAccess(t *testing.T) {
 	uid = 3
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err == nil {
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
 	if err := VerifyUserHasAdminAccess(ctx, "Repos.Create"); err == nil {
 		t.Fatalf("user %v should not have admin access; got access\n", uid)
 	}
-	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", ""); err != nil {
+	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", nil); err != nil {
 		t.Fatalf("user %v should have MirrorRepos.cloneRepo access; got %v\n", uid, err)
 	}
 
@@ -73,13 +73,13 @@ func TestVerifyAccess(t *testing.T) {
 	uid = 0
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err == nil {
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
 	if err := VerifyUserHasAdminAccess(ctx, "Repos.Create"); err == nil {
 		t.Fatalf("user %v should not have admin access; got access\n", uid)
 	}
-	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", ""); err == nil {
+	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", nil); err == nil {
 		t.Fatalf("user %v should not have MirrorRepos.cloneRepo access; got access\n", uid)
 	}
 
@@ -106,14 +106,14 @@ func TestVerifyAccess(t *testing.T) {
 	uid = 0
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err == nil {
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
 
 	uid = 1234
 	ctx = asUID(uid)
 
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err == nil {
+	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
 		t.Fatalf("user %v should not have write access; got access\n", uid)
 	}
 }

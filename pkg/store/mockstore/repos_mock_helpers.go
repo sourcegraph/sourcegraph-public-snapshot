@@ -9,28 +9,41 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
-func (s *Repos) MockGet(t *testing.T, wantRepo string) (called *bool) {
+func (s *Repos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 	called = new(bool)
-	s.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	s.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		*called = true
 		if repo != wantRepo {
-			t.Errorf("got repo %q, want %q", repo, wantRepo)
+			t.Errorf("got repo %d, want %d", repo, wantRepo)
 			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
 		}
-		return &sourcegraph.Repo{URI: repo}, nil
+		return &sourcegraph.Repo{ID: repo}, nil
 	}
 	return
 }
 
 func (s *Repos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called *bool) {
 	called = new(bool)
-	s.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	s.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		*called = true
-		if repo != returns.URI {
-			t.Errorf("got repo %q, want %q", repo, returns.URI)
-			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", returns.URI)
+		if repo != returns.ID {
+			t.Errorf("got repo %d, want %d", repo, returns.ID)
+			return nil, grpc.Errorf(codes.NotFound, "repo %v (%d) not found", returns.URI, returns.ID)
 		}
 		return returns, nil
+	}
+	return
+}
+
+func (s *Repos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (called *bool) {
+	called = new(bool)
+	s.GetByURI_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+		*called = true
+		if uri != wantURI {
+			t.Errorf("got repo URI %q, want %q", uri, wantURI)
+			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", uri)
+		}
+		return &sourcegraph.Repo{ID: repoID, URI: uri}, nil
 	}
 	return
 }

@@ -218,10 +218,6 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 		opt = &sourcegraph.BuildListOptions{}
 	}
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.List", opt.Repo); err != nil {
-		return nil, err
-	}
-
 	var args []interface{}
 	arg := func(v interface{}) string {
 		args = append(args, v)
@@ -230,6 +226,9 @@ func (s *builds) List(ctx context.Context, opt *sourcegraph.BuildListOptions) ([
 
 	var conds []string
 	if opt.Repo != "" {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Builds.List", opt.Repo); err != nil {
+			return nil, err
+		}
 		conds = append(conds, "b.repo="+arg(opt.Repo))
 	} else {
 		// Only admins can list builds for all repos.
@@ -517,20 +516,23 @@ UPDATE repo_build
 SET started_at = clock_timestamp(), ended_at = null, heartbeat_at = null, success = 'f', failure = 'f'
 FROM to_dequeue
 WHERE repo_build.repo = to_dequeue.repo AND repo_build.id = to_dequeue.id
-RETURNING repo_build.*;
+RETURNING repo_build.*, (SELECT id FROM repo WHERE uri=repo_build.repo) AS repo_id;
 `
-	var nextBuild dbBuild
+	var nextBuild struct {
+		dbBuild
+		RepoID int32 `db:"repo_id"`
+	}
 	if err := appDBH(ctx).SelectOne(&nextBuild, query); err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	return newBuildJob(ctx, nextBuild.toBuild())
+	return newBuildJob(ctx, nextBuild.toBuild(), nextBuild.RepoID)
 }
 
-func newBuildJob(ctx context.Context, b *sourcegraph.Build) (*sourcegraph.BuildJob, error) {
-	tok, err := sharedsecret.ShortTokenSource(idkey.FromContext(ctx), "repo:"+b.Repo).Token()
+func newBuildJob(ctx context.Context, b *sourcegraph.Build, repo int32) (*sourcegraph.BuildJob, error) {
+	tok, err := sharedsecret.ShortTokenSource(idkey.FromContext(ctx), fmt.Sprintf("repo:%d", repo)).Token()
 	if err != nil {
 		return nil, err
 	}

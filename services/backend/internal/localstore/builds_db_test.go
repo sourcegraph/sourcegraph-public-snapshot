@@ -405,13 +405,14 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	s := &builds{}
 	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{want})
+	(&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/x"})
 	build, err := s.DequeueNext(ctx)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
 	build.AccessToken = "" // do not compare access token
-	if !reflect.DeepEqual(build, newBuildJobForTest(t, ctx, want)) {
-		t.Errorf("expected %#v, got %#v", newBuildJobForTest(t, ctx, want), build)
+	if !reflect.DeepEqual(build, newBuildJobForTest(t, ctx, want, 1)) {
+		t.Errorf("expected %#v, got %#v", newBuildJobForTest(t, ctx, want, 1), build)
 	}
 }
 
@@ -426,6 +427,9 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	s := &builds{}
 	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
 	t2 := pbtypes.NewTimestamp(time.Unix(200000, 0))
+	ctx = store.WithRepos(ctx, &repos{})
+
+	(&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 
 	b1 := &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
 	b2 := &sourcegraph.Build{ID: 2, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
@@ -436,7 +440,7 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{b1, b2, b3, bNo1, bNo2})
 
 	wantBuilds := []*sourcegraph.BuildJob{
-		newBuildJobForTest(t, ctx, b1), newBuildJobForTest(t, ctx, b2), newBuildJobForTest(t, ctx, b3), nil, // in order
+		newBuildJobForTest(t, ctx, b1, 1), newBuildJobForTest(t, ctx, b2, 1), newBuildJobForTest(t, ctx, b3, 1), nil, // in order
 	}
 
 	for i, wantBuild := range wantBuilds {
@@ -453,8 +457,8 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	}
 }
 
-func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build) *sourcegraph.BuildJob {
-	j, err := newBuildJob(ctx, b)
+func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build, repo int32) *sourcegraph.BuildJob {
+	j, err := newBuildJob(ctx, b, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,6 +498,7 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 		})
 	}
 
+	(&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 	s.mustCreateBuilds(ctx, t, allBuilds)
 	t.Logf("enqueued %d builds", nbuilds)
 

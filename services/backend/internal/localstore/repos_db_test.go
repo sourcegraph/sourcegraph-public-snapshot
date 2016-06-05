@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -316,7 +317,9 @@ func TestRepos_Search(t *testing.T) {
 	}
 
 	ctx, _, done := testContext()
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 	defer done()
+	ctx = store.WithRepos(ctx, &repos{})
 
 	var calledGet bool
 	client := gogithub.NewClient(&http.Client{})
@@ -386,6 +389,8 @@ func TestRepos_Search_PrivateRepo(t *testing.T) {
 
 	ctx, _, done := testContext()
 	defer done()
+	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
+	ctx = store.WithRepos(ctx, &repos{})
 
 	var calledGet bool
 	client := gogithub.NewClient(&http.Client{})
@@ -449,7 +454,7 @@ func TestRepos_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo, err := s.Get(ctx, "a/b")
+	repo, err := s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,7 +507,7 @@ func TestRepos_Update_Description(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo, err := s.Get(ctx, "a/b")
+	repo, err := s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -510,11 +515,11 @@ func TestRepos_Update_Description(t *testing.T) {
 		t.Errorf("got description %q, want %q", repo.Description, want)
 	}
 
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: "a/b", Description: "d"}}); err != nil {
+	if err := s.Update(ctx, store.RepoUpdate{Repo: repo.ID, ReposUpdateOp: &sourcegraph.ReposUpdateOp{Description: "d"}}); err != nil {
 		t.Fatal(err)
 	}
 
-	repo, err = s.Get(ctx, "a/b")
+	repo, err = s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -538,7 +543,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo, err := s.Get(ctx, "a/b")
+	repo, err := s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -548,11 +553,11 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 
 	// Perform any update.
 	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: "a/b"}, UpdatedAt: &newTime}); err != nil {
+	if err := s.Update(ctx, store.RepoUpdate{Repo: repo.ID, ReposUpdateOp: &sourcegraph.ReposUpdateOp{}, UpdatedAt: &newTime}); err != nil {
 		t.Fatal(err)
 	}
 
-	repo, err = s.Get(ctx, "a/b")
+	repo, err = s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -579,7 +584,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo, err := s.Get(ctx, "a/b")
+	repo, err := s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -588,11 +593,11 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	}
 
 	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, store.RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: "a/b"}, PushedAt: &newTime}); err != nil {
+	if err := s.Update(ctx, store.RepoUpdate{Repo: repo.ID, ReposUpdateOp: &sourcegraph.ReposUpdateOp{}, PushedAt: &newTime}); err != nil {
 		t.Fatal(err)
 	}
 
-	repo, err = s.Get(ctx, "a/b")
+	repo, err = s.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}

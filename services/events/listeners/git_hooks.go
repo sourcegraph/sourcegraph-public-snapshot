@@ -56,9 +56,9 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		log15.Warn("postPushHook error", "error", err)
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: payload.Repo})
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: payload.RepoURI})
 	if err != nil {
-		log15.Warn("postPushHook error fetching repo", "repo", payload.Repo, "error", err)
+		log15.Warn("postPushHook error fetching repo", "repo", payload.RepoURI, "error", err)
 	}
 	// Don't emit notifications for mirror repositories.
 	if repo.Mirror {
@@ -137,7 +137,7 @@ func buildHook(ctx context.Context, id events.EventID, payload events.GitPayload
 		log15.Error("postPushHook: failed to create build", "err", err)
 		return
 	}
-	repo := payload.Repo
+	repo := payload.RepoURI
 	event := payload.Event
 
 	if payload.IgnoreBuild {
@@ -172,7 +172,7 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 	}
 	event := payload.Event
 	if event.Type == githttp.PUSH || event.Type == githttp.PUSH_FORCE {
-		repoRev := &sourcegraph.RepoRevSpec{Repo: payload.Repo, CommitID: event.Commit}
+		repoRev := &sourcegraph.RepoRevSpec{Repo: payload.RepoURI, CommitID: event.Commit}
 		// Trigger a call to Repos.GetInventory so the inventory is
 		// cached for subsequent calls.
 		inv, err := cl.Repos.GetInventory(ctx, repoRev)

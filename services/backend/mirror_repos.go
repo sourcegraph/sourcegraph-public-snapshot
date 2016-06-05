@@ -69,7 +69,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		return nil, err
 	}
 
-	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
+	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
 	if err != nil {
 		log15.Error("RefreshVCS: failed to open VCS", "error", err, "URI", repo.URI)
 		return nil, err
@@ -108,7 +108,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.URI, &store.CloneInfo{
+	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.ID, &store.CloneInfo{
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
 	})
@@ -193,7 +193,8 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(eventType, events.GitPayload{
 				Actor:       authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:        repo.URI,
+				Repo:        repo.ID,
+				RepoURI:     repo.URI,
 				IgnoreBuild: change.Branch != repo.DefaultBranch,
 				Event: githttp.Event{
 					Type:   gitEventType,
@@ -219,8 +220,9 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// Branch was deleted.
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{
-				Actor: authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:  repo.URI,
+				Actor:   authpkg.ActorFromContext(ctx).UserSpec(),
+				Repo:    repo.ID,
+				RepoURI: repo.URI,
 				Event: githttp.Event{
 					Type:   githttp.PUSH,
 					Commit: emptyGitCommitID,
@@ -239,8 +241,9 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		// Publish an event for the new commits pushed.
 		// TODO: what about GitPayload.ContentEncoding field?
 		events.Publish(events.GitPushEvent, events.GitPayload{
-			Actor: authpkg.ActorFromContext(ctx).UserSpec(),
-			Repo:  repo.URI,
+			Actor:   authpkg.ActorFromContext(ctx).UserSpec(),
+			Repo:    repo.ID,
+			RepoURI: repo.URI,
 			Event: githttp.Event{
 				Type:   githttp.PUSH,
 				Commit: string(head),

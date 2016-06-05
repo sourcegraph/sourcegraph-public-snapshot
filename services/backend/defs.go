@@ -115,7 +115,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		opt = &sourcegraph.DefListOptions{}
 	}
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.List", ""); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.List", nil); err != nil {
 		return nil, err
 	}
 

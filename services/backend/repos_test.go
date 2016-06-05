@@ -15,11 +15,12 @@ func TestReposService_Get(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := &sourcegraph.Repo{
+		ID:      1,
 		URI:     "r",
 		HTMLURL: "http://example.com/r",
 	}
 
-	calledGet := mock.stores.Repos.MockGet(t, "r")
+	calledGet := mock.stores.Repos.MockGetByURI(t, "r", 1)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{URI: "r"})
 	if err != nil {
@@ -66,7 +67,8 @@ func TestReposService_GetConfig(t *testing.T) {
 		Apps: []string{"a", "b"},
 	}
 
-	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", wantRepoConfig)
+	mock.stores.Repos.MockGetByURI(t, "r", 1)
+	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, 1, wantRepoConfig)
 
 	conf, err := s.GetConfig(ctx, &sourcegraph.RepoSpec{URI: "r"})
 	if err != nil {
@@ -90,9 +92,10 @@ func TestReposService_ConfigureApp_Enable(t *testing.T) {
 		delete(platform.Apps, "b")
 	}()
 
-	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", &sourcegraph.RepoConfig{Apps: []string{"a"}})
+	mock.stores.Repos.MockGetByURI(t, "r", 1)
+	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, 1, &sourcegraph.RepoConfig{Apps: []string{"a"}})
 	var calledConfigsUpdate bool
-	mock.stores.RepoConfigs.Update_ = func(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+	mock.stores.RepoConfigs.Update_ = func(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error {
 		if want := []string{"a", "b"}; !reflect.DeepEqual(conf.Apps, want) {
 			t.Errorf("got %#v, want Apps %v", conf, want)
 		}
@@ -126,9 +129,10 @@ func TestReposService_ConfigureApp_Disable(t *testing.T) {
 		delete(platform.Apps, "b")
 	}()
 
-	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, "r", &sourcegraph.RepoConfig{Apps: []string{"a", "b"}})
+	mock.stores.Repos.MockGetByURI(t, "r", 1)
+	calledConfigsGet := mock.stores.RepoConfigs.MockGet_Return(t, 1, &sourcegraph.RepoConfig{Apps: []string{"a", "b"}})
 	var calledConfigsUpdate bool
-	mock.stores.RepoConfigs.Update_ = func(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+	mock.stores.RepoConfigs.Update_ = func(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error {
 		if want := []string{"a"}; !reflect.DeepEqual(conf.Apps, want) {
 			t.Errorf("got %#v, want Apps %v", conf, want)
 		}
