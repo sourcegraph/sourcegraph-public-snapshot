@@ -604,7 +604,9 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) error {
 	// Resolve repo path, and create local mirror for remote repo if needed.
 	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
-	if err != nil && grpc.Code(err) != codes.NotFound {
+	if grpc.Code(err) == codes.NotFound {
+		return nil
+	} else if err != nil {
 		return err
 	}
 
