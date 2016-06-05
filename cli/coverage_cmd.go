@@ -38,10 +38,10 @@ func init() {
 	}
 
 	cache = &coverageCache{
-		DefsCache:              make(map[string]*defIndex),
+		DefsCache:              make(map[sourcegraph.RepoRevSpec]*defIndex),
 		ResolvedRevCache:       make(map[string]string),
-		SrclibDataVersionCache: make(map[string]string),
-		FetchDefsMus:           make(map[string]*sync.Mutex),
+		SrclibDataVersionCache: make(map[sourcegraph.RepoRevSpec]string),
+		FetchDefsMus:           make(map[sourcegraph.RepoRevSpec]*sync.Mutex),
 	}
 }
 
@@ -79,11 +79,11 @@ type repoCoverage struct {
 // indexed by key, and a mutex for concurrent access
 type defIndex struct {
 	Mu    sync.Mutex
-	Index map[string]*sourcegraph.Def
+	Index map[sourcegraph.DefSpec]*sourcegraph.Def
 }
 
 // get is a threadsafe accessor function for a defIndex
-func (idx *defIndex) get(key string) *sourcegraph.Def {
+func (idx *defIndex) get(key sourcegraph.DefSpec) *sourcegraph.Def {
 	idx.Mu.Lock()
 	defer idx.Mu.Unlock()
 	def, ok := idx.Index[key]
@@ -94,7 +94,7 @@ func (idx *defIndex) get(key string) *sourcegraph.Def {
 }
 
 // put is a threadsafe setter for defIndex
-func (idx *defIndex) put(key string, def *sourcegraph.Def) {
+func (idx *defIndex) put(key sourcegraph.DefSpec, def *sourcegraph.Def) {
 	idx.Mu.Lock()
 	defer idx.Mu.Unlock()
 	idx.Index[key] = def
@@ -104,23 +104,23 @@ func (idx *defIndex) put(key string, def *sourcegraph.Def) {
 // coverage and includes mutexes for concurrent access
 type coverageCache struct {
 	DefsCacheMu            sync.Mutex
-	DefsCache              map[string]*defIndex // key is repo@commit
+	DefsCache              map[sourcegraph.RepoRevSpec]*defIndex // key is repo@commit
 	ResolvedRevMu          sync.Mutex
 	ResolvedRevCache       map[string]string // repo => commit
 	SrclibDataVersionMu    sync.Mutex
-	SrclibDataVersionCache map[string]string // repo@rev => commit
+	SrclibDataVersionCache map[sourcegraph.RepoRevSpec]string // repo@rev => commit
 
 	// FetchDefsMus allows at most one goroutine to fetch defs per repo@commit.
 	// Map access is guarded by FetchDefsMu.
 	FetchDefsMu  sync.Mutex
-	FetchDefsMus map[string]*sync.Mutex
+	FetchDefsMus map[sourcegraph.RepoRevSpec]*sync.Mutex
 }
 
 // cache is a global instance of coverageCache
 var cache *coverageCache
 
 // getFetchDefsMu acquires a lock to fetch defs for a repo@commit; it is threadsafe
-func (c *coverageCache) getFetchDefsMu(key string) *sync.Mutex {
+func (c *coverageCache) getFetchDefsMu(key sourcegraph.RepoRevSpec) *sync.Mutex {
 	c.FetchDefsMu.Lock()
 	defer c.FetchDefsMu.Unlock()
 
@@ -134,7 +134,7 @@ func (c *coverageCache) getFetchDefsMu(key string) *sync.Mutex {
 }
 
 // getDefIndex is a threadsafe accessor function for cached def data
-func (c *coverageCache) getDefIndex(key string) *defIndex {
+func (c *coverageCache) getDefIndex(key sourcegraph.RepoRevSpec) *defIndex {
 	c.DefsCacheMu.Lock()
 	defer c.DefsCacheMu.Unlock()
 	idx, ok := c.DefsCache[key]
@@ -145,7 +145,7 @@ func (c *coverageCache) getDefIndex(key string) *defIndex {
 }
 
 // putDefIndex is a threadsafe setter for cached def data
-func (c *coverageCache) putDefIndex(key string, idx *defIndex) {
+func (c *coverageCache) putDefIndex(key sourcegraph.RepoRevSpec, idx *defIndex) {
 	c.DefsCacheMu.Lock()
 	defer c.DefsCacheMu.Unlock()
 	c.DefsCache[key] = idx
@@ -157,8 +157,7 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 	c.SrclibDataVersionMu.Lock()
 	defer c.SrclibDataVersionMu.Unlock()
 
-	key := repoRevKey(repoRev)
-	dataVer, ok := c.SrclibDataVersionCache[key]
+	dataVer, ok := c.SrclibDataVersionCache[*repoRev]
 	if !ok {
 		sdv, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
 		if err != nil {
@@ -172,7 +171,7 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 		dataVer = sdv.CommitID
 	}
 
-	c.SrclibDataVersionCache[key] = dataVer
+	c.SrclibDataVersionCache[*repoRev] = dataVer
 	return dataVer
 }
 
@@ -209,19 +208,17 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		return nil
 	}
 
-	rr := repoRevKey(repoRev)
-
-	fetchMu := c.getFetchDefsMu(rr)
+	fetchMu := c.getFetchDefsMu(*repoRev)
 	fetchMu.Lock()
 	defer fetchMu.Unlock()
 
-	if idx := c.getDefIndex(rr); idx != nil {
+	if idx := c.getDefIndex(*repoRev); idx != nil {
 		return idx
 	}
 
 	opt := sourcegraph.DefListOptions{
 		IncludeTest: true,
-		RepoRevs:    []string{rr},
+		RepoRevs:    []string{fmt.Sprintf("%s@%s", repoRev.Repo, repoRev.CommitID)},
 	}
 	opt.PerPage = 100000000 // TODO(rothfels): srclib def store doesn't properly handle pagination
 	opt.Page = 1
@@ -230,7 +227,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 	for {
 		dl, err := cl.Defs.List(ctx, &opt)
 		if err != nil {
-			log15.Error("fetch defs", "err", err, "repoRev", rr)
+			log15.Error("fetch defs", "err", err, "repoRev", *repoRev)
 			break
 		}
 		if len(dl.Defs) == 0 {
@@ -240,24 +237,14 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		opt.Page += 1
 	}
 
-	idx := defIndex{Index: make(map[string]*sourcegraph.Def)}
+	idx := defIndex{Index: make(map[sourcegraph.DefSpec]*sourcegraph.Def)}
 	for _, def := range defs {
 		defSpec := def.DefSpec()
-		idx.put(defKey(&defSpec), def)
+		idx.put(defSpec, def)
 	}
 
-	c.putDefIndex(rr, &idx)
+	c.putDefIndex(*repoRev, &idx)
 	return &idx
-}
-
-// repoRevKey returns the cache key for a repo@commit
-func repoRevKey(repoRev *sourcegraph.RepoRevSpec) string {
-	return fmt.Sprintf("%s@%s", repoRev.Repo, repoRev.CommitID)
-}
-
-// defKey returns the cache key for a def
-func defKey(def *sourcegraph.DefSpec) string {
-	return fmt.Sprintf("%s/%s/-/%s", def.UnitType, def.Unit, def.Path)
 }
 
 func (c *coverageCmd) Execute(args []string) error {
@@ -478,7 +465,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		if defIdx == nil {
 			continue
 		}
-		if def := defIdx.get(defKey(annDefSpec)); def != nil {
+		if def := defIdx.get(*annDefSpec); def != nil {
 			fileCvg.Defs += 1
 		} else {
 			if reportDefs {
