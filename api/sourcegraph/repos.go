@@ -24,9 +24,6 @@ func (r *Repo) CloneURL() *url.URL {
 	return u
 }
 
-// IsZero reports whether s.URI is the zero value.
-func (s RepoSpec) IsZero() bool { return s.URI == "" }
-
 // IsAbs returns whether s.CommitID is a valid absolute commit ID (40
 // characters and hexadecimal). It is not a guarantee that s.CommitID
 // refers to an existing commit ID in the repository, or that it is
