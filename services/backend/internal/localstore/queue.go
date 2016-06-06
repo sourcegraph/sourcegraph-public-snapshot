@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/que-go"
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
@@ -28,6 +29,8 @@ CREATE TABLE que_jobs
 );`)
 	AppSchema.DropSQL = append(AppSchema.DropSQL, "DROP TABLE IF EXISTS que_jobs;")
 }
+
+const queueMaxAttempts = 2
 
 type queue struct{}
 
@@ -52,7 +55,18 @@ func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
 	if err != nil || j == nil {
 		return nil, err
 	}
-	return store.NewLockedJob(q.fromQue(j), j.Delete, j.Error), nil
+
+	// We don't want to retry jobs forever, we would rather log and drain
+	// the queue.
+	errFunc := j.Error
+	if j.ErrorCount+1 >= queueMaxAttempts {
+		errFunc = func(reason string) error {
+			log15.Debug("store.Job.MarkError ignoring", "type", j.Type, "lastReason", j.LastError.String, "reason", reason)
+			return j.Delete()
+		}
+	}
+
+	return store.NewLockedJob(q.fromQue(j), j.Delete, errFunc), nil
 }
 
 func (q *queue) toQue(j *store.Job) *que.Job {
