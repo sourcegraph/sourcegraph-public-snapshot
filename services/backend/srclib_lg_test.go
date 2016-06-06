@@ -20,8 +20,6 @@ func TestSrclibPush(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	a, ctx := testserver.NewUnstartedServer()
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
