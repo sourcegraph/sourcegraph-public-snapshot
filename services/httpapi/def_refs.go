@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
 	"sort"
 
@@ -84,7 +83,7 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return json.NewEncoder(w).Encode(refs.Refs)
+	return writeJSON(w, refs.Refs)
 }
 
 func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
@@ -169,7 +168,7 @@ func serveDefRefLocations(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return json.NewEncoder(w).Encode(refLocations)
+	return writeJSON(w, refLocations)
 }
 
 type fileList []*sourcegraph.DefFileRef
