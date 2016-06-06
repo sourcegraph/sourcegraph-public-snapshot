@@ -156,7 +156,7 @@ export default function withChannelListener(Component) {
 				let def = action.Def ? action.Def : "";
 				this.context.router.replace({
 					pathname: "/-/golang",
-					search: `?def=${def}&pkg=${action.Package}&repo=${action.Repo}&editor_type=${action.EditorType}`,
+					search: `?def=${def}&pkg=${action.Package}&repo=${action.Repo}&editor_type=${action.EditorType}&utm_source=sourcegraph-editor`,
 					state: {
 						...this.props.location.state,
 						error: null,
