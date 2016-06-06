@@ -1,7 +1,10 @@
 package cli
 
-var langs_ = []string{"Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++", "CSS", "JSON"}
+var langs_ = []string{"Bash", "Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++", "CSS", "JSON"}
 var langRepos_ = map[string][]string{
+	"Bash": []string{
+		"github.com/mkovacs/bash2048",
+	},
 	"Go": []string{
 		"sourcegraph/sourcegraph",
 		"github.com/gorilla/mux",
