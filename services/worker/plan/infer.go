@@ -49,19 +49,6 @@ var langConfigs = map[string]struct {
 	build  droneyaml.BuildItem
 	matrix map[string][]string
 }{
-	"Go": {
-		build: droneyaml.BuildItem{
-			Key: "Go $$GO_VERSION build",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "golang:$$GO_VERSION"},
-				Commands: []string{
-					"go get -t $(go list ./... | grep -v /vendor/)",
-				},
-				AllowFailure: true,
-			},
-		},
-		matrix: map[string][]string{"GO_VERSION": {"1.6"}},
-	},
 	"JavaScript": {
 		build: droneyaml.BuildItem{
 			Key: "JavaScript deps (node v$$NODE_VERSION)",
