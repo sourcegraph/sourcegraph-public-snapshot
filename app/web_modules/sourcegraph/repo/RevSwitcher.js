@@ -179,7 +179,7 @@ class RevSwitcher extends Component {
 
 	// _onKeydown causes ESC to close the menu.
 	_onKeydown(ev) {
-		if (event.defaultPrevented) {
+		if (ev.defaultPrevented) {
 			return;
 		}
 
