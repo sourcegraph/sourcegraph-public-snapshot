@@ -36,8 +36,13 @@ func (s *defs) ListAuthors(ctx context.Context, op *sourcegraph.DefsListAuthorsO
 		return nil, err
 	}
 
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})
+	if err != nil {
+		return nil, err
+	}
+
 	// Blame file to determine VCS authors.
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, def.Repo)
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}

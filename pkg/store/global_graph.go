@@ -58,7 +58,7 @@ type GlobalDefUpdateOp struct {
 }
 
 type RepoUnit struct {
-	Repo     string
+	Repo     int32
 	Unit     string
 	UnitType string
 }

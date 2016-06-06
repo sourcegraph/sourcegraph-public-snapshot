@@ -87,7 +87,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 				return
 			}
 
-			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: res.Repo})
+			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
 			if err == nil && repo.Mirror {
 				continue
 			} else if errcode.HTTP(err) == http.StatusNotFound {

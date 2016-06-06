@@ -25,7 +25,7 @@ import (
 // called. (This is so that the line numbers in errors refer to the
 // actual caller, not to this helper func.) This means you probably
 // should check the error value returned by this func in your test.
-func BuildRepoAndWait(t *testing.T, ctx context.Context, repo string, commitID string) (*sourcegraph.Build, *sourcegraph.BuildSpec, error) {
+func BuildRepoAndWait(t *testing.T, ctx context.Context, repo int32, commitID string) (*sourcegraph.Build, *sourcegraph.BuildSpec, error) {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	// Create the build.

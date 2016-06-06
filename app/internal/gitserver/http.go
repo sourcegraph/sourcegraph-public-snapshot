@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
@@ -70,7 +72,11 @@ func trimGitService(name string) string {
 
 func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
-	repo := routevar.ToRepo(mux.Vars(r))
+
+	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
+	if err != nil {
+		return err
+	}
 
 	service := trimGitService(r.URL.Query().Get("service"))
 
@@ -115,7 +121,10 @@ func serveInfoRefs(w http.ResponseWriter, r *http.Request) error {
 func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
-	repo := routevar.ToRepo(mux.Vars(r))
+	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
+	if err != nil {
+		return err
+	}
 
 	body, err := readBody(r.Body, r.Header.Get("content-encoding"))
 	if err != nil {
@@ -143,7 +152,10 @@ func serveReceivePack(w http.ResponseWriter, r *http.Request) error {
 func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 	ctx := httpctx.FromRequest(r)
 
-	repo := routevar.ToRepo(mux.Vars(r))
+	repo, err := getRepoID(ctx, routevar.ToRepo(mux.Vars(r)))
+	if err != nil {
+		return err
+	}
 
 	body, err := readBody(r.Body, r.Header.Get("content-encoding"))
 	if err != nil {
@@ -166,6 +178,19 @@ func serveUploadPack(w http.ResponseWriter, r *http.Request) error {
 	noCache(w)
 	_, err = w.Write(pkt.Data)
 	return err
+}
+
+func getRepoID(ctx context.Context, repoPath string) (int32, error) {
+	c, err := client(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := c.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+	if err != nil {
+		return 0, err
+	}
+	return res.Repo, nil
 }
 
 func noCache(w http.ResponseWriter) {

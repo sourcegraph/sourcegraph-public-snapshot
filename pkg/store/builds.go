@@ -18,7 +18,7 @@ type Builds interface {
 	ListBuildTasks(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error)
 	CreateTasks(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error)
 	UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error
-	DequeueNext(ctx context.Context) (*sourcegraph.BuildJob, error)
+	DequeueNext(ctx context.Context) (job *sourcegraph.BuildJob, repoPath string, err error)
 	GetTask(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error)
 }
 

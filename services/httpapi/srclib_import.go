@@ -95,7 +95,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	remoteStore := newSrclibStoreClient(ctx, pb.NewMultiRepoImporterClient(cl.Conn))
 
 	importOpt := srclib.ImportOpt{
-		Repo:     repoRev.Repo,
+		Repo:     repo.URI,
 		CommitID: repoRev.CommitID,
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
@@ -122,7 +122,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 
 		_, err = cl.Search.RefreshIndex(ctx, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []string{repoRev.Repo},
+			Repos:         []int32{repoRev.Repo},
 			RefreshCounts: true,
 			RefreshSearch: true,
 		})

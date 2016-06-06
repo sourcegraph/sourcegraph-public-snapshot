@@ -15,8 +15,8 @@ import (
 func TestRefreshVCS(t *testing.T) {
 	ctx, mock := testContext()
 	var updatedEverything bool
-	mock.servers.Repos.MockGet(t, "r")
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.servers.Repos.MockGet(t, 1)
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return []*vcs.Branch{}, nil
 		},
@@ -29,7 +29,7 @@ func TestRefreshVCS(t *testing.T) {
 		return nil, errors.New("mock")
 	}
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: "r"})
+	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !updatedEverything {
 		t.Error("Did not call UpdateEverything")
 	}
@@ -41,14 +41,14 @@ func TestRefreshVCS(t *testing.T) {
 func TestRefreshVCS_cloneRepo(t *testing.T) {
 	ctx, mock := testContext()
 	var cloned, built bool
-	mock.servers.Repos.MockGet(t, "r")
+	mock.servers.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
-	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ string, _ *store.CloneInfo) error {
+	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
 		cloned = true
 		return nil
 	}
@@ -60,7 +60,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 		return nil, errors.New("mock")
 	}
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: "r"})
+	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !cloned {
 		t.Error("RefreshVCS did not clone missing repo")
 	}
@@ -75,14 +75,14 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	ctx, mock := testContext()
 	var built bool
-	mock.servers.Repos.MockGet(t, "r")
+	mock.servers.Repos.MockGet(t, 1)
 	mock.servers.Repos.MockResolveRev_NoCheck(t, "deadbeef")
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstest.MockRepository{
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		Branches_: func(_ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return nil, vcs.RepoNotExistError{}
 		},
 	})
-	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ string, _ *store.CloneInfo) error {
+	mock.stores.RepoVCS.Clone_ = func(_ context.Context, _ int32, _ *store.CloneInfo) error {
 		return vcs.ErrRepoExist
 	}
 	mock.servers.Builds.Create_ = func(_ context.Context, _ *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
@@ -93,7 +93,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 		return nil, errors.New("mock")
 	}
 
-	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: "r"})
+	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !built {
 		t.Error("RefreshVCS did not build repo")
 	}

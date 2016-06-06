@@ -91,7 +91,7 @@ build:
 		t.Errorf("build log doesn't contain %q\n\n%s", want, buildLog)
 	}
 
-	testutil.CheckImport(t, ctx, build.Repo, build.CommitID)
+	testutil.CheckImport(t, ctx, build.Repo, "r", build.CommitID)
 }
 
 func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Context, done func(), build *sourcegraph.Build, buildLog string) {
@@ -114,7 +114,7 @@ func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Co
 		a.Close()
 	}
 
-	buildSpec := sourcegraph.BuildSpec{Repo: repo.URI, ID: 1}
+	buildSpec := sourcegraph.BuildSpec{Repo: repo.ID, ID: 1}
 
 	// Get log for a single task.
 	getTaskLog := func(task sourcegraph.TaskSpec) (string, error) {

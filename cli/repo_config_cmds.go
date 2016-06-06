@@ -56,7 +56,7 @@ func (c *repoConfigGetCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	repoSpec := &sourcegraph.RepoSpec{URI: res.Repo}
+	repoSpec := &sourcegraph.RepoSpec{ID: res.Repo}
 
 	conf, err := cl.Repos.GetConfig(cliContext, repoSpec)
 	if err != nil {
@@ -93,13 +93,13 @@ func (c *repoConfigAppCmd) Execute(args []string) error {
 		return err
 	}
 
-	repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{URI: res.Repo})
+	repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{ID: res.Repo})
 	if err != nil {
 		return err
 	}
 
 	_, err = cl.Repos.ConfigureApp(cliContext, &sourcegraph.RepoConfigureAppOp{
-		Repo:   repo.URI,
+		Repo:   repo.ID,
 		App:    c.Args.App,
 		Enable: c.Enable,
 	})

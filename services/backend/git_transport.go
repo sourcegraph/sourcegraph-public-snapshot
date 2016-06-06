@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 // emptyGitCommitID is used in githttp.Event objects in the Last (or
@@ -33,8 +32,7 @@ func (s *repos) UploadPack(ctx context.Context, op *sourcegraph.UploadPackOp) (*
 		}
 	}
 
-	store := store.RepoVCSFromContext(ctx)
-	t, err := store.OpenGitTransport(ctx, op.Repo)
+	t, err := store.RepoVCSFromContext(ctx).OpenGitTransport(ctx, op.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -85,24 +83,24 @@ func (s *repos) ReceivePack(ctx context.Context, op *sourcegraph.ReceivePackOp) 
 	return &sourcegraph.Packet{Data: data}, nil
 }
 
-func verifyRepoWriteAccess(ctx context.Context, repoPath string) error {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repoPath); err != nil {
-		return err
-	}
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+func verifyRepoWriteAccess(ctx context.Context, repoID int32) error {
+	repo, err := store.ReposFromContext(ctx).Get(ctx, repoID)
 	if err != nil {
 		return err
 	}
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GitTransport.ReceivePack", repoID); err != nil {
+		return err
+	}
 	if !repo.IsSystemOfRecord() {
-		return grpc.Errorf(codes.FailedPrecondition, "repo is not writeable %v", repoPath)
+		return grpc.Errorf(codes.FailedPrecondition, "repo is not writeable: %s", repo.URI)
 	}
 	return nil
 }
 
-func updateRepoPushedAt(ctx context.Context, repoPath string) error {
+func updateRepoPushedAt(ctx context.Context, repo int32) error {
 	now := time.Now()
 	return store.ReposFromContext(ctx).Update(ctx, store.RepoUpdate{
-		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repoPath},
+		ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo},
 		PushedAt:      &now,
 		// Note: No need to update the UpdatedAt field, since it
 		// should track significant updates to repo metadata, not just

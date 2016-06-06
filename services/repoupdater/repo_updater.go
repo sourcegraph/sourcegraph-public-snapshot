@@ -1,6 +1,7 @@
 package repoupdater
 
 import (
+	"strconv"
 	"sync"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 )
 
 const (
@@ -40,25 +40,25 @@ func init() {
 
 // Enqueue queues a mirror repo for refresh. If asUser is not nil, that user's
 // auth token will be used for performing the fetch from the remote host.
-func Enqueue(repoPath string, asUser *sourcegraph.UserSpec) {
-	enqueueCounter.WithLabelValues(repotrackutil.GetTrackedRepo(repoPath)).Inc()
-	RepoUpdater.enqueue(&repoUpdateOp{Repo: repoPath, AsUser: asUser})
+func Enqueue(repo int32, asUser *sourcegraph.UserSpec) {
+	enqueueCounter.WithLabelValues(strconv.Itoa(int(repo))).Inc()
+	RepoUpdater.enqueue(&repoUpdateOp{Repo: repo, AsUser: asUser})
 }
 
 // RepoUpdater is the app repo updater worker. Repo update requests can be enqueued, with debouncing taken care of.
 var RepoUpdater = &repoUpdater{
-	recent: make(map[string]time.Time),
+	recent: make(map[int32]time.Time),
 	queue:  make(chan *repoUpdateOp, repoUpdaterQueueDepth),
 }
 
 type repoUpdateOp struct {
-	Repo   string
+	Repo   int32
 	AsUser *sourcegraph.UserSpec
 }
 
 type repoUpdater struct {
 	mu     sync.Mutex
-	recent map[string]time.Time // Map of recently scheduled repo updates. Value is last updated time.
+	recent map[int32]time.Time // Map of recently scheduled repo updates. Key is repo ID, value is last updated time.
 
 	queue chan *repoUpdateOp // Queue of scheduled repo updates.
 }
@@ -92,7 +92,7 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 
 	select {
 	case ru.queue <- op:
-		acceptedCounter.WithLabelValues(repotrackutil.GetTrackedRepo(op.Repo)).Inc()
+		acceptedCounter.WithLabelValues(strconv.Itoa(int(op.Repo))).Inc()
 		ru.recent[op.Repo] = now
 	default:
 		// Skip since queue is full.

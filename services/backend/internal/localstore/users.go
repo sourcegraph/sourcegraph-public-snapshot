@@ -87,7 +87,7 @@ type users struct{}
 var _ store.Users = (*users)(nil)
 
 func (s *users) Get(ctx context.Context, userSpec sourcegraph.UserSpec) (*sourcegraph.User, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.Get", ""); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.Get", nil); err != nil {
 		return nil, err
 	}
 	var user *sourcegraph.User
@@ -144,7 +144,7 @@ var okUsersSorts = map[string]struct{}{
 }
 
 func (s *users) List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error) {
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", ""); err != nil {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Users.List", nil); err != nil {
 		return nil, err
 	}
 	var args []interface{}
@@ -206,7 +206,7 @@ func (s *users) Count(ctx context.Context) (int32, error) {
 }
 
 func (s *users) GetUIDByGitHubID(ctx context.Context, githubUID int) (int32, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.GetUIDByGitHubID", ""); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Users.GetUIDByGitHubID", nil); err != nil {
 		return 0, err
 	}
 	uid, err := appDBH(ctx).SelectInt(`SELECT "user" FROM ext_auth_token WHERE host='github.com' AND (NOT disabled) AND ext_uid=$1;`, githubUID)

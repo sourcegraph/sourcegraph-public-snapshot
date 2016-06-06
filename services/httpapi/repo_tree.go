@@ -28,7 +28,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 
 	vars := mux.Vars(r)
 	origRepoRev := routevar.ToRepoRev(vars)
-	repoRev, err := resolveRepoRev(ctx, origRepoRev)
+	repoRev, err := resolveLocalRepoRev(ctx, origRepoRev)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
 func serveRepoTreeSearch(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}

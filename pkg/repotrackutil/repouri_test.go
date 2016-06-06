@@ -25,7 +25,7 @@ func TestGetTrackedRepo(t *testing.T) {
 	for _, c := range cases {
 		got := GetTrackedRepo(c.Path)
 		if got != c.TrackedRepo {
-			t.Errorf("getTrackedRepo(%#v) == %#v != %#v", c.Path, got, c.TrackedRepo)
+			t.Errorf("GetTrackedRepo(%#v) == %#v != %#v", c.Path, got, c.TrackedRepo)
 		}
 	}
 	// a trackedRepo must always be tracked

@@ -56,7 +56,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 		log15.Warn("postPushHook error", "error", err)
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: payload.Repo})
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: payload.Repo})
 	if err != nil {
 		log15.Warn("postPushHook error fetching repo", "repo", payload.Repo, "error", err)
 	}
@@ -97,7 +97,7 @@ func notifyGitEvent(ctx context.Context, id events.EventID, payload events.GitPa
 
 	// See how many commits were pushed.
 	commits, err := cl.Repos.ListCommits(ctx, &sourcegraph.ReposListCommitsOp{
-		Repo: repo.URI,
+		Repo: payload.Repo,
 		Opt: &sourcegraph.RepoListCommitsOptions{
 			Head:        event.Commit,
 			Base:        event.Last,
@@ -183,14 +183,14 @@ func inventoryHook(ctx context.Context, id events.EventID, payload events.GitPay
 
 		// If this push is to the default branch, update the repo's
 		// Language field with the primary language.
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
 		if err != nil {
 			log15.Warn("inventoryHook: call to Repos.Get failed", "err", err, "repoRev", repoRev)
 			return
 		}
 		if event.Branch == repo.DefaultBranch {
 			lang := inv.PrimaryProgrammingLanguage()
-			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.URI, Language: lang}); err != nil {
+			if _, err := cl.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{Repo: repo.ID, Language: lang}); err != nil {
 				log15.Warn("inventoryHook: call to Repos.Update to set language failed", "err", err, "repoRev", repoRev, "language", lang)
 			}
 		}

@@ -26,6 +26,9 @@ func TestGlobalDefs(t *testing.T) {
 	var g globalDefs
 	ctx, mocks, done := testContext()
 	defer done()
+	ctx = store.WithRepos(ctx, &repos{})
+
+	repos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "a/b"})
 
 	testDefs1 := []*graph.Def{
 		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "abc"}, Name: "ABC", Kind: "func", File: "a.go"},
@@ -35,17 +38,17 @@ func TestGlobalDefs(t *testing.T) {
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
 	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Key: unit.Key{Name: "a/b/u", Type: "t"}})
-	mocks.Repos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mocks.Repos.GetByURI_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil
 			},
 		}, nil
 	}
-	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: "a/b"}}}
+	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: repos[0].ID}}}
 	err := g.Update(ctx, op)
 	if err != nil {
 		t.Fatal(err)
@@ -113,17 +116,17 @@ func TestGlobalDefs_PrefixMatch(t *testing.T) {
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
 	mockstore.GraphMockUnits(&mocks.Stores.Graph, &unit.SourceUnit{Key: unit.Key{Name: "a/b/u", Type: "t"}})
-	mocks.Repos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-		return &sourcegraph.Repo{}, nil
+	mocks.Repos.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
+		return &sourcegraph.Repo{ID: 1, URI: "a/b"}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil
 			},
 		}, nil
 	}
-	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: "a/b"}}}
+	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: 1}}}
 	err := g.Update(ctx, op)
 	if err != nil {
 		t.Fatal(err)

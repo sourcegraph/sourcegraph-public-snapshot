@@ -52,7 +52,7 @@ func TestDefsService_ListAuthors(t *testing.T) {
 	}
 
 	defSpec := sourcegraph.DefSpec{
-		Repo:     "r",
+		Repo:     1,
 		CommitID: strings.Repeat("c", 40),
 		Unit:     "u",
 		UnitType: "t",
@@ -60,12 +60,13 @@ func TestDefsService_ListAuthors(t *testing.T) {
 	}
 
 	calledGet := mock.servers.Defs.MockGet_Return(t, &sourcegraph.Def{Def: graph.Def{
-		DefKey:   defSpec.DefKey(),
+		DefKey:   defSpec.DefKey("r"),
 		DefStart: 10,
 		DefEnd:   20,
 	}})
 	var calledVCSRepoBlameFile bool
-	mock.stores.RepoVCS.MockOpen(t, "r", vcstesting.MockRepository{
+	mock.servers.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r"})
+	mock.stores.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
 		BlameFile_: func(path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 			calledVCSRepoBlameFile = true
 			return []*vcs.Hunk{

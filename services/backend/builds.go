@@ -59,7 +59,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, grpc.Errorf(codes.InvalidArgument, "Builds.Create requires full commit ID")
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	// Only an admin can re-enqueue a successful build
 	if err = accesscontrol.VerifyUserHasAdminAccess(ctx, "Builds.Create"); err != nil {
 		successful, err := s.List(ctx, &sourcegraph.BuildListOptions{
-			Repo:      repo.URI,
+			Repo:      repo.ID,
 			CommitID:  op.CommitID,
 			Succeeded: true,
 			ListOptions: sourcegraph.ListOptions{
@@ -89,7 +89,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 	}
 
 	b := &sourcegraph.Build{
-		Repo:        repo.URI,
+		Repo:        repo.ID,
 		CommitID:    op.CommitID,
 		Branch:      op.Branch,
 		Tag:         op.Tag,
@@ -106,7 +106,7 @@ func (s *builds) Create(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*s
 		return nil, err
 	}
 
-	observeNewBuild(b)
+	observeNewBuild(repo.URI)
 
 	return b, nil
 }
@@ -162,7 +162,11 @@ func (s *builds) Update(ctx context.Context, op *sourcegraph.BuildsUpdateOp) (*s
 	}
 
 	if finished {
-		observeFinishedBuild(b)
+		repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: b.Repo})
+		if err != nil {
+			return nil, err
+		}
+		observeFinishedBuild(b, repo.URI)
 	}
 
 	var Result string
@@ -276,23 +280,23 @@ func (s *builds) GetTaskLog(ctx context.Context, op *sourcegraph.BuildsGetTaskLo
 }
 
 func (s *builds) DequeueNext(ctx context.Context, op *sourcegraph.BuildsDequeueNextOp) (*sourcegraph.BuildJob, error) {
-	nextBuild, err := store.BuildsFromContext(ctx).DequeueNext(ctx)
+	nextBuild, repoPath, err := store.BuildsFromContext(ctx).DequeueNext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if nextBuild == nil {
 		return nil, grpc.Errorf(codes.NotFound, "build queue is empty")
 	}
-	observeDequeuedBuild(nextBuild)
+	observeDequeuedBuild(repoPath)
 	return nextBuild, nil
 }
 
-func observeNewBuild(b *sourcegraph.Build) {
-	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(b.Repo)}
+func observeNewBuild(repo string) {
+	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(repo)}
 	buildsCreate.With(labels).Inc()
 }
 
-func observeFinishedBuild(b *sourcegraph.Build) {
+func observeFinishedBuild(b *sourcegraph.Build, repo string) {
 	// increment a counter labeled with status
 	// "beat" a heartbeat
 	var state string
@@ -309,14 +313,14 @@ func observeFinishedBuild(b *sourcegraph.Build) {
 	duration := b.EndedAt.Time().Sub(b.StartedAt.Time())
 	labels := prometheus.Labels{
 		"state": state,
-		"repo":  repotrackutil.GetTrackedRepo(b.Repo),
+		"repo":  repotrackutil.GetTrackedRepo(repo),
 	}
 	buildsDuration.With(labels).Observe(duration.Seconds())
 	buildsHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 }
 
-func observeDequeuedBuild(b *sourcegraph.BuildJob) {
-	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(b.Spec.Repo)}
+func observeDequeuedBuild(repo string) {
+	labels := prometheus.Labels{"repo": repotrackutil.GetTrackedRepo(repo)}
 	buildsDequeue.With(labels).Inc()
 }
 

@@ -103,7 +103,7 @@ func (s *deltas) diff(ctx context.Context, ds sourcegraph.DeltaSpec) ([]*diff.Fi
 	}
 	ds = delta.DeltaSpec()
 
-	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, delta.Base.Repo)
+	baseVCSRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, ds.Base.Repo)
 	if err != nil {
 		return nil, nil, err
 	}

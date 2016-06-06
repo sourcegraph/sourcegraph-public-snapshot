@@ -77,7 +77,7 @@ func getLastModForRepoRevs(r *http.Request, repoRevs []string) (time.Time, error
 		repoPath, commitID := sourcegraph.ParseRepoAndCommitID(repoRevs[0])
 		if commitID != "" {
 			// TODO(sqs): perf can be improved by adding cache headers in
-			// the case where multiple repo URIs are specified (currently
+			// the case where multiple repo paths are specified (currently
 			// this logic is only if 1 repo is specified).
 			lastMod, err := getRepoLastBuildTime(r, repoPath, commitID)
 			if err != nil {

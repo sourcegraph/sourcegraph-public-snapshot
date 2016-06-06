@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
@@ -21,6 +22,7 @@ func testContext() (context.Context, *mocks) {
 	ctx = svc.WithServices(ctx, m.servers.servers())
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test"})
+	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 	return ctx, &m
 }
 

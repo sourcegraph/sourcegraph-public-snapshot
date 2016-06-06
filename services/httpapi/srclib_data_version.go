@@ -13,7 +13,7 @@ import (
 func serveSrclibDataVersion(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	repoRev, err := resolveRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
+	repoRev, err := resolveLocalRepoRev(ctx, routevar.ToRepoRev(mux.Vars(r)))
 	if err != nil {
 		return err
 	}

@@ -63,13 +63,13 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		}
 	}
 
-	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: op.Repo})
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 	if err != nil {
 		log15.Error("RefreshVCS: failed to get repo", "error", err, "repo", op.Repo)
 		return nil, err
 	}
 
-	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.URI)
+	vcsRepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
 	if err != nil {
 		log15.Error("RefreshVCS: failed to open VCS", "error", err, "URI", repo.URI)
 		return nil, err
@@ -108,7 +108,7 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.URI, &store.CloneInfo{
+	err := store.RepoVCSFromContext(ctx).Clone(elevatedActor(ctx), repo.ID, &store.CloneInfo{
 		CloneURL:   repo.HTTPCloneURL,
 		RemoteOpts: remoteOpts,
 	})
@@ -121,14 +121,14 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 	// empty repository first and then proceeds to just updateRepo, thus skipping
 	// this clone phase entirely.
 	res, err := svc.Repos(ctx).ResolveRev(elevatedActor(ctx), &sourcegraph.ReposResolveRevOp{
-		Repo: repo.URI,
+		Repo: repo.ID,
 		Rev:  repo.DefaultBranch,
 	})
 	if err != nil {
 		return err
 	}
 	_, err = svc.Builds(ctx).Create(elevatedActor(ctx), &sourcegraph.BuildsCreateOp{
-		Repo:     repo.URI,
+		Repo:     repo.ID,
 		CommitID: res.CommitID,
 		Branch:   repo.DefaultBranch,
 		Config:   sourcegraph.BuildConfig{Queue: true},
@@ -193,7 +193,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(eventType, events.GitPayload{
 				Actor:       authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:        repo.URI,
+				Repo:        repo.ID,
 				IgnoreBuild: change.Branch != repo.DefaultBranch,
 				Event: githttp.Event{
 					Type:   gitEventType,
@@ -220,7 +220,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 			// TODO: what about GitPayload.ContentEncoding field?
 			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{
 				Actor: authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:  repo.URI,
+				Repo:  repo.ID,
 				Event: githttp.Event{
 					Type:   githttp.PUSH,
 					Commit: emptyGitCommitID,
@@ -240,7 +240,7 @@ func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vc
 		// TODO: what about GitPayload.ContentEncoding field?
 		events.Publish(events.GitPushEvent, events.GitPayload{
 			Actor: authpkg.ActorFromContext(ctx).UserSpec(),
-			Repo:  repo.URI,
+			Repo:  repo.ID,
 			Event: githttp.Event{
 				Type:   githttp.PUSH,
 				Commit: string(head),

@@ -15,14 +15,18 @@ func TestDefsService_ListRefs(t *testing.T) {
 
 	want := []*graph.Ref{{File: "f"}}
 
+	calledReposGet := mock.servers.Repos.MockGet_Path(t, 1, "r")
 	calledRefs := mockstore.GraphMockRefs(&mock.stores.Graph, want...)
 
-	refs, err := s.ListRefs(ctx, &sourcegraph.DefsListRefsOp{Def: sourcegraph.DefSpec{CommitID: "c", Repo: "r", Path: "p"}})
+	refs, err := s.ListRefs(ctx, &sourcegraph.DefsListRefsOp{Def: sourcegraph.DefSpec{CommitID: "c", Repo: 1, Path: "p"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(refs.Refs, want) {
 		t.Errorf("got %+v, want %+v", refs.Refs, want)
+	}
+	if !*calledReposGet {
+		t.Error("!calledReposGet")
 	}
 	if !*calledRefs {
 		t.Error("!calledRefs")

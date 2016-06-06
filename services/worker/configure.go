@@ -34,7 +34,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 		Repo:     build.Spec.Repo,
 		CommitID: build.CommitID,
 	}
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoRev.Repo})
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 	}
 
 	b.Payload.Repo = &plugin.Repo{
-		FullName:  build.Spec.Repo,
+		FullName:  repo.URI,
 		Clone:     containerCloneURL.String(),
 		Link:      repoLink,
 		IsPrivate: true,
@@ -139,7 +139,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 	}
 
 	// SrclibImportURL
-	srclibImportURL, err := getSrclibImportURL(ctx, repoRev, *containerAppURL)
+	srclibImportURL, err := getSrclibImportURL(ctx, repo.URI, build.CommitID, *containerAppURL)
 	if err != nil {
 		return nil, err
 	}
@@ -213,8 +213,8 @@ func getAppURL(ctx context.Context) (*url.URL, error) {
 
 // getSrclibImportURL constructs the srclib import URL to POST srclib
 // data to, after the srclib build steps complete.
-func getSrclibImportURL(ctx context.Context, repoRev sourcegraph.RepoRevSpec, containerAppURL url.URL) (*url.URL, error) {
-	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, routevar.RepoRevRouteVars(routevar.RepoRev{Repo: repoRev.Repo, Rev: repoRev.CommitID}))
+func getSrclibImportURL(ctx context.Context, repo, commitID string, containerAppURL url.URL) (*url.URL, error) {
+	srclibImportURL, err := httpapirouter.URL(httpapirouter.SrclibImport, routevar.RepoRevRouteVars(routevar.RepoRev{Repo: repo, Rev: commitID}))
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,10 @@ package backend
 import (
 	"strings"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sqs/pbtypes"
 
 	"golang.org/x/net/context"
@@ -35,7 +38,13 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	var descToks []string                            // "descriptor" tokens that don't have a special filter meaning.
 	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
 		if strings.HasPrefix(token, "r:") {
-			op.Opt.Repos = append(op.Opt.Repos, strings.TrimPrefix(token, "r:"))
+			repoPath := strings.TrimPrefix(token, "r:")
+			res, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+			if err == nil {
+				op.Opt.Repos = append(op.Opt.Repos, res.Repo)
+			} else {
+				log15.Warn("Search.Search: failed to resolve repo in query; ignoring.", "repo", repoPath, "err", err)
+			}
 			continue
 		}
 		if strings.HasPrefix(token, "u:") {

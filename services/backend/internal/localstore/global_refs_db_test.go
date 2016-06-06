@@ -40,14 +40,39 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	ctx, mocks, done := testContext()
 	defer done()
 
+	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/y"}, &sourcegraph.Repo{URI: "a/b"})
+	xyRepoID := createdRepos[0].ID
+	abRepoID := createdRepos[1].ID
 	// TODO(keegancsmith) remove once we don't need to speak to the repo
 	// service https://app.asana.com/0/138665145800110/137848642885286
 	mockReposS := &mock.ReposServer{
 		Get_: func(_ context.Context, r *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-			return &sourcegraph.Repo{URI: r.URI}, nil
+			var uri string
+			switch r.ID {
+			case xyRepoID:
+				uri = "x/y"
+			case abRepoID:
+				uri = "a/b"
+			default:
+				panic("unrecognized ID")
+			}
+			return &sourcegraph.Repo{ID: r.ID, URI: uri}, nil
+		},
+		Resolve_: func(_ context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+			var id int32
+			switch op.Path {
+			case "x/y":
+				id = xyRepoID
+			case "a/b":
+				id = abRepoID
+			default:
+				panic("unrecognized path: " + op.Path)
+			}
+			return &sourcegraph.RepoResolution{Repo: id}, nil
 		},
 	}
 	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
+	ctx = store.WithRepos(ctx, &repos{})
 
 	testRefs1 := []*graph.Ref{
 		{DefPath: ".", DefRepo: "", DefUnit: "", File: "a/b/u/s.go"},              // package ref
@@ -98,13 +123,16 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	addRefs("x/y", "x/y/c", "t", testRefs3)
 	mockRefs(mocks, allRefs)
 	for repo := range allRefs {
-		err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repo})
+		repoObj, err := (&repos{}).GetByURI(ctx, repo)
 		if err != nil {
+			t.Fatal(err)
+		}
+		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoObj.ID}); err != nil {
 			t.Fatalf("could not update %s: %s", repo, err)
 		}
 	}
 	// Updates should be idempotent.
-	err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: "a/b"})
+	err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: abRepoID})
 	if err != nil {
 		t.Fatalf("could not idempotent update a/b: %s", err)
 	}
@@ -115,7 +143,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 	}{
 		"simple1": {
 			&sourcegraph.DefsListRefLocationsOp{
-				Def: sourcegraph.DefSpec{Repo: "a/b", Unit: "a/b/u", UnitType: "t", Path: "A/R"},
+				Def: sourcegraph.DefSpec{Repo: abRepoID, Unit: "a/b/u", UnitType: "t", Path: "A/R"},
 			},
 			[]*sourcegraph.DefRepoRef{
 				{Repo: "a/b", Count: 3, Files: []*sourcegraph.DefFileRef{{Path: "a/b/u/s.go", Count: 2}, {Path: "a/b/p/t.go", Count: 1}}},
@@ -123,7 +151,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		},
 		"simple2": {
 			&sourcegraph.DefsListRefLocationsOp{
-				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
 			},
 			[]*sourcegraph.DefRepoRef{
 				{Repo: "x/y", Count: 1, Files: []*sourcegraph.DefFileRef{{Path: "x/y/c/v.go", Count: 1}}},
@@ -132,9 +160,9 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		},
 		"repo": {
 			&sourcegraph.DefsListRefLocationsOp{
-				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
 				Opt: &sourcegraph.DefListRefLocationsOptions{
-					Repos: []string{"a/b"},
+					Repos: []int32{abRepoID},
 				},
 			},
 			[]*sourcegraph.DefRepoRef{
@@ -143,7 +171,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		},
 		"pagination_first": {
 			&sourcegraph.DefsListRefLocationsOp{
-				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
 				Opt: &sourcegraph.DefListRefLocationsOptions{
 					ListOptions: sourcegraph.ListOptions{
 						Page: 1,
@@ -157,7 +185,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		},
 		"pagination_empty": {
 			&sourcegraph.DefsListRefLocationsOp{
-				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R"},
+				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
 				Opt: &sourcegraph.DefListRefLocationsOptions{
 					ListOptions: sourcegraph.ListOptions{
 						Page: 100,
@@ -169,12 +197,15 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 		// Missing defspec should not return an error
 		"empty": {
 			&sourcegraph.DefsListRefLocationsOp{
-				Def: sourcegraph.DefSpec{Repo: "x/y", Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
+				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R/D"},
 			},
 			[]*sourcegraph.DefRepoRef{},
 		},
 	}
 	for tn, test := range testCases {
+		if tn != "repo" {
+			continue
+		}
 		got, err := g.Get(ctx, test.Op)
 		if err != nil {
 			t.Fatal(err)
@@ -200,36 +231,60 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	ctx, mocks, done := testContext()
 	defer done()
 
+	createdRepos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "def/repo"}, &sourcegraph.Repo{URI: "repo"})
+	defRepoID := createdRepos[0].ID
+	repoID := createdRepos[1].ID
 	// TODO(keegancsmith) remove once we don't need to speak to the repo
 	// service https://app.asana.com/0/138665145800110/137848642885286
 	mockReposS := &mock.ReposServer{
 		Get_: func(_ context.Context, r *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-			return &sourcegraph.Repo{URI: r.URI}, nil
+			var uri string
+			switch r.ID {
+			case defRepoID:
+				uri = "def/repo"
+			case repoID:
+				uri = "repo"
+			default:
+				panic("unrecognized ID")
+			}
+			return &sourcegraph.Repo{ID: r.ID, URI: uri}, nil
+		},
+		Resolve_: func(_ context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+			var id int32
+			switch op.Path {
+			case "def/repo":
+				id = defRepoID
+			case "repo":
+				id = repoID
+			default:
+				panic("unrecognized path: " + op.Path)
+			}
+			return &sourcegraph.RepoResolution{Repo: id}, nil
 		},
 	}
 	ctx = svc.WithServices(ctx, svc.Services{Repos: mockReposS})
+	ctx = store.WithRepos(ctx, &repos{})
 
 	allRefs := map[string][]*graph.Ref{}
 	mockRefs(mocks, allRefs)
 
-	def := sourcegraph.DefSpec{Repo: "def/repo", Unit: "def/unit", UnitType: "def/type", Path: "def/path"}
+	def := sourcegraph.DefSpec{Repo: defRepoID, Unit: "def/unit", UnitType: "def/type", Path: "def/path"}
 	nFiles := 10
-	repo := "repo"
 	genRefs := func(dir string) {
 		refs := make([]*graph.Ref, 0, nFiles)
 		for i := 0; i < nFiles; i++ {
 			refs = append(refs, &graph.Ref{
-				DefRepo:     def.Repo,
+				DefRepo:     "def/repo",
 				DefUnit:     def.Unit,
 				DefUnitType: def.UnitType,
 				DefPath:     def.Path,
 				File:        fmt.Sprintf("%s/file%d.go", dir, i),
-				Repo:        repo,
+				Repo:        "repo",
 				Unit:        "unit",
 				UnitType:    "unitType",
 			})
 		}
-		allRefs[repo] = refs
+		allRefs["repo"] = refs
 	}
 
 	query := &sourcegraph.DefsListRefLocationsOp{Def: def}
@@ -264,7 +319,7 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// We should only have results for first
 	genRefs("first")
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repo})
+	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,14 +328,14 @@ func TestGlobalRefsUpdate(t *testing.T) {
 	// We haven't changed the "latest" commit, so even though the data has
 	// changed we shouldn't reindex
 	genRefs("second")
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repo})
+	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	check("first-again", "first")
 
 	// Force a reindex should show the new data
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repo, Force: true})
+	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID, Force: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,14 +343,14 @@ func TestGlobalRefsUpdate(t *testing.T) {
 
 	// Update what the latest commit is, that should cause us to index third
 	genRefs("third")
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "bbbbb", nil
 			},
 		}, nil
 	}
-	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repo})
+	err = g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -371,7 +426,11 @@ func benchmarkGlobalRefsGet(b *testing.B, g store.GlobalRefs) {
 	ctx, mocks, done := testContext()
 	defer done()
 	get := func() error {
-		_, err := g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: "github.com/golang/go", Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
+		repo, err := (&repos{}).GetByURI(ctx, "github.com/golang/go")
+		if err != nil {
+			return err
+		}
+		_, err = g.Get(ctx, &sourcegraph.DefsListRefLocationsOp{Def: sourcegraph.DefSpec{Repo: repo.ID, Unit: "fmt", UnitType: "GoPackage", Path: "Errorf"}})
 		return err
 	}
 	if err := get(); err != nil {
@@ -439,7 +498,11 @@ func globalRefsUpdate(b *testing.B, g store.GlobalRefs, ctx context.Context, moc
 	mockRefs(mocks, allRefs)
 	for i := 0; i < nRepos; i++ {
 		pkg := fmt.Sprintf("foo.com/foo/bar%d", i)
-		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: pkg}); err != nil {
+		repoObj, err := (&repos{}).GetByURI(ctx, pkg)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if err := g.Update(ctx, &sourcegraph.DefsRefreshIndexOp{Repo: repoObj.ID}); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -467,10 +530,10 @@ func mockRefs(mocks *mocks, allRefs map[string][]*graph.Ref) {
 		}
 		return allRefs[repos[0]], nil
 	}
-	mocks.Repos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	mocks.Repos.Get_ = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		return &sourcegraph.Repo{}, nil
 	}
-	mocks.RepoVCS.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	mocks.RepoVCS.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil

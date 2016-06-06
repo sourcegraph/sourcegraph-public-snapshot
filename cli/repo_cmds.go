@@ -154,7 +154,7 @@ func (c *repoGetCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	repoSpec := &sourcegraph.RepoSpec{URI: res.Repo}
+	repoSpec := &sourcegraph.RepoSpec{ID: res.Repo}
 
 	repo, err := cl.Repos.Get(cliContext, repoSpec)
 	if err != nil {
@@ -341,7 +341,7 @@ func (c *repoDeleteCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := cl.Repos.Delete(cliContext, &sourcegraph.RepoSpec{URI: res.Repo}); err != nil {
+		if _, err := cl.Repos.Delete(cliContext, &sourcegraph.RepoSpec{ID: res.Repo}); err != nil {
 			return err
 		}
 		log.Printf("# deleted: %s", uri)
@@ -390,7 +390,7 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 	if err != nil {
 		return err
 	}
-	repoSpec := sourcegraph.RepoSpec{URI: res.Repo}
+	repoSpec := sourcegraph.RepoSpec{ID: res.Repo}
 
 	rev := c.Rev
 	if rev == "" {
@@ -456,39 +456,39 @@ func (c *repoRefreshVCSCmd) Execute(args []string) error {
 			return err
 		}
 
-		repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{URI: res.Repo})
+		repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{ID: res.Repo})
 		if err != nil {
 			return err
 		}
 
 		preRes, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.URI,
+			Repo: repo.ID,
 			Rev:  repo.DefaultBranch,
 		})
 		if err != nil {
 			return err
 		}
 		preCommit, err := cl.Repos.GetCommit(cliContext, &sourcegraph.RepoRevSpec{
-			Repo:     repo.URI,
+			Repo:     repo.ID,
 			CommitID: preRes.CommitID,
 		})
 		if err != nil {
 			return err
 		}
 
-		if _, err := cl.MirrorRepos.RefreshVCS(cliContext, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo.URI}); err != nil {
+		if _, err := cl.MirrorRepos.RefreshVCS(cliContext, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo.ID}); err != nil {
 			return err
 		}
 
 		postRes, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.URI,
+			Repo: repo.ID,
 			Rev:  repo.DefaultBranch,
 		})
 		if err != nil {
 			return err
 		}
 		postCommit, err := cl.Repos.GetCommit(cliContext, &sourcegraph.RepoRevSpec{
-			Repo:     repo.URI,
+			Repo:     repo.ID,
 			CommitID: postRes.CommitID,
 		})
 		if err != nil {
