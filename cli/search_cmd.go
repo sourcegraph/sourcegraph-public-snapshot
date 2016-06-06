@@ -21,6 +21,7 @@ func init() {
 
 type searchCmd struct {
 	Refresh       string `long:"refresh" description:"repository URI for which to update the search index and counts (implies --refresh-counts)"`
+	RefreshAsync  bool   `long:"refresh-async" description:"queues refresh instead of blocking"`
 	RefreshCounts string `long:"refresh-counts" description:"repository URI for which to update the search counts"`
 	Limit         int32  `long:"limit" description:"limit # of search results" default:"10"`
 	Args          struct {
@@ -30,7 +31,19 @@ type searchCmd struct {
 
 func (c *searchCmd) Execute(args []string) error {
 	cl := cliClient
-	if c.Refresh != "" {
+	if c.Refresh != "" && c.RefreshAsync {
+		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Refresh})
+		if err != nil {
+			return err
+		}
+		_, err = cl.Async.RefreshIndexes(cliContext, &sourcegraph.AsyncRefreshIndexesOp{
+			Repo:  res.Repo,
+			Force: true,
+		})
+		if err != nil {
+			return err
+		}
+	} else if c.Refresh != "" {
 		log.Printf("Def.RefreshIndex")
 		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Refresh})
 		if err != nil {

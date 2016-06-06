@@ -1,10 +1,17 @@
 package backend
 
 import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -12,22 +19,95 @@ import (
 var Async sourcegraph.AsyncServer = &async{}
 
 type async struct{}
+type asyncWorker struct{}
+
+// StartAsyncWorkers will start async workers to consume jobs from the queue.
+func StartAsyncWorkers(ctx context.Context) {
+	w := &asyncWorker{}
+	for i := 0; i < localcli.Flags.NumAsyncWorkers; i++ {
+		go func() {
+			for {
+				didWork := w.try(ctx)
+				if !didWork {
+					// didn't do anything, sleep
+					time.Sleep(5 * time.Second)
+				}
+			}
+		}()
+	}
+}
 
 func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
 	// TODO(keegancsmith) perm check on ctx, since we want to use one not
 	// tied to the gRPC request lifetime
-	go func() {
-		err := s.refreshIndexes(ctx, op)
-		if err != nil {
-			log15.Debug("Async.RefreshIndexes failed", "repo", op.Repo, "source", op.Source, "err", err)
-		} else {
-			log15.Debug("Async.RefreshIndexes success", "repo", op.Repo, "source", op.Source)
-		}
-	}()
+	args, err := json.Marshal(op)
+	if err != nil {
+		return nil, err
+	}
+	err = store.QueueFromContext(ctx).Enqueue(ctx, &store.Job{
+		Type: "RefreshIndexes",
+		Args: args,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &pbtypes.Void{}, nil
 }
 
-func (s *async) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) error {
+// try attempts to lock a job and do it. Returns true if work was done
+func (s *asyncWorker) try(ctx context.Context) bool {
+	j, err := store.QueueFromContext(ctx).LockJob(ctx)
+	if err != nil {
+		log15.Debug("Queue.LockJob failed", "err", err)
+		return false
+	}
+	if j == nil {
+		return false
+	}
+
+	err = s.doSafe(ctx, j.Job)
+	if err != nil {
+		err = j.MarkError(err.Error())
+		if err != nil {
+			log15.Debug("Queue Job.Error failed", "err", err)
+		}
+		return true
+	}
+	err = j.MarkSuccess()
+	if err != nil {
+		log15.Debug("Queue Job.Delete failed", "err", err)
+	}
+	return true
+}
+
+// doSafe is a wrapper which recovers from panics
+func (s *asyncWorker) doSafe(ctx context.Context, job *store.Job) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic when running job %+v: %v", job, r)
+		}
+	}()
+	err = s.do(ctx, job)
+	return
+}
+
+func (s *asyncWorker) do(ctx context.Context, job *store.Job) error {
+	switch job.Type {
+	case "RefreshIndexes":
+		op := &sourcegraph.AsyncRefreshIndexesOp{}
+		err := json.Unmarshal(job.Args, op)
+		if err != nil {
+			return err
+		}
+		return s.refreshIndexes(ctx, op)
+	case "NOOP":
+		return nil
+	default:
+		return fmt.Errorf("unknown async job type %s", job.Type)
+	}
+}
+
+func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) error {
 	_, err := svc.Defs(ctx).RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
 		Repo:                op.Repo,
 		RefreshRefLocations: true,

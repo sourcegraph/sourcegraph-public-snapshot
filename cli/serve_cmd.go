@@ -49,11 +49,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/snapshotprof"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 	"sourcegraph.com/sqs/pbtypes"
 )
@@ -463,6 +467,26 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 	go statsutil.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
+
+	// Start background async workers. It is a service, so needs the
+	// stores setup in the context
+	asyncCtx := clientCtx
+	// TODO(keegancsmith) setting the serverctx.Funcs seems bad, but we do
+	// need access to the store since Queue.LockJob is session
+	// based. Think of something better
+	for _, f := range serverctx.Funcs {
+		asyncCtx, err = f(asyncCtx)
+		if err != nil {
+			return err
+		}
+	}
+	asyncCtx = svc.WithServices(asyncCtx, server.Config(serverCtxFunc))
+	asyncCtx = accesscontrol.WithInsecureSkip(asyncCtx, true) // HACKS
+	asyncCtx, err = c.authenticateScopedContext(asyncCtx, idKey, []string{"internal:async"})
+	if err != nil {
+		return err
+	}
+	backend.StartAsyncWorkers(asyncCtx)
 
 	select {}
 }

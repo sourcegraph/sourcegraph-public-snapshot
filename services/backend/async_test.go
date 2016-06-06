@@ -1,54 +1,105 @@
 package backend
 
 import (
-	"reflect"
+	"encoding/json"
 	"testing"
-	"time"
 
-	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sqs/pbtypes"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 )
 
 func TestAsyncService_RefreshIndexes(t *testing.T) {
 	s := &async{}
+	w := &asyncWorker{}
 	ctx, mock := testContext()
 
 	wantRepo := int32(10810)
-	calledDefs := make(chan bool, 1)
-	calledSearch := make(chan bool, 1)
-	mock.servers.Defs.RefreshIndex_ = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error) {
-		if op.Repo != wantRepo {
-			t.Errorf("unexpected def repo, got %v != %v", op.Repo, wantRepo)
-		}
-		calledDefs <- true
-		return nil, nil
-	}
-	mock.servers.Search.RefreshIndex_ = func(ctx context.Context, op *sourcegraph.SearchRefreshIndexOp) (*pbtypes.Void, error) {
-		if !reflect.DeepEqual(op.Repos, []int32{wantRepo}) {
-			t.Errorf("unexpected def repo, got %v != []int32{%v}", op.Repos, wantRepo)
-		}
-		calledSearch <- true
-		return nil, nil
-	}
 
-	_, err := s.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{Repo: wantRepo})
+	// Enqueue
+	op := &sourcegraph.AsyncRefreshIndexesOp{Repo: wantRepo}
+	job := &store.Job{
+		Type: "RefreshIndexes",
+		Args: mustMarshal(t, op),
+	}
+	calledEnqueue := mock.stores.Queue.MockEnqueue(t, job)
+	_, err := s.RefreshIndexes(ctx, op)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	timeout := time.After(100 * time.Millisecond)
-	select {
-	case <-calledDefs:
-		break
-	case <-timeout:
-		t.Fatal("waiting for calledDefs timed out")
+	if !*calledEnqueue {
+		t.Fatal("async.RefreshIndexes did not call Enqueue")
 	}
 
-	select {
-	case <-calledSearch:
-		break
-	case <-timeout:
-		t.Fatal("waiting for calledSearch timed out")
+	// LockJob
+	calledDefs := mock.servers.Defs.MockRefreshIndex(t, &sourcegraph.DefsRefreshIndexOp{
+		Repo:                wantRepo,
+		RefreshRefLocations: true,
+	})
+	calledSearch := mock.servers.Search.MockRefreshIndex(t, &sourcegraph.SearchRefreshIndexOp{
+		Repos:         []int32{wantRepo},
+		RefreshCounts: true,
+		RefreshSearch: true,
+	})
+	err = w.do(ctx, job)
+	if err != nil {
+		t.Fatal(err)
 	}
+	if !*calledDefs {
+		t.Error("Did not call Defs.RefreshIndex")
+	}
+	if !*calledSearch {
+		t.Error("Did not call Search.RefreshIndex")
+	}
+}
+
+func TestAsyncWorker(t *testing.T) {
+	w := &asyncWorker{}
+	ctx, mock := testContext()
+
+	calledLockJob, _, _ := mock.stores.Queue.MockLockJob_Return(t, nil)
+	didWork := w.try(ctx)
+	if didWork {
+		t.Error("did work with an empty queue")
+	}
+	if !*calledLockJob {
+		t.Error("did not call LockJob")
+	}
+
+	calledLockJob, calledSuccess, calledError := mock.stores.Queue.MockLockJob_Return(t, &store.Job{Type: "NOOP"})
+	didWork = w.try(ctx)
+	if !didWork {
+		t.Error("did not do work")
+	}
+	if !*calledLockJob {
+		t.Error("did not call LockJob")
+	}
+	if !*calledSuccess {
+		t.Error("job should of succeeded")
+	}
+	if *calledError {
+		t.Error("job should of succeeded")
+	}
+
+	calledLockJob, calledSuccess, calledError = mock.stores.Queue.MockLockJob_Return(t, &store.Job{Type: "does not exist"})
+	didWork = w.try(ctx)
+	if !didWork {
+		t.Error("did not do work")
+	}
+	if !*calledLockJob {
+		t.Error("did not call LockJob")
+	}
+	if *calledSuccess {
+		t.Error("job should of failed")
+	}
+	if !*calledError {
+		t.Error("job should of failed")
+	}
+}
+
+func mustMarshal(t *testing.T, m interface{}) []byte {
+	b, err := json.Marshal(m)
+	if err != nil {
+		t.Fatalf("Failed to json.Marshal %v: %s", m, err)
+	}
+	return b
 }
