@@ -88,7 +88,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	// *os.File field. If package zipfs's implementation changes in
 	// such a way that makes this assumption false, our tests will
 	// catch the issue.
-	fs := zipfs.New(&zip.ReadCloser{Reader: *zipR}, fmt.Sprintf("srclib import for %s", repoRev))
+	fs := zipfs.New(&zip.ReadCloser{Reader: *zipR}, fmt.Sprintf("srclib import for %s", repo.URI))
 	fs = absolutePathVFS{fs}
 
 	// Import and index over gRPC.
@@ -99,7 +99,7 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		CommitID: repoRev.CommitID,
 	}
 	if err := srclib.Import(fs, remoteStore, importOpt); err != nil {
-		return fmt.Errorf("srclib import of %s failed: %s", repoRev, err)
+		return fmt.Errorf("srclib import of %s failed: %s", repo.URI, err)
 	}
 
 	if repo.Fork {
