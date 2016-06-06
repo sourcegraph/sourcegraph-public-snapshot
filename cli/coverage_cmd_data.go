@@ -1,6 +1,6 @@
 package cli
 
-var langs_ = []string{"Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++", "CSS"}
+var langs_ = []string{"Go", "Java", "JavaScript", "TypeScript", "PHP", "Python", "Ruby", "Objective-C", "C", "C#", "C++", "CSS", "JSON"}
 var langRepos_ = map[string][]string{
 	"Go": []string{
 		"sourcegraph/sourcegraph",
@@ -1123,5 +1123,13 @@ var langRepos_ = map[string][]string{
 		"github.com/dhg/Skeleton",
 		"github.com/tobiasahlin/SpinKit",
 		"github.com/h5bp/Effeckt.css",
+	},
+	"JSON": []string{
+		"github.com/mikedeboer/node-github",
+		"github.com/ggilmore/srclib-json",
+		"github.com/arunoda/meteor-up",
+		"github.com/TypeStrong/learn-typescript",
+		"github.com/TelescopeJS/Telescope",
+		"github.com/basarat/typescript-book",
 	},
 }
