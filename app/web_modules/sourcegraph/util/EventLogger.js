@@ -88,9 +88,7 @@ export class EventLogger {
 		this.userAgentIsBot = Boolean(context.userAgentIsBot);
 
 		// Opt out of Amplitude events if the user agent is a bot.
-		if (this.userAgentIsBot) {
-			this._amplitude.setOptOut(true);
-		}
+		this._amplitude.setOptOut(this.userAgentIsBot);
 	}
 
 	// User data from the previous call to _updateUser.
@@ -198,6 +196,9 @@ export class EventLogger {
 				this.setUserProperty("orgs", Object.keys(orgs));
 				this.setUserProperty("num_github_repos", action.data.RemoteRepos.length);
 				this.setIntercomProperty("companies", Object.keys(orgs).map(org => ({id: `github_${org}`, name: org})));
+				if (orgs["sourcegraph"]) {
+					this.setUserProperty("is_sg_employee", "true");
+				}
 			}
 			break;
 
