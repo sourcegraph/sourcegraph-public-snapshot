@@ -239,7 +239,11 @@ func (c *stressCmd) fetchRepos(ctx context.Context) error {
 		}
 		c.repos = allRepos.Repos
 	} else {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: c.Repo})
+		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Repo})
+		if err != nil {
+			return err
+		}
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: res.Repo})
 		if err != nil {
 			return err
 		}

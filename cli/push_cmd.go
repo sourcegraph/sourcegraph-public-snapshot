@@ -45,23 +45,27 @@ func (c *pushCmd) Execute(args []string) error {
 		commitID = c.CommitID
 	}
 
-	repoRevSpec := sourcegraph.RepoRevSpec{Repo: c.Repo, CommitID: commitID}
+	res, err := cliClient.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Repo})
+	if err != nil {
+		return err
+	}
+	repoRevSpec := sourcegraph.RepoRevSpec{Repo: res.Repo, CommitID: commitID}
 
 	appURL, err := getRemoteAppURL(cliContext)
 	if err != nil {
 		return err
 	}
 
-	if err := c.do(cliContext, repoRevSpec); err != nil {
+	if err := c.do(cliContext, res.CanonicalPath, repoRevSpec); err != nil {
 		return err
 	}
 
-	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(repoRevSpec.Repo, repoRevSpec.CommitID)))
+	log.Printf("# Success! View the repository at: %s", appURL.ResolveReference(router.Rel.URLToRepoRev(res.CanonicalPath, commitID)))
 
 	return nil
 }
 
-func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (err error) {
+func (c *pushCmd) do(ctx context.Context, repoPath string, repoRevSpec sourcegraph.RepoRevSpec) (err error) {
 	cl := cliClient
 
 	// Resolve to the full commit ID, and ensure that the remote
@@ -73,7 +77,7 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 	repoRevSpec.CommitID = string(commit.ID)
 
 	if globalOpt.Verbose {
-		log.Printf("Pushing srclib data for %s@%s to server at %s...", repoRevSpec.Repo, repoRevSpec.CommitID, sourcegraph.GRPCEndpoint(ctx))
+		log.Printf("Pushing srclib data for %s@%s to server at %s...", repoPath, repoRevSpec.CommitID, sourcegraph.GRPCEndpoint(ctx))
 	}
 
 	// Perform the import.
@@ -81,11 +85,11 @@ func (c *pushCmd) do(ctx context.Context, repoRevSpec sourcegraph.RepoRevSpec) (
 
 	bdfs, err := srclib.GetBuildDataFS(repoRevSpec.CommitID)
 	if err != nil {
-		return fmt.Errorf("getting local build data FS for %s@%s: %s", repoRevSpec.Repo, repoRevSpec.CommitID, err)
+		return fmt.Errorf("getting local build data FS for %s@%s: %s", repoPath, repoRevSpec.CommitID, err)
 	}
 
 	importOpt := srclib.ImportOpt{
-		Repo:     repoRevSpec.Repo,
+		Repo:     repoPath,
 		CommitID: repoRevSpec.CommitID,
 		Verbose:  globalOpt.Verbose,
 	}

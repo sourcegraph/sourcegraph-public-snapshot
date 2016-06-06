@@ -32,8 +32,13 @@ func (c *searchCmd) Execute(args []string) error {
 	cl := cliClient
 	if c.Refresh != "" {
 		log.Printf("Def.RefreshIndex")
-		_, err := cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
-			Repo:                c.Refresh,
+		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Refresh})
+		if err != nil {
+			return err
+		}
+
+		_, err = cl.Defs.RefreshIndex(cliContext, &sourcegraph.DefsRefreshIndexOp{
+			Repo:                res.Repo,
 			RefreshRefLocations: true,
 			Force:               true,
 		})
@@ -42,7 +47,7 @@ func (c *searchCmd) Execute(args []string) error {
 		}
 		log.Printf("Search.RefreshIndex")
 		_, err = cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []string{c.Refresh},
+			Repos:         []string{res.Repo},
 			RefreshCounts: true,
 			RefreshSearch: true,
 		})
@@ -52,9 +57,14 @@ func (c *searchCmd) Execute(args []string) error {
 		log.Printf("refresh complete")
 		return nil
 	} else if c.RefreshCounts != "" {
+		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.RefreshCounts})
+		if err != nil {
+			return err
+		}
+
 		log.Printf("Search.RefreshIndex (counts only)")
-		_, err := cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
-			Repos:         []string{c.RefreshCounts},
+		_, err = cl.Search.RefreshIndex(cliContext, &sourcegraph.SearchRefreshIndexOp{
+			Repos:         []string{res.Repo},
 			RefreshCounts: true,
 		})
 		if err != nil {

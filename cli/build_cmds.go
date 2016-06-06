@@ -65,8 +65,14 @@ type buildsGetCmd struct {
 
 func (c *buildsGetCmd) Execute(args []string) error {
 	cl := cliClient
+
+	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Args.Repo})
+	if err != nil {
+		return err
+	}
+
 	opt := &sourcegraph.BuildSpec{
-		Repo: c.Args.Repo,
+		Repo: res.Repo,
 		ID:   c.Args.ID,
 	}
 	build, err := cl.Builds.Get(cliContext, opt)
@@ -97,8 +103,13 @@ type buildsListCmd struct {
 func (c *buildsListCmd) Execute(args []string) error {
 	cl := cliClient
 
+	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Repo})
+	if err != nil {
+		return err
+	}
+
 	opt := &sourcegraph.BuildListOptions{
-		Repo:        c.Repo,
+		Repo:        res.Repo,
 		CommitID:    c.CommitID,
 		Active:      c.Active,
 		Queued:      c.Queued,
