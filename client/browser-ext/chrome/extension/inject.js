@@ -386,7 +386,7 @@ class InjectApp extends React.Component {
 			e.appendChild(a);
 		}
 
-		a.href = `https://sourcegraph.com/${props.repo}/-/info/${props.defPath}`;
+		a.href = `https://sourcegraph.com/${props.repo}@${props.rev}/-/info/${props.defPath}`;
 		a.dataset.content = "Find Usages";
 		a.target = "tab";
 		a.title = `Sourcegraph: View cross-references to ${def.Name}`;
