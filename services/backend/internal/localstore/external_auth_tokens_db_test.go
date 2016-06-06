@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -12,6 +10,10 @@ import (
 )
 
 func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -37,6 +39,10 @@ func TestExternalAuthTokens_GetUserToken_found(t *testing.T) {
 }
 
 func TestExternalAuthTokens_GetUserToken_notFound(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -53,6 +59,10 @@ func TestExternalAuthTokens_GetUserToken_notFound(t *testing.T) {
 }
 
 func TestExternalAuthTokens_SetUserToken_create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -81,6 +91,10 @@ func TestExternalAuthTokens_SetUserToken_create(t *testing.T) {
 }
 
 func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -118,6 +132,10 @@ func TestExternalAuthTokens_SetUserToken_update(t *testing.T) {
 }
 
 func TestExternalAuthTokens_DeleteToken(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -149,6 +167,10 @@ func TestExternalAuthTokens_DeleteToken(t *testing.T) {
 }
 
 func TestExternalAuthTokens_ListExternalUsers_empty(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens
@@ -193,6 +215,10 @@ func TestExternalAuthTokens_ListExternalUsers_empty(t *testing.T) {
 }
 
 func TestExternalAuthTokens_ListExternalUsers_nonempty(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	var s externalAuthTokens

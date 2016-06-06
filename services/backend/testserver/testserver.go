@@ -1,5 +1,3 @@
-// +build exectest
-
 package testserver
 
 import (

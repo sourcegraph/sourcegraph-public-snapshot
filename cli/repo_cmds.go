@@ -150,7 +150,11 @@ type repoGetCmd struct {
 func (c *repoGetCmd) Execute(args []string) error {
 	cl := cliClient
 
-	repoSpec := &sourcegraph.RepoSpec{URI: c.Args.URI}
+	res, err := cliClient.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Args.URI})
+	if err != nil {
+		return err
+	}
+	repoSpec := &sourcegraph.RepoSpec{ID: res.Repo}
 
 	repo, err := cl.Repos.Get(cliContext, repoSpec)
 	if err != nil {
@@ -188,8 +192,14 @@ type repoGetSrclibDataVersionForPathCmd struct {
 
 func (c *repoGetSrclibDataVersionForPathCmd) Execute(args []string) error {
 	cl := cliClient
+
+	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Args.URI})
+	if err != nil {
+		return err
+	}
+
 	ver, err := cl.Repos.GetSrclibDataVersionForPath(cliContext, &sourcegraph.TreeEntrySpec{
-		RepoRev: sourcegraph.RepoRevSpec{Repo: c.Args.URI},
+		RepoRev: sourcegraph.RepoRevSpec{Repo: res.Repo},
 	})
 	if err != nil {
 		return err
@@ -300,8 +310,13 @@ type repoUpdateCmd struct {
 func (c *repoUpdateCmd) Execute(args []string) error {
 	cl := cliClient
 
+	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Args.URI})
+	if err != nil {
+		return err
+	}
+
 	repo, err := cl.Repos.Update(cliContext, &sourcegraph.ReposUpdateOp{
-		Repo:        c.Args.URI,
+		Repo:        res.Repo,
 		Description: c.Description,
 		Language:    c.Language,
 	})
@@ -322,7 +337,11 @@ func (c *repoDeleteCmd) Execute(args []string) error {
 	cl := cliClient
 
 	for _, uri := range c.Args.URIs {
-		if _, err := cl.Repos.Delete(cliContext, &sourcegraph.RepoSpec{URI: uri}); err != nil {
+		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: uri})
+		if err != nil {
+			return err
+		}
+		if _, err := cl.Repos.Delete(cliContext, &sourcegraph.RepoSpec{ID: res.Repo}); err != nil {
 			return err
 		}
 		log.Printf("# deleted: %s", uri)
@@ -367,7 +386,11 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 
 	cl := cliClient
 
-	repoSpec := sourcegraph.RepoSpec{URI: repoURI}
+	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: repoURI})
+	if err != nil {
+		return err
+	}
+	repoSpec := sourcegraph.RepoSpec{ID: res.Repo}
 
 	rev := c.Rev
 	if rev == "" {
@@ -377,14 +400,14 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 		}
 		rev = repo.DefaultBranch
 	}
-	res, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-		Repo: repoURI,
+	resRev, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
+		Repo: res.Repo,
 		Rev:  rev,
 	})
 	if err != nil {
 		return err
 	}
-	repoRevSpec := sourcegraph.RepoRevSpec{Repo: repoURI, CommitID: res.CommitID}
+	repoRevSpec := sourcegraph.RepoRevSpec{Repo: res.Repo, CommitID: resRev.CommitID}
 
 	commit, err := cl.Repos.GetCommit(cliContext, &repoRevSpec)
 	if err != nil {
@@ -428,39 +451,44 @@ type repoRefreshVCSCmd struct {
 func (c *repoRefreshVCSCmd) Execute(args []string) error {
 	cl := cliClient
 	for _, repoURI := range c.Args.URIs {
-		repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{URI: repoURI})
+		res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: repoURI})
+		if err != nil {
+			return err
+		}
+
+		repo, err := cl.Repos.Get(cliContext, &sourcegraph.RepoSpec{ID: res.Repo})
 		if err != nil {
 			return err
 		}
 
 		preRes, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.URI,
+			Repo: repo.ID,
 			Rev:  repo.DefaultBranch,
 		})
 		if err != nil {
 			return err
 		}
 		preCommit, err := cl.Repos.GetCommit(cliContext, &sourcegraph.RepoRevSpec{
-			Repo:     repo.URI,
+			Repo:     repo.ID,
 			CommitID: preRes.CommitID,
 		})
 		if err != nil {
 			return err
 		}
 
-		if _, err := cl.MirrorRepos.RefreshVCS(cliContext, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo.URI}); err != nil {
+		if _, err := cl.MirrorRepos.RefreshVCS(cliContext, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo.ID}); err != nil {
 			return err
 		}
 
 		postRes, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.URI,
+			Repo: repo.ID,
 			Rev:  repo.DefaultBranch,
 		})
 		if err != nil {
 			return err
 		}
 		postCommit, err := cl.Repos.GetCommit(cliContext, &sourcegraph.RepoRevSpec{
-			Repo:     repo.URI,
+			Repo:     repo.ID,
 			CommitID: postRes.CommitID,
 		})
 		if err != nil {
@@ -487,9 +515,13 @@ type repoInventoryCmd struct {
 func (c *repoInventoryCmd) Execute(args []string) error {
 	cl := cliClient
 
-	repo := c.Args.Repo
-	res, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
-		Repo: repo,
+	res, err := cl.Repos.Resolve(cliContext, &sourcegraph.RepoResolveOp{Path: c.Args.Repo})
+	if err != nil {
+		return err
+	}
+
+	rev, err := cl.Repos.ResolveRev(cliContext, &sourcegraph.ReposResolveRevOp{
+		Repo: res.Repo,
 		Rev:  c.Rev,
 	})
 	if err != nil {
@@ -497,8 +529,8 @@ func (c *repoInventoryCmd) Execute(args []string) error {
 	}
 
 	inv, err := cl.Repos.GetInventory(cliContext, &sourcegraph.RepoRevSpec{
-		Repo:     repo,
-		CommitID: res.CommitID,
+		Repo:     res.Repo,
+		CommitID: rev.CommitID,
 	})
 	if err != nil {
 		return err

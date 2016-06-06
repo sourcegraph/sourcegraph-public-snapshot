@@ -18,7 +18,7 @@ func (b *Build) BranchOrTag() string {
 
 // IDString returns a succinct string that uniquely identifies this build.
 func (b BuildSpec) IDString() string {
-	return fmt.Sprintf("%s#%d", b.Repo, b.ID)
+	return fmt.Sprintf("repo %d build #%d", b.Repo, b.ID)
 }
 
 // Build task ops.
@@ -33,5 +33,5 @@ func (t *BuildTask) Spec() TaskSpec {
 
 // IDString returns a succinct string that uniquely identifies this build task.
 func (t TaskSpec) IDString() string {
-	return fmt.Sprintf("%s.%d", t.Build.IDString(), t.ID)
+	return fmt.Sprintf("repo %d build #%d task #%d", t.Build.Repo, t.Build.ID, t.ID)
 }

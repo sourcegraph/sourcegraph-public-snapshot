@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 )
 
 var RepoTree sourcegraph.RepoTreeServer = &repoTree{}
@@ -115,7 +116,12 @@ func (s *repoTree) List(ctx context.Context, op *sourcegraph.RepoTreeListOp) (*s
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRevSpec.Repo)
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repoRevSpec.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +148,12 @@ func (s *repoTree) Search(ctx context.Context, op *sourcegraph.RepoTreeSearchOp)
 		return nil, grpc.Errorf(codes.InvalidArgument, "opt and opt.Query must be set")
 	}
 
-	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repoRev.Repo)
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	vcsrepo, err := store.RepoVCSFromContext(ctx).Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}

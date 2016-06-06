@@ -21,7 +21,7 @@ describe("RepoMain", () => {
 
 	describe("repo creation", () => {
 		it("should trigger WantCreateRepo for just-resolved remote repos", () => {
-			const res = render(<RepoMain repo="r" repoResolution={{Result: {RemoteRepo: {GitHubID: 123}}}} location={{pathname: "/r", state: {}}} />);
+			const res = render(<RepoMain repo="r" repoResolution={{RemoteRepo: {GitHubID: 123}}} location={{pathname: "/r", state: {}}} />);
 			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {GitHubID: 123})]);
 		});
 	});

@@ -132,10 +132,10 @@ class BuildsList extends Container {
 									<span>{build.ID}</span>
 								}
 								{build.StartedAt &&
-									<Link to={urlToBuild(build.Repo, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link>
+									<Link to={urlToBuild(this.state.repo || build.RepoPath, build.ID)}><Button size="small" block={true} outline={true}>{`${build.ID}`}</Button></Link>
 								}
 							</span>
-							<span styleName="list-repo"><a href={urlToRepo(build.Repo)}>{build.Repo}</a></span>
+							<span styleName="list-repo"><a href={urlToRepo(this.state.repo || build.RepoPath)}>{this.state.repo || build.RepoPath}</a></span>
 							<span styleName="list-status">{this._rowStatus(build)}</span>
 							<span styleName="list-elapsed">{elapsed(build)}</span>
 						</div>

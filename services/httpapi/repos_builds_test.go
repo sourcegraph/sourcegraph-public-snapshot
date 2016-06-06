@@ -12,9 +12,9 @@ import (
 func TestRepoBuildsCreate(t *testing.T) {
 	c, mock := newTest()
 
-	wantBuild := &sourcegraph.Build{ID: 123, Repo: "r/r", CommitID: "c"}
+	wantBuild := &sourcegraph.Build{ID: 123, Repo: 1, CommitID: "c"}
 
-	calledRepoGet := mock.Repos.MockGet(t, "r/r")
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	var calledCreate bool
 	mock.Builds.Create_ = func(ctx context.Context, op *sourcegraph.BuildsCreateOp) (*sourcegraph.Build, error) {
 		calledCreate = true
@@ -22,11 +22,11 @@ func TestRepoBuildsCreate(t *testing.T) {
 	}
 
 	var build *sourcegraph.Build
-	if err := c.DoJSON("POST", "/repos/r/r/-/builds", &sourcegraph.BuildsCreateOp{}, &build); err != nil {
+	if err := c.DoJSON("POST", "/repos/r/-/builds", &sourcegraph.BuildsCreateOp{}, &build); err != nil {
 		t.Fatal(err)
 	}
-	if !*calledRepoGet {
-		t.Error("!calledRepoGet")
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !calledCreate {
 		t.Error("!calledCreate")

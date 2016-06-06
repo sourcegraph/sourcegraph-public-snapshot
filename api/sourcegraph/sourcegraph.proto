@@ -62,6 +62,9 @@ message RepoConfig {
 
 // Repo represents a source code repository.
 message Repo {
+	// ID is the unique numeric ID for this repository.
+	int32 ID = 18;
+
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	string URI = 1;
@@ -148,7 +151,7 @@ message RepoListOptions {
 
 // RepoRevSpec specifies a repository at a specific commit.
 message RepoRevSpec {
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// CommitID is the 40-character SHA-1 of the Git commit ID.
 	//
@@ -160,7 +163,7 @@ message RepoRevSpec {
 
 // RepoSpec specifies a repository.
 message RepoSpec {
-	string URI = 1;
+	int32 ID = 1;
 }
 
 // RepoStatus is the status of the repository at a specific rev (in a single
@@ -214,15 +217,18 @@ service Repos {
 	// Get fetches a repository.
 	rpc Get(RepoSpec) returns (Repo);
 
-	// Resolve will first try to look up the specified repo using
-	// Repos.Get locally, returning a Repo if found. If no local repo
-	// is found, it will look it up on GitHub and return a RemoteRepo
-	// if found.
+	// Resolve looks up a repo from its "path", which is a
+	// slash-separated string (e.g., "github.com/user/repo"). Resolve
+	// may have to consult external sources (such as GitHub) to
+	// resolve a path. It returns the repo's ID if it has been created
+	// on Sourcegraph, plus additional metadata about the repository
+	// that was determined during the resolution operation.
 	//
 	// Example use case: The app calls Resolve to support navigating
 	// directly to "https://sourcegraph.com/github.com/my/repo" when
-	// that has not been created yet. It will transparently call
-	// Repos.Create if it gets a RemoteRepo back from Repos.Resolve.
+	// that has not been created yet. It calls Resolve with
+	// "github.com/my/repo". It will transparently call Repos.Create
+	// if it gets a RemoteRepo back from Resolve.
 	rpc Resolve(RepoResolveOp) returns (RepoResolution);
 
 	// List repositories.
@@ -293,7 +299,7 @@ service Repos {
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
 message ReposResolveRevOp {
-	string repo = 1;
+	int32 repo = 1;
 
 	// Rev is a VCS revision specifier, such as a branch or
 	// "master~7".
@@ -309,13 +315,13 @@ message ResolvedRev {
 }
 
 message ReceivePackOp {
-	string repo = 1;
+	int32 repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
 
 message UploadPackOp {
-	string repo = 1;
+	int32 repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
 }
@@ -327,21 +333,33 @@ message Packet {
 message RepoResolveOp {
 	// Path is some repo path, such as "github.com/user/repo".
 	string path = 1;
+
+	// Remote controls the behavior when Resolve locates a remote
+	// repository that is not (yet) associated with an existing local
+	// repository. If Remote is false (the default), then a NotFound
+	// error is returned in that case. If Remote is true, then no
+	// error is returned; the RepoResolution's Repo field will be
+	// empty, but some metadata about the remote repository may be
+	// provided.
+	bool remote = 2;
 }
 
 // RepoResolution is the result of resolving a repo using
 // Repos.Resolve.
 message RepoResolution {
-	oneof result {
-		// Repo refers to a local repo (either a locally hosted repo,
-		// or a locally added mirror).
-		string Repo = 1;
+	// ID is the ID of the local repo (either a locally hosted repo,
+	// or a locally added mirror).
+	int32 Repo = 1;
 
-		// RemoteRepo represents a repo that exists on a remote
-		// service (such as GitHub) but has no corresponding repo
-		// mirror created (yet) on this server.
-		RemoteRepo RemoteRepo = 2;
-	}
+	// CanonicalPath is the canonical repo path of the local repo
+	// (with the canonical casing, etc.). Clients should generally
+	// redirect the user to the canonical repo path if users access a
+	// repo by a non-canonical path.
+	string CanonicalPath = 3;
+
+	// RemoteRepo holds metadata about the repo that exists on a
+	// remote service (such as GitHub).
+	RemoteRepo RemoteRepo = 2;
 }
 
 // ReposListRemoteOptions specifies options for Repos.ListRemote.
@@ -362,7 +380,7 @@ message SrclibDataVersion {
 
 message RepoConfigureAppOp {
 	// Repo is the repository whose applications are being configured.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// App is the app ID to enable or disable.
 	string App = 2;
@@ -408,7 +426,7 @@ message ReposCreateOp {
 // ReposUpdateOp is an operation to update a repository's metadata.
 message ReposUpdateOp {
 	// Repo is the repository to update.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// Description is the new description of the repository. If empty,
 	// the description is not changed.
@@ -423,7 +441,7 @@ message ReposUpdateOp {
 };
 
 message ReposListCommitsOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListCommitsOptions Opt = 2;
 }
 
@@ -440,7 +458,7 @@ message CommitList {
 }
 
 message ReposListBranchesOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListBranchesOptions Opt = 2;
 }
 
@@ -457,12 +475,12 @@ message BranchList {
 }
 
 message ReposListTagsOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListTagsOptions Opt = 2;
 }
 
 message ReposListCommittersOp {
-	string Repo = 1;
+	int32 Repo = 1;
 	RepoListCommittersOptions Opt = 2;
 }
 
@@ -488,7 +506,7 @@ message TagList {
 message MirrorReposRefreshVCSOp {
 	reserved 2;
 
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// AsUser is the user whose auth token will be used for refreshing this
 	// mirror repo. This can be used when refreshing a private repo mirror.
@@ -587,8 +605,8 @@ service MirrorRepos {
 // behavior. As we encounter new requirements for the build system, they may
 // evolve.
 message Build {
-	// Repo is the URI of the repository this build is for.
-	string Repo = 1;
+	// Repo is the repository this build is for.
+	int32 Repo = 1;
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
@@ -698,7 +716,7 @@ message BuildListOptions {
 	bool Succeeded = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool Failed = 5 [(gogoproto.moretags) = "url:\",omitempty\""];
 	bool Purged = 6 [(gogoproto.moretags) = "url:\",omitempty\""];
-	string Repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 Repo = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string CommitID = 8 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Sort = 9 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string Direction = 10 [(gogoproto.moretags) = "url:\",omitempty\""];
@@ -708,7 +726,7 @@ message BuildListOptions {
 // A BuildSpec uniquely identifies a build.
 message BuildSpec {
 	// Repo is the repository associated with the build.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// ID is the numeric ID of the build. It is up to the
 	// implementation to decide whether it is sequential within the
@@ -789,7 +807,7 @@ message BuildList {
 }
 
 message BuildsCreateOp {
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// CommitID is the full commit ID of the commit to build. It is
 	// required.
@@ -1383,6 +1401,8 @@ message DefListOptions {
 	// RepoRevs constrains the results to a set of repository revisions (given by their
 	// URIs plus an optional "@" and a revision specifier). For example,
 	// "repo.com/foo@revspec".
+	//
+	// TODO(repo-key): Make this use repo IDs, not URIs.
 	repeated string RepoRevs = 6 [(gogoproto.moretags) = "url:\",omitempty,comma\""];
 
 	string UnitType = 7 [(gogoproto.moretags) = "url:\",omitempty\""];
@@ -1420,7 +1440,7 @@ message DefListOptions {
 
 // DefListRefsOptions configures the scope of ref search for a def.
 message DefListRefsOptions {
-	string Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	int32 Repo = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 	string CommitID = 4 [(gogoproto.moretags) = "url:\",omitempty\""];
 	repeated string Files = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -1428,7 +1448,7 @@ message DefListRefsOptions {
 
 // DefSpec specifies a def.
 message DefSpec {
-	string Repo = 1;
+	int32 Repo = 1;
 	string CommitID = 2;
 	string UnitType = 3;
 	string Unit = 4;
@@ -1460,7 +1480,7 @@ message RefList {
 message DefListRefLocationsOptions {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched for references.
-	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated int32 Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ListOptions specifies options for paginating
 	// the result.
@@ -1701,7 +1721,7 @@ message FileRange {
 message DefsRefreshIndexOp {
 	// Repo is the repo whose graph data is to be re-indexed
 	// for global ref locations.
-	string Repo = 1;
+	int32 Repo = 1;
 
 	// RefreshRefLocations refreshes the global ref locations index for
 	// the specified repository.
@@ -2028,11 +2048,11 @@ message AnnotationsListOptions {
 message SearchOptions {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched.
-	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated int32 Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// NotRepos is the list of repos from which to exclude results.
 	// If empty, then no repositories are excluded.
-	repeated string NotRepos = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated int32 NotRepos = 2 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ListOptions specifies options for paginating
 	// the result.
@@ -2040,6 +2060,9 @@ message SearchOptions {
 
 	// IncludeRepos indicates whether to include repository search results.
 	bool IncludeRepos = 4;
+
+	// PrefixMatch indicates whether to include defs prefix match on search results.
+	bool PrefixMatch = 5;
 }
 
 // SearchOp holds the options for global search for a given query.
@@ -2080,7 +2103,7 @@ message SearchResultsList {
 message SearchRefreshIndexOp {
 	// Repos is the list of repos whose graph data is to be re-indexed
 	// for global search.
-	repeated string Repos = 1;
+	repeated int32 Repos = 1;
 
 	// RefreshCounts refreshes the global xref counts for the specified
 	// repositories.

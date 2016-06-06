@@ -19,8 +19,8 @@ func init() {
 
 // dbRepoConfig DB-maps a sourcegraph.RepoConfig object.
 type dbRepoConfig struct {
-	// Repo is the URI of the repository that this config is for.
-	Repo string
+	// Repo is the ID of the repository that this config is for.
+	Repo int32 `db:"repo_id"`
 
 	Apps *dbutil.StringSlice
 }
@@ -35,7 +35,7 @@ func (c *dbRepoConfig) toRepoConfig() *sourcegraph.RepoConfig {
 	}
 }
 
-func (c *dbRepoConfig) fromRepoConfig(repo string, c2 *sourcegraph.RepoConfig) {
+func (c *dbRepoConfig) fromRepoConfig(repo int32, c2 *sourcegraph.RepoConfig) {
 	c.Repo = repo
 	c.Apps = dbutil.NewSlice(c2.Apps)
 }
@@ -45,12 +45,12 @@ type repoConfigs struct{}
 
 var _ store.RepoConfigs = (*repoConfigs)(nil)
 
-func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoConfig, error) {
+func (s *repoConfigs) Get(ctx context.Context, repo int32) (*sourcegraph.RepoConfig, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoConfigs.Get", repo); err != nil {
 		return nil, err
 	}
 	var config dbRepoConfig
-	if err := appDBH(ctx).SelectOne(&config, `SELECT * FROM repo_config WHERE repo=$1;`, repo); err == sql.ErrNoRows {
+	if err := appDBH(ctx).SelectOne(&config, `SELECT * FROM repo_config WHERE repo_id=$1;`, repo); err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (s *repoConfigs) Get(ctx context.Context, repo string) (*sourcegraph.RepoCo
 	return config.toRepoConfig(), nil
 }
 
-func (s *repoConfigs) Update(ctx context.Context, repo string, conf sourcegraph.RepoConfig) error {
+func (s *repoConfigs) Update(ctx context.Context, repo int32, conf sourcegraph.RepoConfig) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoConfigs.Update", repo); err != nil {
 		return err
 	}

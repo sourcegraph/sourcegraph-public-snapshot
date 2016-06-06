@@ -25,7 +25,7 @@ import (
 // commit ID. If it doesn't exist, it triggers a refresh of the repo's
 // VCS data and then retries (until maxGetCommitVCSRefreshWait has
 // elapsed).
-func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo, rev string) string {
+func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo int32, rev string) string {
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 
 	wait := time.Second * 9 * ciFactor
@@ -47,10 +47,10 @@ func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo, rev 
 
 			if !refreshTriggered {
 				if _, err = cl.MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: repo}); err != nil {
-					err = fmt.Errorf("failed to trigger VCS refresh for repo %s: %s", repo, err)
+					err = fmt.Errorf("failed to trigger VCS refresh for repo %d: %s", repo, err)
 					break
 				}
-				t.Logf("repo %s revision %s not on remote; triggered refresh of VCS data, waiting %s", repo, rev, wait)
+				t.Logf("repo %d revision %s not on remote; triggered refresh of VCS data, waiting %s", repo, rev, wait)
 				refreshTriggered = true
 			}
 			time.Sleep(time.Second)
@@ -64,7 +64,7 @@ func resolveRevWithRefreshAndRetry(t *testing.T, ctx context.Context, repo, rev 
 		}
 		return res.CommitID
 	case <-timeout:
-		t.Fatalf("repo %s revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repo, rev, wait)
+		t.Fatalf("repo %d revision %s not found on remote, even after triggering a VCS refresh and waiting %s (vcsstore should not have taken so long)", repo, rev, wait)
 		panic("unreachable")
 	}
 }
@@ -124,7 +124,7 @@ func CreateAndPushRepoFiles(t *testing.T, ctx context.Context, repoURI string, f
 
 	cl, _ := sourcegraph.NewClientFromContext(ctx)
 	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.URI,
+		Repo: repo.ID,
 		Rev:  "master",
 	})
 	if err != nil {
@@ -194,7 +194,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 	cmd.Dir = dir
 	prepGitCommand(cmd)
-	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 	logCmdOutut(t, cmd, out)
 	if err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -206,7 +206,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files
 		cmd = exec.Command("git", "push", pushURL, "master:tmpbranch")
 		cmd.Env = env
 		cmd.Dir = dir
-		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 		logCmdOutut(t, cmd, out)
 		if err != nil {
 			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -216,7 +216,7 @@ func PushRepo(t *testing.T, ctx context.Context, pushURL, cloneURL string, files
 		cmd = exec.Command("git", "push", pushURL, ":tmpbranch")
 		cmd.Env = env
 		cmd.Dir = dir
-		out, err = executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		out, err = executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 		logCmdOutut(t, cmd, out)
 		if err != nil {
 			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -244,7 +244,7 @@ func CloneRepo(t *testing.T, cloneURL, dir string, args []string, emptyFetch boo
 	cmd.Stdin = bytes.NewReader([]byte("\n"))
 	cmd.Dir = dir
 	prepGitCommand(cmd)
-	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+	out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 	logCmdOutut(t, cmd, out)
 	if err != nil {
 		return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -255,7 +255,7 @@ func CloneRepo(t *testing.T, cloneURL, dir string, args []string, emptyFetch boo
 		cmd.Env = env
 		cmd.Stdin = bytes.NewReader([]byte("\n"))
 		cmd.Dir = filepath.Join(dir, "testrepo")
-		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*5, cmd)
+		out, err := executil.CmdCombinedOutputWithTimeout(time.Second*10, cmd)
 		logCmdOutut(t, cmd, out)
 		if err != nil {
 			return fmt.Errorf("exec %q failed: %s\n%s", cmd.Args, err, out)
@@ -279,6 +279,10 @@ func prepGitCommand(cmd *exec.Cmd) *exec.Cmd {
 func logCmdOutut(t *testing.T, cmd *exec.Cmd, out []byte) {
 	t.Logf(">>> START - %s", strings.Join(cmd.Args, " "))
 	t.Logf("=== ENV - %v", cmd.Env)
-	t.Log(string(out))
+	if testing.Verbose() {
+		t.Log(string(out))
+	} else {
+		t.Log(`=== (run with "go test -v" to see full command output)`)
+	}
 	t.Logf(">>> END - %s", strings.Join(cmd.Args, " "))
 }

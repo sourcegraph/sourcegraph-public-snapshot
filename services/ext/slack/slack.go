@@ -19,13 +19,19 @@ type PostOpts struct {
 	Channel          string // If empty, defaultChannel is used instead.
 	DisableLinkNames bool   // If true, "@ mentions" won't notify users.
 	Attachments      []string
+	WebhookURL       string
 }
 
 // PostMessage posts a message to the Slack channel. If an error
 // occurs, it is logged and PostMessage returns (without panicking).
 func PostMessage(opt PostOpts) {
-	webHookURL := Config.GetWebhookURLIfConfigured()
-	if webHookURL == "" {
+	var webhookURL string
+	if opt.WebhookURL != "" {
+		webhookURL = opt.WebhookURL
+	} else {
+		webhookURL = Config.GetWebhookURLIfConfigured()
+	}
+	if webhookURL == "" {
 		log15.Debug("Ignored Slack message", "msg", opt.Msg)
 		return
 	}
@@ -80,7 +86,7 @@ func PostMessage(opt PostOpts) {
 		if err != nil {
 			return err
 		}
-		resp, err := http.Post(webHookURL, "application/json", bytes.NewReader(b))
+		resp, err := http.Post(webhookURL, "application/json", bytes.NewReader(b))
 		if err != nil {
 			return err
 		}

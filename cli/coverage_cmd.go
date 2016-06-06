@@ -38,10 +38,10 @@ func init() {
 	}
 
 	cache = &coverageCache{
-		DefsCache:              make(map[string]*defIndex),
-		ResolvedRevCache:       make(map[string]string),
-		SrclibDataVersionCache: make(map[string]string),
-		FetchDefsMus:           make(map[string]*sync.Mutex),
+		DefsCache:              make(map[sourcegraph.RepoRevSpec]*defIndex),
+		ResolvedRevCache:       make(map[routevar.RepoRev]sourcegraph.RepoRevSpec),
+		SrclibDataVersionCache: make(map[sourcegraph.RepoRevSpec]string),
+		FetchDefsMus:           make(map[sourcegraph.RepoRevSpec]*sync.Mutex),
 	}
 }
 
@@ -57,12 +57,10 @@ type coverageCmd struct {
 
 // fileCoverage contains coverage data for a single file or repository
 type fileCoverage struct {
-	Path             string // the file path (optional)
-	Idents           int    // # of identifiers in the file
-	Refs             int    // # of refs in the file (i.e. annotations)
-	Defs             int    // # of annotations (URLs) which resolve to real defs
-	UnresolvedIdents []*coverageutil.Token
-	UnresolvedRefs   []*coverageutil.Token
+	Path   string // the file path (optional)
+	Idents int    // # of identifiers in the file
+	Refs   int    // # of refs in the file (i.e. annotations)
+	Defs   int    // # of annotations (URLs) which resolve to real defs
 }
 
 // repoCoverage contains the coverage data for a single repo
@@ -81,11 +79,11 @@ type repoCoverage struct {
 // indexed by key, and a mutex for concurrent access
 type defIndex struct {
 	Mu    sync.Mutex
-	Index map[string]*sourcegraph.Def
+	Index map[sourcegraph.DefSpec]*sourcegraph.Def
 }
 
 // get is a threadsafe accessor function for a defIndex
-func (idx *defIndex) get(key string) *sourcegraph.Def {
+func (idx *defIndex) get(key sourcegraph.DefSpec) *sourcegraph.Def {
 	idx.Mu.Lock()
 	defer idx.Mu.Unlock()
 	def, ok := idx.Index[key]
@@ -96,7 +94,7 @@ func (idx *defIndex) get(key string) *sourcegraph.Def {
 }
 
 // put is a threadsafe setter for defIndex
-func (idx *defIndex) put(key string, def *sourcegraph.Def) {
+func (idx *defIndex) put(key sourcegraph.DefSpec, def *sourcegraph.Def) {
 	idx.Mu.Lock()
 	defer idx.Mu.Unlock()
 	idx.Index[key] = def
@@ -106,23 +104,23 @@ func (idx *defIndex) put(key string, def *sourcegraph.Def) {
 // coverage and includes mutexes for concurrent access
 type coverageCache struct {
 	DefsCacheMu            sync.Mutex
-	DefsCache              map[string]*defIndex // key is repo@commit
+	DefsCache              map[sourcegraph.RepoRevSpec]*defIndex // key is repo@commit
 	ResolvedRevMu          sync.Mutex
-	ResolvedRevCache       map[string]string // repo => commit
+	ResolvedRevCache       map[routevar.RepoRev]sourcegraph.RepoRevSpec // (repo path, rev) => (repo ID, commit)
 	SrclibDataVersionMu    sync.Mutex
-	SrclibDataVersionCache map[string]string // repo@rev => commit
+	SrclibDataVersionCache map[sourcegraph.RepoRevSpec]string // repo@rev => commit
 
 	// FetchDefsMus allows at most one goroutine to fetch defs per repo@commit.
 	// Map access is guarded by FetchDefsMu.
 	FetchDefsMu  sync.Mutex
-	FetchDefsMus map[string]*sync.Mutex
+	FetchDefsMus map[sourcegraph.RepoRevSpec]*sync.Mutex
 }
 
 // cache is a global instance of coverageCache
 var cache *coverageCache
 
 // getFetchDefsMu acquires a lock to fetch defs for a repo@commit; it is threadsafe
-func (c *coverageCache) getFetchDefsMu(key string) *sync.Mutex {
+func (c *coverageCache) getFetchDefsMu(key sourcegraph.RepoRevSpec) *sync.Mutex {
 	c.FetchDefsMu.Lock()
 	defer c.FetchDefsMu.Unlock()
 
@@ -136,7 +134,7 @@ func (c *coverageCache) getFetchDefsMu(key string) *sync.Mutex {
 }
 
 // getDefIndex is a threadsafe accessor function for cached def data
-func (c *coverageCache) getDefIndex(key string) *defIndex {
+func (c *coverageCache) getDefIndex(key sourcegraph.RepoRevSpec) *defIndex {
 	c.DefsCacheMu.Lock()
 	defer c.DefsCacheMu.Unlock()
 	idx, ok := c.DefsCache[key]
@@ -147,7 +145,7 @@ func (c *coverageCache) getDefIndex(key string) *defIndex {
 }
 
 // putDefIndex is a threadsafe setter for cached def data
-func (c *coverageCache) putDefIndex(key string, idx *defIndex) {
+func (c *coverageCache) putDefIndex(key sourcegraph.RepoRevSpec, idx *defIndex) {
 	c.DefsCacheMu.Lock()
 	defer c.DefsCacheMu.Unlock()
 	c.DefsCache[key] = idx
@@ -159,8 +157,7 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 	c.SrclibDataVersionMu.Lock()
 	defer c.SrclibDataVersionMu.Unlock()
 
-	key := repoRevKey(repoRev)
-	dataVer, ok := c.SrclibDataVersionCache[key]
+	dataVer, ok := c.SrclibDataVersionCache[*repoRev]
 	if !ok {
 		sdv, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
 		if err != nil {
@@ -174,32 +171,42 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 		dataVer = sdv.CommitID
 	}
 
-	c.SrclibDataVersionCache[key] = dataVer
+	c.SrclibDataVersionCache[*repoRev] = dataVer
 	return dataVer
 }
 
 // getResolvedRev returns (or fetches) the absolute commit ID for the default branch
 // for a particular repo; it is threadsafe
-func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Context, repoPath string) (string, error) {
+func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Context, repoRev routevar.RepoRev) (sourcegraph.RepoRevSpec, error) {
 	c.ResolvedRevMu.Lock()
 	defer c.ResolvedRevMu.Unlock()
 
-	if commitID, ok := c.ResolvedRevCache[repoPath]; ok {
-		return commitID, nil
+	key := repoRev
+	if v, ok := c.ResolvedRevCache[key]; ok {
+		return v, nil
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoRev.Repo})
 	if err != nil {
-		return "", err
+		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repoPath, Rev: repo.DefaultBranch})
+	if repoRev.Rev == "" {
+		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
+		if err != nil {
+			return sourcegraph.RepoRevSpec{}, err
+		}
+		repoRev.Rev = repo.DefaultBranch
+	}
+
+	resRev, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: res.Repo, Rev: repoRev.Rev})
 	if err != nil {
-		return "", err
+		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	c.ResolvedRevCache[repoPath] = res.CommitID
-	return res.CommitID, nil
+	v := sourcegraph.RepoRevSpec{Repo: res.Repo, CommitID: resRev.CommitID}
+	c.ResolvedRevCache[key] = v
+	return v, nil
 }
 
 // fetchAndIndexDefs fetches (and indexes) all of the defs for a repo@rev, then caches the result.
@@ -211,19 +218,23 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		return nil
 	}
 
-	rr := repoRevKey(repoRev)
-
-	fetchMu := c.getFetchDefsMu(rr)
+	fetchMu := c.getFetchDefsMu(*repoRev)
 	fetchMu.Lock()
 	defer fetchMu.Unlock()
 
-	if idx := c.getDefIndex(rr); idx != nil {
+	if idx := c.getDefIndex(*repoRev); idx != nil {
 		return idx
+	}
+
+	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
+	if err != nil {
+		log15.Error("Error getting repo to list defs.", "err", err, "repo", repoRev.Repo)
+		return nil
 	}
 
 	opt := sourcegraph.DefListOptions{
 		IncludeTest: true,
-		RepoRevs:    []string{rr},
+		RepoRevs:    []string{fmt.Sprintf("%s@%s", repo.URI, repoRev.CommitID)},
 	}
 	opt.PerPage = 100000000 // TODO(rothfels): srclib def store doesn't properly handle pagination
 	opt.Page = 1
@@ -232,7 +243,7 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 	for {
 		dl, err := cl.Defs.List(ctx, &opt)
 		if err != nil {
-			log15.Error("fetch defs", "err", err, "repoRev", rr)
+			log15.Error("fetch defs", "err", err, "repoRev", *repoRev)
 			break
 		}
 		if len(dl.Defs) == 0 {
@@ -242,24 +253,14 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		opt.Page += 1
 	}
 
-	idx := defIndex{Index: make(map[string]*sourcegraph.Def)}
+	idx := defIndex{Index: make(map[sourcegraph.DefSpec]*sourcegraph.Def)}
 	for _, def := range defs {
-		defSpec := def.DefSpec()
-		idx.put(defKey(&defSpec), def)
+		defSpec := def.DefSpec(repoRev.Repo)
+		idx.put(defSpec, def)
 	}
 
-	c.putDefIndex(rr, &idx)
+	c.putDefIndex(*repoRev, &idx)
 	return &idx
-}
-
-// repoRevKey returns the cache key for a repo@commit
-func repoRevKey(repoRev *sourcegraph.RepoRevSpec) string {
-	return fmt.Sprintf("%s@%s", repoRev.Repo, repoRev.CommitID)
-}
-
-// defKey returns the cache key for a def
-func defKey(def *sourcegraph.DefSpec) string {
-	return fmt.Sprintf("%s/%s/-/%s", def.UnitType, def.Unit, def.Path)
 }
 
 func (c *coverageCmd) Execute(args []string) error {
@@ -346,24 +347,12 @@ func (c *coverageCmd) Execute(args []string) error {
 var rel = router.New(nil)
 
 // parseAnnotationURL extracts repoRev and def specs from an annotationURL
-func parseAnnotationURL(annUrl string) (*sourcegraph.RepoRevSpec, *sourcegraph.DefSpec, error) {
+func parseAnnotationURL(annUrl string) (routevar.DefAtRev, error) {
 	var match mux.RouteMatch
 	if rel.Match(&http.Request{Method: "GET", URL: &url.URL{Path: fmt.Sprintf("/%s%s", "repos", annUrl)}}, &match) {
-		repoRev := routevar.ToRepoRev(match.Vars)
-		def := routevar.ToDefAtRev(match.Vars)
-		return &sourcegraph.RepoRevSpec{
-				Repo:     repoRev.Repo,
-				CommitID: repoRev.Rev,
-			}, &sourcegraph.DefSpec{
-				Repo:     def.Repo,
-				CommitID: def.Rev,
-				UnitType: def.UnitType,
-				Unit:     def.Unit,
-				Path:     def.Path,
-			}, nil
-	} else {
-		return nil, nil, fmt.Errorf("error parsing mux vars for annotation url %s", annUrl)
+		return routevar.ToDefAtRev(match.Vars), nil
 	}
+	return routevar.DefAtRev{}, fmt.Errorf("error parsing mux vars for annotation url %s", annUrl)
 }
 
 // annToken stores an annotation (ref) and its associated token (ident)
@@ -374,7 +363,6 @@ type annToken struct {
 
 // getFileCoverage computes the coverage data for a single file in a repository
 func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
-
 	fileCvg := &fileCoverage{Path: path}
 
 	var tokenizer coverageutil.Tokenizer
@@ -425,21 +413,16 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 		}
 
 		fileCvg.Idents += 1
-		var hasRef bool
 		if ann, ok := annsByStartByte[tok.Offset]; ok {
 			if ann.EndByte == tok.Offset+uint32(len([]byte(tok.Text))) {
 				// ref counts exact matches only
 				fileCvg.Refs += 1
 				refAnnotations = append(refAnnotations, &annToken{Annotation: ann, Token: tok})
-				hasRef = true
 			} else if reportRefs {
-				log15.Warn("spans not match", "path", path, "at", tok.Offset, "ident", tok.Text)
+				log15.Warn("spans not match", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 			}
 		} else if reportRefs {
-			log15.Warn("no ref for", "path", path, "at", tok.Offset, "ident", tok.Text)
-		}
-		if !hasRef {
-			fileCvg.UnresolvedIdents = append(fileCvg.UnresolvedIdents, tok)
+			log15.Warn("no ref for", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 		}
 	}
 	errors := tokenizer.Errors()
@@ -468,40 +451,37 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			fileCvg.Defs += 1 // heuristic: consider absolute URLs to be valid defs
 			continue
 		}
-		annRepoRev, annDefSpec, err := parseAnnotationURL(u)
+		annInfo, err := parseAnnotationURL(u)
 		if err != nil {
 			return nil, err
 		}
-		if annRepoRev.CommitID == "" {
-			commitID, err := cache.getResolvedRev(cl, ctx, annRepoRev.Repo)
-			if err != nil || commitID == "" {
-				// The ref cannot be resolved to a def (e.g. the def repo doesn't exist);
-				// this is a normal condition for the coverage script so swallow the error and continue.
-				fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
-				continue
-			}
-			annRepoRev.CommitID = commitID
-		}
-
-		defIdx := cache.fetchAndIndexDefs(cl, ctx, annRepoRev)
-		if defIdx == nil {
-			fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
+		annRepoRev, err := cache.getResolvedRev(cl, ctx, annInfo.RepoRev)
+		if err != nil || annRepoRev.CommitID == "" {
+			// The ref cannot be resolved to a def (e.g. the def repo doesn't exist);
+			// this is a normal condition for the coverage script so swallow the error and continue.
 			continue
 		}
-		if def := defIdx.get(defKey(annDefSpec)); def != nil {
+
+		defIdx := cache.fetchAndIndexDefs(cl, ctx, &annRepoRev)
+		if defIdx == nil {
+			continue
+		}
+		annDefSpec := sourcegraph.DefSpec{
+			Repo:     annRepoRev.Repo,
+			CommitID: annRepoRev.CommitID,
+			UnitType: annInfo.UnitType,
+			Unit:     annInfo.Unit,
+			Path:     annInfo.Path,
+		}
+		if def := defIdx.get(annDefSpec); def != nil {
 			fileCvg.Defs += 1
 		} else {
-			fileCvg.UnresolvedRefs = append(fileCvg.UnresolvedRefs, tok)
 			if reportDefs {
-				log15.Warn("no def", "path", path, "at", ann.StartByte, "key", u)
+				log15.Warn("no def", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", ann.StartByte, "line", tok.Line, "ident", tok.Text, "key", u)
 			}
 		}
 
 	}
-
-	// TEMPORARY: nillify unresolved idents / refs, to reduce storage impact.
-	fileCvg.UnresolvedIdents = nil
-	fileCvg.UnresolvedRefs = nil
 
 	return fileCvg, nil
 }
@@ -515,12 +495,11 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 	start := time.Now()
 
 	repoCvg := repoCoverage{Repo: repoPath, Day: start.Format("01-02"), Language: lang}
-	commitID, err := cache.getResolvedRev(cl, ctx, repoPath)
+	repoRevSpec, err := cache.getResolvedRev(cl, ctx, routevar.RepoRev{Repo: repoPath})
 	if err != nil {
 		return nil, err
 	}
 
-	repoRevSpec := sourcegraph.RepoRevSpec{Repo: repoPath, CommitID: commitID}
 	dataVer := cache.getSrclibDataVersion(cl, ctx, &repoRevSpec)
 	if dataVer != "" {
 		repoRevSpec.CommitID = dataVer
@@ -564,7 +543,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 			}
 		}
 	} else {
-		log15.Warn("missing srclib data version", "repo", repoPath, "rev", commitID)
+		log15.Warn("missing srclib data version", "repoPath", repoPath, "repo", repoRevSpec.Repo, "rev", repoRevSpec.CommitID)
 	}
 
 	repoCvg.Summary = &fileCoverage{}
@@ -609,6 +588,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 	}
 
 	if _, err = cl.RepoStatuses.Create(ctx, &statusUpdate); err != nil {
+		log15.Error("save coverage stats", "err", err)
 		return nil, err
 	}
 
@@ -617,12 +597,14 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 
 func ensureRepoExists(cl *sourcegraph.Client, ctx context.Context, repo string) error {
 	// Resolve repo path, and create local mirror for remote repo if needed.
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo})
-	if err != nil && grpc.Code(err) != codes.NotFound {
+	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo, Remote: true})
+	if grpc.Code(err) == codes.NotFound {
+		return nil
+	} else if err != nil {
 		return err
 	}
 
-	if remoteRepo := res.GetRemoteRepo(); remoteRepo != nil {
+	if remoteRepo := res.RemoteRepo; remoteRepo != nil {
 		if actualURI := githubutil.RepoURI(remoteRepo.Owner, remoteRepo.Name); actualURI != repo {
 			// Repo path is invalid, possibly because repo has been renamed.
 			return fmt.Errorf("repo %s redirects to %s; update dashboard with correct repo path", repo, actualURI)

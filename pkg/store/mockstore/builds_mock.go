@@ -18,7 +18,7 @@ type Builds struct {
 	ListBuildTasks_ func(ctx context.Context, build sourcegraph.BuildSpec, opt *sourcegraph.BuildTaskListOptions) ([]*sourcegraph.BuildTask, error)
 	CreateTasks_    func(ctx context.Context, tasks []*sourcegraph.BuildTask) ([]*sourcegraph.BuildTask, error)
 	UpdateTask_     func(ctx context.Context, task sourcegraph.TaskSpec, info sourcegraph.TaskUpdate) error
-	DequeueNext_    func(ctx context.Context) (*sourcegraph.BuildJob, error)
+	DequeueNext_    func(ctx context.Context) (job *sourcegraph.BuildJob, repoPath string, err error)
 	GetTask_        func(ctx context.Context, task sourcegraph.TaskSpec) (*sourcegraph.BuildTask, error)
 }
 
@@ -50,7 +50,7 @@ func (s *Builds) UpdateTask(ctx context.Context, task sourcegraph.TaskSpec, info
 	return s.UpdateTask_(ctx, task, info)
 }
 
-func (s *Builds) DequeueNext(ctx context.Context) (*sourcegraph.BuildJob, error) {
+func (s *Builds) DequeueNext(ctx context.Context) (job *sourcegraph.BuildJob, repoPath string, err error) {
 	return s.DequeueNext_(ctx)
 }
 

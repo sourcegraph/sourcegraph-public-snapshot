@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -15,6 +13,10 @@ import (
 // TestAccounts_Create_ok tests the behavior of Accounts.Create when
 // called with correct args.
 func TestAccounts_Create_ok(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -53,6 +55,10 @@ func TestAccounts_Create_ok(t *testing.T) {
 // TestAccounts_Create_duplicate tests the behavior of Accounts.Create
 // when called with an existing (duplicate) login.
 func TestAccounts_Create_duplicate(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -76,6 +82,10 @@ func TestAccounts_Create_duplicate(t *testing.T) {
 // TestAccounts_Create_noLogin tests the behavior of Accounts.Create when
 // called with an empty login.
 func TestAccounts_Create_noLogin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -92,6 +102,10 @@ func TestAccounts_Create_noLogin(t *testing.T) {
 // TestAccounts_Create_uidAlreadySet tests the behavior of Accounts.Create
 // when called with an already populated UID.
 func TestAccounts_Create_uidAlreadySet(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -108,6 +122,10 @@ func TestAccounts_Create_uidAlreadySet(t *testing.T) {
 // TestAccounts_Create_noEmail tests the behavior of Accounts.Create
 // when called with an empty email
 func TestAccounts_Create_noEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -124,6 +142,10 @@ func TestAccounts_Create_noEmail(t *testing.T) {
 // TestAccounts_Create_ExistingEmail tests the behavior of Accounts.Create
 // when called with an email that is used by another account
 func TestAccounts_Create_ExistingEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -146,6 +168,10 @@ func TestAccounts_Create_ExistingEmail(t *testing.T) {
 // TestAccounts_RequestPasswordReset tests that we can request a password
 // reset. It is also used to set up the ResetPassword tests.
 func TestAccounts_RequestPasswordReset(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()
@@ -165,6 +191,10 @@ func TestAccounts_RequestPasswordReset(t *testing.T) {
 
 // TestAccounts_ResetPassword_ok tests that we can successfully reset a password.
 func TestAccounts_ResetPassword_ok(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	// t.Parallel() // TODO s.RequestPasswordReset occasionally has a data race with the same function from TestAccounts_RequestPasswordReset
 	ctx, _, done := testContext()
 	defer done()
@@ -185,6 +215,10 @@ func TestAccounts_ResetPassword_ok(t *testing.T) {
 // TestAccounts_ResetPassword_badtoken tests that we cannot reset a password without
 // the correct token.
 func TestAccounts_ResetPassword_badtoken(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 	ctx, _, done := testContext()
 	defer done()

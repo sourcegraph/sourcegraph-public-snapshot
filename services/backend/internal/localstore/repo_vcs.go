@@ -2,6 +2,8 @@ package localstore
 
 import (
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitproto"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -17,23 +19,45 @@ type repoVCS struct{}
 
 var _ store.RepoVCS = (*repoVCS)(nil)
 
-func (s *repoVCS) Open(ctx context.Context, repo string) (vcs.Repository, error) {
+// getRepoDir gets the dir (relative to the base repo VCS storage dir)
+// where the repo's git repository data lives.
+func getRepoDir(ctx context.Context, repo int32) (string, error) {
+	dir, err := appDBH(ctx).SelectStr("SELECT uri FROM repo WHERE id=$1;", repo)
+	if err != nil {
+		return "", err
+	}
+	if dir == "" {
+		return "", grpc.Errorf(codes.NotFound, "repo not found (looking up dir): %d", repo)
+	}
+	return dir, nil
+}
+
+func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) {
 	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
 		return nil, err
 	}
-	r := gitcmd.Open(repo)
+	dir, err := getRepoDir(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	r := gitcmd.Open(dir)
 	r.AppdashRec = traceutil.Recorder(ctx)
 	return r, nil
 }
 
-func (s *repoVCS) Clone(ctx context.Context, repo string, info *store.CloneInfo) error {
+func (s *repoVCS) Clone(ctx context.Context, repo int32, info *store.CloneInfo) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "RepoVCS.Clone", repo); err != nil {
 		return err
 	}
+	dir, err := getRepoDir(ctx, repo)
+	if err != nil {
+		return err
+	}
 
-	return gitserver.Clone(repo, info.CloneURL, &info.RemoteOpts)
+	return gitserver.Clone(dir, info.CloneURL, &info.RemoteOpts)
 }
 
-func (s *repoVCS) OpenGitTransport(ctx context.Context, repo string) (gitproto.Transport, error) {
+func (s *repoVCS) OpenGitTransport(ctx context.Context, repo int32) (gitproto.Transport, error) {
 	return s.Open(ctx, repo)
 }

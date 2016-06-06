@@ -1,5 +1,3 @@
-// +build buildtest,exectest
-
 package backend_test
 
 import (
@@ -18,6 +16,10 @@ import (
 )
 
 func TestSrclibPush(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
@@ -30,23 +32,18 @@ func TestSrclibPush(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, close, err := testutil.CreateAndPushRepo(t, ctx, "r/rr")
+	repo, commitID, close, err := testutil.CreateAndPushRepo(t, ctx, "r/rr")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer close()
-
-	repo, err := a.Client.Repos.Get(ctx, &sourcegraph.RepoSpec{URI: "r/rr"})
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Clone and build the repo locally.
 	if err := cloneAndLocallyBuildRepo(t, a, repo); err != nil {
 		t.Fatal(err)
 	}
 
-	testutil.CheckImport(t, ctx, "r/rr", "")
+	testutil.CheckImport(t, ctx, repo.ID, repo.URI, commitID)
 }
 
 func cloneAndLocallyBuildRepo(t *testing.T, a *testserver.Server, repo *sourcegraph.Repo) (err error) {

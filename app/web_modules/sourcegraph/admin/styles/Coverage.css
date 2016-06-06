@@ -135,7 +135,6 @@
 }
 
 .file-drilldown-header {
-	cursor: pointer;
 	flex: 1 1 auto;
 	composes: pv2 bt from base;
 	composes: b--black-20 from colors;

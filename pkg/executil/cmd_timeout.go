@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -19,7 +20,7 @@ func CmdCombinedOutputWithTimeout(timeout time.Duration, cmd *exec.Cmd) ([]byte,
 	if cmd.Stderr != nil {
 		return nil, errors.New("exec: Stderr already set")
 	}
-	var b bytes.Buffer
+	var b syncBuffer
 	cmd.Stdout = &b
 	cmd.Stderr = &b
 	c := make(chan error, 1)
@@ -36,4 +37,27 @@ func CmdCombinedOutputWithTimeout(timeout time.Duration, cmd *exec.Cmd) ([]byte,
 	case err := <-c:
 		return b.Bytes(), err
 	}
+}
+
+// syncBuffer is like bytes.Buffer (it implements Writer and has a
+// Bytes method) but Write and Bytes calls are synchronized using a
+// mutex. This avoids race conditions when used as the stdout/stderr
+// destination in CmdCombinedOutputWithTimeout.
+type syncBuffer struct {
+	mu sync.RWMutex // guards b
+	b  bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (n int, err error) {
+	b.mu.Lock()
+	n, err = b.b.Write(p)
+	b.mu.Unlock()
+	return
+}
+
+func (b *syncBuffer) Bytes() []byte {
+	b.mu.RLock()
+	p := b.b.Bytes()
+	b.mu.RUnlock()
+	return p
 }

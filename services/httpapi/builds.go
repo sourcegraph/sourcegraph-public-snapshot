@@ -7,16 +7,18 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
+	"golang.org/x/net/context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	buildSpec, err := getBuildSpec(r)
+	buildSpec, err := getBuildSpec(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -40,13 +42,30 @@ func serveBuildTasks(w http.ResponseWriter, r *http.Request) error {
 func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	var opt sourcegraph.BuildListOptions
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
+	var tmp struct {
+		Repo repoIDOrPath
+		sourcegraph.BuildListOptions
+	}
+	if err := schemaDecoder.Decode(&tmp, r.URL.Query()); err != nil {
+		return err
+	}
+	opt := tmp.BuildListOptions
+	if tmp.Repo != "" {
+		var err error
+		opt.Repo, err = getRepoID(ctx, tmp.Repo)
+		if err != nil {
+			return err
+		}
+	}
+
+	builds, err := cl.Builds.List(ctx, &opt)
 	if err != nil {
 		return err
 	}
 
-	builds, err := cl.Builds.List(ctx, &opt)
+	// Add a RepoPath field to each build because most API clients
+	// would need that information.
+	builds2, err := addBuildRepoPaths(ctx, builds.Builds)
 	if err != nil {
 		return err
 	}
@@ -55,7 +74,7 @@ func serveBuilds(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, builds)
+	return writeJSON(w, struct{ Builds []buildWithRepoPath }{builds2})
 }
 
 func serveBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
@@ -66,12 +85,12 @@ func serveBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	taskSpec, err := getBuildTaskSpec(r)
+	taskSpec, err := getBuildTaskSpec(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
 
-	entries, err := cl.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: taskSpec, Opt: &opt})
+	entries, err := cl.Builds.GetTaskLog(ctx, &sourcegraph.BuildsGetTaskLogOp{Task: *taskSpec, Opt: &opt})
 	if err != nil {
 		return err
 	}
@@ -79,30 +98,57 @@ func serveBuildTaskLog(w http.ResponseWriter, r *http.Request) error {
 	return writePlainLogEntries(w, entries)
 }
 
-func getBuildSpec(r *http.Request) (*sourcegraph.BuildSpec, error) {
-	v := mux.Vars(r)
-	build, err := strconv.ParseUint(v["Build"], 10, 64)
+func getBuildSpec(ctx context.Context, vars map[string]string) (*sourcegraph.BuildSpec, error) {
+	repo, err := handlerutil.GetRepoID(ctx, vars)
+	if err != nil {
+		return nil, err
+	}
+	build, err := strconv.ParseUint(vars["Build"], 10, 64)
 	if err != nil {
 		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
-	return &sourcegraph.BuildSpec{
-		Repo: routevar.ToRepo(mux.Vars(r)),
-		ID:   build,
-	}, nil
+	return &sourcegraph.BuildSpec{Repo: repo, ID: build}, nil
 }
 
-func getBuildTaskSpec(r *http.Request) (sourcegraph.TaskSpec, error) {
-	buildSpec, err := getBuildSpec(r)
+func getBuildTaskSpec(ctx context.Context, vars map[string]string) (*sourcegraph.TaskSpec, error) {
+	buildSpec, err := getBuildSpec(ctx, vars)
 	if err != nil {
-		return sourcegraph.TaskSpec{}, err
+		return nil, err
 	}
 
-	v := mux.Vars(r)
-	taskID, err := strconv.ParseUint(v["Task"], 10, 64)
+	taskID, err := strconv.ParseUint(vars["Task"], 10, 64)
 	if err != nil {
-		return sourcegraph.TaskSpec{}, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
+		return nil, &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
-	return sourcegraph.TaskSpec{Build: *buildSpec, ID: taskID}, nil
+	return &sourcegraph.TaskSpec{Build: *buildSpec, ID: taskID}, nil
+}
+
+type buildWithRepoPath struct {
+	*sourcegraph.Build
+	RepoPath string
+}
+
+func addBuildRepoPaths(ctx context.Context, builds []*sourcegraph.Build) ([]buildWithRepoPath, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	builds2 := make([]buildWithRepoPath, len(builds))
+	memo := map[int32]string{}
+	for i, b := range builds {
+		builds2[i].Build = b
+		if repoPath, present := memo[b.Repo]; present {
+			builds2[i].RepoPath = repoPath
+		} else {
+			repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: b.Repo})
+			if err != nil {
+				return nil, err
+			}
+			builds2[i].RepoPath = repo.URI
+		}
+	}
+	return builds2, nil
 }
 
 func writePlainLogEntries(w http.ResponseWriter, entries *sourcegraph.LogEntries) error {

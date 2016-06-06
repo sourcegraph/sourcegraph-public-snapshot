@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -42,19 +40,27 @@ func assertTaskExists(ctx context.Context, s store.Builds, want *sourcegraph.Bui
 // TestBuilds_Get tests that the behavior of Builds.Get indirectly via the
 // assertBuildExists method.
 func TestBuilds_Get(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
-	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	want := &sourcegraph.Build{ID: 5, Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{want})
 	assertBuildExists(ctx, s, want, t)
 }
 
 // TestBuilds_List verifies the correct functioning of the Builds.List method.
 func TestBuilds_List(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -62,9 +68,9 @@ func TestBuilds_List(t *testing.T) {
 
 	s := &builds{}
 	want := []*sourcegraph.Build{
-		{ID: 1, Repo: "r", CommitID: "c1"},
-		{ID: 2, Repo: "r", CommitID: "c2"},
-		{ID: 3, Repo: "r", CommitID: "c3"},
+		{ID: 1, Repo: 1, CommitID: "c1"},
+		{ID: 2, Repo: 1, CommitID: "c2"},
+		{ID: 3, Repo: 1, CommitID: "c3"},
 	}
 	s.mustCreateBuilds(ctx, t, want)
 	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{})
@@ -79,17 +85,21 @@ func TestBuilds_List(t *testing.T) {
 // TestBuilds_List_byRepoAndCommitID verifies the correct functioning of
 // the Builds.List method when filtering by a repo and commit ID.
 func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
 	data := []*sourcegraph.Build{
-		{ID: 1, Repo: "r1", CommitID: "c1"},
-		{ID: 2, Repo: "r1", CommitID: "c2"},
-		{ID: 3, Repo: "r2", CommitID: "c1"},
+		{ID: 1, Repo: 1, CommitID: "c1"},
+		{ID: 2, Repo: 1, CommitID: "c2"},
+		{ID: 3, Repo: 2, CommitID: "c1"},
 	}
 	s.mustCreateBuilds(ctx, t, data)
-	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{Repo: "r1", CommitID: "c1"})
+	builds, err := s.List(ctx, &sourcegraph.BuildListOptions{Repo: 1, CommitID: "c1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,6 +112,10 @@ func TestBuilds_List_byRepoAndCommitID(t *testing.T) {
 // TestBuilds_ListBuildTasks verifies the correct functioning of the
 // Builds.ListBuildTasks method.
 func TestBuilds_ListBuildTasks(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -109,10 +123,10 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 
 	s := builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 10, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"}, // test order
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "b"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "a"},
+		{ID: 10, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"}, // test order
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: 1, ID: 2}, Label: "a"},
 	}
 	s.mustCreateTasks(ctx, t, tasks)
 	ts, err := s.ListBuildTasks(ctx, tasks[0].Spec().Build, nil)
@@ -128,13 +142,17 @@ func TestBuilds_ListBuildTasks(t *testing.T) {
 // TestBuilds_Create tests the behavior of Builds.Create and that it correctly
 // creates the passed in build.
 func TestBuilds_Create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
-	want := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	want := &sourcegraph.Build{ID: 33, Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	b, err := s.Create(ctx, want)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
@@ -148,12 +166,16 @@ func TestBuilds_Create(t *testing.T) {
 // TestBuilds_Create_New verifies that passing a Build with ID == 0 to
 // Builds.Create will generate an ID for it.
 func TestBuilds_Create_New(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
 	// No ID specified.
-	want := &sourcegraph.Build{Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	want := &sourcegraph.Build{Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	b, err := s.Create(ctx, want)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
@@ -169,16 +191,20 @@ func TestBuilds_Create_New(t *testing.T) {
 // ID == 0 to Builds.Create will generate an ID for it that
 // is greater than all other builds' IDs.
 func TestBuilds_Create_SequentialID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
-	_, err := s.Create(ctx, &sourcegraph.Build{ID: 1, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"})
+	_, err := s.Create(ctx, &sourcegraph.Build{ID: 1, Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := &sourcegraph.Build{Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	want := &sourcegraph.Build{Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	b, err := s.Create(ctx, want)
 	if err != nil {
 		t.Fatal(err)
@@ -192,13 +218,17 @@ func TestBuilds_Create_SequentialID(t *testing.T) {
 // by inserting a build, Updating it and verifying that it exists in its new
 // form.
 func TestBuilds_Update(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
-	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost"}
+	orig := &sourcegraph.Build{ID: 33, Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost"}
 	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
 	update := sourcegraph.BuildUpdate{
 		StartedAt: &t0,
@@ -223,6 +253,10 @@ func TestBuilds_Update(t *testing.T) {
 // TestBuilds_Update_builderConfig tests that updating BuilderConfig only updates
 // the BuilderConfig without affecting other fields.
 func TestBuilds_Update_builderConfig(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -230,7 +264,7 @@ func TestBuilds_Update_builderConfig(t *testing.T) {
 
 	s := &builds{}
 	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
-	orig := &sourcegraph.Build{ID: 33, Repo: "y/y", CommitID: strings.Repeat("a", 40), Host: "localhost", StartedAt: &t0}
+	orig := &sourcegraph.Build{ID: 33, Repo: 1, CommitID: strings.Repeat("a", 40), Host: "localhost", StartedAt: &t0}
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{orig})
 
 	update := sourcegraph.BuildUpdate{BuilderConfig: "test"}
@@ -247,6 +281,10 @@ func TestBuilds_Update_builderConfig(t *testing.T) {
 // Builds.CreateTasks correctly creates these tasks in the store. The existence
 // is asserted using the assertTaskExists method.
 func TestBuilds_CreateTasks(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -254,10 +292,10 @@ func TestBuilds_CreateTasks(t *testing.T) {
 
 	s := &builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
-		{ID: 3, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "b"},
-		{ID: 4, Build: sourcegraph.BuildSpec{Repo: "x/z", ID: 1}, Label: "b"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: 1, ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: 2, ID: 1}, Label: "b"},
 	}
 	tsk, err := s.CreateTasks(ctx, tasks)
 	if err != nil {
@@ -275,11 +313,15 @@ func TestBuilds_CreateTasks(t *testing.T) {
 // with unset IDs, IDs are generated such that they are sequential in
 // the build.
 func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx, _, done := testContext()
 	defer done()
 
 	s := &builds{}
-	build := sourcegraph.BuildSpec{Repo: "x/z", ID: 1}
+	build := sourcegraph.BuildSpec{Repo: 2, ID: 1}
 
 	for i := 1; i < 4; i++ {
 		tasks, err := s.CreateTasks(ctx, []*sourcegraph.BuildTask{{Build: build}})
@@ -295,6 +337,10 @@ func TestBuilds_CreateTasks_SequentialID(t *testing.T) {
 // TestBuilds_UpdateTask verifies the correct functioning of the
 // Builds.UpdateTask method.
 func TestBuilds_UpdateTask(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -302,10 +348,10 @@ func TestBuilds_UpdateTask(t *testing.T) {
 
 	s := &builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
-		{ID: 3, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "b"},
-		{ID: 4, Build: sourcegraph.BuildSpec{Repo: "x/z", ID: 1}, Label: "b"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"},
+		{ID: 3, Build: sourcegraph.BuildSpec{Repo: 1, ID: 2}, Label: "b"},
+		{ID: 4, Build: sourcegraph.BuildSpec{Repo: 2, ID: 1}, Label: "b"},
 	}
 	s.mustCreateTasks(ctx, t, tasks)
 	t0 := pbtypes.NewTimestamp(time.Unix(1, 0))
@@ -323,6 +369,10 @@ func TestBuilds_UpdateTask(t *testing.T) {
 }
 
 func TestBuilds_GetTask(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -330,9 +380,9 @@ func TestBuilds_GetTask(t *testing.T) {
 
 	s := &builds{}
 	tasks := []*sourcegraph.BuildTask{
-		{ID: 1, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "b"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 1}, Label: "a"},
-		{ID: 2, Build: sourcegraph.BuildSpec{Repo: "a/b", ID: 2}, Label: "a"},
+		{ID: 1, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "b"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: 1, ID: 1}, Label: "a"},
+		{ID: 2, Build: sourcegraph.BuildSpec{Repo: 1, ID: 2}, Label: "a"},
 	}
 	s.mustCreateTasks(ctx, t, tasks)
 	for _, tsk := range tasks {
@@ -341,6 +391,10 @@ func TestBuilds_GetTask(t *testing.T) {
 }
 
 func TestBuilds_DequeueNext(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -349,15 +403,19 @@ func TestBuilds_DequeueNext(t *testing.T) {
 	ctx = withTestIDKey(t, ctx)
 
 	s := &builds{}
-	want := &sourcegraph.Build{ID: 5, Repo: "x/x", CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	repos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "x/x"})
+	want := &sourcegraph.Build{ID: 5, Repo: repos[0].ID, CommitID: strings.Repeat("a", 40), Host: "localhost", BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{want})
-	build, err := s.DequeueNext(ctx)
+	build, repoPath, err := s.DequeueNext(ctx)
 	if err != nil {
 		t.Fatalf("errored out: %s", err)
 	}
 	build.AccessToken = "" // do not compare access token
-	if !reflect.DeepEqual(build, newBuildJobForTest(t, ctx, want)) {
-		t.Errorf("expected %#v, got %#v", newBuildJobForTest(t, ctx, want), build)
+	if !reflect.DeepEqual(build, newBuildJobForTest(t, ctx, want, 1)) {
+		t.Errorf("expected %#v, got %#v", newBuildJobForTest(t, ctx, want, 1), build)
+	}
+	if want := repos[0].URI; repoPath != want {
+		t.Errorf("got repoPath %q, want %q", repoPath, want)
 	}
 }
 
@@ -372,21 +430,24 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	s := &builds{}
 	t1 := pbtypes.NewTimestamp(time.Unix(100000, 0))
 	t2 := pbtypes.NewTimestamp(time.Unix(200000, 0))
+	ctx = store.WithRepos(ctx, &repos{})
 
-	b1 := &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
-	b2 := &sourcegraph.Build{ID: 2, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
-	b3 := &sourcegraph.Build{ID: 3, CommitID: strings.Repeat("A", 40), Repo: "r", CreatedAt: t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
-	bNo1 := &sourcegraph.Build{ID: 4, CommitID: strings.Repeat("A", 40), Repo: "r", BuildConfig: sourcegraph.BuildConfig{Queue: false}}
-	bNo2 := &sourcegraph.Build{ID: 5, CommitID: strings.Repeat("A", 40), Repo: "r", StartedAt: &t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	(&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
+
+	b1 := &sourcegraph.Build{ID: 1, CommitID: strings.Repeat("A", 40), Repo: 1, CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: 10}}
+	b2 := &sourcegraph.Build{ID: 2, CommitID: strings.Repeat("A", 40), Repo: 1, CreatedAt: t1, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	b3 := &sourcegraph.Build{ID: 3, CommitID: strings.Repeat("A", 40), Repo: 1, CreatedAt: t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
+	bNo1 := &sourcegraph.Build{ID: 4, CommitID: strings.Repeat("A", 40), Repo: 1, BuildConfig: sourcegraph.BuildConfig{Queue: false}}
+	bNo2 := &sourcegraph.Build{ID: 5, CommitID: strings.Repeat("A", 40), Repo: 1, StartedAt: &t2, BuildConfig: sourcegraph.BuildConfig{Queue: true}}
 
 	s.mustCreateBuilds(ctx, t, []*sourcegraph.Build{b1, b2, b3, bNo1, bNo2})
 
 	wantBuilds := []*sourcegraph.BuildJob{
-		newBuildJobForTest(t, ctx, b1), newBuildJobForTest(t, ctx, b2), newBuildJobForTest(t, ctx, b3), nil, // in order
+		newBuildJobForTest(t, ctx, b1, 1), newBuildJobForTest(t, ctx, b2, 1), newBuildJobForTest(t, ctx, b3, 1), nil, // in order
 	}
 
 	for i, wantBuild := range wantBuilds {
-		build, err := s.DequeueNext(ctx)
+		build, _, err := s.DequeueNext(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -399,7 +460,7 @@ func TestBuilds_DequeueNext_ordered(t *testing.T) {
 	}
 }
 
-func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build) *sourcegraph.BuildJob {
+func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build, repo int32) *sourcegraph.BuildJob {
 	j, err := newBuildJob(ctx, b)
 	if err != nil {
 		t.Fatal(err)
@@ -413,6 +474,10 @@ func newBuildJobForTest(t *testing.T, ctx context.Context, b *sourcegraph.Build)
 // build. It may not always trigger the race condition, but if it even does
 // once, it is very important that we fix it.
 func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	ctx, _, done := testContext()
@@ -426,11 +491,13 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 		nworkers = 30
 	)
 
+	repos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
+
 	var allBuilds []*sourcegraph.Build
 	for i := 0; i < nbuilds; i++ {
 		allBuilds = append(allBuilds, &sourcegraph.Build{
 			ID:          uint64(i + 1),
-			Repo:        "r",
+			Repo:        repos[0].ID,
 			BuildConfig: sourcegraph.BuildConfig{Queue: true, Priority: int32(i)},
 			CommitID:    strings.Repeat("a", 40),
 		})
@@ -448,7 +515,7 @@ func TestBuilds_DequeueNext_noRaceCondition(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			for {
-				b, err := s.DequeueNext(ctx)
+				b, _, err := s.DequeueNext(ctx)
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -54,8 +54,7 @@ func (s *defs) Get(ctx context.Context, op *sourcegraph.DefsGetOp) (*sourcegraph
 	if op.Opt.ComputeLineRange {
 		startLine, endLine, err := computeLineRange(ctx, sourcegraph.TreeEntrySpec{
 			RepoRev: sourcegraph.RepoRevSpec{Repo: defSpec.Repo, CommitID: defSpec.CommitID},
-
-			Path: def.File,
+			Path:    def.File,
 		}, def.DefStart, def.DefEnd)
 		if err != nil {
 			log15.Warn("Defs.Get: failed to compute line range.", "err", err, "repo", defSpec.Repo, "commitID", defSpec.CommitID, "file", def.File)
@@ -100,7 +99,12 @@ func computeLineRange(ctx context.Context, entrySpec sourcegraph.TreeEntrySpec, 
 // get returns the def with the given def key (and no additional
 // information, such as docs).
 func (s *defs) get(ctx context.Context, def sourcegraph.DefSpec) (*graph.Def, error) {
-	d, err := store.GraphFromContext(ctx).Defs(srcstore.ByDefKey(def.DefKey()))
+	repo, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: def.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := store.GraphFromContext(ctx).Defs(srcstore.ByDefKey(def.DefKey(repo.URI)))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		opt = &sourcegraph.DefListOptions{}
 	}
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.List", ""); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.List", nil); err != nil {
 		return nil, err
 	}
 
@@ -126,7 +130,13 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		repoPath, commitID := sourcegraph.ParseRepoAndCommitID(repoRev)
 
 		// Dealias. This call also verifies that the repo is visible to the current user.
-		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{URI: repoPath})
+		resA, err := svc.Repos(ctx).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
+		if err != nil {
+			log15.Warn("Defs.List: dropping repo rev from the list because resolution failed.", "err", err, "repoRev", repoRev)
+			continue
+		}
+
+		rA, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: resA.Repo})
 		if err != nil {
 			log.Printf("Warning: dropping repo rev %q from defs list because repo or repo alias was not found: %s.", repoRev, err)
 			continue

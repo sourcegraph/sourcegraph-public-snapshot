@@ -1,5 +1,3 @@
-// +build exectest,buildtest
-
 package worker_test
 
 import (
@@ -14,6 +12,10 @@ import (
 )
 
 func TestWorker_BuildRepo_noSrclib_pass(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	_, done, build, buildLog := testWorker_buildRepo(t, map[string]string{
 		".drone.yml": `
 build:
@@ -34,6 +36,10 @@ build:
 }
 
 func TestWorker_BuildRepo_noSrclib_fail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	_, done, build, buildLog := testWorker_buildRepo(t, map[string]string{
 		".drone.yml": `
 build:
@@ -56,6 +62,10 @@ build:
 // Test when the repo doesn't contain any srclib auto-detected
 // languages, but it does explicitly configure srclib analysis.
 func TestWorker_BuildRepo_srclibExplicit_pass(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Skip("flaky") // https://app.asana.com/0/87040567695724/93915183753618
 
 	_, _, sampleImage := testserver.SrclibSampleToolchain(true)
@@ -81,10 +91,14 @@ build:
 		t.Errorf("build log doesn't contain %q\n\n%s", want, buildLog)
 	}
 
-	testutil.CheckImport(t, ctx, build.Repo, build.CommitID)
+	testutil.CheckImport(t, ctx, build.Repo, "r", build.CommitID)
 }
 
 func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Context, done func(), build *sourcegraph.Build, buildLog string) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	t.Parallel()
 
 	a, ctx := testserver.NewServer()
@@ -100,7 +114,7 @@ func testWorker_buildRepo(t *testing.T, files map[string]string) (ctx context.Co
 		a.Close()
 	}
 
-	buildSpec := sourcegraph.BuildSpec{Repo: repo.URI, ID: 1}
+	buildSpec := sourcegraph.BuildSpec{Repo: repo.ID, ID: 1}
 
 	// Get log for a single task.
 	getTaskLog := func(task sourcegraph.TaskSpec) (string, error) {

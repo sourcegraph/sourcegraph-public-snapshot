@@ -16,7 +16,8 @@ func TestDefsService_List_Repos(t *testing.T) {
 	ctx, mock := testContext()
 
 	calledDefs := mockstore.GraphMockDefs(&mock.stores.Graph)
-	calledGetRepo := mock.servers.Repos.MockGet(t, "r")
+	calledGetRepo := mock.servers.Repos.MockGet(t, 1)
+	calledReposResolve := mock.servers.Repos.MockResolve_Local(t, "r", 1)
 
 	_, err := s.List(ctx, &sourcegraph.DefListOptions{
 		RepoRevs: []string{"r@tttttttttttttttttttttttttttttttttttttttt"},
@@ -29,6 +30,9 @@ func TestDefsService_List_Repos(t *testing.T) {
 	}
 	if !*calledGetRepo {
 		t.Error("!calledGetRepo")
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 }
 

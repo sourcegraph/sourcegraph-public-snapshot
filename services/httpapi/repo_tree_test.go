@@ -19,6 +19,7 @@ func TestRepoTree(t *testing.T) {
 		},
 	}
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 	calledAnnotationsList := mock.Annotations.MockList(t, nil)
@@ -29,6 +30,9 @@ func TestRepoTree(t *testing.T) {
 	}
 	if !reflect.DeepEqual(entry, want) {
 		t.Errorf("got %+v, want %+v", entry, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
@@ -44,6 +48,7 @@ func TestRepoTree(t *testing.T) {
 func TestRepoTree_notFound(t *testing.T) {
 	c, mock := newTest()
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	calledGet := mock.RepoTree.MockGet_NotFound(t)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 
@@ -53,6 +58,9 @@ func TestRepoTree_notFound(t *testing.T) {
 	}
 	if want := http.StatusNotFound; resp.StatusCode != want {
 		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")

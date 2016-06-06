@@ -1,5 +1,3 @@
-// +build pgsqltest
-
 package localstore
 
 import (
@@ -11,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
 func init() {
@@ -26,6 +25,7 @@ func testContext() (ctx context.Context, mock *mocks, done func()) {
 
 	ctx = conf.WithURL(ctx, &url.URL{Scheme: "http", Host: "example.com"})
 	ctx = authpkg.WithActor(ctx, authpkg.Actor{UID: 1, Login: "test", Admin: true})
+	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 
 	appDBH, appDBDone := testdb.NewHandle("app", &AppSchema)
 	graphDBH, graphDBDone := testdb.NewHandle("graph", &GraphSchema)

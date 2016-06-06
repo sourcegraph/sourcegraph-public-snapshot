@@ -30,9 +30,8 @@ func TestBuildCleanup(t *testing.T) {
 
 	build := &sourcegraph.BuildJob{
 		Spec: sourcegraph.BuildSpec{
-			Repo: "test",
-
-			ID: 1,
+			Repo: 1,
+			ID:   1,
 		},
 	}
 	activeBuilds := newActiveBuilds()

@@ -12,10 +12,10 @@ func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegr
 	for _, repo := range repos {
 		repo.DefaultBranch = "master"
 
-		if err := s.Create(ctx, repo); err != nil {
+		if _, err := s.Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
-		repo, err := s.Get(ctx, repo.URI)
+		repo, err := s.GetByURI(ctx, repo.URI)
 		if err != nil {
 			t.Fatal(err)
 		}

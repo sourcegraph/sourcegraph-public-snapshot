@@ -17,6 +17,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -29,9 +30,10 @@ import (
 var skipFS = false // used by tests
 
 func init() {
-	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(false, "URI")
+	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(true, "ID")
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
+		"CREATE UNIQUE INDEX repo_uri_unique ON repo(uri);",
 		"ALTER TABLE repo ALTER COLUMN description TYPE text",
 		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
 		`ALTER TABLE repo ALTER COLUMN vcs SET NOT NULL;`,
@@ -46,6 +48,7 @@ func init() {
 
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
+	ID            int32
 	URI           string
 	Origin        string // DEPRECATED: will be removed in a future commit
 	Owner         string
@@ -69,6 +72,7 @@ type dbRepo struct {
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
+		ID:            r.ID,
 		URI:           r.URI,
 		Owner:         r.Owner,
 		Name:          r.Name,
@@ -102,6 +106,7 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 }
 
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
+	r.ID = r2.ID
 	r.URI = r2.URI
 	r.Owner = r2.Owner
 	r.Name = r2.Name
@@ -143,24 +148,40 @@ type repos struct{}
 
 var _ store.Repos = (*repos)(nil)
 
-func (s *repos) Get(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
+	repo, err := s.getBySQL(ctx, "id=$1", id)
+	if err != nil {
+		return nil, err
+	}
+	return finishGetRepo(ctx, repo)
+}
+
+func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
+	return finishGetRepo(ctx, repo)
+}
 
-	// Access controls for GitHub repos are handled by making a call
-	// in the request path to the GitHub API as the actor, not by us.
-	if !strings.HasPrefix(uri, "github.com/") {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Get", uri); err != nil {
+// finishGetRepo checks permissions and fills in additional fields on
+// repo. It MUST be called after fetching a repo from the DB before
+// returning the repo.
+func finishGetRepo(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+	// Avoid an infinite loop (since
+	// accesscontrol.VerifyUserHasReadAccess calls (*repos).Get).
+	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
+		if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
 			return nil, err
 		}
+	} else {
+		// All hosted repos or alternate URI repos are publicly viewable.
 	}
 
 	// TODO(keegancsmith) remove once we are storing all github metadata
 	// in table https://app.asana.com/0/37478073567611/138332225969208
 	if repo.DefaultBranch == "" {
-		log15.Debug("Repo missing DefaultBranch", "repo", uri)
+		log15.Debug("Repo missing DefaultBranch", "repo", repo.URI)
 		repo.DefaultBranch = "master"
 	}
 
@@ -193,7 +214,7 @@ func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{})
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", ""); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", nil); err != nil {
 		return nil, err
 	}
 	if opt == nil {
@@ -356,7 +377,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 	// Critical permissions check. DO NOT REMOVE.
 	var results []*sourcegraph.RepoSearchResult
 	for _, prepo := range priorityRepos {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Search", prepo.URI); err != nil {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Search", prepo.ID); err != nil {
 			continue
 		}
 		results = append(results, &sourcegraph.RepoSearchResult{
@@ -454,9 +475,10 @@ func (s *repos) listSQL(opt *sourcegraph.RepoListOptions) (string, []interface{}
 	}
 	sort := opt.Sort
 	if sort == "" {
-		sort = "uri"
+		sort = "id"
 	}
 	sortKeyToCol := map[string]string{
+		"id":      "repo.id",
 		"uri":     "repo.uri",
 		"path":    "repo.uri",
 		"name":    "repo.name",
@@ -491,18 +513,18 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 	return toRepos(repos), nil
 }
 
-func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
+func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, error) {
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
 		if !newRepo.Mirror {
-			return grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
+			return 0, grpc.Errorf(codes.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
 		}
 		// Anyone can create GitHub mirrors.
-	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", ""); err != nil {
-		return err
+	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
+		return 0, err
 	}
 
 	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
-		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", repo.URI)
+		return 0, grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", repo.URI)
 	}
 
 	// Create the filesystem repo where the git data lives. (The repo
@@ -511,7 +533,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	// A mirrored repo is automatically cloned by the repo updater instead of here.
 	if !newRepo.Mirror && !skipFS {
 		if err := gitserver.Init(newRepo.URI); err != nil && err != vcs.ErrRepoExist {
-			return err
+			return 0, err
 		}
 	}
 
@@ -519,12 +541,12 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) error {
 	r.fromRepo(newRepo)
 	err := appDBH(ctx).Insert(&r)
 	if isPQErrorUniqueViolation(err) {
-		if c := err.(*pq.Error).Constraint; c != "repo_pkey" {
-			log15.Warn("Expected unique_violation of repo_pkey constraint, but it was something else; did it change?", "constraint", c, "err", err)
+		if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
+			log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
 		}
-		return grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
+		return 0, grpc.Errorf(codes.AlreadyExists, "repo already exists: %s", newRepo.URI)
 	}
-	return err
+	return r.ID, err
 }
 
 func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
@@ -532,32 +554,32 @@ func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 		return err
 	}
 	if op.Description != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE uri=$2`, strings.TrimSpace(op.Description), op.Repo)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "description"=$1 WHERE id=$2`, strings.TrimSpace(op.Description), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.Language != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE uri=$2`, strings.TrimSpace(op.Language), op.Repo)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "language"=$1 WHERE id=$2`, strings.TrimSpace(op.Language), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.DefaultBranch != "" {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE uri=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "default_branch"=$1 WHERE id=$2`, strings.TrimSpace(op.DefaultBranch), op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 
 	if op.UpdatedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE uri=$2`, op.UpdatedAt, op.Repo)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE id=$2`, op.UpdatedAt, op.Repo)
 		if err != nil {
 			return err
 		}
 	}
 	if op.PushedAt != nil {
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE uri=$2`, op.PushedAt, op.Repo)
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE id=$2`, op.PushedAt, op.Repo)
 		if err != nil {
 			return err
 		}
@@ -565,17 +587,27 @@ func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 	return nil
 }
 
-func (s *repos) Delete(ctx context.Context, repo string) error {
+func (s *repos) Delete(ctx context.Context, repo int32) error {
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
 		return err
 	}
-	_, err := appDBH(ctx).Exec(`DELETE FROM repo WHERE uri=$1;`, repo)
+
+	var dir string
+	if !skipFS {
+		var err error
+		dir, err = getRepoDir(ctx, repo)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := appDBH(ctx).Exec(`DELETE FROM repo WHERE id=$1;`, repo)
 	if err != nil {
 		return err
 	}
-	if !skipFS {
-		if err := gitserver.Remove(repo); err != nil {
-			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "err", err)
+	if !skipFS && dir != "" {
+		if err := gitserver.Remove(dir); err != nil {
+			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "dir", dir, "err", err)
 		}
 	}
 	return nil

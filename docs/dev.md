@@ -125,8 +125,6 @@ To run a specific package's tests:
 go test ./util/textutil
 ```
 
-Learn more at [docs/testing.md](docs/testing.md).
-
 ## govendor
 
 The Sourcegraph repository uses

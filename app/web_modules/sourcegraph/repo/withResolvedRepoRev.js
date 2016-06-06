@@ -44,6 +44,7 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 			state.rev = repoRev(repoSplat); // the original rev from the URL
 
 			state.repoResolution = RepoStore.resolutions.get(state.repo);
+			state.repoID = state.repoResolution && !state.repoResolution.Error && state.repoResolution.Repo ? state.repoResolution.Repo : null;
 			state.repoObj = RepoStore.repos.get(state.repo);
 
 			state.resolvedRev = state.repoObj && !state.repoObj.Error ? RepoStore.resolvedRevs.get(state.repo, state.rev) : null;
@@ -63,9 +64,19 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
 				if (nextState.repoResolution.Error) {
 					// Do nothing.
-				} else if (nextState.repoResolution.Result.RemoteRepo) {
-					let remoteRepo = nextState.repoResolution.Result.RemoteRepo;
-					let canonicalPath = `github.com/${nextState.repoResolution.Result.RemoteRepo.Owner}/${nextState.repoResolution.Result.RemoteRepo.Name}`;
+				} else if (nextState.repoResolution.Repo) {
+					let canonicalPath = nextState.repoResolution.CanonicalPath;
+					if (nextState.repo !== canonicalPath) {
+						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
+						this.context.router.replace(canonicalURL);
+						return;
+					}
+
+					// Fetch it if it's a local repo.
+					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
+				} else if (nextState.repoResolution.RemoteRepo) {
+					let remoteRepo = nextState.repoResolution.RemoteRepo;
+					let canonicalPath = `github.com/${nextState.repoResolution.RemoteRepo.Owner}/${nextState.repoResolution.RemoteRepo.Name}`;
 					if (remoteRepo.HTTPCloneURL && !remoteRepo.HTTPCloneURL.startsWith("https://github.com/")) {
 						if (remoteRepo.HTTPCloneURL.startsWith("https://")) {
 							canonicalPath = remoteRepo.HTTPCloneURL.substr("https://".length);
@@ -81,16 +92,6 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 					}
 
 					// If it's a remote repo, do nothing; RepoMain should clone the repository.
-				} else if (nextState.repoResolution.Result.Repo) {
-					let canonicalPath = nextState.repoResolution.Result.Repo;
-					if (nextState.repo !== canonicalPath) {
-						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
-						this.context.router.replace(canonicalURL);
-						return;
-					}
-
-					// Fetch it if it's a local repo.
-					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 				}
 			}
 			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.repoObj !== nextState.repoObj) {

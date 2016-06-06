@@ -10,12 +10,12 @@ import (
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
 
-func (s *RepoVCS) MockOpen(t *testing.T, wantRepo string, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+func (s *RepoVCS) MockOpen(t *testing.T, wantRepo int32, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	s.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		*called = true
 		if repo != wantRepo {
-			t.Errorf("got repo %q, want %q", repo, wantRepo)
+			t.Errorf("got repo %d, want %d", repo, wantRepo)
 			return nil, grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo)
 		}
 		return mockVCSRepo, nil
@@ -25,7 +25,7 @@ func (s *RepoVCS) MockOpen(t *testing.T, wantRepo string, mockVCSRepo vcstesting
 
 func (s *RepoVCS) MockOpen_NoCheck(t *testing.T, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.Open_ = func(ctx context.Context, repo string) (vcs.Repository, error) {
+	s.Open_ = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		*called = true
 		return mockVCSRepo, nil
 	}

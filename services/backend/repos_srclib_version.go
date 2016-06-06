@@ -25,9 +25,14 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 		return nil, errNotAbsCommitID
 	}
 
+	repo, err := store.ReposFromContext(ctx).Get(ctx, entry.RepoRev.Repo)
+	if err != nil {
+		return nil, err
+	}
+
 	// First, try to find an exact match.
 	vers, err := store.GraphFromContext(ctx).Versions(
-		srclibstore.ByRepoCommitIDs(srclibstore.Version{Repo: entry.RepoRev.Repo, CommitID: entry.RepoRev.CommitID}),
+		srclibstore.ByRepoCommitIDs(srclibstore.Version{Repo: repo.URI, CommitID: entry.RepoRev.CommitID}),
 	)
 	if err != nil {
 		return nil, err
@@ -45,7 +50,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	}
 
 	// Do expensive search backwards through history.
-	info, err := s.getSrclibDataVersionForPathLookback(ctx, entry)
+	info, err := s.getSrclibDataVersionForPathLookback(ctx, entry, repo.URI)
 	if err != nil {
 		if errcode.GRPC(err) == codes.NotFound {
 			log15.Debug("svc.local.repos.GetSrclibDataVersionForPath", "entry", entry, "result", "not found: "+err.Error())
@@ -56,7 +61,7 @@ func (s *repos) GetSrclibDataVersionForPath(ctx context.Context, entry *sourcegr
 	return info, nil
 }
 
-func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *sourcegraph.TreeEntrySpec, repo string) (*sourcegraph.SrclibDataVersion, error) {
 	// Find the base commit (the farthest ancestor commit we'll
 	// consider).
 	//
@@ -135,7 +140,7 @@ func (s *repos) getSrclibDataVersionForPathLookback(ctx context.Context, entry *
 
 	// Get all srclib built data versions.
 	vers, err := store.GraphFromContext(ctx).Versions(
-		srclibstore.ByRepos(entry.RepoRev.Repo),
+		srclibstore.ByRepos(repo),
 		srclibstore.ByCommitIDs(candidateCommitIDs...),
 	)
 	if err != nil {

@@ -24,9 +24,6 @@ func (r *Repo) CloneURL() *url.URL {
 	return u
 }
 
-// IsZero reports whether s.URI is the zero value.
-func (s RepoSpec) IsZero() bool { return s.URI == "" }
-
 // IsAbs returns whether s.CommitID is a valid absolute commit ID (40
 // characters and hexadecimal). It is not a guarantee that s.CommitID
 // refers to an existing commit ID in the repository, or that it is
@@ -42,25 +39,6 @@ func (s RepoRevSpec) IsAbs() bool {
 		}
 	}
 	return true
-}
-
-func (r *RepoResolution) UnmarshalJSON(data []byte) error {
-	var m struct {
-		Result struct {
-			Repo       string
-			RemoteRepo *RemoteRepo
-		}
-	}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return err
-	}
-	switch {
-	case m.Result.Repo != "":
-		*r = RepoResolution{Result: &RepoResolution_Repo{Repo: m.Result.Repo}}
-	case m.Result.RemoteRepo != nil:
-		*r = RepoResolution{Result: &RepoResolution_RemoteRepo{RemoteRepo: m.Result.RemoteRepo}}
-	}
-	return nil
 }
 
 func (r *ReposCreateOp) UnmarshalJSON(data []byte) error {

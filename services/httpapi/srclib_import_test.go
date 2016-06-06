@@ -31,7 +31,9 @@ func TestSrclibImport(t *testing.T) {
 		"a/b/t.graph.json": graph.Output{Defs: []*graph.Def{{DefKey: graph.DefKey{Path: "p"}, Name: "n", File: "f"}}},
 	}
 
+	calledReposResolve := mock.Repos.MockResolve_Local(t, wantRepo, 1)
 	calledReposGet := mock.Repos.MockGet_Return(t, &sourcegraph.Repo{
+		ID:   1,
 		URI:  wantRepo,
 		Fork: true, // specify fork to prevent background index refreshes
 	})
@@ -117,6 +119,9 @@ func TestSrclibImport(t *testing.T) {
 	if !calledSrclibStoreCreateVersion {
 		t.Error("!calledSrclibStoreCreateVersion")
 	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
 	if !*calledReposGet {
 		t.Error("!calledReposGet")
 	}
@@ -128,7 +133,8 @@ func TestSrclibImport(t *testing.T) {
 func TestSrclibImport_empty(t *testing.T) {
 	c, mock := newTest()
 
-	calledReposGet := mock.Repos.MockGet(t, "r")
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledReposGet := mock.Repos.MockGet(t, 1)
 	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 
 	// POST an empty zip archive.
@@ -142,6 +148,9 @@ func TestSrclibImport_empty(t *testing.T) {
 	defer resp.Body.Close()
 	if want := http.StatusBadRequest; resp.StatusCode != want {
 		t.Errorf("got HTTP response status %d, want %d", resp.StatusCode, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
 	}
 	if !*calledReposGet {
 		t.Error("!calledReposGet")

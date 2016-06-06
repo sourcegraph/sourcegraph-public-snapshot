@@ -8,14 +8,14 @@ import (
 )
 
 func TestPerf_AFaster(t *testing.T) {
-	d := testPerf(time.Millisecond, 5*time.Millisecond)
+	d := testPerf(time.Millisecond, 50*time.Millisecond)
 	if d.bDur < d.aDur {
 		t.Errorf("Expected A to be faster. a: %v b: %v", d.aDur, d.bDur)
 	}
 }
 
 func TestPerf_BFaster(t *testing.T) {
-	d := testPerf(5*time.Millisecond, time.Millisecond)
+	d := testPerf(50*time.Millisecond, time.Millisecond)
 	if d.aDur < d.bDur {
 		t.Errorf("Expected B to be faster. a: %v b: %v", d.aDur, d.bDur)
 	}
@@ -31,7 +31,7 @@ func TestPerf_DefaultReporter(t *testing.T) {
 	done()
 	// reporting is done in another goroutine, just give it time to panic
 	// if it does
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 }
 
 type perfDurations struct{ aDur, bDur time.Duration }

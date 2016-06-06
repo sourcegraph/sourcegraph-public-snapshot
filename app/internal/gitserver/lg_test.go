@@ -1,5 +1,3 @@
-// +build exectest
-
 package gitserver_test
 
 import (
@@ -13,34 +11,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
 
-func TestGitServerWithAnonymousReaders(t *testing.T) {
+func TestGitServer(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	var tests = []interface{}{
 		// Clone test.
 		gitCloneTest{false, false, []string{}, false},
-		gitCloneTest{false, true, []string{}, false},
-
-		// Shallow clone tests.
-		gitCloneTest{false, true, []string{"--depth", "1"}, false},
-
-		// Empty fetch tests.
-		gitCloneTest{false, true, []string{}, true},
-
-		// Push tests.
-		gitPushTest{true, false, true, false},
-		gitPushTest{false, true, true, false},
-
-		// Vary permissions.
-		gitPushTest{true, true, false, false},
-		gitPushTest{false, true, false, true},
-		gitPushTest{false, true, true, true},
-	}
-	testGitServer(t, tests)
-}
-
-func TestGitServerWithAuth(t *testing.T) {
-	var tests = []interface{}{
-		// Clone test.
-		gitCloneTest{true, false, []string{}, false},
 		gitCloneTest{false, true, []string{}, false},
 
 		// Shallow clone tests.
@@ -127,7 +105,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 		case gitCloneTest:
 			err := testutil.CloneRepo(t, remoteURL(test.authenticated), "", test.args, test.emptyFetch)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
-				t.Errorf("FAILED: %s : %v", test.String(), err)
+				t.Errorf("FAIL: %s : %v", test.String(), err)
 			}
 		case gitPushTest:
 			user := &sourcegraph.User{UID: acct.UID, Login: login, Write: test.canWrite, Admin: test.isAdmin}
@@ -142,7 +120,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 
 			err = testutil.PushRepo(t, ctx, remoteURL(test.authenticated), authedCloneURL, map[string]string{"unique.txt": test.String()}, false)
 			if (test.expectError && err == nil) || (!test.expectError && err != nil) {
-				t.Errorf("FAILED: %s : %v", test.String(), err)
+				t.Errorf("FAIL: %s : %v", test.String(), err)
 			}
 		default:
 			t.Errorf("Invalid test type: %T", it)

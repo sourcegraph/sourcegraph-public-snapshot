@@ -36,7 +36,7 @@ describe("withResolvedRepoRev", () => {
 			expect(res.actions).to.eql([new RepoActions.WantResolveRepo("r")]);
 		});
 		it("should trigger WantRepo for resolved local repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Result: {Repo: "r"}}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Repo: 1, CanonicalPath: "r"}));
 			let calledReplace = false;
 			const res = render(<C params={{splat: "r"}} />, {
 				router: {replace: () => calledReplace = true},
@@ -45,7 +45,7 @@ describe("withResolvedRepoRev", () => {
 			expect(res.actions).to.eql([new RepoActions.WantRepo("r")]);
 		});
 		it("should NOT trigger WantRepo for resolved remote repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {Result: {RemoteRepo: {Owner: "user", Name: "repo"}}}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {RemoteRepo: {Owner: "user", Name: "repo"}}));
 			let calledReplace = false;
 			const res = render(<C params={{splat: "github.com/user/repo"}} />, {
 				router: {replace: () => calledReplace = true},
@@ -55,7 +55,7 @@ describe("withResolvedRepoRev", () => {
 		});
 
 		it("should redirect for resolved local repos with different canonical name", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Result: {Repo: "renamedRepo"}}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Repo: 1, CanonicalPath: "renamedRepo"}));
 			let calledReplace = false;
 			render(<C params={{splat: "repo"}} location={{pathname: "sg.com/alias"}} />, {
 				router: {replace: () => calledReplace = true},
@@ -63,7 +63,7 @@ describe("withResolvedRepoRev", () => {
 			expect(calledReplace).to.be(true);
 		});
 		it("should redirect for resolved remote repos with different canonical name", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {Result: {RemoteRepo: {Owner: "renamedUser", Name: "renamedRepo"}}}));
+			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {RemoteRepo: {Owner: "renamedUser", Name: "renamedRepo"}}));
 			let calledReplace = false;
 			render(<C params={{splat: "github.com/user/repo"}} location={{pathname: "sg.com/alias"}} />, {
 				router: {replace: () => calledReplace = true},

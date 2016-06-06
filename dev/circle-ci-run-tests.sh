@@ -26,14 +26,15 @@ echo "$changed"
 
 pkgs=()
 covered=()
-for pkg in $(go list  -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | sort); do
+for pkg in $(go list -f '{{ if or (gt (len .TestGoFiles) 0) (gt (len .XTestGoFiles ) 0) }}{{ .ImportPath }}{{ end }}' ./... | grep -v /vendor/ | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
 		if [ "$CIRCLE_BRANCH" == 'master' ] || echo "$changed" | awk -v D="$(pwd)" '{ print D "/" $2 }' | egrep "$pkg/$"
 		then
 			echo "Run test with coverage for package: $pkg"
-			make go-test TESTFLAGS="-test.v -test.timeout 5m -test.coverprofile=/tmp/cover.$i.out" TESTPKGS="$pkg"  | tee /tmp/mdtest.out
-			go-junit-report < /tmp/mdtest.out >> $CIRCLE_TEST_REPORTS/junit/mdtest.xml
+			go install -race ./cmd/src
+			go test -race -v -timeout 5m -coverprofile=/tmp/cover.$i.out "$pkg" | tee /tmp/go-test.out
+			go-junit-report < /tmp/go-test.out >> $CIRCLE_TEST_REPORTS/junit/go-test.xml
 			covered+=("$pkg")
 		else
 			pkgs+=("$pkg")
@@ -50,7 +51,8 @@ fi
 
 if [ "${#pkgs[@]}" -gt "0" ]
 then
-	echo "Run tests with out coverage for packages: ${pkgs[@]}"
-	TESTFLAGS="-test.v -test.timeout 5m" TESTPKGS="${pkgs[@]}" make mdtest | tee /tmp/mdtest.out
-	go-junit-report < /tmp/mdtest.out > $CIRCLE_TEST_REPORTS/junit/mdtest.xml
+	echo "Run tests without coverage for packages: ${pkgs[@]}"
+	go install -race ./cmd/src
+	go test -race -v -timeout 5m "${pkgs[@]}" | tee /tmp/go-test.out
+	go-junit-report < /tmp/go-test.out > $CIRCLE_TEST_REPORTS/junit/go-test.xml
 fi

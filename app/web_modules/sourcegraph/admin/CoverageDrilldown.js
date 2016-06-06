@@ -41,16 +41,6 @@ class CoverageDrilldown extends Container {
 					Idents: React.PropTypes.number.isRequired,
 					Refs: React.PropTypes.number.isRequired,
 					Defs: React.PropTypes.number.isRequired,
-					UnresolvedIdents: React.PropTypes.arrayOf(React.PropTypes.shape({
-						Offset: React.PropTypes.number.isRequired,
-						Line: React.PropTypes.number.isRequired,
-						Text: React.PropTypes.string.isRequired,
-					})),
-					UnresolvedRefs: React.PropTypes.arrayOf(React.PropTypes.shape({
-						Offset: React.PropTypes.number.isRequired,
-						Line: React.PropTypes.number.isRequired,
-						Text: React.PropTypes.string.isRequired,
-					})),
 				})),
 			})).isRequired,
 		})).isRequired,
@@ -158,10 +148,7 @@ class CoverageDrilldown extends Container {
 			const blobURL = urlToBlob(this.state.drilldown.Repo, this.state.drilldown.Rev, file.Path);
 			return (<div key={i}>
 				<div styleName="file-drilldown-row">
-					<div styleName={`file-drilldown-header${this.props.refScore(file) <= 0.5 ? "-uncovered" : ""}`} onClick={() => {
-						if (this.state.drilldownFile === i) return this.setState({drilldownFile: null});
-						this.setState({drilldownFile: i});
-					}}>
+					<div styleName={`file-drilldown-header${this.props.refScore(file) <= 0.75 ? "-uncovered" : ""}`}>
 						<div styleName="filepath">{file.Path}</div>
 						<div styleName="file-stats">{`Idents (${file.Idents}) Refs (${this.formatScore(this.props.refScore(file))}%) Defs (${this.formatScore(this.props.defScore(file))}%)`}</div>
 					</div>
@@ -169,22 +156,6 @@ class CoverageDrilldown extends Container {
 						<FileIcon />
 					</Link>
 				</div>
-				{this.state.drilldownFile === i && <div styleName="unresolved-tokens">
-					<div styleName="unresolved-idents">
-						<div styleName="unresolved-header">Unresolved idents</div>
-						{file.UnresolvedIdents && file.UnresolvedIdents.map((ident, j) => <div key={j}>
-							<Link to={`${blobURL}#L${ident.Line}`}>{ident.Line}</Link>
-							{` : ${ident.Text}`}
-						</div>)}
-					</div>
-					<div styleName="unresolved-refs">
-						<div styleName="unresolved-header">Unresolved refs</div>
-						{file.UnresolvedRefs && file.UnresolvedRefs.map((ref, j) => <div key={j}>
-							<Link to={`${blobURL}#L${ref.Line}`}>{ref.Line}</Link>
-							{` : ${ref.Text}`}
-						</div>)}
-					</div>
-				</div>}
 			</div>);
 		});
 	}

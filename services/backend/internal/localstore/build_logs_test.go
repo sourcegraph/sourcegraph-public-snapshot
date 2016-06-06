@@ -13,7 +13,7 @@ import (
 
 func logStr(e *sourcegraph.LogEntries) string { return strings.Join(e.Entries, "\n") }
 
-var task = sourcegraph.TaskSpec{Build: sourcegraph.BuildSpec{Repo: "r", ID: 123}, ID: 456}
+var task = sourcegraph.TaskSpec{Build: sourcegraph.BuildSpec{Repo: 1, ID: 123}, ID: 456}
 
 func writeBuildLog(ctx context.Context, t *testing.T, task sourcegraph.TaskSpec, data string) {
 	if err := ioutil.WriteFile(logFilePath(task), []byte(data), 0600); err != nil {
@@ -30,7 +30,7 @@ func init() {
 }
 
 func TestBuildLogs_Get_noErrorIfNotExist(t *testing.T) {
-	ctx := context.Background()
+	ctx := testContextNoDB()
 
 	s := &buildLogs{}
 	e, err := s.Get(ctx, task, "", time.Time{}, time.Time{})
@@ -43,7 +43,7 @@ func TestBuildLogs_Get_noErrorIfNotExist(t *testing.T) {
 }
 
 func TestBuildLogs_Get_noErrorIfEmpty(t *testing.T) {
-	ctx := context.Background()
+	ctx := testContextNoDB()
 
 	s := &buildLogs{}
 	writeBuildLog(ctx, t, task, "")
@@ -58,7 +58,7 @@ func TestBuildLogs_Get_noErrorIfEmpty(t *testing.T) {
 }
 
 func TestBuildLogs_Get_ok(t *testing.T) {
-	ctx := context.Background()
+	ctx := testContextNoDB()
 
 	s := &buildLogs{}
 	writeBuildLog(ctx, t, task, "hello\nworld")
@@ -72,7 +72,7 @@ func TestBuildLogs_Get_ok(t *testing.T) {
 }
 
 func TestBuildLogs_Get_MinID(t *testing.T) {
-	ctx := context.Background()
+	ctx := testContextNoDB()
 
 	s := &buildLogs{}
 	const data = "a\nb\nc\nd"

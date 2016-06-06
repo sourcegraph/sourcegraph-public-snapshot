@@ -38,7 +38,7 @@ const RepoBackend = {
 				let resolution = RepoStore.resolutions.get(action.repo);
 				if (resolution === null) {
 					trackPromise(
-						RepoBackend.fetch(`/.api/repos/${action.repo}/-/resolve`)
+						RepoBackend.fetch(`/.api/repos/${action.repo}/-/resolve?Remote=true`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
