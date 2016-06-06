@@ -105,7 +105,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 				if (!consumingSpan){
 					// Case to handle if < or > appears, so that we don't "consume" or make span tags in the code disappear
 					// This will not break if "&lt;" or "&gt;" appear because chars are escaped.
-					if (childNodeChars[k] === "&" && (((childNodeChars.slice(k, k+4).join("")) === ("&gt;")) || (childNodeChars.slice(k, k+4).join("") === ("&lt;")))) {
+					if (isSpanTagString(childNodeChars, k)) {
 						output += next(childNodeChars.slice(k, k+4).join(""), startByte, annsByStartByte, annsByEndByte);
 						k += childNodeChars.slice(k, k+4).join("").length-1;
 						startByte += utf8.encode(childNodeChars[k]).length;
@@ -137,6 +137,9 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 	}
 }
 
+function isSpanTagString(childNodeChars, k) {
+	return (childNodeChars[k] === "&" && (((childNodeChars.slice(k, k+4).join("")) === ("&gt;")) || (childNodeChars.slice(k, k+4).join("") === ("&lt;"))))
+}
 // next is a helper method for traverseDOM which transforms a character
 // into itself or wraps the character in a starting/ending anchor tag
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
