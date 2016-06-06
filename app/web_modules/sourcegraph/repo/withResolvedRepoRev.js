@@ -64,7 +64,7 @@ export default function withResolvedRepoRev(Component: ReactClass, isMainCompone
 				if (nextState.repoResolution.Error) {
 					// Do nothing.
 				} else if (nextState.repoResolution.Repo) {
-					let canonicalPath = nextState.repoResolution.Repo;
+					let canonicalPath = nextState.repoResolution.CanonicalPath;
 					if (nextState.repo !== canonicalPath) {
 						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
 						this.context.router.replace(canonicalURL);

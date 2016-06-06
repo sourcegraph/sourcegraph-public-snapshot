@@ -348,6 +348,12 @@ message RepoResolution {
 	// or a locally added mirror).
 	string Repo = 1;
 
+	// CanonicalPath is the canonical repo path of the local repo
+	// (with the canonical casing, etc.). Clients should generally
+	// redirect the user to the canonical repo path if users access a
+	// repo by a non-canonical path.
+	string CanonicalPath = 3;
+
 	// RemoteRepo holds metadata about the repo that exists on a
 	// remote service (such as GitHub).
 	RemoteRepo RemoteRepo = 2;
