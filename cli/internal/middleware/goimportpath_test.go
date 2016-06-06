@@ -22,14 +22,21 @@ import (
 func TestGoImportPath(t *testing.T) {
 	_, mock := httptestutil.NewTest(nil)
 	defer httptestutil.ResetGlobals()
+	mock.Repos.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+		ids := map[string]string{"sourcegraph/sourcegraph": "sourcegraph/sourcegraph", "sourcegraph/srclib-go": "sourcegraph/srclib-go"}
+		if id := ids[op.Path]; id != "" {
+			return &sourcegraph.RepoResolution{Repo: id}, nil
+		}
+		return nil, grpc.Errorf(codes.NotFound, "")
+	}
 	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
 		switch repo.URI {
-		case "sourcegraph/sourcegraph": // Hosted repo.
+		case "sourcegraph/sourcegraph": // "sourcegraph/sourcegraph" hosted repo.
 			return &sourcegraph.Repo{}, nil
-		case "sourcegraph/srclib-go": // Mirror repo.
+		case "sourcegraph/srclib-go": // "sourcegraph/srclib-go" mirror repo.
 			return &sourcegraph.Repo{Mirror: true}, nil
 		default:
-			return nil, grpc.Errorf(codes.NotFound, "repo not found: %s", repo.URI)
+			return nil, grpc.Errorf(codes.NotFound, "repo not found: %v", repo.URI)
 		}
 	}
 	mock.Ctx = conf.WithURL(mock.Ctx, &url.URL{Scheme: "https", Host: "sourcegraph.com", Path: "/"})
@@ -101,10 +108,10 @@ func TestGoImportPath(t *testing.T) {
 func TestGoImportPath_repoCheckSequence(t *testing.T) {
 	_, mock := httptestutil.NewTest(nil)
 	defer httptestutil.ResetGlobals()
-	var attemptedRepoURIs []string
-	mock.Repos.Get_ = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-		attemptedRepoURIs = append(attemptedRepoURIs, repo.URI)
-		return nil, grpc.Errorf(codes.NotFound, "repo not found: %s", repo.URI)
+	var attemptedRepoPaths []string
+	mock.Repos.Resolve_ = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
+		attemptedRepoPaths = append(attemptedRepoPaths, op.Path)
+		return nil, grpc.Errorf(codes.NotFound, "")
 	}
 
 	rw := httptest.NewRecorder()
@@ -117,7 +124,7 @@ func TestGoImportPath_repoCheckSequence(t *testing.T) {
 
 	middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
 
-	got := attemptedRepoURIs
+	got := attemptedRepoPaths
 	want := []string{"alpha", "alpha/beta", "alpha/beta/gamma"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("\ngot  %#v\nwant %#v", got, want)
