@@ -17,8 +17,8 @@ type jsonTokenizer struct {
 
 func (jt *jsonTokenizer) Init(src []byte) {
 	jt.bytes = src
-	jt.tokens = make([]sgjson.TokenInfo, 0)
-	jt.errors = make([]string, 0)
+	// jt.tokens = make([]sgjson.TokenInfo, 0)
+	// jt.errors = make([]string, 0)
 	jt.pointer = 0
 	dec := sgjson.NewDecoder(bytes.NewReader(src))
 	dec.UseNumber()
@@ -42,7 +42,7 @@ func (jt *jsonTokenizer) Init(src []byte) {
 }
 
 func (jt *jsonTokenizer) Next() *Token {
-	// error in tokenizing or out of tokens
+	// out of tokens
 	if jt.pointer >= len(jt.tokens) {
 		return nil
 	}

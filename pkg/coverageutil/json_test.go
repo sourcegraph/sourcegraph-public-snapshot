@@ -24,7 +24,7 @@ func TestJSON(t *testing.T) {
 }
 
 func TestJSONError(t *testing.T) {
-	broken := `{}}`
+	broken := "{}}"
 	tokenizer := jsonTokenizer{}
 	tokenizer.Init([]byte(broken))
 	if tokenizer.Next() != nil {
