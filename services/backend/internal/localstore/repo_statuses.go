@@ -3,6 +3,7 @@ package localstore
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"golang.org/x/net/context"
@@ -137,22 +138,23 @@ func checkCoverageRegression(prev, next *dbRepoCoverage) {
 		if cvg == nil || cvg.Idents == 0 {
 			return 0
 		}
-		return float64(ps.Refs) / float64(ps.Idents)
+		return float64(cvg.Refs) / float64(cvg.Idents)
 	}
 	defScore := func(cvg *dbFileCoverage) float64 {
 		if cvg == nil || cvg.Idents == 0 {
 			return 0
 		}
-		return float64(ps.Defs) / float64(ps.Idents)
+		return float64(cvg.Defs) / float64(cvg.Idents)
 	}
 
 	if refScore(ps) > refScore(ns) || defScore(ps) > defScore(ns) {
 		slack.PostMessage(slack.PostOpts{
-			Msg: fmt.Sprintf(`Coverage for %s (lang=%s) has regressed.
-Before: refScore(%d), defScore(%d)
-After: refScore(%d), defScore(%d)`, prev.Repo, prev.Language, refScore(ps), defScore(ps), refScore(ns), defScore(ns)),
-			IconEmoji: ":warning:",
-			Channel:   "global-graph",
+			Msg: fmt.Sprintf(`Coverage for https://sourcegraph.com/%s (lang=%s) has regressed.
+Before: refScore(%f), defScore(%f)
+After: refScore(%f), defScore(%f)`, prev.Repo, prev.Language, refScore(ps), defScore(ps), refScore(ns), defScore(ns)),
+			IconEmoji:  ":warning:",
+			Channel:    "global-graph",
+			WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
 		})
 	}
 }
