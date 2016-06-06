@@ -24,47 +24,48 @@ func (s *defs) ListRefs(ctx context.Context, op *sourcegraph.DefsListRefsOp) (*s
 	}
 
 	// Restrict the ref search to a single repo and commit for performance.
-	var repo int32
-	var commitID string
-	switch {
-	case opt.Repo != 0:
-		repo = opt.Repo
-	case defSpec.Repo != 0:
-		repo = defSpec.Repo
-	default:
+	if opt.Repo == 0 && defSpec.Repo != 0 {
+		opt.Repo = defSpec.Repo
+	}
+	if opt.CommitID == "" {
+		opt.CommitID = defSpec.CommitID
+	}
+	if opt.Repo == 0 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: Repo must be specified")
 	}
-	switch {
-	case opt.CommitID != "":
-		commitID = opt.CommitID
-	case defSpec.CommitID != "":
-		commitID = defSpec.CommitID
-	default:
+	if opt.CommitID == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "ListRefs: CommitID must be specified")
 	}
 
-	repoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: repo})
+	defRepoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: defSpec.Repo})
 	if err != nil {
 		return nil, err
 	}
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", defRepoObj.ID); err != nil {
+		return nil, err
+	}
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", repoObj.ID); err != nil {
+	refRepoObj, err := svc.Repos(ctx).Get(ctx, &sourcegraph.RepoSpec{ID: opt.Repo})
+	if err != nil {
+		return nil, err
+	}
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.ListRefs", refRepoObj.ID); err != nil {
 		return nil, err
 	}
 
 	repoFilters := []srcstore.RefFilter{
-		srcstore.ByRepos(repoObj.URI),
-		srcstore.ByCommitIDs(commitID),
+		srcstore.ByRepos(refRepoObj.URI),
+		srcstore.ByCommitIDs(opt.CommitID),
 	}
 
 	refFilters := []srcstore.RefFilter{
 		srcstore.ByRefDef(graph.RefDefKey{
-			DefRepo:     repoObj.URI,
+			DefRepo:     defRepoObj.URI,
 			DefUnitType: defSpec.UnitType,
 			DefUnit:     defSpec.Unit,
 			DefPath:     defSpec.Path,
 		}),
-		srcstore.ByCommitIDs(commitID),
+		srcstore.ByCommitIDs(opt.CommitID),
 		srcstore.RefFilterFunc(func(ref *graph.Ref) bool { return !ref.Def }),
 		srcstore.Limit(opt.Offset()+opt.Limit()+1, 0),
 	}

@@ -60,13 +60,13 @@ func serveDefRefs(w http.ResponseWriter, r *http.Request) error {
 			path = opt.Files[0]
 		}
 
-		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: ""})
+		res, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: opt.Repo, Rev: ""})
 		if err != nil {
 			return err
 		}
 
 		dataVersion, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: res.CommitID},
+			RepoRev: sourcegraph.RepoRevSpec{Repo: opt.Repo, CommitID: res.CommitID},
 			Path:    path,
 		})
 		if err != nil {
