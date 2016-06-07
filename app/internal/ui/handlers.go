@@ -81,6 +81,13 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	// NOTE: We don't actually try to fetch the build here, but that's
+	// OK. The frontend JS will notice and display the error if the
+	// build doesn't exist or is inaccessible. It's not super
+	// important to return proper 404s for builds, relative to other
+	// URLs that are linked more often.
+
 	return nil
 }
 
