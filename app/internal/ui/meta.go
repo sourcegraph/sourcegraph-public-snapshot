@@ -28,6 +28,21 @@ type meta struct {
 
 	// CanonicalURL is the canonical URL for the page.
 	CanonicalURL string
+
+	Index, Follow bool // robots directives (in <meta> tags); default is noindex and nofollow
+}
+
+func (m meta) RobotsMetaContent() string {
+	if m.Index && m.Follow {
+		return "all"
+	}
+	if !m.Index && !m.Follow {
+		return "noindex, nofollow"
+	}
+	if !m.Index {
+		return "noindex"
+	}
+	return "nofollow"
 }
 
 // repoPageTitle produces the page title for a repo route or subroute
@@ -87,6 +102,15 @@ func treeOrBlobMeta(path string, repo *sourcegraph.Repo) *meta {
 	}
 }
 
+func isCanonicalRev(routeVars map[string]string, repoDefaultBranch string) bool {
+	rr := routevar.ToRepoRev(routeVars)
+	return rr.Rev == repoDefaultBranch || rr.Rev == ""
+}
+
+func allowRobots(repo *sourcegraph.Repo) bool {
+	return !repo.Private
+}
+
 func canonicalRepoURL(appURL *url.URL, routeName string, routeVars map[string]string, params url.Values, repoDefaultBranch, resolvedCommitID string) string {
 	// Remove non-canonical URL querystring parameters.
 	canonicalurl.FromQuery(params)
@@ -126,4 +150,14 @@ func copyRouteVars(o map[string]string) map[string]string {
 		tmp[k] = v
 	}
 	return tmp
+}
+
+func shouldIndexDef(def *sourcegraph.Def) bool {
+	// Only index high-quality defs. We can make this more lenient
+	// later.
+	var docHTML string
+	if def.DocHTML != nil {
+		docHTML = def.DocHTML.HTML
+	}
+	return def.Exported && len(docHTML) > 20 && len(def.Name) >= 3 && (def.Kind == "func" || def.Kind == "type")
 }

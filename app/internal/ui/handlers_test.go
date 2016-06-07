@@ -115,6 +115,8 @@ func TestRepo_OK(t *testing.T) {
 		ShortTitle:   "r",
 		Description:  "d",
 		CanonicalURL: "http://example.com/r",
+		Index:        false,
+		Follow:       false,
 	}
 
 	if m, err := getForTest(c, "/r", http.StatusOK); err != nil {
@@ -198,6 +200,8 @@ func TestRepoRev_OK(t *testing.T) {
 		ShortTitle:   "r",
 		Description:  "d",
 		CanonicalURL: "http://example.com/r@c",
+		Index:        false,
+		Follow:       false,
 	}
 
 	if m, err := getForTest(c, "/r@v", http.StatusOK); err != nil {
@@ -274,6 +278,8 @@ func TestBlob_OK(t *testing.T) {
 		ShortTitle:   "f",
 		Description:  "r — desc",
 		CanonicalURL: "http://example.com/r@c/-/blob/f",
+		Index:        false,
+		Follow:       false,
 	}
 
 	if m, err := getForTest(c, "/r@v/-/blob/f", http.StatusOK); err != nil {
@@ -365,19 +371,38 @@ func TestDef_OK(t *testing.T) {
 	c, mock := newTest()
 
 	tests := []struct {
+		rev       string
 		defOrInfo string // "def" (for Def route) or "info" (for DefInfo route)
+
+		wantCanonRev string
+		wantIndex    bool
+		wantFollow   bool
 	}{
-		{"def"},
-		{"info"},
+		{"@v", "def", "@c", false, false},
+		{"@v", "info", "@c", false, false},
+		{"@b", "def", "", false, true},
+		{"@b", "info", "", true, true},
+		{"", "def", "", false, true},
+		{"", "info", "", true, true},
 	}
 
 	for _, test := range tests {
 		calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
-		calledGet := mock.Repos.MockGet_Path(t, 1, "r")
+		var calledGet bool
+		mock.Repos.Get_ = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+			calledGet = true
+			return &sourcegraph.Repo{
+				ID:            1,
+				URI:           "r",
+				Description:   "desc",
+				DefaultBranch: "b",
+			}, nil
+		}
 		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 		calledReposGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
 		calledDefsGet := mock.Defs.MockGet_Return(t, &sourcegraph.Def{
 			Def: graph.Def{
+				Name: "aaa",
 				DefKey: graph.DefKey{
 					Repo:     "r",
 					CommitID: "c",
@@ -385,18 +410,22 @@ func TestDef_OK(t *testing.T) {
 					Unit:     "u",
 					Path:     "p",
 				},
+				Exported: true,
+				Kind:     "func",
 			},
-			DocHTML: &pbtypes.HTML{HTML: "<p><b>do</b>c</p>"},
+			DocHTML: &pbtypes.HTML{HTML: "<p><b>hello</b> world!</p>"},
 		})
 
 		wantMeta := meta{
 			Title:        "imp.scope.name · r · Sourcegraph",
 			ShortTitle:   "imp.scope.name",
-			Description:  "doc",
-			CanonicalURL: fmt.Sprintf("http://example.com/r@c/-/%s/t/u/-/p", test.defOrInfo),
+			Description:  "hello world!",
+			CanonicalURL: fmt.Sprintf("http://example.com/r%s/-/%s/t/u/-/p", test.wantCanonRev, test.defOrInfo),
+			Index:        test.wantIndex,
+			Follow:       test.wantFollow,
 		}
 
-		if m, err := getForTest(c, fmt.Sprintf("/r@v/-/%s/t/u/-/p", test.defOrInfo), http.StatusOK); err != nil {
+		if m, err := getForTest(c, fmt.Sprintf("/r%s/-/%s/t/u/-/p", test.rev, test.defOrInfo), http.StatusOK); err != nil {
 			t.Errorf("%#v: %s", test, err)
 			continue
 		} else if !reflect.DeepEqual(m, wantMeta) {
@@ -405,7 +434,7 @@ func TestDef_OK(t *testing.T) {
 		if !*calledReposResolve {
 			t.Errorf("%#v: !calledReposResolve", test)
 		}
-		if !*calledGet {
+		if !calledGet {
 			t.Errorf("%#v: !calledGet", test)
 		}
 		if !*calledReposResolveRev {
@@ -486,6 +515,8 @@ func TestTree_OK(t *testing.T) {
 		ShortTitle:   "d",
 		Description:  "r — desc",
 		CanonicalURL: "http://example.com/r@c/-/tree/d",
+		Index:        false,
+		Follow:       false,
 	}
 
 	if m, err := getForTest(c, "/r@v/-/tree/d", http.StatusOK); err != nil {

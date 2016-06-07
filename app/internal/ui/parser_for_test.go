@@ -34,6 +34,12 @@ func parseMeta(htmlSrc []byte) (*meta, error) {
 			case "og:description":
 				m.Description = attr(n, "content")
 			}
+			switch attr(n, "name") {
+			case "robots":
+				c := attr(n, "content")
+				m.Follow = !strings.Contains(c, "nofollow")
+				m.Index = !strings.Contains(c, "noindex")
+			}
 
 		case atom.Link:
 			if attr(n, "rel") == "canonical" {
@@ -76,11 +82,12 @@ func TestParseMeta(t *testing.T) {
 			want: meta{Title: ""},
 		},
 		{
-			html: "<html><head><title>mytitle</title><meta property=og:title content=shorttitle><meta property=og:description content=desc></head><body></body></html>",
+			html: "<html><head><title>mytitle</title><meta property=og:title content=shorttitle><meta property=og:description content=desc><meta name=robots content=nofollow></head><body></body></html>",
 			want: meta{
 				Title:       "mytitle",
 				ShortTitle:  "shorttitle",
 				Description: "desc",
+				Index:       true,
 			},
 		},
 	}

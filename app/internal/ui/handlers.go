@@ -90,6 +90,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)
+	m.Follow = allowRobots(repo) && isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	return m, nil
 }
 
@@ -110,14 +111,14 @@ func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveDef(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r)
+	return serveDefCommon(w, r, false)
 }
 
 func serveDefInfo(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	return serveDefCommon(w, r)
+	return serveDefCommon(w, r, true)
 }
 
-func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
+func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
 	def, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
@@ -132,6 +133,13 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		def.CommitID,
 	)
+
+	// Don't noindex pages with a canonical URL. See
+	// https://www.seroundtable.com/archives/020151.html.
+	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
+	m.Follow = allowRobots(repo) && canonRev
+	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev && isDefInfo // DefInfo is a better landing page than Def.
+
 	return m, nil
 }
 
@@ -175,6 +183,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)
+	m.Follow = allowRobots(repo) && isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	return m, nil
 }
 
@@ -206,13 +215,14 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)
+	m.Follow = allowRobots(repo) && isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	return m, nil
 }
 
 // serveAny is the fallback/catch-all route. It preloads nothing and
 // returns a page that will merely bootstrap the JavaScript app.
 func serveAny(w http.ResponseWriter, r *http.Request) error {
-	return tmplExec(w, r, http.StatusOK, meta{})
+	return tmplExec(w, r, http.StatusOK, meta{Index: true, Follow: true})
 }
 
 func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) error {
