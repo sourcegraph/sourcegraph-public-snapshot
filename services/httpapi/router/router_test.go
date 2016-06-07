@@ -64,6 +64,18 @@ func TestRouter(t *testing.T) {
 			wantNoMatch: true,
 		},
 
+		// Tree
+		{
+			path:          "/repos/r@v/-/tree",
+			wantRouteName: RepoTree,
+			wantVars:      map[string]string{"Repo": "r", "Rev": "@v", "Path": ""},
+		},
+		{
+			path:          "/repos/r@v/-/tree/a/b.txt",
+			wantRouteName: RepoTree,
+			wantVars:      map[string]string{"Repo": "r", "Rev": "@v", "Path": "/a/b.txt"},
+		},
+
 		// Defs
 		{
 			path:          "/repos/repohost.com/foo@mycommitid/-/def/t/u/-/p",
@@ -74,6 +86,12 @@ func TestRouter(t *testing.T) {
 			path:          "/repos/repohost.com/foo@myrev/subrev/-/def/t/u/-/p",
 			wantRouteName: Def,
 			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@myrev/subrev"},
+		},
+
+		{
+			path:          "/repos/repohost.com/foo@mycommitid/-/def/t/u/-/p/-/refs",
+			wantRouteName: DefRefs,
+			wantVars:      map[string]string{"Repo": "repohost.com/foo", "UnitType": "t", "Unit": "u", "Path": "p", "Rev": "@mycommitid"},
 		},
 	}
 	for _, test := range tests {
