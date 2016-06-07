@@ -125,14 +125,34 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*me
 		return nil, err
 	}
 	m := defMeta(def, repo.URI)
-	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL(ctx),
-		getRouteName(r),
-		mux.Vars(r),
-		r.URL.Query(),
-		repo.DefaultBranch,
-		def.CommitID,
-	)
+
+	if isDefInfo {
+		// DefInfo canonical URL is DefInfo.
+		m.CanonicalURL = canonicalRepoURL(
+			conf.AppURL(ctx),
+			getRouteName(r),
+			mux.Vars(r),
+			r.URL.Query(),
+			repo.DefaultBranch,
+			def.CommitID,
+		)
+	} else {
+		// Def canonical URL is the blob page. We don't want Googlebot
+		// thinking we have tons of repetitive pages (each local var
+		// on a blob page, for example), so let's tell it that all Def
+		// pages are actually canonically the blob.
+		m.CanonicalURL = canonicalRepoURL(
+			conf.AppURL(ctx),
+			routeBlob,
+			routevar.TreeEntryRouteVars(routevar.TreeEntry{
+				RepoRev: routevar.ToRepoRev(mux.Vars(r)),
+				Path:    "/" + def.File,
+			}),
+			r.URL.Query(),
+			repo.DefaultBranch,
+			def.CommitID,
+		)
+	}
 
 	// Don't noindex pages with a canonical URL. See
 	// https://www.seroundtable.com/archives/020151.html.

@@ -374,16 +374,16 @@ func TestDef_OK(t *testing.T) {
 		rev       string
 		defOrInfo string // "def" (for Def route) or "info" (for DefInfo route)
 
-		wantCanonRev string
+		wantCanonURL string
 		wantIndex    bool
 		wantFollow   bool
 	}{
-		{"@v", "def", "@c", false, false},
-		{"@v", "info", "@c", false, false},
-		{"@b", "def", "", false, true},
-		{"@b", "info", "", true, true},
-		{"", "def", "", false, true},
-		{"", "info", "", true, true},
+		{"@v", "def", "/r@c/-/blob/f", false, false},
+		{"@v", "info", "/r@c/-/info/t/u/-/p", false, false},
+		{"@b", "def", "/r/-/blob/f", false, true},
+		{"@b", "info", "/r/-/info/t/u/-/p", true, true},
+		{"", "def", "/r/-/blob/f", false, true},
+		{"", "info", "/r/-/info/t/u/-/p", true, true},
 	}
 
 	for _, test := range tests {
@@ -412,6 +412,7 @@ func TestDef_OK(t *testing.T) {
 				},
 				Exported: true,
 				Kind:     "func",
+				File:     "f",
 			},
 			DocHTML: &pbtypes.HTML{HTML: "<p><b>hello</b> world!</p>"},
 		})
@@ -420,7 +421,7 @@ func TestDef_OK(t *testing.T) {
 			Title:        "imp.scope.name · r · Sourcegraph",
 			ShortTitle:   "imp.scope.name",
 			Description:  "imp.scope.name_imp.scope.typeName — hello world!",
-			CanonicalURL: fmt.Sprintf("http://example.com/r%s/-/%s/t/u/-/p", test.wantCanonRev, test.defOrInfo),
+			CanonicalURL: "http://example.com" + test.wantCanonURL,
 			Index:        test.wantIndex,
 			Follow:       test.wantFollow,
 		}
