@@ -13,6 +13,7 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
+import {isExternalLink} from "sourcegraph/util/externalLink";
 import "sourcegraph/components/styles/code.css";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
@@ -95,10 +96,6 @@ class BlobLine extends Component {
 		});
 	}
 
-	_isExternalLink(url: string): bool {
-		return (/^https?:\/\/(nodejs\.org|developer\.mozilla\.org)/).test(url);
-	}
-
 	_annotate() {
 		let i = 0;
 		return fromUtf8(annotate(this.state.contents, this.state.startByte, this.state.annotations, (ann, content) => {
@@ -112,7 +109,7 @@ class BlobLine extends Component {
 
 			// If ann.URL is an absolute URL with scheme http or https, create an anchor with a link to the URL (e.g., an
 			// external URL to Mozilla's CSS reference documentation site.
-			if (annURLs && this._isExternalLink(annURLs[0])) {
+			if (annURLs && isExternalLink(annURLs[0])) {
 				let isHighlighted = this.state.highlightedDef === annURLs[0];
 				return (
 					<a

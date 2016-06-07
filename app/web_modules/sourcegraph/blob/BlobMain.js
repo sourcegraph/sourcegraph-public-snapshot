@@ -24,6 +24,7 @@ import {makeRepoRev, trimRepo} from "sourcegraph/repo";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import Header from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
+import {isExternalLink} from "sourcegraph/util/externalLink";
 
 export default class BlobMain extends Container {
 	static propTypes = {
@@ -84,7 +85,7 @@ export default class BlobMain extends Container {
 
 		// Def-specific
 		state.highlightedDef = DefStore.highlightedDef;
-		if (state.highlightedDef) {
+		if (state.highlightedDef && !isExternalLink(state.highlightedDef)) {
 			let {repo, rev, def} = defRouteParams(state.highlightedDef);
 			state.highlightedDefObj = DefStore.defs.get(repo, rev, def);
 		} else {
@@ -94,7 +95,7 @@ export default class BlobMain extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (nextState.highlightedDef && prevState.highlightedDef !== nextState.highlightedDef) {
-			if (!(nextState.highlightedDef.startsWith("http:") || nextState.highlightedDef.startsWith("https:"))) { // kludge to filter out external def links
+			if (!isExternalLink(nextState.highlightedDef)) { // kludge to filter out external def links
 				let {repo, rev, def, err} = defRouteParams(nextState.highlightedDef);
 				if (err) {
 					console.err(err);
