@@ -297,7 +297,11 @@ func (c *coverageCmd) Execute(args []string) error {
 
 		syncCmd := &repoSyncCmd{Force: true}
 		syncCmd.Args.URIs = allRepos
-		return syncCmd.Execute(nil)
+		err := syncCmd.Execute(nil)
+		if err != nil {
+			log15.Error("repo sync", "err", err)
+		}
+		return err
 	}
 
 	langCvg := make(map[string][]*repoCoverage)
@@ -362,7 +366,7 @@ type annToken struct {
 }
 
 // getFileCoverage computes the coverage data for a single file in a repository
-func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
+func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
 	fileCvg := &fileCoverage{Path: path}
 
 	var tokenizer coverageutil.Tokenizer
@@ -419,15 +423,15 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 				fileCvg.Refs += 1
 				refAnnotations = append(refAnnotations, &annToken{Annotation: ann, Token: tok})
 			} else if reportRefs {
-				log15.Warn("spans not match", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
+				log15.Warn("spans not match", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 			}
 		} else if reportRefs {
-			log15.Warn("no ref for", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
+			log15.Warn("no ref for", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", tok.Offset, "line", tok.Line, "ident", tok.Text)
 		}
 	}
 	errors := tokenizer.Errors()
 	if len(errors) > 0 {
-		log15.Warn("parse errors", "path", path, "errors", errors)
+		log15.Warn("parse errors", "repo", repoPath, "path", path, "errors", errors)
 	}
 
 	for _, annToken := range refAnnotations {
@@ -477,7 +481,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			fileCvg.Defs += 1
 		} else {
 			if reportDefs {
-				log15.Warn("no def", "repo", repoRev.Repo, "rev", repoRev.CommitID, "path", path, "at", ann.StartByte, "line", tok.Line, "ident", tok.Text, "key", u)
+				log15.Warn("no def", "repo", repoPath, "rev", repoRev.CommitID, "path", path, "at", ann.StartByte, "line", tok.Line, "ident", tok.Text, "key", u)
 			}
 		}
 
@@ -518,7 +522,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 				if progress {
 					log15.Info("processing", path, lang)
 				}
-				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, path, lang, reportRefs, reportDefs)
+				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs)
 				if err != nil {
 					return err
 				}
@@ -543,7 +547,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 			}
 		}
 	} else {
-		log15.Warn("missing srclib data version", "repoPath", repoPath, "repo", repoRevSpec.Repo, "rev", repoRevSpec.CommitID)
+		log15.Warn("missing srclib data version", "repo", repoPath, "rev", repoRevSpec.CommitID)
 	}
 
 	repoCvg.Summary = &fileCoverage{}
