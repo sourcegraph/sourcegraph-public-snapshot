@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -76,7 +77,7 @@ func repoMeta(repo *sourcegraph.Repo) *meta {
 	}
 }
 
-func defMeta(def *sourcegraph.Def, repo string) *meta {
+func defMeta(def *sourcegraph.Def, repo string, includeFile bool) *meta {
 	var html string
 	if def.DocHTML != nil {
 		html = def.DocHTML.HTML
@@ -93,11 +94,17 @@ func defMeta(def *sourcegraph.Def, repo string) *meta {
 		desc += " — " + doc
 	}
 
-	return &meta{
-		Title:       repoPageTitle(repo, f.Name("dep")),
-		ShortTitle:  f.Name("dep"),
+	var fileSuffix string
+	if includeFile {
+		fileSuffix = " · " + path.Base(def.File)
+	}
+
+	m := &meta{
+		Title:       repoPageTitle(repo, f.Name("dep")+fileSuffix),
+		ShortTitle:  f.Name("dep") + fileSuffix,
 		Description: desc,
 	}
+	return m
 }
 
 func treeOrBlobMeta(path string, repo *sourcegraph.Repo) *meta {

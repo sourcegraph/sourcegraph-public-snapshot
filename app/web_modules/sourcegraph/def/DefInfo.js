@@ -153,7 +153,7 @@ class DefInfo extends Container {
 		return (
 			<div styleName="container">
 			{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
-				<Helmet title={defTitleOK(def) ? trimRepo(this.state.repo) : `${defTitle(def)} · ${trimRepo(this.state.repo)}`} />
+				<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
 				{def &&
 					<h1 styleName="def-header">
 						<Link title="View definition in code" styleName="back-icon" to={urlToDef(def, this.state.rev)}>&laquo;</Link>

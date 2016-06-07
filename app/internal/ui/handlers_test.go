@@ -374,16 +374,17 @@ func TestDef_OK(t *testing.T) {
 		rev       string
 		defOrInfo string // "def" (for Def route) or "info" (for DefInfo route)
 
-		wantCanonURL string
-		wantIndex    bool
-		wantFollow   bool
+		wantCanonURL    string
+		wantTitlePrefix string
+		wantIndex       bool
+		wantFollow      bool
 	}{
-		{"@v", "def", "/r@c/-/blob/f", false, false},
-		{"@v", "info", "/r@c/-/info/t/u/-/p", false, false},
-		{"@b", "def", "/r/-/blob/f", false, true},
-		{"@b", "info", "/r/-/info/t/u/-/p", true, true},
-		{"", "def", "/r/-/blob/f", false, true},
-		{"", "info", "/r/-/info/t/u/-/p", true, true},
+		{"@v", "def", "/r@c/-/blob/f", "imp.scope.name · f", false, false},
+		{"@v", "info", "/r@c/-/info/t/u/-/p", "imp.scope.name", false, false},
+		{"@b", "def", "/r/-/blob/f", "imp.scope.name · f", false, true},
+		{"@b", "info", "/r/-/info/t/u/-/p", "imp.scope.name", true, true},
+		{"", "def", "/r/-/blob/f", "imp.scope.name · f", false, true},
+		{"", "info", "/r/-/info/t/u/-/p", "imp.scope.name", true, true},
 	}
 
 	for _, test := range tests {
@@ -418,8 +419,8 @@ func TestDef_OK(t *testing.T) {
 		})
 
 		wantMeta := meta{
-			Title:        "imp.scope.name · r · Sourcegraph",
-			ShortTitle:   "imp.scope.name",
+			Title:        test.wantTitlePrefix + " · r · Sourcegraph",
+			ShortTitle:   test.wantTitlePrefix,
 			Description:  "imp.scope.name_imp.scope.typeName — hello world!",
 			CanonicalURL: "http://example.com" + test.wantCanonURL,
 			Index:        test.wantIndex,

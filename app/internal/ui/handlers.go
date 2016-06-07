@@ -124,7 +124,7 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*me
 	if err != nil {
 		return nil, err
 	}
-	m := defMeta(def, repo.URI)
+	m := defMeta(def, repo.URI, !isDefInfo)
 
 	if isDefInfo {
 		// DefInfo canonical URL is DefInfo.
