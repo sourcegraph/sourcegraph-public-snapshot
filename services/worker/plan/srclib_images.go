@@ -9,6 +9,7 @@ import (
 // developing to make it easier to test out changes to a given toolchain. E.g.,
 // `droneSrclibGoImage = "sourcegraph/srclib-go"`.
 var (
+	droneSrclibBashImage       = "sourcegraph/srclib-bash@sha256:641dddeee4ec7db91ed59af78f2f936bdce451ea7b496b0319f20ebe6dfba255"
 	droneSrclibGoImage         = "sourcegraph/srclib-go@sha256:4c91ca8b3d7fc123e9489e6751c94791776d303e21eb11e2cb14d986b78b1b06"
 	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript@sha256:7cfc4ea50aaf0fea46b8704e80ef50dfa45afe82af57e653bae34ae56288a859"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java@sha256:4f3ffd9dd8b4b0f38c9c2b381dd5dc2103b5052e0d1524f7a0c7883b122e5056"
@@ -30,6 +31,8 @@ func versionHash(image string) (string, error) {
 
 func SrclibVersion(lang string) (string, error) {
 	switch lang {
+	case "Bash":
+		return versionHash(droneSrclibBashImage)
 	case "Go":
 		return versionHash(droneSrclibGoImage)
 	case "JavaScript":

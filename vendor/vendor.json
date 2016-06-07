@@ -608,6 +608,12 @@
 			"revisionTime": "2015-11-02T10:20:00-08:00"
 		},
 		{
+			"checksumSHA1": "WVRHbaY5pI2qNR633zLc2fuQRfA=",
+			"path": "github.com/mkovacs/bash/scanner",
+			"revision": "c7ace111c125da28de796b78ff1fd43bd65c7576",
+			"revisionTime": "2016-06-03T19:26:47Z"
+		},
+		{
 			"checksumSHA1": "dEpgq1GYh5TRRNo22ANVMK8owTA=",
 			"path": "github.com/neelance/chanrpc",
 			"revision": "872b087b93d5e76dbb999d538f20dc416c6fbcd5",

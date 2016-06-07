@@ -109,6 +109,16 @@ var langSrclibConfigs = map[string]droneyaml.BuildItem{
 			AllowFailure: true,
 		},
 	},
+	"Shell": {
+		Key: "Bash (indexing)",
+		Build: droneyaml.Build{
+			Container: droneyaml.Container{
+				Image: droneSrclibBashImage,
+			},
+			Commands:     srclibBuildCommands,
+			AllowFailure: true,
+		},
+	},
 	"TypeScript": {
 		Key: "TypeScript (indexing)",
 		Build: droneyaml.Build{
