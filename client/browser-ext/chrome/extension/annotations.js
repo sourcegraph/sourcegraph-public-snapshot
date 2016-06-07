@@ -172,16 +172,18 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 }
 
 export const defaultBranchCache = {};
+export const fetchingDefaultBranchCache = {};
 function cacheDefaultBranch(annURL) {
 	let annURLsplit = [annURL.split("/")[1], annURL.split("/")[2], annURL.split("/")[3]];
 	let repo = annURLsplit.join("/");
-	if (defaultBranchCache[repo]) {
-		console.log("CACHED")
+	if (fetchingDefaultBranchCache[repo]) {
 		return;
 	}
+	fetchingDefaultBranchCache[repo] = true;
 	fetch(`https://sourcegraph.com/.api/repos/${repo}`)
 		.then((response) => {
 			defaultBranchCache[repo] = response.DefaultBranch;
+			fetchingDefaultBranchCache[repo] = false;
 		})
 		.catch((err) => console.log("Error getting default branch"));
 }

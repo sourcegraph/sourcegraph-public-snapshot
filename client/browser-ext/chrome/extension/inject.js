@@ -232,7 +232,7 @@ class InjectApp extends React.Component {
 				pjaxGoTo(`${pathname}${hash}`, repo === this.props.repo);
 			}
 		}
-	}l
+	}
 
 	_directURLToDef({repo, rev, defPath, def}) {
 		const defObj = def ? def.content[keyFor(repo, rev, defPath)] : null;
