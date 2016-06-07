@@ -12,6 +12,10 @@
 	width: 100%;
 }
 
+.flex-container {
+	display: flex;
+}
+
 .container-fixed {
 	composes: center pt5 pb5 from base;
 	width: 100%;
@@ -36,87 +40,16 @@
 	max-width: 310px;
 }
 
+.panel-cta {
+	display: block;
+	text-align: left;
+}
+
 .button-container {
 	display: flex;
 	flex-direction: row;
 	justify-content: center;
-	composes: pt3 pb4 from base;
-}
-
-.anon-section {
-	composes: col-7-ns from grid;
-	composes: mt4 ph3 center from base;
-	text-align: center;
-}
-
-.anon-title {
-	composes: f1 b from typography;
-	composes: pt5 pb3 center from base;
-	max-width: 700px;
-}
-
-.anon-header-sub {
-	composes: normal-text from typography;
-	composes: pb4 from base;
-}
-
-.list {
-	display: flex;
-	composes: col-8 from grid;
-	composes: mt4 ph3 center from base;
-	text-align: center;
-	justify-content: center;
-	flex-wrap: wrap;
-}
-
-.setup-container {
-	display: flex;
-	align-content: center;
-	composes: pa3 from base;
-	composes: col-6-ns col-11-s col-11-m from grid;
-	max-width: 500px;
-	max-height: 500px;
-}
-
-.info-box {
-	align-items: center;
-	flex: 1 1 0;
-	composes: ph3 pt2 pb2 ba br3 from base;
-	border-color: #eee;
-	cursor: pointer;
-	box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-	transition: box-shadow 0.1s linear;
-}
-
-.info-box:hover{
-	background-color:rgba(177, 20, 247, .01);
-	box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.completed-box {
-	align-items: center;
-	flex: 1 1 0;
-	composes: ph3 pt2 pb2 ba br3 from base;
-	border-color: #eee;
-	background-color: #dddddd;
-	opacity: 0.7;
-}
-
-
-.text-box {
-	display: inline-block;
-	composes: pl3 from base;
-	text-align: center;
-}
-
-.title {
-	composes: heavy-text b from typography;
-	composes: pb2 from base;
-}
-
-.subtitle {
-	composes: normal-text from typography;
-	composes: pb2 from base;
+	composes: pt4 pb4 from base;
 }
 
 .img {
@@ -124,4 +57,43 @@
 	height: 60px;
 	align-self: center;
 	composes: pl3 pr3 pt4 pb3 from base;
+}
+
+.tool-item {
+	display: flex;
+	flex-direction: row;
+	composes: pt7 pl4 pr4 pb5 center from base;
+	composes: col-10 from grid;
+	align-content: center;
+	text-align: center;
+	max-width: 1100px;
+}
+
+.tool-item-paragraph {
+	display: block;
+	composes: pt2 from base;
+	composes: cool-mid-gray from colors;
+	composes: col-10 from grid;
+	text-align: left;
+}
+
+.tool-img {
+	display: block;
+	min-width: 100px;
+	height: 100px;
+	align-self: center;
+	composes: pl5 pr3 pt4 pb3 hidden-s from base;
+}
+
+.tool-gif-container {
+	display: flex;
+	composes: pb4 hidden-s from base;
+	justify-content: center;
+}
+
+.tool-gif {
+	composes: pt2 from base;
+	composes: col-11 from grid;
+	align-self: center;
+	flex: 0;
 }
