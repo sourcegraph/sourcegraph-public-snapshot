@@ -150,15 +150,23 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	{
 		var wheres []string
 		if len(op.Opt.Repos) > 0 {
+			reposURIs, err := repoURIs(ctx, op.Opt.Repos)
+			if err != nil {
+				return nil, err
+			}
 			var r []string
-			for _, repo := range op.Opt.Repos {
+			for _, repo := range reposURIs {
 				r = append(r, arg(repo))
 			}
 			wheres = append(wheres, `repo IN (`+strings.Join(r, ", ")+`)`)
 		}
 		if len(op.Opt.NotRepos) > 0 {
+			notReposURIs, err := repoURIs(ctx, op.Opt.NotRepos)
+			if err != nil {
+				return nil, err
+			}
 			var r []string
-			for _, repo := range op.Opt.NotRepos {
+			for _, repo := range notReposURIs {
 				r = append(r, arg(repo))
 			}
 			wheres = append(wheres, `repo NOT IN (`+strings.Join(r, ", ")+`)`)
@@ -422,4 +430,15 @@ func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, co
 		return
 	}
 	return repoObj.URI, string(c), nil
+}
+
+func repoURIs(ctx context.Context, repoIDs []int32) (uris []string, err error) {
+	for _, repoID := range repoIDs {
+		repo, err := store.ReposFromContext(ctx).Get(ctx, repoID)
+		if err != nil {
+			return nil, err
+		}
+		uris = append(uris, repo.URI)
+	}
+	return uris, nil
 }
