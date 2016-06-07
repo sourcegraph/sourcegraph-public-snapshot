@@ -111,9 +111,10 @@ func TestRepo_OK(t *testing.T) {
 	// (Should not try to resolve the revision; see serveRepo for why.)
 
 	wantMeta := meta{
-		Title:       "r: d · Sourcegraph",
-		ShortTitle:  "r",
-		Description: "d",
+		Title:        "r: d · Sourcegraph",
+		ShortTitle:   "r",
+		Description:  "d",
+		CanonicalURL: "http://example.com/r",
 	}
 
 	if m, err := getForTest(c, "/r", http.StatusOK); err != nil {
@@ -190,12 +191,13 @@ func TestRepoRev_OK(t *testing.T) {
 			Description: "d",
 		}, nil
 	}
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 
 	wantMeta := meta{
-		Title:       "r: d · Sourcegraph",
-		ShortTitle:  "r",
-		Description: "d",
+		Title:        "r: d · Sourcegraph",
+		ShortTitle:   "r",
+		Description:  "d",
+		CanonicalURL: "http://example.com/r@c",
 	}
 
 	if m, err := getForTest(c, "/r@v", http.StatusOK); err != nil {
@@ -259,7 +261,7 @@ func TestBlob_OK(t *testing.T) {
 			Description: "desc",
 		}, nil
 	}
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name: "f",
@@ -268,9 +270,10 @@ func TestBlob_OK(t *testing.T) {
 	})
 
 	wantMeta := meta{
-		Title:       "f · r · Sourcegraph",
-		ShortTitle:  "f",
-		Description: "r — desc",
+		Title:        "f · r · Sourcegraph",
+		ShortTitle:   "f",
+		Description:  "r — desc",
+		CanonicalURL: "http://example.com/r@c/-/blob/f",
 	}
 
 	if m, err := getForTest(c, "/r@v/-/blob/f", http.StatusOK); err != nil {
@@ -371,13 +374,13 @@ func TestDef_OK(t *testing.T) {
 	for _, test := range tests {
 		calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 		calledGet := mock.Repos.MockGet_Path(t, 1, "r")
-		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 		calledReposGetSrclibDataVersionForPath := mock.Repos.MockGetSrclibDataVersionForPath_Current(t)
 		calledDefsGet := mock.Defs.MockGet_Return(t, &sourcegraph.Def{
 			Def: graph.Def{
 				DefKey: graph.DefKey{
 					Repo:     "r",
-					CommitID: "v",
+					CommitID: "c",
 					UnitType: "t",
 					Unit:     "u",
 					Path:     "p",
@@ -387,9 +390,10 @@ func TestDef_OK(t *testing.T) {
 		})
 
 		wantMeta := meta{
-			Title:       "imp.scope.name · r · Sourcegraph",
-			ShortTitle:  "imp.scope.name",
-			Description: "doc",
+			Title:        "imp.scope.name · r · Sourcegraph",
+			ShortTitle:   "imp.scope.name",
+			Description:  "doc",
+			CanonicalURL: fmt.Sprintf("http://example.com/r@c/-/%s/t/u/-/p", test.defOrInfo),
 		}
 
 		if m, err := getForTest(c, fmt.Sprintf("/r@v/-/%s/t/u/-/p", test.defOrInfo), http.StatusOK); err != nil {
@@ -469,7 +473,7 @@ func TestTree_OK(t *testing.T) {
 			Description: "desc",
 		}, nil
 	}
-	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
 	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
 			Name: "d",
@@ -478,9 +482,10 @@ func TestTree_OK(t *testing.T) {
 	})
 
 	wantMeta := meta{
-		Title:       "d · r · Sourcegraph",
-		ShortTitle:  "d",
-		Description: "r — desc",
+		Title:        "d · r · Sourcegraph",
+		ShortTitle:   "d",
+		Description:  "r — desc",
+		CanonicalURL: "http://example.com/r@c/-/tree/d",
 	}
 
 	if m, err := getForTest(c, "/r@v/-/tree/d", http.StatusOK); err != nil {

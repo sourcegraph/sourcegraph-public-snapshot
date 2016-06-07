@@ -25,3 +25,10 @@ func FromURL(currentURL *url.URL) *url.URL {
 	canonicalURL.RawQuery = canonicalQuery.Encode()
 	return &canonicalURL
 }
+
+// FromQuery removes non-canonical parameters from v.
+func FromQuery(v url.Values) {
+	for _, k := range nonCanonicalQueryParams {
+		v.Del(k)
+	}
+}

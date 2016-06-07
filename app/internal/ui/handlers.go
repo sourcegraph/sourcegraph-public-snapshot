@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -54,12 +55,12 @@ func handler(h func(w http.ResponseWriter, r *http.Request) (*meta, error)) http
 // These handlers return the proper HTTP status code but otherwise do
 // not pass data to the JavaScript UI code.
 
-func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, *sourcegraph.Repo, error) {
+func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, *sourcegraph.Repo, *sourcegraph.RepoRevSpec, error) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 
 	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, routeVars)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	entry := routevar.ToTreeEntry(routeVars)
@@ -67,19 +68,29 @@ func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph
 		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: entry.Path},
 		Opt:   nil,
 	})
-	return e, repo, err
+	return e, repo, &repoRev, err
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
-	entry, repo, err := repoTreeGet(ctx, mux.Vars(r))
+	entry, repo, repoRev, err := repoTreeGet(ctx, mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
 	if entry.Type != sourcegraph.FileEntry {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
 	}
-	return treeOrBlobMeta(entry.Name, repo), nil
+
+	m := treeOrBlobMeta(entry.Name, repo)
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(ctx),
+		getRouteName(r),
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		repoRev.CommitID,
+	)
+	return m, nil
 }
 
 func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
@@ -99,21 +110,29 @@ func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveDef(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	ctx, _ := handlerutil.Client(r)
-	def, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
-	if err != nil {
-		return nil, err
-	}
-	return defMeta(def, repo.URI), nil
+	return serveDefCommon(w, r)
 }
 
 func serveDefInfo(w http.ResponseWriter, r *http.Request) (*meta, error) {
+	return serveDefCommon(w, r)
+}
+
+func serveDefCommon(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
 	def, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return nil, err
 	}
-	return defMeta(def, repo.URI), nil
+	m := defMeta(def, repo.URI)
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(ctx),
+		getRouteName(r),
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		def.CommitID,
+	)
+	return m, nil
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
@@ -130,14 +149,33 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		if err != nil {
 			return nil, err
 		}
-		return repoMeta(repo), nil
+		m := repoMeta(repo)
+		m.CanonicalURL = canonicalRepoURL(
+			conf.AppURL(ctx),
+			getRouteName(r),
+			mux.Vars(r),
+			r.URL.Query(),
+			repo.DefaultBranch,
+			"",
+		)
+		return m, nil
 	}
 
-	repo, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
-	return repoMeta(repo), nil
+
+	m := repoMeta(repo)
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(ctx),
+		getRouteName(r),
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		repoRev.CommitID,
+	)
+	return m, nil
 }
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) (*meta, error) {
@@ -151,14 +189,24 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) (*meta, error) {
 
 func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
-	entry, repo, err := repoTreeGet(ctx, mux.Vars(r))
+	entry, repo, repoRev, err := repoTreeGet(ctx, mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
 	if entry.Type != sourcegraph.DirEntry {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a dir")}
 	}
-	return treeOrBlobMeta(entry.Name, repo), nil
+
+	m := treeOrBlobMeta(entry.Name, repo)
+	m.CanonicalURL = canonicalRepoURL(
+		conf.AppURL(ctx),
+		getRouteName(r),
+		mux.Vars(r),
+		r.URL.Query(),
+		repo.DefaultBranch,
+		repoRev.CommitID,
+	)
+	return m, nil
 }
 
 // serveAny is the fallback/catch-all route. It preloads nothing and
@@ -175,4 +223,12 @@ func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) er
 	}{
 		Meta: m,
 	})
+}
+
+func getRouteName(r *http.Request) string {
+	route := mux.CurrentRoute(r)
+	if route != nil {
+		return route.GetName()
+	}
+	return ""
 }

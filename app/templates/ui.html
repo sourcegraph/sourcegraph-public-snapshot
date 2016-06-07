@@ -28,6 +28,10 @@
 	<meta name="description" content="{{$description}}">
 {{end}}
 
+{{with .Meta.CanonicalURL}}
+	<link rel="canonical" href="{{.}}">
+{{end}}
+
 
 {{end}}
 

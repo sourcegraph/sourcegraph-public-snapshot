@@ -35,6 +35,11 @@ func parseMeta(htmlSrc []byte) (*meta, error) {
 				m.Description = attr(n, "content")
 			}
 
+		case atom.Link:
+			if attr(n, "rel") == "canonical" {
+				m.CanonicalURL = attr(n, "href")
+			}
+
 		case atom.Html, atom.Head:
 			return true // traverse
 		}

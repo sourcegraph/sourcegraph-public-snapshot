@@ -106,9 +106,8 @@ type Common struct {
 	TemplateName string
 
 	// AppURL is the conf.AppURL(ctx) value for the current context.
-	AppURL       *url.URL
-	CanonicalURL *url.URL
-	HostName     string
+	AppURL   *url.URL
+	HostName string
 
 	Ctx context.Context
 
