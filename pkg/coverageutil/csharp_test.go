@@ -28,5 +28,10 @@ func TestCsharp(testing *testing.T) {
 				"@\"a\"\" b\" c",
 				[]Token{{9, 1, "c"}},
 			},
+			{
+				"preprocessor directives",
+				"#ifdef A\nfoo\n#endif\n#region License Information (GPL v3)",
+				[]Token{{9, 2, "foo"}},
+			},
 		})
 }
