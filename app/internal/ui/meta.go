@@ -81,16 +81,22 @@ func defMeta(def *sourcegraph.Def, repo string) *meta {
 	if def.DocHTML != nil {
 		html = def.DocHTML.HTML
 	}
-	doc := textutil.TextFromHTML(html)
-	if len(doc) > 250 {
-		doc = doc[:250] + "..."
+	doc := strings.TrimSpace(textutil.TextFromHTML(html))
+	if len(doc) > 200 {
+		doc = doc[:200] + "..."
 	}
 
 	f := graph.PrintFormatter(&def.Def)
+
+	desc := f.Name("dep") + f.NameAndTypeSeparator() + f.Type("dep")
+	if doc != "" {
+		desc += " — " + doc
+	}
+
 	return &meta{
 		Title:       repoPageTitle(repo, f.Name("dep")),
 		ShortTitle:  f.Name("dep"),
-		Description: doc,
+		Description: desc,
 	}
 }
 

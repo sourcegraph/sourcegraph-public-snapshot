@@ -419,7 +419,7 @@ func TestDef_OK(t *testing.T) {
 		wantMeta := meta{
 			Title:        "imp.scope.name · r · Sourcegraph",
 			ShortTitle:   "imp.scope.name",
-			Description:  "hello world!",
+			Description:  "imp.scope.name_imp.scope.typeName — hello world!",
 			CanonicalURL: fmt.Sprintf("http://example.com/r%s/-/%s/t/u/-/p", test.wantCanonRev, test.defOrInfo),
 			Index:        test.wantIndex,
 			Follow:       test.wantFollow,
