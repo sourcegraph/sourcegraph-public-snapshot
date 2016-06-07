@@ -27,6 +27,14 @@ func parseMeta(htmlSrc []byte) (*meta, error) {
 		case atom.Title:
 			m.Title = n.FirstChild.Data
 
+		case atom.Meta:
+			switch attr(n, "property") {
+			case "og:title":
+				m.ShortTitle = attr(n, "content")
+			case "og:description":
+				m.Description = attr(n, "content")
+			}
+
 		case atom.Html, atom.Head:
 			return true // traverse
 		}
@@ -34,6 +42,15 @@ func parseMeta(htmlSrc []byte) (*meta, error) {
 	})
 
 	return &m, nil
+}
+
+func attr(n *html.Node, key string) string {
+	for _, attr := range n.Attr {
+		if attr.Key == key {
+			return attr.Val
+		}
+	}
+	return ""
 }
 
 func walk(n *html.Node, fn func(*html.Node) bool) {
@@ -54,8 +71,12 @@ func TestParseMeta(t *testing.T) {
 			want: meta{Title: ""},
 		},
 		{
-			html: "<html><head><title>mytitle</title></head><body></body></html>",
-			want: meta{Title: "mytitle"},
+			html: "<html><head><title>mytitle</title><meta property=og:title content=shorttitle><meta property=og:description content=desc></head><body></body></html>",
+			want: meta{
+				Title:       "mytitle",
+				ShortTitle:  "shorttitle",
+				Description: "desc",
+			},
 		},
 	}
 	for _, test := range tests {

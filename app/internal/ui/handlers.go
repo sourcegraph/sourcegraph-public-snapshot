@@ -79,9 +79,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	if entry.Type != sourcegraph.FileEntry {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
 	}
-	return &meta{
-		Title: repoPageTitle(repo.URI, entry.Name),
-	}, nil
+	return treeOrBlobMeta(entry.Name, repo), nil
 }
 
 func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
@@ -160,9 +158,7 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	if entry.Type != sourcegraph.DirEntry {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a dir")}
 	}
-	return &meta{
-		Title: repoPageTitle(repo.URI, entry.Name),
-	}, nil
+	return treeOrBlobMeta(entry.Name, repo), nil
 }
 
 // serveAny is the fallback/catch-all route. It preloads nothing and
