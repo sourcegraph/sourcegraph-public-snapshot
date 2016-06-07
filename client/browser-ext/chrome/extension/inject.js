@@ -12,6 +12,8 @@ import styles from "../../app/components/App.css";
 import {SearchIcon} from "../../app/components/Icons";
 import {keyFor, getExpiredSrclibDataVersion, getExpiredDef, getExpiredDefs, getExpiredAnnotations} from "../../app/reducers/helpers";
 import createStore from "../../app/store/configureStore";
+import {defaultBranchCache} from "../../chrome/extension/annotations";
+
 
 @connect(
 	(state) => ({
@@ -40,7 +42,7 @@ class InjectApp extends React.Component {
 		def: React.PropTypes.object.isRequired,
 		annotations: React.PropTypes.object.isRequired,
 		defs: React.PropTypes.object.isRequired,
-		actions: React.PropTypes.object.isRequired
+		actions: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -111,10 +113,13 @@ class InjectApp extends React.Component {
 		if (typeof ev.target.dataset.sourcegraphRef !== "undefined") {
 			let urlProps = this.parseURL({pathname: ev.target.pathname, hash: ev.target.hash});
 			urlProps.repo = `github.com/${urlProps.user}/${urlProps.repo}`;
+			// HACK: We need the default branch for external defs. This gets it for us, but we'd
+			// want to show the proper branch name or commit ID in the future, which would require
+			// an additional API call to Sourcegraph.
 
 			this.props.actions.getDef(urlProps.repo, urlProps.rev, urlProps.defPath);
 
-			const props = {...urlProps, def: this.props.def};
+			const props = {...urlProps, def: this.props.def}
 			const info = this._directURLToDef(props);
 			if (info) {
 				// Fast path. Uses PJAX if possible (automatically).
@@ -158,8 +163,9 @@ class InjectApp extends React.Component {
 	}
 
 	branchSelectorButton() {
-		return document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0]
+		return document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0];
 	}
+
 	supportsAnnotatingFile(path) {
 		if (!path) return false;
 
@@ -181,11 +187,9 @@ class InjectApp extends React.Component {
 		// This scrapes the latest commit ID and updates rev to the latest commit so we are never injecting
 		// outdated annotations.  If there is a new commit, srclib-data-version will return a 404, but the
 		// refresh endpoint will update the version and the annotations will be up to date once the new build succeeds
-		let latestRev = document.getElementsByClassName("js-permalink-shortcut")[0] ? document.getElementsByClassName("js-permalink-shortcut")[0].href.split("/")[6] : rev
+		let latestRev = document.getElementsByClassName("js-permalink-shortcut")[0] ? document.getElementsByClassName("js-permalink-shortcut")[0].href.split("/")[6] : rev;
 		// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
-		let currBranch = this.branchSelectorButton() ? this.branchSelectorButton().title : rev;
 		if (rev !== latestRev) rev = latestRev;
-		if (currBranch !== "master") rev = currBranch;
 		const repoName = repo;
 		if (repo) {
 			repo = `github.com/${user}/${repo}`;
@@ -228,16 +232,17 @@ class InjectApp extends React.Component {
 				pjaxGoTo(`${pathname}${hash}`, repo === this.props.repo);
 			}
 		}
-	}
+	}l
 
 	_directURLToDef({repo, rev, defPath, def}) {
 		const defObj = def ? def.content[keyFor(repo, rev, defPath)] : null;
 		if (defObj) {
-			const pathname = `/${repo.replace("github.com/", "")}/blob/${rev}/${defObj.File}`;
+			let defBranch = defaultBranchCache[repo]
+			const pathname = (repo === this.props.repo) ? `/${repo.replace("github.com/", "")}/blob/${rev}/${defObj.File}` : `/${repo.replace("github.com/", "")}/blob/${defBranch}/${defObj.File}`;
 			const hash = `#sourcegraph&def=${defPath}&L${defObj.StartLine || 0}-${defObj.EndLine || 0}`;
 			return {pathname, hash};
 		}
-		return null;
+		return null
 	}
 
 	// pjaxUpdate is a wrapper around refreshState which is called whenever

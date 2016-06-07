@@ -140,11 +140,11 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 function isSpanTagString(childNodeChars, k) {
 	return (childNodeChars[k] === "&" && (((childNodeChars.slice(k, k+4).join("")) === ("&gt;")) || (childNodeChars.slice(k, k+4).join("") === ("&lt;"))))
 }
+
 // next is a helper method for traverseDOM which transforms a character
 // into itself or wraps the character in a starting/ending anchor tag
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
 	let matchDetails = annsByStartByte[byteCount];
-
 	// if there is a match
 	if (!annotating && matchDetails) {
 		// Handle non-GitHub defs by going to Sourcegraph.
@@ -159,18 +159,31 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 		if (annsByStartByte[byteCount].EndByte - annsByStartByte[byteCount].StartByte === 1) {
 			return `${insert}</a>`;
 		}
-
+		cacheDefaultBranch(matchDetails.URL)
 		annotating = true;
 		return insert;
 	}
-
 	// if we reach the end, close the tag.
 	if (annotating && annsByEndByte[byteCount + 1]) {
 		annotating = false;
 		return `${c}</a>`;
 	}
-
 	return c;
+}
+
+export const defaultBranchCache = {};
+function cacheDefaultBranch(annURL) {
+	let annURLsplit = [annURL.split("/")[1], annURL.split("/")[2], annURL.split("/")[3]];
+	let repo = annURLsplit.join("/");
+	if (defaultBranchCache[repo]) {
+		console.log("CACHED")
+		return;
+	}
+	fetch(`https://sourcegraph.com/.api/repos/${repo}`)
+		.then((response) => {
+			defaultBranchCache[repo] = response.DefaultBranch;
+		})
+		.catch((err) => console.log("Error getting default branch"));
 }
 
 function urlToDef(origURL) {
@@ -200,7 +213,7 @@ function addPopover(el) {
 		if (!t) return;
 		if (activeTarget !== t) {
 			activeTarget = t;
-			let url = activeTarget.dataset.src.split("https://sourcegraph.com")[1]
+			let url = activeTarget.dataset.src.split("https://sourcegraph.com")[1];
 			url = `https://sourcegraph.com/.api/repos${url}?ComputeLineRange=true&Doc=true`;
 			fetchPopoverData(url, function(html, data) {
 				if (activeTarget && html) showPopover(html, e.pageX, e.pageY);
