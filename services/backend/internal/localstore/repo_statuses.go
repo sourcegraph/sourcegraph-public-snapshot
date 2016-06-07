@@ -43,7 +43,7 @@ type dbFileCoverage struct {
 }
 
 type dbRepoCoverage struct {
-	RepoURI       string `db:"repo_uri"`
+	Repo          string `db:"repo_uri"`
 	Rev           string
 	Language      string
 	Files         []*dbFileCoverage
@@ -148,7 +148,7 @@ func checkCoverageRegression(prev, next *dbRepoCoverage) {
 		slack.PostMessage(slack.PostOpts{
 			Msg: fmt.Sprintf(`Coverage for https://sourcegraph.com/%s (lang=%s) has regressed.
 Before: refScore(%f), defScore(%f)
-After: refScore(%f), defScore(%f)`, prev.RepoURI, prev.Language, refScore(ps), defScore(ps), refScore(ns), defScore(ns)),
+After: refScore(%f), defScore(%f)`, prev.Repo, prev.Language, refScore(ps), defScore(ps), refScore(ns), defScore(ns)),
 			IconEmoji:  ":warning:",
 			Channel:    "global-graph",
 			WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
