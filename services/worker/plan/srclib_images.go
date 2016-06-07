@@ -16,7 +16,7 @@ var (
 	droneSrclibTypeScriptImage = "sourcegraph/srclib-typescript@sha256:39adfea4bdaea50be63431fe8c85c174a6a83d34db1196ac0bb171cb79cc88d6"
 	droneSrclibCSharpImage     = "sourcegraph/srclib-csharp@sha256:e5c112fc5ccb0551a09289cd732b00d038c4bc366f853e552826e36bcd903507"
 	droneSrclibCSSImage        = "sourcegraph/srclib-css@sha256:5dea2ffe7183d2fb3f3f3d6a43790189f1c9a82ef46d8d605d87a99830ca9fbd"
-	droneSrclibPythonImage     = "sourcegraph/srclib-python@sha256:ce9625fc4648cc2200237dc95c9b14b0eeb01621a55a53f5123509e84da069be"
+	droneSrclibPythonImage     = "sourcegraph/srclib-python@sha256:801e833c8e45dbf60de46d83ca9c7e1a7b4dcfc2a505201523d660e976849ea6"
 	droneSrclibJSONImage       = "sourcegraph/srclib-json@sha256:8c57b51ad1f0047540106d63fac2d924d0278ae421a470a3067c390ae6edb1fc"
 )
 
