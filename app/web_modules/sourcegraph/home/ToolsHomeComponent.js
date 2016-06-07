@@ -52,7 +52,7 @@ class ToolsHomeComponent extends Component {
 
 	componentDidMount() {
 		this.timeout = setTimeout(() => this.setState({
-			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap") && !window.localStorage["installed_chrome_extension"],
+			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
 		}), 1);
 	}
 
