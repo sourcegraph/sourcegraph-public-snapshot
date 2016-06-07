@@ -29,6 +29,11 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	usingSrclib := srclibExplicitlyConfigured // track if we've found any srclib languages
 	unsupported := []string{}
 
+	var totalLangBytes uint64 = 0
+	for _, lang := range inv.Languages {
+		totalLangBytes += lang.TotalBytes
+	}
+
 	// Add the srclib build steps for all of the languages we
 	// detect. But if we've explicitly configured srclib at all, then
 	// don't do any automagic.
@@ -39,6 +44,10 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 				unsupported = append(unsupported, lang.Name)
 				continue
 			}
+			if _, mustSucceed := mustSucceedLangs[lang.Name]; mustSucceed && float32(lang.TotalBytes)/float32(totalLangBytes) > mustSucceedLangThreshold {
+				b.AllowFailure = false
+			}
+
 			usingSrclib = true
 			if err := insertSrclibBuild(config, axes, b); err != nil {
 				return err
@@ -71,6 +80,21 @@ func configureSrclib(inv *inventory.Inventory, config *droneyaml.Config, axes []
 	}
 
 	return nil
+}
+
+// mustSucceedLangThreshold is the percentage of code bytes in a repository written
+// in a certain language at which that language becomes a "must-succeed"
+// language for the repository. Must-succeed languages are languages where the
+// srclib config has AllowFailure==true.
+const mustSucceedLangThreshold = 0.33
+
+// mustSucceedLangs are languages for which srclib must succeed if their
+// proportion of code bytes in a repository exceeds mustSucceedLangThreshold.
+var mustSucceedLangs = map[string]struct{}{
+	"Go":     struct{}{},
+	"Java":   struct{}{},
+	"C#":     struct{}{},
+	"Python": struct{}{},
 }
 
 // Note: If you push new Docker images for the srclib build steps, you

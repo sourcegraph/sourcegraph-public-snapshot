@@ -6,8 +6,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"strings"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 
 	droneyaml "github.com/drone/drone-exec/yaml"
@@ -20,12 +18,51 @@ func TestConfigureSrclib(t *testing.T) {
 	}
 }
 
+type testConfigureSrclib_withLangs_Case struct {
+	inv            *inventory.Inventory
+	wantYMLStrings []string
+	wantBuildItems []wantBuildItem
+}
+
+type wantBuildItem struct {
+	key          string
+	allowFailure bool
+}
+
 func TestConfigureSrclib_withLangs(t *testing.T) {
+	tests := []testConfigureSrclib_withLangs_Case{{
+		inv: &inventory.Inventory{
+			Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 5}, {Name: "JavaScript", TotalBytes: 5}},
+		},
+		wantBuildItems: []wantBuildItem{
+			{key: "Go (indexing)", allowFailure: false},
+			{key: "JavaScript (indexing)", allowFailure: true},
+		},
+	}, {
+		inv: &inventory.Inventory{
+			Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 5}},
+		},
+		wantBuildItems: []wantBuildItem{{key: "Go (indexing)", allowFailure: false}},
+	}, {
+		inv: &inventory.Inventory{
+			Languages: []*inventory.Lang{{Name: "Go", TotalBytes: 8}, {Name: "Python", TotalBytes: 2}},
+		},
+		wantBuildItems: []wantBuildItem{{key: "Go (indexing)", allowFailure: false}, {key: "Python (indexing)", allowFailure: true}},
+	}, {
+		inv: &inventory.Inventory{
+			Languages: []*inventory.Lang{{Name: "HTML", TotalBytes: 9}, {Name: "Python", TotalBytes: 1}},
+		},
+		wantBuildItems: []wantBuildItem{{key: "HTML (indexing)", allowFailure: true}, {key: "Python (indexing)", allowFailure: true}},
+	}}
+	for _, test := range tests {
+		testConfigureSrclib_withLangs(t, test)
+	}
+}
+
+func testConfigureSrclib_withLangs(t *testing.T, test testConfigureSrclib_withLangs_Case) {
 	var config droneyaml.Config
 	err := configureSrclib(
-		&inventory.Inventory{
-			Languages: []*inventory.Lang{{Name: "Go"}, {Name: "JavaScript"}},
-		},
+		test.inv,
 		&config,
 		[]matrix.Axis{{}},
 		nil,
@@ -34,10 +71,16 @@ func TestConfigureSrclib_withLangs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wants := []string{"sourcegraph/srclib-go", "sourcegraph/srclib-javascript"}
-	for _, want := range wants {
-		if !strings.Contains(config2yaml(config), want) {
-			t.Errorf("### got\n%s\n\n### want to contain %q", config2yaml(config), want)
+	for _, want := range test.wantBuildItems {
+		got := false
+		for _, item := range config.Build {
+			if item.Key == want.key && item.AllowFailure == want.allowFailure {
+				got = true
+				break
+			}
+		}
+		if !got {
+			t.Errorf("didn't find wanted build item %+v among build items %+v", want, config.Build)
 		}
 	}
 }
