@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 )
 
-func TestRepoTree(t *testing.T) {
+func TestRepoTree_file(t *testing.T) {
 	c, mock := newTest()
 
 	want := &sourcegraph.TreeEntry{
@@ -42,6 +42,41 @@ func TestRepoTree(t *testing.T) {
 	}
 	if !*calledAnnotationsList {
 		t.Error("!calledAnnotationsList")
+	}
+}
+
+func TestRepoTree_dir(t *testing.T) {
+	c, mock := newTest()
+
+	want := &sourcegraph.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+			Name: "d",
+			Type: sourcegraph.DirEntry,
+			Entries: []*sourcegraph.BasicTreeEntry{
+				{Name: "f", Type: sourcegraph.FileEntry},
+			},
+		},
+	}
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.RepoTree.MockGet_Return_NoCheck(t, want)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+
+	var entry *sourcegraph.TreeEntry
+	if err := c.GetJSON("/repos/r/-/tree/f", &entry); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(entry, want) {
+		t.Errorf("got %+v, want %+v", entry, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
 	}
 }
 
