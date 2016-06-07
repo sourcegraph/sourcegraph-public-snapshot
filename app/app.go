@@ -72,8 +72,6 @@ func NewHandler(r *router.Router) http.Handler {
 	// Add git transport routes
 	gitserver.AddHandlers(&r.Router)
 
-	r.Get("ui").Handler(internal.Handler(serveUI))
-
 	r.Get(router.RobotsTxt).HandlerFunc(robotsTxt)
 	r.Get(router.Favicon).HandlerFunc(favicon)
 
