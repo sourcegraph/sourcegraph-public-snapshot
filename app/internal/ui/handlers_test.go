@@ -44,13 +44,15 @@ func TestCatchAll(t *testing.T) {
 var urls = map[string]struct {
 	repo string // repo is necessary (but not sufficient) for this route
 	rev  string // rev is necessary (but not sufficient) for this route
+	tree string // tree is necessary (but not sufficient) for this route
+	blob string // blob is necessary (but not sufficient) for this route
 
 	defUnitType, defUnit, defPath string // def is necessary (but not sufficient) for this route
 }{
 	"/r":                  {repo: "r"},
 	"/r@v":                {repo: "r", rev: "v"},
-	"/r@v/-/tree/d":       {repo: "r", rev: "v"},
-	"/r@v/-/blob/f":       {repo: "r", rev: "v"},
+	"/r@v/-/tree/d":       {repo: "r", rev: "v", tree: "d"},
+	"/r@v/-/blob/f":       {repo: "r", rev: "v", blob: "f"},
 	"/r@v/-/def/t/u/-/p":  {repo: "r", rev: "v", defUnitType: "t", defUnit: "u", defPath: "p"},
 	"/r@v/-/info/t/u/-/p": {repo: "r", rev: "v", defUnitType: "t", defUnit: "u", defPath: "p"},
 	"/r/-/builds":         {repo: "r"},
@@ -176,6 +178,102 @@ func TestRepoRev_Error(t *testing.T) {
 	}
 }
 
+func TestBlob_OK(t *testing.T) {
+	c, mock := newTest()
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+			Name: "f",
+			Type: sourcegraph.FileEntry,
+		},
+	})
+
+	if err := getStatus(c, "/r@v/-/blob/f", http.StatusOK); err != nil {
+		t.Fatal(err)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
+	}
+	if !*calledRepoTreeGet {
+		t.Error("!calledRepoTreeGet")
+	}
+}
+
+func TestBlob_NotFound_NonFile(t *testing.T) {
+	c, mock := newTest()
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+			Name: "d",
+			Type: sourcegraph.DirEntry,
+		},
+	})
+
+	if err := getStatus(c, "/r@v/-/blob/d", http.StatusNotFound); err != nil {
+		t.Fatal(err)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
+	}
+	if !*calledRepoTreeGet {
+		t.Error("!calledRepoTreeGet")
+	}
+}
+
+func TestBlob_Error(t *testing.T) {
+	c, mock := newTest()
+
+	for url, req := range urls {
+		if req.repo == "" || req.rev == "" || req.blob == "" {
+			continue
+		}
+
+		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := mock.Repos.MockGet(t, 1)
+		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+		var calledRepoTreeGet bool
+		mock.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+			calledRepoTreeGet = true
+			return nil, grpc.Errorf(codes.NotFound, "")
+		}
+
+		if err := getStatus(c, url, http.StatusNotFound); err != nil {
+			t.Errorf("%s: %s", url, err)
+			continue
+		}
+		if !*calledReposResolve {
+			t.Errorf("%s: !calledReposResolve", url)
+		}
+		if !*calledGet {
+			t.Errorf("%s: !calledGet", url)
+		}
+		if !*calledReposResolveRev {
+			t.Errorf("%s: !calledReposResolveRev", url)
+		}
+		if !calledRepoTreeGet {
+			t.Errorf("%s: !calledRepoTreeGet", url)
+		}
+	}
+}
+
 func TestDef_OK(t *testing.T) {
 	c, mock := newTest()
 
@@ -261,6 +359,102 @@ func TestDef_Error(t *testing.T) {
 		}
 		if !calledDefsGet {
 			t.Errorf("%s: !calledDefsGet", url)
+		}
+	}
+}
+
+func TestTree_OK(t *testing.T) {
+	c, mock := newTest()
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+			Name: "d",
+			Type: sourcegraph.DirEntry,
+		},
+	})
+
+	if err := getStatus(c, "/r@v/-/tree/d", http.StatusOK); err != nil {
+		t.Fatal(err)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
+	}
+	if !*calledRepoTreeGet {
+		t.Error("!calledRepoTreeGet")
+	}
+}
+
+func TestTree_NotFound_NonDir(t *testing.T) {
+	c, mock := newTest()
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+	calledRepoTreeGet := mock.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
+		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
+			Name: "f",
+			Type: sourcegraph.FileEntry,
+		},
+	})
+
+	if err := getStatus(c, "/r@v/-/tree/f", http.StatusNotFound); err != nil {
+		t.Fatal(err)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
+	}
+	if !*calledRepoTreeGet {
+		t.Error("!calledRepoTreeGet")
+	}
+}
+
+func TestTree_Error(t *testing.T) {
+	c, mock := newTest()
+
+	for url, req := range urls {
+		if req.repo == "" || req.rev == "" || req.tree == "" {
+			continue
+		}
+
+		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := mock.Repos.MockGet(t, 1)
+		calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+		var calledRepoTreeGet bool
+		mock.RepoTree.Get_ = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
+			calledRepoTreeGet = true
+			return nil, grpc.Errorf(codes.NotFound, "")
+		}
+
+		if err := getStatus(c, url, http.StatusNotFound); err != nil {
+			t.Errorf("%s: %s", url, err)
+			continue
+		}
+		if !*calledReposResolve {
+			t.Errorf("%s: !calledReposResolve", url)
+		}
+		if !*calledGet {
+			t.Errorf("%s: !calledGet", url)
+		}
+		if !*calledReposResolveRev {
+			t.Errorf("%s: !calledReposResolveRev", url)
+		}
+		if !calledRepoTreeGet {
+			t.Errorf("%s: !calledRepoTreeGet", url)
 		}
 	}
 }

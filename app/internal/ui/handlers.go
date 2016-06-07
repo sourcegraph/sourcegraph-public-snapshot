@@ -2,7 +2,10 @@ package ui
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"golang.org/x/net/context"
 
 	"github.com/gorilla/mux"
 
@@ -45,11 +48,29 @@ func handler(h func(w http.ResponseWriter, r *http.Request) error) http.Handler 
 // These handlers return the proper HTTP status code but otherwise do
 // not pass data to the JavaScript UI code.
 
+func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, error) {
+	cl, err := sourcegraph.NewClientFromContext(ctx)
+
+	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, routeVars)
+	if err != nil {
+		return nil, err
+	}
+
+	entry := routevar.ToTreeEntry(routeVars)
+	return cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: entry.Path},
+		Opt:   nil,
+	})
+}
+
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	entry, err := repoTreeGet(ctx, mux.Vars(r))
 	if err != nil {
 		return err
+	}
+	if entry.Type != sourcegraph.FileEntry {
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
 	}
 	return nil
 }
@@ -110,9 +131,12 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 
 func serveTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	entry, err := repoTreeGet(ctx, mux.Vars(r))
 	if err != nil {
 		return err
+	}
+	if entry.Type != sourcegraph.DirEntry {
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a dir")}
 	}
 	return nil
 }
