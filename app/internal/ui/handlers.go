@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -64,7 +65,7 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	_, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 func serveDefInfo(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	_, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
 		return err
 	}
