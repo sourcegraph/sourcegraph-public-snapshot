@@ -83,6 +83,7 @@ func defMeta(def *sourcegraph.Def, repo string, includeFile bool) *meta {
 		html = def.DocHTML.HTML
 	}
 	doc := strings.TrimSpace(textutil.TextFromHTML(html))
+	doc = strings.Replace(strings.Replace(strings.Replace(doc, "\n", " ", -1), "\t", " ", -1), "\r", "", -1)
 	if len(doc) > 200 {
 		doc = doc[:200] + "..."
 	}
