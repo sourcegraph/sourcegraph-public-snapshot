@@ -45,27 +45,13 @@ You can use [redux-devtools-extension](https://github.com/zalmoxisus/redux-devto
 $ npm run build
 ```
 
-#### Firefox
-
-To bundle the extension for Firefox, compress the *contents* of the `/build` folder (not the folder itself). Rename the file `sourcegraph.xpi`.
-
-## Compress (chrome only)
+## Create distributions
 
 ```bash
-$ npm run build
-$ npm run compress -- [options]
+$ npm run dist
 ```
 
-#### Options
-
-If you want to build a `crx` file, provide options and add an `update.xml` file url in [manifest.json](https://developer.chrome.com/extensions/autoupdate#update_url manifest.json).
-
-* --app-id: the extension id
-* --key: private key path (default: './key.pem')
-  you can use `npm run compress-keygen` to generate private key `./key.pem`
-* --codebase: the `crx` file url
-
-See [autoupdate guide](https://developer.chrome.com/extensions/autoupdate) for more information.
+The reason this process does more than just compress the build directory is to ensure that the environment that the dist is created mimics the environment for the extension submission teams. It spins up a Docker Linux image, chooses a specific version of node and npm, and runs the build process before compressing the file.
 
 ## Boilerplate
 
