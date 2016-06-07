@@ -11,6 +11,7 @@ import (
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func init() {
@@ -45,7 +46,7 @@ func handler(h func(w http.ResponseWriter, r *http.Request) error) http.Handler 
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -63,7 +64,7 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 
 func serveDef(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func serveDef(w http.ResponseWriter, r *http.Request) error {
 
 func serveDefInfo(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -81,11 +82,20 @@ func serveDefInfo(w http.ResponseWriter, r *http.Request) error {
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
-	if err != nil {
+
+	rr := routevar.ToRepoRev(mux.Vars(r))
+	if rr.Rev == "" {
+		// Just fetch the repo. Even if the rev doesn't exist, we
+		// still want to return HTTP 200 OK, because the repo might be
+		// in the process of being cloned. In that case, the 200 OK
+		// refers to the existence of the repo, not the rev, which is
+		// desirable.
+		_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 		return err
 	}
-	return nil
+
+	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	return err
 }
 
 func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
@@ -99,7 +109,7 @@ func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
 
 func serveTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, _ := handlerutil.Client(r)
-	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
 	if err != nil {
 		return err
 	}

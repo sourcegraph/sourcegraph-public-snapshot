@@ -42,13 +42,14 @@ func TestCatchAll(t *testing.T) {
 
 var urls = map[string]struct {
 	repo string // repo is necessary (but not sufficient) for this route
+	rev  string // rev is necessary (but not sufficient) for this route
 }{
 	"/r":                  {repo: "r"},
-	"/r@v":                {repo: "r"},
-	"/r@v/-/tree/d":       {repo: "r"},
-	"/r@v/-/blob/f":       {repo: "r"},
-	"/r@v/-/def/t/u/-/p":  {repo: "r"},
-	"/r@v/-/info/t/u/-/p": {repo: "r"},
+	"/r@v":                {repo: "r", rev: "v"},
+	"/r@v/-/tree/d":       {repo: "r", rev: "v"},
+	"/r@v/-/blob/f":       {repo: "r", rev: "v"},
+	"/r@v/-/def/t/u/-/p":  {repo: "r", rev: "v"},
+	"/r@v/-/info/t/u/-/p": {repo: "r", rev: "v"},
 	"/r/-/builds":         {repo: "r"},
 	"/r/-/builds/2":       {repo: "r"},
 }
@@ -58,6 +59,7 @@ func TestRepo_OK(t *testing.T) {
 
 	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
 	calledGet := mock.Repos.MockGet(t, 1)
+	// (Should not try to resolve the revision; see serveRepo for why.)
 
 	if err := getStatus(c, "/r", http.StatusOK); err != nil {
 		t.Fatal(err)
@@ -114,6 +116,59 @@ func TestRepo_Error_Get(t *testing.T) {
 		}
 		if !calledGet {
 			t.Errorf("%s: !calledGet", url)
+		}
+	}
+}
+
+func TestRepoRev_OK(t *testing.T) {
+	c, mock := newTest()
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledGet := mock.Repos.MockGet(t, 1)
+	calledReposResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "v")
+
+	if err := getStatus(c, "/r@v", http.StatusOK); err != nil {
+		t.Fatal(err)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledReposResolveRev {
+		t.Error("!calledReposResolveRev")
+	}
+}
+
+func TestRepoRev_Error(t *testing.T) {
+	c, mock := newTest()
+
+	for url, req := range urls {
+		if req.repo == "" || req.rev == "" {
+			continue
+		}
+
+		calledReposResolve := mock.Repos.MockResolve_Local(t, req.repo, 1)
+		calledGet := mock.Repos.MockGet(t, 1)
+		var calledReposResolveRev bool
+		mock.Repos.ResolveRev_ = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+			calledReposResolveRev = true
+			return nil, grpc.Errorf(codes.NotFound, "")
+		}
+
+		if err := getStatus(c, url, http.StatusNotFound); err != nil {
+			t.Errorf("%s: %s", url, err)
+			continue
+		}
+		if !*calledReposResolve {
+			t.Errorf("%s: !calledReposResolve", url)
+		}
+		if !*calledGet {
+			t.Errorf("%s: !calledGet", url)
+		}
+		if !calledReposResolveRev {
+			t.Errorf("%s: !calledReposResolveRev", url)
 		}
 	}
 }
