@@ -38,48 +38,57 @@ func init() {
 
 // handler wraps h, calling tmplExec with the HTTP equivalent error
 // code of h's return value (or HTTP 200 if err == nil).
-func handler(h func(w http.ResponseWriter, r *http.Request) error) http.Handler {
+func handler(h func(w http.ResponseWriter, r *http.Request) (*meta, error)) http.Handler {
 	return internal.Handler(func(w http.ResponseWriter, r *http.Request) error {
-		err := h(w, r)
-		return tmplExec(w, r, errcode.HTTP(err))
+		m, err := h(w, r)
+		if m == nil {
+			m = &meta{}
+			if err != nil {
+				m.Title = http.StatusText(errcode.HTTP(err))
+			}
+		}
+		return tmplExec(w, r, errcode.HTTP(err), *m)
 	})
 }
 
 // These handlers return the proper HTTP status code but otherwise do
 // not pass data to the JavaScript UI code.
 
-func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, error) {
+func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, *sourcegraph.Repo, error) {
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 
-	_, repoRev, err := handlerutil.GetRepoAndRev(ctx, routeVars)
+	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, routeVars)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	entry := routevar.ToTreeEntry(routeVars)
-	return cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+	e, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: entry.Path},
 		Opt:   nil,
 	})
+	return e, repo, err
 }
 
-func serveBlob(w http.ResponseWriter, r *http.Request) error {
+func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
-	entry, err := repoTreeGet(ctx, mux.Vars(r))
+	entry, repo, err := repoTreeGet(ctx, mux.Vars(r))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if entry.Type != sourcegraph.FileEntry {
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
+		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
 	}
-	return nil
+	return &meta{
+		Title: repoPageTitle(repo.URI, entry.Name),
+	}, nil
 }
 
-func serveBuild(w http.ResponseWriter, r *http.Request) error {
+func serveBuild(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
 	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// NOTE: We don't actually try to fetch the build here, but that's
@@ -88,28 +97,28 @@ func serveBuild(w http.ResponseWriter, r *http.Request) error {
 	// important to return proper 404s for builds, relative to other
 	// URLs that are linked more often.
 
-	return nil
+	return nil, nil
 }
 
-func serveDef(w http.ResponseWriter, r *http.Request) error {
+func serveDef(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
-	_, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
+	def, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return defMeta(def, repo.URI), nil
 }
 
-func serveDefInfo(w http.ResponseWriter, r *http.Request) error {
+func serveDefInfo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
-	_, _, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
+	def, repo, err := handlerutil.GetDefCommon(ctx, mux.Vars(r), &sourcegraph.DefGetOptions{Doc: true})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return defMeta(def, repo.URI), nil
 }
 
-func serveRepo(w http.ResponseWriter, r *http.Request) error {
+func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
 
 	rr := routevar.ToRepoRev(mux.Vars(r))
@@ -119,44 +128,55 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		// in the process of being cloned. In that case, the 200 OK
 		// refers to the existence of the repo, not the rev, which is
 		// desirable.
-		_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
-		return err
+		repo, err := handlerutil.GetRepo(ctx, mux.Vars(r))
+		if err != nil {
+			return nil, err
+		}
+		return repoMeta(repo), nil
 	}
 
-	_, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
-	return err
+	repo, _, err := handlerutil.GetRepoAndRev(ctx, mux.Vars(r))
+	if err != nil {
+		return nil, err
+	}
+	return repoMeta(repo), nil
 }
 
-func serveRepoBuilds(w http.ResponseWriter, r *http.Request) error {
+func serveRepoBuilds(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
 	_, err := handlerutil.GetRepo(ctx, mux.Vars(r))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return nil, nil
 }
 
-func serveTree(w http.ResponseWriter, r *http.Request) error {
+func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	ctx, _ := handlerutil.Client(r)
-	entry, err := repoTreeGet(ctx, mux.Vars(r))
+	entry, repo, err := repoTreeGet(ctx, mux.Vars(r))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if entry.Type != sourcegraph.DirEntry {
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a dir")}
+		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a dir")}
 	}
-	return nil
+	return &meta{
+		Title: repoPageTitle(repo.URI, entry.Name),
+	}, nil
 }
 
 // serveAny is the fallback/catch-all route. It preloads nothing and
 // returns a page that will merely bootstrap the JavaScript app.
 func serveAny(w http.ResponseWriter, r *http.Request) error {
-	return tmplExec(w, r, http.StatusOK)
+	return tmplExec(w, r, http.StatusOK, meta{})
 }
 
-func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int) error {
+func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) error {
 	return tmpl.Exec(r, w, "ui.html", statusCode, nil, &struct {
 		tmpl.Common
+		Meta   meta
 		Stores *json.RawMessage
-	}{})
+	}{
+		Meta: m,
+	})
 }

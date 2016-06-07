@@ -153,6 +153,7 @@ class DefInfo extends Container {
 		let title = trimRepo(this.state.repo);
 		let description_title = trimRepo(this.state.repo);
 		if (defTitleOK(def)) {
+			/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */
 			title = `${defTitle(def)} · ${trimRepo(this.state.repo)}`;
 			description_title = `${defTitle(def)} in ${trimRepo(this.state.repo)}`;
 		}

@@ -204,6 +204,7 @@ class RepoMain extends React.Component {
 		return (
 			<div>
 				{description ?
+					/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */
 					<Helmet
 						title={trimRepo(this.props.repo)}
 						meta={[
