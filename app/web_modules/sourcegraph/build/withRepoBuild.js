@@ -13,7 +13,7 @@ import "sourcegraph/build/BuildBackend";
 export default function withRepoBuild(Component) {
 	class WithRepoBuild extends Container {
 		static propTypes = {
-			repo: React.PropTypes.string.isRequired,
+			repoID: React.PropTypes.number,
 			commitID: React.PropTypes.string,
 		};
 
@@ -21,16 +21,16 @@ export default function withRepoBuild(Component) {
 
 		reconcileState(state, props) {
 			Object.assign(state, props);
-			const builds = state.commitID ? BuildStore.builds.listNewestByCommitID(state.repo, state.commitID) : null;
+			const builds = state.repoID && state.commitID ? BuildStore.builds.listNewestByCommitID(state.repoID, state.commitID) : null;
 			if (!builds) state.build = null;
 			else if (builds && builds.length > 0) state.build = builds[0];
 			else state.build = {Error: {response: {status: 404}}};
 		}
 
 		onStateTransition(prevState, nextState) {
-			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || (!nextState.build && prevState.build !== nextState.build)) {
-				if (!nextState.build) {
-					Dispatcher.Backends.dispatch(new BuildActions.WantNewestBuildForCommit(nextState.repo, nextState.commitID, false));
+			if (prevState.repoID !== nextState.repoID || prevState.commitID !== nextState.commitID || (!nextState.build && prevState.build !== nextState.build)) {
+				if (!nextState.build && nextState.repoID) {
+					Dispatcher.Backends.dispatch(new BuildActions.WantNewestBuildForCommit(nextState.repoID, nextState.commitID, false));
 				}
 			}
 		}
