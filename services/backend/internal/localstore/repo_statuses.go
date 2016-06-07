@@ -112,6 +112,9 @@ func (s *repoStatuses) GetCombined(ctx context.Context, repo int32, commitID str
 }
 
 func (s *repoStatuses) GetCoverage(ctx context.Context) (*sourcegraph.RepoStatusList, error) {
+	// No accesscontrol check is necessary here; coverage should only computed / reported
+	// for public repositories.
+
 	var dbRepoStatuses []*dbRepoStatus
 	if _, err := appDBH(ctx).Select(&dbRepoStatuses, `SELECT * FROM repo_status WHERE context=$1`, "coverage"); err != nil {
 		return nil, err
