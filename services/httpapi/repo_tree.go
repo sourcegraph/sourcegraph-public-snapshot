@@ -3,8 +3,6 @@ package httpapi
 import (
 	"errors"
 	"net/http"
-	"path"
-	"strings"
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -27,15 +25,15 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
 	vars := mux.Vars(r)
-	origRepoRev := routevar.ToRepoRev(vars)
-	repoRev, err := resolveLocalRepoRev(ctx, origRepoRev)
+	orig := routevar.ToTreeEntry(vars)
+	repoRev, err := resolveLocalRepoRev(ctx, orig.RepoRev)
 	if err != nil {
 		return err
 	}
 
 	entrySpec := sourcegraph.TreeEntrySpec{
 		RepoRev: *repoRev,
-		Path:    path.Clean(strings.TrimPrefix(vars["Path"], "/")),
+		Path:    orig.Path,
 	}
 
 	var opt sourcegraph.RepoTreeGetOptions
