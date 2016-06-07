@@ -12,7 +12,7 @@ import (
 // It should only be modified at init time. It is used to add routes
 // that are handled in files that may be build-tag-disabled or that
 // are in separate packages.
-var Handlers = map[string]func(w http.ResponseWriter, r *http.Request) error{}
+var Handlers = map[string]http.Handler{}
 
 // Handler is a wrapper func for app HTTP handlers that enables app
 // error pages.

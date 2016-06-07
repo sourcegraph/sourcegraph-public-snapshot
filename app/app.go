@@ -80,7 +80,7 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.RepoSitemap).Handler(internal.Handler(serveRepoSitemap))
 
 	for route, handlerFunc := range internal.Handlers {
-		r.Get(route).Handler(internal.Handler(handlerFunc))
+		r.Get(route).Handler(handlerFunc)
 	}
 
 	return handlerutil.WithMiddleware(m, mw...)

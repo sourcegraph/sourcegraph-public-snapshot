@@ -44,8 +44,8 @@ var (
 )
 
 func init() {
-	internal.Handlers[router.GitHubOAuth2Initiate] = serveGitHubOAuth2Initiate
-	internal.Handlers[router.GitHubOAuth2Receive] = serveGitHubOAuth2Receive
+	internal.Handlers[router.GitHubOAuth2Initiate] = internal.Handler(serveGitHubOAuth2Initiate)
+	internal.Handlers[router.GitHubOAuth2Receive] = internal.Handler(serveGitHubOAuth2Receive)
 
 	githubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	githubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")

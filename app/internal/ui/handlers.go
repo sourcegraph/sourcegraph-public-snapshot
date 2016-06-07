@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	internal.Handlers[router.UI] = serve
+	internal.Handlers[router.UI] = internal.Handler(serve)
 }
 
 func serve(w http.ResponseWriter, r *http.Request) error {
