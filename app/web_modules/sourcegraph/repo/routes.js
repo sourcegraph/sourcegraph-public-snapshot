@@ -45,6 +45,7 @@ export const routes: Array<Route> = [
 	{
 		...common,
 		path: rel.repo,
+		disableTreeSearchOverlay: true,
 		indexRoute: {
 			disableTreeSearchOverlay: true,
 			keepScrollPositionOnRouteChangeKey: "tree",
