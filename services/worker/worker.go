@@ -66,7 +66,7 @@ func RunWorker(key *idkey.IDKey, endpoint *url.URL, parallel int, dequeueMsec in
 				break
 			}
 			if grpc.Code(err) == codes.NotFound {
-				time.Sleep(time.Millisecond * time.Duration(rand.Intn(dequeueMsec)))
+				time.Sleep(time.Millisecond * time.Duration(dequeueMsec/2+rand.Intn(dequeueMsec)))
 			} else {
 				log15.Error("Error dequeuing build", "err", err)
 				time.Sleep(5 * time.Second)

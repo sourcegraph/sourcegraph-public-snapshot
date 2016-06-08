@@ -25,7 +25,7 @@ builds.`,
 
 type WorkCmd struct {
 	Parallel    int `short:"p" long:"parallel" description:"number of parallel builds to run" default:"2" env:"SRC_WORK_PARALLEL"`
-	DequeueMsec int `long:"dequeue-msec" description:"if no builds are dequeued, sleep up to this many msec before trying again" default:"1000" env:"SRC_WORK_DEQUEUE_MSEC"`
+	DequeueMsec int `long:"dequeue-msec" description:"if no builds are dequeued, sleep roughly this many msec before trying again" default:"5000" env:"SRC_WORK_DEQUEUE_MSEC"`
 }
 
 func (c *WorkCmd) Execute(args []string) error {
