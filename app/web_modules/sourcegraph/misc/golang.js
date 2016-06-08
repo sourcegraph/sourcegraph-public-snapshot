@@ -31,9 +31,14 @@ export const route: Route = {
 			defaultFetch(`/.api/resolve-custom-import/info?def=${def}&pkg=${pkg}&repo=${repo}`)
 				.then((resp) => resp.json())
 				.then((data) => {
+					// TODO(matt): remove once sourcegraph.com resolving bug is fixed
+					let path = data.Path;
+					if (path.startsWith("/github.com/sourcegraph/")) {
+						path = path.replace("GoPackage/github.com", "GoPackage/sourcegraph.com");
+					}
 					replace({
 						...nextRouterState.location,
-						pathname: data.Path,
+						pathname: path,
 						query: {
 							utm_source: "sourcegraph-editor",
 							editor_type: editor_type,
