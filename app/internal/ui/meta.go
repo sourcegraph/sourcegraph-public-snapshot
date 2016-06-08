@@ -90,7 +90,17 @@ func defMeta(def *sourcegraph.Def, repo string, includeFile bool) *meta {
 
 	f := graph.PrintFormatter(&def.Def)
 
-	desc := f.Name("dep") + f.NameAndTypeSeparator() + f.Type("dep")
+	var desc string
+	const maxLen = 80
+	if fullName := f.Name("dep") + f.NameAndTypeSeparator() + f.Type("dep"); len(fullName) <= maxLen {
+		desc = fullName
+	} else if name := f.Name("dep"); len(name) <= maxLen {
+		desc = name
+	} else {
+		// Might exceed maxLen, but we can't make it any shorter
+		// without losing key information.
+		desc = def.Name
+	}
 	if doc != "" {
 		desc += " — " + doc
 	}
