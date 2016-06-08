@@ -83,7 +83,7 @@ export function getDefs(repo, rev, path, query) {
 			return fetch(`https://sourcegraph.com/.api/defs?RepoRevs=${encodeURIComponent(repo)}@${encodeURIComponent(rev)}&Nonlocal=true&Query=${encodeURIComponent(query)}&FilePathPrefix=${path ? encodeURIComponent(path) : ""}`)
 				.then((json) => dispatch({type: types.FETCHED_DEFS, repo, rev, path, query, json}))
 				.catch((err) => dispatch({type: types.FETCHED_DEFS, repo, rev, path, query, err}));
-		})
+		}).catch((err) => {}); // no error handling
 	}
 }
 
@@ -102,7 +102,7 @@ export function getAnnotations(repo, rev, path) {
 			return fetch(`https://sourcegraph.com/.api/annotations?Entry.RepoRev.Repo=${encodeURIComponent(repo)}&Entry.RepoRev.CommitID=${encodeURIComponent(rev)}&Entry.Path=${encodeURIComponent(path)}&Range.StartByte=0&Range.EndByte=0`)
 				.then((json) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, json}))
 				.catch((err) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, err}));
-		});
+		}).catch((err) => {}); // no error handling
 	}
 }
 
@@ -122,9 +122,31 @@ export function expireDefs(repo, rev, path, query) {
 	return {type: types.EXPIRE_DEFS, repo, rev, path, query};
 }
 
-// refreshVCS has no UI side effects
 export function refreshVCS(repo) {
 	return function (dispatch) {
-		return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/refresh`, {method: "POST"});
+		return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/refresh`, {method: "POST"})
+			.then((json) => dispatch({type: types.REFRESH_VCS}))
+			.catch((err) => dispatch({type: types.REFRESH_VCS}));
+	}
+}
+
+export function ensureRepoExists(repo) {
+	return function (dispatch, getState) {
+		const state = getState();
+		if (state.createdRepos[repo]) return Promise.resolve();
+
+		const body = {
+			Op: {
+				New: {
+					URI: repo,
+					CloneURL: `https://${repo}`,
+					DefaultBranch: "master",
+					Mirror: true,
+				},
+			},
+		};
+		return fetch(`https://sourcegraph.com/.api/repos`, {method: "POST", body: JSON.stringify(body)})
+			.then((json) => dispatch({type: types.CREATED_REPO, repo}))
+			.catch((err) => dispatch({type: types.CREATED_REPO, repo})); // no error handling
 	}
 }

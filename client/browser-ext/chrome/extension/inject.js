@@ -9,7 +9,7 @@ import {useAccessToken} from "../../app/actions/xhr";
 import * as Actions from "../../app/actions";
 import Root from "../../app/containers/Root";
 import styles from "../../app/components/App.css";
-import {SearchIcon} from "../../app/components/Icons";
+import {SearchIcon, SourcegraphIcon} from "../../app/components/Icons";
 import {keyFor, getExpiredSrclibDataVersion, getExpiredDef, getExpiredDefs, getExpiredAnnotations} from "../../app/reducers/helpers";
 import createStore from "../../app/store/configureStore";
 import {defaultBranchCache} from "../../chrome/extension/annotations";
@@ -26,6 +26,8 @@ import EventLogger from "../../app/analytics/EventLogger";
 		def: state.def,
 		annotations: state.annotations,
 		defs: state.defs,
+		createdRepos: state.createdRepos,
+		lastRefresh: state.lastRefresh,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -43,6 +45,8 @@ class InjectApp extends React.Component {
 		annotations: React.PropTypes.object.isRequired,
 		defs: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
+		createdRepos: React.PropTypes.object.isRequired,
+		lastRefresh: React.PropTypes.number,
 	};
 
 	constructor(props) {
@@ -57,6 +61,7 @@ class InjectApp extends React.Component {
 		this.pjaxUpdate = this.pjaxUpdate.bind(this);
 		this.focusUpdate = this.focusUpdate.bind(this);
 		this._clickRef = this._clickRef.bind(this);
+		this._updateIntervalID = null;
 	}
 
 	componentDidMount() {
@@ -75,6 +80,10 @@ class InjectApp extends React.Component {
 			// The window focus listener will refresh state to reflect the
 			// current repository being viewed.
 			window.addEventListener("focus", this.focusUpdate);
+		}
+
+		if (this._updateIntervalID === null) {
+			this._updateIntervalID = setInterval(this._refreshVCS.bind(this), 1000 * 30); // refresh every 30s
 		}
 
 		this.refreshState();
@@ -100,6 +109,16 @@ class InjectApp extends React.Component {
 		if (nextProps.defPath && (nextProps.repo !== this.props.repo || nextProps.rev !== this.props.rev || nextProps.defPath !== this.props.defPath || nextProps.def !== this.props.def)) {
 			this._renderDefInfo(nextProps);
 		}
+
+		if (nextProps.srclibDataVersion !== this.props.srclibDataVersion) {
+			this._updateBuildIndicator(nextProps);
+		}
+
+		if (nextProps.lastRefresh !== this.props.lastRefresh) {
+			if (nextProps.repo && nextProps.rev && this.supportsAnnotatingFile(nextProps.path)) {
+				this.props.actions.getAnnotations(nextProps.repo, nextProps.rev, nextProps.path);
+			}
+		}
 	}
 
 	componentWillUnmount() {
@@ -107,6 +126,10 @@ class InjectApp extends React.Component {
 		document.removeEventListener("pjax:success", this.pjaxUpdate);
 		window.removeEventListener("focus", this.focusUpdate);
 		document.removeEventListener("click", this._clickRef);
+		if (this._updateIntervalID !== null) {
+			clearInterval(this._updateIntervalID);
+			this._updateIntervalID = null;
+		}
 	}
 
 	_clickRef(ev) {
@@ -218,7 +241,11 @@ class InjectApp extends React.Component {
 		}
 
 		if (repo && rev && this.supportsAnnotatingFile(path)) {
+			this.props.actions.ensureRepoExists(repo);
 			this.props.actions.getAnnotations(repo, rev, path);
+		}
+		if (path) {
+			this._updateBuildIndicator(this.props);
 		}
 
 		this._renderDefInfo(this.props);
@@ -227,6 +254,41 @@ class InjectApp extends React.Component {
 		if (srclibDataVersion && srclibDataVersion.CommitID) {
 			const annotations = this.props.annotations.content[keyFor(repo, srclibDataVersion.CommitID, path)];
 			if (annotations) this.annotate(annotations);
+		}
+	}
+
+	_refreshVCS() {
+		if (this.props.repo) {
+			this.props.actions.refreshVCS(this.props.repo);
+		}
+	}
+
+	_updateBuildIndicator(props) {
+		let indicatorText = "";
+		if (props.srclibDataVersion.content[keyFor(props.repo, props.rev, props.path)]) {
+			indicatorText = "Indexed";
+		} else if (!this.supportsAnnotatingFile(props.path)) {
+			indicatorText = "Unsupported file"
+		} else {
+			indicatorText = "Indexing...";
+		}
+
+		const fileInfo = document.querySelector(".file-info");
+		const buildIndicator = document.getElementById("sourcegraph-build-indicator");
+		if (fileInfo && !buildIndicator && window.location.href.split("/")[5] !== "pull") { // don't add build indicator on PRs
+			let buildSeparator = document.createElement("span");
+			buildSeparator.className = "file-info-divider";
+			fileInfo.appendChild(buildSeparator);
+
+			const buildIndicator = document.createElement("span");
+			buildIndicator.id = "sourcegraph-build-indicator";
+			render(<span>
+				<SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", fontSize: "16px"}} />
+				<span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}>{indicatorText}</span>
+			</span>, buildIndicator);
+			fileInfo.appendChild(buildIndicator);
+		} else if (buildIndicator) {
+			document.getElementById("sourcegraph-build-indicator-text").innerText = indicatorText;
 		}
 	}
 

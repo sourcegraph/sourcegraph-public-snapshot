@@ -29,6 +29,15 @@ const rev = function(state = "master", action) {
 	}
 }
 
+ const lastRefresh = function(state = null, action) {
+	switch (action.type) {
+	case ActionTypes.REFRESH_VCS:
+		return Date.now();
+	default:
+		return state;
+	}
+ }
+
 const path = function(state = null, action) {
 	switch (action.type) {
 	case ActionTypes.SET_PATH:
@@ -51,6 +60,18 @@ const query = function(state = "", action) {
 	switch (action.type) {
 	case ActionTypes.SET_QUERY:
 		return action.query;
+	default:
+		return state;
+	}
+}
+
+const createdRepos = function(state = {}, action) {
+	switch (action.type) {
+	case ActionTypes.CREATED_REPO:
+		return {
+			...state,
+			[action.repo]: true,
+		};
 	default:
 		return state;
 	}
@@ -229,4 +250,4 @@ const annotations = function(state = {content: {}, fetches: {}, timestamps: {}},
 	}
 }
 
-export default combineReducers({accessToken, repo, rev, path, defPath, query, srclibDataVersion, def, defs, annotations});
+export default combineReducers({accessToken, repo, rev, path, defPath, query, srclibDataVersion, def, defs, annotations, createdRepos, lastRefresh});

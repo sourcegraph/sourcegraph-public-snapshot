@@ -21,7 +21,7 @@ function parseKey(key) {
 
 export function getExpiredSrclibDataVersion(data) {
 	return Object.keys(data.timestamps)
-		.filter((key) => data.timestamps[key] && (Date.now() - data.timestamps[key]) > (1000 * 60 * 15)) // expire every 15min
+		.filter((key) => data.timestamps[key] && (Date.now() - data.timestamps[key]) > (1000 * 60)) // expire every min
 		.map(parseKey);
 }
 
