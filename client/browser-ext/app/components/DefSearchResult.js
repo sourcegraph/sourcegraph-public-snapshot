@@ -2,12 +2,14 @@ import React from "react";
 
 import CSSModules from "react-css-modules";
 import styles from "./App.css";
+import EventLogger from "../analytics/EventLogger"
 
 @CSSModules(styles)
 export default class DefSearchResult extends React.Component {
 	static propTypes = {
 		href: React.PropTypes.string,
 		qualifiedNameAndType: React.PropTypes.array,
+		query: React.PropTypes.string,
 	};
 
 	render() {
@@ -24,7 +26,7 @@ export default class DefSearchResult extends React.Component {
 					</svg>
 				</td>
 				<td>
-					<a href={this.props.href + "?utm_source=browser-ext&browser_type=chrome"}>{this.props.qualifiedNameAndType}</a>
+					<a onClick={() => EventLogger.logEvent("GitHubSearchItemSelected", {query: this.props.query})} href={this.props.href + "?utm_source=browser-ext&browser_type=chrome"}>{this.props.qualifiedNameAndType}</a>
 				</td>
 			</tr>
 		);

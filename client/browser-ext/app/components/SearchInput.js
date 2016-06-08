@@ -2,6 +2,7 @@ import React from "react";
 
 import CSSModules from "react-css-modules";
 import styles from "./App.css";
+import EventLogger from "../analytics/EventLogger"
 
 @CSSModules(styles)
 export default class SearchInput extends React.Component {
@@ -21,12 +22,14 @@ export default class SearchInput extends React.Component {
 	handleSubmit = (e) => {
 		const text = e.target.value.trim();
 		if (e.which === 13) {
+			EventLogger.logEvent("ForceSubmitGitHubSearchQuery", {query: text});
 			this.props.onSubmit(text);
 		}
 	};
 
 	handleChange = (e) => {
 		const text = e.target.value.trim();
+		EventLogger.logEvent("UpdateGitHubSearchQuery", {query: text});
 		this.setState({value: text}, () => {
 			if (this.props.onChange) this.props.onChange(text);
 		})

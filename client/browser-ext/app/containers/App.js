@@ -99,7 +99,7 @@ export default class App extends Component {
 						<table className="tree-browser css-truncate">
 							<tbody className="tree-browser-result js-tree-browser-result">
 							{defs && defs.Defs && defs.Defs.map((item, i) =>
-								<DefSearchResult key={i} href={`https://sourcegraph.com/${this.urlToDef(item, this.props.rev)}`} qualifiedNameAndType={qualifiedNameAndType(item)} />
+								<DefSearchResult key={i} href={`https://sourcegraph.com/${this.urlToDef(item, this.props.rev)}`} query={this.props.query} qualifiedNameAndType={qualifiedNameAndType(item)} />
 							)}
 							</tbody>
 						</table>

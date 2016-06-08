@@ -13,7 +13,7 @@ import {SearchIcon} from "../../app/components/Icons";
 import {keyFor, getExpiredSrclibDataVersion, getExpiredDef, getExpiredDefs, getExpiredAnnotations} from "../../app/reducers/helpers";
 import createStore from "../../app/store/configureStore";
 import {defaultBranchCache} from "../../chrome/extension/annotations";
-
+import EventLogger from "../../app/analytics/EventLogger";
 
 @connect(
 	(state) => ({
@@ -61,6 +61,7 @@ class InjectApp extends React.Component {
 
 	componentDidMount() {
 		if (this.props.accessToken) useAccessToken(this.props.accessToken);
+		EventLogger.logEvent("ChromeExtensionMounted");
 
 		// Capture the access token if on sourcegraph.com.
 		if (window.location.href.match(/https:\/\/(www.)?sourcegraph.com/)) {
@@ -119,11 +120,13 @@ class InjectApp extends React.Component {
 			const props = {...urlProps, def: this.props.def}
 			const info = this._directURLToDef(props);
 			if (info) {
+				EventLogger.logEvent("ClickedDef", {defPath: props.defPath, repo: props.repo, user: props.user, direct: "true"});
 				// Fast path. Uses PJAX if possible (automatically).
 				const {pathname, hash} = info;
 				ev.target.href = `${pathname}${hash}`;
 				this._renderDefInfo(props);
 			} else {
+				EventLogger.logEvent("ClickedDef", {defPath: props.defPath, repo: props.repo, user: props.user, direct: "false"});
 				pjaxGoTo(ev.target.href, urlProps.repo === this.props.repo);
 			}
 		}
@@ -332,6 +335,7 @@ class InjectApp extends React.Component {
 	// it will directly manipulate the DOM to hide all GitHub repository
 	// content and mount an iframe embedding the chrome extension (react) app.
 	toggleAppFrame = () => {
+		EventLogger.logEvent("ToggleSearchInput", {visibility: this.state.appFrameIsVisible ? "hidden" : "visible"});
 		const focusInput = () => {
 			const el = document.querySelector(".sg-input");
 			if (el) setTimeout(() => el.focus()); // Auto focus input, with slight delay so T doesn't appear
@@ -361,6 +365,7 @@ class InjectApp extends React.Component {
 		let fileElem = document.querySelector(".file .blob-wrapper");
 		if (fileElem) {
 			if (document.querySelector(".vis-private") && !this.props.accessToken) {
+				EventLogger.logEvent("ViewPrivateCodeError");
 				console.error("To use the Sourcegraph Chrome extension on private code, sign in at https://sourcegraph.com and add your repositories.");
 			} else {
 				addAnnotations(json);
@@ -398,7 +403,7 @@ class InjectApp extends React.Component {
 			e.appendChild(a);
 		}
 
-		a.href = `https://sourcegraph.com/${props.repo}@${props.rev}/-/info/${props.defPath}`;
+		a.href = `https://sourcegraph.com/${props.repo}@${props.rev}/-/info/${props.defPath}?utm_source=browser-ext&browser_type=chrome`;
 		a.dataset.content = "Find Usages";
 		a.target = "tab";
 		a.title = `Sourcegraph: View cross-references to ${def.Name}`;

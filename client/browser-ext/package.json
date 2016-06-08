@@ -50,6 +50,7 @@
     "webpack-dev-server": "^1.10.1"
   },
   "dependencies": {
+    "amplitude-js": "git://github.com/amplitude/Amplitude-Javascript.git#v3.0.0",
     "bluebird": "^3.3.4",
     "classnames": "^2.1.3",
     "lodash": "^4.11.2",
