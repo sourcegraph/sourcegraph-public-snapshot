@@ -23,7 +23,7 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func repoURIs(repos []*sourcegraph.Repo) []string {
+func sortedRepoURIs(repos []*sourcegraph.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
@@ -135,7 +135,7 @@ func TestRepos_List_query(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
 	}
@@ -175,7 +175,7 @@ func TestRepos_List_URIs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%v: got repos %v, want %v", test.uris, got, test.want)
 		}
 	}
@@ -225,7 +225,7 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 	}
 
 	want := []string{"a/b"}
-	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
+	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
 
@@ -235,7 +235,7 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 	}
 
 	want = []string{"a/b", "github.com/public"}
-	if got := repoURIs(repoList); !reflect.DeepEqual(got, want) {
+	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
 }
@@ -261,7 +261,7 @@ func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := repoURIs(repoList); len(got) != 0 {
+	if got := sortedRepoURIs(repoList); len(got) != 0 {
 		t.Fatal("List should not have returned any repos, got:", got)
 	}
 }
@@ -287,7 +287,7 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := repoURIs(repoList); len(got) != 0 {
+	if got := sortedRepoURIs(repoList); len(got) != 0 {
 		t.Fatal("List should not have returned any repos, got:", got)
 	}
 
@@ -373,7 +373,7 @@ func TestRepos_Search(t *testing.T) {
 		for _, r := range results {
 			repos = append(repos, r.Repo)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
 	}
@@ -427,7 +427,7 @@ func TestRepos_Search_PrivateRepo(t *testing.T) {
 		for _, r := range results {
 			repos = append(repos, r.Repo)
 		}
-		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %v, want %v", test.query, got, test.want)
 		}
 	}
