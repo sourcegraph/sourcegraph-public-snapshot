@@ -137,7 +137,7 @@ class InjectApp extends React.Component {
 		// We scrape the current branch and set rev to it so we stay on the same branch when doing jump-to-def.
 		// Need to use the branch selector button because _clickRef passes a pathname as the location which,
 		// only includes ${user}/${repo}, and no rev.
-		let currBranch = this.getBranchSelectorButton() ? this.getBranchSelectorButton().title : "master";
+		let currBranch = this.getBranchSelectorButton();
 		let rev = currBranch;
 		if (urlsplit[3] && (urlsplit[2] === "tree" || urlsplit[2] === "blob")) { // what about "commit"
 			rev = urlsplit[3];
@@ -145,7 +145,6 @@ class InjectApp extends React.Component {
 		let path = urlsplit.slice(4).join("/");
 
 		const info = {user, repo, rev, path};
-
 		// Check for URL hashes like "#sourcegraph&def=...".
 		if (loc.hash.startsWith("#sourcegraph&")) {
 			const parts = loc.hash.slice(1).split("&").slice(1); // omit "sourcegraph" sentinel
@@ -162,7 +161,15 @@ class InjectApp extends React.Component {
 	}
 
 	getBranchSelectorButton() {
-		return document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0];
+		if (document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0]) {
+			if (document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0].title !== "") {
+				return document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0].title
+			} else {
+				return document.getElementsByClassName("js-select-button css-truncate-target")[0].innerText;
+			}
+		} else {
+			return "master";
+		}
 	}
 
 	supportsAnnotatingFile(path) {
