@@ -31,7 +31,6 @@ type Stores struct {
 	Orgs               Orgs
 	Password           Password
 	RepoConfigs        RepoConfigs
-	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
@@ -53,7 +52,6 @@ func (s *Stores) Stores() store.Stores {
 		Orgs:               &s.Orgs,
 		Password:           &s.Password,
 		RepoConfigs:        &s.RepoConfigs,
-		RepoPerms:          &s.RepoPerms,
 		RepoStatuses:       &s.RepoStatuses,
 		RepoVCS:            &s.RepoVCS,
 		Repos:              &s.Repos,

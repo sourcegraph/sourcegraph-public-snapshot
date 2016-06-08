@@ -20,7 +20,6 @@ func init() {
 			GlobalRefs:         &globalRefs{},
 			Password:           &password{},
 			RepoConfigs:        &repoConfigs{},
-			RepoPerms:          &repoPerms{},
 			RepoStatuses:       &repoStatuses{},
 			RepoVCS:            &repoVCS{},
 			Repos:              &repos{},

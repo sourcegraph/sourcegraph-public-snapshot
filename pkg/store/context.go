@@ -32,7 +32,6 @@ type Stores struct {
 	Orgs               Orgs
 	Password           Password
 	RepoConfigs        RepoConfigs
-	RepoPerms          RepoPerms
 	RepoStatuses       RepoStatuses
 	RepoVCS            RepoVCS
 	Repos              Repos
@@ -55,7 +54,6 @@ const (
 	_OrgsKey
 	_PasswordKey
 	_RepoConfigsKey
-	_RepoPermsKey
 	_RepoStatusesKey
 	_RepoVCSKey
 	_ReposKey
@@ -102,9 +100,6 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.RepoConfigs != nil {
 		ctx = WithRepoConfigs(ctx, s.RepoConfigs)
-	}
-	if s.RepoPerms != nil {
-		ctx = WithRepoPerms(ctx, s.RepoPerms)
 	}
 	if s.RepoStatuses != nil {
 		ctx = WithRepoStatuses(ctx, s.RepoStatuses)
@@ -299,20 +294,6 @@ func RepoConfigsFromContext(ctx context.Context) RepoConfigs {
 	s, ok := ctx.Value(_RepoConfigsKey).(RepoConfigs)
 	if !ok || s == nil {
 		panic("no RepoConfigs set in context")
-	}
-	return s
-}
-
-// WithRepoPerms returns a copy of parent with the given RepoPerms store.
-func WithRepoPerms(parent context.Context, s RepoPerms) context.Context {
-	return context.WithValue(parent, _RepoPermsKey, s)
-}
-
-// RepoPermsFromContext gets the context's RepoPerms store. If the store is not present, it panics.
-func RepoPermsFromContext(ctx context.Context) RepoPerms {
-	s, ok := ctx.Value(_RepoPermsKey).(RepoPerms)
-	if !ok || s == nil {
-		panic("no RepoPerms set in context")
 	}
 	return s
 }
