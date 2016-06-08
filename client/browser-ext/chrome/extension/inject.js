@@ -113,9 +113,6 @@ class InjectApp extends React.Component {
 		if (typeof ev.target.dataset.sourcegraphRef !== "undefined") {
 			let urlProps = this.parseURL({pathname: ev.target.pathname, hash: ev.target.hash});
 			urlProps.repo = `github.com/${urlProps.user}/${urlProps.repo}`;
-			// HACK: We need the default branch for external defs. This gets it for us, but we'd
-			// want to show the proper branch name or commit ID in the future, which would require
-			// an additional API call to Sourcegraph.
 
 			this.props.actions.getDef(urlProps.repo, urlProps.rev, urlProps.defPath);
 
@@ -137,10 +134,12 @@ class InjectApp extends React.Component {
 		const urlsplit = loc.pathname.slice(1).split("/");
 		let user = urlsplit[0];
 		let repo = urlsplit[1]
-		// We scrape the current branch and set rev to it so we stay on the same branch when doing jump-to-def
-		let currBranch = this.branchSelectorButton() ? this.branchSelectorButton().title : "master";
+		// We scrape the current branch and set rev to it so we stay on the same branch when doing jump-to-def.
+		// Need to use the branch selector button because _clickRef passes a pathname as the location which,
+		// only includes ${user}/${repo}, and no rev.
+		let currBranch = this.getBranchSelectorButton() ? this.getBranchSelectorButton().title : "master";
 		let rev = currBranch;
-		if (urlsplit[3] !== null && (urlsplit[2] === "tree" || urlsplit[2] === "blob")) { // what about "commit"
+		if (urlsplit[3] && (urlsplit[2] === "tree" || urlsplit[2] === "blob")) { // what about "commit"
 			rev = urlsplit[3];
 		}
 		let path = urlsplit.slice(4).join("/");
@@ -162,7 +161,7 @@ class InjectApp extends React.Component {
 		return info;
 	}
 
-	branchSelectorButton() {
+	getBranchSelectorButton() {
 		return document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0];
 	}
 
@@ -189,7 +188,7 @@ class InjectApp extends React.Component {
 		// refresh endpoint will update the version and the annotations will be up to date once the new build succeeds
 		let latestRev = document.getElementsByClassName("js-permalink-shortcut")[0] ? document.getElementsByClassName("js-permalink-shortcut")[0].href.split("/")[6] : rev;
 		// TODO: Branches that are not built on Sourcegraph will not get annotations, need to trigger
-		if (rev !== latestRev) rev = latestRev;
+		rev = latestRev;
 		const repoName = repo;
 		if (repo) {
 			repo = `github.com/${user}/${repo}`;
@@ -237,12 +236,12 @@ class InjectApp extends React.Component {
 	_directURLToDef({repo, rev, defPath, def}) {
 		const defObj = def ? def.content[keyFor(repo, rev, defPath)] : null;
 		if (defObj) {
-			let defBranch = defaultBranchCache[repo]
-			const pathname = (repo === this.props.repo) ? `/${repo.replace("github.com/", "")}/blob/${rev}/${defObj.File}` : `/${repo.replace("github.com/", "")}/blob/${defBranch}/${defObj.File}`;
+			if (repo !== this.props.repo) rev = defaultBranchCache[repo] || "master";
+			const pathname = `/${repo.replace("github.com/", "")}/blob/${rev}/${defObj.File}`;
 			const hash = `#sourcegraph&def=${defPath}&L${defObj.StartLine || 0}-${defObj.EndLine || 0}`;
 			return {pathname, hash};
 		}
-		return null
+		return null;
 	}
 
 	// pjaxUpdate is a wrapper around refreshState which is called whenever

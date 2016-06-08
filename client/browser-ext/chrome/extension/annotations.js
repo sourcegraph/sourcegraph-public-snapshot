@@ -105,7 +105,7 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 				if (!consumingSpan){
 					// Case to handle if < or > appears, so that we don't "consume" or make span tags in the code disappear
 					// This will not break if "&lt;" or "&gt;" appear because chars are escaped.
-					if (isSpanTagString(childNodeChars, k)) {
+					if (isStartOfSpanTag(childNodeChars, k)) {
 						output += next(childNodeChars.slice(k, k+4).join(""), startByte, annsByStartByte, annsByEndByte);
 						k += childNodeChars.slice(k, k+4).join("").length-1;
 						startByte += utf8.encode(childNodeChars[k]).length;
@@ -137,8 +137,8 @@ function traverseDOM(annsByStartByte, annsByEndByte){
 	}
 }
 
-function isSpanTagString(childNodeChars, k) {
-	return (childNodeChars[k] === "&" && (((childNodeChars.slice(k, k+4).join("")) === ("&gt;")) || (childNodeChars.slice(k, k+4).join("") === ("&lt;"))))
+function isStartOfSpanTag(childNodeChars, idx) {
+	return (childNodeChars[idx] === "&" && (((childNodeChars.slice(idx, idx+4).join("")) === ("&gt;")) || (childNodeChars.slice(idx, idx+4).join("") === ("&lt;"))))
 }
 
 // next is a helper method for traverseDOM which transforms a character
@@ -172,20 +172,25 @@ function next(c, byteCount, annsByStartByte, annsByEndByte) {
 }
 
 export const defaultBranchCache = {};
+// fetchingDefaultBranchCache ensures we only make one API call per repo to get default branch.
 export const fetchingDefaultBranchCache = {};
 function cacheDefaultBranch(annURL) {
-	let annURLsplit = [annURL.split("/")[1], annURL.split("/")[2], annURL.split("/")[3]];
-	let repo = annURLsplit.join("/");
+	// Assumes annURL has the form github.com/user/repo. If we can't fetch the default branch, we default to master.
+	let annURLsplit = annURL.split("/");
+	let annRepo = [annURLsplit[1], annURLsplit[2], annURLsplit[3]]
+	let repo = annRepo.join("/");
 	if (fetchingDefaultBranchCache[repo]) {
 		return;
 	}
-	fetchingDefaultBranchCache[repo] = true;
-	fetch(`https://sourcegraph.com/.api/repos/${repo}`)
-		.then((response) => {
-			defaultBranchCache[repo] = response.DefaultBranch;
-			fetchingDefaultBranchCache[repo] = false;
-		})
-		.catch((err) => console.log("Error getting default branch"));
+	if (!defaultBranchCache[repo]) {
+		fetchingDefaultBranchCache[repo] = true;
+		fetch(`https://sourcegraph.com/.api/repos/${repo}`)
+			.then((response) => {
+				defaultBranchCache[repo] = response.ok ? response.DefaultBranch : "master";
+				fetchingDefaultBranchCache[repo] = false;
+			})
+			.catch((err) => console.log("Error getting default branch"))
+	}
 }
 
 function urlToDef(origURL) {
