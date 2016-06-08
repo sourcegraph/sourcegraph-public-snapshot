@@ -421,7 +421,7 @@ func TestDef_OK(t *testing.T) {
 		wantMeta := meta{
 			Title:        test.wantTitlePrefix + " · r · Sourcegraph",
 			ShortTitle:   test.wantTitlePrefix,
-			Description:  "imp.scope.name_imp.scope.typeName — hello world!",
+			Description:  "lang usage examples and docs for imp.scope.name_imp.scope.typeName — hello world!",
 			CanonicalURL: "http://example.com" + test.wantCanonURL,
 			Index:        test.wantIndex,
 			Follow:       test.wantFollow,

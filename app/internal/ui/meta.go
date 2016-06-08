@@ -103,7 +103,7 @@ func defMeta(def *sourcegraph.Def, repo string, includeFile bool) *meta {
 	m := &meta{
 		Title:       repoPageTitle(repo, f.Name("dep")+fileSuffix),
 		ShortTitle:  f.Name("dep") + fileSuffix,
-		Description: desc,
+		Description: fmt.Sprintf("%s usage examples and docs for %s", f.Language(), desc),
 	}
 	return m
 }
