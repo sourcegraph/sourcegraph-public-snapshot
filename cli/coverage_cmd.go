@@ -48,14 +48,15 @@ func init() {
 }
 
 type coverageCmd struct {
-	Repo       string `long:"repo" description:"repo URI"`
-	Lang       string `long:"lang" description:"coverage language"`
-	Limit      int    `long:"limit" description:"max number of repos to run coverage for"`
-	Refresh    bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
-	Dry        bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
-	Progress   bool   `long:"progress" description:"show progress"`
-	ReportRefs bool   `long:"refs" description:"report issues with references"`
-	ReportDefs bool   `long:"defs" description:"report issues with definitions"`
+	Repo        string `long:"repo" description:"repo URI"`
+	Lang        string `long:"lang" description:"coverage language"`
+	Limit       int    `long:"limit" description:"max number of repos to run coverage for"`
+	Refresh     bool   `long:"refresh" description:"refresh repo VCS data (or clone the repo if it doesn't exist); queue a new build"`
+	Dry         bool   `long:"dry" description:"do a dry run (don't save coverage data)"`
+	Progress    bool   `long:"progress" description:"show progress"`
+	ReportRefs  bool   `long:"refs" description:"report issues with references"`
+	ReportDefs  bool   `long:"defs" description:"report issues with definitions"`
+	ReportEmpty bool   `long:"empty" description:"report empty files"`
 }
 
 // fileCoverage contains coverage data for a single file or repository
@@ -314,7 +315,7 @@ func (c *coverageCmd) Execute(args []string) error {
 	for _, repo := range repos {
 		repo := repo
 		p.Do(func() error {
-			_, err := getCoverage(cl, cliContext, repo, c.Lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs)
+			_, err := getCoverage(cl, cliContext, repo, c.Lang, c.Dry, c.Progress, c.ReportRefs, c.ReportDefs, c.ReportEmpty)
 			if err != nil {
 				return fmt.Errorf("error getting coverage for %s: %s", repo, err)
 			}
@@ -364,7 +365,7 @@ type annToken struct {
 }
 
 // getFileCoverage computes the coverage data for a single file in a repository
-func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs bool) (*fileCoverage, error) {
+func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoPath, path, lang string, reportRefs, reportDefs, reportEmpty bool) (*fileCoverage, error) {
 	fileCvg := &fileCoverage{Path: path}
 
 	var tokenizer coverageutil.Tokenizer
@@ -485,11 +486,15 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 
 	}
 
+	if fileCvg.Refs == 0 && reportEmpty {
+		log15.Warn("uncovered file", "repo", repoPath, "rev", repoRev.CommitID, "path", path)
+	}
+
 	return fileCvg, nil
 }
 
 // getCoverage computes coverage data for the given repository
-func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang string, dryRun, progress, reportRefs, reportDefs bool) (*repoCoverage, error) {
+func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang string, dryRun, progress, reportRefs, reportDefs, reportEmpty bool) (*repoCoverage, error) {
 	if err := ensureRepoExists(cl, ctx, repoPath); err != nil {
 		return nil, err
 	}
@@ -520,7 +525,7 @@ func getCoverage(cl *sourcegraph.Client, ctx context.Context, repoPath, lang str
 				if progress {
 					log15.Info("processing", path, lang)
 				}
-				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs)
+				fileCvg, err := getFileCoverage(cl, ctx, &repoRevSpec, repoPath, path, lang, reportRefs, reportDefs, reportEmpty)
 				if err != nil {
 					return err
 				}
