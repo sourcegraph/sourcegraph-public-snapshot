@@ -9,6 +9,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
 func init() {
@@ -37,7 +38,9 @@ type queue struct{}
 var _ store.Queue = (*queue)(nil)
 
 func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
-	// TODO(keegancsmith) perm??
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Enqueue."+j.Type, nil); err != nil {
+		return err
+	}
 	c, err := q.client(ctx)
 	if err != nil {
 		return err
@@ -46,7 +49,9 @@ func (q *queue) Enqueue(ctx context.Context, j *store.Job) error {
 }
 
 func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
-	// TODO(keegancsmith) perm??
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.LockJob", nil); err != nil {
+		return nil, err
+	}
 	c, err := q.client(ctx)
 	if err != nil {
 		return nil, err

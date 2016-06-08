@@ -38,8 +38,6 @@ func StartAsyncWorkers(ctx context.Context) {
 }
 
 func (s *async) RefreshIndexes(ctx context.Context, op *sourcegraph.AsyncRefreshIndexesOp) (*pbtypes.Void, error) {
-	// TODO(keegancsmith) perm check on ctx, since we want to use one not
-	// tied to the gRPC request lifetime
 	args, err := json.Marshal(op)
 	if err != nil {
 		return nil, err
