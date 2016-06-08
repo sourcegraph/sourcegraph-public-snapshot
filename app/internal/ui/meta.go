@@ -109,10 +109,15 @@ func defMeta(def *sourcegraph.Def, repo string, includeFile bool) *meta {
 }
 
 func treeOrBlobMeta(path string, repo *sourcegraph.Repo) *meta {
+	var desc string
+	if repo.Description != "" {
+		desc = " — " + repo.Description
+	}
+
 	return &meta{
 		Title:       repoPageTitle(repo.URI, path),
 		ShortTitle:  path,
-		Description: fmt.Sprintf("%s — %s", trimRepo(repo.URI), repo.Description),
+		Description: trimRepo(repo.URI) + desc,
 	}
 }
 
