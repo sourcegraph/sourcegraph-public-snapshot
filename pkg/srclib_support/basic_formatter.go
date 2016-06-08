@@ -11,6 +11,7 @@ import (
 func init() {
 	graph.RegisterMakeDefFormatter("PipPackage", newBasicFormatter("Python"))
 	graph.RegisterMakeDefFormatter("DjangoApp", newBasicFormatter("Python"))
+	graph.RegisterMakeDefFormatter("BashDirectory", newBasicFormatter("Bash"))
 	graph.RegisterMakeDefFormatter("basic-css", newBasicFormatter("CSS"))
 	graph.RegisterMakeDefFormatter("basic-php", newBasicFormatter("PHP"))
 	graph.RegisterMakeDefFormatter("basic-objc", newBasicFormatter("Objective-C"))
