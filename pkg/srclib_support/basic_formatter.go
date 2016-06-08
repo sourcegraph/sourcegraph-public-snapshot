@@ -18,6 +18,7 @@ func init() {
 	graph.RegisterMakeDefFormatter("TypeScriptModule", newBasicFormatter("TypeScript"))
 	graph.RegisterMakeDefFormatter("CommonJSPackage", newBasicFormatter("JavaScript"))
 	graph.RegisterMakeDefFormatter("myunittype", newBasicFormatter("Generic")) // for quick lang prototypes
+	graph.RegisterMakeDefFormatter("ManPages", newBasicFormatter("Man"))
 }
 
 // DefData should be kept in sync with the def 'Data' field emitted by the
