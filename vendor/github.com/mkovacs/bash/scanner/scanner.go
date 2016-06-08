@@ -83,7 +83,7 @@ func (s *Scanner) transition(tf transitionFunc) {
 }
 
 func isOperator(ch rune) bool {
-	return unicode.IsSymbol(ch) || unicode.IsPunct(ch)
+	return ch != '_' && (unicode.IsSymbol(ch) || unicode.IsPunct(ch))
 }
 
 func isWordChar(ch rune) bool {
