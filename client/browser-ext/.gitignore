@@ -8,4 +8,5 @@ dev/
 *.zip
 *.crx
 *.pem
+*.xpi
 update.xml
