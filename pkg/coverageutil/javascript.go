@@ -115,6 +115,27 @@ func (s *javascriptScanner) consumeRegexp() rune {
 			}
 			return ch
 		}
+	case ch == '*':
+		{
+			// multiline comment
+			ch = s.Next()
+			state := 0
+			for ch >= 0 {
+				if ch == '*' {
+					state = 1
+				} else if ch == '/' {
+					if state == 1 {
+						return ch
+					} else {
+						state = 0
+					}
+				} else {
+					state = 0
+				}
+				ch = s.Next()
+			}
+			return ch
+		}
 	}
 
 	ch = s.Next()
