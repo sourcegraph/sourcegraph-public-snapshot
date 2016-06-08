@@ -26,6 +26,8 @@ const (
 	OldTreeRedirect = "old-tree-redirect"
 
 	GDDORefs = "gddo.refs"
+
+	UI = "ui"
 )
 
 // Router is an app URL router.
@@ -60,7 +62,7 @@ func New(base *mux.Router) *Router {
 	// attach git transport endpoints
 	gitrouter.New(base)
 
-	base.PathPrefix("/").Methods("GET").Name("ui")
+	base.PathPrefix("/").Methods("GET").Name(UI)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

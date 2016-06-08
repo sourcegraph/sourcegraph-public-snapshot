@@ -25,6 +25,7 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import Header from "sourcegraph/components/Header";
 import {createLineFromByteFunc} from "sourcegraph/blob/lineFromByte";
 import {isExternalLink} from "sourcegraph/util/externalLink";
+import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 
 export default class BlobMain extends Container {
 	static propTypes = {
@@ -81,6 +82,7 @@ export default class BlobMain extends Container {
 		state.endCol = props.endCol || null;
 		state.endByte = props.endByte || null;
 		state.def = props.def || null;
+		state.defObj = state.def && state.commitID ? DefStore.defs.get(state.repo, state.commitID, state.def) : null;
 		state.children = props.children || null;
 
 		// Def-specific
@@ -156,10 +158,17 @@ export default class BlobMain extends Container {
 			);
 		}
 
-		let pathParts = this.state.path ? this.state.path.split("/") : null;
+		// NOTE: Title should be kept in sync with app/internal/ui in Go.
+		let title = trimRepo(this.state.repo);
+		const pathParts = this.state.path ? this.state.path.split("/") : null;
+		if (pathParts) title = `${pathParts[pathParts.length - 1]} · ${title}`;
+		if (this.state.defObj && !this.state.defObj.Error && defTitleOK(this.state.defObj)) {
+			title = `${defTitle(this.state.defObj)} · ${title}`;
+		}
+
 		return (
 			<div className={Style.container}>
-				{pathParts && <Helmet title={`${pathParts[pathParts.length - 1]} | ${trimRepo(this.state.repo)}`} />}
+				{title && <Helmet title={title} />}
 				<div className={Style.blobAndToolbar}>
 					<BlobToolbar
 						repo={this.state.repo}

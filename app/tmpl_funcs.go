@@ -50,7 +50,8 @@ var tmplFuncs = htmpl.FuncMap{
 		return s[:maxLen]
 	},
 
-	"assetURL": assets.URL,
+	"assetURL":    assets.URL,
+	"absAssetURL": assets.AbsURL,
 
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
 

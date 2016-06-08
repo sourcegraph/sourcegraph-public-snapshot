@@ -19,6 +19,14 @@ import Header from "sourcegraph/components/Header";
 
 const TREE_SEARCH_MODAL_NAME = "TreeSearch";
 
+function repoPageTitle(repo: Object): string {
+	let title = trimRepo(repo.URI);
+	if (repo.Description) {
+		title += `: ${repo.Description.slice(0, 40)}${repo.Description.length > 40 ? "..." : ""}`;
+	}
+	return title;
+}
+
 class RepoMain extends React.Component {
 	static propTypes = {
 		location: React.PropTypes.object,
@@ -197,27 +205,16 @@ class RepoMain extends React.Component {
 			);
 		}
 
-		let description = null;
-		if (this.props.repoObj && this.props.repoObj.Description && this.props.repoObj.Description.length > 159) {
-			description = this.props.repoObj.Description.substr(0, 159).concat("…");
-		}
+		// Determine if the repo route is the main route (not one of its
+		// children like DefInfo, for example).
+		const mainRoute = this.props.routes[this.props.routes.length - 1];
+		const isMainRoute = mainRoute === this.props.route.indexRoute || mainRoute === this.props.route.indexRoute;
+		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
+
 		return (
 			<div>
-				{description ?
-					<Helmet
-						title={trimRepo(this.props.repo)}
-						meta={[
-							{name: "description", content: description},
-						]}
-						link={[
-							{rel: "canonical", href: this.canonicalURL()},
-						]} /> :
-					<Helmet
-						title={trimRepo(this.props.repo)}
-						link={[
-							{rel: "canonical", href: this.canonicalURL()},
-						]} />
-				}
+				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
+				{isMainRoute && title && <Helmet title={title} />}
 				{this.props.main}
 				{(!this.props.route || !this.props.route.disableTreeSearchOverlay) && this.props.location.state && this.props.location.state.modal === TREE_SEARCH_MODAL_NAME &&
 					<Modal onDismiss={this._dismissTreeSearchModal}>

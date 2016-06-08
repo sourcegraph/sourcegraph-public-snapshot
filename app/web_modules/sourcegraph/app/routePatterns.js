@@ -31,6 +31,8 @@ export type RouteName = "styleguide" |
 	"coverage" |
 	"adminCoverage";
 
+// NOTE: If you add a top-level route (e.g., "/tour"), add it to the
+// topLevel list in app/internal/ui/router.go.
 export const rel: {[key: RouteName]: string} = {
 	search: "search",
 	about: "about",
