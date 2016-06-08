@@ -13,6 +13,8 @@ func TestOldDefsRedirect(t *testing.T) {
 		"/r@c/.GoPackage/u/.def/p":     "/r@c/-/def/GoPackage/u/-/p",
 		"/r@c/.GoPackage/u1/u2/.def/p": "/r@c/-/def/GoPackage/u1/u2/-/p",
 		"/r@c/.GoPackage/u/.def/p1/p2": "/r@c/-/def/GoPackage/u/-/p1/p2",
+
+		"/r@c/-/def/GoPackage/u/-/p/-/refs?repo=r2": "/r@c/-/info/GoPackage/u/-/p",
 	}
 	for oldURL, wantNewURL := range tests {
 		rw := httptest.NewRecorder()
