@@ -286,9 +286,8 @@ func (parser *Parser) parseQualifiedRule() (*css.Rule, error) {
 			// finished
 			break
 		} else if parser.tokenChar(";") {
-			parser.shiftToken()
-			// finished
-			break
+			errMsg := fmt.Sprintf("Unexpected ; character: %s", parser.nextToken().String())
+			return result, errors.New(errMsg)
 		} else {
 			// parse prelude
 			prelude, err, tokens := parser.parsePrelude()
