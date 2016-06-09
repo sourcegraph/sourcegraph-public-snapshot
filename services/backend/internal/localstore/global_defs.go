@@ -216,6 +216,21 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 			wheres = append(wheres, `language NOT IN (`+strings.Join(l, ", ")+`)`)
 		}
 
+		if len(op.Opt.Kinds) > 0 {
+			var kindList []string
+			for _, kind := range op.Opt.Kinds {
+				kindList = append(kindList, arg(kind))
+			}
+			wheres = append(wheres, `kind IN (`+strings.Join(kindList, ", ")+`)`)
+		}
+		if len(op.Opt.NotKinds) > 0 {
+			var notKindList []string
+			for _, kind := range op.Opt.NotKinds {
+				notKindList = append(notKindList, arg(kind))
+			}
+			wheres = append(wheres, `kind NOT IN (`+strings.Join(notKindList, ", ")+`)`)
+		}
+
 		if op.UnitQuery != "" {
 			wheres = append(wheres, `unit=`+arg(op.UnitQuery))
 		}
