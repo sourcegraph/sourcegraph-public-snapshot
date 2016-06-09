@@ -390,6 +390,8 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			}
 			bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
 
+			languageID := languageIDMap[strings.ToLower(graph.PrintFormatter(d).Language())]
+
 			var args []interface{}
 			arg := func(v interface{}) string {
 				args = append(args, v)
@@ -401,7 +403,7 @@ WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
 				`, kind=` + arg(d.Kind) +
 				`, file=` + arg(d.File) +
-				`, language=` + arg(languageIDMap[strings.ToLower(graph.PrintFormatter(d).Language())]) +
+				`, language=` + arg(languageID) +
 				`, commit_id=` + arg(d.CommitID) +
 				`, updated_at=now()` +
 				`, data=` + arg(data) +
@@ -422,6 +424,7 @@ INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, fil
 				arg(d.Name) + `, ` +
 				arg(d.Kind) + `, ` +
 				arg(d.File) + `, ` +
+				arg(languageID) + `, ` +
 				`now(), ` +
 				arg(data) + `, ` +
 				arg(bow) + `, ` +
