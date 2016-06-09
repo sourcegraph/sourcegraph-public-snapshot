@@ -10,15 +10,27 @@
 .hidden-s { composes: hidden-s from base; }
 .hide { display: none; }
 
-.tab {
-	composes: ph2 mh2 pb3 from base;
+.tab {	composes: mh2 from base; }
+
+.vertical {
+	composes: pv1 ph3 mb1 from base;
+	display: block;
+	margin-left: -1px;
+}
+
+.horizontal {
+	composes: pb3 ph2 mh2 from base;
 	padding-top: 12px;
 	display: inline-block;
 	margin-bottom: -1px;
 }
 
 .inactive { composes: cool-mid-gray from colors; }
-.active { composes: bb bw3 from base; }
+.vertical.inactive { padding-left: 1.3rem; }
+
+.active { composes: bw3 from base; }
+.horizontal.active { border-bottom-style: solid; }
+.vertical.active { border-left-style: solid; }
 
 .blue { composes: b--blue blue from colors; }
 .blue:hover { color: c_dark-blue; }
