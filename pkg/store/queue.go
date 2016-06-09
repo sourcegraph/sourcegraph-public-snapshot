@@ -13,6 +13,9 @@ type Queue interface {
 	// jobs. You must call LockedJob.MarkSuccess or LockedJob.MarkError
 	// when done.
 	LockJob(ctx context.Context) (*LockedJob, error)
+
+	// Stats returns statistics about the queue per Job Type
+	Stats(ctx context.Context) (map[string]QueueStats, error)
 }
 
 // Job contains the fields necessary to do a Job
@@ -47,3 +50,9 @@ func (j *LockedJob) MarkSuccess() error { return j.success() }
 // MarkError marks the job as failed with reason. It will put it back on the
 // queue for later processing.
 func (j *LockedJob) MarkError(reason string) error { return j.error(reason) }
+
+// QueueStats captures statistics of what is in the queue for a Job Type
+type QueueStats struct {
+	NumJobs          int
+	NumJobsWithError int
+}

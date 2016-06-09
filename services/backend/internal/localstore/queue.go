@@ -74,6 +74,30 @@ func (q *queue) LockJob(ctx context.Context) (*store.LockedJob, error) {
 	return store.NewLockedJob(q.fromQue(j), j.Delete, errFunc), nil
 }
 
+func (q *queue) Stats(ctx context.Context) (map[string]store.QueueStats, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Queue.Stats", nil); err != nil {
+		return nil, err
+	}
+	type stat struct {
+		NumJobs          int    `db:"num_jobs"`
+		NumJobsWithError int    `db:"num_jobs_with_error"`
+		Type             string `db:"type"`
+	}
+	stats, err := appDBH(ctx).Select(&stat{}, `select job_class as type, count(1) as num_jobs, count(nullif(error_count, 0)) as num_jobs_with_error from que_jobs group by job_class;`)
+	if err != nil {
+		return nil, err
+	}
+	qs := map[string]store.QueueStats{}
+	for _, row := range stats {
+		s := row.(*stat)
+		qs[s.Type] = store.QueueStats{
+			NumJobs:          s.NumJobs,
+			NumJobsWithError: s.NumJobsWithError,
+		}
+	}
+	return qs, nil
+}
+
 func (q *queue) toQue(j *store.Job) *que.Job {
 	return &que.Job{
 		Type: j.Type,

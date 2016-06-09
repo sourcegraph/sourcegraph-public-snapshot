@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -73,5 +74,58 @@ func TestQueue_LockJob_BoundedAttempts(t *testing.T) {
 	}
 	if j != nil {
 		t.Fatalf("wanted no job, got %+v", j)
+	}
+}
+
+func TestQueue_Stats(t *testing.T) {
+	q := &queue{}
+	ctx, _, done := testContext()
+	defer done()
+
+	push := func(qt string) {
+		if err := q.Enqueue(ctx, &store.Job{Type: qt}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Several "a" jobs, mark one as error and finish one
+	for i := 0; i < 10; i++ {
+		push("a")
+	}
+	j1, err := q.LockJob(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	j2, err := q.LockJob(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = j1.MarkError("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = j2.MarkSuccess()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	push("b")
+
+	stats, err := q.Stats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]store.QueueStats{
+		"a": {
+			NumJobs:          9,
+			NumJobsWithError: 1,
+		},
+		"b": {
+			NumJobs: 1,
+		},
+	}
+	if !reflect.DeepEqual(stats, want) {
+		t.Fatalf("q.Stats got %+v, want %+v", stats, want)
 	}
 }

@@ -3,6 +3,9 @@ package middleware
 import (
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
@@ -61,5 +64,47 @@ func TestInstrumentQueue(t *testing.T) {
 	}
 	if *calledSuccess {
 		t.Error("Called underlying LockJob.MarkSuccess")
+	}
+}
+
+func TestQueueStatsCollector(t *testing.T) {
+	m := &mockstore.Queue{}
+	stats := map[string]store.QueueStats{
+		"a": store.QueueStats{
+			NumJobs:          3,
+			NumJobsWithError: 1,
+		},
+		"b": store.QueueStats{
+			NumJobs: 1,
+		},
+	}
+	m.Stats_ = func(_ context.Context) (map[string]store.QueueStats, error) {
+		return stats, nil
+	}
+
+	// We just check that we collect 4 stats, and don't actually check we
+	// collect legit values.
+	var (
+		c     = NewQueueStatsCollector(context.Background(), m)
+		ch    = make(chan prometheus.Metric)
+		count = 0
+	)
+	go func() {
+		c.Collect(ch)
+		close(ch)
+	}()
+	for {
+		select {
+		case m := <-ch:
+			if m == nil && count == 4 {
+				return
+			}
+			if count > 4 || (m == nil && count != 4) {
+				t.Fatalf("collected %d metrics, wanted 4", count)
+			}
+			count++
+		case <-time.After(1 * time.Second):
+			t.Fatal("expected collect timed out")
+		}
 	}
 }
