@@ -31,9 +31,9 @@ func TestGlobalDefs(t *testing.T) {
 	repos := (&repos{}).mustCreate(ctx, t, &sourcegraph.Repo{URI: "a/b"})
 
 	testDefs1 := []*graph.Def{
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "abc"}, Name: "ABC", Kind: "func", File: "a.go"},
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "xyz/abc"}, Name: "ABC", Kind: "field", File: "a.go"},
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "pqr"}, Name: "PQR", Kind: "field", File: "b.go"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "GoPackage", Path: "abc"}, Name: "ABC", Kind: "func", File: "a.go"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "GoPackage", Path: "xyz/abc"}, Name: "ABC", Kind: "field", File: "a.go"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "GoPackage", Path: "pqr"}, Name: "PQR", Kind: "field", File: "b.go"},
 	}
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
@@ -110,8 +110,8 @@ func TestGlobalDefs_PrefixMatch(t *testing.T) {
 	defer done()
 
 	testDefs1 := []*graph.Def{
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "abc"}, Name: "ABC", Kind: "func", File: "a.go"},
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "t", Path: "xyz/abc"}, Name: "ABC", Kind: "field", File: "a.go"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "GoPackage", Path: "abc"}, Name: "ABC", Kind: "func", File: "a.go"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: "aaaa", Unit: "a/b/u", UnitType: "GoPackage", Path: "xyz/abc"}, Name: "ABC", Kind: "field", File: "a.go"},
 	}
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
