@@ -1,0 +1,7 @@
+@value base "./_base.css";
+@value colors "./_colors.css";
+
+.container { composes: b--cool-gray-2 from colors; }
+
+.horizontal { composes: bb from base; }
+.vertical { composes: bl from base; }
