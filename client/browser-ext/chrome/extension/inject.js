@@ -61,7 +61,6 @@ class InjectApp extends React.Component {
 
 	componentDidMount() {
 		if (this.props.accessToken) useAccessToken(this.props.accessToken);
-		EventLogger.logEvent("ChromeExtensionMounted");
 
 		// Capture the access token if on sourcegraph.com.
 		if (window.location.href.match(/https:\/\/(www.)?sourcegraph.com/)) {
