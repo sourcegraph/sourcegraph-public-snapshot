@@ -3,6 +3,7 @@ package localstore
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -319,6 +320,10 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			languages[l] = true
 			languagesList = append(languagesList, l)
 
+			if _, alreadyInDB := langIDCache.get(l); alreadyInDB {
+				continue
+			}
+
 			err := graphDBH(ctx).Insert(&dbGlobalDefLanguages{Language: l})
 			if isPQErrorUniqueViolation(err) {
 				if c := err.(*pq.Error).Constraint; c != "global_defs_languages_unique" {
@@ -327,6 +332,12 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 				// Do nothing with the error, because the language is already
 				// in the table just as we want.
 			} else if err != nil {
+				return err
+			}
+
+			// Fetch the language ID, so it's stored in langIDCache for later to avoid
+			// round-tripping with the DB.
+			if _, err := languageIDs(ctx, []string{l}); err != nil {
 				return err
 			}
 		}
@@ -538,12 +549,40 @@ func repoURIs(ctx context.Context, repoIDs []int32) (uris []string, err error) {
 
 func languageIDs(ctx context.Context, languages []string) (ids []int16, err error) {
 	for _, language := range languages {
+		language = strings.ToLower(language)
+		if id, ok := langIDCache.get(language); ok {
+			ids = append(ids, id)
+			continue
+		}
+
 		var results []int16
-		sql := `SELECT id FROM global_defs_languages WHERE language = lower($1)`
+		sql := `SELECT id FROM global_defs_languages WHERE language = $1`
 		if _, err := graphDBH(ctx).Select(&results, sql, language); err != nil {
 			return nil, err
 		}
 		ids = append(ids, results[0])
+		langIDCache.put(language, results[0])
 	}
+	return
+}
+
+var langIDCache = &languageIDCache{}
+
+type languageIDCache struct {
+	sync.RWMutex
+	c map[string]int16
+}
+
+func (l *languageIDCache) get(language string) (id int16, ok bool) {
+	l.RLock()
+	id, ok = l.c[language]
+	l.RUnlock()
+	return
+}
+
+func (l *languageIDCache) put(language string, id int16) {
+	l.Lock()
+	l.c[language] = id
+	l.Unlock()
 	return
 }
