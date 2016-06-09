@@ -7,25 +7,26 @@ import (
 )
 
 func init() {
+	stores := store.Stores{
+		Accounts:           &accounts{},
+		BuildLogs:          &buildLogs{},
+		Builds:             &builds{},
+		Channel:            &channel{},
+		DefExamples:        &examples{},
+		Directory:          &directory{},
+		ExternalAuthTokens: &externalAuthTokens{},
+		GlobalDefs:         &globalDefs{},
+		GlobalDeps:         &globalDeps{},
+		GlobalRefs:         &globalRefs{},
+		Password:           &password{},
+		Queue:              &queue{},
+		RepoConfigs:        &repoConfigs{},
+		RepoStatuses:       &repoStatuses{},
+		RepoVCS:            &repoVCS{},
+		Repos:              &repos{},
+		Users:              &users{},
+	}
 	serverctx.Funcs = append(serverctx.Funcs, func(ctx context.Context) (context.Context, error) {
-		return store.WithStores(ctx, store.Stores{
-			Accounts:           &accounts{},
-			BuildLogs:          &buildLogs{},
-			Builds:             &builds{},
-			Channel:            &channel{},
-			DefExamples:        &examples{},
-			Directory:          &directory{},
-			ExternalAuthTokens: &externalAuthTokens{},
-			GlobalDefs:         &globalDefs{},
-			GlobalDeps:         &globalDeps{},
-			GlobalRefs:         &globalRefs{},
-			Password:           &password{},
-			Queue:              &queue{},
-			RepoConfigs:        &repoConfigs{},
-			RepoStatuses:       &repoStatuses{},
-			RepoVCS:            &repoVCS{},
-			Repos:              &repos{},
-			Users:              &users{},
-		}), nil
+		return store.WithStores(ctx, stores), nil
 	})
 }
