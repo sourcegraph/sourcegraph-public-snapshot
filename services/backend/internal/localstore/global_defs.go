@@ -21,16 +21,33 @@ import (
 )
 
 func init() {
+	GraphSchema.Map.AddTableWithName(dbGlobalDefLanguages{}, "global_defs_languages").SetKeys(true, "ID")
+	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
+		`ALTER TABLE global_defs_languages ALTER COLUMN id TYPE smallint`,
+		`ALTER TABLE global_defs_languages ALTER COLUMN language SET NOT NULL`,
+		`ALTER TABLE ONLY global_defs_languages ADD CONSTRAINT global_defs_languages_unique UNIQUE (language)`,
+		`CREATE INDEX global_defs_languages_language ON global_defs_languages USING btree (lower(language))`,
+	)
+
 	GraphSchema.Map.AddTableWithName(dbGlobalDef{}, "global_defs").SetKeys(false, "Repo", "CommitID", "UnitType", "Unit", "Path")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
+		`ALTER TABLE global_defs ALTER COLUMN language TYPE smallint`,
+		`ALTER TABLE global_defs ADD CONSTRAINT global_defs_language_fkey FOREIGN KEY (language)
+		      REFERENCES global_defs_languages (id) MATCH SIMPLE
+		      ON UPDATE CASCADE ON DELETE RESTRICT`,
 		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
 		`CREATE INDEX doc_idx ON global_defs USING gin(to_tsvector('english', doc));`,
 		`CREATE INDEX global_defs_name ON global_defs USING btree (lower(name));`,
 		`CREATE INDEX global_defs_repo ON global_defs USING btree (repo text_pattern_ops);`,
 		`CREATE INDEX global_defs_updater ON global_defs USING btree (repo, unit_type, unit, path);`,
 	)
+}
+
+type dbGlobalDefLanguages struct {
+	ID       int16  `db:"id"`
+	Language string `db:"language"`
 }
 
 // dbGlobalDef DB-maps a GlobalDef object.
@@ -41,9 +58,10 @@ type dbGlobalDef struct {
 	Unit     string `db:"unit"`
 	Path     string `db:"path"`
 
-	Name string `db:"name"`
-	Kind string `db:"kind"`
-	File string `db:"file"`
+	Name     string `db:"name"`
+	Kind     string `db:"kind"`
+	File     string `db:"file"`
+	Language int16  `db:"language"`
 
 	RefCount  int        `db:"ref_ct"`
 	UpdatedAt *time.Time `db:"updated_at"`
