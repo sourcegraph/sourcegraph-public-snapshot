@@ -14,7 +14,7 @@ RUN apt-get install -qq git make -y lib32z1 lib32ncurses5 lib32stdc++6
 ENV SRCLIBPATH /srclib/toolchains
 
 # Gradle
-ENV GRADLE_VERSION 2.10
+ENV GRADLE_VERSION 2.13
 WORKDIR /usr/lib
 RUN wget -q https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && unzip "gradle-${GRADLE_VERSION}-bin.zip" && ln -s "/usr/lib/gradle-${GRADLE_VERSION}/bin/gradle" /usr/bin/gradle && rm "gradle-${GRADLE_VERSION}-bin.zip"
 
