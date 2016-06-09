@@ -31,6 +31,27 @@ func (q *InstrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 		errors.WithLabelValues("lockjob").Inc()
 	} else if j != nil {
 		lockedJobs.WithLabelValues(j.Type).Inc()
+		return store.NewLockedJob(
+			j.Job,
+			func() error {
+				err := j.MarkSuccess()
+				if err != nil {
+					errors.WithLabelValues("marksucess").Inc()
+				} else {
+					markedSuccess.WithLabelValues(j.Type).Inc()
+				}
+				return err
+			},
+			func(reason string) error {
+				err := j.MarkError(reason)
+				if err != nil {
+					errors.WithLabelValues("markerror").Inc()
+				} else {
+					markedError.WithLabelValues(j.Type).Inc()
+				}
+				return err
+			},
+		), nil
 	}
 	return j, err
 }
@@ -58,9 +79,23 @@ var errors = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name:      "errors_total",
 	Help:      "Total number of errors.",
 }, []string{"method"})
+var markedSuccess = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: namespace,
+	Subsystem: "queue",
+	Name:      "marked_success_total",
+	Help:      "Total number of LockedJobs.MarkSuccess().",
+}, []string{typeLabel})
+var markedError = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: namespace,
+	Subsystem: "queue",
+	Name:      "marked_error_total",
+	Help:      "Total number of LockedJobs.MarkError().",
+}, []string{typeLabel})
 
 func init() {
 	prometheus.MustRegister(enqueued)
 	prometheus.MustRegister(lockedJobs)
 	prometheus.MustRegister(errors)
+	prometheus.MustRegister(markedSuccess)
+	prometheus.MustRegister(markedError)
 }

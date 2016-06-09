@@ -25,7 +25,7 @@ func TestInstrumentQueue(t *testing.T) {
 	}
 
 	// LockJob
-	called, _, _ = m.MockLockJob_Return(t, want)
+	called, calledSuccess, calledError := m.MockLockJob_Return(t, want)
 	got, err := q.LockJob(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -35,5 +35,31 @@ func TestInstrumentQueue(t *testing.T) {
 	}
 	if !*called {
 		t.Error("Did not call underlying LockJob")
+	}
+
+	// LockJob.MarkSuccess
+	*calledSuccess, *calledError = false, false
+	err = got.MarkSuccess()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledSuccess {
+		t.Error("Did not call underlying LockJob.MarkSuccess")
+	}
+	if *calledError {
+		t.Error("Called underlying LockJob.MarkError")
+	}
+
+	// LockJob.MarkError
+	*calledSuccess, *calledError = false, false
+	err = got.MarkError("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledError {
+		t.Error("Did not call underlying LockJob.MarkError")
+	}
+	if *calledSuccess {
+		t.Error("Called underlying LockJob.MarkSuccess")
 	}
 }
