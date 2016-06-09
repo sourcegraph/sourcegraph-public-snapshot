@@ -2075,6 +2075,14 @@ message SearchOptions {
 	// returned results.
 	repeated string NotLanguages = 7;
 
+	// Kinds, if specified, limits the returned results to just the specified
+	// kinds of definitions (func, var, etc).
+	repeated string Kinds = 8;
+
+	// NotKinds, if specified, excludes the specified kinds of definitions
+	// (func, var, etc) from the returned results.
+	repeated string NotKinds = 9;
+
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
