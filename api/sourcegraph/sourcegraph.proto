@@ -2069,10 +2069,16 @@ message SearchOptions {
 
 	// Languages, if specified, limits the returned results to just the
 	// specified languages.
+	//
+	// The values are case-insensitive, e.g. "java", "Java", and "jAvA" will
+	// all match the Java programming language.
 	repeated string Languages = 6;
 
 	// NotLanguages, if specified, excludes the specified languages from the
 	// returned results.
+	//
+	// The values are case-insensitive, e.g. "java", "Java", and "jAvA" will
+	// all exclude the Java programming language.
 	repeated string NotLanguages = 7;
 
 	// Kinds, if specified, limits the returned results to just the specified
