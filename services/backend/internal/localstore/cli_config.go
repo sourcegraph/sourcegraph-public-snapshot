@@ -3,6 +3,7 @@ package localstore
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 )
 
@@ -19,7 +20,7 @@ func init() {
 		GlobalDeps:         &globalDeps{},
 		GlobalRefs:         &globalRefs{},
 		Password:           &password{},
-		Queue:              &queue{},
+		Queue:              &middleware.InstrumentedQueue{Queue: &queue{}},
 		RepoConfigs:        &repoConfigs{},
 		RepoStatuses:       &repoStatuses{},
 		RepoVCS:            &repoVCS{},
