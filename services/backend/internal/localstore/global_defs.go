@@ -5,7 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lib/pq"
+
 	"gopkg.in/gorp.v1"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -34,9 +37,6 @@ func init() {
 		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
 		`ALTER TABLE global_defs ALTER COLUMN language TYPE smallint`,
-		`ALTER TABLE global_defs ADD CONSTRAINT global_defs_language_fkey FOREIGN KEY (language)
-		      REFERENCES global_defs_languages (id) MATCH SIMPLE
-		      ON UPDATE CASCADE ON DELETE RESTRICT`,
 		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
 		`CREATE INDEX doc_idx ON global_defs USING gin(to_tsvector('english', doc));`,
 		`CREATE INDEX global_defs_name ON global_defs USING btree (lower(name));`,
@@ -167,6 +167,8 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	var whereSQL, prefixSQL string
 	{
 		var wheres []string
+
+		// Repository filtering.
 		if len(op.Opt.Repos) > 0 {
 			reposURIs, err := repoURIs(ctx, op.Opt.Repos)
 			if err != nil {
@@ -189,6 +191,31 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 			}
 			wheres = append(wheres, `repo NOT IN (`+strings.Join(r, ", ")+`)`)
 		}
+
+		// Language filtering.
+		if len(op.Opt.Languages) > 0 {
+			languagesIDs, err := languageIDs(ctx, op.Opt.Languages)
+			if err != nil {
+				return nil, err
+			}
+			var l []string
+			for _, language := range languagesIDs {
+				l = append(l, arg(language))
+			}
+			wheres = append(wheres, `language IN (`+strings.Join(l, ", ")+`)`)
+		}
+		if len(op.Opt.NotLanguages) > 0 {
+			notLanguagesIDs, err := languageIDs(ctx, op.Opt.NotLanguages)
+			if err != nil {
+				return nil, err
+			}
+			var l []string
+			for _, language := range notLanguagesIDs {
+				l = append(l, arg(language))
+			}
+			wheres = append(wheres, `language NOT IN (`+strings.Join(l, ", ")+`)`)
+		}
+
 		if op.UnitQuery != "" {
 			wheres = append(wheres, `unit=`+arg(op.UnitQuery))
 		}
@@ -265,6 +292,38 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			return err
 		}
 
+		// For every unique language that the defs are composed of, ensure
+		// there is a corresponding entry in the global_defs_languages table.
+		languages := make(map[string]bool)
+		var languagesList []string
+		for _, d := range defs {
+			l := strings.ToLower(graph.PrintFormatter(d).Language())
+			if _, ok := languages[l]; ok {
+				continue
+			}
+			languages[l] = true
+			languagesList = append(languagesList, l)
+
+			err := graphDBH(ctx).Insert(&dbGlobalDefLanguages{Language: l})
+			if isPQErrorUniqueViolation(err) {
+				if c := err.(*pq.Error).Constraint; c != "global_defs_languages_unique" {
+					log15.Warn("Expected unique_violation of global_defs_languages_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
+				}
+				// Do nothing with the error, because the language is already
+				// in the table just as we want.
+			} else if err != nil {
+				return err
+			}
+		}
+		ids, err := languageIDs(ctx, languagesList)
+		if err != nil {
+			return err
+		}
+		languageIDMap := make(map[string]int16, len(languagesList))
+		for i, language := range languagesList {
+			languageIDMap[language] = ids[i]
+		}
+
 		type upsert struct {
 			query string
 			args  []interface{}
@@ -316,6 +375,7 @@ WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
 				`, kind=` + arg(d.Kind) +
 				`, file=` + arg(d.File) +
+				`, language=` + arg(languageIDMap[strings.ToLower(graph.PrintFormatter(d).Language())]) +
 				`, commit_id=` + arg(d.CommitID) +
 				`, updated_at=now()` +
 				`, data=` + arg(data) +
@@ -459,4 +519,16 @@ func repoURIs(ctx context.Context, repoIDs []int32) (uris []string, err error) {
 		uris = append(uris, repo.URI)
 	}
 	return uris, nil
+}
+
+func languageIDs(ctx context.Context, languages []string) (ids []int16, err error) {
+	for _, language := range languages {
+		var results []int16
+		sql := `SELECT id FROM global_defs_languages WHERE language = lower($1)`
+		if _, err := graphDBH(ctx).Select(&results, sql, language); err != nil {
+			return nil, err
+		}
+		ids = append(ids, results[0])
+	}
+	return
 }
