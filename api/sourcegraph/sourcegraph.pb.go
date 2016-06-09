@@ -2704,9 +2704,15 @@ type SearchOptions struct {
 	NotRepos []int32 `protobuf:"varint,2,rep,name=NotRepos" json:"NotRepos,omitempty" url:",omitempty"`
 	// Languages, if specified, limits the returned results to just the
 	// specified languages.
+	//
+	// The values are case-insensitive, e.g. "java", "Java", and "jAvA" will
+	// all match the Java programming language.
 	Languages []string `protobuf:"bytes,6,rep,name=Languages" json:"Languages,omitempty"`
 	// NotLanguages, if specified, excludes the specified languages from the
 	// returned results.
+	//
+	// The values are case-insensitive, e.g. "java", "Java", and "jAvA" will
+	// all exclude the Java programming language.
 	NotLanguages []string `protobuf:"bytes,7,rep,name=NotLanguages" json:"NotLanguages,omitempty"`
 	// Kinds, if specified, limits the returned results to just the specified
 	// kinds of definitions (func, var, etc).
