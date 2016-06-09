@@ -21,8 +21,10 @@ func (q *InstrumentedQueue) Enqueue(ctx context.Context, j *store.Job) error {
 	err := q.Queue.Enqueue(ctx, j)
 	if err != nil {
 		errors.WithLabelValues("enqueue").Inc()
+		log15.Debug("queue.Enqueue failed", "type", j.Type, "err", err)
 	} else {
 		enqueued.WithLabelValues(j.Type).Inc()
+		log15.Debug("queue.Enqueue success", "type", j.Type)
 	}
 	return err
 }
@@ -32,16 +34,20 @@ func (q *InstrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 	j, err := q.Queue.LockJob(ctx)
 	if err != nil {
 		errors.WithLabelValues("lockjob").Inc()
+		log15.Debug("queue.LockJob failed", "err", err)
 	} else if j != nil {
 		lockedJobs.WithLabelValues(j.Type).Inc()
+		log15.Debug("queue.LockJob success", "type", j.Type)
 		return store.NewLockedJob(
 			j.Job,
 			func() error {
 				err := j.MarkSuccess()
 				if err != nil {
 					errors.WithLabelValues("marksucess").Inc()
+					log15.Debug("LockedJob.MarkSuccess failed", "type", j.Type, "err", err)
 				} else {
 					markedSuccess.WithLabelValues(j.Type).Inc()
+					log15.Debug("LockedJob.MarkSuccess success", "type", j.Type)
 				}
 				return err
 			},
@@ -49,8 +55,10 @@ func (q *InstrumentedQueue) LockJob(ctx context.Context) (*store.LockedJob, erro
 				err := j.MarkError(reason)
 				if err != nil {
 					errors.WithLabelValues("markerror").Inc()
+					log15.Debug("LockedJob.MarkError failed", "type", j.Type, "reason", reason, "err", err)
 				} else {
 					markedError.WithLabelValues(j.Type).Inc()
+					log15.Debug("LockedJob.MarkError success", "type", j.Type, "reason", reason)
 				}
 				return err
 			},
