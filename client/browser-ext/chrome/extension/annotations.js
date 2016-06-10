@@ -145,6 +145,9 @@ function isStartOfSpanTag(childNodeChars, idx) {
 // next is a helper method for traverseDOM which transforms a character
 // into itself or wraps the character in a starting/ending anchor tag
 function next(c, byteCount, annsByStartByte, annsByEndByte) {
+	if (c === "<" || c === ">") {
+		c = _.escape(c);
+	}
 	let matchDetails = annsByStartByte[byteCount];
 	// if there is a match
 	if (!annotating && matchDetails) {
