@@ -93,7 +93,7 @@ class GlobalSearch extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.query !== nextState.query) {
+		if (nextState.query && prevState.query !== nextState.query) {
 			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT,
 			this.props.location.query.prefixMatch, this.props.location.query.includeRepos));
 		}

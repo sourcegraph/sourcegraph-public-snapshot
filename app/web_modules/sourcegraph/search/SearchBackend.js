@@ -15,10 +15,6 @@ const SearchBackend = {
 
 		case SearchActions.WantResults:
 			{
-				if (!action.query || action.query === "") {
-					break;
-				}
-
 				let results = SearchStore.results.get(action.query, action.repos, action.notRepos, action.limit, action.prefixMatch, action.includeRepos);
 				if (results === null) {
 					let limit = action.limit || RESULTS_LIMIT;
