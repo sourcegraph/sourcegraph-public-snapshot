@@ -140,7 +140,7 @@ func TestRedis_values(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !reflect.DeepEqual(v1, v1_got) {
-			t.Errorf("expected %s, got %s", v1, v1_got)
+			t.Errorf("expected %v, got %v", v1, v1_got)
 		}
 	}
 }

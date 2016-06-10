@@ -141,17 +141,17 @@ func TestUsers_Get_existingByBothConflict(t *testing.T) {
 
 	created1, err := createUser(sourcegraph.User{Login: "u1"}, sourcegraph.EmailAddr{Email: "email1@email.email"})
 	if err != nil {
-		t.Fatal("create1 error %q", err)
+		t.Fatalf("create1 error %q", err)
 	}
 	if created1.Login == "" || created1.UID == 0 {
 		t.Error("violated assumption that both login and UID are set")
 	}
 
 	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created0.UID, Login: created1.Login}); !isUserNotFound(err) {
-		t.Fatal("Get1 error %q", err)
+		t.Fatalf("Get1 error %q", err)
 	}
 	if _, err := s.Get(ctx, sourcegraph.UserSpec{UID: created1.UID, Login: created0.Login}); !isUserNotFound(err) {
-		t.Fatal("Get0 error %q", err)
+		t.Fatalf("Get0 error %q", err)
 	}
 }
 

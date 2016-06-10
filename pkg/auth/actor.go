@@ -32,7 +32,7 @@ type Actor struct {
 }
 
 func (a Actor) String() string {
-	return fmt.Sprintf("Actor UID %d (clientID=%v scope=%v)", a.UID, a.Scope)
+	return fmt.Sprintf("Actor UID %d (scope=%v)", a.UID, a.Scope)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.

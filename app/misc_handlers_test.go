@@ -50,7 +50,7 @@ func TestRobotsTxt(t *testing.T) {
 	for _, test := range tests {
 		got := robots.TestAgent(test.url, "GoogleBot")
 		if got != test.want {
-			t.Errorf("%q: got %q, want %q", test.url, got, test.want)
+			t.Errorf("%q: got %t, want %t", test.url, got, test.want)
 		}
 	}
 }

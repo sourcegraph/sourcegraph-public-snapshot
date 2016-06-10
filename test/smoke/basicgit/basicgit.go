@@ -175,7 +175,7 @@ func noErr(cmdStr string, args ...interface{}) {
 	var stdouterr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdouterr, &stdouterr
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "unexpected error running %s, output: %s", cmdStr, stdouterr)
+		fmt.Fprintf(os.Stderr, "unexpected error running %s, output: %s", cmdStr, stdouterr.String())
 		must(err)
 	}
 }

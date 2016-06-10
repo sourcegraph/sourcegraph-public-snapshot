@@ -69,11 +69,11 @@ func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle,
 	backgroundDBPoolsLock.Unlock()
 
 	if b == nil {
-		log.Fatal("db pool not available: %q", poolName)
+		log.Fatalf("db pool not available: %q", poolName)
 	}
 
 	if schema != nil && b.schema != schema {
-		log.Fatal("schema mismatch for db pool: %q", poolName)
+		log.Fatalf("schema mismatch for db pool: %q", poolName)
 	}
 
 	const timeout = 45 * time.Second

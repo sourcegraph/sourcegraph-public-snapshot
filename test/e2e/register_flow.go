@@ -42,10 +42,10 @@ func testRegisterFlow(t *T) error {
 	// Validate username input field.
 	username := t.FindElement(selenium.ById, "e2etest-login-field")
 	if username.TagName() != "input" {
-		t.Fatalf("username TagName should be input, found", username.TagName())
+		t.Fatalf("username TagName should be input, found %s", username.TagName())
 	}
 	if username.Text() != "" {
-		t.Fatalf("username input field should be empty, found", username.Text())
+		t.Fatalf("username input field should be empty, found %s", username.Text())
 	}
 	if !username.IsDisplayed() {
 		t.Fatalf("username input field should be displayed")
@@ -57,10 +57,10 @@ func testRegisterFlow(t *T) error {
 	// Validate password input field.
 	password := t.FindElement(selenium.ById, "e2etest-password-field")
 	if password.TagName() != "input" {
-		t.Fatalf("password TagName should be input, found", password.TagName())
+		t.Fatalf("password TagName should be input, found %s", password.TagName())
 	}
 	if password.Text() != "" {
-		t.Fatalf("password input field should be empty, found", password.Text())
+		t.Fatalf("password input field should be empty, found %s", password.Text())
 	}
 	if !password.IsDisplayed() {
 		t.Fatalf("password input field should be displayed")
@@ -75,10 +75,10 @@ func testRegisterFlow(t *T) error {
 	// Validate email input field.
 	email := t.FindElement(selenium.ById, "e2etest-email-field")
 	if email.TagName() != "input" {
-		t.Fatalf("email TagName should be input, found", email.TagName())
+		t.Fatalf("email TagName should be input, found %s", email.TagName())
 	}
 	if email.Text() != "" {
-		t.Fatalf("email input field should be empty, found", email.Text())
+		t.Fatalf("email input field should be empty, found %s", email.Text())
 	}
 	if !email.IsDisplayed() {
 		t.Fatalf("email input field should be displayed")
