@@ -120,6 +120,7 @@ check: ${GOBIN}/go-template-lint
 	cd app && node ./node_modules/.bin/lintspaces -t -n -d tabs ./style/*.scss ./style/**/*.scss ./templates/*.html ./templates/**/*.html
 	go-template-lint -f app/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	go list ./... | grep -v /vendor/ | xargs go vet
+	go list ./... | grep -v /vendor/ | xargs staticcheck
 	bash dev/check-for-template-inlines
 	bash dev/check-go-generate-all
 	bash dev/todo-security
