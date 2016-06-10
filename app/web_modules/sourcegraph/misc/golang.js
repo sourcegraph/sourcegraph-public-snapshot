@@ -33,7 +33,7 @@ export const route: Route = {
 				.then((data) => {
 					// TODO(matt): remove once sourcegraph.com resolving bug is fixed
 					let path = data.Path;
-					if (path.startsWith("/github.com/sourcegraph/")) {
+					if (path.startsWith("/github.com/sourcegraph/sourcegraph")) {
 						path = path.replace("GoPackage/github.com", "GoPackage/sourcegraph.com");
 					}
 					replace({
