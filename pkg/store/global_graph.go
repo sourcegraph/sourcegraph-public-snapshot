@@ -48,10 +48,6 @@ type GlobalDefSearchOp struct {
 	UnitQuery     string
 	UnitTypeQuery string
 
-	// If specified, filters matches to those of a definition kind
-	// (func, type, var, package, etc.)
-	Kinds []string
-
 	// TokQuery is a list of tokens that describe the user's text
 	// query. Order matter, as the last token is given especial weight.
 	TokQuery []string

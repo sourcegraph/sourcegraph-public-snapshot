@@ -20,17 +20,32 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
+// Mappings from language to language ID. These should not be changed once set
+// (doing so would require a database migration). When adding a new ID, you
+// must use the exact LOWERCASE srclib toolchain language name.
+var languages = map[string]uint16{
+	"go":     1,
+	"java":   2,
+	"python": 3,
+}
+
 func init() {
 	GraphSchema.Map.AddTableWithName(dbGlobalDef{}, "global_defs").SetKeys(false, "Repo", "CommitID", "UnitType", "Unit", "Path")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
+		`ALTER TABLE global_defs ALTER COLUMN language TYPE smallint`,
 		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
 		`CREATE INDEX doc_idx ON global_defs USING gin(to_tsvector('english', doc));`,
 		`CREATE INDEX global_defs_name ON global_defs USING btree (lower(name));`,
 		`CREATE INDEX global_defs_repo ON global_defs USING btree (repo text_pattern_ops);`,
 		`CREATE INDEX global_defs_updater ON global_defs USING btree (repo, unit_type, unit, path);`,
 	)
+}
+
+type dbGlobalDefLanguages struct {
+	ID       int16  `db:"id"`
+	Language string `db:"language"`
 }
 
 // dbGlobalDef DB-maps a GlobalDef object.
@@ -41,9 +56,10 @@ type dbGlobalDef struct {
 	Unit     string `db:"unit"`
 	Path     string `db:"path"`
 
-	Name string `db:"name"`
-	Kind string `db:"kind"`
-	File string `db:"file"`
+	Name     string `db:"name"`
+	Kind     string `db:"kind"`
+	File     string `db:"file"`
+	Language int16  `db:"language"`
 
 	RefCount  int        `db:"ref_ct"`
 	UpdatedAt *time.Time `db:"updated_at"`
@@ -149,6 +165,8 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 	var whereSQL, prefixSQL string
 	{
 		var wheres []string
+
+		// Repository filtering.
 		if len(op.Opt.Repos) > 0 {
 			reposURIs, err := repoURIs(ctx, op.Opt.Repos)
 			if err != nil {
@@ -171,6 +189,46 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 			}
 			wheres = append(wheres, `repo NOT IN (`+strings.Join(r, ", ")+`)`)
 		}
+
+		// Language filtering.
+		if len(op.Opt.Languages) > 0 {
+			var l []string
+			for _, language := range op.Opt.Languages {
+				id, ok := languages[language]
+				if !ok {
+					continue
+				}
+				l = append(l, arg(id))
+			}
+			wheres = append(wheres, `language IN (`+strings.Join(l, ", ")+`)`)
+		}
+		if len(op.Opt.NotLanguages) > 0 {
+			var l []string
+			for _, language := range op.Opt.NotLanguages {
+				id, ok := languages[language]
+				if !ok {
+					continue
+				}
+				l = append(l, arg(id))
+			}
+			wheres = append(wheres, `language NOT IN (`+strings.Join(l, ", ")+`)`)
+		}
+
+		if len(op.Opt.Kinds) > 0 {
+			var kindList []string
+			for _, kind := range op.Opt.Kinds {
+				kindList = append(kindList, arg(kind))
+			}
+			wheres = append(wheres, `kind IN (`+strings.Join(kindList, ", ")+`)`)
+		}
+		if len(op.Opt.NotKinds) > 0 {
+			var notKindList []string
+			for _, kind := range op.Opt.NotKinds {
+				notKindList = append(notKindList, arg(kind))
+			}
+			wheres = append(wheres, `kind NOT IN (`+strings.Join(notKindList, ", ")+`)`)
+		}
+
 		if op.UnitQuery != "" {
 			wheres = append(wheres, `unit=`+arg(op.UnitQuery))
 		}
@@ -287,6 +345,8 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			}
 			bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
 
+			languageID := languages[strings.ToLower(graph.PrintFormatter(d).Language())]
+
 			var args []interface{}
 			arg := func(v interface{}) string {
 				args = append(args, v)
@@ -298,6 +358,7 @@ WITH upsert AS (
 UPDATE global_defs SET name=` + arg(d.Name) +
 				`, kind=` + arg(d.Kind) +
 				`, file=` + arg(d.File) +
+				`, language=` + arg(languageID) +
 				`, commit_id=` + arg(d.CommitID) +
 				`, updated_at=now()` +
 				`, data=` + arg(data) +
@@ -309,7 +370,7 @@ UPDATE global_defs SET name=` + arg(d.Name) +
 				` AND path=` + arg(d.Path) +
 				` RETURNING *
 )
-INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
+INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, language, updated_at, data, bow, doc) SELECT ` +
 				arg(d.Repo) + `, ` +
 				arg(d.CommitID) + `, ` +
 				arg(d.UnitType) + `, ` +
@@ -318,6 +379,7 @@ INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, fil
 				arg(d.Name) + `, ` +
 				arg(d.Kind) + `, ` +
 				arg(d.File) + `, ` +
+				arg(languageID) + `, ` +
 				`now(), ` +
 				arg(data) + `, ` +
 				arg(bow) + `, ` +
