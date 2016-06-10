@@ -50,7 +50,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/serverctx"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
@@ -468,21 +467,30 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	go statsutil.ComputeUsageStats(usageStatsCtx, 10*time.Minute)
 
+	// HACK(keegancsmith) async is the only user of this at the moment,
+	// but other background workers that need access to the store will
+	// likely pop up in the future. We need to make this less hacky
+	internalServerCtx := func(name string) (context.Context, error) {
+		ctx := clientCtx
+		for _, f := range serverctx.Funcs {
+			ctx, err = f(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+		ctx = svc.WithServices(ctx, server.Config(serverCtxFunc))
+		scope := "internal:" + name
+		ctx = authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{scope: true}})
+		ctx, err = c.authenticateScopedContext(ctx, idKey, []string{scope})
+		if err != nil {
+			return nil, err
+		}
+		return ctx, nil
+	}
+
 	// Start background async workers. It is a service, so needs the
 	// stores setup in the context
-	asyncCtx := clientCtx
-	// TODO(keegancsmith) setting the serverctx.Funcs seems bad, but we do
-	// need access to the store since Queue.LockJob is session
-	// based. Think of something better
-	for _, f := range serverctx.Funcs {
-		asyncCtx, err = f(asyncCtx)
-		if err != nil {
-			return err
-		}
-	}
-	asyncCtx = svc.WithServices(asyncCtx, server.Config(serverCtxFunc))
-	asyncCtx = accesscontrol.WithInsecureSkip(asyncCtx, true) // HACKS
-	asyncCtx, err = c.authenticateScopedContext(asyncCtx, idKey, []string{"internal:async"})
+	asyncCtx, err := internalServerCtx("async")
 	if err != nil {
 		return err
 	}
