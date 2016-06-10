@@ -2,6 +2,7 @@ package syntaxhighlight_test
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -14,6 +15,12 @@ import (
 	"github.com/sourcegraph/annotate"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/syntaxhighlight"
 )
+
+var updateExpected bool
+
+func init() {
+	flag.BoolVar(&updateExpected, "update-expected", false, "Updates the expected data")
+}
 
 func TestLexers(t *testing.T) {
 	files, err := ioutil.ReadDir("testdata/case")
@@ -72,6 +79,16 @@ func processFile(name string, t *testing.T) {
 	}
 	syntaxhighlight.Annotate(source, lexer, collector)
 	tokens := collector.Tokens
+	if updateExpected {
+		b, err := json.MarshalIndent(tokens, "", "  ")
+		if err != nil {
+			t.Fatalf("could not marshal tokens for %s: %s", name, err)
+		}
+		err = ioutil.WriteFile(filepath.Join("testdata/expected/json", name+".json"), b, 0644)
+		if err != nil {
+			t.Fatalf("could not update expected data for %s: %s", name, err)
+		}
+	}
 	expectedTokensData, err := ioutil.ReadFile(filepath.Join("testdata/expected/json", name+".json"))
 	if err != nil {
 		t.Fatalf("Failed to read expected tokens data %s: %s", name, err)
@@ -95,17 +112,23 @@ func processFile(name string, t *testing.T) {
 			tokens[diff])
 	}
 
+	annotations, _ := syntaxhighlight.Annotate(source, lexer, syntaxhighlight.NewHTMLAnnotator(syntaxhighlight.DefaultHTMLConfig))
+	annotated, _ := annotate.Annotate(source, annotations, template.HTMLEscape)
+
+	actual := strings.TrimSpace(string(annotated))
+	if updateExpected {
+		err = ioutil.WriteFile(filepath.Join("testdata/expected/html", name+".html"), []byte(actual), 0644)
+		if err != nil {
+			t.Fatalf("could not update expected data for %s: %s", name, err)
+		}
+	}
+
 	expectedb, err := ioutil.ReadFile(filepath.Join("testdata/expected/html", name+".html"))
 	if err != nil {
 		t.Fatalf("Failed to read expected HTML file %s: %s", name, err)
 	}
 	// make sure that line feeds are normalized
 	expected := strings.TrimSpace(string(re.ReplaceAll(expectedb, []byte{'\n'})))
-
-	annotations, _ := syntaxhighlight.Annotate(source, lexer, syntaxhighlight.NewHTMLAnnotator(syntaxhighlight.DefaultHTMLConfig))
-	annotated, _ := annotate.Annotate(source, annotations, template.HTMLEscape)
-
-	actual := strings.TrimSpace(string(annotated))
 
 	if actual != expected {
 		showDiff(expected, actual, t)

@@ -1,4 +1,6 @@
-<span class="com">/*
+<span class="com">// +build !dev</span><span class="">
+
+</span><span class="com">/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
  * distributed with this work for additional information
@@ -46,8 +48,6 @@
 </span><span class="com">// assets/proxima-nova/proxima-nova.woff</span><span class="">
 </span><span class="com">// assets/sourcegraph.dump</span><span class="">
 </span><span class="com">// DO NOT EDIT!</span><span class="">
-
-</span><span class="com">// +build !dev</span><span class="">
 
 </span><span class="kwd">package</span><span class=""> </span><span class="pln">assets</span><span class="">
 
@@ -837,4 +837,3 @@
 	</span><span class="pln">cannonicalName</span><span class=""> </span><span class="pun">:=</span><span class=""> </span><span class="pln">strings</span><span class="pun">.</span><span class="atn">Replace</span><span class="pun">(</span><span class="pln">name</span><span class="pun">,</span><span class=""> </span><span class="str">&#34;\\&#34;</span><span class="pun">,</span><span class=""> </span><span class="str">&#34;/&#34;</span><span class="pun">,</span><span class=""> </span><span class="pun">-</span><span class="dec">1</span><span class="pun">)</span><span class="">
 	</span><span class="kwd">return</span><span class=""> </span><span class="pln">filepath</span><span class="pun">.</span><span class="atn">Join</span><span class="pun">(</span><span class="pln">append</span><span class="pun">(</span><span class="pun">[</span><span class="pun">]</span><span class="typ">string</span><span class="pun">{</span><span class="pln">dir</span><span class="pun">}</span><span class="pun">,</span><span class=""> </span><span class="pln">strings</span><span class="pun">.</span><span class="atn">Split</span><span class="pun">(</span><span class="pln">cannonicalName</span><span class="pun">,</span><span class=""> </span><span class="str">&#34;/&#34;</span><span class="pun">)</span><span class="pun">...</span><span class="pun">)</span><span class="pun">...</span><span class="pun">)</span><span class="">
 </span><span class="pun">}</span>
-
