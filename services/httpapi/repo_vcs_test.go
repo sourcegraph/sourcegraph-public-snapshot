@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestRepoResolveRev_ok(t *testing.T) {
@@ -57,5 +58,32 @@ func TestRepoResolveRev_notFound(t *testing.T) {
 	}
 	if !calledResolveRev {
 		t.Error("!calledReposResolveRev")
+	}
+}
+
+func TestCommit_ok(t *testing.T) {
+	c, mock := newTest()
+
+	want := &vcs.Commit{ID: "c"}
+
+	calledReposResolve := mock.Repos.MockResolve_Local(t, "r", 1)
+	calledResolveRev := mock.Repos.MockResolveRev_NoCheck(t, "c")
+	calledReposGetCommit := mock.Repos.MockGetCommit_Return_NoCheck(t, want)
+
+	var commit *vcs.Commit
+	if err := c.GetJSON("/repos/r@v/-/commit", &commit); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(commit, want) {
+		t.Errorf("got %+v, want %+v", commit, want)
+	}
+	if !*calledReposResolve {
+		t.Error("!calledReposResolve")
+	}
+	if !*calledResolveRev {
+		t.Error("!calledReposResolveRev")
+	}
+	if !*calledReposGetCommit {
+		t.Error("!calledReposGetCommit")
 	}
 }

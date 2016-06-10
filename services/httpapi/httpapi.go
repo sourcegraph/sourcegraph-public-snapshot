@@ -67,6 +67,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.BuildTaskLog).Handler(handler(serveBuildTaskLog))
 	m.Get(apirouter.ChannelListen).HandlerFunc(serveChannelListen)
 	m.Get(apirouter.ChannelSend).Handler(handler(serveChannelSend))
+	m.Get(apirouter.Commit).Handler(handler(serveCommit))
 	m.Get(apirouter.Coverage).Handler(handler(serveCoverage))
 	m.Get(apirouter.Def).Handler(handler(serveDef))
 	m.Get(apirouter.DefAuthors).Handler(handler(serveDefAuthors))

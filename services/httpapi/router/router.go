@@ -26,6 +26,7 @@ const (
 	BuildTaskLog             = "build.task.log"
 	ChannelListen            = "channel.listen"
 	ChannelSend              = "channel.send"
+	Commit                   = "commit"
 	Coverage                 = "coverage"
 	Def                      = "def"
 	DefRefs                  = "def.refs"
@@ -107,6 +108,7 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
+	repoRev.Path("/commit").Methods("GET").Name(Commit)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
