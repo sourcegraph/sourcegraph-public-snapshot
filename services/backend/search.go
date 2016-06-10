@@ -1,9 +1,8 @@
 package backend
 
 import (
-	"strings"
-
 	"gopkg.in/inconshreveable/log15.v2"
+	"strings"
 
 	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
@@ -29,7 +28,14 @@ var tokenToKind = map[string]string{
 	"var":     "var",
 	"field":   "field",
 	"package": "package",
+	"pkg":     "package",
 	"const":   "const",
+}
+
+var tokenToLanguage = map[string]string{
+	"golang": "go",
+	"java":   "java",
+	"python": "python",
 }
 
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
@@ -55,8 +61,14 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 			unit = strings.TrimPrefix(token, "t:")
 			continue
 		}
-		if kind, exist := tokenToKind[token]; exist {
-			kinds = append(kinds, kind)
+		if kind, exist := tokenToKind[strings.ToLower(token)]; exist {
+			op.Opt.Kinds = append(op.Opt.Kinds, kind)
+			unit = ""
+			continue
+		}
+		if lang, exist := tokenToLanguage[strings.ToLower(token)]; exist {
+			op.Opt.Languages = append(op.Opt.Languages, lang)
+			unit = ""
 			continue
 		}
 
