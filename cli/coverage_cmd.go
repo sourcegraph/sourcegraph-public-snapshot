@@ -196,11 +196,10 @@ func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Conte
 	}
 
 	if repoRev.Rev == "" {
-		repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
-		if err != nil {
-			return sourcegraph.RepoRevSpec{}, err
-		}
-		repoRev.Rev = repo.DefaultBranch
+		// Assume default branch is master to prevent call to Repos.Get.
+		// This may break for some repos (in which case we may want to hardcode mappings
+		// for exception cases).
+		repoRev.Rev = "master"
 	}
 
 	resRev, err := cl.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: res.Repo, Rev: repoRev.Rev})
@@ -215,7 +214,7 @@ func (c *coverageCache) getResolvedRev(cl *sourcegraph.Client, ctx context.Conte
 
 // fetchAndIndexDefs fetches (and indexes) all of the defs for a repo@rev, then caches the result.
 // If the cache already contains data for repo@rev, it is returned immediately.
-func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec) *defIndex {
+func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Context, repoRev *sourcegraph.RepoRevSpec, repoURI string) *defIndex {
 	// First resolve the rev to an absolute commit ID.
 	repoRev.CommitID = c.getSrclibDataVersion(cl, ctx, repoRev)
 	if repoRev.CommitID == "" {
@@ -230,15 +229,9 @@ func (c *coverageCache) fetchAndIndexDefs(cl *sourcegraph.Client, ctx context.Co
 		return idx
 	}
 
-	repo, err := cl.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoRev.Repo})
-	if err != nil {
-		log15.Error("Error getting repo to list defs.", "err", err, "repo", repoRev.Repo)
-		return nil
-	}
-
 	opt := sourcegraph.DefListOptions{
 		IncludeTest: true,
-		RepoRevs:    []string{fmt.Sprintf("%s@%s", repo.URI, repoRev.CommitID)},
+		RepoRevs:    []string{fmt.Sprintf("%s@%s", repoURI, repoRev.CommitID)},
 	}
 	opt.PerPage = 100000000 // TODO(rothfels): srclib def store doesn't properly handle pagination
 	opt.Page = 1
@@ -465,7 +458,7 @@ func getFileCoverage(cl *sourcegraph.Client, ctx context.Context, repoRev *sourc
 			continue
 		}
 
-		defIdx := cache.fetchAndIndexDefs(cl, ctx, &annRepoRev)
+		defIdx := cache.fetchAndIndexDefs(cl, ctx, &annRepoRev, annInfo.RepoRev.Repo)
 		if defIdx == nil {
 			continue
 		}
