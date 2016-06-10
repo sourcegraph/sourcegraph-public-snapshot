@@ -40,8 +40,6 @@ import (
 
 var Repos sourcegraph.ReposServer = &repos{}
 
-var errEmptyRepoURI = grpc.Errorf(codes.InvalidArgument, "repo URI is empty")
-
 type repos struct{}
 
 var _ sourcegraph.ReposServer = (*repos)(nil)
