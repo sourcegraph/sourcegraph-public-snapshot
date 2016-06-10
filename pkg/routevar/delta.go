@@ -12,8 +12,8 @@ type Delta struct {
 // DeltaRouteVars returns the route variables for generating URLs to
 // the delta specified by this Delta.
 func DeltaRouteVars(s Delta) map[string]string {
-	m := RepoRevRouteVars(s.Base)
-	m["DeltaHeadRev"] = "@" + s.Head.Rev
+	m := RepoRevRouteVars(s.Head)
+	m["DeltaBaseRev"] = "@" + s.Base.Rev
 	return m
 }
 
@@ -22,10 +22,10 @@ func DeltaRouteVars(s Delta) map[string]string {
 func ToDelta(routeVars map[string]string) Delta {
 	repoRev := ToRepoRev(routeVars)
 	return Delta{
-		Base: repoRev,
-		Head: RepoRev{
+		Base: RepoRev{
 			Repo: repoRev.Repo,
-			Rev:  strings.TrimPrefix(routeVars["DeltaHeadRev"], "@"),
+			Rev:  strings.TrimPrefix(routeVars["DeltaBaseRev"], "@"),
 		},
+		Head: repoRev,
 	}
 }
