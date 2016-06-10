@@ -7,7 +7,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 
 function keyFor(repo, rev) {
-	return `${repo}@${rev}`;
+	return `${repo}@${rev || ""}`;
 }
 
 export class RepoStore extends Store {
@@ -32,6 +32,12 @@ export class RepoStore extends Store {
 			content: data && data.resolutions ? data.resolutions.content : {},
 			get(repo) {
 				return this.content[keyFor(repo)] || null;
+			},
+		});
+		this.commits = deepFreeze({
+			content: data && data.commits ? data.commits.content : {},
+			get(repo: string, rev: string) {
+				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
 		this.inventory = deepFreeze({
@@ -78,7 +84,16 @@ export class RepoStore extends Store {
 			});
 			this.__emitChange();
 			return;
+		} else if (action instanceof RepoActions.FetchedCommit) {
+			this.commits = deepFreeze({...this.commits,
+				content: {...this.commits.content,
+					[keyFor(action.repo, action.rev)]: action.commit,
+				},
+			});
+			this.__emitChange();
+			return;
 		}
+
 
 		switch (action.constructor) {
 

@@ -27,6 +27,21 @@ export class ResolvedRev {
 	}
 }
 
+export class WantCommit {
+	constructor(repo, rev) {
+		this.repo = repo;
+		this.rev = rev;
+	}
+}
+
+export class FetchedCommit {
+	constructor(repo, rev, commit) {
+		this.repo = repo;
+		this.rev = rev;
+		this.commit = commit;
+	}
+}
+
 export class WantInventory {
 	constructor(repo, commitID) {
 		this.repo = repo;
