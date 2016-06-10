@@ -17,8 +17,6 @@ import (
 	"go/doc"
 	"go/parser"
 	"go/token"
-
-	"github.com/golang/lint"
 )
 
 var (
@@ -95,8 +93,6 @@ func goListPkgs(args []string) ([]string, error) {
 	}
 	return strings.Split(string(bytes.TrimSpace(out)), "\n"), nil
 }
-
-var linter *lint.Linter
 
 type coverage struct {
 	Pkg             string   // package import path
