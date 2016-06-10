@@ -370,7 +370,7 @@ UPDATE global_defs SET name=` + arg(d.Name) +
 				` AND path=` + arg(d.Path) +
 				` RETURNING *
 )
-INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, updated_at, data, bow, doc) SELECT ` +
+INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, language, updated_at, data, bow, doc) SELECT ` +
 				arg(d.Repo) + `, ` +
 				arg(d.CommitID) + `, ` +
 				arg(d.UnitType) + `, ` +
