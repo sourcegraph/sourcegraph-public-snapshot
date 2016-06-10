@@ -131,7 +131,10 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		Repo:     repo.ID,
 		CommitID: res.CommitID,
 		Branch:   repo.DefaultBranch,
-		Config:   sourcegraph.BuildConfig{Queue: true},
+		Config: sourcegraph.BuildConfig{
+			Queue:    true,
+			Priority: -50,
+		},
 	})
 	if err != nil {
 		log15.Warn("cloneRepo: failed to create build", "err", err, "repo", repo.URI, "commit", res.CommitID, "branch", repo.DefaultBranch)
