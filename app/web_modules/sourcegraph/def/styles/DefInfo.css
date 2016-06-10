@@ -39,6 +39,10 @@
 	composes: pt3 pb1 from base;
 }
 
+.section-label:after {
+	content: none;
+}
+
 .description-wrapper {
 	padding-top: 10px;
 }

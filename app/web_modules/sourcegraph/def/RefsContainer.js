@@ -39,6 +39,7 @@ export default class RefsContainer extends Container {
 		refetch: React.PropTypes.bool,
 		initNumSnippets: React.PropTypes.number, // number of snippets to initially expand
 		fileCollapseThreshold: React.PropTypes.number, // number of files to show before "and X more..."-style paginator
+		rangeLimit: React.PropTypes.number,
 	};
 
 	static contextTypes = {
@@ -92,30 +93,12 @@ export default class RefsContainer extends Container {
 		state.refRepo = props.repoRefs.Repo || null;
 		state.refRev = state.refRepo === state.repo ? state.rev : null;
 		state.repoRefLocations = props.repoRefs || null;
+		state.rangeLimit = props.rangeLimit || null;
 		if (state.repoRefLocations) {
 			state.fileLocations = state.repoRefLocations.Files;
-			// TODO state.fileLocations = state.fileLocations.sort((a, b) => b.Count - a.Count); // flatten
 		}
 
 		state.refs = props.refs || DefStore.refs.get(state.repo, state.rev, state.def, state.refRepo, null);
-		if (state.refs && !state.refs.Error && state.fileLocations) {
-			// TODO: cleanup data fetching logic so this doesn't need to be handled as a special case...
-			// state.refs does *not* include the def itself, and this component fetches blobs based on
-			// file locations of state.refs; however, state.fileLocations comes from the ref-locations
-			// endpoint and *does* include the file location of the def.  Once refs are fetched,
-			// prune state.fileLocations to include only files which have non-def refs.
-			// This also resolves an issue where refs pagination causes some of the refLocations
-			// files to not be fetched (since no refs match these file locations).
-			const fileIndex = {};
-			state.refs.forEach((ref) => fileIndex[ref.File] = true);
-
-			const fileIndexExclusions = {};
-			state.fileLocations = state.fileLocations.filter((loc, i) => {
-				if (fileIndex[loc.Path]) return true;
-				fileIndexExclusions[i] = true;
-				return false;
-			});
-		}
 
 		if (state.fileLocations && !state.initExpanded) {
 			// Auto-expand N snippets by default.
@@ -180,12 +163,8 @@ export default class RefsContainer extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		// optimization: since multiple RefContainers may be shown on a page, fetching refs for every container
-		// when the component is mounted will cause unnecessary re-render cycles across components.
-		// Instead, lazily fetch ref data on mouseover.
 		const refPropsUpdated = prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.def !== nextState.def || prevState.refRepo !== nextState.refRepo;
-		const initialLoad = !prevState.repo && !prevState.rev && !prevState.commitID && !prevState.def && !prevState.refRepo;
-		if ((initialLoad && nextState.prefetch) || (refPropsUpdated && !initialLoad) || (nextState.mouseover && !prevState.mouseover)) {
+		if (refPropsUpdated) {
 			Dispatcher.Backends.dispatch(new DefActions.WantRefs(nextState.repo, nextState.rev, nextState.def, nextState.refRepo));
 		}
 
@@ -219,7 +198,9 @@ export default class RefsContainer extends Container {
 				{this.state.shownFiles.has(path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
 				<div className={styles.pathContainer}>
 					{pathBreadcrumb}
-					<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
+					{count &&
+						<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
+					}
 				</div>
 				<Link className={styles.viewFile}
 					to={urlToBlob(repo, rev, path)}>
@@ -260,8 +241,11 @@ export default class RefsContainer extends Container {
 
 		return (
 			<div className={styles.container}
-				onMouseOver={() => this.setState({mouseover: true, mouseout: false})}
-				onMouseOut={() => this.setState({mouseover: false, mouseout: true})}>
+				onMouseEnter={() => {
+					if (!this.state.mouseover) this.setState({mouseover: true, mouseout: false});
+				}}
+				onMouseLeave={() => this.setState({mouseover: false, mouseout: true})}
+				onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}>
 				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
@@ -288,6 +272,13 @@ export default class RefsContainer extends Container {
 								}
 								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{msg}</p></div>;
 							}
+
+							let ranges = this.ranges[loc.Path];
+							if (this.state.rangeLimit) {
+								ranges = ranges.slice(0, this.state.rangeLimit);
+								ranges.map((r) => [r[0], Math.min(r[0] + 10, r[1])]);
+							}
+
 							return (
 								<div key={i}>
 									{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}
@@ -301,7 +292,7 @@ export default class RefsContainer extends Container {
 										activeDefRepo={this.state.repo}
 										activeDef={this.state.def}
 										lineNumbers={true}
-										displayRanges={this.ranges[loc.Path] || null}
+										displayRanges={ranges || null}
 										highlightedDef={this.state.highlightedDef || null}
 										highlightedDefObj={this.state.highlightedDefObj || null} />
 								</div>

@@ -67,3 +67,9 @@ export type RefLocationsKey = {
 	perPage?: number;
 	repos: Array<string>;
 }
+
+export type ExamplesKey = {
+	repo: string;
+	commitID: string;
+	def: string;
+}

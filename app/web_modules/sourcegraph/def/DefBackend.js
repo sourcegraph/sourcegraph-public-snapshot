@@ -84,6 +84,27 @@ const DefBackend = {
 				break;
 			}
 
+		case DefActions.WantExamples:
+			{
+				let a = (action: DefActions.WantExamples);
+				let examples = DefStore.getExamples(a.resource);
+				if (examples === null) {
+					let url = a.url();
+					trackPromise(
+						DefBackend.fetch(url)
+							.then(checkStatus)
+							.then((resp) => resp.json())
+							.catch((err) => ({Error: err}))
+							.then((data) => {
+								if (!data || !data.Error) {
+									Dispatcher.Stores.dispatch(new DefActions.ExamplesFetched(action, data));
+								}
+							})
+					);
+				}
+				break;
+			}
+
 		case DefActions.WantRefs:
 			{
 				let refs = DefStore.refs.get(action.repo, action.commitID, action.def, action.refRepo, action.refFile);

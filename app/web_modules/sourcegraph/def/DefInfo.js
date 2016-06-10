@@ -5,15 +5,14 @@ import Helmet from "react-helmet";
 import AuthorList from "sourcegraph/def/AuthorList";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
-import RefsContainer from "sourcegraph/def/RefsContainer";
 import DefContainer from "sourcegraph/def/DefContainer";
-import {RefLocsPerPage} from "sourcegraph/def";
-import {Button} from "sourcegraph/components";
+import RepoRefsContainer from "sourcegraph/def/RepoRefsContainer";
+import ExamplesContainer from "sourcegraph/def/ExamplesContainer";
 import {Link} from "react-router";
 import "sourcegraph/blob/BlobBackend";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {urlToDef} from "sourcegraph/def/routes";
+import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
@@ -23,7 +22,7 @@ import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import "whatwg-fetch";
 import {GlobeIcon, LanguageIcon} from "sourcegraph/components/Icons";
-import {Dropdown} from "sourcegraph/components";
+import {Dropdown, TabItem} from "sourcegraph/components";
 
 class DefInfo extends Container {
 	static contextTypes = {
@@ -43,12 +42,9 @@ class DefInfo extends Container {
 	constructor(props) {
 		super(props);
 		this.state = {
-			currPage: 1,
-			nextPageLoading: false,
 			currentLang: localStorage.getItem("defInfoCurrentLang"),
 			translations: {},
 		};
-		this._onNextPage = this._onNextPage.bind(this);
 		this._onTranslateDefInfo = this._onTranslateDefInfo.bind(this);
 	}
 
@@ -70,22 +66,9 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
-
-		state.refLocations = state.def ? DefStore.getRefLocations({
-			repo: state.repo, commitID: state.commitID, def: state.def, repos: [],
-		}) : null;
-		if (state.refLocations && state.refLocations.PagesFetched >= state.currPage) {
-			state.nextPageLoading = false;
-		}
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.currPage !== prevState.currPage || nextState.repo !== prevState.repo || nextState.rev !== prevState.rev || nextState.def !== prevState.def) {
-			Dispatcher.Backends.dispatch(new DefActions.WantRefLocations({
-				repo: nextState.repo, commitID: nextState.commitID, def: nextState.def, repos: [], page: nextState.currPage,
-			}));
-		}
-
 		if (prevState.defCommitID !== nextState.defCommitID && nextState.defCommitID) {
 			if (this.context.features.Authors) {
 				Dispatcher.Backends.dispatch(new DefActions.WantDefAuthors(nextState.repo, nextState.defCommitID, nextState.def));
@@ -94,20 +77,19 @@ class DefInfo extends Container {
 	}
 
 	_onTranslateDefInfo(val) {
-		let $this = this;
-		let def = $this.state.defObj;
+		let def = this.state.defObj;
 		let apiKey = "AIzaSyCKati7PcEa2fqyuoDDwd1ujXiBVOddwf4";
 		let targetLang = val;
 
-		if ($this.state.translations[targetLang]) {
+		if (this.state.translations[targetLang]) {
 			// Toggle when target language is same as the current one,
 			// otherwise change the current language and force to show the result.
-			if ($this.state.currentLang === targetLang) {
-				$this.setState({showTranslatedString: !$this.state.showTranslatedString});
+			if (this.state.currentLang === targetLang) {
+				this.setState({showTranslatedString: !this.state.showTranslatedString});
 			} else {
-				$this.setState({
+				this.setState({
 					currentLang: targetLang,
-					translatedString: $this.state.translations[targetLang],
+					translatedString: this.state.translations[targetLang],
 					showTranslatedString: true,
 				});
 			}
@@ -116,11 +98,11 @@ class DefInfo extends Container {
 			// Fetch translation result when does not exist with given target language
 			fetch(`https://www.googleapis.com/language/translate/v2?key=${apiKey}&target=${targetLang}&q=${encodeURIComponent(def.DocHTML.__html)}`)
 				.then((response) => response.json())
-				.then(function(json) {
+				.then((json) => {
 					let translation = json.data.translations[0].translatedText;
-					$this.setState({
+					this.setState({
 						currentLang: targetLang,
-						translations: {...$this.state.translations, [targetLang]: translation},
+						translations: {...this.state.translations, [targetLang]: translation},
 						showTranslatedString: true,
 					});
 				});
@@ -129,18 +111,12 @@ class DefInfo extends Container {
 		localStorage.setItem("defInfoCurrentLang", targetLang);
 	}
 
-	_onNextPage() {
-		let nextPage = this.state.currPage + 1;
-		this.setState({currPage: nextPage, nextPageLoading: true});
-		this.context.eventLogger.logEvent("RefsPaginatorClicked", {page: nextPage});
-	}
-
 	render() {
 		let def = this.state.defObj;
 		let refLocs = this.state.refLocations;
 		let authors = this.state.authors;
-		let fileCount = refLocs && refLocs.RepoRefs ?
-			refLocs.RepoRefs.reduce((total, refs) => total + refs.Files.length, refLocs.RepoRefs[0].Files.length) : 0;
+		let defInfoUrl = this.state.defObj ? urlToDefInfo(this.state.defObj, this.state.rev) : "";
+		let refsSorting = this.props.location.query.refs || "top";
 
 		if (refLocs && refLocs.Error) {
 			return (
@@ -210,39 +186,45 @@ class DefInfo extends Container {
 					{def && !def.Error && <DefContainer {...this.props} />}
 					{def && !def.Error &&
 						<div>
-							{!refLocs && <i>Loading...</i>}
-							{refLocs && refLocs.TotalRepos &&
-								<div styleName="section-label">
-									Used in {refLocs.TotalRepos} repositor{refLocs.TotalRepos === 1 ? "y" : "ies"}
-								</div>
+							<div style={{float: "right"}}>
+								<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "top"}}}>
+									<TabItem active={refsSorting === "top"}>Top</TabItem>
+								</Link>
+								<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "local"}}}>
+									<TabItem active={refsSorting === "local"}>Local</TabItem>
+								</Link>
+								<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "all"}}}>
+									<TabItem active={refsSorting === "all"}>All</TabItem>
+								</Link>
+							</div>
+							{refsSorting === "top" &&
+								<ExamplesContainer
+									repo={this.props.repo}
+									rev={this.props.rev}
+									commitID={this.props.commitID}
+									def={this.props.def}
+									defObj={this.props.defObj} />
 							}
-							{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs &&
-								<div styleName="section-label">
-									Used in {refLocs.RepoRefs.length}+ repositories
-								</div>
+							{refsSorting === "local" &&
+								<RepoRefsContainer
+									repo={this.props.repo}
+									rev={this.props.rev}
+									commitID={this.props.commitID}
+									def={this.props.def}
+									defObj={this.props.defObj}
+									defRepos={[this.props.repo]} />
 							}
-							{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer
-								key={i}
-								repo={this.props.repo}
-								rev={this.props.rev}
-								commitID={this.props.commitID}
-								def={this.props.def}
-								defObj={this.props.defObj}
-								repoRefs={repoRefs}
-								prefetch={i === 0}
-								initNumSnippets={i === 0 ? 1 : 0}
-								fileCollapseThreshold={5} />)}
+							{refsSorting === "all" &&
+								<RepoRefsContainer
+									repo={this.props.repo}
+									rev={this.props.rev}
+									commitID={this.props.commitID}
+									def={this.props.def}
+									defObj={this.props.defObj} />
+							}
 						</div>
 					}
 				</div>
-				{/* Display the paginator if we have more files repos or repos to show. */}
-				{refLocs && refLocs.RepoRefs &&
-					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
-					!refLocs.StreamTerminated &&
-					<div styleName="pagination">
-						<Button color="blue" loading={this.state.nextPageLoading} onClick={this._onNextPage}>View More</Button>
-					</div>
-				}
 			</div>
 		);
 	}

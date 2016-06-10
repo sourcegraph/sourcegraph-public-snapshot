@@ -30,6 +30,7 @@ const (
 	Def                      = "def"
 	DefRefs                  = "def.refs"
 	DefRefLocations          = "def.ref.locations"
+	DefExamples              = "def.examples"
 	DefAuthors               = "def.authors"
 	Defs                     = "defs"
 	GlobalSearch             = "global.search"
@@ -129,6 +130,7 @@ func New(base *mux.Router) *mux.Router {
 	def.Path("/authors").Methods("GET").Name(DefAuthors)
 	def.Path("/refs").Methods("GET").Name(DefRefs)
 	def.Path("/ref-locations").Methods("GET").Name(DefRefLocations)
+	def.Path("/examples").Methods("GET").Name(DefExamples)
 	repoRev.Path(defPath).Methods("GET").Name(Def) // match subroutes first
 
 	base.Path("/channel/{Channel}").Methods("GET").Name(ChannelListen)

@@ -448,6 +448,19 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 	return
 }
 
+func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.RefLocationsList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Defs", "ListExamples", param)
+	defer func() {
+		trace.After(ctx, "Defs", "ListExamples", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Defs.ListExamples(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Defs.ListExamples returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedDefs) ListAuthors(ctx context.Context, param *sourcegraph.DefsListAuthorsOp) (res *sourcegraph.DefAuthorList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "ListAuthors", param)

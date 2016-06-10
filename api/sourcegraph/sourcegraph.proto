@@ -1480,7 +1480,7 @@ message RefList {
 message DefListRefLocationsOptions {
 	// Repos is the list of repos to restrict the results to.
 	// If empty, all repos are searched for references.
-	repeated int32 Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
+	repeated string Repos = 1 [(gogoproto.moretags) = "url:\",omitempty\""];
 
 	// ListOptions specifies options for paginating
 	// the result.
@@ -1495,6 +1495,16 @@ message DefsListRefLocationsOp {
 
 	// Opt controls the scope of the search for ref locations of this def.
 	DefListRefLocationsOptions Opt = 2;
+}
+
+// DefsListExamples holds the options for fetching
+// usage examples referencing the specified def.
+message DefsListExamplesOp {
+	// Def identifies the definition whose examples are requested.
+	DefSpec Def = 1 [(gogoproto.nullable) = false];
+
+	// ListOptions specifies options for paginating the result.
+	ListOptions ListOptions = 2 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
 }
 
 // RefLocationsList lists the repos and files that reference a def.
@@ -1746,6 +1756,9 @@ service Defs {
 
 	// ListRefLocations lists repos and files that refer to def.
 	rpc ListRefLocations(DefsListRefLocationsOp) returns (RefLocationsList);
+
+	// ListExamples lists usage examples for a given def.
+	rpc ListExamples(DefsListExamplesOp) returns (RefLocationsList);
 
 	// ListAuthors lists people who committed parts of def's definition.
 	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);

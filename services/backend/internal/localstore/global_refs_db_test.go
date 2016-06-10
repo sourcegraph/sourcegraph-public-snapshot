@@ -162,7 +162,7 @@ func testGlobalRefs(t *testing.T, g store.GlobalRefs) {
 			&sourcegraph.DefsListRefLocationsOp{
 				Def: sourcegraph.DefSpec{Repo: xyRepoID, Unit: "x/y/c", UnitType: "t", Path: "A/R"},
 				Opt: &sourcegraph.DefListRefLocationsOptions{
-					Repos: []int32{abRepoID},
+					Repos: []string{"a/b"},
 				},
 			},
 			[]*sourcegraph.DefRepoRef{

@@ -1,6 +1,6 @@
 // @flow
 
-import type {Def, Ref, RefLocationsKey} from "sourcegraph/def";
+import type {Def, Ref, RefLocationsKey, ExamplesKey} from "sourcegraph/def";
 import {RefLocsPerPage} from "sourcegraph/def";
 import toQuery from "sourcegraph/util/toQuery";
 
@@ -123,7 +123,7 @@ export class WantRefLocations {
 
 	url(): string {
 		let q = toQuery({
-			Query: this.resource.repos,
+			Repos: this.resource.repos,
 			Page: this.resource.page,
 			PerPage: RefLocsPerPage,
 		});
@@ -139,6 +139,28 @@ export class RefLocationsFetched {
 	locations: Object;
 
 	constructor(request: WantRefLocations, locations: Object) {
+		this.request = request;
+		this.locations = locations;
+	}
+}
+
+export class WantExamples {
+	resource: ExamplesKey;
+
+	constructor(r: ExamplesKey) {
+		this.resource = r;
+	}
+
+	url(): string {
+		return `/.api/repos/${this.resource.repo}${this.resource.commitID ? `@${this.resource.commitID}` : ""}/-/def/${this.resource.def}/-/examples`;
+	}
+}
+
+export class ExamplesFetched {
+	request: WantExamples;
+	locations: Object;
+
+	constructor(request: WantExamples, locations: Object) {
 		this.request = request;
 		this.locations = locations;
 	}
