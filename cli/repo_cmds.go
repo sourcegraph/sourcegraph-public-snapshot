@@ -353,6 +353,10 @@ type repoSyncCmd struct {
 	Force bool   `long:"force" short:"f" description:"force rebuild even if build exists for the latest commit"`
 	Rev   string `long:"revision" short:"r" description:"sync the specified branch or commit ID"`
 
+	// buildPriority is used to control the priority of the build. Private
+	// since we don't want to expose it to the user.
+	buildPriority int32
+
 	Args struct {
 		URIs []string `name:"REPO-URI" description:"repository URIs (e.g., host.com/myrepo)"`
 	} `positional-args:"yes" required:"yes"`
@@ -427,7 +431,10 @@ func (c *repoSyncCmd) sync(repoURI string) error {
 		b, err := cl.Builds.Create(cliContext, &sourcegraph.BuildsCreateOp{
 			Repo:     repoRevSpec.Repo,
 			CommitID: repoRevSpec.CommitID,
-			Config:   sourcegraph.BuildConfig{Queue: true},
+			Config: sourcegraph.BuildConfig{
+				Queue:    true,
+				Priority: c.buildPriority,
+			},
 		})
 		if err != nil {
 			return err

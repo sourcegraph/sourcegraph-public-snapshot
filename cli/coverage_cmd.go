@@ -286,7 +286,10 @@ func (c *coverageCmd) Execute(args []string) error {
 			WebhookURL: os.Getenv("SG_SLACK_GRAPH_WEBHOOK_URL"),
 		})
 
-		syncCmd := &repoSyncCmd{Force: true}
+		syncCmd := &repoSyncCmd{
+			Force:         true,
+			buildPriority: -100, // let other builds run first
+		}
 		syncCmd.Args.URIs = repos
 		err := syncCmd.Execute(nil)
 		if err != nil {
