@@ -3,13 +3,9 @@ package localstore
 import (
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/lib/pq"
-
 	"gopkg.in/gorp.v1"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -24,15 +20,16 @@ import (
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-func init() {
-	GraphSchema.Map.AddTableWithName(dbGlobalDefLanguages{}, "global_defs_languages").SetKeys(true, "ID")
-	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
-		`ALTER TABLE global_defs_languages ALTER COLUMN id TYPE smallint`,
-		`ALTER TABLE global_defs_languages ALTER COLUMN language SET NOT NULL`,
-		`ALTER TABLE ONLY global_defs_languages ADD CONSTRAINT global_defs_languages_unique UNIQUE (language)`,
-		`CREATE INDEX global_defs_languages_language ON global_defs_languages USING btree (lower(language))`,
-	)
+// Mappings from language to language ID. These should not be changed once set
+// (doing so would require a database migration). When adding a new ID, you
+// must use the exact LOWERCASE srclib toolchain language name.
+var languages = map[string]uint16{
+	"go":     1,
+	"java":   2,
+	"python": 3,
+}
 
+func init() {
 	GraphSchema.Map.AddTableWithName(dbGlobalDef{}, "global_defs").SetKeys(false, "Repo", "CommitID", "UnitType", "Unit", "Path")
 	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
 		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
@@ -195,24 +192,24 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 
 		// Language filtering.
 		if len(op.Opt.Languages) > 0 {
-			languagesIDs, err := languageIDs(ctx, op.Opt.Languages)
-			if err != nil {
-				return nil, err
-			}
 			var l []string
-			for _, language := range languagesIDs {
-				l = append(l, arg(language))
+			for _, language := range op.Opt.Languages {
+				id, ok := languages[language]
+				if !ok {
+					continue
+				}
+				l = append(l, arg(id))
 			}
 			wheres = append(wheres, `language IN (`+strings.Join(l, ", ")+`)`)
 		}
 		if len(op.Opt.NotLanguages) > 0 {
-			notLanguagesIDs, err := languageIDs(ctx, op.Opt.NotLanguages)
-			if err != nil {
-				return nil, err
-			}
 			var l []string
-			for _, language := range notLanguagesIDs {
-				l = append(l, arg(language))
+			for _, language := range op.Opt.NotLanguages {
+				id, ok := languages[language]
+				if !ok {
+					continue
+				}
+				l = append(l, arg(id))
 			}
 			wheres = append(wheres, `language NOT IN (`+strings.Join(l, ", ")+`)`)
 		}
@@ -308,48 +305,6 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			return err
 		}
 
-		// For every unique language that the defs are composed of, ensure
-		// there is a corresponding entry in the global_defs_languages table.
-		languages := make(map[string]bool)
-		var languagesList []string
-		for _, d := range defs {
-			l := strings.ToLower(graph.PrintFormatter(d).Language())
-			if _, ok := languages[l]; ok {
-				continue
-			}
-			languages[l] = true
-			languagesList = append(languagesList, l)
-
-			if _, alreadyInDB := langIDCache.get(l); alreadyInDB {
-				continue
-			}
-
-			err := graphDBH(ctx).Insert(&dbGlobalDefLanguages{Language: l})
-			if isPQErrorUniqueViolation(err) {
-				if c := err.(*pq.Error).Constraint; c != "global_defs_languages_unique" {
-					log15.Warn("Expected unique_violation of global_defs_languages_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
-				}
-				// Do nothing with the error, because the language is already
-				// in the table just as we want.
-			} else if err != nil {
-				return err
-			}
-
-			// Fetch the language ID, so it's stored in langIDCache for later to avoid
-			// round-tripping with the DB.
-			if _, err := languageIDs(ctx, []string{l}); err != nil {
-				return err
-			}
-		}
-		ids, err := languageIDs(ctx, languagesList)
-		if err != nil {
-			return err
-		}
-		languageIDMap := make(map[string]int16, len(languagesList))
-		for i, language := range languagesList {
-			languageIDMap[language] = ids[i]
-		}
-
 		type upsert struct {
 			query string
 			args  []interface{}
@@ -390,7 +345,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			}
 			bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
 
-			languageID := languageIDMap[strings.ToLower(graph.PrintFormatter(d).Language())]
+			languageID := languages[strings.ToLower(graph.PrintFormatter(d).Language())]
 
 			var args []interface{}
 			arg := func(v interface{}) string {
@@ -548,44 +503,4 @@ func repoURIs(ctx context.Context, repoIDs []int32) (uris []string, err error) {
 		uris = append(uris, repo.URI)
 	}
 	return uris, nil
-}
-
-func languageIDs(ctx context.Context, languages []string) (ids []int16, err error) {
-	for _, language := range languages {
-		language = strings.ToLower(language)
-		if id, ok := langIDCache.get(language); ok {
-			ids = append(ids, id)
-			continue
-		}
-
-		var results []int16
-		sql := `SELECT id FROM global_defs_languages WHERE language = $1`
-		if _, err := graphDBH(ctx).Select(&results, sql, language); err != nil {
-			return nil, err
-		}
-		ids = append(ids, results[0])
-		langIDCache.put(language, results[0])
-	}
-	return
-}
-
-var langIDCache = &languageIDCache{}
-
-type languageIDCache struct {
-	sync.RWMutex
-	c map[string]int16
-}
-
-func (l *languageIDCache) get(language string) (id int16, ok bool) {
-	l.RLock()
-	id, ok = l.c[language]
-	l.RUnlock()
-	return
-}
-
-func (l *languageIDCache) put(language string, id int16) {
-	l.Lock()
-	l.c[language] = id
-	l.Unlock()
-	return
 }
