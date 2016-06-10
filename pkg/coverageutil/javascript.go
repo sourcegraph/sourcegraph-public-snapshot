@@ -164,7 +164,7 @@ func (s *javascriptScanner) consumeRegexp() rune {
 func newJavascriptScanner() *javascriptScanner {
 	s := &javascriptScanner{&scanner.Scanner{}}
 	s.IsIdentRune = func(ch rune, i int) bool {
-		return ch == '_' || ch == '$' || ch == '$' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
+		return ch == '_' || ch == '$' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
 	}
 	return s
 }
