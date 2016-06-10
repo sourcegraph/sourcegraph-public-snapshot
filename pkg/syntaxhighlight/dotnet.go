@@ -44,10 +44,8 @@ func init() {
 			case 3:
 				if c == '\'' {
 					return []int{0, i + 1}
-				} else {
-					return nil
 				}
-				break
+				return nil
 			case 4:
 				if c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F' {
 					ucounter++

@@ -99,7 +99,6 @@ func (self *RegexpLexer) NextToken() *Token {
 			return self.consumeCache()
 		}
 	}
-	return nil
 }
 
 // Emits one token from cache if any
