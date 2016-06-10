@@ -178,62 +178,6 @@
 				},
 				{
 					"type": "div",
-					"key": ".0:$_nosymbol5",
-					"props": {
-						"styleName": "list-item",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "74%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".0:$_nosymbol6",
-					"props": {
-						"styleName": "list-item",
-						"children": [
-							{
-								"type": "div",
-								"props": {
-									"styleName": "content-placeholder",
-									"style": {
-										"width": "53%"
-									},
-									"children": [
-										{
-											"type": "code",
-											"props": {
-												"children": [
-													" "
-												]
-											}
-										}
-									]
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
 					"key": ".4",
 					"props": {
 						"styleName": "list-header",

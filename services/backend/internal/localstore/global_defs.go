@@ -145,15 +145,12 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		op.Opt = &sourcegraph.SearchOptions{}
 	}
 
-	if len(op.TokQuery) == 0 && len(op.Opt.Repos) == 0 {
+	if len(op.TokQuery) == 0 {
 		return &sourcegraph.SearchResultsList{}, nil
 	}
 
 	bowQuery := search.UserQueryToksToTSQuery(op.TokQuery)
-	var lastTok string
-	if len(op.TokQuery) > 0 {
-		lastTok = op.TokQuery[len(op.TokQuery)-1]
-	}
+	lastTok := op.TokQuery[len(op.TokQuery)-1]
 
 	var scoreSQL string
 	if bowQuery != "" {

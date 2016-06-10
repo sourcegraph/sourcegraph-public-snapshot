@@ -35,9 +35,8 @@ import breadcrumb from "sourcegraph/util/breadcrumb";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tree.css";
 
-const SYMBOL_LIMIT = 7;
+const SYMBOL_LIMIT = 5;
 const GLOBAL_DEFS_LIMIT = 3;
-const DEFS_LIMIT = 30;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
 const MAX_QUERY_LENGTH = 32;
@@ -78,7 +77,6 @@ class TreeSearch extends Container {
 		prefetch: React.PropTypes.bool,
 		location: React.PropTypes.object,
 		route: React.PropTypes.object,
-		includeXDefs: React.PropTypes.bool,
 	};
 
 	props: {
@@ -90,7 +88,6 @@ class TreeSearch extends Container {
 		prefetch: ?boolean;
 		location: Location;
 		route: Route;
-		includeXDefs: boolean;
 		onChangeQuery: (query: string) => void;
 		onSelectPath: (path: string) => void;
 	};
@@ -170,32 +167,9 @@ class TreeSearch extends Container {
 
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.commitID);
 
-		// For the empty revision (== latest build on the default branch, show the
-		// most-referenced defs based on the global search index. We don't have
-		// ref counts for other branches.
-		state.showTopDefs = !state.rev && state.path === "/";
+		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
 
-		if (state.showTopDefs) {
-			let matchingGlobalDefs = SearchStore.results.get(state.query, [state.repo], null, DEFS_LIMIT);
-			if (state.matchingGlobalDefs !== matchingGlobalDefs) {
-				state.matchingGlobalDefs = matchingGlobalDefs;
-				if (matchingGlobalDefs && matchingGlobalDefs.Defs) {
-					state.matchingDefs = {
-						Defs: matchingGlobalDefs.Defs.filter((d) => (
-							// TODO(sqs): Hack to filter to only exported funcs/types for Go, or
-							// to funcs/types for other langs (which is the best we can do). Current global
-							// search does not support filtering to exported definitions only.
-							(d.UnitType !== "GoPackage" || (d.Data && d.Data.Exported)) &&
-							(d.Kind === "func" || d.Kind === "type")
-						)),
-					};
-				}
-			}
-		} else {
-			state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
-		}
-
-		state.xdefs = state.includeXDefs ? SearchStore.results.get(state.query, null, [this.state.repo], GLOBAL_DEFS_LIMIT) : null;
+		state.xdefs = SearchStore.results.get(state.query, null, [this.state.repo], GLOBAL_DEFS_LIMIT);
 	}
 
 	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
@@ -222,9 +196,9 @@ class TreeSearch extends Container {
 		}
 
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
-			if (nextState.showTopDefs) {
-				Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, [nextState.repo], null, DEFS_LIMIT));
-			} else if (nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
+			// Only fetch on the client, not server, so that we don't
+			// cache stale def lists prior to the repo's first build.
+			if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
 				Dispatcher.Backends.dispatch(
 					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false)
 				);
@@ -232,7 +206,7 @@ class TreeSearch extends Container {
 		}
 
 		// Global search results only show up for admin users
-		if (nextState.query && nextState.includeXDefs && this.context.user && this.context.user.Admin && (prevState.query !== nextState.query || prevState.repo !== nextState.repo)) {
+		if (this.context.user && this.context.user.Admin && (prevState.query !== nextState.query || prevState.repo !== nextState.repo)) {
 			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [nextState.repo], GLOBAL_DEFS_LIMIT));
 		}
 
@@ -696,7 +670,7 @@ class TreeSearch extends Container {
 					}
 				</div>
 
-				{this.state.includeXDefs && xdefInfo.items}
+				{xdefInfo.items}
 
 				<div styleName="list-header">
 					Files in
