@@ -390,8 +390,8 @@ func (r *Repository) commitLog(opt vcs.CommitsOptions) ([]*vcs.Commit, uint, err
 
 		commits[i] = &vcs.Commit{
 			ID:        vcs.CommitID(parts[0]),
-			Author:    vcs.Signature{string(parts[1]), string(parts[2]), pbtypes.NewTimestamp(time.Unix(authorTime, 0))},
-			Committer: &vcs.Signature{string(parts[4]), string(parts[5]), pbtypes.NewTimestamp(time.Unix(committerTime, 0))},
+			Author:    vcs.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: pbtypes.NewTimestamp(time.Unix(authorTime, 0))},
+			Committer: &vcs.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: pbtypes.NewTimestamp(time.Unix(committerTime, 0))},
 			Message:   string(bytes.TrimSuffix(parts[7], []byte{'\n'})),
 			Parents:   parents,
 		}
