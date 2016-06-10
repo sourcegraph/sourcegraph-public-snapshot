@@ -62,6 +62,12 @@ func serveRepoBuildsCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: err}
 	}
+	// Don't let the user specify the config
+	op.Config = sourcegraph.BuildConfig{
+		Queue: true,
+		// Builds triggered from the UI have a high priority
+		Priority: 100,
+	}
 
 	repo, err := handlerutil.GetRepoID(ctx, mux.Vars(r))
 	if err != nil {
