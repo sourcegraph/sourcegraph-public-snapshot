@@ -344,10 +344,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
 	s.Config.Endpoint.URL = fmt.Sprintf("%s://localhost:%d", scheme, mainHTTPPort)
 
-	// Other config
-	s.Config.Serve.NoInitialOnboarding = true
-	s.Config.Serve.RegisterURL = ""
-
 	// App
 	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
 
