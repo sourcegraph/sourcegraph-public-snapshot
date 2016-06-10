@@ -1,0 +1,31 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
+@value Blob "sourcegraph/blob/styles/Blob.css";
+
+.container {}
+
+.lines {
+	composes: lines from Blob;
+}
+.line {
+	composes: line from Blob;
+}
+.line-number-cell {
+	composes: lineNumberCell from Blob;
+}
+.line-number {
+	composes: lineNumber from Blob;
+}
+.line-content {
+	composes: lineContent from Blob;
+}
+.new-line {
+	composes: bg-green-2 from colors;
+}
+.old-line {
+	composes: bg-red-2 from colors;
+}

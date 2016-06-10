@@ -5,7 +5,18 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
-.container {
-	composes: containerFixed from layout;
-	composes: pa3 from base;
+.diff-stat-scale {
+	display: inline-block;
+}
+.stat-added {
+	color: green;
+}
+.stat-deleted {
+	color: red;
+}
+.stat-changed {
+	color: orange;
+}
+.stat-filler {
+	color: transparent;
 }

@@ -34,6 +34,7 @@ const (
 	DefExamples              = "def.examples"
 	DefAuthors               = "def.authors"
 	Defs                     = "defs"
+	DeltaFiles               = "delta.files"
 	GlobalSearch             = "global.search"
 	Repo                     = "repo"
 	RepoResolve              = "repo.resolve"
@@ -109,6 +110,7 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
 	repoRev.Path("/commit").Methods("GET").Name(Commit)
+	repoRev.Path("/delta/{DeltaBaseRev}/-/files").Methods("GET").Name(DeltaFiles)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)

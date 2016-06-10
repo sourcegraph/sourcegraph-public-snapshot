@@ -4,4 +4,5 @@
 	composes: v-txt-top from typography;
 	display: inline-flex;
 	align-items: center;
+	pointer-events: none;
 }

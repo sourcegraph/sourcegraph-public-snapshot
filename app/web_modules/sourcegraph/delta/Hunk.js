@@ -1,7 +1,7 @@
 import React from "react";
-
+import styles from "sourcegraph/delta/styles/Hunk.css";
+import CSSModules from "react-css-modules";
 import {atob} from "abab";
-import classNames from "classnames";
 import BlobLine from "sourcegraph/blob/BlobLine";
 import fileLines from "sourcegraph/util/fileLines";
 
@@ -11,18 +11,18 @@ class Hunk extends React.Component {
 
 		let lines = fileLines(atob(hunk.Body));
 
-		let origLine = hunk.OrigStartLine;
-		let newLine = hunk.NewStartLine;
+		let origLine = hunk.OrigStartLine || 0;
+		let newLine = hunk.NewStartLine || 0;
 
 		let lineStartByte = 0;
 
 		return (
-			<table className="line-numbered-code theme-default file-diff-hunk">
+			<table styleName="lines">
 				<tbody>
-					<tr className="line hunk-header">
-						<td className="line-number">...</td>
-						<td className="line-number">...</td>
-						<td className="line-content">
+					<tr styleName="line">
+						<td styleName="line-number-cell"><span styleName="line-number">...</span></td>
+						<td styleName="line-number-cell"><span styleName="line-number">...</span></td>
+						<td styleName="line-content">
 							@@ -{hunk.OrigStartLine},{hunk.OrigLines} +{hunk.NewStartLine},{hunk.NewLines} @@ {hunk.Section}
 						</td>
 					</tr>
@@ -32,13 +32,16 @@ class Hunk extends React.Component {
 						lineStartByte += line.length + 1; // account for 1-char newline
 
 						const prefix = line[0];
+						let styleName;
 						if (i > 0) {
 							switch (prefix) {
 							case "+":
 								newLine++;
+								styleName = styles["new-line"];
 								break;
 							case "-":
 								origLine++;
+								styleName = styles["old-line"];
 								break;
 							case " ":
 								origLine++;
@@ -54,14 +57,13 @@ class Hunk extends React.Component {
 						return (
 							<BlobLine
 								key={i}
-								className={classNames({
-									"new-line": prefix === "+",
-									"old-line": prefix === "-",
-								})}
+								className={styleName || null}
 								oldLineNumber={prefix === "+" ? null : origLine}
 								newLineNumber={prefix === "-" ? null : newLine}
 								contents={line}
 								startByte={thisLineStartByte}
+								highlightedDef={this.props.highlightedDef}
+								highlightedDefObj={this.props.highlightedDefObj}
 								annotations={anns} />
 						);
 					})}
@@ -73,5 +75,8 @@ class Hunk extends React.Component {
 Hunk.propTypes = {
 	hunk: React.PropTypes.object.isRequired,
 	annotations: React.PropTypes.array,
+
+	highlightedDef: React.PropTypes.string,
+	highlightedDefObj: React.PropTypes.object,
 };
-export default Hunk;
+export default CSSModules(Hunk, styles);

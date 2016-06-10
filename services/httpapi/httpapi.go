@@ -75,6 +75,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.DefRefLocations).Handler(handler(serveDefRefLocations))
 	m.Get(apirouter.DefExamples).Handler(handler(serveDefExamples))
 	m.Get(apirouter.Defs).Handler(handler(serveDefs))
+	m.Get(apirouter.DeltaFiles).Handler(handler(serveDeltaFiles))
 	m.Get(apirouter.GlobalSearch).Handler(handler(serveGlobalSearch))
 	m.Get(apirouter.Repo).Handler(handler(serveRepo))
 	m.Get(apirouter.RepoResolve).Handler(handler(serveRepoResolve))

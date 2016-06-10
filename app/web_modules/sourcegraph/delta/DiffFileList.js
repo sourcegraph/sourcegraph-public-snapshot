@@ -1,59 +1,57 @@
 import React from "react";
-
-import classNames from "classnames";
 import DiffStatScale from "sourcegraph/delta/DiffStatScale";
 import {isDevNull} from "sourcegraph/delta/util";
+import styles from "sourcegraph/delta/styles/DiffFileList.css";
+import CSSModules from "react-css-modules";
+import {TriangleDownIcon} from "sourcegraph/components/Icons";
+import {Panel, Menu, Popover} from "sourcegraph/components";
 
 class DiffFileList extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {closed: false};
-	}
+	static propTypes = {
+		files: React.PropTypes.arrayOf(React.PropTypes.object),
+		stats: React.PropTypes.object.isRequired,
+	};
+
+	state = {closed: false};
 
 	render() {
 		return (
-			<div className={classNames({
-				"file-list": true,
-				"closed": Boolean(this.state.closed),
-			})}>
-				<a className="file-list-header" onClick={() => this.setState({closed: !this.state.closed})}>
-					<i className={this.state.closed ? "fa fa-icon fa-plus-square-o" : "fa fa-icon fa-minus-square-o"} />
-					<b>Files</b> <span className="count">( {this.props.files.length} )</span>
-					<span className="pull-right stats">
-						<span className="additions-color">+{this.props.stats.Added}</span>
-						<span className="deletions-color">-{this.props.stats.Deleted}</span>
-					</span>
-				</a>
-
-				<ul className="file-list-items">
-					{this.props.files.map((fd, i) => (
-						<li key={fd.OrigName + fd.NewName} className="file-list-item">
-							<a href={`#F${i}`}>
-								{isDevNull(fd.OrigName) ? <code className="change-type additions-color">+</code> : null}
-								{isDevNull(fd.NewName) ? <code className="change-type deletions-color">&minus;</code> : null}
-								{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) ? <code className="change-type changes-color">&bull;</code> : null}
-
-								{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) && fd.OrigName !== fd.NewName ? (
-									<span>{fd.OrigName} <i className="fa fa-icon fa-long-arrow-right" />&nbsp;</span>
-								) : null}
-
-								{isDevNull(fd.NewName) ? fd.OrigName : fd.NewName}
-
-								<div className="pull-right stats">
-									<span className="additions-color">+{this.props.stats.Added}</span>
-									<span className="deletions-color">-{this.props.stats.Deleted}</span>
-									<DiffStatScale Stat={this.props.stats} />
+			<Panel styleName="container">
+				<div styleName="header">
+				<Popover popoverClassName={styles.popover}>
+						<div styleName="label">
+							<DiffStatScale Stat={this.props.stats} />
+							<span styleName="count">{this.props.files.length}</span> changed files
+							<span styleName="overall-stats">
+								<span styleName="stat added">+{this.props.stats.Added}</span>
+								<span styleName="stat deleted">&ndash;{this.props.stats.Deleted}</span>
+							</span>
+							&nbsp;<TriangleDownIcon />
+						</div>
+						<Menu className={styles["popover-menu"]}>
+							{this.props.files.map((fd, i) => (
+								<div key={fd.OrigName + fd.NewName} styleName="file-item">
+									<a href={`#F${i}`} styleName="file">
+										{isDevNull(fd.OrigName) ? <code styleName="change-type added">+</code> : null}
+										{isDevNull(fd.NewName) ? <code styleName="change-type deleted">&ndash;</code> : null}
+										{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) ? <code styleName="change-type changed">&bull;</code> : null}
+										{!isDevNull(fd.OrigName) && !isDevNull(fd.NewName) && fd.OrigName !== fd.NewName ? (
+											<span>{fd.OrigName} &rarr;&nbsp;</span>
+										) : null}
+										{isDevNull(fd.NewName) ? fd.OrigName : fd.NewName}
+									</a>
+									<span styleName="file-stats">
+										<span styleName="stat added">+{fd.Stats.Added}</span>
+										<span styleName="stat deleted">&ndash;{fd.Stats.Deleted}</span>
+									</span>
 								</div>
-							</a>
-						</li>
-					))}
-				</ul>
-			</div>
+							))}
+						</Menu>
+					</Popover>
+				</div>
+			</Panel>
 		);
 	}
 }
-DiffFileList.propTypes = {
-	files: React.PropTypes.arrayOf(React.PropTypes.object),
-	stats: React.PropTypes.object.isRequired,
-};
-export default DiffFileList;
+
+export default CSSModules(DiffFileList, styles, {allowMultiple: true});

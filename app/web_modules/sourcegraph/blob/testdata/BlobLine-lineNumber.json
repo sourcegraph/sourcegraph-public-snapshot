@@ -2,6 +2,7 @@
 	"renderOutput": {
 		"type": "tr",
 		"props": {
+			"className": "undefined ",
 			"data-line": 42,
 			"children": [
 				{

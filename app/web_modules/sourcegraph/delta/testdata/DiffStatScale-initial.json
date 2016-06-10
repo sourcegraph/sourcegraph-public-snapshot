@@ -2,12 +2,13 @@
 	"renderOutput": {
 		"type": "span",
 		"props": {
-			"className": "diff-stat-scale",
+			"styleName": "diff-stat-scale",
 			"children": [
 				{
 					"type": "span",
+					"key": ".0",
 					"props": {
-						"className": "stat-added",
+						"styleName": "stat-added",
 						"children": [
 							"■"
 						]
@@ -15,8 +16,9 @@
 				},
 				{
 					"type": "span",
+					"key": ".1",
 					"props": {
-						"className": "stat-changed",
+						"styleName": "stat-changed",
 						"children": [
 							"■"
 						]
@@ -24,8 +26,9 @@
 				},
 				{
 					"type": "span",
+					"key": ".2",
 					"props": {
-						"className": "stat-deleted",
+						"styleName": "stat-deleted",
 						"children": [
 							"■"
 						]
@@ -33,8 +36,9 @@
 				},
 				{
 					"type": "span",
+					"key": ".3",
 					"props": {
-						"className": "stat-filler",
+						"styleName": "stat-filler",
 						"children": [
 							"■■"
 						]

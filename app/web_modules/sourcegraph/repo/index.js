@@ -1,5 +1,15 @@
 // @flow
 
+export type RepoRev = {
+	Repo: string;
+	Rev: ?string;
+};
+
+export type RepoRevSpec = {
+	Repo: number;
+	CommitID: ?string;
+};
+
 // repoPath returns the path portion of a repo route var match.
 export function repoPath(repoRevRouteVar: string): string {
 	const at = repoRevRouteVar.indexOf("@");

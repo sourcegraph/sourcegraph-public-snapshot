@@ -6,6 +6,25 @@
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
 .container {
-	composes: containerFixed from layout;
-	composes: pa3 from base;
+
+}
+
+.header {
+	display: flex;
+	composes: bg-light-gray from colors;
+	composes: pv2 ph3 br2 from base;
+}
+.info {
+	flex: 1 0;
+}
+.name {
+	font-weight: bold;
+}
+.actions {
+	flex: 0 1;
+}
+.action {
+	composes: pl2 from base;
+}
+.hunk {
 }

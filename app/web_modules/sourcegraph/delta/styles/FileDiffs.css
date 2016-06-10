@@ -5,7 +5,8 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
-.container {
-	composes: containerFixed from layout;
-	composes: pa3 from base;
+.container {}
+
+.file-diff {
+	composes: mb5 from base;
 }

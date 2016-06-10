@@ -1,5 +1,6 @@
 import React from "react";
-
+import styles from "sourcegraph/delta/styles/FileDiff.css";
+import CSSModules from "react-css-modules";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import {atob} from "abab";
 import Component from "sourcegraph/Component";
@@ -16,25 +17,29 @@ class FileDiff extends Component {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (nextState.baseRepo !== prevState.baseRepo || nextState.baseRev !== prevState.baseRev || nextState.diff.OrigName !== prevState.diff.OrigName) {
-			if (!isDevNull(nextState.diff.OrigName)) Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, "", nextState.diff.OrigName));
+		if (nextState.baseRepo !== prevState.baseRepo || nextState.baseRev !== prevState.baseRev || nextState.diff !== prevState.diff) {
+			if (nextState.diff && nextState.baseRepo && nextState.baseRev && !isDevNull(nextState.diff.OrigName)) {
+				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.baseRepo, nextState.baseRev, nextState.diff.OrigName));
+			}
 		}
-		if (nextState.headRepo !== prevState.headRepo || nextState.headRev !== prevState.headRev || nextState.diff.NewName !== prevState.diff.NewName) {
-			if (!isDevNull(nextState.diff.NewName)) Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.headRepo, nextState.headRev, "", nextState.diff.NewName));
+		if (nextState.headRepo !== prevState.headRepo || nextState.headRev !== prevState.headRev || nextState.diff !== prevState.diff) {
+			if (nextState.headRepo && nextState.headRev && nextState.diff && !isDevNull(nextState.diff.NewName)) {
+				Dispatcher.Backends.dispatch(new BlobActions.WantAnnotations(nextState.headRepo, nextState.headRev, nextState.diff.NewName));
+			}
 		}
 	}
 
 	_groupAnnotationsByHunk(hunks) {
-		let baseAnns = this.state.annotations.get(this.state.baseRepo, this.state.baseRev, "", this.state.diff.OrigName);
-		let headAnns = this.state.annotations.get(this.state.headRepo, this.state.headRev, "", this.state.diff.NewName);
+		let baseAnns = this.state.annotations.get(this.state.baseRepo, this.state.baseRev, this.state.diff.OrigName);
+		let headAnns = this.state.annotations.get(this.state.headRepo, this.state.headRev, this.state.diff.NewName);
 		return hunks.map((hunk) => {
 			let baseStart = baseAnns ? baseAnns.LineStartBytes[hunk.OrigStartLine - 1] : null;
 			let baseEnd = baseAnns ? baseAnns.LineStartBytes[hunk.OrigStartLine + hunk.OrigLines - 1] : null;
-			let hunkBaseAnns = baseAnns ? baseAnns.Annotations.filter((ann) => ann.StartByte >= baseStart && ann.EndByte < baseEnd) : [];
+			let hunkBaseAnns = baseAnns ? (baseAnns.Annotations || []).filter((ann) => ann.StartByte >= baseStart && ann.EndByte < baseEnd) : [];
 
 			let headStart = headAnns ? headAnns.LineStartBytes[hunk.NewStartLine - 1] : null;
 			let headEnd = headAnns ? headAnns.LineStartBytes[hunk.NewStartLine + hunk.NewLines - 1] : null;
-			let hunkHeadAnns = headAnns ? headAnns.Annotations.filter((ann) => ann.StartByte >= headStart && ann.EndByte < headEnd) : [];
+			let hunkHeadAnns = headAnns ? (headAnns.Annotations || []).filter((ann) => ann.StartByte >= headStart && ann.EndByte < headEnd) : [];
 
 			let resultAnns = [];
 			let lines = fileLines(atob(hunk.Body));
@@ -68,7 +73,7 @@ class FileDiff extends Component {
 					break;
 
 				case " ":
-					if (headAnns && (!baseAnns || headAnns.Annotations.length > baseAnns.Annotations.length)) addLineAnns(hunkHeadAnns, headAnns.LineStartBytes[newLine - 1], line.length);
+					if (headAnns && (!baseAnns || !baseAnns.Annotations || (headAnns.Annotations && headAnns.Annotations.length > baseAnns.Annotations.length))) addLineAnns(hunkHeadAnns, headAnns.LineStartBytes[newLine - 1], line.length);
 					else if (baseAnns) addLineAnns(hunkBaseAnns, baseAnns.LineStartBytes[origLine - 1], line.length);
 					origLine++;
 					newLine++;
@@ -85,18 +90,20 @@ class FileDiff extends Component {
 		let diff = this.props.diff;
 		let hunkAnns = this._groupAnnotationsByHunk(diff.Hunks);
 		return (
-			<div className="file-diff" id={this.props.id || ""}>
-				<header>
-					<DiffStatScale Stat={diff.Stats} />
-
-					<span>{isDevNull(diff.OrigName) ? diff.NewName : diff.OrigName}</span>
-					{diff.NewName !== diff.OrigName && !isDevNull(diff.OrigName) && !isDevNull(diff.NewName) ? (
-						<span> <i className="fa fa-long-arrow-right" /> {diff.NewName}</span>
-					) : null}
-
-					<div className="btn-group pull-right">
-						{!isDevNull(diff.OrigName) && <a className="button btn btn-default btn-xs" href={urlToBlob(this.props.baseRepo, this.props.baseRev, diff.OrigName)}>Original</a>}
-						{!isDevNull(diff.NewName) && <a className="button btn btn-default btn-xs" href={urlToBlob(this.props.headRepo, this.props.headRev, diff.NewName)}>New</a>}
+			<div styleName="container" id={this.props.id || ""}>
+				<header styleName="header">
+					<div styleName="info">
+						<DiffStatScale Stat={diff.Stats} />
+						<span styleName="name">
+							<span>{isDevNull(diff.OrigName) ? diff.NewName : diff.OrigName}</span>
+							{diff.NewName !== diff.OrigName && !isDevNull(diff.OrigName) && !isDevNull(diff.NewName) ? (
+								<span> &rarr; {diff.NewName}</span>
+							) : null}
+						</span>
+					</div>
+					<div styleName="actions">
+						{!isDevNull(diff.OrigName) && <a styleName="action" href={urlToBlob(this.props.baseRepo, this.props.baseRev, diff.OrigName)}>Original</a>}
+						{!isDevNull(diff.NewName) && <a styleName="action" href={urlToBlob(this.props.headRepo, this.props.headRev, diff.NewName)}>New</a>}
 					</div>
 				</header>
 
@@ -110,6 +117,8 @@ class FileDiff extends Component {
 						headRepo={this.props.headRepo}
 						headRev={this.props.headRev}
 						headPath={diff.NewName}
+						highlightedDef={this.state.highlightedDef}
+						highlightedDefObj={this.state.highlightedDefObj}
 						annotations={hunkAnns[i]} />
 				))}
 			</div>
@@ -129,5 +138,8 @@ FileDiff.propTypes = {
 	// id is the optional DOM ID, used for creating a URL ("...#F1")
 	// that points to this specific file in a multi-file diff.
 	id: React.PropTypes.string,
+
+	highlightedDef: React.PropTypes.string,
+	highlightedDefObj: React.PropTypes.object,
 };
-export default FileDiff;
+export default CSSModules(FileDiff, styles);
