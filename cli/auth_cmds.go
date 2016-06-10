@@ -106,6 +106,9 @@ func (c *authJWTCmd) Execute(args []string) error {
 	tok, err := jwt.Parse(string(data), func(*jwt.Token) (interface{}, error) {
 		return nil, nil
 	})
+	if err != nil {
+		return err
+	}
 	fmt.Println("(NO VERIFICATION PERFORMED; COULD BE FORGED)")
 	fmt.Println()
 	fmt.Println("## Header")
