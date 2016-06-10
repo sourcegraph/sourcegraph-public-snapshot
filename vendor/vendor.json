@@ -1328,9 +1328,11 @@
 			"revisionTime": "2014-12-13T12:12:54-08:00"
 		},
 		{
+			"checksumSHA1": "Bp61DI/pLFHxEL/giUqN/LzzIUs=",
+			"origin": "sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/srclib-java/java_def",
 			"path": "sourcegraph.com/sourcegraph/srclib-java/java_def",
-			"revision": "e0f1cb29d7b4e3da2816cbbff341ce2b683ea088",
-			"revisionTime": "2016-03-16T16:11:07-07:00"
+			"revision": "2fb7ab2648527bbe4ba16812558ac9be64da8098",
+			"revisionTime": "2016-06-10T20:26:44Z"
 		},
 		{
 			"path": "sourcegraph.com/sourcegraph/srclib-ruby/ruby_def",
