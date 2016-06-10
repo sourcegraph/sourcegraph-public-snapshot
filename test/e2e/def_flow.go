@@ -21,7 +21,7 @@ func testDefFlow(t *T) error {
 	t.WaitForElement(selenium.ByLinkText, "View")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Get gets the first value associated with the given key')]")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'petarm')]")
-	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Used in')]")
+	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Usage examples')]")
 	// TODO(keegancsmith) Find a reliable way to tell if the code view has loaded
 
 	// Check that the def link appears
