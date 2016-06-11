@@ -7,6 +7,7 @@ import {urlToDefInfo} from "sourcegraph/def/routes";
 import styles from "sourcegraph/def/styles/Def.css";
 import CSSModules from "react-css-modules";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+import Button from "sourcegraph/components/Button";
 import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
@@ -49,7 +50,10 @@ class RefLocationsList extends React.Component {
 						</header>
 					</div>
 				))}
-				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && (!refLocs.TotalRepos || refLocs.TotalRepos > this.props.showMax) && <span styleName="sectionTitle"><Link to={urlToDefInfo(def, this.props.rev)}>See more usages...</Link></span>}
+				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 0 && this.props.showMax && (!refLocs.TotalRepos || refLocs.TotalRepos > this.props.showMax) &&
+				<Link to={urlToDefInfo(def, this.props.rev)}>
+					<Button styleName="view-all-button" color="blue">View all references</Button>
+				</Link>}
 				{/* Show a CTA for signup, but only if there are other external refs (so we don't
 					annoyingly show it for every single internal ref. */}
 				{(refLocs.RepoRefs && refLocs.RepoRefs.length > 1 && (!this.context.signedIn || noGitHubPrivateReposScope)) &&
