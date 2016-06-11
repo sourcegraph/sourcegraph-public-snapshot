@@ -32,7 +32,7 @@ type DefData struct {
 	Separator string
 }
 
-// Constructs new def formatter for defs made by basic formatterx
+// Constructs new def formatter for defs made by basic formatter
 func newBasicFormatter(lang string) graph.MakeDefFormatter {
 	return func(s *graph.Def) graph.DefFormatter {
 		var si DefData
