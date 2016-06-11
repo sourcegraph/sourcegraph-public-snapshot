@@ -166,13 +166,13 @@ func (c *coverageCache) getSrclibDataVersion(cl *sourcegraph.Client, ctx context
 		sdv, err := cl.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{RepoRev: *repoRev})
 		if err != nil {
 			log15.Debug("get srclib data version", "err", err)
-			return ""
-		}
-		if sdv.CommitID == "" {
+		} else if sdv.CommitID == "" {
 			log15.Debug("empty srclib data version", "err", err)
-			return ""
+		} else {
+			dataVer = sdv.CommitID
 		}
-		dataVer = sdv.CommitID
+	} else {
+		return dataVer
 	}
 
 	c.SrclibDataVersionCache[*repoRev] = dataVer

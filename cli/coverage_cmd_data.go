@@ -30,7 +30,6 @@ var langRepos_ = map[string][]string{
 		"github.com/spf13/hugo",
 		"github.com/getlantern/lantern",
 		"github.com/syncthing/syncthing",
-		"github.com/astaxie/build-web-application-with-golang",
 		"github.com/go-martini/martini",
 		"github.com/github/hub",
 		"github.com/google/cayley",
