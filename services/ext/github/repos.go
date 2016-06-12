@@ -35,16 +35,31 @@ func init() {
 
 type Repos struct{}
 
+type cachedRemoteRepo struct {
+	sourcegraph.RemoteRepo
+
+	// PublicNotFound indicates that the GitHub API returned a 404 when
+	// using an Unauthed request (repo may be exist privately).
+	PublicNotFound bool
+}
+
 func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
+	cl := client(ctx)
+
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
 	// for the purpose of avoiding rate limits, we set all public repos to
 	// read-only permissions.
-	var cachedRemoteRepo sourcegraph.RemoteRepo
-	if err := reposGithubPublicCache.Get(repo, &cachedRemoteRepo); err == nil {
-		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
-		return &cachedRemoteRepo, nil
+	var cached cachedRemoteRepo
+	if err := reposGithubPublicCache.Get(repo, &cached); err == nil {
+		if !(cl.isAuthedUser && cached.PublicNotFound) {
+			reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
+			if cached.PublicNotFound {
+				return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
+			}
+			return &cached.RemoteRepo, nil
+		}
 	} else if err != rcache.ErrNotFound {
 		log15.Error("github cache-get error", "err", err)
 	}
@@ -55,14 +70,20 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 	}
 
-	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
+	ghrepo, resp, err := cl.repos.Get(owner, repoName)
 	if err != nil {
+		err = checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", repo))
+		if !cl.isAuthedUser && grpc.Code(err) == codes.NotFound {
+			_ = reposGithubPublicCache.Add(repo, cachedRemoteRepo{PublicNotFound: true}, reposGithubPublicCacheTTL)
+			reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
+			return nil, err
+		}
 		reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
-		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", repo))
+		return nil, err
 	}
 	remoteRepo := toRemoteRepo(ghrepo)
 	if ghrepo.Private != nil && !*ghrepo.Private {
-		reposGithubPublicCache.Add(repo, remoteRepo, reposGithubPublicCacheTTL)
+		_ = reposGithubPublicCache.Add(repo, remoteRepo, reposGithubPublicCacheTTL)
 		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 	} else {
 		reposGithubPublicCacheCounter.WithLabelValues("private").Inc()

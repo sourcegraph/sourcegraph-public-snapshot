@@ -122,6 +122,106 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 	}
 }
 
+// TestRepos_Get_publicnotfound tests we correctly cache 404 responses. If we
+// are not authed as a user, all private repos 404 which counts towards our
+// rate limit. This test will ensure unauthed clients cache 404, but authed
+// users do not use the cache
+func TestRepos_Get_publicnotfound(t *testing.T) {
+	githubcli.Config.GitHubHost = "github.com"
+	resetCache(t)
+
+	calledGetMissing := false
+	mockGetMissing := mockGitHubRepos{
+		Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
+			calledGetMissing = true
+			resp := &http.Response{
+				StatusCode: http.StatusNotFound,
+				Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+				Request:    &http.Request{},
+			}
+			return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
+		},
+	}
+	mockGetPrivate := mockGitHubRepos{
+		Get_: func(owner, repo string) (*github.Repository, *github.Response, error) {
+			return &github.Repository{
+				ID:       github.Int(123),
+				Name:     github.String("repo"),
+				FullName: github.String("owner/repo"),
+				Owner:    &github.User{ID: github.Int(1)},
+				CloneURL: github.String("https://github.com/owner/repo.git"),
+				Private:  github.Bool(true),
+			}, nil, nil
+		},
+	}
+
+	mock := &minimalClient{}
+	ctx := testContext(mock)
+
+	s := &Repos{}
+	privateRepo := "github.com/owner/repo"
+
+	// An unauthed user won't be able to see the repo
+	mock.isAuthedUser = false
+	mock.repos = mockGetMissing
+	repo, err := s.Get(ctx, privateRepo)
+	if grpc.Code(err) != codes.NotFound {
+		t.Fatal(err)
+	}
+	if !calledGetMissing {
+		t.Fatal("did not call repos.Get when it should not be cached")
+	}
+
+	// If we repeat the call, we should hit the cache
+	calledGetMissing = false
+	repo, err = s.Get(ctx, privateRepo)
+	if grpc.Code(err) != codes.NotFound {
+		t.Fatal(err)
+	}
+	if calledGetMissing {
+		t.Fatal("should of hit cache")
+	}
+
+	// Now if we call as an authed user, we will hit the cache but not use
+	// it since the repo may not 404 for us
+	mock.isAuthedUser = true
+	mock.repos = mockGetPrivate
+	repo, err = s.Get(ctx, privateRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo == nil {
+		t.Fatal("repo is nil")
+	}
+
+	// Ensure the repo is still missing for unauthed users
+	calledGetMissing = false
+	mock.isAuthedUser = false
+	mock.repos = mockGetMissing
+	repo, err = s.Get(ctx, privateRepo)
+	if grpc.Code(err) != codes.NotFound {
+		t.Fatal(err)
+	}
+	if calledGetMissing {
+		t.Fatal("should of hit cache")
+	}
+
+	// authed user + 404 == never cache. Do twice to ensure we do not
+	// cache
+	for i := 0; i < 2; i++ {
+		calledGetMissing = false
+		mock.isAuthedUser = true
+		mock.repos = mockGetMissing
+		repo, err = s.Get(ctx, privateRepo)
+		if grpc.Code(err) != codes.NotFound {
+			t.Fatal(err)
+		}
+		if !calledGetMissing {
+			t.Fatal("should not hit cache")
+		}
+	}
+}
+
 // TestRepos_GetByID_existing tests the behavior of Repos.GetByID when
 // called on a repo that exists (i.e., the successful outcome).
 func TestRepos_GetByID_existing(t *testing.T) {
