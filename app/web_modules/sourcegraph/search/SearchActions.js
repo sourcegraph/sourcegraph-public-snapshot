@@ -28,14 +28,16 @@ export class ResultsFetched {
 	prefixMatch: ?bool;
 	includeRepos: ?bool;
 	defs: Array<Def>;
+	options: Array<Object>;
 
-	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, prefixMatch: ?bool, includeRepos: ?bool, defs: Array<Def>) {
+	constructor(query: string, repos: ?Array<string>, notRepos: ?Array<string>, limit: ?number, prefixMatch: ?bool, includeRepos: ?bool, options: Array<Object>, defs: Array<Def>) {
 		this.query = query;
 		this.limit = limit;
 		this.repos = repos;
 		this.notRepos = notRepos;
 		this.prefixMatch = prefixMatch;
 		this.includeRepos = includeRepos;
+		this.options = options;
 		this.defs = defs;
 	}
 }
