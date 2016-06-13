@@ -15,7 +15,6 @@ import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
 import {getLanguageExtensionForPath} from "sourcegraph/util/inventory";
-import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/components/styles/code.css";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to

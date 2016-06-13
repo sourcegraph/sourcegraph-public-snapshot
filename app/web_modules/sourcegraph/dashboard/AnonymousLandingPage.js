@@ -115,7 +115,39 @@ class AnonymousLandingPage extends Component {
 										Used in 171 repositories
 									</p>
 								</div>
-
+							</div>
+							<div styleName="language" className={base.mt5}>
+								Java
+								<span styleName="label-blue">15,782 projects</span>
+							</div>
+							<div styleName="row" className={base.mt4}>
+								<div styleName="featured-project">
+									<Link to="/github.com/google/guava">
+										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
+										<strong>guava</strong>
+									</Link>
+									<p styleName="project-desc">
+										Used in 6,256 repositories
+									</p>
+								</div>
+								<div styleName="featured-project">
+									<Link to="/github.com/JodaOrg/joda-time">
+										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
+										<strong>joda-time</strong>
+									</Link>
+									<p styleName="project-desc">
+										Used in 1,113 repositories
+									</p>
+								</div>
+								<div styleName="featured-project">
+									<Link to="/github.com/dropwizard/metrics">
+										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
+										<strong>dropwizard/metrics</strong>
+									</Link>
+									<p styleName="project-desc">
+										Used in 87 repositories
+									</p>
+								</div>
 							</div>
 
 							<h5 styleName="header-5" className={base.mt6}>Coming soon</h5>
@@ -123,9 +155,6 @@ class AnonymousLandingPage extends Component {
 							<div styleName="row">
 								<div styleName="language-2">
 									C#
-								</div>
-								<div styleName="language-3">
-									Java
 								</div>
 								<div styleName="language-5">
 									JavaScript
