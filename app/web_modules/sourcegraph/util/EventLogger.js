@@ -230,6 +230,18 @@ export class EventLogger {
 				this.logEvent(action.eventName, eventProps);
 			}
 			break;
+
+		case DefActions.HighlightDef:
+			{
+				if (action.url) { // we also emit HighlightDef when the def is un-highlighted
+					let eventProps = {
+						language: action.language || "unknown",
+					};
+					this.logEvent(action.eventName, eventProps);
+				}
+				break;
+			}
+
 		default:
 			// All dispatched actions to stores will automatically be tracked by the eventName
 			// of the action (if set). Override this behavior by including another case above.

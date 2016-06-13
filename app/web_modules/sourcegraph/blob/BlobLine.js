@@ -14,6 +14,8 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {fastURLToRepoDef} from "sourcegraph/def/routes";
 import s from "sourcegraph/blob/styles/Blob.css";
 import {isExternalLink} from "sourcegraph/util/externalLink";
+import {getLanguageExtensionForPath} from "sourcegraph/util/inventory";
+import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/components/styles/code.css";
 
 // simpleContentsString converts [string...] (like ["a", "b", "c"]) to
@@ -118,7 +120,7 @@ class BlobLine extends Component {
 						})}
 						target="_blank"
 						href={annURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0]))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0], getLanguageExtensionForPath(this.state.path)))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						key={i}>
 						{simpleContentsString(content)}
@@ -141,7 +143,7 @@ class BlobLine extends Component {
 							[s.activeAnn]: annURLs.includes(this.state.activeDefURL),
 						})}
 						to={annRevURLs[0]}
-						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0]))}
+						onMouseOver={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(annURLs[0], getLanguageExtensionForPath(this.state.path)))}
 						onMouseOut={() => Dispatcher.Stores.dispatch(new DefActions.HighlightDef(null))}
 						onClick={(ev) => {
 							if (ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;

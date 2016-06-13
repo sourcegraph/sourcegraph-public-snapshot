@@ -106,10 +106,12 @@ export class SelectDef {
 
 export class HighlightDef {
 	url: ?string;
+	language: ?string;
 	eventName: string;
 
-	constructor(url: ?string) {
+	constructor(url: ?string, language: ?string) {
 		this.url = url;
+		this.language = language;
 		this.eventName = "HighlightDef";
 	}
 }
