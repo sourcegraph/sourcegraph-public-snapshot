@@ -21,8 +21,8 @@ import (
 )
 
 // RunWorker starts the worker loop with the given parameters.
-func RunWorker(key *idkey.IDKey, endpoint *url.URL, parallel int, dequeueMsec int) error {
-	ctx := sourcegraph.WithGRPCEndpoint(context.Background(), endpoint)
+func RunWorker(ctx context.Context, key *idkey.IDKey, endpoint *url.URL, parallel int, dequeueMsec int) error {
+	ctx = sourcegraph.WithGRPCEndpoint(ctx, endpoint)
 	ctx = sourcegraph.WithCredentials(ctx, sharedsecret.DefensiveReuseTokenSource(nil, sharedsecret.ShortTokenSource(key, "worker:build")))
 
 	cl, err := sourcegraph.NewClientFromContext(ctx)

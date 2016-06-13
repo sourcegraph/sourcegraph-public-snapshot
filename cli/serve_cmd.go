@@ -448,7 +448,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Info("Skip starting worker process.")
 	} else {
 		go func() {
-			if err := worker.RunWorker(idKey, endpoint.URLOrDefault(), c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
+			if err := worker.RunWorker(context.Background(), idKey, endpoint.URLOrDefault(), c.WorkCmd.Parallel, c.WorkCmd.DequeueMsec); err != nil {
 				log.Fatal("Worker exited with error:", err)
 			}
 		}()

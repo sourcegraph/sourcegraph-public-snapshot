@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dockerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -197,6 +198,11 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 // getContainerAppURL gets the Sourcegraph server's app URL from the
 // POV of the Docker containers.
 func getAppURL(ctx context.Context) (*url.URL, error) {
+	u := conf.AppURLOrNil(ctx)
+	if u != nil {
+		return u, nil
+	}
+
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err

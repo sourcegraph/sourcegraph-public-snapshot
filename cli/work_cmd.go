@@ -5,8 +5,11 @@ import (
 	"log"
 	"os"
 
+	"golang.org/x/net/context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/idkey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/worker"
 )
 
@@ -42,5 +45,11 @@ func (c *WorkCmd) Execute(args []string) error {
 		return err
 	}
 
-	return worker.RunWorker(key, endpoint.URLOrDefault(), c.Parallel, c.DequeueMsec)
+	// If we run src work, we want to hit the endpoint as the AppURL, not
+	// what the endpoint regards as the AppURL. The reason behind this is
+	// in production we want to seperate out the endpoint that works
+	// upload to from what our end users use.
+	ctx := conf.WithURL(context.Background(), endpoint.URLOrDefault())
+
+	return worker.RunWorker(ctx, key, endpoint.URLOrDefault(), c.Parallel, c.DequeueMsec)
 }
