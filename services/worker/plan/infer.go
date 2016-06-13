@@ -22,7 +22,10 @@ func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, er
 	for _, lang := range inv.Languages {
 		c, ok := langConfigs[lang.Name]
 		if !ok {
-			unsupported = append(unsupported, lang.Name)
+			// Only warn about languages which are possible to build.
+			if lang.Type == "programming" {
+				unsupported = append(unsupported, lang.Name)
+			}
 		} else {
 			config.Build = append(config.Build, c.build)
 		}
@@ -49,6 +52,7 @@ var langConfigs = map[string]struct {
 	build  droneyaml.BuildItem
 	matrix map[string][]string
 }{
+	"Go": {},
 	"JavaScript": {
 		build: droneyaml.BuildItem{
 			Key: "JavaScript deps (node v$$NODE_VERSION)",

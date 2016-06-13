@@ -197,6 +197,16 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 
 				if err == nil {
 					w := state.Log()
+					langs := make([]*inventory.Lang, 0, len(inv.Languages))
+					skipped := make([]*inventory.Lang, 0, len(inv.Languages))
+					for _, l := range inv.Languages {
+						if _, ok := skipLangs[l.Name]; ok {
+							skipped = append(skipped, l)
+						} else {
+							langs = append(langs, l)
+						}
+					}
+					inv.Languages = langs
 					if len(inv.Languages) == 0 {
 						if !b.DroneYMLFileExists {
 							fmt.Fprintln(w, "No recognized programming languages were detected in this repository.")
@@ -204,6 +214,12 @@ func (b *Builder) plan(ctx context.Context) (finalConfig string, axes []matrix.A
 					} else {
 						fmt.Fprintf(w, "Detected %d programming languages in use by this repository:\n", len(inv.Languages))
 						for _, lang := range inv.Languages {
+							fmt.Fprintf(w, " - %s\n", lang.Name)
+						}
+					}
+					if len(skipped) > 0 {
+						fmt.Fprintf(w, "\nFound %d languages in use by this repository that will not be built or analysed:\n", len(skipped))
+						for _, lang := range skipped {
 							fmt.Fprintf(w, " - %s\n", lang.Name)
 						}
 					}
@@ -406,3 +422,21 @@ func (noopMonitor) Skip() {}
 func (noopMonitor) End(ok, allowFailure bool) {}
 
 func (noopMonitor) Logger() (stdout, stderr io.Writer) { return ioutil.Discard, ioutil.Discard }
+
+// skipLangs are languages we shouldn't build or analyse. They are usually
+// languages that are common in repos, but including them in warnings would be
+// noisy.
+var skipLangs = map[string]struct{}{
+	"Ant Build System": struct{}{},
+	"Batchfile":        struct{}{},
+	"Dockerfile":       struct{}{},
+	"Graphviz (DOT)":   struct{}{},
+	"Makefile":         struct{}{},
+	"Markdown":         struct{}{},
+	"PLpgSQL":          struct{}{},
+	"SaltStack":        struct{}{},
+	"Shell":            struct{}{},
+	"Tcsh":             struct{}{},
+	"YAML":             struct{}{},
+	"fish":             struct{}{},
+}
