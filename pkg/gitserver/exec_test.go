@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/chanrpc/chanrpcutil"
+	"github.com/neelance/chanrpc/chanrpcutil"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
