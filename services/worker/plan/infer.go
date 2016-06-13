@@ -49,6 +49,7 @@ var langConfigs = map[string]struct {
 	build  droneyaml.BuildItem
 	matrix map[string][]string
 }{
+	"Go": {},
 	"JavaScript": {
 		build: droneyaml.BuildItem{
 			Key: "JavaScript deps (node v$$NODE_VERSION)",
