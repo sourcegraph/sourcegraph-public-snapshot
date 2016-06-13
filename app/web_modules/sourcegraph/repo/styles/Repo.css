@@ -11,6 +11,8 @@
 	display: inline-block;
 	flex: 0 0 auto;
 }
+
+.nav { display: flex; }
 .repoName {
 	composes: b db mr3 from base;
 }
@@ -22,6 +24,7 @@
 	.repo-nav-context {
 		overflow: hidden;
 		text-overflow: ellipsis;
+		flex: 1;
 	}
 }
 
