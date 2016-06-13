@@ -179,7 +179,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
-		t.Fatal("should of hit cache")
+		t.Fatal("should have hit cache")
 	}
 
 	// Now if we call as an authed user, we will hit the cache but not use
@@ -203,7 +203,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
-		t.Fatal("should of hit cache")
+		t.Fatal("should have hit cache")
 	}
 
 	// authed user + 404 == never cache. Do twice to ensure we do not
