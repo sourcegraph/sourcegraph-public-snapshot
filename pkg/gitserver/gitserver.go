@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/neelance/chanrpc"
+	"github.com/sourcegraph/chanrpc"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )

@@ -1,21 +1,32 @@
 package chanrpcutil
 
-import "bytes"
+import (
+	"bytes"
+	"sync"
+)
 
 func Drain(c <-chan []byte) {
 	for range c {
 	}
 }
 
+var bytesBufferPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
+
 func ReadAll(c <-chan []byte) <-chan []byte {
 	c2 := make(chan []byte, 1)
 	go func() {
-		var buf bytes.Buffer
+		buf := bytesBufferPool.Get().(*bytes.Buffer)
+		buf.Reset()
 		for b := range c {
 			buf.Write(b)
 		}
 		c2 <- buf.Bytes()
 		close(c2)
+		bytesBufferPool.Put(buf)
 	}()
 	return c2
 }

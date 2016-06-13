@@ -620,18 +620,6 @@
 			"revisionTime": "2016-06-07T23:51:34Z"
 		},
 		{
-			"checksumSHA1": "dEpgq1GYh5TRRNo22ANVMK8owTA=",
-			"path": "github.com/neelance/chanrpc",
-			"revision": "872b087b93d5e76dbb999d538f20dc416c6fbcd5",
-			"revisionTime": "2016-03-29T13:10:07Z"
-		},
-		{
-			"checksumSHA1": "yOBW3lnFnE3Vn8WD6GMM+qBo2FA=",
-			"path": "github.com/neelance/chanrpc/chanrpcutil",
-			"revision": "872b087b93d5e76dbb999d538f20dc416c6fbcd5",
-			"revisionTime": "2016-03-29T13:10:07Z"
-		},
-		{
 			"checksumSHA1": "+XhZPRZr5C/pAwHRHqyoZFTXkdE=",
 			"path": "github.com/nlopes/slack",
 			"revision": "e337a7316d3fe9aa55b7063035d6d32f3dbcaeb9",
@@ -765,6 +753,18 @@
 			"path": "github.com/sourcegraph/annotate",
 			"revision": "f4cad6c6324d3f584e1743d8b3e0e017a5f3a636",
 			"revisionTime": "2016-01-23T01:39:49Z"
+		},
+		{
+			"checksumSHA1": "J3iGwoepEuZZKMxEIIZAKY/X9vE=",
+			"path": "github.com/sourcegraph/chanrpc",
+			"revision": "3c0cb3c589b3fd04080061f3e08558f5a4edd68e",
+			"revisionTime": "2016-06-13T16:02:12Z"
+		},
+		{
+			"checksumSHA1": "SgWLpCuhk9nOzBMLdWSnsCZfCJ0=",
+			"path": "github.com/sourcegraph/chanrpc/chanrpcutil",
+			"revision": "3c0cb3c589b3fd04080061f3e08558f5a4edd68e",
+			"revisionTime": "2016-06-13T16:02:12Z"
 		},
 		{
 			"checksumSHA1": "9msMpcM0peYCbb0lv9ZIJvPRdiQ=",
