@@ -50,18 +50,21 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 	// is cacheable. (Permissions can change, but we no longer store that.) But
 	// for the purpose of avoiding rate limits, we set all public repos to
 	// read-only permissions.
+	//
+	// First parse the repo url before even trying (redis) cache, since this can
+	// invalide the request more quickly and cheaply.
+	owner, repoName, err := githubutil.SplitRepoURI(repo)
+	if err != nil {
+		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
+		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
+	}
+
 	if cached, err := getFromCache(ctx, repo); err == nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		if cached.PublicNotFound {
 			return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 		}
 		return &cached.RemoteRepo, nil
-	}
-
-	owner, repoName, err := githubutil.SplitRepoURI(repo)
-	if err != nil {
-		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
-		return nil, grpc.Errorf(codes.NotFound, "github repo not found: %s", repo)
 	}
 
 	remoteRepo, err := getFromAPI(ctx, owner, repoName)
