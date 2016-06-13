@@ -4,6 +4,16 @@
 .pre { overflow-x: auto; overflow-y: hidden; overflow: scroll; }
 
 /*
+	 Flexbox Utilities
+*/
+
+.order0 { order: 0 }
+.order1 { order: 1 }
+.order2 { order: 2 }
+.order3 { order: 3 }
+.orderlast { order: 99999 }
+
+/*
 	 CLEARFIX
 	 http://nicolasgallagher.com/micro-clearfix-hack/
 */

@@ -1,0 +1,27 @@
+.flex { display: flex; }
+
+.wrap { flex-wrap: wrap; }
+.nowrap { flex-wrap: nowrap; }
+
+.left-right { flex-direction: row; }
+.right-left { flex-direction: row-reverse; }
+.top-bottom { flex-direction: column; }
+.bottom-top { flex-direction: column-reverse; }
+
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.items-center { align-items: center; }
+.items-baseline { align-items: baseline; }
+.items-stretch { align-items: stretch; }
+
+.content-start { align-content: flex-start; }
+.content-end { align-content: flex-end; }
+.content-center { align-content: center; }
+.content-between { align-content: between; }
+.content-stretch { align-content: stretch; }

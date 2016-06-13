@@ -1,27 +1,53 @@
 // @flow
 
 import React from "react";
-import {Hero, Heading} from "sourcegraph/components";
+import {Hero, Heading, FlexContainer, Tabs, TabItem} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
+import styles from "./styles/StyleguideContainer.css";
 import ComponentsContainer from "./ComponentsContainer";
 
 class StyleguideContainer extends React.Component {
 
 	render() {
 		return (
-			<div>
+			<div styleName="bg-near-white">
 				<Hero color="purple" pattern="objects">
 					<Heading level="2" color="white">The Graph Guide</Heading>
 					<p style={{maxWidth: "560px"}} className={base.center}>
 						Welcome to the Graph Guide – a living guide to Sourcegraph's brand identity, voice, visual style, and approach to user experience and user interfaces. Everything else TBD – for now, just components.
 					</p>
 				</Hero>
-				<ComponentsContainer />
+				<FlexContainer styleName="container-fixed">
+					<Tabs direction="vertical" color="purple" style={{flex: "0 0 180px"}} className={`${base.ml5} ${base.orderlast}`}>
+						<TabItem active={true}>Principles</TabItem>
+
+						<Heading level="5" className={base.mt4}>Brand</Heading>
+						<TabItem>Voice</TabItem>
+						<TabItem>Colors</TabItem>
+						<TabItem>Typography</TabItem>
+						<TabItem>Logo and Wordmark</TabItem>
+
+						<Heading level="5" className={base.mt4}>Utilities</Heading>
+						<TabItem>Padding</TabItem>
+						<TabItem>Margin</TabItem>
+						<TabItem>Colors</TabItem>
+						<TabItem>Layout</TabItem>
+
+						<Heading level="5" className={base.mt4}>Components</Heading>
+						<TabItem>Headings</TabItem>
+						<TabItem>Panels</TabItem>
+						<TabItem>Headings</TabItem>
+						<TabItem>Stepper</TabItem>
+						<TabItem>Tabs</TabItem>
+						<TabItem>Checklists</TabItem>
+
+					</Tabs>
+					<ComponentsContainer />
+				</FlexContainer>
 			</div>
 		);
 	}
 }
 
-export default CSSModules(StyleguideContainer, base);
-
+export default CSSModules(StyleguideContainer, styles, {allowMultiple: true});

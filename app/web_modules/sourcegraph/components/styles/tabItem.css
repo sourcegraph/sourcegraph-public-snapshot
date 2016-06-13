@@ -13,7 +13,7 @@
 .tab {	composes: mh2 from base; }
 
 .vertical {
-	composes: pv1 ph3 mb1 from base;
+	composes: pv1 ph3 mb2 from base;
 	display: block;
 	margin-left: -1px;
 }

@@ -19,3 +19,4 @@ export {default as Emoji} from "./Emoji";
 export {default as Tabs} from "./Tabs";
 export {default as TabItem} from "./TabItem";
 export {default as Dropdown} from "./Dropdown";
+export {default as FlexContainer} from "./FlexContainer";
