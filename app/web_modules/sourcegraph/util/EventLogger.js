@@ -5,12 +5,13 @@ import Dispatcher from "sourcegraph/Dispatcher";
 import context from "sourcegraph/app/context";
 import type {SiteConfig} from "sourcegraph/app/siteConfig";
 import type {AuthInfo, User} from "sourcegraph/user";
-import {getViewName, getRoutePattern} from "sourcegraph/app/routePatterns";
+import {getViewName, getRoutePattern, getRouteParams} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as DefActions from "sourcegraph/def/DefActions";
 import UserStore from "sourcegraph/user/UserStore";
+import {getLanguageExtensionForPath, defPathToLanguage} from "sourcegraph/util/inventory";
 
 export const EventLocation = {
 	Login: "Login",
@@ -384,13 +385,28 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 				};
 			}
 
+			const routePattern = getRoutePattern(routes);
 			const viewName = getViewName(routes);
 			if (viewName) {
+				if (viewName === "ViewBlob") {
+					const routeParams = getRouteParams(routePattern, location.pathname);
+					if (routeParams) {
+						const filePath = routeParams.splat[routeParams.splat.length - 1];
+						const lang = getLanguageExtensionForPath(filePath);
+						if (lang) eventProps.language = lang;
+					}
+				} else if (viewName === "ViewDef" || viewName === "ViewDefInfo") {
+					const routeParams = getRouteParams(routePattern, location.pathname);
+					const defPath = routeParams.splat[routeParams.splat.length - 1];
+					const lang = defPathToLanguage(defPath);
+					if (lang) eventProps.language = lang;
+
+				}
 				this.context.eventLogger.logEvent(viewName, eventProps);
 			} else {
 				this.context.eventLogger.logEvent("UnmatchedRoute", {
 					...eventProps,
-					pattern: getRoutePattern(routes),
+					pattern: routePattern,
 				});
 			}
 		}
