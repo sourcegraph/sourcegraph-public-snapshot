@@ -11,6 +11,7 @@ class Tabs extends React.Component {
 		size: React.PropTypes.string, // small, large
 		children: React.PropTypes.any,
 		className: React.PropTypes.string,
+		style: React.PropTypes.object,
 	};
 
 	static defaultProps = {
@@ -19,18 +20,23 @@ class Tabs extends React.Component {
 	};
 
 	_childrenWithProps() {
-		return React.Children.map(this.props.children, child =>
-			React.cloneElement(child, {
+		return React.Children.map(this.props.children, child => {
+			if (child.type.displayName !== "TabItem") {
+				return React.cloneElement(child, {
+					styleName: `item-${this.props.direction}`,
+				});
+			}
+			return React.cloneElement(child, {
 				direction: this.props.direction,
 				color: this.props.color,
 				size: this.props.size,
-			})
-		);
+			});
+		});
 	}
 
 	render() {
-		const {direction, className} = this.props;
-		return <div styleName={`container ${direction}`} className={className}>{this._childrenWithProps()}</div>;
+		const {direction, className, style} = this.props;
+		return <div styleName={`container ${direction}`} className={className} style={style}>{this._childrenWithProps()}</div>;
 	}
 }
 

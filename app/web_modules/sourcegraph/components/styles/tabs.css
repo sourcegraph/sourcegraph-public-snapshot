@@ -1,7 +1,18 @@
 @value base "./_base.css";
 @value colors "./_colors.css";
 
-.container { composes: b--cool-gray-2 from colors; }
+.container { composes: b--cool-gray-1 from colors; }
 
 .horizontal { composes: bb from base; }
 .vertical { composes: bl from base; }
+
+.item-vertical {
+	composes: pv1 mb2 from base;
+	padding-left: 1.2rem;
+	margin-left: -1px;
+}
+.item-horizontal {
+	composes: pb3 ph2 mh2 from base;
+	padding-top: 12px;
+	margin-bottom: -1px;
+}
