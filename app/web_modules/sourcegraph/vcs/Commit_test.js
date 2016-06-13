@@ -20,19 +20,19 @@ const sampleRepo = "sourcegraph.com/sourcegraph";
 describe("Commit", () => {
 	it("should initially render empty", () => {
 		autotest(testdataInitial, `${__dirname}/testdata/Commit-initial.json`,
-			<Commit commit={sampleCommit} repo={sampleRepo} />
+			<Commit commit={sampleCommit} repo={sampleRepo} full={false} />
 		);
 	});
 
 	it("should render commit", () => {
 		autotest(testdataAvailable, `${__dirname}/testdata/Commit-available.json`,
-			<Commit	commit={sampleCommit} repo={sampleRepo} />
+			<Commit commit={sampleCommit} repo={sampleRepo} full={false} />
 		);
 	});
 
 	it("should render commit without author information", () => {
 		autotest(testdataNoAuthorPerson, `${__dirname}/testdata/Commit-noAuthorPerson.json`,
-			<Commit	commit={{ID: "abc", Message: "msg", Author: {Date: ""}, AuthorPerson: null}} repo={sampleRepo} />
+			<Commit commit={{ID: "abc", Message: "msg", Author: {Date: ""}, AuthorPerson: null}} repo={sampleRepo} full={false} />
 		);
 	});
 });
