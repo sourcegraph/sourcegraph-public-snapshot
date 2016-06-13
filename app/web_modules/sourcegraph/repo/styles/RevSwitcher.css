@@ -2,7 +2,9 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value grid "sourcegraph/components/styles/_grid.css";
 @value typography "sourcegraph/components/styles/_typography.css";
+@value vars "sourcegraph/components/styles/_vars.css";
 @value c_cool-gray from colors;
+@value media-sm from vars;
 
 .wrapper {
 	position: relative;
@@ -54,4 +56,9 @@
 .icon-hidden {
 	composes: icon;
 	opacity: 0;
+}
+
+@media screen and media-sm {
+	.wrapper { margin-top: 0; }
+	.dropdown-menu { right: 0; }
 }
