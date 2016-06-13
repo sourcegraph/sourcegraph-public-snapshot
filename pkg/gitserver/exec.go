@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sourcegraph/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/chanrpc/chanrpcutil"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
