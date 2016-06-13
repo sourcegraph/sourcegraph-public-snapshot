@@ -3,12 +3,9 @@ package backend_test
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/testserver"
 )
-
-var httpClient = &httptestutil.Client{}
 
 func TestHostedRepo_CreateCloneAndView(t *testing.T) {
 	if testing.Short() {

@@ -14,7 +14,6 @@ import (
 	droneexec "github.com/drone/drone-exec/exec"
 	droneparser "github.com/drone/drone-exec/parser"
 	dronerunner "github.com/drone/drone-exec/runner"
-	droneyaml "github.com/drone/drone-exec/yaml"
 	"github.com/drone/drone/yaml/matrix"
 	"golang.org/x/net/context"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -59,8 +58,6 @@ type Builder struct {
 	// configuration (.drone.yml) after inferred and srclib steps have
 	// been added.
 	FinalBuildConfig func(ctx context.Context, configYAML string) error
-
-	config droneyaml.Config // the .drone.yml config (possibly inferred)
 }
 
 // TaskState manages a task's state. An implementation could, for
@@ -409,13 +406,3 @@ func (noopMonitor) Skip() {}
 func (noopMonitor) End(ok, allowFailure bool) {}
 
 func (noopMonitor) Logger() (stdout, stderr io.Writer) { return ioutil.Discard, ioutil.Discard }
-
-var skipLangs = map[string]struct{}{
-	"Shell":     struct{}{},
-	"Makefile":  struct{}{},
-	"Batchfile": struct{}{},
-	"fish":      struct{}{},
-	"Tcsh":      struct{}{},
-	"SaltStack": struct{}{},
-	"PLpgSQL":   struct{}{},
-}

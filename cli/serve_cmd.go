@@ -160,15 +160,9 @@ type ServeCmd struct {
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
 
-	Prefetch bool `long:"prefetch" description:"prefetch directory children" env:"SRC_PREFETCH"`
-
 	WorkCmd
 
 	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
-
-	NoInitialOnboarding bool `long:"no-initial-onboarding" description:"don't add sample repositories to server during initial server setup" env:"SRC_NO_INITIAL_ONBOARDING"`
-
-	RegisterURL string `long:"register" description:"register this server as a client of another Sourcegraph server (empty to disable)" value-name:"URL" default:"https://sourcegraph.com"`
 
 	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
 	GitServers string `long:"git-servers" description:"addresses of the remote git servers; a local git server process is used by default" env:"SRC_GIT_SERVERS"`

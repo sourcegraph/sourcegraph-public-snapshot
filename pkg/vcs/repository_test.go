@@ -940,7 +940,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		file1, err = fs2.Open("dir1/file1")
+		_, err = fs2.Open("dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue

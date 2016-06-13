@@ -21,9 +21,6 @@ func (b BuildSpec) IDString() string {
 	return fmt.Sprintf("repo %d build #%d", b.Repo, b.ID)
 }
 
-// Build task ops.
-const ImportTaskOp = "import"
-
 func (t *BuildTask) Spec() TaskSpec {
 	return TaskSpec{
 		Build: t.Build,

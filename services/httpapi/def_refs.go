@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"net/http"
-	"sort"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -151,21 +150,4 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, refLocations)
-}
-
-type fileList []*sourcegraph.DefFileRef
-
-func (f fileList) Len() int           { return len(f) }
-func (f fileList) Less(i, j int) bool { return f[i].Count < f[j].Count }
-func (f fileList) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-
-func sortByRefCount(refsPerFile map[string]int32) fileList {
-	fl := make(fileList, len(refsPerFile))
-	i := 0
-	for k, v := range refsPerFile {
-		fl[i] = &sourcegraph.DefFileRef{Path: k, Count: v}
-		i++
-	}
-	sort.Sort(sort.Reverse(fl))
-	return fl
 }
