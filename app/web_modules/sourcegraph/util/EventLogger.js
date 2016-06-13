@@ -363,9 +363,13 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 		}
 
 		_logView(routes: Array<Route>, location: Location) {
-			let eventProps = {
-				url: location.pathname,
+			let eventProps: {
+				url: string;
+				referred_by_browser_ext?: string;
+				referred_by_sourcegraph_editor?: string;
+				language?: string;
 			};
+
 			// TODO:matt remove this once all plugins are switched to new version
 			// This is temporarily here for backwards compat
 			if (location.query && location.query["utm_source"] === "chromeext") {
@@ -383,24 +387,24 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 					url: location.pathname,
 					referred_by_sourcegraph_editor: location.query["editor_type"],
 				};
+			} else {
+				eventProps = {
+					url: location.pathname,
+				};
 			}
 
 			const routePattern = getRoutePattern(routes);
 			const viewName = getViewName(routes);
+			const routeParams = getRouteParams(routePattern, location.pathname);
 			if (viewName) {
-				if (viewName === "ViewBlob") {
-					const routeParams = getRouteParams(routePattern, location.pathname);
-					if (routeParams) {
-						const filePath = routeParams.splat[routeParams.splat.length - 1];
-						const lang = getLanguageExtensionForPath(filePath);
-						if (lang) eventProps.language = lang;
-					}
-				} else if (viewName === "ViewDef" || viewName === "ViewDefInfo") {
-					const routeParams = getRouteParams(routePattern, location.pathname);
+				if (viewName === "ViewBlob" && routeParams) {
+					const filePath = routeParams.splat[routeParams.splat.length - 1];
+					const lang = getLanguageExtensionForPath(filePath);
+					if (lang) eventProps.language = lang;
+				} else if ((viewName === "ViewDef" || viewName === "ViewDefInfo") && routeParams) {
 					const defPath = routeParams.splat[routeParams.splat.length - 1];
 					const lang = defPathToLanguage(defPath);
 					if (lang) eventProps.language = lang;
-
 				}
 				this.context.eventLogger.logEvent(viewName, eventProps);
 			} else {
