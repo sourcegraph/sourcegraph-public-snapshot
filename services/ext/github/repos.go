@@ -69,7 +69,8 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 
 	remoteRepo, err := getFromAPI(ctx, owner, repoName)
 	if grpc.Code(err) == codes.NotFound {
-		// Before we do anything, ensure we cache NotFound responses
+		// Before we do anything, ensure we cache NotFound responses.
+		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
 		_ = reposGithubPublicCache.Add(repo, cachedRemoteRepo{PublicNotFound: true}, reposGithubPublicCacheTTL)
 		reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
 	}
@@ -96,7 +97,7 @@ func (s *Repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, e
 	return toRemoteRepo(ghrepo), nil
 }
 
-var errInapplicableCache = errors.New("cache cannot be used in this scenario")
+var errInapplicableCache = errors.New("cached value cannot be used in this scenario")
 
 // getFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
