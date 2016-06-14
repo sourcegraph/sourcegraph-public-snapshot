@@ -1,7 +1,7 @@
 // @flow
 
 import React from "react";
-import {Hero, Heading, FlexContainer, Tabs, TabItem} from "sourcegraph/components";
+import {Hero, Heading, FlexContainer, Tabs, TabItem, Affix} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import styles from "./styles/StyleguideContainer.css";
@@ -19,30 +19,32 @@ class StyleguideContainer extends React.Component {
 					</p>
 				</Hero>
 				<FlexContainer styleName="container-fixed">
-					<Tabs direction="vertical" color="purple" style={{flex: "0 0 180px"}} className={`${base.ml5} ${base.orderlast}`}>
-						<TabItem active={true}>Principles</TabItem>
+					<Affix offset={20} style={{flex: "0 0 220px"}} className={base.orderlast}>
+						<Tabs direction="vertical" color="purple" className={base.ml5}>
+							<TabItem active={true}>Principles</TabItem>
 
-						<Heading level="5" className={base.mt4}>Brand</Heading>
-						<TabItem>Voice</TabItem>
-						<TabItem>Colors</TabItem>
-						<TabItem>Typography</TabItem>
-						<TabItem>Logo and Wordmark</TabItem>
+							<Heading level="5" className={base.mt4}>Brand</Heading>
+							<TabItem>Voice</TabItem>
+							<TabItem>Colors</TabItem>
+							<TabItem>Typography</TabItem>
+							<TabItem>Logo and Wordmark</TabItem>
 
-						<Heading level="5" className={base.mt4}>Utilities</Heading>
-						<TabItem>Padding</TabItem>
-						<TabItem>Margin</TabItem>
-						<TabItem>Colors</TabItem>
-						<TabItem>Layout</TabItem>
+							<Heading level="5" className={base.mt4}>Utilities</Heading>
+							<TabItem>Padding</TabItem>
+							<TabItem>Margin</TabItem>
+							<TabItem>Colors</TabItem>
+							<TabItem>Layout</TabItem>
 
-						<Heading level="5" className={base.mt4}>Components</Heading>
-						<TabItem>Headings</TabItem>
-						<TabItem>Panels</TabItem>
-						<TabItem>Headings</TabItem>
-						<TabItem>Stepper</TabItem>
-						<TabItem>Tabs</TabItem>
-						<TabItem>Checklists</TabItem>
+							<Heading level="5" className={base.mt4}>Components</Heading>
+							<TabItem>Headings</TabItem>
+							<TabItem>Panels</TabItem>
+							<TabItem>Headings</TabItem>
+							<TabItem>Stepper</TabItem>
+							<TabItem>Tabs</TabItem>
+							<TabItem>Checklists</TabItem>
 
-					</Tabs>
+						</Tabs>
+					</Affix>
 					<ComponentsContainer />
 				</FlexContainer>
 			</div>
