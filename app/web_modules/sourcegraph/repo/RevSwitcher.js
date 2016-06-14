@@ -156,7 +156,7 @@ class RevSwitcher extends Component {
 
 	// If path is not present, it means this is the rev switcher on commits page.
 	_revSwitcherURL(rev) {
-		return urlWithRev(this.state.routes, this.state.routeParams, rev);
+		return `${urlWithRev(this.state.routes, this.state.routeParams, rev)}${window.location.hash}`;
 	}
 
 	_onToggleDropdown(ev) {
