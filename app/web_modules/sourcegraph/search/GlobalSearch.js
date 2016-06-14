@@ -125,8 +125,6 @@ class GlobalSearch extends Container {
 			q: query || undefined, // eslint-disable-line no-undefined
 			prefixMatch: this.props.location.query.prefixMatch || undefined, // eslint-disable-line no-undefined
 			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
-		this.setState({query: query});
-
 	}
 
 	_navigateTo(url: string) {
