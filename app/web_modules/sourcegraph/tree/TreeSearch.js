@@ -388,7 +388,7 @@ class TreeSearch extends Container {
 			// Def result
 			if (!this.state.matchingDefs || !this.state.matchingDefs.Defs || this.state.matchingDefs.Defs.length === 0) return;
 			const def = this.state.matchingDefs.Defs.filter(this._symbolFilter)[i];
-			this._navigateTo(urlToDef(def, this.state.srclibDataVersion.CommitID));
+			this._navigateTo(urlToDef(def, this.state.rev));
 		} else if (i >= this._numSymbolResults() && i < this._numSymbolResults() + this._numXDefResults()) {
 			// XDef result
 			if (!this.state.xdefs || !this.state.xdefs.Defs || this.state.xdefs.Defs.length === 0) return;
@@ -535,7 +535,7 @@ class TreeSearch extends Container {
 			limit = defs.length > SYMBOL_LIMIT ? SYMBOL_LIMIT : defs.length;
 		for (let i = 0; i < limit; i++) {
 			let def = defs[i];
-			list.push(this._defToLink(def, this.state.srclibDataVersion.CommitID, offset + i, "i"));
+			list.push(this._defToLink(def, this.state.rev, offset + i, "i"));
 		}
 
 		return list;
