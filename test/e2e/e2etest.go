@@ -29,6 +29,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/sharedsecret"
 	"sourcegraph.com/sourcegraph/sourcegraph/test/e2e/e2etestuser"
 
+	"github.com/jpillora/backoff"
 	"github.com/nlopes/slack"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rogpeppe/rog-go/parallel"
@@ -339,14 +340,20 @@ func init() {
 // run runs the test suite over and over again against $TARGET, if $TARGET is set,
 // otherwise it runs the test suite just once.
 func (t *testRunner) run() {
+	b := &backoff.Backoff{
+		Min: time.Second,
+		Max: 10 * time.Minute,
+	}
 	shouldLogSuccess := 0
 	for {
 		if t.runTests(shouldLogSuccess < 5) {
+			b.Reset()
 			shouldLogSuccess++
 			if shouldLogSuccess == 5 {
 				t.slackMessage(typeNormal, ":star: *Five consecutive successes!* (silencing output until next failure)", "")
 			}
 		} else {
+			time.Sleep(b.Duration())
 			shouldLogSuccess = 0
 		}
 
