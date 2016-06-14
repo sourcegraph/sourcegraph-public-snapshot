@@ -25,7 +25,6 @@
 
 .container {
 	display: flex;
-	flex: 1;
 	align-items: start;
 }
 .content {
