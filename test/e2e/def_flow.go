@@ -18,7 +18,7 @@ func testDefFlow(t *T) error {
 		return err
 	}
 
-	t.WaitForElement(selenium.ByLinkText, "View")
+	t.WaitForElement(selenium.ByLinkText, "header.go")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Get gets the first value associated with the given key')]")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'petarm')]")
 	t.WaitForElement(selenium.ByXPATH, "//*[contains(text(), 'Usage examples')]")
