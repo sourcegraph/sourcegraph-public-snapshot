@@ -26,7 +26,9 @@ class StyleguideContainer extends React.Component {
 							</TabItem>
 
 							<Heading level="5" className={base.mt4}>Brand</Heading>
-							<TabItem>Voice</TabItem>
+							<TabItem>
+								<a href="#brand-voice">Voice</a>
+							</TabItem>
 							<TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>
 							<TabItem>Logo and Wordmark</TabItem>
@@ -38,7 +40,9 @@ class StyleguideContainer extends React.Component {
 							<TabItem>Layout</TabItem>
 
 							<Heading level="5" className={base.mt4}>Components</Heading>
-							<TabItem>Headings</TabItem>
+							<TabItem>
+								<a href="#components-headings">Headings</a>
+							</TabItem>
 							<TabItem>Panels</TabItem>
 							<TabItem>Headings</TabItem>
 							<TabItem>Stepper</TabItem>
