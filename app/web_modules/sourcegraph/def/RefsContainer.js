@@ -257,20 +257,23 @@ export default class RefsContainer extends Container {
 							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
 							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
 
+							let err;
 							let file = this.filesByName ? this.filesByName[loc.Path] : null;
-							if (!file) {
-								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
-							}
-							if (file.Error) {
-								let msg;
+							if (file && file.Error) {
 								switch (file.Error.response.status) {
 								case 413:
-									msg = "Sorry, this file is too large to display.";
+									err = "Sorry, this file is too large to display.";
 									break;
 								default:
-									msg = "File is not available.";
+									err = "File is not available.";
 								}
-								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{msg}</p></div>;
+							}
+							if (this.state.refs && this.state.refs.length === 0) err = `No references found for ${loc.Path}`;
+							if (err) {
+								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
+							}
+							if (!file) {
+								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<BlobContentPlaceholder key={i} numLines={10} /></div>;
 							}
 
 							let ranges = this.ranges[loc.Path];
