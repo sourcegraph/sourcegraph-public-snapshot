@@ -435,7 +435,6 @@ var skipLangs = map[string]struct{}{
 	"Markdown":         struct{}{},
 	"PLpgSQL":          struct{}{},
 	"SaltStack":        struct{}{},
-	"Shell":            struct{}{},
 	"Tcsh":             struct{}{},
 	"YAML":             struct{}{},
 	"fish":             struct{}{},
