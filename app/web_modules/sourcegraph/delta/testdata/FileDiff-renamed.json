@@ -2,55 +2,73 @@
 	"renderOutput": {
 		"type": "div",
 		"props": {
-			"className": "file-diff",
+			"styleName": "container",
 			"id": "myid",
 			"children": [
 				{
 					"type": "header",
+					"key": ".0",
 					"props": {
+						"styleName": "header",
 						"children": [
 							{
-								"type": "DiffStatScale",
+								"type": "div",
+								"key": ".0",
 								"props": {
-									"Stat": {
-										"Added": 5,
-										"Changed": 6,
-										"Deleted": 7
-									}
-								}
-							},
-							{
-								"type": "span",
-								"props": {
+									"styleName": "info",
 									"children": [
-										"a"
-									]
-								}
-							},
-							{
-								"type": "span",
-								"props": {
-									"children": [
-										" ",
 										{
-											"type": "i",
+											"type": "WrappedComponent",
+											"key": ".0",
 											"props": {
-												"className": "fa fa-long-arrow-right"
+												"Stat": {
+													"Added": 5,
+													"Changed": 6,
+													"Deleted": 7
+												}
 											}
 										},
-										" b"
+										{
+											"type": "span",
+											"key": ".1",
+											"props": {
+												"styleName": "name",
+												"children": [
+													{
+														"type": "span",
+														"key": ".0",
+														"props": {
+															"children": [
+																"a"
+															]
+														}
+													},
+													{
+														"type": "span",
+														"key": ".1",
+														"props": {
+															"children": [
+																" → b"
+															]
+														}
+													}
+												]
+											}
+										}
 									]
 								}
 							},
 							{
 								"type": "div",
+								"key": ".1",
 								"props": {
-									"className": "btn-group pull-right",
+									"styleName": "actions",
 									"children": [
 										{
 											"type": "a",
+											"key": ".0",
 											"props": {
-												"className": "button btn btn-default btn-xs",
+												"styleName": "action",
 												"href": "/br@bv/-/blob/a",
 												"children": [
 													"Original"
@@ -59,8 +77,9 @@
 										},
 										{
 											"type": "a",
+											"key": ".1",
 											"props": {
-												"className": "button btn btn-default btn-xs",
+												"styleName": "action",
 												"href": "/hr@hv/-/blob/b",
 												"children": [
 													"New"
@@ -74,8 +93,8 @@
 					}
 				},
 				{
-					"type": "Hunk",
-					"key": "0",
+					"type": "WrappedComponent",
+					"key": ".1:$0",
 					"props": {
 						"hunk": {
 							"Body": "a\nb"
@@ -97,15 +116,13 @@
 			"$constructor": "WantAnnotations",
 			"repo": "br",
 			"commitID": "bv",
-			"path": "",
-			"startByte": "a"
+			"path": "a"
 		},
 		{
 			"$constructor": "WantAnnotations",
 			"repo": "hr",
 			"commitID": "hv",
-			"path": "",
-			"startByte": "b"
+			"path": "b"
 		}
 	]
 }

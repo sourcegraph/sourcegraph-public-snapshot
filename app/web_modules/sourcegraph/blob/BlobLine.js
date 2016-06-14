@@ -173,7 +173,7 @@ class BlobLine extends Component {
 		let isDiff = this.state.oldLineNumber || this.state.newLineNumber;
 
 		return (
-			<tr className={s.line}
+			<tr className={`${s.line} ${this.state.className || ""}`}
 				data-line={this.state.lineNumber}>
 				{this.state.lineNumber &&
 					<td className={s.lineNumberCell} onClick={(event) => {
@@ -186,8 +186,8 @@ class BlobLine extends Component {
 						<Link className={this.state.selected ? s.selectedLineNumber : s.lineNumber}
 							to={`${urlToBlob(this.state.repo, this.state.rev, this.state.path)}#L${this.state.lineNumber}`} data-line={this.state.lineNumber} />
 					</td>}
-				{isDiff && <td className="line-number" data-line={this.state.oldLineNumber || ""}></td>}
-				{isDiff && <td className="line-number" data-line={this.state.newLineNumber || ""}></td>}
+				{isDiff && <td className={s.lineNumberCell} data-line={this.state.oldLineNumber || ""}><span className={s.lineNumber} data-line={this.state.oldLineNumber} /></td>}
+				{isDiff && <td className={s.lineNumberCell} data-line={this.state.newLineNumber || ""}><span className={s.lineNumber} data-line={this.state.newLineNumber} /></td>}
 
 				<td className={`code ${this.state.selected ? s.selectedLineContent : s.lineContent}`}>
 					{contents}

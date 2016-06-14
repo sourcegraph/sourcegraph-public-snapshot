@@ -49,7 +49,7 @@ class Popover extends Component {
 			<div styleName="container" ref="container">
 				{this.state.children[0]}
 				{this.state.visible &&
-					<div ref="content" styleName={`popover-${this.state.left ? "left" : "right"}`}>
+					<div ref="content" styleName={`popover-${this.state.left ? "left" : "right"}`} className={this.state.popoverClassName}>
 						{this.state.children[1]}
 					</div>}
 			</div>
@@ -67,6 +67,7 @@ Popover.propTypes = {
 		}
 	},
 	left: React.PropTypes.bool, // position popover content to the left (default: right)
+	popoverClassName: React.PropTypes.string,
 };
 
 export default CSSModules(Popover, styles);

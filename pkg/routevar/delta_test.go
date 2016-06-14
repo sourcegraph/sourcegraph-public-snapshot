@@ -20,8 +20,8 @@ func TestDeltas(t *testing.T) {
 			},
 			wantRouteVars: map[string]string{
 				"Repo":         "samerepo",
-				"Rev":          "@base-rev",
-				"DeltaHeadRev": "@head-rev",
+				"Rev":          "@head-rev",
+				"DeltaBaseRev": "@base-rev",
 			},
 		},
 	}

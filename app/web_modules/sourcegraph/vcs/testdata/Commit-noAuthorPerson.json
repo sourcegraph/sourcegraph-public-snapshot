@@ -8,40 +8,15 @@
 					"type": "div",
 					"key": ".0",
 					"props": {
-						"styleName": "avatar",
+						"styleName": "main",
 						"children": [
 							{
-								"type": "WrappedComponent",
-								"props": {
-									"img": "",
-									"size": "large"
-								}
-							}
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".1",
-					"props": {
-						"styleName": "body",
-						"children": [
-							{
-								"type": "div",
+								"type": "a",
 								"key": ".0",
 								"props": {
 									"styleName": "title",
+									"href": "/sourcegraph.com/sourcegraph@abc/-/commit",
 									"children": [
-										{
-											"type": "code",
-											"key": ".0",
-											"props": {
-												"styleName": "sha",
-												"children": [
-													"abc"
-												]
-											}
-										},
 										"msg"
 									]
 								}
@@ -50,19 +25,86 @@
 								"type": "div",
 								"key": ".1",
 								"props": {
-									"styleName": "text",
+									"styleName": "meta",
 									"children": [
 										{
-											"type": "span",
+											"type": "WrappedComponent",
 											"key": ".0",
 											"props": {
+												"img": "",
+												"size": "small"
+											}
+										},
+										{
+											"type": "div",
+											"key": ".1",
+											"props": {
+												"styleName": "signature",
 												"children": [
-													"authored ",
 													{
-														"type": "TimeAgo",
-														"key": ".1",
+														"type": "span",
+														"key": ".0",
 														"props": {
-															"time": ""
+															"styleName": "sig",
+															"children": [
+																{
+																	"type": "span",
+																	"key": ".0",
+																	"props": {
+																		"styleName": "sig-name",
+																		"children": [
+																			{
+																				"type": "span",
+																				"props": {
+																					"styleName": "name",
+																					"children": [
+																						"(unknown)"
+																					]
+																				}
+																			}
+																		]
+																	}
+																},
+																" authored ",
+																{
+																	"type": "TimeAgo",
+																	"key": ".2",
+																	"props": {
+																		"time": ""
+																	}
+																}
+															]
+														}
+													},
+													{
+														"type": "wbr",
+														"key": ".1",
+														"props": {}
+													}
+												]
+											}
+										},
+										{
+											"type": "div",
+											"key": ".2",
+											"props": {
+												"styleName": "commit-id",
+												"children": [
+													{
+														"type": "a",
+														"props": {
+															"href": "/sourcegraph.com/sourcegraph@abc/-/commit",
+															"children": [
+																{
+																	"type": "code",
+																	"props": {
+																		"styleName": "sha",
+																		"children": [
+																			"abc"
+																		]
+																	}
+																}
+															]
 														}
 													}
 												]

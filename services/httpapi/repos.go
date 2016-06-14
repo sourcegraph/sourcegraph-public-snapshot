@@ -225,15 +225,7 @@ func getRepoLastBuildTime(r *http.Request, repoPath string, commitID string) (ti
 }
 
 func resolveLocalRepo(ctx context.Context, repoPath string) (int32, error) {
-	cl, err := sourcegraph.NewClientFromContext(ctx)
-	if err != nil {
-		return 0, err
-	}
-	res, err := cl.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
-	if err != nil {
-		return 0, err
-	}
-	return res.Repo, nil
+	return handlerutil.GetRepoID(ctx, map[string]string{"Repo": repoPath})
 }
 
 func resolveLocalRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph.RepoRevSpec, error) {

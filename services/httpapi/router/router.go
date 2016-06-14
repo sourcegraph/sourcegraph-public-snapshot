@@ -26,6 +26,7 @@ const (
 	BuildTaskLog             = "build.task.log"
 	ChannelListen            = "channel.listen"
 	ChannelSend              = "channel.send"
+	Commit                   = "commit"
 	Coverage                 = "coverage"
 	Def                      = "def"
 	DefRefs                  = "def.refs"
@@ -33,6 +34,7 @@ const (
 	DefExamples              = "def.examples"
 	DefAuthors               = "def.authors"
 	Defs                     = "defs"
+	DeltaFiles               = "delta.files"
 	GlobalSearch             = "global.search"
 	Repo                     = "repo"
 	RepoResolve              = "repo.resolve"
@@ -107,6 +109,8 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/commits").Methods("GET").Name(RepoCommits) // uses Head/Base query params, not {Rev} route var
 	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
+	repoRev.Path("/commit").Methods("GET").Name(Commit)
+	repoRev.Path("/delta/{DeltaBaseRev}/-/files").Methods("GET").Name(DeltaFiles)
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree-search").Methods("GET").Name(RepoTreeSearch)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
