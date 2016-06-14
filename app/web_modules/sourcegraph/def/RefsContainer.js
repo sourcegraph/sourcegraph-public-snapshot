@@ -268,7 +268,10 @@ export default class RefsContainer extends Container {
 									err = "File is not available.";
 								}
 							}
-							if (this.state.refs && this.state.refs.length === 0) err = `No references found for ${loc.Path}`;
+							if (this.state.refs && this.state.refs.filter((r) => r.File === loc.Path).length === 0) {
+								err = `No references found for ${loc.Path}`;
+							}
+
 							if (err) {
 								return <div key={i}>{this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i)}<p className={styles.fileError}>{err}</p></div>;
 							}
