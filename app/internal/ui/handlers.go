@@ -90,7 +90,6 @@ func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)
-	m.Follow = allowRobots(repo) && isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	return m, nil
 }
 
@@ -157,7 +156,6 @@ func serveDefCommon(w http.ResponseWriter, r *http.Request, isDefInfo bool) (*me
 	// Don't noindex pages with a canonical URL. See
 	// https://www.seroundtable.com/archives/020151.html.
 	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	m.Follow = allowRobots(repo) && canonRev
 	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev && isDefInfo // DefInfo is a better landing page than Def.
 
 	return m, nil
@@ -203,7 +201,6 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)
-	m.Follow = allowRobots(repo) && isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	return m, nil
 }
 
@@ -235,7 +232,6 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)
-	m.Follow = allowRobots(repo) && isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
 	return m, nil
 }
 
