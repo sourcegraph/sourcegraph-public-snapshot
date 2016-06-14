@@ -68,7 +68,7 @@ class ExamplesContainer extends Container {
 					repoRefs={repoRefs}
 					prefetch={i === 0}
 					initNumSnippets={expandedSnippets}
-					rangeLimit={1}
+					rangeLimit={2}
 					fileCollapseThreshold={5} />)}
 			</div>
 		);
