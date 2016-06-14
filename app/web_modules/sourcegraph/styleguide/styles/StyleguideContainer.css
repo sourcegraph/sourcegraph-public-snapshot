@@ -5,5 +5,5 @@
 
 .container-fixed {
 	composes: pv6 ph4 center from base;
-	max-width: 1280px;
+	max-width: 1120px;
 }

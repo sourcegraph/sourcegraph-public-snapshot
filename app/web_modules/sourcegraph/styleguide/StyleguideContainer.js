@@ -21,7 +21,9 @@ class StyleguideContainer extends React.Component {
 				<FlexContainer styleName="container-fixed">
 					<Affix offset={20} style={{flex: "0 0 220px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
-							<TabItem active={true}>Principles</TabItem>
+							<TabItem active={true}>
+								<a href="#principles">Principles</a>
+							</TabItem>
 
 							<Heading level="5" className={base.mt4}>Brand</Heading>
 							<TabItem>Voice</TabItem>
