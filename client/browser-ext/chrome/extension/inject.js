@@ -330,7 +330,7 @@ class InjectApp extends React.Component {
 		chrome.runtime.sendMessage(null, {type: "get"}, {}, (state) => {
 			const accessToken = state.accessToken;
 			if (accessToken) this.props.actions.setAccessToken(accessToken); // without this, access token may be overwritten to null
-			this.refreshState();
+			if (window.location.host === "github.com") this.refreshState();
 		});
 	}
 
