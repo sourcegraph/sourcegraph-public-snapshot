@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 
@@ -116,12 +115,6 @@ func (s *accounts) Update(ctx context.Context, in *sourcegraph.User) (*pbtypes.V
 	}
 
 	return &pbtypes.Void{}, nil
-}
-
-var validLoginRE = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-
-func isValidLogin(login string) bool {
-	return validLoginRE.MatchString(login)
 }
 
 var errEmailNotConfigured = errors.New("email is not configured")
