@@ -17,6 +17,8 @@ export const LanguageIcon = iconWrapper(require("react-icons/lib/fa/language"));
 export const MagnifyingGlassIcon = iconWrapper(require("react-icons/lib/fa/search"));
 export const CloseIcon = iconWrapper(require("react-icons/lib/fa/close"));
 export const EllipsisHorizontal = iconWrapper(require("react-icons/lib/fa/ellipsis-v"));
+export const FaAngleDown = iconWrapper(require("react-icons/lib/fa/angle-down"));
+export const FaAngleRight = iconWrapper(require("react-icons/lib/fa/angle-right"));
 
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon styleName="foo" />

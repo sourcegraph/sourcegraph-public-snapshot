@@ -212,7 +212,7 @@ class RepoMain extends React.Component {
 		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
 
 		return (
-			<div>
+			<div styleName="outer-container">
 				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				{isMainRoute && title && <Helmet title={title} />}
 				{this.props.main}
