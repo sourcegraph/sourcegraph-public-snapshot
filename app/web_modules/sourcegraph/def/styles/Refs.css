@@ -9,10 +9,9 @@
 @value media-sm from vars;
 
 .container {
-	composes: mt4 mb4 br2 ba bw1 from base;
-	composes: b--light-gray-2 from colors;
 	display: flex;
 	flex-direction: column;
+	composes: mb4 from base;
 }
 
 .repo {
@@ -38,7 +37,6 @@
 }
 
 .refs {
-	border-color: #d8d8d8;
 	flex: 1 1 auto;
 }
 
@@ -49,32 +47,23 @@
 }
 
 .filename {
-	composes: bb from base;
-	composes: f5 fw1 from typography;
-	composes: mid-gray b--light-gray-2 from colors;
+	composes: pa2 mt2 ba br1 from base;
+	composes: f5 from typography;
+	composes: mid-gray from colors;
+	background-color: #f7f7f7;
+	border-color: #d8d8d8;
 	display: flex;
-	align-content: flex-start;
-	justify-content: center;
+	align-items: center;
 	cursor: pointer;
 }
 
-.breadcrumbIcon{
-	composes: pt2 pb2 from base;
-	composes: bg-light-blue from colors;
-	min-width: 39px;
-	display: flex;
-	justify-content: center;
-	align-content: center;
-}
-
 .pathContainer {
-	composes: pt2 pb2 from base;
-	composes: ml2 from base;
 	flex: 1 1 auto;
 }
 
-.pathEnd{
-	composes: fw5 from typography;
+.viewFile {
+	composes: tr from typography;
+	flex: 0 0 35px;
 }
 
 .toggleIcon {

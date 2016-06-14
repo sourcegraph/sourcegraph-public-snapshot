@@ -16,9 +16,8 @@ import {urlToBlob} from "sourcegraph/blob/routes";
 import styles from "./styles/Refs.css";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
+import {TriangleRightIcon, TriangleDownIcon} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
-import stripDomain from "sourcegraph/util/stripDomain";
 import type {Def} from "sourcegraph/def";
 
 class DefContainer extends Container {
@@ -86,27 +85,25 @@ class DefContainer extends Container {
 		}
 	}
 
-	renderFileHeader(def) {
-		let path = stripDomain(def.Repo.concat("/", def.File));
+	renderFileHeader(def, beginningLine) {
 		let pathBreadcrumb = breadcrumb(
-			path,
+			def.File,
 			(j) => <span key={j} className={styles.sep}> / </span>,
-			(_, component, j, isLast) => {
-				let span = <span className={styles.pathPart} key={j}>{component}</span>;
-				if (isLast) {
-					return <Link className={styles.pathEnd} to={urlToBlob(def.Repo, this.state.rev, def.File)} key={j}> {span} </Link>;
-				}
-				return span;
-			}
+			(path, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
 		);
 		return (
-			<div className={styles.filename} onClick={(e) => { this.setState({showDef: !this.state.showDef}); }}>
-					<div className={styles.breadcrumbIcon}>
-						{this.state.showDef ? <FaAngleDown className={styles.toggleIcon} /> : <FaAngleRight className={styles.toggleIcon} />}
-					</div>
-					<div className={styles.pathContainer}>
-						{pathBreadcrumb}
-					</div>
+			<div className={styles.filename} onClick={(e) => {
+				this.setState({showDef: !this.state.showDef});
+			}}>
+				{this.state.showDef ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
+				<div className={styles.pathContainer}>
+					<label className={styles.label}>Definition:</label>&nbsp;
+					{pathBreadcrumb}
+					<span className={styles.refsLabel}>line {beginningLine}</span>
+				</div>
+				<Link className={styles.viewFile} to={urlToBlob(def.Repo, this.state.rev, def.File)}>
+					<span className={styles.pageLink}>View</span>
+				</Link>
 			</div>
 		);
 	}
@@ -125,19 +122,7 @@ class DefContainer extends Container {
 			<div className={styles.container}
 				onMouseOver={() => this.setState({mouseover: true, mouseout: false})}
 				onMouseOut={() => this.setState({mouseover: false, mouseout: true})}>
-				{this.renderFileHeader(def)}
-				{!this.state.showDef && this.state.defFile && !this.state.defFile.Error && beginningLine && <Blob
-					repo={def.Repo}
-					rev={this.state.rev}
-					path={deffile}
-					contents={contents}
-					annotations={this.state.defAnns || null}
-					activeDef={this.state.def}
-					lineNumbers={true}
-					displayRanges={[[beginningLine, beginningLine]]}
-					highlightedDef={this.state.highlightedDef || null}
-					highlightedDefObj={this.state.highlightedDefObj || null}
-					displayLineExpanders="bottom"/>}
+				{this.renderFileHeader(def, beginningLine)}
 				{this.state.showDef && this.state.defFile && this.state.defFile.Error && <p>Error loading code</p>}
 				{this.state.showDef && this.state.defFile && !this.state.defFile.Error && <Blob
 					repo={def.Repo}

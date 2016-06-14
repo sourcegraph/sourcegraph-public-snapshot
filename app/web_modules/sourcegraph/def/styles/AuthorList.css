@@ -8,15 +8,10 @@
 	padding-left: 0;
 }
 
-.list-horizontal-container{
-	display: flex;
-}
-
 .list-horizontal {
 	composes: list;
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: center;
 }
 
 @media screen and (max-width: 48em) {
@@ -41,11 +36,7 @@
 
 .person-horizontal {
 	composes: person;
-	composes: pr3 ph2 from base;
-}
-
-.person-horizontal:last-child{
-	padding-right: 0;
+	composes: pr3 from base;
 }
 
 .badge-wrapper {
@@ -58,6 +49,10 @@
 	composes: br2 pv1 ph2 from base;
 	composes: bg-blue-1 blue from colors;
 	composes: f5 fw6 from typography;
+}
+
+.avatar {
+	composes: ph2 from base;
 }
 
 .timestamp {

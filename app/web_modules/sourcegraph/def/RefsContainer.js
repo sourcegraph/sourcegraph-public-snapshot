@@ -18,9 +18,9 @@ import lineFromByte from "sourcegraph/blob/lineFromByte";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
-import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
+import {RepoLink} from "sourcegraph/components";
+import {TriangleRightIcon, TriangleDownIcon} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
-import stripDomain from "sourcegraph/util/stripDomain";
 import styles from "./styles/Refs.css";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
@@ -185,33 +185,27 @@ export default class RefsContainer extends Container {
 	}
 
 	renderFileHeader(repo, rev, path, count, i) {
-		let trimmedPath = stripDomain(repo);
-		trimmedPath = trimmedPath.concat("/", path);
 		let pathBreadcrumb = breadcrumb(
-			trimmedPath,
-			(j) => <span key={j}> / </span>,
-			(_, component, j, isLast) => {
-				let span = <span key={j}>{component}</span>;
-				if (isLast) {
-					return <Link className={styles.pathEnd} to={urlToBlob(repo, rev, path)} key={j}> {span} </Link>;
-				}
-				return span;
-			}
+			path,
+			(j) => <span key={j} className={styles.sep}> / </span>,
+			(_, component, j, isLast) => <span className={styles.pathPart} key={j}>{component}</span>
 		);
 		return (
 			<div key={path} className={styles.filename} onClick={(e) => {
 				if (e.button !== 0) return; // only expand on main button click
 				this._toggleFile(path);
 			}}>
-				<div className={styles.breadcrumbIcon}>
-					{this.state.shownFiles.has(path) ? <FaAngleDown className={styles.toggleIcon} /> : <FaAngleRight className={styles.toggleIcon} />}
-				</div>
+				{this.state.shownFiles.has(path) ? <TriangleDownIcon className={styles.toggleIcon} /> : <TriangleRightIcon className={styles.toggleIcon} />}
 				<div className={styles.pathContainer}>
 					{pathBreadcrumb}
 					{count &&
 						<span className={styles.refsLabel}>{`${count} ref${count > 1 ? "s" : ""}`}</span>
 					}
 				</div>
+				<Link className={styles.viewFile}
+					to={urlToBlob(repo, rev, path)}>
+					<span className={styles.pageLink}>View</span>
+				</Link>
 			</div>
 		);
 	}
@@ -255,6 +249,9 @@ export default class RefsContainer extends Container {
 				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
+					<h2 className={styles.repo}>
+						<RepoLink className={styles.repoLink} repo={this.state.refRepo} />
+					</h2>
 					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
 							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
@@ -307,7 +304,7 @@ export default class RefsContainer extends Container {
 					</div>
 					{!this.state.showAllFiles && this.state.fileLocations && this.state.fileLocations.length > this.state.fileCollapseThreshold &&
 						<div className={styles.filename} onClick={() => this.setState({showAllFiles: true})}>
-							<FaAngleRight className={styles.toggleIcon} />
+							<TriangleRightIcon className={styles.toggleIcon} />
 							{this.paginatorText()}
 						</div>
 					}

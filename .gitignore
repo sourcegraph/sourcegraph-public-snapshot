@@ -7,7 +7,6 @@
 /.emacs.desktop
 /.emacs.desktop.lock
 .\#*
-.dir-locals.el
 
 # Go
 *.o

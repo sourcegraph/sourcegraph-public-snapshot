@@ -53,7 +53,7 @@ class ExamplesContainer extends Container {
 		return (
 			<div>
 				<div styleName="section-label">
-					{refLocs && refLocs.RepoRefs && `${refLocs.RepoRefs.length} ` || ""} Usage Examples
+					Usage examples
 				</div>
 				<hr style={{marginTop: 0, clear: "both"}}/>
 				{!refLocs && <i>Loading...</i>}

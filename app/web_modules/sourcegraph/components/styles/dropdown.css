@@ -2,19 +2,12 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value menu "sourcegraph/components/styles/menu.css";
 
-@value c_dark-blue from colors;
-
 .wrapper {
-	composes: blue from colors;
 	display: inline-block;
 	float: right;
 	line-height: 1.45;
+	margin-top: 18px;
 	cursor: pointer;
-	vertical-align: middle;
-}
-
-.wrapper:hover{
-	color: c_dark-blue;
 }
 
 .wrapper-disabled {
@@ -27,21 +20,17 @@
 	width: 10rem;
 }
 
-.icon {	
+.icon {
+	composes: gray from colors;
 	font-size: 1.5rem;
-}
-
-.center-icon{
-	vertical-align: middle;
 }
 
 .toggle {
 	padding-left: 5px;
-	fill: currentColor;
+	composes: light-silver from colors;
 }
-
-.open-arrow {
-	transform: rotate(90deg);
+.toggle:hover {
+	color: black;
 }
 
 .dropdown-menu-open {

@@ -2,27 +2,22 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value headings "sourcegraph/components/styles/heading.css";
-@value vars "sourcegraph/components/styles/_vars.css";
-@value panel "sourcegraph/components/styles/panel.css";
-
 
 .container {
-	composes: high from panel;
-	composes: center pa4 mv5 from base;
-	composes: col-12-ns from grid;
-	max-width: 74rem;
+	composes: center from base;
+	composes: col-11-ns from grid;
+	max-width: 68rem;
 	min-height: 50vh;
-	background-color: white;
 }
 
-.bg {
-	composes: bg-cool-pale-gray-2 from colors;
-	flex: 1;
+.back-icon {
+	composes: gray from colors;
 }
 
 .def-title {
-	composes: fw1 f4 from typography;
+	composes: black from colors;
+	font-weight: normal;
+	line-height: normal;
 }
 
 .def-title:hover {
@@ -30,21 +25,18 @@
 }
 
 .def {
-	composes: purple from colors;
+	composes: blue from colors;
+	font-weight: bold;
 }
 
 .authors {
-	composes: mt2 ml2 mb2 from base; 
 	display: flex;
-}
-
-.blob-link {
-	composes: mt2 ml2 mb2 from base; 
+	align-items: center;
 }
 
 .section-label {
-	composes: mt3 mr3 mb3 from base;
-	composes: b normal-text from typography;
+	composes: subsection-header from typography;
+	composes: pt3 pb1 from base;
 }
 
 .section-label:after {
@@ -52,9 +44,7 @@
 }
 
 .description-wrapper {
-	composes: pt0 from base;
-	border-top: 1px solid #eeeeee;
-	border-bottom: 1px solid #eeeeee;
+	padding-top: 10px;
 }
 
 .icon {
@@ -68,38 +58,14 @@
 	composes: normal-text from typography;
 }
 
-.description-expander{
-	composes: description;
-	composes: link from "sourcegraph/components/styles/link.css";
-	cursor: pointer; 
-}
-
-.link-and-authors {
-	composes: normal-text from typography;
-	display: flex;
-	justify-content: space-between;
-}
-
 .pagination {
 	composes: pb5 from base;
 	display: flex;
 	justify-content: center;
 }
 
-.translation-dropdown {
-	composes: bg-cool-pale-gray-5 from colors;
-	composes: fw6 from typography;
-	composes: pt2 pl3 pr3 pb2 from base;
-	border-bottom-right-radius: 2px;
-	border-bottom-left-radius: 2px;
-}
-
-.refs-container{
-	border-top: 1px solid #eeeeee;
-}
-
-.def-header{
-	margin-top: 0;
+.translation-widget {
+	composes: pl4 pb3 from base;
 }
 
 @media screen and (max-width: 48em) {
