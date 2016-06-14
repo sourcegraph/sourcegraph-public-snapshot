@@ -41,6 +41,7 @@
 	pointer-events: none;
 	cursor: default !important;
 	user-select: none;
+	list-style-type: none;
 }
 .detail {
 	opacity: 0.6;

@@ -2,8 +2,8 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import Fuze from "fuse.js";
 import {Link} from "react-router";
+import fuzzysearch from "fuzzysearch";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
@@ -39,7 +39,6 @@ const SYMBOL_LIMIT = 5;
 const GLOBAL_DEFS_LIMIT = 3;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
-const MAX_QUERY_LENGTH = 32;
 
 function pathSplit(path: string): string[] {
 	if (path === "") throw new Error("invalid empty path");
@@ -124,9 +123,9 @@ class TreeSearch extends Container {
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._debouncedSetQuery = debounce((query) => {
 			if (query !== this.state.query) {
-				this.props.onChangeQuery(query);
+				setTimeout(() => this.props.onChangeQuery(query));
 			}
-		}, 150, {leading: false, trailing: true});
+		}, 25, {leading: false, trailing: true});
 	}
 
 	componentDidMount() {
@@ -150,12 +149,6 @@ class TreeSearch extends Container {
 		Object.assign(state, props);
 
 		state.query = props.query || "";
-		if (state.query.length > MAX_QUERY_LENGTH) {
-			// HACK: Truncate query if it exceeds Fuse's max query length.
-			// We can probably handle this better and should support longer
-			// queries, but this prevents outright errors from occurring.
-			state.query = state.query.slice(0, MAX_QUERY_LENGTH);
-		}
 
 		state.fileTree = TreeStore.fileTree.get(state.repo, state.commitID);
 		state.fileList = TreeStore.fileLists.get(state.repo, state.commitID);
@@ -212,15 +205,6 @@ class TreeSearch extends Container {
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
 			nextState.lastDefinedMatchingDefs = prevState.matchingDefs;
-		}
-
-		if (prevState.fileList !== nextState.fileList) {
-			nextState.fuzzyFinder = nextState.fileList ? new Fuze(nextState.fileList.Files, {
-				distance: 1000,
-				location: 0,
-				threshold: 0.1,
-				maxPatternLength: MAX_QUERY_LENGTH,
-			}) : null;
 		}
 
 		if (prevState.matchingDefs !== nextState.matchingDefs) {
@@ -286,12 +270,14 @@ class TreeSearch extends Container {
 					// TODO Handle errors in a more standard way.
 					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
 				}
-			} else if (nextState.fuzzyFinder) {
-				nextState.fileResults = nextState.fuzzyFinder.search(nextState.query).map(i => nextState.fileList.Files[i]).map(file => ({
-					name: file,
-					isDirectory: false,
-					url: urlToBlob(nextState.repo, nextState.rev, file),
-				}));
+			} else if (nextState.fileList && nextState.fileList.Files) {
+				nextState.fileResults = nextState.fileList.Files
+					.filter((f) => fuzzysearch(nextState.query, f))
+					.map((f) => ({
+						name: f,
+						isDirectory: false,
+						url: urlToBlob(nextState.repo, nextState.rev, f),
+					}));
 			}
 		}
 	}
@@ -651,7 +637,6 @@ class TreeSearch extends Container {
 						autoFocus={true}
 						defaultValue={this.state.query}
 						placeholder="Jump to symbols or files..."
-						maxLength={MAX_QUERY_LENGTH}
 						spellCheck={false}
 						domRef={(e) => this._queryInput = e} />
 				</div>
