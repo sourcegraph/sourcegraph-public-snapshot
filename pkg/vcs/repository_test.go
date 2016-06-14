@@ -989,6 +989,78 @@ func TestRepository_FileSystem(t *testing.T) {
 	}
 }
 
+func TestRepository_FileSystem_quoteChars(t *testing.T) {
+	t.Parallel()
+
+	// The repo contains 3 files: one whose filename includes a
+	// non-ASCII char, one whose filename contains a double quote, and
+	// one whose filename contains a backslash. These should be parsed
+	// and unquoted properly.
+	//
+	// Filenames with double quotes are always quoted in some versions
+	// of git, so we might encounter quoted paths even if
+	// core.quotepath is off. We test twice, with it both on AND
+	// off. (Note: Although
+	// https://www.kernel.org/pub/software/scm/git/docs/git-config.html
+	// says that double quotes, backslashes, and single quotes are
+	// always quoted, this is not true on all git versions, such as
+	// @sqs's current git version 2.7.0.)
+	wantNames := []string{"⊗.txt", `".txt`, `\.txt`}
+	sort.Strings(wantNames)
+	gitCommands := []string{
+		`touch ⊗.txt '".txt' \\.txt`,
+		`git add ⊗.txt '".txt' \\.txt`,
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	tests := map[string]struct {
+		repo vcs.Repository
+	}{
+		"git cmd (quotepath=on)": {
+			repo: makeGitRepositoryCmd(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
+		},
+		"git cmd (quotepath=off)": {
+			repo: makeGitRepositoryCmd(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
+		},
+	}
+
+	for label, test := range tests {
+		commitID, err := test.repo.ResolveRevision("master")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		fs := vcs.FileSystem(test.repo, commitID)
+
+		entries, err := fs.ReadDir(".")
+		if err != nil {
+			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
+			continue
+		}
+		names := make([]string, len(entries))
+		for i, e := range entries {
+			names[i] = e.Name()
+		}
+		sort.Strings(names)
+
+		if !reflect.DeepEqual(names, wantNames) {
+			t.Errorf("%s: got names %v, want %v", label, names, wantNames)
+			continue
+		}
+
+		for _, name := range wantNames {
+			stat, err := fs.Stat(name)
+			if err != nil {
+				t.Errorf("%s: Stat(%q): %s", label, name, err)
+				continue
+			}
+			if stat.Name() != name {
+				t.Errorf("%s: got Name == %q, want %q", label, stat.Name(), name)
+				continue
+			}
+		}
+	}
+}
+
 func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 

@@ -864,6 +864,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 		"ls-tree",
 		"--long", // show size
 		"--full-name",
+		"-z",
 		string(commit),
 	}
 	if recurse {
@@ -885,7 +886,7 @@ func (r *Repository) lsTree(commit vcs.CommitID, path string, recurse bool) ([]o
 	}
 
 	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(string(out), "\x00")
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
 		if i == len(lines)-1 {
