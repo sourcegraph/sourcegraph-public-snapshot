@@ -5,8 +5,6 @@ import Icon from "./Icon";
 import CSSModules from "react-css-modules";
 import styles from "sourcegraph/components/styles/tabItem.css";
 
-// @TODO(chexee): Create a higher order component that iterates through and renders children. Also adds an underline
-
 class TabItem extends React.Component {
 	static propTypes = {
 		className: React.PropTypes.string,
