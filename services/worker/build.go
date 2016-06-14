@@ -26,37 +26,45 @@ func startBuild(ctx context.Context, build *sourcegraph.BuildJob) {
 
 	start := time.Now()
 
-	log15.Info("Starting build", "build", build.Spec.IDString())
 	c, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		log15.Error("Updating build starting state failed", "build", build.Spec, "err", err)
 		return
 	}
+
+	// Get repo name (not just ID) for more useful log messages.
+	repo, err := c.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: build.Spec.Repo})
+	if err != nil {
+		log15.Error("Updating build starting state failed", "build", build.Spec, "err", err)
+	}
+	label := fmt.Sprintf("repo %s (%d) build #%d", repo.URI, repo.ID, build.Spec.ID)
+
+	log15.Info("Starting build", "build", label)
 	_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
 		Build: build.Spec,
 		Info:  sourcegraph.BuildUpdate{StartedAt: now()},
 	})
 	if err != nil {
-		log15.Error("Updating build starting state failed", "build", build.Spec, "err", err)
+		log15.Error("Updating build starting state failed", "build", label, "err", err)
 		return
 	}
 
 	// Configure build.
 	builder, err := configureBuild(ctx, build)
 	if err != nil {
-		log15.Error("Configuring build failed", "build", build.Spec, "err", err)
+		log15.Error("Configuring build failed", "build", label, "err", err)
 		return
 	}
 
 	// Run build.
 	execErr := builder.Exec(ctx)
 	if execErr == nil {
-		log15.Info("Build succeeded", "build", build.Spec.IDString(), "time", time.Since(start))
+		log15.Info("Build succeeded", "build", label, "time", time.Since(start))
 	} else if ctx.Err() != nil {
-		log15.Info("Build killed", "build", build.Spec.IDString(), "time", time.Since(start))
+		log15.Info("Build killed", "build", label, "time", time.Since(start))
 		return
 	} else {
-		log15.Info("Build failed", "build", build.Spec.IDString(), "time", time.Since(start), "err", execErr)
+		log15.Info("Build failed", "build", label, "time", time.Since(start), "err", execErr)
 	}
 
 	_, err = c.Builds.Update(ctx, &sourcegraph.BuildsUpdateOp{
@@ -68,7 +76,7 @@ func startBuild(ctx context.Context, build *sourcegraph.BuildJob) {
 		},
 	})
 	if err != nil {
-		log15.Error("Updating build final state failed", "build", build.Spec, "err", err)
+		log15.Error("Updating build final state failed", "build", label, "err", err)
 	}
 }
 
