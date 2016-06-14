@@ -11,6 +11,24 @@ class ComponentsContainer extends React.Component {
 	render() {
 		return (
 			<div>
+				<ComponentCard>
+					<a name="principles"></a>
+					<Heading level="2">Principles</Heading>
+					<p>
+						This styleguide and component library is a living reference to building and designing the Sourcegraph user interface. This reference allows us to build and design conistently, efficiently, and quickly. It's not a definitive framework – but it should follow these main principles:
+					</p>
+					<ol>
+						<li className={base.mb3}>
+							<strong>UI components are stateless</strong><br />
+							All state and functionality should be handled outside of UI components. <a href="https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0#.pk5bjyhmz">Read more about presentational and container components.</a>
+						</li>
+						<li>
+							<strong>Maximise reusability</strong><br />
+							Each component should be designed to be used in different contexts, at different widths, on different platforms.
+						</li>
+					</ol>
+					<p>More work on this section TBD.</p>
+				</ComponentCard>
 				<ComponentCard component="Heading">
 					<Heading level="3" className={base.mb4}>Headings</Heading>
 					<Panel>
