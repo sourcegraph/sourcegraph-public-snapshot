@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Stepper, ChecklistItem, TabItem, Button} from "sourcegraph/components";
-import {Headings} from "./componentExamples";
+import {Headings, Buttons} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -44,11 +44,9 @@ class ComponentsContainer extends React.Component {
 				</ul>
 
 				<Heading level="2" underline="purple" className={base.mt5}>Components</Heading>
-				<Headings />
+				<div className={base.mv3}><Headings /></div>
+				<div className={base.mv3}><Buttons /></div>
 
-				<div>
-					<Panel className={base.pa5}><Button color="disabled">Disabled button</Button></Panel>
-				</div>
 				<div>
 					<Heading level="3" className={base.mb4}>Tabs</Heading>
 					<Panel className={base.pa5}>

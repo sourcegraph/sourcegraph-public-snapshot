@@ -2,7 +2,6 @@ import React from "react";
 
 import Component from "sourcegraph/Component";
 import Loader from "./Loader";
-
 import CSSModules from "react-css-modules";
 import styles from "./styles/button.css";
 

@@ -45,6 +45,7 @@
     cursor: not-allowed;
     filter: alpha(opacity=70);
     opacity: 0.70;
+		padding: 0.65rem 1rem;
 }
 
 /* Button – Size modifiers */
