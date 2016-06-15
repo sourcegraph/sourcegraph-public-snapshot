@@ -32,14 +32,15 @@ class ToolComponent extends React.Component {
 	}
 
 	_dismissModal() {
-		this.context.eventLogger.logEvent("ToolBackButtonClicked", {toolType: this.props.location.pathname.split("/").slice(-1)[0]});
-		this.context.router.replace({...this.props.location, pathname: this.props.location.pathname.split("/").slice(0, -1).join("/")});
+		this.context.eventLogger.logEvent("ToolBackButtonClicked", {toolType: this.props.supportedTool.hero.title});
+		let urlWithOutQueryParams = this.props.location.pathname.split("?")[0];
+		this.context.router.replace({...urlWithOutQueryParams, pathname: urlWithOutQueryParams.split("/").slice(0, -1).join("/")});
 	}
 
 	_toggleView() {
+		this.context.eventLogger.logEvent("EmailSubscriptionViewToggled", {visible: !this.state.formVisible});
+		this.context.router.replace({...this.props.location, query: {...this.props.location.query, expanded: !this.state.formVisible}});
 		this.setState({formVisible: !this.state.formVisible});
-		this.context.router.replace({...this.props.location, query: {...this.props.location.query, expanded: this.state.formVisible}});
-		this.context.eventLogger.logEvent("EmailSubscriptionViewToggled", {visible: this.state.formVisible});
 	}
 
 	_getVisibility() {

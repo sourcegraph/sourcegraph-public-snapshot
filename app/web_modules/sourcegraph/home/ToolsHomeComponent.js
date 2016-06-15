@@ -24,7 +24,7 @@ class ToolsHomeComponent extends Component {
 	constructor(props, context) {
 		super(props);
 		this.state = {
-			showChromeExtensionCTA: !window.localStorage["installed_chrome_extension"],
+			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
 		};
 		this.supportedTools = {
 			browser: {

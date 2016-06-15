@@ -19,39 +19,33 @@ class TourContainer extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			showChromeExtensionCTA: !window.localStorage["installed_chrome_extension"],
+			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
 			showSourcegraphLiveCTA: !window.localStorage["installed_sourcegraph_live"],
 			totalSteps: 4,
 		};
 	}
 
 	componentDidMount() {
-		this.timeout = setTimeout(() => this.setState({
-			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap") && !window.localStorage["installed_chrome_extension"],
+		setTimeout(() => this.setState({
+			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
 		}), 1);
-	}
-
-	componentWillUnmount() {
-		clearTimeout(this.timeout);
 	}
 
 	_successHandler() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstalled", "DashboardTour");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false});
-		window.localStorage["installed_chrome_extension"] = true;
 	}
 
 	_failHandler() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstallFailed", "DashboardTour");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
 		this.setState({showChromeExtensionCTA: true});
-		window.localStorage.removeItem("installed_chrome_extension");
 	}
 
 	_installChromeExtensionClicked() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionCTAClicked", "DashboardTour");
-		if (global.chrome) {
+		if (typeof chrome !== "undefined" && global.chrome && global.chrome.webstore) {
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		}
 	}
