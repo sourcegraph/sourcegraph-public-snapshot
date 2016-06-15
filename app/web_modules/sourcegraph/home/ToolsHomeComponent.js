@@ -43,7 +43,7 @@ class ToolsHomeComponent extends Component {
 					paragraph: "When Sourcegraph is installed in your editor you get real usage examples from GitHub, immediate access to source code, and documentation as you type. It’s like pair programming with the smartest developer in the world. Sourcegraph currently supports Go in Vim and Sublime Text. More languages and editors are coming soon.",
 				},
 				primaryButton: this._sfyeCTA(context),
-				gif: "/img/Dashboard/SourcegraphForYourEditor.gif",
+				youtube: "https://www.youtube.com/embed/ssON7dfaDZo",
 				interestForm: {
 					title: "Use another editor or language? Get early access to Sourcegraph for your editor and language of choice.",
 					submittedTitle: "We’ll email you when it’s ready.",
