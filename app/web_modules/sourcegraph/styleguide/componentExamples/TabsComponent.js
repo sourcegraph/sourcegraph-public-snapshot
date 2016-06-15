@@ -67,7 +67,7 @@ class TabsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Tabs>
@@ -108,7 +108,7 @@ class TabsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Tabs size="small">
@@ -149,7 +149,7 @@ class TabsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Tabs direction="horizontal">

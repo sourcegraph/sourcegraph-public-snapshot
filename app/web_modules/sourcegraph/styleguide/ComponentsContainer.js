@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Stepper, ChecklistItem} from "sourcegraph/components";
-import {HeadingsComponent, ButtonsComponent, TabsComponent} from "./componentExamples";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -56,25 +56,11 @@ class ComponentsContainer extends React.Component {
 					<a id="components-tabs"></a>
 					<TabsComponent />
 				</div>
-
-				<div>
-					<Heading level="3" className={base.mb4}>Panels</Heading>
-					<Panel hoverLevel="low" className={base.pa5}>
-						For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-					</Panel>
-					<br />
-					<Panel hoverLevel="high" hover={true} className={base.pa5}>
-						For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-					</Panel>
-					<br/>
-					<Panel color="blue" className={base.pa5}>
-						For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-					</Panel>
-					<br/>
-					<Panel color="blue" inverse={true} className={base.pa5}>
-						For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-					</Panel>
+				<div className={base.mv5}>
+					<a id="components-panels"></a>
+					<PanelsComponent />
 				</div>
+
 				<div>
 					<Heading level="3" className={base.mb4}>Stepper</Heading>
 					<Panel className={base.pa5}><Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" /></Panel>

@@ -49,7 +49,9 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#components-tabs">Tabs</a>
 							</TabItem>
-							<TabItem>Panels</TabItem>
+							<TabItem>
+								<a href="#components-panels">Panels</a>
+							</TabItem>
 							<TabItem>Stepper</TabItem>
 							<TabItem>Tabs</TabItem>
 							<TabItem>Checklists</TabItem>
