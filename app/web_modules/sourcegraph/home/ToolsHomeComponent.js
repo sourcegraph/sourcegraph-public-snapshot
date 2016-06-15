@@ -45,7 +45,7 @@ class ToolsHomeComponent extends Component {
 				primaryButton: this._sfyeCTA(context),
 				gif: "/img/Dashboard/SourcegraphForYourEditor.gif",
 				interestForm: {
-					title: "Use another editor or language? Get early access to Sourcegraph for your editor and langauge of choice.",
+					title: "Use another editor or language? Get early access to Sourcegraph for your editor and language of choice.",
 					submittedTitle: "We’ll email you when it’s ready.",
 				},
 			},
