@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading} from "sourcegraph/components";
-import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent} from "./componentExamples";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent, LogoComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -44,6 +44,11 @@ class ComponentsContainer extends React.Component {
 					<li>Opinionated, but not overzealous</li>
 					<li>Casual, but not unprofessional</li>
 				</ul>
+
+				<div className={base.mv5}>
+					<a id="brand-logo"></a>
+					<LogoComponent />
+				</div>
 
 				<Heading level="2" underline="purple" className={base.mt5}>UI Components</Heading>
 				<div className={base.mv5}>
