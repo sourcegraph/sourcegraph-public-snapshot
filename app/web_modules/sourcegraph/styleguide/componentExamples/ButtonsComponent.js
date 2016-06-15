@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import {Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
 
-class Headings extends React.Component {
+class ButtonsComponent extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -16,7 +16,6 @@ class Headings extends React.Component {
 	render() {
 		return (
 			<div className={base.mv4}>
-				<a name="components-headings"></a>
 				<Heading level="3" className={base.mb2}>Buttons</Heading>
 
 				<Tabs color="purple">
@@ -165,4 +164,4 @@ class Headings extends React.Component {
 	}
 }
 
-export default CSSModules(Headings, {allowMultiple: true});
+export default CSSModules(ButtonsComponent, {allowMultiple: true});

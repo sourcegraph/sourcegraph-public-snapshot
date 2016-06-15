@@ -16,7 +16,6 @@ class Headings extends React.Component {
 	render() {
 		return (
 			<div className={base.mv4}>
-				<a name="components-headings"></a>
 				<Heading level="3" className={base.mb2}>Headings</Heading>
 
 				<Tabs color="purple">
