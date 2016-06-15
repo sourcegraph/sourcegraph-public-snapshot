@@ -29,7 +29,7 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#brand-voice">Voice</a>
 							</TabItem>
-							<TabItem>Logo and Wordmark</TabItem>
+							<TabItem>Logo and Logotype</TabItem>
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
 

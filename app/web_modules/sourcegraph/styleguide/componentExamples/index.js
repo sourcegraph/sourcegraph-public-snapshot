@@ -4,3 +4,4 @@ export {default as TabsComponent} from "./TabsComponent";
 export {default as PanelsComponent} from "./PanelsComponent";
 export {default as StepperComponent} from "./StepperComponent";
 export {default as ChecklistsComponent} from "./ChecklistsComponent";
+export {default as LogoComponent} from "./LogoComponent";
