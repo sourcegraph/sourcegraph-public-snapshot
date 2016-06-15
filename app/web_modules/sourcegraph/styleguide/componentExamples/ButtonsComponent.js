@@ -6,17 +6,12 @@ import base from "sourcegraph/components/styles/_base.css";
 import {Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
 
 class ButtonsComponent extends React.Component {
-
 	constructor(props) {
 		super(props);
 		this.state = {
 			activeExample: 0,
 		};
 	}
-
-	state: {
-		activeExample: number,
-	};
 
 	render() {
 		return (
@@ -68,7 +63,7 @@ class ButtonsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
+								<pre className={base.ph4}>
 {
 	`
 <Button>Submit</Button>
@@ -102,7 +97,7 @@ class ButtonsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
+								<pre className={base.ph4}>
 {
 	`
 <Button color="blue" size="small">Submit</Button>
@@ -169,4 +164,4 @@ class ButtonsComponent extends React.Component {
 	}
 }
 
-export default CSSModules(ButtonsComponent, base, {allowMultiple: true});
+export default CSSModules(ButtonsComponent, {allowMultiple: true});

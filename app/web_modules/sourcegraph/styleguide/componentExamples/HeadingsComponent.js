@@ -5,17 +5,13 @@ import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
 
-class HeadingsComponent extends React.Component {
+class Headings extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			activeExample: 0,
 		};
 	}
-
-	state: {
-		activeExample: number,
-	};
 
 	render() {
 		return (
@@ -73,7 +69,7 @@ class HeadingsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
+								<pre className={base.ph4}>
 {
 	`
 <Heading level="1">Heading 1</Heading>
@@ -97,7 +93,7 @@ class HeadingsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
+								<pre className={base.ph4}>
 {
 	`
 <Heading level="4" color="blue">Blue fourth level heading</Heading>
@@ -121,7 +117,7 @@ class HeadingsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
+								<pre className={base.ph4}>
 {
 	`
 <Heading level="4" underline="blue">Fourth level heading with blue underline</Heading>
@@ -143,7 +139,7 @@ class HeadingsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
+								<pre className={base.ph4}>
 {
 	`
 <Heading level="4" align="left">Left aligned</Heading>
@@ -203,4 +199,4 @@ class HeadingsComponent extends React.Component {
 	}
 }
 
-export default CSSModules(HeadingsComponent, base, {allowMultiple: true});
+export default CSSModules(Headings, {allowMultiple: true});
