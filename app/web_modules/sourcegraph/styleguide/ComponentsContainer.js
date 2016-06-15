@@ -12,7 +12,7 @@ class ComponentsContainer extends React.Component {
 		return (
 			<div>
 				<a name="principles"></a>
-				<Heading level="2">Principles</Heading>
+				<Heading level="2" underline="purple">Principles</Heading>
 				<p>
 					This styleguide and component library is a living reference to building and designing the Sourcegraph user interface. This reference allows us to build and design conistently, efficiently, and quickly. It's not a definitive framework – but it should follow these main principles:
 				</p>
@@ -29,7 +29,7 @@ class ComponentsContainer extends React.Component {
 				<p>More work on this section TBD.</p>
 
 				<a name="brand-voice"></a>
-				<Heading level="2">Voice</Heading>
+				<Heading level="2" underline="purple" className={base.mt5}>Voice</Heading>
 				<p>
 					All of our writing across the product, codebase, and marketing material should stem from these qualities. Tone is variable and contextual – quality of voice should be consistent.
 				</p>
@@ -42,7 +42,8 @@ class ComponentsContainer extends React.Component {
 					<li>Opinionated, but not overzealous</li>
 					<li>Casual, but not unprofessional</li>
 				</ul>
-				<Heading level="1">Components</Heading>
+
+				<Heading level="2" underline="purple" className={base.mt5}>Components</Heading>
 				<Headings />
 
 				<div>

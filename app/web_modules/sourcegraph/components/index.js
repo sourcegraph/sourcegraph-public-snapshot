@@ -23,3 +23,5 @@ export {default as FlexContainer} from "./FlexContainer";
 export {default as Affix} from "./Affix";
 export {default as TabPanels} from "./TabPanels";
 export {default as TabPanel} from "./TabPanel";
+export {default as Table} from "./Table";
+export {default as Code} from "./Code";

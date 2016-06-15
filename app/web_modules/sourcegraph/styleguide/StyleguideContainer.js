@@ -21,7 +21,7 @@ class StyleguideContainer extends React.Component {
 				<FlexContainer styleName="container-fixed">
 					<Affix offset={20} style={{flex: "0 0 220px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
-							<TabItem active={true}>
+							<TabItem>
 								<a href="#principles">Principles</a>
 							</TabItem>
 
@@ -29,22 +29,21 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#brand-voice">Voice</a>
 							</TabItem>
-							<TabItem>Colors</TabItem>
+							{/*<TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>
-							<TabItem>Logo and Wordmark</TabItem>
+							<TabItem>Logo and Wordmark</TabItem>*/}
 
-							<Heading level="5" className={base.mt4}>Utilities</Heading>
+							{/*<Heading level="5" className={base.mt4}>Utilities</Heading>
 							<TabItem>Padding</TabItem>
 							<TabItem>Margin</TabItem>
 							<TabItem>Colors</TabItem>
-							<TabItem>Layout</TabItem>
+							<TabItem>Layout</TabItem>*/}
 
 							<Heading level="5" className={base.mt4}>Components</Heading>
 							<TabItem>
 								<a href="#components-headings">Headings</a>
 							</TabItem>
 							<TabItem>Panels</TabItem>
-							<TabItem>Headings</TabItem>
 							<TabItem>Stepper</TabItem>
 							<TabItem>Tabs</TabItem>
 							<TabItem>Checklists</TabItem>
