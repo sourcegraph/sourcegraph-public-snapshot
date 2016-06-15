@@ -69,7 +69,7 @@ class Headings extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Heading level="1">Heading 1</Heading>
@@ -93,7 +93,7 @@ class Headings extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Heading level="4" color="blue">Blue fourth level heading</Heading>
@@ -117,7 +117,7 @@ class Headings extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Heading level="4" underline="blue">Fourth level heading with blue underline</Heading>
@@ -139,7 +139,7 @@ class Headings extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Heading level="4" align="left">Left aligned</Heading>
