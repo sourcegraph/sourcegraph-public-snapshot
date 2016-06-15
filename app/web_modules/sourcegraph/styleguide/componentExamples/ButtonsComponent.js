@@ -63,7 +63,7 @@ class ButtonsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Button>Submit</Button>
@@ -97,7 +97,7 @@ class ButtonsComponent extends React.Component {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4}>
+								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
 {
 	`
 <Button color="blue" size="small">Submit</Button>
