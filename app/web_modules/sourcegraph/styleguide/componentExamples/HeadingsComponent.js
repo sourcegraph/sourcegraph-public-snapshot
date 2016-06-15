@@ -13,6 +13,10 @@ class Headings extends React.Component {
 		};
 	}
 
+	state: {
+		activeExample: number,
+	};
+
 	render() {
 		return (
 			<div className={base.mv4}>
@@ -199,4 +203,4 @@ class Headings extends React.Component {
 	}
 }
 
-export default CSSModules(Headings, {allowMultiple: true});
+export default CSSModules(Headings, base, {allowMultiple: true});

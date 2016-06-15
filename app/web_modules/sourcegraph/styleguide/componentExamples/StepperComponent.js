@@ -13,6 +13,10 @@ class StepperComponent extends React.Component {
 		};
 	}
 
+	state: {
+		activeExample: number,
+	};
+
 	render() {
 		return (
 			<div className={base.mv4}>
@@ -86,4 +90,4 @@ class StepperComponent extends React.Component {
 	}
 }
 
-export default CSSModules(StepperComponent, {allowMultiple: true});
+export default CSSModules(StepperComponent, base, {allowMultiple: true});

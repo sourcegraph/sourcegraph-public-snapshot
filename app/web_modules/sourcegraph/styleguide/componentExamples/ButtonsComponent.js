@@ -6,12 +6,17 @@ import base from "sourcegraph/components/styles/_base.css";
 import {Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
 
 class ButtonsComponent extends React.Component {
+
 	constructor(props) {
 		super(props);
 		this.state = {
 			activeExample: 0,
 		};
 	}
+
+	state: {
+		activeExample: number,
+	};
 
 	render() {
 		return (
@@ -164,4 +169,4 @@ class ButtonsComponent extends React.Component {
 	}
 }
 
-export default CSSModules(ButtonsComponent, {allowMultiple: true});
+export default CSSModules(ButtonsComponent, base, {allowMultiple: true});
