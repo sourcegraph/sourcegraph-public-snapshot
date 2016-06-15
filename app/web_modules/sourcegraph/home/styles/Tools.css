@@ -68,7 +68,7 @@
 }
 
 .tool-item {
-	composes: mt7 pl4 pr4 mb5 center from base;
+	composes: mt6 pl4 pr4 mb5 center from base;
 	composes: col-10 from grid;
 	align-content: center;
 	text-align: center;

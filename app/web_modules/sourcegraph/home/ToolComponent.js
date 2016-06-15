@@ -100,8 +100,8 @@ class ToolComponent extends React.Component {
 					<div styleName="button-container">{this.props.supportedTool.primaryButton}</div>
 					{this._optionalFormView()}
 					{this.props.supportedTool.secondaryButton}
-					{this.props.supportedTool.gif && <div styleName="tool-gif-container">
-						<img styleName="tool-gif" src={`${this.context.siteConfig.assetsRoot}${this.props.supportedTool.gif}`}></img>
+					{this.props.supportedTool.youtube && <div styleName="tool-gif-container">
+						<iframe width="420" height="315" src="https://www.youtube.com/embed/ssON7dfaDZo" frameBorder="0" allowFullScreen="true"></iframe>
 					</div>}
 				</Panel>
 			</Modal>
