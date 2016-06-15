@@ -4,14 +4,14 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Stepper, ChecklistItem, TabItem, Button} from "sourcegraph/components";
-import {Headings, Buttons} from "./componentExamples";
+import {Heading, Panel, Stepper, ChecklistItem} from "sourcegraph/components";
+import {HeadingsComponent, ButtonsComponent, TabsComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
 		return (
 			<div>
-				<a name="principles"></a>
+				<a id="principles"></a>
 				<Heading level="2" underline="purple">Principles</Heading>
 				<p>
 					This styleguide and component library is a living reference to building and designing the Sourcegraph user interface. This reference allows us to build and design conistently, efficiently, and quickly. It's not a definitive framework – but it should follow these main principles:
@@ -28,7 +28,7 @@ class ComponentsContainer extends React.Component {
 				</ol>
 				<p>More work on this section TBD.</p>
 
-				<a name="brand-voice"></a>
+				<a id="brand-voice"></a>
 				<Heading level="2" underline="purple" className={base.mt5}>Voice</Heading>
 				<p>
 					All of our writing across the product, codebase, and marketing material should stem from these qualities. Tone is variable and contextual – quality of voice should be consistent.
@@ -44,20 +44,19 @@ class ComponentsContainer extends React.Component {
 				</ul>
 
 				<Heading level="2" underline="purple" className={base.mt5}>Components</Heading>
-				<div className={base.mv3}><Headings /></div>
-				<div className={base.mv3}><Buttons /></div>
-
-				<div>
-					<Heading level="3" className={base.mb4}>Tabs</Heading>
-					<Panel className={base.pa5}>
-						<div>
-							<TabItem active={true}>Components</TabItem>
-							<TabItem>Colors</TabItem>
-							<TabItem>Typography</TabItem>
-							<TabItem>Layout</TabItem>
-						</div>
-					</Panel>
+				<div className={base.mv5}>
+					<a id="components-headings"></a>
+					<HeadingsComponent />
 				</div>
+				<div className={base.mv5}>
+					<a id="components-buttons"></a>
+					<ButtonsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-tabs"></a>
+					<TabsComponent />
+				</div>
+
 				<div>
 					<Heading level="3" className={base.mb4}>Panels</Heading>
 					<Panel hoverLevel="low" className={base.pa5}>
