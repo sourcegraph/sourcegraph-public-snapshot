@@ -4,8 +4,8 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, ChecklistItem} from "sourcegraph/components";
-import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent} from "./componentExamples";
+import {Heading} from "sourcegraph/components";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -66,23 +66,9 @@ class ComponentsContainer extends React.Component {
 					<a id="components-stepper"></a>
 					<StepperComponent />
 				</div>
-
-				<div>
-					<Heading level="3" className={base.mb4}>Checklist Items</Heading>
-					<Panel className={base.pa5}>
-						<ChecklistItem complete={true} className={base.mb5}>
-							<Heading level="4">Connect with FooBar</Heading>
-							<p className={base.mt2}>
-								For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
-							</p>
-						</ChecklistItem>
-						<ChecklistItem actionText="Install" actionOnClick={function() { alert("Boo"); }}>
-							<Heading level="4">Connect with FooBar</Heading>
-							<p className={base.mt2}>
-								For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
-							</p>
-						</ChecklistItem>
-					</Panel>
+				<div className={base.mv5}>
+					<a id="components-checklists"></a>
+					<ChecklistsComponent />
 				</div>
 			</div>
 		);
