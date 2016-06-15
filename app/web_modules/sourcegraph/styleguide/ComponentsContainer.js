@@ -4,8 +4,8 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Stepper, ChecklistItem} from "sourcegraph/components";
-import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent} from "./componentExamples";
+import {Heading, Panel, ChecklistItem} from "sourcegraph/components";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -60,11 +60,11 @@ class ComponentsContainer extends React.Component {
 					<a id="components-panels"></a>
 					<PanelsComponent />
 				</div>
-
-				<div>
-					<Heading level="3" className={base.mb4}>Stepper</Heading>
-					<Panel className={base.pa5}><Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" /></Panel>
+				<div className={base.mv5}>
+					<a id="components-stepper"></a>
+					<StepperComponent />
 				</div>
+
 				<div>
 					<Heading level="3" className={base.mb4}>Checklist Items</Heading>
 					<Panel className={base.pa5}>
