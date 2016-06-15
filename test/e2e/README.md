@@ -20,14 +20,15 @@ You may additionally run them locally on your machine:
       chromedriver` via brew to run tests in a local browser. Then run
       `selenium-server -p 4444`
 2. Run an E2E tests:
-    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com go test -run TestDefFlow`
+    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com TARGET_GRPC=https://grpc.sourcegraph.com go test -run TestDefFlow`
         - OS X: use `docker-machine ls` to find the IP of the machine if using docker.
         - Other: Just use `localhost`.
 
 Alternatively you can use the full e2etest stack that runs in production:
+
 1. Run the tests
     - `go install sourcegraph.com/sourcegraph/infrastructure/docker-images/e2etest`
-    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com e2etest -once`
+    - `SELENIUM_SERVER_IP=<DOCKER_HOST_IP> TARGET=https://sourcegraph.com TARGET_GRPC=https://grpc.sourcegraph.com e2etest -once`
         - OS X: use `docker-machine ls` to find the IP of the machine.
         - Linux: Just use `localhost`.
 2. Run a specific E2E test once: `e2etest -once -run="login_flow"`
