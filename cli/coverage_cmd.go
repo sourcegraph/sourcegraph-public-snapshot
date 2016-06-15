@@ -288,7 +288,7 @@ func (c *coverageCmd) Execute(args []string) error {
 
 		syncCmd := &repoSyncCmd{
 			Force:         true,
-			buildPriority: -100, // let other builds run first
+			buildPriority: 0, // prioritize over background updates
 		}
 		syncCmd.Args.URIs = repos
 		err := syncCmd.Execute(nil)
