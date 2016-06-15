@@ -13,6 +13,10 @@ class ChecklistsComponent extends React.Component {
 		};
 	}
 
+	state: {
+		activeExample: number,
+	};
+
 	render() {
 		return (
 			<div className={base.mv4}>
@@ -193,4 +197,4 @@ class ChecklistsComponent extends React.Component {
 	}
 }
 
-export default CSSModules(ChecklistsComponent, {allowMultiple: true});
+export default CSSModules(ChecklistsComponent, base, {allowMultiple: true});

@@ -14,7 +14,7 @@ class TabPanels extends React.Component {
 		active: 0,
 	};
 
-	_childrenWithProps() {
+	_childrenWithProps(): any {
 		return React.Children.map(this.props.children, (child, i) => {
 			if (child.type.name === "TabPanel") {
 				if (this.props.active === i) return React.cloneElement(child, {active: true});

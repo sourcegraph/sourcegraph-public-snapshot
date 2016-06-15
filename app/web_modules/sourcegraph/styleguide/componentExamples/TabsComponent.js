@@ -13,6 +13,10 @@ class TabsComponent extends React.Component {
 		};
 	}
 
+	state: {
+		activeExample: number,
+	};
+
 	render() {
 		return (
 			<div className={base.mv4}>
@@ -258,4 +262,4 @@ class TabsComponent extends React.Component {
 	}
 }
 
-export default CSSModules(TabsComponent, {allowMultiple: true});
+export default CSSModules(TabsComponent, base, {allowMultiple: true});

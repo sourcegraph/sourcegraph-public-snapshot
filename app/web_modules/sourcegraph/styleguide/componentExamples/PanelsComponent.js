@@ -13,6 +13,10 @@ class PanelsComponent extends React.Component {
 		};
 	}
 
+	state: {
+		activeExample: number,
+	};
+
 	render() {
 		return (
 			<div className={base.mv4}>
@@ -185,4 +189,4 @@ class PanelsComponent extends React.Component {
 	}
 }
 
-export default CSSModules(PanelsComponent, {allowMultiple: true});
+export default CSSModules(PanelsComponent, base, {allowMultiple: true});
