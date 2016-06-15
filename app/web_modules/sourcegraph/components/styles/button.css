@@ -244,3 +244,8 @@
     background: white;
     color: c_dark-purple;
 }
+.button-image{
+    height: 1.5em;
+    margin-right: 10px;
+    vertical-align: bottom;
+}

@@ -221,7 +221,11 @@ export class EventLogger {
 				}
 			}
 			break;
-
+		case UserActions.EmailSubscriptionCompleted:
+			if (action.eventName) {
+				this.logEvent(action.eventName);
+			}
+			break;
 		case DefActions.DefsFetched:
 			if (action.eventName) {
 				let eventProps = {
