@@ -28,8 +28,10 @@ class ComponentsContainer extends React.Component {
 				</ol>
 				<p>More work on this section TBD.</p>
 
+				<Heading level="2" underline="purple" className={base.mt5}>Brand</Heading>
+
 				<a id="brand-voice"></a>
-				<Heading level="2" underline="purple" className={base.mt5}>Voice</Heading>
+				<Heading level="3" className={base.mt3}>Voice and Tone</Heading>
 				<p>
 					All of our writing across the product, codebase, and marketing material should stem from these qualities. Tone is variable and contextual – quality of voice should be consistent.
 				</p>
@@ -43,7 +45,7 @@ class ComponentsContainer extends React.Component {
 					<li>Casual, but not unprofessional</li>
 				</ul>
 
-				<Heading level="2" underline="purple" className={base.mt5}>Components</Heading>
+				<Heading level="2" underline="purple" className={base.mt5}>UI Components</Heading>
 				<div className={base.mv5}>
 					<a id="components-headings"></a>
 					<HeadingsComponent />
