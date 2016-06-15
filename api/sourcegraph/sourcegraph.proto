@@ -170,6 +170,11 @@ message Repo {
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	pbtypes.Timestamp PushedAt = 17;
 
+	// VCSSyncedAt is when this repository's VCS data was last synced
+	// with the upstream. This field is only populated for mirror
+	// repositories.
+	pbtypes.Timestamp VCSSyncedAt = 20;
+
 	// Origin describes the repo's canonical location. It is only
 	// populated for mirror repos; for non-mirror repos, it is null.
 	Origin Origin = 19;

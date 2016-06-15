@@ -30,6 +30,10 @@ type Repos interface {
 	// Update a repository.
 	Update(context.Context, RepoUpdate) error
 
+	// InternalUpdate performs an update of internal repository
+	// fields. See InternalRepoUpdate for more information.
+	InternalUpdate(ctx context.Context, repo int32, op InternalRepoUpdate) error
+
 	// Delete a repository.
 	Delete(ctx context.Context, repo int32) error
 }
@@ -44,6 +48,15 @@ type RepoUpdate struct {
 
 	UpdatedAt *time.Time
 	PushedAt  *time.Time
+}
+
+// InternalRepoUpdate is an update of repo fields that are used by
+// internal Sourcegraph processes only. It is separate from RepoUpdate
+// so that internal updates can be performed by machine processes that
+// do not need to assume the privileges of the repo's owner (and can
+// merely have an internal token scope).
+type InternalRepoUpdate struct {
+	VCSSyncedAt *time.Time
 }
 
 // RepoConfigs is the interface for storing Sourcegraph-specific repo

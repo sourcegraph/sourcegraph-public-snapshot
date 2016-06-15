@@ -42,6 +42,7 @@ func init() {
 		`ALTER TABLE repo ALTER COLUMN vcs SET NOT NULL;`,
 		`ALTER TABLE repo ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
 		`ALTER TABLE repo ALTER COLUMN pushed_at TYPE timestamp with time zone USING pushed_at::timestamp with time zone;`,
+		`ALTER TABLE repo ALTER COLUMN vcs_synced_at TYPE timestamp with time zone USING vcs_synced_at::timestamp with time zone;`,
 		"CREATE INDEX repo_name ON repo(name text_pattern_ops);",
 
 		// fast for repo searching by URI and name
@@ -70,6 +71,7 @@ type dbRepo struct {
 	CreatedAt     time.Time  `db:"created_at"`
 	UpdatedAt     *time.Time `db:"updated_at"`
 	PushedAt      *time.Time `db:"pushed_at"`
+	VCSSyncedAt   *time.Time `db:"vcs_synced_at"`
 
 	OriginRepoID     *string `db:"origin_repo_id"`
 	OriginService    *int32  `db:"origin_service"` // values from protobuf Origin.ServiceType enum
@@ -107,6 +109,10 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		ts := pbtypes.NewTimestamp(*r.PushedAt)
 		r2.PushedAt = &ts
 	}
+	if r.VCSSyncedAt != nil {
+		ts := pbtypes.NewTimestamp(*r.VCSSyncedAt)
+		r2.VCSSyncedAt = &ts
+	}
 	if r.OriginRepoID != nil && r.OriginService != nil && r.OriginAPIBaseURL != nil {
 		r2.Origin = &sourcegraph.Origin{
 			ID:         *r.OriginRepoID,
@@ -114,7 +120,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 			APIBaseURL: *r.OriginAPIBaseURL,
 		}
 	}
-
 	return r2
 }
 
@@ -145,6 +150,10 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	if r2.PushedAt != nil {
 		ts := r2.PushedAt.Time()
 		r.PushedAt = &ts
+	}
+	if r2.VCSSyncedAt != nil {
+		ts := r2.VCSSyncedAt.Time()
+		r.VCSSyncedAt = &ts
 	}
 	if o := r2.Origin; o != nil {
 		r.OriginRepoID = gogithub.String(o.ID)
@@ -723,6 +732,32 @@ func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 	}
 	if op.PushedAt != nil {
 		_, err := appDBH(ctx).Exec(`UPDATE repo SET "pushed_at"=$1 WHERE id=$2`, op.PushedAt, op.Repo)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *repos) InternalUpdate(ctx context.Context, repo int32, op store.InternalRepoUpdate) error {
+	// SECURITY NOTE: If you add more fields and more UPDATE queries,
+	// each one should perform its own access checks, since updating
+	// different fields may require different levels of
+	// privilege. Here, we check for read access, which is the minimum
+	// privilege level that any InternalUpdate call must require.
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.InternalRepoUpdate", repo); err != nil {
+		return err
+	}
+
+	if op.VCSSyncedAt != nil {
+		// SECURITY NOTE: Even though this operation causes a DB
+		// write, we only require read access, since we are merely
+		// updating the date when the VCS data was synced.
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.InternalRepoUpdate", repo); err != nil {
+			return err
+		}
+
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "vcs_synced_at"=$1 WHERE id=$2`, op.VCSSyncedAt, repo)
 		if err != nil {
 			return err
 		}

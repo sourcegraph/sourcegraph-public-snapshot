@@ -2,6 +2,7 @@ package backend
 
 import (
 	"strings"
+	"time"
 
 	"github.com/AaronO/go-git-http"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -82,6 +83,15 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		}
 		if err := s.cloneRepo(ctx, repo, remoteOpts); err != nil {
 			log15.Info("RefreshVCS: cloneRepo failed", "error", err, "repo", repo.URI)
+			return nil, err
+		}
+	}
+
+	{
+		now := time.Now()
+		ctx2 := authpkg.WithActor(ctx, authpkg.Actor{Scope: map[string]bool{"internal:repo-internal-update": true}})
+		if err := store.ReposFromContext(ctx).InternalUpdate(ctx2, repo.ID, store.InternalRepoUpdate{VCSSyncedAt: &now}); err != nil {
+			log15.Info("RefreshVCS: updating repo internal VCSSyncedAt failed", "err", err, "repo", repo.URI)
 			return nil, err
 		}
 	}

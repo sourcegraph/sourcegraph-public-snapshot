@@ -11,13 +11,14 @@ import (
 )
 
 type Repos struct {
-	Get_      func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
-	GetByURI_ func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	List_     func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
-	Search_   func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
-	Create_   func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
-	Update_   func(v0 context.Context, v1 store.RepoUpdate) error
-	Delete_   func(ctx context.Context, repo int32) error
+	Get_            func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+	GetByURI_       func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	List_           func(v0 context.Context, v1 *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error)
+	Search_         func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
+	Create_         func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
+	Update_         func(v0 context.Context, v1 store.RepoUpdate) error
+	InternalUpdate_ func(ctx context.Context, repo int32, op store.InternalRepoUpdate) error
+	Delete_         func(ctx context.Context, repo int32) error
 }
 
 func (s *Repos) Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
@@ -41,6 +42,10 @@ func (s *Repos) Create(v0 context.Context, v1 *sourcegraph.Repo) (int32, error) 
 }
 
 func (s *Repos) Update(v0 context.Context, v1 store.RepoUpdate) error { return s.Update_(v0, v1) }
+
+func (s *Repos) InternalUpdate(ctx context.Context, repo int32, op store.InternalRepoUpdate) error {
+	return s.InternalUpdate_(ctx, repo, op)
+}
 
 func (s *Repos) Delete(ctx context.Context, repo int32) error { return s.Delete_(ctx, repo) }
 
