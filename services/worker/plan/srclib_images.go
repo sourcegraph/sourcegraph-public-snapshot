@@ -9,7 +9,7 @@ import (
 // developing to make it easier to test out changes to a given toolchain. E.g.,
 // `droneSrclibGoImage = "sourcegraph/srclib-go"`.
 var (
-	droneSrclibBashImage       = "sourcegraph/srclib-bash@sha256:d2459cc07513cb0fe4329972d10a74d3252e77ff99ec41296a57c0a08050efd3"
+	droneSrclibBashImage       = "sourcegraph/srclib-bash@sha256:c26891ddab9f7e73138927bba8dc323c0ba4c5abdb82b4a56ac4b23063e204e9"
 	droneSrclibGoImage         = "sourcegraph/srclib-go@sha256:4c91ca8b3d7fc123e9489e6751c94791776d303e21eb11e2cb14d986b78b1b06"
 	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript@sha256:7cfc4ea50aaf0fea46b8704e80ef50dfa45afe82af57e653bae34ae56288a859"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java@sha256:7e4ff0bc3aee6d87295dd4629fabcfbb39de115911af6d1abd1aa4e5145b5d1c"
