@@ -15,7 +15,7 @@ class StyleguideContainer extends React.Component {
 				<Hero color="purple" pattern="objects">
 					<Heading level="2" color="white">The Graph Guide</Heading>
 					<p style={{maxWidth: "560px"}} className={base.center}>
-						Welcome to the Graph Guide – a living guide to Sourcegraph's brand identity, voice, visual style, and approach to user experience and user interfaces. Everything else TBD – for now, just components.
+						Welcome to the Graph Guide – a living guide to Sourcegraph's brand identity, voice, visual style, and approach to user experience and user interfaces.
 					</p>
 				</Hero>
 				<FlexContainer styleName="container-fixed">
@@ -43,6 +43,7 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#layout-flexcontainer">FlexContainer</a>
 							</TabItem>
+							<TabItem>Affix</TabItem>
 
 							<Heading level="5" className={base.mt4}>UI Components</Heading>
 							<TabItem>
@@ -60,8 +61,9 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#components-stepper">Stepper</a>
 							</TabItem>
-							<TabItem>Checklists</TabItem>
-							<TabItem>Affix</TabItem>
+							<TabItem>
+								<a href="#components-checklists">Checklist Items</a>
+							</TabItem>
 							<TabItem>Table</TabItem>
 							<TabItem>Code</TabItem>
 
