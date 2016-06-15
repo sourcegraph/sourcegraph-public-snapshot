@@ -2,9 +2,9 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tools.css";
 import ToolsHomeComponent from "./ToolsHomeComponent";
-import Component from "sourcegraph/Component";
+import "sourcegraph/user/UserBackend"; // for side effects
 
-class ToolsContainer extends Component {
+class ToolsContainer extends React.Component {
 	static propTypes = {
 		location: React.PropTypes.object,
 	};

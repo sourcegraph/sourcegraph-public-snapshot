@@ -16,6 +16,7 @@ class Button extends Component {
 		loading: React.PropTypes.bool,
 		color: React.PropTypes.string, // "blue", "purple", "green", "red", "orange"
 		onClick: React.PropTypes.func,
+		imageUrl: React.PropTypes.string,
 	};
 
 	static defaultProps = {
@@ -31,7 +32,7 @@ class Button extends Component {
 	}
 
 	render() {
-		const {color, outline, disabled, block, size, loading, children, onClick} = this.state;
+		const {color, outline, disabled, block, size, loading, children, onClick, imageUrl} = this.state;
 
 		let style = `${outline ? "outline-" : "solid-"}${color}`;
 		if (disabled || loading) style = `${style} disabled`;
@@ -41,6 +42,7 @@ class Button extends Component {
 		return (
 			<button {...this.props} styleName={style}
 				onClick={onClick}>
+				{imageUrl ? <img styleName="button-image" src={imageUrl} /> : ""}
 				{loading && <Loader stretch={Boolean(block)} {...this.props}/>}
 				{!loading && children}
 			</button>

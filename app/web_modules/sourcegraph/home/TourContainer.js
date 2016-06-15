@@ -65,7 +65,7 @@ class TourContainer extends React.Component {
 		this.context.eventLogger.logEventForPage("SourcegraphLiveCTAClicked", "DashboardTour");
 		window.localStorage["installed_sourcegraph_live"] = true;
 		this.setState({showSourcegraphLiveCTA: false});
-		window.location.assign("https://github.com/sourcegraph/sourcegraph-sublime");
+		window.location.assign("/tools/editor");
 	}
 
 	_completedStepsCounter() {

@@ -11,6 +11,16 @@ export const tools = {
 	},
 };
 
+export const tool = {
+	getComponent: (location, callback) => {
+		require.ensure([], (require) => {
+			callback(null, {
+				main: require("sourcegraph/home/ToolsContainer").default,
+			});
+		});
+	},
+};
+
 export const repos = {
 	getComponent: (location, callback) => {
 		require.ensure([], (require) => {
@@ -35,6 +45,10 @@ export const routes: Array<Route> = [
 	{
 		...tools,
 		path: rel.tools,
+	},
+	{
+		...tool,
+		path: rel.tool,
 	},
 	{
 		...repos,

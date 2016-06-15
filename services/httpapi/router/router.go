@@ -62,6 +62,7 @@ const (
 	ResolveCustomImportsTree = "resolve-custom-import.tree"
 
 	InternalAppdashRecordSpan = "internal.appdash.record-span"
+	EmailSubscription         = "email-subscription"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -78,6 +79,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/logout").Methods("POST").Name(Logout)
 	base.Path("/forgot").Methods("POST").Name(ForgotPassword)
 	base.Path("/reset").Methods("POST").Name(ResetPassword)
+
+	base.Path("/email-subscription").Methods("POST").Name(EmailSubscription)
 
 	base.Path("/annotations").Methods("GET").Name(Annotations)
 
@@ -101,6 +104,9 @@ func New(base *mux.Router) *mux.Router {
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
+
+	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
+	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
