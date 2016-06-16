@@ -65,7 +65,7 @@ class ToolComponent extends React.Component {
 				<div styleName="dont-see-div">
 					<a styleName="dont-see-link" onClick={this._toggleView.bind(this)}>{this.state.formVisible ? <TriangleDownIcon /> : <TriangleRightIcon />}{this.props.supportedTool.interestForm.title}</a>
 				</div>
-				<div className={base.mb5} styleName={this.state.formVisible ? "visible" : "invisible"}>
+				<div className={base.pb2} styleName={this.state.formVisible ? "visible" : "invisible"}>
 					<InterestForm onSubmit={this._submitInterestForm.bind(this)} />
 				</div>
 			</div>);
@@ -98,7 +98,7 @@ class ToolComponent extends React.Component {
 							</div>
 						</div>
 					</div>
-					<div styleName="button-container">{this.props.supportedTool.primaryButton}</div>
+					<div styleName="button-container">{this.props.supportedTool.primaryButton()}</div>
 					{this._optionalFormView()}
 					{this.props.supportedTool.secondaryButton}
 					{this.props.supportedTool.youtube && <div styleName="tool-gif-container">

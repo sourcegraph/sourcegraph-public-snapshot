@@ -5,6 +5,7 @@ import {Button} from "sourcegraph/components";
 import Selector from "./Selector";
 import Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
+import base from "sourcegraph/components/styles/_base.css";
 import {languages, editors} from "./HomeUtils";
 
 class InterestForm extends React.Component {
@@ -73,7 +74,7 @@ class InterestForm extends React.Component {
 							<textarea styleName="input-field" name="message" placeholder="Other / comments"></textarea>
 						</span>
 					</div>
-					<div styleName="table-row">
+					<div styleName="table-row" className={base.pb4}>
 						<span styleName="full-input">
 							<Button styleName="button" type="submit" color="purple">Get early access</Button>
 						</span>

@@ -34,7 +34,7 @@ class ToolsHomeComponent extends Component {
 					paragraph: "This extension enhances code pages on GitHub by making every identifier a jump-to-definition link. Hovering over identifiers displays a tooltip with documentation and type information. The new keyboard shortcut Shift-T allows you to search for functions, types, and other definitions. After installing it, view some code on GitHub and hover your mouse over identifiers.",
 					img: "/img/Dashboard/GoogleChromeAsset.svg",
 				},
-				primaryButton: this._browserCTA(),
+				primaryButton: this._browserCTA.bind(this),
 			},
 			editor: {
 				hero: {
@@ -42,7 +42,7 @@ class ToolsHomeComponent extends Component {
 					subtitle: "See usage examples for Go code instantly, as you type. Currently in beta.",
 					paragraph: "When Sourcegraph is installed in your editor you get real usage examples from GitHub, immediate access to source code, and documentation as you type. It’s like pair programming with the smartest developer in the world. Sourcegraph currently supports Go in Vim and Sublime Text. More languages and editors are coming soon.",
 				},
-				primaryButton: this._sfyeCTA(context),
+				primaryButton: this._sfyeCTA.bind(this),
 				youtube: "https://www.youtube.com/embed/ssON7dfaDZo",
 				interestForm: {
 					title: "Use another editor or language? Get early access to Sourcegraph for your editor and language of choice.",
@@ -94,17 +94,16 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_successHandler() {
+		console.log("success handler");
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstalled", "DashboardTools");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false});
-		window.localStorage["installed_chrome_extension"] = true;
 	}
 
 	_failHandler() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstallFailed", "DashboardTools");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
 		this.setState({showChromeExtensionCTA: true});
-		window.localStorage.removeItem("installed_chrome_extension");
 	}
 
 	_installChromeExtensionClicked() {
@@ -132,15 +131,15 @@ class ToolsHomeComponent extends Component {
 		window.location.assign("https://github.com/sourcegraph/sourcegraph-vim");
 	}
 
-	_sfyeCTA(context) {
+	_sfyeCTA() {
 		return (
-			<div>
-				<span className={base.ph1}>
-					<Button color="purple" imageUrl={`${context.siteConfig.assetsRoot}/img/Dashboard/SourcegraphSublime.svg`} onClick={this._installEditorForSublimeCTAClicked.bind(this)}>Install for Sublime</Button>
-				</span>
-				<span className={base.ph1}>
-					<Button color="purple" imageUrl={`${context.siteConfig.assetsRoot}/img/Dashboard/SourcegraphVim.svg`} onClick={this._installEditorForVimCTAClicked.bind(this)}>Install for Vim</Button>
-				</span>
+			<div styleName="multiple-install">
+				<div className={base.ph1} styleName={"mv2-sm"}>
+					<Button color="purple" imageUrl={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SourcegraphSublime.svg`} onClick={this._installEditorForSublimeCTAClicked.bind(this)}>Install for Sublime</Button>
+				</div>
+				<div className={base.ph1} styleName={"mv2-sm"}>
+					<Button color="purple" imageUrl={`${this.context.siteConfig.assetsRoot}/img/Dashboard/SourcegraphVim.svg`} onClick={this._installEditorForVimCTAClicked.bind(this)}>Install for Vim</Button>
+				</div>
 			</div>
 		);
 	}

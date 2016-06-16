@@ -7,26 +7,22 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	align-items: center;
 	composes: center from base;
 }
+
 .table-row {
 	display: flex;
+	flex: 1 1 auto;
+	composes: col-5-ns col-12 from grid;
 	justify-content: center;
 	flex-direction: row;
 	padding-top: 10px;
 }
 
-.left-input {
-	composes: col-2 from grid;
-}
-
-.right-input {
-	composes: col-2 from grid;
-}
-
 .full-input {
 	display: flex;
-	composes: col-4 from grid;
+	flex: 1;
 }
 
 .input-field {
