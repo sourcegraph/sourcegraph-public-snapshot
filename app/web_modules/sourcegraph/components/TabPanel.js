@@ -7,6 +7,11 @@ class TabPanel extends React.Component {
 		className: React.PropTypes.string,
 		children: React.PropTypes.any,
 		active: React.PropTypes.bool,
+		tabPanel: React.PropTypes.bool,
+	};
+
+	static defaultProps = {
+		tabPanel: true,
 	};
 
 	render() {

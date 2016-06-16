@@ -15,12 +15,14 @@ class TabItem extends React.Component {
 		size: React.PropTypes.string, // small, large
 		icon: React.PropTypes.string,
 		direction: React.PropTypes.string,
+		tabItem: React.PropTypes.bool,
 	};
 
 	static defaultProps = {
 		active: false,
 		color: "blue",
 		direction: "horizontal",
+		tabItem: true,
 	};
 
 	render() {
