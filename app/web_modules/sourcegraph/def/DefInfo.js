@@ -2,7 +2,6 @@
 
 import React from "react";
 import Helmet from "react-helmet";
-import AuthorList from "sourcegraph/def/AuthorList";
 import Container from "sourcegraph/Container";
 import DefStore from "sourcegraph/def/DefStore";
 import DefContainer from "sourcegraph/def/DefContainer";
@@ -15,6 +14,8 @@ import * as DefActions from "sourcegraph/def/DefActions";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
+import base from "sourcegraph/components/styles/_base.css";
+import colors from "sourcegraph/components/styles/_colors.css";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import Header from "sourcegraph/components/Header";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
@@ -23,6 +24,12 @@ import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import "whatwg-fetch";
 import {GlobeIcon, LanguageIcon} from "sourcegraph/components/Icons";
 import {Dropdown, TabItem} from "sourcegraph/components";
+import stripDomain from "sourcegraph/util/stripDomain";
+import breadcrumb from "sourcegraph/util/breadcrumb";
+
+
+// Number of characters of the Docstring to show before showing the "collapse" options.
+const DESCRIPTION_CHAR_CUTOFF = 500;
 
 class DefInfo extends Container {
 	static contextTypes = {
@@ -44,8 +51,13 @@ class DefInfo extends Container {
 		this.state = {
 			currentLang: localStorage.getItem("defInfoCurrentLang"),
 			translations: {},
+			defDescrHidden: null,
 		};
 		this._onTranslateDefInfo = this._onTranslateDefInfo.bind(this);
+		this.splitHTMLDescr = this.splitHTMLDescr.bind(this);
+		this.splitPlainDescr = this.splitPlainDescr.bind(this);
+		this._onViewMore = this._onViewMore.bind(this);
+		this._onViewLess = this._onViewLess.bind(this);
 	}
 
 	stores() {
@@ -59,6 +71,66 @@ class DefInfo extends Container {
 		if (typeof window !== "undefined") window.scrollTo(0, 0);
 	}
 
+	shouldHideDescr(defObj, cutOff: number) {
+		if (defObj.DocHTML) {
+			let parser = new DOMParser();
+			let doc = parser.parseFromString(defObj.DocHTML.__html, "text/html");
+			return doc.documentElement.textContent.length >= cutOff;
+		} else if (defObj.Docs) {
+			return defObj.Docs[0].Data.length >= cutOff;
+		}
+		return false;
+	}
+
+	splitHTMLDescr(html, cutOff) {
+		let parser = new DOMParser();
+		let doc = parser.parseFromString(html, "text/html");
+
+		// lp recreates the HTML tree by doing a DFS traversal, keeping
+		// track of the consumed characters along the way
+		// lp breaks early if the # of consumed characters exceeds our cutoff
+		function lp(node, oldLength) {
+			let childrenCopy = [];
+			while (node.firstChild) {
+				let clone = node.firstChild.cloneNode(true);
+				childrenCopy.push(clone);
+				node.removeChild(node.firstChild);
+			}
+
+			let newLength = node.textContent.length + oldLength;
+			if (newLength >= cutOff) {
+				node.textContent = `${node.textContent.slice(0, cutOff - node.textContent.length - 1)}...`;
+				return [node, cutOff];
+			}
+
+			let latestLength = newLength;
+			for (let child of childrenCopy) {
+				let [newChild, newCount] = lp(child, latestLength);
+				node.appendChild(newChild);
+				latestLength = newCount;
+				if (latestLength >= cutOff) {
+					break;
+				}
+			}
+			return [node, latestLength];
+		}
+		let newDoc = lp(doc.documentElement, 0)[0];
+		return newDoc.getElementsByTagName("body")[0].innerHTML;
+	}
+
+	splitPlainDescr(txt, cutOff) {
+		return txt.slice(0, Math.min(txt.length, cutOff));
+	}
+
+	_onViewMore() {
+		this.setState({defDescrHidden: false});
+	}
+
+	_onViewLess() {
+		this.setState({defDescrHidden: true});
+	}
+
+
 	reconcileState(state, props) {
 		state.repo = props.repo || null;
 		state.rev = props.rev || null;
@@ -66,6 +138,9 @@ class DefInfo extends Container {
 		state.defObj = props.defObj || null;
 		state.defCommitID = props.defObj ? props.defObj.CommitID : null;
 		state.authors = state.defObj ? DefStore.authors.get(state.repo, state.defObj.CommitID, state.def) : null;
+		if (state.defObj && state.defDescrHidden === null) {
+			state.defDescrHidden = this.shouldHideDescr(state.defObj, DESCRIPTION_CHAR_CUTOFF);
+		}
 	}
 
 	onStateTransition(prevState, nextState) {
@@ -111,11 +186,20 @@ class DefInfo extends Container {
 		localStorage.setItem("defInfoCurrentLang", targetLang);
 	}
 
+	renderDefBreadcrumb(def) {
+		return breadcrumb(
+			stripDomain(def.Repo.concat("/", def.File)),
+			(j) => "/",
+			(_, component, j, isLast) => component
+		);
+	}
+
 	render() {
 		let def = this.state.defObj;
+		let hiddenDescr = this.state.defDescrHidden;
 		let refLocs = this.state.refLocations;
-		let authors = this.state.authors;
 		let defInfoUrl = this.state.defObj ? urlToDefInfo(this.state.defObj, this.state.rev) : "";
+		let defBlobUrl = def ? urlToDef(def, this.state.rev) : "";
 		let refsSorting = this.props.location.query.refs || "top";
 
 		if (refLocs && refLocs.Error) {
@@ -125,27 +209,31 @@ class DefInfo extends Container {
 					subtitle={`References are not available.`} />
 			);
 		}
-
 		return (
+			<div styleName="bg">
 			<div styleName="container">
 			{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
 				{def &&
 					<h1 styleName="def-header">
-						<Link title="View definition in code" styleName="back-icon" to={urlToDef(def, this.state.rev)}>&laquo;</Link>
-						&nbsp;
-						<Link to={urlToDef(def, this.state.rev)}>
+						<Link title="View definition in code" to={defBlobUrl} className={`${colors["mid-gray"]}`}>
 							<code styleName="def-title">{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 						</Link>
 					</h1>
 				}
-				<hr/>
 				<div>
-					{authors && Object.keys(authors).length > 0 && <AuthorList authors={authors} horizontal={true} />}
+					<div styleName="link-and-authors">
+						{def &&
+							<div styleName="blob-link">
+								Defined in <Link title="View definition in code" to={defBlobUrl}>{this.renderDefBreadcrumb(def)}</Link>
+							</div>
+						}
+					</div>
 					{def && def.DocHTML &&
 						<div styleName="description-wrapper">
 							<Dropdown
-								styleName="translation-widget"
+								styleName="translation-dropdown"
+								className={base.mt0}
 								icon={<GlobeIcon styleName="icon" />}
 								title="Translate"
 								initialValue={this.state.currentLang}
@@ -164,7 +252,7 @@ class DefInfo extends Container {
 								]} />
 
 							{this.state.showTranslatedString &&
-								<div>
+								<div className={base.mt1}>
 									<LanguageIcon styleName="icon" />
 									<div styleName="description" dangerouslySetInnerHTML={{__html: this.state.translations[this.state.currentLang]}}></div>
 								</div>
@@ -172,59 +260,79 @@ class DefInfo extends Container {
 							{this.state.showTranslatedString &&
 								<hr/>
 							}
-							<div styleName="description" dangerouslySetInnerHTML={def.DocHTML}></div>
-						</div>
+							<div styleName="description"
+								dangerouslySetInnerHTML={hiddenDescr && {__html: this.splitHTMLDescr(def.DocHTML.__html, DESCRIPTION_CHAR_CUTOFF)} || def.DocHTML}></div>
+							{hiddenDescr &&
+								<div styleName="description-expander" onClick={this._onViewMore}>View More...</div>
+							}
+							{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
+								<div styleName="description-expander" onClick={this._onViewLess}>Collapse</div>
+							}
+					</div>
 					}
 					{/* TODO DocHTML will not be set if the this def was loaded via the
 						serveDefs endpoint instead of the serveDef endpoint. In this case
 						we'll fallback to displaying plain text. We should be able to
 						sanitize/render DocHTML on the front-end to make this consistent.
 					*/}
-					{def && !def.DocHTML && def.Docs && def.Docs.length &&
-						<div styleName="description">{def.Docs[0].Data}</div>
-					}
-					{def && !def.Error && <DefContainer {...this.props} />}
-					{def && !def.Error &&
-						<div>
-							<div style={{float: "right"}}>
-								<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "top"}}}>
-									<TabItem active={refsSorting === "top"}>Top</TabItem>
-								</Link>
-								<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "local"}}}>
-									<TabItem active={refsSorting === "local"}>Local</TabItem>
-								</Link>
-								<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "all"}}}>
-									<TabItem active={refsSorting === "all"}>All</TabItem>
-								</Link>
+
+				{def && !def.DocHTML && def.Docs && def.Docs.length &&
+							<div styleName="description-wrapper">
+								<div styleName="description">{hiddenDescr && this.splitPlainDescr(def.Docs[0].Data, DESCRIPTION_CHAR_CUTOFF) || def.Docs[0].Data}</div>
+								{hiddenDescr &&
+									<div styleName="description-expander" onClick={this._onViewMore}>View More...</div>
+								}
+								{!hiddenDescr && this.shouldHideDescr(def, DESCRIPTION_CHAR_CUTOFF) &&
+									<div styleName="description-expander" onClick={this._onViewLess}>Collapse</div>
+								}
 							</div>
-							{refsSorting === "top" &&
-								<ExamplesContainer
-									repo={this.props.repo}
-									rev={this.props.rev}
-									commitID={this.props.commitID}
-									def={this.props.def}
-									defObj={this.props.defObj} />
-							}
-							{refsSorting === "local" &&
-								<RepoRefsContainer
-									repo={this.props.repo}
-									rev={this.props.rev}
-									commitID={this.props.commitID}
-									def={this.props.def}
-									defObj={this.props.defObj}
-									defRepos={[this.props.repo]} />
-							}
-							{refsSorting === "all" &&
-								<RepoRefsContainer
-									repo={this.props.repo}
-									rev={this.props.rev}
-									commitID={this.props.commitID}
-									def={this.props.def}
-									defObj={this.props.defObj} />
-							}
+						}
+					<div styleName="section">
+						<div styleName="section-label"> Definition </div>
+						{def && !def.Error && <DefContainer {...this.props} />}
+					</div>
+					{def && !def.Error &&
+						<div styleName="refs-container">
+								<div style={{float: "right"}}>
+										<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "top"}}}>
+											<TabItem active={refsSorting === "top"}>Top</TabItem>
+										</Link>
+										<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "local"}}}>
+											<TabItem active={refsSorting === "local"}>Local</TabItem>
+										</Link>
+										<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "all"}}}>
+											<TabItem active={refsSorting === "all"}>All</TabItem>
+										</Link>
+								</div>
+								{refsSorting === "top" &&
+									<ExamplesContainer
+										repo={this.props.repo}
+										rev={this.props.rev}
+										commitID={this.props.commitID}
+										def={this.props.def}
+										defObj={this.props.defObj} />
+								}
+								{refsSorting === "local" &&
+									<RepoRefsContainer
+										repo={this.props.repo}
+										rev={this.props.rev}
+										commitID={this.props.commitID}
+										def={this.props.def}
+										defObj={this.props.defObj}
+										defRepos={[this.props.repo]} />
+								}
+								{refsSorting === "all" &&
+									<RepoRefsContainer
+										repo={this.props.repo}
+										rev={this.props.rev}
+										commitID={this.props.commitID}
+										def={this.props.def}
+										defObj={this.props.defObj} />
+								}
 						</div>
 					}
 				</div>
+			</div>
 			</div>
 		);
 	}

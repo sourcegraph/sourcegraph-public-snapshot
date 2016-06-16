@@ -2,6 +2,7 @@ import React from "react";
 import {Link} from "react-router";
 import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
 import breadcrumb from "sourcegraph/util/breadcrumb";
+import stripDomain from "sourcegraph/util/stripDomain";
 
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
@@ -20,13 +21,7 @@ class RepoLink extends React.Component {
 	};
 
 	render() {
-		let trimmedPath = this.props.repo;
-		if (trimmedPath.indexOf("sourcegraph.com/") !== -1) {
-			trimmedPath = trimmedPath.substring("sourcegraph.com/".length);
-		}
-		if (trimmedPath.indexOf("github.com/") !== -1) {
-			trimmedPath = trimmedPath.substring("github.com/".length);
-		}
+		let trimmedPath = stripDomain(this.props.repo);
 		let pathBreadcrumb = breadcrumb(
 			trimmedPath,
 			(i) => <span key={i} className={base.mh1}> / </span>,

@@ -71,10 +71,10 @@ class RepoRefsContainer extends Container {
 			<div>
 				<div styleName="section-label">
 					{refLocs && refLocs.TotalRepos &&
-						`Used in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
+						`Referenced in ${refLocs.TotalRepos} repositor${refLocs.TotalRepos === 1 ? "y" : "ies"}`
 					}
 					{refLocs && !refLocs.TotalRepos && refLocs.RepoRefs &&
-						`Used in ${refLocs.RepoRefs.length}+ repositories`
+						`Referenced in ${refLocs.RepoRefs.length}+ repositories`
 					}
 				</div>
 				<hr style={{marginTop: 0, clear: "both"}}/>
@@ -90,7 +90,8 @@ class RepoRefsContainer extends Container {
 					repoRefs={repoRefs}
 					prefetch={i === 0}
 					initNumSnippets={i === 0 ? 1 : 0}
-					fileCollapseThreshold={5} />)}
+					fileCollapseThreshold={5}
+					showRepoTitle={true}/>)}
 				{/* Display the paginator if we have more files repos or repos to show. */}
 				{refLocs && refLocs.RepoRefs &&
 					(fileCount >= RefLocsPerPage || refLocs.TotalRepos > refLocs.RepoRefs.length || !refLocs.TotalRepos) &&
