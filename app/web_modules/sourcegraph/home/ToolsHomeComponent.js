@@ -90,7 +90,7 @@ class ToolsHomeComponent extends Component {
 
 	_browserLearnMoreCTAClicked() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionStoreCTAClicked", "DashboardTools");
-		window.location.href("https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en");
+		window.location.assign("https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en");
 	}
 
 	_successHandler() {

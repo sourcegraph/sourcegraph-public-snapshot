@@ -88,7 +88,7 @@ class ToolComponent extends React.Component {
 						</Button>
 					</div>
 					<div styleName="flex-container">
-						<span>{this.props.supportedTool.hero.img ? <img styleName="tool-img" src={`${this.context.siteConfig.assetsRoot}${this.props.supportedTool.hero.img}`}></img> : <div styleName="tool-img"></div>}</span>
+						{this.props.supportedTool.hero.img ? <span styleName="tool-img-container"><img styleName="large-img" src={`${this.context.siteConfig.assetsRoot}${this.props.supportedTool.hero.img}`}></img></span> : <div styleName="tool-img-container"/>}
 						<div>
 							<Heading align="left" level="2" className={base.pt5}>{this.props.supportedTool.hero.title}</Heading>
 							<div styleName="tool-item-paragraph">

@@ -19,34 +19,40 @@ class TourContainer extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
+			showBrowserExtensionCTA: global.chrome ? !document.getElementById("sourcegraph-app-bootstrap") : !window.localStorage["explored_browser_extensions"],
 			showSourcegraphLiveCTA: !window.localStorage["installed_sourcegraph_live"],
 			totalSteps: 4,
 		};
 	}
 
 	componentDidMount() {
-		setTimeout(() => this.setState({
-			showChromeExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
-		}), 1);
+		if (global.chrome) {
+			setTimeout(() => this.setState({
+				showBrowserExtensionCTA: !document.getElementById("sourcegraph-app-bootstrap"),
+			}), 1);
+		}
 	}
 
 	_successHandler() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstalled", "DashboardTour");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
-		this.setState({showChromeExtensionCTA: false});
+		this.setState({showBrowserExtensionCTA: false});
 	}
 
 	_failHandler() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstallFailed", "DashboardTour");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
-		this.setState({showChromeExtensionCTA: true});
+		this.setState({showBrowserExtensionCTA: true});
 	}
 
-	_installChromeExtensionClicked() {
+	_browserExtensionCTAClicked() {
 		this.context.eventLogger.logEventForPage("ChromeExtensionCTAClicked", "DashboardTour");
 		if (typeof chrome !== "undefined" && global.chrome && global.chrome.webstore) {
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
+		} else {
+			window.localStorage["explored_browser_extensions"] = "true";
+			this.setState({showBrowserExtensionCTA: false});
+			window.location.assign("/tools/browser");
 		}
 	}
 
@@ -66,7 +72,7 @@ class TourContainer extends React.Component {
 		let steps = 1;
 		steps += this.context.githubToken ? 1 : 0;
 		steps += this.state.showSourcegraphLiveCTA ? 0 : 1;
-		steps += this.state.showChromeExtensionCTA ? 0 : 1;
+		steps += this.state.showBrowserExtensionCTA ? 0 : 1;
 		return steps;
 	}
 
@@ -98,7 +104,7 @@ class TourContainer extends React.Component {
 									See your public contributions and grant access to use Sourcegraph on your private repositories.
 								</p>
 							</ChecklistItem>
-							<ChecklistItem complete={!this.state.showChromeExtensionCTA} className={base.mb5} actionText="Install" actionOnClick={this._installChromeExtensionClicked.bind(this)}>
+							<ChecklistItem complete={!this.state.showBrowserExtensionCTA} className={base.mb5} actionText="Install" actionOnClick={this._browserExtensionCTAClicked.bind(this)}>
 								<Heading level="4">Install a browser extension</Heading>
 								<p className={base.mt2} styleName="cool-mid-gray">
 									Browse GitHub like an IDE, with jump-to-definition links, semantic code search, and instant documentation.
