@@ -14,7 +14,7 @@ class Affix extends React.Component {
 		window.addEventListener("scroll", () => this.affixEl());
 	}
 
-	componentDidUnmount() {
+	componentWillUnmount() {
 		window.removeEventListener("scroll", () => this.affixEl());
 	}
 
