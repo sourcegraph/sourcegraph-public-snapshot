@@ -14,8 +14,8 @@ import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import {trimRepo} from "sourcegraph/repo";
 import context from "sourcegraph/app/context";
 import {guessBranchName} from "sourcegraph/build/Build";
-
 import Header from "sourcegraph/components/Header";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 const TREE_SEARCH_MODAL_NAME = "TreeSearch";
 
@@ -45,6 +45,7 @@ class RepoMain extends React.Component {
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
+		eventLogger: React.PropTypes.object.isRequired,
 	};
 
 	constructor(props) {
@@ -175,16 +176,22 @@ class RepoMain extends React.Component {
 		if (err) {
 			let msg;
 			if (err.response && err.response.status === 401) {
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
 				msg = `Sign in to add repositories.`;
 			} else if (err.response && err.response.status === 404) {
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 				msg = `Repository not found.`;
 			} else {
 				msg = `Repository is not available.`;
 			}
+
 			return (
-				<Header
-					title={`${httpStatusCode(err)}`}
-					subtitle={msg} />
+				<div>
+				<Helmet title={"Sourcegraph - Not Found"} />
+					<Header
+						title={`${httpStatusCode(err)}`}
+						subtitle={msg} />
+				</div>
 			);
 		}
 

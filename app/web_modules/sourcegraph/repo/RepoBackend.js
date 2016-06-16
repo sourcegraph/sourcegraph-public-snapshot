@@ -9,6 +9,7 @@ import {singleflightFetch} from "sourcegraph/util/singleflightFetch";
 import {updateRepoCloning} from "sourcegraph/repo/cloning";
 import {sortBranches, sortTags} from "sourcegraph/repo/vcs";
 import EventLogger from "sourcegraph/util/EventLogger";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
@@ -115,7 +116,7 @@ const RepoBackend = {
 						Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
 						if (!data.Error) {
 							const eventProps = {language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private)};
-							EventLogger.logEvent("AddRepo", eventProps);
+							EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
 							EventLogger.logIntercomEvent("add-repo", eventProps);
 						}
 					})

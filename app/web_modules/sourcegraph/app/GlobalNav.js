@@ -12,6 +12,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {SignupForm} from "sourcegraph/user/Signup";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
@@ -20,7 +21,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 
 			{location.state && location.state.modal === "login" &&
 				<LocationStateModal modalName="login" location={location}
-					onDismiss={(v) => eventLogger.logEvent("DismissLoginModal")}>
+					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div styleName="modal">
 						<LoginForm
 							onLoginSuccess={dismissModal("login", location, router)}
@@ -31,7 +32,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 
 			{location.state && location.state.modal === "signup" &&
 				<LocationStateModal modalName="signup" location={location}
-					onDismiss={(v) => eventLogger.logEvent("DismissSignupModal")}>
+					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 					<div styleName="modal">
 						<SignupForm
 							onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
@@ -90,13 +91,13 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<div styleName="tr" className={`${base.pv2} ${base.pr2}`}>
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
-								onToggle={(v) => v && eventLogger.logEvent("ShowLoginModal")}>
+								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								<Button color="blue" outline={true}>Sign in</Button>
 							</LocationStateToggleLink>
 						</div>
 						<div styleName="action hidden-s">
 							<LocationStateToggleLink href="/join" modalName="signup" location={location}
-								onToggle={(v) => v && eventLogger.logEvent("ViewSignupModal")}>
+								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ViewSignupModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 								<Button color="blue">Sign up</Button>
 							</LocationStateToggleLink>
 						</div>

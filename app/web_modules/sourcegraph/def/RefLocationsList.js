@@ -11,6 +11,7 @@ import Button from "sourcegraph/components/Button";
 import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
 import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class RefLocationsList extends React.Component {
 	static propTypes = {
@@ -61,7 +62,7 @@ class RefLocationsList extends React.Component {
 						{!this.context.signedIn &&
 							<LocationStateToggleLink styleName="cta-link"
 								location={this.props.location}
-								onClick={() => this.context.eventLogger.logEvent("Conversion_SignInFromRefList")}
+								onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_SignInFromRefList", {page_name: location.pathname})}
 								href="/login"
 								modalName="login">
 								<strong>Sign in</strong> for results from your code
@@ -70,7 +71,7 @@ class RefLocationsList extends React.Component {
 						{this.context.signedIn && noGitHubPrivateReposScope &&
 							<a styleName="cta-link"
 								href={urlToPrivateGitHubOAuth}
-								onClick={() => this.context.eventLogger.logEvent("Conversion_AuthPrivateCodeFromRefList")}>
+								onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_AuthPrivateCodeFromRefList", {page_name: location.pathname})}>
 								<strong>Authorize</strong> to see results from your private code
 							</a>
 						}

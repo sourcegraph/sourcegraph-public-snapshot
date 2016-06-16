@@ -6,6 +6,7 @@ import {Logo, Button, Heading} from "sourcegraph/components";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class AnonymousLandingPage extends Component {
 	static contextTypes = {
@@ -34,7 +35,7 @@ class AnonymousLandingPage extends Component {
 								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
 									<strong>Sign up with GitHub</strong>
 								</GitHubAuthButton>
-								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")} styleName="white block-sm mv4-sm">Or try it on open-source code &nbsp;&#x276f;</Link>
+								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedExplorePublicRepo", {page_name: AnalyticsConstants.PAGE_HOME})} styleName="white block-sm mv4-sm">Or try it on open-source code &nbsp;&#x276f;</Link>
 							</p>
 						</div>
 					</div>
@@ -43,7 +44,7 @@ class AnonymousLandingPage extends Component {
 				<div styleName="container-lg">
 					<div styleName="content-block">
 						<div styleName="img-left">
-							<Link to="/github.com/golang/go@0cc710dca63b79ed2dd6ce9375502e76e5fc0484/-/tree/src/testing?q=testing" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")}>
+							<Link to="/github.com/golang/go@0cc710dca63b79ed2dd6ce9375502e76e5fc0484/-/tree/src/testing?q=testing" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedExplorePublicRepo", {page_name: AnalyticsConstants.PAGE_HOME})}>
 								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-sourcegraph.png`} styleName="img" width="460" />
 							</Link>
 						</div>
@@ -54,7 +55,7 @@ class AnonymousLandingPage extends Component {
 								<p>Connect your GitHub account to Sourcegraph to start searching, browsing, and cross-referencing your code, with IDE-like capabilities in your browser. Free for public and private projects.</p>
 							</div>
 							<GitHubAuthButton className={base.mr3}><strong>Continue with GitHub</strong></GitHubAuthButton>
-							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEvent("ClickedExplorePublicRepo")} styleName="block-sm mv4-sm">Or try it on open-source code &nbsp;&#x276f;</Link>
+							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedExplorePublicRepo", {page_name: AnalyticsConstants.PAGE_HOME})} styleName="block-sm mv4-sm">Or try it on open-source code &nbsp;&#x276f;</Link>
 						</div>
 					</div>
 
@@ -71,7 +72,7 @@ class AnonymousLandingPage extends Component {
 								<p>Browse GitHub like an IDE, with jump-to-definition links, semantic code search, and documentation tooltips. <em>Support for other browsers is coming soon.</em></p>
 							</div>
 							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" target="new">
-								<Button color="blue" onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
+								<Button color="blue" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedInstallChromeExt", {page_name: AnalyticsConstants.PAGE_HOME})}>
 									Install the Chrome extension
 								</Button>
 							</a>
@@ -80,7 +81,7 @@ class AnonymousLandingPage extends Component {
 
 					<div styleName="content-block">
 						<div styleName="img-left">
-							<Link to="/tools/editor" onClick={(v) => v && eventLogger.logEvent("ClickedInstallEditorExt")}>
+							<Link to="/tools/editor" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ClickedInstallEditorExt", {page_name: AnalyticsConstants.PAGE_HOME})}>
 								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-editor.png`} styleName="img" width="460" />
 							</Link>
 						</div>
@@ -92,7 +93,7 @@ class AnonymousLandingPage extends Component {
 								<div styleName="flex">
 									<div styleName="sfye-flex">
 										<a styleName="" href="/tools/editor">
-											<Button color="blue" onClick={(v) => v && eventLogger.logEvent("ClickedInstallEditorExt")}>
+											<Button color="blue" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ClickedInstallEditorExt", {page_name: AnalyticsConstants.PAGE_HOME})}>
 												Install for your editor
 											</Button>
 										</a>
@@ -207,7 +208,7 @@ class AnonymousLandingPage extends Component {
 							</GitHubAuthButton>
 							<a target="_blank" styleName="block-sm mv4-sm white"
 								href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
-								onClick={(v) => v && eventLogger.logEvent("ClickedInstallChromeExt")}>
+								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ClickedInstallChromeExt", {page_name: AnalyticsConstants.PAGE_HOME})}>
 								Just install the Chrome extension &nbsp;&#x276f;
 							</a>
 						</p>

@@ -8,6 +8,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import CSSModules from "react-css-modules";
 import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 function PricingPage(props, {signedIn, eventLogger}): React$Element {
 	return (
@@ -29,7 +30,7 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 								<p>For individuals and teams, for public and private code</p>
 							</Panel>
 							{!signedIn && <Link to="/join"
-								onClick={(v) => v && eventLogger.logEvent("ClickPricingCTA", {plan: "free"})}>
+								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles["plan-cta"] || ""} color="purple">Sign up</Button>
 							</Link>}
 							{signedIn && <Button block={true} outline={true} color="purple" className={styles["plan-cta-noop"] || ""}><CheckIcon styleName="icon" /> Your current plan</Button>}
@@ -57,7 +58,7 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 								<p>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
-								onClick={(v) => v && eventLogger.logEvent("ClickPricingCTA", {plan: "standard"})}>
+								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "standard", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles["plan-cta"] || ""} color="green">Contact us</Button>
 							</Link>
 						</div>
@@ -82,7 +83,7 @@ function PricingPage(props, {signedIn, eventLogger}): React$Element {
 								<p>per&nbsp;user per&nbsp;month</p>
 							</Panel>
 							<Link to="/contact"
-								onClick={(v) => v && eventLogger.logEvent("ClickPricingCTA", {plan: "free"})}>
+								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles["plan-cta"] || ""} color="blue">Contact us</Button>
 							</Link>
 						</div>

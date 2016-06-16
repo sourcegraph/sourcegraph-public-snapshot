@@ -7,6 +7,7 @@ import stripDomain from "sourcegraph/util/stripDomain";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
 import styles from "./styles/breadcrumb.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class RepoLink extends React.Component {
 	static propTypes = {
@@ -31,7 +32,7 @@ class RepoLink extends React.Component {
 						title={trimmedPath}
 						key={i}
 						styleName={isLast ? "active" : "inactive"}
-						onClick={() => this.context.eventLogger.logEvent("RepoClicked", {repoName: trimmedPath})}>
+						onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "RepoClicked", {repoName: trimmedPath})}>
 						{component}
 					</Link> :
 					<span key={i}>{component}</span>

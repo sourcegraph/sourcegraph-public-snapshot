@@ -8,6 +8,7 @@ import {Link} from "react-router";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import {EventLocation} from "sourcegraph/util/EventLogger";
 import {Panel} from "sourcegraph/components";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class GlobalSearchContainer extends React.Component {
 
@@ -27,12 +28,12 @@ class GlobalSearchContainer extends React.Component {
 	renderCTAButtons() {
 		return (
 			<div className={base.mt4} styleName="inline-block">
-				{!this.context.signedIn && <GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: false})}>Sign in with GitHub</GitHubAuthButton>}
+				{!this.context.signedIn && <GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: EventLocation.Dashboard, scopes: "", upgrade: false})}>Sign in with GitHub</GitHubAuthButton>}
 				{this.context.signedIn && !this.context.githubToken &&
-					<GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "", upgrade: true})}>Link GitHub account</GitHubAuthButton>
+					<GitHubAuthButton href={urlToGitHubOAuth} onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: EventLocation.Dashboard, scopes: "", upgrade: true})}>Link GitHub account</GitHubAuthButton>
 				}
 				{this.context.signedIn && this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email"))) &&
-					<GitHubAuthButton href={urlToPrivateGitHubOAuth} onClick={() => this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", EventLocation.Dashboard, {scopes: "read:org,repo,user:email", upgrade: true})}>Use with private repositories</GitHubAuthButton>
+					<GitHubAuthButton href={urlToPrivateGitHubOAuth} onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: EventLocation.Dashboard, scopes: "read:org,repo,user:email", upgrade: true})}>Use with private repositories</GitHubAuthButton>
 				}
 			</div>
 		);

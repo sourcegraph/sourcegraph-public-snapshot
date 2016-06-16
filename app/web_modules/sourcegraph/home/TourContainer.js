@@ -6,6 +6,7 @@ import styles from "./styles/Tour.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Hero, Panel, Stepper, ChecklistItem, Button, Emoji} from "sourcegraph/components";
 import redirectForUnauthedUser from "sourcegraph/user/redirectForUnauthedUser";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class TourContainer extends React.Component {
 
@@ -34,19 +35,19 @@ class TourContainer extends React.Component {
 	}
 
 	_successHandler() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionInstalled", "DashboardTour");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_TOUR});
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showBrowserExtensionCTA: false});
 	}
 
 	_failHandler() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionInstallFailed", "DashboardTour");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_TOUR});
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
 		this.setState({showBrowserExtensionCTA: true});
 	}
 
 	_browserExtensionCTAClicked() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionCTAClicked", "DashboardTour");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_TOUR});
 		if (typeof chrome !== "undefined" && global.chrome && global.chrome.webstore) {
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
@@ -57,12 +58,12 @@ class TourContainer extends React.Component {
 	}
 
 	_connectGitHubClicked() {
-		this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", "DashboardTour", {scopes: "", upgrade: true});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: AnalyticsConstants.PAGE_TOUR, scopes: "", upgrade: true});
 		window.open(urlToGitHubOAuth);
 	}
 
 	_installSourcegraphLiveClicked() {
-		this.context.eventLogger.logEventForPage("SourcegraphLiveCTAClicked", "DashboardTour");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "SourcegraphLiveCTAClicked", {page_name: AnalyticsConstants.PAGE_TOUR});
 		window.localStorage["installed_sourcegraph_live"] = true;
 		this.setState({showSourcegraphLiveCTA: false});
 		window.location.assign("/tools/editor");

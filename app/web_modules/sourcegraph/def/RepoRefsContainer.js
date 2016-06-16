@@ -10,6 +10,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/DefInfo.css";
 import {RefLocsPerPage} from "sourcegraph/def";
 import "whatwg-fetch";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class RepoRefsContainer extends Container {
 	static propTypes = {
@@ -59,7 +60,7 @@ class RepoRefsContainer extends Container {
 	_onNextPage() {
 		let nextPage = this.state.currPage + 1;
 		this.setState({currPage: nextPage, nextPageLoading: true});
-		if (this.context.eventLogger) this.context.eventLogger.logEvent("RefsPaginatorClicked", {page: nextPage});
+		if (this.context.eventLogger) this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "RefsPaginatorClicked", {next_page: nextPage, repo: this.props.repo, def: this.props.def});
 	}
 
 	render() {

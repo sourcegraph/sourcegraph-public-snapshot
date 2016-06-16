@@ -23,6 +23,7 @@ import {FaAngleDown, FaAngleRight} from "sourcegraph/components/Icons";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 import stripDomain from "sourcegraph/util/stripDomain";
 import styles from "./styles/Refs.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 const SNIPPET_REF_CONTEXT_LINES = 4; // Number of additional lines to show above/below a ref
 
@@ -232,7 +233,7 @@ export default class RefsContainer extends Container {
 			newOpenFiles.delete(path);
 		} else {
 			newOpenFiles.add(path);
-			this.context.eventLogger.logEvent("RefsFileExpanded");
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REFERENCES, AnalyticsConstants.ACTION_TOGGLE, "RefsFileExpanded", {repo: this.props.repo, def: this.props.def});
 		}
 		this.setState({shownFiles: newOpenFiles});
 	}

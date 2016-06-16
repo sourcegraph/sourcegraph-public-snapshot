@@ -21,6 +21,7 @@ import {Input, Icon} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export const RESULTS_LIMIT = 20;
 
@@ -120,7 +121,7 @@ class GlobalSearch extends Container {
 					}
 				}
 			}
-			this.context.eventLogger.logEvent("GlobalSearchInitiated", globalSearchEventDict);
+			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", globalSearchEventDict);
 		}
 	}
 
@@ -228,7 +229,7 @@ class GlobalSearch extends Container {
 		if (this.state.matchingResults.Repos) {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
-				this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i});
+				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, page_name: this.props.location.pathname});
 				this._navigateTo(url);
 				return;
 			}
@@ -240,11 +241,12 @@ class GlobalSearch extends Container {
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
 		let currentDef = this.state.matchingResults.Defs[i];
+		let eventProps = {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length, page_name: this.props.location.pathname};
 		if (currentDef.FmtStrings && currentDef.FmtStrings.Kind && currentDef.FmtStrings.Language && currentDef.Repo) {
-			this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, languageSelected: this.state.matchingResults.Defs[i].FmtStrings.Language, kindSelected: this.state.matchingResults.Defs[i].FmtStrings.Kind, repoSelected: this.state.matchingResults.Defs[i].Repo, indexSelected: i, totalResults: this.state.matchingResults.Defs.length});
-		} else {
-			this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length});
+			eventProps = {...eventProps, languageSelected: this.state.matchingResults.Defs[i].FmtStrings.Language, kindSelected: this.state.matchingResults.Defs[i].FmtStrings.Kind, repoSelected: this.state.matchingResults.Defs[i].Repo};
 		}
+
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
 
 		this._navigateTo(url);
 	}

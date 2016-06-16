@@ -5,6 +5,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import {Heading, Panel, Button} from "sourcegraph/components";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import Modal from "sourcegraph/components/Modal";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {TriangleRightIcon, TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
 import InterestForm from "./InterestForm";
 
@@ -32,13 +33,13 @@ class ToolComponent extends React.Component {
 	}
 
 	_dismissModal() {
-		this.context.eventLogger.logEvent("ToolBackButtonClicked", {toolType: this.props.supportedTool.hero.title});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLOSE, "ToolBackButtonClicked", {toolType: this.props.supportedTool.hero.title, page_name: this.props.location.pathname});
 		let urlWithOutQueryParams = this.props.location.pathname.split("?")[0];
 		this.context.router.replace({...urlWithOutQueryParams, pathname: urlWithOutQueryParams.split("/").slice(0, -1).join("/")});
 	}
 
 	_toggleView() {
-		this.context.eventLogger.logEvent("EmailSubscriptionViewToggled", {visible: !this.state.formVisible});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_TOGGLE, "EmailSubscriptionViewToggled", {visible: !this.state.formVisible});
 		this.context.router.replace({...this.props.location, query: {...this.props.location.query, expanded: !this.state.formVisible}});
 		this.setState({formVisible: !this.state.formVisible});
 	}
@@ -48,7 +49,7 @@ class ToolComponent extends React.Component {
 	}
 
 	_submitInterestForm() {
-		this.context.eventLogger.logEvent("SubmitEmailSubscription", {page_name: this.props.supportedTool.hero.title});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, "SubmitEmailSubscription", {page_name: this.props.supportedTool.hero.title});
 		window.localStorage["email_subscription_submitted"] = "true";
 		this.setState({
 			submitted: true,

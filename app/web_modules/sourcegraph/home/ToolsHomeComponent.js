@@ -6,6 +6,7 @@ import {Heading, Hero, Panel, Button} from "sourcegraph/components";
 import Component from "sourcegraph/Component";
 import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import ToolComponent from "./ToolComponent";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class ToolsHomeComponent extends Component {
 
@@ -66,7 +67,7 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_toolClicked(toolType) {
-		this.context.eventLogger.logEventForPage("ToolCTAClicked", "DashboardTools", {toolType: toolType});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ToolCTAClicked", {toolType: toolType, page_name: AnalyticsConstants.PAGE_TOOLS});
 		this.context.router.replace({pathname: `/tools/${toolType}`});
 	}
 
@@ -89,24 +90,24 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_browserLearnMoreCTAClicked() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionStoreCTAClicked", "DashboardTools");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionStoreCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS});
 		window.location.assign("https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en");
 	}
 
 	_successHandler() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionInstalled", "DashboardTools");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_TOOLS});
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false});
 	}
 
 	_failHandler() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionInstallFailed", "DashboardTools");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: AnalyticsConstants.PAGE_TOOLS});
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "false");
 		this.setState({showChromeExtensionCTA: true});
 	}
 
 	_installChromeExtensionClicked() {
-		this.context.eventLogger.logEventForPage("ChromeExtensionCTAClicked", "DashboardTools");
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS});
 		if (global.chrome) {
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		}
@@ -121,12 +122,12 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_installEditorForSublimeCTAClicked() {
-		this.context.eventLogger.logEventForPage("SourcegraphLiveCTAClicked", "DashboardTools", {editorType: "Sublime"});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "SourcegraphLiveCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS, editorType: AnalyticsConstants.INTEGRATION_EDITOR_SUBLIME});
 		window.location.assign("https://github.com/sourcegraph/sourcegraph-sublime");
 	}
 
 	_installEditorForVimCTAClicked() {
-		this.context.eventLogger.logEventForPage("SourcegraphLiveCTAClicked", "DashboardTools", {editorType: "Vim"});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "SourcegraphLiveCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS, editorType: AnalyticsConstants.INTEGRATION_EDITOR_VIM});
 		window.location.assign("https://github.com/sourcegraph/sourcegraph-vim");
 	}
 
@@ -144,7 +145,7 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_connectGitHubClicked() {
-		this.context.eventLogger.logEventForPage("InitiateGitHubOAuth2Flow", "DashboardTools", {scopes: "", upgrade: true});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: AnalyticsConstants.PAGE_TOOLS, scopes: "", upgrade: true});
 		window.open(urlToGitHubOAuth);
 	}
 

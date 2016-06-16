@@ -5,6 +5,7 @@ import {urlToGitHubOAuth} from "sourcegraph/util/urlTo";
 import {GitHubIcon} from "./Icons";
 import type from "./styles/_typography.css";
 import {Button} from "sourcegraph/components";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class GitHubAuthButton extends React.Component {
 	static propTypes = {
@@ -32,7 +33,7 @@ class GitHubAuthButton extends React.Component {
 		const {url, outline, color, block, children} = this.props;
 		return (
 			<a href={url}
-				onClick={() => this.context.eventLogger.logEvent("InitiateGitHubOAuth2Flow")} {...this.props}>
+				onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow")} {...this.props}>
 				<Button type="button" outline={outline} formNoValidate={true} color={color} block={block}>
 					<GitHubIcon className={type.f4} />&nbsp; {children}
 				</Button>
