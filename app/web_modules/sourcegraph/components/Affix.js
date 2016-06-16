@@ -11,23 +11,28 @@ class Affix extends React.Component {
 	};
 
 	componentDidMount() {
-		const {_affix} = this.refs;
-		const initialOffset = _affix.offsetTop;
-		window.addEventListener("scroll", (e) => {
-			if (initialOffset <= window.scrollY) {
-				_affix.style.position = "fixed";
-				_affix.style.top = `${this.props.offset}px`;
-			} else if (initialOffset > window.scrollY) {
-				_affix.style.position = "relative";
-			}
-		});
+		window.addEventListener("scroll", () => this.affixEl());
+	}
+
+	componentDidUnmount() {
+		window.removeEventListener("scroll", () => this.affixEl());
+	}
+
+	affixEl() {
+		const initialOffset = this._affix.offsetTop;
+		if (initialOffset <= window.scrollY) {
+			this._affix.style.position = "fixed";
+			this._affix.style.top = `${this.props.offset}px`;
+		} else if (initialOffset > window.scrollY) {
+			this._affix.style.position = "relative";
+		}
 	}
 
 	render() {
 		const {className, style, children} = this.props;
 		return (
 			<div className={className} style={style}>
-				<div ref="_affix">{children}</div>
+				<div ref={(el) => { this._affix = el; }}>{children}</div>
 			</div>
 		);
 	}
