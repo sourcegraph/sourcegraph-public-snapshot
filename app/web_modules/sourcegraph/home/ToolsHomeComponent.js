@@ -94,7 +94,6 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_successHandler() {
-		console.log("success handler");
 		this.context.eventLogger.logEventForPage("ChromeExtensionInstalled", "DashboardTools");
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false});
