@@ -3,6 +3,7 @@
 import React from "react";
 
 class Affix extends React.Component {
+
 	static propTypes = {
 		className: React.PropTypes.string,
 		style: React.PropTypes.object,
@@ -18,6 +19,11 @@ class Affix extends React.Component {
 		window.removeEventListener("scroll", () => this.affixEl());
 	}
 
+	_affix: {
+		offsetTop: number;
+		style: any;
+	};
+
 	affixEl() {
 		const initialOffset = this._affix.offsetTop;
 		if (initialOffset <= window.scrollY) {
@@ -32,7 +38,7 @@ class Affix extends React.Component {
 		const {className, style, children} = this.props;
 		return (
 			<div className={className} style={style}>
-				<div ref={(el) => { this._affix = el; }}>{children}</div>
+				<div ref={(el) => this._affix = el}>{children}</div>
 			</div>
 		);
 	}
