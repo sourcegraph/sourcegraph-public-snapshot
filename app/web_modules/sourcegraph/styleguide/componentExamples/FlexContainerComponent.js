@@ -25,7 +25,7 @@ class FlexContainerComponent extends React.Component {
 						</FlexContainer>
 
 						<Heading level="5" className={base.mv3} color="cool-mid-gray">Wrap</Heading>
-						<FlexContainer wrap="true">
+						<FlexContainer wrap={true}>
 							<div className={`${base.ba} ${base.pa2}`}>
 								Man had always assumed that he was more intelligent than dolphins.
 							</div>
@@ -88,7 +88,7 @@ class FlexContainerComponent extends React.Component {
 		For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time.
 	</div>
 </FlexContainer>
-<FlexContainer wrap="true">
+<FlexContainer wrap={true}>
 	<div>Man had always assumed that he was more intelligent than dolphins.</div>
 	<div>Man had always assumed that he was more intelligent than dolphins.</div>
 	<div>Man had always assumed that he was more intelligent than dolphins.</div>
