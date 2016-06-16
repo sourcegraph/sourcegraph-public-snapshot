@@ -39,6 +39,9 @@ RUN cp -a /toolchain/t/. $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-java && 
 # Install
 RUN make
 
+# Adding custom ANDROID_NDK_HOME that contains noop files
+ENV ANDROID_NDK_HOME $SRCLIBPATH/sourcegraph.com/sourcegraph/srclib-java/vendor/android-ndk
+ENV PATH $PATH:$ANDROID_NDK_HOME
 #
 # Install srclib binary (assumes this has been built on the Docker host)
 #
