@@ -23,6 +23,7 @@ It's cross-repository and scalable, with 2,000,000,000+ nodes in the public code
 
 * **Go** — [try it](https://sourcegraph.com/github.com/golang/go/-/def/GoPackage/net/http/-/NewRequest)
 * **Java** — [try it](https://sourcegraph.com/github.com/square/okhttp/-/def/JavaArtifact/com.squareup.okhttp3/okhttp/-/okhttp3/Request:type/Builder:type/method:java.lang.String:okhttp3.RequestBody)
+* **Shell** — [try it](https://sourcegraph.com/github.com/docker-library/redis/-/blob/3.2/docker-entrypoint.sh)
 
 *Coming soon: JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.* ([email us](mailto:support@sourcegraph.com) to get early beta access to these languages for your team or project)
 
