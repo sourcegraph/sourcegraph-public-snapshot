@@ -22,10 +22,12 @@ class Tabs extends React.Component {
 	_childrenWithProps() {
 		return React.Children.map(this.props.children, child => {
 			if (child.type.displayName !== "TabItem") {
+				console.log("TabItem If Statement", child);
 				return React.cloneElement(child, {
 					styleName: `item-${this.props.direction}`,
 				});
 			}
+			console.log("TabItem Def", child);
 			return React.cloneElement(child, {
 				direction: this.props.direction,
 				color: this.props.color,
