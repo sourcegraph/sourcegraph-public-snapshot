@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 	"sourcegraph.com/sqs/pbtypes"
@@ -466,7 +467,18 @@ func resolveRevisionDefaultBranch(ctx context.Context, repo int32) (repoPath, co
 	}
 	c, err := vcsrepo.ResolveRevision(repoObj.DefaultBranch)
 	if err != nil {
-		return
+		// TODO(keegancsmith) Remove once we always have the
+		// DefaultBranch stored in our own DB. https://app.asana.com/0/87040567695724/147734985562458
+		if !strings.HasPrefix(strings.ToLower(repoObj.URI), "github.com/") {
+			return
+		}
+		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repoObj.URI)
+		if err != nil {
+			return "", "", err
+		}
+		if c, err = vcsrepo.ResolveRevision(ghrepo.DefaultBranch); err != nil {
+			return "", "", err
+		}
 	}
 	return repoObj.URI, string(c), nil
 }

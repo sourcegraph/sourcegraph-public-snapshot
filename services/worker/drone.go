@@ -15,6 +15,6 @@ func init() {
 	// https://github.com/drone-plugins/drone-git/pull/14 and the
 	// not-yet-submitted PR based on the github.com/sqs/drone-git
 	// multiple-netrc-entries branch.
-	dronerunner.DefaultCloner = "sourcegraph/drone-git@sha256:09ddfc452b92657fcef5da70a71687f149ef2c4f0b4501fe3f4e0b9c1e91821c"
+	dronerunner.DefaultCloner = "sourcegraph/drone-git@sha256:4c52a8debb54c683a7063da3b85a862fde1279fcab10596800e28489a5aeab80"
 	droneparser.DefaultCloner = dronerunner.DefaultCloner
 }
