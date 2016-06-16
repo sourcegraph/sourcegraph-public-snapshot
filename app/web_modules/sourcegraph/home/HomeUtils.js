@@ -21,6 +21,7 @@ export const editors = [
 	"PyCharm",
 	"RubyMine",
 	"Sublime",
+	"Vim",
 	"Visual Studio",
 	"Visual Studio Code",
 	"Other editor",
