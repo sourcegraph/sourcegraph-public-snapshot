@@ -5,3 +5,4 @@ export {default as PanelsComponent} from "./PanelsComponent";
 export {default as StepperComponent} from "./StepperComponent";
 export {default as ChecklistsComponent} from "./ChecklistsComponent";
 export {default as LogoComponent} from "./LogoComponent";
+export {default as TableComponent} from "./TableComponent";

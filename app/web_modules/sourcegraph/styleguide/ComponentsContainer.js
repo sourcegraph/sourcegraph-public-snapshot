@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading} from "sourcegraph/components";
-import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent, LogoComponent} from "./componentExamples";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent, LogoComponent, TableComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -74,6 +74,10 @@ class ComponentsContainer extends React.Component {
 				<div className={base.mv5}>
 					<a id="components-checklists"></a>
 					<ChecklistsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-table"></a>
+					<TableComponent />
 				</div>
 			</div>
 		);

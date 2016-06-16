@@ -29,7 +29,9 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#brand-voice">Voice</a>
 							</TabItem>
-							<TabItem>Logo and Logotype</TabItem>
+							<TabItem>
+								<a href="#brand-logo">Logo and Logotype</a>
+							</TabItem>
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
 
@@ -64,9 +66,9 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#components-checklists">Checklist Items</a>
 							</TabItem>
-							<TabItem>Table</TabItem>
-							<TabItem>Code</TabItem>
-
+							<TabItem>
+								<a href="#components-table">Table</a>
+							</TabItem>
 						</Tabs>
 					</Affix>
 					<ComponentsContainer />
