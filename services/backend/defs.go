@@ -123,6 +123,11 @@ func (s *defs) List(ctx context.Context, opt *sourcegraph.DefListOptions) (*sour
 		return nil, err
 	}
 
+	if len(opt.RepoRevs) == 0 && opt.Query == "" {
+		err := fmt.Errorf("Either RepoRev or Query should be non-empty")
+		return nil, err
+	}
+
 	// Eliminate repos that don't exist.
 	origRepoRevs := opt.RepoRevs
 	opt.RepoRevs = nil

@@ -381,10 +381,10 @@ func TestDef_OK(t *testing.T) {
 	}{
 		{"@v", "def", "/r@c/-/blob/f", "imp.scope.name · f", false, false},
 		{"@v", "info", "/r@c/-/info/t/u/-/p", "imp.scope.name", false, false},
-		{"@b", "def", "/r/-/blob/f", "imp.scope.name · f", false, true},
-		{"@b", "info", "/r/-/info/t/u/-/p", "imp.scope.name", true, true},
-		{"", "def", "/r/-/blob/f", "imp.scope.name · f", false, true},
-		{"", "info", "/r/-/info/t/u/-/p", "imp.scope.name", true, true},
+		{"@b", "def", "/r/-/blob/f", "imp.scope.name · f", false, false},
+		{"@b", "info", "/r/-/info/t/u/-/p", "imp.scope.name", true, false},
+		{"", "def", "/r/-/blob/f", "imp.scope.name · f", false, false},
+		{"", "info", "/r/-/info/t/u/-/p", "imp.scope.name", true, false},
 	}
 
 	for _, test := range tests {

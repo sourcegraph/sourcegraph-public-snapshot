@@ -9,9 +9,9 @@ import (
 // developing to make it easier to test out changes to a given toolchain. E.g.,
 // `droneSrclibGoImage = "sourcegraph/srclib-go"`.
 var (
-	droneSrclibBashImage       = "sourcegraph/srclib-bash@sha256:08ed88e0d833ea3f987e685b797867400325de566bc63d4f018e0a7a0ed15c2f"
-	droneSrclibGoImage         = "sourcegraph/srclib-go@sha256:a04e8aa1aeaad71bba465b9a17c35590bcee93f33fb12f3ed602ffbca03a30e0"
-	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript@sha256:a1bc7bddc90427a241999bfd0f8e6601df8f285c2a8fc1b0a93ecc57560e7965"
+	droneSrclibBashImage       = "sourcegraph/srclib-bash@sha256:2b5468bd134f34c32ef17af27ecb10561fd1d064104dfad8bf3a0263ffad3dab"
+	droneSrclibGoImage         = "sourcegraph/srclib-go@sha256:5d0e6892182610b86b536a3eb43044d9b960ec8c127c118243cd75b42dbf7a36"
+	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript@sha256:7cfc4ea50aaf0fea46b8704e80ef50dfa45afe82af57e653bae34ae56288a859"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java@sha256:7e4ff0bc3aee6d87295dd4629fabcfbb39de115911af6d1abd1aa4e5145b5d1c"
 	droneSrclibTypeScriptImage = "sourcegraph/srclib-typescript@sha256:39adfea4bdaea50be63431fe8c85c174a6a83d34db1196ac0bb171cb79cc88d6"
 	droneSrclibCSharpImage     = "sourcegraph/srclib-csharp@sha256:faa3c210e22693dc33954fb9d6714c7a735372e3a90a4cebc19c64be42551177"

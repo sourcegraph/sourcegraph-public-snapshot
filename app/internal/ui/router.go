@@ -48,6 +48,8 @@ func newRouter() *mux.Router {
 		"styleguide",
 		"terms",
 		"tools",
+		"tools/editor",
+		"tools/browser",
 		"tools",
 		"tour",
 	}

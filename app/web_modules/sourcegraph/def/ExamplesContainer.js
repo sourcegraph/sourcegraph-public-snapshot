@@ -53,7 +53,8 @@ class ExamplesContainer extends Container {
 		return (
 			<div>
 				<div styleName="section-label">
-					Usage examples
+					{refLocs && refLocs.RepoRefs && `${refLocs.RepoRefs.length} ` || ""}
+					Usage Example{(refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 1) ? "s" : ""}
 				</div>
 				<hr style={{marginTop: 0, clear: "both"}}/>
 				{!refLocs && <i>Loading...</i>}
@@ -68,7 +69,7 @@ class ExamplesContainer extends Container {
 					repoRefs={repoRefs}
 					prefetch={i === 0}
 					initNumSnippets={expandedSnippets}
-					rangeLimit={1}
+					rangeLimit={2}
 					fileCollapseThreshold={5} />)}
 			</div>
 		);

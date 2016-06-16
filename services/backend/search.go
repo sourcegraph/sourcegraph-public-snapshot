@@ -91,6 +91,10 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		TokQuery: descToks,
 		Opt:      op.Opt,
 	})
+
+	// For global search analytics purposes
+	results.SearchQueryOptions = []*sourcegraph.SearchOptions{op.Opt}
+
 	if err != nil {
 		return nil, err
 	}

@@ -78,6 +78,31 @@ class AnonymousLandingPage extends Component {
 						</div>
 					</div>
 
+					<div styleName="content-block">
+						<div styleName="img-left">
+							<Link to="/tools/editor" onClick={(v) => v && eventLogger.logEvent("ClickedInstallEditorExt")}>
+								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-editor.png`} styleName="img" width="460" />
+							</Link>
+						</div>
+						<div styleName="content-right">
+							<div styleName="content">
+								<Logo width="32px" className={base.mt4} />
+								<h3 styleName="h3">Sourcegraph for your editor</h3>
+								<p>See usage examples for code instantly, as you type. It's like pair programming with the smartest developer in the world.</p>
+								<div styleName="flex">
+									<div styleName="sfye-flex">
+										<a styleName="" href="/tools/editor">
+											<Button color="blue" onClick={(v) => v && eventLogger.logEvent("ClickedInstallEditorExt")}>
+												Install for your editor
+											</Button>
+										</a>
+									</div>
+									<div styleName="sfye_beta"><em>Beta for Go in Sublime Text and Vim. <a href="/tools/editor?expanded=true">Get notified when Sourcegraph is available for your editor.</a></em></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<div styleName="box-white">
 						<div styleName="language-container">
 							<Heading level="1" underline="blue" align="center">Language support</Heading>

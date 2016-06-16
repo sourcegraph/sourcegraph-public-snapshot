@@ -614,10 +614,10 @@
 			"revisionTime": "2015-11-02T10:20:00-08:00"
 		},
 		{
-			"checksumSHA1": "BmsqfNtdAdosNZjuHEkfWqEercY=",
+			"checksumSHA1": "IMRVR1lXyhIRNLVNZDqyGUNriyc=",
 			"path": "github.com/mkovacs/bash/scanner",
-			"revision": "af08ea6c8da57fc29900b3c54725fc3c8c4827ee",
-			"revisionTime": "2016-06-07T23:51:34Z"
+			"revision": "6c0df2be096b5bdc1338178b0e94aa335cb2abc4",
+			"revisionTime": "2016-06-15T02:10:16Z"
 		},
 		{
 			"checksumSHA1": "dEpgq1GYh5TRRNo22ANVMK8owTA=",

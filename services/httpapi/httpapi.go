@@ -103,6 +103,8 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.UserEmails).Handler(handler(serveUserEmails))
 	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))
 
+	m.Get(apirouter.EmailSubscription).Handler(handler(serveEmailSubscription))
+
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)

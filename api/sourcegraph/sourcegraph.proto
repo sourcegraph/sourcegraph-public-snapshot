@@ -2153,6 +2153,8 @@ message SearchResultsList {
 	repeated RepoSearchResult RepoResults = 1;
 	// DefResults is the list of def search results
 	repeated DefSearchResult DefResults = 2;
+	// SearchOptions is a list of options to a global search query.
+	repeated SearchOptions SearchQueryOptions = 3;
 }
 
 message SearchRefreshIndexOp {

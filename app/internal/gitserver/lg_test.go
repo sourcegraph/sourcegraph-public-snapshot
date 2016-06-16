@@ -74,7 +74,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 	defer server.Close()
 
 	// Create a test user.
-	const login = "u"
+	const login = "alice"
 	acct, err := server.Client.Accounts.Create(ctx, &sourcegraph.NewAccount{Login: login, Email: "u@example.com", Password: "p"})
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +90,7 @@ func testGitServer(t *testing.T, tests []interface{}) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	authedURL.User = url.UserPassword("u", "p")
+	authedURL.User = url.UserPassword(login, "p")
 
 	remoteURL := func(authenticated bool) string {
 		if authenticated {

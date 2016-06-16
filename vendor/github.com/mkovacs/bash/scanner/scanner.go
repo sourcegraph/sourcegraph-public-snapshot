@@ -153,7 +153,7 @@ func tfIdent(s *Scanner) error {
 		s.emit(Ident)
 		s.transition(tfSpace)
 	// TODO: make sure there are no overlapping cases
-	case isWordChar(ch):
+	case isWordChar(ch) || ch == '-':
 		s.consume()
 		s.accept()
 	case isOperator(ch):

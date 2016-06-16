@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
 import {browserHistory} from "react-router";
+import {rel} from "sourcegraph/app/routePatterns";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
@@ -13,7 +14,7 @@ import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
-import type {Repo, Def} from "sourcegraph/def";
+import type {Options, Repo, Def} from "sourcegraph/def";
 
 import {Input, Icon} from "sourcegraph/components";
 
@@ -42,7 +43,7 @@ class GlobalSearch extends Container {
 
 		this.state = {
 			query: "",
-			matchingResults: {Repos: [], Defs: []},
+			matchingResults: {Repos: [], Defs: [], Options: []},
 			selectionIndex: 0,
 			focused: false,
 		};
@@ -64,7 +65,8 @@ class GlobalSearch extends Container {
 		query: string;
 		matchingResults: {
 			Repos: Array<Repo>,
-			Defs: Array<Def>
+			Defs: Array<Def>,
+			Options: Array<Options>,
 		};
 		focused: boolean;
 		selectionIndex: number;
@@ -75,6 +77,7 @@ class GlobalSearch extends Container {
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
 		}
+		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
 
 	componentWillUnmount() {
@@ -82,7 +85,10 @@ class GlobalSearch extends Container {
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
 		}
+		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
+
+	_dispatcherToken: string;
 
 	stores(): Array<Object> { return [SearchStore]; }
 
@@ -99,13 +105,30 @@ class GlobalSearch extends Container {
 		}
 	}
 
+	__onDispatch(action) {
+		if (action.constructor === SearchActions.ResultsFetched) {
+			let globalSearchEventDict = {};
+			globalSearchEventDict["globalSearchQuery"] = this.state.query;
+			globalSearchEventDict["page name"] = this.props.location.pathname.slice(1) === rel.search ? "Global search homepage" : "Global search repo page";
+			if (this.state.matchingResults !== null) {
+				if (this.state.matchingResults.Options) {
+					if (this.state.matchingResults.Options[0]["Languages"] !== null) {
+						globalSearchEventDict["languages"] = this.state.matchingResults.Options[0]["Languages"];
+					}
+					if (this.state.matchingResults.Options[0]["Kinds"] !== null) {
+						globalSearchEventDict["kinds"] = this.state.matchingResults.Options[0]["Kinds"];
+					}
+				}
+			}
+			this.context.eventLogger.logEvent("GlobalSearchInitiated", globalSearchEventDict);
+		}
+	}
+
 	_onChangeQuery(query: string) {
 		this.context.router.replace({...this.props.location, query: {
 			q: query || undefined, // eslint-disable-line no-undefined
 			prefixMatch: this.props.location.query.prefixMatch || undefined, // eslint-disable-line no-undefined
 			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
-		this.setState({query: query});
-		this.context.eventLogger.logEvent("GlobalSearchInitiated", {globalSearchQuery: query});
 	}
 
 	_navigateTo(url: string) {
@@ -205,7 +228,7 @@ class GlobalSearch extends Container {
 		if (this.state.matchingResults.Repos) {
 			if (i < this.state.matchingResults.Repos.length) {
 				const url = `/${this.state.matchingResults.Repos[i].URI}`;
-				this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
+				this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i});
 				this._navigateTo(url);
 				return;
 			}
@@ -215,7 +238,14 @@ class GlobalSearch extends Container {
 
 		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
-		this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url});
+
+		let currentDef = this.state.matchingResults.Defs[i];
+		if (currentDef.FmtStrings && currentDef.FmtStrings.Kind && currentDef.FmtStrings.Language && currentDef.Repo) {
+			this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, languageSelected: this.state.matchingResults.Defs[i].FmtStrings.Language, kindSelected: this.state.matchingResults.Defs[i].FmtStrings.Kind, repoSelected: this.state.matchingResults.Defs[i].Repo, indexSelected: i, totalResults: this.state.matchingResults.Defs.length});
+		} else {
+			this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length});
+		}
+
 		this._navigateTo(url);
 	}
 
@@ -265,7 +295,6 @@ class GlobalSearch extends Container {
 		if (this.state.matchingResults.Defs) {
 			numDefs = this.state.matchingResults.Defs.length > RESULTS_LIMIT ? RESULTS_LIMIT : this.state.matchingResults.Defs.length;
 		}
-
 		for (let i = 0; i < numRepos; i++) {
 			let repo = this.state.matchingResults.Repos[i];
 			const selected = this._normalizedSelectionIndex() === i;
@@ -277,7 +306,7 @@ class GlobalSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
-					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: repo.URI})}>
+					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt4}>
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="repository-gray" width="32px" />
@@ -319,7 +348,7 @@ class GlobalSearch extends Container {
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}
-					onClick={() => this.context.eventLogger.logEvent("GlobalSearchItemSelected", {globalSearchQuery: this.state.query, selectedItem: defURL})}>
+					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt4}>
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="doc-code" width="32px" />

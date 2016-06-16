@@ -1,5 +1,5 @@
 import React from "react";
-import Fuze from "fuse.js";
+import fuzzysearch from "fuzzysearch";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
 import "sourcegraph/repo/RepoBackend";
@@ -13,14 +13,6 @@ import {TriangleDownIcon, CheckIcon} from "sourcegraph/components/Icons";
 import {Input, Menu, Heading} from "sourcegraph/components";
 import CSSModules from "react-css-modules";
 import {urlWithRev} from "sourcegraph/repo/routes";
-
-function newFuzzyFinder(list) {
-	return new Fuze(list.map((i) => i.Name), {
-		distance: 1000,
-		location: 0,
-		threshold: 0.1,
-	});
-}
 
 class RevSwitcher extends Component {
 	static propTypes = {
@@ -82,9 +74,6 @@ class RevSwitcher extends Component {
 	reconcileState(state, props) {
 		Object.assign(state, props);
 
-		state.branchesErr = state.branches ? state.branches.error(state.repo) : null;
-		state.tagsErr = state.tags ? state.tags.error(state.repo) : null;
-
 		state.srclibDataVersion = state.srclibDataVersions ? state.srclibDataVersions.get(state.repo, state.commitID) : null;
 
 		// effectiveRev is the rev from the URL, or else the repo's default branch.
@@ -102,17 +91,6 @@ class RevSwitcher extends Component {
 				Dispatcher.Backends.dispatch(new TreeActions.WantSrclibDataVersion(nextState.repo, nextState.commitID, null));
 			}
 		}
-
-		["branches", "tags"].forEach((what) => {
-			let nextItems = nextState[what] && nextState[what].list(nextState.repo);
-			let prevItems = prevState[what] && prevState[what].list(prevState.repo);
-			if (nextItems !== prevItems) {
-				nextState[`${what}FuzzyFinder`] = nextItems ? newFuzzyFinder(nextItems) : null;
-			}
-			if (nextState[`${what}FuzzyFinder`] !== prevState[`${what}FuzzyFinder`] || nextState.query !== prevState.query) {
-				nextState[`${what}Matches`] = (nextState.query && nextState[`${what}FuzzyFinder`]) ? nextState[`${what}FuzzyFinder`].search(nextState.query).map(i => nextItems[i]) : nextItems;
-			}
-		});
 	}
 
 	_loadingItem(what) {
@@ -124,7 +102,7 @@ class RevSwitcher extends Component {
 	}
 
 	_emptyItem(what) {
-		return <li role="presentation" styleName="disabled">Nothing to show</li>;
+		return <li role="presentation" styleName="disabled">None found</li>;
 	}
 
 	_item(name, commitID) {
@@ -225,35 +203,44 @@ class RevSwitcher extends Component {
 		// the RevSwitcher would confuse them.
 		if (this.state.isCloning) return null;
 
-		let branches;
-		if (this.state.branchesErr) {
+		let branches = this.state.branches.list(this.state.repo);
+		if (this.state.branches.error(this.state.repo)) {
 			branches = this._errorItem("branches");
-		} else if (this.state.branchesMatches === null) {
+		} else if (!branches) {
 			branches = this._loadingItem("branches");
-		} else if (this.state.branchesMatches.length === 0) {
+		} else if (this.state.query) {
+			branches = branches.filter((b) => fuzzysearch(this.state.query, b.Name));
+		}
+		if (branches.length === 0) {
 			branches = this._emptyItem("branches");
-		} else {
-			branches = this.state.branchesMatches.map((b) => this._item(b.Name, b.Head));
 		}
 
-		let tags;
-		if (this.state.tagsErr) {
+		let tags = this.state.tags.list(this.state.repo);
+		if (this.state.tags.error(this.state.repo)) {
 			tags = this._errorItem("tags");
-		} else if (this.state.tagsMatches === null) {
+		} else if (!tags) {
 			tags = this._loadingItem("tags");
-		} else if (this.state.tagsMatches.length === 0) {
+		} else if (this.state.query) {
+			tags = tags.filter((t) => fuzzysearch(this.state.query, t.Name));
+		}
+		if (tags.length === 0) {
 			tags = this._emptyItem("tags");
-		} else {
-			tags = this.state.tagsMatches.map((tag) => this._item(tag.Name, tag.CommitID));
 		}
 
 		let currentItem;
-		(this.state.branchesMatches || []).forEach((b) => {
-			if (b.Name === this.state.effectiveRev) currentItem = b;
-		});
-		(this.state.tagsMatches || []).forEach((t) => {
-			if (t.Name === this.state.effectiveRev) currentItem = t;
-		});
+		if (branches instanceof Array) {
+			branches.forEach((b) => {
+				if (b.Name === this.state.effectiveRev) currentItem = b;
+			});
+		}
+		if (tags instanceof Array) {
+			tags.forEach((t) => {
+				if (t.Name === this.state.effectiveRev) currentItem = t;
+			});
+		}
+
+		if (branches instanceof Array) branches = branches.map((b) => this._item(b.Name, b.Head));
+		if (tags instanceof Array) tags = tags.map((t) => this._item(t.Name, t.CommitID));
 
 		let title;
 		if (this.state.rev) title = `Viewing revision: ${abbrevRev(this.state.rev)}`;

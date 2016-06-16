@@ -214,6 +214,20 @@
 	composes: white from colors;
 }
 
+.flex {
+	display: flex;
+}
+
+.sfye-flex{
+	flex: 1 0 auto;
+}
+
+.sfye_beta {
+	display: inline;
+	font-size: 10px;
+	padding-left: 10px;
+}
+
 a.white:hover {
 	color: white;
 	opacity: 0.8;

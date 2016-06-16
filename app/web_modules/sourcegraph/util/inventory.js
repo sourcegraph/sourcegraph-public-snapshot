@@ -18,6 +18,7 @@ export function defPathToLanguage(defPath) {
 
 	if (defPath.startsWith("GoPackage")) return "go";
 	if (defPath.startsWith("JavaArtifact")) return "java";
+	if (defPath.startsWith("ManPages")) return "sh";
 
 	return null;
 }

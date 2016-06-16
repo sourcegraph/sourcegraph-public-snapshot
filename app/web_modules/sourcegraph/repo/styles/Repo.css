@@ -47,3 +47,9 @@
 	composes: col-9 from grid;
 	composes: modal from "sourcegraph/components/styles/modal.css";
 }
+
+.outer-container {
+	display: flex;
+	flex-direction: column;
+	flex: auto;
+}
