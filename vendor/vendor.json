@@ -176,6 +176,12 @@
 			"revisionTime": "2016-05-10T05:46:03Z"
 		},
 		{
+			"checksumSHA1": "kR64D1QzAOSM9LHOnTPdbigC8q0=",
+			"path": "github.com/fatih/camelcase",
+			"revision": "f6a740d52f961c60348ebb109adde9f4635d7540",
+			"revisionTime": "2016-03-18T18:15:35Z"
+		},
+		{
 			"checksumSHA1": "VdXZPcDRHK1T7XjBu2KW8Mb8S6w=",
 			"path": "github.com/flynn/go-shlex",
 			"revision": "3f9db97f856818214da2e1057f8ad84803971cff",
