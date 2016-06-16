@@ -5,7 +5,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Heading} from "sourcegraph/components";
-import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent, LogoComponent, TableComponent, FlexContainerComponent} from "./componentExamples";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent, LogoComponent, TableComponent, FlexContainerComponent, AffixComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
@@ -54,6 +54,10 @@ class ComponentsContainer extends React.Component {
 				<div className={base.mv5}>
 					<a id="layout-flexcontainer"></a>
 					<FlexContainerComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="layout-affix"></a>
+					<AffixComponent />
 				</div>
 
 				<Heading level="2" underline="purple" className={base.mt5}>UI Components</Heading>

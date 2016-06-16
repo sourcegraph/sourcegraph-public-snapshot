@@ -45,7 +45,9 @@ class StyleguideContainer extends React.Component {
 							<TabItem>
 								<a href="#layout-flexcontainer">FlexContainer</a>
 							</TabItem>
-							<TabItem>Affix</TabItem>
+							<TabItem>
+								<a href="#layout-affix">Affix</a>
+							</TabItem>
 
 							<Heading level="5" className={base.mt4}>UI Components</Heading>
 							<TabItem>
