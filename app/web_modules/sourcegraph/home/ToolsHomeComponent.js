@@ -145,7 +145,7 @@ class ToolsHomeComponent extends Component {
 	}
 
 	_installAlfredClicked() {
-		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InstallAlfredClicked", {page_name: AnalyticsConstants.PAGE_TOOLS, scopes: "", upgrade: true});
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "AlfredCTAClicked", {page_name: AnalyticsConstants.PAGE_TOOLS});
 		window.open("https://github.com/sourcegraph/sourcegraph-alfred");
 	}
 
@@ -212,7 +212,7 @@ class ToolsHomeComponent extends Component {
 							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/AlfredLogo.png`}></img>
 							<Heading align="center" level="4" className={base.ph4}>For your launcher</Heading>
 							<p styleName="cool-mid-gray" className={base.ph4}>
-								Search Sourcegraph from Alfred.
+								Instant access to global code search from Alfred.
 							</p>
 							<div styleName="button-container">
 								<Button onClick={this._installAlfredClicked.bind(this)} color="purple">
