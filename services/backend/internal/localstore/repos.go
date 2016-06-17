@@ -311,7 +311,7 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 
 		fields := strings.Split(query, "/")
 		if len(fields) == 2 {
-			exactSQL += fmt.Sprintf(" owner = %s AND name = %s", exactArg(fields[0]), exactArg(fields[1]))
+			exactSQL += fmt.Sprintf(" LOWER(owner) = LOWER(%s) AND LOWER(name) = LOWER(%s)", exactArg(fields[0]), exactArg(fields[1]))
 			owner, name = fields[0], fields[1]
 		} else {
 			performExactMatch = false
@@ -321,14 +321,14 @@ func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSe
 		fields := strings.Fields(query)
 		if len(fields) == 1 {
 			// Only one keyword, which could either be the owner or repo name.
-			exactSQL += fmt.Sprintf(" (owner = %s OR name = %s)", exactArg(query), exactArg(query))
-			fuzzSQL += fmt.Sprintf(" (owner LIKE %s OR name LIKE %s)", fuzzArg(query+"%"), fuzzArg(query+"%"))
+			exactSQL += fmt.Sprintf(" (LOWER(owner) = LOWER(%s) OR LOWER(name) = LOWER(%s))", exactArg(query), exactArg(query))
+			fuzzSQL += fmt.Sprintf(" (owner ILIKE %s OR name ILIKE %s)", fuzzArg(query+"%"), fuzzArg(query+"%"))
 			owner, name = query, query
 
 		} else if len(fields) == 2 {
 			// Two keywords. The first could be owners, the second could be repo name.
-			exactSQL += fmt.Sprintf(" owner = %s AND name = %s", exactArg(fields[0]), exactArg(fields[1]))
-			fuzzSQL += fmt.Sprintf(" owner LIKE %s AND name LIKE %s", fuzzArg(fields[0]+"%"), fuzzArg(fields[1]+"%"))
+			exactSQL += fmt.Sprintf(" LOWER(owner) = LOWER(%s) AND LOWER(name) = LOWER(%s)", exactArg(fields[0]), exactArg(fields[1]))
+			fuzzSQL += fmt.Sprintf(" owner ILIKE %s AND name ILIKE %s", fuzzArg(fields[0]+"%"), fuzzArg(fields[1]+"%"))
 			owner, name = fields[0], fields[1]
 
 		} else {
