@@ -144,6 +144,11 @@ class ToolsHomeComponent extends Component {
 		);
 	}
 
+	_installAlfredClicked() {
+		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InstallAlfredClicked", {page_name: AnalyticsConstants.PAGE_TOOLS, scopes: "", upgrade: true});
+		window.open("https://github.com/sourcegraph/sourcegraph-alfred");
+	}
+
 	_connectGitHubClicked() {
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: AnalyticsConstants.PAGE_TOOLS, scopes: "", upgrade: true});
 		window.open(urlToGitHubOAuth);
@@ -197,6 +202,20 @@ class ToolsHomeComponent extends Component {
 							</p>
 							<div styleName="button-container">
 								<Button onClick={this._toolClicked.bind(this, "editor")} color="purple">
+									Install
+								</Button>
+							</div>
+						</Panel>
+					</div>
+					<div styleName="panel-item">
+						<Panel hoverLevel="high">
+							<img styleName="img" src={`${this.context.siteConfig.assetsRoot}/img/Dashboard/AlfredLogo.png`}></img>
+							<Heading align="center" level="4" className={base.ph4}>For your launcher</Heading>
+							<p styleName="cool-mid-gray" className={base.ph4}>
+								Search Sourcegraph from Alfred.
+							</p>
+							<div styleName="button-container">
+								<Button onClick={this._installAlfredClicked.bind(this)} color="purple">
 									Install
 								</Button>
 							</div>

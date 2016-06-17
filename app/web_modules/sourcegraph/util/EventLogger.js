@@ -396,9 +396,15 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 				language?: string;
 			};
 
-			// TODO:matt remove this once all plugins are switched to new version
-			// This is temporarily here for backwards compat
-			if (location.query && location.query["utm_source"] === "chromeext") {
+			if (location.query && location.query["utm_source"] === "integration" && location.query["type"]) {
+				eventProps = {
+					// Alfred, ChromeExtension, FireFoxExtension, SublimeEditor, VIMEditor.
+					referred_by_integration: location.query["type"],
+					url: location.pathname,
+				};
+			} else if (location.query && location.query["utm_source"] === "chromeext") {
+				// TODO:matt remove this once all plugins are switched to new version
+				// This is temporarily here for backwards compat
 				eventProps = {
 					referred_by_browser_ext: "chrome",
 					url: location.pathname,
