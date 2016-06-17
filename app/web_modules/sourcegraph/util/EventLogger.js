@@ -163,19 +163,21 @@ export class EventLogger {
 	}
 
 	// Use logViewEvent as the default way to log view events for Amplitude and GA
-	logViewEvent(location, page, eventProperties) {
-		if (this.userAgentIsBot || !location || !page) {
+	// location is the URL, page is the path.
+	logViewEvent(title, page, eventProperties) {
+
+		if (this.userAgentIsBot || !page) {
 			return;
 		}
 
 		// Log Amplitude "View" event
-		this._amplitude.logEvent(location, eventProperties);
+		this._amplitude.logEvent(title, eventProperties);
 
 		// Log GA "pageview" event without props.
 		window.ga("send", {
 			hitType: "pageview",
-			location: location,
 			page: page,
+			title: title,
 		});
 	}
 
@@ -428,6 +430,7 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			const routePattern = getRoutePattern(routes);
 			const viewName = getViewName(routes);
 			const routeParams = getRouteParams(routePattern, location.pathname);
+
 			if (viewName) {
 				if (viewName === "ViewBlob" && routeParams) {
 					const filePath = routeParams.splat[routeParams.splat.length - 1];
@@ -438,9 +441,10 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 					const lang = defPathToLanguage(defPath);
 					if (lang) eventProps.language = lang;
 				}
-				this.context.eventLogger.logViewEvent(viewName, eventProps);
+
+				this.context.eventLogger.logViewEvent(viewName, location.pathname, {...eventProps, pattern: getRoutePattern(routes)});
 			} else {
-				this.context.eventLogger.logViewEvent("UnmatchedRoute", {
+				this.context.eventLogger.logViewEvent("UnmatchedRoute", location.pathname, {
 					...eventProps,
 					pattern: getRoutePattern(routes),
 				});
