@@ -1,8 +1,9 @@
 package backend
 
 import (
-	"gopkg.in/inconshreveable/log15.v2"
 	"strings"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"

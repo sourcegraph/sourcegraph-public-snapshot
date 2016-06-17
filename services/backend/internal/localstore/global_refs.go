@@ -291,6 +291,10 @@ func (g *globalRefs) getRefStats(ctx context.Context, defKeyID int64) (int64, er
 }
 
 func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
+		return err
+	}
+
 	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
 	if err != nil {
 		return err
@@ -302,24 +306,17 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		return err
 	}
 
-	// Do everything in one transaction, to ensure we don't have
-	// concurrent updates to repo
-	return dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-		return g.update(ctx, tx, op)
-	})
+	return g.update(ctx, graphDBH(ctx), op)
 }
 
-func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *sourcegraph.DefsRefreshIndexOp) error {
+func (g *globalRefs) update(ctx context.Context, dbh gorp.SqlExecutor, op *sourcegraph.DefsRefreshIndexOp) error {
 	repo := op.Repo
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", repo); err != nil {
-		return err
-	}
 
 	repoPath, commitID, err := resolveRevisionDefaultBranch(ctx, repo)
 	if err != nil {
 		return err
 	}
-	oldCommitID, err := g.version(tx, repoPath)
+	oldCommitID, err := g.version(dbh, repoPath)
 	if err != nil {
 		return err
 	}
@@ -329,11 +326,6 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 			return nil
 		}
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
-	}
-
-	// Update and lock version row
-	if err := g.versionUpdate(tx, repoPath, commitID); err != nil {
-		return err
 	}
 
 	allRefs, err := store.GraphFromContext(ctx).Refs(
@@ -372,10 +364,6 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 
 	// Get all defKeyIDs outside of the transaction, since doing it inside
 	// of the transaction can lead to conflicts with other imports
-	//
-	// NOTE: we are using graphDBH(ctx) on purpose, we want to do these
-	// updates outside of the transaction since other repo updates could
-	// be creating the same def_keys.
 	defKeyIDs := map[graph.DefKey]int64{}
 	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
 	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
@@ -387,7 +375,7 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 		}
 
 		// Optimistically get the def key id, otherwise fallback to insertion
-		defKeyID, err := graphDBH(ctx).SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		defKeyID, err := dbh.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
 		if err != nil {
 			return err
 		}
@@ -396,11 +384,11 @@ func (g *globalRefs) update(ctx context.Context, tx gorp.SqlExecutor, op *source
 			continue
 		}
 
-		if _, err = graphDBH(ctx).Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
+		if _, err = dbh.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
 			return err
 		}
 
-		defKeyID, err = graphDBH(ctx).SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		defKeyID, err = dbh.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
 		if err != nil {
 			return err
 		}
@@ -424,46 +412,49 @@ ON COMMIT DROP;`
 	FROM global_refs_tmp
 	GROUP BY def_key_id, repo, file;`
 
-	// Create a temporary table to load all new ref data.
-	if _, err := tx.Exec(tmpCreateSQL); err != nil {
-		return err
-	}
-
-	stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
-	if err != nil {
-		return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
-	}
-
-	// Insert refs into temporary table
-	for _, r := range refs {
-		defKeyID := defKeyIDs[graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-		if _, err := stmt.Exec(defKeyID, repoPath, r.File); err != nil {
-			return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
+	// Do actual update in one transaction, to ensure we don't have concurrent
+	// updates to repo
+	return dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
+		// Create a temporary table to load all new ref data.
+		if _, err := tx.Exec(tmpCreateSQL); err != nil {
+			return err
 		}
-	}
 
-	// We need to do an empty Exec() to flush any remaining
-	// inserts that are in the drivers buffer
-	if _, err = stmt.Exec(); err != nil {
-		return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
-	}
+		stmt, err := dbutil.Prepare(tx, pq.CopyIn("global_refs_tmp", "def_key_id", "repo", "file"))
+		if err != nil {
+			return fmt.Errorf("global_refs_tmp prepare failed: %s", err)
+		}
 
-	// Purge all existing ref data for files in this source unit.
-	if _, err := tx.Exec(finalDeleteSQL, repoPath); err != nil {
-		return err
-	}
+		// Insert refs into temporary table
+		for _, r := range refs {
+			defKeyID := defKeyIDs[graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
+			if _, err := stmt.Exec(defKeyID, repoPath, r.File); err != nil {
+				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
+			}
+		}
 
-	// Insert refs into global refs table
-	if _, err := tx.Exec(finalInsertSQL); err != nil {
-		return err
-	}
+		// We need to do an empty Exec() to flush any remaining
+		// inserts that are in the drivers buffer
+		if _, err = stmt.Exec(); err != nil {
+			return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
+		}
 
-	// Update version row again, to have a more relevant timestamp
-	if err := g.versionUpdate(tx, repoPath, commitID); err != nil {
-		return err
-	}
+		// Purge all existing ref data for files in this source unit.
+		if _, err := tx.Exec(finalDeleteSQL, repoPath); err != nil {
+			return err
+		}
 
-	return nil
+		// Insert refs into global refs table
+		if _, err := tx.Exec(finalInsertSQL); err != nil {
+			return err
+		}
+
+		// Update version row again, to have a more relevant timestamp
+		if err := g.versionUpdate(tx, repoPath, commitID); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // version returns the commit_id that global_refs has indexed for repo
@@ -488,6 +479,7 @@ func (g *globalRefs) versionUpdate(tx gorp.SqlExecutor, repoPath string, commitI
 	return err
 }
 
+// StatRefresh refreshes the global_refs_stats tables. This should ONLY be called from test code.
 func (g *globalRefs) StatRefresh(ctx context.Context) error {
 	_, err := graphDBH(ctx).Exec("REFRESH MATERIALIZED VIEW CONCURRENTLY global_refs_stats;")
 	return err
