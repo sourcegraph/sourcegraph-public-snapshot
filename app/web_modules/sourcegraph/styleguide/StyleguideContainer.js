@@ -9,6 +9,13 @@ import ComponentsContainer from "./ComponentsContainer";
 
 class StyleguideContainer extends React.Component {
 
+	_pageLinkScroll(e) {
+		const anchorLabel = e.target.getAttribute("data-anchor");
+		const anchorEl = document.getElementById(anchorLabel);
+		anchorEl.scrollIntoView();
+		return false;
+	}
+
 	render() {
 		return (
 			<div styleName="bg-near-white">
@@ -22,15 +29,15 @@ class StyleguideContainer extends React.Component {
 					<Affix offset={20} style={{flex: "0 0 220px"}} className={base.orderlast}>
 						<Tabs direction="vertical" color="purple" className={base.ml5}>
 							<TabItem>
-								<a href="#principles">Principles</a>
+								<a data-anchor="principles" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Principles</a>
 							</TabItem>
 
 							<Heading level="5" className={base.mt4}>Brand</Heading>
 							<TabItem>
-								<a href="#brand-voice">Voice</a>
+								<a data-anchor="brand-voice" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Voice</a>
 							</TabItem>
 							<TabItem>
-								<a href="#brand-logo">Logo and Logotype</a>
+								<a data-anchor="brand-logo" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Logo and Logotype</a>
 							</TabItem>
 							{/* <TabItem>Colors</TabItem>
 							<TabItem>Typography</TabItem>}
@@ -43,33 +50,33 @@ class StyleguideContainer extends React.Component {
 
 							<Heading level="5" className={base.mt4}>Layout Components</Heading>
 							<TabItem>
-								<a href="#layout-flexcontainer">FlexContainer</a>
+								<a data-anchor="layout-flexcontainer" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>FlexContainer</a>
 							</TabItem>
 							<TabItem>
-								<a href="#layout-affix">Affix</a>
+								<a data-anchor="layout-affix" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Affix</a>
 							</TabItem>
 
 							<Heading level="5" className={base.mt4}>UI Components</Heading>
 							<TabItem>
-								<a href="#components-headings">Headings</a>
+								<a data-anchor="components-headings" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Headings</a>
 							</TabItem>
 							<TabItem>
-								<a href="#components-buttons">Buttons</a>
+								<a data-anchor="components-buttons" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Buttons</a>
 							</TabItem>
 							<TabItem>
-								<a href="#components-tabs">Tabs</a>
+								<a data-anchor="components-tabs" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Tabs</a>
 							</TabItem>
 							<TabItem>
-								<a href="#components-panels">Panels</a>
+								<a data-anchor="components-panels" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Panels</a>
 							</TabItem>
 							<TabItem>
-								<a href="#components-stepper">Stepper</a>
+								<a data-anchor="components-stepper" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Stepper</a>
 							</TabItem>
 							<TabItem>
-								<a href="#components-checklists">Checklist Items</a>
+								<a data-anchor="components-checklists" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Checklist Items</a>
 							</TabItem>
 							<TabItem>
-								<a href="#components-table">Table</a>
+								<a data-anchor="components-table" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Table</a>
 							</TabItem>
 						</Tabs>
 					</Affix>
