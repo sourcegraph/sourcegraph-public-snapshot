@@ -95,14 +95,18 @@ class GlobalSearch extends Container {
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
-		state.matchingResults = SearchStore.results.get(state.query, null, null, RESULTS_LIMIT,
+		state.matchingResults = SearchStore.get(state.query, null, null, null, RESULTS_LIMIT,
 			this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, null, RESULTS_LIMIT,
-			this.props.location.query.prefixMatch, this.props.location.query.includeRepos));
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+				query: nextState.query,
+				limit: RESULTS_LIMIT,
+				prefixMatch: this.props.location.query.prefixMatch,
+				includeRepos: this.props.location.query.includeRepos,
+			}));
 		}
 	}
 

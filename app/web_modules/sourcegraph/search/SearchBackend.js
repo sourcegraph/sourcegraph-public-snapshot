@@ -15,35 +15,47 @@ const SearchBackend = {
 
 		case SearchActions.WantResults:
 			{
-				if (!action.query || action.query === "") {
-					break;
-				}
-
-				let results = SearchStore.results.get(action.query, action.repos, action.notRepos, action.limit, action.prefixMatch, action.includeRepos);
+				let p: SearchActions.WantResultsPayload = action.p;
+				let results = SearchStore.get(p.query, p.repos, p.notRepos, p.commitID, p.limit);
+				// let results = SearchStore.get(p.query, p.repos, p.notRepos, p.commitID, p.limit, p.prefixMatch, p.includeRepos);
 				if (results === null) {
-					let limit = action.limit || RESULTS_LIMIT;
+					let limit = p.limit || RESULTS_LIMIT;
 
-					let q = [`Query=${encodeURIComponent(action.query)}`];
+					let q = [`Query=${encodeURIComponent(p.query)}`];
 					q.push(`Limit=${limit}`);
-					if (action.repos) {
-						q.push(`Repos=${encodeURIComponent(action.repos)}`);
+					if (p.repos) {
+						q.push(`Repos=${encodeURIComponent(p.repos.toString())}`);
 					}
-					if (action.notRepos) {
-						q.push(`NotRepos=${encodeURIComponent(action.notRepos)}`);
+					if (p.notRepos) {
+						q.push(`NotRepos=${encodeURIComponent(p.notRepos.toString())}`);
 					}
-					if (action.prefixMatch) {
-						q.push(`PrefixMatch=${encodeURIComponent(action.prefixMatch)}`);
+					if (p.prefixMatch) {
+						q.push(`PrefixMatch=${encodeURIComponent(p.prefixMatch.toString())}`);
 					}
-					if (action.includeRepos) {
-						q.push(`IncludeRepos=${encodeURIComponent(action.includeRepos)}`);
+					if (p.includeRepos) {
+						q.push(`IncludeRepos=${encodeURIComponent(p.includeRepos.toString())}`);
 					}
+					if (p.commitID) {
+						q.push(`CommitID=${encodeURIComponent(p.commitID)}`);
+					}
+
 					trackPromise(
 						SearchBackend.fetch(`/.api/global-search?${q.join("&")}`)
 							.then(checkStatus)
 							.then((resp) => resp.json())
 							.catch((err) => ({Error: err}))
 							.then((data) => {
-								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched(action.query, action.repos, action.notRepos, action.limit, action.prefixMatch, action.includeRepos, data.Options, data));
+								Dispatcher.Stores.dispatch(new SearchActions.ResultsFetched({
+									query: p.query,
+									repos: p.repos,
+									notRepos: p.notRepos,
+									commitID: p.commitID,
+									limit: p.limit,
+									prefixMatch: p.prefixMatch,
+									includeRepos: p.includeRepos,
+									defs: data,
+									options: data.options,
+								}));
 							})
 					);
 				}

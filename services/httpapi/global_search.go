@@ -33,6 +33,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Limit        int32
 		PrefixMatch  bool
 		IncludeRepos bool
+		CommitID     string
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
 		return err
@@ -59,6 +60,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
 			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,
+			CommitID:     params.CommitID,
 		},
 	}
 
@@ -75,7 +77,9 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 
 	var defs []*DefSearchResult
 	for _, r := range results.DefResults {
-		r.Def.CommitID = "master" // HACK
+		if r.Def.CommitID == "" {
+			r.Def.CommitID = "master" // HACK
+		}
 		defs = append(defs, &DefSearchResult{
 			Def:      r.Def,
 			RefCount: r.RefCount,

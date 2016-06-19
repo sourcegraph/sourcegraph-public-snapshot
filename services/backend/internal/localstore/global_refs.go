@@ -26,17 +26,18 @@ import (
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
+// dbDefKey DB-maps a DefKey (excluding commit-id) object. We keep
+// this in a separate table to reduce duplication in the global_refs
+// table (postgresql does not do string interning)
+type dbDefKey struct {
+	ID       int64  `db:"id"`
+	Repo     string `db:"repo"`
+	UnitType string `db:"unit_type"`
+	Unit     string `db:"unit"`
+	Path     string `db:"path"`
+}
+
 func init() {
-	// dbDefKey DB-maps a DefKey (excluding commit-id) object. We keep
-	// this in a seperate table to reduce duplication in the global_refs
-	// table (postgresql does not do string interning)
-	type dbDefKey struct {
-		ID       int64  `db:"id"`
-		Repo     string `db:"repo"`
-		UnitType string `db:"unit_type"`
-		Unit     string `db:"unit"`
-		Path     string `db:"path"`
-	}
 	GraphSchema.Map.AddTableWithName(dbDefKey{}, "def_keys").SetKeys(true, "id").SetUniqueTogether("repo", "unit_type", "unit", "path")
 
 	// dbGlobalRef DB-maps a GlobalRef object.

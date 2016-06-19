@@ -40,7 +40,6 @@ var tokenToLanguage = map[string]string{
 }
 
 func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourcegraph.SearchResultsList, error) {
-	var unit, unitType string
 	var kinds []string
 	var descToks []string                            // "descriptor" tokens that don't have a special filter meaning.
 	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
@@ -54,22 +53,12 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 			}
 			continue
 		}
-		if strings.HasPrefix(token, "u:") {
-			unit = strings.TrimPrefix(token, "u:")
-			continue
-		}
-		if strings.HasPrefix(token, "t:") {
-			unit = strings.TrimPrefix(token, "t:")
-			continue
-		}
 		if kind, exist := tokenToKind[strings.ToLower(token)]; exist {
 			op.Opt.Kinds = append(op.Opt.Kinds, kind)
-			unit = ""
 			continue
 		}
 		if lang, exist := tokenToLanguage[strings.ToLower(token)]; exist {
 			op.Opt.Languages = append(op.Opt.Languages, lang)
-			unit = ""
 			continue
 		}
 
@@ -85,13 +74,21 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		}
 	}
 
-	results, err := store.GlobalDefsFromContext(ctx).Search(ctx, &store.GlobalDefSearchOp{
-		UnitQuery:     unit,
-		UnitTypeQuery: unitType,
-
-		TokQuery: descToks,
-		Opt:      op.Opt,
-	})
+	var (
+		results *sourcegraph.SearchResultsList
+		err     error
+	)
+	if op.Opt.CommitID != "" {
+		results, err = store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
+			TokQuery: descToks,
+			Opt:      op.Opt,
+		})
+	} else {
+		results, err = store.GlobalDefsFromContext(ctx).Search(ctx, &store.GlobalDefSearchOp{
+			TokQuery: descToks,
+			Opt:      op.Opt,
+		})
+	}
 
 	// For global search analytics purposes
 	results.SearchQueryOptions = []*sourcegraph.SearchOptions{op.Opt}
@@ -99,6 +96,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 	if err != nil {
 		return nil, err
 	}
+
 	for _, r := range results.DefResults {
 		populateDefFormatStrings(&r.Def)
 	}
@@ -134,5 +132,6 @@ func (s *search) RefreshIndex(ctx context.Context, op *sourcegraph.SearchRefresh
 			return nil, err
 		}
 	}
+
 	return &pbtypes.Void{}, nil
 }

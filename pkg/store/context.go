@@ -24,6 +24,7 @@ type Stores struct {
 	Builds             Builds
 	Channel            Channel
 	DefExamples        DefExamples
+	Defs               Defs
 	Directory          Directory
 	ExternalAuthTokens ExternalAuthTokens
 	GlobalDefs         GlobalDefs
@@ -48,6 +49,7 @@ const (
 	_BuildsKey
 	_ChannelKey
 	_DefExamplesKey
+	_DefsKey
 	_DirectoryKey
 	_ExternalAuthTokensKey
 	_GlobalDefsKey
@@ -80,6 +82,9 @@ func WithStores(ctx context.Context, s Stores) context.Context {
 	}
 	if s.DefExamples != nil {
 		ctx = WithDefExamples(ctx, s.DefExamples)
+	}
+	if s.Defs != nil {
+		ctx = WithDefs(ctx, s.Defs)
 	}
 	if s.Directory != nil {
 		ctx = WithDirectory(ctx, s.Directory)
@@ -192,6 +197,20 @@ func DefExamplesFromContext(ctx context.Context) DefExamples {
 	s, ok := ctx.Value(_DefExamplesKey).(DefExamples)
 	if !ok || s == nil {
 		panic("no DefExamples set in context")
+	}
+	return s
+}
+
+// WithDefs returns a copy of parent with the given Defs store.
+func WithDefs(parent context.Context, s Defs) context.Context {
+	return context.WithValue(parent, _DefsKey, s)
+}
+
+// DefsFromContext gets the context's Defs store. If the store is not present, it panics.
+func DefsFromContext(ctx context.Context) Defs {
+	s, ok := ctx.Value(_DefsKey).(Defs)
+	if !ok || s == nil {
+		panic("no Defs set in context")
 	}
 	return s
 }

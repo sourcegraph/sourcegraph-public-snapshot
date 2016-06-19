@@ -73,6 +73,35 @@ func (s *graph_) Import(ctx context.Context, op *pb.ImportOp) (*pbtypes.Void, er
 		return nil, err
 	}
 
+	// Pre-processing to ensure defs are complete before table insertion
+	for _, def := range op.Data.Defs {
+		if def.Unit == "" {
+			def.Unit = op.Unit.Name
+		}
+		if def.UnitType == "" {
+			def.UnitType = op.Unit.Type
+		}
+		if def.Repo == "" {
+			def.Repo = op.Repo
+		}
+		if def.CommitID == "" {
+			def.CommitID = op.CommitID
+		}
+	}
+
+	// Update defs table
+	rp, err := store.ReposFromContext(ctx).GetByURI(ctx, op.Repo)
+	if err != nil {
+		return nil, err
+	}
+	if err := store.DefsFromContext(ctx).Update(ctx, store.DefUpdateOp{
+		Repo:     rp.ID,
+		CommitID: op.CommitID,
+		Defs:     op.Data.Defs,
+	}); err != nil {
+		return nil, err
+	}
+
 	return &pbtypes.Void{}, nil
 }
 

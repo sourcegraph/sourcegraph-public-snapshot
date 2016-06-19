@@ -63,7 +63,7 @@ export class WantDefs {
 	filePathPrefix: ?string;
 	overlay: boolean;
 
-	constructor(repo: string, commitID: string, query: string, filePathPrefix?: string, overlay: boolean) {
+	constructor(repo: string, commitID: string, query: string, filePathPrefix: ?string, overlay: boolean) {
 		this.repo = repo;
 		this.commitID = commitID;
 		this.query = query;

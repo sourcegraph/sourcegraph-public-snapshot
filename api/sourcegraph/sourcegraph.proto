@@ -2109,6 +2109,11 @@ message SearchOptions {
 	// (func, var, etc) from the returned results.
 	repeated string NotKinds = 9;
 
+	// CommitID is the Git commit ID to restrict the results to. This option is
+	// only used when filtering by a specific set of repositories.
+	// If empty, the latest indexed revision is implied.
+	string CommitID = 10;
+
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];

@@ -3,6 +3,7 @@ package store
 import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 	"sourcegraph.com/sourcegraph/srclib/unit"
 )
 
@@ -68,4 +69,25 @@ type RepoUnit struct {
 type GlobalDeps interface {
 	Upsert(ctx context.Context, resolutions []*unit.Resolution) error
 	Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, error)
+}
+
+type Defs interface {
+	Search(ctx context.Context, op DefSearchOp) (*sourcegraph.SearchResultsList, error)
+	UpdateFromSrclibStore(ctx context.Context, op DefUpdateOp) error
+	Update(ctx context.Context, op DefUpdateOp) error
+}
+
+type DefSearchOp struct {
+	// TokQuery is a list of tokens that describe the user's text
+	// query. Order matter, as the last token is given especial weight.
+	TokQuery []string
+	Opt      *sourcegraph.SearchOptions
+}
+
+type DefUpdateOp struct {
+	Repo     int32
+	CommitID string
+	Defs     []*graph.Def
+
+	RefreshCountsOnly bool
 }

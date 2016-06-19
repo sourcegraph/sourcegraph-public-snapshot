@@ -46,6 +46,13 @@ func TestGlobalDefs(t *testing.T) {
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil
 			},
+			Branches_: func(vcs.BranchesOptions) ([]*vcs.Branch, error) {
+				return []*vcs.Branch{
+					&vcs.Branch{
+						Commit: &vcs.Commit{ID: "aaaa"},
+					},
+				}, nil
+			},
 		}, nil
 	}
 	op := store.GlobalDefUpdateOp{RepoUnits: []store.RepoUnit{{Repo: repos[0].ID}}}
@@ -123,6 +130,13 @@ func TestGlobalDefs_PrefixMatch(t *testing.T) {
 		return sgtest.MockRepository{
 			ResolveRevision_: func(spec string) (vcs.CommitID, error) {
 				return "aaaa", nil
+			},
+			Branches_: func(vcs.BranchesOptions) ([]*vcs.Branch, error) {
+				return []*vcs.Branch{
+					&vcs.Branch{
+						Commit: &vcs.Commit{ID: "aaaa"},
+					},
+				}, nil
 			},
 		}, nil
 	}

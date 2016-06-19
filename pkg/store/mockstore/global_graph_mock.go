@@ -68,3 +68,21 @@ func (s *GlobalDeps) Resolve(ctx context.Context, raw *unit.Key) ([]unit.Key, er
 }
 
 var _ store.GlobalDeps = (*GlobalDeps)(nil)
+
+type Defs struct {
+	Search_                func(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error)
+	UpdateFromSrclibStore_ func(ctx context.Context, op store.DefUpdateOp) error
+	Update_                func(ctx context.Context, op store.DefUpdateOp) error
+}
+
+func (s *Defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.SearchResultsList, error) {
+	return s.Search_(ctx, op)
+}
+
+func (s *Defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) error {
+	return s.UpdateFromSrclibStore_(ctx, op)
+}
+
+func (s *Defs) Update(ctx context.Context, op store.DefUpdateOp) error { return s.Update_(ctx, op) }
+
+var _ store.Defs = (*Defs)(nil)

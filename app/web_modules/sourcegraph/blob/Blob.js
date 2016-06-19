@@ -248,7 +248,7 @@ class Blob extends Component {
 		}
 		const rng = sel.getRangeAt(0);
 
-		const getLineElem = (node: Node): ?HTMLElement => {
+		const getLineElem = (node: ?Node): ?HTMLElement => {
 			if (!node) return null;
 			if (node instanceof HTMLElement && node.nodeName === "TR" && node.dataset.line) {
 				return node;
@@ -259,7 +259,7 @@ class Blob extends Component {
 		const getColInLine = (lineElem, containerElem, offsetInContainer: number) => {
 			let lineContentElem = lineElem.lastChild;
 			let col = 0;
-			let q = [lineContentElem];
+			let q: Array<any> = [lineContentElem];
 			while (q.length > 0) {
 				let e = q.pop();
 				if (e === containerElem) {

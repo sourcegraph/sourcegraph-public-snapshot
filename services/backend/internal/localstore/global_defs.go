@@ -9,38 +9,53 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
-	"sourcegraph.com/sourcegraph/srclib/unit"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
-// Mappings from language to language ID. These should not be changed once set
-// (doing so would require a database migration). When adding a new ID, you
-// must use the exact LOWERCASE srclib toolchain language name.
-var languages = map[string]uint16{
-	"go":     1,
-	"java":   2,
-	"python": 3,
+// dbLang is a numerical identifier that identifies the language of a definition
+// in the database. NOTE: this values of existing dbLang constants should NOT be
+// changed. Doing so would require a database migration.
+type dbLang uint16
+
+const (
+	dbLangGo     = 1
+	dbLangJava   = 2
+	dbLangPython = 3
+)
+
+var toDBLang_ = map[string]dbLang{
+	"go":     dbLangGo,
+	"java":   dbLangJava,
+	"python": dbLangPython,
+}
+
+func toDBLang(lang string) (dbLang, error) {
+	if l, exists := toDBLang_[lang]; exists {
+		return l, nil
+	}
+	return 0, fmt.Errorf("unrecognized language %s", lang)
 }
 
 func init() {
-	GraphSchema.Map.AddTableWithName(dbGlobalDef{}, "global_defs").SetKeys(false, "Repo", "CommitID", "UnitType", "Unit", "Path")
-	GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
-		`ALTER TABLE global_defs ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
-		`ALTER TABLE global_defs ALTER COLUMN ref_ct SET DEFAULT 0;`,
-		`ALTER TABLE global_defs ALTER COLUMN language TYPE smallint`,
-		`CREATE INDEX bow_idx ON global_defs USING gin(to_tsvector('english', bow));`,
-		`CREATE INDEX doc_idx ON global_defs USING gin(to_tsvector('english', doc));`,
-		`CREATE INDEX global_defs_name ON global_defs USING btree (lower(name));`,
-		`CREATE INDEX global_defs_repo ON global_defs USING btree (repo text_pattern_ops);`,
-		`CREATE INDEX global_defs_updater ON global_defs USING btree (repo, unit_type, unit, path);`,
-	)
+	fields := []string{"Repo", "CommitID", "UnitType", "Unit", "Path"}
+	GraphSchema.Map.AddTableWithName(dbGlobalDef{}, "global_defs").SetKeys(false, fields...)
+	for _, table := range []string{"global_defs"} {
+		GraphSchema.CreateSQL = append(GraphSchema.CreateSQL,
+			`ALTER TABLE `+table+` ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
+			`ALTER TABLE `+table+` ALTER COLUMN ref_ct SET DEFAULT 0;`,
+			`ALTER TABLE `+table+` ALTER COLUMN language TYPE smallint`,
+			`CREATE INDEX `+table+`_bow_idx ON `+table+` USING gin(to_tsvector('english', bow));`,
+			`CREATE INDEX `+table+`_doc_idx ON `+table+` USING gin(to_tsvector('english', doc));`,
+			`CREATE INDEX `+table+`_name ON `+table+` USING btree (lower(name));`,
+			`CREATE INDEX `+table+`_repo ON `+table+` USING btree (repo text_pattern_ops);`,
+			`CREATE INDEX `+table+`_updater ON `+table+` USING btree (repo, unit_type, unit, path);`,
+		)
+	}
 }
 
 type dbGlobalDefLanguages struct {
@@ -145,12 +160,15 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		op.Opt = &sourcegraph.SearchOptions{}
 	}
 
-	if len(op.TokQuery) == 0 {
+	if len(op.TokQuery) == 0 && len(op.Opt.Repos) == 0 {
 		return &sourcegraph.SearchResultsList{}, nil
 	}
 
 	bowQuery := search.UserQueryToksToTSQuery(op.TokQuery)
-	lastTok := op.TokQuery[len(op.TokQuery)-1]
+	lastTok := ""
+	if len(op.TokQuery) > 0 {
+		lastTok = op.TokQuery[len(op.TokQuery)-1]
+	}
 
 	var scoreSQL string
 	if bowQuery != "" {
@@ -194,8 +212,8 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		if len(op.Opt.Languages) > 0 {
 			var l []string
 			for _, language := range op.Opt.Languages {
-				id, ok := languages[language]
-				if !ok {
+				id, err := toDBLang(language)
+				if err != nil {
 					continue
 				}
 				l = append(l, arg(id))
@@ -205,8 +223,8 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		if len(op.Opt.NotLanguages) > 0 {
 			var l []string
 			for _, language := range op.Opt.NotLanguages {
-				id, ok := languages[language]
-				if !ok {
+				id, err := toDBLang(language)
+				if err != nil {
 					continue
 				}
 				l = append(l, arg(id))
@@ -287,7 +305,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 		}
 	}
 
-	repoUnits, err := g.resolveUnits(ctx, op.RepoUnits)
+	repoUnits, err := resolveUnits(ctx, op.RepoUnits)
 	if err != nil {
 		return err
 	}
@@ -297,112 +315,8 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 		if err != nil {
 			return err
 		}
-		defs, err := store.GraphFromContext(ctx).Defs(
-			sstore.ByRepoCommitIDs(sstore.Version{Repo: repoPath, CommitID: commitID}),
-			sstore.ByUnits(unit.ID2{Type: repoUnit.UnitType, Name: repoUnit.Unit}),
-		)
-		if err != nil {
-			return err
-		}
 
-		type upsert struct {
-			query string
-			args  []interface{}
-		}
-		var upsertSQLs []upsert
-		for _, d := range defs {
-			// Ignore broken defs
-			if d.Path == "" {
-				continue
-			}
-			// Ignore local defs (KLUDGE)
-			if d.Local || strings.Contains(d.Path, "$") {
-				continue
-			}
-			// Ignore vendored defs
-			if filelang.IsVendored(d.File, false) {
-				continue
-			}
-
-			if d.Repo == "" {
-				d.Repo = repoPath
-			}
-
-			var docstring string
-			if len(d.Docs) == 1 {
-				docstring = d.Docs[0].Data
-			} else {
-				for _, candidate := range d.Docs {
-					if candidate.Format == "" || strings.ToLower(candidate.Format) == "text/plain" {
-						docstring = candidate.Data
-					}
-				}
-			}
-
-			data, err := d.Data.Marshal()
-			if err != nil {
-				data = []byte{}
-			}
-			bow := strings.Join(search.BagOfWordsToTokens(search.BagOfWords(d)), " ")
-
-			languageID := languages[strings.ToLower(graph.PrintFormatter(d).Language())]
-
-			var args []interface{}
-			arg := func(v interface{}) string {
-				args = append(args, v)
-				return gorp.PostgresDialect{}.BindVar(len(args) - 1)
-			}
-
-			upsertSQL := `
-WITH upsert AS (
-UPDATE global_defs SET name=` + arg(d.Name) +
-				`, kind=` + arg(d.Kind) +
-				`, file=` + arg(d.File) +
-				`, language=` + arg(languageID) +
-				`, commit_id=` + arg(d.CommitID) +
-				`, updated_at=now()` +
-				`, data=` + arg(data) +
-				`, bow=` + arg(bow) +
-				`, doc=` + arg(docstring) +
-				` WHERE repo=` + arg(d.Repo) +
-				` AND unit_type=` + arg(d.UnitType) +
-				` AND unit=` + arg(d.Unit) +
-				` AND path=` + arg(d.Path) +
-				` RETURNING *
-)
-INSERT INTO global_defs (repo, commit_id, unit_type, unit, path, name, kind, file, language, updated_at, data, bow, doc) SELECT ` +
-				arg(d.Repo) + `, ` +
-				arg(d.CommitID) + `, ` +
-				arg(d.UnitType) + `, ` +
-				arg(d.Unit) + `, ` +
-				arg(d.Path) + `, ` +
-				arg(d.Name) + `, ` +
-				arg(d.Kind) + `, ` +
-				arg(d.File) + `, ` +
-				arg(languageID) + `, ` +
-				`now(), ` +
-				arg(data) + `, ` +
-				arg(bow) + `, ` +
-				arg(docstring) + `
-WHERE NOT EXISTS (SELECT * FROM upsert);`
-			upsertSQLs = append(upsertSQLs, upsert{query: upsertSQL, args: args})
-		}
-
-		if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
-			for _, upsertSQL := range upsertSQLs {
-				if _, err := tx.Exec(upsertSQL.query, upsertSQL.args...); err != nil {
-					return err
-				}
-			}
-
-			// Delete old entries
-			if _, err := tx.Exec(`DELETE FROM global_defs WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND commit_id!=$4`,
-				repoUnit.RepoURI, repoUnit.UnitType, repoUnit.Unit, commitID); err != nil {
-				return err
-			}
-			return nil
-
-		}); err != nil { // end transaction
+		if err := updateDefs(ctx, false, repoPath, commitID, repoUnit.UnitType, repoUnit.Unit); err != nil {
 			return err
 		}
 	}
@@ -417,7 +331,7 @@ func (g *globalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpd
 		}
 	}
 
-	repoUnits, err := g.resolveUnits(ctx, op.RepoUnits)
+	repoUnits, err := resolveUnits(ctx, op.RepoUnits)
 	if err != nil {
 		return err
 	}
@@ -447,7 +361,7 @@ type resolvedRepoUnit struct {
 
 // resolveUnits resolves RepoUnits without a source unit specified to
 // their underlying source units
-func (g *globalDefs) resolveUnits(ctx context.Context, repoUnits []store.RepoUnit) ([]resolvedRepoUnit, error) {
+func resolveUnits(ctx context.Context, repoUnits []store.RepoUnit) ([]resolvedRepoUnit, error) {
 	var resolved []resolvedRepoUnit
 	for _, repoUnit := range repoUnits {
 		repo, err := store.ReposFromContext(ctx).Get(ctx, repoUnit.Repo)

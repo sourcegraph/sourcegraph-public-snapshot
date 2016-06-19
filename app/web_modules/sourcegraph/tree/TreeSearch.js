@@ -37,6 +37,7 @@ import styles from "./styles/Tree.css";
 
 const SYMBOL_LIMIT = 5;
 const GLOBAL_DEFS_LIMIT = 3;
+const LOCAL_DEFS_LIMIT = 10;
 const FILE_LIMIT = 15;
 const EMPTY_PATH = [];
 
@@ -63,6 +64,48 @@ function pathDir(path: string): string {
 	return pathJoin(parts.splice(0, parts.length - 1));
 }
 
+type TreeSearchProps = {
+	repo: string;
+	rev: ?string;
+	commitID: string;
+	path: string;
+	overlay: boolean;
+	prefetch: ?boolean;
+	location: Location;
+	route: Route;
+	onChangeQuery: (query: string) => void;
+	onSelectPath: (path: string) => void;
+}
+
+type TreeSearchState = {
+	// prop types
+	repo: string;
+	rev?: string;
+	commitID?: string;
+	path?: string;
+	overlay?: boolean;
+	prefetch?: boolean;
+	location?: Location;
+	route?: Route;
+	onChangeQuery: (query: string) => void;
+	onSelectPath: (path: string) => void;
+
+	// other state fields
+	query: string;
+	focused: boolean;
+	selectionIndex: number;
+	matchingDefs: ?{Defs: Array<Def>};
+	lastDefinedMatchingDefs?: ?{Defs: Array<Def>};
+	xdefs: ?{Defs: Array<Def>};
+	defListFilePathPrefix: ?string;
+	fileResults: any; // Array<any> | {Error: any};
+	srclibDataVersion?: Object;
+	fileTree?: any;
+	fileList?: any;
+	fuzzyFinder?: any;
+}
+
+
 class TreeSearch extends Container {
 	static propTypes = {
 		repo: React.PropTypes.string.isRequired,
@@ -78,42 +121,27 @@ class TreeSearch extends Container {
 		route: React.PropTypes.object,
 	};
 
-	props: {
-		repo: string;
-		rev: ?string;
-		commitID: string;
-		path: string;
-		overlay: boolean;
-		prefetch: ?boolean;
-		location: Location;
-		route: Route;
-		onChangeQuery: (query: string) => void;
-		onSelectPath: (path: string) => void;
-	};
-
-	state: TreeSearch.props & {
-		query: string;
-		focused: boolean;
-		matchingDefs: ?{Defs: Array<Def>};
-		xdefs: ?{Defs: Array<Def>};
-		selectionIndex: number;
-		defListFilePathPrefix: ?string;
-	};
+	props: TreeSearchProps;
+	state: TreeSearchState;
 
 	static contextTypes = {
 		router: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
 	};
 
-	constructor(props: TreeSearch.props) {
+	constructor(props: TreeSearchProps) {
 		super(props);
 		this.state = {
+			repo: "",
 			query: "",
 			focused: !props.overlay,
 			matchingDefs: null,
 			xdefs: null,
 			selectionIndex: 0,
 			defListFilePathPrefix: null,
+			onChangeQuery: (query: string) => { /* do nothing */ },
+			onSelectPath: (path: string) => { /* do nothing */ },
+			fileResults: [],
 		};
 		this._queryInput = null;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -145,7 +173,8 @@ class TreeSearch extends Container {
 
 	stores(): Array<Object> { return [TreeStore, DefStore, SearchStore]; }
 
-	reconcileState(state: TreeSearch.state, props: TreeSearch.props): void {
+	reconcileState(state: TreeSearchState, props: TreeSearchProps): void {
+		// $FlowHack
 		Object.assign(state, props);
 
 		state.query = props.query || "";
@@ -157,15 +186,20 @@ class TreeSearch extends Container {
 		// should be global to be consistent with file list behavior (for which
 		// searches are global).
 		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
-
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.commitID);
 
-		state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
-
-		state.xdefs = SearchStore.results.get(state.query, null, [this.state.repo], GLOBAL_DEFS_LIMIT);
+		// $FlowHack: this.props.location.query.nextSearch
+		if (!this.props.location.query.nextSearch) { // DEPRECATED: remove after search index successful
+			state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
+		} else if (state.rev && state.rev.length === 40) {
+			state.matchingDefs = SearchStore.get(state.query, [this.props.repo], null, state.rev, LOCAL_DEFS_LIMIT);
+		} else {
+			state.matchingDefs = SearchStore.get(state.query, [this.props.repo], null, null, LOCAL_DEFS_LIMIT);
+		}
+		state.xdefs = SearchStore.get(state.query, null, [this.props.repo], null, GLOBAL_DEFS_LIMIT);
 	}
 
-	onStateTransition(prevState: TreeSearch.state, nextState: TreeSearch.state) {
+	onStateTransition(prevState: TreeSearchState, nextState: TreeSearchState) {
 		const prefetch = nextState.prefetch && nextState.prefetch !== prevState.prefetch;
 		if (prefetch || nextState.repo !== prevState.repo || nextState.commitID !== prevState.commitID) {
 			if (nextState.commitID) {
@@ -188,19 +222,39 @@ class TreeSearch extends Container {
 			this._srclibBuildingInterval = null;
 		}
 
-		if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
-			// Only fetch on the client, not server, so that we don't
-			// cache stale def lists prior to the repo's first build.
-			if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
-				Dispatcher.Backends.dispatch(
-					new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false)
-				);
+		// $FlowHack: this.props.location.query.nextSearch
+		if (!this.props.location.query.nextSearch) { // DEPRECATED: remove after search index successful
+			if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
+				// Only fetch on the client, not server, so that we don't
+				// cache stale def lists prior to the repo's first build.
+				if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
+					Dispatcher.Backends.dispatch(
+						new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false),
+					);
+				}
 			}
-		}
-
-		// Global search results only show up for admin users
-		if (this.context.user && this.context.user.Admin && (prevState.query !== nextState.query || prevState.repo !== nextState.repo)) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults(nextState.query, null, [nextState.repo], GLOBAL_DEFS_LIMIT));
+		} else {
+			if (prevState.query !== nextState.query || prevState.repo !== nextState.repo) {
+				if (nextState.rev && nextState.rev.length === 40) {
+					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+						query: nextState.query,
+						repos: [nextState.repo],
+						commitID: nextState.rev,
+						limit: LOCAL_DEFS_LIMIT,
+					}));
+				} else {
+					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+						query: nextState.query,
+						repos: [nextState.repo],
+						limit: LOCAL_DEFS_LIMIT,
+					}));
+				}
+			}
+			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+				query: nextState.query,
+				notRepos: [nextState.repo],
+				limit: GLOBAL_DEFS_LIMIT,
+			}));
 		}
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
@@ -221,7 +275,7 @@ class TreeSearch extends Container {
 		}
 
 		if (prevState.path !== nextState.path || prevState.query !== nextState.query || prevState.fileList !== nextState.fileList || prevState.fileTree !== nextState.fileTree) {
-			nextState.fileResults = null;
+			nextState.fileResults = [];
 			nextState.selectionIndex = 0;
 
 			// Show entire file tree as file results.
@@ -231,6 +285,7 @@ class TreeSearch extends Container {
 				if (nextState.fileTree) {
 					let dirLevel = nextState.fileTree;
 					let err;
+					// $FlowHack: nextState.path is non-null
 					for (const part of pathSplit(nextState.path)) {
 						let dirKey = `!${part}`; // dirKey is prefixed to avoid clash with predefined fields like "constructor"
 						if (dirLevel.Dirs[dirKey]) {
@@ -243,6 +298,7 @@ class TreeSearch extends Container {
 						}
 					}
 
+					// $FlowHack: nextState.path is non-null
 					const pathPrefix = nextState.path.replace(/^\/$/, "");
 					const dirs = !err ? Object.keys(dirLevel.Dirs).map(dirKey => ({
 						name: dirKey.substr(1), // dirKey is prefixed to avoid clash with predefined fields like "constructor"
@@ -270,6 +326,7 @@ class TreeSearch extends Container {
 					// TODO Handle errors in a more standard way.
 					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
 				}
+
 			} else if (nextState.fileList && nextState.fileList.Files) {
 				nextState.fileResults = nextState.fileList.Files
 					.filter((f) => fuzzysearch(nextState.query, f))
@@ -379,6 +436,7 @@ class TreeSearch extends Container {
 			// XDef result
 			if (!this.state.xdefs || !this.state.xdefs.Defs || this.state.xdefs.Defs.length === 0) return;
 			let d = i - this._numSymbolResults();
+			// $FlowHack: this.state.xdefs is non-null
 			const def = this.state.xdefs.Defs[d];
 			this._navigateTo(urlToDef(def));
 		} else {
@@ -491,7 +549,7 @@ class TreeSearch extends Container {
 	}
 
 	_symbolItems(offset: number): ?Array<any> {
-		if (this.state.srclibDataVersion && !this.state.srclibDataVersion.CommitID) return null;
+		if (!this.state.srclibDataVersion || !this.state.srclibDataVersion.CommitID) return null;
 
 		const contentPlaceholderItem = (i) => (
 			<div styleName="list-item" key={`_nosymbol${i}`}>
@@ -582,19 +640,22 @@ class TreeSearch extends Container {
 	}
 
 	_overlayBreadcrumb() {
+		if (!this.state.path) return null;
+		let path = this.state.path;
+
 		const urlToPathPrefix = (i) => {
-			const parts = pathSplit(this.state.path);
+			const parts = pathSplit(path);
 			const pathPrefix = pathJoin(parts.splice(0, i + 1));
 			return urlToTree(this.state.repo, this.state.rev, pathPrefix);
 		};
 
-		let filepath = this.state.path;
+		let filepath = path;
 		if (filepath.indexOf("/") === 0) filepath = filepath.substring(1);
 
 		let fileBreadcrumb = breadcrumb(
 			filepath,
 			(i) => <span key={i} styleName="path-sep">/</span>,
-			(path, component, i, isLast) => (
+			(p, component, i, isLast) => (
 				<Link to={urlToPathPrefix(i)}
 					key={i}
 					styleName={isLast ? "path-active" : "path-inactive"}>
