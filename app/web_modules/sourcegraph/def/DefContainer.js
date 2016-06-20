@@ -121,6 +121,18 @@ class DefContainer extends Container {
 			Math.min(lineFromByte(this.state.defFile.ContentsString, this.state.defObj.DefEnd), beginningLine + 14),
 		]] : null;
 		let contents = this.state.defFile && !this.state.defFile.Error ? this.state.defFile.ContentsString : null;
+
+		let errMsg;
+		if (this.state.defFile && this.state.defFile.Error) {
+			switch (this.state.defFile.Error.response.status) {
+			case 413:
+				errMsg = "Sorry, this file is too large to display.";
+				break;
+			default:
+				errMsg = "File is not available.";
+			}
+		}
+
 		return (
 			<div className={styles.container}
 				onMouseOver={() => this.setState({mouseover: true, mouseout: false})}
@@ -138,7 +150,7 @@ class DefContainer extends Container {
 					highlightedDef={this.state.highlightedDef || null}
 					highlightedDefObj={this.state.highlightedDefObj || null}
 					displayLineExpanders="bottom"/>}
-				{this.state.showDef && this.state.defFile && this.state.defFile.Error && <p>Error loading code</p>}
+				{errMsg && <p className={styles.fileError}>{errMsg}</p>}
 				{this.state.showDef && this.state.defFile && !this.state.defFile.Error && <Blob
 					repo={def.Repo}
 					rev={this.state.rev}

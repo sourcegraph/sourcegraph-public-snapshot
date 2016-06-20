@@ -265,7 +265,7 @@ export default class RefsContainer extends Container {
 				{/* mouseover state is for optimization which will only re-render the moused-over blob when a def is highlighted */}
 				{/* this is important since there may be many ref containers on the page */}
 				<div>
-			<div className={styles.refs}>
+					<div className={styles.refs}>
 						{this.state.fileLocations && this.state.fileLocations.map((loc, i) => {
 							if (!this.state.showAllFiles && i >= this.state.fileCollapseThreshold) return null;
 							if (!this.state.shownFiles.has(loc.Path)) return this.renderFileHeader(this.state.refRepo, this.state.refRev, loc.Path, loc.Count, i);
