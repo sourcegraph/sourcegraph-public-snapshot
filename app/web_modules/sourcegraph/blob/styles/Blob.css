@@ -9,7 +9,7 @@
 @value c_blue from colors;
 @value contentWidth 690px;
 @value marginWidth 290px;
-@value codeLineHeight 16px;
+@value codeLineHeight 20px;
 @value firstCodeLineTopPadding 8px;
 
 .pathComponent {}
@@ -71,15 +71,15 @@
    identical markup in Go (where we can't as easily obtain the class mapping). */
 .lines {
 	composes: code from typography;
-	font-size: 1.05rem;
+	font-size: 1.15rem;
 	table-layout: fixed;
 	border-spacing: 0;
 }
 .lineNumberCell {
+	composes: bg-cool-pale-gray-2 from colors;
 	padding: 0;
 	width: 1%;
 	min-width: 40px;
-	background-color: #fafafc;
 }
 
 .lineCell {
@@ -92,7 +92,7 @@
 	display: block;
 	text-align: right;
 	white-space: nowrap;
-	composes: light-silver from colors;
+	composes: dark-blue-5 from colors;
 	padding-right: 8px;
 	user-select: none;
 	cursor: pointer;
@@ -105,8 +105,8 @@
 	composes: lineNumber;
 	@value c_blue-2 from colors;
 	background-color: c_blue-2;
-	@value c_gray from colors;
-	color: c_gray;
+	@value c_dark-blue from colors;
+	color: c_dark-blue;
 }
 .line:first-child .lineNumber, .line:first-child .lineContent {
 	padding-top: firstCodeLineTopPadding;
@@ -117,6 +117,9 @@
 	tab-size: 4;
 	overflow: visible;
 	white-space: pre;
+}
+.lineContent a {
+	font-weight: bold;
 }
 .selectedLineContent {
 	composes: lineContent;
