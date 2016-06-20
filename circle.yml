@@ -67,7 +67,7 @@ deployment:
           pwd: $REPO
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker push us.gcr.io/sourcegraph-dev/sourcegraph:latest
-      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=master" -F "version=$LONG_VERSION"
+      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=master" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
       - echo $LONG_VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
 
   staging-branch:
@@ -75,7 +75,7 @@ deployment:
     commands:
       - ./dev/circle-build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
-      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION"
+      - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
 
   release-tag:
     tag: /[0-9]+\.[0-9]+\.[0-9]+/
