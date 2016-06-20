@@ -100,6 +100,14 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 		return fmt.Errorf("srclib import of %s failed: %s", repo.URI, err)
 	}
 
+	// Update defs table in DB
+	if _, err := cl.Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+		Repo:     repoRev.Repo,
+		CommitID: repoRev.CommitID,
+	}); err != nil {
+		return err
+	}
+
 	if repo.Fork {
 		// Don't index forks in global search
 		return nil

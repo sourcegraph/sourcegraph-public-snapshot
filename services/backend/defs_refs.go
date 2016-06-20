@@ -113,5 +113,14 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 			return nil, err
 		}
 	}
+	if op.CommitID != "" {
+		// Update defs table
+		if err := store.DefsFromContext(ctx).UpdateFromSrclibStore(ctx, store.DefUpdateOp{
+			Repo:     op.Repo,
+			CommitID: op.CommitID,
+		}); err != nil {
+			return nil, err
+		}
+	}
 	return &pbtypes.Void{}, nil
 }

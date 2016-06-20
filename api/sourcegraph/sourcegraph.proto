@@ -1740,6 +1740,9 @@ message DefsRefreshIndexOp {
 	// Force ensures we reindex, even if we have already indexed the latest
 	// commit for repo
 	bool Force = 3;
+
+	// CommitID is the commit for which defs should be synced from srclib-store to DB.
+	string CommitID = 4;
 }
 
 // DefsService communicates with the def- and graph-related endpoints in the
