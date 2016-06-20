@@ -114,7 +114,11 @@ func serveSrclibImport(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	// global * reindex, doesn't block import
-	cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{Repo: repoRev.Repo, Force: true})
+	cl.Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
+		Repo:   repoRev.Repo,
+		Source: fmt.Sprintf("import %s", repoRev.CommitID),
+		Force:  true,
+	})
 
 	return nil
 }

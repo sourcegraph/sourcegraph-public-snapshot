@@ -37,8 +37,9 @@ func (c *searchCmd) Execute(args []string) error {
 			return err
 		}
 		_, err = cl.Async.RefreshIndexes(cliContext, &sourcegraph.AsyncRefreshIndexesOp{
-			Repo:  res.Repo,
-			Force: true,
+			Repo:   res.Repo,
+			Source: "searchCmd",
+			Force:  true,
 		})
 		if err != nil {
 			return err

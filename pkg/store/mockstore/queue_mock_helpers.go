@@ -14,7 +14,7 @@ func (s *Queue) MockEnqueue(t *testing.T, wantJob *store.Job) (called *bool) {
 	s.Enqueue_ = func(ctx context.Context, job *store.Job) error {
 		*called = true
 		if !reflect.DeepEqual(job, wantJob) {
-			t.Errorf("got job %+v, want %+v", job, wantJob)
+			t.Errorf("got job {Type:%s Args:%s}, want {Type:%s Args:%s}", job.Type, string(job.Args), wantJob.Type, string(wantJob.Args))
 		}
 		return nil
 	}

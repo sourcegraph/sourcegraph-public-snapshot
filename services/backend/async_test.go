@@ -16,10 +16,16 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 	wantRepo := int32(10810)
 
 	// Enqueue
-	op := &sourcegraph.AsyncRefreshIndexesOp{Repo: wantRepo}
+	op := &sourcegraph.AsyncRefreshIndexesOp{
+		Repo:   wantRepo,
+		Source: "test",
+	}
 	job := &store.Job{
 		Type: "RefreshIndexes",
-		Args: mustMarshal(t, op),
+		Args: mustMarshal(t, &sourcegraph.AsyncRefreshIndexesOp{
+			Repo:   wantRepo,
+			Source: "test (UID 1 test)",
+		}),
 	}
 	calledEnqueue := mock.stores.Queue.MockEnqueue(t, job)
 	_, err := s.RefreshIndexes(ctx, op)
