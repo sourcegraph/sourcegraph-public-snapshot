@@ -354,6 +354,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	}
 
 	// Compute defs to insert
+	langWarnCount := 0
 	dbDefs := make([]*dbDef, len(chosenDefs))
 	now := time.Now()
 	for i, def := range chosenDefs {
@@ -380,7 +381,7 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		// TODO(beyang): kludge. Should not rely on def formatter for this information.
 		languageID, err := toDBLang(strings.ToLower(graph.PrintFormatter(def).Language()))
 		if err != nil {
-			log15.Warn("could not determine language for def", "def", def.Path, "repo", def.Repo)
+			langWarnCount++
 		}
 
 		dbDefs[i] = &dbDef{
@@ -396,6 +397,9 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 			BoW:       bow,
 			Doc:       docstring,
 		}
+	}
+	if langWarnCount > 0 {
+		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(chosenDefs))
 	}
 
 	// Update defs

@@ -30,6 +30,7 @@ func updateDefs(ctx context.Context, local bool, repo string, commitID string, u
 		return err
 	}
 
+	langWarnCount := 0
 	type upsert struct {
 		query string
 		args  []interface{}
@@ -63,7 +64,7 @@ func updateDefs(ctx context.Context, local bool, repo string, commitID string, u
 
 		languageID, err := toDBLang(strings.ToLower(graph.PrintFormatter(d).Language()))
 		if err != nil {
-			log15.Warn("could not determine language for def", "def", d.Path, "repo", d.Repo)
+			langWarnCount++
 		}
 
 		var args []interface{}
@@ -105,6 +106,9 @@ INSERT INTO ` + table + ` (repo, commit_id, unit_type, unit, path, name, kind, f
 			arg(docstring) + `
 WHERE NOT EXISTS (SELECT * FROM upsert);`
 		upsertSQLs = append(upsertSQLs, upsert{query: upsertSQL, args: args})
+	}
+	if langWarnCount > 0 {
+		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(defs_))
 	}
 
 	if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
