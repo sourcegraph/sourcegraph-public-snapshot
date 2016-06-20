@@ -23,7 +23,7 @@ import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import "whatwg-fetch";
 import {GlobeIcon, LanguageIcon} from "sourcegraph/components/Icons";
-import {Dropdown, TabItem} from "sourcegraph/components";
+import {Dropdown, TabItem, Panel} from "sourcegraph/components";
 import stripDomain from "sourcegraph/util/stripDomain";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 
@@ -211,7 +211,7 @@ class DefInfo extends Container {
 		}
 		return (
 			<div styleName="bg">
-			<div styleName="container">
+			<Panel hoverLevel="low" styleName="container" className={`${base.mb4} ${base.pb4}`}>
 			{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
 				{def &&
@@ -287,13 +287,15 @@ class DefInfo extends Container {
 								}
 							</div>
 						}
-					<div styleName="section">
-						<div styleName="section-label"> Definition </div>
-						{def && !def.Error && <DefContainer {...this.props} />}
-					</div>
+					{def && !def.Error &&
+						<div styleName="section">
+							<div styleName="section-label"> Definition</div>
+							<DefContainer {...this.props} />
+						</div>
+					}
 					{def && !def.Error &&
 						<div styleName="refs-container">
-								<div style={{float: "right"}}>
+								<div styleName="ref-tabs">
 										<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "top"}}}>
 											<TabItem active={refsSorting === "top"}>Top</TabItem>
 										</Link>
@@ -332,7 +334,7 @@ class DefInfo extends Container {
 						</div>
 					}
 				</div>
-			</div>
+			</Panel>
 			</div>
 		);
 	}

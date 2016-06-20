@@ -7,7 +7,6 @@
 @value panel "sourcegraph/components/styles/panel.css";
 
 .container {
-	composes: high from panel;
 	composes: center mv5 from base;
 	composes: col-12-ns from grid;
 	max-width: 74rem;
@@ -21,7 +20,7 @@
 }
 
 .section {
-	composes: mh4 from base;
+	composes: ph4 from base;
 }
 
 .section-label {
@@ -74,6 +73,8 @@
 }
 
 .description-expander {
+	composes: mb3 from base;
+	composes: f5 from typography;
 	composes: description;
 	composes: link from "sourcegraph/components/styles/link.css";
 	cursor: pointer;
@@ -84,6 +85,11 @@
 	composes: normal-text from typography;
 	display: flex;
 	justify-content: space-between;
+}
+
+.ref-tabs {
+	float: right;
+	line-height: 1.7;
 }
 
 .pagination {
