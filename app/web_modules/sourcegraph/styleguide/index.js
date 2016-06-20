@@ -11,11 +11,9 @@ export const styleguide = {
 	},
 };
 
-
 export const routes: Array<Route> = [
 	{
 		...styleguide,
 		path: rel.styleguide,
 	},
 ];
-

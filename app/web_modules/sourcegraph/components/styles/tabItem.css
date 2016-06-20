@@ -3,27 +3,40 @@
 @value colors "./_colors.css";
 @value typography "./_typography.css";
 
-@value c_dark-purple from colors;
+@value c_dark-purple, c_purple, c_cool-mid-gray from colors;
 @value c_dark-blue from colors;
 @value media-sm from vars;
 
 .hidden-s { composes: hidden-s from base; }
 .hide { display: none; }
 
-.tab {
-	composes: ph2 mh2 pb3 from base;
+.vertical {
+	composes: pv1 ph3 mb2 from base;
+	display: block;
+	margin-left: -1px;
+}
+
+.horizontal {
+	composes: pb3 ph2 mh2 from base;
 	padding-top: 12px;
 	display: inline-block;
 	margin-bottom: -1px;
 }
 
 .inactive { composes: cool-mid-gray from colors; }
-.active { composes: bb bw3 from base; }
+.inactive a { color: c_cool-mid-gray; }
+.vertical.inactive { padding-left: 1.3rem; }
+
+.active { composes: bw3 from base; }
+.horizontal.active { border-bottom-style: solid; }
+.vertical.active { border-left-style: solid; }
 
 .blue { composes: b--blue blue from colors; }
 .blue:hover { color: c_dark-blue; }
+
 .purple { composes: b--purple purple from colors; }
-.purple:hover { color: c_dark-purple; }
+.active.purple a { color: c_purple; }
+.purple:hover, .purple a:hover { color: c_dark-purple; }
 
 .small { composes: f5 from typography; }
 .large { composes: f3 from typography; }

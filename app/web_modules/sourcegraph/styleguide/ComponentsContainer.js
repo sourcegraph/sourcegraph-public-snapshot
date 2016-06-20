@@ -4,102 +4,90 @@ import React from "react";
 import CSSModules from "react-css-modules";
 import styles from "./styles/ComponentsContainer.css";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Stepper, ChecklistItem, TabItem, Button} from "sourcegraph/components";
-import ComponentCard from "./ComponentCard";
+import {Heading} from "sourcegraph/components";
+import {HeadingsComponent, ButtonsComponent, TabsComponent, PanelsComponent, StepperComponent, ChecklistsComponent, LogoComponent, TableComponent, FlexContainerComponent, AffixComponent} from "./componentExamples";
 
 class ComponentsContainer extends React.Component {
 	render() {
 		return (
-			<div styleName="container">
-				<div styleName="container-fixed">
-					<ComponentCard>
-						<Heading level="3" className={base.mb4}>Headings</Heading>
-						<Panel>
-							<div className={base.pa4}>
+			<div>
+				<a id="principles"></a>
+				<Heading level="2" underline="purple">Principles</Heading>
+				<p>
+					This styleguide and component library is a living reference to building and designing the Sourcegraph user interface. This reference allows us to build and design conistently, efficiently, and quickly. It's not a definitive framework – but it should follow these main principles:
+				</p>
+				<ol>
+					<li className={base.mb3}>
+						<strong>UI components are stateless</strong><br />
+						All state and functionality should be handled outside of UI components. <a href="https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0#.pk5bjyhmz">Read more about presentational and container components.</a>
+					</li>
+					<li>
+						<strong>Maximise reusability</strong><br />
+						Each component should be designed to be used in different contexts, at different widths, on different platforms.
+					</li>
+				</ol>
+				<p>More work on this section TBD.</p>
 
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Heading sizes</Heading>
-								<Heading level="1" className={base.mb3}>Heading 1</Heading>
-								<Heading level="2" className={base.mb3}>Heading 2</Heading>
-								<Heading level="3" className={base.mb3}>Heading 3</Heading>
-								<Heading level="4" className={base.mb3}>Heading 4</Heading>
-								<Heading level="5" className={base.mb3}>Heading 5</Heading>
+				<Heading level="2" underline="purple" className={base.mt5}>Brand</Heading>
 
-								<Heading level="5" className={base.mv4} color="cool-mid-gray">Headings with color</Heading>
-								<Heading level="4" className={base.mb3} color="blue">Blue fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="purple">Purple fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="orange">Orange fourth level heading</Heading>
-								<Heading level="4" className={base.mb3} color="cool-mid-gray">Mid-gray fourth level heading</Heading>
+				<a id="brand-voice"></a>
+				<Heading level="3" className={base.mt3}>Voice and Tone</Heading>
+				<p>
+					All of our writing across the product, codebase, and marketing material should stem from these qualities. Tone is variable and contextual – quality of voice should be consistent.
+				</p>
+				<ul>
+					<li>Intelligent, but not arrogant</li>
+					<li>Accountable, but not hyperbolic</li>
+					<li>Authentic, but not elitist</li>
+					<li>Efficient and concise, but not aloof</li>
+					<li>Omniscient, but not patronizing</li>
+					<li>Opinionated, but not overzealous</li>
+					<li>Casual, but not unprofessional</li>
+				</ul>
 
-								<Heading level="5" className={base.mv4} color="cool-mid-gray">Headings with underline</Heading>
-								<Heading level="3" className={base.mb3} underline="blue">Third level heading with blue underline</Heading>
-								<Heading level="4" className={base.mb3} underline="purple">Fourth level heading with purple underline</Heading>
+				<div className={base.mv5}>
+					<a id="brand-logo"></a>
+					<LogoComponent />
+				</div>
 
-								<Heading level="5" className={base.mv4} color="cool-mid-gray">Alignment</Heading>
-								<Heading level="3" className={base.mb3} underline="blue" align="center">Third level heading with blue underline, aligned center</Heading>
+				<Heading level="2" underline="purple" className={base.mt5}>Layout Components</Heading>
+				<div className={base.mv5}>
+					<a id="layout-flexcontainer"></a>
+					<FlexContainerComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="layout-affix"></a>
+					<AffixComponent />
+				</div>
 
-							</div>
-							<hr />
-							<div className={base.pa4}>
-								<Heading level="5" className={base.mb3} color="cool-mid-gray">Usage</Heading>
-								<pre>
-									{"<Heading level=\"1\" color=\"blue\" underline=\"blue\">Heading 1</Heading>"}
-								</pre>
-							</div>
-						</Panel>
-					</ComponentCard>
-					<ComponentCard>
-						<Panel className={base.pa5}><Button color="disabled">Disabled button</Button></Panel>
-					</ComponentCard>
-					<ComponentCard>
-						<Heading level="3" className={base.mb4}>Tabs</Heading>
-						<Panel className={base.pa5}>
-							<div>
-								<TabItem active={true}>Components</TabItem>
-								<TabItem>Colors</TabItem>
-								<TabItem>Typography</TabItem>
-								<TabItem>Layout</TabItem>
-							</div>
-						</Panel>
-					</ComponentCard>
-					<ComponentCard>
-						<Heading level="3" className={base.mb4}>Panels</Heading>
-						<Panel hoverLevel="low" className={base.pa5}>
-							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-						</Panel>
-						<br />
-						<Panel hoverLevel="high" hover={true} className={base.pa5}>
-							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-						</Panel>
-						<br/>
-						<Panel color="blue" className={base.pa5}>
-							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-						</Panel>
-						<br/>
-						<Panel color="blue" inverse={true} className={base.pa5}>
-							For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
-						</Panel>
-					</ComponentCard>
-					<ComponentCard>
-						<Heading level="3" className={base.mb4}>Stepper</Heading>
-						<Panel className={base.pa5}><Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" /></Panel>
-					</ComponentCard>
-					<ComponentCard>
-						<Heading level="3" className={base.mb4}>Checklist Items</Heading>
-						<Panel className={base.pa5}>
-							<ChecklistItem complete={true} className={base.mb5}>
-								<Heading level="4">Connect with FooBar</Heading>
-								<p className={base.mt2}>
-									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
-								</p>
-							</ChecklistItem>
-							<ChecklistItem actionText="Install" actionOnClick={function() { alert("Boo"); }}>
-								<Heading level="4">Connect with FooBar</Heading>
-								<p className={base.mt2}>
-									For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
-								</p>
-							</ChecklistItem>
-						</Panel>
-					</ComponentCard>
+				<Heading level="2" underline="purple" className={base.mt5}>UI Components</Heading>
+				<div className={base.mv5}>
+					<a id="components-headings"></a>
+					<HeadingsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-buttons"></a>
+					<ButtonsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-tabs"></a>
+					<TabsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-panels"></a>
+					<PanelsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-stepper"></a>
+					<StepperComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-checklists"></a>
+					<ChecklistsComponent />
+				</div>
+				<div className={base.mv5}>
+					<a id="components-table"></a>
+					<TableComponent />
 				</div>
 			</div>
 		);

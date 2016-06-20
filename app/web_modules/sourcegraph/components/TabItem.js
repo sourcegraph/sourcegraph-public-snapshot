@@ -5,8 +5,6 @@ import Icon from "./Icon";
 import CSSModules from "react-css-modules";
 import styles from "sourcegraph/components/styles/tabItem.css";
 
-// @TODO(chexee): Create a higher order component that iterates through and renders children. Also adds an underline
-
 class TabItem extends React.Component {
 	static propTypes = {
 		className: React.PropTypes.string,
@@ -16,20 +14,22 @@ class TabItem extends React.Component {
 		color: React.PropTypes.string, // blue, purple
 		size: React.PropTypes.string, // small, large
 		icon: React.PropTypes.string,
+		direction: React.PropTypes.string,
+		tabItem: React.PropTypes.bool,
 	};
 
 	static defaultProps = {
-		active: null,
+		active: false,
 		color: "blue",
-		size: null,
+		direction: "horizontal",
+		tabItem: true,
 	};
 
 	render() {
-		const {size, children, hideMobile, active, color, icon} = this.props;
+		const {size, children, hideMobile, active, color, icon, direction} = this.props;
 		return (
 			<span
-				styleName={`tab ${size ? size : ""} ${hideMobile ? "hidden-s" : ""} ${active ? "active" : "inactive"} ${color}`
-			}>
+				styleName={`${size ? size : ""} ${hideMobile ? "hidden-s" : ""} ${active ? "active" : "inactive"} ${color} ${direction}`}>
 				{icon && <Icon icon={`${icon}-blue`} height="14px" width="auto" styleName={`icon ${!active ? "hide" : ""}`}/>}
 				{icon && <Icon icon={`${icon}-gray`} height="14px" width="auto" styleName={`icon ${active ? "hide" : ""}`}/>}
 				{children}
