@@ -9,11 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
-
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/jsonutil"
@@ -181,30 +176,10 @@ func TestRepos_List_URIs(t *testing.T) {
 	}
 }
 
-type RepoGetterMockPublicRepo struct{}
-
-func (r *RepoGetterMockPublicRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return &sourcegraph.RemoteRepo{Private: false}, nil
-}
-
-type RepoGetterMockPrivateRepo struct{}
-
-func (r *RepoGetterMockPrivateRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return &sourcegraph.RemoteRepo{Private: true}, nil
-}
-
-type RepoGetterMockUnauthorizedRepo struct{}
-
-func (r *RepoGetterMockUnauthorizedRepo) Get(ctx context.Context, uri string) (*sourcegraph.RemoteRepo, error) {
-	return nil, grpc.Errorf(codes.Unauthenticated, "%s", "github.Repos.Get")
-}
-
 func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	repoGetter = &RepoGetterMockPublicRepo{}
 
 	ctx, _, done := testContext()
 	defer done()
@@ -228,24 +203,12 @@ func TestRepos_List_GitHubURIs_PublicRepo(t *testing.T) {
 	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
 		t.Fatalf("got repos: %v, want %v", got, want)
 	}
-
-	repoList, err = s.List(ctx, &sourcegraph.RepoListOptions{SlowlyIncludePublicGitHubRepos: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want = []string{"a/b", "github.com/public"}
-	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
-		t.Fatalf("got repos: %v, want %v", got, want)
-	}
 }
 
 func TestRepos_List_GitHubURIs_PrivateRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	repoGetter = &RepoGetterMockPrivateRepo{}
 
 	ctx, _, done := testContext()
 	defer done()
@@ -270,8 +233,6 @@ func TestRepos_List_GithubURIs_UnauthenticatedRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	repoGetter = &RepoGetterMockUnauthorizedRepo{}
 
 	ctx, _, done := testContext()
 	defer done()

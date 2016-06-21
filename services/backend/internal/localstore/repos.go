@@ -221,11 +221,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	if opt.SlowlyIncludePublicGitHubRepos {
-		// special case for generating sitemap
-		return s.listAllGitHubPublic(ctx, opt)
-	}
-
 	sql, args, err := s.listSQL(opt)
 	if err != nil {
 		if err == errOptionsSpecifyEmptyResult {
