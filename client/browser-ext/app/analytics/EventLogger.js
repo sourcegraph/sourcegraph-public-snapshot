@@ -4,6 +4,8 @@ export class EventLogger {
 	_amplitude: any = null;
 
 	constructor() {
+		if (process.env.NODE_ENV === "test") return;
+
 		if (global.window && !this._amplitude) {
 			this._amplitude = require("amplitude-js/amplitude");
 
@@ -23,6 +25,8 @@ export class EventLogger {
 	}
 
 	logEvent(eventName, eventProperties) {
+		if (process.env.NODE_ENV === "test") return;
+
 		eventProperties = eventProperties ? eventProperties : {};
 		eventProperties["Platform"] = global.chrome ? "ChromeExtension" : "FirefoxExtension";
 		this._amplitude.logEvent(eventName, eventProperties);

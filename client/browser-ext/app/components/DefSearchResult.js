@@ -14,7 +14,7 @@ export default class DefSearchResult extends React.Component {
 
 	render() {
 		return (
-			<tr styleName="def-result-row" className="js-navigation-item tree-browser-result">
+			<tr styleName="def-result-row" className="js-navigation-item tree-browser-result sg-search-result">
 				<td styleName="octicon-chevron" className="icon">
 					<svg aria-hidden='true' styleName='octicon-chevron-right' className='octicon octicon-chevron-right' height='16' role='img' version='1.1' viewBox='0 0 8 16' width='8'>
 						<path d='M7.5 8L2.5 13l-1.5-1.5 3.75-3.5L1 4.5l1.5-1.5 5 5z'></path>

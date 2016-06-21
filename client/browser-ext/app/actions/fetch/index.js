@@ -10,6 +10,10 @@
 (function(self) {
   'use strict';
 
+  if (process.env.NODE_ENV === "test") {
+    return; // SOURCEGRAPH MOD: no-op for unit testing environment
+  }
+
   if (self.fetch) {
     // SOURCEGRAPH MOD: overwrite default fetch with this polyfill.
     if (self.fetch.polyfill) return; // the polyfill has already run
@@ -440,4 +444,4 @@
     })
   }
   self.fetch.polyfill = true
-})(typeof self !== 'undefined' ? self : this);
+})(typeof self !== 'undefined' ? self : global);

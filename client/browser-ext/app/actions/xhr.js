@@ -1,4 +1,5 @@
 import "./fetch";
+import btoa from "btoa";
 
 let token = null;
 export function useAccessToken(tok) {
@@ -6,6 +7,10 @@ export function useAccessToken(tok) {
 }
 
 const defaultOptions = function() {
+	if (typeof Headers === "undefined") {
+		return; // for unit tests
+	}
+
 	const headers = new Headers();
 	if (token) {
 		let auth = `x-oauth-basic:${token}`;
@@ -36,17 +41,9 @@ const combineHeaders = function (a, b) {
 const checkStatus = function(resp) {
 	if (resp.status >= 200 && resp.status <= 299) return resp;
 	return resp.text().then((body) => {
-		console.error(`HTTP fetch failed with status ${resp.status} ${resp.statusText}: ${resp.url}: ${body}`);
-		let err;
-		try {
-			err = {...(new Error(resp.status)), body: JSON.parse(body)};
-		} catch (error) {
-			err = {...(new Error(resp.statusText)),
-				body: body,
-				response: {status: resp.status, statusText: resp.statusText, url: resp.url},
-			};
-		}
-		throw err;
+		throw {...(new Error(resp.statusText)),
+			response: {status: resp.status, url: resp.url},
+		};
 	});
 }
 
