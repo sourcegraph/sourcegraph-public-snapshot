@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil/httpctx"
 )
 
@@ -28,6 +30,12 @@ const sessionCookieName = "session-oauth2-token"
 // HTTP request.
 var ErrNoSession = errors.New("no session cookie")
 
+// OnlySecureCookies indicates whether or not the
+// secure flag should be set for all issued cookies.
+func OnlySecureCookies(ctx context.Context) bool {
+	return conf.AppURL(ctx).Scheme == "https"
+}
+
 // ReadSessionCookie reads the session from the HTTP request. If there
 // is no session cookie, ErrNoSession is returned.
 func ReadSessionCookie(req *http.Request) (*Session, error) {
@@ -41,7 +49,7 @@ func ReadSessionCookie(req *http.Request) (*Session, error) {
 	return readSessionCookie(sessionCookie)
 }
 
-// ReadSessionCookieFromResponse reasd the session from an HTTP
+// ReadSessionCookieFromResponse reads the session from an HTTP
 // response. If there is no session cookie, ErrNoSession is returned.
 func ReadSessionCookieFromResponse(resp *http.Response) (*Session, error) {
 	for _, c := range resp.Cookies() {
@@ -67,7 +75,7 @@ func readSessionCookie(c *http.Cookie) (*Session, error) {
 
 // NewSessionCookie creates a new session cookie with the given
 // session information.
-func NewSessionCookie(s Session) (*http.Cookie, error) {
+func NewSessionCookie(s Session, isSecure bool) (*http.Cookie, error) {
 	encoded, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -78,12 +86,13 @@ func NewSessionCookie(s Session) (*http.Cookie, error) {
 		Path:     "/",
 		HttpOnly: true,
 		Expires:  time.Now().Add(time.Hour * 24 * 365 * 2),
+		Secure:   isSecure,
 	}, nil
 }
 
 // WriteSessionCookie writes the session cookie to the HTTP response.
-func WriteSessionCookie(w http.ResponseWriter, s Session) error {
-	sc, err := NewSessionCookie(s)
+func WriteSessionCookie(w http.ResponseWriter, s Session, isSecure bool) error {
+	sc, err := NewSessionCookie(s, isSecure)
 	if err != nil {
 		return err
 	}

@@ -131,7 +131,7 @@ func finishLoginOrSignup(ctx context.Context, cl *sourcegraph.Client, w http.Res
 	ctx = sourcegraph.WithCredentials(ctx, oauth2.StaticTokenSource(&oauth2.Token{TokenType: "Bearer", AccessToken: tok.AccessToken}))
 
 	// Authenticate as newly created user.
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}); err != nil {
+	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: tok.AccessToken}, appauth.OnlySecureCookies(ctx)); err != nil {
 		return err
 	}
 

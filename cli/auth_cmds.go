@@ -81,7 +81,10 @@ func (c *authCookieCmd) Execute(args []string) error {
 	fmt.Fprintln(os.Stderr, "// Auth cookie for the given OAuth2 access token:")
 	fmt.Fprintln(os.Stderr)
 
-	sess, err := appauth.NewSessionCookie(appauth.Session{AccessToken: c.AccessToken})
+	// Since there is no context object to derive the isSecure flag from, isSecure
+	// is arbitrarilly set to false. This is of no consequence since this field isn't used
+	// anyway.
+	sess, err := appauth.NewSessionCookie(appauth.Session{AccessToken: c.AccessToken}, false)
 	if err != nil {
 		return err
 	}

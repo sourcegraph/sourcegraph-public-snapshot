@@ -240,7 +240,7 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.C
 	if err != nil {
 		return err
 	}
-	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: sgTok.AccessToken}); err != nil {
+	if err := appauth.WriteSessionCookie(w, appauth.Session{AccessToken: sgTok.AccessToken}, appauth.OnlySecureCookies(ctx)); err != nil {
 		return err
 	}
 

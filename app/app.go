@@ -34,18 +34,22 @@ import (
 // 	<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
 //
 func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
-	h := nosurf.New(handler)
-	// Prevent setting a different cookie for subpaths if someone
-	// directly visits a subpath.
-	h.SetBaseCookie(http.Cookie{
-		Path: "/",
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := nosurf.New(handler)
+		// Prevent setting a different cookie for subpaths if someone
+		// directly visits a subpath.
+		h.SetBaseCookie(http.Cookie{
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   appauth.OnlySecureCookies(httpctx.FromRequest(r)),
+		})
+		h.ExemptRegexps("^/login/oauth/", "git-[\\w-]+$")
+		h.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			httpctx.SetRouteName(r, "")
+			internal.HandleError(w, r, http.StatusForbidden, errors.New("CSRF check failed"))
+		}))
+		h.ServeHTTP(w, r)
 	})
-	h.ExemptRegexps("^/login/oauth/", "git-[\\w-]+$")
-	h.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpctx.SetRouteName(r, "")
-		internal.HandleError(w, r, http.StatusForbidden, errors.New("CSRF check failed"))
-	}))
-	return h
 }
 
 // NewHandler returns a new app handler that uses the provided app
