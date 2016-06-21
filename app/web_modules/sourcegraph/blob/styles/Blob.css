@@ -58,7 +58,7 @@
 .blobAndToolbar {
 	composes: content;
 	composes: br from base;
-	composes: b--light-gray from colors;
+	composes: b--cool-pale-gray-8 from colors;
 }
 .toolbar {
 	/* TODO(sqs!): not really used right now (only has the build indicator) */

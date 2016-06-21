@@ -39,7 +39,7 @@
 
 .navbar {
 	composes: bb cf from base;
-	composes: bg-white b--cool-gray-2 from colors;
+	composes: bg-white b--cool-pale-gray-8 from colors;
 	display: flex;
 	align-items: center;
 	flex-wrap: nowrap;

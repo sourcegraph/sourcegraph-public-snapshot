@@ -2,7 +2,8 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 
 .sep {
-	composes: ph2 from base;
+	composes: ph1 from base;
+	composes: cool-mid-gray from colors;
 }
 
 .link {
