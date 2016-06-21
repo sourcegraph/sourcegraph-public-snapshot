@@ -28,6 +28,7 @@ func TestRefreshVCS(t *testing.T) {
 	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
+	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !updatedEverything {
@@ -35,6 +36,9 @@ func TestRefreshVCS(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("RefreshVCS call failed: %s", err)
+	}
+	if !*calledInternalUpdate {
+		t.Error("!calledInternalUpdate")
 	}
 }
 
@@ -59,6 +63,7 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
+	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !cloned {
@@ -69,6 +74,9 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("RefreshVCS call failed: %s", err)
+	}
+	if !*calledInternalUpdate {
+		t.Error("!calledInternalUpdate")
 	}
 }
 
@@ -92,6 +100,7 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	mock.servers.Auth.GetExternalToken_ = func(v0 context.Context, v1 *sourcegraph.ExternalTokenSpec) (*sourcegraph.ExternalToken, error) {
 		return nil, errors.New("mock")
 	}
+	calledInternalUpdate := mock.stores.Repos.MockInternalUpdate(t)
 
 	_, err := MirrorRepos.RefreshVCS(ctx, &sourcegraph.MirrorReposRefreshVCSOp{Repo: 1})
 	if !built {
@@ -99,5 +108,8 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("RefreshVCS call failed: %s", err)
+	}
+	if !*calledInternalUpdate {
+		t.Error("!calledInternalUpdate")
 	}
 }

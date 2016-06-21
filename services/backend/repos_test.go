@@ -133,10 +133,11 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 	ctx, mock := testContext()
 
 	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "r",
-		HTMLURL: "http://example.com/r",
-		Mirror:  true,
+		ID:          1,
+		URI:         "r",
+		HTMLURL:     "http://example.com/r",
+		Mirror:      true,
+		Permissions: &sourcegraph.RepoPermissions{Pull: true, Push: true},
 	}
 
 	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})

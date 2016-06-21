@@ -253,6 +253,11 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *store.
 		updated = true
 	}
 
+	// The Permissions field should NOT be persisted, because it is
+	// specific to the current user who requested the repo. So, don't
+	// track updated.
+	repo.Permissions = ghrepo.Permissions
+
 	if updated {
 		return updateOp
 	}

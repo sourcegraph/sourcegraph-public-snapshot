@@ -178,6 +178,26 @@ message Repo {
 	// Origin describes the repo's canonical location. It is only
 	// populated for mirror repos; for non-mirror repos, it is null.
 	Origin Origin = 19;
+
+	// Permissions describes the actions that the current user (who
+	// retrieved this repository from the API) may perform on the
+	// repository. For public repositories retrieved by
+	// non-contributors, the Permissions field may be null and the
+	// Pull permission is implied (because it's a public repository).
+	//
+	// TODO(sqs): Currently these map directly to the user's GitHub
+	// permissions for GitHub repositories; all other repositories
+	// report that all users have the Pull permission only.
+	RepoPermissions Permissions = 21;
+}
+
+// RepoPermissions describes the actions that a user may perform on a
+// repo. Currently, the definition of these permissions directly maps
+// to GitHub permissions, except for "Pull", which means read access.
+message RepoPermissions {
+	bool Pull = 1;
+	bool Push = 2;
+	bool Admin = 3;
 }
 
 message RepoListOptions {
@@ -575,6 +595,67 @@ message MirrorReposRefreshVCSOp {
 message VCSCredentials {
 	// Pass is the password provided to the VCS.
 	string Pass = 1;
+}
+
+// RemoteRepo is a repo canonically stored on an external host, and
+// possibly mirrored on the local instance.
+message RemoteRepo {
+	// GitHubID is the repo's GitHub repository ID.
+	int32 GitHubID = 1;
+
+	// Owner is the login or org name of the repo's owner ("foo" in
+	// github.com/foo/bar).
+	string Owner = 2;
+
+	// OwnerIsOrg is true if the repo's owner is an org (not a user).
+	bool OwnerIsOrg = 15;
+
+	// Name is the repo's name ("bar" in github.com/foo/bar).
+	string Name = 3;
+
+	// VCS is "git".
+	string VCS = 4;
+
+	// HTTPCloneURL is the repo's HTTP (preferably HTTPS) clone URL.
+	string HTTPCloneURL = 5;
+
+	// DefaultBranch is the default Git branch for the repo.
+	string DefaultBranch = 6;
+
+	// Description is the repo's description from GitHub.
+	string Description = 7;
+
+	// Language is the repo's primary programming language, as
+	// reported by GitHub.
+	string Language = 8;
+
+	// UpdatedAt is the date of the most recent update (push or
+	// metadata edit) to the repo on GitHub.
+	pbtypes.Timestamp UpdatedAt = 9;
+
+	// PushedAt is the date of the most recent git push to the repo.
+	pbtypes.Timestamp PushedAt = 14;
+
+	// Private is true for private repos.
+	bool Private = 10;
+
+	// Fork is true for repos that were forked from another repo using
+	// GitHub's "fork" operation.
+	bool Fork = 11;
+
+	// Mirror is true for mirror repos (e.g., Apache Foundation
+	// open-source repo mirrors on GitHub.com).
+	bool Mirror = 12;
+
+	// Stars is the number of stargazers of the GitHub repo.
+	int32 Stars = 13;
+
+	// Permissions describes the actions that the current user may
+	// perform on this remote repository on the remote service it came
+	// from. These permissions currently map directly to GitHub
+	// permissions but will be generalized/modified in the future to
+	// support more repo hosting services.
+	RepoPermissions Permissions = 24;
 }
 
 // MirrorRepos handles operations related to maintaining mirrors on

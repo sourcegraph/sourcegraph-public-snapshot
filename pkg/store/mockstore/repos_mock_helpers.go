@@ -87,3 +87,12 @@ func (s *Repos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	}
 	return
 }
+
+func (s *Repos) MockInternalUpdate(t *testing.T) (called *bool) {
+	called = new(bool)
+	s.InternalUpdate_ = func(ctx context.Context, repo int32, op store.InternalRepoUpdate) error {
+		*called = true
+		return nil
+	}
+	return
+}

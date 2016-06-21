@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"github.com/sourcegraph/go-github/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 )
@@ -51,6 +53,11 @@ func testRepos_Get(t *testing.T, private bool) {
 					Owner:    &github.User{ID: github.Int(1)},
 					CloneURL: github.String("https://github.com/owner/repo.git"),
 					Private:  github.Bool(private),
+					Permissions: &map[string]bool{
+						"pull":  true,
+						"push":  true,
+						"admin": false,
+					},
 				}, nil, nil
 			},
 		},
@@ -87,6 +94,9 @@ func testRepos_Get(t *testing.T, private bool) {
 	}
 	if want := "123"; repo.Origin.ID != want {
 		t.Errorf("got %s, want %s", repo.Origin.ID, want)
+	}
+	if want := (&sourcegraph.RepoPermissions{Pull: true, Push: true}); !reflect.DeepEqual(repo.Permissions, want) {
+		t.Errorf("got perms %#v, want %#v", repo.Permissions, want)
 	}
 }
 
