@@ -583,45 +583,6 @@ class TreeSearch extends Container {
 		return list;
 	}
 
-	_xdefItems(offset: number): {items: ?Array<any>, count: number} {
-		let groups = [];
-		let groupToDefs = {};
-
-		if (!this.state.xdefs || !this.state.xdefs.Defs) {
-			return {items: [], count: 0};
-		}
-		let defs = this.state.xdefs.Defs;
-		for (let i = 0; i < defs.length; i++) {
-			let repo = defs[i].Repo;
-			if (!groupToDefs[repo]) {
-				let repoDefs = [];
-				groups.push(repo);
-				groupToDefs[repo] = repoDefs;
-			}
-			groupToDefs[repo].push(defs[i]);
-		}
-
-		let sections = [];
-		let idx = offset;
-		for (let i = 0; i < groups.length; i++) {
-			let items = [];
-			let repo = groups[i];
-			let rdefs = groupToDefs[repo];
-			for (let j = 0; j < rdefs.length; j++) {
-				let def = rdefs[j];
-				items.push(this._defToLink(def, null, idx, "x"));
-				idx++;
-			}
-			sections.push(
-				<div key={`group-header:${repo}`} styleName="list-header">Symbols in {repo}</div>,
-				<div key={`group:${repo}`} styleName="list-item-group">
-					{items}
-				</div>
-			);
-		}
-		return {items: sections, count: idx - offset};
-	}
-
 	_defToLink(def: Def, rev: ?string, i: number, prefix: string) {
 		const selected = this._normalizedSelectionIndex() === i;
 		let defURL = urlToDef(def, rev);
@@ -681,7 +642,6 @@ class TreeSearch extends Container {
 		}
 
 		let symbolItems = this._symbolItems(0) || [];
-		let xdefInfo = this._xdefItems(this._numSymbolResults()) || {items: [], count: 0};
 		let listItems = this._listItems(this._numSymbolResults() + this._numXDefResults()) || [];
 
 		return (
@@ -713,8 +673,6 @@ class TreeSearch extends Container {
 						</div>
 					}
 				</div>
-
-				{xdefInfo.items}
 
 				<div styleName="list-header">
 					Files in
