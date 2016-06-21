@@ -24,8 +24,8 @@ the entire viewport height.
 }
 
 .breadcrumb {
-	composes: bb ph3 pv2 from base;
-	composes: b--cool-gray-2 bg-cool-pale-gray-2 from colors;
+	composes: bb ph3 pv3 from base;
+	composes: b--cool-pale-gray-8 from colors;
 }
 
 /*

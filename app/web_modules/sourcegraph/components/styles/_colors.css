@@ -6,6 +6,8 @@
 @value c_blue-1 rgba(15, 182, 242, .1);
 @value c_faded-blue rgb(155, 194, 215);
 @value c_dark-blue rgba(0, 82, 140, 1);
+@value c_dark-blue-5 rgba(0, 82, 140, .5);
+
 @value c_dark-blue-2 rgb(0, 166, 222);
 @value c_pale-blue rgba(247, 249, 255, 1);
 @value c_light-blue rgba(64,120,192,.06);
@@ -98,6 +100,7 @@
 .faded-blue { color: c_faded-blue; }
 .pale-blue { color: c_pale-blue; }
 .dark-blue { color: c_dark-blue; }
+.dark-blue-5 { color: c_dark-blue-5; }
 .green { color: c_green-text; }
 .green-8 { color: c_green-8; }
 .green-5 { color: c_green-5; }
@@ -173,6 +176,7 @@
 .bg-pale-blue { background-color: c_pale-blue; }
 .bg-light-blue { background-color: c_light-blue; }
 .bg-dark-blue { background-color: c_dark-blue; }
+.bg-dark-blue { background-color: c_dark-blue-5; }
 .bg-blue-gradient {
 	background-image: linear-gradient(-180deg, c_blue 0%, c_blue-text 100%);
 }
@@ -269,6 +273,7 @@
 .b--faded-blue { border-color: c_faded-blue; }
 .b--pale-blue { border-color: c_pale-blue; }
 .b--dark-blue { border-color: c_dark-blue; }
+.b--dark-blue { border-color: c_dark-blue-5; }
 .b--green { border-color: c_green; }
 .b--green-8 { border-color: c_green-8; }
 .b--green-5 { border-color: c_green-5; }
@@ -298,6 +303,7 @@
 .b--cool-gray-8 { border-color: c_cool-gray-8; }
 .b--cool-mid-gray { border-color: c_cool-mid-gray; }
 .b--cool-pale-gray { border-color: c_cool-pale-gray; }
+.b--cool-pale-gray-8 { border-color: c_cool-pale-gray-8; }
 .b--black { border-color: black; }
 .b--dark-gray { border-color: c_dark-gray; }
 .b--mid-gray { border-color: c_mid-gray; }
