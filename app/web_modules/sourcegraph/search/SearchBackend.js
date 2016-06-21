@@ -17,7 +17,6 @@ const SearchBackend = {
 			{
 				let p: SearchActions.WantResultsPayload = action.p;
 				let results = SearchStore.get(p.query, p.repos, p.notRepos, p.commitID, p.limit);
-				// let results = SearchStore.get(p.query, p.repos, p.notRepos, p.commitID, p.limit, p.prefixMatch, p.includeRepos);
 				if (results === null) {
 					let limit = p.limit || RESULTS_LIMIT;
 
@@ -37,6 +36,9 @@ const SearchBackend = {
 					}
 					if (p.commitID) {
 						q.push(`CommitID=${encodeURIComponent(p.commitID)}`);
+					}
+					if (p.fast) {
+						q.push(`Fast=1`);
 					}
 
 					trackPromise(

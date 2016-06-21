@@ -106,6 +106,7 @@ class GlobalSearch extends Container {
 				limit: RESULTS_LIMIT,
 				prefixMatch: this.props.location.query.prefixMatch,
 				includeRepos: this.props.location.query.includeRepos,
+				fast: true,
 			}));
 		}
 	}

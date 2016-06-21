@@ -258,7 +258,7 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		if len(op.TokQuery) == 1 { // special-case single token queries for performance
 			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
 
-			if len(op.TokQuery) < 10 {
+			if op.Opt.Fast && len(op.TokQuery) < 10 {
 				// Require ref_ct be above a threshold for single-token queries that have short length.
 				// NOTE: the RHS of this predicate ("3") must match the conditional of the partial index *exactly*.
 				wheres = append(wheres, `ref_ct >= 3`)

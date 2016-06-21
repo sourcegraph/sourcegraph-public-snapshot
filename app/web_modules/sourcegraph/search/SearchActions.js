@@ -10,6 +10,7 @@ export type WantResultsPayload = {
 	limit: number;
 	prefixMatch?: bool;
 	includeRepos?: bool;
+	fast?: bool;
 }
 
 export class WantResults {

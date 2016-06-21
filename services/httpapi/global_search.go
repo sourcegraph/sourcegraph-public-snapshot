@@ -34,6 +34,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		PrefixMatch  bool
 		IncludeRepos bool
 		CommitID     string
+		Fast         bool
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
 		return err
@@ -61,6 +62,7 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,
 			CommitID:     params.CommitID,
+			Fast:         params.Fast,
 		},
 	}
 
