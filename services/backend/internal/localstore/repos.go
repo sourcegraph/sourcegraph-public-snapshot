@@ -50,7 +50,6 @@ func init() {
 type dbRepo struct {
 	ID            int32
 	URI           string
-	Origin        string // DEPRECATED: will be removed in a future commit
 	Owner         string
 	Name          string
 	Description   string
