@@ -188,7 +188,7 @@ class TreeSearch extends Container {
 		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.commitID);
 
-		if (!this.context.user.Admin) { // DEPRECATED: remove after search index successful
+		if (!this.context.user || !this.context.user.Admin) { // DEPRECATED: remove after search index successful
 			state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
 		} else if (state.rev && state.rev.length === 40) {
 			state.matchingDefs = SearchStore.get(state.query, [this.props.repo], null, state.rev, LOCAL_DEFS_LIMIT);
@@ -221,7 +221,7 @@ class TreeSearch extends Container {
 			this._srclibBuildingInterval = null;
 		}
 
-		if (!this.context.user.Admin) { // DEPRECATED: remove after search index successful
+		if (!this.context.user || !this.context.user.Admin) { // DEPRECATED: remove after search index successful
 			if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
 				// Only fetch on the client, not server, so that we don't
 				// cache stale def lists prior to the repo's first build.
