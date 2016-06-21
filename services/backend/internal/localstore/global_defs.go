@@ -52,6 +52,7 @@ func init() {
 			`CREATE INDEX `+table+`_bow_idx ON `+table+` USING gin(to_tsvector('english', bow));`,
 			`CREATE INDEX `+table+`_doc_idx ON `+table+` USING gin(to_tsvector('english', doc));`,
 			`CREATE INDEX `+table+`_name ON `+table+` USING btree (lower(name));`,
+			`CREATE INDEX `+table+`_name_hi_ref_ct ON `+table+` USING btree (lower(name)) WHERE ref_ct >= 3;`,
 			`CREATE INDEX `+table+`_repo ON `+table+` USING btree (repo text_pattern_ops);`,
 			`CREATE INDEX `+table+`_updater ON `+table+` USING btree (repo, unit_type, unit, path);`,
 		)
@@ -257,7 +258,13 @@ func (g *globalDefs) Search(ctx context.Context, op *store.GlobalDefSearchOp) (*
 		if len(op.TokQuery) == 1 { // special-case single token queries for performance
 			wheres = append(wheres, `lower(name)=lower(`+arg(op.TokQuery[0])+`)`)
 
-			// Skip matching for too less characters.
+			if len(op.TokQuery) < 10 {
+				// Require ref_ct be above a threshold for single-token queries that have short length.
+				// NOTE: the RHS of this predicate ("3") must match the conditional of the partial index *exactly*.
+				wheres = append(wheres, `ref_ct >= 3`)
+			}
+
+			// Skip prefix matching for too few characters.
 			if op.Opt.PrefixMatch && len(op.TokQuery[0]) > 2 {
 				prefixSQL = ` OR to_tsquery('english', ` + arg(op.TokQuery[0]+":*") + `) @@ to_tsvector('english', bow)`
 			}
