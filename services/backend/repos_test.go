@@ -16,11 +16,15 @@ func TestReposService_Get(t *testing.T) {
 
 	wantRepo := &sourcegraph.Repo{
 		ID:      1,
-		URI:     "r",
-		HTMLURL: "http://example.com/r",
+		URI:     "github.com/u/r",
+		HTMLURL: "http://github.com/u/r",
+		Mirror:  true,
 	}
 
-	calledGet := mock.stores.Repos.MockGet_Path(t, 1, "r")
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{})
+
+	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
+	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
@@ -28,6 +32,74 @@ func TestReposService_Get(t *testing.T) {
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
+	}
+	// Should not be called because mock GitHub has same data as mock DB.
+	if *calledUpdate {
+		t.Error("calledUpdate")
+	}
+	if !reflect.DeepEqual(repo, wantRepo) {
+		t.Errorf("got %+v, want %+v", repo, wantRepo)
+	}
+}
+
+func TestReposService_Get_UpdateMeta(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	wantRepo := &sourcegraph.Repo{
+		ID:      1,
+		URI:     "github.com/u/r",
+		HTMLURL: "http://github.com/u/r",
+		Mirror:  true,
+	}
+
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{
+		Description: "This is a repository",
+	})
+
+	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
+	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
+
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !*calledUpdate {
+		t.Error("!calledUpdate")
+	}
+	if !reflect.DeepEqual(repo, wantRepo) {
+		t.Errorf("got %+v, want %+v", repo, wantRepo)
+	}
+}
+
+func TestReposService_Get_NonGitHub(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	wantRepo := &sourcegraph.Repo{
+		ID:      1,
+		URI:     "r",
+		HTMLURL: "http://example.com/r",
+		Mirror:  true,
+	}
+
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{})
+
+	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
+	calledUpdate := mock.stores.Repos.MockUpdate(t, 1)
+
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if *calledUpdate {
+		t.Error("calledUpdate")
 	}
 	if !reflect.DeepEqual(repo, wantRepo) {
 		t.Errorf("got %+v, want %+v", repo, wantRepo)

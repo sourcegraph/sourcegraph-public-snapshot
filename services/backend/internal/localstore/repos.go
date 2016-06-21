@@ -566,6 +566,18 @@ func (s *repos) Update(ctx context.Context, op store.RepoUpdate) error {
 			return err
 		}
 	}
+	if op.Fork != sourcegraph.ReposUpdateOp_NONE {
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "fork"=$1 WHERE id=$2`, op.Fork == sourcegraph.ReposUpdateOp_TRUE, op.Repo)
+		if err != nil {
+			return err
+		}
+	}
+	if op.Private != sourcegraph.ReposUpdateOp_NONE {
+		_, err := appDBH(ctx).Exec(`UPDATE repo SET "private"=$1 WHERE id=$2`, op.Private == sourcegraph.ReposUpdateOp_TRUE, op.Repo)
+		if err != nil {
+			return err
+		}
+	}
 
 	if op.UpdatedAt != nil {
 		_, err := appDBH(ctx).Exec(`UPDATE repo SET "updated_at"=$1 WHERE id=$2`, op.UpdatedAt, op.Repo)

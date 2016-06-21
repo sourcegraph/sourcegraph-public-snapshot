@@ -10,6 +10,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store/mockstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
 func init() {
@@ -33,6 +35,7 @@ func testContext() (ctx context.Context, mock *mocks, done func()) {
 	mock = &mocks{}
 	ctx = store.WithStores(ctx, mock.Stores.Stores())
 	ctx = store.WithRepoVCS(ctx, &mock.RepoVCS)
+	ctx = github.WithRepos(ctx, &mock.githubRepos)
 
 	dbCtx := WithAppDBH(ctx, appDBH)
 	dbCtx = WithGraphDBH(dbCtx, graphDBH)
@@ -45,4 +48,5 @@ func testContext() (ctx context.Context, mock *mocks, done func()) {
 type mocks struct {
 	mockstore.Stores
 	mockstore.RepoVCS
+	githubRepos githubmock.GitHubRepoGetter
 }

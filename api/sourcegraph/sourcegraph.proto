@@ -437,6 +437,18 @@ message ReposUpdateOp {
 
 	// DefaultBranch is the repo's new default branch.
 	string DefaultBranch = 6;
+
+	enum BoolType {
+		NONE = 0;
+		TRUE = 1;
+		FALSE = 2;
+	}
+
+	// Fork is whether this repository is a fork.
+	BoolType Fork = 7;
+
+	// Private is whether this repository is private.
+	BoolType Private = 8;
 };
 
 message ReposListCommitsOp {

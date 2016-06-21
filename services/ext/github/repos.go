@@ -34,7 +34,13 @@ func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
 }
 
-type Repos struct{}
+type Repos interface {
+	Get(context.Context, string) (*sourcegraph.RemoteRepo, error)
+	GetByID(context.Context, int) (*sourcegraph.RemoteRepo, error)
+	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error)
+}
+
+type repos struct{}
 
 type cachedRemoteRepo struct {
 	sourcegraph.RemoteRepo
@@ -44,7 +50,9 @@ type cachedRemoteRepo struct {
 	PublicNotFound bool
 }
 
-func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
+var _ Repos = (*repos)(nil)
+
+func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, error) {
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
@@ -89,7 +97,7 @@ func (s *Repos) Get(ctx context.Context, repo string) (*sourcegraph.RemoteRepo, 
 	return remoteRepo, nil
 }
 
-func (s *Repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
+func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
 	ghrepo, resp, err := client(ctx).repos.GetByID(id)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
@@ -178,7 +186,7 @@ func toRemoteRepo(ghrepo *github.Repository) *sourcegraph.RemoteRepo {
 //
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
-func (s *Repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error) {
+func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.RemoteRepo, error) {
 	ghRepos, resp, err := client(ctx).repos.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
@@ -189,4 +197,19 @@ func (s *Repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 		repos = append(repos, toRemoteRepo(&ghRepo))
 	}
 	return repos, nil
+}
+
+// WithRepos returns a copy of parent with the given GitHub Repos service.
+func WithRepos(parent context.Context, s Repos) context.Context {
+	return context.WithValue(parent, reposKey, s)
+}
+
+// ReposFromContext gets the context's GitHub Repos service.
+// If the value is not present, it creates a temporary one.
+func ReposFromContext(ctx context.Context) Repos {
+	s, ok := ctx.Value(reposKey).(Repos)
+	if !ok || s == nil {
+		return &repos{}
+	}
+	return s
 }

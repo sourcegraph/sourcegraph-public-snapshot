@@ -76,6 +76,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (*sourc
 	if repo.Blocked {
 		return nil, grpc.Errorf(codes.FailedPrecondition, "repo %s is blocked", repo)
 	}
+
 	return repo, nil
 }
 
@@ -99,28 +100,102 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 }
 
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
+	var updateOp *store.RepoUpdate
 	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
 	// Fetch latest metadata from GitHub (we don't even try to keep
 	// our cache up to date).
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
-		ghrepo, err := (&github.Repos{}).Get(ctx, repo.URI)
+		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
 		if err != nil {
 			return err
 		}
-		repoSetFromRemote(repo, ghrepo)
+		updateOp = repoSetFromRemote(repo, ghrepo)
+	}
+
+	if updateOp != nil {
+		log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
+		if err := store.ReposFromContext(ctx).Update(ctx, *updateOp); err != nil {
+			log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
+		}
 	}
 
 	return nil
 }
 
-func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) {
-	repo.Description = ghrepo.Description
-	repo.Language = ghrepo.Language
-	repo.DefaultBranch = ghrepo.DefaultBranch
-	repo.Fork = ghrepo.Fork
-	repo.Private = ghrepo.Private
-	repo.UpdatedAt = ghrepo.UpdatedAt
-	repo.PushedAt = ghrepo.PushedAt
+func timestampEqual(a, b *pbtypes.Timestamp) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return a.Seconds == b.Seconds && a.Nanos == b.Nanos
+}
+
+// repoSetFromRemote updates repo with fields from ghrepo that are
+// different. If any fields are changed a non-nil store.RepoUpdate is returned
+// representing the update.
+func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.RemoteRepo) *store.RepoUpdate {
+	updateOp := &store.RepoUpdate{
+		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
+			Repo: repo.ID,
+		},
+	}
+	updated := false
+	if repo.Description != ghrepo.Description {
+		repo.Description = ghrepo.Description
+		updateOp.Description = ghrepo.Description
+		updated = true
+	}
+	if repo.Language != ghrepo.Language {
+		repo.Language = ghrepo.Language
+		updateOp.Language = ghrepo.Language
+		updated = true
+	}
+	if repo.DefaultBranch != ghrepo.DefaultBranch {
+		repo.DefaultBranch = ghrepo.DefaultBranch
+		updateOp.DefaultBranch = ghrepo.DefaultBranch
+		updated = true
+	}
+	if repo.Fork != ghrepo.Fork {
+		repo.Fork = ghrepo.Fork
+		if ghrepo.Fork {
+			updateOp.Fork = sourcegraph.ReposUpdateOp_TRUE
+		} else {
+			updateOp.Fork = sourcegraph.ReposUpdateOp_FALSE
+		}
+		updated = true
+	}
+	if repo.Private != ghrepo.Private {
+		repo.Private = ghrepo.Private
+		if ghrepo.Private {
+			updateOp.Private = sourcegraph.ReposUpdateOp_TRUE
+		} else {
+			updateOp.Private = sourcegraph.ReposUpdateOp_FALSE
+		}
+		updated = true
+	}
+	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
+		repo.UpdatedAt = ghrepo.UpdatedAt
+		if ghrepo.UpdatedAt != nil {
+			t := ghrepo.UpdatedAt.Time()
+			updateOp.UpdatedAt = &t
+		}
+		updated = true
+	}
+	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
+		repo.PushedAt = ghrepo.PushedAt
+		if ghrepo.PushedAt != nil {
+			t := ghrepo.PushedAt.Time()
+			updateOp.PushedAt = &t
+		}
+		updated = true
+	}
+
+	if updated {
+		return updateOp
+	}
+	return nil
 }
 
 func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo *sourcegraph.Repo, err error) {
@@ -200,7 +275,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 }
 
 func (s *repos) newRepoFromGitHubID(ctx context.Context, gitHubID int) (*sourcegraph.Repo, error) {
-	ghrepo, err := (&github.Repos{}).GetByID(ctx, gitHubID)
+	ghrepo, err := github.ReposFromContext(ctx).GetByID(ctx, gitHubID)
 	if err != nil {
 		return nil, err
 	}
