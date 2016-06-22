@@ -296,13 +296,12 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		return err
 	}
 	dbh := graphDBH(ctx)
-	repo := op.Repo
 
-	repoPath, commitID, err := resolveRevisionDefaultBranch(ctx, repo)
+	repo, commitID, err := resolveRevisionDefaultBranch(ctx, op.Repo)
 	if err != nil {
 		return err
 	}
-	oldCommitID, err := g.version(dbh, repoPath)
+	oldCommitID, err := g.version(dbh, repo)
 	if err != nil {
 		return err
 	}
@@ -315,7 +314,7 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 
 	allRefs, err := store.GraphFromContext(ctx).Refs(
-		sstore.ByRepoCommitIDs(sstore.Version{Repo: repoPath, CommitID: commitID}),
+		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
 	)
 	if err != nil {
 		return err
@@ -335,7 +334,7 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		// stage. Rather not index at all. Alerting on this error
 		// should be handled upstream.
 		if r.DefRepo == "" || r.DefUnit == "" || r.DefUnitType == "" || r.DefPath == "" {
-			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repoPath, commitID, r)
+			return fmt.Errorf("graphstore contains invalid reference: repo=%s commit=%s ref=%+v", repo, commitID, r)
 		}
 		// Ignore ref to builtin defs of golang/go repo (string, int, bool, etc) as this
 		// doesn't add significant value; yet it adds up to a lot of space in the db,
@@ -414,7 +413,7 @@ ON COMMIT DROP;`
 		// Insert refs into temporary table
 		for _, r := range refs {
 			defKeyID := defKeyIDs[graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
-			if _, err := stmt.Exec(defKeyID, repoPath, r.File); err != nil {
+			if _, err := stmt.Exec(defKeyID, repo, r.File); err != nil {
 				return fmt.Errorf("global_refs_tmp stmt insert failed: %s", err)
 			}
 		}
@@ -426,7 +425,7 @@ ON COMMIT DROP;`
 		}
 
 		// Purge all existing ref data for files in this source unit.
-		if _, err := tx.Exec(finalDeleteSQL, repoPath); err != nil {
+		if _, err := tx.Exec(finalDeleteSQL, repo); err != nil {
 			return err
 		}
 
@@ -436,7 +435,7 @@ ON COMMIT DROP;`
 		}
 
 		// Update version row again, to have a more relevant timestamp
-		if err := g.versionUpdate(tx, repoPath, commitID); err != nil {
+		if err := g.versionUpdate(tx, repo, commitID); err != nil {
 			return err
 		}
 		return nil
