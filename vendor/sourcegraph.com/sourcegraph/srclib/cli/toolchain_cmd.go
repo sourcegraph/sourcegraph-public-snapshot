@@ -264,6 +264,7 @@ var stdToolchains = toolchainMap{
 	"java":       toolchainInstaller{"Java (sourcegraph.com/sourcegraph/srclib-java)", installJavaToolchain},
 	"basic":      toolchainInstaller{"PHP, Objective-C (sourcegraph.com/sourcegraph/srclib-basic)", installBasicToolchain},
 	"csharp":     toolchainInstaller{"C# (sourcegraph.com/sourcegraph/srclib-csharp)", installCSharpToolchain},
+	"css":        toolchainInstaller{"CSS (sourcegraph.com/sourcegraph/srclib-css)", installCSSToolchain},
 }
 
 func (m toolchainMap) listKeys() string {
@@ -462,7 +463,7 @@ func installPythonToolchain() error {
 
 	requiredCmds := map[string]string{
 		"go":         "visit https://golang.org/doc/install",
-		"python":     "visit https://www.python.org/downloads/",
+		"python3.5":  "visit https://www.python.org/downloads/",
 		"pip":        "visit http://pip.readthedocs.org/en/latest/installing.html",
 		"virtualenv": "run `[sudo] pip install virtualenv`",
 	}
@@ -598,6 +599,56 @@ Refusing to install Basic toolchain because %s is not installed or is not on the
 
 	log.Println("Building Basic toolchain program")
 	if err := execCmdInDir(srclibpathDir, "make"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func installCSSToolchain() error {
+
+	const toolchainName = "srclib-css"
+
+	// Identify if Go is installed already or not.
+	if _, err := exec.LookPath("go"); isExecErrNotFound(err) {
+		return errors.New(`
+Refusing to install Go toolchain because Go is not installed or is not on the
+system path.
+
+-> Please install the latest version of Go (https://golang.org/doc/install) and
+run this command again.`)
+	} else if err != nil {
+		return err
+	}
+
+	// retrieve or create GOPATH
+	gopathDir := getGoPath()
+
+	// Go-based toolchains should be cloned into GOPATH/src/TOOLCHAIN
+	// otherwise govendor refuses to work if source code is located outside of GOPATH
+	gopathDir = filepath.Join(gopathDir, "src", toolchainFQN(toolchainName))
+	if err := os.MkdirAll(filepath.Dir(gopathDir), 0700); err != nil {
+		return err
+	}
+
+	log.Println("Downloading CSS toolchain")
+	if err := cloneToolchain(gopathDir, toolchainCloneURI(toolchainName)); err != nil {
+		return err
+	}
+
+	srclibpathDir, err := prepareParentDir(toolchainName)
+	if err != nil {
+		return err
+	}
+
+	// Adding symlink SRCLIBPATH/TOOLCHAIN that points to GOPATH/src/TOOLCHAIN
+	err = symlink(gopathDir, srclibpathDir)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Building CSS toolchain program")
+	if err := execCmdInDir(gopathDir, "make"); err != nil {
 		return err
 	}
 

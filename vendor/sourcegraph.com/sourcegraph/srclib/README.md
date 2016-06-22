@@ -40,7 +40,7 @@ See [srclib.org](https://srclib.org) for more information.
 
 Currently, srclib supports:
 
-* **Languages:** [Go](https://sourcegraph.com/sourcegraph/srclib-go), [JavaScript](https://github.com/sourcegraph/srclib-javascript), and [Ruby](https://github.com/sourcegraph/srclib-ruby) (coming very soon: [Python](https://sourcegraph.com/sourcegraph/srclib-python) and [Java](https://github.com/sourcegraph/srclib-java))
+* **Languages:** [Go](https://sourcegraph.com/sourcegraph/srclib-go), [JavaScript](https://github.com/sourcegraph/srclib-javascript), and [Ruby](https://github.com/sourcegraph/srclib-ruby) (coming very soon: [Python](https://sourcegraph.com/sourcegraph/srclib-python), [Java](https://github.com/sourcegraph/srclib-java), and [Bash](https://github.com/sourcegraph/srclib-bash))
 
 * **Features:** jump-to-definition, find usages, type inference, documentation
   generation, and dependency resolution
