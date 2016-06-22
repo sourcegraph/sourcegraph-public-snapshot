@@ -177,3 +177,7 @@ var defsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Name:      "update_duration_seconds",
 	Help:      "Duration for updating a def",
 }, []string{"table", "repo", "part"})
+
+func init() {
+	prometheus.MustRegister(defsUpdateDuration)
+}
