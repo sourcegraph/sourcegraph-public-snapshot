@@ -11,15 +11,11 @@ default:
 
 build: $(TOOLCHAINS)
 
-push:
-	for t in $(TOOLCHAINS); do docker push sourcegraph/$$t; done;
-
-pull:
-	for t in $(TOOLCHAINS); do docker pull sourcegraph/$$t; done;
-
 $(TOOLCHAINS): srclib
 	@$(eval COMMIT = $(shell git ls-remote https://github.com/sourcegraph/$@ master | awk '{ print $$1 }'))
-	docker build --build-arg TOOLCHAIN_URL=https://github.com/sourcegraph/$@/tarball/${COMMIT} -t sourcegraph/$@ -f ./Dockerfile.$@ .
+	docker build --build-arg TOOLCHAIN_URL=https://github.com/sourcegraph/$@/tarball/${COMMIT} -t sourcegraph/$@:${COMMIT} -f ./Dockerfile.$@ .
+	docker push sourcegraph/$@:${COMMIT}
+	@echo Update the image in ../plan/srclib_images.go to sourcegraph/$@:${COMMIT}
 
 # Generates srclib binary
 srclib:
