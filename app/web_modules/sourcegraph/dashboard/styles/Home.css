@@ -61,6 +61,11 @@
 	max-width: 620px;
 }
 
+.subheading {
+	composes: mv0 from base;
+	composes: white from colors;
+}
+
 .h3 {
 	composes: f3 fw6 from typography;
 	composes: blue from colors;

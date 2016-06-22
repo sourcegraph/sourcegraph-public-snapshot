@@ -38,6 +38,7 @@ class AnonymousLandingPage extends Component {
 							<Heading level="1" color="white">
 								Global code search &amp; cross&#8209;references
 							</Heading>
+							<h2 styleName="subheading">Jump to any definition and see how to use it</h2>
 						</div>
 						<div styleName="row">
 							<Panel hoverLevel="low" className={`${base.mv4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
