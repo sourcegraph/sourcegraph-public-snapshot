@@ -5,10 +5,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"gopkg.in/gorp.v1"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
@@ -312,11 +316,33 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 		}
 	}
 
+	observe := func(part string, start time.Time) {
+		log15.Debug("TRACE GlobalDefsMulti.Update", "part", part, "duration", time.Since(start))
+	}
+	if len(op.RepoUnits) == 1 {
+		// If we just have 1 repo (the usual case), we can do some
+		// more reasonable instrumentation
+		repo, err := store.ReposFromContext(ctx).Get(ctx, op.RepoUnits[0].Repo)
+		if err != nil {
+			return err
+		}
+		observe = func(part string, start time.Time) {
+			since := time.Since(start)
+			log15.Debug("TRACE GlobalDefs.Update", "repo", repo.URI, "part", part, "duration", since)
+			trackedRepo := repotrackutil.GetTrackedRepo(repo.URI)
+			globalDefsUpdateDuration.WithLabelValues(trackedRepo, part).Observe(since.Seconds())
+		}
+	}
+	defer observe("total", time.Now())
+
+	start := time.Now()
 	repoUnits, err := resolveUnits(ctx, op.RepoUnits)
+	observe("resolveUnits", start)
 	if err != nil {
 		return err
 	}
 
+	start = time.Now()
 	for _, repoUnit := range repoUnits {
 		repoPath, commitID, err := resolveRevisionDefaultBranch(ctx, repoUnit.Repo)
 		if err != nil {
@@ -327,6 +353,7 @@ func (g *globalDefs) Update(ctx context.Context, op store.GlobalDefUpdateOp) err
 			return err
 		}
 	}
+	observe("updateDefs", start)
 
 	return nil
 }
@@ -338,11 +365,33 @@ func (g *globalDefs) RefreshRefCounts(ctx context.Context, op store.GlobalDefUpd
 		}
 	}
 
+	observe := func(part string, start time.Time) {
+		log15.Debug("TRACE GlobalDefsMulti.RefreshRefCounts", "part", part, "duration", time.Since(start))
+	}
+	if len(op.RepoUnits) == 1 {
+		// If we just have 1 repo (the usual case), we can do some
+		// more reasonable instrumentation
+		repo, err := store.ReposFromContext(ctx).Get(ctx, op.RepoUnits[0].Repo)
+		if err != nil {
+			return err
+		}
+		observe = func(part string, start time.Time) {
+			since := time.Since(start)
+			log15.Debug("TRACE GlobalDefs.RefreshRefCounts", "repo", repo.URI, "part", part, "duration", since)
+			trackedRepo := repotrackutil.GetTrackedRepo(repo.URI)
+			globalDefsRefreshRefCountsDuration.WithLabelValues(trackedRepo, part).Observe(since.Seconds())
+		}
+	}
+	defer observe("total", time.Now())
+
+	start := time.Now()
 	repoUnits, err := resolveUnits(ctx, op.RepoUnits)
+	observe("resolveUnits", start)
 	if err != nil {
 		return err
 	}
 
+	start = time.Now()
 	for _, repoUnit := range repoUnits {
 		updateSQL := `UPDATE global_defs d
 SET ref_ct = refs.ref_ct
@@ -358,6 +407,8 @@ WHERE repo=def_repo AND unit_type=refs.def_unit_type AND unit=refs.def_unit AND 
 			return err
 		}
 	}
+	log15.Debug("GlobalRefs.RefreshRefCounts finished", "units", len(repoUnits), "duration", time.Since(start))
+	observe("update", start)
 	return nil
 }
 
@@ -381,6 +432,7 @@ func resolveUnits(ctx context.Context, repoUnits []store.RepoUnit) ([]resolvedRe
 			continue
 		}
 
+		start := time.Now()
 		units_, err := store.GraphFromContext(ctx).Units(sstore.ByRepos(repo.URI))
 		if err != nil {
 			return nil, err
@@ -395,6 +447,10 @@ func resolveUnits(ctx context.Context, repoUnits []store.RepoUnit) ([]resolvedRe
 				RepoURI: repo.URI,
 			})
 		}
+		since := time.Since(start)
+		log15.Debug("TRACE GlobalDefs", "repo", repo.URI, "part", "resolveUnits", "units", len(units_), "duration", since)
+		trackedRepo := repotrackutil.GetTrackedRepo(repo.URI)
+		globalDefsResolveUnitDuration.WithLabelValues(trackedRepo).Observe(since.Seconds())
 	}
 	return resolved, nil
 }
@@ -424,4 +480,29 @@ func repoURIs(ctx context.Context, repoIDs []int32) (uris []string, err error) {
 		uris = append(uris, repo.URI)
 	}
 	return uris, nil
+}
+
+var globalDefsResolveUnitDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "global_defs",
+	Name:      "resolve_unit_duration_seconds",
+	Help:      "Duration for resolving a unit in global_defs",
+}, []string{"repo"})
+var globalDefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "global_defs",
+	Name:      "update_duration_seconds",
+	Help:      "Duration for updating global_defs",
+}, []string{"repo", "part"})
+var globalDefsRefreshRefCountsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "global_defs",
+	Name:      "ref_counts_duration_seconds",
+	Help:      "Duration for refreshing RefCounts for global_defs",
+}, []string{"repo", "part"})
+
+func init() {
+	prometheus.MustRegister(globalDefsResolveUnitDuration)
+	prometheus.MustRegister(globalDefsUpdateDuration)
+	prometheus.MustRegister(globalDefsRefreshRefCountsDuration)
 }
