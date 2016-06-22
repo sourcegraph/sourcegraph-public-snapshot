@@ -598,39 +598,6 @@ class TreeSearch extends Container {
 		);
 	}
 
-	_overlayBreadcrumb() {
-		if (!this.state.path) return null;
-		let path = this.state.path;
-
-		const urlToPathPrefix = (i) => {
-			const parts = pathSplit(path);
-			const pathPrefix = pathJoin(parts.splice(0, i + 1));
-			return urlToTree(this.state.repo, this.state.rev, pathPrefix);
-		};
-
-		let filepath = path;
-		if (filepath.indexOf("/") === 0) filepath = filepath.substring(1);
-
-		let fileBreadcrumb = breadcrumb(
-			filepath,
-			(i) => <span key={i} styleName="path-sep">/</span>,
-			(p, component, i, isLast) => (
-				<Link to={urlToPathPrefix(i)}
-					key={i}
-					styleName={isLast ? "path-active" : "path-inactive"}>
-					{component}
-				</Link>
-			),
-		);
-
-		return (
-			<span styleName="file-path">
-				<RepoLink repo={`${this.state.repo}/`} />
-				{fileBreadcrumb}
-			</span>
-		);
-	}
-
 	render() {
 		if (this.state.fileResults && this.state.fileResults.Error) {
 			let code = httpStatusCode(this.state.fileResults.Error);
@@ -675,8 +642,7 @@ class TreeSearch extends Container {
 				</div>
 
 				<div styleName="list-header">
-					Files in
-					{!this.state.query && this.state.overlay && this._overlayBreadcrumb()}
+					Files
 				</div>
 				<div styleName="list-item-group">
 					{listItems}
