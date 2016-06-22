@@ -13,6 +13,7 @@
 
 .flex-fill { flex: 1 }
 .tc { composes: tc from typography; }
+.tc { composes: tc from typography; }
 .white { composes: white from typography; }
 .hidden-s { composes: hidden-s from base; }
 
@@ -20,7 +21,6 @@
 	composes: containerFixed from layout;
 	composes: col-12-ns col-11 from grid;
 	composes: center from base;
-	max-width: container-max-width;
 }
 .container p, .responsive-container p {
 	margin-left: auto;
@@ -38,6 +38,12 @@
 	composes: col-12-ns col-11 from grid;
 	composes: center from base;
 	max-width: 1200px;
+}
+
+.search-container {
+	composes: containerFixed from layout;
+	composes: col-12-ns col-11 from grid;
+	composes: center from base;
 }
 
 .h1 {
@@ -150,6 +156,44 @@
 	composes: cf from base;
 }
 
+.search-examples  {
+	composes: white from colors;
+	display: flex;
+	align-items: center;	
+	justify-content: center;
+}
+
+.examples-brace {
+	composes: ph1 from base;
+	font-size: 4.5rem;
+	font-weight: normal;
+	position: relative;
+	top: -3px;
+}
+
+.examples-label {
+	font-weight: bold;
+	display: flex;
+	align-items: center;	
+}
+
+.examples-category {
+	composes: pv1 from base;
+	display: block;
+	text-align: left;
+}
+
+.search-example {
+	composes: pa1 ml1 br2 from base;
+	composes: bg-white purple from colors;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.search-example:hover {
+	opacity: 0.9;
+}
+
 .project-desc {
 	composes: mt2 from base;
 	composes: f5 from typography;
@@ -237,4 +281,5 @@ a.white:hover {
 	.block-sm { display: block }
 	.ma0-sm {	margin: 0 }
 	.mv4-sm { composes: mv4 from base; }
+	.examples-label { display: none; }
 }

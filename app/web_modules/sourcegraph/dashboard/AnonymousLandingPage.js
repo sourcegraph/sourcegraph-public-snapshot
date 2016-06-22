@@ -2,13 +2,18 @@ import React from "react";
 import {Link} from "react-router";
 import Component from "sourcegraph/Component";
 import CSSModules from "react-css-modules";
-import {Logo, Button, Heading} from "sourcegraph/components";
+import {Logo, Button, Heading, Panel} from "sourcegraph/components";
 import styles from "./styles/Home.css";
 import base from "sourcegraph/components/styles/_base.css";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
+import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class AnonymousLandingPage extends Component {
+	static propTypes = {
+		location: React.PropTypes.object.isRequired,
+	}
+
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		siteConfig: React.PropTypes.object.isRequired,
@@ -19,27 +24,74 @@ class AnonymousLandingPage extends Component {
 		super(props);
 	}
 
+	reconcileState(state, props) {
+		state.location = props.location;
+	}
+
 	render() {
 		const {siteConfig, eventLogger} = this.context;
 		return (
 			<div styleName="flex-fill" style={{marginTop: "-2.3rem"}}>
-				<div styleName="box-purple-gradient screenshot-container tc" className={base.pt5}>
-					<div styleName="container" className={base.pt3}>
+				<div styleName="box-purple-gradient" className={base.pt5}>
+					<div styleName="search-container" className={base.pt3}>
 						<div styleName="row tc">
-							<Heading level="1" underline="white" color="white">
+							<Heading level="1" color="white">
 								Global code search &amp; cross&#8209;references
 							</Heading>
-							<p styleName="lead white" className={base.mt2}>Search for a function, type, or package, and see how other developers use it, globally. Free for public and private projects.</p>
-
-							<p styleName="white ma0-sm" className={base.mt4}>
+						</div>
+						<div styleName="row">
+							<Panel hoverLevel="low" className={`${base.mv4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
+								<GlobalSearch query={this.props.location.query.q || ""} location={this.props.location} />
+							</Panel>
+						</div>
+						<div styleName="row tc search-examples">
+							<div styleName="examples-label">
+								<span styleName="white">Try some common searches </span>
+								<span styleName="examples-brace">{"{"}</span>
+							</div>
+							<div className={base.pl2}>
+								<table>
+									<tbody>
+										<tr>
+											<td>Go:</td>
+											<td styleName="examples-category">
+												<Link to="/?q=golang+http.Get">
+													<code styleName="search-example">http.Get</code>
+												</Link>
+												<Link to="/?q=golang+Sprintf">
+													<code styleName="search-example">Sprintf</code>
+												</Link>
+												<Link to="/?q=func+Decode">
+													<code styleName="search-example">func Decode</code>
+												</Link>
+											</td>
+										</tr>
+										<tr>
+											<td>Java:</td>
+											<td styleName="examples-category">
+												<Link to="/?q=java+sql.ResultSet">
+													<code styleName="search-example">sql.ResultSet</code>
+												</Link>
+												<Link to="/?q=java+DateTime">
+													<code styleName="search-example">DateTime</code>
+												</Link>
+												<Link to="/?q=java+junit+assertEquals">
+													<code styleName="search-example">junit assertEquals</code>
+												</Link>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div styleName="row tc">
+							<p styleName="white ma0-sm" className={`${base.mb4}`}>
 								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
 									<strong>Sign up with GitHub</strong>
 								</GitHubAuthButton>
-								<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedExplorePublicRepo", {page_name: AnalyticsConstants.PAGE_HOME})} styleName="white block-sm mv4-sm">Or try it on open-source code &nbsp;&#x276f;</Link>
 							</p>
 						</div>
 					</div>
-					<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-heros.png`} width="100%" styleName="hero-screenshot hidden-s"/>
 				</div>
 				<div styleName="container-lg">
 					<div styleName="content-block">
