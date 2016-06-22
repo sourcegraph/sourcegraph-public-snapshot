@@ -86,7 +86,7 @@ class AnonymousLandingPage extends Component {
 							</div>
 						</div>
 						<div styleName="row tc">
-							<p styleName="white ma0-sm" className={`${base.mb4}`}>
+							<p styleName="white" className={`${base.mb4}`}>
 								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
 									<strong>Sign up with GitHub</strong>
 								</GitHubAuthButton>
