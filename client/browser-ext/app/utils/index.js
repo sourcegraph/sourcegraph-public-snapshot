@@ -73,7 +73,7 @@ export function isSourcegraphURL(loc = window.location) {
 
 export function getCurrentBranch() {
 	let branchDropdownEl = document.getElementsByClassName("btn btn-sm select-menu-button js-menu-target css-truncate");
-	if (!branchDropdownEl || branchDropdownEl.length > 1) return null;
+	if (!branchDropdownEl || branchDropdownEl.length !== 1) return null;
 
 	return branchDropdownEl[0].title;
 }

@@ -1,5 +1,4 @@
 import React from "react";
-import ReactDOM from "react-dom";
 
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
@@ -39,8 +38,6 @@ export default class BlobAnnotator extends Component {
 	constructor(props) {
 		super(props);
 
-		this._unmount = this._unmount.bind(this);
-
 		this.state = utils.parseURL();
 
 		if (this.state.isDelta) {
@@ -48,20 +45,6 @@ export default class BlobAnnotator extends Component {
 			this.state.base = branches[0].innerText;
 			this.state.head = branches[1].innerText;
 		}
-	}
-
-	componentDidMount() {
-		document.addEventListener("pjax:success", this._unmount)
-		document.addEventListener("popstate", this._unmount)
-	}
-
-	componentWillUnmount() {
-		document.removeEventListener("pjax:success", this._unmount);
-		document.removeEventListener("popstate", this._unmount);
-	}
-
-	_unmount() {
-		ReactDOM.unmountComponentAtNode(ReactDOM.findDOMNode(this).parentNode);
 	}
 
 	reconcileState(state, props) {
@@ -136,13 +119,6 @@ export default class BlobAnnotator extends Component {
 	}
 
 	_addAnnotations(state) {
-		if (!state.blobElement.isConnected) {
-			// TODO: .isConnected is not supported on Firefox; but otherwise we have a race condition
-			// on unmounting the element (e.g. between pages) and trying to write annotations.
-			// This can probably be solved by setting the annotation marker somewhere else on the page
-			// so we can detect it across page views.
-		}
-
 		function apply(rev, branch, isBase) {
 			const json = state.annotations.content[keyFor(state.repoURI, rev, state.path)];
 			if (json) {

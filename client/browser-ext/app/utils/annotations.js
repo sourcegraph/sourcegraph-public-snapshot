@@ -10,16 +10,8 @@ import EventLogger from "../analytics/EventLogger";
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
 export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes) {
-	const markerID = `sourcegraph-annotation-marker-${path}-@${repoRevSpec.rev}`;
-	if (document.getElementById(markerID)) {
-		// Don't let annotations be applied twice (it is not idempotent).
-		return;
-	} else {
-		const marker = document.createElement("div");
-		marker.id = markerID;
-		marker.style.display = "none";
-		el.appendChild(marker);
-	}
+	if (el.dataset[repoRevSpec.rev]) return;
+	el.dataset[repoRevSpec.rev] = true;
 	_applyAnnotations(el, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes));
 	_postProcess();
 }
