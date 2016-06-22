@@ -64,6 +64,14 @@ function pathDir(path: string): string {
 	return pathJoin(parts.splice(0, parts.length - 1));
 }
 
+function fuzzyMatchPath(pattern: string, path: string): boolean {
+	let parts = pathSplit(path);
+	if (parts === EMPTY_PATH || parts.length === 0) {
+		return false;
+	}
+	return fuzzysearch(pattern, parts[parts.length - 1]);
+}
+
 type TreeSearchProps = {
 	repo: string;
 	rev: ?string;
@@ -327,7 +335,7 @@ class TreeSearch extends Container {
 
 			} else if (nextState.fileList && nextState.fileList.Files) {
 				nextState.fileResults = nextState.fileList.Files
-					.filter((f) => fuzzysearch(nextState.query, f))
+					.filter((f) => fuzzyMatchPath(nextState.query, f))
 					.map((f) => ({
 						name: f,
 						isDirectory: false,
