@@ -27,10 +27,8 @@ import {urlToBuilds} from "sourcegraph/build/routes";
 import type {Def} from "sourcegraph/def";
 import type {Route} from "react-router";
 
-import {Input, Loader, RepoLink} from "sourcegraph/components";
+import {Input, Loader} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
-
-import breadcrumb from "sourcegraph/util/breadcrumb";
 
 import CSSModules from "react-css-modules";
 import styles from "./styles/Tree.css";
