@@ -55,11 +55,6 @@ class GlobalSearch extends Container {
 		this._handleInput = this._handleInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
 		this._onChangeQuery = this._onChangeQuery.bind(this);
-		this._debouncedSetQuery = debounce((query) => {
-			if (query !== this.state.query) {
-				this._onChangeQuery(query);
-			}
-		}, 200, {leading: false, trailing: true});
 	}
 
 	state: {
@@ -101,13 +96,15 @@ class GlobalSearch extends Container {
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-				query: nextState.query,
-				limit: RESULTS_LIMIT,
-				prefixMatch: this.props.location.query.prefixMatch,
-				includeRepos: this.props.location.query.includeRepos,
-				fast: true,
-			}));
+			debounce((query) => {
+				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+					query: nextState.query,
+					limit: RESULTS_LIMIT,
+					prefixMatch: this.props.location.query.prefixMatch,
+					includeRepos: this.props.location.query.includeRepos,
+					fast: true,
+				}));
+			}, 200, {leading: false, trailing: true})(nextState.query);
 		}
 	}
 
@@ -193,7 +190,7 @@ class GlobalSearch extends Container {
 
 	_handleInput(e: KeyboardEvent) {
 		if (this.state.focused) {
-			this._debouncedSetQuery(this._queryInput ? this._queryInput.value : "");
+			this._onChangeQuery(this._queryInput ? this._queryInput.value : "");
 		}
 	}
 
@@ -384,10 +381,10 @@ class GlobalSearch extends Container {
 					block={true}
 					onFocus={() => this.setState({focused: true})}
 					onBlur={() => this.setState({focused: false})}
-					onInput={this._handleInput}
+					onChange={this._handleInput}
+					value={this.state.query}
 					autoFocus={true}
-					defaultValue={this.state.query}
-					placeholder="Search for symbols, functions and definitions..."
+					placeholder="Search code and cross-references"
 					spellCheck={false}
 					domRef={(e) => this._queryInput = e} />
 			</div>
