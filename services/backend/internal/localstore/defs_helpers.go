@@ -2,12 +2,16 @@ package localstore
 
 import (
 	"strings"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/net/context"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -22,14 +26,24 @@ func updateDefs(ctx context.Context, local bool, repo string, commitID string, u
 		table = "defs"
 	}
 
+	trackedRepo := repotrackutil.GetTrackedRepo(repo)
+	observe := func(part string, start time.Time) {
+		since := time.Since(start)
+		defsUpdateDuration.WithLabelValues(table, trackedRepo, part).Observe(since.Seconds())
+	}
+	defer observe("total", time.Now())
+
+	start := time.Now()
 	defs_, err := store.GraphFromContext(ctx).Defs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
 		sstore.ByUnits(unit.ID2{Type: unitType, Name: unitName}),
 	)
+	observe("graphstore", start)
 	if err != nil {
 		return err
 	}
 
+	start = time.Now()
 	langWarnCount := 0
 	type upsert struct {
 		query string
@@ -110,19 +124,25 @@ WHERE NOT EXISTS (SELECT * FROM upsert);`
 	if langWarnCount > 0 {
 		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(defs_))
 	}
+	observe("genupserts", start)
 
+	defer observe("transaction", time.Now())
 	if err := dbutil.Transact(graphDBH(ctx), func(tx gorp.SqlExecutor) error {
+		start = time.Now()
 		for _, upsertSQL := range upsertSQLs {
 			if _, err := tx.Exec(upsertSQL.query, upsertSQL.args...); err != nil {
 				return err
 			}
 		}
+		observe("upsert", start)
 
 		// Delete old entries
+		start = time.Now()
 		if _, err := tx.Exec(`DELETE FROM `+table+` WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND commit_id!=$4`,
 			repo, unitType, unitName, commitID); err != nil {
 			return err
 		}
+		observe("delete", start)
 		return nil
 
 	}); err != nil { // end transaction
@@ -150,3 +170,10 @@ func shouldIndex(d *graph.Def) bool {
 	}
 	return true
 }
+
+var defsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "defs",
+	Name:      "update_duration_seconds",
+	Help:      "Duration for updating a def",
+}, []string{"table", "repo", "part"})
