@@ -15,12 +15,15 @@ describe("actions", () => {
 
 	const repo = "github.com/gorilla/mux";
 	const rev = "master";
+	const head = "head";
+	const base = "base";
 	const path = "path";
 	const defPath = "defPath";
 	const query = "query";
 
+	const resolvedRev = "resolvedRev";
 	const dataVer = "dataVer";
-	const srclibDataVersionAPI = `https://sourcegraph.com/.api/repos/${repo}@${rev}/-/srclib-data-version?Path=${path}`;
+	const srclibDataVersionAPI = `https://sourcegraph.com/.api/repos/${repo}@${resolvedRev}/-/srclib-data-version?Path=${path}`;
 	const srclibDataVersion = {CommitID: dataVer};
 
 	function errorResponse(status, url) {
@@ -42,12 +45,12 @@ describe("actions", () => {
 
 		it("200s", () => {
 			fetchMock.mock(refreshVCSAPI, "POST", 200);
-		    return assertAsyncActionsDispatched(actions.refreshVCS(repo), {}, [{type: types.REFRESH_VCS}]);
+		    return assertAsyncActionsDispatched(actions.refreshVCS(repo), {}, []);
 		});
 
 		it("404s", () => {
 			fetchMock.mock(refreshVCSAPI, "POST", 404);
-		    return assertAsyncActionsDispatched(actions.refreshVCS(repo), {}, [{type: types.REFRESH_VCS}]);
+		    return assertAsyncActionsDispatched(actions.refreshVCS(repo), {}, []);
 		});
 	});
 
@@ -70,15 +73,28 @@ describe("actions", () => {
 	});
 
 	describe("getSrclibDataVersion", () => {
+		const resolvedRevAPI = `https://sourcegraph.com/.api/repos/${repo}@${rev}/-/rev`;
 
-		it("200s", () => {
+		it("200s when resolvedRev is not cached", () => {
+			fetchMock.mock(resolvedRevAPI, "GET", {CommitID: resolvedRev}).mock(srclibDataVersionAPI, "GET", srclibDataVersion);
+
+		    return assertAsyncActionsDispatched(actions.getSrclibDataVersion(repo, rev, path), {
+		    	resolvedRev: {content: {}},
+		    	srclibDataVersion: {content: {}, fetches: {}}
+		    }, [
+		    	{type: types.RESOLVED_REV, repo, rev, json: {CommitID: resolvedRev}},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
+		    ]);
+		});
+
+		it("200s when resolvedRev is cached", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion);
 
 		    return assertAsyncActionsDispatched(actions.getSrclibDataVersion(repo, rev, path), {
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}}
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+		    	srclibDataVersion: {content: {}, fetches: {}}
 		    }, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 		    ]);
 		});
 
@@ -86,16 +102,17 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", 404);
 
 		    return assertAsyncActionsDispatched(actions.getSrclibDataVersion(repo, rev, path), {
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}}
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+		    	srclibDataVersion: {content: {}, fetches: {}}
 		    }, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, err: errorResponse(404, srclibDataVersionAPI)},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, err: errorResponse(404, srclibDataVersionAPI)},
 		    ]);
 		});
 
 		it("noops when dataVer is cached", () => {
 			return assertAsyncActionsDispatched(actions.getSrclibDataVersion(repo, rev, path), {
-				srclibDataVersion: {content: {[keyFor(repo, rev, path)]: srclibDataVersion}, fetches: {}, timestamps: {}}
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				srclibDataVersion: {content: {[keyFor(repo, resolvedRev, path)]: srclibDataVersion}, fetches: {}}
 			}, []);
 		});
 	});
@@ -107,11 +124,11 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion).mock(defsAPI, "GET", {Defs: []});
 
 		    return assertAsyncActionsDispatched(actions.getDefs(repo, rev, path, query), {
-		    	defs: {content: {}, fetches: {}, timestamps: {}},
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}},
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+		    	defs: {content: {}, fetches: {}},
+		    	srclibDataVersion: {content: {}, fetches: {}},
 		    }, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 		    	{type: types.WANT_DEFS, repo, rev: dataVer, path, query},
 		    	{type: types.FETCHED_DEFS, repo, rev: dataVer, path, query, json: {Defs: []}},
 		    ]);
@@ -121,11 +138,11 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion).mock(defsAPI, "GET", 404);
 
 		    return assertAsyncActionsDispatched(actions.getDefs(repo, rev, path, query), {
-		    	defs: {content: {}, fetches: {}, timestamps: {}},
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}},
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+		    	defs: {content: {}, fetches: {}},
+		    	srclibDataVersion: {content: {}, fetches: {}},
 		    }, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 		    	{type: types.WANT_DEFS, repo, rev: dataVer, path, query},
 		    	{type: types.FETCHED_DEFS, repo, rev: dataVer, path, query, err: errorResponse(404, defsAPI)},
 		    ]);
@@ -135,11 +152,11 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion);
 
 			return assertAsyncActionsDispatched(actions.getDefs(repo, rev, path, query), {
-				defs: {content: {[keyFor(repo, dataVer, path, query)]: {Defs: []}}, fetches: {}, timestamps: {}},
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}},
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				defs: {content: {[keyFor(repo, dataVer, path, query)]: {Defs: []}}, fetches: {}},
+		    	srclibDataVersion: {content: {}, fetches: {}},
 			}, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 			]);
 		});
 	});
@@ -151,9 +168,8 @@ describe("actions", () => {
 			fetchMock.mock(defAPI, "GET", {});
 
 		    return assertAsyncActionsDispatched(actions.getDef(repo, rev, defPath), {
-		    	def: {content: {}, fetches: {}, timestamps: {}},
+		    	def: {content: {}},
 		    }, [
-		    	{type: types.WANT_DEF, repo, rev, defPath},
 		    	{type: types.FETCHED_DEF, repo, rev, defPath, json: {}},
 		    ]);
 		});
@@ -162,16 +178,45 @@ describe("actions", () => {
 			fetchMock.mock(defAPI, "GET", 404);
 
 		    return assertAsyncActionsDispatched(actions.getDef(repo, rev, defPath), {
-		    	def: {content: {}, fetches: {}, timestamps: {}},
+		    	def: {content: {}},
 		    }, [
-		    	{type: types.WANT_DEF, repo, rev, defPath},
 		    	{type: types.FETCHED_DEF, repo, rev, defPath, err: errorResponse(404, defAPI)},
 		    ]);
 		});
 
 		it("noops when def is cached", () => {
 			return assertAsyncActionsDispatched(actions.getDef(repo, rev, defPath), {
-				def: {content: {[keyFor(repo, rev, defPath)]: {}}, fetches: {}, timestamps: {}},
+				def: {content: {[keyFor(repo, rev, defPath)]: {}}},
+			}, []);
+		});
+	});
+
+	describe("getDelta", () => {
+		const deltaAPI = `https://sourcegraph.com/.api/repos/${repo}@${head}/-/delta/${base}/-/files`;
+
+		it("200s", () => {
+			fetchMock.mock(deltaAPI, "GET", {});
+
+		    return assertAsyncActionsDispatched(actions.getDelta(repo, base, head), {
+		    	delta: {content: {}},
+		    }, [
+		    	{type: types.FETCHED_DELTA, repo, base, head, json: {}},
+		    ]);
+		});
+
+		it("404s", () => {
+			fetchMock.mock(deltaAPI, "GET", 404);
+
+		    return assertAsyncActionsDispatched(actions.getDelta(repo, base, head), {
+		    	delta: {content: {}},
+		    }, [
+		    	{type: types.FETCHED_DELTA, repo, base, head, err: errorResponse(404, deltaAPI)},
+		    ]);
+		});
+
+		it("noops when delta is cached", () => {
+			return assertAsyncActionsDispatched(actions.getDelta(repo, base, head), {
+				delta: {content: {[keyFor(repo, base, head)]: {}}},
 			}, []);
 		});
 	});
@@ -183,12 +228,11 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion).mock(annotationsAPI, "GET", {Annotations: []});
 
 		    return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-		    	annotations: {content: {}, fetches: {}, timestamps: {}},
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}},
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+		    	annotations: {content: {}},
+		    	srclibDataVersion: {content: {}},
 		    }, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
-		    	{type: types.WANT_ANNOTATIONS, repo, rev: dataVer, path},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: dataVer, path, json: {Annotations: []}},
 		    ]);
 		});
@@ -197,12 +241,11 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion).mock(annotationsAPI, "GET", 404);
 
 		    return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-		    	annotations: {content: {}, fetches: {}, timestamps: {}},
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}},
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+		    	annotations: {content: {}},
+		    	srclibDataVersion: {content: {}},
 		    }, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
-		    	{type: types.WANT_ANNOTATIONS, repo, rev: dataVer, path},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 		    	{type: types.FETCHED_ANNOTATIONS, repo, rev: dataVer, path, err: errorResponse(404, annotationsAPI)},
 		    ]);
 		});
@@ -211,11 +254,11 @@ describe("actions", () => {
 			fetchMock.mock(srclibDataVersionAPI, "GET", srclibDataVersion);
 
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				defs: {content: {[keyFor(repo, dataVer, path, query)]: {Annotations: []}}, fetches: {}, timestamps: {}},
-		    	srclibDataVersion: {content: {}, fetches: {}, timestamps: {}},
+		    	resolvedRev: {content: {[keyFor(repo, rev)]: {CommitID: resolvedRev}}},
+				defs: {content: {[keyFor(repo, dataVer, path, query)]: {Annotations: []}}},
+		    	srclibDataVersion: {content: {}},
 			}, [
-		    	{type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path},
-		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json: srclibDataVersion},
+		    	{type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev: resolvedRev, path, json: srclibDataVersion},
 			]);
 		});
 	});

@@ -55,7 +55,7 @@ export default function(url, init) {
 	return fetch(url, {
 		...defaults,
 		...init,
-		headers: combineHeaders(defaults.headers, init ? init.headers : null),
+		headers: combineHeaders(defaults ? defaults.headers : null, init && init.headers ? init.headers : null),
 	})
 		.then(checkStatus)
 		.then((resp) => resp.json());

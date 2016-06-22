@@ -50,13 +50,9 @@ property changes. Of course, the component will also re-render if it changes
 its internal state through this.setState() or if its parent Component updates
 a property, just as in normal React.
 
-In addition to the standard Redux reducer (in-memory) state, we synchronize to
-state browser local storage. This allows for more seamless coordination between
-multiple tabs and can improve performance if values are cached; but it forces
-the developer to consider (and include some minor boilerplate) for TTL so that
-the application state doesn't grow unbounded. Currently, the complete
-reducer state is synchronized to browser local storage though in the future we
-can choose to be more selective about what we hold onto.
+In addition to the standard Redux reducer (in-memory) state, we synchronize some
+state to browser local storage. This allows for more seamless coordination between
+multiple tabs. Currently, only the user access token is synchronized.
 
 Actions are provided on a Component's this.props via the @connect decorator.
 Use these to make API requests and update application state.
