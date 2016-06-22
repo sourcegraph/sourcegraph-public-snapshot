@@ -16,11 +16,17 @@ export function parseURL(loc = window.location) {
 	const urlsplit = loc.pathname.slice(1).split("/");
 	user = urlsplit[0];
 	repo = urlsplit[1]
+
+	let revParts = 1; // a revision may have "/" chars, in which case we consume multiple parts;
 	if (urlsplit[3] && (urlsplit[2] === "tree" || urlsplit[2] === "blob") || urlsplit[2] === "commit") {
-		rev = urlsplit[3];
+		const currBranch = getCurrentBranch();
+		if (currBranch) {
+			revParts = currBranch.split("/").length;
+		}
+		rev = urlsplit.slice(3, 3 + revParts).join("/");
 	}
 	if (urlsplit[2] === "blob") {
-		path = urlsplit.slice(4).join("/");
+		path = urlsplit.slice(3 + revParts).join("/");
 	}
 	return {user, repo, repoURI: user && repo ? `github.com/${user}/${repo}` : null, rev, path, isDelta: urlsplit[2] === "pull" || urlsplit[2] === "commit"};
 }
@@ -66,13 +72,8 @@ export function isSourcegraphURL(loc = window.location) {
 }
 
 export function getCurrentBranch() {
-	if (document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0]) {
-		if (document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0].title !== "") {
-			return document.getElementsByClassName("select-menu-button js-menu-target css-truncate")[0].title
-		} else {
-			return document.getElementsByClassName("js-select-button css-truncate-target")[0].innerText;
-		}
-	} else {
-		return "master";
-	}
+	let branchDropdownEl = document.getElementsByClassName("btn btn-sm select-menu-button js-menu-target css-truncate");
+	if (!branchDropdownEl || branchDropdownEl.length > 1) return null;
+
+	return branchDropdownEl[0].title;
 }

@@ -26,6 +26,8 @@ const createdRepos = function(state = {}, action) {
 const resolvedRev = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.RESOLVED_REV:
+		if (!action.json && !state.content[keyFor(action.repo, action.rev)]) return state; // no update needed; avoid re-rending components
+
 		return {
 			...state,
 			content: {
@@ -41,6 +43,8 @@ const resolvedRev = function(state = {content: {}}, action) {
 const delta = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_DELTA:
+		if (!action.json && !state.content[keyFor(action.repo, action.base, action.head)]) return state; // no update needed; avoid re-rending components
+
 		return {
 			...state,
 			content: {
@@ -98,6 +102,8 @@ const srclibDataVersion = function(state = {content: {}, fetches: {}}, action) {
 const def = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_DEF:
+		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.defPath)]) return state; // no update needed; avoid re-rending components
+
 		return {
 			...state,
 			content: {
@@ -141,6 +147,8 @@ const defs = function(state = {content: {}, fetches: {}}, action) {
 const annotations = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_ANNOTATIONS:
+		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.path)]) return state; // no update needed; avoid re-rending components
+
 		return {
 			...state,
 			content: {
