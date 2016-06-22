@@ -301,7 +301,20 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	if err != nil {
 		return err
 	}
+
+	trackedRepo := repotrackutil.GetTrackedRepo(repo)
+	observe := func(part string, start time.Time) {
+		// We also add logs because update operations are relatively
+		// slow and low volume compared to queries
+		d := time.Since(start)
+		log15.Debug("TRACE GlobalRefs.Update", "repo", repo, "part", part, "duration", d)
+		globalRefsUpdateDuration.WithLabelValues(trackedRepo, part).Observe(d.Seconds())
+	}
+	defer observe("total", time.Now())
+
+	start := time.Now()
 	oldCommitID, err := g.version(dbh, repo)
+	observe("version", start)
 	if err != nil {
 		return err
 	}
@@ -313,9 +326,11 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		log15.Debug("GlobalRefs.Update re-indexing commit", "repo", repo, "commitID", commitID)
 	}
 
+	start = time.Now()
 	allRefs, err := store.GraphFromContext(ctx).Refs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo, CommitID: commitID}),
 	)
+	observe("graphstore", start)
 	if err != nil {
 		return err
 	}
@@ -349,6 +364,7 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 
 	// Get all defKeyIDs outside of the transaction, since doing it inside
 	// of the transaction can lead to conflicts with other imports
+	start = time.Now()
 	defKeyIDs := map[graph.DefKey]int64{}
 	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
 	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
@@ -383,6 +399,7 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 
 		defKeyIDs[defKeyIDKey] = defKeyID
 	}
+	observe("defkeys", start)
 
 	tmpCreateSQL := `CREATE TEMPORARY TABLE global_refs_tmp (
 	def_key_id bigint,
@@ -399,6 +416,7 @@ ON COMMIT DROP;`
 
 	// Do actual update in one transaction, to ensure we don't have concurrent
 	// updates to repo
+	defer observe("transaction", time.Now())
 	return dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
 		// Create a temporary table to load all new ref data.
 		if _, err := tx.Exec(tmpCreateSQL); err != nil {
@@ -411,6 +429,7 @@ ON COMMIT DROP;`
 		}
 
 		// Insert refs into temporary table
+		start = time.Now()
 		for _, r := range refs {
 			defKeyID := defKeyIDs[graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}]
 			if _, err := stmt.Exec(defKeyID, repo, r.File); err != nil {
@@ -423,21 +442,28 @@ ON COMMIT DROP;`
 		if _, err = stmt.Exec(); err != nil {
 			return fmt.Errorf("global_refs_tmp stmt final insert failed: %s", err)
 		}
+		observe("copyin", start)
 
 		// Purge all existing ref data for files in this source unit.
+		start = time.Now()
 		if _, err := tx.Exec(finalDeleteSQL, repo); err != nil {
 			return err
 		}
+		observe("purge", start)
 
 		// Insert refs into global refs table
+		start = time.Now()
 		if _, err := tx.Exec(finalInsertSQL); err != nil {
 			return err
 		}
+		observe("insert", start)
 
 		// Update version row again, to have a more relevant timestamp
+		start = time.Now()
 		if err := g.versionUpdate(tx, repo, commitID); err != nil {
 			return err
 		}
+		observe("versionupdate", start)
 		return nil
 	})
 }
@@ -476,7 +502,14 @@ var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Name:      "duration_seconds",
 	Help:      "Duration for querying global_refs_new",
 }, []string{"repo", "part"})
+var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "src",
+	Subsystem: "global_refs",
+	Name:      "update_duration_seconds",
+	Help:      "Duration for updating global_refs_new",
+}, []string{"repo", "part"})
 
 func init() {
 	prometheus.MustRegister(globalRefsDuration)
+	prometheus.MustRegister(globalRefsUpdateDuration)
 }
