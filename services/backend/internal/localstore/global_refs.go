@@ -295,22 +295,7 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "GlobalRefs.Update", op.Repo); err != nil {
 		return err
 	}
-
-	repo, err := store.ReposFromContext(ctx).Get(ctx, op.Repo)
-	if err != nil {
-		return err
-	}
-
-	// We run this here just to ensure we have a version row to lock (if
-	// missing it does an insert)
-	if _, err := g.version(graphDBH(ctx), repo.URI); err != nil {
-		return err
-	}
-
-	return g.update(ctx, graphDBH(ctx), op)
-}
-
-func (g *globalRefs) update(ctx context.Context, dbh gorp.SqlExecutor, op *sourcegraph.DefsRefreshIndexOp) error {
+	dbh := graphDBH(ctx)
 	repo := op.Repo
 
 	repoPath, commitID, err := resolveRevisionDefaultBranch(ctx, repo)
