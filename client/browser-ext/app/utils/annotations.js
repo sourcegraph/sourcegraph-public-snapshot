@@ -36,18 +36,17 @@ export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startB
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
 
-	let lineComments = {}
-	let additions = {};
-	let deletions = {};
-
 	let cells = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];
 		if (row.classList && row.classList.contains("inline-comments")) continue;
 
 		function removeLeadingChar(cell) {
-			const val = cell.querySelector(".blob-code-inner").firstChild.nodeValue;
-			cell.querySelector(".blob-code-inner").firstChild.nodeValue = val.substring(1, val.length);
+			const innerBlob = cell.querySelector(".blob-code-inner");
+			if (!innerBlob) return;
+
+			const val = innerBlob.firstChild.nodeValue;
+			innerBlob.firstChild.nodeValue = val.substring(1, val.length);
 		}
 
 		function addChar(cell, char) {
@@ -87,16 +86,8 @@ export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startB
 				continue;
 			}
 
-			if (isAddition) {
-				additions[i] = true;
-				removeLeadingChar(codeCell);
-			} else if (isDeletion) {
-				deletions[i] = true;
-				removeLeadingChar(codeCell);
-			} else {
-				// just whitespace
-				removeLeadingChar(codeCell);
-			}
+			// +, -, or whitespace preceeds all code
+			removeLeadingChar(codeCell);
 
 			line = metaCell.dataset.lineNumber;
 			if (line === "..." || !line) {

@@ -21,7 +21,6 @@ function _resolveRev(dispatch, state, repo, rev) {
 		return Promise.resolve(json);
 	}
 
-	dispatch({type: types.WANT_RESOLVE_REV, repo, rev});
 	return fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
 		.then((json) => { dispatch({type: types.RESOLVED_REV, repo, rev, json}); return json; })
 		.catch((err) => { dispatch({type: types.RESOLVED_REV, repo, rev, err}); throw err; });
@@ -31,8 +30,15 @@ function _resolveRev(dispatch, state, repo, rev) {
 // (e.g. fetching annotations requires fetching srclib data version first).
 // It will dispatch actions unless a srclibDataVersion is already cached in browser
 // state for the specified repo/rev/path, and return a Promise.
-function _fetchSrclibDataVersion(dispatch, state, repo, rev, path) {
-	return _resolveRev(dispatch, state, repo, rev).then((json) => {
+function _fetchSrclibDataVersion(dispatch, state, repo, rev, path, exactRev) {
+	let p;
+	if (exactRev) {
+		p = Promise.resolve({CommitID: rev});
+	} else {
+		p = _resolveRev(dispatch, state, repo, rev);
+	}
+
+	return p.then((json) => {
 		rev = json.CommitID;
 
 		const srclibDataVersion = state.srclibDataVersion.content[keyFor(repo, rev, path)];
@@ -41,7 +47,6 @@ function _fetchSrclibDataVersion(dispatch, state, repo, rev, path) {
 			return Promise.reject(new Error("missing srclib data version CommitID"));
 		}
 
-		dispatch({type: types.WANT_SRCLIB_DATA_VERSION, repo, rev, path})
 		return fetch(`https://sourcegraph.com/.api/repos/${repo}@${rev}/-/srclib-data-version?Path=${path || ""}`)
 			.then((json) => { dispatch({type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, json}); return json; })
 			.catch((err) => { dispatch({type: types.FETCHED_SRCLIB_DATA_VERSION, repo, rev, path, err}); throw err; });
@@ -60,7 +65,6 @@ export function getDelta(repo, base, head) {
 		const state = getState();
 		if (state.delta.content[keyFor(repo, base, head)]) return Promise.resolve(); // nothing to do; already have delta
 
-		dispatch({type: types.WANT_DELTA, repo, base, head})
 		return fetch(`https://sourcegraph.com/.api/repos/${repo}@${head}/-/delta/${base}/-/files`)
 			.then((json) => dispatch({type: types.FETCHED_DELTA, repo, base, head, json}))
 			.catch((err) => dispatch({type: types.FETCHED_DELTA, repo, base, head, err}));
@@ -85,7 +89,6 @@ export function getDef(repo, rev, defPath) {
 			return Promise.resolve();
 		}
 
-		dispatch({type: types.WANT_DEF, repo, rev, defPath})
 		return fetch(`https://sourcegraph.com/.api/repos/${repo}@${rev}/-/def/${defPath}?ComputeLineRange=true`)
 			.then((json) => dispatch({type: types.FETCHED_DEF, repo, rev, defPath, json}))
 			.catch((err) => dispatch({type: types.FETCHED_DEF, repo, rev, defPath, err}));
@@ -110,18 +113,10 @@ export function getDefs(repo, rev, path, query) {
 export function getAnnotations(repo, rev, path, exactRev) {
 	return function (dispatch, getState) {
 		const state = getState();
-		let p;
-		if (exactRev) {
-			p = Promise.resolve({CommitID: rev});
-		} else {
-			p = _fetchSrclibDataVersion(dispatch, state, repo, rev, path);
-		}
-
-		return p.then((json) => {
+		return _fetchSrclibDataVersion(dispatch, state, repo, rev, path, exactRev).then((json) => {
 			rev = json.CommitID;
 			if (state.annotations.content[keyFor(repo, rev, path)]) return Promise.resolve(); // nothing to do; already have annotations
 
-			dispatch({type: types.WANT_ANNOTATIONS, repo, rev, path});
 			return fetch(`https://sourcegraph.com/.api/annotations?Entry.RepoRev.Repo=${repo}&Entry.RepoRev.CommitID=${rev}&Entry.Path=${path}&Range.StartByte=0&Range.EndByte=0`)
 				.then((json) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, json}))
 				.catch((err) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, err}));
@@ -141,21 +136,30 @@ function _getNewestBuildForCommit(dispatch, state, repo, commitID) {
 	const build = state.build.content[keyFor(repo, commitID)];
 	if (build) return Promise.resolve();
 
-	dispatch({type: types.WANT_BUILD, repo, commitID});
 	return fetch(`https://sourcegraph.com/.api/builds?Sort=updated_at&Direction=desc&PerPage=1&Repo=${repo}&CommitID=${commitID}`)
 		.then((json) => { dispatch({type: types.FETCHED_BUILD, repo, commitID, json}); return json; })
 		.catch((err) => { dispatch({type: types.FETCHED_BUILD, repo, commitID, err}); throw err; });
 }
 
-export function build(repo, commitID) {
+export function build(repo, commitID, branch) {
 	return function (dispatch, getState) {
-		return _getNewestBuildForCommit(dispatch, getState(), repo, commitID).then((json) => {
+		const state = getState();
+		const build = state.build.created[keyFor(repo, commitID)];
+		if (build) return Promise.resolve();
+
+		return _getNewestBuildForCommit(dispatch, state, repo, commitID).then((json) => {
 			if (json && json.Builds && json.Builds.length === 1) {
 				return Promise.resolve();
 			}
-			return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/builds`, {method: "POST", body: JSON.stringify({CommitID: commitID})})
-				.then((json) => {})
-				.catch((err) => {});
+
+			if (getState().build.created[keyFor(repo, commitID)]) return Promise.resolve(); // check again, for good measure
+
+			return Promise.resolve();
+
+			// dispatch({type: types.CREATED_BUILD, repo, commitID});
+			// return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/builds`, {method: "POST", body: JSON.stringify({CommitID: commitID, Branch: branch})})
+			// 	.then((json) => {})
+			// 	.catch((err) => {});
 		}).catch((err) => {}); // no error handling
 	}
 }

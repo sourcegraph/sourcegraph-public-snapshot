@@ -115,29 +115,29 @@ function getFileName(info, {isDelta, path}) {
 }
 
 function injectBuildIndicators() {
-	if (!isGitHubURL()) return;
+	// if (!isGitHubURL()) return;
 
-	const {user, repo, rev, path, isDelta} = parseURL();
+	// const {user, repo, rev, path, isDelta} = parseURL();
 
-	const fileInfos = document.querySelectorAll(".file-info");
-	for (let i = 0; i < fileInfos.length; ++i) {
-		const info = fileInfos[i];
-		const infoFilePath = getFileName(info, {isDelta, path});
-		if (!infoFilePath) continue;
+	// const fileInfos = document.querySelectorAll(".file-info");
+	// for (let i = 0; i < fileInfos.length; ++i) {
+	// 	const info = fileInfos[i];
+	// 	const infoFilePath = getFileName(info, {isDelta, path});
+	// 	if (!infoFilePath) continue;
 
-		const buildIndicatorId = `sourcegraph-build-indicator-${infoFilePath}`;
-		let buildIndicatorContainer = document.getElementById(buildIndicatorId);
-		if (!buildIndicatorContainer) { // prevent injecting build indicator twice
-			let buildSeparator = document.createElement("span");
-			buildSeparator.className = "file-info-divider";
-			info.appendChild(buildSeparator);
+	// 	const buildIndicatorId = `sourcegraph-build-indicator-${infoFilePath}`;
+	// 	let buildIndicatorContainer = document.getElementById(buildIndicatorId);
+	// 	if (!buildIndicatorContainer) { // prevent injecting build indicator twice
+	// 		let buildSeparator = document.createElement("span");
+	// 		buildSeparator.className = "file-info-divider";
+	// 		info.appendChild(buildSeparator);
 
-			buildIndicatorContainer = document.createElement("span");
-			buildIndicatorContainer.id = buildIndicatorId;
-			info.appendChild(buildIndicatorContainer);
-			injectComponent(<BuildIndicator path={infoFilePath} />, buildIndicatorContainer);
-		}
-	}
+	// 		buildIndicatorContainer = document.createElement("span");
+	// 		buildIndicatorContainer.id = buildIndicatorId;
+	// 		info.appendChild(buildIndicatorContainer);
+	// 		injectComponent(<BuildIndicator path={infoFilePath} />, buildIndicatorContainer);
+	// 	}
+	// }
 }
 
 function injectBackgroundApp() {
@@ -155,10 +155,13 @@ function injectBlobAnnotator() {
 	if (!isGitHubURL()) return;
 
 	const {user, repo, rev, path, isDelta} = parseURL();
-	const fileInfos = document.querySelectorAll(".file-info");
-	const blobs = document.querySelectorAll(".blob-wrapper");
-	for (let i = 0; i < fileInfos.length; ++i) {
-		const info = fileInfos[i];
+	const files = document.querySelectorAll(".file");
+	for (let i = 0; i < files.length; ++i) {
+		const file = files[i];
+		const info = file.querySelector(".file-info");
+		const blob = file.querySelector(".blob-wrapper");
+		if (!blob) continue;
+
 		const infoFilePath = getFileName(info, {isDelta, path});
 		if (!infoFilePath) continue;
 
@@ -169,7 +172,7 @@ function injectBlobAnnotator() {
 			blobAnnotatorContainer.id = blobAnnotatorId;
 			blobAnnotatorContainer.style.display = "none";
 			info.appendChild(blobAnnotatorContainer);
-			injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blobs[i]} />, blobAnnotatorContainer);
+			injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} />, blobAnnotatorContainer);
 		}
 	}
 }
