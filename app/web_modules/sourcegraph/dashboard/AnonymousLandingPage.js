@@ -95,23 +95,6 @@ class AnonymousLandingPage extends Component {
 				</div>
 				<div styleName="container-lg">
 					<div styleName="content-block">
-						<div styleName="img-left">
-							<Link to="/github.com/golang/go@0cc710dca63b79ed2dd6ce9375502e76e5fc0484/-/tree/src/testing?q=testing" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedExplorePublicRepo", {page_name: AnalyticsConstants.PAGE_HOME})}>
-								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-sourcegraph.png`} styleName="img" width="460" />
-							</Link>
-						</div>
-						<div styleName="content-right">
-							<div styleName="content">
-								<Logo width="32px" className={base.mt4} />
-								<h3 styleName="h3">Search by function, type, or package – globally</h3>
-								<p>Connect your GitHub account to Sourcegraph to start searching, browsing, and cross-referencing your code, with IDE-like capabilities in your browser. Free for public and private projects.</p>
-							</div>
-							<GitHubAuthButton className={base.mr3}><strong>Continue with GitHub</strong></GitHubAuthButton>
-							<Link to="/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/aws/credentials/-/NewStaticCredentials" onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DEF_INFO, AnalyticsConstants.ACTION_CLICK, "ClickedExplorePublicRepo", {page_name: AnalyticsConstants.PAGE_HOME})} styleName="block-sm mv4-sm">Or try it on open-source code &nbsp;&#x276f;</Link>
-						</div>
-					</div>
-
-					<div styleName="content-block">
 						<div styleName="img-right">
 							<a href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en" target="new">
 								<img src={`${siteConfig.assetsRoot}/img/Homepage/screenshot-github.png`} styleName="img" width="460" />
@@ -155,95 +138,6 @@ class AnonymousLandingPage extends Component {
 							</div>
 						</div>
 					</div>
-
-					<div styleName="box-white">
-						<div styleName="language-container">
-							<Heading level="1" underline="blue" align="center">Language support</Heading>
-							<p styleName="lead tc">Powered by <a href="https://srclib.org/" target="new">srclib</a>, a hackable code analysis library.</p>
-
-							<div styleName="language" className={base.mt5}>
-								Go
-								<span styleName="label-blue">75,311 projects</span>
-							</div>
-							<div styleName="row" className={base.mt4}>
-								<div styleName="featured-project">
-									<Link to="/github.com/golang/go">
-										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
-										<strong>golang/go</strong>
-									</Link>
-									<p styleName="project-desc">
-										Used in 45,328 repositories
-									</p>
-								</div>
-								<div styleName="featured-project">
-									<Link to="/github.com/gorilla/mux">
-										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
-										<strong>gorilla/mux</strong>
-									</Link>
-									<p styleName="project-desc">
-										Used in 1,843 repositories
-									</p>
-								</div>
-								<div styleName="featured-project">
-									<Link to="/github.com/aws/aws-sdk-go">
-										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
-										<strong>aws-sdk-go</strong>
-									</Link>
-									<p styleName="project-desc">
-										Used in 171 repositories
-									</p>
-								</div>
-							</div>
-							<div styleName="language" className={base.mt5}>
-								Java
-								<span styleName="label-blue">15,782 projects</span>
-							</div>
-							<div styleName="row" className={base.mt4}>
-								<div styleName="featured-project">
-									<Link to="/github.com/google/guava">
-										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
-										<strong>guava</strong>
-									</Link>
-									<p styleName="project-desc">
-										Used in 6,256 repositories
-									</p>
-								</div>
-								<div styleName="featured-project">
-									<Link to="/github.com/JodaOrg/joda-time">
-										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
-										<strong>joda-time</strong>
-									</Link>
-									<p styleName="project-desc">
-										Used in 1,113 repositories
-									</p>
-								</div>
-								<div styleName="featured-project">
-									<Link to="/github.com/dropwizard/metrics">
-										<img src={`${siteConfig.assetsRoot}/img/symbols/folder.svg`} className={`${base.mt1} ${base.mr2}`} width="16px" />
-										<strong>dropwizard/metrics</strong>
-									</Link>
-									<p styleName="project-desc">
-										Used in 87 repositories
-									</p>
-								</div>
-							</div>
-
-							<h5 styleName="header-5" className={base.mt6}>Coming soon</h5>
-
-							<div styleName="row">
-								<div styleName="language-2">
-									C#
-								</div>
-								<div styleName="language-5">
-									JavaScript
-								</div>
-								<div styleName="language-2">
-									Python
-								</div>
-							</div>
-						</div>
-					</div>
-
 				</div>
 
 				<div styleName="box-purple-gradient" className={`${base.pt6} ${base.pb5}`}>
