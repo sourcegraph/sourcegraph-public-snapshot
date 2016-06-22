@@ -31,9 +31,9 @@ class AnonymousLandingPage extends Component {
 	render() {
 		const {siteConfig, eventLogger} = this.context;
 		return (
-			<div styleName="flex-fill" style={{marginTop: "-2.3rem"}}>
-				<div styleName="box-purple-gradient" className={base.pt5}>
-					<div styleName="search-container" className={base.pt3}>
+			<div styleName="flex-fill">
+				<div styleName="box-purple-gradient" className={base.pv4}>
+					<div styleName="search-container">
 						<div styleName="row">
 							<Panel hoverLevel="low" className={`${base.mv4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
 								<GlobalSearch query={this.props.location.query.q || ""} location={this.props.location} />
@@ -80,7 +80,7 @@ class AnonymousLandingPage extends Component {
 							</div>
 						</div>
 						<div styleName="row tc">
-							<p styleName="white" className={`${base.mb4}`}>
+							<p styleName="white">
 								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
 									<strong>Sign in to search your own code</strong>
 								</GitHubAuthButton>
