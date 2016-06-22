@@ -37,69 +37,17 @@
 				},
 				{
 					"type": "div",
-					"key": ".4",
+					"key": ".3",
 					"props": {
 						"styleName": "list-header",
 						"children": [
-							"Files in",
-							{
-								"type": "span",
-								"key": ".1",
-								"props": {
-									"styleName": "file-path",
-									"children": [
-										{
-											"type": "WrappedComponent",
-											"key": ".0",
-											"props": {
-												"repo": "repo/"
-											}
-										},
-										{
-											"type": "",
-											"key": ".1:$0",
-											"props": {
-												"to": "/repo@rev/-/tree/p1",
-												"styleName": "path-inactive",
-												"children": [
-													"p1"
-												],
-												"onlyActiveOnIndex": false,
-												"style": {}
-											}
-										},
-										{
-											"type": "span",
-											"key": ".1:$-1",
-											"props": {
-												"styleName": "path-sep",
-												"children": [
-													"/"
-												]
-											}
-										},
-										{
-											"type": "",
-											"key": ".1:$1",
-											"props": {
-												"to": "/repo@rev/-/tree/p1/p2",
-												"styleName": "path-active",
-												"children": [
-													"p2"
-												],
-												"onlyActiveOnIndex": false,
-												"style": {}
-											}
-										}
-									]
-								}
-							}
+							"Files"
 						]
 					}
 				},
 				{
 					"type": "div",
-					"key": ".5",
+					"key": ".4",
 					"props": {
 						"styleName": "list-item-group",
 						"children": [
