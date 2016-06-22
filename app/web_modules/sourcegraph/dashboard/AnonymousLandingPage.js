@@ -34,12 +34,6 @@ class AnonymousLandingPage extends Component {
 			<div styleName="flex-fill" style={{marginTop: "-2.3rem"}}>
 				<div styleName="box-purple-gradient" className={base.pt5}>
 					<div styleName="search-container" className={base.pt3}>
-						<div styleName="row tc">
-							<Heading level="1" color="white">
-								Global code search &amp; cross&#8209;references
-							</Heading>
-							<h2 styleName="subheading">Jump to any definition and see how to use it</h2>
-						</div>
 						<div styleName="row">
 							<Panel hoverLevel="low" className={`${base.mv4} ${base.pb4} ${base.ph4} ${base.pt3}`}>
 								<GlobalSearch query={this.props.location.query.q || ""} location={this.props.location} />
@@ -70,8 +64,8 @@ class AnonymousLandingPage extends Component {
 										<tr>
 											<td>Java:</td>
 											<td styleName="examples-category">
-												<Link to="/?q=java+sql.ResultSet">
-													<code styleName="search-example">sql.ResultSet</code>
+												<Link to="/?q=java.sql.ResultSet">
+													<code styleName="search-example">java.sql.ResultSet</code>
 												</Link>
 												<Link to="/?q=java+DateTime">
 													<code styleName="search-example">DateTime</code>
@@ -88,7 +82,7 @@ class AnonymousLandingPage extends Component {
 						<div styleName="row tc">
 							<p styleName="white" className={`${base.mb4}`}>
 								<GitHubAuthButton outline={true} color="purple" className={base.mr3}>
-									<strong>Sign up with GitHub</strong>
+									<strong>Sign in to search your own code</strong>
 								</GitHubAuthButton>
 							</p>
 						</div>
@@ -151,12 +145,11 @@ class AnonymousLandingPage extends Component {
 						</p>
 						<p className={base.mt4}>
 							<GitHubAuthButton color="purple" outline={true} className={base.mr3}>
-								<strong>Sign up with GitHub</strong>
+								<strong>Sign in to search your own code</strong>
 							</GitHubAuthButton>
 							<a target="_blank" styleName="block-sm mv4-sm white"
 								href="https://chrome.google.com/webstore/detail/sourcegraph-chrome-extens/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
 								onClick={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_CLICK, "ClickedInstallChromeExt", {page_name: AnalyticsConstants.PAGE_HOME})}>
-								Just install the Chrome extension &nbsp;&#x276f;
 							</a>
 						</p>
 					</div>

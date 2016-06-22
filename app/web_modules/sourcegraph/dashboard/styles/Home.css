@@ -189,7 +189,7 @@
 }
 
 .search-example {
-	composes: pa1 ml1 br2 from base;
+	composes: pa1 ml2 br2 from base;
 	composes: bg-white purple from colors;
 	cursor: pointer;
 	white-space: nowrap;
