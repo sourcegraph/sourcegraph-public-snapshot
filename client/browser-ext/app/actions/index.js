@@ -81,7 +81,7 @@ export function getDef(repo, rev, defPath) {
 		// and immediately go there instead of going via the repo homepage.
 		//
 		// NOTE: Need to keep this in sync with the defCache key structure.
-		const cacheKey = `https://sourcegraph.com/.api/repos/${repo}/-/def/${defPath}?ComputeLineRange=true&Doc=true`;
+		const cacheKey = `https://sourcegraph.com/.api/repos/${repo}@${rev}/-/def/${defPath}?ComputeLineRange=true&Doc=true`;
 		if (defCache[cacheKey]) {
 			// Dispatch FETCHED_DEF so it gets added to the normal def.content
 			// for next time.

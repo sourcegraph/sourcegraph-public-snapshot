@@ -1,6 +1,7 @@
 import utf8 from "utf8";
 import fetch from "../actions/xhr";
 import styles from "../components/App.css";
+import * as utils from "./index";
 import _ from "lodash";
 import EventLogger from "../analytics/EventLogger";
 
@@ -8,8 +9,8 @@ import EventLogger from "../analytics/EventLogger";
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export default function addAnnotations(path, revSpec, el, anns, lineStartBytes) {
-	const markerID = `sourcegraph-annotation-marker-${path}-@${revSpec.rev}`;
+export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes) {
+	const markerID = `sourcegraph-annotation-marker-${path}-@${repoRevSpec.rev}`;
 	if (document.getElementById(markerID)) {
 		// Don't let annotations be applied twice (it is not idempotent).
 		return;
@@ -19,7 +20,7 @@ export default function addAnnotations(path, revSpec, el, anns, lineStartBytes) 
 		marker.style.display = "none";
 		el.appendChild(marker);
 	}
-	_applyAnnotations(el, revSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes));
+	_applyAnnotations(el, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes));
 	_postProcess();
 }
 
@@ -31,7 +32,7 @@ function _postProcess() {
 	_annURLs = [];
 }
 // _applyAnnotations is a helper function for addAnnotations
-export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startBytesByLine) {
+export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesByLine) {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
@@ -63,8 +64,8 @@ export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startB
 		}
 
 		let line, codeCell, isAddition, isDeletion;
-		if (isDelta) {
-			let metaCell = isBase ? row.cells[0] : row.cells[1];
+		if (repoRevSpec.isDelta) {
+			let metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[1];
 			if (metaCell.classList.contains("blob-num-expandable")) {
 				continue;
 			}
@@ -76,13 +77,13 @@ export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startB
 
 			isAddition = codeCell.classList.contains("blob-code-addition");
 			isDeletion = codeCell.classList.contains("blob-code-deletion");
-			if (!isAddition && !isDeletion && !isBase) {
+			if (!isAddition && !isDeletion && !repoRevSpec.isBase) {
 				continue; // careful; we don't need to put head AND base on unmodified parts
 			}
-			if (isDeletion && !isBase) {
+			if (isDeletion && !repoRevSpec.isBase) {
 				continue;
 			}
-			if (isAddition && isBase) {
+			if (isAddition && repoRevSpec.isBase) {
 				continue;
 			}
 
@@ -101,8 +102,7 @@ export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startB
 		const offset = startBytesByLine[line];
 
 		// result is the new (annotated) innerHTML of the code cell
-		const {result, bytesConsumed} = convertNode(codeCell, annsByStartByte, offset);
-
+		const {result, bytesConsumed} = convertNode(codeCell, annsByStartByte, offset, repoRevSpec);
 		// manipulate the DOM asynchronously so the page doesn't freeze while large
 		// code files are being annotated
 		let cell = codeCell;
@@ -120,7 +120,7 @@ export function _applyAnnotations(el, {isDelta, isBase}, annsByStartByte, startB
 			} else {
 				addChar(cell, " ");
 			}
-			addPopover(cell);
+			addPopover(cell, repoRevSpec);
 		});
 	}
 }
@@ -154,20 +154,36 @@ export function indexLineStartBytes(lineStartBytes) {
 // at the byte offset. The match result contains the number of bytes
 // matched by the annotation, and a generator function which returns
 // an HTML anchor tag string .
-export function annGenerator(annsByStartByte, byte) {
+export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 	const match = annsByStartByte[byte];
 	if (!match) return null;
 
-	function urlToDef(origURL) {
-		if (!origURL) return null;
-		const parts = origURL.split("/-/");
-		if (parts.length < 2) return null;
-		const repo = parts[0]; // remove leading slash
-		const def = parts.slice(1).join("/-/").replace("def/", "");
-		if (repo.startsWith("/github.com/")) {
-			return `https:/${repo}#sourcegraph&def=${def}`;
+	let rev;
+	if (match.URL.indexOf(repoRevSpec.repoURI) !== -1) {
+		rev = repoRevSpec.branch;
+	} else {
+		rev = "master"; // assume external links are to default branch "master"
+		// rev = getDefaultBranch(utils.getAnnRepoURI(match.URL));
+	}
+	const annURL = utils.addRevToAnnURL(match.URL, rev);
+
+	function urlToDef(matchURL) {
+		if (!matchURL) return null;
+
+		if (matchURL.startsWith("/")) {
+			matchURL = matchURL.substring(1); // remove leading slash
 		}
-		return `https://github.com/#sourcegraph&repo=${repo}&def=${def}`;
+
+		const parts = matchURL.split("/-/");
+		if (parts.length < 2) return null;
+
+		const repo = parts[0];
+		const def = parts.slice(1).join("/-/").replace("def/", "");
+
+		if (repo.startsWith("github.com/")) {
+			return `https://${repo}#sourcegraph&def=${def}&rev=${rev}`;
+		}
+		return `https://github.com/#sourcegraph&repo=${repo}&def=${def}&rev=${rev}`;
 	}
 
 	const defIsOnGitHub = match.URL && match.URL.includes("github.com/");
@@ -176,7 +192,7 @@ export function annGenerator(annsByStartByte, byte) {
 	const annLen = match.EndByte - match.StartByte;
 	return {annLen, annGen: function(innerHTML) {
 		_annURLs.push(url);
-		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${match.URL}" class=${styles.sgdef}>${innerHTML}</a>`;
+		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
 	}};
 }
 
@@ -203,7 +219,7 @@ export function getOpeningTag(node) {
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(node, annsByStartByte, offset) {
+export function convertNode(node, annsByStartByte, offset, repoRevSpec) {
 	let result, bytesConsumed, c; // c is an intermediate result
 	if (node.nodeType === Node.ELEMENT_NODE) {
 		// The logic here is to:
@@ -221,8 +237,8 @@ export function convertNode(node, annsByStartByte, offset) {
 		}
 
 		c = isQuotedStringNode(node) ?
-			convertQuotedStringNode(node, annsByStartByte, offset) :
-			convertElementNode(node, annsByStartByte, offset);
+			convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) :
+			convertElementNode(node, annsByStartByte, offset, repoRevSpec);
 
 		if (!isTableCell) {
 			const openTag = getOpeningTag(node);
@@ -236,7 +252,7 @@ export function convertNode(node, annsByStartByte, offset) {
 		}
 		bytesConsumed = c.bytesConsumed;
 	} else if (node.nodeType === Node.TEXT_NODE) {
-		c = convertTextNode(node, annsByStartByte, offset);
+		c = convertTextNode(node, annsByStartByte, offset, repoRevSpec);
 		result = c.result;
 		bytesConsumed = c.bytesConsumed;
 	} else {
@@ -250,7 +266,7 @@ export function convertNode(node, annsByStartByte, offset) {
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
-export function convertTextNode(node, annsByStartByte, offset) {
+export function convertTextNode(node, annsByStartByte, offset, repoRevSpec) {
 	let innerHTML = [];
 	let bytesConsumed;
 
@@ -258,7 +274,7 @@ export function convertTextNode(node, annsByStartByte, offset) {
 	// decoded characters (e.g. "˟") which need to be properly counted in terms of bytes.
 	const nodeText = utf8.encode(_.unescape(node.wholeText)).split("");
 	for (bytesConsumed = 0; bytesConsumed < nodeText.length;) {
-		const match = annGenerator(annsByStartByte, offset + bytesConsumed);
+		const match = annGenerator(annsByStartByte, offset + bytesConsumed, repoRevSpec);
 		if (!match) {
 			innerHTML.push(_.escape(nodeText[bytesConsumed++]));
 			continue;
@@ -274,14 +290,14 @@ export function convertTextNode(node, annsByStartByte, offset) {
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(node, annsByStartByte, offset) {
+export function convertElementNode(node, annsByStartByte, offset, repoRevSpec) {
 	let innerHTML = [];
 	let bytesConsumed = 0;
 
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
 	for (let i = 0; i < node.childNodes.length; ++i) {
-		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed);
+		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed, repoRevSpec);
 		innerHTML.push(res.result);
 		bytesConsumed += res.bytesConsumed;
 	}
@@ -311,9 +327,9 @@ export function isQuotedStringNode(node) {
 // convertQuotedStringNode takes a DOM node which should pass the isQuotedStringNode predicate
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertQuotedStringNode(node, annsByStartByte, offset) {
+export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) {
 	const text = `"${utf8.encode(_.unescape(node.childNodes[1].wholeText))}"`; // put quotes around the sanitized inner text
-	const match = annGenerator(annsByStartByte, offset);
+	const match = annGenerator(annsByStartByte, offset, repoRevSpec);
 
 	// NOTE:
 	// match could be undefined if the annotation doesn't consume the opening start quote;
@@ -357,10 +373,13 @@ function cacheDefaultBranch(annURL) {
 			.catch((err) => console.log("Error getting default branch"))
 	}
 }
+function getDefaultBranch(repoURI) {
+	return defaultBranchCache[repoURI] || "master";
+}
 
 let popoverCache = {};
 export const defCache = {};
-function addPopover(el) {
+function addPopover(el, repoRevSpec) {
 	let activeTarget, popover;
 
 	el.addEventListener("mouseout", (e) => {
@@ -391,6 +410,7 @@ function addPopover(el) {
 			EventLogger.logEvent("HighlightDef");
 			popover = document.createElement("div");
 			popover.classList.add(styles.popover);
+			popover.classList.add("sg-popover");
 			popover.innerHTML = html;
 			positionPopover(x, y);
 			document.body.appendChild(popover);

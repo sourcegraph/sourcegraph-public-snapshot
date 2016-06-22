@@ -52,10 +52,12 @@ export default class BlobAnnotator extends Component {
 
 	componentDidMount() {
 		document.addEventListener("pjax:success", this._unmount)
+		document.addEventListener("popstate", this._unmount)
 	}
 
 	componentWillUnmount() {
 		document.removeEventListener("pjax:success", this._unmount);
+		document.removeEventListener("popstate", this._unmount);
 	}
 
 	_unmount() {
@@ -92,14 +94,14 @@ export default class BlobAnnotator extends Component {
 		if (prevState.srclibDataVersion !== nextState.srclibDataVersion) {
 			if (nextState.isDelta) {
 				if (this.srclibDataVersionIs404(nextState, p.baseCommitID)) {
-					nextState.actions.build(nextState.repoURI, p.baseCommitID, nextState.base);
+					// nextState.actions.build(nextState.repoURI, p.baseCommitID, nextState.base);
 				}
 				if (this.srclibDataVersionIs404(nextState, p.headCommitID)) {
-					nextState.actions.build(nextState.repoURI, p.headCommitID, nextState.head);
+					// nextState.actions.build(nextState.repoURI, p.headCommitID, nextState.head);
 				}
 			} else {
 				if (this.srclibDataVersionIs404(nextState, p.resolvedRev)) {
-					nextState.actions.build(nextState.repoURI, p.resolvedRev, nextState.rev);
+					// nextState.actions.build(nextState.repoURI, p.resolvedRev, nextState.rev);
 				}
 			}
 		}
@@ -134,10 +136,17 @@ export default class BlobAnnotator extends Component {
 	}
 
 	_addAnnotations(state) {
-		function apply(rev, isBase) {
+		if (!state.blobElement.isConnected) {
+			// TODO: .isConnected is not supported on Firefox; but otherwise we have a race condition
+			// on unmounting the element (e.g. between pages) and trying to write annotations.
+			// This can probably be solved by setting the annotation marker somewhere else on the page
+			// so we can detect it across page views.
+		}
+
+		function apply(rev, branch, isBase) {
 			const json = state.annotations.content[keyFor(state.repoURI, rev, state.path)];
 			if (json) {
-				addAnnotations(state.path, {rev, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes);
+				addAnnotations(state.path, {repoURI: state.repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes);
 			}
 		}
 
@@ -145,15 +154,15 @@ export default class BlobAnnotator extends Component {
 			const delta = state.delta.content[keyFor(state.repoURI, state.base, state.head)];
 			if (!delta || !delta.Delta) return;
 
-			apply(delta.Delta.Base.CommitID, true);
-			apply(delta.Delta.Head.CommitID, false);
+			apply(delta.Delta.Base.CommitID, state.base, true);
+			apply(delta.Delta.Head.CommitID, state.head, false);
 		} else {
 			const resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
 			if (!resolvedRev || !resolvedRev.CommitID) return;
 
 			const dataVer = state.srclibDataVersion.content[keyFor(state.repoURI, resolvedRev.CommitID, state.path)];
 			if (dataVer && dataVer.CommitID) {
-				apply(dataVer.CommitID, false);
+				apply(dataVer.CommitID, state.rev, false);
 			}
 		}
 	}

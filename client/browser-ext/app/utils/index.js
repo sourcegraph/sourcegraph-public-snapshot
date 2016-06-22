@@ -1,3 +1,5 @@
+import {defaultBranchCache} from "./annotations";
+
 export function supportsAnnotatingFile(path) {
 	if (!path) return false;
 
@@ -26,12 +28,6 @@ export function parseURL(loc = window.location) {
 export function parseURLWithSourcegraphDef(loc = window.location) {
 	let info = parseURL(loc);
 
-	// We scrape the current branch and set rev to it so we stay on the same branch when doing jump-to-def.
-	// Need to use the branch selector button because _clickRef passes a pathname as the location which,
-	// only includes ${user}/${repo}, and no rev.
-	let currBranch = getCurrentBranch();
-	info.rev = currBranch;
-
 	// Check for URL hashes like "#sourcegraph&def=...".
 	if (loc.hash.startsWith("#sourcegraph&")) {
 		loc.hash.slice(1).split("&").slice(1).forEach((p) => { // omit "sourcegraph" sentinel
@@ -40,10 +36,25 @@ export function parseURLWithSourcegraphDef(loc = window.location) {
 			let k = kv[0];
 			const v = kv[1];
 			if (k === "def") k = "defPath"; // disambiguate with def obj
-			if (!info[k]) info[k] = v; // don't clobber
+			info[k] = v; // clobber existing properties
 		});
 	}
+
 	return info;
+}
+
+export function addRevToAnnURL(annURL, rev) {
+	// annURL should be a pattern like "/github.com/user/repo/-/def/GoPackage/github.com/user/repo/-/main.go/main"
+	const urlSplit = annURL.split("/-/");
+	urlSplit[0] = `${urlSplit[0]}@${rev}`;
+	return urlSplit.join("/-/");
+}
+
+export function getAnnRepoURI(annURL) {
+	// annURL should be a pattern like "/github.com/user/repo/-/def/GoPackage/github.com/user/repo/-/main.go/main"
+	if (annURL.indexOf("/") === 0) annURL = annURL.substring(1);
+	const urlSplit = annURL.split("/-/");
+	return urlSplit[0];
 }
 
 export function isGitHubURL(loc = window.location) {

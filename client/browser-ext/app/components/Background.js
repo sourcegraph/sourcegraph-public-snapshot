@@ -40,11 +40,11 @@ export default class Background extends React.Component {
 	constructor(props) {
 		super(props);
 		this._refresh = this._refresh.bind(this);
+		this._cleanupAndRefresh = this._cleanupAndRefresh.bind(this);
+		this._popstateUpdate = this._popstateUpdate.bind(this);
 		this._clickRef = this._clickRef.bind(this);
 		this._directURLToDef = this._directURLToDef.bind(this);
 		this._updateIntervalID = null;
-
-		this.state = utils.parseURLWithSourcegraphDef();
 	}
 
 	componentDidMount() {
@@ -62,28 +62,19 @@ export default class Background extends React.Component {
 		}
 
 		document.addEventListener("click", this._clickRef);
-		document.addEventListener("pjax:success", this._refresh);
-		if (utils.isGitHubURL()) {
-			window.addEventListener("focus", this._refresh);
-		}
+		document.addEventListener("pjax:success", this._cleanupAndRefresh);
+		window.addEventListener("popstate", this._popstateUpdate);
 
 		this._refresh();
 	}
 
-	componentWillUpdate(nextProps, nextState) {
-		// Show/hide def info.
-		if (nextState.defPath &&
-			(nextState.repoURI !== this.state.repoURI ||
-				nextState.rev !== this.state.rev ||
-				nextState.defPath !== this.state.defPath ||
-				nextState.def !== this.state.def)) {
-			this._renderDefInfo(nextProps, nextState);
-		}
+	componentWillUpdate(nextProps) {
+		this._refresh();
 	}
 
 	componentWillUnmount() {
-		document.removeEventListener("pjax:success", this._refresh);
-		window.removeEventListener("focus", this._refresh);
+		document.removeEventListener("pjax:success", this._cleanupAndRefresh);
+		document.removeEventListener("popstate", this._popstateUpdate);
 		document.removeEventListener("click", this._clickRef);
 		if (this._updateIntervalID !== null) {
 			clearInterval(this._updateIntervalID);
@@ -93,6 +84,7 @@ export default class Background extends React.Component {
 
 	_clickRef(ev) {
 		if (ev.target.dataset && typeof ev.target.dataset.sourcegraphRef !== "undefined") {
+			let currLocation = utils.parseURLWithSourcegraphDef();
 			let urlProps = utils.parseURLWithSourcegraphDef({pathname: ev.target.pathname, hash: ev.target.hash});
 			this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
 
@@ -103,9 +95,29 @@ export default class Background extends React.Component {
 				this._renderDefInfo(this.props, urlProps);
 			} else {
 				EventLogger.logEvent("ClickedDef", {defPath: urlProps.defPath, repo: urlProps.repoURI, user: urlProps.user, direct: "false"});
-				pjaxGoTo(ev.target.href, urlProps.repoURI === this.state.repoURI);
+				pjaxGoTo(ev.target.href, urlProps.repoURI === currLocation.repoURI);
 			}
 		}
+	}
+
+	_cleanupAndRefresh() {
+		// Clean up any popovers on the page before refreshing (after pjax:success).
+		// Otherwise, popovers may remain on the page because the anchored elem's mousout
+		// event may not have fired (and the elem may no longer be on the page).
+		const popovers = document.querySelectorAll(".sg-popover")
+		for (let i = 0; i < popovers.length; ++i) {
+			popovers[i].remove();
+		}
+
+		this._refresh();
+	}
+
+	_popstateUpdate() {
+		// If the user navigates "back" in the browser, there will not necessarily
+		// be a pjax:success event; it may be that the user is jumping back to
+		// a previous definition (even in the same file) in which case re-rendering
+		// the def info link is necessary.
+		this._renderDefInfo(this.props, utils.parseURLWithSourcegraphDef());
 	}
 
 	_refresh() {
@@ -136,21 +148,27 @@ export default class Background extends React.Component {
 				this.props.actions.ensureRepoExists(urlProps.repoURI);
 			}
 
-			this.setState(urlProps);
+			const directURLToDef = this._directURLToDef(urlProps);
+			if (directURLToDef) {
+				if (!window.location.href.includes(directURLToDef.hash)) {
+					pjaxGoTo(`${directURLToDef.pathname}${directURLToDef.hash}`, true);
+				}
+			}
+
 			this._renderDefInfo(this.props, urlProps);
 		});
 	}
 
 	_refreshVCS() {
-		if (this.state.repoURI && utils.isGitHubURL()) {
-			this.props.actions.refreshVCS(this.state.repoURI);
+		let urlProps = utils.parseURLWithSourcegraphDef();
+		if (urlProps.repoURI && utils.isGitHubURL()) {
+			this.props.actions.refreshVCS(urlProps.repoURI);
 		}
 	}
 
 	_directURLToDef({repoURI, rev, defPath}) {
 		const defObj = this.props.def.content[keyFor(repoURI, rev, defPath)];
 		if (defObj) {
-			if (repoURI !== this.state.repoURI) rev = defaultBranchCache[repoURI] || "master";
 			const pathname = `/${repoURI.replace("github.com/", "")}/blob/${rev}/${defObj.File}`;
 			const hash = `#sourcegraph&def=${defPath}&L${defObj.StartLine || 0}-${defObj.EndLine || 0}`;
 			return {pathname, hash};
