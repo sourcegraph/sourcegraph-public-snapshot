@@ -3,6 +3,7 @@ package unit
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -176,7 +177,7 @@ func (u *SourceUnit) MarshalJSON() ([]byte, error) {
 func (u *SourceUnit) UnmarshalJSON(b []byte) error {
 	var su sourceUnit
 	if err := json.Unmarshal(b, &su); err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal source unit: %s; JSON was: %s", err, string(b))
 	}
 	deps := make([]*Key, len(su.Dependencies))
 	for i, depJSON := range su.Dependencies {
@@ -186,7 +187,7 @@ func (u *SourceUnit) UnmarshalJSON(b []byte) error {
 		} else if err != nil {
 			var s string
 			if err := json.Unmarshal(depJSON, &s); err != nil {
-				return err
+				return fmt.Errorf("could not unmarshal dependency: %s; JSON was %v", err, depJSON)
 			}
 			deps[i] = &Key{
 				Repo: UnitRepoUnresolved,
@@ -199,7 +200,8 @@ func (u *SourceUnit) UnmarshalJSON(b []byte) error {
 	for k, vJSON := range su.Config {
 		var v string
 		if err := json.Unmarshal(*vJSON, &v); err != nil {
-			return err
+			log.Printf("warning: could not unmarshal config string: %s, JSON was %v", err, vJSON)
+			continue
 		}
 		cfg[k] = v
 	}
