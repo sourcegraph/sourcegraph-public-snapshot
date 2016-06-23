@@ -9,14 +9,14 @@ import EventLogger from "../analytics/EventLogger";
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes) {
+export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff) {
 	if (el.dataset[repoRevSpec.rev]) return;
 	el.dataset[repoRevSpec.rev] = true;
-	_applyAnnotations(el, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes));
+	_applyAnnotations(el, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff);
 }
 
 // _applyAnnotations is a helper function for addAnnotations
-export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesByLine) {
+export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff) {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
@@ -49,20 +49,36 @@ export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesBy
 
 		let line, codeCell, isAddition, isDeletion;
 		if (repoRevSpec.isDelta) {
-			let metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[1];
-			if (metaCell.classList.contains("blob-num-expandable")) {
+			if (isSplitDiff && row.cells.length !== 4) continue;
+
+			let metaCell;
+			if (isSplitDiff) {
+				metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[2];
+			} else {
+				metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[1];
+			}
+
+			if (metaCell.classList && metaCell.classList.contains("blob-num-expandable")) {
 				continue;
 			}
 
-			codeCell = row.cells[2];
+			if (isSplitDiff) {
+				codeCell = repoRevSpec.isBase ? row.cells[1] : row.cells[3];
+			} else {
+				codeCell = row.cells[2];
+			}
 			if (!codeCell) {
 				continue;
 			}
 
-			isAddition = codeCell.classList.contains("blob-code-addition");
-			isDeletion = codeCell.classList.contains("blob-code-deletion");
-			if (!isAddition && !isDeletion && !repoRevSpec.isBase) {
-				continue; // careful; we don't need to put head AND base on unmodified parts
+			if (codeCell.classList && codeCell.classList.contains("blob-code-empty")) {
+				continue;
+			}
+
+			isAddition = codeCell.classList && codeCell.classList.contains("blob-code-addition");
+			isDeletion = codeCell.classList && codeCell.classList.contains("blob-code-deletion");
+			if (!isAddition && !isDeletion && !repoRevSpec.isBase && !isSplitDiff) {
+				continue; // careful; we don't need to put head AND base on unmodified parts (but only for unified diff views)
 			}
 			if (isDeletion && !repoRevSpec.isBase) {
 				continue;

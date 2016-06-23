@@ -43,6 +43,8 @@ export default class BlobAnnotator extends Component {
 		this.state = utils.parseURL();
 
 		if (this.state.isDelta) {
+			this.state.isSplitDiff = document.querySelector('meta[name="diff-view"]').content === "split";
+
 			let baseCommitID, headCommitID;
 			let el = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
 			if (el && el.length > 0) {
@@ -176,7 +178,7 @@ export default class BlobAnnotator extends Component {
 
 			const json = state.annotations.content[keyFor(repoURI, dataVer.CommitID, state.path)];
 			if (json) {
-				addAnnotations(state.path, {repoURI: repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes);
+				addAnnotations(state.path, {repoURI: repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes, state.isSplitDiff);
 			}
 		}
 
