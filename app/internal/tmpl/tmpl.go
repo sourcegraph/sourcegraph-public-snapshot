@@ -116,17 +116,6 @@ type Common struct {
 	// Debug is whether to show debugging info on the rendered page.
 	Debug bool
 
-	// ReturnTo is the URL to the page that the user should be returned to if
-	// the user initiates a signup or login process from this page. Usually this
-	// is the same as CurrentURI. The exceptions are when there are tracking
-	// querystring parameters (we want to remove from the URL that the user
-	// visits after signing up), and when the user is on the signup or login
-	// pages themselves (otherwise we could get into a loop).
-	//
-	// The ReturnTo field is overridden by serveSignUp and other handlers that want
-	// to set a ReturnTo different from CurrentURI.
-	ReturnTo string
-
 	// ExternalLinks decides if we should include links to things like
 	// sourcegraph.com and the issue tracker on github.com
 	DisableExternalLinks bool
