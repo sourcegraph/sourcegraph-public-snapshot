@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import {Link} from "react-router";
 import fuzzysearch from "fuzzysearch";
+import fuzzy_score from "sourcegraph/tree/fuzzy_score";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import debounce from "lodash/function/debounce";
@@ -60,14 +61,6 @@ function pathDir(path: string): string {
 	// Remove last item from path.
 	const parts = pathSplit(path);
 	return pathJoin(parts.splice(0, parts.length - 1));
-}
-
-function fuzzyMatchPath(pattern: string, path: string): boolean {
-	let parts = pathSplit(path);
-	if (parts === EMPTY_PATH || parts.length === 0) {
-		return false;
-	}
-	return fuzzysearch(pattern, parts[parts.length - 1]);
 }
 
 type TreeSearchProps = {
@@ -333,15 +326,17 @@ class TreeSearch extends Container {
 
 			} else {
 				// NOTE(mate): moving this constant declaration inside the if-block seems to trigger
-				// a bug in flow so that it can't infer the definedness of `nextState.fileList.Files`
+				// a bug in Flow so that it can't infer the definedness of `nextState.fileList.Files`
 				const query = nextState.query.toLowerCase();
 				if (nextState.fileList && nextState.fileList.Files) {
 					nextState.fileResults = nextState.fileList.Files
-						.filter((f) => fuzzyMatchPath(query, f.toLowerCase()))
-						.map((f) => ({
-							name: f,
+						.map(f => fuzzysearch(query, f.toLowerCase()) && fuzzy_score(nextState.query, f))
+						.filter(f => f)               // drop partial matches
+						.sort((a, b) => b[0] - a[0])  // descending order by score
+						.map(f => ({
+							name: f[1],
 							isDirectory: false,
-							url: urlToBlob(nextState.repo, nextState.rev, f),
+							url: urlToBlob(nextState.repo, nextState.rev, f[1]),
 						}));
 				}
 			}
