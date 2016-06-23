@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule memoizeStringOnly
+ * @flow
  * @typechecks static-only
  */
 
@@ -14,12 +15,9 @@
 
 /**
  * Memoizes the return value of a function that accepts one string argument.
- *
- * @param {function} callback
- * @return {function}
  */
 
-function memoizeStringOnly(callback) {
+function memoizeStringOnly<T>(callback: (s: string) => T): (s: string) => T {
   const cache = {};
   return function (string) {
     if (!cache.hasOwnProperty(string)) {

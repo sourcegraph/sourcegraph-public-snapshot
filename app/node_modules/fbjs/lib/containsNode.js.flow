@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule containsNode
- * @typechecks
+ * @flow
  */
 
 const isTextNode = require('./isTextNode');
@@ -16,12 +16,8 @@ const isTextNode = require('./isTextNode');
 
 /**
  * Checks if a given DOM node contains or is another DOM node.
- *
- * @param {?DOMNode} outerNode Outer DOM node.
- * @param {?DOMNode} innerNode Inner DOM node.
- * @return {boolean} True if `outerNode` contains or is `innerNode`.
  */
-function containsNode(outerNode, innerNode) {
+function containsNode(outerNode: ?Node, innerNode: ?Node): bool {
   if (!outerNode || !innerNode) {
     return false;
   } else if (outerNode === innerNode) {
@@ -30,7 +26,7 @@ function containsNode(outerNode, innerNode) {
     return false;
   } else if (isTextNode(innerNode)) {
     return containsNode(outerNode, innerNode.parentNode);
-  } else if (outerNode.contains) {
+  } else if ('contains' in outerNode) {
     return outerNode.contains(innerNode);
   } else if (outerNode.compareDocumentPosition) {
     return !!(outerNode.compareDocumentPosition(innerNode) & 16);

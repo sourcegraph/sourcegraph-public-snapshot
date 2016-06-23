@@ -11,7 +11,7 @@
  * 
  */
 
-var nullthrows = function (x) {
+var nullthrows = function nullthrows(x) {
   if (x != null) {
     return x;
   }

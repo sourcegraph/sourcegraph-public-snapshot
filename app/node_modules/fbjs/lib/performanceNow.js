@@ -21,11 +21,11 @@ var performanceNow;
  * because of Facebook's testing infrastructure.
  */
 if (performance.now) {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return performance.now();
   };
 } else {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return Date.now();
   };
 }

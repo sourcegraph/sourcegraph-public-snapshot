@@ -31,7 +31,7 @@
 var PUNCTUATION = '[.,+*?$|#{}()\'\\^\\-\\[\\]\\\\\\/!@%"~=<>_:;' + '・、。〈-】〔-〟：-？！-／' + '［-｀｛-･⸮؟٪-٬؛،؍' + '﴾﴿᠁।၊။‐-‧‰-⁞' + '¡-±´-¸º»¿]';
 
 module.exports = {
-  getPunctuation: function () {
+  getPunctuation: function getPunctuation() {
     return PUNCTUATION;
   }
 };

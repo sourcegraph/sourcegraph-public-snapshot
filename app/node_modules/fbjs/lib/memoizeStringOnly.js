@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  * @typechecks static-only
  */
 
@@ -13,9 +14,6 @@
 
 /**
  * Memoizes the return value of a function that accepts one string argument.
- *
- * @param {function} callback
- * @return {function}
  */
 
 function memoizeStringOnly(callback) {

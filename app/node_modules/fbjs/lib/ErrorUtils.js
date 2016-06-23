@@ -16,10 +16,10 @@ if (global.ErrorUtils) {
   module.exports = global.ErrorUtils;
 } else {
   var ErrorUtils = {
-    applyWithGuard: function (callback, context, args, onError, name) {
+    applyWithGuard: function applyWithGuard(callback, context, args, onError, name) {
       return callback.apply(context, args);
     },
-    guard: function (callback, name) {
+    guard: function guard(callback, name) {
       return callback;
     }
   };

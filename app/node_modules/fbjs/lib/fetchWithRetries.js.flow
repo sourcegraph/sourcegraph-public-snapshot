@@ -37,7 +37,7 @@ const DEFAULT_RETRIES = [1000, 3000];
  * Makes a POST request to the server with the given data as the payload.
  * Automatic retries are done based on the values in `retryDelays`.
  */
-function fetchWithRetries(uri: string, initWithRetries?: ?InitWithRetries): Promise {
+function fetchWithRetries(uri: string, initWithRetries?: ?InitWithRetries): Promise<any> {
   const { fetchTimeout, retryDelays, ...init } = initWithRetries || {};
   const _fetchTimeout = fetchTimeout != null ? fetchTimeout : DEFAULT_TIMEOUT;
   const _retryDelays = retryDelays != null ? retryDelays : DEFAULT_RETRIES;

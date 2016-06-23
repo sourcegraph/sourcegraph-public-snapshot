@@ -33,7 +33,7 @@ React.addons = {
 };
 
 if (process.env.NODE_ENV !== 'production') {
-  React.addons.Perf = require('./ReactDefaultPerf');
+  React.addons.Perf = require('./ReactPerf');
   React.addons.TestUtils = require('./ReactTestUtils');
 }
 

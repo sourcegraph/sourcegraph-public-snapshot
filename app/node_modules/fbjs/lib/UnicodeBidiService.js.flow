@@ -48,7 +48,7 @@ const UnicodeBidiDirection = require('./UnicodeBidiDirection');
 
 const invariant = require('./invariant');
 
-import type { BidiDirection } from 'UnicodeBidiDirection';
+import type { BidiDirection } from './UnicodeBidiDirection';
 
 class UnicodeBidiService {
 

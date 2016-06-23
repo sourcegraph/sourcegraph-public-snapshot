@@ -45,7 +45,7 @@ var Style = {
    * @param {?DOMNode} node Node from which to start searching.
    * @return {?DOMWindow|DOMElement} Scroll parent of the supplied node.
    */
-  getScrollParent: function (node) {
+  getScrollParent: function getScrollParent(node) {
     if (!node) {
       return null;
     }

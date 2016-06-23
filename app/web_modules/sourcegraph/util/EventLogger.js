@@ -370,6 +370,23 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 				}
 
 				this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, this.props.location.query._event, eventProperties);
+
+				// Won't take effect until we call replace below, but prevents this
+				// from being called 2x before the setTimeout block runs.
+				delete this.props.location.query._event;
+				delete this.props.location.query._githubAuthed;
+
+				// Remove _event from the URL to canonicalize the URL and make it
+				// less ugly.
+				const locWithoutEvent = {...this.props.location,
+					query: {...this.props.location.query, _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined}, // eslint-disable-line no-undefined
+					state: {...this.props.location.state, _onboarding: this.props.location.query._onboarding},
+				};
+
+				delete this.props.location.query._signupChannel;
+				delete this.props.location.query._onboarding;
+
+				this.context.router.replace(locWithoutEvent);
 			}
 		}
 
