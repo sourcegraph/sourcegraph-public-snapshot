@@ -10,7 +10,7 @@ import (
 // `droneSrclibGoImage = "sourcegraph/srclib-go"`.
 var (
 	droneSrclibBashImage       = "sourcegraph/srclib-bash@sha256:2b5468bd134f34c32ef17af27ecb10561fd1d064104dfad8bf3a0263ffad3dab"
-	droneSrclibGoImage         = "sourcegraph/srclib-go:fa8df1e70152b2b14b47a0230f3c0d8333be9028"
+	droneSrclibGoImage         = "sourcegraph/srclib-go:2bf78d43ec53d8fd81c77392b8ebe2f4181a4fd6"
 	droneSrclibJavaScriptImage = "sourcegraph/srclib-javascript@sha256:53fd71cb3a1097575c632ab654383945369dac491e30cddd9ebc777ab5d9f000"
 	droneSrclibJavaImage       = "sourcegraph/srclib-java@sha256:7e4ff0bc3aee6d87295dd4629fabcfbb39de115911af6d1abd1aa4e5145b5d1c"
 	droneSrclibTypeScriptImage = "sourcegraph/srclib-typescript@sha256:39adfea4bdaea50be63431fe8c85c174a6a83d34db1196ac0bb171cb79cc88d6"
