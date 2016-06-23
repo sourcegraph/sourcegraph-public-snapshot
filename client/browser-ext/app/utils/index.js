@@ -2,11 +2,7 @@ import {defaultBranchCache} from "./annotations";
 
 export function supportsAnnotatingFile(path) {
 	if (!path) return false;
-
-	const pathParts = path.split("/");
-	let lang = pathParts[pathParts.length - 1].split(".")[1] || null;
-	lang = lang ? lang.toLowerCase() : null;
-	return lang === "go" || lang === "java" || lang === "sh" || lang === "bash";
+	return true;
 }
 
 export function parseURL(loc = window.location) {
