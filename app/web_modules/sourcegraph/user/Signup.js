@@ -18,6 +18,10 @@ export class SignupForm extends Container {
 	static propTypes = {
 		onSignupSuccess: React.PropTypes.func.isRequired,
 		location: React.PropTypes.object.isRequired,
+
+		// returnTo is where the user should be redirected after an OAuth login flow,
+		// either a URL path or a Location object.
+		returnTo: React.PropTypes.oneOfType(React.PropTypes.string, React.PropTypes.object).isRequired,
 	};
 	state = {
 		submitted: false,
@@ -71,7 +75,7 @@ export class SignupForm extends Container {
 			<form {...this.props} onSubmit={this._handleSubmit} styleName="form">
 				<Heading level="3" align="center" underline="orange">Sign up for Sourcegraph</Heading>
 				{!this.state.githubError && [
-					<GitHubAuthButton tabIndex="1" key="1" block={true}>Continue with GitHub</GitHubAuthButton>,
+					<GitHubAuthButton returnTo={this.state.returnTo} tabIndex="1" key="1" block={true}>Continue with GitHub</GitHubAuthButton>,
 					<p key="2" styleName="divider">or</p>,
 				]}
 				{this.state.githubError === "username-or-email-taken" && <div styleName="error">Your GitHub username <strong>{this.state.githubLogin}</strong> {this.state.githubEmail && <span>or email <strong>{this.state.githubEmail}</strong></span>} is already taken on Sourcegraph. Sign up on Sourcegraph with a different username/email, then link your GitHub account again.</div>}
@@ -142,6 +146,7 @@ function Signup(props, {router}) {
 		<div styleName="full-page">
 			<Helmet title="Sign Up" />
 			<SignupForm {...props}
+				returnTo="/"
 				onSignupSuccess={() => router.replace({...location, state: {...location.state, _onboarding: "new-user"}})} />
 		</div>
 	);

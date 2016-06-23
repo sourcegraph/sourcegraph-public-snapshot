@@ -9,6 +9,9 @@ import redirectForUnauthedUser from "sourcegraph/user/redirectForUnauthedUser";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class TourContainer extends React.Component {
+	static propTypes = {
+		location: React.PropTypes.object.isRequired,
+	}
 
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
@@ -59,7 +62,7 @@ class TourContainer extends React.Component {
 
 	_connectGitHubClicked() {
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: AnalyticsConstants.PAGE_TOUR, scopes: "", upgrade: true});
-		window.open(urlToGitHubOAuth);
+		window.open(urlToGitHubOAuth(null, this.props.location));
 	}
 
 	_installSourcegraphLiveClicked() {

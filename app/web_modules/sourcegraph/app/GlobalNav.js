@@ -25,6 +25,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<div styleName="modal">
 						<LoginForm
 							onLoginSuccess={dismissModal("login", location, router)}
+							returnTo={location}
 							location={location} />
 					</div>
 				</LocationStateModal>
@@ -36,6 +37,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<div styleName="modal">
 						<SignupForm
 							onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
+							returnTo={location}
 							location={location} />
 					</div>
 				</LocationStateModal>

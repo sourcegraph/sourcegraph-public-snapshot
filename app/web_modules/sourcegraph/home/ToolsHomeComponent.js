@@ -151,7 +151,7 @@ class ToolsHomeComponent extends Component {
 
 	_connectGitHubClicked() {
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "InitiateGitHubOAuth2Flow", {page_name: AnalyticsConstants.PAGE_TOOLS, scopes: "", upgrade: true});
-		window.open(urlToGitHubOAuth);
+		window.open(urlToGitHubOAuth(null, this.props.location));
 	}
 
 	render() {

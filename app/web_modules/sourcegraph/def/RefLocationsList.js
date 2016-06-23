@@ -8,7 +8,7 @@ import styles from "sourcegraph/def/styles/Def.css";
 import CSSModules from "react-css-modules";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Button from "sourcegraph/components/Button";
-import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import {urlToGitHubOAuth, privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {trimRepo} from "sourcegraph/repo";
 import {defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -70,7 +70,7 @@ class RefLocationsList extends React.Component {
 						}
 						{this.context.signedIn && noGitHubPrivateReposScope &&
 							<a styleName="cta-link"
-								href={urlToPrivateGitHubOAuth}
+								href={urlToGitHubOAuth(privateGitHubOAuthScopes, this.props.location)}
 								onClick={() => this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "Conversion_AuthPrivateCodeFromRefList", {page_name: location.pathname})}>
 								<strong>Authorize</strong> to see results from your private code
 							</a>

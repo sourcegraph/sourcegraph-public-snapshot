@@ -7,7 +7,7 @@ import base from "sourcegraph/components/styles/_base.css";
 import {Input, Panel, Hero, Heading, Button, Icon} from "sourcegraph/components";
 import debounce from "lodash/function/debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
-import {urlToPrivateGitHubOAuth} from "sourcegraph/util/urlTo";
+import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
 class DashboardRepos extends React.Component {
 	static contextTypes = {
@@ -65,7 +65,7 @@ class DashboardRepos extends React.Component {
 						Add your private repositories
 					</Heading>
 					<p className={base.pb2}>Use Sourcegraph on your private repositories</p>
-					<GitHubAuthButton url={urlToPrivateGitHubOAuth} styleName="inline-block">Connect your repositories</GitHubAuthButton>
+					<GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="inline-block">Connect your repositories</GitHubAuthButton>
 				</div>
 			</Panel>
 		);
@@ -103,7 +103,7 @@ class DashboardRepos extends React.Component {
 									<Heading level="4" className={base.mb4}>
 										Uh-oh! You'll need to connect your GitHub account to browse your private code with Sourcegraph.
 									</Heading>
-									<GitHubAuthButton styleName="inline-block">Connect with GitHub</GitHubAuthButton>
+									<GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="inline-block">Connect with GitHub</GitHubAuthButton>
 								</div>
 							</div>
 						}
@@ -133,6 +133,7 @@ class DashboardRepos extends React.Component {
 
 DashboardRepos.propTypes = {
 	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+	location: React.PropTypes.object.isRequired,
 };
 
 export default CSSModules(DashboardRepos, styles, {allowMultiple: true});

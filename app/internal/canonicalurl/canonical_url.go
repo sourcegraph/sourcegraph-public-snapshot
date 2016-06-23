@@ -14,8 +14,8 @@ var nonCanonicalQueryParams = []string{
 	"utm_source", "utm_medium", "utm_campaign", returnto.ParamName,
 }
 
-// FromURL returns the canonical URL for the given URL. If it is the
-// same as the currentURL, the currentURL is returned unchanged.
+// FromURL returns the canonical URL for the given URL. The given URL
+// is not modified.
 func FromURL(currentURL *url.URL) *url.URL {
 	canonicalQuery := currentURL.Query()
 	for _, k := range nonCanonicalQueryParams {

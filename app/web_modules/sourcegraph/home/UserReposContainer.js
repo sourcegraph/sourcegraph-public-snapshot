@@ -7,6 +7,10 @@ import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
 import * as DashboardActions from "sourcegraph/dashboard/DashboardActions";
 
 class UserReposContainer extends Container {
+	static propTypes = {
+		location: React.PropTypes.object.isRequired,
+	};
+
 	static contextTypes = {
 		siteConfig: React.PropTypes.object.isRequired,
 		user: React.PropTypes.object,
@@ -37,7 +41,7 @@ class UserReposContainer extends Container {
 	stores() { return [DashboardStore]; }
 
 	render() {
-		return <DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} />;
+		return <DashboardRepos repos={(this.state.repos || []).concat(this.state.remoteRepos || [])} location={this.props.location} />;
 	}
 }
 
