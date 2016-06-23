@@ -70,6 +70,8 @@
 
 .description {
 	composes: normal-text from typography;
+	margin-top: 1.5rem;
+	margin-bottom: 1.5rem;
 }
 
 .description-expander {
