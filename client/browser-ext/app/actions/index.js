@@ -144,7 +144,7 @@ function _getNewestBuildForCommit(dispatch, state, repo, commitID) {
 export function build(repo, commitID, branch) {
 	return function (dispatch, getState) {
 		const state = getState();
-		const build = state.build.created[keyFor(repo, commitID)];
+		const build = state.build.content[keyFor(repo, commitID)];
 		if (build) return Promise.resolve();
 
 		return _getNewestBuildForCommit(dispatch, state, repo, commitID).then((json) => {
@@ -152,14 +152,10 @@ export function build(repo, commitID, branch) {
 				return Promise.resolve();
 			}
 
-			if (getState().build.created[keyFor(repo, commitID)]) return Promise.resolve(); // check again, for good measure
-
-			return Promise.resolve();
-
-			// dispatch({type: types.CREATED_BUILD, repo, commitID});
-			// return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/builds`, {method: "POST", body: JSON.stringify({CommitID: commitID, Branch: branch})})
-			// 	.then((json) => {})
-			// 	.catch((err) => {});
+			dispatch({type: types.CREATED_BUILD, repo, commitID, json: {Builds: [{}]}});
+			return fetch(`https://sourcegraph.com/.api/repos/${repo}/-/builds`, {method: "POST", body: JSON.stringify({CommitID: commitID, Branch: branch})})
+				.then((json) => {})
+				.catch((err) => {});
 		}).catch((err) => {}); // no error handling
 	}
 }

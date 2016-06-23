@@ -57,21 +57,14 @@ const delta = function(state = {content: {}}, action) {
 	}
 }
 
-const build = function(state = {content: {}, created: {}}, action) {
+const build = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_BUILD:
+	case ActionTypes.CREATED_BUILD:
 		return {
 			...state,
 			content: {
 				...state.content,
-				[keyFor(action.repo, action.commitID)]: action.json ? action.json : null,
-			}
-		};
-	case ActionTypes.CREATED_BUILD:
-		return {
-			...state,
-			created: {
-				...state.created,
 				[keyFor(action.repo, action.commitID)]: action.json ? action.json : null,
 			}
 		};

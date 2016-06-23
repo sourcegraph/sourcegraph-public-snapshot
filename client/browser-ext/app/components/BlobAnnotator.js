@@ -11,6 +11,8 @@ import * as utils from "../utils";
 import {keyFor} from "../reducers/helpers";
 import EventLogger from "../analytics/EventLogger";
 
+let buildsCache = {};
+
 @connect(
 	(state) => ({
 		resolvedRev: state.resolvedRev,
@@ -114,6 +116,7 @@ export default class BlobAnnotator extends Component {
 				}
 				state.isAnnotated = true;
 			} else {
+				state.actions.getSrclibDataVersion(state.repoURI, state.rev);
 				state.actions.getAnnotations(state.repoURI, state.rev, state.path);
 				state.isAnnotated = true;
 			}
@@ -121,50 +124,31 @@ export default class BlobAnnotator extends Component {
 	}
 
 	onStateTransition(prevState, nextState) {
-		// const p = this.parseState(nextState);
-
-		// if (prevState.srclibDataVersion !== nextState.srclibDataVersion) {
-		// 	if (nextState.isDelta) {
-		// 		if (this.srclibDataVersionIs404(nextState, p.baseCommitID)) {
-		// 			// nextState.actions.build(nextState.repoURI, p.baseCommitID, nextState.base);
-		// 		}
-		// 		if (this.srclibDataVersionIs404(nextState, p.headCommitID)) {
-		// 			// nextState.actions.build(nextState.repoURI, p.headCommitID, nextState.head);
-		// 		}
-		// 	} else {
-		// 		if (this.srclibDataVersionIs404(nextState, p.resolvedRev)) {
-		// 			// nextState.actions.build(nextState.repoURI, p.resolvedRev, nextState.rev);
-		// 		}
-		// 	}
-		// }
+		if (nextState.isDelta) {
+			if (nextState.baseCommitID) {
+				this._build(nextState.baseRepoURI, nextState.baseCommitID, nextState.base);
+			}
+			if (nextState.headCommitID) {
+				this._build(nextState.headRepoURI, nextState.headCommitID, nextState.head);
+			}
+		} else {
+			const resolvedRev = nextState.resolvedRev.content[keyFor(nextState.repoURI, nextState.rev)];
+			if (resolvedRev && resolvedRev.CommitID) {
+				const dataVer = nextState.srclibDataVersion.content[keyFor(nextState.repoURI, resolvedRev.CommitID)];
+				if (dataVer && dataVer.CommitID) this._build(nextState.repoURI, dataVer.CommitID, nextState.rev);
+			}
+		}
 
 		this._addAnnotations(nextState);
 	}
 
-	// parseState(state) {
-	// 	let resolvedRev, srclibDataVersion, delta, baseCommitID, headCommitID, baseSrclibDataVersion, headSrclibDataVersion;
-	// 	if (state.isDelta) {
-	// 		delta = state.delta.content[keyFor(state.repoURI, state.base, state.head)];
-	// 		if (delta && delta.Delta) {
-	// 			baseCommitID = delta.Delta.Base.CommitID;
-	// 			headCommitID = delta.Delta.Head.CommitID;
-	// 			baseSrclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, baseCommitID, state.path)];
-	// 			headSrclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, headCommitID, state.path)];
-	// 		}
-	// 	} else {
-	// 		resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
-	// 		if (resolvedRev && resolvedRev.CommitID) {
-	// 			resolvedRev = resolvedRev.CommitID
-	// 			srclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, resolvedRev, state.path)];
-	// 		}
-	// 	}
-	// 	return {resolvedRev, srclibDataVersion, delta, baseCommitID, headCommitID, baseSrclibDataVersion, headSrclibDataVersion};
-	// }
+	_build(repoURI, commitID, branch) {
+		if (!this.state.actions) return;
 
-	srclibDataVersionIs404(props, rev) {
-		if (!rev) return false;
-		const fetch = props.srclibDataVersion.fetches[keyFor(this.state.repoURI, rev, props.path)];
-		return fetch && fetch.response && fetch.response.status === 404;
+		if (!buildsCache[keyFor(repoURI, commitID, branch)]) {
+			buildsCache[keyFor(repoURI, commitID, branch)] = true;
+			this.state.actions.build(repoURI, commitID, branch);
+		}
 	}
 
 	_addAnnotations(state) {
