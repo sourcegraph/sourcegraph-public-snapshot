@@ -61,7 +61,7 @@ export default class BlobAnnotator extends Component {
 						if (k === "end_commit_oid") headCommitID = v;
 					}
 				}
-			} else {
+			} else if (this.state.isPullRequest) {
 				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
 				if (baseInput) {
 					baseCommitID = baseInput.value;
@@ -70,11 +70,15 @@ export default class BlobAnnotator extends Component {
 				if (headInput) {
 					headCommitID = headInput.value;
 				}
+			} else if (this.state.isCommit) {
+				let shaContainer = document.querySelectorAll(".sha-block");
+				if (shaContainer && shaContainer.length === 2) {
+					let baseShaEl = shaContainer[0].querySelector("a");
+					if (baseShaEl) baseCommitID = baseShaEl.href.split("/").slice(-1)[0];
+					let headShaEl = shaContainer[1].querySelector("span.sha");
+					if (headShaEl) headCommitID = headShaEl.innerText;
+				}
 			}
-
-			this.state.baseCommitID = baseCommitID;
-			this.state.headCommitID = headCommitID;
-
 			if (!baseCommitID) {
 				console.error("unable to parse base commit id");
 			}
@@ -82,22 +86,36 @@ export default class BlobAnnotator extends Component {
 				console.error("unable to parse head commit id");
 			}
 
-			const branches = document.querySelectorAll(".commit-ref,.current-branch");
-			this.state.base = branches[0].innerText;
-			this.state.head = branches[1].innerText;
+			this.state.baseCommitID = baseCommitID;
+			this.state.headCommitID = headCommitID;
 
-			if (this.state.base.includes(":")) {
-				const baseSplit = this.state.base.split(":");
-				this.state.base = baseSplit[1];
-				this.state.baseRepoURI = `github.com/${baseSplit[0]}/${this.state.repo}`;
-			} else {
+			if (this.state.isPullRequest) {
+				const branches = document.querySelectorAll(".commit-ref,.current-branch");
+				this.state.base = branches[0].innerText;
+				this.state.head = branches[1].innerText;
+
+				if (this.state.base.includes(":")) {
+					const baseSplit = this.state.base.split(":");
+					this.state.base = baseSplit[1];
+					this.state.baseRepoURI = `github.com/${baseSplit[0]}/${this.state.repo}`;
+				} else {
+					this.state.baseRepoURI = this.state.repoURI;
+				}
+				if (this.state.head.includes(":")) {
+					const headSplit = this.state.head.split(":");
+					this.state.head = headSplit[1];
+					this.state.headRepoURI = `github.com/${headSplit[0]}/${this.state.repo}`;
+				} else {
+					this.state.headRepoURI = this.state.repoURI;
+				}
+			} else if (this.state.isCommit) {
+				let branchEl = document.querySelector("li.branch");
+				if (branchEl) branchEl = branchEl.querySelector("a")
+				if (branchEl) {
+					this.state.base = branchEl.innerText;
+					this.state.head = branchEl.innerText;
+				}
 				this.state.baseRepoURI = this.state.repoURI;
-			}
-			if (this.state.head.includes(":")) {
-				const headSplit = this.state.head.split(":");
-				this.state.head = headSplit[1];
-				this.state.headRepoURI = `github.com/${headSplit[0]}/${this.state.repo}`;
-			} else {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
@@ -154,6 +172,10 @@ export default class BlobAnnotator extends Component {
 	_addAnnotations(state) {
 		function apply(repoURI, rev, branch, isBase) {
 			const json = state.annotations.content[keyFor(repoURI, rev, state.path)];
+			if (state.path === "services/backend/internal/localstore/accounts.go") {
+				console.log("annotating that file", repoURI, rev, branch, isBase)
+				console.log("json", json)
+			}
 			if (json) {
 				addAnnotations(state.path, {repoURI: repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes);
 			}

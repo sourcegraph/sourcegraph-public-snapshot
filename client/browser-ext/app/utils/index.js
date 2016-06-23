@@ -24,7 +24,7 @@ export function parseURL(loc = window.location) {
 	if (urlsplit[2] === "blob") {
 		path = urlsplit.slice(3 + revParts).join("/");
 	}
-	return {user, repo, repoURI: user && repo ? `github.com/${user}/${repo}` : null, rev, path, isDelta: urlsplit[2] === "pull" || urlsplit[2] === "commit"};
+	return {user, repo, repoURI: user && repo ? `github.com/${user}/${repo}` : null, rev, path, isDelta: urlsplit[2] === "pull" || urlsplit[2] === "commit", isPullRequest: urlsplit[2] === "pull", isCommit: urlsplit[2] === "commit"};
 }
 
 export function parseURLWithSourcegraphDef(loc = window.location) {
