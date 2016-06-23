@@ -162,15 +162,6 @@ class RepoMain extends React.Component {
 		}
 	}
 
-	// canonicalURL returns the canonical URL for current page.
-	canonicalURL(): string {
-		// HACK: Assume that default branch name is always "master". This may not always be true,
-		//       but it is for most git repos. Try this first, since it'll be accurate for most
-		//       repos, and figure out the actual default branch later as a followup.
-		let path = this.props.location.pathname.replace("@master/", "/");
-		return `https://sourcegraph.com${path}`;
-	}
-
 	render() {
 		const err = (this.props.repoResolution && this.props.repoResolution.Error) || (this.props.repoObj && this.props.repoObj.Error);
 		if (err) {
