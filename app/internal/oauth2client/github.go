@@ -264,7 +264,7 @@ func createAccountFromGitHub(w http.ResponseWriter, r *http.Request, ctx context
 
 	var newAcct sourcegraph.NewAccount
 	newAcct.Login = ghUser.Login
-	if strings.HasSuffix(ghUser.Email, "@users.noreply.github.com") {
+	if !strings.HasSuffix(ghUser.Email, "@users.noreply.github.com") {
 		newAcct.Email = ghUser.Email
 	}
 
