@@ -11,7 +11,7 @@
  * 
  */
 
-var compareNumber = function (a, b) {
+var compareNumber = function compareNumber(a, b) {
   return a - b;
 };
 

@@ -108,7 +108,7 @@ class DataTransfer {
    */
   isLink() {
     return this.types.some(type => {
-      return type.indexOf('Url') != -1 || type.indexOf('text/uri-list') != -1;
+      return type.indexOf('Url') != -1 || type.indexOf('text/uri-list') != -1 || type.indexOf('text/x-moz-url');
     });
   }
 
@@ -119,6 +119,10 @@ class DataTransfer {
    */
   getLink() {
     if (this.data.getData) {
+      if (this.types.indexOf('text/x-moz-url') != -1) {
+        let url = this.data.getData('text/x-moz-url').split('\n');
+        return url[0];
+      }
       return this.types.indexOf('text/uri-list') != -1 ? this.data.getData('text/uri-list') : this.data.getData('url');
     }
 

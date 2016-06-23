@@ -10,10 +10,10 @@
  *
  */
 var PhotosMimeType = {
-  isImage: function (mimeString) {
+  isImage: function isImage(mimeString) {
     return getParts(mimeString)[0] === 'image';
   },
-  isJpeg: function (mimeString) {
+  isJpeg: function isJpeg(mimeString) {
     var parts = getParts(mimeString);
     return PhotosMimeType.isImage(mimeString) && (
     // see http://fburl.com/10972194

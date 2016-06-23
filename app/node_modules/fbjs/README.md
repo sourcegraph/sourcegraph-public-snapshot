@@ -12,9 +12,9 @@ Any `@providesModule` modules that are used by your project should be added to `
 
 ```js
 // Before transform
-var emptyFunction = require('emptyFunction');
+const emptyFunction = require('emptyFunction');
 // After transform
-var emptyFunction = require('fbjs/lib/emptyFunction');
+const emptyFunction = require('fbjs/lib/emptyFunction');
 ```
 
 See React for an example of this. *Coming soon!*
@@ -35,7 +35,7 @@ Right now these packages represent a subset of packages that we use internally a
 
 ### Process
 
-Since we use `@providesModule`, we need to rewrite requires to be relative. Thanks to `@providesModule` requiring global uniqueness, we can do this easily. Eventually we'll try to make this part of the process go away by making more projects use CommmonJS.
+Since we use `@providesModule`, we need to rewrite requires to be relative. Thanks to `@providesModule` requiring global uniqueness, we can do this easily. Eventually we'll try to make this part of the process go away by making more projects use CommonJS.
 
 
 ## TODO

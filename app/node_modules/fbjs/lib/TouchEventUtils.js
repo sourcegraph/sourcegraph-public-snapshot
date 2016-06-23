@@ -21,7 +21,7 @@ var TouchEventUtils = {
    * @param {Event} nativeEvent Native event that may or may not be a touch.
    * @return {TouchesObject?} an object with pageX and pageY or null.
    */
-  extractSingleTouch: function (nativeEvent) {
+  extractSingleTouch: function extractSingleTouch(nativeEvent) {
     var touches = nativeEvent.touches;
     var changedTouches = nativeEvent.changedTouches;
     var hasTouches = touches && touches.length > 0;
