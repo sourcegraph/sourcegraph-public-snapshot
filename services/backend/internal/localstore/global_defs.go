@@ -487,18 +487,21 @@ var globalDefsResolveUnitDuration = prometheus.NewSummaryVec(prometheus.SummaryO
 	Subsystem: "global_defs",
 	Name:      "resolve_unit_duration_seconds",
 	Help:      "Duration for resolving a unit in global_defs",
+	MaxAge:    time.Hour,
 }, []string{"repo"})
 var globalDefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_defs",
 	Name:      "update_duration_seconds",
 	Help:      "Duration for updating global_defs",
+	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
 var globalDefsRefreshRefCountsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_defs",
 	Name:      "ref_counts_duration_seconds",
 	Help:      "Duration for refreshing RefCounts for global_defs",
+	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
 
 func init() {

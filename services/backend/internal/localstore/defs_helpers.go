@@ -176,6 +176,7 @@ var defsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Subsystem: "defs",
 	Name:      "update_duration_seconds",
 	Help:      "Duration for updating a def",
+	MaxAge:    time.Hour,
 }, []string{"table", "repo", "part"})
 
 func init() {

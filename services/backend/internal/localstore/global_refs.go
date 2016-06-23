@@ -501,12 +501,14 @@ var globalRefsDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Subsystem: "global_refs",
 	Name:      "duration_seconds",
 	Help:      "Duration for querying global_refs_new",
+	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
 var globalRefsUpdateDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "src",
 	Subsystem: "global_refs",
 	Name:      "update_duration_seconds",
 	Help:      "Duration for updating global_refs_new",
+	MaxAge:    time.Hour,
 }, []string{"repo", "part"})
 
 func init() {
