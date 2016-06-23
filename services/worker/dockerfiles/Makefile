@@ -4,7 +4,7 @@
 
 TOOLCHAINS ?= srclib-go srclib-java srclib-typescript srclib-python srclib-basic srclib-javascript srclib-csharp srclib-css
 
-.PHONY: default build push pull $(TOOLCHAINS) clean
+.PHONY: default build $(TOOLCHAINS) clean
 
 default:
 	@echo "See README.md for instructions"
