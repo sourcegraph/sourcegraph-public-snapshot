@@ -51,6 +51,12 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 		b.DroneYMLFileExists = true
 	}
 
+	// Virtual .drone.yml for Kubernetes repo
+	if repo.URI == "github.com/kubernetes/kubernetes" {
+		b.Payload.Yaml = "clone:\n  path: k8s.io/kubernetes"
+		b.DroneYMLFileExists = true
+	}
+
 	// Drone build
 	b.Payload.Build = &plugin.Build{
 		Commit: build.CommitID,
