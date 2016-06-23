@@ -114,7 +114,7 @@ export default class SearchFrame extends React.Component {
 						<table className="tree-browser css-truncate">
 							<tbody className="tree-browser-result js-tree-browser-result">
 							{defs && defs.Defs && defs.Defs.map((item, i) =>
-								<DefSearchResult key={i} href={`https://sourcegraph.com/${this.urlToDef(item, this.state.rev)}`} query={this.state.query} qualifiedNameAndType={qualifiedNameAndType(item)} />
+								<DefSearchResult key={i} href={`https://sourcegraph.com/${this.urlToDef(item, item.CommitID)}`} query={this.state.query} qualifiedNameAndType={qualifiedNameAndType(item)} />
 							)}
 							</tbody>
 						</table>
