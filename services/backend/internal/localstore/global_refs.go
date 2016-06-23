@@ -366,38 +366,34 @@ func (g *globalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	// of the transaction can lead to conflicts with other imports
 	start = time.Now()
 	defKeyIDs := map[graph.DefKey]int64{}
-	defKeyInsertSQL := `INSERT INTO def_keys(repo, unit_type, unit, path) VALUES($1, $2, $3, $4);`
-	defKeyGetSQL := `SELECT id FROM def_keys WHERE repo=$1 AND unit_type=$2 AND unit=$3 AND path=$4`
-	for _, r := range refs {
-		defKeyIDKey := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
-		defKeyID, ok := defKeyIDs[defKeyIDKey]
-		if ok {
-			continue
+	{
+		// Find unique defKeys so we can bulk upsert and get the def_key ids
+		defKeys := map[graph.DefKey]struct{}{}
+		for _, r := range refs {
+			k := graph.DefKey{Repo: r.DefRepo, UnitType: r.DefUnitType, Unit: r.DefUnit, Path: r.DefPath}
+			defKeys[k] = struct{}{}
+		}
+		defs := make([]*graph.Def, 0, len(defKeys))
+		for k := range defKeys {
+			defs = append(defs, &graph.Def{DefKey: k})
 		}
 
-		// Optimistically get the def key id, otherwise fallback to insertion
-		defKeyID, err := dbh.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		start := time.Now()
+		err := updateDefKeys(ctx, dbh, repo, defs)
+		observe("defkeysupdate", start)
 		if err != nil {
 			return err
 		}
-		if defKeyID != 0 {
-			defKeyIDs[defKeyIDKey] = defKeyID
-			continue
-		}
 
-		if _, err = dbh.Exec(defKeyInsertSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath); err != nil && !isPQErrorUniqueViolation(err) {
-			return err
-		}
-
-		defKeyID, err = dbh.SelectInt(defKeyGetSQL, r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		start = time.Now()
+		dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
+		observe("defkeysget", start)
 		if err != nil {
 			return err
 		}
-		if defKeyID == 0 {
-			return fmt.Errorf("Could not create or find defKeyID for (%s, %s, %s, %s)", r.DefRepo, r.DefUnitType, r.DefUnit, r.DefPath)
+		for _, dk := range dbDefKeys {
+			defKeyIDs[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
 		}
-
-		defKeyIDs[defKeyIDKey] = defKeyID
 	}
 	observe("defkeys", start)
 
