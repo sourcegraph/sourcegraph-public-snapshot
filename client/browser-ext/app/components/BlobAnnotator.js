@@ -41,29 +41,78 @@ export default class BlobAnnotator extends Component {
 		this.state = utils.parseURL();
 
 		if (this.state.isDelta) {
+			let baseCommitID, headCommitID;
+			let el = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
+			if (el && el.length > 0) {
+				for (let i = 0; i < el.length; ++i) {
+					const url = el[i].dataset ? el[i].dataset.url : null;
+					if (!url) continue;
+					const urlSplit = url.split("?");
+					if (urlSplit.length !== 2) continue;
+					const query = urlSplit[1];
+					const querySplit = query.split("&");
+					for (let kv of querySplit) {
+						const kvSplit = kv.split("=");
+						const k = kvSplit[0];
+						const v = kvSplit[1];
+						if (k === "base_commit_oid") baseCommitID = v;
+						if (k === "end_commit_oid") headCommitID = v;
+					}
+				}
+			} else {
+				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
+				if (baseInput) {
+					baseCommitID = baseInput.value;
+				}
+				const headInput = document.querySelector('input[name="comparison_end_oid"]');
+				if (headInput) {
+					headCommitID = headInput.value;
+				}
+			}
+
+			this.state.baseCommitID = baseCommitID;
+			this.state.headCommitID = headCommitID;
+
+			if (!baseCommitID) {
+				console.error("unable to parse base commit id");
+			}
+			if (!headCommitID) {
+				console.error("unable to parse head commit id");
+			}
+
 			const branches = document.querySelectorAll(".commit-ref,.current-branch");
 			this.state.base = branches[0].innerText;
 			this.state.head = branches[1].innerText;
+
+			if (this.state.base.includes(":")) {
+				const baseSplit = this.state.base.split(":");
+				this.state.base = baseSplit[1];
+				this.state.baseRepoURI = `github.com/${baseSplit[0]}/${this.state.repo}`;
+			} else {
+				this.state.baseRepoURI = this.state.repoURI;
+			}
+			if (this.state.head.includes(":")) {
+				const headSplit = this.state.head.split(":");
+				this.state.head = headSplit[1];
+				this.state.headRepoURI = `github.com/${headSplit[0]}/${this.state.repo}`;
+			} else {
+				this.state.headRepoURI = this.state.repoURI;
+			}
 		}
 	}
 
 	reconcileState(state, props) {
 		Object.assign(state, props);
-		const p = this.parseState(state);
 
 		if (!state.isAnnotated) {
 			if (state.isDelta) {
-				if (p.delta) {
-					if (p.baseCommitID) {
-						state.actions.getAnnotations(state.repoURI, p.baseCommitID, state.path, true);
-					}
-					if (p.headCommitID) {
-						state.actions.getAnnotations(state.repoURI, p.headCommitID, state.path, true);
-					}
-					state.isAnnotated = true;
-				} else {
-					state.actions.getDelta(state.repoURI, state.base, state.head);
+				if (state.baseCommitID) {
+					state.actions.getAnnotations(state.baseRepoURI, state.baseCommitID, state.path, true);
 				}
+				if (state.headCommitID) {
+					state.actions.getAnnotations(state.headRepoURI, state.headCommitID, state.path, true);
+				}
+				state.isAnnotated = true;
 			} else {
 				state.actions.getAnnotations(state.repoURI, state.rev, state.path);
 				state.isAnnotated = true;
@@ -72,45 +121,45 @@ export default class BlobAnnotator extends Component {
 	}
 
 	onStateTransition(prevState, nextState) {
-		const p = this.parseState(nextState);
+		// const p = this.parseState(nextState);
 
-		if (prevState.srclibDataVersion !== nextState.srclibDataVersion) {
-			if (nextState.isDelta) {
-				if (this.srclibDataVersionIs404(nextState, p.baseCommitID)) {
-					// nextState.actions.build(nextState.repoURI, p.baseCommitID, nextState.base);
-				}
-				if (this.srclibDataVersionIs404(nextState, p.headCommitID)) {
-					// nextState.actions.build(nextState.repoURI, p.headCommitID, nextState.head);
-				}
-			} else {
-				if (this.srclibDataVersionIs404(nextState, p.resolvedRev)) {
-					// nextState.actions.build(nextState.repoURI, p.resolvedRev, nextState.rev);
-				}
-			}
-		}
+		// if (prevState.srclibDataVersion !== nextState.srclibDataVersion) {
+		// 	if (nextState.isDelta) {
+		// 		if (this.srclibDataVersionIs404(nextState, p.baseCommitID)) {
+		// 			// nextState.actions.build(nextState.repoURI, p.baseCommitID, nextState.base);
+		// 		}
+		// 		if (this.srclibDataVersionIs404(nextState, p.headCommitID)) {
+		// 			// nextState.actions.build(nextState.repoURI, p.headCommitID, nextState.head);
+		// 		}
+		// 	} else {
+		// 		if (this.srclibDataVersionIs404(nextState, p.resolvedRev)) {
+		// 			// nextState.actions.build(nextState.repoURI, p.resolvedRev, nextState.rev);
+		// 		}
+		// 	}
+		// }
 
 		this._addAnnotations(nextState);
 	}
 
-	parseState(state) {
-		let resolvedRev, srclibDataVersion, delta, baseCommitID, headCommitID, baseSrclibDataVersion, headSrclibDataVersion;
-		if (state.isDelta) {
-			delta = state.delta.content[keyFor(state.repoURI, state.base, state.head)];
-			if (delta && delta.Delta) {
-				baseCommitID = delta.Delta.Base.CommitID;
-				headCommitID = delta.Delta.Head.CommitID;
-				baseSrclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, baseCommitID, state.path)];
-				headSrclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, headCommitID, state.path)];
-			}
-		} else {
-			resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
-			if (resolvedRev && resolvedRev.CommitID) {
-				resolvedRev = resolvedRev.CommitID
-				srclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, resolvedRev, state.path)];
-			}
-		}
-		return {resolvedRev, srclibDataVersion, delta, baseCommitID, headCommitID, baseSrclibDataVersion, headSrclibDataVersion};
-	}
+	// parseState(state) {
+	// 	let resolvedRev, srclibDataVersion, delta, baseCommitID, headCommitID, baseSrclibDataVersion, headSrclibDataVersion;
+	// 	if (state.isDelta) {
+	// 		delta = state.delta.content[keyFor(state.repoURI, state.base, state.head)];
+	// 		if (delta && delta.Delta) {
+	// 			baseCommitID = delta.Delta.Base.CommitID;
+	// 			headCommitID = delta.Delta.Head.CommitID;
+	// 			baseSrclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, baseCommitID, state.path)];
+	// 			headSrclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, headCommitID, state.path)];
+	// 		}
+	// 	} else {
+	// 		resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
+	// 		if (resolvedRev && resolvedRev.CommitID) {
+	// 			resolvedRev = resolvedRev.CommitID
+	// 			srclibDataVersion = state.srclibDataVersion.content[keyFor(state.repoURI, resolvedRev, state.path)];
+	// 		}
+	// 	}
+	// 	return {resolvedRev, srclibDataVersion, delta, baseCommitID, headCommitID, baseSrclibDataVersion, headSrclibDataVersion};
+	// }
 
 	srclibDataVersionIs404(props, rev) {
 		if (!rev) return false;
@@ -119,7 +168,7 @@ export default class BlobAnnotator extends Component {
 	}
 
 	_addAnnotations(state) {
-		function apply(rev, branch, isBase) {
+		function apply(repoURI, rev, branch, isBase) {
 			const json = state.annotations.content[keyFor(state.repoURI, rev, state.path)];
 			if (json) {
 				addAnnotations(state.path, {repoURI: state.repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes);
@@ -127,18 +176,15 @@ export default class BlobAnnotator extends Component {
 		}
 
 		if (state.isDelta) {
-			const delta = state.delta.content[keyFor(state.repoURI, state.base, state.head)];
-			if (!delta || !delta.Delta) return;
-
-			apply(delta.Delta.Base.CommitID, state.base, true);
-			apply(delta.Delta.Head.CommitID, state.head, false);
+			if (state.baseCommitID) apply(state.baseRepoURI, state.baseCommitID, state.base, true);
+			if (state.headCommitID) apply(state.headRepoURI, state.headCommitID, state.head, false);
 		} else {
 			const resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
 			if (!resolvedRev || !resolvedRev.CommitID) return;
 
 			const dataVer = state.srclibDataVersion.content[keyFor(state.repoURI, resolvedRev.CommitID, state.path)];
 			if (dataVer && dataVer.CommitID) {
-				apply(dataVer.CommitID, state.rev, false);
+				apply(state.repoURI, dataVer.CommitID, state.rev, false);
 			}
 		}
 	}
