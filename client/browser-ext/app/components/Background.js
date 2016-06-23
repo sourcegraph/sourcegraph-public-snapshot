@@ -6,7 +6,6 @@ import {useAccessToken} from "../actions/xhr";
 import * as Actions from "../actions";
 import styles from "./App.css";
 import {keyFor} from "../reducers/helpers";
-import {defaultBranchCache} from "../utils/annotations";
 import EventLogger from "../analytics/EventLogger";
 
 import * as utils from "../utils";

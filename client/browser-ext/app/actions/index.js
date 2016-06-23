@@ -53,9 +53,9 @@ function _fetchSrclibDataVersion(dispatch, state, repo, rev, path, exactRev) {
 	}).catch((err) => {}); // no error handling
 }
 
-export function getSrclibDataVersion(repo, rev, path) {
+export function getSrclibDataVersion(repo, rev, path, exactRev) {
 	return function (dispatch, getState) {
-		return _fetchSrclibDataVersion(dispatch, getState(), repo, rev, path)
+		return _fetchSrclibDataVersion(dispatch, getState(), repo, rev, path, exactRev)
 			.catch((err) => {}); // no error handling
 	}
 }

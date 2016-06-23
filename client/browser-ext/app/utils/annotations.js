@@ -13,16 +13,8 @@ export default function addAnnotations(path, repoRevSpec, el, anns, lineStartByt
 	if (el.dataset[repoRevSpec.rev]) return;
 	el.dataset[repoRevSpec.rev] = true;
 	_applyAnnotations(el, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes));
-	_postProcess();
 }
 
-let _annURLs = []; // global state container for annotation URLs matched to tokens
-// _postProcess fetches metadata for each of the repositories matched to the
-// page within annotations
-function _postProcess() {
-	_annURLs.forEach((url) => setTimeout(() => cacheDefaultBranch(url)));
-	_annURLs = [];
-}
 // _applyAnnotations is a helper function for addAnnotations
 export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesByLine) {
 	// The blob is represented by a table; the first column is the line number,
@@ -112,7 +104,7 @@ export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesBy
 			} else {
 				addChar(cell, " ");
 			}
-			addPopover(cell, repoRevSpec);
+			addPopover(cell);
 		});
 	}
 }
@@ -152,10 +144,9 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 
 	let rev;
 	if (match.URL.indexOf(repoRevSpec.repoURI) !== -1) {
-		rev = repoRevSpec.branch;
+		rev = repoRevSpec.rev;
 	} else {
 		rev = "master"; // assume external links are to default branch "master"
-		// rev = getDefaultBranch(utils.getAnnRepoURI(match.URL));
 	}
 	const annURL = utils.addRevToAnnURL(match.URL, rev);
 
@@ -183,7 +174,6 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 
 	const annLen = match.EndByte - match.StartByte;
 	return {annLen, annGen: function(innerHTML) {
-		_annURLs.push(url);
 		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
 	}};
 }
@@ -344,34 +334,9 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 // The sate management is done outside of the Redux container, thought it could be there; some of this
 // stuff we don't need synchonized to browser local storage.
 
-export const defaultBranchCache = {};
-// fetchingDefaultBranchCache ensures we only make one API call per repo to get default branch.
-export const fetchingDefaultBranchCache = {};
-function cacheDefaultBranch(annURL) {
-	// Assumes annURL has the form github.com/user/repo. If we can't fetch the default branch, we default to master.
-	let annURLsplit = annURL.split(/[\/#]/);
-	let annRepo = [annURLsplit[2], annURLsplit[3], annURLsplit[4]]
-	let repo = annRepo.join("/");
-	if (fetchingDefaultBranchCache[repo]) {
-		return;
-	}
-	if (!defaultBranchCache[repo]) {
-		fetchingDefaultBranchCache[repo] = true;
-		fetch(`https://sourcegraph.com/.api/repos/${repo}`)
-			.then((response) => {
-				defaultBranchCache[repo] = response.ok ? response.DefaultBranch : "master";
-				fetchingDefaultBranchCache[repo] = false;
-			})
-			.catch((err) => console.log("Error getting default branch"))
-	}
-}
-function getDefaultBranch(repoURI) {
-	return defaultBranchCache[repoURI] || "master";
-}
-
 let popoverCache = {};
 export const defCache = {};
-function addPopover(el, repoRevSpec) {
+function addPopover(el) {
 	let activeTarget, popover;
 
 	el.addEventListener("mouseout", (e) => {

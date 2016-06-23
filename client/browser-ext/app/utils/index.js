@@ -1,5 +1,3 @@
-import {defaultBranchCache} from "./annotations";
-
 export function supportsAnnotatingFile(path) {
 	if (!path) return false;
 	return true;

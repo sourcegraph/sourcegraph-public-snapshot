@@ -171,11 +171,10 @@ export default class BlobAnnotator extends Component {
 
 	_addAnnotations(state) {
 		function apply(repoURI, rev, branch, isBase) {
-			const json = state.annotations.content[keyFor(repoURI, rev, state.path)];
-			if (state.path === "services/backend/internal/localstore/accounts.go") {
-				console.log("annotating that file", repoURI, rev, branch, isBase)
-				console.log("json", json)
-			}
+			const dataVer = state.srclibDataVersion.content[keyFor(repoURI, rev, state.path)];
+			if (!dataVer || !dataVer.CommitID) return;
+
+			const json = state.annotations.content[keyFor(repoURI, dataVer.CommitID, state.path)];
 			if (json) {
 				addAnnotations(state.path, {repoURI: repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes);
 			}
@@ -186,12 +185,7 @@ export default class BlobAnnotator extends Component {
 			if (state.headCommitID) apply(state.headRepoURI, state.headCommitID, state.head, false);
 		} else {
 			const resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
-			if (!resolvedRev || !resolvedRev.CommitID) return;
-
-			const dataVer = state.srclibDataVersion.content[keyFor(state.repoURI, resolvedRev.CommitID, state.path)];
-			if (dataVer && dataVer.CommitID) {
-				apply(state.repoURI, dataVer.CommitID, state.rev, false);
-			}
+			if (resolvedRev && resolvedRev.CommitID) apply(state.repoURI, resolvedRev.CommitID, state.rev, false);
 		}
 	}
 
