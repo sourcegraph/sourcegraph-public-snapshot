@@ -168,7 +168,7 @@ export default class Background extends React.Component {
 	_directURLToDef({repoURI, rev, defPath}) {
 		const defObj = this.props.def.content[keyFor(repoURI, rev, defPath)];
 		if (defObj) {
-			const pathname = `/${repoURI.replace("github.com/", "")}/blob/${rev}/${defObj.File}`;
+			const pathname = `/${repoURI.replace("github.com/", "")}/${defObj.File === "." ? "tree" : "blob"}/${rev}/${defObj.File}`;
 			const hash = `#sourcegraph&def=${defPath}&L${defObj.StartLine || 0}-${defObj.EndLine || 0}`;
 			return {pathname, hash};
 		}
