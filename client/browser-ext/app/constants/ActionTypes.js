@@ -11,8 +11,6 @@ export const FETCHED_DEFS = "FETCHED_DEFS";
 
 export const FETCHED_ANNOTATIONS = "FETCHED_ANNOTATIONS";
 
-export const FETCHED_DELTA = "FETCHED_DELTA";
-
 export const FETCHED_BUILD = "FETCHED_BUILD";
 
 export const CREATED_REPO = "CREATED_REPO";

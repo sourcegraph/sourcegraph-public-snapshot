@@ -18,7 +18,6 @@ let buildsCache = {};
 	(state) => ({
 		resolvedRev: state.resolvedRev,
 		build: state.build,
-		delta: state.delta,
 		srclibDataVersion: state.srclibDataVersion,
 		annotations: state.annotations,
 	}),
@@ -31,7 +30,6 @@ export default class BlobAnnotator extends Component {
 		path: React.PropTypes.string.isRequired,
 		resolvedRev: React.PropTypes.object.isRequired,
 		build: React.PropTypes.object.isRequired,
-		delta: React.PropTypes.object.isRequired,
 		srclibDataVersion: React.PropTypes.object.isRequired,
 		annotations: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,

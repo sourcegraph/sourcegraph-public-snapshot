@@ -191,36 +191,6 @@ describe("actions", () => {
 		});
 	});
 
-	describe("getDelta", () => {
-		const deltaAPI = `https://sourcegraph.com/.api/repos/${repo}@${head}/-/delta/${base}/-/files`;
-
-		it("200s", () => {
-			fetchMock.mock(deltaAPI, "GET", {});
-
-		    return assertAsyncActionsDispatched(actions.getDelta(repo, base, head), {
-		    	delta: {content: {}},
-		    }, [
-		    	{type: types.FETCHED_DELTA, repo, base, head, json: {}},
-		    ]);
-		});
-
-		it("404s", () => {
-			fetchMock.mock(deltaAPI, "GET", 404);
-
-		    return assertAsyncActionsDispatched(actions.getDelta(repo, base, head), {
-		    	delta: {content: {}},
-		    }, [
-		    	{type: types.FETCHED_DELTA, repo, base, head, err: errorResponse(404, deltaAPI)},
-		    ]);
-		});
-
-		it("noops when delta is cached", () => {
-			return assertAsyncActionsDispatched(actions.getDelta(repo, base, head), {
-				delta: {content: {[keyFor(repo, base, head)]: {}}},
-			}, []);
-		});
-	});
-
 	describe("getAnnotations", () => {
 		const annotationsAPI = `https://sourcegraph.com/.api/annotations?Entry.RepoRev.Repo=${repo}&Entry.RepoRev.CommitID=${dataVer}&Entry.Path=${path}&Range.StartByte=0&Range.EndByte=0`;
 

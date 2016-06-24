@@ -40,23 +40,6 @@ const resolvedRev = function(state = {content: {}}, action) {
 	}
 }
 
-const delta = function(state = {content: {}}, action) {
-	switch (action.type) {
-	case ActionTypes.FETCHED_DELTA:
-		if (!action.json && !state.content[keyFor(action.repo, action.base, action.head)]) return state; // no update needed; avoid re-rending components
-
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.base, action.head)]: action.json ? action.json : null,
-			}
-		};
-	default:
-		return state;
-	}
-}
-
 const build = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_BUILD:
@@ -154,4 +137,4 @@ const annotations = function(state = {content: {}}, action) {
 	}
 }
 
-export default combineReducers({accessToken, resolvedRev, srclibDataVersion, delta, build, def, defs, annotations, createdRepos});
+export default combineReducers({accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations, createdRepos});

@@ -60,17 +60,6 @@ export function getSrclibDataVersion(repo, rev, path, exactRev) {
 	}
 }
 
-export function getDelta(repo, base, head) {
-	return function (dispatch, getState) {
-		const state = getState();
-		if (state.delta.content[keyFor(repo, base, head)]) return Promise.resolve(); // nothing to do; already have delta
-
-		return fetch(`https://sourcegraph.com/.api/repos/${repo}@${head}/-/delta/${base}/-/files`)
-			.then((json) => dispatch({type: types.FETCHED_DELTA, repo, base, head, json}))
-			.catch((err) => dispatch({type: types.FETCHED_DELTA, repo, base, head, err}));
-	}
-}
-
 export function getDef(repo, rev, defPath) {
 	return function (dispatch, getState) {
 		const state = getState();
