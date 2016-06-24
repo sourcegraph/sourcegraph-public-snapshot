@@ -15,6 +15,7 @@ func TestReposCreateOp_JSON(t *testing.T) {
 			},
 		}},
 		{Op: &ReposCreateOp_FromGitHubID{FromGitHubID: 123}},
+		{Op: &ReposCreateOp_Origin{Origin: &Origin{ID: "123", Service: Origin_GitHub}}},
 	}
 	for _, test := range tests {
 		data, err := json.Marshal(test)

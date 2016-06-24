@@ -106,6 +106,88 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 	}
 }
 
+func TestRepos_Create_New(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	wantRepo := &sourcegraph.Repo{
+		ID:      1,
+		URI:     "r",
+		Name:    "r",
+		HTMLURL: "http://example.com/r",
+	}
+
+	calledCreate := false
+	mock.stores.Repos.Create_ = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+		calledCreate = true
+		if repo.URI != wantRepo.URI {
+			t.Errorf("got uri %#v, want %#v", repo.URI, wantRepo.URI)
+		}
+		return wantRepo.ID, nil
+	}
+	mock.stores.Repos.MockGet(t, 1)
+
+	_, err := s.Create(ctx, &sourcegraph.ReposCreateOp{
+		Op: &sourcegraph.ReposCreateOp_New{New: &sourcegraph.ReposCreateOp_NewRepo{
+			URI: "r",
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !calledCreate {
+		t.Error("!calledCreate")
+	}
+}
+
+func TestRepos_Create_Origin(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	wantRepo := &sourcegraph.Repo{
+		ID:      1,
+		URI:     "github.com/a/b",
+		HTMLURL: "http://example.com/github.com/a/b",
+		Origin: &sourcegraph.Origin{
+			ID:         "123",
+			Service:    sourcegraph.Origin_GitHub,
+			APIBaseURL: "https://api.github.com",
+		},
+	}
+
+	calledGet := false
+	mock.githubRepos.GetByID_ = func(ctx context.Context, id int) (*sourcegraph.RemoteRepo, error) {
+		if want := 123; id != want {
+			t.Errorf("got id %d, want %d", id, want)
+		}
+		calledGet = true
+		return &sourcegraph.RemoteRepo{GitHubID: 123}, nil
+	}
+
+	calledCreate := false
+	mock.stores.Repos.Create_ = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+		calledCreate = true
+		if !reflect.DeepEqual(repo.Origin, wantRepo.Origin) {
+			t.Errorf("got repo origin %#v, want %#v", repo.Origin, wantRepo.Origin)
+		}
+		return wantRepo.ID, nil
+	}
+	mock.stores.Repos.MockGet(t, 1)
+
+	_, err := s.Create(ctx, &sourcegraph.ReposCreateOp{
+		Op: &sourcegraph.ReposCreateOp_Origin{Origin: wantRepo.Origin},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !calledGet {
+		t.Error("!calledGet")
+	}
+	if !calledCreate {
+		t.Error("!calledCreate")
+	}
+}
+
 func TestReposService_List(t *testing.T) {
 	var s repos
 	ctx, mock := testContext()

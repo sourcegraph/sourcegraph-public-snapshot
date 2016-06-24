@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sqs/pbtypes"
 )
 
@@ -50,7 +52,6 @@ func init() {
 type dbRepo struct {
 	ID            int32
 	URI           string
-	Origin        string // DEPRECATED: will be removed in a future commit
 	Owner         string
 	Name          string
 	Description   string
@@ -68,6 +69,10 @@ type dbRepo struct {
 	CreatedAt     time.Time  `db:"created_at"`
 	UpdatedAt     *time.Time `db:"updated_at"`
 	PushedAt      *time.Time `db:"pushed_at"`
+
+	OriginRepoID     *string `db:"origin_repo_id"`
+	OriginService    *int32  `db:"origin_service"` // values from protobuf Origin.ServiceType enum
+	OriginAPIBaseURL *string `db:"origin_api_base_url"`
 }
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
@@ -101,6 +106,13 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		ts := pbtypes.NewTimestamp(*r.PushedAt)
 		r2.PushedAt = &ts
 	}
+	if r.OriginRepoID != nil && r.OriginService != nil && r.OriginAPIBaseURL != nil {
+		r2.Origin = &sourcegraph.Origin{
+			ID:         *r.OriginRepoID,
+			Service:    sourcegraph.Origin_ServiceType(*r.OriginService),
+			APIBaseURL: *r.OriginAPIBaseURL,
+		}
+	}
 
 	return r2
 }
@@ -132,6 +144,12 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	if r2.PushedAt != nil {
 		ts := r2.PushedAt.Time()
 		r.PushedAt = &ts
+	}
+	if o := r2.Origin; o != nil {
+		r.OriginRepoID = gogithub.String(o.ID)
+		service := int32(o.Service)
+		r.OriginService = &service
+		r.OriginAPIBaseURL = gogithub.String(o.APIBaseURL)
 	}
 }
 
@@ -173,6 +191,24 @@ func finishGetRepo(ctx context.Context, repo *sourcegraph.Repo) (*sourcegraph.Re
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		if err := accesscontrol.VerifyActorHasGitHubRepoAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI); err != nil {
 			return nil, err
+		}
+
+		// Automatically migrate repos that don't have their origin fields set.
+		//
+		// NOTE: This can be removed when all repos in the DB have their
+		// origin fields set.
+		if repo.Origin == nil {
+			ghRepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
+			if err != nil {
+				// Highly unlikely to fail since the
+				// VerifyActorHasGitHubRepoAccess would make this same
+				// call, so let's treat it as fatal to catch any
+				// possible rare edge cases.
+				return nil, grpc.Errorf(codes.Internal, "while auto-migrating repo to add origin fields: %s", err)
+			}
+			if _, err := appDBH(ctx).Exec(`UPDATE repo SET origin_repo_id=$1, origin_service=$2, origin_api_base_url=$3 WHERE id=$4;`, ghRepo.GitHubID, sourcegraph.Origin_GitHub, "https://api.github.com", repo.ID); err != nil {
+				return nil, err
+			}
 		}
 	} else {
 		// All hosted repos or alternate URI repos are publicly viewable.

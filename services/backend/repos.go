@@ -6,6 +6,7 @@ import (
 	pathpkg "path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/rogpeppe/rog-go/parallel"
@@ -22,7 +23,6 @@ import (
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -206,7 +206,15 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (repo
 			return
 		}
 	case op.GetFromGitHubID() != 0:
-		repo, err = s.newRepoFromGitHubID(ctx, int(op.GetFromGitHubID()))
+		repo, err = s.newRepoFromOrigin(ctx, &sourcegraph.Origin{
+			Service: sourcegraph.Origin_GitHub,
+			ID:      strconv.Itoa(int(op.GetFromGitHubID())),
+		})
+		if err != nil {
+			return
+		}
+	case op.GetOrigin() != nil:
+		repo, err = s.newRepoFromOrigin(ctx, op.GetOrigin())
 		if err != nil {
 			return
 		}
@@ -271,33 +279,6 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 		Description:   op.Description,
 		Mirror:        op.Mirror,
 		CreatedAt:     &ts,
-	}, nil
-}
-
-func (s *repos) newRepoFromGitHubID(ctx context.Context, gitHubID int) (*sourcegraph.Repo, error) {
-	ghrepo, err := github.ReposFromContext(ctx).GetByID(ctx, gitHubID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Purposefully set very few fields. We don't want to cache
-	// metadata, because it'll get stale, and fetching online from
-	// GitHub is quite easy and (with HTTP caching) performant.
-	ts := pbtypes.NewTimestamp(time.Now())
-	return &sourcegraph.Repo{
-		Owner:        ghrepo.Owner,
-		Name:         ghrepo.Name,
-		URI:          githubutil.RepoURI(ghrepo.Owner, ghrepo.Name),
-		HTTPCloneURL: ghrepo.HTTPCloneURL,
-		Description:  ghrepo.Description,
-		Mirror:       true,
-		Fork:         ghrepo.Fork,
-		CreatedAt:    &ts,
-
-		// KLUDGE: set this to be true to avoid accidentally treating
-		// a private GitHub repo as public (the real value should be
-		// populated from GitHub on the fly).
-		Private: true,
 	}, nil
 }
 

@@ -16,6 +16,47 @@ option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
+// Origin represents the origin of a resource that canonically lives
+// on an external service (e.g., a repo hosted on GitHub).
+message Origin {
+	// ServiceType indicates which service is running on an origin. A
+	// repo whose origin service is GitHub, for example, should be
+	// accessed using a GitHub API client.
+	//
+	// If there are multiple API versions for a service, separate
+	// entries may be added per API version. In that case, the
+	// APIBaseURL may need to differ as well. The API client code is
+	// responsible for handling these cases.
+	enum ServiceType {
+		// GitHub indicates that the origin is GitHub.com or a GitHub
+		// Enterprise server. If the latter, the origin base URL indicates
+		// the URL to the GitHub Enterprise server's API.
+		GitHub = 0;
+	}
+
+	// ID is an identifier for the resource on its origin
+	// service. Although numeric IDs are used on many services (GitHub
+	// and Bitbucket, for example), this field is a string so that it
+	// supports non-numeric IDs (which are used on Google Cloud
+	// Platform and probably other services that Sourcegraph might
+	// support in the future).
+	//
+	// If the ID is numeric, this string is the base-10 string
+	// representation of the numeric ID (e.g., "1234"), with no
+	// leading 0s.
+	string ID = 1;
+
+	// Service is the type service that the resource canonically lives
+	// on. It is used to determine which API client should be used to
+	// access it on the origin service (e.g., GitHub vs. Bitbucket).
+	ServiceType Service = 2 [(gogoproto.jsontag) = ""]; // don't omitempty
+
+	// APIBaseURL is the base URL to the API of the origin service for
+	// the resource. (E.g., "https://api.github.com" for
+	// GitHub.com-hosted repos.)
+	string APIBaseURL = 3;
+}
+
 // CombinedStatus is the combined status (i.e., incorporating statuses from all
 // contexts) of the repository at a specific rev.
 message CombinedStatus {
@@ -113,7 +154,9 @@ message Repo {
 	bool Fork = 12;
 
 	// Mirror indicates whether this repo's canonical location is on
-	// another server. Mirror repos track their upstream.
+	// another server. Mirror repos track their upstream. If this repo
+	// canonically lives on a repo hosting that can supply additional
+	// metadata (such as GitHub), the Origin field should be set.
 	bool Mirror = 13;
 
 	// Private is whether this repository is private.
@@ -130,6 +173,10 @@ message Repo {
 
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	pbtypes.Timestamp PushedAt = 17;
+
+	// Origin describes the repo's canonical location. It is only
+	// populated for mirror repos; for non-mirror repos, it is null.
+	Origin Origin = 19;
 }
 
 message RepoListOptions {
@@ -418,7 +465,20 @@ message ReposCreateOp {
 
 	oneof Op {
 		NewRepo New = 1;
-		int32 FromGitHubID = 2;
+
+		// FromGitHubID creates a new repo that mirrors a repo hosted
+		// on GitHub.com.
+		//
+		// DEPRECATED: Use Origin instead.
+		int32 FromGitHubID = 2 [deprecated=true];
+
+		// Origin creates a new repo mirrored from an external
+		// service.
+		//
+		// The Origin's APIBaseURL can be either a blank string (for
+		// default API endpoint for the service), or the an actual API
+		// endpoint URL.
+		Origin Origin = 3;
 	}
 }
 
