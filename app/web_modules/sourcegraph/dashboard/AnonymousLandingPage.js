@@ -1,6 +1,5 @@
 import React from "react";
 import {Link} from "react-router";
-import Component from "sourcegraph/Component";
 import CSSModules from "react-css-modules";
 import {Logo, Button, Heading, Panel} from "sourcegraph/components";
 import styles from "./styles/Home.css";
@@ -9,7 +8,7 @@ import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-class AnonymousLandingPage extends Component {
+class AnonymousLandingPage extends React.Component {
 	static propTypes = {
 		location: React.PropTypes.object.isRequired,
 	}
@@ -19,14 +18,6 @@ class AnonymousLandingPage extends Component {
 		siteConfig: React.PropTypes.object.isRequired,
 		eventLogger: React.PropTypes.object.isRequired,
 	};
-
-	constructor(props) {
-		super(props);
-	}
-
-	reconcileState(state, props) {
-		state.location = props.location;
-	}
 
 	render() {
 		const {siteConfig, eventLogger} = this.context;
