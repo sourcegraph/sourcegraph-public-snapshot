@@ -13,12 +13,8 @@ import * as utils from "../utils";
 @connect(
 	(state) => ({
 		accessToken: state.accessToken,
-		resolvedRev: state.resolvedRev,
-		srclibDataVersion: state.srclibDataVersion,
-		build: state.build,
+		createdRepos: state.createdRepos,
 		def: state.def,
-		annotations: state.annotations,
-		defs: state.defs,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)
@@ -27,12 +23,8 @@ import * as utils from "../utils";
 export default class Background extends React.Component {
 	static propTypes = {
 		accessToken: React.PropTypes.string,
-		resolvedRev: React.PropTypes.object.isRequired,
-		srclibDataVersion: React.PropTypes.object.isRequired,
-		build: React.PropTypes.object.isRequired,
+		createdRepos: React.PropTypes.object.isRequired,
 		def: React.PropTypes.object.isRequired,
-		annotations: React.PropTypes.object.isRequired,
-		defs: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
 	};
 
@@ -143,7 +135,7 @@ export default class Background extends React.Component {
 				this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
 			}
 
-			if (urlProps.repoURI) {
+			if (urlProps.repoURI && !this.props.createdRepos[urlProps.repoURI]) {
 				this.props.actions.ensureRepoExists(urlProps.repoURI);
 			}
 
