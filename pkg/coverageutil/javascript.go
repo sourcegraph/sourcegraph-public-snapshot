@@ -241,6 +241,7 @@ var javascriptKeywords = map[string]bool{
 	"true":         true,
 	"false":        true,
 	"undefined":    true,
+	"from":         true,
 }
 
 // Initializes text scanner that extracts only idents
