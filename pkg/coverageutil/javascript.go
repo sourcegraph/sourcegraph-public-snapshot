@@ -292,7 +292,7 @@ func init() {
 		if lang != "JavaScript" {
 			return nil
 		}
-		if !strings.HasSuffix(path, ".js") {
+		if !strings.HasSuffix(path, ".js") && !strings.HasSuffix(path, ".jsx") {
 			return nil
 		}
 		if strings.HasSuffix(path, ".min.js") {
@@ -303,7 +303,8 @@ func init() {
 			// fallback
 			abs = path
 		}
-		if strings.Contains(filepath.ToSlash(abs), "/node_modules/") {
+		abs = filepath.ToSlash(abs)
+		if strings.Contains(abs, "/node_modules/") || strings.Contains(abs, "/bower_components/") {
 			return nil
 		}
 		return factory

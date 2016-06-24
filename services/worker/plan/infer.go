@@ -63,7 +63,7 @@ var langConfigs = map[string]struct {
 					// directory, attempt to find and navigate to it within
 					// subdirectories, excluding any node_modules directories.
 					`[ -f package.json ] || cd "$(dirname "$(find ./ -type f -name package.json -not -path '*/node_modules/*' | tail -1)")"`,
-					"[ -f package.json ] && npm install --quiet",
+					"[ -f package.json ] && npm install --quiet --no-optional",
 				},
 				AllowFailure: true,
 			},
