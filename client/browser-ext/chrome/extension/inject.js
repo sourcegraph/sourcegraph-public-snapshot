@@ -3,14 +3,12 @@ import {render} from "react-dom";
 import {Provider} from "react-redux";
 
 import EventLogger from "../../app/analytics/EventLogger";
-import {useAccessToken} from "../../app/actions/xhr";
 import * as Actions from "../../app/actions";
 
 import Background from "../../app/components/Background";
 import SearchFrame from "../../app/components/SearchFrame";
 import {SearchIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
-import styles from "../../app/components/App.css";
 import createStore from "../../app/store/configureStore";
 
 import {parseURL, isGitHubURL} from "../../app/utils";
@@ -33,7 +31,7 @@ function createSearchFrame() {
 }
 
 function toggleSearchFrame() {
-	// EventLogger.logEvent("ToggleSearchInput", {visibility: isSearchAppShown ? "hidden" : "visible"});
+	EventLogger.logEvent("ToggleSearchInput", {visibility: isSearchAppShown ? "hidden" : "visible"});
 	function focusInput() {
 		const el = document.querySelector(".sg-input");
 		if (el) setTimeout(() => el.focus()); // Auto focus input, with slight delay so 'T' doesn't appear
