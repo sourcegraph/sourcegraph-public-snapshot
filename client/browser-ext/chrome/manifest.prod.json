@@ -1,5 +1,5 @@
 {
-  "version": "1.1.22",
+  "version": "1.1.23",
   "name": "Sourcegraph for GitHub",
   "manifest_version": 2,
   "description": "Browse and search code on GitHub like an IDE, with jump-to-definition, doc tooltips, and semantic search.",
