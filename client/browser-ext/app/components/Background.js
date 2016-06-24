@@ -57,7 +57,7 @@ export default class Background extends React.Component {
 		}
 
 		if (this._updateIntervalID === null) {
-			this._updateIntervalID = setInterval(this._refreshVCS.bind(this), 1000 * 30); // refresh every 30s
+			this._updateIntervalID = setInterval(this._refreshVCS.bind(this), 1000 * 60 * 5); // refresh every 5min
 		}
 
 		document.addEventListener("click", this._clickRef);
