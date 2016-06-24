@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install serve-dep serve-metrics-dev smoke src test libvfsgen
+.PHONY: app-dep build check compile-test dep deploy dist dist-dep distclean drop-test-dbs generate generate-dep gopath install serve-dep serve-metrics-dev src test libvfsgen
 
 PRIVATE_HASH := 87ff6253d35505c92cb3190e422f64ec61cc227f
 
@@ -77,13 +77,6 @@ serve-dep:
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
 
 	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" PUBLIC_WEBPACK_DEV_SERVER_URL="$(PUBLIC_WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
-
-smoke: src
-	dropdb --if-exists src-smoke
-	createdb src-smoke
-	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=app create
-	PGDATABASE=src-smoke $(GOBIN)/src pgsql --db=graph create
-	PGDATABASE=src-smoke go run ./test/smoke/basicgit/basicgit.go
 
 libvfsgen:
 	go get github.com/shurcooL/vfsgen
