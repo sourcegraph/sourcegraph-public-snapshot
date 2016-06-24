@@ -12,7 +12,7 @@ class Footer extends React.Component {
 
 	render() {
 		return (
-			<div styleName="footer">
+			<div id="global-footer" styleName="footer">
 				<ul styleName="left-box">
 					<li styleName="item">
 						<Link to="/" styleName="link">

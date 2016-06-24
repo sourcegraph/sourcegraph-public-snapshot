@@ -17,7 +17,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
 	return (
-		<nav styleName="navbar" role="navigation">
+		<nav id="global-nav" styleName="navbar" role="navigation">
 
 			{location.state && location.state.modal === "login" &&
 				<LocationStateModal modalName="login" location={location}
