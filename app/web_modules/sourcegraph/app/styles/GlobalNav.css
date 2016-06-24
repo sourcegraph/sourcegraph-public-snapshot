@@ -21,21 +21,7 @@
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
 
-@media media-sm {
-	.logged-out-nav {
-		float: none;
-		display: block;
-		margin: auto;
-		margin-top: 1rem;
-	}
-}
-
 .username {	padding-top: 10px; }
-
-.logged-out-nav-item {
-	composes: link-subtle from link;
-	composes: pa2 ml2 from base;
-}
 
 .navbar {
 	composes: bb cf from base;
@@ -119,4 +105,8 @@
 .icon-ellipsis {
 	composes: icon;
 	composes: white bg-blue-8 b--blue from colors;
+}
+
+.search {
+	flex: 1 0;
 }

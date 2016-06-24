@@ -33,10 +33,14 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
 				<Link to="/">
 					<Logo styleName={`logo flex-fixed ${signedIn ? "logomark" : ""}`}
-						width={signedIn ? "24px" : "200px"}
+						width={signedIn ? "24px" : "165px"}
 						type={signedIn ? "logomark" : "logotype"}/>
 				</Link>
-				{user && <div styleName="flex flex-start flex-item-auto">
+
+				<div styleName="search">
+				</div>
+
+				{user && <div styleName="flex flex-start flex-fixed">
 					<Link to="/tour">
 						<TabItem active={location.pathname === "/tour"} icon="tour">Tour</TabItem>
 					</Link>
@@ -52,14 +56,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 						</TabItem>
 					</Link>
 				</div>}
-				{!user && <div styleName="flex-start flex-item-auto hidden-s">
-					<Link to="/about" styleName="logged-out-nav-item">About</Link>
-					<Link to="/pricing" styleName="logged-out-nav-item">Pricing</Link>
-					<a href="https://text.sourcegraph.com" styleName="logged-out-nav-item">Blog</a>
-					<Link to="/settings/repos">
-						<TabItem active={location.pathname === "/settings/repos"}>Repositories</TabItem>
-					</Link>
-				</div>}
+
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
 
