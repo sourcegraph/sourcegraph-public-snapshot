@@ -1611,13 +1611,13 @@ JSONiq:
   - .jq
   tm_scope: source.jq
 
-JSX:
-  type: programming
-  group: JavaScript
-  extensions:
-  - .jsx
-  tm_scope: source.js.jsx
-  ace_mode: javascript
+#JSX:
+#  type: programming
+#  group: JavaScript
+#  extensions:
+#  - .jsx
+#  tm_scope: source.js.jsx
+#  ace_mode: javascript
 
 Jade:
   group: HTML
@@ -1692,6 +1692,7 @@ JavaScript:
   - .sublime_session
   - .xsjs
   - .xsjslib
+  - .jsx
   filenames:
   - Jakefile
   interpreters:
