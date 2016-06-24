@@ -54,6 +54,7 @@ const (
 	RepoTreeSearch           = "repo-tree.search"
 	Repos                    = "repos"
 	RemoteRepos              = "repos.remote"
+	SourcegraphDesktop       = "sourcegraph-desktop"
 	SrclibImport             = "srclib.import"
 	SrclibDataVer            = "srclib.data-version"
 	User                     = "user"
@@ -107,6 +108,7 @@ func New(base *mux.Router) *mux.Router {
 	repoPath := `/repos/` + routevar.Repo
 	base.Path(repoPath).Methods("GET").Name(Repo)
 
+	base.Path("/sourcegraph-desktop/").Methods("GET").Name(SourcegraphDesktop)
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

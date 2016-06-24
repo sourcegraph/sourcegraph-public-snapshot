@@ -871,6 +871,26 @@ func (s *SearchServer) Search(v0 context.Context, v1 *sourcegraph.SearchOp) (*so
 
 var _ sourcegraph.SearchServer = (*SearchServer)(nil)
 
+type DesktopClient struct {
+	GetLatest_ func(ctx context.Context, in *pbtypes.Void) (*sourcegraph.LatestDesktopVersion, error)
+}
+
+func (s *DesktopClient) GetLatest(ctx context.Context, in *pbtypes.Void, opts ...grpc.CallOption) (*sourcegraph.LatestDesktopVersion, error) {
+	return s.GetLatest_(ctx, in)
+}
+
+var _ sourcegraph.DesktopClient = (*DesktopClient)(nil)
+
+type DesktopServer struct {
+	GetLatest_ func(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.LatestDesktopVersion, error)
+}
+
+func (s *DesktopServer) GetLatest(v0 context.Context, v1 *pbtypes.Void) (*sourcegraph.LatestDesktopVersion, error) {
+	return s.GetLatest_(v0, v1)
+}
+
+var _ sourcegraph.DesktopServer = (*DesktopServer)(nil)
+
 type ChannelClient struct {
 	Listen_ func(ctx context.Context, in *sourcegraph.ChannelListenOp) (sourcegraph.Channel_ListenClient, error)
 	Send_   func(ctx context.Context, in *sourcegraph.ChannelSendOp) (*sourcegraph.ChannelSendResult, error)

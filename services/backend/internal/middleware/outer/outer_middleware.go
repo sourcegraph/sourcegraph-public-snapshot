@@ -38,6 +38,7 @@ func Services(ctxFunc ContextFunc, services svc.Services) svc.Services {
 		Channel:           wrappedChannel{ctxFunc, services},
 		Defs:              wrappedDefs{ctxFunc, services},
 		Deltas:            wrappedDeltas{ctxFunc, services},
+		Desktop:           wrappedDesktop{ctxFunc, services},
 		Meta:              wrappedMeta{ctxFunc, services},
 		MirrorRepos:       wrappedMirrorRepos{ctxFunc, services},
 		Notify:            wrappedNotify{ctxFunc, services},
@@ -1110,6 +1111,41 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, v1 *sourcegraph.DeltasList
 	}
 
 	rv, err := innerSvc.ListFiles(ctx, v1)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	return rv, nil
+}
+
+type wrappedDesktop struct {
+	ctxFunc  ContextFunc
+	services svc.Services
+}
+
+func (s wrappedDesktop) GetLatest(ctx context.Context, v1 *pbtypes.Void) (returnedResult *sourcegraph.LatestDesktopVersion, returnedError error) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+			returnedError = grpc.Errorf(codes.Internal, "panic in Desktop.GetLatest: %v\n\n%s", err, buf)
+			returnedResult = nil
+		}
+	}()
+
+	var err error
+	ctx, err = initContext(ctx, s.ctxFunc, s.services)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+
+	innerSvc := svc.DesktopOrNil(ctx)
+	if innerSvc == nil {
+		return nil, grpc.Errorf(codes.Unimplemented, "Desktop")
+	}
+
+	rv, err := innerSvc.GetLatest(ctx, v1)
 	if err != nil {
 		return nil, wrapErr(err)
 	}

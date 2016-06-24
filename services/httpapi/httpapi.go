@@ -99,6 +99,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.ResolveCustomImportsTree).Handler(handler(serveResolveCustomImportsTree))
 	m.Get(apirouter.SrclibImport).Handler(handler(serveSrclibImport))
 	m.Get(apirouter.SrclibDataVer).Handler(handler(serveSrclibDataVersion))
+	m.Get(apirouter.SourcegraphDesktop).Handler(handler(serveSourcegraphDesktopUpdateURL))
 	m.Get(apirouter.User).Handler(handler(serveUser))
 	m.Get(apirouter.UserEmails).Handler(handler(serveUserEmails))
 	m.Get(apirouter.InternalAppdashRecordSpan).Handler(handler(serveInternalAppdashRecordSpan))

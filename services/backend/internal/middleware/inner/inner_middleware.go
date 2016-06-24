@@ -50,6 +50,8 @@ func Services() svc.Services {
 
 		Deltas: wrappedDeltas{},
 
+		Desktop: wrappedDesktop{},
+
 		Meta: wrappedMeta{},
 
 		MirrorRepos: wrappedMirrorRepos{},
@@ -528,6 +530,21 @@ func (s wrappedDeltas) ListFiles(ctx context.Context, param *sourcegraph.DeltasL
 	res, err = backend.Services.Deltas.ListFiles(ctx, param)
 	if res == nil && err == nil {
 		err = grpc.Errorf(codes.Internal, "Deltas.ListFiles returned nil, nil")
+	}
+	return
+}
+
+type wrappedDesktop struct{}
+
+func (s wrappedDesktop) GetLatest(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.LatestDesktopVersion, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Desktop", "GetLatest", param)
+	defer func() {
+		trace.After(ctx, "Desktop", "GetLatest", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Desktop.GetLatest(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Desktop.GetLatest returned nil, nil")
 	}
 	return
 }

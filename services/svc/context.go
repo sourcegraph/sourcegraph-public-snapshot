@@ -31,6 +31,7 @@ const (
 	_ChannelKey           contextKey = iota
 	_DefsKey              contextKey = iota
 	_DeltasKey            contextKey = iota
+	_DesktopKey           contextKey = iota
 	_MetaKey              contextKey = iota
 	_MirrorReposKey       contextKey = iota
 	_NotifyKey            contextKey = iota
@@ -54,6 +55,7 @@ type Services struct {
 	Channel           sourcegraph.ChannelServer
 	Defs              sourcegraph.DefsServer
 	Deltas            sourcegraph.DeltasServer
+	Desktop           sourcegraph.DesktopServer
 	Meta              sourcegraph.MetaServer
 	MirrorRepos       sourcegraph.MirrorReposServer
 	Notify            sourcegraph.NotifyServer
@@ -103,6 +105,10 @@ func RegisterAll(s *grpc.Server, svcs Services) {
 
 	if svcs.Deltas != nil {
 		sourcegraph.RegisterDeltasServer(s, svcs.Deltas)
+	}
+
+	if svcs.Desktop != nil {
+		sourcegraph.RegisterDesktopServer(s, svcs.Desktop)
 	}
 
 	if svcs.Meta != nil {
@@ -184,6 +190,10 @@ func WithServices(ctx context.Context, s Services) context.Context {
 
 	if s.Deltas != nil {
 		ctx = WithDeltas(ctx, s.Deltas)
+	}
+
+	if s.Desktop != nil {
+		ctx = WithDesktop(ctx, s.Desktop)
 	}
 
 	if s.Meta != nil {
@@ -430,6 +440,29 @@ func Deltas(ctx context.Context) sourcegraph.DeltasServer {
 // DeltasOrNil returns the context's Deltas service if present, or else nil.
 func DeltasOrNil(ctx context.Context) sourcegraph.DeltasServer {
 	s, ok := ctx.Value(_DeltasKey).(sourcegraph.DeltasServer)
+	if ok {
+		return s
+	}
+	return nil
+}
+
+// WithDesktop returns a copy of parent that uses the given Desktop service.
+func WithDesktop(ctx context.Context, s sourcegraph.DesktopServer) context.Context {
+	return context.WithValue(ctx, _DesktopKey, s)
+}
+
+// Desktop gets the context's Desktop service. If the service is not present, it panics.
+func Desktop(ctx context.Context) sourcegraph.DesktopServer {
+	s, ok := ctx.Value(_DesktopKey).(sourcegraph.DesktopServer)
+	if !ok || s == nil {
+		panic("no Desktop set in context")
+	}
+	return s
+}
+
+// DesktopOrNil returns the context's Desktop service if present, or else nil.
+func DesktopOrNil(ctx context.Context) sourcegraph.DesktopServer {
+	s, ok := ctx.Value(_DesktopKey).(sourcegraph.DesktopServer)
 	if ok {
 		return s
 	}
