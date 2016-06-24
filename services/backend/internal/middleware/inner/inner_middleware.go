@@ -1058,16 +1058,3 @@ func (s wrappedUsers) List(ctx context.Context, param *sourcegraph.UsersListOpti
 	}
 	return
 }
-
-func (s wrappedUsers) Count(ctx context.Context, param *pbtypes.Void) (res *sourcegraph.UserCount, err error) {
-	start := time.Now()
-	ctx = trace.Before(ctx, "Users", "Count", param)
-	defer func() {
-		trace.After(ctx, "Users", "Count", param, err, time.Since(start))
-	}()
-	res, err = backend.Services.Users.Count(ctx, param)
-	if res == nil && err == nil {
-		err = grpc.Errorf(codes.Internal, "Users.Count returned nil, nil")
-	}
-	return
-}

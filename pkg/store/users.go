@@ -15,7 +15,6 @@ type Users interface {
 	GetWithEmail(ctx context.Context, emailAddr sourcegraph.EmailAddr) (*sourcegraph.User, error)
 	List(ctx context.Context, opt *sourcegraph.UsersListOptions) ([]*sourcegraph.User, error)
 	ListEmails(context.Context, sourcegraph.UserSpec) ([]*sourcegraph.EmailAddr, error)
-	Count(context.Context) (int32, error)
 
 	// GetUIDByGitHubID gets the Sourcegraph UID for the user given
 	// the GitHub UID that they've authorized tokens with (in

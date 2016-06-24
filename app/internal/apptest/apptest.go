@@ -38,9 +38,5 @@ func New() (*httptestutil.Client, *httptestutil.MockClients) {
 		return &sourcegraph.ServerConfig{}, nil
 	}
 
-	mock.Users.Count_ = func(context.Context, *pbtypes.Void) (*sourcegraph.UserCount, error) {
-		return &sourcegraph.UserCount{Count: 1}, nil
-	}
-
 	return c, mock
 }
