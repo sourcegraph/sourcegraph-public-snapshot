@@ -47,7 +47,6 @@ class GlobalSearch extends Container {
 			matchingResults: {Repos: [], Defs: [], Options: []},
 			selectionIndex: 0,
 		};
-		this._queryInput = null;
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
@@ -187,7 +186,8 @@ class GlobalSearch extends Container {
 	}
 
 	_handleInput(e: KeyboardEvent) {
-		this._onChangeQuery(this._queryInput ? this._queryInput.value : "");
+		if (!(e.currentTarget instanceof HTMLInputElement)) return;
+		this._onChangeQuery(e.currentTarget.value);
 	}
 
 	_scrollToVisibleSelection() {
@@ -379,8 +379,7 @@ class GlobalSearch extends Container {
 					value={this.state.query}
 					autoFocus={true}
 					placeholder="Search code and cross-references"
-					spellCheck={false}
-					domRef={(e) => this._queryInput = e} />
+					spellCheck={false} />
 			</div>
 			<div>
 				{this._results()}
