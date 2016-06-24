@@ -211,7 +211,7 @@ class DefInfo extends Container {
 		}
 		return (
 			<div styleName="bg">
-			<Panel hoverLevel="low" styleName="container" className={`${base.mb4} ${base.pb4}`}>
+			<Panel id="DefInfoContainer" hoverLevel="low" styleName="container" className={`${base.mb4} ${base.pb4}`}>
 			{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				<Helmet title={defTitleOK(def) ? `${defTitle(def)} · ${trimRepo(this.state.repo)}` : trimRepo(this.state.repo)} />
 				{def &&

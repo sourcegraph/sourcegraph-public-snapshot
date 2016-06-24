@@ -24,7 +24,7 @@ class Panel extends React.Component {
 		const colorClass = color ? `color ${inverse ? "inverse-" : ""}${color}` : "no-color";
 
 		return (
-			<div className={className}
+			<div {...this.props} className={className}
 				styleName={`panel ${colorClass} ${hoverLevel || ""} ${hover && hoverLevel ? `${hoverLevel}-hover hover` : ""}`
 			}>
 				{children}
