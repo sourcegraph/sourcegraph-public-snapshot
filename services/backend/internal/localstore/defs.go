@@ -485,28 +485,19 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
-	end := obs.start("update_def_keys")
-	if err := updateDefKeys(ctx, dbh, repo.URI, chosenDefs); err != nil {
-		end()
-		return err
-	}
-	end()
-
-	defKeys := make(map[graph.DefKey]struct{})
+	end := obs.start("def_keys")
+	defKeyIDs := make(map[graph.DefKey]int64)
 	for _, def := range chosenDefs {
-		var dk graph.DefKey = def.DefKey
-		dk.Repo, dk.CommitID = repo.URI, ""
-		defKeys[dk] = struct{}{}
+		rp := def.Repo
+		if rp == "" {
+			rp = repo.URI
+		}
+		defKeyIDs[graph.DefKey{Repo: rp, UnitType: def.UnitType, Unit: def.Unit, Path: def.Path}] = -1
 	}
-	end = obs.start("get_def_keys")
-	dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
+	err = getOrInsertDefKeys(ctx, dbh, defKeyIDs)
 	end()
 	if err != nil {
 		return err
-	}
-	defKeyIDs := make(map[graph.DefKey]int64)
-	for _, dk := range dbDefKeys {
-		defKeyIDs[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
 	}
 
 	// Update repo_revs
@@ -680,45 +671,8 @@ func getRepoRev(ctx context.Context, dbh gorp.SqlExecutor, id int64) (*dbRepoRev
 	return &d, nil
 }
 
-func getDefKeys(ctx context.Context, dbh gorp.SqlExecutor, defKeys map[graph.DefKey]struct{}) ([]*dbDefKey, error) {
+func getOrInsertDefKeys(ctx context.Context, dbh gorp.SqlExecutor, defKeys map[graph.DefKey]int64) error {
 	var dbDefKeys []*dbDefKey
-	createTmpSQL := `CREATE TEMPORARY TABLE def_keys_tmp (
-repo TEXT,
-unit_type TEXT,
-unit TEXT,
-path TEXT)
-ON COMMIT DROP;`
-	selectSQL := `SELECT * FROM def_keys WHERE (repo, unit_type, unit, path) IN (SELECT * from def_keys_tmp)`
-	err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
-		if _, err := tx.Exec(createTmpSQL); err != nil {
-			return err
-		}
-		copy, err := dbutil.Prepare(tx, pq.CopyIn("def_keys_tmp", "repo", "unit_type", "unit", "path"))
-		if err != nil {
-			return fmt.Errorf("def_keys_tmp copy prepare failed: %s", err)
-		}
-		for defKey, _ := range defKeys {
-			if _, err := copy.Exec(defKey.Repo, defKey.UnitType, defKey.Unit, defKey.Path); err != nil {
-				return fmt.Errorf("def_keys_tmp copy failed: %s", err)
-			}
-		}
-		if _, err := copy.Exec(); err != nil {
-			return fmt.Errorf("def_keys_tmp final copy failed: %s", err)
-		}
-		if _, err := tx.Select(&dbDefKeys, selectSQL); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return dbDefKeys, nil
-}
-
-// updateDefKeys, given a list of defs, inserts all missing defs into def_keys.
-// It never deletes anything.
-func updateDefKeys(ctx context.Context, dbh gorp.SqlExecutor, repo string, defs []*graph.Def) error {
 	createTmpSQL := `CREATE TEMPORARY TABLE def_keys_tmp (
 repo TEXT,
 unit_type TEXT,
@@ -730,22 +684,18 @@ SELECT repo, unit_type, unit, path
 FROM def_keys_tmp dkt
 WHERE NOT EXISTS (
 	SELECT id FROM def_keys dk where dk.repo=dkt.repo AND dk.unit_type=dkt.unit_type AND dk.unit=dkt.unit AND dk.path=dkt.path
-)`
-
-	return dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
+);`
+	selectSQL := `SELECT * FROM def_keys WHERE (repo, unit_type, unit, path) IN (SELECT * from def_keys_tmp);`
+	err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
 		if _, err := tx.Exec(createTmpSQL); err != nil {
-			return fmt.Errorf("def_keys_tmp create failed: %s", err)
+			return err
 		}
 		copy, err := dbutil.Prepare(tx, pq.CopyIn("def_keys_tmp", "repo", "unit_type", "unit", "path"))
 		if err != nil {
-			return fmt.Errorf("def_keys_tmp prepare failed: %s", err)
+			return fmt.Errorf("def_keys_tmp copy prepare failed: %s", err)
 		}
-		for _, def := range defs {
-			rp := def.Repo
-			if rp == "" {
-				rp = repo
-			}
-			if _, err := copy.Exec(rp, def.UnitType, def.Unit, def.Path); err != nil {
+		for defKey := range defKeys {
+			if _, err := copy.Exec(defKey.Repo, defKey.UnitType, defKey.Unit, defKey.Path); err != nil {
 				return fmt.Errorf("def_keys_tmp copy failed: %s", err)
 			}
 		}
@@ -755,8 +705,18 @@ WHERE NOT EXISTS (
 		if _, err := tx.Exec(insertSQL); err != nil {
 			return fmt.Errorf("def_keys insert failed: %s", err)
 		}
+		if _, err := tx.Select(&dbDefKeys, selectSQL); err != nil {
+			return err
+		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	for _, dk := range dbDefKeys {
+		defKeys[graph.DefKey{Repo: dk.Repo, UnitType: dk.UnitType, Unit: dk.Unit, Path: dk.Path}] = dk.ID
+	}
+	return nil
 }
 
 var repoRevUnindexedErr = errors.New("repository has not been indexed yet, so no latest revision exists")
