@@ -66,6 +66,7 @@
 	display: inline-block;
 	white-space: nowrap;
 	cursor: pointer;
+	font-weight: bold;
 }
 
 /* TODO: Abstract this – styles should be contained in their components */

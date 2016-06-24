@@ -10,7 +10,6 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
-import {SignupForm} from "sourcegraph/user/Signup";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -31,17 +30,6 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 				</LocationStateModal>
 			}
 
-			{location.state && location.state.modal === "signup" &&
-				<LocationStateModal modalName="signup" location={location}
-					onDismiss={(v) => eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-					<div styleName="modal">
-						<SignupForm
-							onSignupSuccess={dismissModal("signup", location, router, {_onboarding: "new-user", _signupChannel: "email"})}
-							returnTo={location}
-							location={location} />
-					</div>
-				</LocationStateModal>
-			}
 			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
 				<Link to="/">
 					<Logo styleName={`logo flex-fixed ${signedIn ? "logomark" : ""}`}
@@ -98,13 +86,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 						<div styleName="action">
 							<LocationStateToggleLink href="/login" modalName="login" location={location}
 								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ShowLoginModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								<Button color="blue" outline={true}>Sign in</Button>
-							</LocationStateToggleLink>
-						</div>
-						<div styleName="action hidden-s">
-							<LocationStateToggleLink href="/join" modalName="signup" location={location}
-								onToggle={(v) => v && eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "ViewSignupModal", {page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
-								<Button color="blue">Sign up</Button>
+								<Button color="blue">Sign in</Button>
 							</LocationStateToggleLink>
 						</div>
 					</div>

@@ -16,7 +16,7 @@
 */
 
 .btn {
-    composes: tc fw5 from typography;
+    composes: tc from typography;
     composes: ph3 pv2 br4 from base;
     box-sizing: border-box;
     cursor: pointer;
