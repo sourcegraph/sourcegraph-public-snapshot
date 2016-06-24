@@ -40,11 +40,10 @@ export default class BlobAnnotator extends Component {
 
 	constructor(props) {
 		super(props);
-
 		this.state = utils.parseURL();
 
 		if (this.state.isDelta) {
-			this.state.isSplitDiff = document.querySelector('meta[name="diff-view"]').content === "split";
+			this.state.isSplitDiff = this._isSplitDiff();
 
 			let baseCommitID, headCommitID;
 			let el = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
@@ -122,6 +121,11 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
+	}
+
+	_isSplitDiff() {
+		const metaTag = document.querySelector('meta[name="diff-view"]');
+		return metaTag && metaTag.content === "split";
 	}
 
 	reconcileState(state, props) {
