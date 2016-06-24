@@ -331,14 +331,19 @@ class TreeSearch extends Container {
 					nextState.fileResults = !err ? dirs.concat(files) : {Error: err};
 				}
 
-			} else if (nextState.fileList && nextState.fileList.Files) {
-				nextState.fileResults = nextState.fileList.Files
-					.filter((f) => fuzzyMatchPath(nextState.query, f))
-					.map((f) => ({
-						name: f,
-						isDirectory: false,
-						url: urlToBlob(nextState.repo, nextState.rev, f),
-					}));
+			} else {
+				// NOTE(mate): moving this constant declaration inside the if-block seems to trigger
+				// a bug in flow so that it can't infer the definedness of `nextState.fileList.Files`
+				const query = nextState.query.toLowerCase();
+				if (nextState.fileList && nextState.fileList.Files) {
+					nextState.fileResults = nextState.fileList.Files
+						.filter((f) => fuzzyMatchPath(query, f.toLowerCase()))
+						.map((f) => ({
+							name: f,
+							isDirectory: false,
+							url: urlToBlob(nextState.repo, nextState.rev, f),
+						}));
+				}
 			}
 		}
 	}
