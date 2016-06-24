@@ -6,6 +6,7 @@ import {connect} from "react-redux";
 import addAnnotations from "../utils/annotations";
 
 import Component from "./Component";
+import {SourcegraphIcon} from "./Icons";
 import * as Actions from "../actions";
 import * as utils from "../utils";
 import {keyFor} from "../reducers/helpers";
@@ -191,7 +192,56 @@ export default class BlobAnnotator extends Component {
 		}
 	}
 
+	_getSrclibDataVersion(repoURI, rev) {
+		const getDataVer = (repoURI, rev) => {
+			const dataVer = this.state.srclibDataVersion.content[keyFor(repoURI, rev, this.state.path)];
+			return dataVer && dataVer.CommitID ? dataVer.CommitID : null;
+		}
+		if (this.state.isDelta) {
+			return getDataVer(repoURI, rev);
+		} else {
+			const resolvedRev = this.state.resolvedRev.content[keyFor(repoURI, rev)];
+			return resolvedRev && resolvedRev.CommitID ? getDataVer(repoURI, resolvedRev.CommitID) : null;
+		}
+	}
+
+	_getBuild(repoURI, rev) {
+		const getBuild = (repoURI, rev) => {
+			const b = this.state.build.content[keyFor(repoURI, rev)];
+			return b && b.Builds ? b.Builds[0] : null;
+		}
+		if (this.state.isDelta) {
+			return getBuild(repoURI, rev);
+		} else {
+			const resolvedRev = this.state.resolvedRev.content[keyFor(repoURI, rev)];
+			return resolvedRev && resolvedRev.CommitID ? getBuild(repoURI, resolvedRev.CommitID) : null;
+		}
+	}
+
+	_buildStatus(build) {
+		if (!build) return "";
+		if (build.Failure || build.Killed) return "n/a";
+		return "Indexing...";
+	}
+
+	_indicatorText(repoURI, rev) {
+		const dataVer = this._getSrclibDataVersion(repoURI, rev);
+		if (dataVer) return "Indexed";
+		return this._buildStatus(this._getBuild(repoURI, rev));
+	}
+
 	render() {
-		return <span />;
+		let indicatorText = "";
+		if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
+			indicatorText = "Unsupported language";
+		} else if (this.state.isDelta) {
+			indicatorText = `base:${this._indicatorText(this.state.baseRepoURI, this.state.baseCommitID)} head:${this._indicatorText(this.state.headRepoURI, this.state.headCommitID)}`
+		} else {
+			indicatorText = this._indicatorText(this.state.repoURI, this.state.rev);
+		}
+		return (<span>
+			{indicatorText && <SourcegraphIcon style={{marginTop: "-2px", paddingLeft: "5px", fontSize: "16px"}} />}
+			{indicatorText && <span id="sourcegraph-build-indicator-text" style={{paddingLeft: "5px"}}>{indicatorText}</span>}
+		</span>);
 	}
 }

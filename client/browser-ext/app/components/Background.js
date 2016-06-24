@@ -143,7 +143,7 @@ export default class Background extends React.Component {
 				this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
 			}
 
-			if (urlProps.repoURI && utils.supportsAnnotatingFile(urlProps.path)) {
+			if (urlProps.repoURI) {
 				this.props.actions.ensureRepoExists(urlProps.repoURI);
 			}
 

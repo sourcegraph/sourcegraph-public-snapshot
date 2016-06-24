@@ -9,7 +9,6 @@ import * as Actions from "../../app/actions";
 import Background from "../../app/components/Background";
 import SearchFrame from "../../app/components/SearchFrame";
 import {SearchIcon} from "../../app/components/Icons";
-import BuildIndicator from "../../app/components/BuildIndicator";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import styles from "../../app/components/App.css";
 import createStore from "../../app/store/configureStore";
@@ -114,32 +113,6 @@ function getFileName(info, {isDelta, path}) {
 	}
 }
 
-function injectBuildIndicators() {
-	// if (!isGitHubURL()) return;
-
-	// const {user, repo, rev, path, isDelta} = parseURL();
-
-	// const fileInfos = document.querySelectorAll(".file-info");
-	// for (let i = 0; i < fileInfos.length; ++i) {
-	// 	const info = fileInfos[i];
-	// 	const infoFilePath = getFileName(info, {isDelta, path});
-	// 	if (!infoFilePath) continue;
-
-	// 	const buildIndicatorId = `sourcegraph-build-indicator-${infoFilePath}`;
-	// 	let buildIndicatorContainer = document.getElementById(buildIndicatorId);
-	// 	if (!buildIndicatorContainer) { // prevent injecting build indicator twice
-	// 		let buildSeparator = document.createElement("span");
-	// 		buildSeparator.className = "file-info-divider";
-	// 		info.appendChild(buildSeparator);
-
-	// 		buildIndicatorContainer = document.createElement("span");
-	// 		buildIndicatorContainer.id = buildIndicatorId;
-	// 		info.appendChild(buildIndicatorContainer);
-	// 		injectComponent(<BuildIndicator path={infoFilePath} />, buildIndicatorContainer);
-	// 	}
-	// }
-}
-
 function injectBackgroundApp() {
 	// Inject the background app on github.com AND sourcegraph.com
 	if (!document.getElementById("sourcegraph-app-background")) {
@@ -167,10 +140,9 @@ function injectBlobAnnotator() {
 
 		const blobAnnotatorId = `sourcegraph-blob-annotator-${infoFilePath}`;
 		let blobAnnotatorContainer = document.getElementById(blobAnnotatorId);
-		if (!blobAnnotatorContainer) { // prevent injecting build indicator twice
+		if (!blobAnnotatorContainer) { // prevent injecting twice
 			blobAnnotatorContainer = document.createElement("span");
 			blobAnnotatorContainer.id = blobAnnotatorId;
-			blobAnnotatorContainer.style.display = "none";
 			info.appendChild(blobAnnotatorContainer);
 			injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} />, blobAnnotatorContainer);
 		}
@@ -184,7 +156,6 @@ function injectComponent(component, mountElement) {
 function injectModules() {
 	injectBackgroundApp();
 	injectSearchApp();
-	injectBuildIndicators();
 	injectBlobAnnotator();
 
 	// Add invisible div to the page to indicate injection has completed.

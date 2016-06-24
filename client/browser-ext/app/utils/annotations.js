@@ -343,13 +343,6 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 	return {result: match.annGen(node.innerHTML), bytesConsumed: match.annLen};
 }
 
-function getPathExtension(path) {
-	const pathSplit = path.split(".");
-	if (pathSplit.length === 1) return "n/a";
-	if (pathSplit.length === 2 && pathSplit[0] === "") return "n/a"; // e.g. .gitignore
-	return pathSplit[pathSplit.length - 1].toLowerCase();
-}
-
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
 // and adding interaction popover data to annotated elements.
 // The sate management is done outside of the Redux container, thought it could be there; some of this
@@ -385,7 +378,7 @@ function addPopover(el, path, repoRevSpec) {
 
 	function showPopover(html, x, y) {
 		if (!popover) {
-			EventLogger.logEvent("HighlightDef", {isDelta: repoRevSpec.isDelta, language: getPathExtension(path)});
+			EventLogger.logEvent("HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
 			popover = document.createElement("div");
 			popover.classList.add(styles.popover);
 			popover.classList.add("sg-popover");

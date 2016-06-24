@@ -1,6 +1,12 @@
-export function supportsAnnotatingFile(path) {
-	if (!path) return false;
-	return true;
+export const supportedExtensions = [
+	"go", "java", "js", "jsx", "py", "sh", "bash"
+];
+
+export function getPathExtension(path) {
+	const pathSplit = path.split(".");
+	if (pathSplit.length === 1) return null;
+	if (pathSplit.length === 2 && pathSplit[0] === "") return null; // e.g. .gitignore
+	return pathSplit[pathSplit.length - 1].toLowerCase();
 }
 
 export function parseURL(loc = window.location) {
