@@ -11,18 +11,6 @@ const accessToken = function(state = null, action) {
 	}
 }
 
-const createdRepos = function(state = {}, action) {
-	switch (action.type) {
-	case ActionTypes.CREATED_REPO:
-		return {
-			...state,
-			[action.repo]: true,
-		};
-	default:
-		return state;
-	}
-}
-
 const resolvedRev = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.RESOLVED_REV:
@@ -137,4 +125,4 @@ const annotations = function(state = {content: {}}, action) {
 	}
 }
 
-export default combineReducers({accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations, createdRepos});
+export default combineReducers({accessToken, resolvedRev, srclibDataVersion, build, def, defs, annotations});

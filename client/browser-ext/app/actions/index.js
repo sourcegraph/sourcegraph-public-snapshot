@@ -150,10 +150,7 @@ export function build(repo, commitID, branch) {
 }
 
 export function ensureRepoExists(repo) {
-	return function (dispatch, getState) {
-		const state = getState();
-		if (state.createdRepos[repo]) return Promise.resolve();
-
+	return function () {
 		const body = {
 			Op: {
 				New: {
@@ -165,7 +162,7 @@ export function ensureRepoExists(repo) {
 			},
 		};
 		return fetch(`https://sourcegraph.com/.api/repos`, {method: "POST", body: JSON.stringify(body)})
-			.then((json) => dispatch({type: types.CREATED_REPO, repo}))
-			.catch((err) => dispatch({type: types.CREATED_REPO, repo})); // no error handling
+			.then((json) => {})
+			.catch((err) => {}); // no error handling
 	}
 }

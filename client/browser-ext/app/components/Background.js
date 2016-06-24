@@ -10,10 +10,11 @@ import EventLogger from "../analytics/EventLogger";
 
 import * as utils from "../utils";
 
+let createdReposCache = {};
+
 @connect(
 	(state) => ({
 		accessToken: state.accessToken,
-		createdRepos: state.createdRepos,
 		def: state.def,
 	}),
 	(dispatch) => ({
@@ -23,7 +24,6 @@ import * as utils from "../utils";
 export default class Background extends React.Component {
 	static propTypes = {
 		accessToken: React.PropTypes.string,
-		createdRepos: React.PropTypes.object.isRequired,
 		def: React.PropTypes.object.isRequired,
 		actions: React.PropTypes.object.isRequired,
 	};
@@ -135,7 +135,8 @@ export default class Background extends React.Component {
 				this.props.actions.getDef(urlProps.repoURI, urlProps.rev, urlProps.defPath);
 			}
 
-			if (urlProps.repoURI && !this.props.createdRepos[urlProps.repoURI]) {
+			if (urlProps.repoURI && !createdReposCache[urlProps.repoURI]) {
+				createdReposCache[urlProps.repoURI] = true;
 				this.props.actions.ensureRepoExists(urlProps.repoURI);
 			}
 
