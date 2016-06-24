@@ -21,7 +21,7 @@ var (
 )
 
 func versionHash(image string) (string, error) {
-	split := strings.Split(image, "@sha256:")
+	split := strings.Split(image, ":")
 	if len(split) != 2 {
 		return "", fmt.Errorf("cannot parse version hash from toolchain image %s", image)
 	}
