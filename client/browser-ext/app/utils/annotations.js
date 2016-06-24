@@ -12,11 +12,11 @@ import EventLogger from "../analytics/EventLogger";
 export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff) {
 	if (el.dataset[repoRevSpec.rev]) return;
 	el.dataset[repoRevSpec.rev] = true;
-	_applyAnnotations(el, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff);
+	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff);
 }
 
 // _applyAnnotations is a helper function for addAnnotations
-export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff) {
+export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff) {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
@@ -120,7 +120,7 @@ export function _applyAnnotations(el, repoRevSpec, annsByStartByte, startBytesBy
 			} else {
 				addChar(cell, " ");
 			}
-			addPopover(cell);
+			addPopover(cell, path, repoRevSpec);
 		});
 	}
 }
@@ -343,7 +343,12 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 	return {result: match.annGen(node.innerHTML), bytesConsumed: match.annLen};
 }
 
-
+function getPathExtension(path) {
+	const pathSplit = path.split(".");
+	if (pathSplit.length === 1) return "n/a";
+	if (pathSplit.length === 2 && pathSplit[0] === "") return "n/a"; // e.g. .gitignore
+	return pathSplit[pathSplit.length - 1].toLowerCase();
+}
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
 // and adding interaction popover data to annotated elements.
@@ -352,7 +357,7 @@ export function convertQuotedStringNode(node, annsByStartByte, offset, repoRevSp
 
 let popoverCache = {};
 export const defCache = {};
-function addPopover(el) {
+function addPopover(el, path, repoRevSpec) {
 	let activeTarget, popover;
 
 	el.addEventListener("mouseout", (e) => {
@@ -380,7 +385,7 @@ function addPopover(el) {
 
 	function showPopover(html, x, y) {
 		if (!popover) {
-			EventLogger.logEvent("HighlightDef");
+			EventLogger.logEvent("HighlightDef", {isDelta: repoRevSpec.isDelta, language: getPathExtension(path)});
 			popover = document.createElement("div");
 			popover.classList.add(styles.popover);
 			popover.classList.add("sg-popover");

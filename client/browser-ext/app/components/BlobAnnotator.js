@@ -178,7 +178,7 @@ export default class BlobAnnotator extends Component {
 
 			const json = state.annotations.content[keyFor(repoURI, dataVer.CommitID, state.path)];
 			if (json) {
-				addAnnotations(state.path, {repoURI: repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes, state.isSplitDiff);
+				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase}, state.blobElement, json.Annotations, json.LineStartBytes, state.isSplitDiff);
 			}
 		}
 

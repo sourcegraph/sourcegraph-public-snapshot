@@ -28,6 +28,8 @@ export class EventLogger {
 		if (process.env.NODE_ENV === "test") return;
 
 		eventProperties = eventProperties ? eventProperties : {};
+		// TODO(rothfels): this is broken, since Firefox has a polyfill that adds chrome
+		// to the global scope.
 		eventProperties["Platform"] = global.chrome ? "ChromeExtension" : "FirefoxExtension";
 		this._amplitude.logEvent(eventName, eventProperties);
 	}
