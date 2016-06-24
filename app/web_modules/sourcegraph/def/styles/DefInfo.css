@@ -122,7 +122,7 @@
 }
 
 @media screen and (max-width: 48em) {
-	.def-header, .description, .section-label {
+	.description, .section-label {
 		margin-left: 10px;
 		margin-right: 10px;
 	}
