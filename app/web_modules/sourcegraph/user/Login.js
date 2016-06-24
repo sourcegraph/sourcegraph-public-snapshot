@@ -20,7 +20,7 @@ export class LoginForm extends Container {
 
 		// returnTo is where the user should be redirected after an OAuth login flow,
 		// either a URL path or a Location object.
-		returnTo: React.PropTypes.oneOfType(React.PropTypes.string, React.PropTypes.object).isRequired,
+		returnTo: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
 	};
 
 	state = {
