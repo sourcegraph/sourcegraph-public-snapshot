@@ -41,19 +41,14 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 				</div>
 
 				{user && <div styleName="flex flex-start flex-fixed">
-					<Link to="/tour">
-						<TabItem active={location.pathname === "/tour"} icon="tour">Tour</TabItem>
+					<Link to="/tour" styleName="nav-link">
+						<TabItem active={location.pathname === "/tour"}>Tour</TabItem>
 					</Link>
-					<Link to="/settings/repos">
-						<TabItem active={location.pathname === "/settings/repos"} icon="repository">Repositories</TabItem>
+					<Link to="/settings/repos" styleName="nav-link">
+						<TabItem active={location.pathname === "/settings/repos"}>Repositories</TabItem>
 					</Link>
-					<Link to="/tools">
-						<TabItem hideMobile={true} active={location.pathname === "/tools"} icon="tools">Tools</TabItem>
-					</Link>
-					<Link to="/">
-						<TabItem active={location.pathname === "/search"} icon="search">
-							<span styleName="hidden-s">Code</span> Search
-						</TabItem>
+					<Link to="/tools" styleName="nav-link">
+						<TabItem hideMobile={true} active={location.pathname === "/tools"}>Tools</TabItem>
 					</Link>
 				</div>}
 
