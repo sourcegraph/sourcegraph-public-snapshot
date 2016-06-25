@@ -76,7 +76,7 @@ const browserConfig = {
 	target: "web",
 	cache: true,
 	entry: "./web_modules/sourcegraph/init/browser.js",
-	devtool: "source-map",
+	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
 		path: `${__dirname}/assets`,
 		filename: "[name].browser.js",
