@@ -82,7 +82,7 @@ const browserConfig = {
 		sourceMapFilename: "[file].map",
 	},
 	plugins: commonPlugins.concat([
-		new FlowStatusWebpackPlugin({restartFlow: false}),
+		new FlowStatusWebpackPlugin({quietSuccess: true}),
 		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 	]),
 	module: {

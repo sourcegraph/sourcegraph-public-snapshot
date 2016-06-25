@@ -7,6 +7,7 @@ var assert = require('assert')
 process.env[n+'_someOpt__a'] = 42
 process.env[n+'_someOpt__x__'] = 99
 process.env[n+'_someOpt__a__b'] = 186
+process.env[n+'_someOpt__a__b__c'] = 243
 process.env[n+'_someOpt__x__y'] = 1862
 process.env[n+'_someOpt__z'] = 186577
 
