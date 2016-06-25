@@ -1,61 +1,69 @@
-/* eslint max-len: 0 */
-
-"use strict";
-
-var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
-
-var _getIterator = require("babel-runtime/core-js/get-iterator")["default"];
-
-var _interopRequireDefault = require("babel-runtime/helpers/interop-require-default")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-var _babelTraverse = require("babel-traverse");
+var _getIterator2 = require("babel-runtime/core-js/get-iterator");
 
-var _babelHelperReplaceSupers = require("babel-helper-replace-supers");
+var _getIterator3 = _interopRequireDefault(_getIterator2);
 
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var /*istanbul ignore next*/_babelTraverse = require("babel-traverse");
+
+var /*istanbul ignore next*/_babelHelperReplaceSupers = require("babel-helper-replace-supers");
+
+/*istanbul ignore next*/
 var _babelHelperReplaceSupers2 = _interopRequireDefault(_babelHelperReplaceSupers);
 
-var _babelHelperOptimiseCallExpression = require("babel-helper-optimise-call-expression");
+var /*istanbul ignore next*/_babelHelperOptimiseCallExpression = require("babel-helper-optimise-call-expression");
 
+/*istanbul ignore next*/
 var _babelHelperOptimiseCallExpression2 = _interopRequireDefault(_babelHelperOptimiseCallExpression);
 
-var _babelHelperDefineMap = require("babel-helper-define-map");
+var /*istanbul ignore next*/_babelHelperDefineMap = require("babel-helper-define-map");
 
+/*istanbul ignore next*/
 var defineMap = _interopRequireWildcard(_babelHelperDefineMap);
 
-var _babelTemplate = require("babel-template");
+var /*istanbul ignore next*/_babelTemplate = require("babel-template");
 
+/*istanbul ignore next*/
 var _babelTemplate2 = _interopRequireDefault(_babelTemplate);
 
-var _babelTypes = require("babel-types");
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
 
+/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var buildDerivedConstructor = _babelTemplate2["default"]("\n  (function () {\n    super(...arguments);\n  })\n");
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-var noMethodVisitor = {
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var buildDerivedConstructor = /*istanbul ignore next*/(0, _babelTemplate2.default)( /*istanbul ignore next*/"\n  (function () {\n    super(...arguments);\n  })\n"); /* eslint max-len: 0 */
+
+var noMethodVisitor = { /*istanbul ignore next*/
   "FunctionExpression|FunctionDeclaration": function FunctionExpressionFunctionDeclaration(path) {
     if (!path.is("shadow")) {
       path.skip();
     }
   },
-
-  Method: function Method(path) {
+  /*istanbul ignore next*/Method: function Method(path) {
     path.skip();
   }
 };
 
-var verifyConstructorVisitor = _babelTraverse.visitors.merge([noMethodVisitor, {
+var verifyConstructorVisitor = /*istanbul ignore next*/_babelTraverse.visitors.merge([noMethodVisitor, { /*istanbul ignore next*/
   Super: function Super(path) {
     if (this.isDerived && !this.hasBareSuper && !path.parentPath.isCallExpression({ callee: path.node })) {
       throw path.buildCodeFrameError("'super.*' is not allowed before super()");
     }
   },
 
-  CallExpression: {
+
+  CallExpression: { /*istanbul ignore next*/
     exit: function exit(path) {
       if (path.get("callee").isSuper()) {
         this.hasBareSuper = true;
@@ -67,7 +75,7 @@ var verifyConstructorVisitor = _babelTraverse.visitors.merge([noMethodVisitor, {
     }
   },
 
-  ThisExpression: function ThisExpression(path) {
+  /*istanbul ignore next*/ThisExpression: function ThisExpression(path) {
     if (this.isDerived && !this.hasBareSuper) {
       if (!path.inShadow("this")) {
         throw path.buildCodeFrameError("'this' is not allowed before super()");
@@ -76,15 +84,16 @@ var verifyConstructorVisitor = _babelTraverse.visitors.merge([noMethodVisitor, {
   }
 }]);
 
-var findThisesVisitor = _babelTraverse.visitors.merge([noMethodVisitor, {
+var findThisesVisitor = /*istanbul ignore next*/_babelTraverse.visitors.merge([noMethodVisitor, { /*istanbul ignore next*/
   ThisExpression: function ThisExpression(path) {
     this.superThises.push(path);
   }
 }]);
 
-var ClassTransformer = (function () {
-  function ClassTransformer(path, file) {
-    _classCallCheck(this, ClassTransformer);
+/*istanbul ignore next*/
+var ClassTransformer = function () {
+  function /*istanbul ignore next*/ClassTransformer(path, file) {
+    /*istanbul ignore next*/(0, _classCallCheck3.default)(this, ClassTransformer);
 
     this.parent = path.parent;
     this.scope = path.scope;
@@ -112,15 +121,14 @@ var ClassTransformer = (function () {
     this.classId = this.node.id;
 
     // this is the name of the binding that will **always** reference the class we've constructed
-    this.classRef = this.node.id || this.scope.generateUidIdentifier("class");
+    this.classRef = this.node.id ? t.identifier(this.node.id.name) : this.scope.generateUidIdentifier("class");
 
     this.superName = this.node.superClass || t.identifier("Function");
     this.isDerived = !!this.node.superClass;
   }
 
   ClassTransformer.prototype.run = function run() {
-    // istanbul ignore next
-
+    /*istanbul ignore next*/
     var _this = this;
 
     var superName = this.superName;
@@ -153,8 +161,8 @@ var ClassTransformer = (function () {
     // make sure this class isn't directly called
     constructorBody.body.unshift(t.expressionStatement(t.callExpression(file.addHelper("classCallCheck"), [t.thisExpression(), this.classRef])));
 
-    body = body.concat(this.staticPropBody.map(function (fn) {
-      return fn(_this.classRef);
+    body = body.concat(this.staticPropBody.map(function (fn) /*istanbul ignore next*/{
+      return fn( /*istanbul ignore next*/_this.classRef);
     }));
 
     if (this.classId) {
@@ -176,11 +184,12 @@ var ClassTransformer = (function () {
     return func;
   };
 
-  ClassTransformer.prototype.pushToMap = function pushToMap(node, enumerable, kind, scope) {
-    if (kind === undefined) kind = "value";
+  ClassTransformer.prototype.pushToMap = function pushToMap(node, enumerable) {
+    /*istanbul ignore next*/var kind = arguments.length <= 2 || arguments[2] === undefined ? "value" : arguments[2];
+    /*istanbul ignore next*/var scope = arguments[3];
 
-    var mutatorMap = undefined;
-    if (node["static"]) {
+    var mutatorMap = /*istanbul ignore next*/void 0;
+    if (node.static) {
       this.hasStaticDescriptors = true;
       mutatorMap = this.staticMutatorMap;
     } else {
@@ -205,16 +214,28 @@ var ClassTransformer = (function () {
   ClassTransformer.prototype.constructorMeMaybe = function constructorMeMaybe() {
     var hasConstructor = false;
     var paths = this.path.get("body.body");
-    var _arr = paths;
-    for (var _i = 0; _i < _arr.length; _i++) {
-      var path = _arr[_i];
+    for ( /*istanbul ignore next*/var _iterator = paths, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
+      /*istanbul ignore next*/
+      var _ref;
+
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref = _i.value;
+      }
+
+      var path = _ref;
+
       hasConstructor = path.equals("kind", "constructor");
       if (hasConstructor) break;
     }
     if (hasConstructor) return;
 
-    var params = undefined,
-        body = undefined;
+    var params = /*istanbul ignore next*/void 0,
+        body = /*istanbul ignore next*/void 0;
 
     if (this.isDerived) {
       var _constructor = buildDerivedConstructor().expression;
@@ -246,8 +267,21 @@ var ClassTransformer = (function () {
   ClassTransformer.prototype.pushBody = function pushBody() {
     var classBodyPaths = this.path.get("body.body");
 
-    for (var _i2 = 0; _i2 < classBodyPaths.length; _i2++) {
-      var path = classBodyPaths[_i2];
+    for ( /*istanbul ignore next*/var _iterator2 = classBodyPaths, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
+      /*istanbul ignore next*/
+      var _ref2;
+
+      if (_isArray2) {
+        if (_i2 >= _iterator2.length) break;
+        _ref2 = _iterator2[_i2++];
+      } else {
+        _i2 = _iterator2.next();
+        if (_i2.done) break;
+        _ref2 = _i2.value;
+      }
+
+      var path = _ref2;
+
       var node = path.node;
 
       if (path.isClassProperty()) {
@@ -269,13 +303,13 @@ var ClassTransformer = (function () {
           }
         }
 
-        var replaceSupers = new _babelHelperReplaceSupers2["default"]({
+        var replaceSupers = new /*istanbul ignore next*/_babelHelperReplaceSupers2.default({
           forceSuperMemoisation: isConstructor,
           methodPath: path,
           methodNode: node,
           objectRef: this.classRef,
           superRef: this.superName,
-          isStatic: node["static"],
+          isStatic: node.static,
           isLoose: this.isLoose,
           scope: this.scope,
           file: this.file
@@ -305,8 +339,8 @@ var ClassTransformer = (function () {
 
     var body = this.body;
 
-    var instanceProps = undefined;
-    var staticProps = undefined;
+    var instanceProps = /*istanbul ignore next*/void 0;
+    var staticProps = /*istanbul ignore next*/void 0;
 
     if (this.hasInstanceDescriptors) {
       instanceProps = defineMap.toClassObject(this.instanceMutatorMap);
@@ -367,12 +401,12 @@ var ClassTransformer = (function () {
         bareSuperNode.callee = t.memberExpression(superRef, t.identifier("call"));
       }
     } else {
-      bareSuperNode = _babelHelperOptimiseCallExpression2["default"](t.callExpression(t.memberExpression(t.identifier("Object"), t.identifier("getPrototypeOf")), [this.classRef]), t.thisExpression(), bareSuperNode.arguments);
+      bareSuperNode = /*istanbul ignore next*/(0, _babelHelperOptimiseCallExpression2.default)(t.callExpression(t.memberExpression(t.identifier("Object"), t.identifier("getPrototypeOf")), [this.classRef]), t.thisExpression(), bareSuperNode.arguments);
     }
 
     var call = t.callExpression(this.file.addHelper("possibleConstructorReturn"), [t.thisExpression(), bareSuperNode]);
 
-    var bareSuperAfter = this.bareSuperAfter.map(function (fn) {
+    var bareSuperAfter = this.bareSuperAfter.map(function (fn) /*istanbul ignore next*/{
       return fn(thisRef);
     });
 
@@ -386,18 +420,17 @@ var ClassTransformer = (function () {
       }
 
       if (bareSuperAfter.length) {
-        call = t.toSequenceExpression([call].concat(bareSuperAfter, [thisRef]));
+        call = t.toSequenceExpression( /*istanbul ignore next*/[call].concat(bareSuperAfter, [thisRef]));
       }
 
       bareSuper.parentPath.replaceWith(t.returnStatement(call));
     } else {
-      bareSuper.replaceWithMultiple([t.variableDeclaration("var", [t.variableDeclarator(thisRef, call)])].concat(bareSuperAfter, [t.expressionStatement(thisRef)]));
+      bareSuper.replaceWithMultiple( /*istanbul ignore next*/[t.variableDeclaration("var", [t.variableDeclarator(thisRef, call)])].concat(bareSuperAfter, [t.expressionStatement(thisRef)]));
     }
   };
 
   ClassTransformer.prototype.verifyConstructor = function verifyConstructor() {
-    // istanbul ignore next
-
+    /*istanbul ignore next*/
     var _this2 = this;
 
     if (!this.isDerived) return;
@@ -412,19 +445,20 @@ var ClassTransformer = (function () {
     var superRef = this.superName || t.identifier("Function");
     var thisRef = path.scope.generateUidIdentifier("this");
 
-    for (var _iterator = this.bareSupers, _isArray = Array.isArray(_iterator), _i3 = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
-      var _ref;
+    for ( /*istanbul ignore next*/var _iterator3 = this.bareSupers, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
+      /*istanbul ignore next*/
+      var _ref3;
 
-      if (_isArray) {
-        if (_i3 >= _iterator.length) break;
-        _ref = _iterator[_i3++];
+      if (_isArray3) {
+        if (_i3 >= _iterator3.length) break;
+        _ref3 = _iterator3[_i3++];
       } else {
-        _i3 = _iterator.next();
+        _i3 = _iterator3.next();
         if (_i3.done) break;
-        _ref = _i3.value;
+        _ref3 = _i3.value;
       }
 
-      var bareSuper = _ref;
+      var bareSuper = _ref3;
 
       this.wrapSuperCall(bareSuper, superRef, thisRef, body);
 
@@ -443,25 +477,26 @@ var ClassTransformer = (function () {
       }
     }
 
-    for (var _iterator2 = this.superThises, _isArray2 = Array.isArray(_iterator2), _i4 = 0, _iterator2 = _isArray2 ? _iterator2 : _getIterator(_iterator2);;) {
-      var _ref2;
+    for ( /*istanbul ignore next*/var _iterator4 = this.superThises, _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : (0, _getIterator3.default)(_iterator4);;) {
+      /*istanbul ignore next*/
+      var _ref4;
 
-      if (_isArray2) {
-        if (_i4 >= _iterator2.length) break;
-        _ref2 = _iterator2[_i4++];
+      if (_isArray4) {
+        if (_i4 >= _iterator4.length) break;
+        _ref4 = _iterator4[_i4++];
       } else {
-        _i4 = _iterator2.next();
+        _i4 = _iterator4.next();
         if (_i4.done) break;
-        _ref2 = _i4.value;
+        _ref4 = _i4.value;
       }
 
-      var thisPath = _ref2;
+      var thisPath = _ref4;
 
       thisPath.replaceWith(thisRef);
     }
 
-    var wrapReturn = function wrapReturn(returnArg) {
-      return t.callExpression(_this2.file.addHelper("possibleConstructorReturn"), [thisRef].concat(returnArg || []));
+    var wrapReturn = function wrapReturn(returnArg) /*istanbul ignore next*/{
+      return t.callExpression( /*istanbul ignore next*/_this2.file.addHelper("possibleConstructorReturn"), [thisRef].concat(returnArg || []));
     };
 
     // if we have a return as the last node in the body then we've already caught that
@@ -471,19 +506,20 @@ var ClassTransformer = (function () {
       body.pushContainer("body", t.returnStatement(guaranteedSuperBeforeFinish ? thisRef : wrapReturn()));
     }
 
-    for (var _iterator3 = this.superReturns, _isArray3 = Array.isArray(_iterator3), _i5 = 0, _iterator3 = _isArray3 ? _iterator3 : _getIterator(_iterator3);;) {
-      var _ref3;
+    for ( /*istanbul ignore next*/var _iterator5 = this.superReturns, _isArray5 = Array.isArray(_iterator5), _i5 = 0, _iterator5 = _isArray5 ? _iterator5 : (0, _getIterator3.default)(_iterator5);;) {
+      /*istanbul ignore next*/
+      var _ref5;
 
-      if (_isArray3) {
-        if (_i5 >= _iterator3.length) break;
-        _ref3 = _iterator3[_i5++];
+      if (_isArray5) {
+        if (_i5 >= _iterator5.length) break;
+        _ref5 = _iterator5[_i5++];
       } else {
-        _i5 = _iterator3.next();
+        _i5 = _iterator5.next();
         if (_i5.done) break;
-        _ref3 = _i5.value;
+        _ref5 = _i5.value;
       }
 
-      var returnPath = _ref3;
+      var returnPath = _ref5;
 
       if (returnPath.node.argument) {
         var ref = returnPath.scope.generateDeclaredUidIdentifier("ret");
@@ -571,7 +607,7 @@ var ClassTransformer = (function () {
   };
 
   return ClassTransformer;
-})();
+}();
 
-exports["default"] = ClassTransformer;
-module.exports = exports["default"];
+/*istanbul ignore next*/exports.default = ClassTransformer;
+/*istanbul ignore next*/module.exports = exports["default"];

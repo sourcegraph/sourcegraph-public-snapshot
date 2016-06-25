@@ -1,9 +1,13 @@
-"use strict";
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function (_ref) {
-  var t = _ref.types;
+var _getIterator2 = require("babel-runtime/core-js/get-iterator");
+
+var _getIterator3 = _interopRequireDefault(_getIterator2);
+
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var t = _ref.types;
 
   function isString(node) {
     return t.isLiteral(node) && typeof node.value === "string";
@@ -14,9 +18,9 @@ exports["default"] = function (_ref) {
   }
 
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       TaggedTemplateExpression: function TaggedTemplateExpression(path, state) {
-        var node = path.node;
+        /*istanbul ignore next*/var node = path.node;
 
         var quasi = node.quasi;
         var args = [];
@@ -24,9 +28,21 @@ exports["default"] = function (_ref) {
         var strings = [];
         var raw = [];
 
-        var _arr = quasi.quasis;
-        for (var _i = 0; _i < _arr.length; _i++) {
-          var elem = _arr[_i];
+        for ( /*istanbul ignore next*/var _iterator = quasi.quasis, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
+          /*istanbul ignore next*/
+          var _ref2;
+
+          if (_isArray) {
+            if (_i >= _iterator.length) break;
+            _ref2 = _iterator[_i++];
+          } else {
+            _i = _iterator.next();
+            if (_i.done) break;
+            _ref2 = _i.value;
+          }
+
+          var elem = _ref2;
+
           strings.push(t.stringLiteral(elem.value.cooked));
           raw.push(t.stringLiteral(elem.value.raw));
         }
@@ -44,15 +60,26 @@ exports["default"] = function (_ref) {
 
         path.replaceWith(t.callExpression(node.tag, args));
       },
-
-      TemplateLiteral: function TemplateLiteral(path, state) {
+      /*istanbul ignore next*/TemplateLiteral: function TemplateLiteral(path, state) {
         var nodes = [];
 
         var expressions = path.get("expressions");
 
-        var _arr2 = path.node.quasis;
-        for (var _i2 = 0; _i2 < _arr2.length; _i2++) {
-          var elem = _arr2[_i2];
+        for ( /*istanbul ignore next*/var _iterator2 = path.node.quasis, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
+          /*istanbul ignore next*/
+          var _ref3;
+
+          if (_isArray2) {
+            if (_i2 >= _iterator2.length) break;
+            _ref3 = _iterator2[_i2++];
+          } else {
+            _i2 = _iterator2.next();
+            if (_i2.done) break;
+            _ref3 = _i2.value;
+          }
+
+          var elem = _ref3;
+
           nodes.push(t.stringLiteral(elem.value.cooked));
 
           var expr = expressions.shift();
@@ -66,7 +93,7 @@ exports["default"] = function (_ref) {
         }
 
         // filter out empty string literals
-        nodes = nodes.filter(function (n) {
+        nodes = nodes.filter(function (n) /*istanbul ignore next*/{
           return !t.isLiteral(n, { value: "" });
         });
 
@@ -79,8 +106,21 @@ exports["default"] = function (_ref) {
         if (nodes.length > 1) {
           var root = buildBinaryExpression(nodes.shift(), nodes.shift());
 
-          for (var _i3 = 0; _i3 < nodes.length; _i3++) {
-            var node = nodes[_i3];
+          for ( /*istanbul ignore next*/var _iterator3 = nodes, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
+            /*istanbul ignore next*/
+            var _ref4;
+
+            if (_isArray3) {
+              if (_i3 >= _iterator3.length) break;
+              _ref4 = _iterator3[_i3++];
+            } else {
+              _i3 = _iterator3.next();
+              if (_i3.done) break;
+              _ref4 = _i3.value;
+            }
+
+            var node = _ref4;
+
             root = buildBinaryExpression(root, node);
           }
 
@@ -92,5 +132,8 @@ exports["default"] = function (_ref) {
     }
   };
 };
+
+/*istanbul ignore next*/
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 module.exports = exports["default"];

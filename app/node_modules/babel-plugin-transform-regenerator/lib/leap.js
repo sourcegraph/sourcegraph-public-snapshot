@@ -1,32 +1,33 @@
-/**
- * Copyright (c) 2014, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
- * additional grant of patent rights can be found in the PATENTS file in
- * the same directory.
- */
+/*istanbul ignore next*/"use strict";
 
-"use strict";
+var /*istanbul ignore next*/_assert = require("assert");
 
-var _interopRequireDefault = require("babel-runtime/helpers/interop-require-default")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
-
-var _assert = require("assert");
-
+/*istanbul ignore next*/
 var _assert2 = _interopRequireDefault(_assert);
 
-var _babelTypes = require("babel-types");
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
 
+/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
-var _util = require("util");
+var /*istanbul ignore next*/_util = require("util");
+
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function Entry() {
-  _assert2["default"].ok(this instanceof Entry);
-}
+  /*istanbul ignore next*/_assert2.default.ok(this instanceof Entry);
+} /**
+   * Copyright (c) 2014, Facebook, Inc.
+   * All rights reserved.
+   *
+   * This source code is licensed under the BSD-style license found in the
+   * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
+   * additional grant of patent rights can be found in the PATENTS file in
+   * the same directory.
+   */
 
 function FunctionEntry(returnLoc) {
   Entry.call(this);
@@ -34,7 +35,7 @@ function FunctionEntry(returnLoc) {
   this.returnLoc = returnLoc;
 }
 
-_util.inherits(FunctionEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(FunctionEntry, Entry);
 exports.FunctionEntry = FunctionEntry;
 
 function LoopEntry(breakLoc, continueLoc, label) {
@@ -54,7 +55,7 @@ function LoopEntry(breakLoc, continueLoc, label) {
   this.label = label;
 }
 
-_util.inherits(LoopEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(LoopEntry, Entry);
 exports.LoopEntry = LoopEntry;
 
 function SwitchEntry(breakLoc) {
@@ -63,7 +64,7 @@ function SwitchEntry(breakLoc) {
   this.breakLoc = breakLoc;
 }
 
-_util.inherits(SwitchEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(SwitchEntry, Entry);
 exports.SwitchEntry = SwitchEntry;
 
 function TryEntry(firstLoc, catchEntry, finallyEntry) {
@@ -72,26 +73,26 @@ function TryEntry(firstLoc, catchEntry, finallyEntry) {
   t.assertLiteral(firstLoc);
 
   if (catchEntry) {
-    _assert2["default"].ok(catchEntry instanceof CatchEntry);
+    /*istanbul ignore next*/_assert2.default.ok(catchEntry instanceof CatchEntry);
   } else {
     catchEntry = null;
   }
 
   if (finallyEntry) {
-    _assert2["default"].ok(finallyEntry instanceof FinallyEntry);
+    /*istanbul ignore next*/_assert2.default.ok(finallyEntry instanceof FinallyEntry);
   } else {
     finallyEntry = null;
   }
 
   // Have to have one or the other (or both).
-  _assert2["default"].ok(catchEntry || finallyEntry);
+  /*istanbul ignore next*/_assert2.default.ok(catchEntry || finallyEntry);
 
   this.firstLoc = firstLoc;
   this.catchEntry = catchEntry;
   this.finallyEntry = finallyEntry;
 }
 
-_util.inherits(TryEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(TryEntry, Entry);
 exports.TryEntry = TryEntry;
 
 function CatchEntry(firstLoc, paramId) {
@@ -104,7 +105,7 @@ function CatchEntry(firstLoc, paramId) {
   this.paramId = paramId;
 }
 
-_util.inherits(CatchEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(CatchEntry, Entry);
 exports.CatchEntry = CatchEntry;
 
 function FinallyEntry(firstLoc, afterLoc) {
@@ -115,7 +116,7 @@ function FinallyEntry(firstLoc, afterLoc) {
   this.afterLoc = afterLoc;
 }
 
-_util.inherits(FinallyEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(FinallyEntry, Entry);
 exports.FinallyEntry = FinallyEntry;
 
 function LabeledEntry(breakLoc, label) {
@@ -128,14 +129,14 @@ function LabeledEntry(breakLoc, label) {
   this.label = label;
 }
 
-_util.inherits(LabeledEntry, Entry);
+/*istanbul ignore next*/(0, _util.inherits)(LabeledEntry, Entry);
 exports.LabeledEntry = LabeledEntry;
 
 function LeapManager(emitter) {
-  _assert2["default"].ok(this instanceof LeapManager);
+  /*istanbul ignore next*/_assert2.default.ok(this instanceof LeapManager);
 
   var Emitter = require("./emit").Emitter;
-  _assert2["default"].ok(emitter instanceof Emitter);
+  /*istanbul ignore next*/_assert2.default.ok(emitter instanceof Emitter);
 
   this.emitter = emitter;
   this.entryStack = [new FunctionEntry(emitter.finalLoc)];
@@ -145,13 +146,13 @@ var LMp = LeapManager.prototype;
 exports.LeapManager = LeapManager;
 
 LMp.withEntry = function (entry, callback) {
-  _assert2["default"].ok(entry instanceof Entry);
+  /*istanbul ignore next*/_assert2.default.ok(entry instanceof Entry);
   this.entryStack.push(entry);
   try {
     callback.call(this.emitter);
   } finally {
     var popped = this.entryStack.pop();
-    _assert2["default"].strictEqual(popped, entry);
+    /*istanbul ignore next*/_assert2.default.strictEqual(popped, entry);
   }
 };
 

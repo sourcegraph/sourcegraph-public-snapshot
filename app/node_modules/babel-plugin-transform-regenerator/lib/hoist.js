@@ -1,3 +1,25 @@
+/*istanbul ignore next*/"use strict";
+
+var _keys = require("babel-runtime/core-js/object/keys");
+
+var _keys2 = _interopRequireDefault(_keys);
+
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
+
+/*istanbul ignore next*/
+var t = _interopRequireWildcard(_babelTypes);
+
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var hasOwn = Object.prototype.hasOwnProperty;
+
+// The hoist function takes a FunctionExpression or FunctionDeclaration
+// and replaces any Declaration nodes in its body with assignments, then
+// returns a VariableDeclaration containing just the names of the removed
+// declarations.
 /**
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -8,22 +30,6 @@
  * the same directory.
  */
 
-"use strict";
-
-var _Object$keys = require("babel-runtime/core-js/object/keys")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
-
-var _babelTypes = require("babel-types");
-
-var t = _interopRequireWildcard(_babelTypes);
-
-var hasOwn = Object.prototype.hasOwnProperty;
-
-// The hoist function takes a FunctionExpression or FunctionDeclaration
-// and replaces any Declaration nodes in its body with assignments, then
-// returns a VariableDeclaration containing just the names of the removed
-// declarations.
 exports.hoist = function (funPath) {
   t.assertFunction(funPath.node);
 
@@ -53,7 +59,7 @@ exports.hoist = function (funPath) {
 
   funPath.get("body").traverse({
     VariableDeclaration: {
-      exit: function exit(path) {
+      exit: function /*istanbul ignore next*/exit(path) {
         var expr = varDeclToExpr(path.node, false);
         if (expr === null) {
           path.remove();
@@ -69,21 +75,21 @@ exports.hoist = function (funPath) {
       }
     },
 
-    ForStatement: function ForStatement(path) {
+    ForStatement: function /*istanbul ignore next*/ForStatement(path) {
       var init = path.node.init;
       if (t.isVariableDeclaration(init)) {
         path.get("init").replaceWith(varDeclToExpr(init, false));
       }
     },
 
-    ForXStatement: function ForXStatement(path) {
+    ForXStatement: function /*istanbul ignore next*/ForXStatement(path) {
       var left = path.get("left");
       if (left.isVariableDeclaration()) {
         left.replaceWith(varDeclToExpr(left.node, true));
       }
     },
 
-    FunctionDeclaration: function FunctionDeclaration(path) {
+    FunctionDeclaration: function /*istanbul ignore next*/FunctionDeclaration(path) {
       var node = path.node;
       vars[node.id.name] = node.id;
 
@@ -108,7 +114,7 @@ exports.hoist = function (funPath) {
       path.skip();
     },
 
-    FunctionExpression: function FunctionExpression(path) {
+    FunctionExpression: function /*istanbul ignore next*/FunctionExpression(path) {
       // Don't descend into nested function expressions.
       path.skip();
     }
@@ -127,7 +133,7 @@ exports.hoist = function (funPath) {
 
   var declarations = [];
 
-  _Object$keys(vars).forEach(function (name) {
+  /*istanbul ignore next*/(0, _keys2.default)(vars).forEach(function (name) {
     if (!hasOwn.call(paramNames, name)) {
       declarations.push(t.variableDeclarator(vars[name], null));
     }

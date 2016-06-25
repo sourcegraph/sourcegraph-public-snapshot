@@ -1,31 +1,22 @@
-"use strict";
-
-var _Object$create = require("babel-runtime/core-js/object/create")["default"];
-
-var _getIterator = require("babel-runtime/core-js/get-iterator")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-var _babelTypes = require("babel-types");
+var _getIterator2 = require("babel-runtime/core-js/get-iterator");
 
-var t = _interopRequireWildcard(_babelTypes);
+var _getIterator3 = _interopRequireDefault(_getIterator2);
 
-function getName(key) {
-  if (t.isIdentifier(key)) {
-    return key.name;
-  }
-  return key.value.toString();
-}
+var _create = require("babel-runtime/core-js/object/create");
 
-exports["default"] = function () {
+var _create2 = _interopRequireDefault(_create);
+
+exports.default = function () {
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       ObjectExpression: function ObjectExpression(path) {
-        var node = path.node;
+        /*istanbul ignore next*/var node = path.node;
 
-        var plainProps = node.properties.filter(function (prop) {
+        var plainProps = node.properties.filter(function (prop) /*istanbul ignore next*/{
           return !t.isSpreadProperty(prop) && !prop.computed;
         });
 
@@ -37,11 +28,12 @@ exports["default"] = function () {
         // * the property is a setter property, and is preceeded by a data or
         //   setter property of the same name.
 
-        var alreadySeenData = _Object$create(null);
-        var alreadySeenGetters = _Object$create(null);
-        var alreadySeenSetters = _Object$create(null);
+        var alreadySeenData = /*istanbul ignore next*/(0, _create2.default)(null);
+        var alreadySeenGetters = /*istanbul ignore next*/(0, _create2.default)(null);
+        var alreadySeenSetters = /*istanbul ignore next*/(0, _create2.default)(null);
 
-        for (var _iterator = plainProps, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _getIterator(_iterator);;) {
+        for ( /*istanbul ignore next*/var _iterator = plainProps, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
+          /*istanbul ignore next*/
           var _ref;
 
           if (_isArray) {
@@ -55,33 +47,33 @@ exports["default"] = function () {
 
           var prop = _ref;
 
-          var _name = getName(prop.key);
+          var name = getName(prop.key);
           var isDuplicate = false;
           switch (prop.kind) {
             case "get":
-              if (alreadySeenData[_name] || alreadySeenGetters[_name]) {
+              if (alreadySeenData[name] || alreadySeenGetters[name]) {
                 isDuplicate = true;
               }
-              alreadySeenGetters[_name] = true;
+              alreadySeenGetters[name] = true;
               break;
             case "set":
-              if (alreadySeenData[_name] || alreadySeenSetters[_name]) {
+              if (alreadySeenData[name] || alreadySeenSetters[name]) {
                 isDuplicate = true;
               }
-              alreadySeenSetters[_name] = true;
+              alreadySeenSetters[name] = true;
               break;
             default:
-              if (alreadySeenData[_name] || alreadySeenGetters[_name] || alreadySeenSetters[_name]) {
+              if (alreadySeenData[name] || alreadySeenGetters[name] || alreadySeenSetters[name]) {
                 isDuplicate = true;
               }
-              alreadySeenData[_name] = true;
+              alreadySeenData[name] = true;
           }
 
           if (isDuplicate) {
             // Rely on the computed properties transform to split the property
             // assignment out of the object literal.
             prop.computed = true;
-            prop.key = t.stringLiteral(_name);
+            prop.key = t.stringLiteral(name);
           }
         }
       }
@@ -89,4 +81,21 @@ exports["default"] = function () {
   };
 };
 
-module.exports = exports["default"];
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
+
+/*istanbul ignore next*/
+var t = _interopRequireWildcard(_babelTypes);
+
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function getName(key) {
+  if (t.isIdentifier(key)) {
+    return key.name;
+  }
+  return key.value.toString();
+}
+
+/*istanbul ignore next*/module.exports = exports["default"];

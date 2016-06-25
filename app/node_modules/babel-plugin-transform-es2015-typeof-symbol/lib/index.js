@@ -1,20 +1,20 @@
-/* eslint max-len: 0 */
-
-"use strict";
-
-var _Symbol = require("babel-runtime/core-js/symbol")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function (_ref) {
-  var t = _ref.types;
+var _symbol = require("babel-runtime/core-js/symbol");
 
-  var IGNORE = _Symbol();
+var _symbol2 = _interopRequireDefault(_symbol);
+
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var t = _ref.types;
+
+  var IGNORE = /*istanbul ignore next*/(0, _symbol2.default)();
 
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       Scope: function Scope(_ref2) {
-        var scope = _ref2.scope;
+        /*istanbul ignore next*/var scope = _ref2.scope;
 
         if (!scope.getBinding("Symbol")) {
           return;
@@ -22,13 +22,12 @@ exports["default"] = function (_ref) {
 
         scope.rename("Symbol");
       },
-
-      UnaryExpression: function UnaryExpression(path) {
-        var node = path.node;
-        var parent = path.parent;
+      /*istanbul ignore next*/UnaryExpression: function UnaryExpression(path) {
+        /*istanbul ignore next*/var node = path.node;
+        /*istanbul ignore next*/var parent = path.parent;
 
         if (node[IGNORE]) return;
-        if (path.find(function (path) {
+        if (path.find(function (path) /*istanbul ignore next*/{
           return path.node && !!path.node._generated;
         })) return;
 
@@ -56,4 +55,7 @@ exports["default"] = function (_ref) {
   };
 };
 
-module.exports = exports["default"];
+/*istanbul ignore next*/
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+module.exports = exports["default"]; /* eslint max-len: 0 */
