@@ -67,5 +67,8 @@ function AboutPage(props, {signedIn}): React$Element {
 		</div>
 	);
 }
+AboutPage.contextTypes = {
+	signedIn: React.PropTypes.bool,
+};
 
 export default CSSModules(AboutPage, styles);
