@@ -264,11 +264,11 @@ var instance = {
       buffer.writeUInt32BE(length % 0x100000000, 6);
     }
 
+    frame.payload.copy(buffer, offset);
+
     if (frame.masked) {
       frame.maskingKey.copy(buffer, header);
-      Hybi.mask(frame.payload, frame.maskingKey).copy(buffer, offset);
-    } else {
-      frame.payload.copy(buffer, offset);
+      Hybi.mask(buffer, frame.maskingKey, offset);
     }
 
     this._write(buffer);

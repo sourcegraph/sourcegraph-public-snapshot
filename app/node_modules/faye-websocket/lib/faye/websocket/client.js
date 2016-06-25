@@ -1,7 +1,6 @@
 var util   = require('util'),
     net    = require('net'),
     tls    = require('tls'),
-    crypto = require('crypto'),
     url    = require('url'),
     driver = require('websocket-driver'),
     API    = require('./api'),

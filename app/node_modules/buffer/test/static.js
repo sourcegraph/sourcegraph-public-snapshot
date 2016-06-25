@@ -15,17 +15,3 @@ test('Buffer.isBuffer', function (t) {
   t.equal(B.isBuffer('hey'), false)
   t.end()
 })
-
-test('Buffer.toArrayBuffer', function (t) {
-  var data = [1, 2, 3, 4, 5, 6, 7, 8]
-  if (typeof Uint8Array !== 'undefined') {
-    var result = new B(data).toArrayBuffer()
-    var expected = new Uint8Array(data).buffer
-    for (var i = 0; i < expected.byteLength; i++) {
-      t.equal(result[i], expected[i])
-    }
-  } else {
-    t.pass('No toArrayBuffer() method provided in old browsers')
-  }
-  t.end()
-})

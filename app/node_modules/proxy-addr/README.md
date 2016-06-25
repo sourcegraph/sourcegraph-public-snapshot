@@ -49,7 +49,6 @@ automatically (i.e. `fe80::00ed:1` equals `fe80:0:0:0:0:0:ed:1`).
 ```js
 proxyaddr(req, '::1')
 proxyaddr(req, ['::1/128', 'fe80::/10'])
-proxyaddr(req, ['fe80::/ffc0::'])
 ```
 
 This module will automatically work with IPv4-mapped IPv6 addresses

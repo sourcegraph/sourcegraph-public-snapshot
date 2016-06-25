@@ -82,7 +82,7 @@ First, you need to load the SockJS JavaScript library. For example, you can
 put that in your HTML head:
 
 ```html
-<script src="//cdn.jsdelivr.net/sockjs/1.0.0/sockjs.min.js"></script>
+<script src="//cdn.jsdelivr.net/sockjs/1/sockjs.min.js"></script>
 ```
 
 After the script is loaded you can establish a connection with the
@@ -114,6 +114,8 @@ Similar to the 'WebSocket' API, the 'SockJS' constructor takes one, or more argu
 ```javascript
 var sockjs = new SockJS(url, _reserved, options);
 ```
+
+`url` may contain a query string, if one is desired.
 
 Where `options` is a hash which can contain:
 
@@ -168,7 +170,8 @@ Chrome 6-13     | hixie-76         | xhr-streaming   | xhr-polling
 Chrome 14+      | hybi-10 / rfc6455| xhr-streaming   | xhr-polling
 Firefox <10     | no &Dagger;      | xhr-streaming   | xhr-polling
 Firefox 10+     | hybi-10 / rfc6455| xhr-streaming   | xhr-polling
-Safari 5        | hixie-76         | xhr-streaming   | xhr-polling
+Safari 5.x      | hixie-76         | xhr-streaming   | xhr-polling
+Safari 6+       | rfc6455          | xhr-streaming   | xhr-polling
 Opera 10.70+    | no &Dagger;      | iframe-eventsource | iframe-xhr-polling
 Opera 12.10+    | rfc6455          | xhr-streaming | xhr-polling
 Konqueror       | no               | no          | jsonp-polling
@@ -255,7 +258,7 @@ You should use a version of sockjs-client
 that supports the protocol used by your server. For example:
 
 ```html
-<script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+<script src="//cdn.jsdelivr.net/sockjs/1/sockjs.min.js"></script>
 ```
 
 
@@ -327,9 +330,6 @@ There are various browser quirks which we don't intend to address:
    not a good idea. The other way around should be fine.
  * Long polling is known to cause problems on Heroku, but a
    [workaround for SockJS is available](https://github.com/sockjs/sockjs-node/issues/57#issuecomment-5242187).
- * Don't use "javascript:" links on a page that uses SockJS. For
-   some reason clicking on this type of link breaks XDR/XHR requests
-   on IE (see [#90](https://github.com/sockjs/sockjs-client/issues/90)).
  * SockJS [websocket transport is more stable over SSL](https://github.com/sockjs/sockjs-client/issues/94). If
    you're a serious SockJS user then consider using SSL
    ([more info](http://www.ietf.org/mail-archive/web/hybi/current/msg01605.html)).

@@ -197,3 +197,16 @@ tests['should support custom index file'] = function(test) {
   test.ok(next.called);
   test.done();
 };
+
+tests['should accept html requests based on headers option'] = function(test) {
+  req.headers.accept = '*/*';
+  middleware = historyApiFallback({
+    htmlAcceptHeaders: ['text/html', 'application/xhtml+xml']
+  });
+
+  middleware(req, null, next);
+
+  test.equal(req.url, requestedUrl);
+  test.ok(next.called);
+  test.done();
+};

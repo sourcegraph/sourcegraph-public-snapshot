@@ -71,7 +71,7 @@ function DEFNODE(type, props, methods, base) {
     if (type) {
         ctor.prototype.TYPE = ctor.TYPE = type;
     }
-    if (methods) for (i in methods) if (methods.hasOwnProperty(i)) {
+    if (methods) for (i in methods) if (HOP(methods, i)) {
         if (/^\$/.test(i)) {
             ctor[i.substr(1)] = methods[i];
         } else {
@@ -631,6 +631,13 @@ var AST_Seq = DEFNODE("Seq", "car cdr", {
                 return p.cdr = cell;
             }
             p = p.cdr;
+        }
+    },
+    len: function() {
+        if (this.cdr instanceof AST_Seq) {
+            return this.cdr.len() + 1;
+        } else {
+            return 2;
         }
     },
     _walk: function(visitor) {

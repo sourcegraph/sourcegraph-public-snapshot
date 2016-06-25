@@ -65,8 +65,7 @@ const eslintPreloader = {
 function config(opts) {
 	return Object.assign({}, {
 		resolve: {
-			modulesDirectories: ["node_modules"],
-			root: [`${__dirname}/web_modules`],
+			modules: [`${__dirname}/web_modules`, "node_modules"],
 		},
 	}, opts);
 }

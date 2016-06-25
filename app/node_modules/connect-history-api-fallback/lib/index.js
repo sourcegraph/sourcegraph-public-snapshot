@@ -32,7 +32,7 @@ exports = module.exports = function historyApiFallback(options) {
         'because the client prefers JSON.'
       );
       return next();
-    } else if (!acceptsHtml(headers.accept)) {
+    } else if (!acceptsHtml(headers.accept, options)) {
       logger(
         'Not rewriting',
         req.method,
@@ -86,8 +86,14 @@ function evaluateRewriteRule(parsedUrl, match, rule) {
   });
 }
 
-function acceptsHtml(header) {
-  return header.indexOf('text/html') !== -1 || header.indexOf('*/*') !== -1;
+function acceptsHtml(header, options) {
+  options.htmlAcceptHeaders = options.htmlAcceptHeaders || ['text/html', '*/*'];
+  for (var i = 0; i < options.htmlAcceptHeaders.length; i++) {
+    if (header.indexOf(options.htmlAcceptHeaders[i]) !== -1) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function getLogger(options) {

@@ -133,7 +133,7 @@ describe("applyPluginsParallelBailResult", function() {
 			[1, "a"],
 			[2, "a"],
 			[3, "a"],
-			[0, "ok", undefined],
+			[0, "ok"],
 		]);
 	});
 

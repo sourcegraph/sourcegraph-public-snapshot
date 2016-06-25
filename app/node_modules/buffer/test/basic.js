@@ -2,12 +2,6 @@ if (process.env.OBJECT_IMPL) global.TYPED_ARRAY_SUPPORT = false
 var B = require('../').Buffer
 var test = require('tape')
 
-test('buf.constructor is Buffer', function (t) {
-  var buf = new B([1, 2])
-  t.strictEqual(buf.constructor, B)
-  t.end()
-})
-
 test('instanceof Buffer', function (t) {
   var buf = new B([1, 2])
   t.ok(buf instanceof B)

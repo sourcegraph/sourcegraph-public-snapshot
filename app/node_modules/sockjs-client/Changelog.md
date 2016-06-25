@@ -1,3 +1,18 @@
+1.1.1
+==
+
+ * Do not pass `protocols` or `options` arguments to browser WebSocket constructor - #309
+
+1.1.0
+==
+
+ * Fix IE7/8 usage of `console.log` which does not have `apply` - #279
+ * Remove `dbg` global variable - #282
+ * Bump `faye-websocket` version to `0.11.0` - #267
+ * Optimize `arguments` usage - #263
+ * Add sourcemap file to dist folder - #237
+ * Add way to transparently pass transport-specific options - #272
+
 1.0.3
 ==
 

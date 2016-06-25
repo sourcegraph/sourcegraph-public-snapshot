@@ -158,6 +158,42 @@ describe("Watchpack", function() {
 		});
 	});
 
+	it("should watch a directory (delete and recreate file)", function(done) {
+		var w = new Watchpack({
+			aggregateTimeout: 1000
+		});
+		var changeEvents = [];
+		w.on("change", function(file) {
+			if(changeEvents[changeEvents.length - 1] === file)
+				return;
+			changeEvents.push(file);
+		});
+		w.on("aggregated", function(changes) {
+			changes.should.be.eql([path.join(fixtures, "dir")]);
+			changeEvents.should.be.eql([
+				path.join(fixtures, "dir", "a"),
+				path.join(fixtures, "dir", "b"),
+				path.join(fixtures, "dir", "a")
+			]);
+			w.close();
+			done();
+		});
+		testHelper.dir("dir");
+		testHelper.file(path.join("dir", "a"));
+		testHelper.tick(function() {
+			w.watch([], [path.join(fixtures, "dir")]);
+			testHelper.tick(function() {
+				testHelper.remove(path.join("dir", "a"));
+				testHelper.tick(function() {
+					testHelper.file(path.join("dir", "b"));
+					testHelper.tick(function() {
+						testHelper.file(path.join("dir", "a"));
+					});
+				});
+			});
+		});
+	});
+
 	it("should watch a directory (delete directory)", function(done) {
 		var w = new Watchpack({
 			aggregateTimeout: 1000

@@ -1,4 +1,5 @@
 ui: mocha-qunit
+tunnel: ngrok
 browsers:
   - name: chrome
     version: latest
@@ -8,3 +9,5 @@ browsers:
     version: latest
   - name: ie
     version: 9..latest
+  - name: microsoftedge
+    version: latest

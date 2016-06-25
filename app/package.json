@@ -44,8 +44,8 @@
     "react-addons-perf": "^15.1.0",
     "react-addons-test-utils": "^15.1.0",
     "style-loader": "^0.12.3",
-    "webpack": "1.12.13",
-    "webpack-dev-server": "1.14.1"
+    "webpack": "^2.1.0-beta.14",
+    "webpack-dev-server": "^2.1.0-beta.0"
   },
   "dependencies": {
     "abab": "^1.0.3",

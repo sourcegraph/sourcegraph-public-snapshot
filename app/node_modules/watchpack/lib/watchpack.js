@@ -11,6 +11,7 @@ function Watchpack(options) {
 	if(!options.aggregateTimeout) options.aggregateTimeout = 200;
 	this.options = options;
 	this.watcherOptions = {
+		ignored: options.ignored,
 		poll: options.poll
 	};
 	this.fileWatchers = [];

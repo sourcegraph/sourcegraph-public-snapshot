@@ -7,6 +7,7 @@ if (!process.browser) {
   describe('test against our shim', function () {
     test(ourProcess);
   });
+  vmtest();
 }
 function test (ourProcess) {
     describe('test arguments', function (t) {
@@ -63,4 +64,80 @@ function test (ourProcess) {
         });
         });
     });
+
+    describe('rename globals', function (t) {
+      var oldTimeout = setTimeout;
+      var oldClear = clearTimeout;
+
+      it('clearTimeout', function (done){
+
+        var ok = true;
+        clearTimeout = function () {
+          ok = false;
+        }
+        ourProcess.nextTick(function () {
+          setTimeout(function () {
+            clearTimeout = oldClear;
+            var err;
+            try {
+              assert.ok(ok, 'fake clearTimeout ran');
+            } catch (e) {
+              err = e;
+            }
+            done(err);
+          }, 50);
+        });
+      });
+      it('just setTimeout', function (done){
+
+
+        setTimeout = function () {
+          setTimeout = oldTimeout;
+          try {
+            assert.ok(false, 'fake setTimeout called')
+          } catch (e) {
+            done(e);
+          }
+
+        }
+
+        ourProcess.nextTick(function () {
+          setTimeout = oldTimeout;
+          done();
+        });
+      });
+    });
+}
+function vmtest() {
+  var vm = require('vm');
+  var fs = require('fs');
+  var process =  fs.readFileSync('./browser.js', {encoding: 'utf8'});
+
+
+  describe('should work in vm in strict mode with no globals', function () {
+    it('should parse', function (done) {
+      var str = '"use strict";var module = {exports:{}};';
+      str += process;
+      str += 'this.works = process.browser;';
+      var script = new vm.Script(str);
+      var context = {
+        works: false
+      };
+      script.runInNewContext(context);
+      assert.ok(context.works);
+      done();
+    });
+    it('setTimeout throws error', function (done) {
+      var str = '"use strict";var module = {exports:{}};';
+      str += process;
+      str += 'try {process.nextTick(function () {})} catch (e){this.works = e;}';
+      var script = new vm.Script(str);
+      var context = {
+        works: false
+      };
+      script.runInNewContext(context);
+      assert.ok(context.works);
+      done();
+    });
+  });
 }

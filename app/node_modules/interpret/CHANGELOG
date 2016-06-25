@@ -1,3 +1,8 @@
+v1.0.0:
+  date: 2015-11-18
+  changes:
+    - add support for babel-register
+    - go stable!
 v0.6.6:
   date: 2015-09-21
   changes:
