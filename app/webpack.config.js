@@ -51,6 +51,12 @@ if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	);
 }
 
+if (process.env.NODE_ENV === "development") {
+	commonPlugins.push(
+		new webpack.HotModuleReplacementPlugin()
+	);
+}
+
 const webpackDevServerPort = 8080;
 if (process.env.WEBPACK_DEV_SERVER_URL) {
 	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
@@ -74,7 +80,12 @@ const browserConfig = {
 	name: "browser",
 	target: "web",
 	cache: true,
-	entry: "./web_modules/sourcegraph/init/browser.js",
+	entry: [
+		`webpack-dev-server/client?http://localhost:${webpackDevServerPort}`,
+		"webpack/hot/only-dev-server",
+		"react-hot-loader/patch",
+		"./web_modules/sourcegraph/init/browser.js",
+	],
 	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
 		path: `${__dirname}/assets`,
@@ -104,6 +115,8 @@ const browserConfig = {
 		port: webpackDevServerPort,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
+		quiet: true,
+		hot: true,
 	},
 };
 

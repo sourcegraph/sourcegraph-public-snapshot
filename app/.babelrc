@@ -1,6 +1,7 @@
 {
 	"presets": ["es2015-webpack", "react"],
 	"plugins": [
+		"react-hot-loader/babel",
 		"transform-flow-strip-types",
 		"transform-object-rest-spread",
 		"syntax-trailing-function-commas",

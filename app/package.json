@@ -44,6 +44,7 @@
     "postcss-modules-values": "^1.1.3",
     "react-addons-perf": "^15.1.0",
     "react-addons-test-utils": "^15.1.0",
+    "react-hot-loader": "^3.0.0-beta.2",
     "style-loader": "^0.13.1",
     "webpack": "^2.1.0-beta.14",
     "webpack-dev-server": "^2.1.0-beta.0"
