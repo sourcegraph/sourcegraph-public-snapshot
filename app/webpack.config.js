@@ -24,7 +24,7 @@ if (process.env.NODE_ENV === "development") {
 	}
 }
 
-const commonPlugins = [
+const plugins = [
 	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
 	new webpack.ProvidePlugin({
 		fetch: "imports?this=>global!exports?global.fetch!isomorphic-fetch",
@@ -38,10 +38,12 @@ const commonPlugins = [
 	new webpack.IgnorePlugin(/\.json$/),
 	new webpack.IgnorePlugin(/\_test\.js$/),
 	new webpack.optimize.OccurrenceOrderPlugin(),
+	new FlowStatusWebpackPlugin({quietSuccess: true}),
+	new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 ];
 
 if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
-	commonPlugins.push(
+	plugins.push(
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
 			compress: {
@@ -52,7 +54,7 @@ if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 }
 
 if (process.env.NODE_ENV === "development") {
-	commonPlugins.push(
+	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
 	);
 }
@@ -62,21 +64,7 @@ if (process.env.WEBPACK_DEV_SERVER_URL) {
 	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
 }
 
-const eslintPreloader = {
-	test:	/\.js$/,
-	exclude: [`${__dirname}/node_modules`],
-	loader: "eslint-loader",
-};
-
-function config(opts) {
-	return Object.assign({}, {
-		resolve: {
-			modules: [`${__dirname}/web_modules`, "node_modules"],
-		},
-	}, opts);
-}
-
-const browserConfig = {
+module.exports = {
 	name: "browser",
 	target: "web",
 	cache: true,
@@ -86,18 +74,20 @@ const browserConfig = {
 		"react-hot-loader/patch",
 		"./web_modules/sourcegraph/init/browser.js",
 	],
+	resolve: {
+			modules: [`${__dirname}/web_modules`, "node_modules"],
+	},
 	devtool: (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) ? "source-map" : "eval",
 	output: {
 		path: `${__dirname}/assets`,
 		filename: "[name].browser.js",
 		sourceMapFilename: "[file].map",
 	},
-	plugins: commonPlugins.concat([
-		new FlowStatusWebpackPlugin({quietSuccess: true}),
-		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
-	]),
+	plugins: plugins,
 	module: {
-		preLoaders: [eslintPreloader],
+		preLoaders: [
+			{test:	/\.js$/, exclude: [`${__dirname}/node_modules`], loader: "eslint-loader"},
+		],
 		loaders: [
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
@@ -119,5 +109,3 @@ const browserConfig = {
 		hot: true,
 	},
 };
-
-module.exports = config(browserConfig);
