@@ -1,5 +1,4 @@
 const webpack = require("webpack");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
 const log = require("logalot");
@@ -85,7 +84,6 @@ const browserConfig = {
 	},
 	plugins: commonPlugins.concat([
 		new FlowStatusWebpackPlugin({restartFlow: false}),
-		new ExtractTextPlugin("[name].css", {allChunks: true, ignoreOrder: true}),
 		new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 	]),
 	module: {
@@ -97,7 +95,7 @@ const browserConfig = {
 			{test: /\.svg$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{
 				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader"),
+				loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss",
 			},
 		],
 		noParse: /\.min\.js$/,
