@@ -97,8 +97,7 @@ const browserConfig = {
 			{test: /\.svg$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{
 				test: /\.css$/,
-				loader: require.resolve("./non-caching-extract-text-loader") + "?{remove:true}!" + // eslint-disable-line prefer-template
-						"css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader",
+				loader: ExtractTextPlugin.extract("css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader"),
 			},
 		],
 		noParse: /\.min\.js$/,
