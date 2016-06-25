@@ -3,7 +3,7 @@
     "node": true
   },
   "rules": {
-    "strict": false,
-    "quotes": "single"
+    "strict": [2, "never"],
+    "quotes": [2, "single"]
   }
 }

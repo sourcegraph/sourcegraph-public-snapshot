@@ -52,8 +52,12 @@ module.exports = function(context) {
 
     JSXAttribute: function(node) {
       if (isTagName(node.parent.name.name) && isDangerous(node.name.name)) {
-        context.report(node, DANGEROUS_MESSAGE, {
-          name: node.name.name
+        context.report({
+          node: node,
+          message: DANGEROUS_MESSAGE,
+          data: {
+            name: node.name.name
+          }
         });
       }
     }

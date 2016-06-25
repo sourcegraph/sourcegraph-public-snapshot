@@ -2,7 +2,7 @@
 
 <a name="type-check" />
 
-`type-check` is a library which allows you to check the types of JavaScript values at runtime with a Haskell like type syntax. It is great for checking external input, for testing, or even for adding a bit of safety to your internal code. It is a major component of [levn](https://github.com/gkz/levn). MIT license. Version 0.3.1. Check out the [demo](http://gkz.github.io/type-check/).
+`type-check` is a library which allows you to check the types of JavaScript values at runtime with a Haskell like type syntax. It is great for checking external input, for testing, or even for adding a bit of safety to your internal code. It is a major component of [levn](https://github.com/gkz/levn). MIT license. Version 0.3.2. Check out the [demo](http://gkz.github.io/type-check/).
 
 For updates on `type-check`, [follow me on twitter](https://twitter.com/gkzahariev).
 

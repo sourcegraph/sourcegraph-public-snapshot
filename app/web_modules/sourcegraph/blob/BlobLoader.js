@@ -49,6 +49,10 @@ export type Helper = {
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
 	class BlobLoader extends Container {
+		static propTypes = {
+			route: React.PropTypes.object.isRequired,
+		};
+
 		_helpers: ?Array<Helper>;
 
 		constructor(props) {

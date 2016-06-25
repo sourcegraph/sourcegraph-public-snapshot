@@ -43,7 +43,10 @@ module.exports = Components.detect(function(context, components) {
         if (!list.hasOwnProperty(component) || isIgnored(list[component]) || ++i === 1) {
           continue;
         }
-        context.report(list[component].node, MULTI_COMP_MESSAGE);
+        context.report({
+          node: list[component].node,
+          message: MULTI_COMP_MESSAGE
+        });
       }
     }
   };

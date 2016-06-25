@@ -5,17 +5,15 @@
 'use strict';
 
 var variableUtil = require('../util/variable');
+var pragmaUtil = require('../util/pragma');
 
 // ------------------------------------------------------------------------------
 // Rule Definition
 // ------------------------------------------------------------------------------
 
-var JSX_ANNOTATION_REGEX = /^\*\s*@jsx\s+([^\s]+)/;
-
 module.exports = function(context) {
 
-  var config = context.options[0] || {};
-  var id = config.pragma || 'React';
+  var pragma = pragmaUtil.getFromContext(context);
 
   // --------------------------------------------------------------------------
   // Public
@@ -24,15 +22,11 @@ module.exports = function(context) {
   return {
 
     JSXOpeningElement: function() {
-      variableUtil.markVariableAsUsed(context, id);
+      variableUtil.markVariableAsUsed(context, pragma);
     },
 
     BlockComment: function(node) {
-      var matches = JSX_ANNOTATION_REGEX.exec(node.value);
-      if (!matches) {
-        return;
-      }
-      id = matches[1].split('.')[0];
+      pragma = pragmaUtil.getFromNode(node) || pragma;
     }
 
   };

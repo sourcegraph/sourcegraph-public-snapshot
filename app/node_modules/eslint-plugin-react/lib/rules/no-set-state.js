@@ -27,7 +27,10 @@ module.exports = function(context) {
       var ancestors = context.getAncestors(callee);
       for (var i = 0, j = ancestors.length; i < j; i++) {
         if (ancestors[i].type === 'Property' || ancestors[i].type === 'MethodDefinition') {
-          context.report(callee, 'Do not use setState');
+          context.report({
+            node: callee,
+            message: 'Do not use setState'
+          });
           break;
         }
       }

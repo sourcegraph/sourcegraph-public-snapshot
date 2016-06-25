@@ -9,3 +9,5 @@ maxlen 100
 ass
 nomen
 plusplus
+
+predef+ WeakMap

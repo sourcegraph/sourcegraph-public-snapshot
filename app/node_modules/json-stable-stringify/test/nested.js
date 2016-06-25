@@ -26,3 +26,10 @@ test('cyclic (specifically allowed)', function (t) {
     one.two = two;
     t.equal(stringify(one, {cycles:true}), '{"a":1,"two":{"a":2,"one":"__cycle__"}}');
 });
+
+test('repeated non-cyclic value', function(t) {
+    t.plan(1);
+    var one = { x: 1 };
+    var two = { a: one, b: one };
+    t.equal(stringify(two), '{"a":{"x":1},"b":{"x":1}}');
+});

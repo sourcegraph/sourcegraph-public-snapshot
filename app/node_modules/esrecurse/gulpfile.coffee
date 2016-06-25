@@ -42,7 +42,7 @@ ESLINT_OPTION =
         'no-shadow': 0
         'no-new': 0
         'no-underscore-dangle': 0
-        'no-multi-spaces': false
+        'no-multi-spaces': 0
         'no-native-reassign': 0
         'no-loop-func': 0
     env:

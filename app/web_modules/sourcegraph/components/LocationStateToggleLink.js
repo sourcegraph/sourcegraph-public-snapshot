@@ -48,6 +48,11 @@ LocationStateToggleLink.propTypes = {
 
 	// onToggle is called when the link is toggled ON.
 	onToggle: React.PropTypes.func,
+
+	// target is the <a target=""> attribute value.
+	target: React.PropTypes.string,
+
+	children: React.PropTypes.any,
 };
 LocationStateToggleLink.contextTypes = {
 	router: React.PropTypes.object.isRequired,

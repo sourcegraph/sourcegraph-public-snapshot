@@ -30,7 +30,10 @@ module.exports = function (context) {
         }
 
         if (props.hasOwnProperty(name)) {
-          context.report(decl, 'No duplicate props allowed');
+          context.report({
+            node: decl,
+            message: 'No duplicate props allowed'
+          });
         } else {
           props[name] = 1;
         }

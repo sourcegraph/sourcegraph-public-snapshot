@@ -204,6 +204,7 @@ BlobLine.propTypes = {
 		if (typeof props.lineNumber !== "undefined" && (typeof props.oldLineNumber !== "undefined" || typeof props.newLineNumber !== "undefined")) {
 			return new Error("If lineNumber is set, then oldLineNumber/newLineNumber (which are for diff hunks) may not be used");
 		}
+		return null;
 	},
 
 	// Optional: for linking line numbers to the file they came from (e.g., in
@@ -223,6 +224,7 @@ BlobLine.propTypes = {
 	// be aligned to the contents.
 	startByte: (props, propName, componentName) => {
 		if (props.annotations) return React.PropTypes.number.isRequired(props, propName, componentName);
+		return null;
 	},
 	contents: React.PropTypes.string,
 	annotations: React.PropTypes.array,

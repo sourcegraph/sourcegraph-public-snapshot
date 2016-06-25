@@ -69,7 +69,8 @@ class CoverageDrilldown extends Container {
 			const lastDay = this.props.data[this.props.data.length - 1];
 			for (const source of lastDay.Sources) {
 				if (source.Repo === repo) {
-					return this._drilldown(source);
+					this._drilldown(source);
+					return;
 				}
 			}
 		}

@@ -20,6 +20,7 @@ export default function withDef(Component) {
 			rev: React.PropTypes.string,
 			params: React.PropTypes.object.isRequired,
 			isCloning: React.PropTypes.bool,
+			def: React.PropTypes.string,
 		};
 
 		stores() { return [DefStore, RepoStore]; }

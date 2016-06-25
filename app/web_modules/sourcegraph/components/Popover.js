@@ -65,6 +65,7 @@ Popover.propTypes = {
 			return new Error("Popover must be constructed with exactly two children.");
 			// TODO(chexee): make this accomodate multiple lengths!
 		}
+		return null;
 	},
 	left: React.PropTypes.bool, // position popover content to the left (default: right)
 	popoverClassName: React.PropTypes.string,
