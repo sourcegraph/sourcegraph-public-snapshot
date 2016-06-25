@@ -25,6 +25,7 @@ export default function withFileBlob(Component) {
 			rev: React.PropTypes.string,
 			commitID: React.PropTypes.string,
 			params: React.PropTypes.object.isRequired,
+			path: React.PropTypes.string,
 		};
 
 		stores() {
