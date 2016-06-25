@@ -101,12 +101,16 @@
 }
 
 .translation-dropdown {
-	composes: bg-cool-pale-gray-5 from colors;
+	composes: blue bg-cool-pale-gray-5 from colors;
 	composes: fw6 from typography;
 	composes: pt2 pl3 pr3 pb2 from base;
 	border-bottom-right-radius: 2px;
 	border-bottom-left-radius: 2px;
 	float: right;
+}
+@value c_dark-blue from colors;
+.translation-dropdown:hover {
+	color: c_dark-blue;
 }
 
 .refs-container {

@@ -2,18 +2,11 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value menu "sourcegraph/components/styles/menu.css";
 
-@value c_dark-blue from colors;
-
 .wrapper {
-	composes: blue from colors;
 	display: inline-block;
 	line-height: 1.45;
 	cursor: pointer;
 	vertical-align: middle;
-}
-
-.wrapper:hover{
-	color: c_dark-blue;
 }
 
 .wrapper-disabled {
