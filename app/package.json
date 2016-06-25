@@ -71,7 +71,7 @@
   },
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
-    "check": "./node_modules/.bin/flow check",
+    "check": "flow check",
     "build": "npm run check && env NODE_ENV=production node ./node_modules/.bin/webpack",
     "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules",
     "test": "npm run check && npm run lint && npm run test-unit",
