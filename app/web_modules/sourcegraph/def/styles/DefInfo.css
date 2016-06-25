@@ -106,6 +106,7 @@
 	composes: pt2 pl3 pr3 pb2 from base;
 	border-bottom-right-radius: 2px;
 	border-bottom-left-radius: 2px;
+	float: right;
 }
 
 .refs-container {

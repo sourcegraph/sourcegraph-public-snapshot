@@ -7,7 +7,6 @@
 .wrapper {
 	composes: blue from colors;
 	display: inline-block;
-	float: right;
 	line-height: 1.45;
 	cursor: pointer;
 	vertical-align: middle;
