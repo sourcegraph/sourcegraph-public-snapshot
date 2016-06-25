@@ -1,1 +1,0 @@
-a{box-shadow:#fff 0 0 0!important}b{box-shadow:rgba(255,255,255,.5)0 0 0!important}c{background:#fff no-repeat}d{background:linear-gradient(bottom,#d1d1d1 10%,#fafafa 55%)}

@@ -1,2 +1,0 @@
-['clazz', 
-  ['ident', 'abc']]
