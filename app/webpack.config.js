@@ -1,15 +1,14 @@
-var webpack = require("webpack");
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
-var autoprefixer = require("autoprefixer");
-var glob = require("glob");
-var url = require("url");
-var log = require("logalot");
-var FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
+const webpack = require("webpack");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const autoprefixer = require("autoprefixer");
+const url = require("url");
+const log = require("logalot");
+const FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
 
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
-	const flow = require('flow-bin/lib');
-	flow.run(['--version'], function (err) {
+	const flow = require("flow-bin/lib");
+	flow.run(["--version"], (err) => {
 		if (err) {
 			log.error(err.message);
 			log.error("ERROR: flow is not properly installed. Run 'rm app/node_modules/flow-bin/vendor/flow; make dep' to fix.");
@@ -26,7 +25,7 @@ if (process.env.NODE_ENV === "development") {
 	}
 }
 
-var commonPlugins = [
+const commonPlugins = [
 	new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, "node-noop"),
 	new webpack.ProvidePlugin({
 		fetch: "imports?this=>global!exports?global.fetch!isomorphic-fetch",
@@ -53,14 +52,14 @@ if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	);
 }
 
-var webpackDevServerPort = 8080;
+const webpackDevServerPort = 8080;
 if (process.env.WEBPACK_DEV_SERVER_URL) {
 	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
 }
 
-var eslintPreloader = {
+const eslintPreloader = {
 	test:	/\.js$/,
-	exclude: [__dirname+"/node_modules"],
+	exclude: [`${__dirname}/node_modules`],
 	loader: "eslint-loader",
 };
 
@@ -70,16 +69,16 @@ function config(opts) {
 			modulesDirectories: ["web_modules", "node_modules"],
 		},
 	}, opts);
-};
+}
 
-var browserConfig = {
+const browserConfig = {
 	name: "browser",
 	target: "web",
 	cache: true,
 	entry: "./web_modules/sourcegraph/init/browser.js",
 	devtool: "source-map",
 	output: {
-		path: __dirname+"/assets",
+		path: `${__dirname}/assets`,
 		filename: "[name].browser.js",
 		sourceMapFilename: "[file].map",
 	},
@@ -97,7 +96,7 @@ var browserConfig = {
 			{test: /\.svg$/, loader: "file-loader?name=fonts/[name].[ext]"},
 			{
 				test: /\.css$/,
-				loader: require.resolve("./non-caching-extract-text-loader") + "?{remove:true}!" +
+				loader: require.resolve("./non-caching-extract-text-loader") + "?{remove:true}!" + // eslint-disable-line prefer-template
 						"css-loader?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader",
 			},
 		],
