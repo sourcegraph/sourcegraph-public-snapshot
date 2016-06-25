@@ -88,7 +88,7 @@ module.exports = {
 	plugins: plugins,
 	module: {
 		preLoaders: [
-			{test:	/\.js$/, exclude: [`${__dirname}/node_modules`], loader: "eslint-loader"},
+			{test:	/\.js$/, exclude: /node_modules/, loader: "eslint-loader"},
 		],
 		loaders: [
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
