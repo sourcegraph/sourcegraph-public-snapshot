@@ -3,6 +3,7 @@ const autoprefixer = require("autoprefixer");
 const url = require("url");
 const log = require("logalot");
 const FlowStatusWebpackPlugin = require("flow-status-webpack-plugin");
+const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
 // Check dev dependencies.
 if (process.env.NODE_ENV === "development") {
@@ -40,6 +41,7 @@ const plugins = [
 	new webpack.optimize.OccurrenceOrderPlugin(),
 	new FlowStatusWebpackPlugin({quietSuccess: true}),
 	new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
+	new ProgressBarPlugin(),
 ];
 
 if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
