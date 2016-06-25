@@ -55,7 +55,8 @@ if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	);
 }
 
-if (process.env.NODE_ENV === "development") {
+const useHot = process.env.NODE_ENV !== "production" || process.env.WEBPACK_QUICK;
+if (useHot) {
 	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
 	);
@@ -71,9 +72,6 @@ module.exports = {
 	target: "web",
 	cache: true,
 	entry: [
-		`webpack-dev-server/client?http://localhost:${webpackDevServerPort}`,
-		"webpack/hot/only-dev-server",
-		"react-hot-loader/patch",
 		"./web_modules/sourcegraph/init/browser.js",
 	],
 	resolve: {
@@ -108,6 +106,14 @@ module.exports = {
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 		quiet: true,
-		hot: true,
+		hot: useHot,
 	},
 };
+
+if (useHot) {
+	module.exports.entry.unshift("webpack/hot/only-dev-server");
+	module.exports.entry.unshift("react-hot-loader/patch");
+}
+if (process.env.NODE_ENV !== "production") {
+	module.exports.entry.unshift(`webpack-dev-server/client?http://localhost:${webpackDevServerPort}`);
+}
