@@ -1,53 +1,46 @@
+// @flow
+
 import React from "react";
 
-import Component from "sourcegraph/Component";
 import Loader from "./Loader";
 import CSSModules from "react-css-modules";
 import styles from "./styles/button.css";
 
-class Button extends Component {
+function Button({
+	block = false,
+	outline = false,
+	size,
+	disabled = false,
+	loading = false,
+	color = "default",
+	onClick,
+	imageUrl,
+	children,
+	...props,
+}: {
+	block: bool, // display:inline-block by default; use block for full-width buttons
+	outline: bool, // solid by default
+	size: "small" | "large",
+	disabled: bool,
+	loading: bool,
+	color: "blue" | "purple" | "green" | "red" | "orange",
+	onClick?: Function,
+	imageUrl?: string,
+	children: React$Element | Array<React$Element>,
+}) {
+	let style = `${outline ? "outline-" : "solid-"}${color}`;
+	if (disabled || loading) style = `${style} disabled`;
+	if (block) style = `${style} block`;
+	style = `${style} ${size ? size : ""}`;
 
-	static propTypes = {
-		block: React.PropTypes.bool, // display:inline-block by default; use block for full-width buttons
-		outline: React.PropTypes.bool, // solid by default
-		size: React.PropTypes.string, // "small", "large"
-		disabled: React.PropTypes.bool,
-		loading: React.PropTypes.bool,
-		color: React.PropTypes.string, // "blue", "purple", "green", "red", "orange"
-		onClick: React.PropTypes.func,
-		imageUrl: React.PropTypes.string,
-	};
-
-	static defaultProps = {
-		color: "default",
-	};
-
-	constructor(props) {
-		super(props);
-	}
-
-	reconcileState(state, props) {
-		Object.assign(state, props);
-	}
-
-	render() {
-		const {color, outline, disabled, block, size, loading, children, onClick, imageUrl} = this.state;
-
-		let style = `${outline ? "outline-" : "solid-"}${color}`;
-		if (disabled || loading) style = `${style} disabled`;
-		if (block) style = `${style} block`;
-		style = `${style} ${size ? size : ""}`;
-
-		return (
-			<button {...this.props} styleName={style}
-				onClick={onClick}>
-				{imageUrl ? <img styleName="button-image" src={imageUrl} /> : ""}
-				{loading && <Loader stretch={Boolean(block)} {...this.props}/>}
-				{!loading && children}
-			</button>
-		);
-	}
+	return (
+		<button {...props} styleName={style}
+			onClick={onClick}>
+			{imageUrl ? <img styleName="button-image" src={imageUrl} /> : ""}
+			{loading && <Loader stretch={Boolean(block)} {...props}/>}
+			{!loading && children}
+		</button>
+	);
 }
-
 
 export default CSSModules(Button, styles, {allowMultiple: true});
