@@ -11,6 +11,7 @@ import * as context from "sourcegraph/app/context";
 import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
 import shouldUpdateScroll from "sourcegraph/app/shouldUpdateScroll";
 import {AppContainer} from "react-hot-loader";
+import Redbox from "redbox-react";
 
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
@@ -53,7 +54,17 @@ function matchWithRedirectHandling(recursed) {
 			return;
 		}
 
-		setTimeout(() => ReactDOM.render(<AppContainer><Router key={hotReloadCounter} {...renderProps} render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} /></AppContainer>, rootEl));
+		setTimeout(() => {
+			ReactDOM.render(
+				<AppContainer errorReporter={Redbox}>
+					<Router
+						key={hotReloadCounter}
+						{...renderProps}
+						render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />
+				</AppContainer>,
+				rootEl,
+			);
+		});
 	});
 }
 
