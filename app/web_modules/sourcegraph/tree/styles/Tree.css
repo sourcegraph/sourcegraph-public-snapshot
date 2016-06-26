@@ -2,7 +2,6 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
 @value grid "sourcegraph/components/styles/_grid.css";
-@value tooltips "sourcegraph/components/styles/tooltips.css";
 @value breadcrumb "sourcegraph/components/styles/breadcrumb.css";
 @value animation "sourcegraph/components/styles/animation.css";
 
