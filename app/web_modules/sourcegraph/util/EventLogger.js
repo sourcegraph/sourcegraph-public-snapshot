@@ -127,7 +127,7 @@ export class EventLogger {
 
 			if (authInfo) {
 				if (this._amplitude && authInfo.Login) this._amplitude.setUserId(authInfo.Login || null);
-				if (window.ga && authInfo.Login) window.ga("set", "user_id", authInfo.Login);
+				if (window.ga && authInfo.Login) window.ga("set", "userId", authInfo.Login);
 				if (authInfo.UID) this.setIntercomProperty("user_id", authInfo.UID.toString());
 				if (authInfo.IntercomHash) this.setIntercomProperty("user_hash", authInfo.IntercomHash);
 				if (this._fullStory && authInfo.Login) {
@@ -157,6 +157,14 @@ export class EventLogger {
 		this._primaryEmail = primaryEmail;
 	}
 
+
+	getAmplitudeIdentificationProps() {
+		if (!this._amplitude || !this._amplitude.options) {
+			return null;
+		}
+
+		return {detail: {deviceId: this._amplitude.options.deviceId, userId: UserStore.activeAuthInfo() ? UserStore.activeAuthInfo().Login : null}};
+	}
 	// sets current user's properties
 	setUserProperty(property, value) {
 		this._amplitude.identify(new this._amplitude.Identify().set(property, value));
@@ -336,6 +344,8 @@ export function withViewEventsLogged(Component: ReactClass): ReactClass {
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
 				this._logView(nextProps.routes, nextProps.location);
+				// $FlowHack
+				document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps()));
 			}
 
 			this._checkEventQuery();

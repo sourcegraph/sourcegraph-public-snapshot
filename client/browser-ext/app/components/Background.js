@@ -149,6 +149,12 @@ export default class Background extends React.Component {
 
 			this._renderDefInfo(this.props, urlProps);
 		});
+
+		chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
+			if (identity) {
+				EventLogger.updateAmplitudePropsForUser(identity);
+			}
+		})
 	}
 
 	_refreshVCS() {

@@ -165,8 +165,20 @@ function injectModules() {
 	}
 }
 
-window.addEventListener("load", injectModules);
+window.addEventListener("load", () => {
+	injectModules();
+	chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
+		if (identity) EventLogger.updateAmplitudePropsForUser(identity);
+	});
+});
 document.addEventListener("pjax:success", () => {
 	hideSearchFrame();
 	injectModules();
+});
+
+document.addEventListener("sourcegraph:identify", (ev) => {
+	if (ev && ev.detail) {
+		EventLogger.updateAmplitudePropsForUser(ev.detail);
+		chrome.runtime.sendMessage(null, {type: "setIdentity", identity: ev.detail}, {});
+	}
 });

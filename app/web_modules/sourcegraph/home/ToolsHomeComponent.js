@@ -98,6 +98,7 @@ class ToolsHomeComponent extends Component {
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOOLS, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: AnalyticsConstants.PAGE_TOOLS});
 		this.context.eventLogger.setUserProperty("installed_chrome_extension", "true");
 		this.setState({showChromeExtensionCTA: false});
+		setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", this.context.eventLogger.getAmplitudeIdentificationProps())), 10);
 	}
 
 	_failHandler() {

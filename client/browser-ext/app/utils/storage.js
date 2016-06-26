@@ -1,5 +1,4 @@
 function saveState(state) {
-	delete state.text; // migrate unused data
 	chrome.runtime.sendMessage(null, {type: "set", state: JSON.stringify(state)}, {});
 }
 

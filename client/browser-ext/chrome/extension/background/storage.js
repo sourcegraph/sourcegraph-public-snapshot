@@ -12,5 +12,13 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
 		return true; // signal asynchronous response
 	} else if (message.type === "set") {
 		chrome.storage.local.set({state: message.state});
+	} else if (message.type === "setIdentity") {
+		chrome.storage.local.set({identity: message.identity});
+	} else if (message.type === "getIdentity") {
+		chrome.storage.local.get("identity", (obj) => {
+			const {identity} = obj;
+			cb(identity);
+		});
+		return true;
 	}
 });
