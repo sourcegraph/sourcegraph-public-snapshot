@@ -65,10 +65,20 @@ if (useHot) {
 	);
 }
 
-const webpackDevServerPort = 8080;
+// port to listen
+var webpackDevServerPort = 8080;
 if (process.env.WEBPACK_DEV_SERVER_URL) {
 	webpackDevServerPort = url.parse(process.env.WEBPACK_DEV_SERVER_URL).port;
 }
+// address to listen on
+const webpackDevServerAddr = process.env.WEBPACK_DEV_SERVER_ADDR || "127.0.0.1";
+// public address of webpack dev server
+var publicWebpackDevServer = "localhost:8080";
+if (process.env.PUBLIC_WEBPACK_DEV_SERVER_URL) {
+	var uStruct = url.parse(process.env.PUBLIC_WEBPACK_DEV_SERVER_URL);
+	publicWebpackDevServer = uStruct.host;
+}
+
 
 module.exports = {
 	name: "browser",
@@ -105,6 +115,8 @@ module.exports = {
 	},
 	postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
 	devServer: {
+		host: webpackDevServerAddr,
+		public: publicWebpackDevServer,
 		port: webpackDevServerPort,
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
@@ -118,5 +130,5 @@ if (useHot) {
 	module.exports.entry.unshift("react-hot-loader/patch");
 }
 if (process.env.NODE_ENV !== "production") {
-	module.exports.entry.unshift(`webpack-dev-server/client?http://localhost:${webpackDevServerPort}`);
+	module.exports.entry.unshift(`webpack-dev-server/client?http://${publicWebpackDevServer}`);
 }
