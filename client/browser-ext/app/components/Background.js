@@ -91,19 +91,23 @@ export default class Background extends React.Component {
 		}
 	}
 
-	_cleanupAndRefresh() {
-		// Clean up any popovers on the page before refreshing (after pjax:success).
-		// Otherwise, popovers may remain on the page because the anchored elem's mousout
-		// event may not have fired (and the elem may no longer be on the page).
+	removePopovers() {
 		const popovers = document.querySelectorAll(".sg-popover")
 		for (let i = 0; i < popovers.length; ++i) {
 			popovers[i].remove();
 		}
+	}
 
+	_cleanupAndRefresh() {
+		// Clean up any popovers on the page before refreshing (after pjax:success).
+		// Otherwise, popovers may remain on the page because the anchored elem's mousout
+		// event may not have fired (and the elem may no longer be on the page).
+		this.removePopovers();
 		this._refresh();
 	}
 
 	_popstateUpdate() {
+		this.removePopovers();
 		// If the user navigates "back" in the browser, there will not necessarily
 		// be a pjax:success event; it may be that the user is jumping back to
 		// a previous definition (even in the same file) in which case re-rendering
