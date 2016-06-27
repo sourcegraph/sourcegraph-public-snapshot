@@ -26,28 +26,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 		const row = table.rows[i];
 		if (row.classList && row.classList.contains("inline-comments")) continue;
 
-		function removeLeadingChar(cell) {
-			const innerBlob = cell.querySelector(".blob-code-inner");
-			if (!innerBlob) return;
-
-			const val = innerBlob.firstChild.nodeValue;
-			innerBlob.firstChild.nodeValue = val.substring(1, val.length);
-		}
-
-		function addChar(cell, char) {
-			const innerBlob = cell.querySelector(".blob-code-inner");
-			if (!innerBlob) return;
-
-			if (!innerBlob.firstChild) {
-				innerBlob.appendChild(document.createTextNode(char));
-			} else if (innerBlob.firstChild.nodeType !== Node.TEXT_NODE) {
-				innerBlob.insertBefore(document.createTextNode(char), innerBlob.firstChild);
-			} else {
-				innerBlob.firstChild.nodeValue = `${char}${innerBlob.firstChild.nodeValue}`;
-			}
-		}
-
-		let line, codeCell, isAddition, isDeletion;
+		let line, codeCell;
 		if (repoRevSpec.isDelta) {
 			if (isSplitDiff && row.cells.length !== 4) continue;
 
@@ -75,8 +54,8 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 				continue;
 			}
 
-			isAddition = codeCell.classList && codeCell.classList.contains("blob-code-addition");
-			isDeletion = codeCell.classList && codeCell.classList.contains("blob-code-deletion");
+			let isAddition = codeCell.classList && codeCell.classList.contains("blob-code-addition");
+			let isDeletion = codeCell.classList && codeCell.classList.contains("blob-code-deletion");
 			if (!isAddition && !isDeletion && !repoRevSpec.isBase && !isSplitDiff) {
 				continue; // careful; we don't need to put head AND base on unmodified parts (but only for unified diff views)
 			}
@@ -86,9 +65,6 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			if (isAddition && repoRevSpec.isBase) {
 				continue;
 			}
-
-			// +, -, or whitespace preceeds all code
-			removeLeadingChar(codeCell);
 
 			line = metaCell.dataset.lineNumber;
 			if (line === "..." || !line) {
@@ -112,13 +88,6 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 				inner.innerHTML = result;
 			} else {
 				cell.innerHTML = result;
-			}
-			if (isAddition) {
-				addChar(cell, "+");
-			} else if (isDeletion) {
-				addChar(cell, "-");
-			} else {
-				addChar(cell, " ");
 			}
 			addPopover(cell, path, repoRevSpec);
 		});
@@ -219,7 +188,7 @@ export function getOpeningTag(node) {
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(node, annsByStartByte, offset, repoRevSpec) {
+export function convertNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar) {
 	let result, bytesConsumed, c; // c is an intermediate result
 	if (node.nodeType === Node.ELEMENT_NODE) {
 		// The logic here is to:
@@ -228,6 +197,7 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec) {
 		//    - ^^ but don't do that if the top-level tag is the <td> element (entrypoint)
 
 		const isTableCell = node.tagName === "TD";
+		ignoreFirstTextChar = repoRevSpec.isDelta && isTableCell; // +, -, or whitespace preceeds all code
 		if (isTableCell) {
 			// For diff blobs, the td can have extraneous child (text) nodes of whitespace that shouldn't
 			// be annotated; select the ".blob-code-inner" element which has only the code we
@@ -238,7 +208,7 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec) {
 
 		c = isQuotedStringNode(node) ?
 			convertQuotedStringNode(node, annsByStartByte, offset, repoRevSpec) :
-			convertElementNode(node, annsByStartByte, offset, repoRevSpec);
+			convertElementNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar);
 
 		if (!isTableCell) {
 			const openTag = getOpeningTag(node);
@@ -252,7 +222,7 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec) {
 		}
 		bytesConsumed = c.bytesConsumed;
 	} else if (node.nodeType === Node.TEXT_NODE) {
-		c = convertTextNode(node, annsByStartByte, offset, repoRevSpec);
+		c = convertTextNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar);
 		result = c.result;
 		bytesConsumed = c.bytesConsumed;
 	} else {
@@ -266,13 +236,17 @@ export function convertNode(node, annsByStartByte, offset, repoRevSpec) {
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
-export function convertTextNode(node, annsByStartByte, offset, repoRevSpec) {
+export function convertTextNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar) {
 	let innerHTML = [];
 	let bytesConsumed;
 
 	// Text could contain escaped character sequences (e.g. "&gt;") or UTF-8
 	// decoded characters (e.g. "˟") which need to be properly counted in terms of bytes.
-	const nodeText = utf8.encode(_.unescape(node.wholeText)).split("");
+	let nodeText = utf8.encode(_.unescape(node.wholeText)).split("");
+	if (ignoreFirstTextChar && nodeText.length > 0) {
+		innerHTML.push(nodeText[0]);
+		nodeText = nodeText.slice(1);
+	}
 	for (bytesConsumed = 0; bytesConsumed < nodeText.length;) {
 		const match = annGenerator(annsByStartByte, offset + bytesConsumed, repoRevSpec);
 		if (!match) {
@@ -290,14 +264,14 @@ export function convertTextNode(node, annsByStartByte, offset, repoRevSpec) {
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(node, annsByStartByte, offset, repoRevSpec) {
+export function convertElementNode(node, annsByStartByte, offset, repoRevSpec, ignoreFirstTextChar) {
 	let innerHTML = [];
 	let bytesConsumed = 0;
 
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
 	for (let i = 0; i < node.childNodes.length; ++i) {
-		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed, repoRevSpec);
+		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed, repoRevSpec, i === 0 && ignoreFirstTextChar);
 		innerHTML.push(res.result);
 		bytesConsumed += res.bytesConsumed;
 	}
