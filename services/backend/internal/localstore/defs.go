@@ -139,7 +139,7 @@ func init() {
 			`ALTER TABLE `+table+` ALTER COLUMN ref_ct SET NOT NULL;`,
 			`ALTER TABLE `+table+` ALTER COLUMN language TYPE smallint`,
 			`ALTER TABLE `+table+` ALTER COLUMN state TYPE smallint`,
-			`CREATE INDEX `+table+`_bow_idx ON `+table+` USING gin(bow);`,
+			`CREATE INDEX `+table+`_bow_prev_idx ON `+table+` USING gin(bow) WHERE state=2;`,
 			`CREATE INDEX `+table+`_bow_latest_idx ON `+table+` USING gin(bow) WHERE state=1;`,
 			`CREATE INDEX `+table+`_name ON `+table+` USING btree (lower(name));`,
 			`CREATE INDEX `+table+`_rid_idx ON `+table+` using btree (rid);`,
@@ -229,6 +229,8 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 				}
 				wheres = append(wheres, "rid NOT IN ("+strings.Join(nrArgs, ",")+")")
 			}
+		} else {
+			wheres = append(wheres, "state=1 OR state=2")
 		}
 
 		// Repository/commit filtering.
