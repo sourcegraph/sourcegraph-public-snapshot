@@ -2202,6 +2202,9 @@ message SearchOptions {
 	// the cost of missing lower ranked results. If there are no high-ranking results
 	// and Fast is set to true, there may be no results returned at all.
 	bool Fast = 11;
+
+	// Latest indicates that the search should only search over the latest indexed revision of repositories.
+	bool Latest = 12;
 }
 
 // SearchOp holds the options for global search for a given query.

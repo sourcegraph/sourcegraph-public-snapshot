@@ -29,9 +29,9 @@ func TestDefs(t *testing.T) {
 	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 	testDefs1 := []*graph.Def{
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "abc/xyz"}, Name: "XYZ", Kind: "func", File: "a.go"},
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "xyz/abc"}, Name: "ABC", Kind: "field", File: "a.go"},
-		{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "pqr"}, Name: "PQR", Kind: "field", File: "b.go"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "abc/xyz"}, Name: "XYZ", Kind: "func"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "xyz/abc"}, Name: "ABC", Kind: "field"},
+		{DefKey: graph.DefKey{Repo: "a/b", CommitID: commitID, Unit: "a/b/u", UnitType: "GoPackage", Path: "pqr"}, Name: "PQR", Kind: "field"},
 	}
 
 	mockstore.GraphMockDefs(&mocks.Stores.Graph, testDefs1...)
@@ -103,12 +103,14 @@ func TestDefs(t *testing.T) {
 		}
 
 		// strip score
-		for _, res := range got.DefResults {
-			res.Score = 0
+		gotDefResultsNoScore := make([]*sourcegraph.DefSearchResult, len(got.DefResults))
+		for i, r := range got.DefResults {
+			r_ := *r
+			r_.Score = 0
+			gotDefResultsNoScore[i] = &r_
 		}
-
-		if !verifyResultsMatch(got.DefResults, test.Results) {
-			t.Errorf("got %+v, want %+v", got.DefResults, test.Results)
+		if !verifyResultsMatch(gotDefResultsNoScore, test.Results) {
+			t.Errorf("for query %+v, got %+v, want %+v", test.Query, got.DefResults, test.Results)
 		}
 	}
 }

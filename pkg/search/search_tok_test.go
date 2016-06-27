@@ -2,8 +2,9 @@ package search
 
 import (
 	"reflect"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 	"testing"
+
+	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func TestBagOfWords(t *testing.T) {
@@ -25,7 +26,7 @@ func TestBagOfWords(t *testing.T) {
 				"testOne":       2,
 				"testNumberOne": 32,
 				"test":          12,
-				"":              17,
+				"":              16,
 				"firstCase":     1,
 				"caseNumOne":    3,
 			},
@@ -43,7 +44,7 @@ func TestBagOfWords(t *testing.T) {
 				"test":            12,
 				"number":          11,
 				"two":             12,
-				"":                17,
+				"":                16,
 				"secondCase":      1,
 				"caseNumTwo":      3,
 			},
@@ -58,7 +59,7 @@ func TestBagOfWords(t *testing.T) {
 			expected: map[string]int{
 				"three":        43,
 				"test":         3,
-				"":             17,
+				"":             16,
 				"thirdCase":    1,
 				"caseNumThree": 3,
 			},
@@ -72,7 +73,7 @@ func TestBagOfWords(t *testing.T) {
 			},
 			expected: map[string]int{
 				"test":        46,
-				"":            17,
+				"":            16,
 				"fourthCase":  1,
 				"caseNumFour": 3,
 			},
@@ -80,9 +81,10 @@ func TestBagOfWords(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		eq := reflect.DeepEqual(BagOfWords(&c.def), c.expected)
+		got := BagOfWords(&c.def)
+		eq := reflect.DeepEqual(c.expected, got)
 		if !eq {
-			t.Error("Miscalculated bag of words scoring for test case at index ", i)
+			t.Errorf("Test case %d: expected %+v, got %+v", i, c.expected, got)
 		}
 	}
 }
