@@ -21,7 +21,7 @@ for cmd in "${cmds[@]}"; do
 done
 
 echo "Directories changed relative to master:"
-changed=$(git diff --dirstat=files,0 origin/master..$CIRCLE_SHA1)
+changed=$(git diff --dirstat=files,0 origin/master..$CIRCLE_SHA1 | grep -v /node_modules/)
 echo "$changed"
 
 pkgs=()
