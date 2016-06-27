@@ -38,6 +38,7 @@ export default class BlobAnnotator extends Component {
 
 	constructor(props) {
 		super(props);
+		this._clickRefresh = this._clickRefresh.bind(this);
 		this.state = utils.parseURL();
 
 		if (this.state.isDelta) {
@@ -119,6 +120,24 @@ export default class BlobAnnotator extends Component {
 				this.state.headRepoURI = this.state.repoURI;
 			}
 		}
+	}
+
+	componentDidMount() {
+		// Click may be for context expansion, in which case we should
+		// re-annotate the blob (which is smart enough to only annoate
+		// lines which haven't already been annotated).
+		document.addEventListener("click", this._clickRefresh);
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("click", this._clickRefresh);
+	}
+
+	_clickRefresh() {
+		// Diff expansion is not synchronous, so we must wait for
+		// elements to get added to the DOM before calling into the
+		// annotations code. 500ms is arbitrary but seems to work well.
+		setTimeout(() => this._addAnnotations(this.state), 500);
 	}
 
 	_isSplitDiff() {

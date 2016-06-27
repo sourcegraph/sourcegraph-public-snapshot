@@ -10,8 +10,6 @@ import EventLogger from "../analytics/EventLogger";
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
 export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff) {
-	if (el.dataset[repoRevSpec.rev]) return;
-	el.dataset[repoRevSpec.rev] = true;
 	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff);
 }
 
@@ -74,6 +72,10 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			line = row.cells[0].dataset.lineNumber;
 			codeCell = row.cells[1];
 		}
+
+		// Prevent double annotation of lines.
+		if (el.dataset[`${line}_${repoRevSpec.rev}`]) continue;
+		el.dataset[`${line}_${repoRevSpec.rev}`] = true;
 
 		const offset = startBytesByLine[line];
 
