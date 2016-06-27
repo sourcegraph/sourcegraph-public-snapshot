@@ -136,14 +136,12 @@ function injectBlobAnnotator() {
 		const infoFilePath = getFileName(info, {isDelta, path});
 		if (!infoFilePath) continue;
 
-		const blobAnnotatorId = `sourcegraph-blob-annotator-${infoFilePath}`;
-		let blobAnnotatorContainer = document.getElementById(blobAnnotatorId);
-		if (!blobAnnotatorContainer) { // prevent injecting twice
-			blobAnnotatorContainer = document.createElement("span");
-			blobAnnotatorContainer.id = blobAnnotatorId;
-			info.appendChild(blobAnnotatorContainer);
-			injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} />, blobAnnotatorContainer);
-		}
+		if (file.dataset && file.dataset["sgAnnotator"]) continue; // prevent injecting twice
+		file.dataset["sgAnnotator"] = true;
+
+		const blobAnnotatorContainer = document.createElement("span");
+		info.appendChild(blobAnnotatorContainer);
+		injectComponent(<BlobAnnotator path={infoFilePath} blobElement={blob} />, blobAnnotatorContainer);
 	}
 }
 
