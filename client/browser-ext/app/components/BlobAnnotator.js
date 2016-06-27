@@ -122,8 +122,24 @@ export default class BlobAnnotator extends Component {
 	}
 
 	_isSplitDiff() {
-		const metaTag = document.querySelector('meta[name="diff-view"]');
-		return metaTag && metaTag.content === "split";
+		if (this.state.isPullRequest) {
+			const diffTypeDropdown = document.getElementsByClassName("diffbar-item dropdown js-menu-container");
+			if (!diffTypeDropdown || diffTypeDropdown.length !== 1) return false;
+
+			const diffSelection = diffTypeDropdown[0].getElementsByClassName("dropdown-item selected");
+			if (!diffSelection || diffSelection.length !== 1) return false;
+
+			return diffSelection[0].href.includes("diff=split");
+		} else {
+			const headerBar = document.getElementsByClassName("details-collapse table-of-contents js-details-container");
+			if (!headerBar || headerBar.length !== 1) return false;
+
+			const diffToggles = headerBar[0].getElementsByClassName("btn-group right");
+			if (!diffToggles || diffToggles.length !== 1) return false;
+
+			const selectedToggle = diffToggles[0].querySelector(".selected");
+			return selectedToggle && selectedToggle.href.includes("diff=split");
+		}
 	}
 
 	reconcileState(state, props) {
