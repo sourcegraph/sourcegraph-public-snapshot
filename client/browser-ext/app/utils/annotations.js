@@ -158,6 +158,9 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 	const match = annsByStartByte[byte];
 	if (!match) return null;
 
+	const annLen = match.EndByte - match.StartByte;
+	if (annLen <= 0) return null; // sometimes, there will be an "empty" annotation, e.g. for CommonJS modules
+
 	let rev;
 	if (match.URL.indexOf(repoRevSpec.repoURI) !== -1) {
 		rev = repoRevSpec.rev;
@@ -188,7 +191,6 @@ export function annGenerator(annsByStartByte, byte, repoRevSpec) {
 	const defIsOnGitHub = match.URL && match.URL.includes("github.com/");
 	const url = defIsOnGitHub ? urlToDef(match.URL) : `https://sourcegraph.com${match.URL}`;
 
-	const annLen = match.EndByte - match.StartByte;
 	return {annLen, annGen: function(innerHTML) {
 		return `<a href="${url}" ${defIsOnGitHub ? "data-sourcegraph-ref" : "target=tab"} data-src="https://sourcegraph.com${annURL}" class=${styles.sgdef}>${innerHTML}</a>`;
 	}};
