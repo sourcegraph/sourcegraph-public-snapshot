@@ -49,6 +49,12 @@ func (s *dbConfig) dbEnvConfig() []string {
 	if u := os.Getenv("PGUSER"); u != "" {
 		v = append(v, "PGUSER="+u)
 	}
+	if u := os.Getenv("PGPASSWORD"); u != "" {
+		v = append(v, "PGPASSWORD="+u)
+	}
+	if u := os.Getenv("PGPORT"); u != "" {
+		v = append(v, "PGPORT="+u)
+	}
 	return v
 }
 
