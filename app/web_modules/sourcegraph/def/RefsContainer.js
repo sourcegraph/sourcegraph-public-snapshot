@@ -301,7 +301,7 @@ export default class RefsContainer extends Container {
 							}
 							if (this.props.selectedRefs) {
 								let selected = this.props.selectedRefs[`${this.state.repo}/${loc.Path}`];
-								ranges = [ranges[selected]] || ranges;
+								ranges = ranges[selected] ? [ranges[selected]] : ranges;
 							}
 
 							return (

@@ -92,7 +92,7 @@ WHERE def_key_id=` + arg(defKeyID) + fmt.Sprintf(" LIMIT %s", arg(rowLimit))
 	// =============== START HACK ===============
 	limit := opt.PerPageOrDefault()
 	selectedRefs := make(map[string]int32)
-	selectedRepoRefs := make([]*sourcegraph.DefRepoRef, limit)
+	selectedRepoRefs := make([]*sourcegraph.DefRepoRef, 0)
 	cl, err := sourcegraph.NewClientFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ WHERE def_key_id=` + arg(defKeyID) + fmt.Sprintf(" LIMIT %s", arg(rowLimit))
 	var examples *sourcegraph.ExamplesList
 	if len(selectedRepoRefs) >= limit {
 		examples = &sourcegraph.ExamplesList{
-			RepoRefs:     repoRefs,
+			RepoRefs:     selectedRepoRefs,
 			SelectedRefs: selectedRefs,
 		}
 	} else {
