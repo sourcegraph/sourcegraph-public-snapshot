@@ -144,10 +144,10 @@ func serveDefExamples(w http.ResponseWriter, r *http.Request) error {
 	opt.ListOptions.PerPage = 3
 	opt.ListOptions.Page = 1
 
-	examples, err := cl.Defs.ListExamples(ctx, &opt)
+	refLocations, err := cl.Defs.ListExamples(ctx, &opt)
 	if err != nil {
 		return err
 	}
 
-	return writeJSON(w, examples)
+	return writeJSON(w, refLocations)
 }

@@ -962,7 +962,7 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, v1 *sourcegraph.DefsL
 	return rv, nil
 }
 
-func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListExamplesOp) (returnedResult *sourcegraph.ExamplesList, returnedError error) {
+func (s wrappedDefs) ListExamples(ctx context.Context, v1 *sourcegraph.DefsListExamplesOp) (returnedResult *sourcegraph.RefLocationsList, returnedError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			const size = 64 << 10
