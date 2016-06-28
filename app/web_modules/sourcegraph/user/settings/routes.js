@@ -5,13 +5,17 @@ import type {Route} from "react-router";
 
 export const routes: Array<Route> = [
 	{
-		path: rel.settingsRepos,
-		getComponent: (location, callback) => {
-			require.ensure([], (require) => {
-				callback(null, {
-					main: require("sourcegraph/user/settings/UserSettingsReposMain").default,
-				});
-			});
-		},
+		path: rel.settings,
+		getComponent: (location, callback) =>
+			System.import("sourcegraph/user/settings/SettingsMain")
+				.then(m => callback(null, {main: m.default})),
+		childRoutes: [
+			{
+				path: rel.settingsRepos,
+				getComponent: (location, callback) =>
+					System.import("sourcegraph/user/settings/UserSettingsReposMain")
+						.then(m => callback(null, {main: m.default})),
+			},
+		],
 	},
 ];

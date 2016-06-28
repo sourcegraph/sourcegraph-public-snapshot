@@ -4,33 +4,13 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
-.container-fixed { composes: containerFixed from layout; }
-.bg-white-50 { composes: bg-white-50 from colors; }
-.mid-gray { composes: cool-mid-gray from colors; }
-.cool-pale-gray {	composes: cool-pale-gray from colors; }
-.inline-block { display: inline-block; }
-.tc { composes: tc from typography; }
-.br3 { composes: br3 from base; }
-
-.flex-fill {
-	display: flex;
-	flex: 1;
+.repos {
+	width: 100%;
 }
 
-.max-width-500 { max-width: 500px; }
-
-.bg {
-	composes: bg-pale-blue-gradient from colors;
-	flex: 1;
-}
-
-.repositories {	margin-top: -20px; }
-
-.item {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	justify-content: flex-start;
+.row {}
+.cell {
+	composes: pv4 from base;
 }
 
 .button {
@@ -43,4 +23,27 @@
 .privateRepos {
  	text-align: center;
  	flex: 1 1 auto;	
+}
+
+.filter-input {
+	composes: pb4 from base;
+}
+
+.repo-link {
+	composes: f4 from typography;
+}
+.repo-link a {
+	font-weight: bold;
+}
+.description {
+	composes: mt0 from base;
+	composes: cool-mid-gray from colors;
+	composes: mb0 from base;
+}
+.indicator {
+	composes: mv4 from base;
+}
+.github-button {
+	float: right;
+	composes: ml5 from base;
 }
