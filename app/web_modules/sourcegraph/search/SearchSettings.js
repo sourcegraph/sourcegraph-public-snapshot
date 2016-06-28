@@ -114,11 +114,9 @@ class SearchSettings extends Container {
 							styleName="choice-button"
 							onClick={() => this._setScope({popular: !scope.popular})}
 							outline={!scope.popular}>Popular libraries</Button>
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Libraries you use</GitHubAuthButton>}
 						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects</GitHubAuthButton>}
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Private</GitHubAuthButton>}
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Team</GitHubAuthButton>}
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Starred</GitHubAuthButton>}
+						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your private projects</GitHubAuthButton>}
+						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Team projects</GitHubAuthButton>}
 					</div>
 				</div>
 			</div>
