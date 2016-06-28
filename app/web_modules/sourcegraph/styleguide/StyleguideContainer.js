@@ -61,6 +61,9 @@ class StyleguideContainer extends React.Component {
 								<a data-anchor="components-headings" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Headings</a>
 							</TabItem>
 							<TabItem>
+								<a data-anchor="components-forms" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Forms</a>
+							</TabItem>
+							<TabItem>
 								<a data-anchor="components-buttons" style={{cursor: "pointer"}} onClick={(e) => this._pageLinkScroll(e)}>Buttons</a>
 							</TabItem>
 							<TabItem>

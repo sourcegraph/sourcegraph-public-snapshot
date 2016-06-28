@@ -3,56 +3,49 @@
 @value typography "./_typography.css";
 
 @value c_blue-8 from colors;
-@value c_light-silver from colors;
+@value c_cool-mid-gray from colors;
 @value c_red from colors;
 
-.border {
-	composes: br2 ba from base;
-	composes: b--moon-gray from colors;
-}
-
-.focus-border {
-	composes: b--blue-8 from colors;
-}
-
-.common:focus {
+.input:focus {
 	outline: none;
-	border-color: c_blue-8; /* TODO: can't use compose on pseudoelements. */
+	border-color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
 	background-color: white;
 }
 
-.common:focus:invalid {
+.input:focus:invalid {
 	outline: none;
 	border-color: c_red;
 }
 
-.common {
-	composes: border;
-	padding: 7px 8px;
-	appearance: none;
-	composes: bg-near-white from colors;
-}
-
-.common::-webkit-input-placeholder {
-	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
-}
-.common:-moz-placeholder {
-	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
-}
-.common::-moz-placeholder {
-	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
-}
-.common:-ms-input-placeholder {
-	color: c_light-silver; /* TODO: can't use compose on pseudoelements. */
-}
-
 .input {
-	composes: common;
-	display: inline-block;
+	composes: br2 ba mt2 from base;
+	composes: bg-white from colors;
+	box-sizing: border-box;
+	padding: 8px 15px;
+	transition: all 0.25s ease-in-out;
+	appearance: none;
 }
 
 .block {
-	composes: common;
 	display: block;
 	width: 100%;
+}
+
+.v-mid { composes: v-mid from typography;}
+.red { composes: red from colors; }
+.small { composes: f5 from typography; }
+.border-red { composes: b--red from colors; }
+.border-neutral { composes: b--cool-mid-gray-5 from colors; }
+
+.input::-webkit-input-placeholder {
+	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+}
+.input:-moz-placeholder {
+	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+}
+.input::-moz-placeholder {
+	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
+}
+.input:-ms-input-placeholder {
+	color: c_cool-mid-gray; /* TODO: can't use compose on pseudoelements. */
 }
