@@ -24,8 +24,6 @@ import base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import popularRepos from "./popularRepos";
 
-const allPopularRepos = Object.keys(popularRepos).reduce((memo, lang) => memo.concat(popularRepos[lang]), []);
-
 export const RESULTS_LIMIT = 10;
 
 const resultIconSize = "24px";
@@ -55,6 +53,7 @@ class GlobalSearch extends Container {
 			className: null,
 			resultClassName: null,
 			selectionIndex: -1,
+			githubToken: null,
 		};
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
@@ -103,58 +102,51 @@ class GlobalSearch extends Container {
 			{};
 	}
 
+	_repoIncludes(state, lang) {
+		const scope = this._scope(state);
+		if (!state.githubToken) return popularRepos[lang];
+		if (scope.public) return ["github.com/gorilla/mux"]; // TODO(rothfels): fill in
+		return [];
+	}
+
 	stores(): Array<Object> { return [SearchStore, UserStore]; }
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
+		state.githubToken = UserStore.activeGitHubToken;
+		state.settings = UserStore.settings.get();
 		state.className = props.className || "";
 		state.resultClassName = props.resultClassName || "";
 
-		let matchingResults;
-		const langs = this._langs(state);
-		const scope = this._scope(state);
-		if (langs.length > 0) {
-			matchingResults = langs.reduce((memo, lang) => {
-				const results = SearchStore.get(`${lang} ${state.query}`, scope && scope.popular ? popularRepos[lang] : null, null, null, RESULTS_LIMIT,
+		state.matchingResults = this._langs(state).reduce((memo, lang) => {
+			const repoIncludes = this._repoIncludes(state, lang);
+			if (repoIncludes && repoIncludes.length > 0) {
+				const results = SearchStore.get(`${lang} ${state.query}`, this._repoIncludes(state, lang), null, null, RESULTS_LIMIT,
 					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 				if (results) {
 					if (results.Repos) memo.Repos.push(...results.Repos);
 					if (results.Defs) memo.Defs.push(...results.Defs);
 					if (results.Options) memo.Options.push(...results.Options);
 				}
-				return memo;
-			}, {Repos: [], Defs: [], Options: []});
-		} else {
-			matchingResults = SearchStore.get(state.query, scope && scope.popular ? allPopularRepos : null, null, null, RESULTS_LIMIT,
-				this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
-		}
-		state.matchingResults = matchingResults;
+			}
+			return memo;
+		}, {Repos: [], Defs: [], Options: []});
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
 			debounce((query) => {
 				const langs = this._langs(nextState);
-				const scope = this._scope(nextState);
-				if (langs.length > 0) {
-					for (const lang of langs) {
-						Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-							query: `${lang} ${nextState.query}`,
-							limit: RESULTS_LIMIT,
-							prefixMatch: this.props.location.query.prefixMatch,
-							includeRepos: this.props.location.query.includeRepos,
-							fast: true,
-							repos: scope.popular ? popularRepos[lang] : null,
-						}));
-					}
-				} else {
+				for (const lang of langs) {
+					const repoIncludes = this._repoIncludes(nextState, lang);
+					if (!repoIncludes || repoIncludes.length === 0) continue;
 					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-						query: nextState.query,
+						query: `${lang} ${nextState.query}`,
 						limit: RESULTS_LIMIT,
 						prefixMatch: this.props.location.query.prefixMatch,
 						includeRepos: this.props.location.query.includeRepos,
 						fast: true,
-						repos: scope.popular ? allPopularRepos : null,
+						repos: repoIncludes,
 					}));
 				}
 			}, 200, {leading: false, trailing: true})(nextState.query);
@@ -326,10 +318,15 @@ class GlobalSearch extends Container {
 	_results(): React$Element | Array<React$Element> {
 		if (!this.state.query) return <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result">Type a query&hellip;</div>;
 
+		const invalidFiltersItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Nothing found. Update your filters and try again.</div>;
 		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Nothing found. Broaden your search scope and try again.</div>;
 		if (!this.state.matchingResults) {
 			return [<div key="1" styleName="tc f4" className={base.pv5}>Loading results...</div>];
 		}
+
+		const langs = this._langs(this.state);
+		const repoIncludes = langs && langs.reduce((memo, lang) => memo.concat(...this._repoIncludes(this.state, lang)), []);
+		if (!langs || langs.length === 0 || !repoIncludes || repoIncludes.length === 0) return [invalidFiltersItem];
 
 		if (this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
