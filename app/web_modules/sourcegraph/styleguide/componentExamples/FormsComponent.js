@@ -3,7 +3,7 @@
 import React from "react";
 import CSSModules from "react-css-modules";
 import base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Table, Code, Input} from "sourcegraph/components";
+import {Heading, Panel, Table, Code, Input, Select} from "sourcegraph/components";
 
 class StepperComponent extends React.Component {
 	constructor(props) {
@@ -26,6 +26,13 @@ class StepperComponent extends React.Component {
 					<Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
 
 					<Input placeholder="Placeholder text" block={true} error={true} label="Input label" errorText="This is an error." className={base.mb4} />
+
+					<Select defaultValue="">
+						<option value="" disabled={true}>Placeholder</option>
+						<option>Option 1</option>
+						<option>Option 2</option>
+						<option>Option 3</option>
+					</Select>
 
 				</div>
 				<Panel hoverLevel="low">
