@@ -100,7 +100,7 @@ class GlobalSearch extends Container {
 	_scope(state) {
 		if (!state) state = this.state;
 		return state.settings && state.settings.search && state.settings.search.scope ? state.settings.search.scope :
-			{popular: false, public: false, private: false, starred: false, team: false};
+			{};
 	}
 
 	stores(): Array<Object> { return [SearchStore, UserStore]; }

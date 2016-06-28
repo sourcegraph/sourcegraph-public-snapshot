@@ -37,12 +37,30 @@ export class UserStore extends Store {
 				return this.content[state] || null;
 			},
 		});
-		this.settings = deepFreeze({
-			content: data && data.settings ? data.settings.content : {},
-			get(/* no args, stored on user's browser */) {
-				return this.content || null;
-			},
-		});
+
+		if (global.window) {
+			let storedUserSettings = window.localStorage.getItem("userSettings");
+			if (!storedUserSettings) {
+				storedUserSettings = {
+					search: {
+						languages: [],
+						scope: {
+							public: true,
+							private: false,
+						},
+					},
+				};
+			} else {
+				storedUserSettings = JSON.parse(storedUserSettings);
+			}
+
+			this.settings = deepFreeze({
+				content: storedUserSettings,
+				get(/* no args, stored on user's browser */) {
+					return this.content || null;
+				},
+			});
+		}
 	}
 
 	toJSON() {
@@ -123,6 +141,7 @@ export class UserStore extends Store {
 			this.__emitChange();
 			return;
 		} else if (action instanceof UserActions.UpdateSettings) {
+			if (global.window) window.localStorage.setItem("userSettings", JSON.stringify(action.settings));
 			this.settings = deepFreeze({...this.settings, content: action.settings});
 			this.__emitChange();
 			return;

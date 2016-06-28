@@ -39,21 +39,12 @@ class SearchSettings extends Container {
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
 	}
 
-	onStateTransition(prevState, nextState) {
-		if (nextState.githubToken && !prevState.githubToken) {
-			// HACK: since we can't dispatch to stores while we're already in a dispatch,
-			// we wrap this in setTimeout. The effect is that logged in users cannot search
-			// over public repos.
-			setTimeout(() => this._setScope({popular: false}, nextState));
-		}
-	}
-
 	_langs() {
 		return this.state.settings && this.state.settings.search && this.state.settings.search.languages ? Array.from(this.state.settings.search.languages) : [];
 	}
 
 	_scope() {
-		return this.state.settings && this.state.settings.search && this.state.settings.search.scope ? this.state.settings.search.scope : {popular: false, public: false, private: false, starred: false, team: false};
+		return this.state.settings && this.state.settings.search && this.state.settings.search.scope ? this.state.settings.search.scope : {};
 	}
 
 	_hasPrivateGitHubToken() {
@@ -129,8 +120,7 @@ class SearchSettings extends Container {
 							color="default"
 							size="small"
 							styleName="choice-button"
-							onClick={() => this._setScope({popular: !scope.popular})}
-							outline={!scope.popular}>Popular libraries</Button>}
+							outline={false}>Popular libraries</Button>}
 						{(!this.state.signedIn || !this.props.githubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects + deps</GitHubAuthButton>}
 						{this.props.githubToken &&
@@ -159,18 +149,26 @@ class SearchSettings extends Container {
 
 	render() {
 		const langChosen = this.state.settings && this.state.settings.search && this.state.settings.search.languages && this.state.settings.search.languages.length > 0;
+		const scope = this._scope();
 
 		return (
 			<div styleName="groups"><div styleName="groups-inner" className={this.props.className}>
 				<div styleName="row">
 					{this._renderLanguages()}
 				</div>
-				{!(this.state.signedIn || langChosen) && this.state.showAlerts && <div styleName="row">
+				{!langChosen && this.state.showAlerts && <div styleName="row">
 					<div styleName="group">
 						<Alert>Select a language to search.</Alert>
 					</div>
 				</div>}
 				{this._renderScope()}
+				{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private &&
+					<div styleName="row">
+						<div styleName="group">
+							<Alert>Select repositories to include.</Alert>
+						</div>
+					</div>
+				}
 			</div></div>
 		);
 	}
