@@ -194,7 +194,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		scoreSQL = `ref_ct score`
 	}
 	selectSQL := `SELECT rid, defid, name, kind, language, updated_at, state, ref_ct, ` + scoreSQL + ` FROM defs2`
-	var whereSQL, prefixSQL string
+	var whereSQL, fastWhereSQL, prefixSQL string
 	{
 		var wheres []string
 
@@ -309,15 +309,23 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		}
 
 		whereSQL = fmt.Sprint(`WHERE (`+strings.Join(wheres, ") AND (")+`)`) + prefixSQL
+		fastWheres := append(wheres, "ref_ct > 10") // this corresponds to a partial index
+		fastWhereSQL = fmt.Sprint(`WHERE (`+strings.Join(fastWheres, ") AND (")+`)`) + prefixSQL
 	}
 	orderSQL := `ORDER BY score DESC`
 	limitSQL := `LIMIT ` + arg(op.Opt.PerPageOrDefault())
 
 	sql := strings.Join([]string{selectSQL, whereSQL, orderSQL, limitSQL}, "\n")
+	fastSQL := strings.Join([]string{selectSQL, fastWhereSQL, orderSQL, limitSQL}, "\n")
 
 	var dbSearchResults []*dbDefSearchResult
-	if _, err := graphDBH(ctx).Select(&dbSearchResults, sql, args...); err != nil {
-		return nil, fmt.Errorf("error fetching from defs2: %s", err)
+	if _, err := graphDBH(ctx).Select(&dbSearchResults, fastSQL, args...); err != nil {
+		return nil, fmt.Errorf("error fast-fetching from defs2: %s", err)
+	}
+	if len(dbSearchResults) == 0 { // if no fast results, search for slow results
+		if _, err := graphDBH(ctx).Select(&dbSearchResults, sql, args...); err != nil {
+			return nil, fmt.Errorf("error fetching from defs2: %s", err)
+		}
 	}
 
 	var results []*sourcegraph.DefSearchResult
