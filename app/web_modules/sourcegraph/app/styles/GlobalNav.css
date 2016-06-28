@@ -110,6 +110,47 @@
 .nav-link {
 	font-weight: bold;
 }
+
+@value input-height-small from "sourcegraph/search/styles/GlobalSearchInput.css";
+@value search-form-max-width 1000px;
 .search {
 	flex: 1 0;
+	composes: mr4 from base;
+}
+.search-form-container {
+	max-width: search-form-max-width;
+	position: relative; /* so that search-panel is same width as its parent (this class) */
+}
+.search-form {
+	display: flex;
+}
+.search-form > div { /* make search input share width */
+	flex: 1 0;
+}
+.search-form button {
+	height: input-height-small;
+}
+.search-button {
+	border-radius: 0;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+.search-icon {
+	font-size: 1.3rem;
+}
+.search-panel {
+	position: absolute;
+	width: 100%;
+	max-width: search-form-max-width;
+}
+.search-settings {
+	composes: ph3 from base;
+}
+.search-results {
+	max-height: 85vh;
+	min-height: 60px;
+	overflow: auto;
+}
+.search-result {
+	composes: ph3 pt3 from base;
 }

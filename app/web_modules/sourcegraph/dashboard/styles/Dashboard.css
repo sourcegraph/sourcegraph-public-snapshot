@@ -1,4 +1,94 @@
-.flex-fill {
-	display: flex;
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value vars "sourcegraph/components/styles/_vars.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+
+@value media-sm from vars;
+
+.container-fixed { composes: containerFixed from layout; }
+.bg-white-50 { composes: bg-white-50 from colors; }
+.mid-gray { composes: cool-mid-gray from colors; }
+.cool-pale-gray {	composes: cool-pale-gray from colors; }
+.inline-block { display: inline-block; }
+.tc { composes: tc from typography; }
+.br3 { composes: br3 from base; }
+
+.max-width-500 { max-width: 500px; }
+
+.bg {
+	composes: bg-pale-blue-gradient from colors;
 	flex: 1;
+}
+
+.repositories {	margin-top: -20px; }
+
+.item {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: flex-start;
+}
+
+.button {
+	composes: tr from typography;
+	flex: 0 0 150px;
+}
+
+.content { flex: 1 1 auto; }
+
+.logo {
+	width: 390px;
+	height: 52px;
+	composes: mb2 from base;
+	composes: center from base;
+	display: block;
+}
+@media screen and media-sm {
+	.logo {
+		width: auto;
+		max-width: 390px;
+		height: auto;
+	}
+}
+.description {
+	text-align: justify;
+	text-align-last: center;
+	composes: mt2 mb4 from base;
+	font-size: 1.2rem;
+	font-weight: normal;
+}
+
+.privateRepos {
+ 	text-align: center;
+ 	flex: 1 1 auto;	
+}
+.actions {
+	margin-left: auto;
+	margin-right: auto;
+	composes: mt4 from base;
+	text-align: center;
+}
+.action-button {
+	composes: mh2 ph4 mb2 from base;
+}
+.action-icon {
+	font-size: 1.3rem;
+	vertical-align: text-top;
+}
+.search-button {
+	font-weight: bold;
+	composes: action-button;
+}
+
+.home-container {
+	composes: container-fixed;
+	composes: mb4 pt4 ph3 from base;
+	margin-top: 12vh;
+	max-width: 720px;
+}
+
+.search-settings {
+	composes: mt5 from base;
 }

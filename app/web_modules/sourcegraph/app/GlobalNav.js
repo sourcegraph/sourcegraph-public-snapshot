@@ -2,9 +2,10 @@
 
 import React from "react";
 import {Link} from "react-router";
+import type {RouterLocation} from "react-router";
 import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
-import {Avatar, Popover, Menu, Button, TabItem, Logo} from "sourcegraph/components";
+import {Avatar, Panel, Popover, Menu, Button, TabItem, Logo} from "sourcegraph/components";
 import LogoutLink from "sourcegraph/user/LogoutLink";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalNav.css";
@@ -12,6 +13,12 @@ import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
+import {locationForSearch, queryFromStateOrURL} from "sourcegraph/search/routes";
+import {MagnifyingGlassIcon} from "sourcegraph/components/Icons";
+import GlobalSearch from "sourcegraph/search/GlobalSearch";
+import SearchSettings from "sourcegraph/search/SearchSettings";
+import invariant from "invariant";
 
 function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
@@ -38,6 +45,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 				</Link>
 
 				<div styleName="search">
+					{location.pathname !== "/" && <SearchForm location={location} router={router} showResultsPanel={location.pathname !== "/search"} />}
 				</div>
 
 				{user && <div styleName="flex flex-start flex-fixed">
@@ -99,3 +107,157 @@ GlobalNav.contextTypes = {
 };
 
 export default CSSModules(GlobalNav, styles, {allowMultiple: true});
+
+class SearchForm extends React.Component {
+	// TODO(sqs): dismiss when click/focus outside
+
+	static propTypes = {
+		location: React.PropTypes.object.isRequired,
+		router: React.PropTypes.object.isRequired,
+		showResultsPanel: React.PropTypes.bool.isRequired,
+	};
+
+	constructor(props) {
+		super(props);
+
+		this.state.query = queryFromStateOrURL(props.location); // eslint-disable-line react/no-direct-mutation-state
+		if (this.state.query) this.state.open = true; // eslint-disable-line react/no-direct-mutation-state
+
+		this._handleGlobalHotkey = this._handleGlobalHotkey.bind(this);
+		this._handleGlobalClick = this._handleGlobalClick.bind(this);
+		this._handleSubmit = this._handleSubmit.bind(this);
+		this._handleKeyDown = this._handleKeyDown.bind(this);
+		this._handleChange = this._handleChange.bind(this);
+		this._handleFocus = this._handleFocus.bind(this);
+		this._handleBlur = this._handleBlur.bind(this);
+	}
+
+	state: {
+		open: bool;
+		query: ?string;
+	} = {
+		open: false,
+		query: null,
+	};
+
+	componentDidMount() {
+		document.addEventListener("keydown", this._handleGlobalHotkey);
+		document.addEventListener("click", this._handleGlobalClick);
+
+		if (this.state.query) {
+			this._input.focus();
+		}
+	}
+
+	componentWillReceiveProps(nextProps) {
+		const nextQuery = queryFromStateOrURL(nextProps.location);
+		if (this.state.query !== nextQuery) {
+			if (nextQuery && !this.state.query) this.setState({open: true});
+			this.setState({query: nextQuery});
+		}
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("keydown", this._handleGlobalHotkey);
+		document.removeEventListener("click", this._handleGlobalClick);
+	}
+
+	_container: HTMLElement;
+	_input: HTMLInputElement;
+
+	// NOTE: Flow doesn't automatically treat methods as props, so this manual list
+	// is necessary. See https://github.com/facebook/flow/issues/1517.
+	_handleGlobalHotkey: any;
+	_handleGlobalClick: any;
+	_handleSubmit: any;
+	_handleKeyDown: any;
+	_handleChange: any;
+	_handleFocus: any;
+	_handleBlur: any;
+
+	_handleGlobalHotkey(ev: KeyboardEvent) {
+		// Hotkey "/" to focus search field.
+		invariant(this._input, "input not available");
+		if (ev.keyCode === 191 /* forward slash "/" */) {
+			if (!document.activeElement || (document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "TEXTAREA")) {
+				ev.preventDefault();
+				this._input.focus();
+			}
+		}
+	}
+
+	_handleGlobalClick(ev: Event) {
+		// Clicking outside of the open results panel should close it.
+		invariant(this._container, "container not available");
+		invariant(ev.target instanceof Node, "target is not a node");
+		if (this.state.open && !this._container.contains(ev.target)) {
+			this.setState({open: false});
+		}
+	}
+
+	_handleSubmit(ev: Event) {
+		ev.preventDefault();
+		this.props.router.push(locationForSearch(this.props.location, this.state.query, true, true));
+	}
+
+	_handleKeyDown(ev: KeyboardEvent) {
+		if (ev.keyCode === 27 /* ESC */) {
+			this.setState({open: false});
+			this._input.blur();
+		}
+	}
+
+	_handleChange(ev: KeyboardEvent) {
+		invariant(ev.currentTarget instanceof HTMLInputElement, "invalid currentTarget");
+		this.props.router.replace(locationForSearch(this.props.location, ev.currentTarget.value, false, false));
+	}
+
+	_handleFocus(ev: Event) {
+		this.setState({open: true});
+	}
+
+	_handleBlur(ev: Event) {
+		// Don't close it when we blur, since we might be interacting with
+	}
+
+	render() {
+		return (
+			<div
+				styleName="search-form-container"
+				ref={e => this._container = e}>
+				<form
+					onSubmit={this._handleSubmit}
+					styleName="search-form"
+					autoComplete="off">
+					<GlobalSearchInput
+						name="q"
+						size="small"
+						autoComplete="off"
+						value={this.state.query || ""}
+						domRef={e => this._input = e}
+						onFocus={this._handleFocus}
+						onBlur={this._handleBlur}
+						onKeyDown={this._handleKeyDown}
+						onClick={this._handleFocus}
+						onChange={this._handleChange} />
+					<Button styleName="search-button" type="submit" color="blue">
+						<MagnifyingGlassIcon styleName="search-icon" />
+					</Button>
+				</form>
+				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel location={this.props.location} />}
+			</div>
+		);
+	}
+}
+SearchForm = CSSModules(SearchForm, styles);
+
+let SearchResultsPanel = ({location}: {location: RouterLocation}) => {
+	const q = queryFromStateOrURL(location);
+	return (
+		<Panel hoverLevel="high" styleName="search-panel">
+			<SearchSettings styleName="search-settings" showAlerts={true} />
+			<GlobalSearch styleName="search-results" query={q || ""} location={location} resultClassName={styles["search-result"]} />
+		</Panel>
+	);
+};
+SearchResultsPanel = CSSModules(SearchResultsPanel, styles);

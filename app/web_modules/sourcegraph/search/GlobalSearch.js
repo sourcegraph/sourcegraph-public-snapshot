@@ -15,15 +15,16 @@ import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
 import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
 import type {Options, Repo, Def} from "sourcegraph/def";
-
-import {Input, Icon} from "sourcegraph/components";
-
+import {Icon} from "sourcegraph/components";
+import {trimRepo} from "sourcegraph/repo";
 import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-export const RESULTS_LIMIT = 20;
+export const RESULTS_LIMIT = 10;
+
+const resultIconSize = "24px";
 
 // GlobalSearch is the global search bar + results component.
 // Tech debt: this duplicates a lot of code with TreeSearch and we
@@ -32,6 +33,8 @@ class GlobalSearch extends Container {
 	static propTypes = {
 		location: React.PropTypes.object.isRequired,
 		query: React.PropTypes.string.isRequired,
+		className: React.PropTypes.string,
+		resultClassName: React.PropTypes.string,
 	};
 
 	static contextTypes = {
@@ -45,18 +48,20 @@ class GlobalSearch extends Container {
 		this.state = {
 			query: "",
 			matchingResults: {Repos: [], Defs: [], Options: []},
-			selectionIndex: 0,
+			className: null,
+			resultClassName: null,
+			selectionIndex: -1,
 		};
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
-		this._handleInput = this._handleInput.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
-		this._onChangeQuery = this._onChangeQuery.bind(this);
 	}
 
 	state: {
 		query: string;
+		className: ?string;
+		resultClassName: ?string;
 		matchingResults: {
 			Repos: Array<Repo>,
 			Defs: Array<Def>,
@@ -87,6 +92,8 @@ class GlobalSearch extends Container {
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
+		state.className = props.className || "";
+		state.resultClassName = props.resultClassName || "";
 		state.matchingResults = SearchStore.get(state.query, null, null, null, RESULTS_LIMIT,
 			this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 	}
@@ -124,13 +131,6 @@ class GlobalSearch extends Container {
 		}
 	}
 
-	_onChangeQuery(query: string) {
-		this.context.router.replace({...this.props.location, query: {
-			q: query || undefined, // eslint-disable-line no-undefined
-			prefixMatch: this.props.location.query.prefixMatch || undefined, // eslint-disable-line no-undefined
-			includeRepos: this.props.location.query.includeRepos || undefined}}); // eslint-disable-line no-undefined
-	}
-
 	_navigateTo(url: string) {
 		browserHistory.push(url);
 	}
@@ -143,7 +143,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx + 1 >= max ? 0 : idx + 1,
+				selectionIndex: idx + 1 >= max ? -1 : idx + 1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -155,7 +155,7 @@ class GlobalSearch extends Container {
 			max = this._numResults();
 
 			this.setState({
-				selectionIndex: idx < 1 ? max-1 : idx-1,
+				selectionIndex: idx < 0 ? max-1 : idx-1,
 			}, this._scrollToVisibleSelection);
 
 			this._temporarilyIgnoreMouseSelection();
@@ -175,19 +175,17 @@ class GlobalSearch extends Container {
 			break;
 
 		case 13: // Enter
-			this._onSelection();
-			this._temporarilyIgnoreMouseSelection();
-			e.preventDefault();
+			// Ignore global search enter keypress (to submit search form).
+			if (this._normalizedSelectionIndex() !== -1) {
+				this._onSelection();
+				this._temporarilyIgnoreMouseSelection();
+				e.preventDefault();
+			}
 			break;
 		default:
-			// Changes to the input value are handled by _handleInput.
+			// Changes to the input value are handled by the parent component.
 			break;
 		}
-	}
-
-	_handleInput(e: KeyboardEvent) {
-		if (!(e.currentTarget instanceof HTMLInputElement)) return;
-		this._onChangeQuery(e.currentTarget.value);
 	}
 
 	_scrollToVisibleSelection() {
@@ -276,10 +274,10 @@ class GlobalSearch extends Container {
 		this._ignoreMouseSelection = true;
 	}
 
-	_results(): Array<any> {
-		if (!this.state.query) return [<div styleName="result" key="_nosymbol"></div>];
+	_results(): React$Element | Array<React$Element> {
+		if (!this.state.query) return <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result">Type a query&hellip;</div>;
 
-		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Sorry, we couldn't find anything.</div>;
+		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Nothing found. Broaden your search scope and try again.</div>;
 		if (!this.state.matchingResults) {
 			return [<div key="1" styleName="tc f4" className={base.pv5}>Loading results...</div>];
 		}
@@ -301,24 +299,22 @@ class GlobalSearch extends Container {
 			const firstLineDocString = firstLine(repo.Description);
 			list.push(
 				<Link styleName={selected ? "block result-selected" : "block result"}
+					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={repo.URI}
 					key={repo.URI}
 					onClick={() => this._onSelection()}>
-					<div styleName="cool-gray flex-container" className={base.pt4}>
+					<div styleName="cool-gray flex-container">
 						<div styleName="flex-icon hidden-s">
-							<Icon icon="repository-gray" width="32px" />
+							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
-						<div styleName="flex bottom-border" className={base.pb3}>
-							<code styleName="f4 block" className={base.mb2}>
+						<div styleName="flex bottom-border" className={base.pb4}>
+							<code styleName="block title">
 								Repository
 								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
 							</code>
-							<p>
-								from {repo.URI}
-								<span styleName="cool-mid-gray">{firstLineDocString ? ` – ${firstLineDocString}` : ""}</span>
-							</p>
+							{firstLineDocString && <p styleName="docstring">{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -343,23 +339,22 @@ class GlobalSearch extends Container {
 			const firstLineDocString = firstLine(docstring);
 			list.push(
 				<Link styleName={selected ? "block result-selected" : "block result"}
+					className={this.state.resultClassName}
 					onMouseOver={(ev) => this._mouseSelectItem(ev, i)}
 					ref={selected ? this._setSelectedItem : null}
 					to={defURL}
 					key={defURL}
 					onClick={() => this._onSelection()}>
-					<div styleName="cool-gray flex-container" className={base.pt4}>
+					<div styleName="cool-gray flex-container" className={base.pt3}>
 						<div styleName="flex-icon hidden-s">
-							<Icon icon="doc-code" width="32px" />
+							<Icon icon="doc-code" width={resultIconSize} />
 						</div>
-						<div styleName="flex bottom-border" className={base.pb3}>
-							<code styleName="f4 block" className={base.mb2}>
+						<div styleName="flex bottom-border" className={base.pb4}>
+							<p styleName="repo">{trimRepo(def.Repo)}</p>
+							<code styleName="block title">
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}
 							</code>
-							<p>
-								from {def.Repo}
-								<span styleName="cool-mid-gray">{firstLineDocString ? ` – ${firstLineDocString}` : ""}</span>
-							</p>
+							{firstLineDocString && <p styleName="docstring">{firstLineDocString}</p>}
 						</div>
 					</div>
 				</Link>
@@ -370,19 +365,8 @@ class GlobalSearch extends Container {
 	}
 
 	render() {
-		return (<div styleName="center flex">
-			<div styleName="search-input relative">
-				<Input type="text"
-					block={true}
-					onChange={this._handleInput}
-					value={this.state.query}
-					autoFocus={true}
-					placeholder="Search code and cross-references"
-					spellCheck={false} />
-			</div>
-			<div>
-				{this._results()}
-			</div>
+		return (<div styleName="center flex" className={this.state.className}>
+			{this._results()}
 		</div>);
 	}
 }

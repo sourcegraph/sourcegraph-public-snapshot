@@ -1,0 +1,28 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+.container {
+	composes: containerFixedLeft from layout;
+	max-width: 900px;
+	composes: pr4 from base;
+}
+
+@value left-gutter 40px;
+
+.settings-inner {
+	composes: container;
+	padding-left: left-gutter;
+	composes: mh2 from base;
+}
+
+.results {
+	composes: container;
+	padding-left: left-gutter;
+	composes: mh0 mt4 from base;
+}
+.result {
+	composes: pl3 mr3 pt3 mb3 from base;
+}

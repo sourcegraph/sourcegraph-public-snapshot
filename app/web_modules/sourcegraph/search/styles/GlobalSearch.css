@@ -27,7 +27,7 @@
 .flex { flex: 1 1; }
 .flex-icon {
 	composes: tc from typography;
-	flex: 0 0 80px;
+	composes: pr3 from base;
 }
 
 .bg {
@@ -35,7 +35,7 @@
 	flex: 1;
 }
 
-.container-fixed { composes: containerFixed from layout; }
+.container { composes: containerFixedLeft from layout; }
 
 .center { composes: center from base; }
 
@@ -43,29 +43,6 @@
 	composes: bb from base;
 	composes: b--cool-pale-gray from colors;
 }
-
-/* TODO(chexee): Better input components */
-.search-input input {
-	background-color: white;
-	background-image: url('../../../../assets/img/symbols/search-gray.svg');
-	background-repeat: no-repeat;
-	background-size: 32px auto;
-	background-position: 16px;
-	border: 0;
-	border-bottom: 4px c_cool-pale-gray solid;
-	border-radius: 0;
-	color: c_cool-gray;
-	font-size: font-size-3;
-	padding: 16px;
-	text-indent: 48px;
-	transition: all 550ms cubic-bezier(0.175, 0.885, 0.320, 1);
-}
-
-.search-input input::placeholder {
-	color: c_cool-mid-gray;
-	text-overflow: ellipsis;
-}
-.search-input input[placeholder] { text-overflow: ellipsis; }
 
 .bold {
 	font-weight: bold;
@@ -75,22 +52,28 @@
 	cursor: pointer;
 	display: block;
 	margin: -1px 0;
+	line-height: 1;
 }
 
 .result-selected {
 	composes: result;
 	composes: bg-blue-1 from colors;
 }
+.result-selected .repo, .result-selected .docstring {
+	color: c_cool-gray;
+}
 
-@media media-sm {
-	.search-input input {
-		font-size: font-size-4;
-		background-image: none;
-		padding: 6px;
-		text-indent: 0;
-	}
-	.f4 { font-size: font-size-5;	}
-	.result, .result-selected { composes: ph2 from base; }
+.title {
+	font-size: 1.3rem;
+}
+.repo {
+	float: right;
+	composes: cool-mid-gray from colors;
+	composes: ma0 pl4 pr2 from base;
+}
+.docstring {
+	composes: ma0 from base;
+	composes: cool-mid-gray from colors;
 }
 
 code.block {

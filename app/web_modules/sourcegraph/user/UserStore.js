@@ -37,6 +37,12 @@ export class UserStore extends Store {
 				return this.content[state] || null;
 			},
 		});
+		this.settings = deepFreeze({
+			content: data && data.settings ? data.settings.content : {},
+			get(/* no args, stored on user's browser */) {
+				return this.content || null;
+			},
+		});
 	}
 
 	toJSON() {
@@ -48,6 +54,7 @@ export class UserStore extends Store {
 			emails: this.emails,
 			pendingAuthActions: this.pendingAuthActions,
 			authResponses: this.authResponses,
+			settings: this.settings,
 		};
 	}
 
@@ -113,6 +120,10 @@ export class UserStore extends Store {
 			return;
 		} else if (action instanceof UserActions.FetchedGitHubToken) {
 			this.activeGitHubToken = action.token;
+			this.__emitChange();
+			return;
+		} else if (action instanceof UserActions.UpdateSettings) {
+			this.settings = deepFreeze({...this.settings, content: action.settings});
 			this.__emitChange();
 			return;
 		}

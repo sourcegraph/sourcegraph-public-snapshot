@@ -5,10 +5,14 @@ import styles from "./styles/input.css";
 
 function Input(props) {
 	const cls = props.styles[props.block ? "block" : "input"]; // eslint-disable-line react/prop-types
-	return <input {...props} ref={props.domRef} className={cls} />;
+	return <input {...props} ref={props.domRef} className={`${cls} ${props.className || ""}`} />;
 }
 
 Input.propTypes = {
+	// className is an additional CSS class (or classes) to apply to the
+	// <input> element.
+	className: React.PropTypes.string,
+
 	// block, if true, displays the input as a block element.
 	block: React.PropTypes.bool,
 

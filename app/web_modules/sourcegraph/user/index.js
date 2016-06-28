@@ -2,6 +2,7 @@
 
 import {rel} from "sourcegraph/app/routePatterns";
 import type {Route} from "react-router";
+import type {SearchSettings} from "sourcegraph/search";
 
 export type User = {
 	UID: number;
@@ -21,6 +22,10 @@ export type ExternalToken = {
 	uid: number;
 	host: string;
 	scope: string;
+};
+
+export type Settings = {
+	search: ?SearchSettings;
 };
 
 const login = {
