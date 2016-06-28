@@ -281,8 +281,6 @@ func TestImages_Exists(t *testing.T) {
 			}
 			if v == 0 {
 				t.Errorf("%s: could not find image %s", lang, image)
-			} else if v != 1 && strings.Contains(image, "@sha256:") {
-				t.Errorf("%s: docker image is specified using `sha256` tag, but image is not version 1. Image %s is using version %d. Please build the image and use a named tag, or build with docker 1.9", lang, image, v)
 			}
 		}(lang, b.Build.Container.Image)
 	}
@@ -290,12 +288,9 @@ func TestImages_Exists(t *testing.T) {
 }
 
 func getImageSchemaVersion(image string) (int, error) {
-	parts := strings.SplitN(image, "@", 2)
+	parts := strings.SplitN(image, ":", 2)
 	if len(parts) < 2 {
-		parts = strings.SplitN(image, ":", 2)
-		if len(parts) < 2 {
-			return 0, fmt.Errorf("missing tag in image name %s", image)
-		}
+		return 0, fmt.Errorf("missing tag in image name %s", image)
 	}
 	name, tag := parts[0], parts[1]
 
