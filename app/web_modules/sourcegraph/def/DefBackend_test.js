@@ -85,5 +85,14 @@ describe("DefBackend", () => {
 				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr"));
 			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, null)]);
 		});
+		it("for a 404 error", () => {
+			DefBackend.fetch = function(url, options) {
+				expect(url).to.be("/.api/repos/r@v/-/def/d/-/refs?Repo=rr");
+				return immediateSyncPromise({response: {status: 404}, text: ""}, true);
+			};
+			expect(Dispatcher.Stores.catchDispatched(() => {
+				DefBackend.__onDispatch(new DefActions.WantRefs("r", "v", "d", "rr"));
+			})).to.eql([new DefActions.RefsFetched("r", "v", "d", "rr", null, {})]);
+		});
 	});
 });
