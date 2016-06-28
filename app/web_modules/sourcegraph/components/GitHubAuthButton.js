@@ -26,7 +26,7 @@ class GitHubAuthButton extends React.Component {
 		eventLogger: React.PropTypes.object.isRequired,
 	};
 	static defaultProps = {
-		scopes: null,
+		scopes: "",
 		returnTo: null,
 		color: "blue",
 		outline: false,

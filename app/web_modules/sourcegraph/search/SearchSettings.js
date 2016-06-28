@@ -12,11 +12,14 @@ import * as UserActions from "sourcegraph/user/UserActions";
 import type {Settings} from "sourcegraph/user";
 import {allLangs, langName} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
+import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
+import {withUserContext} from "sourcegraph/app/user";
 
 class SearchSettings extends Container {
 	static propTypes = {
 		className: React.PropTypes.string,
 		showAlerts: React.PropTypes.bool.isRequired,
+		githubToken: React.PropTypes.object,
 	};
 
 	state: {
@@ -36,12 +39,25 @@ class SearchSettings extends Container {
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
 	}
 
+	onStateTransition(prevState, nextState) {
+		if (nextState.githubToken && !prevState.githubToken) {
+			// HACK: since we can't dispatch to stores while we're already in a dispatch,
+			// we wrap this in setTimeout. The effect is that logged in users cannot search
+			// over public repos.
+			setTimeout(() => this._setScope({popular: false}, nextState));
+		}
+	}
+
 	_langs() {
 		return this.state.settings && this.state.settings.search && this.state.settings.search.languages ? Array.from(this.state.settings.search.languages) : [];
 	}
 
 	_scope() {
 		return this.state.settings && this.state.settings.search && this.state.settings.search.scope ? this.state.settings.search.scope : {popular: false, public: false, private: false, starred: false, team: false};
+	}
+
+	_hasPrivateGitHubToken() {
+		return this.props.githubToken && (!this.props.githubToken.scope || !(this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email")));
 	}
 
 	_toggleLang(lang: LanguageID) {
@@ -65,13 +81,15 @@ class SearchSettings extends Container {
 		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
 	}
 
-	_setScope(scope: any) {
+	_setScope(scope: any, currState: any) {
+		if (!currState) currState = this.state;
+
 		const newSettings = {
-			...this.state.settings,
+			...currState.settings,
 			search: {
-				...this.state.settings.search,
+				...currState.settings.search,
 				scope: {
-					...(this.state.settings.search && this.state.settings.search.scope),
+					...(currState.settings.search && currState.settings.search.scope),
 					...scope,
 				},
 			},
@@ -96,7 +114,6 @@ class SearchSettings extends Container {
 							outline={!langs.includes(lang)}>{langName(lang)}</Button>
 					))}
 				</div>
-				{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Auto-detect your languages</GitHubAuthButton>}
 			</div>
 		);
 	}
@@ -108,15 +125,32 @@ class SearchSettings extends Container {
 				<div styleName="group">
 					<span styleName="label">Include:</span>
 					<div>
-						<Button
+						{!this.state.signedIn && !this.state.githubToken && <Button
 							color="default"
 							size="small"
 							styleName="choice-button"
 							onClick={() => this._setScope({popular: !scope.popular})}
-							outline={!scope.popular}>Popular libraries</Button>
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects</GitHubAuthButton>}
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your private projects</GitHubAuthButton>}
-						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Team projects</GitHubAuthButton>}
+							outline={!scope.popular}>Popular libraries</Button>}
+						{(!this.state.signedIn || !this.props.githubToken) &&
+							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects + deps</GitHubAuthButton>}
+						{this.props.githubToken &&
+							<Button
+								color="default"
+								size="small"
+								styleName="choice-button"
+								onClick={() => this._setScope({public: !scope.public})}
+								outline={!scope.public}>Your public projects + deps</Button>
+						}
+						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button">Your private projects + deps</GitHubAuthButton>}
+						{this._hasPrivateGitHubToken() &&
+							<Button
+								color="default"
+								size="small"
+								styleName="choice-button"
+								onClick={() => this._setScope({private: !scope.private})}
+								outline={!scope.private}>Your private projects + deps</Button>
+						}
 					</div>
 				</div>
 			</div>
@@ -141,7 +175,7 @@ class SearchSettings extends Container {
 		);
 	}
 }
-export default CSSModules(SearchSettings, styles);
+export default withUserContext(CSSModules(SearchSettings, styles));
 
 const Alert = CSSModules(({children}: {children: React$Element | Array<React$Element>}) => (
 	<span styleName="alert">

@@ -8,7 +8,5 @@ export type SearchSettings = {
 		popular: boolean;
 		public: boolean;
 		private: boolean;
-		team: boolean;
-		starred: boolean;
 	}
 };
