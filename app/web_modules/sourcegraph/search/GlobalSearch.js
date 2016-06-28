@@ -238,10 +238,9 @@ class GlobalSearch extends Container {
 		const def = this.state.matchingResults.Defs[i - offset];
 		const url = urlToDefInfo(def) ? urlToDefInfo(def) : urlToDef(def);
 
-		let currentDef = this.state.matchingResults.Defs[i];
 		let eventProps = {globalSearchQuery: this.state.query, selectedItem: url, indexSelected: i, totalResults: this.state.matchingResults.Defs.length, page_name: this.props.location.pathname};
-		if (currentDef.FmtStrings && currentDef.FmtStrings.Kind && currentDef.FmtStrings.Language && currentDef.Repo) {
-			eventProps = {...eventProps, languageSelected: this.state.matchingResults.Defs[i].FmtStrings.Language, kindSelected: this.state.matchingResults.Defs[i].FmtStrings.Kind, repoSelected: this.state.matchingResults.Defs[i].Repo};
+		if (def.FmtStrings && def.FmtStrings.Kind && def.FmtStrings.Language && def.Repo) {
+			eventProps = {...eventProps, languageSelected: def.FmtStrings.Language, kindSelected: def.FmtStrings.Kind, repoSelected: def.Repo};
 		}
 
 		this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_CLICK, "GlobalSearchItemSelected", eventProps);
