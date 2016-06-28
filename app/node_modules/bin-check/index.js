@@ -1,8 +1,6 @@
 'use strict';
-
 var spawn = require('child_process').spawn;
 var executable = require('executable');
-var spawnSync = require('spawn-sync');
 
 module.exports = function (bin, cmd, cb) {
 	if (typeof cmd === 'function') {
@@ -28,14 +26,4 @@ module.exports = function (bin, cmd, cb) {
 			cb(null, code === 0);
 		});
 	});
-};
-
-module.exports.sync = function (bin, cmd) {
-	cmd = cmd || ['--help'];
-
-	if (!executable.sync(bin)) {
-		return false;
-	}
-
-	return spawnSync(bin, cmd).status === 0;
 };

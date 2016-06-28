@@ -1,9 +1,0 @@
-c, a b, a b {
-    p0: v
-}
-a b, c, a b {
-    p1: v;
-}
-a b, a b, c {
-    p2: v;
-}

@@ -11,7 +11,10 @@
 module.exports = function(context) {
 
   function reportLiteralNode(node) {
-    context.report(node, 'Missing JSX expression container around literal string');
+    context.report({
+      node: node,
+      message: 'Missing JSX expression container around literal string'
+    });
   }
 
   // --------------------------------------------------------------------------

@@ -41,7 +41,9 @@ module.exports = {
       // Explorer had problems with that.
       try {
         iframe.onload = null;
-      } catch (x) {}
+      } catch (x) {
+        // intentionally empty
+      }
       iframe.onerror = null;
     };
     var cleanup = function() {
@@ -77,7 +79,9 @@ module.exports = {
             iframe.contentWindow.postMessage(msg, origin);
           }
         }, 0);
-      } catch (x) {}
+      } catch (x) {
+        // intentionally empty
+      }
     };
 
     iframe.src = iframeUrl;
@@ -127,7 +131,7 @@ module.exports = {
         CollectGarbage();
       }
     };
-    var onerror = function(r)  {
+    var onerror = function(r) {
       debug('onerror', r);
       if (doc) {
         cleanup();
@@ -143,7 +147,9 @@ module.exports = {
               iframe.contentWindow.postMessage(msg, origin);
           }
         }, 0);
-      } catch (x) {}
+      } catch (x) {
+        // intentionally empty
+      }
     };
 
     doc.open();

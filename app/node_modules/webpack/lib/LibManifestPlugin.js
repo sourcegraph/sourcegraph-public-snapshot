@@ -12,13 +12,15 @@ module.exports = LibManifestPlugin;
 LibManifestPlugin.prototype.apply = function(compiler) {
 	compiler.plugin("emit", function(compilation, callback) {
 		async.forEach(compilation.chunks, function(chunk, callback) {
-			if(!chunk.initial)
+			if(!chunk.initial) {
+				callback();
 				return;
+			}
 			var targetPath = compilation.getPath(this.options.path, {
 				hash: compilation.hash,
 				chunk: chunk
 			});
-			var name = compilation.getPath(this.options.name, {
+			var name = this.options.name && compilation.getPath(this.options.name, {
 				hash: compilation.hash,
 				chunk: chunk
 			});

@@ -1,9 +1,7 @@
-// required to safely use babel/register within a browserify codebase
-
-"use strict";
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function () {};
+exports.default = function () {};
 
-module.exports = exports["default"];
+/*istanbul ignore next*/module.exports = exports["default"]; // required to safely use babel/register within a browserify codebase

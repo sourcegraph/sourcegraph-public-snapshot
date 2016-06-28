@@ -51,9 +51,8 @@ export const routes: Array<Route> = [
 			disableTreeSearchOverlay: true,
 			keepScrollPositionOnRouteChangeKey: "tree",
 			getComponents: (location, callback) => {
-				require.ensure([], (require) => {
-					require("sourcegraph/tree/routes").routes[0].getComponents(location, callback);
-				});
+				System.import("sourcegraph/tree/routes")
+					.then(m => m.routes[0].getComponents(location, callback));
 			},
 		},
 	},

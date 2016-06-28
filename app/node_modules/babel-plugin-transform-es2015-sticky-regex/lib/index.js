@@ -1,22 +1,12 @@
-"use strict";
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-var _babelHelperRegex = require("babel-helper-regex");
-
-var regex = _interopRequireWildcard(_babelHelperRegex);
-
-var _babelTypes = require("babel-types");
-
-var t = _interopRequireWildcard(_babelTypes);
-
-exports["default"] = function () {
+exports.default = function () {
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       RegExpLiteral: function RegExpLiteral(path) {
-        var node = path.node;
+        /*istanbul ignore next*/var node = path.node;
 
         if (!regex.is(node, "y")) return;
 
@@ -25,5 +15,18 @@ exports["default"] = function () {
     }
   };
 };
+
+var /*istanbul ignore next*/_babelHelperRegex = require("babel-helper-regex");
+
+/*istanbul ignore next*/
+var regex = _interopRequireWildcard(_babelHelperRegex);
+
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
+
+/*istanbul ignore next*/
+var t = _interopRequireWildcard(_babelTypes);
+
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 module.exports = exports["default"];

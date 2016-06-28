@@ -103,6 +103,8 @@ LocationStateModal.propTypes = {
 	modalName: React.PropTypes.string.isRequired,
 
 	onDismiss: React.PropTypes.func,
+
+	children: React.PropTypes.any,
 };
 LocationStateModal.contextTypes = {
 	router: React.PropTypes.object.isRequired,

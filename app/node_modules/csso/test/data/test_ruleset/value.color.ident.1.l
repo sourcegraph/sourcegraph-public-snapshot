@@ -1,1 +1,0 @@
-yellow{p:yellow}

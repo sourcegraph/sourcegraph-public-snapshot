@@ -6,7 +6,7 @@ Transforms:
 
 ```css
 :local(.continueButton) {
-  extends: button from "library/button.css";
+  composes: button from "library/button.css";
   color: green;
 }
 ```
@@ -18,17 +18,17 @@ into:
   button: __tmp_487387465fczSDGHSABb;
 }
 :local(.continueButton) {
-  extends: __tmp_487387465fczSDGHSABb;
+  composes: __tmp_487387465fczSDGHSABb;
   color: green;
 }
 ```
 
 ## Specification
 
-- Only a certain whitelist of properties are inspected. Currently, that whitelist is `['extends']` alone.
+- Only a certain whitelist of properties are inspected. Currently, that whitelist is `['composes']` alone.
 - An extend-import has the following format:
 ```
-extends: className [... className] from "path/to/file.css";
+composes: className [... className] from "path/to/file.css";
 ```
 
 ## Building

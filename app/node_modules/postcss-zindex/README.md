@@ -47,9 +47,11 @@ the dialog becomes `2`. For more examples, see the [tests](test.js).
 ```
 
 Note that this module does not attempt to normalize relative z-index values,
-such as `-1`. Be careful with using this module alongside JavaScript injected
-CSS; ideally you should have already extracted all of your stacking context
-into CSS.
+such as `-1`; indeed, it will abort immediately when encountering these values
+as it cannot be sure that rebasing mixed positive & negative values will keep
+the stacking context intact. Be careful with using this module alongside 
+JavaScript injected CSS; ideally you should have already extracted all of your
+stacking context into CSS.
 
 ## Usage
 

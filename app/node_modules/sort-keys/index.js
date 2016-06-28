@@ -14,16 +14,27 @@ module.exports = function (obj, opts) {
 	}
 
 	var deep = opts.deep;
+	var seenInput = [];
+	var seenOutput = [];
 
 	var sortKeys = function (x) {
+		var seenIndex = seenInput.indexOf(x);
+
+		if (seenIndex !== -1) {
+			return seenOutput[seenIndex];
+		}
+
 		var ret = {};
 		var keys = Object.keys(x).sort(opts.compare);
+
+		seenInput.push(x);
+		seenOutput.push(ret);
 
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
 			var val = x[key];
 
-			ret[key] = deep && val !== x && isPlainObj(val) ? sortKeys(val) : val;
+			ret[key] = deep && isPlainObj(val) ? sortKeys(val) : val;
 		}
 
 		return ret;

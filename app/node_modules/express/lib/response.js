@@ -14,6 +14,7 @@
 
 var contentDisposition = require('content-disposition');
 var deprecate = require('depd')('express');
+var encodeUrl = require('encodeurl');
 var escapeHtml = require('escape-html');
 var http = require('http');
 var isAbsolute = require('./utils').isAbsolute;
@@ -189,7 +190,7 @@ res.send = function send(body) {
   if (req.fresh) this.statusCode = 304;
 
   // strip irrelevant headers
-  if (204 == this.statusCode || 304 == this.statusCode) {
+  if (204 === this.statusCode || 304 === this.statusCode) {
     this.removeHeader('Content-Type');
     this.removeHeader('Content-Length');
     this.removeHeader('Transfer-Encoding');
@@ -239,7 +240,7 @@ res.json = function json(obj) {
   var app = this.app;
   var replacer = app.get('json replacer');
   var spaces = app.get('json spaces');
-  var body = JSON.stringify(val, replacer, spaces);
+  var body = stringify(val, replacer, spaces);
 
   // content-type
   if (!this.get('Content-Type')) {
@@ -281,7 +282,7 @@ res.jsonp = function jsonp(obj) {
   var app = this.app;
   var replacer = app.get('json replacer');
   var spaces = app.get('json spaces');
-  var body = JSON.stringify(val, replacer, spaces);
+  var body = stringify(val, replacer, spaces);
   var callback = this.req.query[app.get('jsonp callback name')];
 
   // content-type
@@ -740,7 +741,7 @@ res.get = function(field){
  * Clear cookie `name`.
  *
  * @param {String} name
- * @param {Object} options
+ * @param {Object} [options]
  * @return {ServerResponse} for chaining
  * @public
  */
@@ -832,8 +833,7 @@ res.location = function location(url) {
   }
 
   // set location
-  this.set('Location', loc);
-  return this;
+  return this.set('Location', encodeUrl(loc));
 };
 
 /**
@@ -871,13 +871,12 @@ res.redirect = function redirect(url) {
   }
 
   // Set location header
-  this.location(address);
-  address = this.get('Location');
+  address = this.location(address).get('Location');
 
   // Support text/{plain,html} by default
   this.format({
     text: function(){
-      body = statusCodes[status] + '. Redirecting to ' + encodeURI(address);
+      body = statusCodes[status] + '. Redirecting to ' + address;
     },
 
     html: function(){
@@ -1050,4 +1049,17 @@ function sendfile(res, file, options, callback) {
 
   // pipe
   file.pipe(res);
+}
+
+/**
+ * Stringify JSON, like JSON.stringify, but v8 optimized.
+ * @private
+ */
+
+function stringify(value, replacer, spaces) {
+  // v8 checks arguments.length for optimizing simple call
+  // https://bugs.chromium.org/p/v8/issues/detail?id=4730
+  return replacer || spaces
+    ? JSON.stringify(value, replacer, spaces)
+    : JSON.stringify(value);
 }

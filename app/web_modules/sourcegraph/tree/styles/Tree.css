@@ -54,7 +54,6 @@
 }
 
 .content-placeholder {
-	composes2: bg-blue-1 from colors;
 	composes: shimmer-animation from animation;
 
 	/* HACK: Using c_blue-5 and c_blue-8 doesn't work (vars aren't interpreted), so hardcode them. */

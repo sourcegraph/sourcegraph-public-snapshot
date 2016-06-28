@@ -7,6 +7,7 @@
 /**
  * Record that a particular variable has been used in code
  *
+ * @param {Object} context The current rule context.
  * @param {String} name The name of the variable to mark as used.
  * @returns {Boolean} True if the variable was found and marked as used, false if not.
  */

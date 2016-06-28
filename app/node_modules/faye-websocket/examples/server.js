@@ -1,4 +1,4 @@
-var WebSocket = require('../lib/faye/websocket'),
+var WebSocket = require('..'),
     deflate   = require('permessage-deflate'),
     fs        = require('fs'),
     http      = require('http'),

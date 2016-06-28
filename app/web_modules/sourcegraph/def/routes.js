@@ -6,6 +6,9 @@ import {rel} from "sourcegraph/app/routePatterns";
 import {defPath} from "sourcegraph/def";
 import type {Route} from "react-router";
 import type {Def} from "sourcegraph/def";
+import withLastSrclibDataVersion from "sourcegraph/blob/withLastSrclibDataVersion";
+import withDefAndRefLocations from "sourcegraph/def/withDefAndRefLocations";
+import blobWithDefBox from "sourcegraph/def/blobWithDefBox";
 
 export const routes: Array<Route> = [
 	{
@@ -30,13 +33,10 @@ export const routes: Array<Route> = [
 				callback(null, {
 					main: require("sourcegraph/blob/BlobLoader").default,
 					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
-				}, [
-					require("sourcegraph/blob/withLastSrclibDataVersion").default,
-					require("sourcegraph/def/withDefAndRefLocations").default,
-					require("sourcegraph/def/blobWithDefBox").default,
-				]);
+				});
 			});
 		},
+		blobLoaderHelpers: [withLastSrclibDataVersion, withDefAndRefLocations, blobWithDefBox],
 	},
 ];
 

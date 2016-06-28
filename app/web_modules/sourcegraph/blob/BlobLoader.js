@@ -13,6 +13,7 @@ import withResolvedRepoRev from "sourcegraph/repo/withResolvedRepoRev";
 import withFileBlob from "sourcegraph/blob/withFileBlob";
 import withAnnotations from "sourcegraph/blob/withAnnotations";
 import BlobMain from "sourcegraph/blob/BlobMain";
+import invariant from "invariant";
 
 export type Helper = {
 	reconcileState: (state: Object, props: Object) => void;
@@ -48,13 +49,15 @@ export type Helper = {
 // standard react-router thing) to be the helpers used by the BlobLoader.
 function blobLoader(Component) {
 	class BlobLoader extends Container {
+		static propTypes = {
+			route: React.PropTypes.object.isRequired,
+		};
+
 		_helpers: ?Array<Helper>;
-		_stores: ?Array<Object>;
 
 		constructor(props) {
 			super(props);
 			this._helpers = null;
-			this._stores = null;
 		}
 
 		reconcileState(state, props) {
@@ -66,15 +69,13 @@ function blobLoader(Component) {
 					});
 				}
 
+				Object.assign(state, props);
+
 				// This call is synchronous because we are guaranteed to already have
 				// loaded these components' modules.
-				props.route.getComponents(null, (err, components, helpers) => {
-					this._helpers = helpers || null;
-					this._stores = helpers ? this._helpers.map((h) => h.store).filter((s) => typeof s !== "undefined") : null;
-				});
+				invariant(props.route.blobLoaderHelpers, "route must define blobLoaderHelpers");
+				this._helpers = props.route.blobLoaderHelpers;
 			}
-
-			Object.assign(state, props);
 
 			if (this._helpers) {
 				this._helpers.forEach((h) => {

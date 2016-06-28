@@ -23,8 +23,6 @@
 		{{/* Insert this inline script before any resources to allow parallel resource fetches. */}}
 		{{template "Scripts" $}}
 
-		<link href="{{assetURL "/main.css"}}" rel="stylesheet">
-
 		{{template "Head" $}}
 
 		{{appconf.ExtraHeadHTML}}
@@ -43,8 +41,8 @@
 		{{template "Footer" $}}
 
 		{{if .Debug}}
-			<div id="debug">
-				<div class="verbose">
+			<div ignore-csp id="debug" style="position:fixed;bottom:42px;left:0;padding:5px 8px;font-family:monospace;font-size:0.75em;background-color:#efefef;z-index:99999;color:#999">
+				<div ignore-csp class="verbose" style="display:none">
 				{{if not (eq buildvar.Version "dev")}}{{buildvar.Version}}<br>{{end}}
 				{{if buildvar.CommitID}}
 					@{{buildvar.CommitID|maxLen 7}} &nbsp;
@@ -59,10 +57,6 @@
 
 		{{if appconf.CustomFeedbackForm}}
 			<div id="custom-feedback-form">{{customFeedbackForm}}</div>
-		{{end}}
-
-		{{with appconf.WebpackDevServerURL}}
-			<script src="{{.}}/webpack-dev-server.js"></script>
 		{{end}}
 
 		<script src="{{assetURL "/main.browser.js"}}"></script>

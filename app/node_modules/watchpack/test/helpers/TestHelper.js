@@ -26,8 +26,15 @@ TestHelper.prototype._before = function before(done) {
 };
 
 TestHelper.prototype._after = function after(done) {
-	this.tick(300, function() {
-		rimraf.sync(this.testdir);
+	var i = 0;
+	this.tick(300, function del() {
+		try {
+			rimraf.sync(this.testdir);
+		} catch(e) {
+			if(i++ > 20) throw e;
+			this.tick(100, del.bind(this));
+			return;
+		}
 		Object.keys(watcherManager.directoryWatchers).should.be.eql([]);
 		this.tick(300, done);
 	}.bind(this));

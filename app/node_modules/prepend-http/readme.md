@@ -13,19 +13,19 @@ $ npm install --save prepend-http
 ## Usage
 
 ```js
-var prependHttp = require('prepend-http');
+const prependHttp = require('prepend-http');
 
 prependHttp('todomvc.com');
-//=> http://todomvc.com
+//=> 'http://todomvc.com'
 
 prependHttp('localhost');
-//=> http://localhost
+//=> 'http://localhost'
 
 prependHttp('http://todomvc.com');
-//=> http://todomvc.com
+//=> 'http://todomvc.com'
 ```
 
 
 ## License
 
-MIT © [Sindre Sorhus](http://sindresorhus.com)
+MIT © [Sindre Sorhus](https://sindresorhus.com)

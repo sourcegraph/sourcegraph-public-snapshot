@@ -1,23 +1,39 @@
-/* eslint max-len: 0 */
-
-"use strict";
-
-var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function (_ref) {
-  var t = _ref.types;
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
+
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var _getIterator2 = require("babel-runtime/core-js/get-iterator");
+
+var _getIterator3 = _interopRequireDefault(_getIterator2);
+
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var t = _ref.types;
+
 
   /**
    * Test if a VariableDeclaration's declarations contains any Patterns.
    */
 
   function variableDeclarationHasPattern(node) {
-    var _arr = node.declarations;
+    for ( /*istanbul ignore next*/var _iterator = node.declarations, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : (0, _getIterator3.default)(_iterator);;) {
+      /*istanbul ignore next*/
+      var _ref2;
 
-    for (var _i = 0; _i < _arr.length; _i++) {
-      var declar = _arr[_i];
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref2 = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref2 = _i.value;
+      }
+
+      var declar = _ref2;
+
       if (t.isPattern(declar.id)) {
         return true;
       }
@@ -30,10 +46,21 @@ exports["default"] = function (_ref) {
    */
 
   function hasRest(pattern) {
-    var _arr2 = pattern.elements;
+    for ( /*istanbul ignore next*/var _iterator2 = pattern.elements, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : (0, _getIterator3.default)(_iterator2);;) {
+      /*istanbul ignore next*/
+      var _ref3;
 
-    for (var _i2 = 0; _i2 < _arr2.length; _i2++) {
-      var elem = _arr2[_i2];
+      if (_isArray2) {
+        if (_i2 >= _iterator2.length) break;
+        _ref3 = _iterator2[_i2++];
+      } else {
+        _i2 = _iterator2.next();
+        if (_i2.done) break;
+        _ref3 = _i2.value;
+      }
+
+      var elem = _ref3;
+
       if (t.isRestElement(elem)) {
         return true;
       }
@@ -41,7 +68,7 @@ exports["default"] = function (_ref) {
     return false;
   }
 
-  var arrayUnpackVisitor = {
+  var arrayUnpackVisitor = { /*istanbul ignore next*/
     ReferencedIdentifier: function ReferencedIdentifier(path, state) {
       if (state.bindings[path.node.name]) {
         state.deopt = true;
@@ -50,9 +77,10 @@ exports["default"] = function (_ref) {
     }
   };
 
-  var DestructuringTransformer = (function () {
-    function DestructuringTransformer(opts) {
-      _classCallCheck(this, DestructuringTransformer);
+  /*istanbul ignore next*/
+  var DestructuringTransformer = function () {
+    function /*istanbul ignore next*/DestructuringTransformer(opts) {
+      /*istanbul ignore next*/(0, _classCallCheck3.default)(this, DestructuringTransformer);
 
       this.blockHoist = opts.blockHoist;
       this.operator = opts.operator;
@@ -67,7 +95,7 @@ exports["default"] = function (_ref) {
       var op = this.operator;
       if (t.isMemberExpression(id)) op = "=";
 
-      var node = undefined;
+      var node = /*istanbul ignore next*/void 0;
 
       if (op) {
         node = t.expressionStatement(t.assignmentExpression(op, id, init));
@@ -211,9 +239,21 @@ exports["default"] = function (_ref) {
       if (pattern.elements.length > arr.elements.length) return;
       if (pattern.elements.length < arr.elements.length && !hasRest(pattern)) return false;
 
-      var _arr3 = pattern.elements;
-      for (var _i3 = 0; _i3 < _arr3.length; _i3++) {
-        var elem = _arr3[_i3];
+      for ( /*istanbul ignore next*/var _iterator3 = pattern.elements, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : (0, _getIterator3.default)(_iterator3);;) {
+        /*istanbul ignore next*/
+        var _ref4;
+
+        if (_isArray3) {
+          if (_i3 >= _iterator3.length) break;
+          _ref4 = _iterator3[_i3++];
+        } else {
+          _i3 = _iterator3.next();
+          if (_i3.done) break;
+          _ref4 = _i3.value;
+        }
+
+        var elem = _ref4;
+
         // deopt on holes
         if (!elem) return false;
 
@@ -221,11 +261,23 @@ exports["default"] = function (_ref) {
         if (t.isMemberExpression(elem)) return false;
       }
 
-      var _arr4 = arr.elements;
-      for (var _i4 = 0; _i4 < _arr4.length; _i4++) {
-        var elem = _arr4[_i4];
+      for ( /*istanbul ignore next*/var _iterator4 = arr.elements, _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : (0, _getIterator3.default)(_iterator4);;) {
+        /*istanbul ignore next*/
+        var _ref5;
+
+        if (_isArray4) {
+          if (_i4 >= _iterator4.length) break;
+          _ref5 = _iterator4[_i4++];
+        } else {
+          _i4 = _iterator4.next();
+          if (_i4.done) break;
+          _ref5 = _i4.value;
+        }
+
+        var _elem = _ref5;
+
         // deopt on spread elements
-        if (t.isSpreadElement(elem)) return false;
+        if (t.isSpreadElement(_elem)) return false;
       }
 
       // deopt on reference to left side identifiers
@@ -289,7 +341,7 @@ exports["default"] = function (_ref) {
         // hole
         if (!elem) continue;
 
-        var elemRef = undefined;
+        var elemRef = /*istanbul ignore next*/void 0;
 
         if (t.isRestElement(elem)) {
           elemRef = this.toArray(arrayRef);
@@ -329,10 +381,10 @@ exports["default"] = function (_ref) {
     };
 
     return DestructuringTransformer;
-  })();
+  }();
 
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       ExportNamedDeclaration: function ExportNamedDeclaration(path) {
         var declaration = path.get("declaration");
         if (!declaration.isVariableDeclaration()) return;
@@ -340,8 +392,8 @@ exports["default"] = function (_ref) {
 
         var specifiers = [];
 
-        for (var _name in path.getOuterBindingIdentifiers(path)) {
-          var id = t.identifier(_name);
+        for (var name in path.getOuterBindingIdentifiers(path)) {
+          var id = t.identifier(name);
           specifiers.push(t.exportSpecifier(id, id));
         }
 
@@ -351,10 +403,9 @@ exports["default"] = function (_ref) {
         path.replaceWith(declaration.node);
         path.insertAfter(t.exportNamedDeclaration(null, specifiers));
       },
-
-      ForXStatement: function ForXStatement(path, file) {
-        var node = path.node;
-        var scope = path.scope;
+      /*istanbul ignore next*/ForXStatement: function ForXStatement(path, file) {
+        /*istanbul ignore next*/var node = path.node;
+        /*istanbul ignore next*/var scope = path.scope;
 
         var left = node.left;
 
@@ -396,10 +447,9 @@ exports["default"] = function (_ref) {
         var block = node.body;
         block.body = nodes.concat(block.body);
       },
-
-      CatchClause: function CatchClause(_ref2, file) {
-        var node = _ref2.node;
-        var scope = _ref2.scope;
+      /*istanbul ignore next*/CatchClause: function CatchClause(_ref6, file) {
+        /*istanbul ignore next*/var node = _ref6.node;
+        /*istanbul ignore next*/var scope = _ref6.scope;
 
         var pattern = node.param;
         if (!t.isPattern(pattern)) return;
@@ -419,10 +469,9 @@ exports["default"] = function (_ref) {
 
         node.body.body = nodes.concat(node.body.body);
       },
-
-      AssignmentExpression: function AssignmentExpression(path, file) {
-        var node = path.node;
-        var scope = path.scope;
+      /*istanbul ignore next*/AssignmentExpression: function AssignmentExpression(path, file) {
+        /*istanbul ignore next*/var node = path.node;
+        /*istanbul ignore next*/var scope = path.scope;
 
         if (!t.isPattern(node.left)) return;
 
@@ -435,7 +484,7 @@ exports["default"] = function (_ref) {
           nodes: nodes
         });
 
-        var ref = undefined;
+        var ref = /*istanbul ignore next*/void 0;
         if (path.isCompletionRecord() || !path.parentPath.isExpressionStatement()) {
           ref = scope.generateUidIdentifierBasedOnNode(node.right, "ref");
 
@@ -454,18 +503,17 @@ exports["default"] = function (_ref) {
 
         path.replaceWithMultiple(nodes);
       },
-
-      VariableDeclaration: function VariableDeclaration(path, file) {
-        var node = path.node;
-        var scope = path.scope;
-        var parent = path.parent;
+      /*istanbul ignore next*/VariableDeclaration: function VariableDeclaration(path, file) {
+        /*istanbul ignore next*/var node = path.node;
+        /*istanbul ignore next*/var scope = path.scope;
+        /*istanbul ignore next*/var parent = path.parent;
 
         if (t.isForXStatement(parent)) return;
         if (!parent || !path.container) return; // i don't know why this is necessary - TODO
         if (!variableDeclarationHasPattern(node)) return;
 
         var nodes = [];
-        var declar = undefined;
+        var declar = /*istanbul ignore next*/void 0;
 
         for (var i = 0; i < node.declarations.length; i++) {
           declar = node.declarations[i];
@@ -500,4 +548,7 @@ exports["default"] = function (_ref) {
   };
 };
 
-module.exports = exports["default"];
+/*istanbul ignore next*/
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+module.exports = exports["default"]; /* eslint max-len: 0 */

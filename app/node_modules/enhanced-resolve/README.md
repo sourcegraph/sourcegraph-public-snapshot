@@ -21,6 +21,12 @@ npm test
 [![Build Status](https://secure.travis-ci.org/webpack/enhanced-resolve.png?branch=master)](http://travis-ci.org/webpack/enhanced-resolve)
 
 
+## Contributing
+
+Take a look at `lib/ResolveFactory.js` to understand how everything fits together.
+
+
+
 ## License
 
 Copyright (c) 2012-2013 Tobias Koppers

@@ -49,6 +49,8 @@ app-dep:
 	cd app && $(NPM_RUN_DEP)
 
 WEBPACK_DEV_SERVER_URL ?= http://localhost:8080
+PUBLIC_WEBPACK_DEV_SERVER_URL ?= $(WEBPACK_DEV_SERVER_URL)
+WEBPACK_DEV_SERVER_ADDR ?= 127.0.0.1
 SERVEFLAGS ?=
 serve-dev: serve-dep
 	@echo Starting server\; will recompile and restart when source files change
@@ -74,7 +76,7 @@ serve-dep:
 # the app itself).
 	@[ "$(SGXOS)" = "windows" ] || [ `ulimit -n` -ge 10000 ] || (echo "Error: Please increase the open file limit by running\n\n  ulimit -n 10000\n" 1>&2; exit 1)
 
-	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" npm start &)) || echo Serving bundled assets, not using Webpack.
+	@[ -n "$(WEBPACK_DEV_SERVER_URL)" ] && [ "$(WEBPACK_DEV_SERVER_URL)" != " " ] && (curl -Ss -o /dev/null "$(WEBPACK_DEV_SERVER_URL)" || (cd app && WEBPACK_DEV_SERVER_URL="$(WEBPACK_DEV_SERVER_URL)" PUBLIC_WEBPACK_DEV_SERVER_URL="$(PUBLIC_WEBPACK_DEV_SERVER_URL)" WEBPACK_DEV_SERVER_ADDR="$(WEBPACK_DEV_SERVER_ADDR)" npm start &)) || echo Serving bundled assets, not using Webpack.
 
 smoke: src
 	dropdb --if-exists src-smoke

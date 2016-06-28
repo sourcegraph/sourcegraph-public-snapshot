@@ -16,7 +16,7 @@ machine:
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
   node:
-    version: 4.1.0
+    version: 5.11.1
 
 dependencies:
   pre:

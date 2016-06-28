@@ -1,1 +1,0 @@
-a{padding:0 1px 2px 3px!important}

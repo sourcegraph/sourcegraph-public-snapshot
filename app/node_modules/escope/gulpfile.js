@@ -32,15 +32,18 @@ var gulp = require('gulp'),
     filter = require('gulp-filter'),
     tagVersion = require('gulp-tag-version'),
     sourcemaps = require('gulp-sourcemaps'),
-    coffee = require('gulp-coffee'),
     plumber = require('gulp-plumber'),
     source = require('vinyl-source-stream'),
     browserify = require('browserify'),
     lazypipe = require('lazypipe'),
     eslint = require('gulp-eslint'),
-    coffee = require('coffee-script/register');
+    fs = require('fs');
 
-var TEST = [ 'test/*.coffee' ];
+require('babel-register')({
+    only: /escope\/(src|test)\//
+});
+
+var TEST = [ 'test/*.js' ];
 var SOURCE = [ 'src/**/*.js' ];
 
 var ESLINT_OPTION = {
@@ -51,23 +54,26 @@ var ESLINT_OPTION = {
         'no-shadow': 0,
         'no-new': 0,
         'no-underscore-dangle': 0,
-        'no-multi-spaces': false,
+        'no-multi-spaces': 0,
         'no-native-reassign': 0,
         'no-loop-func': 0,
         'no-lone-blocks': 0
     },
-    settings: {
-        "ecmascript": 6,
-        "jsx": false
+    ecmaFeatures: {
+        jsx: false,
+        modules: true
     },
     env: {
-        'node': true
+        node: true,
+        es6: true
     }
 };
 
+var BABEL_OPTIONS = JSON.parse(fs.readFileSync('.babelrc', { encoding: 'utf8' }));
+
 var build = lazypipe()
     .pipe(sourcemaps.init)
-    .pipe(babel)
+    .pipe(babel, BABEL_OPTIONS)
     .pipe(sourcemaps.write)
     .pipe(gulp.dest, 'lib');
 

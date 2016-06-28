@@ -11,6 +11,7 @@ function AMDRequireDependenciesBlock(expr, arrayRange, functionRange, module, lo
 	this.outerRange = expr.range;
 	this.arrayRange = arrayRange;
 	this.functionRange = functionRange;
+	this.bindThis = true;
 	this.range = arrayRange && functionRange ? [arrayRange[0], functionRange[1]] :
 		arrayRange ? arrayRange :
 		functionRange ? functionRange :
@@ -22,3 +23,4 @@ function AMDRequireDependenciesBlock(expr, arrayRange, functionRange, module, lo
 module.exports = AMDRequireDependenciesBlock;
 
 AMDRequireDependenciesBlock.prototype = Object.create(AsyncDependenciesBlock.prototype);
+AMDRequireDependenciesBlock.prototype.constructor = AMDRequireDependenciesBlock;

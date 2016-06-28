@@ -1,4 +1,4 @@
-var WebSocket = require('../lib/faye/websocket'),
+var WebSocket = require('..').Client,
     deflate   = require('permessage-deflate'),
     pace      = require('pace');
 
@@ -7,7 +7,7 @@ var host    = 'ws://localhost:9001',
     cases   = 0,
     options = {extensions: [deflate]};
 
-var socket = new WebSocket.Client(host + '/getCaseCount'),
+var socket = new WebSocket(host + '/getCaseCount'),
     url, progress;
 
 socket.onmessage = function(event) {
@@ -19,13 +19,13 @@ socket.onmessage = function(event) {
 var runCase = function(n) {
   if (n > cases) {
     url = host + '/updateReports?agent=' + agent;
-    socket = new WebSocket.Client(url);
+    socket = new WebSocket(url);
     socket.onclose = process.exit;
     return;
   }
 
   url = host + '/runCase?case=' + n + '&agent=' + agent;
-  socket = new WebSocket.Client(url, [], options);
+  socket = new WebSocket(url, [], options);
   socket.pipe(socket);
 
   socket.on('close', function() {

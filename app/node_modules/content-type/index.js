@@ -4,6 +4,8 @@
  * MIT Licensed
  */
 
+'use strict'
+
 /**
  * RegExp to match *( ";" parameter ) in RFC 7231 sec 3.1.1.1
  *

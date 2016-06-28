@@ -1,31 +1,39 @@
-/* eslint max-len: 0 */
-
-"use strict";
-
-var _classCallCheck = require("babel-runtime/helpers/class-call-check")["default"];
-
-var _Symbol = require("babel-runtime/core-js/symbol")["default"];
-
-var _interopRequireDefault = require("babel-runtime/helpers/interop-require-default")["default"];
-
-var _interopRequireWildcard = require("babel-runtime/helpers/interop-require-wildcard")["default"];
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-var _babelHelperOptimiseCallExpression = require("babel-helper-optimise-call-expression");
+var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
+var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+var _symbol = require("babel-runtime/core-js/symbol");
+
+var _symbol2 = _interopRequireDefault(_symbol);
+
+var /*istanbul ignore next*/_babelHelperOptimiseCallExpression = require("babel-helper-optimise-call-expression");
+
+/*istanbul ignore next*/
 var _babelHelperOptimiseCallExpression2 = _interopRequireDefault(_babelHelperOptimiseCallExpression);
 
-var _babelMessages = require("babel-messages");
+var /*istanbul ignore next*/_babelMessages = require("babel-messages");
 
+/*istanbul ignore next*/
 var messages = _interopRequireWildcard(_babelMessages);
 
-var _babelTypes = require("babel-types");
+var /*istanbul ignore next*/_babelTypes = require("babel-types");
 
+/*istanbul ignore next*/
 var t = _interopRequireWildcard(_babelTypes);
 
+/*istanbul ignore next*/
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 // ✌️
-var HARDCORE_THIS_REF = _Symbol();
+/* eslint max-len: 0 */
+
+var HARDCORE_THIS_REF = /*istanbul ignore next*/(0, _symbol2.default)();
 
 function isIllegalBareSuper(node, parent) {
   if (!t.isSuper(node)) return false;
@@ -38,26 +46,23 @@ function isMemberExpressionSuper(node) {
   return t.isMemberExpression(node) && t.isSuper(node.object);
 }
 
-var visitor = {
+var visitor = { /*istanbul ignore next*/
   Function: function Function(path) {
     if (!path.inShadow("this")) {
       path.skip();
     }
   },
-
-  ReturnStatement: function ReturnStatement(path, state) {
+  /*istanbul ignore next*/ReturnStatement: function ReturnStatement(path, state) {
     if (!path.inShadow("this")) {
       state.returns.push(path);
     }
   },
-
-  ThisExpression: function ThisExpression(path, state) {
+  /*istanbul ignore next*/ThisExpression: function ThisExpression(path, state) {
     if (!path.node[HARDCORE_THIS_REF]) {
       state.thises.push(path);
     }
   },
-
-  enter: function enter(path, state) {
+  /*istanbul ignore next*/enter: function enter(path, state) {
     var callback = state.specHandle;
     if (state.isLoose) callback = state.looseHandle;
 
@@ -87,11 +92,11 @@ var visitor = {
   }
 };
 
-var ReplaceSupers = (function () {
-  function ReplaceSupers(opts) {
-    var inClass = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-
-    _classCallCheck(this, ReplaceSupers);
+/*istanbul ignore next*/
+var ReplaceSupers = function () {
+  function /*istanbul ignore next*/ReplaceSupers(opts) {
+    /*istanbul ignore next*/var inClass = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+    /*istanbul ignore next*/(0, _classCallCheck3.default)(this, ReplaceSupers);
 
     this.forceSuperMemoisation = opts.forceSuperMemoisation;
     this.methodPath = opts.methodPath;
@@ -152,7 +157,7 @@ var ReplaceSupers = (function () {
       return;
     } else if (t.isCallExpression(parent, { callee: id })) {
       return;
-    } else if (t.isMemberExpression(parent) && !methodNode["static"]) {
+    } else if (t.isMemberExpression(parent) && !methodNode.static) {
       // super.test -> objectRef.prototype.test
       return t.memberExpression(superRef, t.identifier("prototype"));
     } else {
@@ -188,10 +193,10 @@ var ReplaceSupers = (function () {
   };
 
   ReplaceSupers.prototype.specHandle = function specHandle(path) {
-    var property = undefined;
-    var computed = undefined;
-    var args = undefined;
-    var thisReference = undefined;
+    var property = /*istanbul ignore next*/void 0;
+    var computed = /*istanbul ignore next*/void 0;
+    var args = /*istanbul ignore next*/void 0;
+    var thisReference = /*istanbul ignore next*/void 0;
 
     var parent = path.parent;
     var node = path.node;
@@ -242,11 +247,12 @@ var ReplaceSupers = (function () {
   ReplaceSupers.prototype.optimiseCall = function optimiseCall(callee, args) {
     var thisNode = t.thisExpression();
     thisNode[HARDCORE_THIS_REF] = true;
-    return _babelHelperOptimiseCallExpression2["default"](callee, thisNode, args);
+    return (/*istanbul ignore next*/(0, _babelHelperOptimiseCallExpression2.default)(callee, thisNode, args)
+    );
   };
 
   return ReplaceSupers;
-})();
+}();
 
-exports["default"] = ReplaceSupers;
-module.exports = exports["default"];
+/*istanbul ignore next*/exports.default = ReplaceSupers;
+/*istanbul ignore next*/module.exports = exports["default"];

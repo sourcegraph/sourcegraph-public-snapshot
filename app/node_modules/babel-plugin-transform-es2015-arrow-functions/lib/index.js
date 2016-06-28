@@ -1,19 +1,19 @@
-"use strict";
+/*istanbul ignore next*/"use strict";
 
 exports.__esModule = true;
 
-exports["default"] = function (_ref) {
-  var t = _ref.types;
+exports.default = function ( /*istanbul ignore next*/_ref) {
+  /*istanbul ignore next*/var t = _ref.types;
 
   return {
-    visitor: {
+    visitor: { /*istanbul ignore next*/
       ArrowFunctionExpression: function ArrowFunctionExpression(path, state) {
         if (state.opts.spec) {
-          var node = path.node;
+          /*istanbul ignore next*/var node = path.node;
 
           if (node.shadow) return;
 
-          node.shadow = { "this": false };
+          node.shadow = { this: false };
           node.type = "FunctionExpression";
 
           var boundThis = t.thisExpression();
@@ -32,4 +32,4 @@ exports["default"] = function (_ref) {
   };
 };
 
-module.exports = exports["default"];
+/*istanbul ignore next*/module.exports = exports["default"];

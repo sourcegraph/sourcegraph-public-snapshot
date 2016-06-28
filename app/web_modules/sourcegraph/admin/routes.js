@@ -22,11 +22,8 @@ const globalBuilds: Route = {
 const coverage: Route = {
 	path: rel.coverage,
 	getComponents: (location, callback) => {
-		require.ensure([], (require) => {
-			callback(null, {
-				main: require("sourcegraph/admin/CoverageDashboard").default,
-			});
-		});
+		System.import("sourcegraph/admin/CoverageDashboard")
+			.then(m => callback(null, {main: m.default}));
 	},
 };
 

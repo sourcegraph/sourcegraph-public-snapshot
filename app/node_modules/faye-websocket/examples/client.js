@@ -1,11 +1,18 @@
-var WebSocket = require('../lib/faye/websocket'),
-    fs = require('fs');
+var WebSocket = require('..').Client,
+    deflate   = require('permessage-deflate'),
+    fs        = require('fs');
 
-var url     = process.argv[2],
-    headers = {Origin: 'http://faye.jcoglan.com'},
-    ca      = fs.readFileSync(__dirname + '/../spec/server.crt'),
-    proxy   = {origin: process.argv[3], headers: {'User-Agent': 'Echo'}, tls: {ca: ca}},
-    ws      = new WebSocket.Client(url, [], {headers: headers, proxy: proxy, tls: {ca: ca}});
+var url   = process.argv[2],
+    proxy = process.argv[3],
+    ca    = fs.readFileSync(__dirname + '/../spec/server.crt'),
+    tls   = {ca: ca};
+
+var ws = new WebSocket(url, [], {
+  proxy:      {origin: proxy, headers: {'User-Agent': 'Echo'}, tls: tls},
+  tls:        tls,
+  headers:    {Origin: 'http://faye.jcoglan.com'},
+  extensions: [deflate]
+});
 
 ws.onopen = function() {
   console.log('[open]', ws.headers);

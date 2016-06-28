@@ -3,6 +3,8 @@
 
 Node's `constants` module for the browser.
 
+[![downloads](https://img.shields.io/npm/dm/constants-browserify.svg)](https://www.npmjs.org/package/constants-browserify)
+
 ## Usage
 
 To use with browserify cli:

@@ -40,7 +40,10 @@ module.exports = function(context) {
         ) {
           continue;
         }
-        context.report(callee, 'Do not use setState in componentDidUpdate');
+        context.report({
+          node: callee,
+          message: 'Do not use setState in componentDidUpdate'
+        });
         break;
       }
     }

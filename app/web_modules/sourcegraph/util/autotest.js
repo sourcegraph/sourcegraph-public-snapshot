@@ -51,7 +51,7 @@ export default function(expected, filename, component, context) {
 			case Number:
 			case Array:
 			case Object:
-			case Symbol:
+			case Symbol: // eslint-disable-line no-undef
 			case Boolean:
 				return v;
 			case Function:

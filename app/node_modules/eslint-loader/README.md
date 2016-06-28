@@ -67,7 +67,7 @@ You can pass [eslint options](http://eslint.org/docs/user-guide/command-line-int
     preLoaders: [
       {
         test: /\.js$/,
-        loader: "eslint-loader?{rules:[{semi:0}]}",
+        loader: "eslint-loader?{rules:{semi:0}}",
         exclude: /node_modules/,
       },
     ],

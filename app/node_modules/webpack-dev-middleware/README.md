@@ -66,3 +66,40 @@ app.use(webpackMiddleware(webpack({
 	// options for formating the statistics
 }));
 ```
+
+## Advanced API
+
+This part shows how you might interact with the middleware during runtime:
+
+* `close(callback)` - stop watching for file changes
+	```js
+	var webpackDevMiddlewareInstance = webpackMiddleware(/* see example usage */);
+	app.use(webpackDevMiddlewareInstance);
+	// After 10 seconds stop watching for file changes:
+	setTimeout(function(){
+	  webpackDevMiddlewareInstance.close();
+	}, 10000);
+	```
+
+* `invalidate()` - recompile the bundle - e.g. after you changed the configuration
+	```js
+	var compiler = webpack(/* see example usage */);
+	var webpackDevMiddlewareInstance = webpackMiddleware(compiler);
+	app.use(webpackDevMiddlewareInstance);
+	setTimeout(function(){
+	  // After a short delay the configuration is changed
+	  // in this example we will just add a banner plugin:
+	  compiler.apply(new webpack.BannerPlugin('A new banner'));
+	  // Recompile the bundle with the banner plugin:
+	  webpackDevMiddlewareInstance.invalidate();
+	}, 1000);
+	```
+
+* `waitUntilValid(callback)` - executes the `callback` if the bundle is valid or after it is valid again:
+	```js
+	var webpackDevMiddlewareInstance = webpackMiddleware(/* see example usage */);
+	app.use(webpackDevMiddlewareInstance);
+	webpackDevMiddleware.waitUntilValid(function(){
+	  console.log('Package is in a valid state');
+	});
+	```

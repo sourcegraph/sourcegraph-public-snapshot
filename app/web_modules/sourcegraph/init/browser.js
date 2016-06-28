@@ -10,6 +10,8 @@ import {reset as resetStores} from "sourcegraph/init/stores";
 import * as context from "sourcegraph/app/context";
 import resetOnAuthChange from "sourcegraph/app/resetOnAuthChange";
 import shouldUpdateScroll from "sourcegraph/app/shouldUpdateScroll";
+import {AppContainer} from "react-hot-loader";
+import Redbox from "redbox-react";
 
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
@@ -25,6 +27,10 @@ if (typeof window !== "undefined" && window.__StoreData) {
 context.reset(window.__sourcegraphJSContext);
 resetOnAuthChange();
 __webpack_public_path__ = document.head.dataset.webpackPublicPath; // eslint-disable-line no-undef
+
+const rootEl = document.getElementById("main");
+
+let hotReloadCounter = 0;
 
 // matchWithRedirectHandling calls the router match func. If the router issues
 // a redirect, it calls match recursively after replacing the location with the
@@ -48,8 +54,25 @@ function matchWithRedirectHandling(recursed) {
 			return;
 		}
 
-		setTimeout(() => ReactDOM.render(<Router {...renderProps} render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />, document.getElementById("main")));
+		setTimeout(() => {
+			ReactDOM.render(
+				<AppContainer errorReporter={Redbox}>
+					<Router
+						key={hotReloadCounter}
+						{...renderProps}
+						render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />
+				</AppContainer>,
+				rootEl,
+			);
+		});
 	});
 }
 
 matchWithRedirectHandling(false);
+
+if (typeof module !== "undefined" && module.hot) {
+	module.hot.accept("sourcegraph/app/App", () => {
+		hotReloadCounter++;
+		matchWithRedirectHandling(false);
+	});
+}
