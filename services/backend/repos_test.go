@@ -4,9 +4,15 @@ import (
 	"reflect"
 	"testing"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/platform"
 )
 
@@ -68,6 +74,54 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 		t.Error("!calledGet")
 	}
 	if !*calledUpdate {
+		t.Error("!calledUpdate")
+	}
+	if !reflect.DeepEqual(repo, wantRepo) {
+		t.Errorf("got %+v, want %+v", repo, wantRepo)
+	}
+}
+
+func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
+	var s repos
+	ctx, mock := testContext()
+
+	// Remove auth from testContext
+	ctx = authpkg.WithActor(ctx, authpkg.Actor{})
+	ctx = accesscontrol.WithInsecureSkip(ctx, false)
+
+	wantRepo := &sourcegraph.Repo{
+		ID:      1,
+		URI:     "github.com/u/r",
+		HTMLURL: "http://github.com/u/r",
+		Mirror:  true,
+	}
+
+	mock.githubRepos.MockGet_Return(ctx, &sourcegraph.RemoteRepo{
+		Description: "This is a repository",
+	})
+
+	calledGet := mock.stores.Repos.MockGet_Return(t, wantRepo)
+	var calledUpdate bool
+	mock.stores.Repos.Update_ = func(ctx context.Context, op store.RepoUpdate) error {
+		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
+			return err
+		}
+		calledUpdate = true
+		if op.ReposUpdateOp.Repo != wantRepo.ID {
+			t.Errorf("got repo %q, want %q", op.ReposUpdateOp.Repo, wantRepo.ID)
+			return grpc.Errorf(codes.NotFound, "repo %v not found", wantRepo.ID)
+		}
+		return nil
+	}
+
+	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*calledGet {
+		t.Error("!calledGet")
+	}
+	if !calledUpdate {
 		t.Error("!calledUpdate")
 	}
 	if !reflect.DeepEqual(repo, wantRepo) {

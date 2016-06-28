@@ -100,7 +100,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (*so
 }
 
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
-	var updateOp *store.RepoUpdate
+	var updateWithDataFromRemote *store.RepoUpdate
 	repo.HTMLURL = conf.AppURL(ctx).ResolveReference(app_router.Rel.URLToRepo(repo.URI)).String()
 	// Fetch latest metadata from GitHub (we don't even try to keep
 	// our cache up to date).
@@ -109,12 +109,17 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 		if err != nil {
 			return err
 		}
-		updateOp = repoSetFromRemote(repo, ghrepo)
+		updateWithDataFromRemote = repoSetFromRemote(repo, ghrepo)
 	}
 
-	if updateOp != nil {
+	if updateWithDataFromRemote != nil {
 		log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
-		if err := store.ReposFromContext(ctx).Update(ctx, *updateOp); err != nil {
+		// setRepoFieldsFromRemote is used in read requests, including
+		// unauthed ones. However, this write isn't as the user, but
+		// rather an optimization for us to save the data from
+		// github. As such we use an elevated context to allow the
+		// write.
+		if err := store.ReposFromContext(ctx).Update(elevatedActor(ctx), *updateWithDataFromRemote); err != nil {
 			log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
 		}
 	}
