@@ -11,12 +11,10 @@ import (
 // ContainerHost returns is the IP address of the Docker host, as
 // viewed by Docker containers running on that host.
 var ContainerHost = func() (string, error) {
-	if runtime.GOOS == "darwin" {
-		return "192.168.99.1", nil // No reliable way to determine Docker machine's vbox interface
-	}
-
-	// Linux
 	iface := "docker0"
+	if runtime.GOOS == "darwin" {
+		iface = "en0"
+	}
 	if iface, err := net.InterfaceByName(iface); err == nil {
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -24,7 +22,9 @@ var ContainerHost = func() (string, error) {
 		}
 		for _, addr := range addrs {
 			if ipn, ok := addr.(*net.IPNet); ok {
-				return ipn.IP.String(), nil
+				if ip := ipn.IP.To4(); ip != nil {
+					return ip.String(), nil
+				}
 			}
 		}
 	}
