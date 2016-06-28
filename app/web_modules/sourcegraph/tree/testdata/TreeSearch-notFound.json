@@ -16,6 +16,26 @@
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"commitID": "c"
+		},
+		{
+			"$constructor": "WantResults",
+			"p": {
+				"query": "",
+				"repos": [
+					"repo"
+				],
+				"limit": 10
+			}
+		},
+		{
+			"$constructor": "WantResults",
+			"p": {
+				"query": "",
+				"notRepos": [
+					"repo"
+				],
+				"limit": 3
+			}
 		}
 	]
 }

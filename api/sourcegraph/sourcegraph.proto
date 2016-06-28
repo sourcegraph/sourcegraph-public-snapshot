@@ -2183,11 +2183,6 @@ message SearchOptions {
 	// (func, var, etc) from the returned results.
 	repeated string NotKinds = 9;
 
-	// CommitID is the Git commit ID to restrict the results to. This option is
-	// only used when filtering by a specific set of repositories.
-	// If empty, the latest indexed revision is implied.
-	string CommitID = 10;
-
 	// ListOptions specifies options for paginating
 	// the result.
 	ListOptions ListOptions = 3 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
@@ -2201,10 +2196,10 @@ message SearchOptions {
 	// Fast specifies that the client would like results returned more quickly at
 	// the cost of missing lower ranked results. If there are no high-ranking results
 	// and Fast is set to true, there may be no results returned at all.
-	bool Fast = 11;
+	bool Fast = 10;
 
 	// Latest indicates that the search should only search over the latest indexed revision of repositories.
-	bool Latest = 12;
+	bool Latest = 11;
 }
 
 // SearchOp holds the options for global search for a given query.

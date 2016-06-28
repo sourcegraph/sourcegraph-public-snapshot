@@ -16,6 +16,36 @@
 									"type": "text",
 									"id": "search-input",
 									"block": true,
+									"onFocus": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
+									"onBlur": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
 									"autoFocus": true,
 									"defaultValue": "",
 									"placeholder": "Jump to symbols or files...",
@@ -56,6 +86,21 @@
 								"key": ".$f=2/repo@rev/-/tree/p1",
 								"props": {
 									"styleName": "list-item-selected parent-dir",
+									"onMouseOver": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
@@ -69,6 +114,21 @@
 								"key": ".$f=2/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"styleName": "list-item ",
+									"onMouseOver": {
+										"dispatchedToStores": [],
+										"dispatchedToBackends": [
+											{
+												"$constructor": "WantResults",
+												"p": {
+													"query": "",
+													"notRepos": [
+														"repo"
+													],
+													"limit": 3
+												}
+											}
+										]
+									},
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
@@ -100,6 +160,26 @@
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"commitID": "c"
+		},
+		{
+			"$constructor": "WantResults",
+			"p": {
+				"query": "",
+				"repos": [
+					"repo"
+				],
+				"limit": 10
+			}
+		},
+		{
+			"$constructor": "WantResults",
+			"p": {
+				"query": "",
+				"notRepos": [
+					"repo"
+				],
+				"limit": 3
+			}
 		}
 	]
 }

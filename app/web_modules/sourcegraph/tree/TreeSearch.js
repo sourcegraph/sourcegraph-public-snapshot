@@ -187,13 +187,12 @@ class TreeSearch extends Container {
 		state.defListFilePathPrefix = state.query || state.path === "/" ? null : `${state.path}/`;
 		state.srclibDataVersion = TreeStore.srclibDataVersions.get(state.repo, state.commitID);
 
-		if (!this.context.user || !this.context.user.Admin) { // DEPRECATED: remove after search index successful
+		if (state.rev && state.rev.length === 40) {
 			state.matchingDefs = state.srclibDataVersion && state.srclibDataVersion.CommitID ? DefStore.defs.list(state.repo, state.srclibDataVersion.CommitID, state.query, state.defListFilePathPrefix) : null;
-		} else if (state.rev && state.rev.length === 40) {
-			state.matchingDefs = SearchStore.get(state.query, [this.props.repo], null, state.rev, LOCAL_DEFS_LIMIT);
 		} else {
 			state.matchingDefs = SearchStore.get(state.query, [this.props.repo], null, null, LOCAL_DEFS_LIMIT);
 		}
+
 		state.xdefs = SearchStore.get(state.query, null, [this.props.repo], null, GLOBAL_DEFS_LIMIT);
 	}
 
@@ -220,39 +219,30 @@ class TreeSearch extends Container {
 			this._srclibBuildingInterval = null;
 		}
 
-		if (!this.context.user || !this.context.user.Admin) { // DEPRECATED: remove after search index successful
-			if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
-				// Only fetch on the client, not server, so that we don't
-				// cache stale def lists prior to the repo's first build.
-				if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
-					Dispatcher.Backends.dispatch(
-						new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false),
-					);
+		if (prevState.query !== nextState.query || prevState.repo !== nextState.repo) {
+			if (nextState.rev && nextState.rev.length === 40) {
+				if (prevState.srclibDataVersion !== nextState.srclibDataVersion || prevState.query !== nextState.query || prevState.defListFilePathPrefix !== nextState.defListFilePathPrefix) {
+					// Only fetch on the client, not server, so that we don't
+					// cache stale def lists prior to the repo's first build.
+					if (typeof document !== "undefined" && nextState.srclibDataVersion && nextState.srclibDataVersion.CommitID) {
+						Dispatcher.Backends.dispatch(
+							new DefActions.WantDefs(nextState.repo, nextState.srclibDataVersion.CommitID, nextState.query, nextState.defListFilePathPrefix, nextState.overlay || false),
+						);
+					}
 				}
+			} else {
+				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+					query: nextState.query,
+					repos: [nextState.repo],
+					limit: LOCAL_DEFS_LIMIT,
+				}));
 			}
-		} else {
-			if (prevState.query !== nextState.query || prevState.repo !== nextState.repo) {
-				if (nextState.rev && nextState.rev.length === 40) {
-					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-						query: nextState.query,
-						repos: [nextState.repo],
-						commitID: nextState.rev,
-						limit: LOCAL_DEFS_LIMIT,
-					}));
-				} else {
-					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-						query: nextState.query,
-						repos: [nextState.repo],
-						limit: LOCAL_DEFS_LIMIT,
-					}));
-				}
-			}
-			Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-				query: nextState.query,
-				notRepos: [nextState.repo],
-				limit: GLOBAL_DEFS_LIMIT,
-			}));
 		}
+		Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+			query: nextState.query,
+			notRepos: [nextState.repo],
+			limit: GLOBAL_DEFS_LIMIT,
+		}));
 
 		if (prevState.matchingDefs && prevState.matchingDefs !== nextState.matchingDefs) {
 			nextState.lastDefinedMatchingDefs = prevState.matchingDefs;

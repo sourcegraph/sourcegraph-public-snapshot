@@ -33,7 +33,6 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		Limit        int32
 		PrefixMatch  bool
 		IncludeRepos bool
-		CommitID     string
 		Fast         bool
 	}
 	if err := schemaDecoder.Decode(&params, r.URL.Query()); err != nil {
@@ -61,7 +60,6 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 			ListOptions:  sourcegraph.ListOptions{PerPage: params.Limit},
 			PrefixMatch:  params.PrefixMatch,
 			IncludeRepos: params.IncludeRepos,
-			CommitID:     params.CommitID,
 			Fast:         params.Fast,
 		},
 	}

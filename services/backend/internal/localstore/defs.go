@@ -31,7 +31,8 @@ type dbRepoRev struct {
 	// indicates that the revision is the latest indexed revision of the
 	// repository. 2 indicates that the revision is indexed, but not the latest
 	// indexed revision. In the global_defs table, definitions whose revisions
-	// have state 2 are garbage collected.
+	// have state 2 are garbage collected. State increases monotically over time
+	// (i.e., something in state 2 never transitions to state 1)
 	State uint8 `db:"state"`
 }
 
@@ -161,9 +162,6 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		if len(op.Opt.NotRepos) > 0 {
 			return nil, fmt.Errorf("NotRepos unsupported if not searching latest")
 		}
-		if op.Opt.CommitID == "" {
-			return nil, fmt.Errorf("CommitID must be specified if not searching latest")
-		}
 	}
 
 	var args []interface{}
@@ -234,29 +232,25 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		}
 
 		// Repository/commit filtering.
-		if len(op.Opt.Repos) == 1 {
-			rp, err := store.ReposFromContext(ctx).Get(ctx, op.Opt.Repos[0])
-			if err != nil {
-				return nil, fmt.Errorf("error getting included repository: %s", err)
-			}
+		if len(op.Opt.Repos) > 0 {
+			var repoArgs []string
+			for _, repo := range op.Opt.Repos {
+				rp, err := store.ReposFromContext(ctx).Get(ctx, repo)
+				if err != nil {
+					return nil, fmt.Errorf("error getting included repository: %s", err)
+				}
 
-			var rid int64
-			if op.Opt.CommitID == "" {
 				rr, err := getRepoRevLatest(graphDBH(ctx), rp.URI)
 				if err == repoRevUnindexedErr {
-					return &sourcegraph.SearchResultsList{}, nil
+					continue
 				} else if err != nil {
 					return nil, fmt.Errorf("error getting latest repo revision: %s", err)
 				}
-				rid = rr.ID
-			} else {
-				var err error
-				rid, err = getRID(ctx, graphDBH(ctx), rp.URI, op.Opt.CommitID)
-				if err != nil {
-					return nil, fmt.Errorf("could not get repo rev ID: %s", err)
-				}
+				repoArgs = append(repoArgs, arg(rr.ID))
 			}
-			wheres = append(wheres, `rid=`+arg(rid))
+			if len(repoArgs) > 0 {
+				wheres = append(wheres, `rid IN (`+strings.Join(repoArgs, ",")+`)`)
+			}
 		}
 
 		// Language filtering.
@@ -357,7 +351,7 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		}
 
 		// Critical permissions check. DO NOT REMOVE.
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "GlobalDefs.Search", def.Repo); err != nil {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.Search", def.Repo); err != nil {
 			continue
 		}
 
@@ -585,6 +579,10 @@ FROM (
 // referencing defs in the latest built revision of the specified repository
 // (repo).
 func (s *defs) UpdateRefCounts(ctx context.Context, repo string) error {
+	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Defs.UpdateRefCounts", repo); err != nil {
+		return err
+	}
+
 	rr, err := getRepoRevLatest(graphDBH(ctx), repo)
 	if err != nil {
 		return err

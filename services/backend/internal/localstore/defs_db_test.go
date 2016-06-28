@@ -92,7 +92,7 @@ func TestDefs(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		got, err := g.Search(ctx, store.DefSearchOp{Opt: &sourcegraph.SearchOptions{Repos: []int32{repos[0].ID}, CommitID: commitID}, TokQuery: test.Query})
+		got, err := g.Search(ctx, store.DefSearchOp{Opt: &sourcegraph.SearchOptions{Repos: []int32{repos[0].ID}}, TokQuery: test.Query})
 		if err != nil {
 			t.Fatal(err)
 		}

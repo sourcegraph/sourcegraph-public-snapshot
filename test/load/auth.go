@@ -42,7 +42,7 @@ func getAuthedCookie(endpoint *url.URL, username, password string) (*authedCooki
 		return nil, err
 	}
 
-	cookie, err := auth.NewSessionCookie(auth.Session{AccessToken: tok.AccessToken})
+	cookie, err := auth.NewSessionCookie(auth.Session{AccessToken: tok.AccessToken}, false)
 	if err != nil {
 		return nil, err
 	}

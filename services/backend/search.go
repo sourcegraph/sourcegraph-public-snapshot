@@ -6,6 +6,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -80,7 +81,8 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		results *sourcegraph.SearchResultsList
 		err     error
 	)
-	if op.Opt.CommitID != "" {
+	actor := authpkg.ActorFromContext(ctx)
+	if actor.HasAdminAccess() { // feature-flag use of defs2 to admin users
 		opt := *op.Opt
 		opt.Latest = true
 		results, err = store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
