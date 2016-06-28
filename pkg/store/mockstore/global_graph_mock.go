@@ -45,10 +45,10 @@ func (s *GlobalRefs) Update(ctx context.Context, op *sourcegraph.DefsRefreshInde
 var _ store.GlobalRefs = (*GlobalRefs)(nil)
 
 type DefExamples struct {
-	Get_ func(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
+	Get_ func(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error)
 }
 
-func (s *DefExamples) Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
+func (s *DefExamples) Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error) {
 	return s.Get_(ctx, op)
 }
 

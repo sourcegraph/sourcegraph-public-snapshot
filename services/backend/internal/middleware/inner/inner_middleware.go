@@ -465,7 +465,7 @@ func (s wrappedDefs) ListRefLocations(ctx context.Context, param *sourcegraph.De
 	return
 }
 
-func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.RefLocationsList, err error) {
+func (s wrappedDefs) ListExamples(ctx context.Context, param *sourcegraph.DefsListExamplesOp) (res *sourcegraph.ExamplesList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Defs", "ListExamples", param)
 	defer func() {
