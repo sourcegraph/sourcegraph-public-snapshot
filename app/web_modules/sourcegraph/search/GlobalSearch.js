@@ -9,6 +9,7 @@ import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
 import "sourcegraph/search/SearchBackend";
+import UserStore from "sourcegraph/user/UserStore";
 import debounce from "lodash/function/debounce";
 import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
@@ -21,6 +22,9 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/GlobalSearch.css";
 import base from "sourcegraph/components/styles/_base.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import popularRepos from "./popularRepos";
+
+const allPopularRepos = Object.keys(popularRepos).reduce((memo, lang) => memo.concat(popularRepos[lang]), []);
 
 export const RESULTS_LIMIT = 10;
 
@@ -88,26 +92,71 @@ class GlobalSearch extends Container {
 
 	_dispatcherToken: string;
 
-	stores(): Array<Object> { return [SearchStore]; }
+	_langs(state) {
+		if (!state) state = this.state;
+		return state.settings && state.settings.search && state.settings.search.languages ? Array.from(state.settings.search.languages) : [];
+	}
+
+	_scope(state) {
+		if (!state) state = this.state;
+		return state.settings && state.settings.search && state.settings.search.scope ? state.settings.search.scope :
+			{popular: false, public: false, private: false, starred: false, team: false};
+	}
+
+	stores(): Array<Object> { return [SearchStore, UserStore]; }
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
 		state.className = props.className || "";
 		state.resultClassName = props.resultClassName || "";
-		state.matchingResults = SearchStore.get(state.query, null, null, null, RESULTS_LIMIT,
-			this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+
+		let matchingResults;
+		const langs = this._langs(state);
+		const scope = this._scope(state);
+		if (langs.length > 0) {
+			matchingResults = langs.reduce((memo, lang) => {
+				const results = SearchStore.get(`${lang} ${state.query}`, scope && scope.popular ? popularRepos[lang] : null, null, null, RESULTS_LIMIT,
+					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+				if (results) {
+					if (results.Repos) memo.Repos.push(...results.Repos);
+					if (results.Defs) memo.Defs.push(...results.Defs);
+					if (results.Options) memo.Options.push(...results.Options);
+				}
+				return memo;
+			}, {Repos: [], Defs: [], Options: []});
+		} else {
+			matchingResults = SearchStore.get(state.query, scope && scope.popular ? allPopularRepos : null, null, null, RESULTS_LIMIT,
+				this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
+		}
+		state.matchingResults = matchingResults;
 	}
 
 	onStateTransition(prevState, nextState) {
 		if (prevState.query !== nextState.query) {
 			debounce((query) => {
-				Dispatcher.Backends.dispatch(new SearchActions.WantResults({
-					query: nextState.query,
-					limit: RESULTS_LIMIT,
-					prefixMatch: this.props.location.query.prefixMatch,
-					includeRepos: this.props.location.query.includeRepos,
-					fast: true,
-				}));
+				const langs = this._langs(nextState);
+				const scope = this._scope(nextState);
+				if (langs.length > 0) {
+					for (const lang of langs) {
+						Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+							query: `${lang} ${nextState.query}`,
+							limit: RESULTS_LIMIT,
+							prefixMatch: this.props.location.query.prefixMatch,
+							includeRepos: this.props.location.query.includeRepos,
+							fast: true,
+							repos: scope.popular ? popularRepos[lang] : null,
+						}));
+					}
+				} else {
+					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
+						query: nextState.query,
+						limit: RESULTS_LIMIT,
+						prefixMatch: this.props.location.query.prefixMatch,
+						includeRepos: this.props.location.query.includeRepos,
+						fast: true,
+						repos: scope.popular ? allPopularRepos : null,
+					}));
+				}
 			}, 200, {leading: false, trailing: true})(nextState.query);
 		}
 	}

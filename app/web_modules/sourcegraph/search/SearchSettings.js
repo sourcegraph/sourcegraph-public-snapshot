@@ -40,6 +40,10 @@ class SearchSettings extends Container {
 		return this.state.settings && this.state.settings.search && this.state.settings.search.languages ? Array.from(this.state.settings.search.languages) : [];
 	}
 
+	_scope() {
+		return this.state.settings && this.state.settings.search && this.state.settings.search.scope ? this.state.settings.search.scope : {popular: false, public: false, private: false, starred: false, team: false};
+	}
+
 	_toggleLang(lang: LanguageID) {
 		const langs = this._langs();
 		const enabled = langs.includes(lang);
@@ -55,6 +59,21 @@ class SearchSettings extends Container {
 			search: {
 				...this.state.settings.search,
 				languages: langs,
+			},
+		};
+
+		Dispatcher.Stores.dispatch(new UserActions.UpdateSettings(newSettings));
+	}
+
+	_setScope(scope: any) {
+		const newSettings = {
+			...this.state.settings,
+			search: {
+				...this.state.settings.search,
+				scope: {
+					...(this.state.settings.search && this.state.settings.search.scope),
+					...scope,
+				},
 			},
 		};
 
@@ -83,6 +102,7 @@ class SearchSettings extends Container {
 	}
 
 	_renderScope() {
+		const scope = this._scope();
 		return (
 			<div styleName="row">
 				<div styleName="group">
@@ -92,7 +112,8 @@ class SearchSettings extends Container {
 							color="default"
 							size="small"
 							styleName="choice-button"
-							outline={false}>Popular libraries</Button>
+							onClick={() => this._setScope({popular: !scope.popular})}
+							outline={!scope.popular}>Popular libraries</Button>
 						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Libraries you use</GitHubAuthButton>}
 						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects</GitHubAuthButton>}
 						{!this.state.signedIn && <GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Private</GitHubAuthButton>}
