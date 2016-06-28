@@ -1165,10 +1165,10 @@ type BuildConfig struct {
 	// Priority of the build in the queue (higher numbers mean the build is dequeued
 	// sooner).
 	Priority int32 `protobuf:"varint,4,opt,name=Priority,proto3" json:"Priority,omitempty"`
-	// BuilderConfig is the actual .drone.yml config file that was
+	// BuilderConfig is the actual .sg-drone.yml config file that was
 	// used to run this build in CI. It reflects all automatic
 	// additions/changes made by the worker (i.e., it is not
-	// necessarily the same .drone.yml config file as the one in the
+	// necessarily the same .sg-drone.yml config file as the one in the
 	// repository).
 	BuilderConfig string `protobuf:"bytes,16,opt,name=BuilderConfig,proto3" json:"BuilderConfig,omitempty"`
 }

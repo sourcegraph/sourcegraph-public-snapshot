@@ -40,9 +40,9 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 		return nil, err
 	}
 
-	// Read existing .drone.yml file.
+	// Read existing .sg-drone.yml file.
 	file, err := cl.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: ".drone.yml"},
+		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: ".sg-drone.yml"},
 	})
 	if err != nil && grpc.Code(err) != codes.NotFound {
 		return nil, err
@@ -51,7 +51,7 @@ func configureBuild(ctx context.Context, build *sourcegraph.BuildJob) (*builder.
 		b.DroneYMLFileExists = true
 	}
 
-	// Virtual .drone.yml for Kubernetes repo
+	// Virtual .sg-drone.yml for Kubernetes repo
 	if repo.URI == "github.com/kubernetes/kubernetes" {
 		b.Payload.Yaml = "clone:\n  path: k8s.io/kubernetes"
 		b.DroneYMLFileExists = true

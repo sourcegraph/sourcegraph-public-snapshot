@@ -9,8 +9,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 )
 
-// Create creates a CI test plan, given a .drone.yml file. It returns
-// the final .drone.yml to use, after adding inferred build steps,
+// Create creates a CI test plan, given a .sg-drone.yml file. It returns
+// the final .sg-drone.yml to use, after adding inferred build steps,
 // srclib analysis, srclib import, etc.
 //
 // Create should execute very quickly and must not make any server API

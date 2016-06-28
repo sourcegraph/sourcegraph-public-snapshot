@@ -742,10 +742,10 @@ message BuildConfig {
 	// sooner).
 	int32 Priority = 4;
 
-	// BuilderConfig is the actual .drone.yml config file that was
+	// BuilderConfig is the actual .sg-drone.yml config file that was
 	// used to run this build in CI. It reflects all automatic
 	// additions/changes made by the worker (i.e., it is not
-	// necessarily the same .drone.yml config file as the one in the
+	// necessarily the same .sg-drone.yml config file as the one in the
 	// repository).
 	string BuilderConfig = 16;
 }

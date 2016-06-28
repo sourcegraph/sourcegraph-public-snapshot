@@ -10,7 +10,7 @@ import (
 )
 
 // inferConfig consults a repo's inventory (of programming languages
-// used) and generates a .drone.yml file that will build the
+// used) and generates a .sg-drone.yml file that will build the
 // repo. This is not guaranteed to be correct. The primary purpose of
 // this inferred config is to fetch the project dependencies and
 // compile the project to prepare for the srclib analysis step.
@@ -35,12 +35,12 @@ func inferConfig(inv *inventory.Inventory) (*droneyaml.Config, []matrix.Axis, er
 	}
 
 	if len(config.Build) == 0 {
-		config.Build = append(config.Build, buildLogMsg("Couldn't infer CI build config; please create a .drone.yml file", "no supported programming languages were auto-detected"))
+		config.Build = append(config.Build, buildLogMsg("Couldn't infer CI build config; please create a .sg-drone.yml file", "no supported programming languages were auto-detected"))
 	}
 
 	if len(unsupported) > 0 {
 		config.Build = append(config.Build, buildLogMsg(
-			fmt.Sprintf("Can't automatically generate CI build config for %s; please create a .drone.yml file", strings.Join(unsupported, ", ")),
+			fmt.Sprintf("Can't automatically generate CI build config for %s; please create a .sg-drone.yml file", strings.Join(unsupported, ", ")),
 			fmt.Sprintf("automatic CI config does not yet support:\n%s\n", strings.Join(unsupported, "\n")),
 		))
 	}
