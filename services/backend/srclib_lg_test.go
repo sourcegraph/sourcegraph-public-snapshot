@@ -16,6 +16,8 @@ import (
 )
 
 func TestSrclibPush(t *testing.T) {
+	t.Skip("flaky") // see https://circleci.com/gh/sourcegraph/sourcegraph/17885 and https://circleci.com/gh/sourcegraph/sourcegraph/17895
+
 	if testing.Short() {
 		t.Skip()
 	}
