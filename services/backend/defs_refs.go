@@ -103,7 +103,7 @@ func (s *defs) ListRefLocations(ctx context.Context, op *sourcegraph.DefsListRef
 	return store.GlobalRefsFromContext(ctx).Get(ctx, op)
 }
 
-func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
+func (s *defs) ListExamples(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error) {
 	return store.DefExamplesFromContext(ctx).Get(ctx, op)
 }
 

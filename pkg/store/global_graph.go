@@ -42,7 +42,7 @@ type GlobalRefs interface {
 // DefExamples defines the interface for getting and listing def usage examples.
 type DefExamples interface {
 	// Get returns the list of example locations for a given def.
-	Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
+	Get(ctx context.Context, op *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error)
 }
 
 type GlobalDefSearchOp struct {
