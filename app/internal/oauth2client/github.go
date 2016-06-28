@@ -253,12 +253,6 @@ func linkAccountWithGitHub(w http.ResponseWriter, r *http.Request, ctx context.C
 		return err
 	}
 
-	// Always redirect to the tour page if this is their first time
-	// logging in.
-	if firstTime {
-		returnTo = "/tour" // tracking/attribution params will be added below
-	}
-
 	// Add tracking info to return-to URL.
 	returnToURL, err := url.Parse(returnTo)
 	if err != nil {

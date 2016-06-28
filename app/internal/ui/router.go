@@ -51,7 +51,6 @@ func newRouter() *mux.Router {
 		"tools/editor",
 		"tools/browser",
 		"tools",
-		"tour",
 	}
 	m.Path("/{Path:(?:" + strings.Join(topLevel, "|") + ")}").Methods("GET").Name(routeTopLevel)
 
