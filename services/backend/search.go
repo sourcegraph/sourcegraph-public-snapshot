@@ -6,7 +6,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -77,24 +76,12 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		}
 	}
 
-	var (
-		results *sourcegraph.SearchResultsList
-		err     error
-	)
-	actor := authpkg.ActorFromContext(ctx)
-	if actor.HasAdminAccess() { // feature-flag use of defs2 to admin users
-		opt := *op.Opt
-		opt.Latest = true
-		results, err = store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
-			TokQuery: descToks,
-			Opt:      &opt,
-		})
-	} else {
-		results, err = store.GlobalDefsFromContext(ctx).Search(ctx, &store.GlobalDefSearchOp{
-			TokQuery: descToks,
-			Opt:      op.Opt,
-		})
-	}
+	opt := *op.Opt
+	opt.Latest = true
+	results, err := store.DefsFromContext(ctx).Search(ctx, store.DefSearchOp{
+		TokQuery: descToks,
+		Opt:      &opt,
+	})
 	if err != nil {
 		return nil, err
 	}
