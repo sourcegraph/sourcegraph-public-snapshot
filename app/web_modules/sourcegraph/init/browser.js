@@ -70,7 +70,9 @@ function matchWithRedirectHandling(recursed) {
 
 matchWithRedirectHandling(false);
 
-module.hot.accept("sourcegraph/app/App", () => {
-	hotReloadCounter++;
-	matchWithRedirectHandling(false);
-});
+if (typeof module !== "undefined" && module.hot) {
+	module.hot.accept("sourcegraph/app/App", () => {
+		hotReloadCounter++;
+		matchWithRedirectHandling(false);
+	});
+}
