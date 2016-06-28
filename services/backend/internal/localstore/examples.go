@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 // globalRefs is a DB-backed implementation of the Examples store.
@@ -146,9 +147,8 @@ WHERE def_key_id=` + arg(defKeyID) + fmt.Sprintf(" LIMIT %s", arg(rowLimit))
 				}
 				treeEntries[r.File] = entry.Contents
 			}
-			// contents := treeEntries[r.File]
-			// after := contents[r.Start:r.End]
-			if true {
+			contents := treeEntries[r.File]
+			if isUsage(r, contents) {
 				selectedRepoRefs = append(selectedRepoRefs, rr)
 				selectedRefs[selectedRefKey(rr.Repo, r.File)] = int32(i)
 				break
@@ -180,4 +180,20 @@ WHERE def_key_id=` + arg(defKeyID) + fmt.Sprintf(" LIMIT %s", arg(rowLimit))
 
 func selectedRefKey(repo, file string) string {
 	return fmt.Sprintf("%s/%s", repo, file)
+}
+
+// isUsage uses token-based heuristics to determine if a given ref is a usage
+// e.g. a struct instantiation or method call.
+func isUsage(ref *graph.Ref, contents []byte) bool {
+	if int(ref.End) >= len(contents)-1 {
+		return false
+	}
+	charAfter := contents[ref.End]
+	switch string(charAfter) {
+	case "{":
+		return true
+	case "(":
+		return true
+	}
+	return false
 }
