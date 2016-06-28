@@ -616,7 +616,7 @@ type DefsClient struct {
 	List_             func(ctx context.Context, in *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_         func(ctx context.Context, in *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(ctx context.Context, in *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	ListExamples_     func(ctx context.Context, in *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
+	ListExamples_     func(ctx context.Context, in *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error)
 	ListAuthors_      func(ctx context.Context, in *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 	RefreshIndex_     func(ctx context.Context, in *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
 }
@@ -637,7 +637,7 @@ func (s *DefsClient) ListRefLocations(ctx context.Context, in *sourcegraph.DefsL
 	return s.ListRefLocations_(ctx, in)
 }
 
-func (s *DefsClient) ListExamples(ctx context.Context, in *sourcegraph.DefsListExamplesOp, opts ...grpc.CallOption) (*sourcegraph.RefLocationsList, error) {
+func (s *DefsClient) ListExamples(ctx context.Context, in *sourcegraph.DefsListExamplesOp, opts ...grpc.CallOption) (*sourcegraph.ExamplesList, error) {
 	return s.ListExamples_(ctx, in)
 }
 
@@ -656,7 +656,7 @@ type DefsServer struct {
 	List_             func(v0 context.Context, v1 *sourcegraph.DefListOptions) (*sourcegraph.DefList, error)
 	ListRefs_         func(v0 context.Context, v1 *sourcegraph.DefsListRefsOp) (*sourcegraph.RefList, error)
 	ListRefLocations_ func(v0 context.Context, v1 *sourcegraph.DefsListRefLocationsOp) (*sourcegraph.RefLocationsList, error)
-	ListExamples_     func(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error)
+	ListExamples_     func(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error)
 	ListAuthors_      func(v0 context.Context, v1 *sourcegraph.DefsListAuthorsOp) (*sourcegraph.DefAuthorList, error)
 	RefreshIndex_     func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) (*pbtypes.Void, error)
 }
@@ -677,7 +677,7 @@ func (s *DefsServer) ListRefLocations(v0 context.Context, v1 *sourcegraph.DefsLi
 	return s.ListRefLocations_(v0, v1)
 }
 
-func (s *DefsServer) ListExamples(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.RefLocationsList, error) {
+func (s *DefsServer) ListExamples(v0 context.Context, v1 *sourcegraph.DefsListExamplesOp) (*sourcegraph.ExamplesList, error) {
 	return s.ListExamples_(v0, v1)
 }
 

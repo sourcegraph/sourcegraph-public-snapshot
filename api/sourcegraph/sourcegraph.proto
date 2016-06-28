@@ -1590,6 +1590,19 @@ message RefLocationsList {
 	int32 TotalRepos = 3;
 }
 
+// ExamplesList lists the locations for examples for a def.
+message ExamplesList {
+	// RepoRefs holds the repos and files for the selected examples.
+	repeated DefRepoRef RepoRefs = 1;
+
+	// Selected refs is a mapping from repo refs to the index of a ref selected
+	// as a usage example.
+	//
+	// TODO this is a temporary format until the front-end can properly support
+	// displaying specific examples independent of repo refs.
+	map<string, int32> SelectedRefs = 2;
+}
+
 // DefRepoRef identifies a repo and its files that reference a def.
 message DefRepoRef {
 	// Repo is the name of repo that references the def.
@@ -1832,7 +1845,7 @@ service Defs {
 	rpc ListRefLocations(DefsListRefLocationsOp) returns (RefLocationsList);
 
 	// ListExamples lists usage examples for a given def.
-	rpc ListExamples(DefsListExamplesOp) returns (RefLocationsList);
+	rpc ListExamples(DefsListExamplesOp) returns (ExamplesList);
 
 	// ListAuthors lists people who committed parts of def's definition.
 	rpc ListAuthors(DefsListAuthorsOp) returns (DefAuthorList);

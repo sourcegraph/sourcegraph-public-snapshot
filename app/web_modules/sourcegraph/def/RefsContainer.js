@@ -299,6 +299,10 @@ export default class RefsContainer extends Container {
 								ranges = ranges.slice(0, this.state.rangeLimit);
 								ranges.map((r) => [r[0], Math.min(r[0] + 10, r[1])]);
 							}
+							if (this.props.selectedRefs) {
+								let selected = this.props.selectedRefs[`${this.state.repo}/${loc.Path}`];
+								ranges = ranges[selected] ? [ranges[selected]] : ranges;
+							}
 
 							return (
 								<div key={i}>

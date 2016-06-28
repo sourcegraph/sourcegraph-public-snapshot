@@ -53,7 +53,7 @@ export function defaultFetch(url: string | Request, init?: RequestOptions): Prom
 
 	const defaults = defaultOptions();
 
-	return fetch(url, {
+	return fetch(`${url}`, {
 		...defaults,
 		...init,
 		headers: combineHeaders(defaults.headers, init ? init.headers : null),

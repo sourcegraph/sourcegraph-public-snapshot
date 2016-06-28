@@ -67,6 +67,7 @@ class ExamplesContainer extends Container {
 					def={this.props.def}
 					defObj={this.props.defObj}
 					repoRefs={repoRefs}
+					selectedRefs={refLocs.SelectedRefs || null}
 					prefetch={i === 0}
 					initNumSnippets={expandedSnippets}
 					rangeLimit={2}
