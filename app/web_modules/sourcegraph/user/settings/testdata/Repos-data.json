@@ -12,15 +12,6 @@
 						"Language": "Go"
 					}
 				],
-				"exampleRepos": [
-					{
-						"Private": false,
-						"URI": "someURL",
-						"Description": "someDescription",
-						"UpdatedAt": "2016-02-24T10:18:55-08:00",
-						"Language": "Go"
-					}
-				],
 				"linkGitHubURL": ""
 			}
 		},

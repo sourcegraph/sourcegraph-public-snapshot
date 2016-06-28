@@ -2,14 +2,19 @@ import React from "react";
 import {Link} from "react-router";
 import RepoLink from "sourcegraph/components/RepoLink";
 import CSSModules from "react-css-modules";
-import styles from "./styles/Dashboard.css";
+import styles from "./styles/Repos.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Input, Panel, Hero, Heading, Button, Icon} from "sourcegraph/components";
 import debounce from "lodash/function/debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
-class DashboardRepos extends React.Component {
+class Repos extends React.Component {
+	static propTypes = {
+		repos: React.PropTypes.arrayOf(React.PropTypes.object),
+		location: React.PropTypes.object.isRequired,
+	};
+
 	static contextTypes = {
 		signedIn: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
@@ -72,14 +77,14 @@ class DashboardRepos extends React.Component {
 	}
 
 	render() {
-		let repos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
+		let repos = (this.props.repos || []).filter(this._showRepo).sort(this._repoSort);
 
 		return (
 				<div styleName="bg">
 					{this.context.signedIn &&
 						<Hero pattern="objects" color="dark" className={base.pv6}>
-							<Heading level="2" color="white">My Repositories</Heading>
-							<p styleName="cool-pale-gray">Search, browse and cross-reference your own code.</p>
+							<Heading level="2" color="white">Repositories</Heading>
+							<p styleName="cool-pale-gray"></p>
 							<Input type="text"
 								placeholder="Filter repositories..."
 								domRef={(e) => this._filterInput = e}
@@ -131,9 +136,4 @@ class DashboardRepos extends React.Component {
 	}
 }
 
-DashboardRepos.propTypes = {
-	repos: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-	location: React.PropTypes.object.isRequired,
-};
-
-export default CSSModules(DashboardRepos, styles, {allowMultiple: true});
+export default CSSModules(Repos, styles, {allowMultiple: true});

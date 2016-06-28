@@ -52,8 +52,8 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<Link to="/tour">
 						<TabItem active={location.pathname === "/tour"} icon="tour">Tour</TabItem>
 					</Link>
-					<Link to="/repositories">
-						<TabItem active={location.pathname === "/repositories"} icon="repository">My Repositories</TabItem>
+					<Link to="/settings/repos">
+						<TabItem active={location.pathname === "/settings/repos"} icon="repository">Repositories</TabItem>
 					</Link>
 					<Link to="/tools">
 						<TabItem hideMobile={true} active={location.pathname === "/tools"} icon="tools">Tools</TabItem>
@@ -68,6 +68,9 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 					<Link to="/about" styleName="logged-out-nav-item">About</Link>
 					<Link to="/pricing" styleName="logged-out-nav-item">Pricing</Link>
 					<a href="https://text.sourcegraph.com" styleName="logged-out-nav-item">Blog</a>
+					<Link to="/settings/repos">
+						<TabItem active={location.pathname === "/settings/repos"}>Repositories</TabItem>
+					</Link>
 				</div>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 0 && <EllipsisHorizontal styleName="icon-ellipsis" title="Your editor could not identify the symbol"/>}
 				{typeof channelStatusCode !== "undefined" && channelStatusCode === 1 && <CheckIcon styleName="icon-check" title="Sourcegraph successfully looked up symbol" />}
