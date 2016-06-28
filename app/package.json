@@ -73,7 +73,7 @@
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "check": "flow check",
-    "build": "npm run check && env NODE_ENV=production node ./node_modules/.bin/webpack",
+    "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "lint": "./node_modules/.bin/eslint --max-warnings=0 web_modules",
     "test": "npm run check && npm run lint && npm run test-unit",
     "test-unit": "find web_modules -name '*_test.js' | env NODE_PATH=web_modules NODE_ENV=test xargs ./node_modules/.bin/mocha --compilers js:babel-register --require babel-polyfill --require ignore-styles --require isomorphic-fetch",

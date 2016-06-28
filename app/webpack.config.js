@@ -39,10 +39,13 @@ const plugins = [
 	new webpack.IgnorePlugin(/\.json$/),
 	new webpack.IgnorePlugin(/\_test\.js$/),
 	new webpack.optimize.OccurrenceOrderPlugin(),
-	new FlowStatusWebpackPlugin({quietSuccess: true}),
 	new webpack.optimize.LimitChunkCountPlugin({maxChunks: 1}),
 	new ProgressBarPlugin(),
 ];
+
+if (process.env.NODE_ENV !== "production") {
+	plugins.push(new FlowStatusWebpackPlugin({quietSuccess: true}));
+}
 
 if (process.env.NODE_ENV === "production" && !process.env.WEBPACK_QUICK) {
 	plugins.push(
