@@ -143,6 +143,7 @@ func init() {
 			`CREATE INDEX `+table+`_bow_latest_idx ON `+table+` USING gin(bow) WHERE state=1;`,
 			`CREATE INDEX `+table+`_bow_fast_idx ON `+table+` USING gin(bow) WHERE ref_ct > 10;`,
 			`CREATE INDEX `+table+`_name ON `+table+` USING btree (lower(name));`,
+			`CREATE INDEX `+table+`_name_fast ON `+table+` USING btree (lower(name)) WHERE ref_ct > 10;`,
 			`CREATE INDEX `+table+`_rid_idx ON `+table+` using btree (rid);`,
 			`CREATE INDEX `+table+`_defid_idx ON `+table+` using btree (defid);`,
 		)
