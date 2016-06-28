@@ -211,7 +211,6 @@ var langRepos_ = map[string][]string{
 		"github.com/socketio/socket.io",
 		"github.com/blueimp/jQuery-File-Upload",
 		"github.com/zurb/foundation-sites",
-		"github.com/driftyco/ionic",
 		"github.com/nodejs/node",
 		"github.com/gulpjs/gulp",
 		"github.com/TryGhost/Ghost",
