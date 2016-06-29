@@ -8,8 +8,8 @@ export default function() {
       nest;
 
   function apply(array, depth, createResult, setResult) {
-    if (depth >= keys.length) return rollup
-        ? rollup(array) : (sortValues
+    if (depth >= keys.length) return rollup != null
+        ? rollup(array) : (sortValues != null
         ? array.sort(sortValues)
         : array);
 
@@ -38,18 +38,11 @@ export default function() {
   }
 
   function entries(map, depth) {
-    if (depth >= keys.length) return map;
-
-    var array = [],
-        sortKey = sortKeys[depth++];
-
-    map.each(function(value, key) {
-      array.push({key: key, values: entries(value, depth)});
-    });
-
-    return sortKey
-        ? array.sort(function(a, b) { return sortKey(a.key, b.key); })
-        : array;
+    if (++depth > keys.length) return map;
+    var array, sortKey = sortKeys[depth - 1];
+    if (rollup != null && depth >= keys.length) array = map.entries();
+    else array = [], map.each(function(v, k) { array.push({key: k, values: entries(v, depth)}); });
+    return sortKey != null ? array.sort(function(a, b) { return sortKey(a.key, b.key); }) : array;
   }
 
   return nest = {

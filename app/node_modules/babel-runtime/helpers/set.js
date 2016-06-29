@@ -1,12 +1,22 @@
 "use strict";
 
-var _Object$getOwnPropertyDescriptor = require("babel-runtime/core-js/object/get-own-property-descriptor")["default"];
+exports.__esModule = true;
 
-exports["default"] = function set(object, property, value, receiver) {
-  var desc = _Object$getOwnPropertyDescriptor(object, property);
+var _getPrototypeOf = require("../core-js/object/get-prototype-of");
+
+var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
+
+var _getOwnPropertyDescriptor = require("../core-js/object/get-own-property-descriptor");
+
+var _getOwnPropertyDescriptor2 = _interopRequireDefault(_getOwnPropertyDescriptor);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function set(object, property, value, receiver) {
+  var desc = (0, _getOwnPropertyDescriptor2.default)(object, property);
 
   if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
+    var parent = (0, _getPrototypeOf2.default)(object);
 
     if (parent !== null) {
       set(parent, property, value, receiver);
@@ -23,5 +33,3 @@ exports["default"] = function set(object, property, value, receiver) {
 
   return value;
 };
-
-exports.__esModule = true;

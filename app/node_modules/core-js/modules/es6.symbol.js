@@ -1,77 +1,87 @@
 'use strict';
 // ECMAScript 6 symbols shim
-var $              = require('./$')
-  , global         = require('./$.global')
-  , has            = require('./$.has')
-  , DESCRIPTORS    = require('./$.descriptors')
-  , $export        = require('./$.export')
-  , redefine       = require('./$.redefine')
-  , $fails         = require('./$.fails')
-  , shared         = require('./$.shared')
-  , setToStringTag = require('./$.set-to-string-tag')
-  , uid            = require('./$.uid')
-  , wks            = require('./$.wks')
-  , keyOf          = require('./$.keyof')
-  , $names         = require('./$.get-names')
-  , enumKeys       = require('./$.enum-keys')
-  , isArray        = require('./$.is-array')
-  , anObject       = require('./$.an-object')
-  , toIObject      = require('./$.to-iobject')
-  , createDesc     = require('./$.property-desc')
-  , getDesc        = $.getDesc
-  , setDesc        = $.setDesc
-  , _create        = $.create
-  , getNames       = $names.get
+var global         = require('./_global')
+  , has            = require('./_has')
+  , DESCRIPTORS    = require('./_descriptors')
+  , $export        = require('./_export')
+  , redefine       = require('./_redefine')
+  , META           = require('./_meta').KEY
+  , $fails         = require('./_fails')
+  , shared         = require('./_shared')
+  , setToStringTag = require('./_set-to-string-tag')
+  , uid            = require('./_uid')
+  , wks            = require('./_wks')
+  , wksExt         = require('./_wks-ext')
+  , wksDefine      = require('./_wks-define')
+  , keyOf          = require('./_keyof')
+  , enumKeys       = require('./_enum-keys')
+  , isArray        = require('./_is-array')
+  , anObject       = require('./_an-object')
+  , toIObject      = require('./_to-iobject')
+  , toPrimitive    = require('./_to-primitive')
+  , createDesc     = require('./_property-desc')
+  , _create        = require('./_object-create')
+  , gOPNExt        = require('./_object-gopn-ext')
+  , $GOPD          = require('./_object-gopd')
+  , $DP            = require('./_object-dp')
+  , $keys          = require('./_object-keys')
+  , gOPD           = $GOPD.f
+  , dP             = $DP.f
+  , gOPN           = gOPNExt.f
   , $Symbol        = global.Symbol
   , $JSON          = global.JSON
   , _stringify     = $JSON && $JSON.stringify
-  , setter         = false
+  , PROTOTYPE      = 'prototype'
   , HIDDEN         = wks('_hidden')
-  , isEnum         = $.isEnum
+  , TO_PRIMITIVE   = wks('toPrimitive')
+  , isEnum         = {}.propertyIsEnumerable
   , SymbolRegistry = shared('symbol-registry')
   , AllSymbols     = shared('symbols')
-  , useNative      = typeof $Symbol == 'function'
-  , ObjectProto    = Object.prototype;
+  , OPSymbols      = shared('op-symbols')
+  , ObjectProto    = Object[PROTOTYPE]
+  , USE_NATIVE     = typeof $Symbol == 'function'
+  , QObject        = global.QObject;
+// Don't use setters in Qt Script, https://github.com/zloirock/core-js/issues/173
+var setter = !QObject || !QObject[PROTOTYPE] || !QObject[PROTOTYPE].findChild;
 
 // fallback for old Android, https://code.google.com/p/v8/issues/detail?id=687
 var setSymbolDesc = DESCRIPTORS && $fails(function(){
-  return _create(setDesc({}, 'a', {
-    get: function(){ return setDesc(this, 'a', {value: 7}).a; }
+  return _create(dP({}, 'a', {
+    get: function(){ return dP(this, 'a', {value: 7}).a; }
   })).a != 7;
 }) ? function(it, key, D){
-  var protoDesc = getDesc(ObjectProto, key);
+  var protoDesc = gOPD(ObjectProto, key);
   if(protoDesc)delete ObjectProto[key];
-  setDesc(it, key, D);
-  if(protoDesc && it !== ObjectProto)setDesc(ObjectProto, key, protoDesc);
-} : setDesc;
+  dP(it, key, D);
+  if(protoDesc && it !== ObjectProto)dP(ObjectProto, key, protoDesc);
+} : dP;
 
 var wrap = function(tag){
-  var sym = AllSymbols[tag] = _create($Symbol.prototype);
+  var sym = AllSymbols[tag] = _create($Symbol[PROTOTYPE]);
   sym._k = tag;
-  DESCRIPTORS && setter && setSymbolDesc(ObjectProto, tag, {
-    configurable: true,
-    set: function(value){
-      if(has(this, HIDDEN) && has(this[HIDDEN], tag))this[HIDDEN][tag] = false;
-      setSymbolDesc(this, tag, createDesc(1, value));
-    }
-  });
   return sym;
 };
 
-var isSymbol = function(it){
+var isSymbol = USE_NATIVE && typeof $Symbol.iterator == 'symbol' ? function(it){
   return typeof it == 'symbol';
+} : function(it){
+  return it instanceof $Symbol;
 };
 
 var $defineProperty = function defineProperty(it, key, D){
-  if(D && has(AllSymbols, key)){
+  if(it === ObjectProto)$defineProperty(OPSymbols, key, D);
+  anObject(it);
+  key = toPrimitive(key, true);
+  anObject(D);
+  if(has(AllSymbols, key)){
     if(!D.enumerable){
-      if(!has(it, HIDDEN))setDesc(it, HIDDEN, createDesc(1, {}));
+      if(!has(it, HIDDEN))dP(it, HIDDEN, createDesc(1, {}));
       it[HIDDEN][key] = true;
     } else {
       if(has(it, HIDDEN) && it[HIDDEN][key])it[HIDDEN][key] = false;
       D = _create(D, {enumerable: createDesc(0, false)});
     } return setSymbolDesc(it, key, D);
-  } return setDesc(it, key, D);
+  } return dP(it, key, D);
 };
 var $defineProperties = function defineProperties(it, P){
   anObject(it);
@@ -86,83 +96,80 @@ var $create = function create(it, P){
   return P === undefined ? _create(it) : $defineProperties(_create(it), P);
 };
 var $propertyIsEnumerable = function propertyIsEnumerable(key){
-  var E = isEnum.call(this, key);
-  return E || !has(this, key) || !has(AllSymbols, key) || has(this, HIDDEN) && this[HIDDEN][key]
-    ? E : true;
+  var E = isEnum.call(this, key = toPrimitive(key, true));
+  if(this === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key))return false;
+  return E || !has(this, key) || !has(AllSymbols, key) || has(this, HIDDEN) && this[HIDDEN][key] ? E : true;
 };
 var $getOwnPropertyDescriptor = function getOwnPropertyDescriptor(it, key){
-  var D = getDesc(it = toIObject(it), key);
+  it  = toIObject(it);
+  key = toPrimitive(key, true);
+  if(it === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key))return;
+  var D = gOPD(it, key);
   if(D && has(AllSymbols, key) && !(has(it, HIDDEN) && it[HIDDEN][key]))D.enumerable = true;
   return D;
 };
 var $getOwnPropertyNames = function getOwnPropertyNames(it){
-  var names  = getNames(toIObject(it))
+  var names  = gOPN(toIObject(it))
     , result = []
     , i      = 0
     , key;
-  while(names.length > i)if(!has(AllSymbols, key = names[i++]) && key != HIDDEN)result.push(key);
-  return result;
+  while(names.length > i){
+    if(!has(AllSymbols, key = names[i++]) && key != HIDDEN && key != META)result.push(key);
+  } return result;
 };
 var $getOwnPropertySymbols = function getOwnPropertySymbols(it){
-  var names  = getNames(toIObject(it))
+  var IS_OP  = it === ObjectProto
+    , names  = gOPN(IS_OP ? OPSymbols : toIObject(it))
     , result = []
     , i      = 0
     , key;
-  while(names.length > i)if(has(AllSymbols, key = names[i++]))result.push(AllSymbols[key]);
-  return result;
+  while(names.length > i){
+    if(has(AllSymbols, key = names[i++]) && (IS_OP ? has(ObjectProto, key) : true))result.push(AllSymbols[key]);
+  } return result;
 };
-var $stringify = function stringify(it){
-  if(it === undefined || isSymbol(it))return; // IE8 returns string on undefined
-  var args = [it]
-    , i    = 1
-    , $$   = arguments
-    , replacer, $replacer;
-  while($$.length > i)args.push($$[i++]);
-  replacer = args[1];
-  if(typeof replacer == 'function')$replacer = replacer;
-  if($replacer || !isArray(replacer))replacer = function(key, value){
-    if($replacer)value = $replacer.call(this, key, value);
-    if(!isSymbol(value))return value;
-  };
-  args[1] = replacer;
-  return _stringify.apply($JSON, args);
-};
-var buggyJSON = $fails(function(){
-  var S = $Symbol();
-  // MS Edge converts symbol values to JSON as {}
-  // WebKit converts symbol values to JSON as null
-  // V8 throws on boxed symbols
-  return _stringify([S]) != '[null]' || _stringify({a: S}) != '{}' || _stringify(Object(S)) != '{}';
-});
 
 // 19.4.1.1 Symbol([description])
-if(!useNative){
+if(!USE_NATIVE){
   $Symbol = function Symbol(){
-    if(isSymbol(this))throw TypeError('Symbol is not a constructor');
-    return wrap(uid(arguments.length > 0 ? arguments[0] : undefined));
+    if(this instanceof $Symbol)throw TypeError('Symbol is not a constructor!');
+    var tag = uid(arguments.length > 0 ? arguments[0] : undefined);
+    var $set = function(value){
+      if(this === ObjectProto)$set.call(OPSymbols, value);
+      if(has(this, HIDDEN) && has(this[HIDDEN], tag))this[HIDDEN][tag] = false;
+      setSymbolDesc(this, tag, createDesc(1, value));
+    };
+    if(DESCRIPTORS && setter)setSymbolDesc(ObjectProto, tag, {configurable: true, set: $set});
+    return wrap(tag);
   };
-  redefine($Symbol.prototype, 'toString', function toString(){
+  redefine($Symbol[PROTOTYPE], 'toString', function toString(){
     return this._k;
   });
 
-  isSymbol = function(it){
-    return it instanceof $Symbol;
-  };
+  $GOPD.f = $getOwnPropertyDescriptor;
+  $DP.f   = $defineProperty;
+  require('./_object-gopn').f = gOPNExt.f = $getOwnPropertyNames;
+  require('./_object-pie').f  = $propertyIsEnumerable;
+  require('./_object-gops').f = $getOwnPropertySymbols;
 
-  $.create     = $create;
-  $.isEnum     = $propertyIsEnumerable;
-  $.getDesc    = $getOwnPropertyDescriptor;
-  $.setDesc    = $defineProperty;
-  $.setDescs   = $defineProperties;
-  $.getNames   = $names.get = $getOwnPropertyNames;
-  $.getSymbols = $getOwnPropertySymbols;
-
-  if(DESCRIPTORS && !require('./$.library')){
+  if(DESCRIPTORS && !require('./_library')){
     redefine(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
+  }
+
+  wksExt.f = function(name){
+    return wrap(wks(name));
   }
 }
 
-var symbolStatics = {
+$export($export.G + $export.W + $export.F * !USE_NATIVE, {Symbol: $Symbol});
+
+for(var symbols = (
+  // 19.4.2.2, 19.4.2.3, 19.4.2.4, 19.4.2.6, 19.4.2.8, 19.4.2.9, 19.4.2.10, 19.4.2.11, 19.4.2.12, 19.4.2.13, 19.4.2.14
+  'hasInstance,isConcatSpreadable,iterator,match,replace,search,species,split,toPrimitive,toStringTag,unscopables'
+).split(','), i = 0; symbols.length > i; )wks(symbols[i++]);
+
+for(var symbols = $keys(wks.store), i = 0; symbols.length > i; )wksDefine(symbols[i++]);
+
+$export($export.S + $export.F * !USE_NATIVE, 'Symbol', {
   // 19.4.2.1 Symbol.for(key)
   'for': function(key){
     return has(SymbolRegistry, key += '')
@@ -171,37 +178,14 @@ var symbolStatics = {
   },
   // 19.4.2.5 Symbol.keyFor(sym)
   keyFor: function keyFor(key){
-    return keyOf(SymbolRegistry, key);
+    if(isSymbol(key))return keyOf(SymbolRegistry, key);
+    throw TypeError(key + ' is not a symbol!');
   },
   useSetter: function(){ setter = true; },
   useSimple: function(){ setter = false; }
-};
-// 19.4.2.2 Symbol.hasInstance
-// 19.4.2.3 Symbol.isConcatSpreadable
-// 19.4.2.4 Symbol.iterator
-// 19.4.2.6 Symbol.match
-// 19.4.2.8 Symbol.replace
-// 19.4.2.9 Symbol.search
-// 19.4.2.10 Symbol.species
-// 19.4.2.11 Symbol.split
-// 19.4.2.12 Symbol.toPrimitive
-// 19.4.2.13 Symbol.toStringTag
-// 19.4.2.14 Symbol.unscopables
-$.each.call((
-  'hasInstance,isConcatSpreadable,iterator,match,replace,search,' +
-  'species,split,toPrimitive,toStringTag,unscopables'
-).split(','), function(it){
-  var sym = wks(it);
-  symbolStatics[it] = useNative ? sym : wrap(sym);
 });
 
-setter = true;
-
-$export($export.G + $export.W, {Symbol: $Symbol});
-
-$export($export.S, 'Symbol', symbolStatics);
-
-$export($export.S + $export.F * !useNative, 'Object', {
+$export($export.S + $export.F * !USE_NATIVE, 'Object', {
   // 19.1.2.2 Object.create(O [, Properties])
   create: $create,
   // 19.1.2.4 Object.defineProperty(O, P, Attributes)
@@ -217,8 +201,32 @@ $export($export.S + $export.F * !useNative, 'Object', {
 });
 
 // 24.3.2 JSON.stringify(value [, replacer [, space]])
-$JSON && $export($export.S + $export.F * (!useNative || buggyJSON), 'JSON', {stringify: $stringify});
+$JSON && $export($export.S + $export.F * (!USE_NATIVE || $fails(function(){
+  var S = $Symbol();
+  // MS Edge converts symbol values to JSON as {}
+  // WebKit converts symbol values to JSON as null
+  // V8 throws on boxed symbols
+  return _stringify([S]) != '[null]' || _stringify({a: S}) != '{}' || _stringify(Object(S)) != '{}';
+})), 'JSON', {
+  stringify: function stringify(it){
+    if(it === undefined || isSymbol(it))return; // IE8 returns string on undefined
+    var args = [it]
+      , i    = 1
+      , replacer, $replacer;
+    while(arguments.length > i)args.push(arguments[i++]);
+    replacer = args[1];
+    if(typeof replacer == 'function')$replacer = replacer;
+    if($replacer || !isArray(replacer))replacer = function(key, value){
+      if($replacer)value = $replacer.call(this, key, value);
+      if(!isSymbol(value))return value;
+    };
+    args[1] = replacer;
+    return _stringify.apply($JSON, args);
+  }
+});
 
+// 19.4.3.4 Symbol.prototype[@@toPrimitive](hint)
+$Symbol[PROTOTYPE][TO_PRIMITIVE] || require('./_hide')($Symbol[PROTOTYPE], TO_PRIMITIVE, $Symbol[PROTOTYPE].valueOf);
 // 19.4.3.5 Symbol.prototype[@@toStringTag]
 setToStringTag($Symbol, 'Symbol');
 // 20.2.1.9 Math[@@toStringTag]

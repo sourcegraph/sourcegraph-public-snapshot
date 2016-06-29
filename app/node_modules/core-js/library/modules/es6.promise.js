@@ -1,82 +1,60 @@
 'use strict';
-var $          = require('./$')
-  , LIBRARY    = require('./$.library')
-  , global     = require('./$.global')
-  , ctx        = require('./$.ctx')
-  , classof    = require('./$.classof')
-  , $export    = require('./$.export')
-  , isObject   = require('./$.is-object')
-  , anObject   = require('./$.an-object')
-  , aFunction  = require('./$.a-function')
-  , strictNew  = require('./$.strict-new')
-  , forOf      = require('./$.for-of')
-  , setProto   = require('./$.set-proto').set
-  , same       = require('./$.same-value')
-  , SPECIES    = require('./$.wks')('species')
-  , speciesConstructor = require('./$.species-constructor')
-  , asap       = require('./$.microtask')
-  , PROMISE    = 'Promise'
-  , process    = global.process
-  , isNode     = classof(process) == 'process'
-  , P          = global[PROMISE]
-  , Wrapper;
+var LIBRARY            = require('./_library')
+  , global             = require('./_global')
+  , ctx                = require('./_ctx')
+  , classof            = require('./_classof')
+  , $export            = require('./_export')
+  , isObject           = require('./_is-object')
+  , anObject           = require('./_an-object')
+  , aFunction          = require('./_a-function')
+  , anInstance         = require('./_an-instance')
+  , forOf              = require('./_for-of')
+  , setProto           = require('./_set-proto').set
+  , speciesConstructor = require('./_species-constructor')
+  , task               = require('./_task').set
+  , microtask          = require('./_microtask')()
+  , PROMISE            = 'Promise'
+  , TypeError          = global.TypeError
+  , process            = global.process
+  , $Promise           = global[PROMISE]
+  , process            = global.process
+  , isNode             = classof(process) == 'process'
+  , empty              = function(){ /* empty */ }
+  , Internal, GenericPromiseCapability, Wrapper;
 
-var testResolve = function(sub){
-  var test = new P(function(){});
-  if(sub)test.constructor = Object;
-  return P.resolve(test) === test;
-};
-
-var USE_NATIVE = function(){
-  var works = false;
-  function P2(x){
-    var self = new P(x);
-    setProto(self, P2.prototype);
-    return self;
-  }
+var USE_NATIVE = !!function(){
   try {
-    works = P && P.resolve && testResolve();
-    setProto(P2, P);
-    P2.prototype = $.create(P.prototype, {constructor: {value: P2}});
-    // actual Firefox has broken subclass support, test that
-    if(!(P2.resolve(5).then(function(){}) instanceof P2)){
-      works = false;
-    }
-    // actual V8 bug, https://code.google.com/p/v8/issues/detail?id=4162
-    if(works && require('./$.descriptors')){
-      var thenableThenGotten = false;
-      P.resolve($.setDesc({}, 'then', {
-        get: function(){ thenableThenGotten = true; }
-      }));
-      works = thenableThenGotten;
-    }
-  } catch(e){ works = false; }
-  return works;
+    // correct subclassing with @@species support
+    var promise     = $Promise.resolve(1)
+      , FakePromise = (promise.constructor = {})[require('./_wks')('species')] = function(exec){ exec(empty, empty); };
+    // unhandled rejections tracking support, NodeJS Promise without it fails @@species test
+    return (isNode || typeof PromiseRejectionEvent == 'function') && promise.then(empty) instanceof FakePromise;
+  } catch(e){ /* empty */ }
 }();
 
 // helpers
 var sameConstructor = function(a, b){
-  // library wrapper special case
-  if(LIBRARY && a === P && b === Wrapper)return true;
-  return same(a, b);
-};
-var getConstructor = function(C){
-  var S = anObject(C)[SPECIES];
-  return S != undefined ? S : C;
+  // with library wrapper special case
+  return a === b || a === $Promise && b === Wrapper;
 };
 var isThenable = function(it){
   var then;
   return isObject(it) && typeof (then = it.then) == 'function' ? then : false;
 };
-var PromiseCapability = function(C){
+var newPromiseCapability = function(C){
+  return sameConstructor($Promise, C)
+    ? new PromiseCapability(C)
+    : new GenericPromiseCapability(C);
+};
+var PromiseCapability = GenericPromiseCapability = function(C){
   var resolve, reject;
   this.promise = new C(function($$resolve, $$reject){
     if(resolve !== undefined || reject !== undefined)throw TypeError('Bad Promise constructor');
     resolve = $$resolve;
     reject  = $$reject;
   });
-  this.resolve = aFunction(resolve),
-  this.reject  = aFunction(reject)
+  this.resolve = aFunction(resolve);
+  this.reject  = aFunction(reject);
 };
 var perform = function(exec){
   try {
@@ -85,23 +63,32 @@ var perform = function(exec){
     return {error: e};
   }
 };
-var notify = function(record, isReject){
-  if(record.n)return;
-  record.n = true;
-  var chain = record.c;
-  asap(function(){
-    var value = record.v
-      , ok    = record.s == 1
+var notify = function(promise, isReject){
+  if(promise._n)return;
+  promise._n = true;
+  var chain = promise._c;
+  microtask(function(){
+    var value = promise._v
+      , ok    = promise._s == 1
       , i     = 0;
     var run = function(reaction){
       var handler = ok ? reaction.ok : reaction.fail
         , resolve = reaction.resolve
         , reject  = reaction.reject
+        , domain  = reaction.domain
         , result, then;
       try {
         if(handler){
-          if(!ok)record.h = true;
-          result = handler === true ? value : handler(value);
+          if(!ok){
+            if(promise._h == 2)onHandleUnhandled(promise);
+            promise._h = 1;
+          }
+          if(handler === true)result = value;
+          else {
+            if(domain)domain.enter();
+            result = handler(value);
+            if(domain)domain.exit();
+          }
           if(result === reaction.promise){
             reject(TypeError('Promise-chain cycle'));
           } else if(then = isThenable(result)){
@@ -113,12 +100,17 @@ var notify = function(record, isReject){
       }
     };
     while(chain.length > i)run(chain[i++]); // variable length - can't use forEach
-    chain.length = 0;
-    record.n = false;
-    if(isReject)setTimeout(function(){
-      var promise = record.p
-        , handler, console;
-      if(isUnhandled(promise)){
+    promise._c = [];
+    promise._n = false;
+    if(isReject && !promise._h)onUnhandled(promise);
+  });
+};
+var onUnhandled = function(promise){
+  task.call(global, function(){
+    var value = promise._v
+      , abrupt, handler, console;
+    if(isUnhandled(promise)){
+      abrupt = perform(function(){
         if(isNode){
           process.emit('unhandledRejection', value, promise);
         } else if(handler = global.onunhandledrejection){
@@ -126,42 +118,54 @@ var notify = function(record, isReject){
         } else if((console = global.console) && console.error){
           console.error('Unhandled promise rejection', value);
         }
-      } record.a = undefined;
-    }, 1);
+      });
+      // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
+      promise._h = isNode || isUnhandled(promise) ? 2 : 1;
+    } promise._a = undefined;
+    if(abrupt)throw abrupt.error;
   });
 };
 var isUnhandled = function(promise){
-  var record = promise._d
-    , chain  = record.a || record.c
-    , i      = 0
+  if(promise._h == 1)return false;
+  var chain = promise._a || promise._c
+    , i     = 0
     , reaction;
-  if(record.h)return false;
   while(chain.length > i){
     reaction = chain[i++];
     if(reaction.fail || !isUnhandled(reaction.promise))return false;
   } return true;
 };
+var onHandleUnhandled = function(promise){
+  task.call(global, function(){
+    var handler;
+    if(isNode){
+      process.emit('rejectionHandled', promise);
+    } else if(handler = global.onrejectionhandled){
+      handler({promise: promise, reason: promise._v});
+    }
+  });
+};
 var $reject = function(value){
-  var record = this;
-  if(record.d)return;
-  record.d = true;
-  record = record.r || record; // unwrap
-  record.v = value;
-  record.s = 2;
-  record.a = record.c.slice();
-  notify(record, true);
+  var promise = this;
+  if(promise._d)return;
+  promise._d = true;
+  promise = promise._w || promise; // unwrap
+  promise._v = value;
+  promise._s = 2;
+  if(!promise._a)promise._a = promise._c.slice();
+  notify(promise, true);
 };
 var $resolve = function(value){
-  var record = this
+  var promise = this
     , then;
-  if(record.d)return;
-  record.d = true;
-  record = record.r || record; // unwrap
+  if(promise._d)return;
+  promise._d = true;
+  promise = promise._w || promise; // unwrap
   try {
-    if(record.p === value)throw TypeError("Promise can't be resolved itself");
+    if(promise === value)throw TypeError("Promise can't be resolved itself");
     if(then = isThenable(value)){
-      asap(function(){
-        var wrapper = {r: record, d: false}; // wrap
+      microtask(function(){
+        var wrapper = {_w: promise, _d: false}; // wrap
         try {
           then.call(value, ctx($resolve, wrapper, 1), ctx($reject, wrapper, 1));
         } catch(e){
@@ -169,114 +173,122 @@ var $resolve = function(value){
         }
       });
     } else {
-      record.v = value;
-      record.s = 1;
-      notify(record, false);
+      promise._v = value;
+      promise._s = 1;
+      notify(promise, false);
     }
   } catch(e){
-    $reject.call({r: record, d: false}, e); // wrap
+    $reject.call({_w: promise, _d: false}, e); // wrap
   }
 };
 
 // constructor polyfill
 if(!USE_NATIVE){
   // 25.4.3.1 Promise(executor)
-  P = function Promise(executor){
+  $Promise = function Promise(executor){
+    anInstance(this, $Promise, PROMISE, '_h');
     aFunction(executor);
-    var record = this._d = {
-      p: strictNew(this, P, PROMISE),         // <- promise
-      c: [],                                  // <- awaiting reactions
-      a: undefined,                           // <- checked in isUnhandled reactions
-      s: 0,                                   // <- state
-      d: false,                               // <- done
-      v: undefined,                           // <- value
-      h: false,                               // <- handled rejection
-      n: false                                // <- notify
-    };
+    Internal.call(this);
     try {
-      executor(ctx($resolve, record, 1), ctx($reject, record, 1));
+      executor(ctx($resolve, this, 1), ctx($reject, this, 1));
     } catch(err){
-      $reject.call(record, err);
+      $reject.call(this, err);
     }
   };
-  require('./$.redefine-all')(P.prototype, {
+  Internal = function Promise(executor){
+    this._c = [];             // <- awaiting reactions
+    this._a = undefined;      // <- checked in isUnhandled reactions
+    this._s = 0;              // <- state
+    this._d = false;          // <- done
+    this._v = undefined;      // <- value
+    this._h = 0;              // <- rejection state, 0 - default, 1 - handled, 2 - unhandled
+    this._n = false;          // <- notify
+  };
+  Internal.prototype = require('./_redefine-all')($Promise.prototype, {
     // 25.4.5.3 Promise.prototype.then(onFulfilled, onRejected)
     then: function then(onFulfilled, onRejected){
-      var reaction = new PromiseCapability(speciesConstructor(this, P))
-        , promise  = reaction.promise
-        , record   = this._d;
-      reaction.ok   = typeof onFulfilled == 'function' ? onFulfilled : true;
-      reaction.fail = typeof onRejected == 'function' && onRejected;
-      record.c.push(reaction);
-      if(record.a)record.a.push(reaction);
-      if(record.s)notify(record, false);
-      return promise;
+      var reaction    = newPromiseCapability(speciesConstructor(this, $Promise));
+      reaction.ok     = typeof onFulfilled == 'function' ? onFulfilled : true;
+      reaction.fail   = typeof onRejected == 'function' && onRejected;
+      reaction.domain = isNode ? process.domain : undefined;
+      this._c.push(reaction);
+      if(this._a)this._a.push(reaction);
+      if(this._s)notify(this, false);
+      return reaction.promise;
     },
     // 25.4.5.1 Promise.prototype.catch(onRejected)
     'catch': function(onRejected){
       return this.then(undefined, onRejected);
     }
   });
+  PromiseCapability = function(){
+    var promise  = new Internal;
+    this.promise = promise;
+    this.resolve = ctx($resolve, promise, 1);
+    this.reject  = ctx($reject, promise, 1);
+  };
 }
 
-$export($export.G + $export.W + $export.F * !USE_NATIVE, {Promise: P});
-require('./$.set-to-string-tag')(P, PROMISE);
-require('./$.set-species')(PROMISE);
-Wrapper = require('./$.core')[PROMISE];
+$export($export.G + $export.W + $export.F * !USE_NATIVE, {Promise: $Promise});
+require('./_set-to-string-tag')($Promise, PROMISE);
+require('./_set-species')(PROMISE);
+Wrapper = require('./_core')[PROMISE];
 
 // statics
 $export($export.S + $export.F * !USE_NATIVE, PROMISE, {
   // 25.4.4.5 Promise.reject(r)
   reject: function reject(r){
-    var capability = new PromiseCapability(this)
+    var capability = newPromiseCapability(this)
       , $$reject   = capability.reject;
     $$reject(r);
     return capability.promise;
   }
 });
-$export($export.S + $export.F * (!USE_NATIVE || testResolve(true)), PROMISE, {
+$export($export.S + $export.F * (LIBRARY || !USE_NATIVE), PROMISE, {
   // 25.4.4.6 Promise.resolve(x)
   resolve: function resolve(x){
     // instanceof instead of internal slot check because we should fix it without replacement native Promise core
-    if(x instanceof P && sameConstructor(x.constructor, this))return x;
-    var capability = new PromiseCapability(this)
+    if(x instanceof $Promise && sameConstructor(x.constructor, this))return x;
+    var capability = newPromiseCapability(this)
       , $$resolve  = capability.resolve;
     $$resolve(x);
     return capability.promise;
   }
 });
-$export($export.S + $export.F * !(USE_NATIVE && require('./$.iter-detect')(function(iter){
-  P.all(iter)['catch'](function(){});
+$export($export.S + $export.F * !(USE_NATIVE && require('./_iter-detect')(function(iter){
+  $Promise.all(iter)['catch'](empty);
 })), PROMISE, {
   // 25.4.4.1 Promise.all(iterable)
   all: function all(iterable){
-    var C          = getConstructor(this)
-      , capability = new PromiseCapability(C)
+    var C          = this
+      , capability = newPromiseCapability(C)
       , resolve    = capability.resolve
-      , reject     = capability.reject
-      , values     = [];
+      , reject     = capability.reject;
     var abrupt = perform(function(){
-      forOf(iterable, false, values.push, values);
-      var remaining = values.length
-        , results   = Array(remaining);
-      if(remaining)$.each.call(values, function(promise, index){
-        var alreadyCalled = false;
+      var values    = []
+        , index     = 0
+        , remaining = 1;
+      forOf(iterable, false, function(promise){
+        var $index        = index++
+          , alreadyCalled = false;
+        values.push(undefined);
+        remaining++;
         C.resolve(promise).then(function(value){
           if(alreadyCalled)return;
-          alreadyCalled = true;
-          results[index] = value;
-          --remaining || resolve(results);
+          alreadyCalled  = true;
+          values[$index] = value;
+          --remaining || resolve(values);
         }, reject);
       });
-      else resolve(results);
+      --remaining || resolve(values);
     });
     if(abrupt)reject(abrupt.error);
     return capability.promise;
   },
   // 25.4.4.4 Promise.race(iterable)
   race: function race(iterable){
-    var C          = getConstructor(this)
-      , capability = new PromiseCapability(C)
+    var C          = this
+      , capability = newPromiseCapability(C)
       , reject     = capability.reject;
     var abrupt = perform(function(){
       forOf(iterable, false, function(promise){

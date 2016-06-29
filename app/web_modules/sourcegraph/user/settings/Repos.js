@@ -4,7 +4,7 @@ import CSSModules from "react-css-modules";
 import styles from "./styles/Repos.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {Input, Table} from "sourcegraph/components";
-import debounce from "lodash/function/debounce";
+import debounce from "lodash.debounce";
 import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 

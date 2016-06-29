@@ -1,2 +1,4 @@
-require('../../modules/js.array.statics');
-module.exports = require('../../modules/$.core').Array.push;
+// for a legacy code and future fixes
+module.exports = function(){
+  return Function.call.apply(Array.prototype.push, arguments);
+};
