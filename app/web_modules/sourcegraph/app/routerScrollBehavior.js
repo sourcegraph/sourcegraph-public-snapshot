@@ -8,7 +8,7 @@ import type {RouterState} from "react-router";
 // achieve the desirable behavior of the window not scrolling when
 // the user clicks on a def (and goes to a def route) on the blob page,
 // or performs an incremental search that updates the URL.
-export default function shouldUpdateScroll(prevRouterProps: ?RouterState, nextRouterProps: ?RouterState): bool {
+export function shouldUpdateScroll(prevRouterProps: ?RouterState, nextRouterProps: ?RouterState): bool {
 	if (!prevRouterProps) return true;
 	if (!nextRouterProps) return true;
 
@@ -17,4 +17,19 @@ export default function shouldUpdateScroll(prevRouterProps: ?RouterState, nextRo
 	const changedScrollKey = !prevRoute.keepScrollPositionOnRouteChangeKey || prevRoute.keepScrollPositionOnRouteChangeKey !== nextRoute.keepScrollPositionOnRouteChangeKey;
 	if (!changedScrollKey) return false;
 	return true;
+}
+
+// Work around for react-router hash scroll behavior - https://github.com/reactjs/react-router/issues/394
+export function hashLinkScroll() {
+	const {hash} = window.location;
+	if (hash !== "") {
+		// Push onto callback queue so it runs after the DOM is updated,
+		// this is required when navigating from a different page so that
+		// the element is rendered on the page before trying to getElementById.
+		setTimeout(() => {
+			const id = hash.replace("#", "");
+			const element = document.getElementById(id);
+			if (element) element.scrollIntoView();
+		}, 0);
+	}
 }
