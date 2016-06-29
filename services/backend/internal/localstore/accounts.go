@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -14,6 +15,7 @@ import (
 
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/amortize"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
@@ -120,11 +122,19 @@ func init() {
 }
 
 type passwordResetRequest struct {
-	Token string
-	UID   int32
+	Token     string
+	UID       int32
+	ExpiresAt time.Time `db:"expires_at"`
 }
 
+const passwordResetTokenExpiration = 4 * time.Hour
+
 func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.User) (*sourcegraph.PasswordResetToken, error) {
+	// 1 out of every 1000 times is just an initial guess as to how often we
+	// should go through and delete expired password reset requests.
+	if amortize.ShouldAmortize(1, 1000) {
+		s.cleanExpiredResets(ctx)
+	}
 	if err := accesscontrol.VerifyUserSelfOrAdmin(ctx, "Accounts.RequestPasswordReset", user.UID); err != nil {
 		return nil, err
 	}
@@ -136,9 +146,11 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 		return nil, errors.New("UID must be set")
 	}
 	token := randstring.NewLen(tokenLength)
+	expiration := time.Now().Add(passwordResetTokenExpiration)
 	req := passwordResetRequest{
-		Token: token,
-		UID:   user.UID,
+		Token:     token,
+		UID:       user.UID,
+		ExpiresAt: expiration,
 	}
 	if err := appDBH(ctx).Insert(&req); err != nil {
 		return nil, fmt.Errorf("Error saving password reset token: %s", err)
@@ -146,23 +158,44 @@ func (s *accounts) RequestPasswordReset(ctx context.Context, user *sourcegraph.U
 	return &sourcegraph.PasswordResetToken{Token: token}, nil
 }
 
+func unmarshalResetRequest(ctx context.Context, token string) (passwordResetRequest, error) {
+	var req passwordResetRequest
+	err := appDBH(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE token=$1`, token)
+	return req, err
+}
+
 func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPassword) error {
 	genericErr := grpc.Errorf(codes.InvalidArgument, "error reseting password") // don't need to reveal everything
-	var req passwordResetRequest
-	if err := appDBH(ctx).SelectOne(&req, `SELECT * FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err == sql.ErrNoRows {
+	req, err := unmarshalResetRequest(ctx, newPass.Token.Token)
+	if err == sql.ErrNoRows {
 		log15.Warn("Token does not exist in password reset database", "store", "Accounts", "error", err)
 		return genericErr
 	} else if err != nil {
 		return genericErr
 	}
-	log15.Info("Resetting password", "store", "Accounts", "UID", req.UID)
-	if err := (password{}).SetPassword(ctx, req.UID, newPass.Password); err != nil {
-		return fmt.Errorf("Error changing password: %s", err)
-	}
-
-	if _, err := appDBH(ctx).Exec(`DELETE FROM password_reset_requests WHERE Token=$1`, newPass.Token.Token); err != nil {
-		log15.Warn("Error deleting token", "store", "Accounts", "error", err)
+	// We round to the microsecond because that is the maximum resolution
+	// allowed by our DB.
+	if time.Now().Round(time.Microsecond).Before(req.ExpiresAt.Round(time.Microsecond)) {
+		log15.Info("Resetting password", "store", "Accounts", "UID", req.UID)
+		if err := (password{}).SetPassword(ctx, req.UID, newPass.Password); err != nil {
+			return fmt.Errorf("error changing password: %s", err)
+		}
+		// This changes the expiry date to some point in the past.
+		req.ExpiresAt = time.Time{}
+		_, err := appDBH(ctx).Update(&req)
+		if err != nil {
+			log15.Warn("Error updating token", "store", "Accounts", "error", err)
+		}
 		return nil
+	}
+	return grpc.Errorf(codes.InvalidArgument, "password reset token has expired")
+}
+
+// cleanExpiredResets deletes password reset requests from the DB whose expiration date has passed.
+func (s *accounts) cleanExpiredResets(ctx context.Context) error {
+	_, err := appDBH(ctx).Exec(`DELETE FROM password_reset_requests WHERE expires_at < now()`)
+	if err != nil {
+		return fmt.Errorf("error when cleaning up expired password resets: %s", err)
 	}
 	return nil
 }
