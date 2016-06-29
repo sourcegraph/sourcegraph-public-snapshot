@@ -109,7 +109,7 @@ class GlobalSearch extends Container {
 			{};
 	}
 
-	_repoIncludes(state, lang) {
+	_reposScope(state, lang) {
 		const scope = this._scope(state);
 		let repos = [];
 		if (state.repo && scope.repo) repos.push(state.repo);
@@ -119,6 +119,21 @@ class GlobalSearch extends Container {
 			if (scope.public) repos.push(...state.publicRepos);
 			if (scope.private) repos.push(...state.privateRepos);
 		}
+
+		// Add lang standard library.
+		if (lang) {
+			switch (lang) {
+			case "golang":
+				repos.push("github.com/golang/go");
+				break;
+			case "java":
+				repos.push("hg.openjdk.java.net/jdk8/jdk8/jdk");
+				break;
+			default:
+				break;
+			}
+		}
+
 		return uniq(repos);
 	}
 
@@ -151,9 +166,9 @@ class GlobalSearch extends Container {
 		}
 
 		state.matchingResults = this._langs(state).reduce((memo, lang) => {
-			const repoIncludes = this._repoIncludes(state, lang);
+			const repoIncludes = this._reposScope(state, lang);
 			if (repoIncludes && repoIncludes.length > 0) {
-				const results = SearchStore.get(`${lang} ${state.query}`, this._repoIncludes(state, lang), null, null, RESULTS_LIMIT,
+				const results = SearchStore.get(`${lang} ${state.query}`, this._reposScope(state, lang), null, null, RESULTS_LIMIT,
 					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 				if (results) {
 					if (results.Repos) memo.Repos.push(...results.Repos);
@@ -170,7 +185,7 @@ class GlobalSearch extends Container {
 			debounce((query) => {
 				const langs = this._langs(nextState);
 				for (const lang of langs) {
-					const repoIncludes = this._repoIncludes(nextState, lang);
+					const repoIncludes = this._reposScope(nextState, lang);
 					if (!repoIncludes || repoIncludes.length === 0) continue;
 					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
 						query: `${lang} ${nextState.query}`,
@@ -350,7 +365,7 @@ class GlobalSearch extends Container {
 		}
 
 		const langs = this._langs(this.state);
-		const repoIncludes = langs && langs.reduce((memo, lang) => memo.concat(...this._repoIncludes(this.state, lang)), []);
+		const repoIncludes = langs && langs.reduce((memo, lang) => memo.concat(...this._reposScope(this.state, lang)), []);
 		if (!langs || langs.length === 0 || !repoIncludes || repoIncludes.length === 0) return [invalidFiltersItem];
 
 		if (this.state.matchingResults &&
