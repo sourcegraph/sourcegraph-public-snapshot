@@ -1,4 +1,4 @@
-// @flow
+// @flow weak
 
 import React from "react";
 import Helmet from "react-helmet";
@@ -23,33 +23,65 @@ const reactElement = React.PropTypes.oneOfType([
 	React.PropTypes.element,
 ]);
 
-function App(props, {signedIn}) {
-	let styleName = "main-container";
-	if (props.location.state && props.location.state.modal) styleName = "main-container-with-modal";
-	if (!signedIn && location.pathname === "/") styleName = "main-container-homepage";
+export default class App extends React.Component {
 
-	return (
-		<div styleName={styleName}>
-			<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-			<GlobalNav location={props.location} channelStatusCode={props.channelStatusCode}/>
-			<div styleName="main-content">
-				{props.navContext && <div styleName="breadcrumb">{props.navContext}</div>}
-				{props.main}
+	static propTypes = {
+		main: reactElement,
+		navContext: reactElement,
+		location: React.PropTypes.object.isRequired,
+		channelStatusCode: React.PropTypes.number,
+	};
+
+	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
+		signedIn: React.PropTypes.bool.isRequired,
+	};
+
+	constructor(props, context) {
+		super(props);
+		let styleName = "main-container";
+		if (props.location.state && props.location.state.modal) styleName = "main-container-with-modal";
+		if (!context.signedIn && location.pathname === "/") styleName = "main-container-homepage";
+		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
+		this.state = {
+			styleName: styleName,
+		};
+	}
+
+	state = {
+		styleName: String,
+	};
+
+	componentDidMount() {
+		if (typeof document !== "undefined") {
+			document.addEventListener("sourcegraph:desktop", this._handleSourcegraphDesktop);
+		}
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("sourcegraph:desktop", this._handleSourcegraphDesktop);
+	}
+
+	_handleSourcegraphDesktop: any;
+	_handleSourcegraphDesktop(event) {
+		this.context.router.replace(event.detail);
+	}
+
+	render() {
+		return (
+			<div styleName={this.state.styleName}>
+				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
+				<GlobalNav location={this.props.location} channelStatusCode={this.props.channelStatusCode}/>
+				<div styleName="main-content">
+					{this.props.navContext && <div styleName="breadcrumb">{this.props.navContext}</div>}
+					{this.props.main}
+				</div>
+				{!this.context.signedIn && <Footer />}
 			</div>
-			{!signedIn && <Footer />}
-		</div>
-	);
-}
-App.propTypes = {
-	main: reactElement,
-	navContext: reactElement,
-	location: React.PropTypes.object.isRequired,
-	channelStatusCode: React.PropTypes.number,
-};
+		);
+	}
 
-App.contextTypes = {
-	signedIn: React.PropTypes.bool.isRequired,
-};
+}
 
 export const rootRoute: Route = {
 	path: "/",
