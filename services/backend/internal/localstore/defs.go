@@ -332,31 +332,26 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	var results []*sourcegraph.DefSearchResult
 	for _, d := range dbSearchResults {
 		// convert dbDef to Def
-		var def sourcegraph.Def
-		{
-			dk, err := getDefKey(ctx, graphDBH(ctx), d.DefKey)
-			if err != nil {
-				return nil, fmt.Errorf("error getting def key: %s", err)
-			}
-
-			rv, err := getRepoRev(ctx, graphDBH(ctx), d.Rev)
-			if err != nil {
-				return nil, fmt.Errorf("error getting repo revision repo_rev.id %d: %s", d.Rev, err)
-			}
-
-			def = sourcegraph.Def{
-				Def: graph.Def{
-					DefKey: graph.DefKey{
-						Repo:     dk.Repo,
-						CommitID: rv.Commit,
-						UnitType: dk.UnitType,
-						Unit:     dk.Unit,
-						Path:     dk.Path,
-					},
-					Name: d.Name,
-					Kind: d.Kind,
+		dk, err := getDefKey(ctx, graphDBH(ctx), d.DefKey)
+		if err != nil {
+			return nil, fmt.Errorf("error getting def key: %s", err)
+		}
+		rv, err := getRepoRev(ctx, graphDBH(ctx), d.Rev)
+		if err != nil {
+			return nil, fmt.Errorf("error getting repo revision repo_rev.id %d: %s", d.Rev, err)
+		}
+		def := sourcegraph.Def{
+			Def: graph.Def{
+				DefKey: graph.DefKey{
+					Repo:     dk.Repo,
+					CommitID: rv.Commit,
+					UnitType: dk.UnitType,
+					Unit:     dk.Unit,
+					Path:     dk.Path,
 				},
-			}
+				Name: d.Name,
+				Kind: d.Kind,
+			},
 		}
 
 		// Critical permissions check. DO NOT REMOVE.

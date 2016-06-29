@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -134,16 +135,57 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 		dk_ := dk
 		defkeys = append(defkeys, &dk_)
 	}
-	deflist, err := svc.Defs(ctx).List(ctx, &sourcegraph.DefListOptions{
-		DefKeys:  defkeys,
-		RepoRevs: reporevs,
-	})
-	if err != nil {
-		return nil, err
+
+	// fetch definition metadata in parallel
+	var (
+		deflist []*sourcegraph.Def
+		mu      sync.Mutex
+		wg      sync.WaitGroup
+		errs    []error
+	)
+	wg.Add(len(defkeys))
+	for _, dk := range defkeys {
+		dk := dk
+		go func() {
+			defer wg.Done()
+
+			rp, err := store.ReposFromContext(ctx).GetByURI(ctx, dk.Repo)
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
+			df, err := svc.Defs(ctx).Get(ctx, &sourcegraph.DefsGetOp{
+				Def: sourcegraph.DefSpec{
+					Repo:     rp.ID,
+					CommitID: dk.CommitID,
+					UnitType: dk.UnitType,
+					Unit:     dk.Unit,
+					Path:     dk.Path,
+				},
+				Opt: &sourcegraph.DefGetOptions{Doc: true},
+			})
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
+			{
+				mu.Lock()
+				deflist = append(deflist, df)
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if errs != nil {
+		return nil, fmt.Errorf("fetching definition metadata failed with errors: %+v", errs)
 	}
 
 	hydratedDefs := make(map[graph.DefKey]*sourcegraph.Def)
-	for _, def := range deflist.Defs {
+	for _, def := range deflist {
 		hydratedDefs[def.DefKey] = def
 	}
 	hydratedResults := make([]*sourcegraph.DefSearchResult, 0, len(defs))
