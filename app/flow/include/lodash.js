@@ -3,7 +3,7 @@ declare module "lodash.debounce" {
 	declare var exports: typeof debounce;
 }
 
-declare module "lodash.trimLeft" {
+declare module "lodash.trimleft" {
 	declare function trimLeft(string: string, chars: ?string): string;
 	declare var exports: typeof trimLeft;
 }
