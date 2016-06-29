@@ -317,10 +317,10 @@ class GlobalSearch extends Container {
 	_results(): React$Element | Array<React$Element> {
 		if (!this.state.query) return <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result">Type a query&hellip;</div>;
 
-		const invalidFiltersItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Nothing found. Update your filters and try again.</div>;
-		const noResultsItem = <div styleName="tc f4" className={base.pv5} key="_nosymbol">Nothing found. Broaden your search scope and try again.</div>;
+		const invalidFiltersItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">Check your search filters and try again.</div>;
+		const noResultsItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
 		if (!this.state.matchingResults) {
-			return [<div key="1" styleName="tc f4" className={base.pv5}>Loading results...</div>];
+			return [<div key="1" styleName="result" className={base.pv5}>Loading results...</div>];
 		}
 
 		const langs = this._langs(this.state);

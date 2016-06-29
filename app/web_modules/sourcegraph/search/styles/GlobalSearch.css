@@ -78,4 +78,5 @@
 
 code.block {
 	word-break: break-all;
+	padding-bottom: 5px;
 }
