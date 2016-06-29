@@ -43,11 +43,11 @@ func serveGlobalSearch(w http.ResponseWriter, r *http.Request) error {
 		params.Limit = 100
 	}
 
-	paramsRepos, err := resolveLocalRepos(ctx, params.Repos)
+	paramsRepos, err := resolveLocalRepos(ctx, params.Repos, true)
 	if err != nil {
 		return err
 	}
-	paramsNotRepos, err := resolveLocalRepos(ctx, params.NotRepos)
+	paramsNotRepos, err := resolveLocalRepos(ctx, params.NotRepos, true)
 	if err != nil {
 		return err
 	}

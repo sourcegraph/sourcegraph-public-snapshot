@@ -247,14 +247,19 @@ func resolveLocalRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*source
 	}, nil
 }
 
-func resolveLocalRepos(ctx context.Context, repoPaths []string) ([]int32, error) {
+func resolveLocalRepos(ctx context.Context, repoPaths []string, ignoreErrors bool) ([]int32, error) {
 	repoIDs := make([]int32, 0, len(repoPaths))
 	for _, repoPath := range repoPaths {
 		repoID, err := resolveLocalRepo(ctx, repoPath)
 		if err != nil {
-			return nil, err
+			if !ignoreErrors {
+				return nil, err
+			} else {
+				log15.Warn("resolve local repo", "err", err, "repo", repoPath)
+			}
+		} else {
+			repoIDs = append(repoIDs, repoID)
 		}
-		repoIDs = append(repoIDs, repoID)
 	}
 	return repoIDs, nil
 }
