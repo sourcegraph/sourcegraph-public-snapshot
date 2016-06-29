@@ -35,15 +35,6 @@ class DashboardContainer extends React.Component {
 	}
 
 	render() {
-		let osName = "OS";
-		if (typeof window !== "undefined" && window.navigator && window.navigator.platform) {
-			const p = window.navigator.platform.toLowerCase();
-			if (p.includes("mac")) osName = "macOS";
-			else if (p.includes("linux")) osName = "Linux";
-			else if (p.includes("windows")) osName = "Windows";
-			// Ignore mobile (fall back to "OS").
-		}
-		
 		return (
 			<div>
 				<Helmet title="Home" />
