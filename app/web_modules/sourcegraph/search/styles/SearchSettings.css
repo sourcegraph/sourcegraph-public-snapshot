@@ -1,5 +1,6 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 @value typography "sourcegraph/components/styles/_typography.css";
@@ -47,4 +48,20 @@
 .groups button {
 	/* otherwise the selected state still has 2px */
 	border-width: 1px !important;
+}
+
+/* TODO: Abstract this – styles should be contained in their components */
+.modal {
+	composes: modal from "sourcegraph/components/styles/modal.css";
+	composes: col-10 from grid;
+	max-width: 440px;
+	min-width: 420px;
+}
+
+.modalTitle {
+	text-align: center;
+}
+
+.modalRow {
+	width: 100% !important;
 }

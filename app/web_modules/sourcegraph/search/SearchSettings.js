@@ -15,6 +15,9 @@ import {allLangs, langName} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import {withUserContext} from "sourcegraph/app/user";
+import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
+import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
+import InterestForm from "sourcegraph/home/InterestForm";
 
 class SearchSettings extends Container {
 	static propTypes = {
@@ -26,8 +29,13 @@ class SearchSettings extends Container {
 		githubToken: React.PropTypes.object,
 	};
 
+	static contextTypes = {
+		router: React.PropTypes.object.isRequired,
+	};
+
 	state: {
 		settings: Settings;
+		betaLanguage: ?LanguageID;
 	};
 
 	stores() { return [UserStore]; }
@@ -111,14 +119,27 @@ class SearchSettings extends Container {
 				<span styleName="label">Languages:</span>
 				<div>
 					{allLangs.map(lang => (
-						<Button
-							key={lang}
-							color="default"
-							size="small"
-							styleName="choice-button"
-							onClick={() => this._toggleLang(lang)}
-							outline={!langs.includes(lang)}>{langName(lang)}</Button>
-					))}
+						lang === "python" || lang === "javascript" ?
+							<LocationStateToggleLink key={lang} href="/beta" modalName="beta" location={this.props.location}>
+								<Button
+									color="default"
+									size="small"
+									styleName="choice-button"
+									onClick={() => this.setState({betaLanguage: lang})}
+									outline={true}>
+										{langName(lang)}
+								</Button>
+							</LocationStateToggleLink> :
+							<Button
+								key={lang}
+								color="default"
+								size="small"
+								styleName="choice-button"
+								onClick={() => this._toggleLang(lang)}
+								outline={!langs.includes(lang)}>
+									{langName(lang)}
+							</Button>
+						))}
 				</div>
 			</div>
 		);
@@ -176,24 +197,38 @@ class SearchSettings extends Container {
 		const scope = this._scope();
 
 		return (
-			<div styleName="groups" className={this.props.className}><div styleName="groups-inner" className={this.props.innerClassName}>
-				<div styleName="row">
-					{this._renderLanguages()}
-				</div>
-				{!langChosen && this.state.showAlerts && <div styleName="row">
-					<div styleName="group">
-						<Alert>Select a language to search.</Alert>
-					</div>
-				</div>}
-				{this._renderScope()}
-				{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) && !scope.popular &&
+			<div styleName="groups" className={this.props.className}>
+				<div styleName="groups-inner" className={this.props.innerClassName}>
 					<div styleName="row">
-						<div styleName="group">
-							<Alert>Select repositories to include.</Alert>
-						</div>
+						{this._renderLanguages()}
 					</div>
+					{!langChosen && this.state.showAlerts && <div styleName="row">
+						<div styleName="group">
+							<Alert>Select a language to search.</Alert>
+						</div>
+					</div>}
+					{this._renderScope()}
+					{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) && !scope.popular &&
+						<div styleName="row">
+							<div styleName="group">
+								<Alert>Select repositories to include.</Alert>
+							</div>
+						</div>
+					}
+				</div>
+				{this.props.location.state && this.props.location.state.modal === "beta" && this.state.betaLanguage &&
+					<LocationStateModal modalName="beta" location={this.props.location}>
+						<div styleName="modal">
+							<h2 styleName="modalTitle">Join the Sourcegraph beta list</h2>
+							<h3 styleName="modalTitle">We don't support {langName(this.state.betaLanguage)} yet, but will soon</h3>
+							<InterestForm
+								rowClass={styles.modalRow}
+								language={this.state.betaLanguage}
+								onSubmit={dismissModal("beta", this.props.location, this.context.router)} />
+						</div>
+					</LocationStateModal>
 				}
-			</div></div>
+			</div>
 		);
 	}
 }
