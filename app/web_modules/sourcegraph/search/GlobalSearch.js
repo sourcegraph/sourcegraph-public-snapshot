@@ -143,11 +143,11 @@ class GlobalSearch extends Container {
 		const scope = this._scope(state);
 		if (scope.public) {
 			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: false});
-			state.publicRepos = this._parseRemoteRepoURIsWithDeps(repos ? repos.RemoteRepos : []);
+			state.publicRepos = this._parseRemoteRepoURIsWithDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : []);
 		}
 		if (scope.private) {
 			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: true}) || [];
-			state.privateRepos = this._parseRemoteRepoURIsWithDeps(repos ? repos.RemoteRepos : []);
+			state.privateRepos = this._parseRemoteRepoURIsWithDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : []);
 		}
 
 		state.matchingResults = this._langs(state).reduce((memo, lang) => {
