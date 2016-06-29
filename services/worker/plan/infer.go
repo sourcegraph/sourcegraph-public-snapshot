@@ -52,24 +52,8 @@ var langConfigs = map[string]struct {
 	build  droneyaml.BuildItem
 	matrix map[string][]string
 }{
-	"Go": {},
-	"JavaScript": {
-		build: droneyaml.BuildItem{
-			Key: "JavaScript deps (node v$$NODE_VERSION)",
-			Build: droneyaml.Build{
-				Container: droneyaml.Container{Image: "node:$$NODE_VERSION"},
-				Commands: []string{
-					// If the required package.json file is not in the root
-					// directory, attempt to find and navigate to it within
-					// subdirectories, excluding any node_modules directories.
-					`[ -f package.json ] || cd "$(dirname "$(find ./ -type f -name package.json -not -path '*/node_modules/*' | tail -1)")"`,
-					"[ -f package.json ] && npm install --quiet --no-optional",
-				},
-				AllowFailure: true,
-			},
-		},
-		matrix: map[string][]string{"NODE_VERSION": {"4"}},
-	},
+	"JavaScript": {},
+	"Go":         {},
 	"Java":       {},
 	"Python":     {},
 	"TypeScript": {},
