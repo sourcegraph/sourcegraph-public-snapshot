@@ -53,7 +53,7 @@ var langConfigs = map[string]struct {
 	matrix map[string][]string
 }{
 	"JavaScript": {},
-	"Go": {},
+	"Go":         {},
 	"Java":       {},
 	"Python":     {},
 	"TypeScript": {},
