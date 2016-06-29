@@ -138,7 +138,6 @@ class SearchForm extends React.Component {
 		super(props);
 
 		this.state.query = queryFromStateOrURL(props.location); // eslint-disable-line react/no-direct-mutation-state
-		if (this.state.query) this.state.open = true; // eslint-disable-line react/no-direct-mutation-state
 
 		this._handleGlobalHotkey = this._handleGlobalHotkey.bind(this);
 		this._handleGlobalClick = this._handleGlobalClick.bind(this);
@@ -151,19 +150,17 @@ class SearchForm extends React.Component {
 
 	state: {
 		open: bool;
+		focused: bool;
 		query: ?string;
 	} = {
 		open: false,
+		focused: false,
 		query: null,
 	};
 
 	componentDidMount() {
 		document.addEventListener("keydown", this._handleGlobalHotkey);
 		document.addEventListener("click", this._handleGlobalClick);
-
-		if (this.state.query) {
-			this._input.focus();
-		}
 	}
 
 	componentWillReceiveProps(nextProps) {
@@ -172,6 +169,7 @@ class SearchForm extends React.Component {
 			if (nextQuery && !this.state.query) this.setState({open: true});
 			this.setState({query: nextQuery});
 		}
+		if (!nextQuery && !this.state.focused) this.setState({open: false});
 	}
 
 	componentWillUnmount() {
@@ -220,6 +218,8 @@ class SearchForm extends React.Component {
 		if (ev.keyCode === 27 /* ESC */) {
 			this.setState({open: false});
 			this._input.blur();
+		} else if (ev.keyCode === 13 /* Enter */) {
+			setTimeout(() => this._input.blur());
 		}
 	}
 
@@ -229,11 +229,11 @@ class SearchForm extends React.Component {
 	}
 
 	_handleFocus(ev: Event) {
-		this.setState({open: true});
+		this.setState({focused: true, open: true});
 	}
 
 	_handleBlur(ev: Event) {
-		// Don't close it when we blur, since we might be interacting with
+		this.setState({focused: false});
 	}
 
 	render() {
@@ -252,6 +252,7 @@ class SearchForm extends React.Component {
 						styleName="search-input"
 						value={this.state.query || ""}
 						domRef={e => this._input = e}
+						autoFocus={this.props.location.pathname.slice(1) === rel.search}
 						onFocus={this._handleFocus}
 						onBlur={this._handleBlur}
 						onKeyDown={this._handleKeyDown}
