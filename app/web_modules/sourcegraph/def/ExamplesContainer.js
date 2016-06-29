@@ -52,11 +52,6 @@ class ExamplesContainer extends Container {
 		const expandedSnippets = 3;
 		return (
 			<div>
-				<div styleName="section-label">
-					{refLocs && refLocs.RepoRefs && `${refLocs.RepoRefs.length} ` || ""}
-					Usage Example{(refLocs && refLocs.RepoRefs && refLocs.RepoRefs.length > 1) ? "s" : ""}
-				</div>
-				<hr style={{marginTop: 0, clear: "both"}}/>
 				{!refLocs && <i>Loading...</i>}
 				{refLocs && !refLocs.RepoRefs && <i>No examples found</i>}
 				{refLocs && refLocs.RepoRefs && refLocs.RepoRefs.map((repoRefs, i) => <RefsContainer

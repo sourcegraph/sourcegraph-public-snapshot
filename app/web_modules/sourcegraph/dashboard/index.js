@@ -6,6 +6,7 @@ export const dashboard = {
 		require.ensure([], (require) => {
 			callback(null, {
 				main: require("sourcegraph/dashboard/DashboardContainer").default,
+				navContext: null,
 			});
 		});
 	},

@@ -52,6 +52,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (*so
 
 func (s *repos) ListRemote(ctx context.Context, opt *sourcegraph.ReposListRemoteOptions) (*sourcegraph.RemoteRepoList, error) {
 	repos, err := github.ReposFromContext(ctx).ListAccessible(ctx, &gogithub.RepositoryListOptions{
+		Type: opt.Type,
 		ListOptions: gogithub.ListOptions{
 			PerPage: int(opt.ListOptions.PerPage),
 			Page:    int(opt.ListOptions.Page),

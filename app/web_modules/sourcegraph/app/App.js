@@ -31,7 +31,7 @@ function App(props, {signedIn}) {
 	return (
 		<div styleName={styleName}>
 			<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
-			<GlobalNav location={props.location} channelStatusCode={props.channelStatusCode}/>
+			<GlobalNav params={props.params} location={props.location} channelStatusCode={props.channelStatusCode}/>
 			<div styleName="main-content">
 				{props.navContext && <div styleName="breadcrumb">{props.navContext}</div>}
 				{props.main}
@@ -44,6 +44,7 @@ App.propTypes = {
 	main: reactElement,
 	navContext: reactElement,
 	location: React.PropTypes.object.isRequired,
+	params: React.PropTypes.object,
 	channelStatusCode: React.PropTypes.number,
 };
 
@@ -84,6 +85,7 @@ export const rootRoute: Route = {
 				...require("sourcegraph/admin/routes").routes,
 				...require("sourcegraph/search/routes").routes,
 				...require("sourcegraph/user").routes,
+				...require("sourcegraph/user/settings/routes").routes,
 				...require("sourcegraph/repo/routes").routes,
 			]);
 		});

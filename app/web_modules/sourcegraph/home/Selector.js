@@ -7,16 +7,17 @@ class Selector extends React.Component {
 	static propTypes = {
 		valueArray: React.PropTypes.array.isRequired,
 		title: React.PropTypes.string.isRequired,
+		defaultValue: React.PropTypes.string,
 	};
 
 	render() {
 		let options = [];
 		options.push(<option key="none" value="" disabled="true">{this.props.title}</option>);
 		for (let [key, value] of this.props.valueArray.entries()) {
-			options.push(<option key={key}>{value}</option>);
+			options.push(<option value={value} key={key}>{value}</option>);
 		}
 		return (
-			<select styleName="input-select" required={true} defaultValue="">
+			<select styleName="input-select" required={true} defaultValue={this.props.defaultValue || ""}>
 				{options}
 			</select>);
 	}

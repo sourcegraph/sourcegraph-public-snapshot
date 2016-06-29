@@ -41,7 +41,7 @@ func newRouter() *mux.Router {
 		"login",
 		"pricing",
 		"privacy",
-		"repositories",
+		"settings/repos",
 		"reset",
 		"search",
 		"security",
@@ -51,7 +51,6 @@ func newRouter() *mux.Router {
 		"tools/editor",
 		"tools/browser",
 		"tools",
-		"tour",
 	}
 	m.Path("/{Path:(?:" + strings.Join(topLevel, "|") + ")}").Methods("GET").Name(routeTopLevel)
 

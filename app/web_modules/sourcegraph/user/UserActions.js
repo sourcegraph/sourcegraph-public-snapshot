@@ -1,6 +1,6 @@
 // @flow
 
-import type {AuthInfo, User, EmailAddr, ExternalToken} from "sourcegraph/user";
+import type {AuthInfo, User, EmailAddr, ExternalToken, Settings} from "sourcegraph/user";
 
 export class WantAuthInfo {
 	accessToken: string;
@@ -194,5 +194,13 @@ export class EmailSubscriptionCompleted {
 	constructor(resp: any) {
 		this.resp = resp;
 		this.eventName = "EmailSubscriptionCompleted";
+	}
+}
+
+export class UpdateSettings {
+	settings: Settings;
+
+	constructor(settings: Settings) {
+		this.settings = settings;
 	}
 }

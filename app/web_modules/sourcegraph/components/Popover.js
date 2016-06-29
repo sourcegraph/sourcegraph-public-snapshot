@@ -31,12 +31,12 @@ class Popover extends Component {
 	}
 
 	_onClick(e) {
-		if (this.refs.container && (e.target === this.refs.container || e.target === this.refs.container.children[0])) {
+		if (this.refs.container && this.refs.container.contains(e.target)) {
 			// Toggle popover visibility when clicking on container or anywhere else
 			this.setState({
 				visible: !this.state.visible,
 			});
-		} else if (this.refs.content && (e.target !== this.refs.content && e.target !== this.refs.content.children[0])) {
+		} else if (this.refs.content && !this.refs.content.contains(e.target)) {
 			// Dismiss popover when clicking on anything else but content.
 			this.setState({
 				visible: false,

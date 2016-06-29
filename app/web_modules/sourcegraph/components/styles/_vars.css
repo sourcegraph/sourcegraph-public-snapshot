@@ -1,4 +1,5 @@
 /* Responsive variables */
+@value media-xs: (max-width: 36em);
 @value media-sm: (max-width: 48em);
 @value media-md: (min-width: 48em) and (max-width: 64em);
 @value media-lg: (min-width: 64em);

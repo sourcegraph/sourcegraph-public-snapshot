@@ -105,7 +105,7 @@ module.exports = {
 			{test: /\.js$/, exclude: /node_modules/, loader: "babel-loader?cacheDirectory"},
 			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
 			{test: /\.(eot|ttf|woff)$/, loader: "file-loader?name=fonts/[name].[ext]"},
-			{test: /\.svg$/, loader: "file-loader?name=fonts/[name].[ext]"},
+			{test: /\.svg$/, loader: "url"},
 			{
 				test: /\.css$/,
 				loader: "style!css?sourceMap&modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss",

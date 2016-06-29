@@ -13,18 +13,18 @@ import base from "sourcegraph/components/styles/_base.css";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import DefStore from "sourcegraph/def/DefStore";
-import DefContainer from "sourcegraph/def/DefContainer";
 import RepoRefsContainer from "sourcegraph/def/RepoRefsContainer";
 import ExamplesContainer from "sourcegraph/def/ExamplesContainer";
 import * as DefActions from "sourcegraph/def/DefActions";
-import {urlToDef, urlToDefInfo} from "sourcegraph/def/routes";
+import {urlToDef} from "sourcegraph/def/routes";
 import {qualifiedNameAndType, defTitle, defTitleOK} from "sourcegraph/def/Formatter";
 import httpStatusCode from "sourcegraph/util/httpStatusCode";
 import stripDomain from "sourcegraph/util/stripDomain";
 import breadcrumb from "sourcegraph/util/breadcrumb";
 import {trimRepo} from "sourcegraph/repo";
-import {GlobeIcon, LanguageIcon} from "sourcegraph/components/Icons";
-import {Dropdown, TabItem, Panel, Header, Heading, FlexContainer} from "sourcegraph/components";
+import {urlToRepo} from "sourcegraph/repo/routes";
+import {LanguageIcon} from "sourcegraph/components/Icons";
+import {Dropdown, Panel, Header, Heading, FlexContainer} from "sourcegraph/components";
 
 
 // Number of characters of the Docstring to show before showing the "collapse" options.
@@ -196,9 +196,7 @@ class DefInfo extends Container {
 		let def = this.state.defObj;
 		let hiddenDescr = this.state.defDescrHidden;
 		let refLocs = this.state.refLocations;
-		let defInfoUrl = this.state.defObj ? urlToDefInfo(this.state.defObj, this.state.rev) : "";
-		let defBlobUrl = def ? urlToDef(def, this.state.rev) : "";
-		let refsSorting = this.props.location.query.refs || "top";
+		let defURL = def ? urlToDef(def, this.state.rev) : "";
 
 		if (refLocs && refLocs.Error) {
 			return (
@@ -215,7 +213,7 @@ class DefInfo extends Container {
 					{def &&
 						<div className={base.mv4}>
 							<Heading level="4" styleName="break-word normal" className={base.mv2}>
-								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">
+								<Link title="View definition in code" to={defURL} styleName="link-subtle">
 									<code>{qualifiedNameAndType(def, {unqualifiedNameClass: styles.def})}</code>
 								</Link>
 							</Heading>
@@ -223,9 +221,7 @@ class DefInfo extends Container {
 							{def.DocHTML &&
 								<div>
 									<Dropdown
-										styleName="translation-dropdown"
 										className={base.mt0}
-										icon={<GlobeIcon styleName="icon" />}
 										title="Translate"
 										initialValue={this.state.currentLang}
 										disabled={this.state.repoObj ? this.state.repoObj.Private : false}
@@ -278,60 +274,36 @@ class DefInfo extends Container {
 								</div>
 							}
 
-
 							<div styleName="f5 cool-mid-gray">
-								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">{this.props.repo}</Link>
-								&middot;
-								<Link title="View definition in code" to={defBlobUrl} styleName="link-subtle">View definition</Link>
+								{def && def.Repo && <Link to={urlToRepo(def.Repo)} styleName="link-subtle">{def.Repo}</Link>}
+								&nbsp; &middot; &nbsp;
+								<Link title="View definition in code" to={defURL} styleName="link-subtle">View definition</Link>
+							</div>
+
+							<div>
+								<Heading level="2" styleName="examples-heading">4 usage examples</Heading>
+								<Panel hoverLevel="low">
+									<ExamplesContainer
+										repo={this.props.repo}
+										rev={this.props.rev}
+										commitID={this.props.commitID}
+										def={this.props.def}
+										defObj={this.props.defObj} />
+								</Panel>
+								<Heading level="2" styleName="refs-heading">10 references in 4 repositories</Heading>
+								<Panel hoverLevel="low">
+										{/* TODO(sqs): to be implemented */}
+										<RepoRefsContainer
+											repo={this.props.repo}
+											rev={this.props.rev}
+											commitID={this.props.commitID}
+											def={this.props.def}
+											defObj={this.props.defObj} />
+								</Panel>
 							</div>
 						</div>
 					}
 
-					<Panel id="DefInfoContainer" hoverLevel="low" className={`${base.mb4} ${base.pb4}`}>
-						<div>
-
-							{def && !def.Error &&
-								<div styleName="refs-container">
-										<div styleName="ref-tabs">
-												<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "top"}}}>
-													<TabItem active={refsSorting === "top"}>Top</TabItem>
-												</Link>
-												<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "local"}}}>
-													<TabItem active={refsSorting === "local"}>Local</TabItem>
-												</Link>
-												<Link to={{pathname: defInfoUrl, query: {...this.props.location.query, refs: "all"}}}>
-													<TabItem active={refsSorting === "all"}>All</TabItem>
-												</Link>
-										</div>
-										{refsSorting === "top" &&
-											<ExamplesContainer
-												repo={this.props.repo}
-												rev={this.props.rev}
-												commitID={this.props.commitID}
-												def={this.props.def}
-												defObj={this.props.defObj} />
-										}
-										{refsSorting === "local" &&
-											<RepoRefsContainer
-												repo={this.props.repo}
-												rev={this.props.rev}
-												commitID={this.props.commitID}
-												def={this.props.def}
-												defObj={this.props.defObj}
-												defRepos={[this.props.repo]} />
-										}
-										{refsSorting === "all" &&
-											<RepoRefsContainer
-												repo={this.props.repo}
-												rev={this.props.rev}
-												commitID={this.props.commitID}
-												def={this.props.def}
-												defObj={this.props.defObj} />
-										}
-								</div>
-							}
-						</div>
-					</Panel>
 				</div>
 			</FlexContainer>
 		);

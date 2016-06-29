@@ -5,7 +5,6 @@ import DefStore from "sourcegraph/def/DefStore";
 import RepoStore from "sourcegraph/repo/RepoStore";
 import TreeStore from "sourcegraph/tree/TreeStore";
 import SearchStore from "sourcegraph/search/SearchStore";
-import DashboardStore from "sourcegraph/dashboard/DashboardStore";
 import BuildStore from "sourcegraph/build/BuildStore";
 import CoverageStore from "sourcegraph/admin/CoverageStore";
 import UserStore from "sourcegraph/user/UserStore";
@@ -18,7 +17,6 @@ const allStores = () => ({
 	RepoStore,
 	TreeStore,
 	SearchStore,
-	DashboardStore,
 	BuildStore,
 	CoverageStore,
 	UserStore,

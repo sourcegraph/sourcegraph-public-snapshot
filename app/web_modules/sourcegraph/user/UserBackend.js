@@ -85,7 +85,7 @@ const UserBackend = {
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new UserActions.SignupCompleted(action.email, data));
 						if (data.Success) {
-							window.location.href = "/tour";
+							window.location.href = "/";
 						}
 					})
 				);

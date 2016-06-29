@@ -1,7 +1,19 @@
 // @flow
 
 import type {Route} from "react-router";
-import {rel} from "sourcegraph/app/routePatterns";
+import {rel, abs} from "sourcegraph/app/routePatterns";
+import invariant from "invariant";
+
+// isPage returns whether the location path refers to one of these
+// static pages.
+//
+// NOTE: All static pages should be added to the OR-expression.
+export function isPage(pathname: string): bool {
+	invariant(pathname, "no pathname");
+	pathname = pathname.slice(1); // trim leading "/"
+	return pathname === abs.about || pathname === abs.contact || pathname === abs.security ||
+		pathname === abs.pricing || pathname === abs.terms || pathname === abs.privacy;
+}
 
 export const routes: Array<Route> = [
 	{

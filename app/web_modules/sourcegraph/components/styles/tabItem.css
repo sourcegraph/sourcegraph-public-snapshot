@@ -48,6 +48,10 @@
 	position: relative;
 	top: -1px;
 }
+.component-icon {
+	font-size: 1.5rem;
+	composes: pr2 from base;
+}
 
 @media media-sm {
 	.tab {

@@ -899,6 +899,19 @@ func (s wrappedRepos) ListTags(ctx context.Context, param *sourcegraph.ReposList
 	return
 }
 
+func (s wrappedRepos) ListDeps(ctx context.Context, param *sourcegraph.URIList) (res *sourcegraph.URIList, err error) {
+	start := time.Now()
+	ctx = trace.Before(ctx, "Repos", "ListDeps", param)
+	defer func() {
+		trace.After(ctx, "Repos", "ListDeps", param, err, time.Since(start))
+	}()
+	res, err = backend.Services.Repos.ListDeps(ctx, param)
+	if res == nil && err == nil {
+		err = grpc.Errorf(codes.Internal, "Repos.ListDeps returned nil, nil")
+	}
+	return
+}
+
 func (s wrappedRepos) ListCommitters(ctx context.Context, param *sourcegraph.ReposListCommittersOp) (res *sourcegraph.CommitterList, err error) {
 	start := time.Now()
 	ctx = trace.Before(ctx, "Repos", "ListCommitters", param)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -161,11 +162,19 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
+	q := r.URL.Query()
+	_, privateOnly := q["Private"]
+	var repoType string
+	if privateOnly {
+		repoType = "private"
+	}
+
 	var err error
 	var reposOnPage *sourcegraph.RemoteRepoList
 	var remoteRepos = &sourcegraph.RemoteRepoList{}
 	for page := 1; ; page++ {
 		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
+			Type:        repoType,
 			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
 		})
 		if err != nil {
@@ -186,7 +195,31 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, remoteRepos)
+	var deps []string
+	if _, ok := q["Dependencies"]; ok {
+		uris := []string{}
+		for _, r := range remoteRepos.RemoteRepos {
+			// TODO better domain stripping
+			uri := strings.TrimPrefix(r.HTTPCloneURL, "https://")
+			uri = strings.TrimSuffix(uri, ".git")
+			uris = append(uris, uri)
+		}
+		depList, err := cl.Repos.ListDeps(ctx, &sourcegraph.URIList{
+			URIs: uris,
+		})
+		if err != nil {
+			return err
+		}
+		deps = depList.URIs
+	}
+
+	return writeJSON(w, struct {
+		sourcegraph.RemoteRepoList
+		Dependencies []string
+	}{
+		RemoteRepoList: *remoteRepos,
+		Dependencies:   deps,
+	})
 }
 
 // getRepoLastBuildTime returns the time of the newest build for the
@@ -247,14 +280,19 @@ func resolveLocalRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*source
 	}, nil
 }
 
-func resolveLocalRepos(ctx context.Context, repoPaths []string) ([]int32, error) {
+func resolveLocalRepos(ctx context.Context, repoPaths []string, ignoreErrors bool) ([]int32, error) {
 	repoIDs := make([]int32, 0, len(repoPaths))
 	for _, repoPath := range repoPaths {
 		repoID, err := resolveLocalRepo(ctx, repoPath)
 		if err != nil {
-			return nil, err
+			if !ignoreErrors {
+				return nil, err
+			} else {
+				log15.Warn("resolve local repo", "err", err, "repo", repoPath)
+			}
+		} else {
+			repoIDs = append(repoIDs, repoID)
 		}
-		repoIDs = append(repoIDs, repoID)
 	}
 	return repoIDs, nil
 }

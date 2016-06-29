@@ -18,6 +18,11 @@ declare module "lodash/array/last" {
 	declare var exports: typeof last;
 }
 
+declare module "lodash/array/uniq" {
+	declare function uniq(array: Array<any>): Array<any>;
+	declare var exports: typeof uniq;
+}
+
 declare module "lodash/number/random" {
 	declare function random(lower: number, upper: ?number, floating: ?boolean): any;
 	declare var exports: typeof random;

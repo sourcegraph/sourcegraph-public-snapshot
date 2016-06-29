@@ -23,10 +23,10 @@ const SearchBackend = {
 					let q = [`Query=${encodeURIComponent(p.query)}`];
 					q.push(`Limit=${limit}`);
 					if (p.repos) {
-						q.push(`Repos=${encodeURIComponent(p.repos.toString())}`);
+						p.repos.forEach((repo) => q.push(`Repos=${encodeURIComponent(repo)}`));
 					}
 					if (p.notRepos) {
-						q.push(`NotRepos=${encodeURIComponent(p.notRepos.toString())}`);
+						p.notRepos.forEach((repo) => q.push(`NotRepos=${encodeURIComponent(repo)}`));
 					}
 					if (p.prefixMatch) {
 						q.push(`PrefixMatch=${encodeURIComponent(p.prefixMatch.toString())}`);

@@ -39,7 +39,6 @@ export const ACTION_REDIRECT = "Redirect";
 // Page name constants to provide additional context around where an event was fired from
 export const PAGE_HOME = "Home";
 export const PAGE_TOOLS = "DashboardTools";
-export const PAGE_TOUR = "DashboardTour";
 export const PAGE_PRICING = "Pricing";
 
 // Location on page constants

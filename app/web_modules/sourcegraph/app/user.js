@@ -76,7 +76,7 @@ export function withUserContext(Component: ReactClass): ReactClass {
 		getChildContext(): childContext { return getChildContext(this.state); }
 
 		render() {
-			return <Component {...this.props} />;
+			return <Component {...this.state} />;
 		}
 	}
 	return WithUser;

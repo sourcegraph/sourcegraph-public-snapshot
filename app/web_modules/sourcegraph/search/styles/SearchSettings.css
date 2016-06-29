@@ -1,0 +1,67 @@
+@value vars "sourcegraph/components/styles/_vars.css";
+@value base "sourcegraph/components/styles/_base.css";
+@value grid "sourcegraph/components/styles/_grid.css";
+@value colors "sourcegraph/components/styles/_colors.css";
+@value layout "sourcegraph/components/styles/_layout.css";
+@value typography "sourcegraph/components/styles/_typography.css";
+
+.groups {
+	composes: pt2 from base;
+}
+.groups-bb { /* exported */
+	composes: b--light-gray from colors;
+	composes: bb from base;
+}
+.groups-inner {
+}
+
+.row {
+	display: flex;
+	justify-content: space-between;
+	composes: mv2 from base;
+}
+.label {
+	composes: pr2 from base;
+	composes: f5 from typography;
+	min-width: 72px;
+	flex: 0 0;
+	display: inline-block;
+	composes: cool-mid-gray from colors;
+}
+.alert {
+	composes: red from colors;
+	composes: f5 from typography;
+	font-weight: bold;
+	composes: mb2 from base;
+}
+
+.group {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: baseline;
+}
+
+.choice-button {
+	composes: mr2 mb2 from base;
+	display: inline-block;
+}
+.groups button {
+	/* otherwise the selected state still has 2px */
+	border-width: 1px !important;
+}
+
+/* TODO: Abstract this – styles should be contained in their components */
+.modal {
+	composes: modal from "sourcegraph/components/styles/modal.css";
+	composes: col-10 from grid;
+	max-width: 440px;
+	min-width: 420px;
+}
+
+.modalTitle {
+	text-align: center;
+}
+
+.modalRow {
+	width: 100% !important;
+}

@@ -10,8 +10,12 @@ function keyFor(repo, rev) {
 	return `${repo}@${rev || ""}`;
 }
 
+function keyForOpt(opt) {
+	return `${opt.deps}:${opt.private}`;
+}
+
 export class RepoStore extends Store {
-	reset(data?: {repos: any, resolvedRevs: any, resolutions: any, branches: any, tags: any}) {
+	reset(data?: {repos: any, remoteRepos: any, resolvedRevs: any, resolutions: any, branches: any, tags: any}) {
 		this.repos = deepFreeze({
 			content: data && data.repos ? data.repos.content : {},
 			get(repo) {
@@ -20,6 +24,15 @@ export class RepoStore extends Store {
 			cloning: data && data.repos ? data.repos.cloning : {},
 			isCloning(repo) {
 				return this.cloning[keyFor(repo)] || false;
+			},
+		});
+		this.remoteRepos = deepFreeze({
+			content: data && data.remoteRepos ? data.remoteRepos.content : {},
+			list() {
+				return this.content[""] || null;
+			},
+			getOpt(opt) {
+				return this.content[keyForOpt(opt)] || null;
 			},
 		});
 		this.resolvedRevs = deepFreeze({
@@ -67,6 +80,7 @@ export class RepoStore extends Store {
 	toJSON(): any {
 		return {
 			repos: this.repos,
+			remoteRepos: this.repos,
 			resolvedRevs: this.resolvedRevs,
 			resolutions: this.resolutions,
 			branches: this.branches,
@@ -76,7 +90,17 @@ export class RepoStore extends Store {
 	}
 
 	__onDispatch(action) {
-		if (action instanceof RepoActions.ResolvedRev) {
+		if (action instanceof RepoActions.RemoteReposFetched) {
+			let newContent = {...this.remoteRepos.content};
+			if (action.opt) {
+				newContent[keyForOpt(action.opt)] = action.data;
+			} else {
+				newContent[""] = action.data;
+			}
+			this.remoteRepos = deepFreeze({...this.remoteRepos, content: newContent});
+			this.__emitChange();
+			return;
+		} else if (action instanceof RepoActions.ResolvedRev) {
 			this.resolvedRevs = deepFreeze({...this.resolvedRevs,
 				content: {...this.resolvedRevs.content,
 					[keyFor(action.repo, action.rev)]: action.commitID,

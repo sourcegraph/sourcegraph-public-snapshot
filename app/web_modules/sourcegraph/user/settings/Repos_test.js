@@ -1,11 +1,11 @@
 import autotest from "sourcegraph/util/autotest";
 
 import React from "react";
-import DashboardRepos from "sourcegraph/dashboard/DashboardRepos";
+import Repos from "sourcegraph/user/settings/Repos";
 import {withUserContext} from "sourcegraph/app/user";
-import testdataData from "sourcegraph/dashboard/testdata/DashboardRepos-data.json";
+import testdataData from "sourcegraph/user/settings/testdata/Repos-data.json";
 
-describe("DashboardRepos", () => {
+describe("Repos", () => {
 	it("should render repos", () => {
 		let repos=[{
 			Private: false,
@@ -14,10 +14,9 @@ describe("DashboardRepos", () => {
 			UpdatedAt: "2016-02-24T10:18:55-08:00",
 			Language: "Go",
 		}];
-		autotest(testdataData, `${__dirname}/testdata/DashboardRepos-data.json`,
-			React.createElement(withUserContext(<DashboardRepos
+		autotest(testdataData, `${__dirname}/testdata/Repos-data.json`,
+			React.createElement(withUserContext(<Repos
 				repos={repos}
-				exampleRepos={repos}
 				linkGitHubURL={""} />)),
 			{signedIn: false},
 		);
