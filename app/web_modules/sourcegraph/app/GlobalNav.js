@@ -125,6 +125,8 @@ GlobalNav.contextTypes = {
 export default CSSModules(GlobalNav, styles, {allowMultiple: true});
 
 class SearchForm extends React.Component {
+	// TODO(sqs): dismiss when click/focus outside
+
 	static propTypes = {
 		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
@@ -218,12 +220,6 @@ class SearchForm extends React.Component {
 		if (ev.keyCode === 27 /* ESC */) {
 			this.setState({open: false});
 			this._input.blur();
-		} else if (ev.keyCode === 13 /* Enter */) {
-			this._input.blur();
-			if (this.state.open) {
-				// HACK: without setTimeout, the page will reload. Unclear why.
-				setTimeout(() => this.setState({open: false}));
-			}
 		}
 	}
 
