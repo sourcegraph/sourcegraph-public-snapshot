@@ -64,6 +64,7 @@
 	/* TODO(sqs!): not really used right now (only has the build indicator) */
 }
 .scroller {
+	padding-top: 45px;
 	overflow-x: auto;
 	overflow-y: hidden;
 }
