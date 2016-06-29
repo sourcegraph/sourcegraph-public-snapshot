@@ -165,14 +165,7 @@ class GlobalSearch extends Container {
 			globalSearchEventDict["globalSearchQuery"] = this.state.query;
 			globalSearchEventDict["page name"] = this.props.location.pathname.slice(1) === rel.search ? "Global search homepage" : "Global search repo page";
 			if (this.state.matchingResults !== null) {
-				if (this.state.matchingResults.Options) {
-					if (this.state.matchingResults.Options[0]["Languages"] !== null) {
-						globalSearchEventDict["languages"] = this.state.matchingResults.Options[0]["Languages"];
-					}
-					if (this.state.matchingResults.Options[0]["Kinds"] !== null) {
-						globalSearchEventDict["kinds"] = this.state.matchingResults.Options[0]["Kinds"];
-					}
-				}
+				globalSearchEventDict["languages"] = this._langs(this.state);
 			}
 			this.context.eventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_GLOBAL_SEARCH, AnalyticsConstants.ACTION_SUCCESS, "GlobalSearchInitiated", globalSearchEventDict);
 		}
