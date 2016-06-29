@@ -24,8 +24,6 @@
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
 
-.username {	padding-top: 10px; }
-
 .navbar {
 	composes: bb cf from base;
 	composes: bg-white from colors;
@@ -198,6 +196,7 @@
 
 .user {
 	display: flex;
+	align-items: center;
 }
 .user-menu-icon {
 	composes: cool-mid-gray from colors;

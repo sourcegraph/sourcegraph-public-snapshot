@@ -73,11 +73,11 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 				{user && <div styleName="flex flex-fixed" className={`${base.pv2} ${base.ph3}`}>
 					<Popover left={true}>
 						<div styleName="user">
-							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div styleName="username">{user.Login}</div>}
+							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div>{user.Login}</div>}
 							<FaChevronDown styleName="user-menu-icon" />
 						</div>
 						<Menu>
-							<span styleName="current-user">Signed in as <strong>sqs</strong></span>
+							<span styleName="current-user">Signed in as <strong>{user.Login}</strong></span>
 							<hr className={base.m0} />
 							<Link to="/about" role="menu-item">About</Link>
 							<Link to="/contact" role="menu-item">Contact</Link>
