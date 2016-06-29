@@ -343,10 +343,10 @@ class GlobalSearch extends Container {
 	}
 
 	_results(): React$Element | Array<React$Element> {
-		if (!this.state.query) return <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result">Type a query&hellip;</div>;
+		if (!this.state.query) return <div className={`${base.pt4} ${base.ph4}`} styleName="result">Type a query&hellip;</div>;
 
-		const invalidFiltersItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">Update your search filters and try again.</div>;
-		const noResultsItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
+		const invalidFiltersItem = <div className={`${base.pt4} ${base.ph4}`} styleName="result" key="_nosymbol">Update your search filters and try again.</div>;
+		const noResultsItem = <div className={`${base.ph4} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
 		if (!this.state.matchingResults) {
 			return [<div key="1" styleName="result" className={base.pv5}>Loading results...</div>];
 		}
@@ -382,7 +382,7 @@ class GlobalSearch extends Container {
 						<div styleName="flex-icon hidden-s">
 							<Icon icon="repository-gray" width={resultIconSize} />
 						</div>
-						<div styleName="flex bottom-border" className={base.pb4}>
+						<div styleName="flex" className={base.pb4}>
 							<code styleName="block title">
 								Repository
 								<span styleName="bold"> {repo.URI.split(/[// ]+/).pop()}</span>
@@ -419,10 +419,7 @@ class GlobalSearch extends Container {
 					key={defURL}
 					onClick={() => this._onSelection()}>
 					<div styleName="cool-gray flex-container" className={base.pt3}>
-						<div styleName="flex-icon hidden-s">
-							<Icon icon="doc-code" width={resultIconSize} />
-						</div>
-						<div styleName="flex bottom-border" className={base.pb4}>
+						<div styleName="flex" className={base.pb4}>
 							<p styleName="repo">{trimRepo(def.Repo)}</p>
 							<code styleName="block title">
 								{qualifiedNameAndType(def, {nameQual: "DepQualified"})}

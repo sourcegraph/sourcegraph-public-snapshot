@@ -39,11 +39,6 @@
 
 .center { composes: center from base; }
 
-.bottom-border {
-	composes: bb from base;
-	composes: b--cool-pale-gray from colors;
-}
-
 .bold {
 	font-weight: bold;
 }
@@ -51,7 +46,6 @@
 .result {
 	cursor: pointer;
 	display: block;
-	margin: -1px 0;
 	line-height: 1;
 }
 
@@ -64,7 +58,9 @@
 }
 
 .title {
-	font-size: 1.3rem;
+	composes: f4 from typography;
+	composes: pb3 from base;
+	composes: blue from colors;
 }
 .repo {
 	float: right;
@@ -78,5 +74,4 @@
 
 code.block {
 	word-break: break-all;
-	padding-bottom: 5px;
 }
