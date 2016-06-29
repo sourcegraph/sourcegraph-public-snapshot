@@ -22,7 +22,7 @@ const RepoBackend = {
 			let queryString = "";
 			if (action.opt) {
 				repos = RepoStore.remoteRepos.getOpt(action.opt);
-				queryString = `?Deps=${Boolean(action.opt.deps)}&Private=${Boolean(action.opt.private)}`;
+				queryString = `?IncludeDeps=${Boolean(action.opt.deps)}&Private=${Boolean(action.opt.private)}`;
 			} else {
 				repos = RepoStore.remoteRepos.list();
 			}
