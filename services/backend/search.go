@@ -2,12 +2,12 @@ package backend
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	srch "sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/svc"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 
@@ -72,7 +72,7 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		if strings.HasSuffix(token, ".com") || strings.HasSuffix(token, ".org") {
 			descToks = append(descToks, token)
 		} else {
-			descToks = append(descToks, srch.QueryTokens(token)...)
+			descToks = append(descToks, queryTokens(token)...)
 		}
 	}
 
@@ -112,6 +112,23 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (*sourceg
 		return nil, err
 	}
 	return results, nil
+}
+
+var delims = regexp.MustCompile(`[/.:\$\(\)\*\%\#\@\[\]\{\}]+`)
+
+// strippedQuery is the user query after it has been stripped of special filter terms
+func queryTokens(strippedQuery string) []string {
+	prototoks := delims.Split(strippedQuery, -1)
+	if len(prototoks) == 0 {
+		return nil
+	}
+	toks := make([]string, 0, len(prototoks))
+	for _, tokmaybe := range prototoks {
+		if tokmaybe != "" {
+			toks = append(toks, tokmaybe)
+		}
+	}
+	return toks
 }
 
 func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult) ([]*sourcegraph.DefSearchResult, error) {

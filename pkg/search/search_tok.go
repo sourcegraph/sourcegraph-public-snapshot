@@ -220,21 +220,6 @@ func UserQueryToksToTSQuery(toks []string) string {
 	return tokMatch
 }
 
-// strippedQuery is the user query after it has been stripped of special filter terms
-func QueryTokens(strippedQuery string) []string {
-	prototoks := delims.Split(strippedQuery, -1)
-	if len(prototoks) == 0 {
-		return nil
-	}
-	toks := make([]string, 0, len(prototoks))
-	for _, tokmaybe := range prototoks {
-		if tokmaybe != "" {
-			toks = append(toks, tokmaybe)
-		}
-	}
-	return toks
-}
-
 func BagOfWordsToTokens(words []string, wordCounts map[string]int) []string {
 	var v []string
 	for _, word := range words {
