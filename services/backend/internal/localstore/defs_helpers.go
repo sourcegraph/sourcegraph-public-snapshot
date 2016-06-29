@@ -1,8 +1,9 @@
 package localstore
 
 import (
-	"sync"
 	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 
@@ -35,10 +36,8 @@ func init() {
 }
 
 type observer struct {
-	mu          sync.Mutex
 	table       string
 	trackedRepo string
-	starts      map[string]time.Time
 	summaryVec  *prometheus.SummaryVec
 }
 
@@ -46,7 +45,6 @@ func newDefsUpdateObserver(table, repo string) *observer {
 	return &observer{
 		table:       table,
 		trackedRepo: repotrackutil.GetTrackedRepo(repo),
-		starts:      make(map[string]time.Time),
 		summaryVec:  defsUpdateDuration,
 	}
 }
@@ -55,20 +53,19 @@ func newDefsSearchObserver(table, repo string) *observer {
 	return &observer{
 		table:       table,
 		trackedRepo: repotrackutil.GetTrackedRepo(repo),
-		starts:      make(map[string]time.Time),
 		summaryVec:  defsSearchDuration,
 	}
 }
 
-func (d *observer) start(part string) {
-	d.mu.Lock()
-	d.starts[part] = time.Now()
-	d.mu.Unlock()
-}
-
-func (d *observer) end(part string) {
-	d.mu.Lock()
-	since := time.Since(d.starts[part])
-	d.summaryVec.WithLabelValues(d.table, d.trackedRepo, part).Observe(since.Seconds())
-	d.mu.Unlock()
+func (d *observer) start(part string) func() {
+	start := time.Now()
+	var observed bool
+	return func() {
+		if observed {
+			log15.Error("Called observe more than once", "table", d.table, "part", part)
+			return
+		}
+		observed = true
+		d.summaryVec.WithLabelValues(d.table, d.trackedRepo, part).Observe(time.Since(start).Seconds())
+	}
 }
