@@ -59,8 +59,10 @@ class GlobalSearch extends Container {
 			githubToken: null,
 			privateRepos: [],
 			publicRepos: [],
+			clickModifier: false,
 		};
 		this._handleKeyDown = this._handleKeyDown.bind(this);
+		this._handleKeyUp = this._handleKeyUp.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
 		this._setSelectedItem = this._setSelectedItem.bind(this);
 		this._onSelection = debounce(this._onSelection.bind(this), 100, {leading: false, trailing: true}); // Prevent rapid repeated selections
@@ -78,12 +80,14 @@ class GlobalSearch extends Container {
 		selectionIndex: number;
 		privateRepos: Array<Repo>;
 		publicRepos: Array<Repo>;
+		clickModifier: boolean;
 	};
 
 	componentDidMount() {
 		super.componentDidMount();
 		if (global.document) {
 			document.addEventListener("keydown", this._handleKeyDown);
+			document.addEventListener("keyup", this._handleKeyUp);
 		}
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 	}
@@ -92,6 +96,7 @@ class GlobalSearch extends Container {
 		super.componentWillUnmount();
 		if (global.document) {
 			document.removeEventListener("keydown", this._handleKeyDown);
+			document.addEventListener("keyup", this._handleKeyUp);
 		}
 		Dispatcher.Stores.unregister(this._dispatcherToken);
 	}
@@ -200,12 +205,19 @@ class GlobalSearch extends Container {
 	}
 
 	_navigateTo(url: string) {
-		browserHistory.push(url);
+		if (!this.state.clickModifier) {
+			browserHistory.push(url);
+		}
 	}
 
 	_handleKeyDown(e: KeyboardEvent) {
+		let code = e.keyCode;
+		if (e.metaKey) {
+			// http://stackoverflow.com/questions/3902635/how-does-one-capture-a-macs-command-key-via-javascript
+			code = 17;
+		}
 		let idx, max;
-		switch (e.keyCode) {
+		switch (code) {
 		case 40: // ArrowDown
 			idx = this._normalizedSelectionIndex();
 			max = this._numResults();
@@ -250,10 +262,19 @@ class GlobalSearch extends Container {
 				e.preventDefault();
 			}
 			break;
+
+		case 17: // ctrl (or meta, see above)
+			this.setState({clickModifier: true});
+			break;
+
 		default:
 			// Changes to the input value are handled by the parent component.
 			break;
 		}
+	}
+
+	_handleKeyUp(e: KeyboardEvent) {
+		this.setState({clickModifier: false});
 	}
 
 	_scrollToVisibleSelection() {
