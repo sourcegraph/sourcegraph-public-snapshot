@@ -1,6 +1,7 @@
 // @flow
 
 import React from "react";
+import {Link} from "react-router";
 import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
@@ -9,7 +10,7 @@ import styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components";
-import {CloudDownloadIcon, PlayIcon} from "sourcegraph/components/Icons";
+import {ToolsIcon} from "sourcegraph/components/Icons";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import type {LanguageID} from "sourcegraph/Language";
 import invariant from "invariant";
@@ -87,8 +88,7 @@ class DashboardContainer extends Container {
 
 					<div styleName="user-actions">
 						{!this.context.signedIn && <Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button>}
-						<Button styleName="action-link" type="button" color="blue" outline={true}><CloudDownloadIcon styleName="action-icon" /> Download the app</Button>
-						<Button styleName="action-link" type="button" color="blue" outline={true}><PlayIcon styleName="action-icon" /> Watch the video</Button>
+						<Link to="/tools"><Button styleName="action-link" type="button" color="blue" outline={true}><ToolsIcon styleName="action-icon" />Upgrade your workflow</Button></Link>
 					</div>
 
 					<GlobalSearchInput

@@ -78,6 +78,7 @@
 .action-icon {
 	font-size: 120%;
 	vertical-align: text-top;
+	padding-right: 5px;
 }
 .action-link {
 	composes: action-button;
