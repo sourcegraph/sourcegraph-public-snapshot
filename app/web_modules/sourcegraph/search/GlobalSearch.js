@@ -8,6 +8,7 @@ import {rel} from "sourcegraph/app/routePatterns";
 import Container from "sourcegraph/Container";
 import Dispatcher from "sourcegraph/Dispatcher";
 import SearchStore from "sourcegraph/search/SearchStore";
+import RepoStore from "sourcegraph/repo/RepoStore";
 import "sourcegraph/search/SearchBackend";
 import UserStore from "sourcegraph/user/UserStore";
 import debounce from "lodash/function/debounce";
@@ -56,6 +57,8 @@ class GlobalSearch extends Container {
 			resultClassName: null,
 			selectionIndex: -1,
 			githubToken: null,
+			privateRepos: [],
+			publicRepos: [],
 		};
 		this._handleKeyDown = this._handleKeyDown.bind(this);
 		this._scrollToVisibleSelection = this._scrollToVisibleSelection.bind(this);
@@ -73,6 +76,8 @@ class GlobalSearch extends Container {
 			Options: Array<Options>,
 		};
 		selectionIndex: number;
+		privateRepos: Array<Repo>;
+		publicRepos: Array<Repo>;
 	};
 
 	componentDidMount() {
@@ -111,14 +116,22 @@ class GlobalSearch extends Container {
 		if (!state.githubToken) {
 			if (lang) repos.push(...popularRepos[lang]);
 		} else {
-			// TODO(rothfels): fill in
-			if (scope.public) repos.push("github.com/gorilla/mux");
-			if (scope.private) repos.push("github.com/gorilla/mux");
+			if (scope.public) repos.push(...state.publicRepos);
+			if (scope.private) repos.push(...state.privateRepos);
 		}
 		return uniq(repos);
 	}
 
-	stores(): Array<Object> { return [SearchStore, UserStore]; }
+	_parseRemoteRepoURIsWithDeps(repos) {
+		let uris = [];
+		for (let repo of repos) {
+			uris.push(`github.com/${repo.Owner}/${repo.Name}`);
+			if (repo.Deps) uris.push(...repo.Deps);
+		}
+		return uris;
+	}
+
+	stores(): Array<Object> { return [SearchStore, UserStore, RepoStore]; }
 
 	reconcileState(state: GlobalSearch.state, props) {
 		Object.assign(state, props);
@@ -126,6 +139,16 @@ class GlobalSearch extends Container {
 		state.settings = UserStore.settings.get();
 		state.className = props.className || "";
 		state.resultClassName = props.resultClassName || "";
+
+		const scope = this._scope(state);
+		if (scope.public) {
+			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: false});
+			state.publicRepos = this._parseRemoteRepoURIsWithDeps(repos ? repos.RemoteRepos : []);
+		}
+		if (scope.private) {
+			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: true}) || [];
+			state.privateRepos = this._parseRemoteRepoURIsWithDeps(repos ? repos.RemoteRepos : []);
+		}
 
 		state.matchingResults = this._langs(state).reduce((memo, lang) => {
 			const repoIncludes = this._repoIncludes(state, lang);

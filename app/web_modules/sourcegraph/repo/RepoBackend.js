@@ -18,13 +18,20 @@ const RepoBackend = {
 
 	__onDispatch(action) {
 		if (action instanceof RepoActions.WantRemoteRepos) {
-			let repos = RepoStore.remoteRepos.list();
+			let repos;
+			let queryString = "";
+			if (action.opt) {
+				repos = RepoStore.remoteRepos.getOpt(action.opt);
+				queryString = `?Deps=${Boolean(action.opt.deps)}&Private=${Boolean(action.opt.private)}`;
+			} else {
+				repos = RepoStore.remoteRepos.list();
+			}
 			if (repos === null) {
-				RepoBackend.fetch("/.api/remote-repos")
+				RepoBackend.fetch(`/.api/remote-repos${queryString}`)
 					.then(checkStatus)
 					.then((resp) => resp.json())
 					.catch((err) => ({Error: err}))
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.RemoteReposFetched(data)));
+					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.RemoteReposFetched(action.opt, data)));
 			}
 			return;
 		} else if (action instanceof RepoActions.WantCommit) {

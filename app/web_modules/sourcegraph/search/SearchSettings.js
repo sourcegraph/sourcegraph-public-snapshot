@@ -9,6 +9,7 @@ import GitHubAuthButton from "sourcegraph/components/GitHubAuthButton";
 import Dispatcher from "sourcegraph/Dispatcher";
 import UserStore from "sourcegraph/user/UserStore";
 import * as UserActions from "sourcegraph/user/UserActions";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
 import type {Settings} from "sourcegraph/user";
 import {allLangs, langName} from "sourcegraph/Language";
 import type {LanguageID} from "sourcegraph/Language";
@@ -40,6 +41,17 @@ class SearchSettings extends Container {
 		// propagating context through components that use shouldComponentUpdate.
 		// We're already observing UserStore, so this doesn't add any extra overhead.
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
+	}
+
+	onStateTransition(prevState, nextState) {
+		if (prevState.settings !== nextState.settings && nextState.settings && nextState.settings.search && nextState.settings.search.scope) {
+			const scope = nextState.settings.search.scope;
+			if (scope.public) {
+				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: false}));
+			} else if (scope.private) {
+				Dispatcher.Backends.dispatch(new RepoActions.WantRemoteRepos({deps: true, private: true}));
+			}
+		}
 	}
 
 	_langs(): Array<LanguageID> {
