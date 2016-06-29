@@ -110,54 +110,64 @@
 			"revisionTime": "2015-12-15T14:00:59-08:00"
 		},
 		{
+			"checksumSHA1": "6E32dTaYC6MpKiO/JFRZWHOPSH0=",
 			"path": "github.com/drone/drone-exec/docker",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "sX6iHjVTYoyPycd/oRFxvT9wbuM=",
 			"path": "github.com/drone/drone-exec/exec",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "tIn8QX930yToBVzAHDJ+q3jQ+oc=",
 			"path": "github.com/drone/drone-exec/parser",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "5nbCMKyRCsNkQ3D9n0Y4GLLwNEo=",
 			"path": "github.com/drone/drone-exec/runner",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "wR6A9iKhi/fyRA4sCskWdRujucY=",
 			"path": "github.com/drone/drone-exec/runner/script",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "U/u37IVMdQFNcuR2f1mdYJWSuDc=",
 			"path": "github.com/drone/drone-exec/yaml",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "TsAI9NyeQSh07pPTiBRkYSZnBF0=",
 			"path": "github.com/drone/drone-exec/yaml/inject",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "MJFxFyje27EKVBSFetbREhL9L/I=",
 			"path": "github.com/drone/drone-exec/yaml/path",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "xBGrL6Lcq8uKBVWV+h+xm5rYiF0=",
 			"path": "github.com/drone/drone-exec/yaml/secure",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
+			"checksumSHA1": "BfJP6XGUeh6fSjD73secTB3ClbE=",
 			"path": "github.com/drone/drone-exec/yaml/shasum",
-			"revision": "bc3aa3af34b64aa2e439aac9d268cba6019de7fc",
-			"revisionTime": "2016-02-03T12:07:27-08:00"
+			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
+			"revisionTime": "2016-02-10T17:02:43Z"
 		},
 		{
 			"path": "github.com/drone/drone-plugin-go/plugin",

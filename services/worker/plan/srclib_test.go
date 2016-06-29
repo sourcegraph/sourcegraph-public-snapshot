@@ -249,6 +249,14 @@ func config2yaml(c droneyaml.Config) string {
 	return string(b)
 }
 
+func TestImages_MemLimit(t *testing.T) {
+	for lang, b := range langSrclibConfigs {
+		if b.Build.Container.Memory == 0 {
+			t.Errorf("no memory limit set for language %s", lang)
+		}
+	}
+}
+
 // TestImages_Version ensures we can parse all docker image names specified in
 // srclib_images.go
 func TestImages_Version(t *testing.T) {

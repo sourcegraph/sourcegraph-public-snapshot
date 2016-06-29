@@ -26,6 +26,8 @@ type Container struct {
 	Volumes     []string      `yaml:",omitempty"`
 	Net         string        `yaml:",omitempty"`
 	AuthConfig  AuthConfig    `yaml:"auth_config,omitempty"`
+	Memory      int64         `yaml:"mem_limit,omitempty"`
+	CPUSetCPUs  string        `yaml:"cpuset,omitempty"`
 }
 
 // Build is a typed representation of the build
