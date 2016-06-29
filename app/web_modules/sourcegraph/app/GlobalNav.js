@@ -219,7 +219,9 @@ class SearchForm extends React.Component {
 			this.setState({open: false});
 			this._input.blur();
 		} else if (ev.keyCode === 13 /* Enter */) {
-			setTimeout(() => this._input.blur());
+			// Close the search results menu AFTER the action has taken place on
+			// the result (if a result was highlighted).
+			setTimeout(() => this.setState({open: false}));
 		}
 	}
 
