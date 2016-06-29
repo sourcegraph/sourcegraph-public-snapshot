@@ -11,7 +11,7 @@
     "compress-keygen": "crx keygen",
     "clean": "rimraf build/ dev/ *.zip *.crx",
     "build-docker": "docker build -t sourcegraph/browser-ext-build scripts/build-env",
-    "dist": "npm run build-docker && docker run -v `pwd`:/browser-ext -i -t sourcegraph/browser-ext-build /bin/bash /browser-ext/scripts/build-env/dist.sh"
+    "dist": "npm run build-docker && docker run -e GIT_HASH=`git rev-parse HEAD` -v `pwd`:/browser-ext -i -t sourcegraph/browser-ext-build /bin/bash /browser-ext/scripts/build-env/dist.sh"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
