@@ -9,7 +9,7 @@
 	composes: pt2 from base;
 }
 .groups-bb { /* exported */
-	composes: b--light-gray from colors;
+	composes: bg-cool-pale-gray-2 b--light-gray from colors;
 	composes: bb from base;
 }
 .groups-inner {
@@ -48,6 +48,7 @@
 .groups button {
 	/* otherwise the selected state still has 2px */
 	border-width: 1px !important;
+	border-radius: 50px;
 }
 
 /* TODO: Abstract this – styles should be contained in their components */

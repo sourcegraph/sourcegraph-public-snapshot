@@ -132,7 +132,8 @@ class SearchSettings extends Container {
 							</LocationStateToggleLink> :
 							<Button
 								key={lang}
-								color="default"
+								color="blue"
+								color={!langs.includes(lang) ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._toggleLang(lang)}
@@ -153,13 +154,13 @@ class SearchSettings extends Container {
 					<span styleName="label">Include:</span>
 					<div>
 						{this.state.repo && <Button
-							color="default"
+							color={!scope.repo ? "blue" : "default"}
 							size="small"
 							styleName="choice-button"
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						<Button
-							color="default"
+							color={this.state.githubToken && !scope.popular ? "default" : "blue"}
 							size="small"
 							styleName="choice-button"
 							onClick={() => {
@@ -170,7 +171,7 @@ class SearchSettings extends Container {
 							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
 						{this.props.githubToken &&
 							<Button
-								color="default"
+								color={!scope.public ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({public: !scope.public})}
@@ -180,7 +181,7 @@ class SearchSettings extends Container {
 							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your private projects + deps</GitHubAuthButton>}
 						{this._hasPrivateGitHubToken() &&
 							<Button
-								color="default"
+								color={!scope.private ? "default" : "blue"}
 								size="small"
 								styleName="choice-button"
 								onClick={() => this._setScope({private: !scope.private})}
