@@ -162,14 +162,19 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
-	// TODO support private query string
-	// TODO support includeDeps query string
+	q := r.URL.Query()
+	_, privateOnly := q["Private"]
+	var repoType string
+	if privateOnly {
+		repoType = "private"
+	}
 
 	var err error
 	var reposOnPage *sourcegraph.RemoteRepoList
 	var remoteRepos = &sourcegraph.RemoteRepoList{}
 	for page := 1; ; page++ {
 		reposOnPage, err = cl.Repos.ListRemote(ctx, &sourcegraph.ReposListRemoteOptions{
+			Type:        repoType,
 			ListOptions: sourcegraph.ListOptions{PerPage: 100, Page: int32(page)},
 		})
 		if err != nil {
@@ -190,8 +195,8 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	deps := []string{}
-	if true {
+	var deps []string
+	if _, ok := q["Dependencies"]; ok {
 		uris := []string{}
 		for _, r := range remoteRepos.RemoteRepos {
 			// TODO better domain stripping

@@ -417,6 +417,10 @@ message RepoResolution {
 // ReposListRemoteOptions specifies options for Repos.ListRemote.
 message ReposListRemoteOptions {
 	ListOptions ListOptions = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = ""];
+	// Type of repositories to list.  Possible values are currently ones
+	// supported by the GitHub API, including: all, owner, public,
+	// private, member. Default is "all".
+	string Type = 2;
 }
 
 // RemoteRepoList is a list of remote repos.
