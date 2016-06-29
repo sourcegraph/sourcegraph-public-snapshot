@@ -132,65 +132,6 @@ func ToTSVector(def *graph.Def) *TSVector {
 	return &tsvector
 }
 
-func BagOfWords(def *graph.Def) map[string]int {
-	words := make(map[string]int)
-
-	repoParts := strings.Split(def.Repo, "/")
-	if len(repoParts) >= 1 && (strings.HasSuffix(repoParts[0], ".com") || strings.HasSuffix(repoParts[0], ".org")) {
-		repoParts = repoParts[1:]
-	}
-	unitParts := strings.Split(def.Unit, "/")
-	defParts := delims.Split(def.Path, -1)
-	fileParts := strings.Split(filepath.ToSlash(def.File), "/")
-	for i, w := range repoParts {
-		words[w]++
-		if len(repoParts)-1 == i {
-			words[w] += 2 // the last path tends to be the name
-		}
-	}
-	for i, w := range unitParts {
-		words[w]++
-		if len(unitParts)-1 == i {
-			words[w] += 2
-		}
-	}
-	for i, w := range defParts {
-		words[w] += 2
-		if len(defParts)-1 == i {
-			words[w] += 30 // mega extra points for matching the last component of the def path (typically the "name" of the def)
-
-			if snakeSplit := snakeCaseSplit(w); len(snakeSplit) > 1 {
-				snakeSplit := snakeCaseSplit(w)
-				for _, tokPart := range snakeSplit {
-					words[tokPart] += 10 // more points for matching last component of def path
-				}
-			} else {
-				camelSplit := camelcase.Split(w)
-				for _, tokPart := range camelSplit {
-					words[tokPart] += 10 // more points for matching last component of def path
-				}
-			}
-		}
-	}
-	camelCaseWords, snakeCaseWords := splitCaseWords(defParts)
-	for _, w := range camelCaseWords {
-		words[w]++ // add each individual word of camel cased tokens
-	}
-	for _, w := range snakeCaseWords {
-		words[w]++ // add each individual word of snake cased tokens
-	}
-	for i, w := range fileParts {
-		words[w]++
-		if len(fileParts)-1 == i {
-			words[w] += 2
-		}
-	}
-
-	words[def.Name] += 10
-
-	return words
-}
-
 func splitCaseWords(defParts []string) ([]string, []string) {
 	var camelCaseWords []string
 	var snakeCaseWords []string
