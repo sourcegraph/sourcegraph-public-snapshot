@@ -19,9 +19,14 @@ import {MagnifyingGlassIcon} from "sourcegraph/components/Icons";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import invariant from "invariant";
+import {rel} from "sourcegraph/app/routePatterns";
+import {repoPath, repoParam} from "sourcegraph/repo";
 
-function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
+function GlobalNav({navContext, location, params, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
 	if (location.pathname === "/styleguide") return <span />;
+	const repoSplat = repoParam(params.splat);
+	let repo;
+	if (repoSplat) repo = repoPath(repoSplat);
 	return (
 		<nav id="global-nav" styleName="navbar" role="navigation">
 
@@ -45,7 +50,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 				</Link>
 
 				<div styleName="search">
-					{location.pathname !== "/" && <SearchForm location={location} router={router} showResultsPanel={location.pathname !== "/search"} />}
+					{location.pathname !== "/" && <SearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
 				</div>
 
 				{user && <div styleName="flex flex-start flex-fixed">
@@ -96,6 +101,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 GlobalNav.propTypes = {
 	navContext: React.PropTypes.element,
 	location: React.PropTypes.object.isRequired,
+	params: React.PropTypes.object,
 	channelStatusCode: React.PropTypes.number,
 };
 GlobalNav.contextTypes = {
@@ -112,6 +118,7 @@ class SearchForm extends React.Component {
 	// TODO(sqs): dismiss when click/focus outside
 
 	static propTypes = {
+		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
 		router: React.PropTypes.object.isRequired,
 		showResultsPanel: React.PropTypes.bool.isRequired,
@@ -244,19 +251,19 @@ class SearchForm extends React.Component {
 						<MagnifyingGlassIcon styleName="search-icon" />
 					</Button>
 				</form>
-				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel location={this.props.location} />}
+				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel repo={this.props.repo} location={this.props.location} />}
 			</div>
 		);
 	}
 }
 SearchForm = CSSModules(SearchForm, styles);
 
-let SearchResultsPanel = ({location}: {location: RouterLocation}) => {
+let SearchResultsPanel = ({repo, location}: {repo: ?string, location: RouterLocation}) => {
 	const q = queryFromStateOrURL(location);
 	return (
 		<Panel hoverLevel="high" styleName="search-panel">
-			<SearchSettings styleName="search-settings" showAlerts={true} />
-			<GlobalSearch styleName="search-results" query={q || ""} location={location} resultClassName={styles["search-result"]} />
+			<SearchSettings styleName="search-settings" showAlerts={true} repo={repo} />
+			<GlobalSearch styleName="search-results" query={q || ""} repo={repo} location={location} resultClassName={styles["search-result"]} />
 		</Panel>
 	);
 };

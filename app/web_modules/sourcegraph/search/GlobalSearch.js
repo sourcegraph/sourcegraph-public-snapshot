@@ -33,6 +33,7 @@ const resultIconSize = "24px";
 // should consider merging them at some point.
 class GlobalSearch extends Container {
 	static propTypes = {
+		repo: React.PropTypes.string,
 		location: React.PropTypes.object.isRequired,
 		query: React.PropTypes.string.isRequired,
 		className: React.PropTypes.string,
@@ -104,9 +105,14 @@ class GlobalSearch extends Container {
 
 	_repoIncludes(state, lang) {
 		const scope = this._scope(state);
-		if (!state.githubToken) return popularRepos[lang];
-		if (scope.public) return ["github.com/gorilla/mux"]; // TODO(rothfels): fill in
-		return [];
+		let repos = [];
+		if (state.repo && scope.repo) repos.push(state.repo);
+		if (!state.githubToken) {
+			repos.push(...popularRepos[lang]);
+			return repos;
+		}
+		if (scope.public) repos.push("github.com/gorilla/mux"); // TODO(rothfels): fill in
+		return repos;
 	}
 
 	stores(): Array<Object> { return [SearchStore, UserStore]; }

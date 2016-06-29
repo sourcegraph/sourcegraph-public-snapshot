@@ -17,6 +17,7 @@ import {withUserContext} from "sourcegraph/app/user";
 
 class SearchSettings extends Container {
 	static propTypes = {
+		repo: React.PropTypes.string,
 		className: React.PropTypes.string,
 		showAlerts: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
@@ -121,6 +122,12 @@ class SearchSettings extends Container {
 							size="small"
 							styleName="choice-button"
 							outline={false}>Popular libraries</Button>}
+						{this.state.repo && <Button
+							color="default"
+							size="small"
+							styleName="choice-button"
+							onClick={() => this._setScope({repo: !scope.repo})}
+							outline={!scope.repo}>{this.state.repo}</Button>}
 						{(!this.state.signedIn || !this.props.githubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects + deps</GitHubAuthButton>}
 						{this.props.githubToken &&
@@ -162,7 +169,7 @@ class SearchSettings extends Container {
 					</div>
 				</div>}
 				{this._renderScope()}
-				{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private &&
+				{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) &&
 					<div styleName="row">
 						<div styleName="group">
 							<Alert>Select repositories to include.</Alert>

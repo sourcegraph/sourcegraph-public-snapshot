@@ -7,5 +7,6 @@ export type SearchSettings = {
 	scope: {
 		public: boolean;
 		private: boolean;
+		repo: boolean;
 	}
 };

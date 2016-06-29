@@ -47,6 +47,7 @@ export class UserStore extends Store {
 						scope: {
 							public: true,
 							private: false,
+							repo: true,
 						},
 					},
 				};
