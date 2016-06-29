@@ -54,8 +54,8 @@
 .modal {
 	composes: modal from "sourcegraph/components/styles/modal.css";
 	composes: col-10 from grid;
-	max-width: 440px;
-	min-width: 420px;
+	max-width: 340px;
+	min-width: 320px;
 }
 
 .modalTitle {
