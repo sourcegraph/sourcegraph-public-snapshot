@@ -11,6 +11,7 @@ import SearchStore from "sourcegraph/search/SearchStore";
 import "sourcegraph/search/SearchBackend";
 import UserStore from "sourcegraph/user/UserStore";
 import debounce from "lodash/function/debounce";
+import uniq from "lodash/array/uniq";
 import trimLeft from "lodash/string/trimLeft";
 import * as SearchActions from "sourcegraph/search/SearchActions";
 import {qualifiedNameAndType} from "sourcegraph/def/Formatter";
@@ -109,10 +110,12 @@ class GlobalSearch extends Container {
 		if (state.repo && scope.repo) repos.push(state.repo);
 		if (!state.githubToken) {
 			if (lang) repos.push(...popularRepos[lang]);
-			return repos;
+		} else {
+			// TODO(rothfels): fill in
+			if (scope.public) repos.push("github.com/gorilla/mux");
+			if (scope.private) repos.push("github.com/gorilla/mux");
 		}
-		if (scope.public) repos.push("github.com/gorilla/mux"); // TODO(rothfels): fill in
-		return repos;
+		return uniq(repos);
 	}
 
 	stores(): Array<Object> { return [SearchStore, UserStore]; }
