@@ -6,26 +6,20 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value panel "sourcegraph/components/styles/panel.css";
 
-.container {
-	composes: center mv5 from base;
-	composes: col-12-ns from grid;
-	max-width: 74rem;
-	min-height: 50vh;
-	background-color: white;
-}
-
 .bg {
 	composes: bg-cool-pale-gray-2 from colors;
 	flex: auto;
+	composes: pt3 from base;
 }
 
 .section {
 	composes: ph4 from base;
 }
 
-.section-label {
-	composes: mt3 mr3 mb3 from base;
-	composes: b normal-text from typography;
+.section-heading {
+	text-transform: uppercase;
+	composes: cool-mid-gray from colors;
+	font-size: 1.2rem; /* f4 too big, f5 too small */
 }
 
 .section-label:after {
@@ -57,8 +51,6 @@
 .description-wrapper {
 	composes: section;
 	composes: pt0 from base;
-	border-top: 1px solid #eeeeee;
-	border-bottom: 1px solid #eeeeee;
 }
 
 .icon {
@@ -70,8 +62,11 @@
 
 .description {
 	composes: normal-text from typography;
-	margin-top: 1.5rem;
-	margin-bottom: 1.5rem;
+	composes: mv2 from base;
+}
+.description p {
+	margin-top: 1.0rem;
+	margin-bottom: 1.0rem;
 }
 
 .description-expander {
@@ -82,16 +77,44 @@
 	cursor: pointer;
 }
 
-.link-and-authors {
+.actions {
 	composes: section;
-	composes: normal-text from typography;
 	display: flex;
-	justify-content: space-between;
+	justify-content: flex-start;
+	align-items: center;
+}
+.action {
+	composes: cool-mid-gray from colors;
+}
+.action:not(:last-child)::after {
+	content: "\00A0·\00A0";
+	font-weight: bold;
+	font-size: 1.4rem;
+	padding: 0 5px;
+}
+.translation-action {
+	composes: action;
+	display: flex;
 }
 
-.ref-tabs {
-	float: right;
-	line-height: 1.7;
+
+.examples-container {
+	composes: mt5 from base;
+}
+.examples-panel {
+	background-color: white;
+}
+.examples-heading {
+	composes: section-heading;
+	composes: section;
+}
+
+.refs-container {
+	composes: mt5 from base;
+	composes: section;
+}
+.refs-heading {
+	composes: section-heading;
 }
 
 .pagination {
@@ -100,27 +123,8 @@
 	justify-content: center;
 }
 
-.translation-dropdown {
-	composes: blue bg-cool-pale-gray-5 from colors;
-	composes: fw6 from typography;
-	composes: pt2 pl3 pr3 pb2 from base;
-	border-bottom-right-radius: 2px;
-	border-bottom-left-radius: 2px;
-	float: right;
-}
-@value c_dark-blue from colors;
-.translation-dropdown:hover {
-	color: c_dark-blue;
-}
-
-.refs-container {
-	composes: section;
-	composes: pb2 from base;
-	border-top: 1px solid #eeeeee;
-}
-
 .def-header {
-	composes: mh4 mb1 pt3 from base;
+	composes: mh4 from base;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;

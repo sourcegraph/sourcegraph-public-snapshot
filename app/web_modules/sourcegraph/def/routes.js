@@ -13,13 +13,13 @@ import blobWithDefBox from "sourcegraph/def/blobWithDefBox";
 export const routes: Array<Route> = [
 	{
 		path: rel.defInfo,
+		repoNavContext: false,
 		getComponents: (location, callback) => {
 			require.ensure([], (require) => {
 				const withResolvedRepoRev = require("sourcegraph/repo/withResolvedRepoRev").default;
 				const withDef = require("sourcegraph/def/withDef").default;
 				callback(null, {
 					main: withResolvedRepoRev(withDef(require("sourcegraph/def/DefInfo").default)),
-					repoNavContext: withResolvedRepoRev(require("sourcegraph/def/DefNavContext").default),
 				});
 			});
 		},
