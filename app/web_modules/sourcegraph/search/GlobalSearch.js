@@ -108,7 +108,7 @@ class GlobalSearch extends Container {
 		let repos = [];
 		if (state.repo && scope.repo) repos.push(state.repo);
 		if (!state.githubToken) {
-			repos.push(...popularRepos[lang]);
+			if (lang) repos.push(...popularRepos[lang]);
 			return repos;
 		}
 		if (scope.public) repos.push("github.com/gorilla/mux"); // TODO(rothfels): fill in
