@@ -56,14 +56,14 @@
 	height: navbarHeight;
 }
 
-@value logo-height 24.578px;
+@value logo-height 21.508px;
 .logo-link {
-	padding-top: calc((navbarHeight - logo-height)/2);
-	padding-bottom: calc((navbarHeight - logo-height)/2);
-	composes: ph3 br from base;
+	padding: calc((navbarHeight - logo-height)/2);
+	composes: br from base;
 	border-color: nav-border-color;
 }
 .logo {
+	display: block;
 }
 .logomark:hover {
 	animation: spin 0.5s ease-in-out 1;
@@ -134,11 +134,12 @@
 	font-weight: bold;
 }
 
-@value input-height-small from "sourcegraph/search/styles/GlobalSearchInput.css";
 @value search-form-max-width 1000px;
 .search {
 	flex: 1 0;
-	composes: mr4 from base;
+	composes: mr3 from base;
+	composes: br from base;
+	border-color: nav-border-color;
 }
 .search-form-container {
 	max-width: search-form-max-width;
@@ -150,13 +151,9 @@
 .search-form > div { /* make search input share width */
 	flex: 1 0;
 }
-.search-form button {
-	height: input-height-small;
-}
-.search-button {
-	border-radius: 0;
-	border-top-left-radius: 0;
-	border-bottom-left-radius: 0;
+.search-input {
+	height: navbarHeight;
+	composes: f4 from typography;
 }
 .search-icon {
 	font-size: 1.3rem;
@@ -180,4 +177,16 @@
 }
 .search-result {
 	composes: ph3 pt3 from base;
+}
+
+.user {
+	display: flex;
+}
+.user-menu-icon {
+	composes: cool-mid-gray from colors;
+	font-size: 0.8rem;
+	margin-left: 6px;
+}
+.current-user {
+	color: cool-mid-gray;
 }

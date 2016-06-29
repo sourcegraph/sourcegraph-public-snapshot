@@ -12,10 +12,10 @@ import styles from "./styles/GlobalNav.css";
 import base from "sourcegraph/components/styles/_base.css";
 import {LoginForm} from "sourcegraph/user/Login";
 import {EllipsisHorizontal, CheckIcon} from "sourcegraph/components/Icons";
+import {FaChevronDown} from "sourcegraph/components/Icons";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {locationForSearch, queryFromStateOrURL} from "sourcegraph/search/routes";
-import {MagnifyingGlassIcon} from "sourcegraph/components/Icons";
 import GlobalSearch from "sourcegraph/search/GlobalSearch";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 import invariant from "invariant";
@@ -50,7 +50,7 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 			<div styleName="flex flex-fill flex-center tl navbar-inner" className={base.bn}>
 				{!isHomepage && <Link to="/" styleName="logo-link flex-fixed">
 					<Logo styleName={`logo ${showLogoMarkOnly ? "logomark" : ""}`}
-						width={showLogoMarkOnly ? "24px" : "165px"}
+						width={showLogoMarkOnly ? "21px" : "144px"}
 						type={showLogoMarkOnly ? "logomark" : "logotype"}/>
 				</Link>}
 
@@ -72,8 +72,13 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 
 				{user && <div styleName="flex flex-fixed" className={`${base.pv2} ${base.ph3}`}>
 					<Popover left={true}>
-						{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} styleName="block" className={base.pt2} /> : <div styleName="username">{user.Login}</div>}
+						<div styleName="user">
+							{user.AvatarURL ? <Avatar size="small" img={user.AvatarURL} /> : <div styleName="username">{user.Login}</div>}
+							<FaChevronDown styleName="user-menu-icon" />
+						</div>
 						<Menu>
+							<span styleName="current-user">Signed in as <strong>sqs</strong></span>
+							<hr className={base.m0} />
 							<Link to="/about" role="menu-item">About</Link>
 							<Link to="/contact" role="menu-item">Contact</Link>
 							<Link to="/pricing" role="menu-item">Pricing</Link>
@@ -246,8 +251,9 @@ class SearchForm extends React.Component {
 					autoComplete="off">
 					<GlobalSearchInput
 						name="q"
-						size="small"
+						icon={true}
 						autoComplete="off"
+						styleName="search-input"
 						value={this.state.query || ""}
 						domRef={e => this._input = e}
 						onFocus={this._handleFocus}
@@ -255,9 +261,6 @@ class SearchForm extends React.Component {
 						onKeyDown={this._handleKeyDown}
 						onClick={this._handleFocus}
 						onChange={this._handleChange} />
-					<Button styleName="search-button" type="submit" color="blue">
-						<MagnifyingGlassIcon styleName="search-icon" />
-					</Button>
 				</form>
 				{this.props.showResultsPanel && this.state.open && <SearchResultsPanel repo={this.props.repo} location={this.props.location} />}
 			</div>

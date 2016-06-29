@@ -87,6 +87,10 @@
 .action-link:hover {
 	border-color: c_dark-blue-2;
 }
+
+.search-input {
+	composes: f4 from typography;
+}
 .search-button {
 	font-weight: bold;
 	composes: action-button;

@@ -93,10 +93,11 @@ class DashboardContainer extends Container {
 
 					<GlobalSearchInput
 						name="q"
-						size="large"
+						border={true}
 						value={this.props.location.query.q || ""}
 						autoFocus={true}
 						domRef={e => this._input = e}
+						styleName="search-input"
 						onChange={this._handleInput} />
 					<div styleName="search-actions">
 						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>

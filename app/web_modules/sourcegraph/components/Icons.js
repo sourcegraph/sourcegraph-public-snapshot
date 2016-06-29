@@ -20,6 +20,7 @@ export const CloseIcon = iconWrapper(require("react-icons/lib/fa/close"));
 export const EllipsisHorizontal = iconWrapper(require("react-icons/lib/fa/ellipsis-v"));
 export const FaAngleDown = iconWrapper(require("react-icons/lib/fa/angle-down"));
 export const FaAngleRight = iconWrapper(require("react-icons/lib/fa/angle-right"));
+export const FaChevronDown = iconWrapper(require("react-icons/lib/fa/chevron-down"));
 export const PlayIcon = iconWrapper(require("react-icons/lib/fa/play-circle"));
 
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
