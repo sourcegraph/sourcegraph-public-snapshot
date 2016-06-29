@@ -137,12 +137,12 @@ class GlobalSearch extends Container {
 		return uniq(repos);
 	}
 
-	_parseRemoteRepoURIsWithDeps(repos) {
+	_parseRemoteRepoURIsAndDeps(repos, deps) {
 		let uris = [];
 		for (let repo of repos) {
 			uris.push(`github.com/${repo.Owner}/${repo.Name}`);
-			if (repo.Deps) uris.push(...repo.Deps);
 		}
+		if (deps) uris.push(...deps.filter((dep) => dep.startsWith("github.com")));
 		return uris;
 	}
 
@@ -158,16 +158,16 @@ class GlobalSearch extends Container {
 		const scope = this._scope(state);
 		if (scope.public) {
 			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: false});
-			state.publicRepos = this._parseRemoteRepoURIsWithDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : []);
+			state.publicRepos = this._parseRemoteRepoURIsAndDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : [], repos && repos.Dependencies ? repos.Dependencies : null);
 		}
 		if (scope.private) {
 			const repos = RepoStore.remoteRepos.getOpt({deps: true, private: true}) || [];
-			state.privateRepos = this._parseRemoteRepoURIsWithDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : []);
+			state.privateRepos = this._parseRemoteRepoURIsAndDeps(repos && repos.RemoteRepos ? repos.RemoteRepos : [], repos && repos.Dependencies ? repos.Dependencies : null);
 		}
 
 		state.matchingResults = this._langs(state).reduce((memo, lang) => {
-			const repoIncludes = this._reposScope(state, lang);
-			if (repoIncludes && repoIncludes.length > 0) {
+			const reposScope = this._reposScope(state, lang);
+			if (reposScope && reposScope.length > 0) {
 				const results = SearchStore.get(`${lang} ${state.query}`, this._reposScope(state, lang), null, null, RESULTS_LIMIT,
 					this.props.location.query.prefixMatch, this.props.location.query.includeRepos);
 				if (results) {
@@ -181,19 +181,19 @@ class GlobalSearch extends Container {
 	}
 
 	onStateTransition(prevState, nextState) {
-		if (prevState.query !== nextState.query) {
+		if (prevState.query !== nextState.query || prevState.githubToken !== nextState.githubToken || prevState.settings !== nextState.settings) {
 			debounce((query) => {
 				const langs = this._langs(nextState);
 				for (const lang of langs) {
-					const repoIncludes = this._reposScope(nextState, lang);
-					if (!repoIncludes || repoIncludes.length === 0) continue;
+					const reposScope = this._reposScope(nextState, lang);
+					if (!reposScope || reposScope.length === 0) continue;
 					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
 						query: `${lang} ${nextState.query}`,
 						limit: RESULTS_LIMIT,
 						prefixMatch: this.props.location.query.prefixMatch,
 						includeRepos: this.props.location.query.includeRepos,
 						fast: true,
-						repos: repoIncludes,
+						repos: reposScope,
 					}));
 				}
 			}, 200, {leading: false, trailing: true})(nextState.query);
@@ -365,8 +365,8 @@ class GlobalSearch extends Container {
 		}
 
 		const langs = this._langs(this.state);
-		const repoIncludes = langs && langs.reduce((memo, lang) => memo.concat(...this._reposScope(this.state, lang)), []);
-		if (!langs || langs.length === 0 || !repoIncludes || repoIncludes.length === 0) return [invalidFiltersItem];
+		const reposScope = langs && langs.reduce((memo, lang) => memo.concat(...this._reposScope(this.state, lang)), []);
+		if (!langs || langs.length === 0 || !reposScope || reposScope.length === 0) return [invalidFiltersItem];
 
 		if (this.state.matchingResults &&
 			(!this.state.matchingResults.Defs || this.state.matchingResults.Defs.length === 0) &&
