@@ -53,40 +53,51 @@
 	}
 }
 .description {
-	text-align: justify;
-	text-align-last: center;
-	composes: mt2 mb4 from base;
+	text-align: center;
+	composes: mt3 mb5 from base;
 	font-size: 1.2rem;
 	font-weight: normal;
 }
 
-.privateRepos {
- 	text-align: center;
- 	flex: 1 1 auto;	
-}
 .actions {
 	margin-left: auto;
 	margin-right: auto;
-	composes: mt4 from base;
 	text-align: center;
 }
+.user-actions {
+	composes: actions;
+	composes: mt6 from base;
+}
+.search-actions {
+	composes: actions;
+	composes: mt4 from base;
+}
 .action-button {
-	composes: mh2 ph4 mb2 from base;
+	composes: mh2 ph2 mb2 from base;
 }
 .action-icon {
-	font-size: 1.3rem;
+	font-size: 120%;
 	vertical-align: text-top;
+}
+.action-link {
+	composes: action-button;
+	border-color: transparent;
+}
+@value c_dark-blue-2 from colors;
+.action-link:hover {
+	border-color: c_dark-blue-2;
 }
 .search-button {
 	font-weight: bold;
 	composes: action-button;
+	composes: ph4 from base;
 }
 
 .home-container {
 	composes: container-fixed;
 	composes: mb4 pt4 ph3 from base;
-	margin-top: 12vh;
-	max-width: 720px;
+	margin-top: 13vh;
+	max-width: 575px;
 }
 
 .search-settings {

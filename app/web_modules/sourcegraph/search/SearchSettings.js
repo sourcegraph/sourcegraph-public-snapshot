@@ -41,8 +41,8 @@ class SearchSettings extends Container {
 		state.signedIn = Boolean(UserStore.activeAuthInfo());
 	}
 
-	_langs() {
-		return this.state.settings && this.state.settings.search && this.state.settings.search.languages ? Array.from(this.state.settings.search.languages) : [];
+	_langs(): Array<LanguageID> {
+		return this.state.settings && this.state.settings.search && this.state.settings.search.languages ? Array.from(this.state.settings.search.languages) : ["golang"];
 	}
 
 	_scope() {

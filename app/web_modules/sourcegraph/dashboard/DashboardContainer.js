@@ -7,6 +7,7 @@ import styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components";
+import {CloudDownloadIcon, PlayIcon} from "sourcegraph/components/Icons";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 
 class DashboardContainer extends React.Component {
@@ -34,13 +35,22 @@ class DashboardContainer extends React.Component {
 	}
 
 	render() {
+		let osName = "OS";
+		if (typeof window !== "undefined" && window.navigator && window.navigator.platform) {
+			const p = window.navigator.platform.toLowerCase();
+			if (p.includes("mac")) osName = "macOS";
+			else if (p.includes("linux")) osName = "Linux";
+			else if (p.includes("windows")) osName = "Windows";
+			// Ignore mobile (fall back to "OS").
+		}
+		
 		return (
 			<div>
 				<Helmet title="Home" />
 				<div styleName="home-container">
 					<Logo type="logotype" styleName="logo" />
 					<h2 styleName="description">
-						<strong>Code faster, together.</strong><br/>Search instantly across all the code you use and write. See where and how code is being used, with real usage examples. Integrates with the tools you love.
+						<strong>Instant&nbsp;usage&nbsp;examples and other&nbsp;helpful&nbsp;info as&nbsp;you&nbsp;code,</strong> automatically&nbsp;drawn&nbsp;from public&nbsp;and&nbsp;(your&nbsp;own)&nbsp;private&nbsp;code.
 					</h2>
 					<GlobalSearchInput
 						name="q"
@@ -48,10 +58,16 @@ class DashboardContainer extends React.Component {
 						value={this.props.location.query.q || ""}
 						autoFocus={true}
 						onChange={this._handleInput} />
-					<div styleName="actions">
+					<div styleName="search-actions">
 						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>
 					</div>
-					<SearchSettings showAlerts={false} location={this.props.location} styleName="search-settings" />
+					{this.context.signedIn && <SearchSettings showAlerts={false} location={this.props.location} styleName="search-settings" />}
+
+					<div styleName="user-actions">
+						{!this.context.signedIn && <Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button>}
+						<Button styleName="action-link" type="button" color="blue" outline={true}><CloudDownloadIcon styleName="action-icon" /> Download the app</Button>
+						<Button styleName="action-link" type="button" color="blue" outline={true}><PlayIcon styleName="action-icon" /> Watch the video</Button>
+					</div>
 				</div>
 			</div>
 		);
