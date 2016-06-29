@@ -5,6 +5,7 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 
 .groups {
+	composes: pt2 from base;
 }
 .groups-bb { /* exported */
 	composes: b--light-gray from colors;
@@ -16,17 +17,15 @@
 .row {
 	display: flex;
 	justify-content: space-between;
-	composes: mv3 from base;
+	composes: mv2 from base;
 }
 .label {
-	font-weight: bold;
 	composes: pr2 from base;
 	composes: f5 from typography;
 	min-width: 72px;
 	flex: 0 0;
 	display: inline-block;
 	composes: cool-mid-gray from colors;
-	vertical-align: text-top;
 }
 .alert {
 	composes: red from colors;

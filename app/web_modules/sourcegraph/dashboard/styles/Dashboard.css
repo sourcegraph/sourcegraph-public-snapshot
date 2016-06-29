@@ -54,7 +54,7 @@
 }
 .description {
 	text-align: center;
-	composes: mt3 mb5 from base;
+	composes: mt3 mb0 from base;
 	font-size: 1.2rem;
 	font-weight: normal;
 }
@@ -66,7 +66,7 @@
 }
 .user-actions {
 	composes: actions;
-	composes: mt6 from base;
+	composes: mt1 mb5 from base;
 }
 .search-actions {
 	composes: actions;
@@ -96,10 +96,55 @@
 .home-container {
 	composes: container-fixed;
 	composes: mb4 pt4 ph3 from base;
-	margin-top: 13vh;
 	max-width: 575px;
 }
+@media screen and (max-height: 950px) {
+	.home-container { margin-top: 0; }
+}
+@media screen and (min-height: 950px) {
+	.home-container { margin-top: 6vh; }
+}
 
+.top-queries-panel {
+	composes: mt5 mb4 pb2 from base;
+	padding-top: 1.5rem; /* need in between pt3 and pt4 */
+	height: 128px;
+}
+.notice {
+	composes: ma0 from base;
+	composes: cool-mid-gray from colors;
+}
+.search-settings-panel {
+	composes: pt2 pb1 from base;
+}
 .search-settings {
-	composes: mt5 from base;
+}
+
+/* TitledSection */
+.titled-section {
+	composes: bt from base;
+	composes: b--cool-pale-gray from colors;
+	position: relative;
+}
+.section-title {
+	background-color: white;
+	composes: pv1 pr3 from base;
+	position: absolute;
+	top: -16px;
+	font-size: 1.1rem;
+	font-weight: bold;
+	composes: cool-mid-gray from colors;
+	user-select: none;
+}
+
+/* Queries */
+@value c_blue-2 from colors;
+.query {
+	font-size: 0.95rem;
+	composes: mr2 mb2 from base;
+	border-width: 1px;
+	border-color: c_blue-2;
+}
+.query:hover {
+	border-color: c_dark-blue-2;
 }
