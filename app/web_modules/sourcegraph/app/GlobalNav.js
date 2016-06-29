@@ -64,7 +64,7 @@ function GlobalNav({navContext, location, channelStatusCode}, {user, siteConfig,
 						</TabItem>
 					</Link>
 				</div>}
-				{!user && <div styleName="flex-start flex-item-auto hidden-s">
+				{!user && <div styleName="flex-start flex-item-auto hidden-s cool-mid-gray">
 					<Link to="/about" styleName="logged-out-nav-item">About</Link>
 					<Link to="/pricing" styleName="logged-out-nav-item">Pricing</Link>
 					<a href="https://text.sourcegraph.com" styleName="logged-out-nav-item">Blog</a>

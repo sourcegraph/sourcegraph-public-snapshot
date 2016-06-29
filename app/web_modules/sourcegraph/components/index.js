@@ -11,6 +11,7 @@ export {default as RepoLink} from "./RepoLink";
 export {default as Hero} from "./Hero";
 export {default as Logo} from "./Logo";
 export {default as Heading} from "./Heading";
+export {default as Header} from "./Header";
 export {default as Panel} from "./Panel";
 export {default as Stepper} from "./Stepper";
 export {default as Icon} from "./Icon";

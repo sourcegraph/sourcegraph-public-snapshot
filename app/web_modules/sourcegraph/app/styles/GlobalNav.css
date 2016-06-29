@@ -4,7 +4,6 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 @value grid "sourcegraph/components/styles/_grid.css";
 @value layout "sourcegraph/components/styles/_layout.css";
-@value link "sourcegraph/components/styles/link.css";
 
 @value media-sm from vars;
 @value navbarHeight: 48px;
@@ -20,6 +19,7 @@
 .flex-start { justify-content: flex-start; }
 .block { display: block; }
 .hidden-s { composes: hidden-s from base; }
+.cool-mid-gray { composes: cool-mid-gray from colors; }
 
 @media media-sm {
 	.logged-out-nav {
@@ -33,7 +33,7 @@
 .username {	padding-top: 10px; }
 
 .logged-out-nav-item {
-	composes: link-subtle from link;
+	composes: link-subtle from typography;
 	composes: pa2 ml2 from base;
 }
 

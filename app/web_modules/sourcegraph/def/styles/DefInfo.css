@@ -2,22 +2,16 @@
 @value grid "sourcegraph/components/styles/_grid.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value headings "sourcegraph/components/styles/heading.css";
 @value vars "sourcegraph/components/styles/_vars.css";
-@value panel "sourcegraph/components/styles/panel.css";
+@value layout "sourcegraph/components/styles/_layout.css";
 
-.container {
-	composes: center mv5 from base;
-	composes: col-12-ns from grid;
-	max-width: 74rem;
-	min-height: 50vh;
-	background-color: white;
-}
-
-.bg {
-	composes: bg-cool-pale-gray-2 from colors;
-	flex: auto;
-}
+.cool-mid-gray { composes: cool-mid-gray from colors; }
+.bg-cool-pale-gray-2 { composes: bg-cool-pale-gray-2 from colors; }
+.container-fixed { composes: containerFixed from layout; }
+.break-word { word-wrap: break-word; }
+.link-subtle { composes: link-subtle from typography; }
+.normal { composes: normal from typography; }
+.f5 { composes: f5 from typography; }
 
 .section {
 	composes: ph4 from base;
@@ -47,18 +41,6 @@
 .authors {
 	composes: mt2 ml2 mb2 from base;
 	display: flex;
-}
-
-.blob-link {
-	composes: mb3 from base;
-	composes: f5 from typography;
-}
-
-.description-wrapper {
-	composes: section;
-	composes: pt0 from base;
-	border-top: 1px solid #eeeeee;
-	border-bottom: 1px solid #eeeeee;
 }
 
 .icon {
@@ -119,12 +101,6 @@
 	border-top: 1px solid #eeeeee;
 }
 
-.def-header {
-	composes: mh4 mb1 pt3 from base;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
 
 @media screen and (max-width: 48em) {
 	.description, .section-label {

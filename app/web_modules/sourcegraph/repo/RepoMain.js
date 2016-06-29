@@ -34,6 +34,7 @@ class RepoMain extends React.Component {
 		rev: React.PropTypes.string,
 		commitID: React.PropTypes.string,
 		resolvedRev: React.PropTypes.object,
+		repoNavContext: React.PropTypes.object,
 		repoResolution: React.PropTypes.object,
 		build: React.PropTypes.object,
 		repoObj: React.PropTypes.object,
