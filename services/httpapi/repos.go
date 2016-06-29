@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -161,6 +162,9 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 	ctx, cl := handlerutil.Client(r)
 
+	// TODO support private query string
+	// TODO support includeDeps query string
+
 	var err error
 	var reposOnPage *sourcegraph.RemoteRepoList
 	var remoteRepos = &sourcegraph.RemoteRepoList{}
@@ -186,7 +190,31 @@ func serveRemoteRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return writeJSON(w, remoteRepos)
+	deps := []string{}
+	if true {
+		uris := []string{}
+		for _, r := range remoteRepos.RemoteRepos {
+			// TODO better domain stripping
+			uri := strings.TrimPrefix(r.HTTPCloneURL, "https://")
+			uri = strings.TrimSuffix(uri, ".git")
+			uris = append(uris, uri)
+		}
+		depList, err := cl.Repos.ListDeps(ctx, &sourcegraph.URIList{
+			URIs: uris,
+		})
+		if err != nil {
+			return err
+		}
+		deps = depList.URIs
+	}
+
+	return writeJSON(w, struct {
+		sourcegraph.RemoteRepoList
+		Dependencies []string
+	}{
+		RemoteRepoList: *remoteRepos,
+		Dependencies:   deps,
+	})
 }
 
 // getRepoLastBuildTime returns the time of the newest build for the

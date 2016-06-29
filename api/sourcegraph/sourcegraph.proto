@@ -311,6 +311,8 @@ service Repos {
 	rpc ListBranches(ReposListBranchesOp) returns (BranchList);
 	rpc ListTags(ReposListTagsOp) returns (TagList);
 
+	rpc ListDeps(URIList) returns (URIList);
+
 	// ListCommitters returns the list of authors who have contributed
 	// to the main branch of the repo.
 	rpc ListCommitters(ReposListCommittersOp) returns (CommitterList);
@@ -370,6 +372,10 @@ message UploadPackOp {
 	int32 repo = 1;
 	bytes data = 3;
 	bool advertiseRefs = 4;
+}
+
+message URIList {
+	repeated string URIs = 1;
 }
 
 message Packet {
