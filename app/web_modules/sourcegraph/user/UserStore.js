@@ -45,7 +45,8 @@ export class UserStore extends Store {
 					search: {
 						languages: [],
 						scope: {
-							public: true,
+							popular: true,
+							public: false,
 							private: false,
 							repo: true,
 						},

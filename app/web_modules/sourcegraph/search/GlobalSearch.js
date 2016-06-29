@@ -109,31 +109,18 @@ class GlobalSearch extends Container {
 			{};
 	}
 
+	_canSearch(state) {
+		const scope = this._scope(state);
+		return scope.public || scope.private || scope.repo || (scope.popular || !state.githubToken);
+	}
+
 	_reposScope(state, lang) {
 		const scope = this._scope(state);
 		let repos = [];
 		if (state.repo && scope.repo) repos.push(state.repo);
-		if (!state.githubToken) {
-			if (lang) repos.push(...popularRepos[lang]);
-		} else {
-			if (scope.public) repos.push(...state.publicRepos);
-			if (scope.private) repos.push(...state.privateRepos);
-		}
-
-		// Add lang standard library.
-		if (lang) {
-			switch (lang) {
-			case "golang":
-				repos.push("github.com/golang/go");
-				break;
-			case "java":
-				repos.push("hg.openjdk.java.net/jdk8/jdk8/jdk");
-				break;
-			default:
-				break;
-			}
-		}
-
+		if ((scope.popular || !state.githubToken) && lang) repos.push(...popularRepos[lang]);
+		if (scope.public) repos.push(...state.publicRepos);
+		if (scope.private) repos.push(...state.privateRepos);
 		return uniq(repos);
 	}
 
@@ -186,7 +173,7 @@ class GlobalSearch extends Container {
 				const langs = this._langs(nextState);
 				for (const lang of langs) {
 					const reposScope = this._reposScope(nextState, lang);
-					if (!reposScope || reposScope.length === 0) continue;
+					if (!reposScope || reposScope.length === 0 || !this._canSearch(nextState)) continue;
 					Dispatcher.Backends.dispatch(new SearchActions.WantResults({
 						query: `${lang} ${nextState.query}`,
 						limit: RESULTS_LIMIT,
@@ -358,7 +345,7 @@ class GlobalSearch extends Container {
 	_results(): React$Element | Array<React$Element> {
 		if (!this.state.query) return <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result">Type a query&hellip;</div>;
 
-		const invalidFiltersItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">Check your search filters and try again.</div>;
+		const invalidFiltersItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">Update your search filters and try again.</div>;
 		const noResultsItem = <div className={`${this.state.resultClassName} ${base.pt4}`} styleName="result" key="_nosymbol">No results found.</div>;
 		if (!this.state.matchingResults) {
 			return [<div key="1" styleName="result" className={base.pv5}>Loading results...</div>];

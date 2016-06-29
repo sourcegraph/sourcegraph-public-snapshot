@@ -131,17 +131,20 @@ class SearchSettings extends Container {
 				<div styleName="group">
 					<span styleName="label">Include:</span>
 					<div>
-						{!this.state.signedIn && !this.state.githubToken && <Button
-							color="default"
-							size="small"
-							styleName="choice-button"
-							outline={false}>Popular libraries</Button>}
 						{this.state.repo && <Button
 							color="default"
 							size="small"
 							styleName="choice-button"
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
+						<Button
+							color="default"
+							size="small"
+							styleName="choice-button"
+							onClick={() => {
+								if (this.props.githubToken) this._setScope({popular: !scope.popular});
+							}}
+							outline={this.state.githubToken && !scope.popular}>Popular libraries</Button>
 						{(!this.state.signedIn || !this.props.githubToken) &&
 							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
 						{this.props.githubToken &&
@@ -183,7 +186,7 @@ class SearchSettings extends Container {
 					</div>
 				</div>}
 				{this._renderScope()}
-				{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) &&
+				{this.state.signedIn && this.state.showAlerts && !scope.public && !scope.private && (!scope.repo || !this.state.repo) && !scope.popular &&
 					<div styleName="row">
 						<div styleName="group">
 							<Alert>Select repositories to include.</Alert>
