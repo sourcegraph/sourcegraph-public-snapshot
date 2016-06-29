@@ -7,7 +7,6 @@ import styles from "./styles/Dashboard.css";
 import {locationForSearch} from "sourcegraph/search/routes";
 import GlobalSearchInput from "sourcegraph/search/GlobalSearchInput";
 import {Button, Logo} from "sourcegraph/components";
-import {PlayIcon} from "sourcegraph/components/Icons";
 import SearchSettings from "sourcegraph/search/SearchSettings";
 
 class DashboardContainer extends React.Component {
@@ -50,10 +49,7 @@ class DashboardContainer extends React.Component {
 						autoFocus={true}
 						onChange={this._handleInput} />
 					<div styleName="actions">
-						<Button styleName="search-button" type="button" color="blue">Search code</Button>
-						<Button styleName="action-button" type="button" color="blue" outline={true}>
-							<PlayIcon styleName="action-icon" /> Watch the video
-						</Button>
+						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>
 					</div>
 					<SearchSettings showAlerts={false} styleName="search-settings" />
 				</div>
