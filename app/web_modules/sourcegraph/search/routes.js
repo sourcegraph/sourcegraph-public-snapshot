@@ -10,6 +10,7 @@ export const routes: Array<Route> = [
 			require.ensure([], (require) => {
 				callback(null, {
 					main: require("sourcegraph/search/GlobalSearchMain").default,
+					navContext: null,
 				});
 			});
 		},
