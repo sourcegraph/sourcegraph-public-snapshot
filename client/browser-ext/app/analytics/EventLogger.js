@@ -29,13 +29,15 @@ export class EventLogger {
 		}
 	}
 
+	_isFirefox() {
+		return window.navigator.userAgent.indexOf("Firefox") !== -1;
+	}
+
 	logEvent(eventName, eventProperties) {
 		if (process.env.NODE_ENV === "test") return;
 
 		eventProperties = eventProperties ? eventProperties : {};
-		// TODO(rothfels): this is broken, since Firefox has a polyfill that adds chrome
-		// to the global scope.
-		eventProperties["Platform"] = global.chrome ? "ChromeExtension" : "FirefoxExtension";
+		eventProperties["Platform"] = this._isFirefox() ? "FirefoxExtension" : "ChromeExtension";
 		_amplitude.getInstance().logEvent(eventName, eventProperties);
 	}
 }
