@@ -6,7 +6,7 @@
 @value layout "sourcegraph/components/styles/_layout.css";
 @value link "sourcegraph/components/styles/link.css";
 
-@value media-sm from vars;
+@value media-xs from vars;
 @value navbarHeight: 48px;
 
 @value c_cool-pale-gray-8 from colors;
@@ -178,6 +178,23 @@
 .search-result {
 	composes: ph3 pt3 from base;
 }
+@media screen and media-xs {
+	.search-form-container {
+		position: static;
+	}
+	.search-panel {
+		height: calc(100vh - navbarHeight);
+		overflow: auto;
+		left: 0;
+		top: navbarHeight;
+	}
+	.search-results {
+		max-height: none;
+		min-height: none;
+		overflow: hidden;
+	}
+}
+
 
 .user {
 	display: flex;
