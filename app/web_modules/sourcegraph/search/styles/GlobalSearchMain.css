@@ -12,7 +12,11 @@
 
 @value left-gutter 40px;
 
-.settings-inner {
+@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
+.search-settings {
+	composes: groups-bb from SearchSettings;
+}
+.search-settings-inner {
 	composes: container;
 	padding-left: left-gutter;
 	composes: mh2 from base;

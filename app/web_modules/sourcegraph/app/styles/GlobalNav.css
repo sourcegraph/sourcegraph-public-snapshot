@@ -151,7 +151,11 @@
 	width: 100%;
 	max-width: search-form-max-width;
 }
+@value SearchSettings "sourcegraph/search/styles/SearchSettings.css";
 .search-settings {
+	composes: groups-bb from SearchSettings;
+}
+.search-settings-inner {
 	composes: ph3 from base;
 }
 .search-results {

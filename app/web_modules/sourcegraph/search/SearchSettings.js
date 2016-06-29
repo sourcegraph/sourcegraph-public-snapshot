@@ -20,6 +20,7 @@ class SearchSettings extends Container {
 		location: React.PropTypes.object.isRequired,
 		repo: React.PropTypes.string,
 		className: React.PropTypes.string,
+		innerClassName: React.PropTypes.string,
 		showAlerts: React.PropTypes.bool.isRequired,
 		githubToken: React.PropTypes.object,
 	};
@@ -160,7 +161,7 @@ class SearchSettings extends Container {
 		const scope = this._scope();
 
 		return (
-			<div styleName="groups"><div styleName="groups-inner" className={this.props.className}>
+			<div styleName="groups" className={this.props.className}><div styleName="groups-inner" className={this.props.innerClassName}>
 				<div styleName="row">
 					{this._renderLanguages()}
 				</div>

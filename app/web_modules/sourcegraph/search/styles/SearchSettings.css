@@ -5,6 +5,8 @@
 @value typography "sourcegraph/components/styles/_typography.css";
 
 .groups {
+}
+.groups-bb { /* exported */
 	composes: b--light-gray from colors;
 	composes: bb from base;
 }
