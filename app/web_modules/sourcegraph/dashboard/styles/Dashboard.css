@@ -1,46 +1,4 @@
-@value base "sourcegraph/components/styles/_base.css";
-@value grid "sourcegraph/components/styles/_grid.css";
-@value colors "sourcegraph/components/styles/_colors.css";
-@value typography "sourcegraph/components/styles/_typography.css";
-@value layout "sourcegraph/components/styles/_layout.css";
-
-.container-fixed { composes: containerFixed from layout; }
-.bg-white-50 { composes: bg-white-50 from colors; }
-.mid-gray { composes: cool-mid-gray from colors; }
-.cool-pale-gray {	composes: cool-pale-gray from colors; }
-.inline-block { display: inline-block; }
-.tc { composes: tc from typography; }
-.br3 { composes: br3 from base; }
-
 .flex-fill {
 	display: flex;
 	flex: 1;
-}
-
-.max-width-500 { max-width: 500px; }
-
-.bg {
-	composes: bg-pale-blue-gradient from colors;
-	flex: 1;
-}
-
-.repositories {	margin-top: -20px; }
-
-.item {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	justify-content: flex-start;
-}
-
-.button {
-	composes: tr from typography;
-	flex: 0 0 150px;
-}
-
-.content { flex: 1 1 auto; }
-
-.privateRepos {
- 	text-align: center;
- 	flex: 1 1 auto;	
 }

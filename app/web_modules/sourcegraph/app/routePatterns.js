@@ -8,8 +8,9 @@ export type RouteName = "styleguide" |
 	"home" |
 	"tools" |
 	"tool" |
-	"myRepos" |
 	"tour" |
+	"settings" |
+	"settingsRepos" |
 	"commit" |
 	"def" |
 	"defInfo" |
@@ -47,8 +48,9 @@ export const rel: {[key: RouteName]: string} = {
 	home: "",
 	tools: "tools",
 	tool: "tools/*",
-	myRepos: "repositories",
 	tour: "tour",
+	settings: "settings/",
+	settingsRepos: "repos",
 	login: "login",
 	signup: "join",
 	forgot: "forgot",
@@ -77,8 +79,9 @@ export const abs: {[key: RouteName]: string} = {
 	home: rel.home,
 	tools: rel.tools,
 	tool: rel.tool,
-	myRepos: rel.myRepos,
 	tour: rel.tour,
+	settings: rel.settings,
+	settingsRepos: `${rel.settings}/${rel.settingsRepos}`,
 	login: rel.login,
 	signup: rel.signup,
 	forgot: rel.forgot,

@@ -1,3 +1,14 @@
+export class WantRemoteRepos {
+	constructor() {
+	}
+}
+
+export class RemoteReposFetched {
+	constructor(data) {
+		this.data = data;
+	}
+}
+
 export class WantRepo {
 	constructor(repo) {
 		this.repo = repo;
