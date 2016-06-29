@@ -16,39 +16,9 @@
 									"type": "text",
 									"id": "search-input",
 									"block": true,
-									"onFocus": {
-										"dispatchedToStores": [],
-										"dispatchedToBackends": [
-											{
-												"$constructor": "WantResults",
-												"p": {
-													"query": "",
-													"notRepos": [
-														"repo"
-													],
-													"limit": 3
-												}
-											}
-										]
-									},
-									"onBlur": {
-										"dispatchedToStores": [],
-										"dispatchedToBackends": [
-											{
-												"$constructor": "WantResults",
-												"p": {
-													"query": "",
-													"notRepos": [
-														"repo"
-													],
-													"limit": 3
-												}
-											}
-										]
-									},
 									"autoFocus": true,
 									"defaultValue": "",
-									"placeholder": "Jump to symbols or files...",
+									"placeholder": "Jump to files...",
 									"spellCheck": false
 								}
 							}
@@ -61,23 +31,13 @@
 					"props": {
 						"styleName": "list-header",
 						"children": [
-							"Symbols in current repository"
-						]
-					}
-				},
-				{
-					"type": "div",
-					"key": ".3",
-					"props": {
-						"styleName": "list-header",
-						"children": [
 							"Files"
 						]
 					}
 				},
 				{
 					"type": "div",
-					"key": ".4",
+					"key": ".2",
 					"props": {
 						"styleName": "list-item-group",
 						"children": [
@@ -86,21 +46,6 @@
 								"key": ".$f=2/repo@rev/-/tree/p1",
 								"props": {
 									"styleName": "list-item-selected parent-dir",
-									"onMouseOver": {
-										"dispatchedToStores": [],
-										"dispatchedToBackends": [
-											{
-												"$constructor": "WantResults",
-												"p": {
-													"query": "",
-													"notRepos": [
-														"repo"
-													],
-													"limit": 3
-												}
-											}
-										]
-									},
 									"to": "/repo@rev/-/tree/p1",
 									"children": [
 										".."
@@ -114,21 +59,6 @@
 								"key": ".$f=2/repo@rev/-/blob/p1/p2/f3",
 								"props": {
 									"styleName": "list-item ",
-									"onMouseOver": {
-										"dispatchedToStores": [],
-										"dispatchedToBackends": [
-											{
-												"$constructor": "WantResults",
-												"p": {
-													"query": "",
-													"notRepos": [
-														"repo"
-													],
-													"limit": 3
-												}
-											}
-										]
-									},
 									"to": "/repo@rev/-/blob/p1/p2/f3",
 									"children": [
 										{
@@ -152,34 +82,9 @@
 	},
 	"dispatched": [
 		{
-			"$constructor": "WantSrclibDataVersion",
-			"repo": "repo",
-			"commitID": "c"
-		},
-		{
 			"$constructor": "WantFileList",
 			"repo": "repo",
 			"commitID": "c"
-		},
-		{
-			"$constructor": "WantResults",
-			"p": {
-				"query": "",
-				"repos": [
-					"repo"
-				],
-				"limit": 10
-			}
-		},
-		{
-			"$constructor": "WantResults",
-			"p": {
-				"query": "",
-				"notRepos": [
-					"repo"
-				],
-				"limit": 3
-			}
 		}
 	]
 }
