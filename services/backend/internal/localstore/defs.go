@@ -204,6 +204,10 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 		return &sourcegraph.SearchResultsList{}, nil
 	}
 
+	__obs := newDefsSearchObserver("defs2", "")
+	__obs.start("search_total")
+	defer __obs.end("search_total")
+
 	bowQuery := search.UserQueryToksToTSQuery(op.TokQuery)
 	lastTok := ""
 	if len(op.TokQuery) > 0 {
@@ -345,13 +349,19 @@ func (s *defs) Search(ctx context.Context, op store.DefSearchOp) (*sourcegraph.S
 	fastSQL := strings.Join([]string{selectSQL, fastWhereSQL, orderSQL, limitSQL}, "\n")
 
 	var dbSearchResults []*dbDefSearchResult
+	__obs.start("select_fast")
 	if _, err := graphDBH(ctx).Select(&dbSearchResults, fastSQL, args...); err != nil {
+		__obs.end("select_fast")
 		return nil, fmt.Errorf("error fast-fetching from defs2: %s", err)
 	}
+	__obs.end("select_fast")
 	if len(dbSearchResults) == 0 { // if no fast results, search for slow results
+		__obs.start("select_slow")
 		if _, err := graphDBH(ctx).Select(&dbSearchResults, sql, args...); err != nil {
+			__obs.end("select_slow")
 			return nil, fmt.Errorf("error fetching from defs2: %s", err)
 		}
+		__obs.end("select_slow")
 	}
 
 	var results []*sourcegraph.DefSearchResult
@@ -406,7 +416,7 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 	if err != nil {
 		return err
 	}
-	__observer := newDefsUpdateObserver("defs2", repo.URI)
+	__obs := newDefsUpdateObserver("defs2", repo.URI)
 
 	if len(op.CommitID) == 0 {
 		rr, err := getRepoRevLatest(graphDBH(ctx), repo.URI)
@@ -418,11 +428,11 @@ func (s *defs) UpdateFromSrclibStore(ctx context.Context, op store.DefUpdateOp) 
 		return fmt.Errorf("commit ID must be 40 characters long, was: %q", op.CommitID)
 	}
 
-	__observer.start("graphstore")
+	__obs.start("graphstore")
 	defs_, err := store.GraphFromContext(ctx).Defs(
 		sstore.ByRepoCommitIDs(sstore.Version{Repo: repo.URI, CommitID: op.CommitID}),
 	)
-	__observer.end("graphstore")
+	__obs.end("graphstore")
 	if err != nil {
 		return err
 	}
@@ -441,9 +451,9 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		return err
 	}
 
-	__observer := newDefsUpdateObserver("defs2", repo.URI)
-	__observer.start("update_total")
-	defer __observer.end("update_total")
+	__obs := newDefsUpdateObserver("defs2", repo.URI)
+	__obs.start("update_total")
+	defer __obs.end("update_total")
 
 	// Validate input
 	if op.Repo == 0 || op.CommitID == "" {
@@ -473,12 +483,12 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 	dbh := graphDBH(ctx)
 
 	// Update def_keys
-	__observer.start("update def_keys")
+	__obs.start("update_def_keys")
 	if err := updateDefKeys(ctx, dbh, repo.URI, chosenDefs); err != nil {
-		__observer.end("update def_keys")
+		__obs.end("update_def_keys")
 		return err
 	}
-	__observer.end("update def_keys")
+	__obs.end("update_def_keys")
 
 	defKeys := make(map[graph.DefKey]struct{})
 	for _, def := range chosenDefs {
@@ -486,9 +496,9 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		dk.Repo, dk.CommitID = repo.URI, ""
 		defKeys[dk] = struct{}{}
 	}
-	__observer.start("get def_keys")
+	__obs.start("get_def_keys")
 	dbDefKeys, err := getDefKeys(ctx, dbh, defKeys)
-	__observer.end("get def_keys")
+	__obs.end("get_def_keys")
 	if err != nil {
 		return err
 	}
@@ -499,15 +509,15 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 
 	// Update repo_revs
 	repoRevsInsertSQL := `INSERT INTO repo_revs(repo, commit, state) (SELECT $1 AS repo, $2 AS commit, 0 AS state WHERE NOT EXISTS (SELECT 1 FROM repo_revs WHERE repo=$1 AND commit=$2))`
-	__observer.start("update repo_revs")
+	__obs.start("update_repo_revs_update")
 	if _, err := dbh.Exec(repoRevsInsertSQL, repo.URI, op.CommitID); err != nil {
-		__observer.end("update repo_revs")
+		__obs.end("update_repo_revs_update")
 		return fmt.Errorf("repo_rev update failed: %s", err)
 	}
-	__observer.end("update repo_revs")
-	__observer.start("get repo_revs")
+	__obs.end("update_repo_revs_update")
+	__obs.start("update_repo_revs_select")
 	repoRevID, err := dbh.SelectInt(`SELECT id FROM repo_revs WHERE repo=$1 AND commit=$2`, repo.URI, op.CommitID)
-	__observer.end("get repo_revs")
+	__obs.end("update_repo_revs_select")
 	if err != nil {
 		return fmt.Errorf("repo_rev id fetch failed: %s", err)
 	}
@@ -547,17 +557,17 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		log15.Warn("could not determine language for all defs", "noLang", langWarnCount, "allDefs", len(chosenDefs))
 	}
 
-	__observer.start("insert")
+	__obs.start("update_insert")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
 		return execDBDefInsert(tx, repoRevID, dbDefs)
 	}); err != nil {
-		__observer.end("insert")
+		__obs.end("update_insert")
 		return err
 	}
-	__observer.end("insert")
+	__obs.end("update_insert")
 
 	// Update state column
-	__observer.start("update state")
+	__obs.start("update_state")
 	if err := dbutil.Transact(dbh, func(tx gorp.SqlExecutor) error {
 		if op.Latest {
 			var repoRevs []*dbRepoRev
@@ -603,18 +613,18 @@ func (s *defs) Update(ctx context.Context, op store.DefUpdateOp) error {
 		}
 		return nil
 	}); err != nil {
-		__observer.end("update state")
+		__obs.end("update_state")
 		return err
 	}
-	__observer.end("update state")
+	__obs.end("update_state")
 
 	if op.RefreshCounts {
-		__observer.start("update ref_ct")
+		__obs.start("update_ref_ct")
 		if err := s.UpdateRefCounts(ctx, repo.URI); err != nil {
-			__observer.end("update ref_ct")
+			__obs.end("update_ref_ct")
 			return err
 		}
-		__observer.end("update ref_ct")
+		__obs.end("update_ref_ct")
 	}
 	return nil
 }
