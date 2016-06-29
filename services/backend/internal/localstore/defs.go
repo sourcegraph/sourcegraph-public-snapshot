@@ -14,12 +14,37 @@ import (
 	"golang.org/x/net/context"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/store"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	sstore "sourcegraph.com/sourcegraph/srclib/store"
 )
+
+// dbLang is a numerical identifier that identifies the language of a definition
+// in the database. NOTE: this values of existing dbLang constants should NOT be
+// changed. Doing so would require a database migration.
+type dbLang uint16
+
+const (
+	dbLangGo     = 1
+	dbLangJava   = 2
+	dbLangPython = 3
+)
+
+var toDBLang_ = map[string]dbLang{
+	"go":     dbLangGo,
+	"java":   dbLangJava,
+	"python": dbLangPython,
+}
+
+func toDBLang(lang string) (dbLang, error) {
+	if l, exists := toDBLang_[lang]; exists {
+		return l, nil
+	}
+	return 0, fmt.Errorf("unrecognized language %s", lang)
+}
 
 type dbRepoRev struct {
 	ID     int64  `db:"id"`
@@ -30,9 +55,9 @@ type dbRepoRev struct {
 	// the process of being uploaded but is not yet available for querying. 1
 	// indicates that the revision is the latest indexed revision of the
 	// repository. 2 indicates that the revision is indexed, but not the latest
-	// indexed revision. In the global_defs table, definitions whose revisions
-	// have state 2 are garbage collected. State increases monotically over time
-	// (i.e., something in state 2 never transitions to state 1)
+	// indexed revision. In the defs table, definitions whose revisions have state
+	// 2 are garbage collected. State increases monotically over time (i.e.,
+	// something in state 2 never transitions to state 1)
 	State uint8 `db:"state"`
 }
 
@@ -710,4 +735,24 @@ func getRepoRevLatest(dbh gorp.SqlExecutor, repo string) (*dbRepoRev, error) {
 		return nil, fmt.Errorf("repo %s has more than one latest version", repo)
 	}
 	return rr[0], nil
+}
+
+func shouldIndex(d *graph.Def) bool {
+	// Ignore broken defs
+	if d.Path == "" {
+		return false
+	}
+	// Ignore local defs (KLUDGE)
+	if d.Local || strings.Contains(d.Path, "$") {
+		return false
+	}
+	// Ignore vendored defs
+	if filelang.IsVendored(d.File, false) {
+		return false
+	}
+	// Ignore defs in Go test files
+	if strings.HasSuffix(d.File, "_test.go") {
+		return false
+	}
+	return true
 }

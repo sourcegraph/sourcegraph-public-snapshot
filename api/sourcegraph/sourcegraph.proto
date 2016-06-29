@@ -1860,7 +1860,7 @@ message AsyncRefreshIndexesOp {
 // actions, but do not block responses
 service Async {
 	// RefreshIndexes refreshes indexes we keep on a repo (GlobalRefs,
-	// GlobalDefs, etc)
+	// Defs, etc)
 	rpc RefreshIndexes(AsyncRefreshIndexesOp) returns (pbtypes.Void);
 }
 
@@ -2239,30 +2239,10 @@ message SearchResultsList {
 	repeated SearchOptions SearchQueryOptions = 3;
 }
 
-message SearchRefreshIndexOp {
-	// Repos is the list of repos whose graph data is to be re-indexed
-	// for global search.
-	repeated int32 Repos = 1;
-
-	// RefreshCounts refreshes the global xref counts for the specified
-	// repositories.
-	bool RefreshCounts = 2;
-
-	// RefreshSearch refreshes the global search index for the specified
-	// repositories.
-	bool RefreshSearch = 3;
-}
-
 // Search provides global search over all code indexed by Sourcegraph.
 service Search {
 	// Search returns a list of defs matching the given query string.
 	rpc Search(SearchOp) returns (SearchResultsList);
-
-	// RefreshIndex updates the precomputed indexes used for efficiently
-	// answering search queries. The indexes are built from the current
-	// snapshot of the code graph. This operation is idempotent, and
-	// should be executed regularly to keep the indexes up-to-date.
-	rpc RefreshIndex(SearchRefreshIndexOp) returns (pbtypes.Void);
 }
 
 // Channel manages a realtime communication channel between a client
