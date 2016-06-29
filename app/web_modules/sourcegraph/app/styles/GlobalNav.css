@@ -25,7 +25,7 @@
 
 .navbar {
 	composes: bb cf from base;
-	composes: bg-white b--cool-pale-gray-8 from colors;
+	composes: bg-white from colors;
 	display: flex;
 	align-items: center;
 	flex-wrap: nowrap;
@@ -34,6 +34,14 @@
 	top: 0;
 	width: 100%;
 	height: navbarHeight;
+}
+.navbar-non-homepage {
+	composes: navbar;
+	composes: b--cool-pale-gray-8 from colors;
+}
+.navbar-homepage {
+	composes: navbar;
+	border-color: transparent;
 }
 
 .navbar + * {

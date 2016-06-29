@@ -23,11 +23,13 @@ import {rel} from "sourcegraph/app/routePatterns";
 import {repoPath, repoParam} from "sourcegraph/repo";
 
 function GlobalNav({navContext, location, params, channelStatusCode}, {user, siteConfig, signedIn, router, eventLogger}) {
+	const isHomepage = location.pathname === "/";
+
 	if (location.pathname === "/styleguide") return <span />;
 	const repoSplat = repoParam(params.splat);
 	let repo = repoSplat ? repoPath(repoSplat) : null;
 	return (
-		<nav id="global-nav" styleName="navbar" role="navigation">
+		<nav id="global-nav" styleName={isHomepage ? "navbar-homepage" : "navbar-non-homepage"} role="navigation">
 
 			{location.state && location.state.modal === "login" &&
 				<LocationStateModal modalName="login" location={location}
@@ -42,11 +44,11 @@ function GlobalNav({navContext, location, params, channelStatusCode}, {user, sit
 			}
 
 			<div styleName="flex flex-fill flex-center tl" className={base.bn}>
-				<Link to="/">
+				{!isHomepage && <Link to="/">
 					<Logo styleName={`logo flex-fixed ${signedIn ? "logomark" : ""}`}
 						width={signedIn ? "24px" : "165px"}
 						type={signedIn ? "logomark" : "logotype"}/>
-				</Link>
+				</Link>}
 
 				<div styleName="search">
 					{location.pathname !== "/" && <SearchForm repo={repo} location={location} router={router} showResultsPanel={location.pathname !== `/${rel.search}`} />}
