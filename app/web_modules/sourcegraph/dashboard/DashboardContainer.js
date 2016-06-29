@@ -2,6 +2,7 @@
 
 import React from "react";
 import {Link} from "react-router";
+import LocationStateToggleLink from "sourcegraph/components/LocationStateToggleLink";
 import Helmet from "react-helmet";
 import CSSModules from "react-css-modules";
 import Container from "sourcegraph/Container";
@@ -87,7 +88,7 @@ class DashboardContainer extends Container {
 					</h2>
 
 					<div styleName="user-actions">
-						{!this.context.signedIn && <Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button>}
+						{!this.context.signedIn && <LocationStateToggleLink href="/login" modalName="login" location={this.props.location}><Button styleName="action-link" type="button" color="blue" outline={true}>Sign in</Button></LocationStateToggleLink>}
 						<Link to="/tools"><Button styleName="action-link" type="button" color="blue" outline={true}><ToolsIcon styleName="action-icon" />Upgrade your workflow</Button></Link>
 					</div>
 
