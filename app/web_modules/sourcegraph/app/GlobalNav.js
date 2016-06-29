@@ -220,7 +220,7 @@ class SearchForm extends React.Component {
 
 	_handleChange(ev: KeyboardEvent) {
 		invariant(ev.currentTarget instanceof HTMLInputElement, "invalid currentTarget");
-		this.props.router.replace(locationForSearch(this.props.location, ev.currentTarget.value, false, false));
+		this.props.router.replace(locationForSearch(this.props.location, ev.currentTarget.value, false, this.props.location.pathname.slice(1) === rel.search));
 	}
 
 	_handleFocus(ev: Event) {
