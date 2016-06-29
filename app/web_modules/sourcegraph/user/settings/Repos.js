@@ -58,7 +58,7 @@ class Repos extends React.Component {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.context.githubToken && (!this.context.githubToken.scope || !(this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email")));
+		return this.context.githubToken && this.context.githubToken.scope && this.context.githubToken.scope.includes("repo") && this.context.githubToken.scope.includes("read:org") && this.context.githubToken.scope.includes("user:email");
 	}
 
 	render() {
@@ -79,7 +79,7 @@ class Repos extends React.Component {
 										onChange={this._handleFilter} />
 								</td>
 								<td>
-									{this._hasGithubToken && !this._hasPrivateGitHubToken && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
+									{!this._hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
 									{!this._hasGithubToken() && <GitHubAuthButton returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
 								</td>
 							</tr>

@@ -71,7 +71,7 @@ class SearchSettings extends Container {
 	}
 
 	_hasPrivateGitHubToken() {
-		return this.props.githubToken && (!this.props.githubToken.scope || !(this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email")));
+		return this.props.githubToken && this.props.githubToken.scope && this.props.githubToken.scope.includes("repo") && this.props.githubToken.scope.includes("read:org") && this.props.githubToken.scope.includes("user:email");
 	}
 
 	_toggleLang(lang: LanguageID) {
