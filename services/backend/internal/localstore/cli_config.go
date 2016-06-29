@@ -23,7 +23,7 @@ func init() {
 		Defs:               &defs{},
 		GlobalDeps:         &globalDeps{},
 		GlobalRefs:         &globalRefs{},
-		Password:           &password{},
+		Password:           newPassword(),
 		Queue:              &middleware.InstrumentedQueue{Queue: &queue{}},
 		RepoConfigs:        &repoConfigs{},
 		RepoStatuses:       &repoStatuses{},

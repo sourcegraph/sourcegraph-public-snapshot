@@ -173,11 +173,12 @@ func (s *accounts) ResetPassword(ctx context.Context, newPass *sourcegraph.NewPa
 	} else if err != nil {
 		return genericErr
 	}
+
 	// We round to the microsecond because that is the maximum resolution
 	// allowed by our DB.
 	if time.Now().Round(time.Microsecond).Before(req.ExpiresAt.Round(time.Microsecond)) {
 		log15.Info("Resetting password", "store", "Accounts", "UID", req.UID)
-		if err := (password{}).SetPassword(ctx, req.UID, newPass.Password); err != nil {
+		if err := newPassword().SetPassword(ctx, req.UID, newPass.Password); err != nil {
 			return fmt.Errorf("error changing password: %s", err)
 		}
 		// This changes the expiry date to some point in the past.
