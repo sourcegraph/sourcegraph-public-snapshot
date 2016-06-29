@@ -74,83 +74,49 @@ func ToTSVector(def *graph.Def) *TSVector {
 	if len(repoParts) >= 1 && (strings.HasSuffix(repoParts[0], ".com") || strings.HasSuffix(repoParts[0], ".org")) {
 		repoParts = repoParts[1:]
 	}
+	for _, w := range repoParts {
+		tsvector.Add("B", w, 1)
+	}
+	tsvector.Add("B", repoParts[len(repoParts)-1], 2) // the last path component tends to be the repository name
+
 	unitParts := strings.Split(def.Unit, "/")
+	for _, w := range unitParts {
+		tsvector.Add("B", w, 1)
+	}
+	tsvector.Add("B", unitParts[len(unitParts)-1], 2)
+
 	defParts := delims.Split(def.Path, -1)
-	fileParts := strings.Split(filepath.ToSlash(def.File), "/")
-	for i, w := range repoParts {
-		if len(repoParts)-1 == i {
-			tsvector.Add("B", w, 3) // the last path component tends to be the repository name
-		} else {
-			tsvector.Add("B", w, 1)
-		}
+	for _, w := range defParts {
+		tsvector.Add("B", w, 2)
 	}
-	for i, w := range unitParts {
-		if len(unitParts)-1 == i {
-			tsvector.Add("B", w, 3)
-		} else {
-			tsvector.Add("B", w, 1)
-		}
+	lastDefPart := defParts[len(defParts)-1]
+	tsvector.Add("A", lastDefPart, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
+	for _, w := range splitCaseWords(lastDefPart) {
+		tsvector.Add("A", w, 1) // more points for matching last component of def path
 	}
-	for i, w := range defParts {
-		if len(defParts)-1 == i {
-			tsvector.Add("A", w, 3) // mega extra points for matching the last component of the def path (typically the "name" of the def)
-
-			if snakeSplit := snakeCaseSplit(w); len(snakeSplit) > 1 {
-				snakeSplit := snakeCaseSplit(w)
-				for _, tokPart := range snakeSplit {
-					tsvector.Add("A", tokPart, 1) // more points for matching last component of def path
-				}
-			} else {
-				camelSplit := camelcase.Split(w)
-				for _, tokPart := range camelSplit {
-					tsvector.Add("A", tokPart, 1)
-				}
-			}
-		} else {
-			tsvector.Add("B", w, 2)
-		}
-	}
-
 	// CamelCase and snake_case tokens in the definition path
-	camelCaseWords, snakeCaseWords := splitCaseWords(defParts)
-	for _, w := range camelCaseWords {
-		tsvector.Add("C", w, 1)
-	}
-	for _, w := range snakeCaseWords {
-		tsvector.Add("C", w, 1)
-	}
-	for i, w := range fileParts {
-		if len(fileParts)-1 == i {
-			tsvector.Add("C", w, 3)
-		} else {
+	for _, part := range defParts {
+		for _, w := range splitCaseWords(part) {
 			tsvector.Add("C", w, 1)
 		}
 	}
+
+	fileParts := strings.Split(filepath.ToSlash(def.File), "/")
+	for _, w := range fileParts {
+		tsvector.Add("C", w, 1)
+	}
+	tsvector.Add("C", fileParts[len(fileParts)-1], 2)
 
 	tsvector.Add("A", def.Name, 1)
 
 	return &tsvector
 }
 
-func splitCaseWords(defParts []string) ([]string, []string) {
-	var camelCaseWords []string
-	var snakeCaseWords []string
-
-	for _, w := range defParts {
-		if len(snakeCaseSplit(w)) > 1 {
-			snakeCaseWords = append(snakeCaseWords, snakeCaseSplit(w)...)
-		} else {
-			camelCaseWords = append(camelCaseWords, camelcase.Split(w)...)
-		}
+func splitCaseWords(w string) []string {
+	if strings.Contains(w, "_") {
+		return strings.Split(w, "_")
 	}
-	return camelCaseWords, snakeCaseWords
-}
-
-func snakeCaseSplit(src string) (entries []string) {
-	if strings.Split(src, "_")[0] != src {
-		entries = strings.Split(src, "_")
-	}
-	return entries
+	return camelcase.Split(w)
 }
 
 func UserQueryToksToTSQuery(toks []string) string {
