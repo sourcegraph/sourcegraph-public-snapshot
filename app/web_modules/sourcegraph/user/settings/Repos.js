@@ -80,7 +80,7 @@ class Repos extends React.Component {
 								</td>
 								<td>
 									{this._canLinkPrivateGithub() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect your private repositories</GitHubAuthButton>}
-									{!this._hasGithubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="inline-block">Connect with GitHub</GitHubAuthButton>}
+									{!this._hasGithubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} styleName="github-button">Connect with GitHub</GitHubAuthButton>}
 								</td>
 							</tr>
 						</thead>
