@@ -51,7 +51,7 @@ class DashboardContainer extends React.Component {
 					<div styleName="actions">
 						<Button styleName="search-button" type="button" color="blue">Find usage examples</Button>
 					</div>
-					<SearchSettings showAlerts={false} styleName="search-settings" />
+					<SearchSettings showAlerts={false} location={this.props.location} styleName="search-settings" />
 				</div>
 			</div>
 		);

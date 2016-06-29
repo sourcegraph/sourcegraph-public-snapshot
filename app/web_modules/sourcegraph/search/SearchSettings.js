@@ -17,6 +17,7 @@ import {withUserContext} from "sourcegraph/app/user";
 
 class SearchSettings extends Container {
 	static propTypes = {
+		location: React.PropTypes.object.isRequired,
 		repo: React.PropTypes.string,
 		className: React.PropTypes.string,
 		showAlerts: React.PropTypes.bool.isRequired,
@@ -129,7 +130,7 @@ class SearchSettings extends Container {
 							onClick={() => this._setScope({repo: !scope.repo})}
 							outline={!scope.repo}>{this.state.repo}</Button>}
 						{(!this.state.signedIn || !this.props.githubToken) &&
-							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button">Your public projects + deps</GitHubAuthButton>}
+							<GitHubAuthButton color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your public projects + deps</GitHubAuthButton>}
 						{this.props.githubToken &&
 							<Button
 								color="default"
@@ -139,7 +140,7 @@ class SearchSettings extends Container {
 								outline={!scope.public}>Your public projects + deps</Button>
 						}
 						{(!this.state.signedIn || !this._hasPrivateGitHubToken()) &&
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button">Your private projects + deps</GitHubAuthButton>}
+							<GitHubAuthButton scopes={privateGitHubOAuthScopes} color="green" size="small" outline={true} styleName="choice-button" returnTo={this.props.location}>Your private projects + deps</GitHubAuthButton>}
 						{this._hasPrivateGitHubToken() &&
 							<Button
 								color="default"
