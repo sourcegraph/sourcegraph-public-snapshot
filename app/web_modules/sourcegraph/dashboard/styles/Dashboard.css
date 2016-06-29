@@ -112,7 +112,7 @@
 .top-queries-panel {
 	composes: mt5 mb4 pb2 from base;
 	padding-top: 1.5rem; /* need in between pt3 and pt4 */
-	height: 128px;
+	min-height: 100px;
 }
 .notice {
 	composes: ma0 from base;
